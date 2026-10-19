@@ -51,3 +51,13 @@ Safety requirements by hazard
 .. needtable::
    :filter: hazard.startswith("loss")
    :columns: id, title, hazard
+
+Tests of the wrong type
+-----------------------
+
+.. spec:: A specification
+   :id: S_001
+
+.. test:: A test that verifies a specification
+   :id: T_003
+   :verifies: S_001

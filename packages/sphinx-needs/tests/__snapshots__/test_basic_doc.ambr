@@ -628,6 +628,7 @@
         }),
         'type': 'array',
       }),
+      target_types=None,
     ),
     'parent_needs': LinkSchema(
       allow_dead_links=False,
@@ -663,6 +664,7 @@
         }),
         'type': 'array',
       }),
+      target_types=None,
     ),
     'post_template': FieldSchema(
       allow_defaults=True,

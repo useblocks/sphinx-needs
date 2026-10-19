@@ -118,13 +118,15 @@ and is inherited by the types that name it in ``inherits``.
 Schema rules (:ref:`needs_schema_definitions`, ``schemas.json``) are for what a type's entry cannot say,
 listed in :ref:`schema_per_type_still_rules`.
 
-A type's entry constrains its needs in two ways, which are checked differently:
+A type's entry constrains its needs in three ways, which are checked differently:
 
 - a **constraint keyword** in a ``schema`` (``enum``, ``const``, ``minimum``, ``maximum``, ``minLength``, ``maxLength``,
   ``pattern``, ``minItems``, ``maxItems``, ...) is checked by the schema validation, together with the schema rules,
   and a need that breaks it is reported and kept;
 - a **structural declaration** -- a field that is not nullable on the type, or a field or link type that only some types
-  declare -- is checked when the need is created, and what does not fit it is dropped: the value, or the whole need.
+  declare -- is checked when the need is created, and what does not fit it is dropped: the value, or the whole need;
+- a link type's ``target_types`` -- the need types its links may point to -- is checked where the links are resolved,
+  as a link's ``[condition]`` is, and a link that breaks it is reported at its need and kept.
 
 The examples below come from one project in the test suite,
 `doc_schema_per_type <https://github.com/useblocks/sphinx-needs/tree/master/packages/sphinx-needs/tests/doc_test/doc_schema_per_type>`__,
@@ -205,6 +207,13 @@ with a warning giving its place in the document, and the need is kept without it
 
    index.rst:27: WARNING: Link type 'verifies' is not declared on need type 'spec' and cannot be set in need 'S_003'; the value 'R_001' is ignored [needs.undeclared_for_type]
 
+Its ``target_types`` accepts a ``req``, and a need of a type inheriting from ``req`` such as a ``safety_req``.
+A link to a need of another type is reported once the links are resolved, at the need it is set in, and kept:
+
+.. code-block:: text
+
+   index.rst:36: WARNING: Need 'T_002' link 'S_002' in field 'verifies': target need type 'spec' is not one of 'req' (or a type inheriting from it), as need type 'test' declares it [needs.link_target_type]
+
 Required fields: two strengths
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -255,33 +264,42 @@ When and how violations are reported
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 40 40
+   :widths: 16 28 28 28
 
    * -
      - constraint keyword in a type's ``schema``
      - structural declaration
+     - link check
    * - examples
      - ``enum``, ``maximum``, ``maxLength``, ``minItems``, ...
      - ``nullable = false``; a field or link type of some types only
+     - a link type's ``target_types``; a link's ``[condition]`` (:ref:`need_conditional_links`)
    * - checked
      - by the schema validation, after the documents are read, together with the schema rules
      - when the need is created: while the documents are read, or when external needs are loaded
+     - once every link is final, after the documents are read, before the schema validation
    * - reported as
      - ``sn_schema_violation.field_fail`` or ``sn_schema_violation.link_fail``,
        always of severity ``violation``, with no custom message and no source location
      - a warning (``needs.create_need``, ``needs.import_need``, ``needs.undeclared_for_type``),
        with its place in the document for a need read from the documents
+     - a warning per link (``needs.link_target_type``, ``needs.link_condition_failed``),
+       with the place in the document of the need the link is set in
    * - the need
      - is kept, with its value, and listed in :ref:`schema_violation_json`
      - is kept without the value, or is not created
+     - is kept, with the link; not listed in :ref:`schema_violation_json`
    * - switched off by
      - :ref:`needs_schema_validation_enabled` ``= False``, which switches off the schema rules too
      - not switched off by :ref:`needs_schema_validation_enabled`
+     - not switched off by :ref:`needs_schema_validation_enabled`; silenced by ``suppress_warnings``
    * - external needs
      - checked too: a need from :ref:`needs_external_needs` is validated as its type declares;
        a type's entry cannot leave such needs out
      - applied too, with warnings that give no place in a document
        (``needs.load_external_need`` for a need that is not created), see :ref:`needs_types_fields`
+     - checked too, with warnings that give the need's URL and no place in a document
+       (``needs.external_link_target_type``, ``needs.link_condition_failed``)
 
 The constraint keywords of a type's entry are suppressed with the same ``suppress_warnings`` entries as other schema findings
 (:ref:`suppress_validation_messages`): ``sn_schema_violation.field_fail`` hides every field's, of every type at once.
@@ -291,10 +309,13 @@ The constraint keywords of a type's entry are suppressed with the same ``suppres
 What still needs schema rules
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A type's entry only says something about the needs of the type themselves.
+A type's entry only says something about the needs of the type themselves,
+and the types of the needs their links point to.
 These need schema rules:
 
-- the **types of linked needs**, and anything else about the needs a link points to (:ref:`network_validation`);
+- **anything about linked needs beyond their type**: their status or other fields,
+  or "a ``req`` but not a ``safety_req``" (:ref:`network_validation`);
+  which need types a link may point to is the link type's ``target_types`` (:ref:`needs_links`), which accepts subtypes;
 - **incoming links**, such as "every requirement is verified by a test" (:ref:`network_back_validation`);
 - **conditions between fields**, such as "``approval`` is required when ``efforts`` is greater than 15";
 - **multi-hop chains** (:ref:`nested network validation <network_validation>`);
@@ -302,19 +323,20 @@ These need schema rules:
 - a **severity or message** per rule (:ref:`rule_severity`);
 - **leaving out external or imported needs**, with a ``select`` on ``is_external`` or ``is_import``.
 
-Here a ``test`` may only verify requirements:
+The ``target_types`` of ``verifies`` says that a ``test`` verifies a ``req``, a ``safety_req`` included.
+That the requirements it verifies state their ASIL is about the linked needs' fields, and takes a schema rule:
 
 .. code-block:: json
 
    {
-     "id": "test-verifies-req",
+     "id": "test-verifies-rated",
      "select": { "properties": { "type": { "const": "test" } } },
      "validate": {
        "network": {
          "verifies": {
            "items": {
              "local": {
-               "properties": { "type": { "enum": ["req", "safety_req"] } }
+               "required": ["asil"]
              }
            }
          }
@@ -324,21 +346,22 @@ Here a ``test`` may only verify requirements:
 
 .. code-block:: text
 
-   ERROR: Need 'S_002' has schema violations:
+   ERROR: Need 'R_002' has schema violations:
      Severity:       violation
-     Field:          type
-     Need path:      T_002 > verifies > S_002
-     Schema path:    test-verifies-req[1] > validate > network > verifies > items > local > properties > type > enum
-     Schema message: "spec" is not one of "req" or "safety_req" [sn_schema_violation.network_local_fail]
+     Need path:      T_005 > verifies > R_002
+     Schema path:    test-verifies-rated[1] > validate > network > verifies > items > local > required
+     Schema message: "asil" is a required property [sn_schema_violation.network_local_fail]
 
-The need path gives the chain: the ``verifies`` link of ``T_002`` to ``S_002``.
+The need path gives the chain: the ``verifies`` link of ``T_005`` to ``R_002``.
+The header names the linked need, ``R_002``, not the need the rule selects.
 
 .. important::
 
    A schema rule matches the ``type`` it names literally: it does not follow ``inherits``.
-   The rule above lists ``safety_req`` beside ``req``;
-   with ``{ "const": "req" }`` instead, a test verifying a ``safety_req`` would be reported.
-   List the subtypes in the rule yourself, and keep the list in step with :ref:`needs_types`.
+   With ``"type": { "const": "req" }`` in its ``local`` properties, a test verifying a ``safety_req`` would be reported.
+   To restrict the types of the needs a link points to, give the link type ``target_types`` instead,
+   which accepts the types inheriting from those it lists;
+   use a rule for what it cannot say, such as "a ``req`` but not a ``safety_req``", listing the types literally.
 
 The next sections guide through an example and how to use the type and schema system to enforce
 constraints on need items and links between them.

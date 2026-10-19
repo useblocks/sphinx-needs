@@ -53,7 +53,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 54
+EXPECTED_CASE_COUNT = 83
 
 #: The codes of the per-type declaration contract, compared as bare subcodes; every
 #: other finding (a ``needs.config`` warning, a dead link) is each tool's own.
@@ -70,6 +70,8 @@ SHARED_CODES = frozenset(
         "create_need",
         "field_fail",
         "link_fail",
+        "link_target_type",
+        "external_link_target_type",
     }
 )
 
@@ -99,6 +101,9 @@ _TYPE = {
     "type_inherits": re.compile(r"^Need type '([^']+)'"),
     "undeclared_for_type": re.compile(r" on need type '([^']+)'"),
     "needextend": re.compile(r" on need type '([^']+)'"),
+    # the TARGET need's type, not the source's: the type the link may not point to
+    "link_target_type": re.compile(r"target need type '([^']+)'"),
+    "external_link_target_type": re.compile(r"target need type '([^']+)'"),
 }
 
 #: the default id regex, which every need id of a case satisfies
@@ -247,9 +252,11 @@ def _describe(code: str, message: str) -> tuple[str | None, str | None]:
 
     A finding of the schema's build names its entry, ``needs_types['<t>']``, and the
     field or link type in it, ``.fields['<f>']`` or ``.links['<f>']``; any other names
-    its field as ``Field``/``Option``/``Link type '<f>'``, and its type as its code says
-    (``Need type '<t>'`` for ``type_inherits``; ``on need type '<t>'`` for
-    ``undeclared_for_type`` and ``needextend``).
+    its field as ``Field``/``Option``/``Link type '<f>'`` (or a link's ``field '<l>'``),
+    and its type as its code says (``Need type '<t>'`` for ``type_inherits``;
+    ``on need type '<t>'`` for ``undeclared_for_type`` and ``needextend``; the TARGET's
+    ``target need type '<t>'`` for ``link_target_type`` and
+    ``external_link_target_type``).
     """
     field = _FIELD.search(message)
     field_name = field[1] if field else None
@@ -266,9 +273,12 @@ def _violations(subtype: str) -> Reader:
     ``needs.json`` (``sphinx_needs.schema.process``): its ``validation_warnings`` maps a
     need id to that need's violations, each with its ``subtype`` and the field or link
     type in its ``details``. The file is written on every build that validates, so its
-    absence fails the case."""
+    absence fails the case; a build whose configuration switches the validation off
+    (``schema_validation_enabled = false``) has neither the file nor these findings."""
 
     def read(app: Any, needs: Mapping[str, Mapping[str, Any]]) -> Iterator[Finding]:
+        if not app.config.needs_schema_validation_enabled:
+            return
         report = json.loads(
             Path(app.outdir, "schema_violations.json").read_text(encoding="utf-8")
         )

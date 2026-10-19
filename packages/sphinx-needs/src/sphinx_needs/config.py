@@ -460,6 +460,12 @@ class NeedLinksConfig(TypedDict, total=False):
     """Used for needflow. Default: '->'"""
     allow_dead_links: bool
     """If True, add a 'forbidden' class to dead links"""
+    target_types: NotRequired[list[str]]
+    """
+    The need types the links may point to, by directive name: a link to a need of
+    another type, other than a type inheriting from a listed one, is reported where
+    the links are resolved (``needs.link_target_type``). Unset: any type.
+    """
     schema: NotRequired[LinkSchemaType]
     """
     A JSON schema for the link option.
@@ -555,6 +561,7 @@ class NeedTypeLinkDeclaration(TypedDict, total=False):
     default: Any
     predicates: list[tuple[str, Any]]
     derive: dict[str, Any]
+    target_types: list[str]
     incoming: str
     outgoing: str
     copy: bool

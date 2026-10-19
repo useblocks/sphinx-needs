@@ -74,7 +74,7 @@
 #     compared --
 #         type_inherits, type_conflict, type_widening, undeclared_for_type, needextend,
 #         derive_authored, derive_invalid, dynamic_function, create_need, field_fail,
-#         link_fail
+#         link_fail, link_target_type, external_link_target_type
 #     -- every other finding is each tool's own. `config` is not among them: it is every
 #     configuration finding, so a bare `config` would match any; a case that would pin a
 #     `needs.config` warning pins its consequence for a value instead, and says so
@@ -86,11 +86,15 @@
 #     `needimport`, so a case imports ONE need per `needimport`, and the finding's `need`
 #     is that need's own id. Its `field` is the field or link type it is about (a link
 #     type's, as a field's, is its name: `.links['<l>']` in an entry). Its
-#     `type` is the need type it is about. As sphinx-needs spells them (ubCode's runner
+#     `type` is the need type it is about -- but for `link_target_type` and
+#     `external_link_target_type`, whose `type` is the TARGET need's type (below). As
+#     sphinx-needs spells them (ubCode's runner
 #     reads its own diagnostics for the same facts): the entry a finding of the schema's
 #     build names (`needs_types['<t>']`, whose `.fields['<f>']` or `.links['<f>']` is its
 #     `field`), the type a `type_inherits` finding opens with (`Need type '<t>'`), the type
-#     an `undeclared_for_type` or a `needextend` finding names (`on need type '<t>'`); a
+#     an `undeclared_for_type` or a `needextend` finding names (`on need type '<t>'`), the
+#     target's type a `link_target_type` or `external_link_target_type` finding names
+#     (`target need type '<t>'`, its link type `field '<l>'`); a
 #     finding of another code (`field_fail`, `derive_authored`) has none
 #   - `create_need` is the finding of a need that is not created: here, one without a value
 #     of a field its type makes not nullable, with no default (`Field '<f>'` is its field)
@@ -103,6 +107,29 @@
 #     need and the field or link type from the `schema_violations.json` the validation
 #     writes beside `needs.json` (`validation_warnings.<need id>[]`, `subtype` and
 #     `details.field`), not from the warning stream, so each is counted once
+#   - `link_target_type` is the finding of a resolved link to a need whose type is not one
+#     of the `target_types` of its link type, as the source need's type declares it -- a
+#     listed type, or a type inheriting from one, transitively, is one of them -- found
+#     once every link is final (after the needextends, the defaults and every computed
+#     value), whether or not the schema validation runs: ONE finding per distinct link,
+#     as `needs.json` writes the links (a link written twice is one, a link with a
+#     `[condition]` another), at the
+#     source need (`need`), its link type the `field`, and the TARGET's type the `type`.
+#     `external_link_target_type` is the same finding of a link of a need from
+#     `needs_external_needs`, which has no `need`. A dead link is no such finding,
+#     `allow_dead_links` or not: it is left to the dead-link finding (each tool's own,
+#     which `allow_dead_links` silences), and a link to a
+#     part its target lacks is a dead link; a link to a part
+#     is checked by the type of the need owning the part; a `[condition]` on the link
+#     changes nothing. A link of `links` that the same need also holds -- the same target,
+#     the same part -- in another link type with `copy = true`, one that is not derived
+#     (a derived link type copies nothing), is not checked against the
+#     `target_types` of `links` (it is checked as a link of that link type), whether it
+#     was copied or written by hand. A need type's `target_types` narrows by the EXPANDED
+#     sets (a listed type with the types inheriting from it, against the same of the
+#     declaration before it); a name that is no need type is ignored, and a
+#     `target_types` naming none declares nothing: the links keep the target types of the
+#     declaration before it, and are unrestricted where none gives any
 #   - a runner that cannot read a record carrying one of these codes FAILS the case rather
 #     than skip the record
 #   - a version whose `needs_defaults_removed` is `true` is read with its `needs_schema`
@@ -3382,3 +3409,1426 @@ lvl = 1
 [case.expect.needs.SPEC_003]
 asil = "QM"
 lvl = 1
+
+# --- the target types of a link type --------------------------------------------------
+
+[[case]]
+name = "link-target-types-global"
+why = "target_types on a [needs.links] entry holds for the links of every need type: a link to a need of another type is one link_target_type at the source need, naming the target's type, and the link is kept"
+config = '''
+[needs.links.verifies]
+target_types = ["req"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. req:: Target
+   :id: REQ_1
+
+.. spec:: Target of another type
+   :id: SPEC_1
+
+.. test:: Verifies both
+   :id: TEST_1
+   :verifies: REQ_1, SPEC_1
+
+.. spec:: Verifies a spec
+   :id: SPEC_2
+   :verifies: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["REQ_1", "SPEC_1"]
+[case.expect.needs.SPEC_2]
+verifies = ["SPEC_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "SPEC_2"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-follow-inherits"
+why = "a listed type accepts the types inheriting from it, transitively: a child and a grandchild of req are accepted, a spec is not"
+config = '''
+[needs.links.verifies]
+target_types = ["req"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.safety_req]
+title = "Safety requirement"
+prefix = "SR_"
+inherits = "req"
+
+[needs.types.asil_req]
+title = "ASIL requirement"
+prefix = "AR_"
+inherits = "safety_req"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. safety_req:: A child of req
+   :id: SREQ_1
+
+.. asil_req:: A grandchild of req
+   :id: AREQ_1
+
+.. spec:: Another type
+   :id: SPEC_1
+
+.. test:: Verifies all four
+   :id: TEST_1
+   :verifies: REQ_1, SREQ_1, AREQ_1, SPEC_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["AREQ_1", "REQ_1", "SPEC_1", "SREQ_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-type-local-roots-differ"
+why = "target_types is no part of a link type's shape: two roots of a link type need types declare alone each give their own (no type_conflict), and each holds for its own needs"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+target_types = ["req"]
+
+[needs.types.review]
+title = "Review"
+prefix = "RV_"
+
+[needs.types.review.links.verifies]
+target_types = ["spec"]
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Verifies both
+   :id: TEST_1
+   :verifies: REQ_1, SPEC_1
+
+.. review:: Verifies both
+   :id: REVIEW_1
+   :verifies: REQ_1, SPEC_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["REQ_1", "SPEC_1"]
+[case.expect.needs.REVIEW_1]
+verifies = ["REQ_1", "SPEC_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "REVIEW_1"
+field = "verifies"
+type = "req"
+
+[[case]]
+name = "link-target-types-type-narrows-global"
+why = "a need type's target_types narrows the [needs.links] one for its needs and the types inheriting from it; the needs of every other type keep the global target types"
+config = '''
+[needs.links.verifies]
+target_types = ["req", "spec"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+target_types = ["req"]
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Narrowed to req
+   :id: TEST_1
+   :verifies: REQ_1, SPEC_1
+
+.. impl:: The global target types
+   :id: IMPL_1
+   :verifies: SPEC_1, TEST_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["REQ_1", "SPEC_1"]
+[case.expect.needs.IMPL_1]
+verifies = ["SPEC_1", "TEST_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "IMPL_1"
+field = "verifies"
+type = "test"
+
+[[case]]
+name = "link-target-types-child-narrows-parent"
+why = "a child type's target_types narrows its parent's, a subtype of a listed type included: a unit_test may verify a safety_req and no longer a req, while a test still verifies both"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.safety_req]
+title = "Safety requirement"
+prefix = "SR_"
+inherits = "req"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+target_types = ["req"]
+
+[needs.types.unit_test]
+title = "Unit test"
+prefix = "UT_"
+inherits = "test"
+
+[needs.types.unit_test.links.verifies]
+target_types = ["safety_req"]
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. safety_req:: Safety requirement
+   :id: SREQ_1
+
+.. test:: Verifies both
+   :id: TEST_1
+   :verifies: REQ_1, SREQ_1
+
+.. unit_test:: Verifies both
+   :id: UTEST_1
+   :verifies: REQ_1, SREQ_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["REQ_1", "SREQ_1"]
+[case.expect.needs.UTEST_1]
+verifies = ["REQ_1", "SREQ_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "UTEST_1"
+field = "verifies"
+type = "req"
+
+[[case]]
+name = "link-target-types-child-keeps-parent"
+why = "a child type whose declaration of the link type gives no target_types, and a grandchild with no declaration, keep the target types their ancestor declares"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+target_types = ["req"]
+
+[needs.types.unit_test]
+title = "Unit test"
+prefix = "UT_"
+inherits = "test"
+
+[needs.types.unit_test.links.verifies]
+description = "What a unit test verifies"
+
+[needs.types.smoke_test]
+title = "Smoke test"
+prefix = "ST_"
+inherits = "unit_test"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. unit_test:: Verifies both
+   :id: UTEST_1
+   :verifies: REQ_1, SPEC_1
+
+.. smoke_test:: Verifies both
+   :id: STEST_1
+   :verifies: REQ_1, SPEC_1
+'''
+[case.expect]
+[case.expect.needs.UTEST_1]
+verifies = ["REQ_1", "SPEC_1"]
+[case.expect.needs.STEST_1]
+verifies = ["REQ_1", "SPEC_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "UTEST_1"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "STEST_1"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-widening-ignored"
+why = "a child type's target_types listing a type its parent's do not cover widens them, as its maxItems above its parent's does: one type_widening for each, and the child's whole declaration is ignored, so the parent's target types and maxItems still hold for its needs"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+target_types = ["req"]
+schema = { maxItems = 2 }
+
+[needs.types.unit_test]
+title = "Unit test"
+prefix = "UT_"
+inherits = "test"
+
+[needs.types.unit_test.links.verifies]
+target_types = ["req", "spec"]
+schema = { maxItems = 3 }
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. unit_test:: Verifies both
+   :id: UTEST_1
+   :verifies: REQ_1, SPEC_1
+'''
+[case.expect]
+[case.expect.needs.UTEST_1]
+verifies = ["REQ_1", "SPEC_1"]
+[[case.expect.findings]]
+code = "type_widening"
+field = "verifies"
+type = "unit_test"
+[[case.expect.findings]]
+code = "type_widening"
+field = "verifies"
+type = "unit_test"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "UTEST_1"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-unknown-name"
+why = "a name in target_types that is no need type is ignored (each tool's configuration finding, not compared: the case pins its consequence) and the others hold; a target_types naming no need type at all is ignored: the links keep the target types of the declaration before it, and are unrestricted where none gives any, as here"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+target_types = ["rq", "req"]
+
+[needs.types.review]
+title = "Review"
+prefix = "RV_"
+
+[needs.types.review.links.verifies]
+target_types = ["Requirement"]
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Verifies both
+   :id: TEST_1
+   :verifies: REQ_1, SPEC_1
+
+.. review:: Verifies both
+   :id: REVIEW_1
+   :verifies: REQ_1, SPEC_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["REQ_1", "SPEC_1"]
+[case.expect.needs.REVIEW_1]
+verifies = ["REQ_1", "SPEC_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-dead-link-skipped"
+why = "a dead link has no type to check: a link to no need, and to a missing part of a need of another type, is no link_target_type, with allow_dead_links or without; it is left to the dead-link finding (each tool's own, not compared), which allow_dead_links silences"
+config = '''
+[needs.links.verifies]
+target_types = ["req"]
+
+[needs.links.checks]
+target_types = ["req"]
+allow_dead_links = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Dead links
+   :id: TEST_1
+   :verifies: REQ_404, SPEC_1.p9
+   :checks: REQ_405, SPEC_1.p9
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+verifies = ["REQ_404", "SPEC_1.p9"]
+checks = ["REQ_405", "SPEC_1.p9"]
+
+[[case]]
+name = "link-target-types-part-by-owner"
+why = "a link to a need part is checked by the type of the need owning the part"
+config = '''
+[needs.links.verifies]
+target_types = ["req"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+   A part: :np:`(p1) of a requirement`.
+
+.. spec:: Specification
+   :id: SPEC_1
+
+   A part: :np:`(p1) of a specification`.
+
+.. test:: Verifies two parts
+   :id: TEST_1
+   :verifies: REQ_1.p1, SPEC_1.p1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["REQ_1.p1", "SPEC_1.p1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-outside-targets"
+why = "a target from outside is checked by its type, as the project declares it: a need from needs_external_needs and a need a needimport imports"
+config = '''
+[needs]
+external_needs = [{ base_url = "http://example.org", json_path = "other.json", id_prefix = "E_" }]
+
+[needs.links.verifies]
+target_types = ["req"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. needimport:: imported.json
+   :filter: id == 'SPEC_2'
+
+.. test:: Verifies needs from outside
+   :id: TEST_1
+   :verifies: E_REQ_1, E_SPEC_1, SPEC_2
+'''
+files = { "other.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "REQ_1": {"id": "REQ_1", "type": "req", "title": "External requirement"},
+        "SPEC_1": {"id": "SPEC_1", "type": "spec", "title": "External specification"}
+      }
+    }
+  }
+}
+''', "imported.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "SPEC_2": {"id": "SPEC_2", "type": "spec", "title": "Imported specification"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["E_REQ_1", "E_SPEC_1", "SPEC_2"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-imported-source"
+why = "the links of a need a needimport imports are checked, and the finding is reported at the needimport, naming the imported need"
+config = '''
+[needs.links.verifies]
+target_types = ["req"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. needimport:: other.json
+   :filter: id == 'TEST_1'
+'''
+files = { "other.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "TEST_1": {"id": "TEST_1", "type": "test", "title": "Imported test", "verifies": ["REQ_1", "SPEC_1"]}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["REQ_1", "SPEC_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-external-source"
+why = "the links of a need from needs_external_needs are checked too, as external_link_target_type, which has no need (the need has no directive); its links name needs that are not in the file, so they keep no id_prefix and point to the project's REQ_1 and SPEC_1"
+config = '''
+[needs]
+external_needs = [{ base_url = "http://example.org", json_path = "other.json", id_prefix = "E_" }]
+
+[needs.links.verifies]
+target_types = ["req"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+'''
+files = { "other.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "TEST_1": {"id": "TEST_1", "type": "test", "title": "External test", "verifies": ["REQ_1", "SPEC_1"]}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+[case.expect.needs.REQ_1]
+verifies = []
+[[case.expect.findings]]
+code = "external_link_target_type"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-beside-derive"
+why = "a derived link type takes no target_types: beside derive it is one derive_invalid, and ignored, and the rule applies, its links unchecked"
+config = '''
+[needs.links.covers]
+derive = { kind = "links", where = "type == 'spec'" }
+target_types = ["req"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. spec:: Specification
+   :id: SPEC_1
+
+.. req:: Covers every spec
+   :id: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+covers = ["SPEC_1"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "covers"
+
+[[case]]
+name = "link-target-types-type-entry-on-derived"
+why = "a need type's declaration giving target_types to a derived link type is one type_conflict, and the whole entry is ignored (its description and schema too); the rule applies, its links unchecked"
+config = '''
+[needs.links.covers]
+derive = { kind = "links", where = "type == 'spec'" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.covers]
+target_types = ["req"]
+schema = { maxItems = 0 }
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. spec:: Specification
+   :id: SPEC_1
+
+.. req:: Covers every spec
+   :id: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+covers = ["SPEC_1"]
+[[case.expect.findings]]
+code = "type_conflict"
+field = "covers"
+type = "req"
+
+[[case]]
+name = "link-target-types-computed-links-checked"
+why = "the links a default and a predicate give are checked as the links a need writes"
+config = '''
+[needs.links.verifies]
+target_types = ["req"]
+default = ["SPEC_1"]
+predicates = [["title == 'By predicate'", ["SPEC_2"]]]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. spec:: Specification
+   :id: SPEC_1
+
+.. spec:: Specification
+   :id: SPEC_2
+
+.. req:: Requirement
+   :id: REQ_1
+   :verifies: REQ_2
+
+.. req:: Requirement
+   :id: REQ_2
+   :verifies: REQ_1
+
+.. test:: By default
+   :id: TEST_1
+
+.. test:: By predicate
+   :id: TEST_2
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["SPEC_1"]
+[case.expect.needs.TEST_2]
+verifies = ["SPEC_2"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "SPEC_1"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "SPEC_2"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_2"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-needextend-link-checked"
+why = "a link a needextend adds is checked, and reported at the need it extends, not at the needextend"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+target_types = ["req"]
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Extended
+   :id: TEST_1
+   :verifies: REQ_1
+
+.. needextend:: TEST_1
+   :+verifies: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["REQ_1", "SPEC_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-copy-into-links"
+why = "a link a copy = true link type copies into links is not checked against the target_types of links (the same target and part in both); the original is checked as its own link type's, and a link written in links is checked against links, also where a link type without copy holds the same target"
+config = '''
+[needs.links.links]
+target_types = ["spec"]
+
+[needs.links.verifies]
+copy = true
+target_types = ["req"]
+
+[needs.links.checks]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. req:: Requirement
+   :id: REQ_2
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Verifies, and links
+   :id: TEST_1
+   :verifies: REQ_1, SPEC_1
+   :links: REQ_2
+   :checks: REQ_2
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["REQ_1", "SPEC_1"]
+links = ["REQ_1", "REQ_2", "SPEC_1"]
+checks = ["REQ_2"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "links"
+type = "req"
+
+[[case]]
+name = "link-target-types-beside-condition"
+why = "the target type and a [condition] on the same link are checked apart: a link failing both is a link_target_type (and the condition's finding, each tool's own, not compared), and a link failing its condition alone is no link_target_type"
+config = '''
+[needs.links.verifies]
+target_types = ["req"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+   :status: closed
+
+.. spec:: Specification
+   :id: SPEC_1
+   :status: closed
+
+.. test:: Conditions failing
+   :id: TEST_1
+   :verifies: REQ_1[status == 'open'], SPEC_1[status == 'open']
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["REQ_1[status == 'open']", "SPEC_1[status == 'open']"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-not-a-list"
+why = "a target_types that is not a non-empty list of need type names -- a bare string, an empty list -- is ignored (each tool's configuration finding, not compared: the case pins its consequence), and the links are unrestricted"
+config = '''
+[needs.links.checks]
+target_types = "req"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+target_types = "req"
+
+[needs.types.review]
+title = "Review"
+prefix = "RV_"
+
+[needs.types.review.links.verifies]
+target_types = []
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Verifies and checks a spec
+   :id: TEST_1
+   :verifies: SPEC_1
+   :checks: SPEC_1
+
+.. review:: Verifies a spec
+   :id: REVIEW_1
+   :verifies: SPEC_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+verifies = ["SPEC_1"]
+checks = ["SPEC_1"]
+[case.expect.needs.REVIEW_1]
+verifies = ["SPEC_1"]
+
+[[case]]
+name = "link-target-types-without-schema-validation"
+why = "the target types are checked where the links are resolved, not by the schema validation: with sphinx-needs' schema_validation_enabled switched off (a setting ubCode does not have), a link to a need of another type is still a link_target_type"
+python_only = true
+config = '''
+[needs]
+schema_validation_enabled = false
+
+[needs.links.verifies]
+target_types = ["req"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Verifies a spec
+   :id: TEST_1
+   :verifies: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["SPEC_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-duplicate-link"
+why = "a link written twice is one link, as needs.json writes it, and one link_target_type; the same target with a [condition] is another link, and another finding, however often it is written"
+config = '''
+[needs.links.verifies]
+target_types = ["req"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: The same links twice
+   :id: TEST_1
+   :verifies: SPEC_1, SPEC_1, SPEC_1[status == 'open'], SPEC_1[status == 'open']
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["SPEC_1", "SPEC_1[status == 'open']"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-unknown-names-keep-inherited"
+why = "in a need type's declaration, a target_types naming no need type declares nothing: the links keep the target types before it (no type_widening) and the declaration's other keys apply, its maxItems here; one naming a need type beside an unknown name narrows to that type (each tool's configuration finding of the unknown names, not compared)"
+config = '''
+[needs.links.verifies]
+target_types = ["req"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.safety_req]
+title = "Safety requirement"
+prefix = "SR_"
+inherits = "req"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+target_types = ["Requirement"]
+schema = { maxItems = 1 }
+
+[needs.types.review]
+title = "Review"
+prefix = "RV_"
+
+[needs.types.review.links.verifies]
+target_types = ["nope", "safety_req"]
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. safety_req:: Safety requirement
+   :id: SREQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Verifies a req and a spec
+   :id: TEST_1
+   :verifies: REQ_1, SPEC_1
+
+.. review:: Verifies a req and a safety_req
+   :id: REVIEW_1
+   :verifies: REQ_1, SREQ_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["REQ_1", "SPEC_1"]
+[case.expect.needs.REVIEW_1]
+verifies = ["REQ_1", "SREQ_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_fail"
+need = "TEST_1"
+field = "verifies"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "REVIEW_1"
+field = "verifies"
+type = "req"
+
+[[case]]
+name = "link-target-types-beside-derive-by-type"
+why = "a link type derived per need type takes no target_types either: beside derive_by_type it is one derive_invalid, and ignored, and the rules apply, their links unchecked"
+config = '''
+[needs.links.covers]
+derive_by_type = { req = { kind = "links", where = "type == 'spec'" } }
+target_types = ["req"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. spec:: Specification
+   :id: SPEC_1
+
+.. req:: Covers every spec
+   :id: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+covers = ["SPEC_1"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "covers"
+
+[[case]]
+name = "link-target-types-derive-in-the-same-entry"
+why = "a need type's declaration of a link type declared on need types alone that gives derive and target_types together is one type_conflict for the target_types, the entry ignored; the rule still derives the link type, its links unchecked"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.covers]
+derive = { kind = "links", where = "type == 'spec'" }
+target_types = ["req"]
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. spec:: Specification
+   :id: SPEC_1
+
+.. req:: Covers every spec
+   :id: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+covers = ["SPEC_1"]
+[[case.expect.findings]]
+code = "type_conflict"
+field = "covers"
+type = "req"
+
+[[case]]
+name = "link-target-types-parent-needs"
+why = "parent_needs takes target_types like any link type that is not derived: a need nested in a need of a type its declaration does not accept is one link_target_type"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.parent_needs]
+target_types = ["req"]
+'''
+source = '''
+.. spec:: Outer specification
+   :id: SPEC_1
+
+   .. spec:: Nested in a spec
+      :id: SPEC_2
+
+.. req:: Outer requirement
+   :id: REQ_1
+
+   .. spec:: Nested in a req
+      :id: SPEC_3
+'''
+[case.expect]
+[case.expect.needs.SPEC_2]
+parent_needs = ["SPEC_1"]
+[case.expect.needs.SPEC_3]
+parent_needs = ["REQ_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "SPEC_2"
+field = "parent_needs"
+type = "spec"
+
+[[case]]
+name = "link-target-types-copy-on-links"
+why = "copy = true on links itself copies nothing, so it exempts nothing: a link of links to a need of a type its target_types do not accept is a link_target_type (the exemption is for a link another link type with copy = true holds)"
+config = '''
+[needs.links.links]
+copy = true
+target_types = ["spec"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Links a req and a spec
+   :id: TEST_1
+   :links: REQ_1, SPEC_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+links = ["REQ_1", "SPEC_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "links"
+type = "req"
+
+[[case]]
+name = "link-target-types-copy-derived-exempts-nothing"
+why = "a derived link type copies nothing (its copy = true is one derive_invalid, and ignored), so it exempts nothing: a link of links to a target the derived link type holds is still checked against the target_types of links"
+config = '''
+[needs.links.links]
+target_types = ["req"]
+
+[needs.links.covers]
+derive = { kind = "links", where = "type == 'spec'" }
+copy = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Covers the spec, and links it by hand
+   :id: TEST_1
+   :links: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+covers = ["SPEC_1"]
+links = ["SPEC_1"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "covers"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "links"
+type = "spec"
+
+[[case]]
+name = "link-target-types-copy-by-target-and-part"
+why = "the copy exemption is by target AND part, whatever the condition: a copied part exempts that part in links but not the whole need, a copied whole need exempts the need but not a part of it, and a copied link with a [condition] exempts a link of links to the same target without one"
+config = '''
+[needs.links.links]
+target_types = ["spec"]
+
+[needs.links.verifies]
+copy = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+   A part: :np:`(p1) of it`.
+
+.. req:: Requirement
+   :id: REQ_2
+   :status: x
+
+.. test:: Verifies a part, links the part and the need
+   :id: TEST_1
+   :verifies: REQ_1.p1
+   :links: REQ_1.p1, REQ_1
+
+.. test:: Verifies the need, links the need and a part
+   :id: TEST_2
+   :verifies: REQ_1
+   :links: REQ_1, REQ_1.p1
+
+.. test:: Verifies with a condition, links without one
+   :id: TEST_3
+   :verifies: REQ_2[status == 'x']
+   :links: REQ_2
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+links = ["REQ_1", "REQ_1.p1"]
+[case.expect.needs.TEST_2]
+links = ["REQ_1", "REQ_1.p1"]
+[case.expect.needs.TEST_3]
+links = ["REQ_2", "REQ_2[status == 'x']"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "links"
+type = "req"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_2"
+field = "links"
+type = "req"
