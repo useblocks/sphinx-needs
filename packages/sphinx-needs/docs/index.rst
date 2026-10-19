@@ -204,6 +204,7 @@ Contents
    :maxdepth: 1
 
    need_types
+   namespaced_ids
    schema/index
    filter
    dynamic_functions

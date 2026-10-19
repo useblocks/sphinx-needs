@@ -10,6 +10,21 @@ Unreleased
 Improvements
 ............
 
+- ✨ Namespaced need ids, experimental, behind the switch :ref:`needs_namespaced_ids` (off by
+  default; off, nothing changes) (:pr:`0000`)
+
+  With it on, every need's id is read as a namespace and a local id, split at its last ``::``:
+  ``nc::testcase::T_001`` is the local id ``T_001`` in the namespace ``nc::testcase``. An id that
+  does not split (``::X``, ``a::``, a ``.`` in the local id, a namespace segment that is not a
+  letter followed by letters, digits, ``_`` or ``-``) is refused as an id failing
+  :ref:`needs_id_regex` is, and :ref:`needs_id_regex` applies to the local id, as does
+  :ref:`needextract`'s id argument. ``ns`` and ``local_id`` are reserved field names while it is
+  on. Each version of ``needs.json`` the project writes carries ``"namespaced_ids": true``;
+  :ref:`needimport` and :ref:`needs_external_needs` split every id they read, and say so once per
+  source, as information, when the version read is not marked but holds an id with ``::``, or
+  when it is marked and the switch is off. Filtering by namespace is planned
+  (:ref:`namespaced_ids`).
+
 - 👌 A :ref:`needservice` naming a service that is not registered is one
   ``needs.load_service_need`` warning, checked before the directive's options: for a
   built-in GitHub service that is not configured it says so and gives the configuration to
@@ -275,6 +290,10 @@ Deprecations
 
 Bug fixes
 .........
+
+- 🐛 :ref:`needsequence` names its participants as :ref:`needflow` names its nodes, so a need id
+  holding a character PlantUML does not take in a name (``::``, ``-``) no longer makes the
+  diagram a syntax error (:pr:`0000`)
 
 - 🐛 The ``needs_schema`` of a :ref:`needs.json <needs_builder_format>` writes a core field as the
   project declares it, as it writes an extra field: a :ref:`needs_fields` entry narrowing ``status``

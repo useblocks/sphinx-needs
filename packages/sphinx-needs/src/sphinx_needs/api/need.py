@@ -67,7 +67,7 @@ from sphinx_needs.utils import jinja_parse
 from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
 from sphinx_needs.views import NeedsView
-from ub_needs_exchange import map_legacy_keys
+from ub_needs_exchange import map_legacy_keys, split_id
 
 logger = get_logger(__name__)
 
@@ -226,14 +226,29 @@ def generate_need(
     from_outside = bool(
         source.dict_repr["is_import"] or source.dict_repr["is_external"]
     )
+    # with namespaced ids on, every id -- authored, generated, imported, external -- is a
+    # namespace and a local id, by the exchange contract's one rule; off, it is its own
+    # local id, whatever it holds
+    need_ns: tuple[str, ...] = ()
+    local_id = need_id
+    if needs_config.namespaced_ids:
+        try:
+            need_ns, local_id = split_id(need_id)
+        except ValueError as err:
+            raise InvalidNeedException(
+                "invalid_id", f"{err} (needs_namespaced_ids is on)"
+            ) from err
     if (
         needs_config.id_regex
         and not from_outside
-        and not re.match(needs_config.id_regex, need_id)
+        and not re.match(needs_config.id_regex, local_id)
     ):
         raise InvalidNeedException(
             "invalid_id",
-            f"Given ID {need_id!r} does not match configured regex {needs_config.id_regex!r}",
+            f"Given ID {need_id!r} does not match configured regex {needs_config.id_regex!r}"
+            if local_id == need_id
+            else f"Local ID {local_id!r} of {need_id!r} does not match configured regex "
+            f"{needs_config.id_regex!r}",
         )
 
     # Convert all schema-enabled core fields
@@ -525,6 +540,8 @@ def generate_need(
             dynamic_fields=dynamic_fields,
             # one set for every need type, the schema's own (derived_names)
             derived=schema.derived_names,
+            ns=need_ns,
+            local_id=local_id,
             _validate=False,
         )
     except ValueError as err:
@@ -1049,6 +1066,32 @@ def _record_params(
         unknown_keys.update(unknown)
     _check_record_params(params)
     return params, unknown
+
+
+def _namespace_note(
+    *, marked: bool, ids: Iterable[str], namespaced_ids: bool
+) -> str | None:
+    """The informational note a needs.json version read into this project is worth,
+    for both readers, or ``None``: with ``needs_namespaced_ids`` on, an unmarked version
+    holding an id with ``::`` (its ids are split all the same); with it off, a marked
+    version (its ids are read as plain ids). The reader names its source before it.
+
+    :param marked: The version's ``namespaced_ids`` marker
+        (:attr:`ub_needs_exchange.Version.namespaced_ids`).
+    :param ids: The version's ids, as the file has them.
+    """
+    if namespaced_ids:
+        if not marked and any("::" in need_id for need_id in ids):
+            return (
+                "its ids are read as namespaced ids, as needs_namespaced_ids is on; "
+                "the version read does not mark them as namespaced"
+            )
+    elif marked:
+        return (
+            "the version read marks its ids as namespaced, but needs_namespaced_ids "
+            "is off: its ids are read as plain ids"
+        )
+    return None
 
 
 def ingest_need_record(

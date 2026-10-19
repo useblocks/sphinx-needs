@@ -32,6 +32,7 @@ from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.utils import add_doc, remove_node_from_tree
+from ub_needs_exchange import split_id
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -185,7 +186,7 @@ def process_needextract(
             # check if given filter argument is need-id
             if need_filter_arg in all_needs:
                 need_filter_arg = f'id == "{need_filter_arg}"'
-            elif re.fullmatch(needs_config.id_regex, need_filter_arg):
+            elif _is_id_shaped(need_filter_arg, needs_config):
                 # check if given filter argument is need-id, but not exists
                 log_warning(
                     LOGGER,
@@ -439,3 +440,16 @@ def _replace_pending_xref_refdoc(node: nodes.Element, new_refdoc: str) -> None:
         for child in node.children:
             if isinstance(child, nodes.Element):
                 _replace_pending_xref_refdoc(child, new_refdoc)
+
+
+def _is_id_shaped(argument: str, needs_config: NeedsSphinxConfig) -> bool:
+    """Whether a needextract argument that names no need is shaped like a need id: it
+    ``fullmatch``-es ``needs_id_regex``, or with namespaced ids on, it splits and its
+    local id does."""
+    if not needs_config.namespaced_ids:
+        return re.fullmatch(needs_config.id_regex, argument) is not None
+    try:
+        _, local_id = split_id(argument)
+    except ValueError:
+        return False
+    return re.fullmatch(needs_config.id_regex, local_id) is not None

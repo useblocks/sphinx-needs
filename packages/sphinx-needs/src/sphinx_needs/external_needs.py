@@ -10,7 +10,7 @@ from sphinx.environment import BuildEnvironment
 import ub_needs_exchange as exchange
 from sphinx_needs._jinja import compile_template
 from sphinx_needs.api import InvalidNeedException, add_external_need, del_need
-from sphinx_needs.api.need import _record_params
+from sphinx_needs.api.need import _namespace_note, _record_params
 from sphinx_needs.config import ExternalSource, NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
@@ -85,6 +85,13 @@ def load_external_needs(
                 "external_needs",
                 location=None,
             )
+
+        if note := _namespace_note(
+            marked=selected.namespaced_ids,
+            ids=(r.key for r in records),
+            namespaced_ids=needs_config.namespaced_ids,
+        ):
+            log.info(clean_log(f"External needs source {source_str!r}: {note}"))
 
         log.debug(f"Loading {len(records)} needs.")
 

@@ -38,7 +38,7 @@ class NeedsJsonVersionType(TypedDict, total=False):
     """One entry of ``versions`` in a ``needs.json``.
 
     Every key is optional: :meth:`NeedsList.update_or_add_version` writes ``needs``,
-    ``needs_amount`` and ``creator`` for a version it creates, and the other three
+    ``needs_amount`` and ``creator`` for a version it creates, and the other four
     by configuration, but a version kept from a file read by
     :meth:`NeedsList.load_json` may be of an older shape that has any of them
     missing (before 3.0 there was no ``creator`` or ``needs_schema``).
@@ -52,6 +52,10 @@ class NeedsJsonVersionType(TypedDict, total=False):
     needs_defaults_removed: bool
     needs_schema: dict[str, Any]
     """The JSON schema of one need, from :func:`generate_needs_schema`."""
+    namespaced_ids: bool
+    """``True`` says the version's ids are namespaced, split at their last ``::`` (the
+    exchange contract, section 5.4); written by a project with
+    ``needs_namespaced_ids`` on, and left out otherwise."""
 
 
 class NeedsJsonType(TypedDict):
@@ -233,6 +237,8 @@ class NeedsList:
                 self.needs_list["versions"][version]["needs_schema"] = self._schema
             if self.needs_config.json_remove_defaults:
                 self.needs_list["versions"][version]["needs_defaults_removed"] = True
+            if self.needs_config.namespaced_ids:
+                self.needs_list["versions"][version]["namespaced_ids"] = True
             if not self.needs_config.reproducible_json:
                 self.needs_list["versions"][version]["created"] = ""
 

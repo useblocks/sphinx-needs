@@ -2897,6 +2897,10 @@ applied to imported needs (:ref:`needimport`) or to external needs
 (:ref:`needs_external_needs`): their ids are the data of the project that wrote them, and an
 ``id_prefix`` may not match any pattern of this project.
 
+With :ref:`needs_namespaced_ids` on, it applies to the **local** id: ``T_001`` of
+``nc::testcase::T_001``, so the default accepts ``nc::REQ_001``. The namespace is checked
+against a fixed grammar instead (:ref:`namespaced_ids`).
+
 .. warning::
 
    An automatically generated ID of needs without a manually given ID must match
@@ -2904,6 +2908,28 @@ applied to imported needs (:ref:`needimport`) or to external needs
 
    If you change the regular expression, you should also set :ref:`needs_id_required`
    so that authors are forced to set an valid ID.
+
+.. _`needs_namespaced_ids`:
+
+needs_namespaced_ids
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.1.0
+
+**Experimental.** Reads every need's id as a namespace and a local id, split at its last
+``::``: ``nc::testcase::T_001`` is the local id ``T_001`` in the namespace ``nc::testcase``.
+:ref:`needs_id_regex` then applies to the local id, the names ``ns`` and ``local_id`` are
+reserved, and each version of ``needs.json`` the project writes is marked
+``"namespaced_ids": true``. The rules are on :ref:`namespaced_ids`.
+
+Default value: ``False``: a ``::`` in an id is a character of it, and nothing changes.
+
+.. code-block:: toml
+
+   [needs]
+   namespaced_ids = true
+
+Changing it reads every document again.
 
 .. _`needs_functions`:
 

@@ -15,6 +15,7 @@ from sphinx.util.docutils import SphinxDirective
 
 import ub_needs_exchange as exchange
 from sphinx_needs.api import InvalidNeedException, ingest_need_record
+from sphinx_needs.api.need import _namespace_note
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -134,6 +135,16 @@ class NeedimportDirective(SphinxDirective):
 
         # note this is not exactly NeedsInfoType, because the export removes/adds some keys
         all_needs: dict[str, dict[str, Any]] = {r.key: r.fields for r in records}
+
+        if note := _namespace_note(
+            marked=selected.namespaced_ids,
+            ids=all_needs,
+            namespaced_ids=needs_config.namespaced_ids,
+        ):
+            logger.info(
+                f"Needs import file {source_name}: {note}",
+                location=(self.env.docname, self.lineno),
+            )
         needs_list = all_needs
 
         if ids := self.options.get("ids"):

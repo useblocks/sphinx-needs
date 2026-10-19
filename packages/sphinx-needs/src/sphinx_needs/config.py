@@ -1017,7 +1017,13 @@ class NeedsSphinxConfig:
     id_regex: str = field(
         default="^[A-Z0-9_]{5,}", metadata={"rebuild": "html", "types": ()}
     )
-    """Regex to validate need IDs."""
+    """Regex to validate need IDs (the local id, with :attr:`namespaced_ids` on)."""
+    namespaced_ids: bool = field(
+        default=False, metadata={"rebuild": "env", "types": (bool,)}
+    )
+    """Experimental: read every need id as a namespace and a local id, split at its last
+    ``::`` (``ub_needs_exchange.split_id``). ``env``: each need stores its split when it
+    is created, so turning it on or off reads every document again."""
     show_link_type: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )

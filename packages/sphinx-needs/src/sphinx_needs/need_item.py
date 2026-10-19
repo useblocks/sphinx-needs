@@ -435,7 +435,9 @@ class NeedItem:
         "_dynamic_fields",
         "_extras",
         "_links",
+        "_local_id",
         "_modifications",
+        "_ns",
         "_parts",
         "_source",
     )
@@ -457,6 +459,8 @@ class NeedItem:
         dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray]
         | None = None,
         derived: Iterable[str] = (),
+        ns: Sequence[str] = (),
+        local_id: str | None = None,
         _validate: bool = True,
     ) -> None:
         """Initialize the NeedItem instance.
@@ -475,6 +479,10 @@ class NeedItem:
         :param derived: The keys of the derived fields (extras or links keys), which
             ``need[key] = value`` refuses: they hold what their rules compute
             (:attr:`~sphinx_needs.needs_schema.FieldsSchema.derived_names`).
+        :param ns: The segments of the need's namespace, with
+            :ref:`needs_namespaced_ids` on (``()`` for none, and always with it off).
+        :param local_id: The need's id within its namespace; ``None`` is the id itself.
+            ``ns`` and ``local_id`` must join to the id, with ``::``.
         :param _validate: Perform runtime type validation of initialisation inputs
         """
         if _validate:
@@ -507,12 +515,23 @@ class NeedItem:
                 )
             if not isinstance(dynamic_fields, None | dict):
                 raise TypeError("NeedItem dynamic_fields must be a dictionary or None.")
+            if (
+                "::".join((*ns, core["id"] if local_id is None else local_id))
+                != core["id"]
+            ):
+                raise ValueError(
+                    f"NeedItem ns {tuple(ns)!r} and local_id {local_id!r} do not join "
+                    f"to its id {core['id']!r}"
+                )
 
         # set internal fields
         self._dynamic_fields = (
             dynamic_fields.copy() if dynamic_fields is not None else {}
         )
         self._core = core.copy()
+        # the namespace and the local id, stored once: the id is immutable
+        self._ns = tuple(ns)
+        self._local_id = core["id"] if local_id is None else local_id
         self._extras = extras.copy()
         # one set shared by the needs of a build, per process (a parallel worker
         # unpickles its own): a frozenset is not copied
@@ -638,6 +657,19 @@ class NeedItem:
         return self._core["id"]
 
     @property
+    def ns(self) -> tuple[str, ...]:
+        """The segments of the need's namespace: ``("nc", "testcase")`` for the id
+        ``nc::testcase::T_001``, with :ref:`needs_namespaced_ids` on. ``()`` for an id
+        without ``::``, and for every id with the switch off."""
+        return self._ns
+
+    @property
+    def local_id(self) -> str:
+        """The need's id within its namespace: ``T_001`` for ``nc::testcase::T_001``,
+        with :ref:`needs_namespaced_ids` on; the whole id otherwise."""
+        return self._local_id
+
+    @property
     def source(self) -> NeedItemSourceProtocol:
         """Return the source of the need item."""
         return self._source
@@ -689,6 +721,8 @@ class NeedItem:
             constraint_results=self._constraint_results,
             dynamic_fields=self._dynamic_fields,
             derived=self._derived,
+            ns=self._ns,
+            local_id=self._local_id,
             _validate=False,
         )
 

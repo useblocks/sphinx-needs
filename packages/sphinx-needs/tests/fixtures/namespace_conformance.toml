@@ -1,0 +1,834 @@
+# Conformance corpus for NAMESPACED IDS: the experimental `[needs] namespaced_ids`
+# switch -- how a need's id is read as a namespace and a local id, what is refused, and
+# what a needs.json written or read says about it.
+#
+# Repository of record: useblocks/sphinx-needs (public)
+# Canonical path:       packages/sphinx-needs/tests/fixtures/namespace_conformance.toml
+#
+# THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
+# (this path, and the commit it was taken from) prepended and nothing else changed, and to
+# run it against its own engine. The corpus travels public -> private, so vendoring with a
+# recorded source commit is the sync mechanism.
+#
+# Do not reformat this file: every `config = '''...'''`, `source = '''...'''` and `files`
+# body below is the INPUT of a case, so a formatter touching one silently changes what the
+# case tests. A change here is a change to the contract, and owes ubCode a re-vendor.
+#
+# The split itself is the needs.json exchange contract's (ub-needs-exchange,
+# `design/exchange-contract.md` section 5.4, `split_id`): at the LAST `::`; a segment is an
+# ASCII letter, then ASCII letters, digits, `_` or `-`; a local id is not empty, does not
+# begin with `:`, and holds neither `::` nor `.`; an id without `::` is its own local id.
+# This corpus pins what a PROJECT does with it.
+#
+# Rules for every runner:
+#   - a case is one project. `config` is its `ubproject.toml` (the `[needs]` configuration
+#     only); `source` is the body of its one reStructuredText document, `index.rst`, under
+#     a title the runner adds; `files` (optional) are other files of the project, relative
+#     to the case directory. A case writes only inside its own directory: a `files` key
+#     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
+#   - a case declares ITS OWN need types, each with a `title` and a `prefix`
+#   - `id_regex = ""` is no id pattern at all: the cases about the split rule use it, so
+#     that no pattern decides them
+#   - `split.<ID>` pins how need <ID> is read: `ns`, the namespace's segments in order
+#     (`[]` for none), and `local_id`. needs.json carries neither (the file keeps the
+#     joined id), so a runner reads them from its engine's need items after the build:
+#     sphinx-needs' runner from `NeedItem.ns` (a tuple of segments) and
+#     `NeedItem.local_id` of the built environment's needs; ubCode's from its need item's
+#     `ns` and `local_id` identity fields, its `ns` compared as its `::`-separated
+#     segments (`""` is `[]`). A need a `split` pin names must exist
+#   - `marked` pins the version the project writes: `true` says its `namespaced_ids` is
+#     the JSON `true`; `false` says the version has no `namespaced_ids` key at all
+#   - `needs.<ID>` pins values as needs.json writes them, TYPE INCLUDED; a link list is a
+#     list of id strings, as needs.json writes it
+#   - a `missing` entry names a need the case's source or files give that is NOT
+#     created: the runner asserts its id is no key of the needs needs.json writes
+#   - findings are compared as a MULTISET of `code`, and of `need` and `field` where the
+#     finding names them; a key a finding leaves out is not compared. `code` is the BARE
+#     subcode. Messages and severities are NOT compared. Only these codes are compared --
+#         create_need, import_need, load_external_need, link_outgoing
+#     -- every other finding is each tool's own. `create_need` is a need of the sources
+#     that is not created, `import_need` a record a `needimport` does not create (reported
+#     at the `needimport`, so a case imports ONE record per `needimport` and the finding
+#     has no need), `load_external_need` one an external source does not create (no
+#     location, so no need), and `link_outgoing` a link to a need that does not exist
+#   - `notes` pins the INFORMATIONAL findings, one per source read, by bare code, as a
+#     multiset: `namespaced_ids_unmarked` (the switch is on, and a version read is not
+#     marked but holds an id with `::`: its ids are read as namespaced) and
+#     `namespaced_ids_off` (the switch is off, and a version read is marked: its ids are
+#     read as plain ids). sphinx-needs reports them on its status stream, not as warnings,
+#     and its runner reads them by their wording; ubCode's runner reads its own
+#     diagnostics for the same facts
+#   - `refused` names the reserved field name a case's configuration is refused for: the
+#     project is not built, and the case pins nothing else. sphinx-needs raises its
+#     configuration error, whose message names the field; ubCode reports a configuration
+#     error naming it
+#   - a case with `python_only = true` is one only sphinx-needs runs, and ubCode's runner
+#     skips it; `ubcode_only = true` is the converse
+#
+# `packages/sphinx-needs/tests/test_namespace_conformance.py` runs every case with the
+# `needs` builder AND asserts the case COUNT, so a truncated copy is a red test rather
+# than reduced coverage. The prose half of the contract is the "Namespaced ids" page of the
+# sphinx-needs documentation (`docs/namespaced_ids.rst`); each case's `why` restates the
+# sentence of it the case holds the tools to.
+#
+# Each `[[case]]` has:
+#   name         - unique, kebab-case
+#   why          - one line saying what the case pins
+#   config       - the `ubproject.toml`, its need types included
+#   source       - the body of `index.rst`
+#   files        - optional; other files, relative to the case directory, and their text
+#   python_only  - optional; see the rules above
+#   ubcode_only  - optional; see the rules above
+#   [case.expect]
+#     refused      - the reserved name the configuration is refused for; alone
+#     findings     - the findings, `[]` for none; or one `[[case.expect.findings]]` table
+#                    per finding: `code`, and `need` and `field` where named
+#     notes        - the informational findings' codes, `[]` for none
+#     marked       - whether the version written is marked
+#     split.<ID>   - `ns` and `local_id` of a need
+#     needs.<ID>   - field = value
+#     missing      - [the ids of needs pinned as not created]
+
+# --- the switch off: a `::` is a character of the id ---------------------------------
+
+[[case]]
+name = "off-a-double-colon-is-part-of-the-id"
+why = "with needs_namespaced_ids off, nothing changes: a :: in an id is a character of it, and the version written is not marked"
+config = '''
+[needs]
+id_regex = ""
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: Two levels
+   :id: nc::testcase::T_001
+
+.. req:: One level
+   :id: NS::REQ_001
+'''
+[case.expect]
+findings = []
+notes = []
+marked = false
+[case.expect.split."nc::testcase::T_001"]
+ns = []
+local_id = "nc::testcase::T_001"
+[case.expect.split."NS::REQ_001"]
+ns = []
+local_id = "NS::REQ_001"
+
+[[case]]
+name = "off-an-id-that-would-not-split-is-a-plain-id"
+why = "with needs_namespaced_ids off, an id that breaks the namespace rules is created as written: the rules are the switch's"
+config = '''
+[needs]
+id_regex = ""
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: Empty local id
+   :id: a::
+
+.. req:: Empty namespace
+   :id: ::REQ_001
+
+.. req:: A segment starting with a digit
+   :id: 1a::REQ_001
+'''
+[case.expect]
+findings = []
+notes = []
+marked = false
+[case.expect.split."a::"]
+ns = []
+local_id = "a::"
+[case.expect.split."::REQ_001"]
+ns = []
+local_id = "::REQ_001"
+[case.expect.split."1a::REQ_001"]
+ns = []
+local_id = "1a::REQ_001"
+
+[[case]]
+name = "off-the-id-regex-applies-to-the-whole-id"
+why = "with needs_namespaced_ids off, needs_id_regex validates the id whole: the default refuses nc::REQ_001"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: Lowercase namespace
+   :id: nc::REQ_001
+
+.. req:: Plain
+   :id: REQ_001
+'''
+[case.expect]
+notes = []
+marked = false
+missing = ["nc::REQ_001"]
+[[case.expect.findings]]
+code = "create_need"
+[case.expect.split.REQ_001]
+ns = []
+local_id = "REQ_001"
+
+[[case]]
+name = "off-ns-and-local-id-are-ordinary-names"
+why = "with the switch off, ns and local_id are ordinary names: fields of those names are declared and hold their values"
+config = '''
+[needs.fields.ns]
+schema = { type = "string" }
+
+[needs.fields.local_id]
+schema = { type = "string" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: Fields named ns and local_id
+   :id: REQ_001
+   :ns: east
+   :local_id: one
+'''
+[case.expect]
+findings = []
+notes = []
+marked = false
+[case.expect.split.REQ_001]
+ns = []
+local_id = "REQ_001"
+[case.expect.needs.REQ_001]
+ns = "east"
+local_id = "one"
+
+# --- the switch on: the split ---------------------------------------------------------
+
+[[case]]
+name = "on-a-plain-id-has-no-namespace"
+why = "an id without :: has no namespace: it is its own local id; each version written with the switch on carries namespaced_ids: true"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: Plain
+   :id: REQ_001
+'''
+[case.expect]
+findings = []
+notes = []
+marked = true
+[case.expect.split.REQ_001]
+ns = []
+local_id = "REQ_001"
+
+[[case]]
+name = "on-one-level"
+why = "with the switch on, an id is read as a namespace and a local id: NS::REQ_001 is the local id REQ_001 in the namespace NS"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: One level
+   :id: NS::REQ_001
+'''
+[case.expect]
+findings = []
+notes = []
+marked = true
+[case.expect.split."NS::REQ_001"]
+ns = ["NS"]
+local_id = "REQ_001"
+[case.expect.needs."NS::REQ_001"]
+id = "NS::REQ_001"
+
+[[case]]
+name = "on-two-levels"
+why = "split at the LAST ::: nc::testcase::T_001 is the local id T_001 in the namespace nc::testcase, whose segments are nc and testcase"
+config = '''
+[needs]
+namespaced_ids = true
+id_regex = ""
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: Two levels
+   :id: nc::testcase::T_001
+
+.. req:: Three levels
+   :id: a::b::c::X
+'''
+[case.expect]
+findings = []
+notes = []
+marked = true
+[case.expect.split."nc::testcase::T_001"]
+ns = ["nc", "testcase"]
+local_id = "T_001"
+[case.expect.split."a::b::c::X"]
+ns = ["a", "b", "c"]
+local_id = "X"
+
+[[case]]
+name = "on-the-id-regex-applies-to-the-local-id"
+why = "needs_id_regex applies to the local id: with the default ^[A-Z0-9_]{5,}, nc::REQ_001 is a valid id"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: Lowercase namespace, valid local id
+   :id: nc::REQ_001
+'''
+[case.expect]
+findings = []
+notes = []
+marked = true
+[case.expect.split."nc::REQ_001"]
+ns = ["nc"]
+local_id = "REQ_001"
+
+[[case]]
+name = "on-a-local-id-that-fails-the-regex-is-refused"
+why = "needs_id_regex applies to the local id: NS::r_001 is refused by ^[A-Z], which the whole id would match, and NS::R_001 is not"
+config = '''
+[needs]
+namespaced_ids = true
+id_regex = "^[A-Z]"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: Lowercase local id
+   :id: NS::r_001
+
+.. req:: Uppercase local id
+   :id: NS::R_001
+'''
+[case.expect]
+notes = []
+marked = true
+missing = ["NS::r_001"]
+[[case.expect.findings]]
+code = "create_need"
+[case.expect.split."NS::R_001"]
+ns = ["NS"]
+local_id = "R_001"
+
+[[case]]
+name = "on-a-segment-that-breaks-the-grammar-is-refused"
+why = "a namespace segment is an ASCII letter followed by ASCII letters, digits, _ or -; a need whose id breaks it is not created"
+config = '''
+[needs]
+namespaced_ids = true
+id_regex = ""
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: A segment starting with a digit
+   :id: 1a::REQ_001
+
+.. req:: A segment holding a dot
+   :id: a.b::REQ_001
+
+.. req:: A segment starting with an underscore
+   :id: _a::REQ_001
+
+.. req:: Letters, digits, underscore and dash
+   :id: a-b_1::REQ_001
+'''
+[case.expect]
+notes = []
+marked = true
+missing = ["1a::REQ_001", "a.b::REQ_001", "_a::REQ_001"]
+[[case.expect.findings]]
+code = "create_need"
+[[case.expect.findings]]
+code = "create_need"
+[[case.expect.findings]]
+code = "create_need"
+[case.expect.split."a-b_1::REQ_001"]
+ns = ["a-b_1"]
+local_id = "REQ_001"
+
+[[case]]
+name = "on-an-empty-namespace-or-local-id-is-refused"
+why = "a local id is not empty, and a namespace is one or more segments: ::REQ_001, a:: and a::::REQ_001 are not created"
+config = '''
+[needs]
+namespaced_ids = true
+id_regex = ""
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: Empty namespace
+   :id: ::REQ_001
+
+.. req:: Empty local id
+   :id: a::
+
+.. req:: Empty segment
+   :id: a::::REQ_001
+
+.. req:: Plain
+   :id: REQ_001
+'''
+[case.expect]
+notes = []
+marked = true
+missing = ["::REQ_001", "a::", "a::::REQ_001"]
+[[case.expect.findings]]
+code = "create_need"
+[[case.expect.findings]]
+code = "create_need"
+[[case.expect.findings]]
+code = "create_need"
+[case.expect.split.REQ_001]
+ns = []
+local_id = "REQ_001"
+
+[[case]]
+name = "on-a-dot-in-the-local-id-is-refused"
+why = "a local id holds no . (a . starts a need part): NS::REQ_001.x is not created"
+config = '''
+[needs]
+namespaced_ids = true
+id_regex = ""
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: A dot in the local id
+   :id: NS::REQ_001.x
+
+.. req:: No dot
+   :id: NS::REQ_001
+'''
+[case.expect]
+notes = []
+marked = true
+missing = ["NS::REQ_001.x"]
+[[case.expect.findings]]
+code = "create_need"
+[case.expect.split."NS::REQ_001"]
+ns = ["NS"]
+local_id = "REQ_001"
+
+# --- the switch on: one string a need and a namespace, and links ----------------------
+
+[[case]]
+name = "on-a-need-and-a-namespace-may-share-a-name"
+why = "a need and a namespace may share a name: a need nc::testcase and the needs of the namespace nc::testcase coexist"
+config = '''
+[needs]
+namespaced_ids = true
+id_regex = ""
+
+[needs.types.comp]
+title = "Component"
+prefix = "C_"
+
+[needs.types.test]
+title = "Test case"
+prefix = "T_"
+'''
+source = '''
+.. comp:: The test case component
+   :id: nc::testcase
+
+.. test:: A test case of it
+   :id: nc::testcase::T_001
+   :links: nc::testcase
+'''
+[case.expect]
+findings = []
+notes = []
+marked = true
+[case.expect.split."nc::testcase"]
+ns = ["nc"]
+local_id = "testcase"
+[case.expect.split."nc::testcase::T_001"]
+ns = ["nc", "testcase"]
+local_id = "T_001"
+[case.expect.needs."nc::testcase::T_001"]
+links = ["nc::testcase"]
+[case.expect.needs."nc::testcase"]
+links_back = ["nc::testcase::T_001"]
+
+[[case]]
+name = "on-links-with-parts-and-conditions"
+why = "links name a namespaced need as they name any need, with parts and conditions; a link to a namespaced id no need has is a dead link"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: The target
+   :id: NS::REQ_001
+   :status: open
+
+   :np:`(p1) a part`
+
+.. spec:: The source
+   :id: nc::tc::SPEC_001
+   :links: NS::REQ_001.p1, NS::REQ_001[status=="open"], NS::REQ_404
+'''
+[case.expect]
+notes = []
+marked = true
+[[case.expect.findings]]
+code = "link_outgoing"
+need = "nc::tc::SPEC_001"
+[case.expect.split."nc::tc::SPEC_001"]
+ns = ["nc", "tc"]
+local_id = "SPEC_001"
+[case.expect.needs."NS::REQ_001"]
+links_back = ["nc::tc::SPEC_001"]
+
+# --- the switch on: reserved names ------------------------------------------------------
+
+[[case]]
+name = "on-ns-is-a-reserved-field-name"
+why = "with the switch on, ns is reserved: a [needs.fields] entry of that name is a configuration error"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.fields.ns]
+schema = { type = "string" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: Unbuilt
+   :id: REQ_001
+'''
+[case.expect]
+refused = "ns"
+
+[[case]]
+name = "on-local-id-is-a-reserved-link-type-name"
+why = "with the switch on, local_id is reserved: a [needs.links] entry of that name is a configuration error"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.links.local_id]
+outgoing = "local"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: Unbuilt
+   :id: REQ_001
+'''
+[case.expect]
+refused = "local_id"
+
+[[case]]
+name = "on-a-need-type-may-not-declare-a-reserved-name"
+why = "with the switch on, a need type's fields entry named ns is a configuration error"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.ns]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Unbuilt
+   :id: REQ_001
+'''
+[case.expect]
+refused = "ns"
+
+# --- reading a needs.json ---------------------------------------------------------------
+
+[[case]]
+name = "on-a-marked-import-is-split"
+why = "into a project with the switch on, every id of a marked version is split, and nothing is reported"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. needimport:: data.json
+'''
+files = { "data.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "namespaced_ids": true,
+      "needs": {
+        "ext::IMP_001": {"type": "req", "title": "One level"},
+        "ext::sub::IMP_002": {"type": "req", "title": "Two levels"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+findings = []
+notes = []
+marked = true
+[case.expect.split."ext::IMP_001"]
+ns = ["ext"]
+local_id = "IMP_001"
+[case.expect.split."ext::sub::IMP_002"]
+ns = ["ext", "sub"]
+local_id = "IMP_002"
+
+[[case]]
+name = "on-an-unmarked-import-is-split-with-one-note"
+why = "into a project with the switch on, an unmarked version's ids are split too, and a version holding an id with :: is reported once per source"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. needimport:: data.json
+'''
+files = { "data.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "ext::IMP_001": {"type": "req", "title": "One level"},
+        "ext::sub::IMP_002": {"type": "req", "title": "Two levels"},
+        "IMP_003": {"type": "req", "title": "Plain"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+findings = []
+notes = ["namespaced_ids_unmarked"]
+marked = true
+[case.expect.split."ext::IMP_001"]
+ns = ["ext"]
+local_id = "IMP_001"
+[case.expect.split."ext::sub::IMP_002"]
+ns = ["ext", "sub"]
+local_id = "IMP_002"
+[case.expect.split.IMP_003]
+ns = []
+local_id = "IMP_003"
+
+[[case]]
+name = "on-an-unmarked-import-of-plain-ids-is-not-reported"
+why = "only an unmarked version that holds an id with :: is reported: one of plain ids says nothing"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. needimport:: data.json
+'''
+files = { "data.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "IMP_001": {"type": "req", "title": "Plain"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+findings = []
+notes = []
+marked = true
+[case.expect.split.IMP_001]
+ns = []
+local_id = "IMP_001"
+
+[[case]]
+name = "on-an-unmarked-external-source-is-split-with-one-note"
+why = "an external source is read as an import is: its unmarked ids are split, and it is reported once"
+config = '''
+[needs]
+namespaced_ids = true
+
+[[needs.external_needs]]
+base_url = "http://ext.example"
+json_path = "data.json"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: A need of the project
+   :id: REQ_001
+'''
+files = { "data.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "ext::EXT_001": {"type": "req", "title": "One level"},
+        "ext::sub::EXT_002": {"type": "req", "title": "Two levels"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+findings = []
+notes = ["namespaced_ids_unmarked"]
+marked = true
+[case.expect.split."ext::EXT_001"]
+ns = ["ext"]
+local_id = "EXT_001"
+[case.expect.split."ext::sub::EXT_002"]
+ns = ["ext", "sub"]
+local_id = "EXT_002"
+
+[[case]]
+name = "on-an-imported-id-that-does-not-split-is-refused"
+why = "an imported id that does not split is not read: one warning per need, at the needimport"
+config = '''
+[needs]
+namespaced_ids = true
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. req:: A need of the project
+   :id: REQ_001
+
+.. needimport:: data.json
+'''
+files = { "data.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "namespaced_ids": true,
+      "needs": {
+        "ext::": {"type": "req", "title": "Empty local id"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+notes = []
+marked = true
+missing = ["ext::"]
+[[case.expect.findings]]
+code = "import_need"
+[case.expect.split.REQ_001]
+ns = []
+local_id = "REQ_001"
+
+[[case]]
+name = "off-a-marked-import-keeps-plain-ids-with-one-note"
+why = "into a project with the switch off, a marked version's ids are read as plain ids, :: included, with one note per source"
+config = '''
+[needs]
+id_regex = ""
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+'''
+source = '''
+.. needimport:: data.json
+'''
+files = { "data.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "namespaced_ids": true,
+      "needs": {
+        "ext::IMP_001": {"type": "req", "title": "One level"},
+        "ext::sub::IMP_002": {"type": "req", "title": "Two levels"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+findings = []
+notes = ["namespaced_ids_off"]
+marked = false
+[case.expect.split."ext::IMP_001"]
+ns = []
+local_id = "ext::IMP_001"
+[case.expect.split."ext::sub::IMP_002"]
+ns = []
+local_id = "ext::sub::IMP_002"

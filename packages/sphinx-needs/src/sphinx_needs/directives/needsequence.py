@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
@@ -19,6 +19,10 @@ from sphinx_needs.diagrams_common import (
     get_filter_para,
     no_plantuml,
     set_plantuml_paths,
+)
+from sphinx_needs.directives.needflow._plantuml import (
+    get_entity_name,
+    make_entity_names,
 )
 from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
@@ -118,6 +122,10 @@ def process_needsequence(
     include_needs = needs_config.include_needs
     link_type_names = [name.upper() for name in needs_schema.iter_link_field_names()]
     needs_types = needs_config.types
+    # a need id is not a PlantUML name (``::``, ``-``, ...): every participant is named
+    # through needflow's entity map, over every id a walk may reach, so that ids
+    # sanitising to the same name stay distinct participants
+    entity_names = make_entity_names(all_needs_dict)
 
     # NEEDSEQUENCE
     # for node in doctree.findall(Needsequence):
@@ -210,6 +218,7 @@ def process_needsequence(
                 filter=current_needsequence["filter"],
                 counter=counter,
                 origin_docname=current_needsequence["docname"],
+                entity_names=entity_names,
             )
             p_string += p_string_new
             c_string += c_string_new
@@ -358,12 +367,18 @@ def get_message_needs(
     *,
     counter: _MessageCounter,
     origin_docname: str | None = None,
+    entity_names: Mapping[str, str] | None = None,
 ) -> tuple[dict[str, dict[str, Any]], str, str]:
     """Walk the messages sent by ``sender``, drawing each receiver that passes ``filter``.
 
     :param origin_docname: The document the needsequence is written in, so that a
         ``filter`` may test the receiver against it with ``c.this_doc()``.
+    :param entity_names: The PlantUML name of each need id
+        (:func:`~sphinx_needs.directives.needflow._plantuml.make_entity_names`); made
+        from ``all_needs_dict`` if not given.
     """
+    if entity_names is None:
+        entity_names = make_entity_names(all_needs_dict)
     msg_needs: list[dict[str, Any]] = []
     if tracked_receivers is None:
         tracked_receivers = []
@@ -381,7 +396,7 @@ def get_message_needs(
         }
         if sender["id"] not in tracked_receivers:
             declaration = 'participant "{}" as {}\n'.format(
-                sender["title"], sender["id"]
+                sender["title"], get_entity_name(entity_names, sender["id"])
             )
             if counter.has_room:
                 p_string += declaration
@@ -413,7 +428,9 @@ def get_message_needs(
 
                 if counter.add_message(sender["id"], rec_id):
                     c_string += "{} -> {}: {}\n".format(
-                        sender["id"], rec_data["id"], msg_need["title"]
+                        get_entity_name(entity_names, sender["id"]),
+                        get_entity_name(entity_names, rec_id),
+                        msg_need["title"],
                     )
 
                 if rec_id not in tracked_receivers:
@@ -426,6 +443,7 @@ def get_message_needs(
                         filter=filter,
                         counter=counter,
                         origin_docname=origin_docname,
+                        entity_names=entity_names,
                     )
                     p_string += p_string_new
                     c_string += c_string_new

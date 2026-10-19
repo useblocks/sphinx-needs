@@ -164,7 +164,8 @@ def project(
     if data is not None:
         all_files["data.json"] = data
     index = PAGE
-    confoverrides: dict[str, Any] = {}
+    # a caller's overrides are kept beside the external reader's source
+    confoverrides: dict[str, Any] = dict(params.pop("confoverrides", {}))
     if reader == "import":
         for name, opts in imports or (("data.json", options),):
             index += "\n".join([f".. needimport:: {name}", *(f"   {o}" for o in opts)])
@@ -1422,3 +1423,146 @@ def test_ids_too_many_for_one_trie_still_match():
     pattern = _whole_ids_pattern(ids)
     assert pattern is not None
     assert pattern.sub(lambda m: "px_" + m.group(0), "AAA AAAB") == "px_AAA AAAB"
+
+
+# ------------------------------------------------------------------------------------
+# namespaced ids: a version's marker, read into a project with the switch on or off
+
+NAMESPACED = {
+    "ext::IMP_001": rec("ext::IMP_001"),
+    "ext::sub::IMP_002": rec("ext::sub::IMP_002"),
+}
+
+SWITCH_ON = {"needs_namespaced_ids": True}
+
+
+def note(reader: str, text: str) -> str:
+    """How each reader reports an informational finding about its source."""
+    if reader == "import":
+        return (
+            f"<srcdir>/index.rst:{IMPORT_LINE}: Needs import file {DATA_PATH}: {text}"
+        )
+    return f"External needs source 'data.json': {text}"
+
+
+UNMARKED = (
+    "its ids are read as namespaced ids, as needs_namespaced_ids is on; the version "
+    "read does not mark them as namespaced"
+)
+MARKED_WHILE_OFF = (
+    "the version read marks its ids as namespaced, but needs_namespaced_ids is off: "
+    "its ids are read as plain ids"
+)
+
+
+def notes(app: SphinxTestApp) -> list[str]:
+    """The status lines that are a namespaced-ids note, the source dir rewritten."""
+    return [
+        line.replace(str(app.srcdir), "<srcdir>")
+        for line in app._status.getvalue().splitlines()
+        if "namespaced_ids" in line
+    ]
+
+
+def splits(app: SphinxTestApp) -> dict[str, tuple[tuple[str, ...], str]]:
+    return {
+        need_id: (need.ns, need.local_id)
+        for need_id, need in SphinxNeedsData(app.env).get_needs_view().items()
+        if need_id != "LOCAL_001"
+    }
+
+
+@pytest.mark.parametrize(
+    ("test_app", "reader"),
+    both(envelope(NAMESPACED, namespaced_ids=True), confoverrides=SWITCH_ON),
+    indirect=["test_app"],
+)
+def test_a_marked_version_is_split_without_a_note(test_app: SphinxTestApp, reader: str):
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert notes(app) == []
+    assert splits(app) == {
+        "ext::IMP_001": (("ext",), "IMP_001"),
+        "ext::sub::IMP_002": (("ext", "sub"), "IMP_002"),
+    }
+
+
+@pytest.mark.parametrize(
+    ("test_app", "reader"),
+    both(envelope(NAMESPACED), confoverrides=SWITCH_ON),
+    indirect=["test_app"],
+)
+def test_an_unmarked_version_is_split_with_one_note(
+    test_app: SphinxTestApp, reader: str
+):
+    """One note for the source, however many of its ids hold ``::``: information, not
+    a warning."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert notes(app) == [note(reader, UNMARKED)]
+    assert splits(app) == {
+        "ext::IMP_001": (("ext",), "IMP_001"),
+        "ext::sub::IMP_002": (("ext", "sub"), "IMP_002"),
+    }
+
+
+@pytest.mark.parametrize(
+    ("test_app", "reader"),
+    both(
+        envelope(NAMESPACED, namespaced_ids=True), confoverrides={"needs_id_regex": ""}
+    ),
+    indirect=["test_app"],
+)
+def test_a_marked_version_read_with_the_switch_off_keeps_plain_ids(
+    test_app: SphinxTestApp, reader: str
+):
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert notes(app) == [note(reader, MARKED_WHILE_OFF)]
+    assert splits(app) == {
+        "ext::IMP_001": ((), "ext::IMP_001"),
+        "ext::sub::IMP_002": ((), "ext::sub::IMP_002"),
+    }
+
+
+@pytest.mark.parametrize(
+    ("test_app", "reader"),
+    both(envelope(NAMESPACED)),
+    indirect=["test_app"],
+)
+def test_an_unmarked_version_read_with_the_switch_off_says_nothing(
+    test_app: SphinxTestApp, reader: str
+):
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert notes(app) == []
+
+
+@pytest.mark.parametrize(
+    ("test_app", "reader"),
+    both(
+        envelope(
+            {"ext::": rec("ext::"), "IMP_001": rec("IMP_001")}, namespaced_ids=True
+        ),
+        confoverrides=SWITCH_ON,
+    ),
+    indirect=["test_app"],
+)
+def test_a_read_id_that_does_not_split_is_refused(test_app: SphinxTestApp, reader: str):
+    """One warning for the need, as for any record that cannot be read; the others are
+    read."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        refused_need(
+            reader,
+            "ext::",
+            "'ext::' is not a namespaced id: its local id is empty "
+            "(needs_namespaced_ids is on)",
+        )
+    ]
+    assert splits(app) == {"IMP_001": ((), "IMP_001")}

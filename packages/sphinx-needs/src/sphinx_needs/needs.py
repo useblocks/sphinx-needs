@@ -1642,6 +1642,22 @@ def check_configuration(app: Sphinx, config: Config) -> None:
                 " Please use another name in your config (needs_links)."
             )
 
+    # with namespaced ids on, the need's namespace and local id hold these names: no
+    # field or link type may take them, by any route that declares one
+    if needs_config.namespaced_ids:
+        declared = {
+            *fields,
+            *_link_type_names(needs_config),
+            *_type_link_names(config),
+        }
+        for reserved in NAMESPACE_NAMES:
+            if reserved in declared:
+                raise NeedsConfigException(
+                    f"Field {reserved!r} is reserved while needs_namespaced_ids is on: "
+                    "it is the need's namespace or local id. Please use another name in "
+                    "your config."
+                )
+
     # Check if option and link are using the same name
     for link in link_types:
         if link in fields:
@@ -1696,6 +1712,26 @@ def _get_core_schema(data: CoreFieldParameters) -> tuple[dict[str, Any], bool]:
     if type_ == "array":
         schema["items"] = data["schema"].get("items", {"type": "string"})
     return schema, nullable
+
+
+#: The names the need's namespace and local id hold with ``needs_namespaced_ids`` on.
+NAMESPACE_NAMES = ("ns", "local_id")
+
+
+def _type_link_names(config: Config) -> set[str]:
+    """The names the ``links`` of the ``needs_types`` entries declare (as
+    :func:`~sphinx_needs.config.type_field_names` reads their ``fields``)."""
+    need_types = getattr(config, "needs_types", [])
+    if not isinstance(need_types, list):
+        return set()
+    return {
+        name
+        for entry in need_types
+        if isinstance(entry, Mapping)
+        and isinstance(table := entry.get("links"), Mapping)
+        for name in table
+        if isinstance(name, str)
+    }
 
 
 def _link_type_names(needs_config: NeedsSphinxConfig) -> frozenset[str]:
