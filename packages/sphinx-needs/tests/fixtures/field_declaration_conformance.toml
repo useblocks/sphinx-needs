@@ -4831,3 +4831,103 @@ type = "spec"
 code = "link_fail"
 need = "TEST_4"
 field = "verifies"
+
+[[case]]
+name = "union-declared-on-need-types-alone"
+why = "a union declared in a need type's links entry alone is a link type of the types declaring it, a child inheriting the rule: their needs hold its members' links, every other type's []; an author's links in it are derive_authored on a declaring type, undeclared_for_type on another"
+config = '''
+[needs.links.tests]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.all_links]
+derive = { kind = "union", fields = ["links", "tests"] }
+
+[needs.types.subspec]
+title = "Subspecification"
+prefix = "SS_"
+inherits = "spec"
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+   :links: REQ_1
+   :all_links: REQ_1
+
+.. spec:: Links them
+   :id: SPEC_1
+   :links: REQ_1
+   :tests: REQ_2
+   :all_links: REQ_1
+
+.. subspec:: Inherits the rule
+   :id: SUBSPEC_1
+   :tests: REQ_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+all_links = ["REQ_1", "REQ_2"]
+[case.expect.needs.SUBSPEC_1]
+all_links = ["REQ_1"]
+[case.expect.needs.REQ_2]
+all_links = []
+[case.expect.schema.all_links]
+description = "Declared by need types 'spec'"
+[[case.expect.findings]]
+code = "derive_authored"
+need = "SPEC_1"
+field = "all_links"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "REQ_2"
+field = "all_links"
+type = "req"
+
+[[case]]
+name = "union-target-types-in-a-type-entry"
+why = "a need type's entry giving target_types to a union declared outright is one type_conflict, the entry ignored, as for any derived link type: the union still holds its members' links on that type, none of them checked"
+config = '''
+[needs.links.all_links]
+derive = { kind = "union", fields = ["links"] }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.all_links]
+target_types = ["spec"]
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Links a req
+   :id: REQ_2
+   :links: REQ_1
+
+.. spec:: Links a req too
+   :id: SPEC_1
+   :links: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_2]
+all_links = ["REQ_1"]
+[case.expect.needs.SPEC_1]
+all_links = ["REQ_1"]
+[[case.expect.findings]]
+code = "type_conflict"
+field = "all_links"
+type = "req"

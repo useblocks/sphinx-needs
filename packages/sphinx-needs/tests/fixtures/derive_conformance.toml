@@ -54,6 +54,10 @@
 #     writes every declared field (and link type) on every need, null included, so a
 #     runner asserts the need and the field are PRESENT, then that the value is null; a
 #     missing need or field fails the case
+#   - a `union` link type holds the links of its members (`fields`, in that order), each
+#     link once by its target, part and condition, carried as written; it reports no dead
+#     link and no link condition of its own, which are its members', so a dead link it holds
+#     is a forbidden one only through the member's own `allow_dead_links`
 #
 # `packages/sphinx-needs/tests/test_derive_conformance.py` runs every case with the `needs`
 # builder AND asserts the case COUNT, so a truncated copy is a red test rather than reduced
@@ -3906,3 +3910,545 @@ findings = []
 [case.expect.needs.SPEC_2]
 open_all = ["REQ_1", "REQ_2", "REQ_3", "SPEC_1"]
 rel = ["REQ_1", "REQ_2", "REQ_3", "SPEC_1"]
+
+# --- the union kind -----------------------------------------------------------------
+
+[[case]]
+name = "union-of-link-types"
+why = "union: the links of its members, each once, on a link type of the project's choosing, with its own back links; the members keep their own links, and nothing is copied into links"
+config = '''
+[needs.links.blocks]
+
+[needs.links.tests]
+
+[needs.links.all_links]
+derive = { kind = "union", fields = ["links", "blocks", "tests"] }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Links them
+   :id: SPEC_1
+   :links: REQ_1
+   :blocks: REQ_2
+   :tests: REQ_1
+
+.. spec:: Links nothing
+   :id: SPEC_2
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+all_links = ["REQ_1", "REQ_2"]
+links = ["REQ_1"]
+blocks = ["REQ_2"]
+tests = ["REQ_1"]
+[case.expect.needs.SPEC_2]
+all_links = []
+[case.expect.needs.REQ_1]
+all_links = []
+all_links_back = ["SPEC_1"]
+links_back = ["SPEC_1"]
+[case.expect.needs.REQ_2]
+all_links_back = ["SPEC_1"]
+links_back = []
+
+[[case]]
+name = "union-carries-parts-and-conditions"
+why = "union keeps each link once by its target, part and condition, as needs.json writes them: REQ_1 from two members is one link, REQ_1, REQ_1.p1 and REQ_1[status == 'open'] are three, each carried as written"
+config = '''
+[needs.links.blocks]
+
+[needs.links.all_links]
+derive = { kind = "union", fields = ["links", "blocks"] }
+'''
+source = '''
+.. req:: With a part
+   :id: REQ_1
+   :status: open
+
+   A part: :np:`(p1) first`.
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Links them
+   :id: SPEC_1
+   :links: REQ_1, REQ_2
+   :blocks: REQ_1.p1, REQ_1[status == 'open'], REQ_1, REQ_2
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+all_links = ["REQ_1", "REQ_1[status == 'open']", "REQ_1.p1", "REQ_2"]
+
+[[case]]
+name = "union-over-derived-members"
+why = "a union's members may be derived link types (links, content_links): they are computed first, and the union holds what they computed"
+config = '''
+[needs.links.blocks]
+
+[needs.links.l_open]
+derive = { kind = "links", where = "type == 'req' and status == 'open'" }
+
+[needs.links.mentions]
+derive = { kind = "content_links" }
+
+[needs.links.all_links]
+derive = { kind = "union", fields = ["l_open", "mentions", "blocks"] }
+'''
+source = '''
+.. req:: Open
+   :id: REQ_1
+   :status: open
+
+.. req:: Closed
+   :id: REQ_2
+   :status: closed
+
+.. req:: Closed too
+   :id: REQ_3
+   :status: closed
+
+.. spec:: Mentions and blocks
+   :id: SPEC_1
+   :blocks: REQ_3
+
+   Mentions :need:`REQ_2`.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+l_open = ["REQ_1"]
+mentions = ["REQ_2"]
+all_links = ["REQ_1", "REQ_2", "REQ_3"]
+[case.expect.needs.REQ_1]
+all_links = []
+
+[[case]]
+name = "union-sees-needextend"
+why = "a union is computed after the needextends: a link a needextend adds to a member is in the union, and one it replaces in a member is not"
+config = '''
+[needs.links.blocks]
+
+[needs.links.all_links]
+derive = { kind = "union", fields = ["links", "blocks"] }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. req:: Three
+   :id: REQ_3
+
+.. spec:: Extended
+   :id: SPEC_1
+   :links: REQ_3
+
+.. needextend:: SPEC_1
+   :+blocks: REQ_2
+   :links: REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+links = ["REQ_1"]
+blocks = ["REQ_2"]
+all_links = ["REQ_1", "REQ_2"]
+
+[[case]]
+name = "union-closed-to-authors"
+why = "a union is closed to authors like every derived link type: links written in it, and a needextend's, are each derive_authored and ignored, and it holds its members' links"
+config = '''
+[needs.links.blocks]
+
+[needs.links.all_links]
+derive = { kind = "union", fields = ["links", "blocks"] }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Authored
+   :id: SPEC_1
+   :blocks: REQ_1
+   :all_links: REQ_2
+
+.. spec:: Extended
+   :id: SPEC_2
+   :links: REQ_2
+
+.. needextend:: SPEC_2
+   :+all_links: REQ_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+all_links = ["REQ_1"]
+[case.expect.needs.SPEC_2]
+all_links = ["REQ_2"]
+[[case.expect.findings]]
+code = "derive_authored"
+need = "SPEC_1"
+field = "all_links"
+[[case.expect.findings]]
+code = "derive_authored"
+field = "all_links"
+
+[[case]]
+name = "union-refusals"
+why = "a union's members are declared link types, each named once: a union naming back links, a field, a name declared nowhere, parent_needs, no member or a member twice is one derive_invalid and holds no links, as is one on a field; allow_dead_links beside a union is one derive_invalid, the key ignored and the rule applied; a fingerprint never includes a union, so excluding one is refused"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.on_field]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "union", fields = ["links"] }
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint", exclude = ["all_links"] }
+
+[needs.links.blocks]
+
+[needs.links.all_links]
+derive = { kind = "union", fields = ["links", "blocks"] }
+
+[needs.links.bad_back]
+derive = { kind = "union", fields = ["blocks_back"] }
+
+[needs.links.bad_field]
+derive = { kind = "union", fields = ["owner"] }
+
+[needs.links.bad_none]
+derive = { kind = "union", fields = ["nope"] }
+
+[needs.links.bad_parent]
+derive = { kind = "union", fields = ["links", "parent_needs"] }
+
+[needs.links.bad_empty]
+derive = { kind = "union", fields = [] }
+
+[needs.links.bad_twice]
+derive = { kind = "union", fields = ["blocks", "blocks"] }
+
+[needs.links.bad_missing]
+derive = { kind = "union" }
+
+[needs.links.dead_ok]
+derive = { kind = "union", fields = ["blocks"] }
+allow_dead_links = true
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. spec:: Links it
+   :id: SPEC_1
+   :owner: alice
+   :links: REQ_1
+   :blocks: REQ_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+all_links = ["REQ_1"]
+bad_back = []
+bad_field = []
+bad_none = []
+bad_parent = []
+bad_empty = []
+bad_twice = []
+bad_missing = []
+dead_ok = ["REQ_1"]
+[case.expect.needs.REQ_1]
+blocks_back = ["SPEC_1"]
+[case.expect.nulls]
+SPEC_1 = ["on_field", "fp"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "on_field"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "fp"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_back"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_field"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_none"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_parent"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_empty"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_twice"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_missing"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "dead_ok"
+
+[[case]]
+name = "union-cycle-refused"
+why = "a union naming itself, or two unions naming each other, can be computed on no need: each is one derive_invalid at load and holds no links; a union beside them applies"
+config = '''
+[needs.links.u_self]
+derive = { kind = "union", fields = ["links", "u_self"] }
+
+[needs.links.u_one]
+derive = { kind = "union", fields = ["u_two"] }
+
+[needs.links.u_two]
+derive = { kind = "union", fields = ["links", "u_one"] }
+
+[needs.links.u_ok]
+derive = { kind = "union", fields = ["links"] }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. spec:: Links it
+   :id: SPEC_1
+   :links: REQ_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+u_self = []
+u_one = []
+u_two = []
+u_ok = ["REQ_1"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "u_self"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "u_one"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "u_two"
+
+[[case]]
+name = "union-of-a-union"
+why = "a union may name another union, which is computed first"
+config = '''
+[needs.links.blocks]
+
+[needs.links.tests]
+
+[needs.links.inner]
+derive = { kind = "union", fields = ["blocks", "tests"] }
+
+[needs.links.outer]
+derive = { kind = "union", fields = ["links", "inner"] }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. req:: Three
+   :id: REQ_3
+
+.. spec:: Links them
+   :id: SPEC_1
+   :links: REQ_1
+   :blocks: REQ_2
+   :tests: REQ_3, REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+inner = ["REQ_1", "REQ_2", "REQ_3"]
+outer = ["REQ_1", "REQ_2", "REQ_3"]
+
+[[case]]
+name = "union-by-type"
+why = "a union in derive_by_type applies on its need type alone; a need of another type holds no links, and cannot set it either"
+config = '''
+[needs.links.blocks]
+
+[needs.links.all_links]
+derive_by_type = { spec = { kind = "union", fields = ["links", "blocks"] } }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+   :blocks: REQ_2
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Links them
+   :id: SPEC_1
+   :links: REQ_1
+   :blocks: REQ_2
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+all_links = ["REQ_1", "REQ_2"]
+[case.expect.needs.REQ_1]
+all_links = []
+
+[[case]]
+name = "union-target-types-refused"
+why = "a union takes no target_types, as no derived link type does: given, it is one derive_invalid beside the rule, ignored, and the rule applies"
+config = '''
+[needs.links.blocks]
+
+[needs.links.all_links]
+derive = { kind = "union", fields = ["links", "blocks"] }
+target_types = ["spec"]
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. spec:: Links it
+   :id: SPEC_1
+   :blocks: REQ_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+all_links = ["REQ_1"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "all_links"
+
+[[case]]
+name = "union-beside-copy"
+why = "a union beside a link type that copies into links: links holds the copies as before, and the union, over links and that link type, the same links each once"
+config = '''
+[needs.links.blocks]
+copy = true
+
+[needs.links.all_links]
+derive = { kind = "union", fields = ["links", "blocks"] }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Links them
+   :id: SPEC_1
+   :links: REQ_1
+   :blocks: REQ_1, REQ_2
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+links = ["REQ_1", "REQ_2"]
+blocks = ["REQ_1", "REQ_2"]
+all_links = ["REQ_1", "REQ_2"]
+
+[[case]]
+name = "union-with-dead-member"
+why = "a union keeps its members' dead links, and leaves them to the members: a dead link of a member allowing dead links is no forbidden dead link of the need, one of a member not allowing them is"
+config = '''
+[needs.links.blocks]
+allow_dead_links = true
+
+[needs.links.all_links]
+derive = { kind = "union", fields = ["links", "blocks"] }
+'''
+source = '''
+.. spec:: An allowed dead link
+   :id: SPEC_1
+   :blocks: DEAD_1
+
+.. spec:: A forbidden dead link
+   :id: SPEC_2
+   :links: DEAD_2
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+all_links = ["DEAD_1"]
+has_dead_links = true
+has_forbidden_dead_links = false
+[case.expect.needs.SPEC_2]
+all_links = ["DEAD_2"]
+has_dead_links = true
+has_forbidden_dead_links = true
+
+[[case]]
+name = "union-over-derived-links"
+why = "a union may name links when links itself is derived: the links its rule computed are in the union"
+config = '''
+[needs.links.links]
+derive = { kind = "links", where = "type == 'req'" }
+
+[needs.links.blocks]
+
+[needs.links.all_links]
+derive = { kind = "union", fields = ["links", "blocks"] }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. impl:: Implementation
+   :id: IMPL_1
+
+.. spec:: Blocks it
+   :id: SPEC_1
+   :blocks: IMPL_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+links = ["REQ_1"]
+all_links = ["IMPL_1", "REQ_1"]
+
+[[case]]
+name = "union-on-imported-needs"
+why = "no rule runs on an imported need, a union's neither: one carrying no union holds no links, though its members carry some, one carrying it keeps it as written; a need of the project computes it"
+config = '''
+[needs.links.blocks]
+
+[needs.links.all_links]
+derive = { kind = "union", fields = ["links", "blocks"] }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. spec:: Links it
+   :id: SPEC_1
+   :blocks: REQ_1
+
+.. needimport:: imported.json
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "spec", "title": "Imported without the union", "links": ["REQ_1"], "blocks": ["REQ_1"]}, "IMP_2": {"id": "IMP_2", "type": "spec", "title": "Imported with the union", "blocks": ["REQ_1"], "all_links": ["SPEC_1"]}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+all_links = ["REQ_1"]
+[case.expect.needs.IMP_1]
+blocks = ["REQ_1"]
+all_links = []
+[case.expect.needs.IMP_2]
+all_links = ["SPEC_1"]
