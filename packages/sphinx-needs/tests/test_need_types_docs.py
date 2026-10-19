@@ -111,7 +111,7 @@ SCHEMA_PER_TYPE_WARNINGS = [
     ),
     # The schema rule: what the target types cannot say, a linked need's fields.
     _schema_record(
-        "ERROR: Need 'S_002' has schema violations:",
+        "ERROR: Need 'T_002' has schema violations:",
         severity="violation",
         field=None,
         need_path="T_002 > verifies > S_002",
@@ -135,7 +135,7 @@ SCHEMA_PER_TYPE_WARNINGS = [
     ),
     # A req the target types accept, which the rule reports for its missing ASIL.
     _schema_record(
-        "ERROR: Need 'R_002' has schema violations:",
+        "ERROR: Need 'T_005' has schema violations:",
         severity="violation",
         field=None,
         need_path="T_005 > verifies > R_002",

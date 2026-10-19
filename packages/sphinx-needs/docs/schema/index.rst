@@ -346,14 +346,14 @@ That the requirements it verifies state their ASIL is about the linked needs' fi
 
 .. code-block:: text
 
-   ERROR: Need 'R_002' has schema violations:
+   ERROR: Need 'T_005' has schema violations:
      Severity:       violation
      Need path:      T_005 > verifies > R_002
      Schema path:    test-verifies-rated[1] > validate > network > verifies > items > local > required
      Schema message: "asil" is a required property [sn_schema_violation.network_local_fail]
 
-The need path gives the chain: the ``verifies`` link of ``T_005`` to ``R_002``.
-The header names the linked need, ``R_002``, not the need the rule selects.
+The header names the need the rule selects, ``T_005``,
+and the need path gives the chain: the ``verifies`` link of ``T_005`` to ``R_002``, the need without an ASIL.
 
 .. important::
 

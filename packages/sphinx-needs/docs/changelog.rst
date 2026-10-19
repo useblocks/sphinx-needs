@@ -295,6 +295,14 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 The console message of a schema finding names the need the rule selected, under which
+  ``schema_violations.json`` files it. A finding of a ``network`` or ``network_back`` rule that failed
+  on a linked need named that linked need: a rule selecting the tests, with
+  ``T_001 > verifies > S_001`` as its need path, reported ``Need 'S_001' has schema violations``, as
+  if the spec broke it. It now reads ``Need 'T_001' has schema violations``; the ``Need path`` line
+  still gives the chain, and the finding's code, severity and ``schema_violations.json`` do not
+  change (:issue:`2297`)
+
 - 🐛 The ``needs_schema`` of a :ref:`needs.json <needs_builder_format>` writes a core field as the
   project declares it, as it writes an extra field: a :ref:`needs_fields` entry narrowing ``status``
   to a non-nullable field with the default ``"open"`` is written ``"type": "string"``,
