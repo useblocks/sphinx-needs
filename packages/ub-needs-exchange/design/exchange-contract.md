@@ -106,6 +106,8 @@ object identity). A rule marked **(not pinned)** has neither.
    `format-version-above-1-is-refused`, `format-version-a-pre-release-is-refused`,
    `format-version-a-release-candidate-is-refused`,
    `format-version-a-pre-release-of-1-is-refused`,
+   `format-version-a-pre-release-of-many-digits-is-refused`,
+   `format-version-of-many-digits-is-refused`,
    `a-later-format-is-refused-before-its-shape-is-read`,
    `a-later-integer-format-is-refused-before-its-shape-is-read`,
    `format-version-is-checked-whatever-version-is-asked-for`, `format-version-a-string`,

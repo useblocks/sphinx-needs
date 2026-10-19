@@ -336,6 +336,22 @@ version = "1.0"
 error = "format_version_unsupported"
 
 [[case]]
+name = "format-version-a-pre-release-of-many-digits-is-refused"
+why = "a format number and a pre-release number may each have more than one digit: a pre-release of format 10 is refused as unsupported"
+layer = "document"
+json = '''{"format_version": "10rc12", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_unsupported"
+
+[[case]]
+name = "format-version-of-many-digits-is-refused"
+why = "any integer above 1 is a later format, not only the next one"
+layer = "document"
+json = '''{"format_version": 10, "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_unsupported"
+
+[[case]]
 name = "format-version-a-string"
 why = "a string that is not a pre-release, even of the number 1, is not a format version"
 layer = "document"
