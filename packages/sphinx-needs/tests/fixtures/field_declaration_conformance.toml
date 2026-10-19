@@ -121,12 +121,14 @@
 #     which `allow_dead_links` silences), and a link to a
 #     part its target lacks is a dead link; a link to a part
 #     is checked by the type of the need owning the part; a `[condition]` on the link
-#     changes nothing. A link of `links` that the same need also holds -- the same target,
-#     the same part -- in another link type with `copy = true`, one that is not derived
-#     (a derived link type copies nothing), is not checked against the
+#     changes nothing. A link of `links` that another link type with `copy = true` copied
+#     into it when the need was created -- the same target, the same part, whatever its
+#     condition; a derived link type copies nothing -- is not checked against the
 #     `target_types` of `links` (it is checked as a link of that link type), whether it
-#     was copied or written by hand. A need type's `target_types` narrows by the EXPANDED
-#     sets (a listed type with the types inheriting from it, against the same of the
+#     was copied or written by hand; a needextend of the copying link type copies
+#     nothing, so it changes nothing here. The `schema` count is independent: it counts
+#     every link, refused and dead included. A need type's `target_types` narrows by the
+#     EXPANDED sets (a listed type with the types inheriting from it, against the same of the
 #     declaration before it); a name that is no need type is ignored, and a
 #     `target_types` naming none declares nothing: the links keep the target types of the
 #     declaration before it, and are unrestricted where none gives any
@@ -4832,3 +4834,153 @@ code = "link_target_type"
 need = "TEST_2"
 field = "links"
 type = "req"
+
+[[case]]
+name = "link-target-types-copy-then-needextend"
+why = "the copy exemption is by what was copied into links when the need was created: a needextend that replaces, removes or appends to the copying link type copies nothing, so the copy in links stays exempt; the copying link type is checked against its own target_types as the needextend leaves it"
+config = '''
+[needs.links.links]
+target_types = ["spec"]
+
+[needs.links.verifies]
+copy = true
+target_types = ["req"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. req:: Requirement
+   :id: REQ_2
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Its verifies replaced
+   :id: TEST_1
+   :verifies: REQ_1
+
+.. test:: Its verifies removed
+   :id: TEST_2
+   :verifies: REQ_1
+
+.. test:: Its verifies appended to
+   :id: TEST_3
+   :verifies: REQ_1
+
+.. test:: Its verifies replaced by a spec
+   :id: TEST_4
+   :verifies: REQ_1
+
+.. needextend:: TEST_1
+   :verifies: REQ_2
+
+.. needextend:: TEST_2
+   :-verifies:
+
+.. needextend:: TEST_3
+   :+verifies: REQ_2
+
+.. needextend:: TEST_4
+   :verifies: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["REQ_2"]
+links = ["REQ_1"]
+[case.expect.needs.TEST_2]
+verifies = []
+links = ["REQ_1"]
+[case.expect.needs.TEST_3]
+verifies = ["REQ_1", "REQ_2"]
+links = ["REQ_1"]
+[case.expect.needs.TEST_4]
+verifies = ["SPEC_1"]
+links = ["REQ_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_4"
+field = "verifies"
+type = "spec"
+
+[[case]]
+name = "link-target-types-with-min-items"
+why = "target_types and the schema's minItems and maxItems are independent: the count is every link the need holds, a link target_types refuses and a dead link included, checked by the schema validation (link_fail); so a refused link alone satisfies minItems, a dead one too, a need without links fails it, and one refused link over maxItems is reported by both"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+target_types = ["req"]
+schema = { minItems = 1, maxItems = 1 }
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+
+.. test:: Its only link refused
+   :id: TEST_1
+   :verifies: SPEC_1
+
+.. test:: Its only link dead
+   :id: TEST_2
+   :verifies: REQ_404
+
+.. test:: No link
+   :id: TEST_3
+
+.. test:: Two links, one refused
+   :id: TEST_4
+   :verifies: REQ_1, SPEC_1
+'''
+[case.expect]
+[case.expect.needs.TEST_1]
+verifies = ["SPEC_1"]
+[case.expect.needs.TEST_2]
+verifies = ["REQ_404"]
+[case.expect.needs.TEST_3]
+verifies = []
+[case.expect.needs.TEST_4]
+verifies = ["REQ_1", "SPEC_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_fail"
+need = "TEST_3"
+field = "verifies"
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_4"
+field = "verifies"
+type = "spec"
+[[case.expect.findings]]
+code = "link_fail"
+need = "TEST_4"
+field = "verifies"
