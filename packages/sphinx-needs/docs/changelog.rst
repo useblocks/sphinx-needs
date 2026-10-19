@@ -301,7 +301,7 @@ Bug fixes
   ``T_001 > verifies > S_001`` as its need path, reported ``Need 'S_001' has schema violations``, as
   if the spec broke it. It now reads ``Need 'T_001' has schema violations``; the ``Need path`` line
   still gives the chain, and the finding's code, severity and ``schema_violations.json`` do not
-  change (:issue:`2297`)
+  change (:issue:`2297`, :pr:`2340`)
 
 - 🐛 The ``needs_schema`` of a :ref:`needs.json <needs_builder_format>` writes a core field as the
   project declares it, as it writes an extra field: a :ref:`needs_fields` entry narrowing ``status``
