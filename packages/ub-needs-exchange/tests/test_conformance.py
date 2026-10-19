@@ -28,7 +28,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "needs_json_reading_conforman
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 80
+EXPECTED_CASE_COUNT = 90
 
 #: The keys a case may carry, and those its ``[case.expect]`` may: the header defines
 #: each. A key outside them is a case this runner would silently not honour.

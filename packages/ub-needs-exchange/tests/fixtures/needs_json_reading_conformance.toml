@@ -254,6 +254,88 @@ json = '''{"format_version": "2a1\u0660", "current_version": "1.0", "versions": 
 error = "format_version_invalid"
 
 [[case]]
+name = "format-version-a-pre-release-of-1-is-refused"
+why = "a pre-release of format 1 is a format other than 1, so it is refused as unsupported"
+layer = "document"
+json = '''{"format_version": "1a1", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_unsupported"
+
+[[case]]
+name = "format-version-a-pre-release-numbered-0-is-invalid"
+why = "a pre-release number is 1 or more: one numbered 0 is not of the pre-release form, so it is not a format version"
+layer = "document"
+json = '''{"format_version": "2a0", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-a-pre-release-without-a-number-is-invalid"
+why = "a pre-release names its number: a format number and a segment alone is not a format version"
+layer = "document"
+json = '''{"format_version": "2a", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-a-format-number-with-a-leading-zero-is-invalid"
+why = "a pre-release whose format number has a leading zero is not of the pre-release form, so it is not a format version"
+layer = "document"
+json = '''{"format_version": "02a1", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-a-pre-release-in-upper-case-is-invalid"
+why = "the pre-release segments are lower case: a, b, rc; another spelling is not a format version"
+layer = "document"
+json = '''{"format_version": "2A1", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-a-pre-release-of-another-segment-is-invalid"
+why = "the pre-release segments are a, b and rc only: c, which some versioning schemes read as rc, is not one"
+layer = "document"
+json = '''{"format_version": "2c1", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-a-pre-release-with-whitespace-is-invalid"
+why = "the whole string is the pre-release form or it is not a format version: a trailing newline is not stripped"
+layer = "document"
+json = '''{"format_version": "2a1\n", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-a-fraction-above-1-is-invalid"
+why = "a number written with a fraction is not a format version, even one whose value is a later format's"
+layer = "document"
+json = '''{"format_version": 2.0, "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "a-later-integer-format-is-refused-before-its-shape-is-read"
+why = "a file of a later released format, with no versions envelope, is refused for its format_version, not for the envelope it lacks"
+layer = "document"
+json = '''{"format_version": 2, "needs": {"A": {"id": "A", "type": "req", "title": "t"}}}'''
+[case.expect]
+error = "format_version_unsupported"
+
+[[case]]
+name = "format-version-is-checked-whatever-version-is-asked-for"
+why = "a later format refuses the file when a version is asked for by name, as when none is"
+layer = "document"
+json = '''{"format_version": "2a1", "current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.options]
+version = "1.0"
+[case.expect]
+error = "format_version_unsupported"
+
+[[case]]
 name = "format-version-a-string"
 why = "a string that is not a pre-release, even of the number 1, is not a format version"
 layer = "document"
