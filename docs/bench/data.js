@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792405432498,
+  "lastUpdate": 1792426628992,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26208,6 +26208,42 @@ window.BENCHMARK_DATA = {
             "value": 54.40807672999999,
             "unit": "s",
             "extra": "Commit: fcdb3c2116ffb3a804478ccc1478e744113ac76b\nBranch: master\nTime: 2026-10-19T12:22:27+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d94a37408dac4f4e7e80d1765fbea1ea34daaa1e",
+          "message": "‼️ ub-needs-exchange 1.1.0: a format_version naming a later format refuses the file (#2334)\n\n### What\n\n`ub-needs-exchange` 1.1.0 refuses a needs.json whose `format_version`\nnames a later format — an integer above 1, or a\npre-release string such as `\"2a1\"`, `\"2b1\"`, `\"2rc1\"` — with its own\ncode, `format_version_unsupported`, checked before\nanything else in the envelope. 1.0.0 read an integer above 1 as format 1\nand reported it, and refused a pre-release\nstring as not a format version. The release stamp is in this branch.\n\nPart of #2260.\n\n### Why\n\nneeds.json v2 is to be signalled through `format_version` (ruled\n2026-10-19). A v2 file's records do not mean what a\nv1 file's do, so a v1 reader must not read one as v1 — and the 1.0.0\nsentence \"a later format is to stay readable as\nthis one\" is withdrawn. Measured on 1.0.0: `{\"format_version\": 2, …v1\nenvelope…}` was read with a\n`format_version_unsupported` Diagnostic; `\"2a1\"` was\n`format_version_invalid` (\"not an integer\", blaming the file);\na v2-shaped file with no `versions` was refused as `versions_missing`.\nNothing released depends on 1.0.0's rule, and\nno writer has ever written the key, so this is a minor release.\n\n### How\n\n- `reader.py`: one check, `_check_format_version`, still first in\n`Document.select_version`, whether or not a version\nis asked for. Absent or `1` reads as before. An integer above 1, or a\nstring that fullmatches\n`[1-9][0-9]*(a|b|rc)[1-9][0-9]*` — a format number of 1 or more, `a`,\n`b` or `rc`, and a pre-release number of 1 or\nmore, each in the digits `0`–`9` without leading zeros — raises\n`format_version_unsupported`: the existing constant,\nsame name and value, moved from a diagnostic code to an error code.\nAnything else present (`\"1\"`, `\"2\"`, `\"2.0\"`,\n`\"2a\"`, `\"2a0\"`, `\"2a01\"`, `\"02a1\"`, `\"2A1\"`, `\"2c1\"`, `\"2a1\\n\"`, other\nscripts' digits, `0`, negatives, `1.0`/`2.0`,\n`true`, `null`) stays `format_version_invalid`. `true` stays invalid\nalthough Python counts it an `int`.\n- Both messages spell the value as JSON does, with characters outside\nASCII as themselves and a lone surrogate as its\nescape: `the file is of format version \"2a1\"; this reader reads format\nversion 1 only` (`2` for an integer);\n`'format_version' is null, not an integer of 1 or more`;\n`'format_version' is \"é\", …`. (1.0.0 used Python `repr`:\n  `'1'`, `None`, `True`.)\n- Through sphinx-needs, a later-format source is one warning and is\nskipped; the build goes on.\n`needimport`: `Could not load needs import file <path>: the file is of\nformat version \"2a1\"; this reader reads format\nversion 1 only [needs.needimport]`; `needs_external_needs`: `Could not\nload external needs from '<file>': the file is\n  of format version \"2a1\"; … [needs.external_needs]`.\n- `poe bump ub-needs-exchange --bump minor`: 1.1.0, `__version__`,\nsphinx-needs' floor `ub-needs-exchange>=1.1.0,<2`,\n  `uv.lock` (one line), the changelog entry with its summary.\n\n### Tests\n\n- Corpus 74 → **92** cases: `format-version-above-1-is-read-as-1` →\n`format-version-above-1-is-refused`;\n`every-finding-of-a-file-is-reported` re-based on `format_version: 1` (4\nfindings); eighteen new. Refused as\nunsupported: `\"2a1\"`, `\"2rc1\"`, `\"1a1\"`, `\"10rc12\"`, `10`; a v2-shaped\nfile with no `versions`, for `\"2b1\"` and for the integer `2`\n(refused for its format, not `versions_missing`); `\"2a1\"` with a version\nasked for by name. Invalid: `\"2.0\"`,\n`\"2a01\"`, `\"2a0\"`, `\"2a\"`, `\"02a1\"`, `\"2A1\"`, `\"2c1\"`, `\"2a1\\n\"`, a\ntrailing U+0660, and `2.0`. Every wrong classifier\nmeasured in this work turns a corpus case red, so a reader held to the\ncorpus alone is held to the rule.\n- `test_reader.py`: `test_a_later_format_version_refuses_the_file` (`2`,\n`10`, `\"2a1\"`, `\"2b1\"`, `\"10rc2\"`, `\"1a1\"`)\nand the invalid test with the messages pinned — JSON-spelled, non-ASCII\nas written, a lone surrogate escaped. Package\n  suite 188 → 245.\n- sphinx-needs: one `REFUSED_SOURCES` row in\n`tests/test_exchange_readers.py`, through both readers.\n- Mutations, each applied and reverted on a clean tree: a later format\nread as 1 with a diagnostic; the grammar widened\nto any string; no `rc`; the check after `versions` — each red in the\ncorpus; `repr` messages — red in\n`test_reader.py` and the sphinx-needs row (the corpus pins no message);\nand nineteen more wrong classifiers, every one\ncorpus-red — a one-digit format number, a one-digit pre-release number,\nonly `2` refused rather than any integer above 1, a format number of 2\nor more only, a pre-release number of 0,\nleading zeros, case-insensitive, a `c` segment, an optional pre-release\nnumber, `strip()`, `$` for `fullmatch`,\n`match`, an integral float above 1, a digit string as an integer, a PEP\n440 parser, the check only when no version is\nasked for, the integer checked after the envelope (two ways), `\\d` for\n`[0-9]`.\n- Local: `poe lint`, `poe typecheck`, `poe test-ub-needs-exchange` 245,\n`poe test-needs -n 4` 3457 passed / 12 skipped,\nsphinx-7 cell on 3.12 (`test_exchange_readers.py`, `test_exchange.py`)\n100, `poe docs-needs` 0 warnings,\n  `uv lock --check`.\n\n### Docs\n\n- `design/exchange-contract.md` §3.1 (the rule; both numbers 1 or more,\nin the digits 0–9), §8.1\n(`format_version_unsupported` now an error code, the two\n`format_version` codes one check), §8.2 (the row removed),\n  Status 1.1.0. \"No writer writes the key yet.\" stays.\n- The corpus header's code lists.\n- `packages/ub-needs-exchange/docs/changelog.rst`: the 1.1.0 entry.\n- `packages/sphinx-needs/docs/changelog.rst`: the unreleased\nDeprecations entry no longer says a `format_version` above\n1 is read as format 1 with a warning; it says such a source is refused,\nand gives the floor\n  `ub-needs-exchange>=1.1.0,<2`.\n\n### Release\n\n**The \"Needs smoke test of the built wheel\" job is red, and stays red\nuntil 1.1.0 is on PyPI.** The workspace check\nmoves sphinx-needs' floor to `ub-needs-exchange>=1.1.0,<2` together with\nthe version (tight tracking), and the smoke\ntest installs the built sphinx-needs against PyPI on purpose (#2235),\nwhere only 1.0.0 exists. So this PR is merged\nwith that check overridden, the tag is pushed at once, and the job is\nre-run on master, where it then passes.\nMeasured locally: with the floor at `>=1.0.0` the smoke test passes, and\nthe workspace check refuses that floor.\n\n\nAfter the merge: tag `ub-needs-exchange-v1.1.0` from master (`poe\nrelease-plan` shows it pending, and that sphinx-needs\ncannot release until it is on PyPI). Whether to yank 1.0.0 is the\nmaintainer's call.\n\n### ubCode\n\nubCode has not vendored the corpus yet, so no re-vendor is owed.\nuseblocks/ubcode#4106 should vendor the **1.1.0**\ncorpus (92 cases) from the `ub-needs-exchange-v1.1.0` tag; its body (\"74\ncases\") is to be updated when the tag lands.\nubCode's readers then refuse a later `format_version` as this one does.",
+          "timestamp": "2026-10-19T18:15:35+02:00",
+          "tree_id": "5979b81f956ce209edac7920edf1c4d137ce3a14",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d94a37408dac4f4e7e80d1765fbea1ea34daaa1e"
+        },
+        "date": 1792426620261,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11325821599999131,
+            "unit": "s",
+            "extra": "Commit: d94a37408dac4f4e7e80d1765fbea1ea34daaa1e\nBranch: master\nTime: 2026-10-19T18:15:35+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.877938785,
+            "unit": "s",
+            "extra": "Commit: d94a37408dac4f4e7e80d1765fbea1ea34daaa1e\nBranch: master\nTime: 2026-10-19T18:15:35+02:00"
           }
         ]
       }
