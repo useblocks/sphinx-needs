@@ -28,9 +28,9 @@ guess.
   ``true``, ``null`` -- where 1.0.0 used Python's spelling (``'1'``, ``True``, ``None``).
 - **The contract and the corpus.** ``design/exchange-contract.md`` §3.1 and §8 say so,
   withdrawing 1.0.0's "a later format is to stay readable as this one", and the corpus
-  has 77 cases: ``format-version-above-1-is-read-as-1`` is now
+  has 80 cases: ``format-version-above-1-is-read-as-1`` is now
   ``format-version-above-1-is-refused``, ``every-finding-of-a-file-is-reported`` is read
-  at ``format_version`` 1, and three cases are new. Nothing writes the key yet.
+  at ``format_version`` 1, and six cases are new. Nothing writes the key yet.
 
 .. _`release:1.0.0`:
 

@@ -93,7 +93,8 @@ object identity). A rule marked **(not pinned)** has neither.
    is the only format this reader reads. A file of any other format is **refused**, whatever
    else its envelope holds (`format_version_unsupported`): an integer above 1, such as `2`,
    or a pre-release of a format — a string of a format number, `a`, `b` or `rc`, and a
-   pre-release number, each number without leading zeros: `"2a1"`, `"2b1"`, `"2rc1"`.
+   pre-release number, each number written in the digits `0`–`9` without leading zeros:
+   `"2a1"`, `"2b1"`, `"2rc1"`.
    A later format is not read as this one, even when its envelope could be: what its
    records mean is not this contract's. Any other value is not a format version and refuses
    the file too (`format_version_invalid`): any other string, even `"1"` or `"2.0"`; `0`
@@ -103,8 +104,11 @@ object identity). A rule marked **(not pinned)** has neither.
    it lacks. No writer writes the key yet.
    Enforced by: corpus: `format-version-1`, `format-version-absent-is-1`,
    `format-version-above-1-is-refused`, `format-version-a-pre-release-is-refused`,
+   `format-version-a-release-candidate-is-refused`,
    `a-later-format-is-refused-before-its-shape-is-read`, `format-version-a-string`,
-   `format-version-a-string-of-no-pre-release-form`, `format-version-zero`,
+   `format-version-a-string-of-no-pre-release-form`,
+   `format-version-a-pre-release-with-a-leading-zero-is-invalid`,
+   `format-version-a-pre-release-in-other-digits-is-invalid`, `format-version-zero`,
    `format-version-negative`, `format-version-a-fraction`, `format-version-a-boolean`,
    `format-version-null`, `format-version-is-checked-first`;
    `test_reader.py::test_a_later_format_version_refuses_the_file`,

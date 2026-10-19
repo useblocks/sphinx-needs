@@ -214,6 +214,14 @@ json = '''{"format_version": "2a1", "current_version": "1.0", "versions": {"1.0"
 error = "format_version_unsupported"
 
 [[case]]
+name = "format-version-a-release-candidate-is-refused"
+why = "a release candidate of a later format (a format number, rc, a pre-release number) refuses the file as unsupported, as a or b does"
+layer = "document"
+json = '''{"format_version": "2rc1", "current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+error = "format_version_unsupported"
+
+[[case]]
 name = "a-later-format-is-refused-before-its-shape-is-read"
 why = "a file of a later format, with no versions envelope, is refused for its format_version, not for the envelope it lacks"
 layer = "document"
@@ -226,6 +234,22 @@ name = "format-version-a-string-of-no-pre-release-form"
 why = "a string that is not a pre-release (here a dotted number) is not a format version"
 layer = "document"
 json = '''{"format_version": "2.0", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-a-pre-release-with-a-leading-zero-is-invalid"
+why = "a pre-release whose number has a leading zero is not of the pre-release form, so it is not a format version"
+layer = "document"
+json = '''{"format_version": "2a01", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
+[case.expect]
+error = "format_version_invalid"
+
+[[case]]
+name = "format-version-a-pre-release-in-other-digits-is-invalid"
+why = "a pre-release's numbers are of the digits 0 to 9 only: one ending in another script's digit (here U+0660) is not a format version"
+layer = "document"
+json = '''{"format_version": "2a1\u0660", "current_version": "1.0", "versions": {"1.0": {"needs": {}}}}'''
 [case.expect]
 error = "format_version_invalid"
 
