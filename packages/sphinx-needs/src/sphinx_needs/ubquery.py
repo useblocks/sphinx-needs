@@ -48,7 +48,7 @@ import operator
 import re
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from functools import lru_cache
+from functools import lru_cache, partial
 from typing import Any
 
 from sphinx_needs.need_item import NeedItem, NeedPartItem
@@ -131,14 +131,17 @@ def _get_field(
     raise NameError(f"name {name!r} is not defined")
 
 
-def _get_value(
-    need: NeedItem | NeedPartItem,
+def _read_name(
     name: str,
+    need: NeedItem | NeedPartItem,
     fallback: Mapping[str, Any] | None = None,
 ) -> Any:
     """The value of a name used as an operand: :func:`_get_field`, then Python's
     builtins, where eval finds a name that no key of its context defines -- so that
     ``owner != filter`` answers what eval answers rather than ``filter`` being undefined.
+
+    The name comes first, for :func:`functools.partial` to bind it: an operand's reader
+    is then called with no Python frame of its own between the predicate and this.
     """
     if fallback is not None and name in fallback:
         return fallback[name]
@@ -147,6 +150,15 @@ def _get_value(
     if hasattr(builtins, name):
         return getattr(builtins, name)
     raise NameError(f"name {name!r} is not defined")
+
+
+def _read_chain(
+    chain: tuple[str, ...],
+    need: NeedItem | NeedPartItem,
+    fallback: Mapping[str, Any] | None = None,
+) -> Any:
+    """:func:`_resolve_chain`, as a reader for :func:`functools.partial` to bind."""
+    return _resolve_chain(fallback, chain)
 
 
 #: Type alias for predicates returned by the fast-path builder.
@@ -268,7 +280,9 @@ def _expr(node: ast.expr) -> SimplePredicate:
     # name that is no field stays undefined rather than reading a Python builtin: eval
     # refuses a builtin there as no boolean, so the two tiers both exclude the need and
     # report the filter
-    get = _field(node, builtin=False) if isinstance(node, ast.Name) else _operand(node)
+    if (name := _plain_name(node)) is not None:
+        return lambda need, ctx=None, _f=name, _r=_get_field: bool(_r(need, _f, ctx))
+    get = _operand(node)
     return lambda need, ctx=None, _g=get: bool(_g(need, ctx))
 
 
@@ -364,6 +378,10 @@ def _compare(node: ast.Compare) -> SimplePredicate:
     # `comparison_expr` against a literal: <operand> == "x", <operand> > 5
     value = _comparison_literal(right, left, ordering=ordering)
     if value is not _NOT_LITERAL:
+        if (name := _plain_name(left)) is not None:
+            return lambda need, ctx=None, _f=name, _v=value, _op=op_fn, _r=_read_name: (
+                _op(_r(_f, need, ctx), _v)
+            )
         get = _operand(left)
         return lambda need, ctx=None, _g=get, _v=value, _op=op_fn: _op(
             _g(need, ctx), _v
@@ -372,6 +390,10 @@ def _compare(node: ast.Compare) -> SimplePredicate:
     # `literal_cmp_var_field_expr`: "x" == <operand>, 5 < <operand>
     value = _comparison_literal(left, right, ordering=ordering)
     if value is not _NOT_LITERAL:
+        if (name := _plain_name(right)) is not None:
+            return lambda need, ctx=None, _f=name, _v=value, _op=op_fn, _r=_read_name: (
+                _op(_v, _r(_f, need, ctx))
+            )
         get = _operand(right)
         return lambda need, ctx=None, _g=get, _v=value, _op=op_fn: _op(
             _v, _g(need, ctx)
@@ -406,21 +428,27 @@ def _membership(left: ast.expr, right: ast.expr, *, negate: bool) -> SimplePredi
     # <operand> in [<literal>, ...]
     if isinstance(right, ast.List | ast.Tuple | ast.Set):
         values = _members(right, legacy=isinstance(left, ast.Name))
-        get = _operand(left)
+        name = _plain_name(left)
+        get = partial(_read_name, name) if name is not None else _operand(left)
         if isinstance(right, ast.Set):
             # eval builds a set, so a value that cannot be hashed fails there too
             hashed = frozenset(values)
             if negate:
                 return lambda need, ctx=None, _g=get, _v=hashed: _g(need, ctx) not in _v
             return lambda need, ctx=None, _g=get, _v=hashed: _g(need, ctx) in _v
-        member = _sequence_member(tuple(values))
-        if negate:
-            return lambda need, ctx=None, _g=get, _m=member: not _m(_g(need, ctx))
-        return lambda need, ctx=None, _g=get, _m=member: _m(_g(need, ctx))
+        return _sequence_member(name, get, tuple(values), negate=negate)
 
     # "<literal>" in <operand>
     value = _comparison_literal(left, right, ordering=False)
     if value is not _NOT_LITERAL:
+        if (name := _plain_name(right)) is not None:
+            if negate:
+                return lambda need, ctx=None, _f=name, _v=value, _r=_read_name: (
+                    _v not in _r(_f, need, ctx)
+                )
+            return lambda need, ctx=None, _f=name, _v=value, _r=_read_name: (
+                _v in _r(_f, need, ctx)
+            )
         get = _operand(right)
         if negate:
             return lambda need, ctx=None, _g=get, _v=value: _v not in _g(need, ctx)
@@ -431,20 +459,28 @@ def _membership(left: ast.expr, right: ast.expr, *, negate: bool) -> SimplePredi
     raise _NotPortable("compare:in")
 
 
-def _sequence_member(values: tuple[Any, ...]) -> Callable[[Any], bool]:
-    """Membership in a list or a tuple of literals, as Python's ``in`` reads it there.
+def _sequence_member(
+    name: str | None, get: _Getter, values: tuple[Any, ...], *, negate: bool
+) -> SimplePredicate:
+    """Membership of an operand in a list or a tuple of literals, as Python's ``in``
+    reads it there.
 
     A hashed lookup gives the answer the sequence gives for every value that can be
     hashed; a value that cannot (a list, a dict) is compared item by item instead, as
-    eval compares it, rather than raising where eval does not.
+    eval compares it, rather than raising where eval does not. A plain *name* is read
+    directly, the other operands through *get*.
     """
     hashed = frozenset(values)
 
-    def member(value: Any) -> bool:
+    def member(
+        need: NeedItem | NeedPartItem, ctx: Mapping[str, Any] | None = None
+    ) -> bool:
+        value = _read_name(name, need, ctx) if name is not None else get(need, ctx)
         try:
-            return value in hashed
+            found = value in hashed
         except TypeError:
-            return value in values
+            found = value in values
+        return not found if negate else found
 
     return member
 
@@ -534,6 +570,15 @@ def _is_operand_shape(node: ast.expr) -> bool:
     return isinstance(node, ast.Name | ast.Attribute | ast.Call)
 
 
+def _plain_name(node: ast.expr) -> str | None:
+    """The name, if *node* is a plain name a field can hold (not one eval binds to its
+    own context), for the arms that read it with no reader in between: they then cost
+    what they cost before the other operands existed."""
+    if isinstance(node, ast.Name) and node.id not in _CONTEXT_ONLY_NAMES:
+        return node.id
+    return None
+
+
 def _operand(node: ast.expr) -> _Getter:
     """Compile an operand (`var_field_with_func`): a field, ``len(<field>)``,
     ``<field>.lower()`` or ``<field>.upper()``.
@@ -563,28 +608,26 @@ def _operand(node: ast.expr) -> _Getter:
     return _field(node)
 
 
-def _field(
-    node: ast.expr, *, within: str | None = None, builtin: bool = True
-) -> _Getter:
+def _field(node: ast.expr, *, within: str | None = None) -> _Getter:
     """Compile a field (`var_field`): a name, or a ``var.`` chain.
+
+    A name that no key defines reads a Python builtin, as eval reads it
+    (:func:`_read_name`).
 
     :param within: the reason to give for a node that is no field and no other refused
         construct, when the field is the argument of an operand's call.
-    :param builtin: whether a name that no key defines reads a Python builtin, as eval
-        reads it (:func:`_get_value`), rather than being undefined.
     :raises _NotPortable: For anything else.
     """
     # a name: a field of the need, or a `needs_filter_data` key
     if isinstance(node, ast.Name):
         if node.id in _CONTEXT_ONLY_NAMES:
             raise _NotPortable(f"name:{node.id}")
-        read = _get_value if builtin else _get_field
-        return lambda need, ctx=None, _f=node.id, _r=read: _r(need, _f, ctx)
+        return partial(_read_name, node.id)
     # a dotted name: only the variant data's, var.<key>...
     if isinstance(node, ast.Attribute):
         chain = _unpack_attribute_chain(node)
         if chain is not None and chain[0] in _FALLBACK_ROOTS:
-            return lambda need, ctx=None, _c=chain: _resolve_chain(ctx, _c)
+            return partial(_read_chain, chain)
         raise _NotPortable(_describe(node))
     if within is not None and not isinstance(node, ast.Subscript):
         raise _NotPortable(within)
