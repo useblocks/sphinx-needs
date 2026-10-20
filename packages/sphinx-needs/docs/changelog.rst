@@ -562,9 +562,9 @@ Documentation
   ``inherits`` another. The documentation's ``docs`` extra gains ``sphinxcontrib-mermaid``
 
 - 📚 Derived fields have a page of their own, :ref:`needs_derive`, under
-  :doc:`Delayed field evaluation <dynamic_functions>`
+  :doc:`Delayed field evaluation <dynamic_functions>` (:pr:`2344`)
 
-  The "Derived fields" section of :ref:`needs_fields` moves there whole, every label with its text,
+  The "Derived fields" section of :ref:`needs_fields` moves there, reordered for a reader, every label with its text,
   and the kinds, the roles, what a derived field holds, how a rule is computed and detecting a changed need
   gain labels of their own; the built-in calls each kind spells (:ref:`dynamic_functions_derived`) move with it.
   The docstrings of :ref:`links_from_content <links_content>`, :ref:`links_from_filter` and :ref:`links_from_match`
