@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792519982554,
+  "lastUpdate": 1792536813840,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26424,6 +26424,42 @@ window.BENCHMARK_DATA = {
             "value": 45.75183773200001,
             "unit": "s",
             "extra": "Commit: d19b6f1c0386981dc61c4e1e5f0b49a9fe143f42\nBranch: master\nTime: 2026-10-20T20:11:43+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a568efc426abd24de3aebdad908a6efc34563257",
+          "message": "📚 Say X-as-Code on the docs landing page (#2348)\n\n## What\n\n`packages/sphinx-needs/docs/index.rst`: the landing page's headline\nbecomes \"Bringing X-as-Code engineering to the Sphinx framework.\",\nand the useblocks card's \"its goal to bring Engineering-as-Code to the\nsoftware development process\" becomes \"X-as-Code\".\nTwo lines; nothing else changes. \"Docs-as-Code\", where it names the\ndocumentation practice (the headline's sub-line), is unchanged.\n\n## Why\n\nuseblocks used three umbrella terms for one idea: \"Engineering-as-Code\"\nhere, \"Docs-as-code engineering\" in ubCode's docs,\nand \"X-as-Code\" on x-as-code.useblocks.com, in the webinars and with\ncustomers.\nThis aligns Sphinx-Needs with X-as-Code, keeping \"engineering\" in the\nheadline so it matches ubCode's \"X-as-Code engineering\";\nthe companion PR https://github.com/useblocks/ubcode/pull/4246 does the\nsame for ubCode.\nThere is no issue.\n\n## Tests\n\nNone: a docs wording change. `uv run poe docs-needs` exits 0 with no\nSphinx warnings, and `uv run poe lint` passes and leaves the tree\nunchanged.\n`grep -rni 'engineering-as-code'` finds no other user-facing occurrence\nin the repository.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [ ] I ran the package's tests (`uv run poe test-<package>`) and they\npass. (Not run; no code changed. The docs build is above.)\n- [ ] Documentation is updated where behaviour or options change. (No\nbehaviour or option changes.)\n- [ ] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. (Left to the release; a wording change on the landing\npage.)\n- [ ] `uv run poe lint` and `uv run poe typecheck` pass. (`lint` passes;\n`typecheck` not run, as no Python changed.)",
+          "timestamp": "2026-10-21T00:51:57+02:00",
+          "tree_id": "096beefcdf5a86797fe1fb0662cff1faa4fcc7b6",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a568efc426abd24de3aebdad908a6efc34563257"
+        },
+        "date": 1792536805398,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10791736100000549,
+            "unit": "s",
+            "extra": "Commit: a568efc426abd24de3aebdad908a6efc34563257\nBranch: master\nTime: 2026-10-21T00:51:57+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.681513318,
+            "unit": "s",
+            "extra": "Commit: a568efc426abd24de3aebdad908a6efc34563257\nBranch: master\nTime: 2026-10-21T00:51:57+02:00"
           }
         ]
       }
