@@ -183,6 +183,8 @@ links_from_match
 Develop own functions
 ---------------------
 
+.. _dynamic_functions_registration:
+
 Registration
 ~~~~~~~~~~~~
 
@@ -211,14 +213,14 @@ giving its ``name``.
 
    .. code-block:: python
 
-         from sphinx_needs.api import add_dynamic_function
+      from sphinx_needs.api import add_dynamic_function
 
-            def my_function(app, need, needs, *args, **kwargs):
-                # Do magic here
-                return "some data"
+      def my_function(app, need, needs, *args, **kwargs):
+          # Do magic here
+          return "some data"
 
-            def setup(app):
-                  add_dynamic_function(app, my_function)
+      def setup(app):
+          add_dynamic_function(app, my_function)
 
 .. _needs_processing_order:
 

@@ -822,6 +822,8 @@ The following would be invalid specializations:
        },
    }
 
+.. _`needs_fields_defaults`:
+
 Default values
 ++++++++++++++
 
@@ -1065,23 +1067,8 @@ Default values
 
 .. versionadded:: 7.0.0
 
-Default values either must match the type defined in the schema for the field, or can be :ref:`dynamic values <dynamic_functions>`, that resolve to a value of the correct type.
-
-For ``predicates``, the match expression is a string, using Python syntax, that will be evaluated against data from each need (before the resolution of defaults or dynamic functions etc):
-
-- ``id`` (``str``)
-- ``type`` (``str``)
-- ``title`` (``str``)
-- ``tags`` (``tuple[str, ...]``)
-- ``status`` (``str | None``)
-- ``docname`` (``str | None``)
-- ``is_external`` (``bool``)
-- ``is_import`` (``bool``)
-- :ref:`needs_fields`
-- :ref:`needs_links` (``tuple[str, ...]``)
-- :ref:`needs_variant_data` (via the ``var`` namespace)
-
-An expression that cannot be evaluated, such as one naming something not in this list, is reported as a ``needs.config`` warning and then skipped, so that the remaining predicates and the ``default`` apply just as they would for an expression that did not match.
+A link type's ``default`` and ``predicates`` are given, and evaluated, as a field's are:
+see :ref:`needs_fields_defaults` for the values they take and the data a match expression reads.
 
 For example:
 
@@ -2433,34 +2420,10 @@ Must be a list of :py:class:`.DynamicFunction`.
 
 Default value: ``[]``
 
-Inside your **conf.py** file use it like this:
-
-.. code-block:: python
-
-   def my_own_function(app, need, needs):
-       return "Awesome"
-
-   needs_functions = [my_own_function]
-
-See :ref:`dynamic_functions` for more information.
-
-.. warning::
-
-   Assigning a function to a Sphinx option will deactivate the incremental build feature of Sphinx.
-   Please use the :ref:`Sphinx-Needs API <api_configuration>` and read :ref:`inc_build` for details.
-
-It is better to use the following way in your **conf.py** file:
-
-.. code-block:: python
-
-   from sphinx_needs.api import add_dynamic_function
-
-      def my_function(app, need, needs, *args, **kwargs):
-          # Do magic here
-          return "some data"
-
-      def setup(app):
-            add_dynamic_function(app, my_function)
+Assigning a function to this option deactivates the incremental build feature of Sphinx (:ref:`inc_build`).
+How to register a function, by this option or, better, with
+:py:func:`~sphinx_needs.api.configuration.add_dynamic_function` in ``setup()``, is described in
+:ref:`dynamic_functions_registration`; what a function can do, in :ref:`dynamic_functions`.
 
 .. _`needs_part_prefix`:
 
