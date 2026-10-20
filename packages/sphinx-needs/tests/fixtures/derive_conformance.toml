@@ -4463,3 +4463,49 @@ has_dead_links = false
 all_links = ["DEAD_1"]
 has_dead_links = true
 has_forbidden_dead_links = true
+
+[[case]]
+name = "union-over-links-from-content"
+why = "a union reads a member filled by an inline [[links_from_content()]] as it reads a content_links rule member: the built-in call is computed before the union, the rule is a derived member computed before it too, and the union holds the links of both, each once"
+config = '''
+[needs.links.mentions]
+
+[needs.links.mentions_impl]
+derive = { kind = "content_links", where = "type == 'impl'" }
+
+[needs.links.all_links]
+derive = { kind = "union", fields = ["links", "mentions", "mentions_impl"] }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. impl:: Implementation
+   :id: IMPL_1
+
+.. spec:: Mentions them
+   :id: SPEC_1
+   :links: REQ_1
+   :mentions: [[links_from_content(filter="type == 'req'")]]
+
+   Mentions :need:`REQ_1`, :need:`REQ_2` and :need:`IMPL_1`.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+links = ["REQ_1"]
+mentions = ["REQ_1", "REQ_2"]
+mentions_impl = ["IMPL_1"]
+all_links = ["IMPL_1", "REQ_1", "REQ_2"]
+[case.expect.needs.REQ_1]
+all_links = []
+all_links_back = ["SPEC_1"]
+[case.expect.needs.REQ_2]
+all_links_back = ["SPEC_1"]
+mentions_back = ["SPEC_1"]
+[case.expect.needs.IMPL_1]
+all_links_back = ["SPEC_1"]
+mentions_impl_back = ["SPEC_1"]
