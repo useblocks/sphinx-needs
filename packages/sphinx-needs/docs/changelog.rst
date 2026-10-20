@@ -561,6 +561,22 @@ Documentation
   checks and the schema validation. The :ref:`tutorial` gains a short step on a need type that
   ``inherits`` another. The documentation's ``docs`` extra gains ``sphinxcontrib-mermaid``
 
+- 📚 Derived fields have a page of their own, :ref:`needs_derive`, under
+  :doc:`Delayed field evaluation <dynamic_functions>` (:pr:`2344`)
+
+  The "Derived fields" section of :ref:`needs_fields` moves there, reordered for a reader, every label with its text,
+  and the kinds, the roles, what a derived field holds, how a rule is computed and detecting a changed need
+  gain labels of their own; the built-in calls each kind spells (:ref:`dynamic_functions_derived`) move with it.
+  The docstrings of :ref:`links_from_content <links_content>`, :ref:`links_from_filter` and :ref:`links_from_match`
+  name their declared forms and say that a link type they fill may be a member of a union,
+  which the derive conformance corpus now pins for an inline ``links_from_content`` (``union-over-links-from-content``;
+  from the review of :pr:`2343`).
+  Said once now, and linked from the other places: :ref:`need-id order <needs_id_order>`,
+  the nearest declared form of ``tr_link``, the default values of a field and a link type (:ref:`needs_fields_defaults`),
+  and how to register a function (:ref:`dynamic_functions_registration`, whose ``add_dynamic_function`` example
+  now runs as written). The derived-fields page tells the three meanings of ``copy`` apart,
+  and the ``[variants]`` note says that ubCode reads the table from 0.37.0
+
 Internal changes
 ................
 
