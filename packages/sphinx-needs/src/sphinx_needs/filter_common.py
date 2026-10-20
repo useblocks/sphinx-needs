@@ -9,7 +9,7 @@ import ast
 import json
 import math
 import re
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 from timeit import default_timer as timer
 from types import CodeType
@@ -753,7 +753,9 @@ def filter_needs_and_parts(
     simple_pred = compiled.predicate
 
     if simple_pred is not None:
-        fallback = _fast_path_context(config, compiled, origin_docname)
+        fallback = _fast_path_context(
+            config.filter_data, config.variant_data_proxy, compiled, origin_docname
+        )
         found_needs: list[_NeedOrPartT] = []
         error_reported = False
         for filter_need in needs:
@@ -814,7 +816,8 @@ def filter_needs_and_parts(
 
 
 def _fast_path_context(
-    config: NeedsSphinxConfig,
+    filter_data: Mapping[str, Any],
+    var_proxy: Any,
     compiled: CompiledFilter,
     origin_docname: str | None,
 ) -> dict[str, Any] | None:
@@ -826,13 +829,16 @@ def _fast_path_context(
     document is passed per call, never compiled in: one compiled filter serves every
     document a string is written in.
 
+    The caller passes the two configuration values it has read: a read of one costs
+    more than the rest of a per-need call, and :func:`filter_single_need` is called
+    need by need.
+
     :return: The mapping, or None when the predicate needs nothing of it.
     """
-    var_proxy = config.variant_data_proxy
     origin = origin_docname if compiled.reads_origin else None
-    if not config.filter_data and var_proxy is None and origin is None:
+    if not filter_data and var_proxy is None and origin is None:
         return None
-    fallback: dict[str, Any] = dict(config.filter_data) if config.filter_data else {}
+    fallback: dict[str, Any] = dict(filter_data) if filter_data else {}
     if var_proxy is not None:
         fallback["var"] = var_proxy
     if origin is not None:
@@ -942,7 +948,15 @@ def filter_single_need(
     compiled = compile_portable(filter_string)
     simple_pred = compiled.predicate
     if simple_pred is not None:
-        fallback = _fast_path_context(config, compiled, origin_docname)
+        # called need by need: the mapping is built only for a predicate that reads it
+        filter_data = config.filter_data
+        fallback = (
+            _fast_path_context(filter_data, var_proxy, compiled, origin_docname)
+            if filter_data
+            or var_proxy is not None
+            or (origin_docname is not None and compiled.reads_origin)
+            else None
+        )
         try:
             result = simple_pred(need, fallback)
             if not isinstance(result, bool):

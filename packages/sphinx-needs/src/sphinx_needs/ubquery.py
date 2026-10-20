@@ -65,9 +65,28 @@ _COMPARE_OPS: dict[type, Callable[[Any, Any], Any]] = {
 #: The ordering comparisons, which the grammar allows against a number literal only.
 _ORDERING_OPS: tuple[type, ...] = (ast.Lt, ast.LtE, ast.Gt, ast.GtE)
 
+
+def _is_dunder(name: str) -> bool:
+    """Whether *name* is a ``__dunder__`` name."""
+    return len(name) > 4 and name.startswith("__") and name.endswith("__")
+
+
 #: Names injected into the eval context by the slow path that are *not* need fields.
 #: If a filter references these, the fast path must bail out (return None).
 _CONTEXT_ONLY_NAMES: frozenset[str] = frozenset({"needs", "current_need", "c", "var"})
+
+#: The builtins a name that no key defines reads, as eval finds them: the builtins
+#: module's own names (not the attributes every module object has, such as
+#: ``__class__``), and no ``__dunder__`` name, which no operand takes (:func:`_field`).
+_BUILTINS: Mapping[str, Any] = {
+    name: value for name, value in vars(builtins).items() if not _is_dunder(name)
+}
+
+#: Names eval binds to something no field holds, so that no operand of this module
+#: takes them (beside every ``__dunder__`` name, ``__builtins__`` among them): ``search``
+#: is eval's regex function whatever the need holds. The comparisons this module took
+#: before the grammar was its reference keep reading a plain name as they did.
+_EVAL_BOUND: frozenset[str] = frozenset({"search"})
 
 #: Root names that live in the fallback context (not on the need itself).
 #: Attribute chains starting with these are resolved via the fallback mapping.
@@ -147,8 +166,8 @@ def _read_name(
         return fallback[name]
     if name in need:
         return need[name]
-    if hasattr(builtins, name):
-        return getattr(builtins, name)
+    if name in _BUILTINS:
+        return _BUILTINS[name]
     raise NameError(f"name {name!r} is not defined")
 
 
@@ -620,7 +639,11 @@ def _field(node: ast.expr, *, within: str | None = None) -> _Getter:
     """
     # a name: a field of the need, or a `needs_filter_data` key
     if isinstance(node, ast.Name):
-        if node.id in _CONTEXT_ONLY_NAMES:
+        if (
+            node.id in _CONTEXT_ONLY_NAMES
+            or node.id in _EVAL_BOUND
+            or _is_dunder(node.id)
+        ):
             raise _NotPortable(f"name:{node.id}")
         return partial(_read_name, node.id)
     # a dotted name: only the variant data's, var.<key>...
@@ -659,6 +682,8 @@ def _describe(node: ast.expr) -> str:
         return "comprehension"
     if isinstance(node, ast.Constant) or _literal(node) is not _NOT_LITERAL:
         return "literal"
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
+        return "not"
     if isinstance(node, ast.BinOp | ast.UnaryOp):
         return "arithmetic"
     if isinstance(node, ast.JoinedStr):
