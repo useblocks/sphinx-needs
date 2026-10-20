@@ -40,6 +40,71 @@ or in :file:`conf.py`, as every other key of the entry:
 A link type is derived the same way, with ``derive`` on its :ref:`needs_links` entry
 and one of the kinds that compute a link list: ``links``, ``content_links`` and ``union``.
 How a rule relates to the ``[[…]]`` calls that compute a value per need is described in :ref:`dynamic_functions_derived`.
+Whether a value is better computed by a rule, an inline call or a variant is set out in
+:doc:`Delayed field evaluation <dynamic_functions>`.
+
+.. _dynamic_functions_derived:
+
+Rules and inline calls
+----------------------
+
+.. versionadded:: 9.0.0
+
+A built-in call computes a value for the one need it is written in.
+A :ref:`derived field <needs_derive>` declares the same computation once, in :ref:`needs_fields` or :ref:`needs_links`,
+for every need of the project:
+
+.. code-block:: toml
+
+   [needs.fields.total_hours]
+   schema = { type = "number" }
+   derive = { kind = "sum", field = "hours", over = "links" }
+
+is the declared form of ``:total_hours: [[calc_sum("hours", links_only=True)]]`` written in every need,
+and both are computed in the same step (see :ref:`needs_processing_order`): a declared rule is the field's value,
+as a call written in it would be, but an author cannot set the field.
+The built-in functions are the per-need spellings of the kinds:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 46 54
+
+   * - inline call
+     - the kind it spells
+   * - ``copy("x")``, ``copy("x", "ID")``
+     - ``copy`` with ``field = "x"``, and ``from = "ID"``
+   * - ``copy("x", filter=…)``
+     - no declared form: the lowest-id need the filter keeps, read from every need
+   * - ``calc_sum("x", links_only=True)``
+     - ``sum`` with ``field = "x"`` and ``over = "links"``; its ``filter`` is the ``where``
+   * - ``calc_sum("x")``, ``calc_sum("x", filter=…)``
+     - no declared form: a sum over every need
+   * - ``check_linked_values(result, "x", values, filter, one_hit)``
+     - ``all`` over ``links`` (``any`` with ``one_hit``), with the ``test`` ``x in values`` and the ``where`` ``filter``,
+       giving ``result``; with ``one_hit``, ``result`` even when no linked need matches, which ``any`` does not
+   * - ``links_from_content()``, ``links_from_content("ID", filter=…)``
+     - ``content_links``, with ``from = "ID"`` and the ``where`` ``filter``
+   * - ``links_from_filter(filter, include_self, include_parts)``
+     - ``links``, with the ``where`` ``filter`` and the same ``include_self`` and ``include_parts``
+   * - ``links_from_match(field, equals, include_self, filter)``
+     - ``links`` with ``join = { field = field, equals = equals }``, the same ``include_self``,
+       and the ``where`` ``filter``
+
+A ``where`` that cannot be evaluated on a candidate (one lacking a field it names) drops that candidate,
+without a warning, in every kind and in ``links_from_filter``;
+the ``filter`` of ``calc_sum``, ``check_linked_values`` and ``links_from_content`` keeps its own behaviour.
+
+Written in many needs, ``links_from_filter``, ``links_from_content`` and ``links_from_match`` store a list on each,
+counted as a rule's lists are: see :ref:`needs_derive_cost`.
+
+The ``join`` role spells a correlated lookup (:ref:`needs_derive_join`,
+which also gives the nearest declared form of sphinx-test-reports' ``tr_link``),
+and :ref:`links_from_match` is its inline spelling.
+A ``copy("x", filter=…)`` whose filter compares a need with ``current_need`` (``name == current_need['ref']``)
+is such a lookup too, its filter tested on every need for each need it is in:
+a ``copy`` with ``join`` is the declared form of such a lookup (it splits the values,
+and finds no value rather than this need's own when nothing matches).
+A rule for some need types is declared under ``derive_by_type`` (:ref:`needs_derive_by_type`), not with a role.
 
 .. _`needs_derive_kinds`:
 
@@ -200,31 +265,97 @@ A ``join`` matches the needs whose field equals one of this need's values (:ref:
 A rule on a core field (``status``, ``tags``, ``title`` and the other core fields, and the ``parent_needs`` link type),
 or on a link type named after a core field (such as ``parts``), is not available in this release: it is reported, and ignored.
 
-.. _`needs_derive_cost`:
+.. _`needs_derive_by_type`:
 
-What a rule costs
------------------
+Rules per need type
+-------------------
 
-A rule is computed once per step for every need holding it (a ``links`` rule's ``where`` is tested once,
-on each candidate alone), so writing one costs little: what costs is what it **stores**.
-Every need holding a ``links`` rule with a ``where`` (and no ``join``) is linked to the same needs (but itself),
-and each of them gets a back link from every one (a ``join`` links each need to its own matches):
-on every need of a project of 2 000, a rule whose ``where`` half the needs pass stores about 2 000 000 links
-and as many back links, and ``needs.json`` grows from about 2.5 MB to about 58 MB;
-at twice the needs it stores four times the links.
-A rule that ten needs pass stores about ten links per need.
+Beside ``derive``, or instead of it, a ``derive_by_type`` table gives a rule per need type.
+Its keys are need types, by their directive name (the value ``type`` holds, as a filter reads it: ``type == 'story'``),
+and each value is a rule, as ``derive`` takes one.
+A need uses the rule of its type, else ``derive``, else none.
+A need type's own declaration of a derived field (:ref:`needs_types_fields`) narrows its description, schema and ``nullable``,
+but gives it no default; a ``derive`` in it is the type's ``derive_by_type`` entry.
 
-- Keep ``where`` selective, or declare the rule only for the need types that use it (:ref:`needs_derive_by_type`).
-- To show a set of needs, use a :ref:`needtable` or :ref:`needlist` with that filter: it shows the set once,
-  where a ``links`` rule copies it into every need.
-- To know on one need how many needs (or which) point at it, link the other way and read the back links:
-  ``{ kind = "count", over = "tests_back", where = "status == 'open'" }`` stores one number.
-- :ref:`links_from_filter` written in every need stores what the ``links`` rule stores, and also tests its filter
-  on every need once per call, so on many needs prefer the declared rule.
+Effort written on tasks and rolled up through stories and epics takes two fields:
+the one authors write, and a derived one, which copies it on a task and sums itself over the links of a story or an epic:
 
-A link type whose computed links number more than :ref:`needs_derive_max_links_per_need` (``100``) per need of the project
-is reported once, as the warning ``needs.derive_dense``,
-naming the links, the needs holding the rule and the longest list.
+.. code-block:: toml
+
+   [needs.fields.effort]
+   schema = { type = "number" }
+
+   [needs.fields.total_effort]
+   schema = { type = "number" }
+   nullable = false
+   derive_by_type.task = { kind = "copy", field = "effort" }
+   derive_by_type.story = { kind = "sum", field = "total_effort", over = "links" }
+   derive_by_type.epic = { kind = "sum", field = "total_effort", over = "links" }
+
+.. code-block:: rst
+
+   .. task:: Write the parser
+      :id: TASK_1
+      :effort: 3
+
+   .. task:: Write the tests
+      :id: TASK_2
+      :effort: 5
+
+   .. task:: Write the docs
+      :id: TASK_3
+      :effort: 2
+
+   .. story:: Parse the input
+      :id: STORY_1
+      :links: TASK_1, TASK_2
+
+   .. epic:: Ship the reader
+      :id: EPIC_1
+      :links: STORY_1, TASK_3
+
+Each task's ``total_effort`` is its ``effort`` (``3.0``, ``5.0``, ``2.0``),
+``STORY_1``'s is ``8.0``, and ``EPIC_1``'s ``10.0``: a rule reading its own field over a link type
+reads the value each linked need computes, through any depth.
+Needs linking one another in a cycle cannot compute such a value, and are reported (``needs.derive_cycle``).
+One field cannot do both: a derived field is closed on every need type, also where it has no rule.
+
+A need of a type without a rule holds the same value on every need of the type:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - beside ``derive_by_type``
+     - a need of a type without a rule holds
+   * - a ``default``
+     - the default, in the field's type (``default = 0`` is ``0.0`` in a ``number`` field);
+       the field's ``schema`` checks it, as it checks any default
+       (but a link type's ``default = []``, which is its "no links", as no default is)
+   * - no ``default``, nullable (as the field is declared: a :ref:`needs_fields` entry is unless
+       ``nullable = false``; a :ref:`needs_extra_options` entry without a ``schema`` is not)
+     - ``None``
+   * - no ``default``, ``nullable = false``
+     - the field's empty value (``""``, ``0``, ``0.0``, ``False`` or ``[]``; no links for a link type),
+       which the ``schema`` does not check
+
+The ``default`` must be a literal value, and is given only with ``derive_by_type`` alone:
+beside ``derive`` every need type has a rule, and a ``default`` is reported as ``needs.derive_invalid``, and ignored.
+A ``default`` that is a ``[[…]]`` or a variant, and ``predicates``, are reported beside ``derive_by_type`` too, and ignored:
+a value that varies per need is what a rule is for.
+
+``derive_by_type`` is checked when the configuration is read, one ``needs.derive_invalid`` per entry:
+a key naming no need type is ignored (a type's title is not its directive name, and the warning says which is meant);
+an empty ``derive_by_type``, or one that is not a table, adds no rule: the field stays derived,
+every need type using the ``derive`` beside it, or, without one, no rule;
+an entry that cannot be read, as a ``derive`` that cannot be read, leaves the needs of its type at the empty value,
+and the other types are unaffected.
+Rules reading one another's own fields in a circle are looked for per need type, among the rules each type uses:
+a ``derive`` closing such a circle on some types only is reported naming them, and applies on every other type.
+
+Each need is computed in the step of its own rule, so one field may be computed after every other on one type
+(``after = "derived"``) and not on another: a value that reads the field waits for the rule of the need it reads,
+and only the needs whose rule comes later are reported (``needs.derive_scope``).
 
 .. _`needs_derive_join`:
 
@@ -319,157 +450,85 @@ compares each need's ``target_option`` whole (so an array, a number or a comma-s
 and an unstripped one only as written), and fails when this need's ``test_option`` is an array or a number;
 ``links_from_match`` reads both sides by value and fails the call on a number or boolean field.
 
-.. _`needs_derive_by_type`:
+.. _`needs_derive_union`:
 
-Rules per need type
--------------------
+A union of link types
+---------------------
 
-Beside ``derive``, or instead of it, a ``derive_by_type`` table gives a rule per need type.
-Its keys are need types, by their directive name (the value ``type`` holds, as a filter reads it: ``type == 'story'``),
-and each value is a rule, as ``derive`` takes one.
-A need uses the rule of its type, else ``derive``, else none.
-A need type's own declaration of a derived field (:ref:`needs_types_fields`) narrows its description, schema and ``nullable``,
-but gives it no default; a ``derive`` in it is the type's ``derive_by_type`` entry.
+.. versionadded:: 9.1.0
 
-Effort written on tasks and rolled up through stories and epics takes two fields:
-the one authors write, and a derived one, which copies it on a task and sums itself over the links of a story or an epic:
+A link type deriving ``union`` holds the links of other link types, its members, which ``fields`` names:
 
 .. code-block:: toml
 
-   [needs.fields.effort]
-   schema = { type = "number" }
+   [needs.links.blocks]
 
-   [needs.fields.total_effort]
-   schema = { type = "number" }
-   nullable = false
-   derive_by_type.task = { kind = "copy", field = "effort" }
-   derive_by_type.story = { kind = "sum", field = "total_effort", over = "links" }
-   derive_by_type.epic = { kind = "sum", field = "total_effort", over = "links" }
+   [needs.links.tests]
 
-.. code-block:: rst
+   [needs.links.all_links]
+   outgoing = "all links"
+   incoming = "all links from"
+   derive = { kind = "union", fields = ["links", "blocks", "tests"] }
 
-   .. task:: Write the parser
-      :id: TASK_1
-      :effort: 3
+A need whose ``links`` is ``REQ_1``, whose ``blocks`` is ``REQ_2`` and whose ``tests`` is ``REQ_1``
+then holds ``REQ_1, REQ_2`` in ``all_links``, and ``REQ_1`` and ``REQ_2`` hold it in ``all_links_back``.
+It is the declared spelling of "every outgoing link of these types", which ``copy = true`` gave by copying
+into ``links`` (deprecated, see :ref:`needs_links`).
 
-   .. task:: Write the tests
-      :id: TASK_2
-      :effort: 5
+- **Members.** Any link type the need has: ``links``, one of :ref:`needs_links` or :ref:`needs_extra_links`,
+  one need types declare alone, a derived link type, another union -- each computed before the union,
+  whether its links are written, computed by a rule, a built-in function such as ``links_from_filter``, a variant,
+  or added by a ``needextend``.
+  Not a member filled by one of your own :ref:`functions <needs_functions>` (such as sphinx-test-reports' ``tr_link``),
+  nor by a call whose filter cannot be read, such as a ``links_from_filter`` whose filter names ``needs``:
+  those run after the other built-in functions of their step, a union's rule included
+  (see :ref:`needs_processing_order`), so the union cannot read the member, which is one
+  ``needs.derive_scope`` warning, the union holding no links. Keep ``copy`` for such a link type until a later
+  release lets a union read it.
+  ``parent_needs`` and the back links (``<link type>_back``, built after the link types) are not members,
+  nor is a field, and a member is named once; the union itself, or two unions naming each other, can be computed
+  on no need. Each is one ``needs.derive_invalid`` at load, and the union holds no links.
+  On a need of a type that does not have a member, the member holds no links, and adds none.
+- **The links.** Each member's links, in the order ``fields`` names the members, each member's in its own order;
+  a link is kept the first time it comes, a link being its target, its part and its condition:
+  ``REQ_1`` from two members is one link, while ``REQ_1``, ``REQ_1.p1`` and ``REQ_1[status == 'open']`` are three.
+  Parts and conditions are carried as written. ``needs.json`` writes the list sorted, as every link list;
+  the order above is what a rule or a ``[[…]]`` reading the union in the pass sees.
+- **Dead links and conditions are the members'.** Where its rule computed it, a union reports no dead link and no
+  failed link condition of its own:
+  each is reported once, at the member, which decides with its own ``allow_dead_links`` whether a dead link is allowed.
+  So a dead link of a member allowing dead links is kept in the union and makes no dead link forbidden
+  (``has_forbidden_dead_links``; ``has_dead_links`` counts it, as every dead link), it is drawn in a need's layout as
+  the member allows it, and an ``allow_dead_links`` on a link type all of whose rules are unions is refused
+  (``needs.derive_invalid``) and ignored; beside a rule of another kind, for another need type, it is that rule's.
+  ``target_types`` is refused on it, as on every derived link type: the members' own apply.
+- **When.** In the link fields' step, after every :ref:`needextend`: a link a ``needextend`` adds to a member is in the union.
+  The union itself is closed, as every derived field: links written in it, or by a ``needextend``, are reported
+  (``needs.derive_authored``) and ignored.
+- **Imported needs keep their data.** No rule runs on a need from :ref:`needimport` or :ref:`needs_external_needs`:
+  it holds the union its needs.json carries, else no links, whatever its members hold.
+  Those links are not its members', so they are checked as any link type's, under the union's own
+  ``allow_dead_links``: a dead one is reported, under the union, and is a forbidden one.
+- **Not counted as dense.** ``needs.derive_dense`` (:ref:`needs_derive_cost`) counts the links its members compute,
+  not the union's list, which holds them again.
+- It is left out of every ``fingerprint``, as every derived link type is, and it may be declared per need type
+  (``derive_by_type``, or a need type's ``links`` entry, :ref:`needs_types_fields`).
 
-   .. task:: Write the docs
-      :id: TASK_3
-      :effort: 2
+**Reading it.** A union is read where ``links`` holding the copies was read, by its name:
 
-   .. story:: Parse the input
-      :id: STORY_1
-      :links: TASK_1, TASK_2
+- :ref:`needflow` (and :ref:`needsequence`, :ref:`needgantt`'s ``starts_after_links``): ``:link_types: all_links``.
+  A needflow drawing every link type (or the members and the union) draws an edge of the union beside each member's,
+  so name either the union, which draws one style, or its members, which keep theirs.
+- :ref:`Filter strings <filter_string>`: ``"REQ_1" in all_links``; a rule's ``over = "all_links"``
+  or ``over = "all_links_back"``.
+- :ref:`needtable` columns: ``all_links`` and ``all_links_back`` (``OUTGOING`` and ``INCOMING`` stay ``links``).
+- A need's layout shows it as one more row, as every link type with links; ``meta_links_all(exclude=[...])`` leaves it out.
 
-   .. epic:: Ship the reader
-      :id: EPIC_1
-      :links: STORY_1, TASK_3
-
-Each task's ``total_effort`` is its ``effort`` (``3.0``, ``5.0``, ``2.0``),
-``STORY_1``'s is ``8.0``, and ``EPIC_1``'s ``10.0``: a rule reading its own field over a link type
-reads the value each linked need computes, through any depth.
-Needs linking one another in a cycle cannot compute such a value, and are reported (``needs.derive_cycle``).
-One field cannot do both: a derived field is closed on every need type, also where it has no rule.
-
-A need of a type without a rule holds the same value on every need of the type:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 30 70
-
-   * - beside ``derive_by_type``
-     - a need of a type without a rule holds
-   * - a ``default``
-     - the default, in the field's type (``default = 0`` is ``0.0`` in a ``number`` field);
-       the field's ``schema`` checks it, as it checks any default
-       (but a link type's ``default = []``, which is its "no links", as no default is)
-   * - no ``default``, nullable (as the field is declared: a :ref:`needs_fields` entry is unless
-       ``nullable = false``; a :ref:`needs_extra_options` entry without a ``schema`` is not)
-     - ``None``
-   * - no ``default``, ``nullable = false``
-     - the field's empty value (``""``, ``0``, ``0.0``, ``False`` or ``[]``; no links for a link type),
-       which the ``schema`` does not check
-
-The ``default`` must be a literal value, and is given only with ``derive_by_type`` alone:
-beside ``derive`` every need type has a rule, and a ``default`` is reported as ``needs.derive_invalid``, and ignored.
-A ``default`` that is a ``[[…]]`` or a variant, and ``predicates``, are reported beside ``derive_by_type`` too, and ignored:
-a value that varies per need is what a rule is for.
-
-``derive_by_type`` is checked when the configuration is read, one ``needs.derive_invalid`` per entry:
-a key naming no need type is ignored (a type's title is not its directive name, and the warning says which is meant);
-an empty ``derive_by_type``, or one that is not a table, adds no rule: the field stays derived,
-every need type using the ``derive`` beside it, or, without one, no rule;
-an entry that cannot be read, as a ``derive`` that cannot be read, leaves the needs of its type at the empty value,
-and the other types are unaffected.
-Rules reading one another's own fields in a circle are looked for per need type, among the rules each type uses:
-a ``derive`` closing such a circle on some types only is reported naming them, and applies on every other type.
-
-Each need is computed in the step of its own rule, so one field may be computed after every other on one type
-(``after = "derived"``) and not on another: a value that reads the field waits for the rule of the need it reads,
-and only the needs whose rule comes later are reported (``needs.derive_scope``).
-
-.. _`needs_derive_holds`:
-
-What a derived field holds
---------------------------
-
-A derived field (one with ``derive`` or ``derive_by_type``) is closed to authors, on every need type,
-also on a type it has no rule for:
-a value written for it in a need (a literal, or a ``[[…]]``, ``<<…>>`` or ``<{…}>``),
-or set by a :ref:`needextend`, is ignored and reported as ``needs.derive_authored``, at the need or the ``needextend``.
-It takes no ``default`` (but the value of the need types without a rule, see :ref:`needs_derive_by_type`)
-and no ``predicates``.
-A need from outside the project's sources, created by :ref:`needimport` or loaded from :ref:`needs_external_needs`,
-keeps the values it carries, as data: no rule runs on it.
-One lacking a derived field holds what a need of its type holds when no rule has computed it:
-the value of a type without a rule, else the empty value.
-In the schema of the :ref:`needs.json <needs_builder_format>`, a derived field or link type is marked ``"readOnly": true``,
-so a project importing the file knows the value is computed, not authored;
-the schema's ``default`` of a field, or of a link type derived by type alone, is the value of a need type without a rule.
-
-A rule is checked when the configuration is read.
-A rule that cannot be read is reported as ``needs.derive_invalid``, once per rule, naming the kind and the role:
-an unknown kind, an unknown role, a role the kind does not take or requires,
-a role holding the wrong type of value,
-a kind computing a link list declared on a field, or one computing a value declared on a link type,
-an ``over`` naming no link type, a ``field`` naming nothing a need has,
-a result the field's ``schema`` cannot hold,
-a ``min`` or ``max`` reading a field that has no order,
-a ``hash`` naming a ``<link type>_back``,
-a ``fingerprint`` whose ``exclude`` is not a list of names, names one twice,
-or names what a fingerprint does not include (nothing a need has, or a name it never includes, such as ``docname``),
-a ``where`` or ``test`` that does not parse or reads more than the candidate,
-an empty ``where`` on ``links`` (it would link every need),
-a ``join`` that is not a table of a ``field`` and an ``equals`` naming text fields, or is given beside ``include_parts``,
-a ``union`` naming what is not a link type (a field, a ``<link type>_back``, a name declared nowhere), ``parent_needs``,
-no link type, or one twice,
-and rules reading one another's own fields in a circle (``copy`` without ``over`` or ``from``, ``hash``, and ``union``,
-a union naming itself or two naming each other),
-which no need could compute.
-The field stays derived: it cannot be set, and it holds its empty value
-(``None``, or for a field that is not nullable ``""``, ``0``, ``0.0``, ``False`` or ``[]``; no links for a link type).
-The empty value a derived field holds is its "no value", as ``None`` is for a nullable field:
-the field's ``schema`` does not check it, so an ``enum``, a ``minimum`` or a ``pattern`` that refuses it is no violation.
-A ``default`` or ``predicates`` beside ``derive`` is reported as ``needs.derive_invalid`` too, and ignored;
-the rule applies. So is an ``allow_dead_links`` beside a ``union``, whose dead links are its members'.
-So is a link type declared with ``copy = true`` while ``links`` is derived:
-nothing is copied into ``links``, which holds what its rule computes;
-and ``copy = true`` on a derived link type, which is not available in this release: nothing is copied.
-
-A rule that cannot be computed on a need leaves the field at its empty value, and is reported:
-a cycle of rules or calls reading one another (``needs.derive_cycle``, see :ref:`needs_derive_cycle`),
-a read of a value its step cannot wait for (``needs.derive_scope``, see :ref:`needs_derive_scope`),
-or a ``from`` naming no need, and a result the field's ``schema`` refuses, such as a value outside its ``enum`` or under its ``minimum``
-(``needs.dynamic_function``); a result is checked even when it equals the empty value,
-such as a ``count`` of ``0`` under ``minimum = 1``.
-To silence a warning, add its type to Sphinx's ``suppress_warnings``:
-
-.. code-block:: python
-
-   suppress_warnings = ["needs.derive_invalid", "needs.derive_authored", "needs.derive_unique"]
+Some readers read only ``links`` in this release, and take no link type yet: :ref:`check_linked_values <check_linked_values>`,
+:ref:`calc_sum <calc_sum>` with ``links_only``, and the :ref:`need_outgoing <role_need_outgoing>` and :ref:`need_incoming <role_need_incoming>` roles written
+in a need's content. While ``copy = true`` is in use they see the copies, as before.
+A project that relies on them keeps ``copy = true`` until 10.0, and with it the ``needs.deprecated`` warning;
+``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation with it.
 
 .. _`needs_derive_computed`:
 
@@ -588,85 +647,91 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
 - **union.** The links of each link type ``fields`` names, in that order, each in its own order,
   a link kept the first time it comes: see :ref:`needs_derive_union`.
 
-.. _`needs_derive_union`:
+.. _`needs_derive_cost`:
 
-A union of link types
----------------------
+What a rule costs
+-----------------
 
-.. versionadded:: 9.1.0
+A rule is computed once per step for every need holding it (a ``links`` rule's ``where`` is tested once,
+on each candidate alone), so writing one costs little: what costs is what it **stores**.
+Every need holding a ``links`` rule with a ``where`` (and no ``join``) is linked to the same needs (but itself),
+and each of them gets a back link from every one (a ``join`` links each need to its own matches):
+on every need of a project of 2 000, a rule whose ``where`` half the needs pass stores about 2 000 000 links
+and as many back links, and ``needs.json`` grows from about 2.5 MB to about 58 MB;
+at twice the needs it stores four times the links.
+A rule that ten needs pass stores about ten links per need.
 
-A link type deriving ``union`` holds the links of other link types, its members, which ``fields`` names:
+- Keep ``where`` selective, or declare the rule only for the need types that use it (:ref:`needs_derive_by_type`).
+- To show a set of needs, use a :ref:`needtable` or :ref:`needlist` with that filter: it shows the set once,
+  where a ``links`` rule copies it into every need.
+- To know on one need how many needs (or which) point at it, link the other way and read the back links:
+  ``{ kind = "count", over = "tests_back", where = "status == 'open'" }`` stores one number.
+- :ref:`links_from_filter` written in every need stores what the ``links`` rule stores, and also tests its filter
+  on every need once per call, so on many needs prefer the declared rule.
 
-.. code-block:: toml
+A link type whose computed links number more than :ref:`needs_derive_max_links_per_need` (``100``) per need of the project
+is reported once, as the warning ``needs.derive_dense``,
+naming the links, the needs holding the rule and the longest list.
 
-   [needs.links.blocks]
+.. _`needs_derive_holds`:
 
-   [needs.links.tests]
+What a derived field holds
+--------------------------
 
-   [needs.links.all_links]
-   outgoing = "all links"
-   incoming = "all links from"
-   derive = { kind = "union", fields = ["links", "blocks", "tests"] }
+A derived field (one with ``derive`` or ``derive_by_type``) is closed to authors, on every need type,
+also on a type it has no rule for:
+a value written for it in a need (a literal, or a ``[[…]]``, ``<<…>>`` or ``<{…}>``),
+or set by a :ref:`needextend`, is ignored and reported as ``needs.derive_authored``, at the need or the ``needextend``.
+It takes no ``default`` (but the value of the need types without a rule, see :ref:`needs_derive_by_type`)
+and no ``predicates``.
+A need from outside the project's sources, created by :ref:`needimport` or loaded from :ref:`needs_external_needs`,
+keeps the values it carries, as data: no rule runs on it.
+One lacking a derived field holds what a need of its type holds when no rule has computed it:
+the value of a type without a rule, else the empty value.
+In the schema of the :ref:`needs.json <needs_builder_format>`, a derived field or link type is marked ``"readOnly": true``,
+so a project importing the file knows the value is computed, not authored;
+the schema's ``default`` of a field, or of a link type derived by type alone, is the value of a need type without a rule.
 
-A need whose ``links`` is ``REQ_1``, whose ``blocks`` is ``REQ_2`` and whose ``tests`` is ``REQ_1``
-then holds ``REQ_1, REQ_2`` in ``all_links``, and ``REQ_1`` and ``REQ_2`` hold it in ``all_links_back``.
-It is the declared spelling of "every outgoing link of these types", which ``copy = true`` gave by copying
-into ``links`` (deprecated, see :ref:`needs_links`).
+A rule is checked when the configuration is read.
+A rule that cannot be read is reported as ``needs.derive_invalid``, once per rule, naming the kind and the role:
+an unknown kind, an unknown role, a role the kind does not take or requires,
+a role holding the wrong type of value,
+a kind computing a link list declared on a field, or one computing a value declared on a link type,
+an ``over`` naming no link type, a ``field`` naming nothing a need has,
+a result the field's ``schema`` cannot hold,
+a ``min`` or ``max`` reading a field that has no order,
+a ``hash`` naming a ``<link type>_back``,
+a ``fingerprint`` whose ``exclude`` is not a list of names, names one twice,
+or names what a fingerprint does not include (nothing a need has, or a name it never includes, such as ``docname``),
+a ``where`` or ``test`` that does not parse or reads more than the candidate,
+an empty ``where`` on ``links`` (it would link every need),
+a ``join`` that is not a table of a ``field`` and an ``equals`` naming text fields, or is given beside ``include_parts``,
+a ``union`` naming what is not a link type (a field, a ``<link type>_back``, a name declared nowhere), ``parent_needs``,
+no link type, or one twice,
+and rules reading one another's own fields in a circle (``copy`` without ``over`` or ``from``, ``hash``, and ``union``,
+a union naming itself or two naming each other),
+which no need could compute.
+The field stays derived: it cannot be set, and it holds its empty value
+(``None``, or for a field that is not nullable ``""``, ``0``, ``0.0``, ``False`` or ``[]``; no links for a link type).
+The empty value a derived field holds is its "no value", as ``None`` is for a nullable field:
+the field's ``schema`` does not check it, so an ``enum``, a ``minimum`` or a ``pattern`` that refuses it is no violation.
+A ``default`` or ``predicates`` beside ``derive`` is reported as ``needs.derive_invalid`` too, and ignored;
+the rule applies. So is an ``allow_dead_links`` beside a ``union``, whose dead links are its members'.
+So is a link type declared with ``copy = true`` while ``links`` is derived:
+nothing is copied into ``links``, which holds what its rule computes;
+and ``copy = true`` on a derived link type, which is not available in this release: nothing is copied.
 
-- **Members.** Any link type the need has: ``links``, one of :ref:`needs_links` or :ref:`needs_extra_links`,
-  one need types declare alone, a derived link type, another union -- each computed before the union,
-  whether its links are written, computed by a rule, a built-in function such as ``links_from_filter``, a variant,
-  or added by a ``needextend``.
-  Not a member filled by one of your own :ref:`functions <needs_functions>` (such as sphinx-test-reports' ``tr_link``),
-  nor by a call whose filter cannot be read, such as a ``links_from_filter`` whose filter names ``needs``:
-  those run after the other built-in functions of their step, a union's rule included
-  (see :ref:`needs_processing_order`), so the union cannot read the member, which is one
-  ``needs.derive_scope`` warning, the union holding no links. Keep ``copy`` for such a link type until a later
-  release lets a union read it.
-  ``parent_needs`` and the back links (``<link type>_back``, built after the link types) are not members,
-  nor is a field, and a member is named once; the union itself, or two unions naming each other, can be computed
-  on no need. Each is one ``needs.derive_invalid`` at load, and the union holds no links.
-  On a need of a type that does not have a member, the member holds no links, and adds none.
-- **The links.** Each member's links, in the order ``fields`` names the members, each member's in its own order;
-  a link is kept the first time it comes, a link being its target, its part and its condition:
-  ``REQ_1`` from two members is one link, while ``REQ_1``, ``REQ_1.p1`` and ``REQ_1[status == 'open']`` are three.
-  Parts and conditions are carried as written. ``needs.json`` writes the list sorted, as every link list;
-  the order above is what a rule or a ``[[…]]`` reading the union in the pass sees.
-- **Dead links and conditions are the members'.** Where its rule computed it, a union reports no dead link and no
-  failed link condition of its own:
-  each is reported once, at the member, which decides with its own ``allow_dead_links`` whether a dead link is allowed.
-  So a dead link of a member allowing dead links is kept in the union and makes no dead link forbidden
-  (``has_forbidden_dead_links``; ``has_dead_links`` counts it, as every dead link), it is drawn in a need's layout as
-  the member allows it, and an ``allow_dead_links`` on a link type all of whose rules are unions is refused
-  (``needs.derive_invalid``) and ignored; beside a rule of another kind, for another need type, it is that rule's.
-  ``target_types`` is refused on it, as on every derived link type: the members' own apply.
-- **When.** In the link fields' step, after every :ref:`needextend`: a link a ``needextend`` adds to a member is in the union.
-  The union itself is closed, as every derived field: links written in it, or by a ``needextend``, are reported
-  (``needs.derive_authored``) and ignored.
-- **Imported needs keep their data.** No rule runs on a need from :ref:`needimport` or :ref:`needs_external_needs`:
-  it holds the union its needs.json carries, else no links, whatever its members hold.
-  Those links are not its members', so they are checked as any link type's, under the union's own
-  ``allow_dead_links``: a dead one is reported, under the union, and is a forbidden one.
-- **Not counted as dense.** ``needs.derive_dense`` (:ref:`needs_derive_cost`) counts the links its members compute,
-  not the union's list, which holds them again.
-- It is left out of every ``fingerprint``, as every derived link type is, and it may be declared per need type
-  (``derive_by_type``, or a need type's ``links`` entry, :ref:`needs_types_fields`).
+A rule that cannot be computed on a need leaves the field at its empty value, and is reported:
+a cycle of rules or calls reading one another (``needs.derive_cycle``, see :ref:`needs_derive_cycle`),
+a read of a value its step cannot wait for (``needs.derive_scope``, see :ref:`needs_derive_scope`),
+or a ``from`` naming no need, and a result the field's ``schema`` refuses, such as a value outside its ``enum`` or under its ``minimum``
+(``needs.dynamic_function``); a result is checked even when it equals the empty value,
+such as a ``count`` of ``0`` under ``minimum = 1``.
+To silence a warning, add its type to Sphinx's ``suppress_warnings``:
 
-**Reading it.** A union is read where ``links`` holding the copies was read, by its name:
+.. code-block:: python
 
-- :ref:`needflow` (and :ref:`needsequence`, :ref:`needgantt`'s ``starts_after_links``): ``:link_types: all_links``.
-  A needflow drawing every link type (or the members and the union) draws an edge of the union beside each member's,
-  so name either the union, which draws one style, or its members, which keep theirs.
-- :ref:`Filter strings <filter_string>`: ``"REQ_1" in all_links``; a rule's ``over = "all_links"``
-  or ``over = "all_links_back"``.
-- :ref:`needtable` columns: ``all_links`` and ``all_links_back`` (``OUTGOING`` and ``INCOMING`` stay ``links``).
-- A need's layout shows it as one more row, as every link type with links; ``meta_links_all(exclude=[...])`` leaves it out.
-
-Some readers read only ``links`` in this release, and take no link type yet: :ref:`check_linked_values <check_linked_values>`,
-:ref:`calc_sum <calc_sum>` with ``links_only``, and the :ref:`need_outgoing <role_need_outgoing>` and :ref:`need_incoming <role_need_incoming>` roles written
-in a need's content. While ``copy = true`` is in use they see the copies, as before.
-A project that relies on them keeps ``copy = true`` until 10.0, and with it the ``needs.deprecated`` warning;
-``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation with it.
+   suppress_warnings = ["needs.derive_invalid", "needs.derive_authored", "needs.derive_unique"]
 
 .. _`needs_derive_changed`:
 
@@ -696,70 +761,12 @@ writing the new fingerprint into the condition accepts the change.
 Writing only the start of the fingerprint is enough to tell a change apart:
 ``REQ_1[fp.startswith('3f9a1c2b7d4e')]``.
 
+.. _`needs_derive_corpus`:
+
+The conformance corpus
+----------------------
+
 The executable half of :ref:`needs_derive` is a conformance corpus,
 ``packages/sphinx-needs/tests/fixtures/derive_conformance.toml`` in the sphinx-needs repository:
 one project per rule, with the values its needs hold and the warnings it gives,
 which sphinx-needs' test suite runs and ubCode vendors, and is held to.
-
-.. _dynamic_functions_derived:
-
-Rules and inline calls
-----------------------
-
-.. versionadded:: 9.0.0
-
-A built-in call computes a value for the one need it is written in.
-A :ref:`derived field <needs_derive>` declares the same computation once, in :ref:`needs_fields` or :ref:`needs_links`,
-for every need of the project:
-
-.. code-block:: toml
-
-   [needs.fields.total_hours]
-   schema = { type = "number" }
-   derive = { kind = "sum", field = "hours", over = "links" }
-
-is the declared form of ``:total_hours: [[calc_sum("hours", links_only=True)]]`` written in every need,
-and both are computed in the same step (see :ref:`needs_processing_order`): a declared rule is the field's value,
-as a call written in it would be, but an author cannot set the field.
-The built-in functions are the per-need spellings of the kinds:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 46 54
-
-   * - inline call
-     - the kind it spells
-   * - ``copy("x")``, ``copy("x", "ID")``
-     - ``copy`` with ``field = "x"``, and ``from = "ID"``
-   * - ``copy("x", filter=…)``
-     - no declared form: the lowest-id need the filter keeps, read from every need
-   * - ``calc_sum("x", links_only=True)``
-     - ``sum`` with ``field = "x"`` and ``over = "links"``; its ``filter`` is the ``where``
-   * - ``calc_sum("x")``, ``calc_sum("x", filter=…)``
-     - no declared form: a sum over every need
-   * - ``check_linked_values(result, "x", values, filter, one_hit)``
-     - ``all`` over ``links`` (``any`` with ``one_hit``), with the ``test`` ``x in values`` and the ``where`` ``filter``,
-       giving ``result``; with ``one_hit``, ``result`` even when no linked need matches, which ``any`` does not
-   * - ``links_from_content()``, ``links_from_content("ID", filter=…)``
-     - ``content_links``, with ``from = "ID"`` and the ``where`` ``filter``
-   * - ``links_from_filter(filter, include_self, include_parts)``
-     - ``links``, with the ``where`` ``filter`` and the same ``include_self`` and ``include_parts``
-   * - ``links_from_match(field, equals, include_self, filter)``
-     - ``links`` with ``join = { field = field, equals = equals }``, the same ``include_self``,
-       and the ``where`` ``filter``
-
-A ``where`` that cannot be evaluated on a candidate (one lacking a field it names) drops that candidate,
-without a warning, in every kind and in ``links_from_filter``;
-the ``filter`` of ``calc_sum``, ``check_linked_values`` and ``links_from_content`` keeps its own behaviour.
-
-Written in many needs, ``links_from_filter``, ``links_from_content`` and ``links_from_match`` store a list on each,
-counted as a rule's lists are: see :ref:`needs_derive_cost`.
-
-The ``join`` role spells a correlated lookup (:ref:`needs_derive_join`,
-which also gives the nearest declared form of sphinx-test-reports' ``tr_link``),
-and :ref:`links_from_match` is its inline spelling.
-A ``copy("x", filter=…)`` whose filter compares a need with ``current_need`` (``name == current_need['ref']``)
-is such a lookup too, its filter tested on every need for each need it is in:
-a ``copy`` with ``join`` is the declared form of such a lookup (it splits the values,
-and finds no value rather than this need's own when nothing matches).
-A rule for some need types is declared under ``derive_by_type`` (:ref:`needs_derive_by_type`), not with a role.
