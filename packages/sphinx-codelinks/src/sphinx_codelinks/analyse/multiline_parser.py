@@ -61,7 +61,7 @@ logger = get_logger(__name__)
 CommentKind = Literal["line", "block", "docstring", "unknown"]
 
 #: line-comment delimiters, longest first so that ``///`` is not read as ``//``
-LINE_DELIMITERS: tuple[str, ...] = ("///", "//!", "//", "#")
+LINE_DELIMITERS: tuple[str, ...] = ("///", "//!", "//", "--!", "--", "#")
 
 _LEADER = re.compile(r"^[ \t]*\*(?: |$)")
 """A doxygen leader: optional whitespace, ``*``, then one space or the line end."""

@@ -293,6 +293,13 @@ reported as one of these kinds, the kind leading the message:
   before the start sequence -- combining marks, circled letters, and letters newer than
   the interpreter's Unicode tables -- are where ubCode's notion of alphanumeric differs: a
   documented non-goal.
+- ``doxygen_tag`` -- a line of a Doxygen comment (a VHDL line comment opened by ``--!``,
+  under ``comment_type = "vhdl"``) is a ``doxygen_tag`` warning, and never a need, under the
+  same rule as ``jsdoc_tag``, with Doxygen's special commands (``param``, ``brief``,
+  ``return``, ``see``, ...) as the list and a command that ends at a space, a tab, ``[``,
+  ``{`` or the line end (``@param[in] clk``, ``@code{.vhd}``):
+  ``'@param' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen
+  comments do not contain``. A ``--`` comment is no Doxygen comment.
 
 A line with nothing between the start and end sequences is not a marker. A marker that
 fits the style but whose need Sphinx-Needs refuses -- an id that does not match

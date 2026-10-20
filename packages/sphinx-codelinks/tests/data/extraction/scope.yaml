@@ -12,6 +12,10 @@
 # TypeScript exercises the declarations wrapped in ``export``, ``declare`` or an
 # expression statement, and those that bind only when they hold a function or
 # a class (a ``const``, a class field, an assignment, a default export).
+# VHDL binds a marker to a design element next to it and never walks past a
+# sibling: a trailing comment to the innermost design element ending on its row,
+# a leading comment to the next sibling or a wrapper's first item, and otherwise
+# to the enclosing design element (``find_vhdl_associated_scope``).
 
 cpp_above_function:
   # Marker directly above a function definition -> binds to that function.
@@ -582,3 +586,137 @@ yaml_non_ascii_key_scope:
   source: |
     # @T, ID_YAML_UTF8, impl
     ké: 1
+
+vhdl_above_instantiation:
+  # Above a component instantiation -> the instantiation, not the process after it.
+  lang: vhdl
+  config: default
+  source: |
+    architecture rtl of top is
+    begin
+      -- @Fifo instance, IMPL_VHDL_INST, impl
+      u_fifo : entity work.fifo port map (clk => clk);
+      p : process (clk) begin end process p;
+    end architecture rtl;
+
+vhdl_signal_assignment:
+  # Above and trailing a concurrent signal assignment -> the assignment.
+  lang: vhdl
+  config: default
+  source: |
+    architecture rtl of top is
+    begin
+      -- @Led above, IMPL_VHDL_ASSIGN_ABOVE, impl
+      led_o <= '1';
+      busy_o <= '0'; -- @Busy trailing, IMPL_VHDL_ASSIGN_TRAILING, impl
+      p : process (clk) begin end process p;
+    end architecture rtl;
+
+vhdl_signal_and_constant:
+  # Above a signal and trailing a constant -> the declaration, not a later function
+  # or the architecture.
+  lang: vhdl
+  config: default
+  source: |
+    architecture rtl of top is
+      -- @Counter signal, IMPL_VHDL_SIGNAL, impl
+      signal cnt : integer := 0;
+      constant MAX : integer := 10; -- @Maximum, IMPL_VHDL_CONSTANT, impl
+      function f return integer is begin return 1; end function;
+    begin
+    end architecture rtl;
+
+vhdl_trailing_port:
+  # Trailing a port -> the port, not the entity.
+  lang: vhdl
+  config: default
+  source: |
+    entity top is
+      port (
+        clk : in std_logic; -- @Clock, IMPL_VHDL_PORT, impl
+        led_o : out std_logic
+      );
+    end entity top;
+
+vhdl_process_in_generate:
+  # Above a process inside a for-generate -> the process (through the generate_block
+  # wrapper), not the generate.
+  lang: vhdl
+  config: default
+  source: |
+    architecture rtl of top is
+    begin
+      gen : for i in 0 to 3 generate
+        -- @Lane process, IMPL_VHDL_GEN_PROC, impl
+        p : process (clk) begin end process p;
+      end generate gen;
+    end architecture rtl;
+
+vhdl_procedure_in_process:
+  # Above the first procedure of a process -> the procedure (through the process_head
+  # wrapper), not the process.
+  lang: vhdl
+  config: default
+  source: |
+    architecture rtl of top is
+    begin
+      proc : process (clk)
+        -- @Helper procedure, IMPL_VHDL_PROC, impl
+        procedure foo is begin end procedure;
+      begin
+      end process proc;
+    end architecture rtl;
+
+vhdl_function_in_block:
+  # Above a function in a block's declarations -> the function (through the block_head
+  # wrapper), not the block.
+  lang: vhdl
+  config: default
+  source: |
+    architecture rtl of top is
+    begin
+      blk : block
+        -- @Block function, IMPL_VHDL_BLOCK_FN, impl
+        function f return integer is begin return 1; end function;
+      begin
+      end block blk;
+    end architecture rtl;
+
+vhdl_entity_after_context_clauses:
+  # Above the library and use clauses -> the entity they precede (the design_unit
+  # wrapper's first item after its context clauses), and a generic -> the generic
+  # (through the interface_list wrapper).
+  lang: vhdl
+  config: default
+  source: |
+    -- @Top entity, IMPL_VHDL_ENTITY, impl
+    library ieee;
+    use ieee.std_logic_1164.all;
+    entity top is
+      generic (
+        -- @Width, IMPL_VHDL_GENERIC, impl
+        W : natural := 8
+      );
+    end entity top;
+
+vhdl_sequential_statement:
+  # Above a sequential statement, which is no design element -> the enclosing process.
+  lang: vhdl
+  config: default
+  source: |
+    architecture rtl of top is
+    begin
+      proc : process (clk)
+      begin
+        -- @Count up, IMPL_VHDL_SEQ, impl
+        cnt <= cnt + 1;
+      end process proc;
+    end architecture rtl;
+
+vhdl_no_scope:
+  # Above a library clause with no design unit after it -> no scope.
+  lang: vhdl
+  config: default
+  source: |
+    -- @No Scope, IMPL_VHDL_NONE, impl
+    library ieee;

@@ -306,6 +306,36 @@ Features
    .. fault:: Sphinx-codelinks hallucinates traceability objects in TypeScript
       :id: FAULT_TS_2
 
+.. feature:: VHDL Language Support
+   :id: FE_VHDL
+
+   Support for defining traceability objects in VHDL source files.
+
+   The VHDL language parser leverages tree-sitter to identify and extract single-line
+   (``--``) and VHDL-2008 multi-line (``/* */``) comments, associating each marker with
+   the design element it documents.
+
+   Key capabilities:
+
+   * Detection of line and block comments, a comment after code included
+   * Association of a marker with the design element next to it: an entity,
+     architecture, package, configuration or context; a function or procedure; a type,
+     subtype, component, constant, signal, variable, file or alias declaration; a
+     generic, port or parameter; a process, block or generate statement, a component
+     instantiation, a concurrent signal assignment, assertion or procedure call. A
+     trailing marker documents the element ending on its row, a leading one the element
+     that follows it, never one further down; a marker among sequential statements
+     documents its process or subprogram
+   * A Doxygen command line (``--! @param clk Clock input, rising edge``) under a start
+     sequence Doxygen also uses is a ``doxygen_tag`` warning, never a need
+   * File extensions ``.vhd`` and ``.vhdl`` auto-discovered when ``comment_type = "vhdl"``
+
+   .. fault:: Traceability objects are not detected in VHDL
+      :id: FAULT_VHDL_1
+
+   .. fault:: Sphinx-codelinks hallucinates traceability objects in VHDL
+      :id: FAULT_VHDL_2
+
 .. feature:: Preprocessor-Aware C/C++ Extraction
    :id: FE_PREPROC
 
@@ -405,7 +435,7 @@ Features
 
    * One grammar for every language, the header parsed by the analyser and the body kept
      as written
-   * Blocks over runs of line comments (``//``, ``///``, ``//!``, ``#``) as well as block
+   * Blocks over runs of line comments (``//``, ``///``, ``//!``, ``--``, ``--!``, ``#``) as well as block
      comments and Python docstrings
    * Comment prefixes stripped by the comment's kind, the doxygen ``*`` leader only when
      every line carries one, so ``*emphasis*`` in a body is kept

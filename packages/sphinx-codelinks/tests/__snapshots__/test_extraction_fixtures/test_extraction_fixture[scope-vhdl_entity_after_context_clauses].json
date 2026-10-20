@@ -1,0 +1,48 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 38
+      }
+    },
+    "tagged_scope": "entity top is\n  generic (\n    -- @Width, IMPL_VHDL_GENERIC, impl\n    W : natural := 8\n  );\nend entity top;",
+    "need": {
+      "title": "Top entity",
+      "id": "IMPL_VHDL_ENTITY",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "entity_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 8
+      },
+      "end": {
+        "row": 5,
+        "column": 38
+      }
+    },
+    "tagged_scope": "W : natural := 8",
+    "need": {
+      "title": "Width",
+      "id": "IMPL_VHDL_GENERIC",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "interface_declaration"
+  }
+]

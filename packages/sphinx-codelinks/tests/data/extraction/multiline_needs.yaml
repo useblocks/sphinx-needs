@@ -280,6 +280,30 @@ bash_hash_run:
       echo deploy
     }
 
+vhdl_dash_run:
+  # A run of VHDL ``--`` comments forms one block.
+  lang: vhdl
+  config: default
+  source: |
+    -- @need impl: Counter
+    -- :id: IMPL_VHDL_RUN
+    --
+    -- Counts the clock edges.
+    -- @endneed
+    entity counter is
+    end entity counter;
+
+vhdl_doxygen_run:
+  # A run of Doxygen ``--!`` comments forms one block too.
+  lang: vhdl
+  config: default
+  source: |
+    --! @need impl: Documented counter
+    --! :id: IMPL_VHDL_BANG
+    --! @endneed
+    entity counter is
+    end entity counter;
+
 cpp_bang_block_opener:
   # The "/*!" opener (Qt style) is a block comment opener like "/*" and "/**": on a row
   # of its own it is a delimiter row and dropped; on the open line's row it is removed

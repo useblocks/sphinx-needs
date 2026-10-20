@@ -317,7 +317,7 @@ Specifies the comment syntax style used in the source code files. This determine
 
 **Type:** ``str``
 **Default:** ``"cpp"``
-**Supported values:** ``"cpp"``, ``"python"``, ``"cs"``, ``"ts"``, ``"yaml"``, ``"rust"``, ``"go"``, ``"jsonc"``, ``"bash"``
+**Supported values:** ``"cpp"``, ``"python"``, ``"cs"``, ``"ts"``, ``"yaml"``, ``"rust"``, ``"go"``, ``"jsonc"``, ``"bash"``, ``"vhdl"``
 
 .. code-block:: toml
 
@@ -383,6 +383,10 @@ Specifies the comment syntax style used in the source code files. This determine
      - ``"bash"``
      - ``#`` (single-line)
      - ``.sh``, ``.bash``, ``.zsh``, ``.ksh``
+   * - VHDL
+     - ``"vhdl"``
+     - ``--`` (single-line), ``--!`` (Doxygen), ``/* */`` (multi-line, VHDL-2008)
+     - ``.vhd``, ``.vhdl``
 
 .. note:: Future versions may support additional programming languages.
 

@@ -1,0 +1,48 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 33
+      }
+    },
+    "tagged_scope": "entity top is\nend entity top;",
+    "need": {
+      "title": "Own line",
+      "id": "IMPL_VHDL_OWN",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "entity_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 20
+      },
+      "end": {
+        "row": 2,
+        "column": 53
+      }
+    },
+    "tagged_scope": "entity top is\nend entity top;",
+    "need": {
+      "title": "After code",
+      "id": "IMPL_VHDL_AFTER",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "entity_declaration"
+  }
+]
