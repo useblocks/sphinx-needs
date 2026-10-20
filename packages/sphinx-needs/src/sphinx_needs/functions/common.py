@@ -955,6 +955,8 @@ def execute_rule(
             for link in found
             if link.id in needs and _passes(needs[link.id], rule.where, config, None)
         ]
+    if rule.kind == "union":
+        return _rule_union(need, rule, reads)
     if rule.kind == "hash":
         return _rule_hash(need, rule, link_fields, reads)
     if rule.kind == "fingerprint":
@@ -1240,6 +1242,24 @@ def _rule_copy_over(
             location=(need["docname"], need["lineno"]) if need["docname"] else None,
         )
     return setting[0][1][rule.field]
+
+
+def _rule_union(
+    need: NeedItem, rule: DeriveRule, reads: UnresolvedReads | None
+) -> list[NeedLink]:
+    """The links of the members, in the order the rule names them, each in its
+    member's order: each link once, by its target, part and condition, carried as
+    written (``REQ_1`` and ``REQ_1[status == 'open']`` are two links)."""
+    links: list[NeedLink] = []
+    seen: set[NeedLink] = set()
+    for name in rule.fields:
+        if reads is not None:
+            reads.note_read(need, name)
+        for link in need.get_links(name, as_str=False):
+            if link not in seen:
+                seen.add(link)
+                links.append(link)
+    return links
 
 
 def _rule_hash(

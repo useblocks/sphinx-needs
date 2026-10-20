@@ -1607,21 +1607,19 @@ def _copy_links(
 ) -> None:
     """Implement 'copy' logic for links, on the schema of the need's type.
 
-    Nothing is copied into a derived ``links``: it holds what its rule computes.
+    The link types copied are :meth:`~.FieldsSchema.copying_link_types`: nothing is
+    copied into a derived ``links``, which holds what its rule computes, nor from a
+    derived link type, whose ``copy`` is refused at load.
     """
     if "links" not in links:
         return  # should not happen, but be defensive
-    if (target := schema.get_link_field("links")) is not None and target.derived:
-        return
     copy_links: list[
         NeedLink | DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed
     ] = []
-    for link_field in schema.iter_link_fields():
-        # a derived link type copies nothing (it is reported at load)
-        if link_field.copy and link_field.name != "links" and not link_field.derived:
-            other = links[link_field.name]
-            if isinstance(other, LinksLiteralValue | LinksFunctionArray):
-                copy_links.extend(other.value)
+    for name in schema.copying_link_types():
+        other = links[name]
+        if isinstance(other, LinksLiteralValue | LinksFunctionArray):
+            copy_links.extend(other.value)
     if any(
         isinstance(
             li, DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed

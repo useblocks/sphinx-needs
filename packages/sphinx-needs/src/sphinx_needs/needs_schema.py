@@ -27,10 +27,11 @@ from sphinx_needs.derive import (
     Derive,
     DeriveInvalid,
     DeriveRule,
+    is_union,
     typed_empty,
 )
 from sphinx_needs.exceptions import VariantParsingException
-from sphinx_needs.need_item import NeedLink
+from sphinx_needs.need_item import NeedItem, NeedLink
 from sphinx_needs.schema.config import (
     FieldSchemaTypes,
     LinkSchemaType,
@@ -792,7 +793,8 @@ class LinkSchema:
     display: LinkDisplayConfig
     """Display/rendering configuration for this link type."""
     copy: bool = False
-    """If True, copy links to the common 'links' field."""
+    """If True, copy links to the common 'links' field (deprecated, removed in 10.0:
+    a ``union`` link type replaces it)."""
     allow_dead_links: bool = False
     """If True, add a 'forbidden' class to dead links instead of warning."""
     target_types: LinkTargetTypes | None = None
@@ -897,6 +899,21 @@ class LinkSchema:
     def describe_derived(self) -> str:
         """The rules of a derived link type, as messages name them: ``kind 'links'``."""
         return _describe_derived(self.derive, self.derive_by_type)
+
+    def union_on(self, need: NeedItem) -> DeriveRule | None:
+        """The ``union`` rule that computed this link type on ``need``, if one did.
+
+        There its links are its members' links, so it reports no dead link and no link
+        condition of its own, nor does a dead link of it make one forbidden: the
+        members do, as they allow dead links. A need from ``needimport`` or
+        ``needs_external_needs`` keeps the links its file gives, which no rule
+        computed: there the link type is checked as any other. Every check of a
+        need's links asks this.
+        """
+        if need["is_import"] or need["is_external"]:
+            return None
+        rule = self.rule_for(need["type"])
+        return rule if is_union(rule) else None
 
     def off_type_value(self) -> list[NeedLink]:
         """The links a need holds when its type has no rule (see :meth:`rule_for`).
@@ -1196,6 +1213,8 @@ class LinkShape(FieldShape, Protocol):
 
     @property
     def allow_dead_links(self) -> bool: ...
+
+    def union_on(self, need: NeedItem) -> DeriveRule | None: ...
 
 
 class FieldsSchema:
@@ -1750,6 +1769,25 @@ class FieldsSchema:
     def iter_link_fields(self) -> Iterable[LinkShape]:
         """Iterate over all link fields in the schema."""
         yield from self._link_fields.values()
+
+    def copying_link_types(self) -> list[str]:
+        """The link types that copy their links into ``links`` (``copy = true``,
+        deprecated), as a need's creation copies them: those with ``copy``, but
+        ``links`` itself and a derived one (whose ``copy`` is refused), and none where
+        ``links`` is derived (nothing is copied into it).
+
+        Read on :meth:`for_type`'s schema, they are those a need of that type copies;
+        on the global view, they are why ``links`` takes no ``target_types``: it holds
+        links written in it and links copied into it.
+        """
+        own = self.get_link_field("links")
+        if own is None or own.derived:
+            return []
+        return [
+            link.name
+            for link in self.iter_link_fields()
+            if link.copy and link.name != "links" and not link.derived
+        ]
 
 
 class TypeFieldsSchema(FieldsSchema):

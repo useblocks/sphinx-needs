@@ -406,7 +406,9 @@ def test_target_types_on_links_beside_a_copy_are_refused(
     checked."""
     test_app.build()
     warnings = build_warnings(test_app)
-    assert warnings[:2] == [
+    assert warnings[:4] == [
+        _deprecated_copy("needs_links['verifies']", "verifies"),
+        _deprecated_copy("needs_links['implements']", "implements"),
         "WARNING: needs_links['links'] has a 'target_types', but 'verifies' and "
         "'implements' copy into links (copy = true); the key is ignored until copy is "
         "replaced [needs.config]",
@@ -447,9 +449,14 @@ NO_REFUSAL_INDEX = """\
 )
 def test_a_copy_that_copies_nothing_refuses_nothing(test_app: SphinxTestApp) -> None:
     """``copy`` on ``links`` itself, and on a derived link type (refused), copies
-    nothing into ``links``: the ``target_types`` of ``links`` holds."""
+    nothing into ``links``: the ``target_types`` of ``links`` holds. On ``links`` the
+    key is deprecated all the same; on the derived link type its refusal is the one
+    finding."""
     test_app.build()
     assert build_warnings(test_app) == [
+        "WARNING: needs_links['links'] sets 'copy = true', which is deprecated and "
+        "will be removed in sphinx-needs 10.0; on links it copies nothing, so remove "
+        "it [needs.deprecated]",
         "WARNING: Invalid derive of link type 'covers': kind 'links': 'copy' is not "
         "available on a derived link type in this release, and is ignored; the rule "
         "applies [needs.derive_invalid]",
@@ -459,6 +466,16 @@ def test_a_copy_that_copies_nothing_refuses_nothing(test_app: SphinxTestApp) -> 
         "<srcdir>/index.rst:7: WARNING: Need 'TEST_1' has unknown outgoing link "
         "'SPEC_404' in field 'links' [needs.link_outgoing]",
     ]
+
+
+def _deprecated_copy(where: str, name: str) -> str:
+    """The ``needs.deprecated`` warning of a declaration writing ``copy = true``."""
+    return (
+        f"WARNING: {where} sets 'copy = true', which is deprecated and will be removed "
+        "in sphinx-needs 10.0; declare a link type deriving the union instead, e.g. "
+        f'derive = {{kind = "union", fields = ["links", "{name}"]}}, and read it where '
+        "the copies in links were read [needs.deprecated]"
+    )
 
 
 def _link(**kwargs: Any) -> LinkSchema:

@@ -18,6 +18,9 @@ def test_links_html(test_app):
     # print(warnings)
     assert warning_records == [
         'WARNING: Config option "needs_extra_links" is deprecated. Please use "needs_links" instead. [needs.deprecated]',
+        "WARNING: needs_links['blocks'] sets 'copy = true', which is deprecated and will be removed in sphinx-needs 10.0; "
+        'declare a link type deriving the union instead, e.g. derive = {kind = "union", fields = ["links", "blocks"]}, '
+        "and read it where the copies in links were read [needs.deprecated]",
         "<srcdir>/index.rst:7: WARNING: Need 'REQ_001' has unknown outgoing link 'DEAD_LINK_NOT_ALLOWED' in field 'links' [needs.link_outgoing]",
         "<srcdir>/index.rst:7: WARNING: Need 'REQ_001' has unknown outgoing link 'DEAD_LINK_ALLOWED' in field 'links' [needs.link_outgoing]",
         "<srcdir>/index.rst:7: WARNING: Need 'REQ_001' has unknown outgoing link 'DEAD_LINK_ALLOWED' in field 'blocks' [needs.link_outgoing]",

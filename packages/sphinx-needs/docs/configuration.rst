@@ -594,6 +594,9 @@ Its back links, ``<name>_back``, are on every need, as for any link type.
 (a ``test`` may verify a ``req`` while a ``review`` verifies a ``spec``), and the types inheriting from it narrow that one.
 With ``copy`` the links of the declaring needs are copied into ``links``, and a need of another type copies none;
 ``copy`` beside a ``derive`` is reported as on a ``needs_links`` entry (``needs.derive_invalid``), and nothing is copied.
+``copy = true`` is deprecated here as on a ``needs_links`` entry, one ``needs.deprecated`` warning per declaration writing it
+(``needs_types['req'].links['verifies'] sets 'copy = true', ...``): a :ref:`union <needs_derive_union>` declared
+the same way replaces it.
 A derived one is derived on every type that declares it (a child inheriting its parent's rule), and holds ``[]`` on the others.
 These link types come after the :ref:`needs_links` and :ref:`needs_extra_links` ones, in the order their first declarations are resolved:
 in a need's links, a :ref:`needflow` legend, a :ref:`needreport`.
@@ -898,7 +901,7 @@ or in :file:`conf.py`, as every other key of the entry:
    }
 
 A link type is derived the same way, with ``derive`` on its :ref:`needs_links` entry
-and one of the two kinds that compute a link list.
+and one of the kinds that compute a link list: ``links``, ``content_links`` and ``union``.
 How a rule relates to the ``[[…]]`` calls that compute a value per need is described in :ref:`dynamic_functions_derived`.
 
 The kinds
@@ -964,6 +967,11 @@ The kinds
      - (none)
      - ``from``, ``where``
      - a link list
+   * - ``union``
+     - a link type
+     - ``fields``
+     - (none)
+     - a link list: the links of the link types ``fields`` names (:ref:`needs_derive_union`)
 
 Every kind that computes a value, but ``fingerprint``, also takes ``after = "derived"``,
 which computes the field after every other rule of the need, as ``hash`` and ``fingerprint`` always are.
@@ -986,6 +994,8 @@ The roles
    * - ``fields``
      - a list of field names
      - ``hash``: the need's own fields hashed, in the listed order (fields and link types; not a ``<link type>_back``).
+       ``union``: the need's own link types whose links it holds, in the listed order, each named once
+       (derived ones and other unions included; not ``parent_needs`` or a ``<link type>_back``).
    * - ``exclude``
      - a list of field names
      - ``fingerprint``: the names it leaves out, each a name it includes, once; an empty list leaves nothing out.
@@ -1283,14 +1293,17 @@ or names what a fingerprint does not include (nothing a need has, or a name it n
 a ``where`` or ``test`` that does not parse or reads more than the candidate,
 an empty ``where`` on ``links`` (it would link every need),
 a ``join`` that is not a table of a ``field`` and an ``equals`` naming text fields, or is given beside ``include_parts``,
-and rules reading one another's own fields in a circle (``copy`` without ``over`` or ``from``, and ``hash``),
+a ``union`` naming what is not a link type (a field, a ``<link type>_back``, a name declared nowhere), ``parent_needs``,
+no link type, or one twice,
+and rules reading one another's own fields in a circle (``copy`` without ``over`` or ``from``, ``hash``, and ``union``,
+a union naming itself or two naming each other),
 which no need could compute.
 The field stays derived: it cannot be set, and it holds its empty value
 (``None``, or for a field that is not nullable ``""``, ``0``, ``0.0``, ``False`` or ``[]``; no links for a link type).
 The empty value a derived field holds is its "no value", as ``None`` is for a nullable field:
 the field's ``schema`` does not check it, so an ``enum``, a ``minimum`` or a ``pattern`` that refuses it is no violation.
 A ``default`` or ``predicates`` beside ``derive`` is reported as ``needs.derive_invalid`` too, and ignored;
-the rule applies.
+the rule applies. So is an ``allow_dead_links`` beside a ``union``, whose dead links are its members'.
 So is a link type declared with ``copy = true`` while ``links`` is derived:
 nothing is copied into ``links``, which holds what its rule computes;
 and ``copy = true`` on a derived link type, which is not available in this release: nothing is copied.
@@ -1299,8 +1312,9 @@ How a rule is computed
 ^^^^^^^^^^^^^^^^^^^^^^
 
 A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_order`):
-``links`` and ``content_links`` with the link fields, ``hash``, ``fingerprint`` and the rules with
-``after = "derived"`` after every other field, every other kind with the other fields; each after every value it reads.
+``links``, ``content_links`` and ``union`` with the link fields, ``hash``, ``fingerprint`` and the rules with
+``after = "derived"`` after every other field, every other kind with the other fields; each after every value it reads
+(a ``union`` after the derived link types it names).
 
 - **Candidates.** ``over = "<t>"``: the needs this need's ``<t>`` names, once the link fields are computed,
   in the order written; a need named twice is a candidate twice;
@@ -1407,6 +1421,88 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
   in document order, each once: a reference to a part is a part link, a reference to this need is kept,
   a reference to no need is kept (and reported as any dead link), a disabled one (``!ID``) and those inside a
   nested need are not. With ``where``, only the references to needs it holds on are kept (a part through its need).
+- **union.** The links of each link type ``fields`` names, in that order, each in its own order,
+  a link kept the first time it comes: see :ref:`needs_derive_union`.
+
+.. _`needs_derive_union`:
+
+A union of link types
+^^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 9.1.0
+
+A link type deriving ``union`` holds the links of other link types, its members, which ``fields`` names:
+
+.. code-block:: toml
+
+   [needs.links.blocks]
+
+   [needs.links.tests]
+
+   [needs.links.all_links]
+   outgoing = "all links"
+   incoming = "all links from"
+   derive = { kind = "union", fields = ["links", "blocks", "tests"] }
+
+A need whose ``links`` is ``REQ_1``, whose ``blocks`` is ``REQ_2`` and whose ``tests`` is ``REQ_1``
+then holds ``REQ_1, REQ_2`` in ``all_links``, and ``REQ_1`` and ``REQ_2`` hold it in ``all_links_back``.
+It is the declared spelling of "every outgoing link of these types", which ``copy = true`` gave by copying
+into ``links`` (deprecated, see :ref:`needs_links`).
+
+- **Members.** Any link type the need has: ``links``, one of :ref:`needs_links` or :ref:`needs_extra_links`,
+  one need types declare alone, a derived link type, another union -- each computed before the union,
+  whether its links are written, computed by a rule, a built-in function such as ``links_from_filter``, a variant,
+  or added by a ``needextend``.
+  Not a member filled by one of your own :ref:`functions <needs_functions>` (such as sphinx-test-reports' ``tr_link``),
+  nor by a call whose filter cannot be read, such as a ``links_from_filter`` whose filter names ``needs``:
+  those run after the other built-in functions of their step, a union's rule included
+  (see :ref:`needs_processing_order`), so the union cannot read the member, which is one
+  ``needs.derive_scope`` warning, the union holding no links. Keep ``copy`` for such a link type until a later
+  release lets a union read it.
+  ``parent_needs`` and the back links (``<link type>_back``, built after the link types) are not members,
+  nor is a field, and a member is named once; the union itself, or two unions naming each other, can be computed
+  on no need. Each is one ``needs.derive_invalid`` at load, and the union holds no links.
+  On a need of a type that does not have a member, the member holds no links, and adds none.
+- **The links.** Each member's links, in the order ``fields`` names the members, each member's in its own order;
+  a link is kept the first time it comes, a link being its target, its part and its condition:
+  ``REQ_1`` from two members is one link, while ``REQ_1``, ``REQ_1.p1`` and ``REQ_1[status == 'open']`` are three.
+  Parts and conditions are carried as written. ``needs.json`` writes the list sorted, as every link list;
+  the order above is what a rule or a ``[[…]]`` reading the union in the pass sees.
+- **Dead links and conditions are the members'.** Where its rule computed it, a union reports no dead link and no
+  failed link condition of its own:
+  each is reported once, at the member, which decides with its own ``allow_dead_links`` whether a dead link is allowed.
+  So a dead link of a member allowing dead links is kept in the union and makes no dead link forbidden
+  (``has_forbidden_dead_links``; ``has_dead_links`` counts it, as every dead link), it is drawn in a need's layout as
+  the member allows it, and an ``allow_dead_links`` on a link type all of whose rules are unions is refused
+  (``needs.derive_invalid``) and ignored; beside a rule of another kind, for another need type, it is that rule's.
+  ``target_types`` is refused on it, as on every derived link type: the members' own apply.
+- **When.** In the link fields' step, after every :ref:`needextend`: a link a ``needextend`` adds to a member is in the union.
+  The union itself is closed, as every derived field: links written in it, or by a ``needextend``, are reported
+  (``needs.derive_authored``) and ignored.
+- **Imported needs keep their data.** No rule runs on a need from :ref:`needimport` or :ref:`needs_external_needs`:
+  it holds the union its needs.json carries, else no links, whatever its members hold.
+  Those links are not its members', so they are checked as any link type's, under the union's own
+  ``allow_dead_links``: a dead one is reported, under the union, and is a forbidden one.
+- **Not counted as dense.** ``needs.derive_dense`` (:ref:`needs_derive_cost`) counts the links its members compute,
+  not the union's list, which holds them again.
+- It is left out of every ``fingerprint``, as every derived link type is, and it may be declared per need type
+  (``derive_by_type``, or a need type's ``links`` entry, :ref:`needs_types_fields`).
+
+**Reading it.** A union is read where ``links`` holding the copies was read, by its name:
+
+- :ref:`needflow` (and :ref:`needsequence`, :ref:`needgantt`'s ``starts_after_links``): ``:link_types: all_links``.
+  A needflow drawing every link type (or the members and the union) draws an edge of the union beside each member's,
+  so name either the union, which draws one style, or its members, which keep theirs.
+- :ref:`Filter strings <filter_string>`: ``"REQ_1" in all_links``; a rule's ``over = "all_links"``
+  or ``over = "all_links_back"``.
+- :ref:`needtable` columns: ``all_links`` and ``all_links_back`` (``OUTGOING`` and ``INCOMING`` stay ``links``).
+- A need's layout shows it as one more row, as every link type with links; ``meta_links_all(exclude=[...])`` leaves it out.
+
+Some readers read only ``links`` in this release, and take no link type yet: :ref:`check_linked_values <check_linked_values>`,
+:ref:`calc_sum <calc_sum>` with ``links_only``, and the :ref:`need_outgoing <role_need_outgoing>` and :ref:`need_incoming <role_need_incoming>` roles written
+in a need's content. While ``copy = true`` is in use they see the copies, as before.
+A project that relies on them keeps ``copy = true`` until 10.0, and with it the ``needs.deprecated`` warning;
+``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation with it.
 
 A rule that cannot be computed on a need leaves the field at its empty value, and is reported:
 a cycle of rules or calls reading one another (``needs.derive_cycle``, see :ref:`needs_derive_cycle`),
@@ -1482,7 +1578,7 @@ Each configured link can define:
 - ``parse_conditions``: If set to ``False``, the ``[condition]`` bracket syntax will not be parsed for this link type.
     Default: ``True``. *New in version 8.0.0.*
 - ``derive`` (optional): A rule computing the links of every need, which makes the link type :ref:`derived <needs_derive>`:
-    a table naming the kind ``links`` or ``content_links``, and its roles;
+    a table naming the kind ``links``, ``content_links`` or ``union`` (:ref:`needs_derive_union`), and its roles;
     with ``derive_by_type`` beside it, of every need of a type ``derive_by_type`` does not list.
     A derived link type cannot be set in a need or by a ``needextend``, and takes no ``default`` or ``predicates``.
     *New in version 9.0.0.*
@@ -1497,6 +1593,43 @@ Each configured link can define:
   Default: False.
   Nothing is copied into a :ref:`derived <needs_derive>` ``links``, nor from a derived link type
   (``copy`` is not available on one in this release), and the ``copy`` is reported.
+
+  .. deprecated:: 9.1.0
+
+     ``copy = true`` is removed in 10.0. Until then the links are still copied,
+     and each declaration writing it is one ``needs.deprecated`` warning::
+
+        needs_links['blocks'] sets 'copy = true', which is deprecated and will be removed in sphinx-needs 10.0; declare a link type deriving the union instead, e.g. derive = {kind = "union", fields = ["links", "blocks"]}, and read it where the copies in links were read
+
+     Declare a link type deriving the :ref:`union <needs_derive_union>` of ``links`` and the copying link types instead,
+     and read it where ``links`` was read for the copies (a needflow's ``:link_types:``, a filter, a needtable column).
+     Before:
+
+     .. code-block:: toml
+
+        [needs.links.blocks]
+        copy = true
+
+     After:
+
+     .. code-block:: toml
+
+        [needs.links.blocks]
+
+        [needs.links.all_links]
+        derive = { kind = "union", fields = ["links", "blocks"] }
+
+     ``links`` then holds only the links written in it, and ``all_links`` what ``links`` held with the copies,
+     with four differences: a link a :ref:`needextend` adds to ``blocks`` is in ``all_links``, where it was not copied;
+     a need from :ref:`needimport` or :ref:`needs_external_needs` keeps the ``all_links`` of its needs.json, where its
+     ``blocks`` were copied; a dead link of ``blocks`` is reported once, under ``blocks`` and as it allows dead links,
+     where the copy reported it under ``links`` too;
+     and a ``blocks`` filled by one of your own :ref:`functions <needs_functions>`, or by a call whose filter cannot be
+     read (a ``links_from_filter`` whose filter names ``needs``), cannot be read by the union
+     (``needs.derive_scope``, the union holding no links), where the copy copied the call: keep ``copy`` for it.
+     The readers that take only ``links`` (:ref:`needs_derive_union`) read no union in this release:
+     a project that relies on them keeps ``copy`` until 10.0, and the warning with it
+     (``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation).
 - ``allow_dead_links`` (optional): True/False. If True, dead links are allowed and do not throw a warning.
   See :ref:`allow_dead_links` for details. Default: False.
 - ``target_types`` (optional): The need types the links may point to, a list of directive names, such as ``["req"]``.
@@ -1663,6 +1796,8 @@ Need objects have the two attributes ``has_dead_links`` and ``has_forbidden_dead
 ``has_dead_links`` gets set to ``True``, if any dead link was found in the need.
 And ``has_forbidden_dead_links`` is set to ``True`` only, if dead links were not allowed
 (so ``allow_dead_links`` was set to ``False`` for at least one link type with dead links).
+A :ref:`union <needs_derive_union>` its rule computed counts only through its members:
+its dead links are forbidden where a member holding them does not allow dead links, as they are drawn.
 
 HTML style
 ^^^^^^^^^^
@@ -4702,7 +4837,7 @@ Each configured link should define:
 - ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by".
 - ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks".
 - ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
-  Default: True
+  Default: False. Deprecated since 9.1.0 and removed in 10.0, as on :ref:`needs_links`: a :ref:`union <needs_derive_union>` replaces it.
 - ``allow_dead_links`` (optional): True/False. If True, dead links are allowed and do not throw a warning.
   See :ref:`allow_dead_links` for details. Default: False.
 - ``target_types`` (optional): The need types the links may point to, as for :ref:`needs_links`.

@@ -69,6 +69,7 @@ from sphinx_needs.derive import (
     core_message,
     invalid_entry_message,
     invalid_message,
+    is_union,
     parse_derive,
     parse_derive_by_type,
 )
@@ -2163,6 +2164,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         if name not in refused_links
     } | {name: (params, "needs_types") for name, params in local_links.items()}
 
+    #: the declarations writing ``copy = true``, each deprecated
+    copy_declarations: list[tuple[str, str]] = []
     for name, (link, config_source) in links.items():
         try:
             # create link schema, with defaults if not defined
@@ -2231,6 +2234,13 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     )
                     derive_problems.extend(by_type_problems)
             authored = derive is None and by_type is None
+            # a union reports no dead link of its own, so where every rule is one its
+            # allow_dead_links would say nothing: reported beside it, below, and
+            # ignored; beside another rule it is that rule's
+            rules = [r for r in (derive, *(by_type or {}).values()) if r is not None]
+            dead_beside = (
+                "allow_dead_links" in link and bool(rules) and all(map(is_union, rules))
+            )
             where = f"{config_source}[{name!r}]"
             # a target_types not of its shape is ignored, as a need type's entry's is
             given_targets = "target_types" in link
@@ -2262,7 +2272,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 directive_option=authored,
                 display=display_config,
                 copy=link.get("copy", False),
-                allow_dead_links=link.get("allow_dead_links", False),
+                allow_dead_links=link.get("allow_dead_links", False)
+                and not dead_beside,
                 target_types=target_types,
                 derive=derive,
                 derive_by_type=by_type,
@@ -2279,6 +2290,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                                 ("default", "default" in link),
                                 ("predicates", "predicates" in link),
                                 ("target_types", given_targets),
+                                ("allow_dead_links", dead_beside),
                             )
                             if beside_key
                         ],
@@ -2295,15 +2307,32 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         ("default", refused),
                         ("predicates", "predicates" in link),
                         ("target_types", given_targets),
+                        ("allow_dead_links", dead_beside),
                     )
                     if refused_key
                 ]
                 if beside:
+                    # a link type need types alone declare takes allow_dead_links from
+                    # its first root, whose own entry gives the first rule
+                    spelling = (
+                        next(
+                            (
+                                e.removesuffix(".derive")
+                                for _, e, own in type_rules.values()
+                                if own
+                            ),
+                            None,
+                        )
+                        if config_source == "needs_types"
+                        else None
+                    )
                     derive_problems.append(
                         DeriveProblem(
                             name,
                             True,
-                            beside_by_type_message(name, on_link=True, keys=beside),
+                            beside_by_type_message(
+                                name, on_link=True, keys=beside, spelling=spelling
+                            ),
                             part="beside",
                         )
                     )
@@ -2336,6 +2365,17 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             schema.add_link_field(link_field)
         except Exception as exc:
             raise NeedsConfigException(f"Invalid link {name!r}: {exc}") from exc
+        # a need type's entry is reported where the need types are read; on a derived
+        # link type, copy is refused (copy_on_derived_message) and so not deprecated
+        if (
+            config_source != "needs_types"
+            and link_field.copy
+            and not link_field.derived
+        ):
+            copy_declarations.append((where, name))
+    # once every link type is read: whether links is derived, so copies nothing
+    for where, name in copy_declarations:
+        log_warning(LOGGER, _copy_deprecation(where, name, schema), "deprecated", None)
 
     # validated where the configuration is read, so that a project which misconfigures
     # one of these and happens to have no needflow anywhere is still told, exactly once
@@ -2374,7 +2414,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
 
     # ``links`` takes no target types while a link type copies into it
     if (
-        (copying := _copying_link_types(schema))
+        (copying := schema.copying_link_types())
         and (own := schema.global_declaration("links")) is not None
         and isinstance(own, LinkSchema)
         and own.target_types is not None
@@ -2401,23 +2441,26 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     SphinxNeedsData(env)._set_schema(schema)
 
 
-def _copying_link_types(schema: FieldsSchema) -> list[str]:
-    """The link types that copy into ``links``, as the copy step copies them: those
-    with ``copy``, but ``links`` itself and a derived one (whose ``copy`` is refused),
-    and none where ``links`` is derived (nothing is copied into it).
+def _copy_deprecation(where: str, name: str, schema: FieldsSchema) -> str:
+    """The ``needs.deprecated`` finding of a declaration writing ``copy = true``.
 
-    With one, ``links`` holds links written in it and links copied into it, so which
-    need types its links may point to is not one question: its ``target_types`` is
-    refused (:func:`_copy_refusal`) until ``copy`` is replaced.
+    The links are still copied: the key goes in 10.0, and a link type deriving the
+    union of ``links`` and the copying link types replaces it. Where nothing is copied
+    -- on ``links`` itself, or into a derived ``links`` -- the advice is to remove it.
     """
-    own = schema.get_link_field("links")
-    if own is None or own.derived:
-        return []
-    return [
-        link.name
-        for link in schema.iter_link_fields()
-        if link.copy and link.name != "links" and not link.derived
-    ]
+    deprecated = (
+        f"{where} sets 'copy = true', which is deprecated and will be removed in "
+        "sphinx-needs 10.0"
+    )
+    if name == "links":
+        return f"{deprecated}; on links it copies nothing, so remove it"
+    if (links := schema.get_link_field("links")) is not None and links.derived:
+        return f"{deprecated}; links is derived, so it copies nothing: remove it"
+    return (
+        f"{deprecated}; declare a link type deriving the union instead, e.g. "
+        f'derive = {{kind = "union", fields = ["links", "{name}"]}}, and read it '
+        "where the copies in links were read"
+    )
 
 
 def _copy_refusal(where: str, copying: Sequence[str]) -> str:
@@ -3221,7 +3264,7 @@ def _resolve_type_declarations(
     """
     entry_findings, inherits_findings, shape_findings = findings
     #: a need type's ``links`` takes no target types beside them either
-    copying = _copying_link_types(schema)
+    copying = schema.copying_link_types()
     for text in entry_findings:
         log_warning(LOGGER, text, "config", None)
     for text in inherits_findings:
@@ -3288,6 +3331,20 @@ def _resolve_type_declarations(
                         f"{name!r} keeps its own on every need type and the "
                         f"{'key is' if len(shape_keys) == 1 else 'keys are'} ignored",
                         "config",
+                        None,
+                    )
+                if (
+                    table == "links"
+                    and name in local
+                    and keys.get("copy") is True
+                    and not glob.derived
+                ):
+                    # the shape a declaration of a link type need types alone give:
+                    # on a derived one, copy is refused at its rule
+                    log_warning(
+                        LOGGER,
+                        _copy_deprecation(where, name, schema),
+                        "deprecated",
                         None,
                     )
                 # declared, also if the entry cannot be used: the type keeps the

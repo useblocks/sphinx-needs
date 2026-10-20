@@ -129,7 +129,7 @@ EXPECTED_WARNINGS = [
     _invalid(
         "bad_kind",
         "the kind 'expr' is unknown; the kinds are copy, sum, count, min, max, any, "
-        "all, collect, hash, fingerprint, links, content_links",
+        "all, collect, hash, fingerprint, links, content_links, union",
     ),
     _invalid(
         "bad_link_kind",
@@ -779,10 +779,19 @@ def test_a_copy_into_derived_links_is_ignored(test_app):
     ``links`` holds what its rule computes, so the copy, a second writer, is not
     made, and it is one ``needs.derive_invalid`` at the ``links`` rule, naming every
     copying link type; the rule applies, and the copying link types keep their links.
+    Each ``copy = true`` is deprecated all the same, and, as it copies nothing, the
+    warning says to remove it.
     """
     app = test_app
     app.build()
     assert build_warnings(app) == [
+        *(
+            "WARNING: "
+            f"needs_links[{name!r}] sets 'copy = true', which is deprecated and will "
+            "be removed in sphinx-needs 10.0; links is derived, so it copies nothing: "
+            "remove it [needs.deprecated]"
+            for name in ("tests", "satisfies")
+        ),
         "WARNING: Invalid derive of link type 'links': kind 'links': 'links' is "
         "derived; the copy of the link types 'satisfies' and 'tests' into it is "
         "ignored; the rule applies [needs.derive_invalid]",
@@ -1034,7 +1043,7 @@ def test_parse_derive_reads_a_rule(raw, on_link, expected):
             False,
             None,
             "the kind 1 is unknown; the kinds are copy, sum, count, min, max, any, "
-            "all, collect, hash, fingerprint, links, content_links",
+            "all, collect, hash, fingerprint, links, content_links, union",
             id="kind-not-string",
         ),
         pytest.param(
@@ -1042,7 +1051,7 @@ def test_parse_derive_reads_a_rule(raw, on_link, expected):
             False,
             "expr",
             "the kind 'expr' is unknown; the kinds are copy, sum, count, min, max, "
-            "any, all, collect, hash, fingerprint, links, content_links",
+            "any, all, collect, hash, fingerprint, links, content_links, union",
             id="expr-not-yet",
         ),
         pytest.param(

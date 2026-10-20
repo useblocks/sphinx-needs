@@ -291,7 +291,7 @@ Once every document has been read, and before any page is written, the needs are
    which is then computed like one written in the need; until it is, the field holds what is written in it
    besides calls: an array the items written before a call was appended to them, any other field its empty value.
 2. The ``[[…]]``, ``<<…>>`` and ``<{…}>`` of the :ref:`link fields <needs_links>` are computed,
-   with the rules of the :ref:`derived link types <needs_derive>` (``links``, ``content_links``),
+   with the rules of the :ref:`derived link types <needs_derive>` (``links``, ``content_links``, ``union``),
    each after the link fields it reads, and those that call your own :ref:`functions <needs_functions>` last.
 3. The back links are built from the links of steps 1 and 2, each back link list in need-id order.
 4. Every other ``[[…]]``, ``<<…>>`` and ``<{…}>`` is computed, with the rules of the
@@ -331,7 +331,8 @@ Before the five steps above, each need is created as its document is read
 (a need from a needs.json, by :ref:`needimport` or :ref:`needs_external_needs`, as it is loaded):
 a field or link type it does not set takes its default, as its need type declares it (:ref:`needs_types_fields`),
 and the links of a link type with ``copy`` are copied into ``links``,
-so the links a ``needextend`` adds to such a link type are not copied.
+so the links a ``needextend`` adds to such a link type are not copied
+(``copy = true`` is deprecated: a :ref:`union <needs_derive_union>`, computed in step 2, holds them, a ``needextend``'s too).
 The whole path of a need's values:
 
 .. mermaid::
@@ -342,7 +343,7 @@ The whole path of a need's values:
        direction TB
        written["What the need sets:<br/>its directive's options, or its needs.json record"]
        defaults["Each field and link type it does not set takes its default:<br/>the first matching predicate, else the default,<br/>as its need type declares them"]
-       copied["copy: the links of a link type with copy = true<br/>are copied into links"]
+       copied["copy (deprecated): the links of a link type with copy = true<br/>are copied into links"]
      end
      subgraph post["Post-processing"]
        direction TB
@@ -404,6 +405,8 @@ And what each :ref:`derive rule <needs_derive>` reads:
      - ``y`` of its own need, and ``x`` (``copy``'s ``field`` too, and the names of ``where``) on every need
    * - ``content_links``
      - the need's content (or that of the need ``from`` names), and the names of ``where`` on each need it references
+   * - ``union``, ``fields = [...]``
+     - the listed link types of its own need, each computed before it
 
 A ``filter`` that names only values final before its step is evaluated before the step, so its matches are known:
 values nothing computes, and, in step 4, the link fields and back links of steps 2 and 3.

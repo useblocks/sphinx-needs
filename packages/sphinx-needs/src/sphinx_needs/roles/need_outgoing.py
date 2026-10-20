@@ -8,6 +8,8 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
+from sphinx_needs.need_item import NeedItem
+from sphinx_needs.needs_schema import FieldsSchema
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, split_need_id
 
 log = get_logger(__name__)
@@ -128,8 +130,7 @@ def process_need_outgoing(
                 # add a CSS class for disallowed unknown links
                 # note a warning is already emitted when validating the needs list
                 # so we don't need to do it here
-                link_field = needs_schema.get_link_field(link_type)
-                if not (link_field and link_field.allow_dead_links):
+                if _forbidden(needs_schema, ref_need, link_type, need_id_full):
                     dead_link_para.attributes["classes"].append("forbidden")
 
             # If we have several links, we add an empty text between them
@@ -140,3 +141,23 @@ def process_need_outgoing(
             node_link_container += nodes.Text("None")
 
         node_need_ref.replace_self(node_link_container)
+
+
+def _forbidden(schema: FieldsSchema, need: NeedItem, link_type: str, link: str) -> bool:
+    """Whether the dead ``link`` of ``need``'s ``link_type`` is a forbidden one.
+
+    That is, its link type does not allow dead links; for a ``union`` its rule
+    computed (:meth:`~sphinx_needs.needs_schema.LinkSchema.union_on`), a member
+    holding the same link does not, a member that is a union itself asked the same
+    way (cycles are refused at load).
+    """
+    link_field = schema.get_link_field(link_type)
+    if link_field is None:
+        return True
+    if (union := link_field.union_on(need)) is None:
+        return not link_field.allow_dead_links
+    return any(
+        _forbidden(schema, need, name, link)
+        for name in union.fields
+        if schema.get_link_field(name) is not None and link in need[name]
+    )
