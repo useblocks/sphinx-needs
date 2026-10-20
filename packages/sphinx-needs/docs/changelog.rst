@@ -11,7 +11,7 @@ Improvements
 ............
 
 - ✨ The filter fast path compiles the whole portable filter language, the subset of Python expressions ubCode
-  reads as well, and a conformance corpus both tools run defines it (:issue:`2346`)
+  reads as well, and a conformance corpus both tools run defines it (:issue:`2346`, :pr:`2350`)
 
   A :ref:`filter string <filter_string>` that the index path does not answer is compiled once and evaluated
   need by need without Python's ``eval`` when it is written in the portable language, which now holds
@@ -34,7 +34,7 @@ Improvements
   holds ``tier``, ``"index"``, ``"fast"`` or ``"eval"``, and for ``"eval"`` ``fallback_reason``, the construct that
   kept the string out of the portable filter language (``subscript``, ``call:any``,
   ``compare:name-in-name``, ...), or ``filter-code`` / ``filter-func`` for a directive's filter code
-  (:issue:`2346`)
+  (:issue:`2346`, :pr:`2350`)
 
 - ✨ A derived union of link types: a link type deriving ``union`` holds the links of the link types it names
   (:issue:`2279`, :pr:`2343`)
@@ -368,7 +368,7 @@ Bug fixes
 - 🐛 The filter fast path answers as ``eval`` does where it did not: a list or a tuple of literals after ``in``
   compares a list field item by item (``tags not in ['a']`` raised there and was true in ``eval``), and a name no
   field defines that is a Python builtin is the builtin (``filter != 'x'`` was refused there as undefined, and is
-  true in ``eval``) (:issue:`2346`)
+  true in ``eval``) (:issue:`2346`, :pr:`2350`)
 
 - 🐛 The console message of a schema finding names the need the rule selected, under which
   ``schema_violations.json`` files it. A finding of a ``network`` or ``network_back`` rule that failed
