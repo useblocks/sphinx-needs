@@ -520,7 +520,8 @@ def links_from_content(
     (see :ref:`dynamic_functions_derived`).
     A link type filled by the call, like one deriving ``content_links``, may be a member of
     a :ref:`union <needs_derive_union>`, which then holds its links;
-    but not while its ``filter`` cannot be read, such as one naming ``needs``.
+    but not while its ``filter`` cannot be read, such as one reading ``current_need`` by
+    a key that is not written out.
 
     .. versionchanged:: 8.0.0
 

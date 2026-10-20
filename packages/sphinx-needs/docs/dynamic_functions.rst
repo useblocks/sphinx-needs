@@ -42,7 +42,7 @@ Derived fields
 
 A :ref:`derived field <needs_derive>` declares a computation once, in :ref:`needs_fields` or :ref:`needs_links`,
 for every need of the project, where a built-in call computes a value for the one need it is written in;
-:ref:`dynamic_functions_derived` maps each built-in call to the kind of rule it spells.
+a :ref:`table on that page <dynamic_functions_derived>` maps each built-in call to the kind of rule it spells.
 
 .. toctree::
    :maxdepth: 1
@@ -372,7 +372,8 @@ the check at run time (:ref:`needs_derive_scope`) does not see a filter's reads.
 The needs of a set are read in need-id order, comparing ids as strings, by code point
 (``REQ_10``, ``REQ_2``, ``REQ_9``), where a sorted link list, of step 5 and of ``needs.json``,
 is in natural order (``REQ_2``, ``REQ_9``, ``REQ_10``):
-the candidates of a ``calc_sum`` or a ``filter``, and a back link list.
+the candidates of a ``calc_sum`` or a ``filter``, those of a rule's ``join`` and of a ``links`` rule,
+and a back link list.
 A link list is read in the order it is written, followed by the links a ``needextend`` added;
 a link written twice is read twice, so a ``calc_sum`` with ``links_only`` adds its value twice.
 The link lists are sorted, and a link written twice kept once, only in step 5.
