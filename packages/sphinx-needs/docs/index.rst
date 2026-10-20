@@ -17,7 +17,7 @@ Introduction
 
       .. div:: sd-font-weight-bold
          
-         Bringing Engineering-as-Code to the Sphinx framework.
+         Bringing X-as-Code to the Sphinx framework.
 
       .. div:: sd-fs-5 sd-font-italic
 
@@ -110,7 +110,7 @@ See more from `useblocks <https://useblocks.com>`__ to enhance your sphinx-needs
         :class-img-top: sd-p-3 sd-bg-dark
         :class-card: border
 
-        Provides an oversight of the useblocks ecosystem, and its goal to bring Engineering-as-Code to the software development process.
+        Provides an oversight of the useblocks ecosystem, and its goal to bring X-as-Code to the software development process.
         +++
 
         .. button-link:: https://useblocks.com
