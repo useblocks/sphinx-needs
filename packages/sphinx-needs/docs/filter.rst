@@ -364,7 +364,7 @@ so writing filters the first two take is recommended:
 3. **Python's** ``eval``, for every other string: it is evaluated need by need against a context holding every field of the need,
    which costs far more than the first two tiers, nearly all of it building that context.
 
-The three tiers give the same answers, with three exceptions:
+The three tiers give the same answers, with four exceptions:
 
 - **A filter whose value is not a boolean** (:issue:`1773`). The portable language reads an operand alone,
   and under ``and``, ``or`` and ``not``, by Python's truthiness -- an empty string, an empty list, ``0`` and ``None``
@@ -378,6 +378,10 @@ The three tiers give the same answers, with three exceptions:
 - **The name of a Python builtin alone under** ``not``, ``and`` **or** ``or`` (``filter and status == 'open'``):
   ``eval`` reads the builtin, the portable language reports the name as undefined. As the whole filter
   (``filter``), both refuse it.
+- ``search`` **and the** ``__dunder__`` **names** (``__name__``, ``__debug__``) **compared with a literal, or alone**
+  (``search == 'x'``, ``__name__ == 'builtins'``, ``__debug__``): ``eval`` reads its own binding -- the regular
+  expression function, the builtins module's attributes -- and the portable language reports the name as undefined,
+  as it did before 9.1.0. Beside a field (``owner != search``) the string falls to ``eval`` and answers as it does.
 
 Other differences from ubCode come from Python.
 ``search()`` takes Python's regular expression syntax, where ubCode takes Rust's: ``(?i)``, character classes and
@@ -387,7 +391,7 @@ A few forms the second tier answers are not part of the portable language, so ub
 ``owner < None``), a tuple or a set after ``in``, a constant the language has no literal for beside a field
 (``status == b"x"``, ``status == ...``, ``status == 1j``), and ``not not x`` (write ``not (not x)``).
 The second tier also reads a string's syntax rather than its spelling, and has none of ubCode's limits on its input,
-so it answers strings ubCode refuses for their size or spelling alone: an integer beyond 64 bits, more than 10 000
+so it answers strings ubCode refuses for their size or spelling alone: an integer outside the signed 64-bit range, more than 10 000
 terms once the filter is expanded into alternatives of conjunctions, nesting deeper than 64, a string longer than
 16 KiB, and spellings such as a parenthesised operand (``len((tags)) > 0``), a trailing comma, a comment, triple
 quotes, ``.5``, ``1e+5``, ``-(1)`` or a name that is not ASCII. Each answers as ``eval`` answers it.

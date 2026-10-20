@@ -37,7 +37,7 @@ name. It reads the string's syntax tree, not its text, and has none of ``ubc_que
 limits on its input, so it also compiles what ubCode refuses for its spelling or its
 size alone, each of which answers as eval answers it: ``not not x`` beside
 ``not (not x)``, a parenthesised operand, a trailing comma, a comment, triple quotes,
-``.5``, ``1e+5``, ``-(1)``, a name that is not ASCII; an integer beyond 64 bits, more
+``.5``, ``1e+5``, ``-(1)``, a name that is not ASCII; an integer outside the signed 64-bit range, more
 than 10 000 alternatives of conjunctions once expanded, nesting deeper than 64, a
 string longer than 16 KiB.
 
