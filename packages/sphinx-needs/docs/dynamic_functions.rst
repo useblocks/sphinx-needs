@@ -13,7 +13,7 @@ There are three mechanisms to achieve this, and which one to use depends on what
    * - mechanism
      - written as
      - use it when
-   * - a :ref:`declared derive rule <dynamic_functions_derived>` (recommended)
+   * - a :ref:`declared derive rule <needs_derive>` (recommended)
      - in the configuration: ``[needs.fields.<name>] derive = {…}``, or under ``[needs.links.<name>]``
      - a field is computed the same way on every need:
        a roll-up over links or back links, a lookup, a hash, a filtered link list.
@@ -37,67 +37,17 @@ A rule applies to every need of the project, or, declared under ``derive_by_type
 (a need of another type uses ``derive`` if given, else holds the field's default; see :ref:`needs_derive_by_type`);
 a rule's ``where`` narrows the candidates it reads, not the needs that carry the field.
 
-.. _dynamic_functions_derived:
+Derived fields
+==============
 
-Derived fields: the declared form
-=================================
+A :ref:`derived field <needs_derive>` declares a computation once, in :ref:`needs_fields` or :ref:`needs_links`,
+for every need of the project, where a built-in call computes a value for the one need it is written in;
+:ref:`dynamic_functions_derived` maps each built-in call to the kind of rule it spells.
 
-.. versionadded:: 9.0.0
+.. toctree::
+   :maxdepth: 1
 
-A built-in call computes a value for the one need it is written in.
-A :ref:`derived field <needs_derive>` declares the same computation once, in :ref:`needs_fields` or :ref:`needs_links`,
-for every need of the project:
-
-.. code-block:: toml
-
-   [needs.fields.total_hours]
-   schema = { type = "number" }
-   derive = { kind = "sum", field = "hours", over = "links" }
-
-is the declared form of ``:total_hours: [[calc_sum("hours", links_only=True)]]`` written in every need,
-and both are computed in the same step (see :ref:`needs_processing_order`): a declared rule is the field's value,
-as a call written in it would be, but an author cannot set the field.
-The built-in functions are the per-need spellings of the kinds:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 46 54
-
-   * - inline call
-     - the kind it spells
-   * - ``copy("x")``, ``copy("x", "ID")``
-     - ``copy`` with ``field = "x"``, and ``from = "ID"``
-   * - ``copy("x", filter=…)``
-     - no declared form: the lowest-id need the filter keeps, read from every need
-   * - ``calc_sum("x", links_only=True)``
-     - ``sum`` with ``field = "x"`` and ``over = "links"``; its ``filter`` is the ``where``
-   * - ``calc_sum("x")``, ``calc_sum("x", filter=…)``
-     - no declared form: a sum over every need
-   * - ``check_linked_values(result, "x", values, filter, one_hit)``
-     - ``all`` over ``links`` (``any`` with ``one_hit``), with the ``test`` ``x in values`` and the ``where`` ``filter``,
-       giving ``result``; with ``one_hit``, ``result`` even when no linked need matches, which ``any`` does not
-   * - ``links_from_content()``, ``links_from_content("ID", filter=…)``
-     - ``content_links``, with ``from = "ID"`` and the ``where`` ``filter``
-   * - ``links_from_filter(filter, include_self, include_parts)``
-     - ``links``, with the ``where`` ``filter`` and the same ``include_self`` and ``include_parts``
-   * - ``links_from_match(field, equals, include_self, filter)``
-     - ``links`` with ``join = { field = field, equals = equals }``, the same ``include_self``,
-       and the ``where`` ``filter``
-
-A ``where`` that cannot be evaluated on a candidate (one lacking a field it names) drops that candidate,
-without a warning, in every kind and in ``links_from_filter``;
-the ``filter`` of ``calc_sum``, ``check_linked_values`` and ``links_from_content`` keeps its own behaviour.
-
-Written in many needs, ``links_from_filter``, ``links_from_content`` and ``links_from_match`` store a list on each,
-counted as a rule's lists are: see :ref:`needs_derive_cost`.
-
-The ``join`` role (:ref:`needs_derive_join`) spells such a correlated lookup, as sphinx-test-reports' ``tr_link`` does,
-and :ref:`links_from_match` is its inline spelling.
-A ``copy("x", filter=…)`` whose filter compares a need with ``current_need`` (``name == current_need['ref']``)
-is such a lookup too, its filter tested on every need for each need it is in:
-a ``copy`` with ``join`` is the declared form of such a lookup (it splits the values,
-and finds no value rather than this need's own when nothing matches).
-A rule for some need types is declared under ``derive_by_type`` (:ref:`needs_derive_by_type`), not with a role.
+   derived_fields
 
 .. _dynamic_functions:
 
