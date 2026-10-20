@@ -11,7 +11,7 @@ Improvements
 ............
 
 - ✨ A derived union of link types: a link type deriving ``union`` holds the links of the link types it names
-  (:issue:`2279`)
+  (:issue:`2279`, :pr:`2343`)
 
   ``derive = { kind = "union", fields = ["links", "blocks", "tests"] }`` on a :ref:`needs_links` entry (or
   ``[needs.links.<l>]``, a need type's ``links`` entry, ``derive_by_type``) gives each need the links of
@@ -304,7 +304,7 @@ Deprecations
 ............
 
 - ⚠️ ``copy = true`` on a link type is deprecated, and is removed in 10.0: a link type deriving the
-  :ref:`union <needs_derive_union>` of ``links`` and the copying link types replaces it (:issue:`2279`)
+  :ref:`union <needs_derive_union>` of ``links`` and the copying link types replaces it (:issue:`2279`, :pr:`2343`)
 
   The links are still copied into ``links``. Each declaration writing ``copy = true`` -- a :ref:`needs_links` or
   :ref:`needs_extra_links` entry, a ``[needs.links.<l>]`` table, a need type's entry of a link type need types alone
