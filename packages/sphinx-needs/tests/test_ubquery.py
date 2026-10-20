@@ -638,3 +638,18 @@ class TestThisDoc:
                 NeedsInvalidFilter, match="`this_doc` can not be used in this context"
             ):
                 filter_single_need(self.need, self.config, filter_string)
+
+
+def test_a_builtin_name_reads_as_in_eval() -> None:
+    """A name no field defines that is a Python builtin is the builtin, as eval reads it:
+    as an operand it is compared, and alone it stays undefined (eval refuses it there as
+    no boolean, so both tiers exclude the need and report the filter)."""
+    config = Mock()
+    config.filter_data = {}
+    need = _make_need()
+    for filter_string in ("status != filter", "(status != filter) is True"):
+        assert filter_single_need(need, config, filter_string) is True
+    with pytest.raises(NeedsInvalidFilter, match="name 'filter' is not defined"):
+        filter_single_need(need, config, "filter")
+    with pytest.raises(NeedsInvalidFilter, match="did not evaluate to a boolean"):
+        filter_single_need(need, config, "filter if True else False")

@@ -41,6 +41,7 @@ The public entry point is :func:`try_build_simple_predicate`.
 from __future__ import annotations
 
 import ast
+import builtins
 import operator
 import re
 from collections.abc import Callable, Mapping
@@ -125,6 +126,24 @@ def _get_field(
         return fallback[name]
     if name in need:
         return need[name]
+    raise NameError(f"name {name!r} is not defined")
+
+
+def _get_value(
+    need: NeedItem | NeedPartItem,
+    name: str,
+    fallback: Mapping[str, Any] | None = None,
+) -> Any:
+    """The value of a name used as an operand: :func:`_get_field`, then Python's
+    builtins, where eval finds a name that no key of its context defines -- so that
+    ``owner != filter`` answers what eval answers rather than ``filter`` being undefined.
+    """
+    if fallback is not None and name in fallback:
+        return fallback[name]
+    if name in need:
+        return need[name]
+    if hasattr(builtins, name):
+        return getattr(builtins, name)
     raise NameError(f"name {name!r} is not defined")
 
 
@@ -243,8 +262,11 @@ def _expr(node: ast.expr) -> SimplePredicate:
     if isinstance(node, ast.Constant) and isinstance(node.value, bool):
         return lambda need, ctx=None, _v=node.value: _v
 
-    # `var_field_op_expr` with no operator: the operand, read by its truthiness
-    get = _operand(node)
+    # `var_field_op_expr` with no operator: the operand, read by its truthiness. A bare
+    # name that is no field stays undefined rather than reading a Python builtin: eval
+    # refuses a builtin there as no boolean, so the two tiers both exclude the need and
+    # report the filter
+    get = _field(node, builtin=False) if isinstance(node, ast.Name) else _operand(node)
     return lambda need, ctx=None, _g=get: bool(_g(need, ctx))
 
 
@@ -539,18 +561,23 @@ def _operand(node: ast.expr) -> _Getter:
     return _field(node)
 
 
-def _field(node: ast.expr, *, within: str | None = None) -> _Getter:
+def _field(
+    node: ast.expr, *, within: str | None = None, builtin: bool = True
+) -> _Getter:
     """Compile a field (`var_field`): a name, or a ``var.`` chain.
 
     :param within: the reason to give for a node that is no field and no other refused
         construct, when the field is the argument of an operand's call.
+    :param builtin: whether a name that no key defines reads a Python builtin, as eval
+        reads it (:func:`_get_value`), rather than being undefined.
     :raises _NotPortable: For anything else.
     """
     # a name: a field of the need, or a `needs_filter_data` key
     if isinstance(node, ast.Name):
         if node.id in _CONTEXT_ONLY_NAMES:
             raise _NotPortable(f"name:{node.id}")
-        return lambda need, ctx=None, _f=node.id: _get_field(need, _f, ctx)
+        read = _get_value if builtin else _get_field
+        return lambda need, ctx=None, _f=node.id, _r=read: _r(need, _f, ctx)
     # a dotted name: only the variant data's, var.<key>...
     if isinstance(node, ast.Attribute):
         chain = _unpack_attribute_chain(node)
