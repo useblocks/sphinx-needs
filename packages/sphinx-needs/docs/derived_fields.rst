@@ -143,9 +143,7 @@ The roles
    * - ``over``
      - a link type
      - The candidates: the needs this need's ``<link type>`` names, in the order written, a need named twice counted twice;
-       or, for ``<link type>_back``, the needs that link to this one, in need-id order, each once
-       (need-id order compares the ids as strings, by code point: ``T_10``, ``T_2``, ``T_9``;
-       ``needs.json`` sorts a link list naturally instead: ``T_2``, ``T_9``, ``T_10``).
+       or, for ``<link type>_back``, the needs that link to this one, in :ref:`need-id order <needs_id_order>`, each once.
        A link to a need part reads the part's need; a link to no need is skipped.
    * - ``from``
      - a need id
@@ -153,7 +151,7 @@ The roles
    * - ``join``
      - ``{ field = …, equals = … }``
      - ``links``, ``copy``: the candidates are the needs whose ``field`` equals one of this need's ``equals`` values,
-       each once, in need-id order. Both are text fields, a string split on ``,`` or an array of strings,
+       each once, in :ref:`need-id order <needs_id_order>`. Both are text fields, a string split on ``,`` or an array of strings,
        compared value by value (see :ref:`needs_derive_join`).
    * - ``where``
      - a filter string
@@ -274,8 +272,7 @@ and its ``owners`` are ``["alice", "bob"]``; a spec, which has no ``test_case``,
   (an item is not split again), and an empty value is dropped.
   A need matches when its ``field`` and this need's ``equals`` share a value, compared exactly (case-sensitive).
 - **Candidates.** Each need that matches, once, however many values it shares,
-  in need-id order (the ids compared as strings, by code point: ``T_10``, ``T_2``, ``T_9``;
-  ``needs.json`` sorts a link list naturally instead).
+  in :ref:`need-id order <needs_id_order>`.
   This need is left out unless ``include_self = true``.
   Needs only: a need part is never a candidate (a need with parts matches as itself),
   and ``include_parts`` cannot be given beside ``join``.
@@ -464,9 +461,8 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
 - **Candidates.** ``over = "<t>"``: the needs this need's ``<t>`` names, once the link fields are computed,
   in the order written; a need named twice is a candidate twice;
   a link to a :ref:`need part <need_part>` is its need, and a link to no need is skipped.
-  ``over = "<t>_back"``: the needs that link to this need (or to one of its parts), in need-id order, each once
-  (need-id order compares the ids as strings, by code point: ``T_10``, ``T_2``, ``T_9``, as a back link list is read;
-  ``needs.json`` sorts a link list naturally instead: ``T_2``, ``T_9``, ``T_10``).
+  ``over = "<t>_back"``: the needs that link to this need (or to one of its parts), in :ref:`need-id order <needs_id_order>`, each once,
+  as a back link list is read.
   ``where`` drops the candidates it does not hold on, then ``test`` is tested on the others.
   A ``where`` or ``test`` that cannot be evaluated on a candidate (a field the candidate lacks,
   as ``hours > 1`` on a need without ``hours``) does not hold on it, without a warning.
@@ -491,7 +487,7 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
   ``collect`` keeps each value once, in the order of the candidates, a list's items each.
   ``copy`` over several targets takes the one with the lowest need id among those that set the field
   (``select = "first"``), the same and a ``needs.derive_unique`` warning when several set it (``"unique"``),
-  or every value in the order written (in need-id order over a ``join``), a list's items each (``"list"``).
+  or every value in the order written (in :ref:`need-id order <needs_id_order>` over a ``join``), a list's items each (``"list"``).
 - **transitive.** ``min`` and ``max`` read every need reachable through ``over``, each once:
   a need on a cycle reaches itself, so every member of a cycle has the same value;
   ``include_self`` adds the need's own ``field``.
@@ -558,10 +554,10 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
   For a need ``REQ_1`` of type ``req``, titled ``Größe``, with status ``open`` and no other value set,
   the text is ``{"id":"REQ_1","status":"open","title":"Größe","type":"req"}``.
 - **links.** Every need, and with ``include_parts`` every need's parts (after it, in part-id order),
-  in need-id order (the ids compared as strings, by code point: ``T_10``, ``T_2``, ``T_9``);
+  in :ref:`need-id order <needs_id_order>`;
   this need and its parts are left out unless ``include_self``.
   With ``join``, the needs that match (:ref:`needs_derive_join`), in the same order.
-  ``needs.json`` writes the list sorted naturally, as every link list (``T_2``, ``T_9``, ``T_10``).
+  ``needs.json`` writes the list sorted naturally, as every link list.
 - **content_links.** The ``:need:`` references of this need's content (or of the content of the need ``from`` names),
   in document order, each once: a reference to a part is a part link, a reference to this need is kept,
   a reference to no need is kept (and reported as any dead link), a disabled one (``!ID``) and those inside a
@@ -748,7 +744,8 @@ the ``filter`` of ``calc_sum``, ``check_linked_values`` and ``links_from_content
 Written in many needs, ``links_from_filter``, ``links_from_content`` and ``links_from_match`` store a list on each,
 counted as a rule's lists are: see :ref:`needs_derive_cost`.
 
-The ``join`` role (:ref:`needs_derive_join`) spells such a correlated lookup, as sphinx-test-reports' ``tr_link`` does,
+The ``join`` role spells a correlated lookup (:ref:`needs_derive_join`,
+which also gives the nearest declared form of sphinx-test-reports' ``tr_link``),
 and :ref:`links_from_match` is its inline spelling.
 A ``copy("x", filter=…)`` whose filter compares a need with ``current_need`` (``name == current_need['ref']``)
 is such a lookup too, its filter tested on every need for each need it is in:

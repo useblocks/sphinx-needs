@@ -243,7 +243,7 @@ Once every document has been read, and before any page is written, the needs are
 2. The ``[[…]]``, ``<<…>>`` and ``<{…}>`` of the :ref:`link fields <needs_links>` are computed,
    with the rules of the :ref:`derived link types <needs_derive>` (``links``, ``content_links``, ``union``),
    each after the link fields it reads, and those that call your own :ref:`functions <needs_functions>` last.
-3. The back links are built from the links of steps 1 and 2, each back link list in need-id order.
+3. The back links are built from the links of steps 1 and 2, each back link list in :ref:`need-id order <needs_id_order>`.
 4. Every other ``[[…]]``, ``<<…>>`` and ``<{…}>`` is computed, with the rules of the
    :ref:`derived fields <needs_derive>`, each after every value it reads
    (a field of its own need or of another need, a field of a linked need, a back link),
@@ -364,6 +364,9 @@ One that names a value computed in the same step makes every need a candidate, a
 that field and ``x`` on every need.
 A filter reads the needs themselves, so only these rules order what it reads:
 the check at run time (:ref:`needs_derive_scope`) does not see a filter's reads.
+
+.. _needs_id_order:
+
 The needs of a set are read in need-id order, comparing ids as strings, by code point
 (``REQ_10``, ``REQ_2``, ``REQ_9``), where a sorted link list, of step 5 and of ``needs.json``,
 is in natural order (``REQ_2``, ``REQ_9``, ``REQ_10``):
@@ -382,14 +385,15 @@ it is not run when one is a back link, a dead-link flag, or a field computed in 
 (:ref:`needs_derive_scope`);
 and a field no need computes is read as written.
 
-Your own functions run after every built-in function of their step, in need-id order, then by field.
+Your own functions run after every built-in function of their step, in :ref:`need-id order <needs_id_order>`, then by field.
 They read the values the built-in functions computed
 (but for a call whose filter cannot be read, which runs among them, see below);
 a built-in function that reads a field your own function computes
 reads it before it is computed, which is reported (:ref:`needs_derive_scope`).
 A function of your own in a link field, such as sphinx-test-reports' ``tr_link``, runs at the end of step 2,
 so its links are in the back links of step 3
-(:ref:`links_from_match` is the built-in function for ``tr_link``'s links, ordered as the other built-in functions are).
+(its nearest built-in form is :ref:`links_from_match`, ordered as the other built-in functions are:
+see :ref:`needs_derive_join`).
 A later release is to let a function declare what it reads, which will order it like a built-in one.
 A ``filter`` that names ``needs``, or reads ``current_need`` by a key that is not written out,
 cannot be ordered either: its call runs with your own functions.
