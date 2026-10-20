@@ -515,6 +515,13 @@ def links_from_content(
 
     Same links are only added once.
 
+    It is the per-need spelling of a :ref:`derived link type <needs_derive>` of the kind
+    ``content_links``, with ``from`` for ``need_id`` and ``where`` for ``filter``
+    (see :ref:`dynamic_functions_derived`).
+    A link type filled by the call, like one deriving ``content_links``, may be a member of
+    a :ref:`union <needs_derive_union>`, which then holds its links;
+    but not while its ``filter`` cannot be read, such as one naming ``needs``.
+
     .. versionchanged:: 8.0.0
 
        Previously used a regex on raw RST source text to extract ``:need:`` references.
@@ -646,7 +653,11 @@ def links_from_filter(
     The linked needs come in need-id order, comparing ids as strings
     (so ``REQ_10`` comes before ``REQ_9``); the link list is sorted for the output anyway.
     It is the per-need spelling of a :ref:`derived link type <needs_derive>` of the kind
-    ``links``.
+    ``links``, with ``filter`` for ``where`` and the same ``include_self`` and
+    ``include_parts`` (see :ref:`dynamic_functions_derived`).
+    A link type filled by the call, like one deriving ``links``, may be a member of a
+    :ref:`union <needs_derive_union>`, which then holds its links;
+    but not while its ``filter`` cannot be read, such as one naming ``needs``.
 
     The need that contains the call is not linked, even if it passes the filter, and
     neither are its own parts: set ``include_self=True`` to keep them.
@@ -743,6 +754,9 @@ def links_from_match(
     It is the per-need spelling of a :ref:`derived link type <needs_derive>` of the kind
     ``links`` with the role :ref:`join <needs_derive_join>`, ``join = { field = …,
     equals = … }``, and it links to the same needs.
+    A link type filled by the call, like one deriving ``links`` with ``join``, may be a
+    member of a :ref:`union <needs_derive_union>`, which then holds its links;
+    but not while its ``filter`` cannot be read, such as one naming ``needs``.
 
     Both fields hold text, a string or an array of strings, and both are read the same
     way: a string is split on ``,``, an array taken item by item, each value stripped of
