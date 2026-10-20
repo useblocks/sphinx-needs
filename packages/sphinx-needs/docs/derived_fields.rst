@@ -459,6 +459,18 @@ So is a link type declared with ``copy = true`` while ``links`` is derived:
 nothing is copied into ``links``, which holds what its rule computes;
 and ``copy = true`` on a derived link type, which is not available in this release: nothing is copied.
 
+A rule that cannot be computed on a need leaves the field at its empty value, and is reported:
+a cycle of rules or calls reading one another (``needs.derive_cycle``, see :ref:`needs_derive_cycle`),
+a read of a value its step cannot wait for (``needs.derive_scope``, see :ref:`needs_derive_scope`),
+or a ``from`` naming no need, and a result the field's ``schema`` refuses, such as a value outside its ``enum`` or under its ``minimum``
+(``needs.dynamic_function``); a result is checked even when it equals the empty value,
+such as a ``count`` of ``0`` under ``minimum = 1``.
+To silence a warning, add its type to Sphinx's ``suppress_warnings``:
+
+.. code-block:: python
+
+   suppress_warnings = ["needs.derive_invalid", "needs.derive_authored", "needs.derive_unique"]
+
 .. _`needs_derive_computed`:
 
 How a rule is computed
@@ -655,18 +667,6 @@ Some readers read only ``links`` in this release, and take no link type yet: :re
 in a need's content. While ``copy = true`` is in use they see the copies, as before.
 A project that relies on them keeps ``copy = true`` until 10.0, and with it the ``needs.deprecated`` warning;
 ``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation with it.
-
-A rule that cannot be computed on a need leaves the field at its empty value, and is reported:
-a cycle of rules or calls reading one another (``needs.derive_cycle``, see :ref:`needs_derive_cycle`),
-a read of a value its step cannot wait for (``needs.derive_scope``, see :ref:`needs_derive_scope`),
-or a ``from`` naming no need, and a result the field's ``schema`` refuses, such as a value outside its ``enum`` or under its ``minimum``
-(``needs.dynamic_function``); a result is checked even when it equals the empty value,
-such as a ``count`` of ``0`` under ``minimum = 1``.
-To silence a warning, add its type to Sphinx's ``suppress_warnings``:
-
-.. code-block:: python
-
-   suppress_warnings = ["needs.derive_invalid", "needs.derive_authored", "needs.derive_unique"]
 
 .. _`needs_derive_changed`:
 
