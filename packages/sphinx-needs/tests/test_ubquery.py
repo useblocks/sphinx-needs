@@ -694,6 +694,25 @@ def test_a_name_eval_binds_otherwise_stays_with_eval(name: str) -> None:
         assert _outcome(need, config, filter_string) == answer
 
 
+@pytest.mark.parametrize(
+    "filter_string",
+    [
+        pytest.param('__class__ != "x"', id="module-attribute"),
+        pytest.param('__name__ == "builtins"', id="module-dunder"),
+    ],
+)
+def test_a_builtins_module_attribute_is_no_builtin(filter_string: str) -> None:
+    """The builtins a name reads are the builtins module's own names, never the
+    attributes every module object has nor its dunders: compared with a literal, such a
+    name stays undefined, as it was before the grammar was the reference."""
+    config = Mock()
+    config.filter_data = {}
+    need = _make_need()
+    assert compile_portable(filter_string).predicate is not None
+    with pytest.raises(NeedsInvalidFilter, match="is not defined"):
+        filter_single_need(need, config, filter_string)
+
+
 def test_the_origin_key_is_no_name_a_filter_can_hold() -> None:
     """The document reaches a predicate under a key no field or filter-data key can be,
     so a field named like it is never read as the document."""
