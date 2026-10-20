@@ -1,0 +1,35 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 6
+      },
+      "end": {
+        "row": 1,
+        "column": 16
+      }
+    },
+    "tagged_scope": "entity e is\nend entity e;",
+    "scope": {
+      "kind": "entity_declaration",
+      "start": 3,
+      "end": 4,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "param a",
+      "id": "b",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "entity_declaration"
+  }
+]

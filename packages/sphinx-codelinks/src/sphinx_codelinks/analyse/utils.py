@@ -141,7 +141,7 @@ def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
         return False
 
 
-# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS, FE_POWERSHELL]
+# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS, FE_POWERSHELL, FE_VHDL]
 def init_tree_sitter(
     comment_type: CommentType, src_path: Path | None = None
 ) -> tuple[Parser, Query]:
@@ -220,6 +220,13 @@ def init_tree_sitter(
 
         parsed_language = Language(tree_sitter_powershell.language())
         query = Query(parsed_language, POWERSHELL_QUERY)
+    elif comment_type == CommentType.vhdl:
+        # @VHDL comment query for tree-sitter, IMPL_VHDL_3, impl, [FE_VHDL]
+        import tree_sitter_vhdl
+
+        parsed_language = Language(tree_sitter_vhdl.language())
+        # VHDL names its ``--`` and ``/* */`` comments as Rust does
+        query = Query(parsed_language, RUST_QUERY)
     else:
         raise ValueError(f"Unsupported comment style: {comment_type}")
     parser = Parser(parsed_language)
@@ -761,6 +768,95 @@ def find_jsonc_associated_structure(node: TreeSitterNode) -> TreeSitterNode | No
     return association.node if association is not None else None
 
 
+# The VHDL nodes that wrap the design elements a leading comment documents: a marker
+# above one binds the wrapper's first item. A design unit's first item is the one after
+# its context clauses.
+VHDL_SCOPE_WRAPPER_TYPES = frozenset(
+    {
+        "design_unit",
+        "process_head",
+        "block_head",
+        "generate_head",
+        "generate_block",
+        "interface_list",
+    }
+)
+VHDL_CONTEXT_CLAUSE_TYPES = frozenset(
+    {"library_clause", "use_clause", "context_reference"}
+)
+VHDL_COMMENT_TYPES = frozenset({"line_comment", "block_comment"})
+
+
+def _vhdl_innermost_on_row(node: TreeSitterNode, row: int) -> TreeSitterNode | None:
+    """The innermost design element of ``node``'s subtree, ``node`` included, that
+    ends on ``row``, following the last non-comment child that ends there."""
+    found = None
+    current: TreeSitterNode | None = node
+    while current is not None:
+        if is_entity(current, CommentType.vhdl):
+            found = current
+        current = next(
+            (
+                child
+                for child in reversed(current.named_children)
+                if child.type not in VHDL_COMMENT_TYPES and child.end_point.row == row
+            ),
+            None,
+        )
+    return found
+
+
+# @VHDL comment-to-design-element association, IMPL_VHDL_4, impl, [FE_VHDL]
+def _vhdl_associate(node: TreeSitterNode, written: bytes) -> Association | None:
+    """The VHDL design element a comment documents, and how.
+
+    A trailing comment -- the previous non-comment sibling ends on the comment's row --
+    documents the innermost design element ending on that row, a port inside its
+    ``interface_list`` included (``trailing``). A leading comment documents the next
+    non-comment sibling, if that is a design element, or the first item of a wrapper;
+    the walk never passes a sibling (``leading``). Otherwise the comment documents the
+    nearest enclosing design element (``enclosing``), or nothing at file level. A
+    Doxygen ``--!`` comment attached as ``leading`` or ``trailing`` is a
+    ``doc_comment``. Comment siblings are skipped: a VHDL ``line_comment`` holds its
+    newline, so the comment on the row above ends on this one.
+    """
+    is_doc = is_doc_comment(node, CommentType.vhdl, text=written)
+
+    def enclosing() -> Association | None:
+        scope = find_enclosing_scope(node, CommentType.vhdl)
+        return Association(scope, "enclosing") if scope is not None else None
+
+    row = node.start_point.row
+    previous = node.prev_named_sibling
+    while previous is not None and previous.type in VHDL_COMMENT_TYPES:
+        previous = previous.prev_named_sibling
+    if previous is not None and previous.end_point.row == row:
+        entity = _vhdl_innermost_on_row(previous, row)
+        if entity is None:
+            return enclosing()
+        return Association(entity, "doc_comment" if is_doc else "trailing")
+    following = node.next_named_sibling
+    while following is not None and following.type in VHDL_COMMENT_TYPES:
+        following = following.next_named_sibling
+    if following is not None and following.type in VHDL_SCOPE_WRAPPER_TYPES:
+        skipped = (
+            VHDL_CONTEXT_CLAUSE_TYPES
+            if following.type == "design_unit"
+            else frozenset()
+        )
+        following = next(
+            (
+                child
+                for child in following.named_children
+                if child.type not in VHDL_COMMENT_TYPES and child.type not in skipped
+            ),
+            None,
+        )
+    if following is not None and is_entity(following, CommentType.vhdl):
+        return Association(following, "doc_comment" if is_doc else "leading")
+    return enclosing()
+
+
 # @Attach a marker to the adjacent code entity, IMPL_ENTITY_1, impl, [FE_DEF]
 def associate(
     node: TreeSitterNode,
@@ -774,6 +870,8 @@ def associate(
 
     1. YAML and JSONC: the data structure on the comment's row, else the next one,
        else the enclosing one.
+       VHDL: the design element next to the comment, never past a sibling (see
+       :func:`_vhdl_associate`).
     2. A Python docstring documents the definition it is in.
     3. A Rust inner doc comment (``//!``) documents what it is inside, and PowerShell
        comment-based help first in a function's body documents that function (see
@@ -821,6 +919,9 @@ def associate(
         return _jsonc_associate(node)
 
     written = (node.text or b"") if text is None else text
+    if comment_type == CommentType.vhdl:
+        # VHDL binds to the design element next to the comment, never past it
+        return _vhdl_associate(node, written)
     declared: Mechanism = "doc_comment"
     if node.type == CommentCategory.docstring or _is_inner_doc(written, comment_type):
         scope = find_enclosing_scope(node, comment_type)

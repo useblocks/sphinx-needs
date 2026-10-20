@@ -1,0 +1,37 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 5
+      },
+      "end": {
+        "row": 4,
+        "column": 43
+      }
+    },
+    "tagged_scope": "entity counter is\nend entity counter;",
+    "scope": {
+      "kind": "entity_declaration",
+      "start": 6,
+      "end": 7,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Real Need",
+      "id": "IMPL_DOXY",
+      "type": "impl",
+      "links": [
+        "REQ_VHDL"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "entity_declaration"
+  }
+]

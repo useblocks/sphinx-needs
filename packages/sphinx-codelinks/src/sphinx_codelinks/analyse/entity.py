@@ -61,7 +61,7 @@ Mechanism = Literal["doc_comment", "leading", "trailing", "enclosing"]
 
 ``doc_comment`` is *declared*: a documentation comment (``///``, ``//!``, ``/**``,
 ``/*!``, a C# ``///``, a JSDoc ``/**``, a Python docstring, PowerShell comment-based
-help first in a function's body) attached by its own rule.
+help first in a function's body, a VHDL ``--!``) attached by its own rule.
 The other three are *inferred* from where a plain comment sits: on the lines before the
 entity (``leading``), after code on the entity's own line (``trailing``), or inside its
 body (``enclosing``).
@@ -239,6 +239,54 @@ ENTITY_NODE_TYPES: dict[CommentType, set[str]] = {
         "class_property_definition",
         "enum_statement",
         "command",
+    },
+    # @VHDL Scope Node Types, IMPL_VHDL_2, impl, [FE_VHDL]
+    # VHDL's design elements, which the VHDL association binds a marker to.
+    # Sequential statements are not among them: a marker among those documents its
+    # process or subprogram.
+    CommentType.vhdl: {
+        # design units
+        "entity_declaration",
+        "architecture_definition",
+        "package_declaration",
+        "package_definition",
+        "package_instantiation_declaration",
+        "configuration_declaration",
+        "context_declaration",
+        # subprograms
+        "subprogram_declaration",
+        "subprogram_definition",
+        "subprogram_instantiation_declaration",
+        # declarations
+        "type_declaration",
+        "subtype_declaration",
+        "component_declaration",
+        "constant_declaration",
+        "signal_declaration",
+        "variable_declaration",
+        "file_declaration",
+        "alias_declaration",
+        # generics, ports and parameters
+        "interface_declaration",
+        "interface_constant_declaration",
+        "interface_signal_declaration",
+        "interface_variable_declaration",
+        "interface_file_declaration",
+        "interface_type_declaration",
+        "interface_subprogram_declaration",
+        "interface_package_declaration",
+        # concurrent statements
+        "process_statement",
+        "block_statement",
+        "for_generate_statement",
+        "if_generate_statement",
+        "case_generate_statement",
+        "component_instantiation_statement",
+        "concurrent_simple_signal_assignment",
+        "concurrent_conditional_signal_assignment",
+        "concurrent_selected_signal_assignment",
+        "concurrent_assertion_statement",
+        "concurrent_procedure_call_statement",
     },
 }
 SCOPE_NODE_TYPES = ENTITY_NODE_TYPES
@@ -537,6 +585,8 @@ _DOC_LINE_OPENINGS: dict[CommentType, tuple[str, ...]] = {
     CommentType.cpp: ("///", "//!"),
     CommentType.cs: ("///",),
     CommentType.rust: ("///", "//!"),
+    # Doxygen's VHDL comment
+    CommentType.vhdl: ("--!",),
 }
 _DOC_BLOCK_OPENINGS: dict[CommentType, tuple[str, ...]] = {
     CommentType.cpp: ("/**", "/*!"),
