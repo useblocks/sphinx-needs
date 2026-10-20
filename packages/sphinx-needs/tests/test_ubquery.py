@@ -11,16 +11,19 @@ from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import (
     filter_single_need,
 )
-from sphinx_needs.need_item import NeedItem, NeedsContent
+from sphinx_needs.need_item import NeedItem, NeedItemSourceDirective, NeedsContent
 from sphinx_needs.ubquery import (
     _expr_to_predicate,
     _get_field,
+    compile_portable,
     try_build_simple_predicate,
 )
 
 
-def _make_need(**core_overrides: object) -> NeedItem:
-    """Create a minimal NeedItem for testing."""
+def _make_need(
+    *, extras: dict[str, object] | None = None, **core_overrides: object
+) -> NeedItem:
+    """Create a minimal NeedItem for testing, written in the document ``index``."""
     core_base = {
         "id": "REQ_001",
         "type": "requirement",
@@ -46,9 +49,9 @@ def _make_need(**core_overrides: object) -> NeedItem:
     core_base.update(core_overrides)
     return NeedItem(
         core=core_base,
-        extras={},
+        extras=dict(extras or {}),
         links={},
-        source=None,
+        source=NeedItemSourceDirective(docname="index", lineno=1, lineno_content=2),
         content=NeedsContent(content="", doctype=".rst"),
         parts=(),
     )
@@ -449,3 +452,189 @@ class TestVariantDataFastPath:
         config.variant_data_proxy = VariantDataProxy(config.variant_data)
         result = filter_single_need(self.need, config, 'var.cpu == "arm"')
         assert result is True
+
+
+# --- the portable grammar: the forms added to the fast path ---
+
+
+@pytest.mark.parametrize(
+    ("filter_string", "expected", "extras"),
+    [
+        # `is_null_expr` / `is_not_null_expr`
+        pytest.param("style is None", True, {}, id="is-none"),
+        pytest.param("status is None", False, {}, id="is-none-false"),
+        pytest.param("status is not None", True, {}, id="is-not-none"),
+        # `var_field_with_len`, either side of a comparison
+        pytest.param("len(tags) > 1", True, {}, id="len-gt"),
+        pytest.param("len(tags) == 0", False, {}, id="len-eq"),
+        pytest.param("0 < len(tags)", True, {}, id="number-lt-len"),
+        pytest.param("len(title) >= -1", True, {}, id="len-negative-number"),
+        pytest.param("len(tags)", True, {}, id="bare-len"),
+        # `var_field_with_lower` / `var_field_with_upper`
+        pytest.param('status.upper() == "OPEN"', True, {}, id="upper-eq"),
+        pytest.param('"open" == status.lower()', True, {}, id="literal-eq-lower"),
+        pytest.param('"test" in title.lower()', True, {}, id="literal-in-lower"),
+        pytest.param(
+            '"test" not in title.upper()', True, {}, id="literal-not-in-upper"
+        ),
+        pytest.param(
+            'status.upper() in ["OPEN", "DONE"]', True, {}, id="upper-in-list"
+        ),
+        # `str_predicate_method`, composable with the chains
+        pytest.param('id.startswith("REQ")', True, {}, id="startswith"),
+        pytest.param('id.endswith("001")', True, {}, id="endswith"),
+        pytest.param('id.lower().startswith("req")', True, {}, id="lower-startswith"),
+        pytest.param('title.upper().endswith("MENT")', True, {}, id="upper-endswith"),
+        pytest.param('not id.startswith("SPEC")', True, {}, id="not-startswith"),
+        # `comparison_expr` with an operand on both sides
+        pytest.param(
+            "owner == lead", True, {"owner": "a", "lead": "a"}, id="name-eq-name"
+        ),
+        pytest.param(
+            "owner != lead", True, {"owner": "a", "lead": "b"}, id="name-ne-name"
+        ),
+        pytest.param(
+            "effort < budget", True, {"effort": 1, "budget": 2}, id="name-lt-name"
+        ),
+        pytest.param("len(tags) == len(title)", False, {}, id="len-eq-len"),
+        pytest.param("status.lower() == status", True, {}, id="lower-eq-name"),
+        # `search_check` over any operand
+        pytest.param('search("^test", title.lower())', True, {}, id="search-lower"),
+        # `bool_literal_expr`
+        pytest.param("True", True, {}, id="bare-true"),
+        pytest.param("False or status", True, {}, id="false-or"),
+        pytest.param("not True", False, {}, id="not-true"),
+        # `in_list_expr` with a negative number literal
+        pytest.param(
+            "effort in [-1, 0]", True, {"effort": -1}, id="in-negative-number"
+        ),
+    ],
+)
+def test_portable_form_compiles_and_answers(
+    filter_string: str, expected: bool, extras: dict[str, object]
+) -> None:
+    pred = try_build_simple_predicate(filter_string)
+    assert pred is not None, compile_portable(filter_string).rejection
+    assert pred(_make_need(extras=extras), None) is expected
+
+
+@pytest.mark.parametrize(
+    ("filter_string", "reason"),
+    [
+        # outside the grammar: the construct the debug report names
+        pytest.param("sphinx_tag in tags", "compare:name-in-name", id="name-in-name"),
+        pytest.param("x in y.lower()", "compare:name-in-name", id="name-in-lower"),
+        pytest.param("x == [1]", "compare:list", id="list-beside-eq"),
+        pytest.param("[] != x", "compare:list", id="list-beside-ne"),
+        pytest.param('x.lower() < "a"', "compare:ordering", id="ordering-string"),
+        pytest.param("len(x) > True", "compare:ordering", id="ordering-bool"),
+        pytest.param("None is x", "compare:is", id="none-is"),
+        pytest.param("x is True", "compare:is", id="is-true"),
+        pytest.param("1 < x < 3", "compare:chained", id="chained"),
+        pytest.param('"a" in [x]', "compare:in", id="literal-in-list-of-names"),
+        pytest.param('x.lower() in ("a",)', "tuple", id="tuple-after-function"),
+        pytest.param("len(x.lower())", "call:len", id="len-of-function"),
+        pytest.param("x.lower().upper()", "method:upper", id="chained-functions"),
+        pytest.param("x.strip()", "method:strip", id="other-method"),
+        pytest.param("x.startswith(y)", "method:startswith", id="startswith-name"),
+        pytest.param(
+            'x.startswith("a", 1)', "method:startswith", id="startswith-2-args"
+        ),
+        pytest.param("bool(arch)", "call:bool", id="other-function"),
+        pytest.param("any(tags)", "call:any", id="any"),
+        pytest.param("c.this_doc() == True", "call:c.this_doc", id="this-doc-compared"),
+        pytest.param('c.in_namespace("x")', "call:c.in_namespace", id="c-other"),
+        pytest.param('id.ns == "x"', "attribute:id", id="facet-root"),
+        pytest.param("needs", "name:needs", id="needs"),
+        pytest.param("x[0] == 1", "subscript", id="subscript"),
+        pytest.param("[t for t in tags]", "comprehension", id="comprehension"),
+        pytest.param("x + 1 > 2", "arithmetic", id="arithmetic"),
+        pytest.param("1", "literal", id="bare-number"),
+        pytest.param('"a" == "b"', "literal", id="literal-eq-literal"),
+        pytest.param('f"{x}" == "a"', "fstring", id="fstring"),
+        pytest.param("x if y else z", "ifexp", id="conditional"),
+        pytest.param('search("(", title)', "call:search", id="search-bad-pattern"),
+        pytest.param("status===", "syntax", id="syntax"),
+    ],
+)
+def test_outside_the_grammar_names_its_construct(
+    filter_string: str, reason: str
+) -> None:
+    compiled = compile_portable(filter_string)
+    assert compiled.predicate is None
+    assert compiled.rejection == reason
+
+
+@pytest.mark.parametrize(
+    "filter_string",
+    [
+        # accepted before the portable grammar was the reference; ubc_query refuses them
+        pytest.param('id < "ZZZ"', id="name-ordering-string"),
+        pytest.param('type in ("requirement", "spec")', id="name-in-tuple"),
+        pytest.param('type in {"requirement", "spec"}', id="name-in-set"),
+        pytest.param('status == b"open"', id="name-eq-bytes"),
+    ],
+)
+def test_forms_accepted_before_the_grammar_stay(filter_string: str) -> None:
+    assert try_build_simple_predicate(filter_string) is not None
+
+
+@pytest.mark.parametrize(
+    ("filter_string", "expected"),
+    [
+        # a list value against a list literal compares item by item, as eval's list does
+        pytest.param('tags in ["safety"]', False, id="in-list"),
+        pytest.param('tags not in ["safety"]', True, id="not-in-list"),
+        pytest.param('tags in ("safety",)', False, id="in-tuple"),
+    ],
+)
+def test_an_unhashable_value_in_a_list_answers_as_eval(
+    filter_string: str, expected: bool
+) -> None:
+    config = Mock()
+    config.filter_data = {}
+    need = _make_need()
+    assert filter_single_need(need, config, filter_string) is expected
+    assert filter_single_need(need, config, f"({filter_string}) is True") is expected
+
+
+def test_an_unhashable_value_in_a_set_fails_as_in_eval() -> None:
+    config = Mock()
+    config.filter_data = {}
+    with pytest.raises(NeedsInvalidFilter, match="unhashable type: 'list'"):
+        filter_single_need(_make_need(), config, 'tags in {"safety"}')
+    with pytest.raises(NeedsInvalidFilter, match="unhashable type: 'list'"):
+        filter_single_need(_make_need(), config, '(tags in {"safety"}) is True')
+
+
+class TestThisDoc:
+    """``c.this_doc()`` takes the document from the call, never from the compiled form."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self) -> None:
+        self.need = _make_need()
+        self.config = Mock()
+        self.config.filter_data = {}
+
+    def test_compiled_once_for_every_document(self) -> None:
+        compiled = compile_portable("c.this_doc()")
+        assert compiled.predicate is not None
+        assert compiled.reads_origin
+
+    @pytest.mark.parametrize(
+        ("origin", "expected"), [("index", True), ("other", False)]
+    )
+    def test_compares_the_document_of_the_call(
+        self, origin: str, expected: bool
+    ) -> None:
+        result = filter_single_need(
+            self.need, self.config, "c.this_doc()", origin_docname=origin
+        )
+        assert result is expected
+
+    def test_without_a_document_raises_as_eval(self) -> None:
+        for filter_string in ("c.this_doc()", "(c.this_doc()) is True"):
+            with pytest.raises(
+                NeedsInvalidFilter, match="`this_doc` can not be used in this context"
+            ):
+                filter_single_need(self.need, self.config, filter_string)

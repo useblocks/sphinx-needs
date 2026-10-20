@@ -28,7 +28,7 @@ from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.needs_schema import AllowedTypes
-from sphinx_needs.ubquery import try_build_simple_predicate
+from sphinx_needs.ubquery import ORIGIN_KEY, CompiledFilter, compile_portable
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
@@ -703,15 +703,11 @@ def filter_needs_and_parts(
         return list(needs)
 
     # === Fast path: try compiled predicate to avoid eval() entirely ===
-    simple_pred = try_build_simple_predicate(filter_string)
-    var_proxy = config.variant_data_proxy
+    compiled = compile_portable(filter_string)
+    simple_pred = compiled.predicate
 
     if simple_pred is not None:
-        fallback: dict[str, Any] | None = None
-        if config.filter_data or var_proxy is not None:
-            fallback = dict(config.filter_data) if config.filter_data else {}
-            if var_proxy is not None:
-                fallback["var"] = var_proxy
+        fallback = _fast_path_context(config, compiled, origin_docname)
         found_needs: list[_NeedOrPartT] = []
         error_reported = False
         for filter_need in needs:
@@ -769,6 +765,33 @@ def filter_needs_and_parts(
                 error_reported = True
 
     return found_needs_slow
+
+
+def _fast_path_context(
+    config: NeedsSphinxConfig,
+    compiled: CompiledFilter,
+    origin_docname: str | None,
+) -> dict[str, Any] | None:
+    """The mapping a compiled filter's predicate reads beside the need.
+
+    What the ``eval`` tier's context holds besides the need's fields: the
+    ``needs_filter_data`` keys, the variant data under ``var``, and, for a predicate
+    that reads it (``c.this_doc()``), the document the filter is written in. The
+    document is passed per call, never compiled in: one compiled filter serves every
+    document a string is written in.
+
+    :return: The mapping, or None when the predicate needs nothing of it.
+    """
+    var_proxy = config.variant_data_proxy
+    origin = origin_docname if compiled.reads_origin else None
+    if not config.filter_data and var_proxy is None and origin is None:
+        return None
+    fallback: dict[str, Any] = dict(config.filter_data) if config.filter_data else {}
+    if var_proxy is not None:
+        fallback["var"] = var_proxy
+    if origin is not None:
+        fallback[ORIGIN_KEY] = origin
+    return fallback
 
 
 def need_search(*args: Any, **kwargs: Any) -> bool:
@@ -870,13 +893,10 @@ def filter_single_need(
     var_proxy = config.variant_data_proxy
 
     # === Fast path: short-circuit simple expressions ===
-    simple_pred = try_build_simple_predicate(filter_string)
+    compiled = compile_portable(filter_string)
+    simple_pred = compiled.predicate
     if simple_pred is not None:
-        fallback: dict[str, Any] | None = None
-        if config.filter_data or var_proxy is not None:
-            fallback = dict(config.filter_data) if config.filter_data else {}
-            if var_proxy is not None:
-                fallback["var"] = var_proxy
+        fallback = _fast_path_context(config, compiled, origin_docname)
         try:
             result = simple_pred(need, fallback)
             if not isinstance(result, bool):
