@@ -147,8 +147,9 @@ def _forbidden(schema: FieldsSchema, need: NeedItem, link_type: str, link: str) 
     """Whether the dead ``link`` of ``need``'s ``link_type`` is a forbidden one.
 
     That is, its link type does not allow dead links; for a ``union`` its rule
-    computed, a member holding the same link does not
-    (:meth:`~sphinx_needs.needs_schema.LinkSchema.union_on`).
+    computed (:meth:`~sphinx_needs.needs_schema.LinkSchema.union_on`), a member
+    holding the same link does not, a member that is a union itself asked the same
+    way (cycles are refused at load).
     """
     link_field = schema.get_link_field(link_type)
     if link_field is None:
@@ -156,7 +157,7 @@ def _forbidden(schema: FieldsSchema, need: NeedItem, link_type: str, link: str) 
     if (union := link_field.union_on(need)) is None:
         return not link_field.allow_dead_links
     return any(
-        not member.allow_dead_links
+        _forbidden(schema, need, name, link)
         for name in union.fields
-        if (member := schema.get_link_field(name)) is not None and link in need[name]
+        if schema.get_link_field(name) is not None and link in need[name]
     )

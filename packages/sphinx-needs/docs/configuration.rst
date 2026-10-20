@@ -1453,8 +1453,10 @@ into ``links`` (deprecated, see :ref:`needs_links`).
   one need types declare alone, a derived link type, another union -- each computed before the union,
   whether its links are written, computed by a rule, a built-in function such as ``links_from_filter``, a variant,
   or added by a ``needextend``.
-  Not a member filled by one of your own :ref:`functions <needs_functions>` (such as sphinx-test-reports' ``tr_link``):
-  those run after the built-in ones of their step, a union's rule included, so the union cannot read it, which is one
+  Not a member filled by one of your own :ref:`functions <needs_functions>` (such as sphinx-test-reports' ``tr_link``),
+  nor by a call whose filter cannot be read, such as a ``links_from_filter`` whose filter names ``needs``:
+  those run after the other built-in functions of their step, a union's rule included
+  (see :ref:`needs_processing_order`), so the union cannot read the member, which is one
   ``needs.derive_scope`` warning, the union holding no links. Keep ``copy`` for such a link type until a later
   release lets a union read it.
   ``parent_needs`` and the back links (``<link type>_back``, built after the link types) are not members,
@@ -1479,8 +1481,8 @@ into ``links`` (deprecated, see :ref:`needs_links`).
   (``needs.derive_authored``) and ignored.
 - **Imported needs keep their data.** No rule runs on a need from :ref:`needimport` or :ref:`needs_external_needs`:
   it holds the union its needs.json carries, else no links, whatever its members hold.
-  Those links are not its members', so they are checked as any link type's: a dead one is reported, under the union,
-  and is a forbidden one.
+  Those links are not its members', so they are checked as any link type's, under the union's own
+  ``allow_dead_links``: a dead one is reported, under the union, and is a forbidden one.
 - **Not counted as dense.** ``needs.derive_dense`` (:ref:`needs_derive_cost`) counts the links its members compute,
   not the union's list, which holds them again.
 - It is left out of every ``fingerprint``, as every derived link type is, and it may be declared per need type
@@ -1622,7 +1624,8 @@ Each configured link can define:
      a need from :ref:`needimport` or :ref:`needs_external_needs` keeps the ``all_links`` of its needs.json, where its
      ``blocks`` were copied; a dead link of ``blocks`` is reported once, under ``blocks`` and as it allows dead links,
      where the copy reported it under ``links`` too;
-     and a ``blocks`` filled by one of your own :ref:`functions <needs_functions>` cannot be read by the union
+     and a ``blocks`` filled by one of your own :ref:`functions <needs_functions>`, or by a call whose filter cannot be
+     read (a ``links_from_filter`` whose filter names ``needs``), cannot be read by the union
      (``needs.derive_scope``, the union holding no links), where the copy copied the call: keep ``copy`` for it.
      The readers that take only ``links`` (:ref:`needs_derive_union`) read no union in this release:
      a project that relies on them keeps ``copy`` until 10.0, and the warning with it

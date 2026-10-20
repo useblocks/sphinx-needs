@@ -25,8 +25,9 @@ Improvements
   computed it: a union reports neither, a dead link of a member that allows dead links makes no dead link forbidden
   (and is drawn as allowed), and an ``allow_dead_links`` on a link type all of whose rules are unions is refused; on
   an imported need, which keeps its file's union, it is checked as any link type. ``needs.derive_dense`` does not
-  count its list. A member filled by one of the project's own functions (``needs_functions``) cannot be read by a
-  union in this release (``needs.derive_scope``). It is what
+  count its list. A member filled by one of the project's own functions (``needs_functions``), or by a call whose
+  filter cannot be read (a ``links_from_filter`` whose filter names ``needs``), cannot be read by a union in this
+  release (``needs.derive_scope``). It is what
   ``copy = true`` gave, declared (see *Deprecations*); see :ref:`needs_derive_union` for how to read it in place of
   ``links``. The derive conformance corpus pins it (``union-*``), as does the field-declaration corpus for a union
   declared on need types.
@@ -313,8 +314,9 @@ Deprecations
   :ref:`needimport` or :ref:`needs_external_needs` keeps the union its needs.json carries rather than copying, and a
   dead link is reported once, at the member. Two cases keep ``copy`` until 10.0, with the warning
   (``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation): a link type filled by
-  one of the project's own functions (``needs_functions``, such as sphinx-test-reports' ``tr_link``), which a union
-  cannot read in this release, and a project relying on :ref:`check_linked_values <check_linked_values>`,
+  one of the project's own functions (``needs_functions``, such as sphinx-test-reports' ``tr_link``) or by a call
+  whose filter cannot be read (a ``links_from_filter`` whose filter names ``needs``), which a union cannot read in
+  this release, and a project relying on :ref:`check_linked_values <check_linked_values>`,
   :ref:`calc_sum <calc_sum>` with ``links_only`` or the ``need_outgoing`` and ``need_incoming`` roles written in a
   need, which read only ``links``. Where ``links`` is derived the copy copies nothing, and the warning says to
   remove it. The documentation's own configuration no longer sets ``copy``.

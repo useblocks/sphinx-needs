@@ -597,7 +597,9 @@ def my_links(app, need, needs, *args, **kwargs):
 needs_functions = [my_links]
 needs_links = {
     "blocks": {"copy": True},
+    "flt": {},
     "all_links": {"derive": {"kind": "union", "fields": ["links", "blocks"]}},
+    "all_flt": {"derive": {"kind": "union", "fields": ["flt"]}},
 }
 """
 
@@ -615,15 +617,20 @@ Own function
    :id: SPEC_1
    :blocks: [[my_links()]]
    :links: REQ_1
+
+.. spec:: Its flt is a call whose filter names needs
+   :id: SPEC_2
+   :flt: [[links_from_filter("len(needs) > 0 and id == 'REQ_1'")]]
 """
 
 
 @pytest.mark.parametrize(
     "test_app", [_project(CONF_OWN_FUNCTION, INDEX_OWN_FUNCTION)], indirect=True
 )
-def test_a_union_cannot_read_a_member_your_own_function_computes(test_app):
+def test_a_union_cannot_read_a_member_computed_after_the_built_ins(test_app):
     """Your own functions run after the built-in ones of their step, a union's rule
-    included, so a union over a member one of them computes cannot be computed: it is
+    included, and so does a built-in call whose filter cannot be read (it names
+    ``needs``): a union over a member one of them computes cannot be computed. It is
     one ``needs.derive_scope`` and holds no links, while ``copy`` still copies the
     call. A known limit of this release, documented beside the deprecation."""
     app = test_app
@@ -633,11 +640,17 @@ def test_a_union_cannot_read_a_member_your_own_function_computes(test_app):
         "<srcdir>/index.rst:10: WARNING: derive rule 'union' for option 'all_links' "
         "read 'links' on need 'SPEC_1' and 'blocks' on need 'SPEC_1' before they were "
         "computed: they are computed by your own function 'my_links', which runs "
-        "after the built-in functions [needs.derive_scope]"
+        "after the built-in functions [needs.derive_scope]",
+        "<srcdir>/index.rst:15: WARNING: derive rule 'union' for option 'all_flt' "
+        "read 'flt' on need 'SPEC_2' before it was computed: it is computed by a "
+        "call whose filter cannot be read, which runs after the other built-in "
+        "functions [needs.derive_scope]",
     ]
-    spec = _built(app)["needs"]["SPEC_1"]
-    assert spec["links"] == ["REQ_1", "REQ_2"]
-    assert spec["all_links"] == []
+    needs = _built(app)["needs"]
+    assert needs["SPEC_1"]["links"] == ["REQ_1", "REQ_2"]
+    assert needs["SPEC_1"]["all_links"] == []
+    assert needs["SPEC_2"]["flt"] == ["REQ_1"]
+    assert needs["SPEC_2"]["all_flt"] == []
 
 
 CONF_HTML = """\
@@ -649,17 +662,45 @@ needs_links = {
         "outgoing": "all links",
         "derive": {"kind": "union", "fields": ["blocks", "tests"]},
     },
+    "inner": {
+        "outgoing": "inner links",
+        "derive": {"kind": "union", "fields": ["blocks"]},
+    },
+    "outer": {
+        "outgoing": "outer links",
+        "derive": {"kind": "union", "fields": ["inner", "tests"]},
+    },
 }
 """
+
+IMPORTED_HTML_JSON = json.dumps(
+    {
+        "current_version": "1.0",
+        "versions": {
+            "1.0": {
+                "needs": {
+                    "EXP_1": {
+                        "id": "EXP_1",
+                        "type": "spec",
+                        "title": "Imported, a dead link in its union",
+                        "all_links": ["DEAD_9"],
+                    }
+                }
+            }
+        },
+    }
+)
 
 INDEX_HTML = """\
 Rendered
 ========
 
-.. spec:: Two dead links
+.. spec:: Dead links
    :id: SPEC_1
-   :blocks: DEAD_1
-   :tests: DEAD_2
+   :blocks: DEAD_1, DEAD_3
+   :tests: DEAD_2, DEAD_3
+
+.. needimport:: exp.json
 """
 
 
@@ -668,20 +709,42 @@ Rendered
     [
         {
             "buildername": "html",
-            "files": [(Path("conf.py"), CONF_HTML), (Path("index.rst"), INDEX_HTML)],
+            "files": [
+                (Path("conf.py"), CONF_HTML),
+                (Path("exp.json"), IMPORTED_HTML_JSON),
+                (Path("index.rst"), INDEX_HTML),
+            ],
         }
     ],
     indirect=True,
 )
 def test_a_unions_dead_links_are_drawn_as_its_members_allow(test_app):
-    """In a need's layout, a dead link of the union's row is marked forbidden only
-    where a member holding it does not allow dead links, as the build reports it."""
+    """In a need's layout, a dead link of a union's row is marked forbidden where a
+    member holding it does not allow dead links, as the build reports it: through a
+    member that is a union itself, and where any member holding it does not (``DEAD_3``,
+    in an allowing and a forbidding member). On an imported need, whose union no rule
+    computed, the union's own ``allow_dead_links`` (none) decides."""
     app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text("utf8")
-    row = html[html.index("all links:") :]
-    row = row[: row.index("</div>")]
-    assert re.findall(r'class="([^"]*)">(DEAD_\d)', row) == [
-        ("needs_dead_link", "DEAD_1"),
-        ("needs_dead_link forbidden", "DEAD_2"),
+    rows = [
+        (label, re.findall(r'class="([^"]*)">(DEAD_\d)', row))
+        for label, row in re.findall(
+            r"(all links|inner links|outer links):(.*?)</div>", html, re.S
+        )
+    ]
+    allowed, forbidden = "needs_dead_link", "needs_dead_link forbidden"
+    assert rows == [
+        # SPEC_1
+        (
+            "all links",
+            [(allowed, "DEAD_1"), (forbidden, "DEAD_2"), (forbidden, "DEAD_3")],
+        ),
+        ("inner links", [(allowed, "DEAD_1"), (allowed, "DEAD_3")]),
+        (
+            "outer links",
+            [(allowed, "DEAD_1"), (forbidden, "DEAD_2"), (forbidden, "DEAD_3")],
+        ),
+        # EXP_1, imported
+        ("all links", [(forbidden, "DEAD_9")]),
     ]
