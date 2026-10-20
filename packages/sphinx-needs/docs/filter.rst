@@ -288,7 +288,7 @@ The second parameter should be one of the above variables(status, id, content, .
 In the :ref:`portable filter language <filter_string_performance>` the pattern is a plain string literal:
 it has no raw strings (``r"..."``), so a backslash is written twice (``"\\d+"``), or avoided with a
 character class (``"[.]"``). The pattern is read with Python's regular expression syntax;
-ubCode reads it with Rust's, which shares most of it, but not look-around.
+ubCode reads it with Rust's, which shares most of it, but not look-around, backreferences or ``{,n}``.
 
 .. dropdown:: Show example
 
@@ -364,15 +364,33 @@ so writing filters the first two take is recommended:
 3. **Python's** ``eval``, for every other string: it is evaluated need by need against a context holding every field of the need,
    which costs far more than the first two tiers, nearly all of it building that context.
 
-The three tiers give the same answers, with one exception: a filter whose value is not a boolean.
-The portable language reads an operand alone, and under ``and``, ``or`` and ``not``, by Python's truthiness --
-an empty string, an empty list, ``0`` and ``None`` are false -- so ``tags`` selects the needs that have tags,
-where ``eval`` refuses a filter whose value is not a boolean (``Filter did not evaluate to a boolean``),
-as for ``status == 'open' and tags[0]``. Two smaller differences from ubCode come from Python:
-``search()`` takes Python's regular expression syntax, where ubCode takes Rust's (``(?i)``, character classes and anchors
-are common to both; look-around is Python's alone), and a few forms the second tier answers are not part of the
-portable language, so ubCode refuses them: ``<`` and the other orderings between a field and a string (``title < 'M'``),
-a tuple or a set after ``in``, and ``not not x`` (write ``not (not x)``).
+The three tiers give the same answers, with three exceptions:
+
+- **A filter whose value is not a boolean** (:issue:`1773`). The portable language reads an operand alone,
+  and under ``and``, ``or`` and ``not``, by Python's truthiness -- an empty string, an empty list, ``0`` and ``None``
+  are false -- so ``tags`` selects the needs that have tags, where ``eval`` refuses a filter whose value is not a
+  boolean (``Filter did not evaluate to a boolean``), as for ``status == 'open' and tags[0]``. A string that is in
+  the portable language since 9.1.0 and whose value is not a boolean -- ``len(tags)`` alone, ``title.lower()``,
+  ``True and owner``, a ``var.`` chain alone holding a string -- therefore selects by its truthiness, where it was
+  refused with that warning and selected nothing.
+- **A field or** :ref:`needs_filter_data` **key named** ``len``: ``eval`` calls it in ``len(x)``, the portable
+  language calls Python's ``len``.
+- **The name of a Python builtin alone under** ``not``, ``and`` **or** ``or`` (``filter and status == 'open'``):
+  ``eval`` reads the builtin, the portable language reports the name as undefined. As the whole filter
+  (``filter``), both refuse it.
+
+Other differences from ubCode come from Python.
+``search()`` takes Python's regular expression syntax, where ubCode takes Rust's: ``(?i)``, character classes and
+anchors are common to both; look-around, backreferences and ``{,n}`` are Python's alone.
+A few forms the second tier answers are not part of the portable language, so ubCode refuses them:
+``<`` and the other orderings between a field and a literal that is no number (``title < 'M'``, ``owner > True``,
+``owner < None``), a tuple or a set after ``in``, a constant the language has no literal for beside a field
+(``status == b"x"``, ``status == ...``, ``status == 1j``), and ``not not x`` (write ``not (not x)``).
+The second tier also reads a string's syntax rather than its spelling, and has none of ubCode's limits on its input,
+so it answers strings ubCode refuses for their size or spelling alone: an integer beyond 64 bits, more than 10 000
+terms once the filter is expanded into alternatives of conjunctions, nesting deeper than 64, a string longer than
+16 KiB, and spellings such as a parenthesised operand (``len((tags)) > 0``), a trailing comma, a comment, triple
+quotes, ``.5``, ``1e+5``, ``-(1)`` or a name that is not ASCII. Each answers as ``eval`` answers it.
 
 To see which tier answers each filter of a project's view directives, and why one reaches ``eval``,
 enable :ref:`needs_debug_filters`: every record says ``tier`` (``"index"``, ``"fast"`` for the portable language, or ``"eval"``)

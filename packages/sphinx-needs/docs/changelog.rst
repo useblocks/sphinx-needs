@@ -19,10 +19,13 @@ Improvements
   comparison, of ``in``, of ``search()`` and alone; ``x.startswith('...')`` / ``x.endswith('...')``, after any of
   those (``id.lower().startswith('req')``); a field against a field in every comparison (``variant ==
   current_variant``); ``c.this_doc()``; a negative number; ``True`` / ``False``; and a ``var.`` chain alone. Its
-  answers are ``eval``'s, an error included; the one exception stays a filter whose value is not a boolean, which
-  the portable language reads by its truthiness and ``eval`` refuses (:issue:`1773`). A string the language does
-  not hold -- a field ``in`` a field, a list beside ``==``, a subscript, a comprehension, arithmetic, another call --
-  is evaluated by ``eval`` as before. Of the strings this repository's documentation and tests wrote, eleven of
+  answers are ``eval``'s, an error included, but for a filter whose value is not a boolean, which the portable
+  language reads by its truthiness and ``eval`` refuses (:issue:`1773`), and the two smaller cases
+  :ref:`filter_string_performance` lists. So a string newly in the language whose value is not a boolean --
+  ``len(tags)`` alone, ``title.lower()``, ``True and owner``, a ``var.`` chain alone holding a string -- now selects
+  the needs it is true for, where it was refused with ``Filter did not evaluate to a boolean`` and selected
+  nothing. A string the language does not hold -- a field ``in`` a field, a list beside ``==``, a subscript, a
+  comprehension, arithmetic, another call -- is evaluated by ``eval`` as before. Of the strings this repository's documentation and tests wrote, eleven of
   the sixteen that reached ``eval`` no longer do. ``tests/fixtures/filter_conformance.toml`` (repository of
   record: this one; ubCode vendors it) pins every rule, the answers in both tools and where ubCode answers
   otherwise; see :ref:`filter_string_performance`.
@@ -363,8 +366,9 @@ Bug fixes
 .........
 
 - 🐛 The filter fast path answers as ``eval`` does where it did not: a list or a tuple of literals after ``in``
-  compares a list field item by item (``tags not in ['a']`` raised there and was true in ``eval``), and a name
-  no field defines that is a Python builtin is the builtin (``owner != filter``) (:issue:`2346`)
+  compares a list field item by item (``tags not in ['a']`` raised there and was true in ``eval``), and a name no
+  field defines that is a Python builtin is the builtin (``filter != 'x'`` was refused there as undefined, and is
+  true in ``eval``) (:issue:`2346`)
 
 - 🐛 The console message of a schema finding names the need the rule selected, under which
   ``schema_violations.json`` files it. A finding of a ``network`` or ``network_back`` rule that failed

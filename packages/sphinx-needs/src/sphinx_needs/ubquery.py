@@ -33,9 +33,13 @@ Each arm below names the ``py_expr.pest`` rule it mirrors. A few forms this modu
 before the grammar was its reference are kept, although ``ubc_query`` refuses them: an
 ordering comparison of a name with a literal that is no number, a tuple or a set of
 literals after ``in``, and a constant the grammar has no literal for (``b"x"``) beside a
-name. It reads the string's syntax tree, not its text, so what the grammar refuses for
-its spelling alone -- ``not not x`` beside ``not (not x)``, a missing space -- is not
-refused here.
+name. It reads the string's syntax tree, not its text, and has none of ``ubc_query``'s
+limits on its input, so it also compiles what ubCode refuses for its spelling or its
+size alone, each of which answers as eval answers it: ``not not x`` beside
+``not (not x)``, a parenthesised operand, a trailing comma, a comment, triple quotes,
+``.5``, ``1e+5``, ``-(1)``, a name that is not ASCII; an integer beyond 64 bits, more
+than 10 000 alternatives of conjunctions once expanded, nesting deeper than 64, a
+string longer than 16 KiB.
 
 The public entry point is :func:`try_build_simple_predicate`.
 """

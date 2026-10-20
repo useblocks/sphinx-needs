@@ -46,8 +46,9 @@
 #     nothing. sphinx-needs reports it as one `needs.filter` warning; ubCode's runner reads
 #     its own report of a failed filter
 #   - an entry with `tier = "eval"` is OUTSIDE the portable language: ubCode's runner
-#     asserts that its engine refuses the string (it parses it to no query), and
-#     sphinx-needs answers it through `eval`, which `expected` pins. Every other entry is
+#     asserts that its engine refuses the string (it parses it to no query), unless the
+#     entry carries `divergent`, and sphinx-needs answers it through `eval`, which
+#     `expected` pins. Every other entry is
 #     inside it. `tier = "index"` or `tier = "fast"` pins which of sphinx-needs' two
 #     earlier tiers answers it; `reason` (with `tier = "eval"`) pins the construct
 #     sphinx-needs' debug report names. ubCode's runner ignores `tier`'s value and `reason`

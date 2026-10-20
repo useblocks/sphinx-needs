@@ -4268,11 +4268,15 @@ or a filter in the configuration writes no record. A record holds:
   name that stays the same across releases --
   ``subscript``, ``comprehension``, ``arithmetic``, ``literal`` (a literal where the language has none, ``1`` alone),
   ``call:<function>`` (a call of a function the language lacks, or of one of its own in a shape it lacks: ``call:any``,
-  ``call:len``), ``method:<name>`` (``method:strip``), ``attribute:<root>`` (a dotted name not under ``var.``),
-  ``name:<name>`` (``needs``, ``current_need``, ``c`` or ``var`` as a value), ``compare:<shape>``
-  (``compare:name-in-name``, ``compare:list``, ``compare:ordering``, ``compare:is``, ``compare:chained``,
-  ``compare:in``), ``syntax``, the kind of any other expression (``ifexp``, ``fstring``, ``lambda``, ``tuple``, ...),
-  and ``filter-code`` and ``filter-func`` for a directive's :ref:`filter code <filter_code>` and :ref:`filter_func`.
+  ``call:len``; a method of a ``var.`` value or of ``c`` is named by its chain, ``call:var.build.strip``,
+  ``call:c.in_namespace``), ``call`` (a call of anything else, ``x()()``), ``method:<name>`` (``method:strip``),
+  ``attribute:<root>`` (a dotted name not under ``var.``), ``name:<name>`` (``needs``, ``current_need``, ``c``,
+  ``var``, ``search`` or a ``__dunder__`` name as a value), ``not`` (a ``not`` as an operand, ``(not x) == y``),
+  ``compare:<shape>`` (``compare:name-in-name``, ``compare:list``, ``compare:ordering``, ``compare:is``,
+  ``compare:chained``, ``compare:in``), the kind of any other expression (``ifexp``, ``fstring``, ``lambda``,
+  ``tuple``, ...), and ``filter-code`` and ``filter-func`` for a directive's :ref:`filter code <filter_code>` and
+  :ref:`filter_func`. ``syntax`` names a string that is no Python expression, but no record carries it today: such a
+  filter stops the build before its record is written.
 
 .. _`needs_schema_validation_enabled`:
 
