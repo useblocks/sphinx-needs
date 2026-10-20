@@ -17,7 +17,7 @@ Introduction
 
       .. div:: sd-font-weight-bold
          
-         Bringing X-as-Code to the Sphinx framework.
+         Bringing X-as-Code engineering to the Sphinx framework.
 
       .. div:: sd-fs-5 sd-font-italic
 
