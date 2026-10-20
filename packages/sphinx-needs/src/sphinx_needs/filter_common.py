@@ -13,7 +13,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from timeit import default_timer as timer
 from types import CodeType
-from typing import Any, TypedDict, TypeVar, overload
+from typing import Any, Literal, TypedDict, TypeVar, overload
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -182,6 +182,8 @@ def process_filters(
     )
 
     found_needs: list[NeedItem | NeedPartItem] = []
+    # which tier answered the filter, and why one reached eval: the debug report's
+    tier: tuple[_FilterTier, str | None]
 
     if (not filter_code or filter_code.isspace()) and not ff_result:
         # TODO these may not be correct for parts
@@ -212,6 +214,11 @@ def process_filters(
             location=location,
             origin_docname=filter_data["docname"],
         )
+        tier = (
+            _filter_tier(filter_data["filter"])
+            if needs_config.debug_filters
+            else ("index", None)
+        )
     else:
         # The filter results may be dirty, as it may continue manipulated needs.
         found_dirty_needs: list[NeedItem | NeedPartItem] = []
@@ -226,6 +233,7 @@ def process_filters(
             }
             exec(filter_code, context)
             found_dirty_needs = context["results"]
+            tier = ("eval", "filter-code")
         elif ff_result:  # code from external file
             full_filter.append(ff_result.sig)
             args = []
@@ -242,6 +250,7 @@ def process_filters(
                 results=found_dirty_needs,
                 **args_context,
             )
+            tier = ("eval", "filter-func")
         else:
             log_warning(
                 log, "Something went wrong running filter", "filter", location=location
@@ -294,22 +303,59 @@ def process_filters(
     if needs_config.debug_filters and full_filter:
         # Store basic filter configuration and result global list.
         # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
-        json_line = json.dumps(
-            {
-                "origin": origin,
-                "source": str(location.source) if location.source else None,
-                "line": location.line,
-                "filter": full_filter[0]
-                if len(full_filter) == 1
-                else " and ".join(f"({f})" for f in full_filter),
-                "needs_count": len(found_needs),
-                "runtime": duration,
-            }
-        )
+        record: dict[str, Any] = {
+            "origin": origin,
+            "source": str(location.source) if location.source else None,
+            "line": location.line,
+            "filter": full_filter[0]
+            if len(full_filter) == 1
+            else " and ".join(f"({f})" for f in full_filter),
+            "needs_count": len(found_needs),
+            "runtime": duration,
+            "tier": tier[0],
+        }
+        if tier[0] == "eval":
+            record["fallback_reason"] = tier[1]
+        json_line = json.dumps(record)
         with Path(str(app.outdir), "debug_filters.jsonl").open("a") as f:
             f.write(json_line + "\n")
 
     return found_needs
+
+
+_FilterTier = Literal["index", "fast", "eval"]
+"""The tier of filter evaluation that answers a filter string: the index path, the
+fast path of the portable grammar (:mod:`sphinx_needs.ubquery`), or Python's ``eval``."""
+
+
+def _filter_tier(filter_string: str | None) -> tuple[_FilterTier, str | None]:
+    """The tier that answers *filter_string* over a view of needs, as
+    :func:`filter_needs_view` and :func:`filter_needs_parts` take it, and, for ``eval``,
+    the construct that kept the string out of the portable grammar.
+
+    The first two tiers decide by the string alone, never by the needs, so this asks
+    each the question it asks itself: the index path whether it answers the whole
+    string (its own analysis, over an empty view), the fast path whether the string
+    compiles. No filter at all is answered by the view's indexes.
+
+    :return: The tier, and the reason for ``eval`` (None for the other two).
+    """
+    if not filter_string:
+        return "index", None
+    try:
+        body = ast.parse(filter_string).body
+    except Exception:
+        body = []
+    if len(body) == 1 and isinstance((expr := body[0]), ast.Expr):
+        _, requires_eval = _analyze_and_apply_expr(
+            NeedsView._from_needs({}), expr.value
+        )
+        if not requires_eval:
+            return "index", None
+    compiled = compile_portable(filter_string)
+    if compiled.predicate is not None:
+        return "fast", None
+    return "eval", compiled.rejection
 
 
 def filter_scope_ids(
