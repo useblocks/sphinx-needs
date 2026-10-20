@@ -163,6 +163,11 @@ filter = 'effort <= -2'
 expected = ["REQ_002"]
 
 [[case.filters]]
+filter = 'effort > -3'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+why = "the sign is the literal's: > 3 would select SPEC_001 alone"
+
+[[case.filters]]
 filter = 'effort == 8'
 expected = ["SPEC_001"]
 
@@ -229,7 +234,7 @@ filter = '1 < effort < 5'
 expected = ["REQ_001"]
 tier = "eval"
 reason = "compare:chained"
-divergent = { ubcode = "a parse error: the grammar has no comparison chain" }
+why = "the grammar has no comparison chain: ubCode refuses it"
 
 [[case]]
 name = "compare-a-field-with-a-field"

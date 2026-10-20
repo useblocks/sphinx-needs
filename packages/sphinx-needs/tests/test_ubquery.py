@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import ast
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
+from sphinx_needs import filter_common
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import (
     filter_single_need,
 )
 from sphinx_needs.need_item import NeedItem, NeedItemSourceDirective, NeedsContent
 from sphinx_needs.ubquery import (
+    ORIGIN_KEY,
+    CompiledFilter,
     _expr_to_predicate,
     _get_field,
     compile_portable,
@@ -553,6 +556,7 @@ def test_portable_form_compiles_and_answers(
         pytest.param('"a" == "b"', "literal", id="literal-eq-literal"),
         pytest.param('f"{x}" == "a"', "fstring", id="fstring"),
         pytest.param("x if y else z", "ifexp", id="conditional"),
+        pytest.param("(not status) == True", "not", id="not-as-an-operand"),
         pytest.param('search("(", title)', "call:search", id="search-bad-pattern"),
         pytest.param("status===", "syntax", id="syntax"),
     ],
@@ -653,3 +657,44 @@ def test_a_builtin_name_reads_as_in_eval() -> None:
         filter_single_need(need, config, "filter")
     with pytest.raises(NeedsInvalidFilter, match="did not evaluate to a boolean"):
         filter_single_need(need, config, "filter if True else False")
+
+
+def _outcome(need: NeedItem, config: Mock, filter_string: str) -> object:
+    """The answer of ``filter_single_need``, or the message of the error it reports."""
+    try:
+        return filter_single_need(need, config, filter_string)
+    except NeedsInvalidFilter as error:
+        return str(error)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        # eval binds `search` to the regex function, whatever the need holds
+        pytest.param("search", id="search"),
+        # eval's globals hold the builtins under this name
+        pytest.param("__builtins__", id="builtins-module"),
+        # a module attribute, which eval does not find among its builtins
+        pytest.param("__class__", id="dunder"),
+    ],
+)
+def test_a_name_eval_binds_otherwise_stays_with_eval(name: str) -> None:
+    """A name eval binds to something no field holds is no operand of the parsed tier:
+    the string falls to eval, and answers what eval answers."""
+    filter_string = f"owner != {name}"
+    compiled = compile_portable(filter_string)
+    assert compiled.predicate is None
+    assert compiled.rejection == f"name:{name}"
+    config = Mock()
+    config.filter_data = {}
+    need = _make_need(extras={"owner": "alice"})
+    answer = _outcome(need, config, filter_string)
+    refused = CompiledFilter(None, "refused", False)
+    with patch.object(filter_common, "compile_portable", lambda _: refused):
+        assert _outcome(need, config, filter_string) == answer
+
+
+def test_the_origin_key_is_no_name_a_filter_can_hold() -> None:
+    """The document reaches a predicate under a key no field or filter-data key can be,
+    so a field named like it is never read as the document."""
+    assert not ORIGIN_KEY.isidentifier()
