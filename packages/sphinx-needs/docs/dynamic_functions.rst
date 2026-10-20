@@ -33,7 +33,7 @@ it is checked when the build starts, before any document is read, so a typo is r
 it is closed to authors, so no stale value written in a need overrides it (``needs.derive_authored``);
 `ubCode <https://ubcode.useblocks.com/>`__ computes the same values from its phase-2 release, but for the differences its documentation lists;
 and the schema in :ref:`needs.json <needs_builder_format>` marks the field ``"readOnly": true``.
-A rule applies to every need of the project, or, declared under ``derive_by_type``, to the need types it names
+A rule applies to every need of the project, or, declared in a need type's own entry, to the needs of that type
 (a need of another type uses ``derive`` if given, else holds the field's default; see :ref:`needs_derive_by_type`);
 a rule's ``where`` narrows the candidates it reads, not the needs that carry the field.
 
