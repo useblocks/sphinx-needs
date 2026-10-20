@@ -390,7 +390,8 @@ A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` ta
    * - ``predicates``
      - ``(match expression, value)`` pairs, in place of the field's (an empty list: none)
    * - ``derive``
-     - rule computing the field on the type's needs: its ``derive_by_type`` entry for the type (below)
+     - rule computing the field on the type's needs and on those of the types inheriting from it (below;
+       ``derive_by_type`` is the older spelling, :ref:`needs_derive_by_type`)
 
 and a declaration in ``links`` these, as :ref:`needs_links` takes them:
 
@@ -409,7 +410,8 @@ and a declaration in ``links`` these, as :ref:`needs_links` takes them:
    * - ``predicates``
      - ``(match expression, links)`` pairs, in place of the link type's (an empty list: none)
    * - ``derive``
-     - rule computing the links of the type's needs: its ``derive_by_type`` entry for the type (below)
+     - rule computing the links of the type's needs and of those of the types inheriting from it (below;
+       ``derive_by_type`` is the older spelling, :ref:`needs_derive_by_type`)
    * - ``target_types``
      - need types the links of the type's needs may point to (a listed type or one inheriting from it): within those it inherits (the subtypes of a listed type included), never others (below)
    * - ``incoming``, ``outgoing``
@@ -705,7 +707,8 @@ For new fields the following can be defined:
     with ``derive_by_type`` beside it, for every need of a type ``derive_by_type`` does not list.
     A derived field cannot be set in a need or by a ``needextend``, and takes no ``default`` or ``predicates``.
     *New in version 9.0.0.*
-- ``derive_by_type``: Rules per need type (optional), which make it a :ref:`derived field <needs_derive>` too:
+- ``derive_by_type``: Rules per need type (optional), which make it a :ref:`derived field <needs_derive>` too,
+    an older spelling of a ``derive`` in a need type's own entry (:ref:`needs_derive_by_type`):
     a table of need type (the directive name, as ``type`` holds it) to a rule, as ``derive`` takes one,
     overriding ``derive`` on that type.
     A need of a type without a rule holds the ``default`` (a literal, given only without ``derive``),
@@ -905,7 +908,8 @@ Each configured link can define:
     with ``derive_by_type`` beside it, of every need of a type ``derive_by_type`` does not list.
     A derived link type cannot be set in a need or by a ``needextend``, and takes no ``default`` or ``predicates``.
     *New in version 9.0.0.*
-- ``derive_by_type`` (optional): Rules per need type, which make the link type :ref:`derived <needs_derive>` too:
+- ``derive_by_type`` (optional): Rules per need type, which make the link type :ref:`derived <needs_derive>` too,
+    an older spelling of a ``derive`` in a need type's own entry (:ref:`needs_derive_by_type`):
     a table of need type (the directive name) to a rule, as ``derive`` takes one, overriding ``derive`` on that type.
     A need of a type without a rule holds the ``default`` (a literal, given only without ``derive``), else no links.
     See :ref:`needs_derive_by_type`.

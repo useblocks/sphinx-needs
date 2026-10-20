@@ -42,7 +42,19 @@ A rule for the needs of some need types is declared in those types' own entries 
 
 .. code-block:: toml
 
+   [needs.types.task]
+   title = "Task"
+   prefix = "T_"
+
+   [needs.types.story]
+   title = "Story"
+   prefix = "S_"
+
+   [needs.fields.effort]
+   schema = { type = "number" }
+
    [needs.types.story.fields.total_effort]
+   schema = { type = "number" }
    derive = { kind = "sum", field = "effort", over = "links" }
 
 gives a ``story`` the sum of the ``effort`` of the needs it links,
@@ -75,6 +87,8 @@ Rules per need type
 
 A need type's own entry (:ref:`needs_types_fields`) gives the rule to the needs of that type:
 a ``derive`` in its declaration of the field, under ``fields``, or of the link type, under ``links``.
+The entry is one of :ref:`needs_types`: the type is declared there, with its ``title`` and ``prefix``,
+and declaring need types replaces the default ones (see :ref:`need_types_howto`).
 A type inheriting from it uses the rule too, unless it declares one of its own.
 A need uses the rule of its type, else ``derive``, else none.
 A need type's own declaration of a derived field narrows its description, schema and ``nullable``,
@@ -84,6 +98,18 @@ Effort written on tasks and rolled up through stories and epics takes two fields
 the one authors write, and a derived one, which copies it on a task and sums itself over the links of a story or an epic:
 
 .. code-block:: toml
+
+   [needs.types.task]
+   title = "Task"
+   prefix = "T_"
+
+   [needs.types.story]
+   title = "Story"
+   prefix = "S_"
+
+   [needs.types.epic]
+   title = "Epic"
+   prefix = "E_"
 
    [needs.fields.effort]
    schema = { type = "number" }
@@ -157,12 +183,18 @@ a value that varies per need is what a rule is for.
 kept for existing projects: a table from need type, by its directive name
 (the value ``type`` holds, as a filter reads it: ``type == 'story'``), to a rule, as ``derive`` takes one,
 such as ``derive_by_type.story = { kind = "sum", field = "total_effort", over = "links" }``.
-A ``derive`` in a type's own entry is that type's ``derive_by_type`` entry, and the warnings name it so.
-One thing only it can say: a rule for a need type that the types inheriting from it do not use,
-where a ``derive`` in the type's own entry reaches them too.
+A ``derive`` in a type's own entry is the field's ``derive_by_type`` entry for that type,
+and for each type inheriting from it that gives none of its own;
+its ``needs.derive_invalid`` warnings name the entry it came from.
+``derive_by_type`` alone gives a need type a rule without declaring the type:
+one of the default types, on a project that keeps them
+(a :ref:`needs_types` entry, even one that is ignored, replaces them all),
+or a type an extension or a service adds
+(an entry must repeat its ``title`` and ``prefix``, which then replace the extension's);
+and it alone gives a type a rule that the types inheriting from it do not get.
 
-``derive_by_type`` is checked when the configuration is read, one ``needs.derive_invalid`` per entry:
-a key naming no need type is ignored (a type's title is not its directive name, and the warning says which is meant);
+Rules per need type are checked when the configuration is read, one ``needs.derive_invalid`` per entry:
+a ``derive_by_type`` key naming no need type is ignored (a type's title is not its directive name, and the warning says which is meant);
 an empty ``derive_by_type``, or one that is not a table, adds no rule: the field stays derived,
 every need type using the ``derive`` beside it, or, without one, no rule;
 an entry that cannot be read, as a ``derive`` that cannot be read, leaves the needs of its type at the empty value,
