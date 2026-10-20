@@ -21,9 +21,12 @@ Improvements
   declared nowhere, no member, one named twice, and a union naming itself or two naming each other are each one
   ``needs.derive_invalid``, the union holding no links. It is computed after every :ref:`needextend`, so a link a
   needextend adds to a member is in it, closed to authors, left out of fingerprints and not computed on imported
-  or external needs, as every derived link type. Dead links and link conditions are its members': a union reports
-  neither, a dead link of a member that allows dead links makes no dead link forbidden, and an
-  ``allow_dead_links`` on the union itself is refused; ``needs.derive_dense`` does not count its list. It is what
+  or external needs, as every derived link type. Dead links and link conditions are its members' where its rule
+  computed it: a union reports neither, a dead link of a member that allows dead links makes no dead link forbidden
+  (and is drawn as allowed), and an ``allow_dead_links`` on a link type all of whose rules are unions is refused; on
+  an imported need, which keeps its file's union, it is checked as any link type. ``needs.derive_dense`` does not
+  count its list. A member filled by one of the project's own functions (``needs_functions``) cannot be read by a
+  union in this release (``needs.derive_scope``). It is what
   ``copy = true`` gave, declared (see *Deprecations*); see :ref:`needs_derive_union` for how to read it in place of
   ``links``. The derive conformance corpus pins it (``union-*``), as does the field-declaration corpus for a union
   declared on need types.
@@ -308,9 +311,13 @@ Deprecations
   where the key is already refused (beside a derive rule, in a need type's entry of a link type declared outright).
   A union differs from the copies in three ways: a link a needextend adds to a member is in it, a need from
   :ref:`needimport` or :ref:`needs_external_needs` keeps the union its needs.json carries rather than copying, and a
-  dead link is reported once, at the member. :ref:`check_linked_values <check_linked_values>`,
-  :ref:`calc_sum <calc_sum>` with ``links_only`` and the ``need_outgoing`` and ``need_incoming`` roles written in a
-  need read only ``links`` in this release. The documentation's own configuration no longer sets ``copy``.
+  dead link is reported once, at the member. Two cases keep ``copy`` until 10.0, with the warning
+  (``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation): a link type filled by
+  one of the project's own functions (``needs_functions``, such as sphinx-test-reports' ``tr_link``), which a union
+  cannot read in this release, and a project relying on :ref:`check_linked_values <check_linked_values>`,
+  :ref:`calc_sum <calc_sum>` with ``links_only`` or the ``need_outgoing`` and ``need_incoming`` roles written in a
+  need, which read only ``links``. Where ``links`` is derived the copy copies nothing, and the warning says to
+  remove it. The documentation's own configuration no longer sets ``copy``.
 
 - ♻️ :ref:`needimport` and :ref:`needs_external_needs` read a needs.json through the new
   ``ub-needs-exchange`` library, a new dependency of sphinx-needs

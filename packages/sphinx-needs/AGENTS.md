@@ -456,7 +456,7 @@ The `ensure_post_process_needs_data` function calls `post_process_needs_data`, w
 
 1. `extend_needs_data` - Apply all `needextend` modifications to need data
 2. `resolve_functions` - Resolve dynamic function values (calls functions set as field values), building the back-links between its strata (`build_backlinks`)
-3. `check_links` - Check each link's target type against its link type's `target_types` (as the source need's type declares them; `target_types` on `links` is refused where the schema is built while a link type copies into it), assess link conditions, and report dead/broken links between needs (never under a link type deriving `union`, whose links are its members': `LinkSchema.is_union` is the one predicate every such check asks). (`resolve_links` bundles back-links, `check_links` and sorting for callers outside the build; `post_process_needs_data` does not call it.)
+3. `check_links` - Check each link's target type against its link type's `target_types` (as the source need's type declares them; `target_types` on `links` is refused where the schema is built while a link type copies into it), assess link conditions, and report dead/broken links between needs (never under a link type a `union` computed on the need, whose links are its members': `LinkSchema.union_on` is the one predicate every such check asks; `has_dead_links` counts every link type). (`resolve_links` bundles back-links, `check_links` and sorting for callers outside the build; `post_process_needs_data` does not call it.)
 4. `process_constraints` - Process constraints for each need
 
 After this, needs are "sealed" (made immutable) via the `needs-before-sealing` event.
