@@ -4,9 +4,9 @@ repos:
     rev: v0.9.3
     hooks:
       - id: taplo-format
-        # the five TOML conformance corpora are (or, for the `ubproject.toml` reading one, the
-        # derived-field one, the field-declaration one and the needs.json reading one, are to be)
-        # shared byte-for-byte with ubCode, so a
+        # the six TOML conformance corpora are (or, for the `ubproject.toml` reading one, the
+        # derived-field one, the field-declaration one, the needs.json reading one and the
+        # filter one, are to be) shared byte-for-byte with ubCode, so a
         # formatter local to this repository must not rewrite them. taplo's current
         # defaults happen to leave the variant-condition one alone; the `ubproject.toml` reading
         # corpus they do NOT -- measured: every expectation line past taplo's column limit
@@ -18,6 +18,7 @@ repos:
             packages/ub-project/tests/fixtures/ubproject_reading_conformance\.toml|
             packages/sphinx-needs/tests/fixtures/derive_conformance\.toml|
             packages/sphinx-needs/tests/fixtures/field_declaration_conformance\.toml|
+            packages/sphinx-needs/tests/fixtures/filter_conformance\.toml|
             packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance\.toml
           )$
 
@@ -34,7 +35,7 @@ repos:
       - id: yamlfmt
         # the conformance corpora are (or are to be) shared byte-for-byte with ubCode, so a
         # formatter local to this repository must not rewrite them. yamlfmt only matches YAML today,
-        # so the four TOML corpora below are listed to state the intent rather than
+        # so the five TOML corpora below are listed to state the intent rather than
         # because the hook would reach them; sphinx-codelinks' extraction corpus is shared the same way
         exclude: |-
           (?x)^(
@@ -43,6 +44,7 @@ repos:
             packages/ub-project/tests/fixtures/ubproject_reading_conformance\.toml$|
             packages/sphinx-needs/tests/fixtures/derive_conformance\.toml$|
             packages/sphinx-needs/tests/fixtures/field_declaration_conformance\.toml$|
+            packages/sphinx-needs/tests/fixtures/filter_conformance\.toml$|
             packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance\.toml$
           )
 

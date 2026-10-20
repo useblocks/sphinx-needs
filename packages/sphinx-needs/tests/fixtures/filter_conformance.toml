@@ -1,0 +1,1628 @@
+# Conformance corpus for the PORTABLE FILTER LANGUAGE: the subset of Python expressions a
+# filter string is written in that sphinx-needs answers without `eval` and ubCode's
+# `ubc_query` parses -- which strings are in it, and what each one selects.
+#
+# Repository of record: useblocks/sphinx-needs (public)
+# Canonical path:       packages/sphinx-needs/tests/fixtures/filter_conformance.toml
+#
+# THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
+# (this path, and the commit it was taken from) prepended and nothing else changed, and to
+# run it against its own engine. The corpus travels public -> private, so vendoring with a
+# recorded source commit is the sync mechanism.
+#
+# Do not reformat this file. `.gitattributes` pins its line endings, and the taplo hook
+# excludes it: every `config = '''...'''`, `source = '''...'''` body and every `filter`
+# below is the INPUT of a case, so a formatter touching one silently changes what the case
+# tests. A change here is a change to the contract, and owes ubCode a re-vendor.
+#
+# The grammar is ubCode's `rust/ubc_query/src/py_expr.pest`, as `ubc_query` converts it
+# (a form the grammar parses and the converter refuses -- a name `in` a name, a list
+# beside `==` -- is outside it). sphinx-needs' parsed tier (`sphinx_needs/ubquery.py`)
+# compiles every string inside it, and every other string falls to Python's `eval`. Its
+# answers are Python's: where `ubc_query` answers otherwise, the entry says so
+# (`divergent`). The grammar has no raw-string literal, so no `search(r'...')` here:
+# sphinx-needs reads one through Python, ubCode refuses it at the `r`.
+#
+# Rules for every runner:
+#   - a case is one project. `config` is its `ubproject.toml` (the `[needs]` configuration
+#     only); `source` is the body of its one reStructuredText document, `index.rst`, under
+#     a title the runner adds; `files` (optional) are other files of the project, relative
+#     to the case directory. A case writes only inside its own directory: a `files` key
+#     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
+#   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
+#     the default ones (`req`, `spec`, `impl`, `test`) unless the case's `config` declares
+#     its own
+#   - no case declares a field named `c`, `var`, `search`, `needs` or `current_need`:
+#     which of a field and the context name a filter reads there is not pinned yet
+#   - each `[[case.filters]]` entry is one filter string, evaluated over the needs of the
+#     built project -- and over their parts too, where it says `include_parts = true` --
+#     as a filter written in `index.rst` is: `c.this_doc()` compares with that document.
+#     `in_document = false` evaluates it with no document, as a filter configured outside
+#     every document is
+#   - `expected` lists the ids it selects, sorted, a part as `<need>.<part>`
+#   - a filter whose evaluation fails on a need (a name no field defines, a method the
+#     value has not, `c.this_doc()` with no document) excludes that need and is reported:
+#     `error = "filter"` says it is reported, once; an entry without `error` reports
+#     nothing. sphinx-needs reports it as one `needs.filter` warning; ubCode's runner reads
+#     its own report of a failed filter
+#   - an entry with `tier = "eval"` is OUTSIDE the portable language: ubCode's runner
+#     asserts that its engine refuses the string (it parses it to no query), and
+#     sphinx-needs answers it through `eval`, which `expected` pins. Every other entry is
+#     inside it. `tier = "index"` or `tier = "fast"` pins which of sphinx-needs' two
+#     earlier tiers answers it; `reason` (with `tier = "eval"`) pins the construct
+#     sphinx-needs' debug report names. ubCode's runner ignores `tier`'s value and `reason`
+#   - `eval` (sphinx-needs only) pins what sphinx-needs' `eval` tier answers when it is
+#     made to answer a string inside the language and does not answer `expected`: its
+#     selection, and the words of the error it reports. It is #1773's rule: a filter whose
+#     value is not a boolean is read by its truthiness in the parsed tiers, and refused by
+#     `eval`
+#   - a case or an entry with `python_only = true` is one only sphinx-needs runs, and
+#     ubCode's runner skips it; `ubcode_only = true` is the converse
+#   - an entry carrying `divergent` is skipped by the runner it names, counted, with the
+#     value -- what that tool does instead -- as the reason; every other runner runs it
+#
+# `packages/sphinx-needs/tests/test_filter_conformance.py` runs every case, building each
+# project once with the `needs` builder, AND asserts the case and entry COUNTS, so a
+# truncated copy is a red test rather than reduced coverage. For every entry it asserts
+# the selection and the report of the filter engine (`filter_needs_view`, or
+# `filter_needs_parts` with parts), the tier, and that sphinx-needs' parsed tier and its
+# `eval` tier give the same answer -- an error included, with its message -- need by
+# need. The prose half of the contract is the "Filter string" section of the
+# sphinx-needs documentation (`docs/filter.rst`); each case's `why` restates the sentence
+# of it the case holds the tools to.
+#
+# Each `[[case]]` has:
+#   name         - unique, kebab-case
+#   why          - one line saying what the case pins
+#   config       - the `ubproject.toml`
+#   source       - the body of `index.rst`
+#   files        - optional; other files, relative to the case directory, and their text
+#   python_only  - optional; see the rules above
+#   ubcode_only  - optional; see the rules above
+#   [[case.filters]]
+#     filter         - the filter string
+#     expected       - the ids it selects, sorted
+#     why            - optional; one line saying what the entry pins
+#     error          - optional; "filter": the filter is reported
+#     tier           - optional; "index", "fast" or "eval"
+#     reason         - optional, with tier = "eval"; the construct sphinx-needs names
+#     in_document    - optional; false: evaluated with no document
+#     include_parts  - optional; true: the parts are evaluated too
+#     eval           - optional; { expected = [...], reports = "..." }, see the rules
+#     python_only    - optional; see the rules above
+#     ubcode_only    - optional; see the rules above
+#     divergent      - optional; { ubcode = "what ubc_query does" }
+
+# --- comparisons -----------------------------------------------------------------------
+
+[[case]]
+name = "compare-a-field-with-a-literal"
+why = "a comparison takes a field and a literal in either order, == and != any literal, < <= > >= a number (an integer, a float, a negative one); integers and floats compare with each other"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.effort]
+schema = { type = "integer" }
+
+[needs.fields.ratio]
+schema = { type = "number" }
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :status: open
+   :owner: alice
+   :effort: 3
+   :ratio: 0.5
+
+.. req:: Beta
+   :id: REQ_002
+   :status: closed
+   :owner: bob
+   :effort: -2
+   :ratio: 1.5
+
+.. spec:: Gamma
+   :id: SPEC_001
+   :status: open
+   :owner: carol
+   :effort: 8
+   :ratio: 2.0
+'''
+
+[[case.filters]]
+filter = 'status == "open"'
+expected = ["REQ_001", "SPEC_001"]
+tier = "index"
+
+[[case.filters]]
+filter = 'status != "open"'
+expected = ["REQ_002"]
+tier = "fast"
+
+[[case.filters]]
+filter = "owner == 'bob'"
+expected = ["REQ_002"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'effort > 2'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = 'effort >= 3'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = 'effort < 0'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'effort <= -2'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'effort == 8'
+expected = ["SPEC_001"]
+
+[[case.filters]]
+filter = 'effort == 3.0'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'ratio > 1'
+expected = ["REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = 'ratio == 2'
+expected = ["SPEC_001"]
+
+[[case.filters]]
+filter = 'ratio < 1e0'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = '"open" == status'
+expected = ["REQ_001", "SPEC_001"]
+tier = "index"
+
+[[case.filters]]
+filter = "'bob' != owner"
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = '2 < effort'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = '-2 >= effort'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = '8 <= effort'
+expected = ["SPEC_001"]
+
+[[case.filters]]
+filter = '0 > effort'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'status == 1'
+expected = []
+why = "a string is never equal to a number"
+
+[[case.filters]]
+filter = "effort == '3'"
+expected = []
+why = "nor a number to a string"
+
+[[case.filters]]
+filter = '"a" == "a"'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+tier = "eval"
+reason = "literal"
+why = "a literal against a literal is no comparison of the language"
+
+[[case.filters]]
+filter = '1 < effort < 5'
+expected = ["REQ_001"]
+tier = "eval"
+reason = "compare:chained"
+divergent = { ubcode = "a parse error: the grammar has no comparison chain" }
+
+[[case]]
+name = "compare-a-field-with-a-field"
+why = "a field is compared with a field in every comparison, an operand's function on either side included; a null equals a null"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.lead]
+schema = { type = "string" }
+
+[needs.fields.assignee]
+schema = { type = "string" }
+
+[needs.fields.effort]
+schema = { type = "integer" }
+
+[needs.fields.budget]
+schema = { type = "integer" }
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :status: open
+   :owner: alice
+   :lead: alice
+   :assignee: open
+   :effort: 3
+   :budget: 5
+
+.. req:: Beta
+   :id: REQ_002
+   :owner: bob
+   :lead: alice
+   :effort: 7
+   :budget: 5
+
+.. spec:: Gamma
+   :id: SPEC_001
+   :status: done
+   :owner: carol
+   :lead: carol
+   :assignee: dave
+   :effort: 5
+   :budget: 5
+'''
+
+[[case.filters]]
+filter = 'owner == lead'
+expected = ["REQ_001", "SPEC_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'owner != lead'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'effort < budget'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'effort <= budget'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = 'effort > budget'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'effort >= budget'
+expected = ["REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = 'status == assignee'
+expected = ["REQ_001", "REQ_002"]
+why = "REQ_002 holds neither: null against null is equal"
+
+[[case.filters]]
+filter = 'len(owner) == len(lead)'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = 'owner.upper() == lead.upper()'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = 'len(owner) < effort'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'lead < owner'
+expected = ["REQ_002"]
+divergent = { ubcode = "the filter fails: a field against a field orders numbers only (Unsupported type for number comparison)" }
+
+[[case]]
+name = "compare-a-field-holding-no-value"
+why = "an ordering comparison with a field holding no value fails for that need, which is excluded and reported, the others answered"
+config = '''
+[needs.fields.priority]
+schema = { type = "integer" }
+
+[needs.fields.score]
+schema = { type = "integer" }
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :priority: 3
+   :score: 2
+
+.. req:: Beta
+   :id: REQ_002
+   :priority: 1
+
+.. spec:: Gamma
+   :id: SPEC_001
+   :priority: 5
+   :score: 9
+'''
+
+[[case.filters]]
+filter = 'priority > score'
+expected = ["REQ_001"]
+error = "filter"
+divergent = { ubcode = "the whole filter fails on REQ_002's null score (Unsupported type for number comparison; variable: score), so nothing is selected" }
+
+[[case.filters]]
+filter = 'priority == score'
+expected = []
+why = "== reads a null as a value"
+
+[[case.filters]]
+filter = 'score != None'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case]]
+name = "a-field-another-type-declares"
+why = "a field the need's type does not declare reads None on its needs -- not the declared default, not the type's empty value -- so an ordering comparison fails there, under not too, and == and != read it as a value"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.priority]
+schema = { type = "integer" }
+nullable = false
+default = 5
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: Urgent
+   :id: REQ_001
+   :priority: 9
+
+.. req:: The default
+   :id: REQ_002
+
+.. spec:: Another type
+   :id: SPEC_001
+'''
+
+[[case.filters]]
+filter = 'priority > 7'
+expected = ["REQ_001"]
+error = "filter"
+
+[[case.filters]]
+filter = 'not (priority > 7)'
+expected = ["REQ_002"]
+error = "filter"
+why = "not does not rescue the need whose comparison failed"
+
+[[case.filters]]
+filter = 'priority is None'
+expected = ["SPEC_001"]
+
+[[case.filters]]
+filter = 'priority == None'
+expected = ["SPEC_001"]
+
+[[case.filters]]
+filter = 'priority == 5'
+expected = ["REQ_002"]
+why = "the default is the declaring type's, for its unset needs"
+
+[[case.filters]]
+filter = 'priority != 5'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = 'priority == 0'
+expected = []
+why = "the type's empty value is never read"
+
+# --- membership ------------------------------------------------------------------------
+
+[[case]]
+name = "membership"
+why = "in and not in take a field before a list of literals, or a literal before a field: membership of a list, a substring of a string"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.effort]
+schema = { type = "integer" }
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :status: open
+   :tags: safety, ui
+   :owner: alice
+   :effort: 1
+
+.. req:: Beta
+   :id: REQ_002
+   :status: closed
+   :tags: ui
+   :owner: bob
+   :effort: 2
+
+.. spec:: Gamma
+   :id: SPEC_001
+   :status: done
+   :owner: carol
+   :effort: 3
+'''
+
+[[case.filters]]
+filter = 'status in ["open", "closed"]'
+expected = ["REQ_001", "REQ_002"]
+tier = "index"
+
+[[case.filters]]
+filter = 'status not in ["open", "closed"]'
+expected = ["SPEC_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'owner in ["alice", "carol"]'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = 'effort in [1, 3]'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = 'effort in [2.0, "x", None, False]'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'effort in [-1, 2]'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'effort in []'
+expected = []
+
+[[case.filters]]
+filter = 'effort not in []'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = 'tags in ["ui"]'
+expected = []
+why = "a list field against a list of literals: no item of it is equal to the list"
+
+[[case.filters]]
+filter = 'tags not in ["ui"]'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = '"ui" in tags'
+expected = ["REQ_001", "REQ_002"]
+tier = "index"
+
+[[case.filters]]
+filter = '"ui" not in tags'
+expected = ["SPEC_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = '"li" in owner'
+expected = ["REQ_001"]
+why = "on a string, in is a substring test"
+
+[[case.filters]]
+filter = '"o" not in owner'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = '"B" in owner.upper()'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'owner.lower() in ["bob", "carol"]'
+expected = ["REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = 'len(tags) in [0, 1]'
+expected = ["REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = 'owner in tags'
+expected = []
+tier = "eval"
+reason = "compare:name-in-name"
+why = "a field in a field: ubc_query parses it and refuses it"
+
+[[case.filters]]
+filter = "tags == ['ui']"
+expected = ["REQ_002"]
+tier = "eval"
+reason = "compare:list"
+why = "a list literal beside == is refused by ubc_query (ubcode#3957)"
+
+[[case.filters]]
+filter = '[] != tags'
+expected = ["REQ_001", "REQ_002"]
+tier = "eval"
+reason = "compare:list"
+
+[[case.filters]]
+filter = 'status in [["open"]]'
+expected = []
+tier = "eval"
+reason = "compare:in"
+why = "a list literal holds literals only"
+
+[[case.filters]]
+filter = '1 in tags'
+expected = []
+divergent = { ubcode = "the filter fails: an integer literal in a list of strings is an unsupported literal type" }
+
+# --- null checks -----------------------------------------------------------------------
+
+[[case]]
+name = "null-checks"
+why = "is None and is not None take an operand on the left and None on the right; == None and != None read None as a value"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.effort]
+schema = { type = "integer" }
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :status: open
+   :owner: alice
+   :effort: 1
+
+.. req:: Beta
+   :id: REQ_002
+   :effort: 0
+
+.. spec:: Gamma
+   :id: SPEC_001
+   :status: draft
+   :owner: bob
+'''
+
+[[case.filters]]
+filter = 'status is None'
+expected = ["REQ_002"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'status is not None'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = 'owner is None'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'effort is None'
+expected = ["SPEC_001"]
+
+[[case.filters]]
+filter = 'status == None'
+expected = ["REQ_002"]
+tier = "index"
+
+[[case.filters]]
+filter = 'None == owner'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'owner != None'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = 'owner is not None and owner.startswith("a")'
+expected = ["REQ_001"]
+why = "the guard keeps startswith from the need holding no value"
+
+[[case.filters]]
+filter = 'len(tags) is None'
+expected = []
+
+[[case.filters]]
+filter = 'None is status'
+expected = ["REQ_002"]
+tier = "eval"
+reason = "compare:is"
+
+[[case.filters]]
+filter = 'status is True'
+expected = []
+tier = "eval"
+reason = "compare:is"
+
+# --- functions and string methods ------------------------------------------------------
+
+[[case]]
+name = "string-functions"
+why = "len(), lower() and upper() make an operand of a field, on either side of a comparison, of in, and alone; startswith() and endswith() take a string literal, after a field or a lower() or upper() of one"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Alpha Requirement
+   :id: REQ_001
+   :owner: Alice
+   :tags: a, b
+
+.. req:: beta requirement
+   :id: REQ_002
+   :owner: BOB
+
+.. spec:: Gamma Spec
+   :id: SPEC_001
+   :owner: carol
+'''
+
+[[case.filters]]
+filter = 'title.lower() == "alpha requirement"'
+expected = ["REQ_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'title.upper() == "BETA REQUIREMENT"'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = '"bob" == owner.lower()'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = '"requirement" in title.lower()'
+expected = ["REQ_001", "REQ_002"]
+
+[[case.filters]]
+filter = '"SPEC" not in title.upper()'
+expected = ["REQ_001", "REQ_002"]
+
+[[case.filters]]
+filter = 'title.startswith("Alpha")'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'title.endswith("Spec")'
+expected = ["SPEC_001"]
+
+[[case.filters]]
+filter = 'title.lower().startswith("beta")'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'title.upper().endswith("REQUIREMENT")'
+expected = ["REQ_001", "REQ_002"]
+
+[[case.filters]]
+filter = 'id.lower().startswith("req")'
+expected = ["REQ_001", "REQ_002"]
+
+[[case.filters]]
+filter = 'not owner.endswith("e")'
+expected = ["REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = 'len(title) > 10'
+expected = ["REQ_001", "REQ_002"]
+
+[[case.filters]]
+filter = '10 >= len(title)'
+expected = ["SPEC_001"]
+
+[[case.filters]]
+filter = 'len(owner) == 3'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'len(tags) > 1'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'tags.lower() == "a"'
+expected = []
+error = "filter"
+why = "a method the value has not fails on every need, as Python's does"
+
+[[case.filters]]
+filter = 'owner.startswith("A") and tags.upper() == "A"'
+expected = []
+error = "filter"
+why = "it fails on REQ_001 alone: the others stop at startswith"
+
+[[case.filters]]
+filter = 'title.lower().upper() == "X"'
+expected = []
+tier = "eval"
+reason = "method:upper"
+
+[[case.filters]]
+filter = 'len(title.lower()) > 1'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+tier = "eval"
+reason = "call:len"
+
+[[case.filters]]
+filter = 'title.strip() == "Gamma Spec"'
+expected = ["SPEC_001"]
+tier = "eval"
+reason = "method:strip"
+
+[[case.filters]]
+filter = 'title.startswith(owner)'
+expected = []
+tier = "eval"
+reason = "method:startswith"
+
+[[case.filters]]
+filter = 'title.lower() < "m"'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+tier = "eval"
+reason = "compare:ordering"
+
+[[case]]
+name = "string-functions-unicode"
+why = "len() counts code points, and lower() and upper() apply Unicode's full case mappings, in both tools"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Straße
+   :id: REQ_001
+
+.. req:: ΟΔΟΣ
+   :id: REQ_002
+'''
+
+[[case.filters]]
+filter = 'title.upper() == "STRASSE"'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'len(title) == 6'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'title.lower() == "οδος"'
+expected = ["REQ_002"]
+why = "a capital sigma ending a word lowers to the final sigma"
+
+[[case.filters]]
+filter = 'title == "Straße"'
+expected = ["REQ_001"]
+divergent = { ubcode = "a \\u escape in a string literal is read as its characters, not as the code point" }
+
+# --- search ----------------------------------------------------------------------------
+
+[[case]]
+name = "search"
+why = "search() takes a string literal pattern and an operand, and is true when the pattern matches anywhere in it"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Set the admin@example.com address
+   :id: REQ_001
+   :tags: x
+
+.. req:: Plain
+   :id: REQ_002
+
+.. spec:: REQ in a spec
+   :id: SPEC_001
+'''
+
+[[case.filters]]
+filter = 'search("@", title)'
+expected = ["REQ_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'search("^Pl", title)'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'search("(?i)plain", title)'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'search("spec", title.lower())'
+expected = ["SPEC_001"]
+
+[[case.filters]]
+filter = 'search("^REQ_\\d+$", id)'
+expected = ["REQ_001", "REQ_002"]
+
+[[case.filters]]
+filter = 'not search("^REQ", id)'
+expected = ["SPEC_001"]
+
+[[case.filters]]
+filter = 'search("x", tags)'
+expected = []
+error = "filter"
+why = "search() reads a string, and fails on a list"
+
+[[case.filters]]
+filter = 'search("a", "abc")'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+tier = "eval"
+reason = "call:search"
+
+[[case.filters]]
+filter = 'search("^(?=SPEC)", id)'
+expected = ["SPEC_001"]
+divergent = { ubcode = "the regex dialect has no look-around: the pattern is refused when the filter is parsed" }
+
+# --- c.this_doc() ----------------------------------------------------------------------
+
+[[case]]
+name = "this-doc"
+why = "c.this_doc() is true for a need of the document the filter is written in, and with no such document the filter fails"
+config = '''
+[needs]
+'''
+source = '''
+.. toctree::
+
+   other
+
+.. req:: Here
+   :id: REQ_001
+
+.. req:: Here too
+   :id: REQ_002
+   :status: done
+'''
+files = { "other.rst" = '''
+Other
+=====
+
+.. req:: There
+   :id: REQ_003
+''' }
+
+[[case.filters]]
+filter = 'c.this_doc()'
+expected = ["REQ_001", "REQ_002"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'not c.this_doc()'
+expected = ["REQ_003"]
+
+[[case.filters]]
+filter = 'c.this_doc() and status is None'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'status == "done" or c.this_doc()'
+expected = ["REQ_001", "REQ_002"]
+
+[[case.filters]]
+filter = 'c.this_doc()'
+expected = []
+in_document = false
+error = "filter"
+
+[[case.filters]]
+filter = 'status == "done" or c.this_doc()'
+expected = ["REQ_002"]
+in_document = false
+error = "filter"
+why = "the need whose or stops before c.this_doc() is answered"
+
+[[case.filters]]
+filter = 'c.this_doc() == True'
+expected = ["REQ_001", "REQ_002"]
+tier = "eval"
+reason = "call:c.this_doc"
+
+# --- parts -----------------------------------------------------------------------------
+
+[[case]]
+name = "parts"
+why = "with parts included, a part is evaluated too: its own is_need, is_part and id_complete, its need's id as id_parent, and the rest of its need's"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: With parts
+   :id: REQ_001
+   :status: open
+
+   :np:`(a) first part` and :np:`(b) second part`
+
+.. req:: Plain
+   :id: REQ_002
+'''
+
+[[case.filters]]
+filter = 'is_part'
+expected = ["REQ_001.a", "REQ_001.b"]
+include_parts = true
+
+[[case.filters]]
+filter = 'is_need'
+expected = ["REQ_001", "REQ_002"]
+include_parts = true
+
+[[case.filters]]
+filter = 'id_parent == "REQ_001"'
+expected = ["REQ_001", "REQ_001.a", "REQ_001.b"]
+include_parts = true
+
+[[case.filters]]
+filter = 'status == "open"'
+expected = ["REQ_001", "REQ_001.a", "REQ_001.b"]
+include_parts = true
+tier = "index"
+
+[[case.filters]]
+filter = 'id_complete.endswith(".a")'
+expected = ["REQ_001.a"]
+include_parts = true
+
+[[case.filters]]
+filter = 'c.this_doc() and is_part'
+expected = ["REQ_001.a", "REQ_001.b"]
+include_parts = true
+
+# --- variant data ----------------------------------------------------------------------
+
+[[case]]
+name = "variant-data"
+why = "a var. chain reads the project's variant data, as an operand anywhere a field is one, alone too; a key it does not hold fails"
+config = '''
+[needs.fields.platform]
+schema = { type = "string" }
+
+[needs.variant_data]
+platform = "arm"
+archs = ["arm", "x86"]
+
+[needs.variant_data.build]
+debug = true
+compiler = "gcc"
+level = 2
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :platform: arm
+
+.. req:: Beta
+   :id: REQ_002
+   :platform: x86
+
+.. spec:: Gamma
+   :id: SPEC_001
+'''
+
+[[case.filters]]
+filter = 'var.platform == "arm"'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+tier = "fast"
+why = "the build's variant value: true for every need, or for none"
+
+[[case.filters]]
+filter = 'var.platform == platform'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'platform == var.platform'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'platform is not None and var.platform != platform'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = '"x86" in var.archs'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = '"mips" not in var.archs'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = 'len(var.archs) == 2'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = 'var.build.compiler.upper() == "GCC"'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = 'var.build.level > 1'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = 'var.platform in ["arm", "riscv"]'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = 'var.build.debug'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+tier = "fast"
+why = "a var. chain alone, read by its truthiness"
+
+[[case.filters]]
+filter = 'var.build.debug and platform == "x86"'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'var.missing == "x"'
+expected = []
+error = "filter"
+
+[[case.filters]]
+filter = 'platform in var.archs'
+expected = ["REQ_001", "REQ_002"]
+tier = "eval"
+reason = "compare:name-in-name"
+
+# --- logic -----------------------------------------------------------------------------
+
+[[case]]
+name = "logic"
+why = "and, or and not combine expressions with Python's precedence, parentheses group them and not negates a group; True and False are expressions; and and or stop where Python's stop, so an operand they do not reach is never read"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :status: open
+   :tags: a
+
+.. req:: Beta
+   :id: REQ_002
+   :status: closed
+   :tags: b
+
+.. spec:: Gamma
+   :id: SPEC_001
+   :status: open
+   :tags: a, b
+'''
+
+[[case.filters]]
+filter = 'status == "open" and "a" in tags'
+expected = ["REQ_001", "SPEC_001"]
+tier = "index"
+
+[[case.filters]]
+filter = 'status == "closed" or "b" in tags'
+expected = ["REQ_002", "SPEC_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'not status == "open"'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'not ("b" in tags or type == "spec")'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = '(type == "spec" or status == "closed") and "b" in tags'
+expected = ["REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = 'type == "spec" or status == "closed" and "b" in tags'
+expected = ["REQ_002", "SPEC_001"]
+why = "and binds tighter than or"
+
+[[case.filters]]
+filter = 'not (not status == "open")'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = 'True'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+tier = "index"
+
+[[case.filters]]
+filter = 'False'
+expected = []
+tier = "index"
+
+[[case.filters]]
+filter = 'False or type == "spec"'
+expected = ["SPEC_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'not True'
+expected = []
+tier = "fast"
+
+[[case.filters]]
+filter = 'not False and status == "open"'
+expected = ["REQ_001", "SPEC_001"]
+
+[[case.filters]]
+filter = 'type == "test" and absent == 1'
+expected = []
+why = "no need is a test, so absent is never read: no error"
+
+[[case.filters]]
+filter = 'type == "req" or absent == 1'
+expected = ["REQ_001", "REQ_002"]
+error = "filter"
+why = "the reqs stop at the first operand; SPEC_001 reads absent, and fails"
+
+# --- truthiness ------------------------------------------------------------------------
+
+[[case]]
+name = "truthiness"
+why = "an operand alone, and under and, or and not, is read by Python's truthiness: an empty string, list, 0 and None are false (#1773)"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.effort]
+schema = { type = "integer" }
+
+[needs.fields.done]
+schema = { type = "boolean" }
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :owner: alice
+   :effort: 2
+   :done: true
+   :tags: a
+
+.. req:: Beta
+   :id: REQ_002
+   :effort: 0
+   :done: false
+'''
+
+[[case.filters]]
+filter = 'done'
+expected = ["REQ_001"]
+tier = "fast"
+why = "a boolean field alone"
+
+[[case.filters]]
+filter = 'owner'
+expected = ["REQ_001"]
+eval = { expected = [], reports = "did not evaluate to a boolean" }
+why = "a string, and None"
+
+[[case.filters]]
+filter = 'tags'
+expected = ["REQ_001"]
+eval = { expected = [], reports = "did not evaluate to a boolean" }
+why = "a list"
+
+[[case.filters]]
+filter = 'effort'
+expected = ["REQ_001"]
+eval = { expected = [], reports = "did not evaluate to a boolean" }
+why = "an integer, 0 among them"
+
+[[case.filters]]
+filter = 'status'
+expected = []
+eval = { expected = [], reports = "did not evaluate to a boolean" }
+why = "None"
+
+[[case.filters]]
+filter = 'len(tags)'
+expected = ["REQ_001"]
+eval = { expected = [], reports = "did not evaluate to a boolean" }
+
+[[case.filters]]
+filter = 'title.lower()'
+expected = ["REQ_001", "REQ_002"]
+eval = { expected = [], reports = "did not evaluate to a boolean" }
+
+[[case.filters]]
+filter = 'not owner'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'not tags'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'owner and done'
+expected = ["REQ_001"]
+eval = { expected = ["REQ_001"], reports = "did not evaluate to a boolean" }
+why = "eval's and gives REQ_002's None"
+
+[[case.filters]]
+filter = 'done or effort'
+expected = ["REQ_001"]
+eval = { expected = ["REQ_001"], reports = "did not evaluate to a boolean" }
+why = "eval's or gives REQ_002's 0"
+
+[[case.filters]]
+filter = 'is_external'
+expected = []
+tier = "index"
+
+# --- names no field defines ------------------------------------------------------------
+
+[[case]]
+name = "undefined-names"
+why = "a name no field defines fails the filter on every need that reads it; a qualifier is no name of the language"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :status: open
+   :owner: alice
+
+.. req:: Beta
+   :id: REQ_002
+   :owner: bob
+'''
+
+[[case.filters]]
+filter = 'absent == "x"'
+expected = []
+error = "filter"
+tier = "fast"
+
+[[case.filters]]
+filter = '"x" in absent'
+expected = []
+error = "filter"
+
+[[case.filters]]
+filter = 'absent'
+expected = []
+error = "filter"
+
+[[case.filters]]
+filter = 'owner == absent'
+expected = []
+error = "filter"
+
+[[case.filters]]
+filter = 'absent is None'
+expected = []
+error = "filter"
+
+[[case.filters]]
+filter = 'len(absent) > 0'
+expected = []
+error = "filter"
+
+[[case.filters]]
+filter = 'owner != filter'
+expected = ["REQ_001", "REQ_002"]
+why = "a name no field defines that is a Python builtin is the builtin to sphinx-needs, as it is to eval"
+divergent = { ubcode = "filter is an unknown field: the filter fails" }
+
+[[case.filters]]
+filter = "n.status == 'open'"
+expected = []
+error = "filter"
+tier = "eval"
+reason = "attribute:n"
+divergent = { ubcode = "the n. qualifier names the need: REQ_001 is selected" }
+
+# --- outside the language --------------------------------------------------------------
+
+[[case]]
+name = "outside-the-language"
+why = "a call, a subscript, arithmetic, a comprehension, a conditional or an f-string is outside the language; sphinx-needs answers it through eval"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :status: open
+   :tags: a, b
+
+.. req:: Beta
+   :id: REQ_002
+   :status: closed
+'''
+
+[[case.filters]]
+filter = 'any(t == "a" for t in tags)'
+expected = ["REQ_001"]
+tier = "eval"
+reason = "call:any"
+
+[[case.filters]]
+filter = 'tags[0] == "a"'
+expected = ["REQ_001"]
+error = "filter"
+tier = "eval"
+reason = "subscript"
+
+[[case.filters]]
+filter = 'len(tags) + 1 > 2'
+expected = ["REQ_001"]
+tier = "eval"
+reason = "arithmetic"
+
+[[case.filters]]
+filter = '[t for t in tags if t == "b"]'
+expected = []
+error = "filter"
+tier = "eval"
+reason = "comprehension"
+
+[[case.filters]]
+filter = 'status == "open" if True else False'
+expected = ["REQ_001"]
+tier = "eval"
+reason = "ifexp"
+
+[[case.filters]]
+filter = 'f"{status}" == "open"'
+expected = ["REQ_001"]
+tier = "eval"
+reason = "fstring"
+
+[[case.filters]]
+filter = 'str(status) == "closed"'
+expected = ["REQ_002"]
+tier = "eval"
+reason = "call:str"
+
+# --- the strings this repository's own corpus took to eval -----------------------------
+
+[[case]]
+name = "the-measured-eval-residue"
+why = "the sixteen filter strings of this repository's docs and tests that reached eval before the language was complete, each with the tier that answers it now"
+config = '''
+[needs.fields.variant]
+schema = { type = "string" }
+
+[needs.fields.platform]
+schema = { type = "string" }
+
+[needs.fields.service]
+schema = { type = "string" }
+
+[needs.filter_data]
+current_variant = "project_x"
+sphinx_tag = "ui"
+
+[needs.variant_data]
+platform = "arm"
+'''
+source = '''
+.. toctree::
+
+   other
+
+.. req:: Alpha
+   :id: REQ_001
+   :variant: project_x
+   :platform: arm
+   :tags: ui
+   :service: github-issues
+
+.. req:: Beta
+   :id: REQ_002
+   :status: open
+   :variant: project_y
+   :platform: x86
+   :links: REQ_001
+
+1.1 First Section
+-----------------
+
+.. spec:: Gamma
+   :id: SPEC_001
+   :tags: example
+'''
+files = { "other.rst" = '''
+Other
+=====
+
+.. impl:: Delta
+   :id: IMPL_001
+   :status: done
+''' }
+
+[[case.filters]]
+filter = 'c.this_doc()'
+expected = ["REQ_001", "REQ_002", "SPEC_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'variant == current_variant'
+expected = ["REQ_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'variant != current_variant'
+expected = ["IMPL_001", "REQ_002", "SPEC_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'c.this_doc() and status is None'
+expected = ["REQ_001", "SPEC_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'sphinx_tag in tags'
+expected = ["REQ_001"]
+tier = "eval"
+reason = "compare:name-in-name"
+
+[[case.filters]]
+filter = 'bool(arch)'
+expected = []
+tier = "eval"
+reason = "call:bool"
+
+[[case.filters]]
+filter = "service is not None and 'github' in service"
+expected = ["REQ_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = "'First Section' in sections[0] and sections[0].startswith('1.1')"
+expected = ["SPEC_001"]
+tier = "eval"
+reason = "subscript"
+
+[[case.filters]]
+filter = 'bad == filter'
+expected = []
+error = "filter"
+tier = "fast"
+
+[[case.filters]]
+filter = '1'
+expected = []
+error = "filter"
+tier = "eval"
+reason = "literal"
+
+[[case.filters]]
+filter = 'var.platform == platform'
+expected = ["REQ_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'id.startswith("colwidths")'
+expected = []
+tier = "fast"
+
+[[case.filters]]
+filter = 'len(links) > 0 or len(links_back) > 0'
+expected = ["REQ_001", "REQ_002"]
+tier = "fast"
+
+[[case.filters]]
+filter = '(len(links) > 0 or len(links_back) > 0) and "example" not in tags and "auto" not in tags and "pytest_sphinx" not in tags'
+expected = ["REQ_001", "REQ_002"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'type == "requirement" or [x for x in ["requirement"] if x == type][0] == type'
+expected = []
+error = "filter"
+tier = "eval"
+reason = "subscript"
+
+[[case.filters]]
+filter = 'platform is not None and var.platform != platform'
+expected = ["REQ_002"]
+tier = "fast"
+
+# --- forms sphinx-needs' parsed tier kept from before the language ---------------------
+
+[[case]]
+name = "kept-forms-outside-the-language"
+why = "sphinx-needs' parsed tier still answers four shapes it took before the language was its reference, which ubc_query refuses"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :owner: alice
+
+.. req:: Beta
+   :id: REQ_002
+   :owner: mallory
+'''
+
+[[case.filters]]
+filter = "title < 'M'"
+expected = ["REQ_001", "REQ_002"]
+tier = "fast"
+divergent = { ubcode = "a parse error: < > <= >= take a number literal or a field, never a string" }
+
+[[case.filters]]
+filter = 'owner in ("alice", "bob")'
+expected = ["REQ_001"]
+tier = "fast"
+divergent = { ubcode = "a parse error: the grammar has no tuple" }
+
+[[case.filters]]
+filter = 'owner in {"mallory"}'
+expected = ["REQ_002"]
+tier = "fast"
+divergent = { ubcode = "a parse error: the grammar has no set" }
+
+[[case.filters]]
+filter = 'not not owner == "alice"'
+expected = ["REQ_001"]
+tier = "fast"
+divergent = { ubcode = "a parse error: not takes no not; not (not ...) is the language's spelling" }
+
+# --- values ubc_query compares otherwise -----------------------------------------------
+
+[[case]]
+name = "mixed-type-values"
+why = "Python's answers where a boolean meets an integer, or a list a list; ubc_query compares neither"
+config = '''
+[needs.fields.flag]
+schema = { type = "boolean" }
+
+[needs.fields.count]
+schema = { type = "integer" }
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :flag: true
+   :count: 1
+
+.. req:: Beta
+   :id: REQ_002
+   :flag: false
+   :count: 0
+   :tags: x
+'''
+
+[[case.filters]]
+filter = 'flag == 1'
+expected = ["REQ_001"]
+divergent = { ubcode = "a boolean is never equal to a number: nothing is selected" }
+
+[[case.filters]]
+filter = 'count == True'
+expected = ["REQ_001"]
+divergent = { ubcode = "a number is never equal to a boolean: nothing is selected" }
+
+[[case.filters]]
+filter = 'count in [True]'
+expected = ["REQ_001"]
+divergent = { ubcode = "a number is never equal to a boolean: nothing is selected" }
+
+[[case.filters]]
+filter = 'flag > 0'
+expected = ["REQ_001"]
+divergent = { ubcode = "the filter fails: a boolean is no number to order" }
+
+[[case.filters]]
+filter = 'tags == links'
+expected = ["REQ_001"]
+divergent = { ubcode = "the filter fails: a list field is no value to compare with" }
