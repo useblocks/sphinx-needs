@@ -35,7 +35,7 @@ import ast
 import enum
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, TypeGuard
 
 from sphinx_needs._wording import title_hint
 
@@ -710,11 +710,29 @@ def by_type_message(
     return f"Invalid derive_by_type of {what} {name!r}: {reason}"
 
 
-def beside_by_type_message(name: str, *, on_link: bool, keys: list[str]) -> str:
+#: Why ``allow_dead_links`` cannot be given beside a link type whose rules are unions.
+_UNION_DEAD_LINKS: Final = " (a union's dead links are its members')"
+
+
+def beside_by_type_message(
+    name: str, *, on_link: bool, keys: list[str], spelling: str | None = None
+) -> str:
     """The ``needs.derive_invalid`` warning for a key beside ``derive_by_type`` alone:
-    ``predicates``, or a ``default`` that is not a literal."""
+    ``predicates``, a ``default`` that is not a literal, or an ``allow_dead_links``
+    where every rule is a ``union``.
+
+    :param spelling: The need type's entry the key came from, if it did (a link type
+        need types alone declare, whose rules are folded into ``derive_by_type``): the
+        entry is named, and the key is beside its ``derive``.
+    """
     named = " and ".join(repr(key) for key in keys)
     verb = "are" if len(keys) > 1 else "is"
+    union = _UNION_DEAD_LINKS if "allow_dead_links" in keys else ""
+    if spelling is not None:
+        return (
+            f"Invalid derive of {_what(on_link)} {name!r}: {spelling}: {named} cannot "
+            f"be given beside derive, and {verb} ignored{union}; the rule applies"
+        )
     why = (
         "; the default of the need types without a rule must be a literal value"
         if "default" in keys
@@ -722,7 +740,7 @@ def beside_by_type_message(name: str, *, on_link: bool, keys: list[str]) -> str:
     )
     return (
         f"Invalid derive of {_what(on_link)} {name!r}: {named} cannot be given beside "
-        f"derive_by_type, and {verb} ignored{why}; the rules apply"
+        f"derive_by_type, and {verb} ignored{union}{why}; the rules apply"
     )
 
 
@@ -755,9 +773,10 @@ def beside_message(name: str, *, on_link: bool, rule: Derive, keys: list[str]) -
     """The ``needs.derive_invalid`` warning for a default beside a rule."""
     named = " and ".join(repr(key) for key in keys)
     verb = "are" if len(keys) > 1 else "is"
+    union = _UNION_DEAD_LINKS if "allow_dead_links" in keys else ""
     return (
         f"Invalid derive of {_what(on_link)} {name!r}: {rule.describe()}: {named} "
-        f"cannot be given beside derive, and {verb} ignored; the rule applies"
+        f"cannot be given beside derive, and {verb} ignored{union}; the rule applies"
     )
 
 
@@ -1039,7 +1058,7 @@ def _union_problem(rule: DeriveRule, links: set[str]) -> str | None:
     return None
 
 
-def is_union(rule: Derive | None) -> bool:
+def is_union(rule: Derive | None) -> TypeGuard[DeriveRule]:
     """Whether a rule is a ``union``: its links are those of its members, which report
     their own dead links and link conditions, so the union reports none of its own.
 

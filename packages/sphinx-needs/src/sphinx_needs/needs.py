@@ -2164,6 +2164,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         if name not in refused_links
     } | {name: (params, "needs_types") for name, params in local_links.items()}
 
+    #: the declarations writing ``copy = true``, each deprecated
+    copy_declarations: list[tuple[str, str]] = []
     for name, (link, config_source) in links.items():
         try:
             # create link schema, with defaults if not defined
@@ -2232,10 +2234,12 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     )
                     derive_problems.extend(by_type_problems)
             authored = derive is None and by_type is None
-            # a union reports no dead link of its own, so its allow_dead_links would
-            # say nothing: reported beside its rule, below, and ignored
-            dead_beside = "allow_dead_links" in link and (
-                is_union(derive) or any(map(is_union, (by_type or {}).values()))
+            # a union reports no dead link of its own, so where every rule is one its
+            # allow_dead_links would say nothing: reported beside it, below, and
+            # ignored; beside another rule it is that rule's
+            rules = [r for r in (derive, *(by_type or {}).values()) if r is not None]
+            dead_beside = (
+                "allow_dead_links" in link and bool(rules) and all(map(is_union, rules))
             )
             where = f"{config_source}[{name!r}]"
             # a target_types not of its shape is ignored, as a need type's entry's is
@@ -2308,11 +2312,27 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     if refused_key
                 ]
                 if beside:
+                    # a link type need types alone declare takes allow_dead_links from
+                    # its first root, whose own entry gives the first rule
+                    spelling = (
+                        next(
+                            (
+                                e.removesuffix(".derive")
+                                for _, e, own in type_rules.values()
+                                if own
+                            ),
+                            None,
+                        )
+                        if config_source == "needs_types"
+                        else None
+                    )
                     derive_problems.append(
                         DeriveProblem(
                             name,
                             True,
-                            beside_by_type_message(name, on_link=True, keys=beside),
+                            beside_by_type_message(
+                                name, on_link=True, keys=beside, spelling=spelling
+                            ),
                             part="beside",
                         )
                     )
@@ -2352,7 +2372,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             and link_field.copy
             and not link_field.derived
         ):
-            log_warning(LOGGER, _copy_deprecation(where, name), "deprecated", None)
+            copy_declarations.append((where, name))
+    # once every link type is read: whether links is derived, so copies nothing
+    for where, name in copy_declarations:
+        log_warning(LOGGER, _copy_deprecation(where, name, schema), "deprecated", None)
 
     # validated where the configuration is read, so that a project which misconfigures
     # one of these and happens to have no needflow anywhere is still told, exactly once
@@ -2418,11 +2441,12 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     SphinxNeedsData(env)._set_schema(schema)
 
 
-def _copy_deprecation(where: str, name: str) -> str:
+def _copy_deprecation(where: str, name: str, schema: FieldsSchema) -> str:
     """The ``needs.deprecated`` finding of a declaration writing ``copy = true``.
 
     The links are still copied: the key goes in 10.0, and a link type deriving the
-    union of ``links`` and the copying link types replaces it.
+    union of ``links`` and the copying link types replaces it. Where nothing is copied
+    -- on ``links`` itself, or into a derived ``links`` -- the advice is to remove it.
     """
     deprecated = (
         f"{where} sets 'copy = true', which is deprecated and will be removed in "
@@ -2430,6 +2454,8 @@ def _copy_deprecation(where: str, name: str) -> str:
     )
     if name == "links":
         return f"{deprecated}; on links it copies nothing, so remove it"
+    if (links := schema.get_link_field("links")) is not None and links.derived:
+        return f"{deprecated}; links is derived, so it copies nothing: remove it"
     return (
         f"{deprecated}; declare a link type deriving the union instead, e.g. "
         f'derive = {{kind = "union", fields = ["links", "{name}"]}}, and read it '
@@ -3316,7 +3342,10 @@ def _resolve_type_declarations(
                     # the shape a declaration of a link type need types alone give:
                     # on a derived one, copy is refused at its rule
                     log_warning(
-                        LOGGER, _copy_deprecation(where, name), "deprecated", None
+                        LOGGER,
+                        _copy_deprecation(where, name, schema),
+                        "deprecated",
+                        None,
                     )
                 # declared, also if the entry cannot be used: the type keeps the
                 # declaration before it

@@ -55,9 +55,11 @@
 #     runner asserts the need and the field are PRESENT, then that the value is null; a
 #     missing need or field fails the case
 #   - a `union` link type holds the links of its members (`fields`, in that order), each
-#     link once by its target, part and condition, carried as written; it reports no dead
-#     link and no link condition of its own, which are its members', so a dead link it holds
-#     is a forbidden one only through the member's own `allow_dead_links`
+#     link once by its target, part and condition, carried as written; where its rule
+#     computed it, it reports no dead link and no link condition of its own, which are its
+#     members', so a dead link it holds is a forbidden one only through the member's own
+#     `allow_dead_links`; on an imported need, which keeps its file's value, it is checked
+#     as any link type
 #
 # `packages/sphinx-needs/tests/test_derive_conformance.py` runs every case with the `needs`
 # builder AND asserts the case COUNT, so a truncated copy is a red test rather than reduced
@@ -4283,7 +4285,7 @@ outer = ["REQ_1", "REQ_2", "REQ_3"]
 
 [[case]]
 name = "union-by-type"
-why = "a union in derive_by_type applies on its need type alone; a need of another type holds no links, and cannot set it either"
+why = "a union in derive_by_type applies on its need type alone; a need of another type holds no links, and cannot set it either: links written in it there are derive_authored and ignored"
 config = '''
 [needs.links.blocks]
 
@@ -4294,6 +4296,7 @@ source = '''
 .. req:: One
    :id: REQ_1
    :blocks: REQ_2
+   :all_links: REQ_2
 
 .. req:: Two
    :id: REQ_2
@@ -4304,11 +4307,14 @@ source = '''
    :blocks: REQ_2
 '''
 [case.expect]
-findings = []
 [case.expect.needs.SPEC_1]
 all_links = ["REQ_1", "REQ_2"]
 [case.expect.needs.REQ_1]
 all_links = []
+[[case.expect.findings]]
+code = "derive_authored"
+need = "REQ_1"
+field = "all_links"
 
 [[case]]
 name = "union-target-types-refused"
@@ -4425,7 +4431,7 @@ all_links = ["IMPL_1", "REQ_1"]
 
 [[case]]
 name = "union-on-imported-needs"
-why = "no rule runs on an imported need, a union's neither: one carrying no union holds no links, though its members carry some, one carrying it keeps it as written; a need of the project computes it"
+why = "no rule runs on an imported need, a union's neither: one carrying no union holds no links, though its members carry some, one carrying it keeps it as written, and is checked as any link type, so a dead link in it is a forbidden one; a need of the project computes it"
 config = '''
 [needs.links.blocks]
 
@@ -4442,7 +4448,7 @@ source = '''
 
 .. needimport:: imported.json
 '''
-files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "spec", "title": "Imported without the union", "links": ["REQ_1"], "blocks": ["REQ_1"]}, "IMP_2": {"id": "IMP_2", "type": "spec", "title": "Imported with the union", "blocks": ["REQ_1"], "all_links": ["SPEC_1"]}}}}}''' }
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "spec", "title": "Imported without the union", "links": ["REQ_1"], "blocks": ["REQ_1"]}, "IMP_2": {"id": "IMP_2", "type": "spec", "title": "Imported with the union", "blocks": ["REQ_1"], "all_links": ["SPEC_1"]}, "IMP_3": {"id": "IMP_3", "type": "spec", "title": "Imported with a dead link in the union", "all_links": ["DEAD_1"]}}}}}''' }
 [case.expect]
 findings = []
 [case.expect.needs.SPEC_1]
@@ -4452,3 +4458,8 @@ blocks = ["REQ_1"]
 all_links = []
 [case.expect.needs.IMP_2]
 all_links = ["SPEC_1"]
+has_dead_links = false
+[case.expect.needs.IMP_3]
+all_links = ["DEAD_1"]
+has_dead_links = true
+has_forbidden_dead_links = true

@@ -500,23 +500,26 @@ def resolve_links(
 
 
 def _unions(
-    schema: FieldsSchema, need_type: str, cache: dict[str, frozenset[str]]
+    schema: FieldsSchema, need: NeedItem, cache: dict[str, frozenset[str]]
 ) -> frozenset[str]:
-    """The link types that are a ``union`` on a need of ``need_type``
-    (:meth:`~sphinx_needs.needs_schema.LinkSchema.is_union`), read once per need type:
-    their links are their members', which alone report dead links and conditions."""
-    if (unions := cache.get(need_type)) is None:
-        unions = cache[need_type] = frozenset(
-            link.name for link in schema.iter_link_fields() if link.is_union(need_type)
+    """The link types a ``union`` computed on ``need``
+    (:meth:`~sphinx_needs.needs_schema.LinkSchema.union_on`), read once per need type:
+    their links are their members', which alone report dead links and conditions.
+    None on a need from a needs.json, whose links no rule computed."""
+    if need["is_import"] or need["is_external"]:
+        return frozenset()
+    if (unions := cache.get(need["type"])) is None:
+        unions = cache[need["type"]] = frozenset(
+            link.name for link in schema.iter_link_fields() if link.union_on(need)
         )
     return unions
 
 
 def _dead_links(
-    need: NeedItem, needs: NeedsMutable, unions: frozenset[str]
+    need: NeedItem, needs: NeedsMutable, unions: frozenset[str] = frozenset()
 ) -> list[tuple[str, NeedLink]]:
     """The links of ``need`` to an unknown need, or to an unknown part of a known one;
-    never those of a union (``unions``), which are its members'."""
+    never those of the link types ``unions``, a union's, which are its members'."""
     dead_links: list[tuple[str, NeedLink]] = []
     for link_type, references in need.iter_links_items(as_str=False):
         if link_type in unions:
@@ -563,13 +566,20 @@ def build_backlinks(
     allow_dead_links = {
         link.name: link.allow_dead_links for link in schema.iter_link_fields()
     }
-    unions: dict[str, frozenset[str]] = {}
+    unions_by_type: dict[str, frozenset[str]] = {}
     for need in needs.values():
         need.sort_backlinks()
-        dead_links = _dead_links(need, needs, _unions(schema, need["type"], unions))
+        # every dead link, a union's too; a union's computed links do not decide
+        # which are forbidden: its members do
+        dead_links = _dead_links(need, needs)
+        unions = _unions(schema, need, unions_by_type)
         need["has_dead_links"] = bool(dead_links)
         need["has_forbidden_dead_links"] = bool(
-            any(not allow_dead_links.get(lt, False) for lt, _ in dead_links)
+            any(
+                not allow_dead_links.get(lt, False)
+                for lt, _ in dead_links
+                if lt not in unions
+            )
         )
 
 
@@ -592,7 +602,7 @@ def check_links(
     target_types: dict[str, dict[str, LinkTargetTypes]] = {}
     unions_by_type: dict[str, frozenset[str]] = {}
     for need in needs.values():
-        unions = _unions(schema, need["type"], unions_by_type)
+        unions = _unions(schema, need, unions_by_type)
         if (declared := target_types.get(need_type := need["type"])) is None:
             declared = target_types[need_type] = {
                 link.name: link.target_types

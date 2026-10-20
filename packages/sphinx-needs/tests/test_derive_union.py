@@ -9,6 +9,7 @@ members, the density check, the export's schema, and the order the pass computes
 """
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -152,11 +153,11 @@ def test_the_refusals(test_app):
             "(bad_self -> bad_self), so no need can compute it",
         ),
         "WARNING: Invalid derive of link type 'dead_by_type': 'allow_dead_links' "
-        "cannot be given beside derive_by_type, and is ignored; the rules apply "
-        "[needs.derive_invalid]",
+        "cannot be given beside derive_by_type, and is ignored (a union's dead links "
+        "are its members'); the rules apply [needs.derive_invalid]",
         "WARNING: Invalid derive of link type 'dead_ok': kind 'union': "
-        "'allow_dead_links' cannot be given beside derive, and is ignored; the rule "
-        "applies [needs.derive_invalid]",
+        "'allow_dead_links' cannot be given beside derive, and is ignored (a union's "
+        "dead links are its members'); the rule applies [needs.derive_invalid]",
         "<srcdir>/index.rst:7: WARNING: Need 'SPEC_1' has unknown outgoing link "
         "'DEAD_1' in field 'blocks' [needs.link_outgoing]",
     ]
@@ -323,3 +324,364 @@ def test_the_order_a_union_is_computed_in(test_app):
     assert properties["all_links"]["field_type"] == "links"
     assert properties["all_links"]["readOnly"] is True
     assert properties["all_links_back"]["field_type"] == "backlinks"
+
+
+CONF_MIXED = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {
+    "blocks": {},
+    "mentions": {
+        "allow_dead_links": True,
+        "derive_by_type": {
+            "spec": {"kind": "union", "fields": ["blocks"]},
+            "req": {"kind": "content_links"},
+        },
+    },
+}
+"""
+
+INDEX_MIXED = """\
+Mixed
+=====
+
+.. req:: Mentions a dead need
+   :id: REQ_1
+
+   Mentions :need:`DEAD_1`.
+
+.. spec:: Blocks a dead need
+   :id: SPEC_1
+   :blocks: DEAD_2
+"""
+
+
+@pytest.mark.parametrize("test_app", [_project(CONF_MIXED, INDEX_MIXED)], indirect=True)
+def test_allow_dead_links_beside_rules_not_all_unions_is_kept(test_app):
+    """``allow_dead_links`` is refused only where every rule of the link type is a
+    union: beside a ``content_links`` rule for another need type it is that rule's,
+    so the dead reference it computes on ``req`` is allowed; on ``spec`` the union
+    leaves its dead link to ``blocks``, which reports it once."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:9: WARNING: Need 'SPEC_1' has unknown outgoing link "
+        "'DEAD_2' in field 'blocks' [needs.link_outgoing]",
+    ]
+    needs = _built(app)["needs"]
+    assert needs["REQ_1"]["mentions"] == ["DEAD_1"]
+    assert needs["REQ_1"]["has_forbidden_dead_links"] is False
+    assert needs["SPEC_1"]["mentions"] == ["DEAD_2"]
+    assert needs["SPEC_1"]["has_forbidden_dead_links"] is True
+
+
+CONF_TYPE_ENTRY = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {"blocks": {"allow_dead_links": True}}
+needs_types = [
+    {"directive": "req", "title": "Requirement", "prefix": "R_"},
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "links": {
+            "tl": {
+                "derive": {"kind": "union", "fields": ["blocks"]},
+                "allow_dead_links": True,
+            }
+        },
+    },
+]
+"""
+
+INDEX_TYPE_ENTRY = """\
+Type entry
+==========
+
+.. spec:: Blocks a dead need
+   :id: S_001
+   :blocks: DEAD_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_TYPE_ENTRY, INDEX_TYPE_ENTRY)], indirect=True
+)
+def test_allow_dead_links_beside_a_union_in_a_need_types_entry(test_app):
+    """The refusal of ``allow_dead_links`` beside a union a need type's entry declares
+    names that entry, and the ``derive`` beside it."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: Invalid derive of link type 'tl': needs_types['spec'].links['tl']: "
+        "'allow_dead_links' cannot be given beside derive, and is ignored (a union's "
+        "dead links are its members'); the rule applies [needs.derive_invalid]",
+    ]
+    assert _built(app)["needs"]["S_001"]["tl"] == ["DEAD_1"]
+
+
+CONF_IMPORTED = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {
+    "blocks": {"allow_dead_links": True},
+    "all_links": {"derive": {"kind": "union", "fields": ["links", "blocks"]}},
+}
+"""
+
+IMPORTED_JSON = json.dumps(
+    {
+        "current_version": "1.0",
+        "versions": {
+            "1.0": {
+                "needs": {
+                    "EXP_1": {
+                        "id": "EXP_1",
+                        "type": "spec",
+                        "title": "Its union names a dead need its members do not",
+                        "blocks": [],
+                        "all_links": ["DEAD_9"],
+                    }
+                }
+            }
+        },
+    }
+)
+
+INDEX_IMPORTED = """\
+Imported
+========
+
+.. needimport:: exp.json
+
+.. spec:: Blocks a dead need, which blocks allows
+   :id: LOC_1
+   :blocks: DEAD_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF_IMPORTED),
+                (Path("exp.json"), IMPORTED_JSON),
+                (Path("index.rst"), INDEX_IMPORTED),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_an_imported_union_is_checked_as_any_link_type(test_app):
+    """A union leaves its dead links to its members only where its rule computed it:
+    an imported need keeps the union its file gives, which no member holds, so it is
+    checked as any link type, under the union's own allow_dead_links (none): its dead
+    link is reported and forbidden. ``has_dead_links`` counts every link type, a
+    union's too, as before; on a computed need only the member decides what is
+    forbidden."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:4: WARNING: Need 'EXP_1' has unknown outgoing link "
+        "'DEAD_9' in field 'all_links' [needs.link_outgoing]",
+    ]
+    needs = _built(app)["needs"]
+    imported, local = needs["EXP_1"], needs["LOC_1"]
+    assert (imported["all_links"], imported["blocks"]) == (["DEAD_9"], [])
+    assert (imported["has_dead_links"], imported["has_forbidden_dead_links"]) == (
+        True,
+        True,
+    )
+    assert local["all_links"] == ["DEAD_1"]
+    assert (local["has_dead_links"], local["has_forbidden_dead_links"]) == (
+        True,
+        False,
+    )
+
+
+CONF_PER_TYPE = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {
+    "blocks": {},
+    "tests": {"allow_dead_links": True},
+    "all_links": {
+        "derive_by_type": {
+            "spec": {"kind": "union", "fields": ["blocks", "tests"]},
+        },
+        "allow_dead_links": True,
+    },
+}
+"""
+
+INDEX_PER_TYPE = """\
+Per type
+========
+
+.. req:: A closed requirement
+   :id: REQ_0
+   :status: closed
+
+.. req:: No union: a forbidden dead link, a failed condition
+   :id: REQ_1
+   :blocks: DEAD_1, REQ_0[status == 'open']
+
+.. req:: No union: an allowed dead link
+   :id: REQ_2
+   :tests: DEAD_2
+
+.. spec:: The union: a forbidden dead link, a failed condition
+   :id: SPEC_1
+   :blocks: DEAD_3, REQ_0[status == 'open']
+
+.. spec:: The union: an allowed dead link
+   :id: SPEC_2
+   :tests: DEAD_4
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_PER_TYPE, INDEX_PER_TYPE)], indirect=True
+)
+def test_a_union_for_one_need_type(test_app):
+    """A ``derive_by_type`` union is a union on its need type alone, read per need: on
+    ``spec`` it reports no dead link and no condition of its own, and its dead links
+    are forbidden as the member says; on ``req``, read first, it has no rule and holds
+    no links. Every rule being a union, ``allow_dead_links`` beside it is refused."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: Invalid derive of link type 'all_links': 'allow_dead_links' cannot "
+        "be given beside derive_by_type, and is ignored (a union's dead links are its "
+        "members'); the rules apply [needs.derive_invalid]",
+        "<srcdir>/index.rst:8: WARNING: Need 'REQ_1' link 'REQ_0' in field 'blocks': "
+        "condition \"status == 'open'\" not satisfied by target need 'REQ_0' "
+        "[needs.link_condition_failed]",
+        "<srcdir>/index.rst:8: WARNING: Need 'REQ_1' has unknown outgoing link "
+        "'DEAD_1' in field 'blocks' [needs.link_outgoing]",
+        "<srcdir>/index.rst:16: WARNING: Need 'SPEC_1' link 'REQ_0' in field 'blocks': "
+        "condition \"status == 'open'\" not satisfied by target need 'REQ_0' "
+        "[needs.link_condition_failed]",
+        "<srcdir>/index.rst:16: WARNING: Need 'SPEC_1' has unknown outgoing link "
+        "'DEAD_3' in field 'blocks' [needs.link_outgoing]",
+    ]
+    needs = _built(app)["needs"]
+    assert {
+        need_id: (
+            need["all_links"],
+            need["has_dead_links"],
+            need["has_forbidden_dead_links"],
+        )
+        for need_id, need in needs.items()
+        if need_id != "REQ_0"
+    } == {
+        "REQ_1": ([], True, True),
+        "REQ_2": ([], True, False),
+        "SPEC_1": (["DEAD_3", "REQ_0[status == 'open']"], True, True),
+        "SPEC_2": (["DEAD_4"], True, False),
+    }
+
+
+CONF_OWN_FUNCTION = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+
+
+def my_links(app, need, needs, *args, **kwargs):
+    return ["REQ_2"]
+
+
+needs_functions = [my_links]
+needs_links = {
+    "blocks": {"copy": True},
+    "all_links": {"derive": {"kind": "union", "fields": ["links", "blocks"]}},
+}
+"""
+
+INDEX_OWN_FUNCTION = """\
+Own function
+============
+
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Its blocks are your own function's
+   :id: SPEC_1
+   :blocks: [[my_links()]]
+   :links: REQ_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_OWN_FUNCTION, INDEX_OWN_FUNCTION)], indirect=True
+)
+def test_a_union_cannot_read_a_member_your_own_function_computes(test_app):
+    """Your own functions run after the built-in ones of their step, a union's rule
+    included, so a union over a member one of them computes cannot be computed: it is
+    one ``needs.derive_scope`` and holds no links, while ``copy`` still copies the
+    call. A known limit of this release, documented beside the deprecation."""
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert [w for w in warnings if "derive_scope" in w] == [
+        "<srcdir>/index.rst:10: WARNING: derive rule 'union' for option 'all_links' "
+        "read 'links' on need 'SPEC_1' and 'blocks' on need 'SPEC_1' before they were "
+        "computed: they are computed by your own function 'my_links', which runs "
+        "after the built-in functions [needs.derive_scope]"
+    ]
+    spec = _built(app)["needs"]["SPEC_1"]
+    assert spec["links"] == ["REQ_1", "REQ_2"]
+    assert spec["all_links"] == []
+
+
+CONF_HTML = """\
+extensions = ["sphinx_needs"]
+needs_links = {
+    "blocks": {"allow_dead_links": True},
+    "tests": {},
+    "all_links": {
+        "outgoing": "all links",
+        "derive": {"kind": "union", "fields": ["blocks", "tests"]},
+    },
+}
+"""
+
+INDEX_HTML = """\
+Rendered
+========
+
+.. spec:: Two dead links
+   :id: SPEC_1
+   :blocks: DEAD_1
+   :tests: DEAD_2
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_HTML), (Path("index.rst"), INDEX_HTML)],
+        }
+    ],
+    indirect=True,
+)
+def test_a_unions_dead_links_are_drawn_as_its_members_allow(test_app):
+    """In a need's layout, a dead link of the union's row is marked forbidden only
+    where a member holding it does not allow dead links, as the build reports it."""
+    app = test_app
+    app.build()
+    html = Path(app.outdir, "index.html").read_text("utf8")
+    row = html[html.index("all links:") :]
+    row = row[: row.index("</div>")]
+    assert re.findall(r'class="([^"]*)">(DEAD_\d)', row) == [
+        ("needs_dead_link", "DEAD_1"),
+        ("needs_dead_link forbidden", "DEAD_2"),
+    ]

@@ -4882,6 +4882,7 @@ all_links = ["REQ_1"]
 all_links = []
 [case.expect.schema.all_links]
 description = "Declared by need types 'spec'"
+readOnly = true
 [[case.expect.findings]]
 code = "derive_authored"
 need = "SPEC_1"
