@@ -139,6 +139,7 @@ _LANGUAGES = {
     "typescript": "typescript",
     "tsx": "typescript",
     "js": "javascript",
+    "vhdl": "vhdl",
 }
 
 
