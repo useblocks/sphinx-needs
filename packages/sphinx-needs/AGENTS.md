@@ -511,7 +511,9 @@ app.add_event("needs-before-sealing")          # Before needs are sealed (made i
 ### Adding a Configuration Option
 
 1. Add to `src/sphinx_needs/config.py`
-2. Document in `docs/configuration.rst`
+2. Document in `docs/configuration.rst`; a derived field's `derive` (its kinds, roles and how a
+   rule is computed) is documented in `docs/derived_fields.rst`, whose executable half is
+   `tests/fixtures/derive_conformance.toml`
 3. Add tests for the new option
 
 ## Debugging

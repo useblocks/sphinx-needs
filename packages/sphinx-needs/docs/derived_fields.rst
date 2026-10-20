@@ -115,6 +115,17 @@ The kinds
 Every kind that computes a value, but ``fingerprint``, also takes ``after = "derived"``,
 which computes the field after every other rule of the need, as ``hash`` and ``fingerprint`` always are.
 
+.. note::
+
+   Three things are called ``copy``, and only the first is a kind:
+
+   - the ``copy`` **kind** of a rule, ``derive = { kind = "copy", … }``, which reads a field (above);
+   - the :ref:`copy <copy>` **dynamic function**, ``[[copy("x")]]`` written in a need,
+     whose declared form is mostly that kind (see :ref:`dynamic_functions_derived`);
+   - the ``copy = true`` **option** of a :ref:`needs_links` entry, deprecated,
+     which copies the link type's links into ``links``;
+     its declared successor is a :ref:`union <needs_derive_union>`, not the ``copy`` kind.
+
 .. _`needs_derive_roles`:
 
 The roles
