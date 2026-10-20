@@ -103,7 +103,7 @@ members = ["packages/*", "tools"]
 dev = [
   "prek>=0.5.2",
   "poethepoet~=0.48",
-  "uv>=0.12.9",
+  "uv>=0.13.4",
   { include-group = "test" },
   { include-group = "js" },
 ]
