@@ -4249,8 +4249,30 @@ needs_debug_filters
 
 .. versionadded:: 4.0.0
 
+.. versionchanged:: 9.1.0
+   Each record says which tier answered the filter (``tier``), and for ``eval`` why (``fallback_reason``).
+
 If set to ``True``, all calls to :ref:`filter processing <filter>` will be logged to a ``debug_filters.jsonl`` file in the build output directory,
 appending a single-line JSON for each filter call.
+The calls logged are those of the directives taking the :ref:`filter options <filter_options>`
+(:ref:`needlist`, :ref:`needtable`, :ref:`needflow`, ...); a :ref:`need_count`, a :ref:`needextend`
+or a filter in the configuration writes no record. A record holds:
+
+- ``origin``, ``source`` and ``line``: the directive and where it is written;
+- ``filter``: the directive's filter, its ``:status:``, ``:tags:`` and ``:types:`` joined to its ``:filter:`` with ``and``;
+- ``needs_count`` and ``runtime``: how many needs it selected, and in how many seconds;
+- ``tier``: which of the :ref:`three tiers <filter_string_performance>` answered the ``:filter:``:
+  ``"index"`` (from the indexes, a directive with no ``:filter:`` included), ``"fast"`` (the portable filter language)
+  or ``"eval"`` (Python's ``eval``);
+- ``fallback_reason``, for ``"eval"`` only: the construct that kept the string out of the portable language, a short
+  name that stays the same across releases --
+  ``subscript``, ``comprehension``, ``arithmetic``, ``literal`` (a literal where the language has none, ``1`` alone),
+  ``call:<function>`` (a call of a function the language lacks, or of one of its own in a shape it lacks: ``call:any``,
+  ``call:len``), ``method:<name>`` (``method:strip``), ``attribute:<root>`` (a dotted name not under ``var.``),
+  ``name:<name>`` (``needs``, ``current_need``, ``c`` or ``var`` as a value), ``compare:<shape>``
+  (``compare:name-in-name``, ``compare:list``, ``compare:ordering``, ``compare:is``, ``compare:chained``,
+  ``compare:in``), ``syntax``, the kind of any other expression (``ifexp``, ``fstring``, ``lambda``, ``tuple``, ...),
+  and ``filter-code`` and ``filter-func`` for a directive's :ref:`filter code <filter_code>` and :ref:`filter_func`.
 
 .. _`needs_schema_validation_enabled`:
 

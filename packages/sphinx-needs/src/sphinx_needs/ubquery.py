@@ -18,12 +18,12 @@ runs, and that is nearly all of what it spends. A predicate reads only the field
 expression reaches.
 
 Its answers are ``eval``'s: for every string it compiles, a predicate gives the answer
-``eval`` gives on the same need, errors included -- a name that is no field and no
-``needs_filter_data`` key raises :class:`NameError`, a method of a value of the wrong
-type raises what Python raises, and ``c.this_doc()`` with no document to compare raises
-the error the ``eval`` tier's context raises. One difference is deliberate: a predicate
-reads every operand by Python truthiness, as ubCode does, where ``eval`` refuses a
-filter whose value is not a boolean (#1773).
+``eval`` gives on the same need, errors included -- a name that is no field, no
+``needs_filter_data`` key and no Python builtin raises :class:`NameError`, a method of a
+value of the wrong type raises what Python raises, and ``c.this_doc()`` with no document
+to compare raises the error the ``eval`` tier's context raises. One difference is
+deliberate: a predicate reads every operand by Python truthiness, as ubCode does, where
+``eval`` refuses a filter whose value is not a boolean (#1773).
 
 A string outside the grammar is not an error here. :func:`try_build_simple_predicate`
 returns ``None`` for it, the caller falls back to ``eval``, and :func:`compile_portable`
@@ -33,7 +33,9 @@ Each arm below names the ``py_expr.pest`` rule it mirrors. A few forms this modu
 before the grammar was its reference are kept, although ``ubc_query`` refuses them: an
 ordering comparison of a name with a literal that is no number, a tuple or a set of
 literals after ``in``, and a constant the grammar has no literal for (``b"x"``) beside a
-name.
+name. It reads the string's syntax tree, not its text, so what the grammar refuses for
+its spelling alone -- ``not not x`` beside ``not (not x)``, a missing space -- is not
+refused here.
 
 The public entry point is :func:`try_build_simple_predicate`.
 """

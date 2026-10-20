@@ -10,6 +10,29 @@ Unreleased
 Improvements
 ............
 
+- ✨ The filter fast path compiles the whole portable filter language, the subset of Python expressions ubCode
+  reads as well, and a conformance corpus both tools run defines it (:issue:`2346`)
+
+  A :ref:`filter string <filter_string>` that the index path does not answer is compiled once and evaluated
+  need by need without Python's ``eval`` when it is written in the portable language, which now holds
+  ``x is None`` / ``x is not None``; ``len(x)``, ``x.lower()`` and ``x.upper()`` as operands, on either side of a
+  comparison, of ``in``, of ``search()`` and alone; ``x.startswith('...')`` / ``x.endswith('...')``, after any of
+  those (``id.lower().startswith('req')``); a field against a field in every comparison (``variant ==
+  current_variant``); ``c.this_doc()``; a negative number; ``True`` / ``False``; and a ``var.`` chain alone. Its
+  answers are ``eval``'s, an error included; the one exception stays a filter whose value is not a boolean, which
+  the portable language reads by its truthiness and ``eval`` refuses (:issue:`1773`). A string the language does
+  not hold -- a field ``in`` a field, a list beside ``==``, a subscript, a comprehension, arithmetic, another call --
+  is evaluated by ``eval`` as before. Of the strings this repository's documentation and tests wrote, eleven of
+  the sixteen that reached ``eval`` no longer do. ``tests/fixtures/filter_conformance.toml`` (repository of
+  record: this one; ubCode vendors it) pins every rule, the answers in both tools and where ubCode answers
+  otherwise; see :ref:`filter_string_performance`.
+
+- 👌 :ref:`needs_debug_filters` says which tier answered each filter: every record of ``debug_filters.jsonl``
+  holds ``tier``, ``"index"``, ``"fast"`` or ``"eval"``, and for ``"eval"`` ``fallback_reason``, the construct that
+  kept the string out of the portable filter language (``subscript``, ``call:any``,
+  ``compare:name-in-name``, ...), or ``filter-code`` / ``filter-func`` for a directive's filter code
+  (:issue:`2346`)
+
 - ✨ A derived union of link types: a link type deriving ``union`` holds the links of the link types it names
   (:issue:`2279`, :pr:`2343`)
 
@@ -338,6 +361,10 @@ Deprecations
 
 Bug fixes
 .........
+
+- 🐛 The filter fast path answers as ``eval`` does where it did not: a list or a tuple of literals after ``in``
+  compares a list field item by item (``tags not in ['a']`` raised there and was true in ``eval``), and a name
+  no field defines that is a Python builtin is the builtin (``owner != filter``) (:issue:`2346`)
 
 - 🐛 The console message of a schema finding names the need the rule selected, under which
   ``schema_violations.json`` files it. A finding of a ``network`` or ``network_back`` rule that failed
