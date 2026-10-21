@@ -178,11 +178,13 @@ If it is invalid or its value is false, the related need is not taken into accou
 
 A filter that is a constant alone says nothing about a need, as its value is the same on every need:
 a literal (a string, bytes, a number with one sign or none, ``None`` or ``...``),
-a tuple, list, set or dict display whatever it holds (``[1]``, ``{}``, and so the trailing-comma typo ``status == 'open',``),
-or an f-string with no placeholder, parenthesised or not, after any leading spaces.
+a tuple, list, set or dict display that unpacks nothing, whatever it holds
+(``[1]``, ``{1}``, ``{}``, and so the trailing-comma typo ``status == 'open',``),
+a generator expression (``(t for t in tags)``, which is true whatever it would yield),
+or an f-string with no placeholder, parenthesised or not, after any leading spaces and tabs.
 ``True`` and ``False`` are the exception: ``True`` selects every need, and ``False`` none.
-``--5`` and ``-True`` are arithmetic, and a comprehension or an f-string with a placeholder is read by its truth,
-as is a constant inside a larger filter (``True and owner``).
+``--5`` and ``-True`` are arithmetic, and a display that unpacks (``[*tags]``), a list, set or dict comprehension
+or an f-string with a placeholder is read by its truth, as is a constant inside a larger filter (``True and owner``).
 
 The directives and roles that list or count needs -- :ref:`needlist`, :ref:`needtable` and the other views,
 :ref:`need_count`, a content line of :ref:`needpie` or :ref:`needbar`, :ref:`needextend` -- and

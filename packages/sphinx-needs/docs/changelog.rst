@@ -48,8 +48,8 @@ Improvements
   boolean``) where the index path and the portable filter language read its truth, so ``tags`` and
   ``[t for t in tags]`` answered differently. A filter that is a constant alone -- a literal such as ``'x'``,
   ``-5``, ``10.5`` or ``None``, a display such as ``[1]`` or ``{}``, the trailing-comma typo
-  ``status == 'open',``, an f-string with no placeholder, parenthesised or not, after any leading spaces -- says
-  nothing about a need. The views, :ref:`need_count`, the content lines of :ref:`needpie` and :ref:`needbar`,
+  ``status == 'open',``, a generator expression, which is true whatever it would yield, an f-string with no
+  placeholder, parenthesised or not, after any leading spaces and tabs -- says nothing about a need. The views, :ref:`need_count`, the content lines of :ref:`needpie` and :ref:`needbar`,
   :ref:`needextend`, :ref:`needs_warnings`, :ref:`needs_builder_filter`, the ``filter()`` of :ref:`needuml` and
   ``copy(filter=...)`` refuse it before any tier runs, with one ``needs.filter`` warning, and select nothing, so
   ``:filter: 'x'`` no longer selects every need without a word; :ref:`needimport`, a predicate of
