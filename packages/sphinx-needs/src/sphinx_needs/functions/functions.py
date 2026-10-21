@@ -616,6 +616,15 @@ class _Pass:
         self.called_links: dict[Node, tuple[int, frozenset[str]]] = {}
         #: the functions whose refused declaration was reported
         self.refused_warned: set[str] = set()
+        #: the names of the fields some need computes in the pass (``parent_need``
+        #: for a computed ``parent_needs``)
+        self.computed_names: frozenset[str] = frozenset(
+            name for _, name in project.nodes
+        ) | (
+            frozenset({"parent_need"})
+            if project.field_of("parent_need") in project.computed_fields
+            else frozenset()
+        )
         #: the ``(need id, name)`` values not computed yet, a name being the field's,
         #: or ``parent_need`` for a computed ``parent_needs``
         self.pending: set[tuple[str, str]] = set(project.nodes)
@@ -774,6 +783,17 @@ class _LateReads:
         #: built-in node's filter read a value not computed yet
         self.late = stratum is not None and any(r.last for r in stratum.reads.values())
         self.found: dict[tuple[str, str, str], _Found] = {}
+        #: the keys of :attr:`found` the reads of one recorded list (by its id) gave a
+        #: reader (``what``, ``option``), with the list, kept alive
+        self._replays: dict[
+            tuple[int, str, str],
+            tuple[list[tuple[str, str]], list[tuple[str, str, str]]],
+        ] = {}
+        #: the keys :meth:`_note` adds to, while a replay is worked out
+        self._touched: dict[tuple[str, str, str], None] | None = None
+        #: why each node read before it was computed is computed after its reader
+        #: (:meth:`_Pass.kind`), which the order of the stratum fixes
+        self._kinds: dict[Node, tuple[str, Sequence[str]]] = {}
 
     def watch(
         self,
@@ -818,8 +838,14 @@ class _LateReads:
         reader_last = node_reads is not None and node_reads.last
         pending = pass_.pending
         field_of = project.field_of
+        computed = pass_.computed_names
+        kinds = self._kinds
 
         def on_read(need_id: str, name: str) -> bool:
+            # the watch passes on only the names some need computes; of those, an
+            # undeclared reader's read of a value computed already is one lookup
+            if declared is None and (need_id, name) not in pending:
+                return False
             node = (need_id, field_of(name))
             if node == current:
                 return False
@@ -829,13 +855,34 @@ class _LateReads:
                 if not declared.covers(*node):
                     self._note(what, field, "undeclared", need, need_id, name)
                     return True
-            if (need_id, name) not in pending or record.noted(name, need_id):
+                if (need_id, name) not in pending:
+                    return False
+            if record.noted(name, need_id):
                 return False
-            kind, functions = pass_.kind(node)
-            self._note(what, field, kind, need, need_id, name, functions, reader_last)
+            if (cause := kinds.get(node)) is None:
+                cause = kinds[node] = pass_.kind(node)
+            self._note(
+                what, field, cause[0], need, need_id, name, cause[1], reader_last
+            )
             return True
 
-        return _read_watch.watching(on_read, filters_only=not own)
+        def replayed(reads: list[tuple[str, str]]) -> None:
+            # a result computed once and used by every need computing the rule (a
+            # ``links`` rule's candidates): the reads, worked out once per reader
+            memo = self._replays.get(memo_key := (id(reads), what, field))
+            if memo is not None and memo[0] is reads:
+                for key in memo[1]:
+                    self.found[key].readers[need.id] = None
+                return
+            self._touched = {}
+            for need_id, name in reads:
+                on_read(need_id, name)
+            self._replays[memo_key] = (reads, list(self._touched))
+            self._touched = None
+
+        return _read_watch.watching(
+            on_read, filters_only=not own, names=computed, replayed=replayed
+        )
 
     def _note(
         self,
@@ -853,7 +900,10 @@ class _LateReads:
             found = self.found[key] = _Found(need, reader_last=reader_last)
         found.readers[need.id] = None
         found.reads.setdefault(name, {})[need_id] = None
-        found.functions.update(dict.fromkeys(functions))
+        for function in functions:
+            found.functions[function] = None
+        if self._touched is not None:
+            self._touched[key] = None
 
     def report(self) -> None:
         """Warn of every reader and cause noted, in the order first noted."""
@@ -881,6 +931,7 @@ class _LateReads:
                 message = _derive_scope_message(what, option, reads, cause, on)
             log_warning(logger, message, "derive_scope", location=_location(found.need))
         self.found = {}
+        self._replays = {}
 
 
 @dataclass(frozen=True, slots=True)

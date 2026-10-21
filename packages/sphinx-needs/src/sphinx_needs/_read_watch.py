@@ -2,11 +2,12 @@
 
 ``resolve_functions`` opens a watch around one call: around the whole call of your own
 function, or, for a built-in function or derive rule of a step that computes values
-after the built-in functions, around each evaluation of a filter or ``where``
-(``filters_only``). While a read is watched, every ``NeedItem.__getitem__`` (and so
-``.get``, and the fast path of a filter) and every name the ``eval`` of a filter looks
-up on a need is passed to the watch, as the need's id and the name. A read returns what
-it returns without the watch.
+after the built-in functions, around each evaluation of a filter or ``where`` only
+(``filters_only``: the filter functions mark the watch :attr:`Watch.active` while they
+evaluate). While a read is watched, every ``NeedItem.__getitem__`` (and so ``.get``, and
+the fast path of a filter) and every name the ``eval`` of a filter looks up on a need
+is passed to the watch, as the need's id and the name. A read returns what it returns
+without the watch.
 
 With no watch open nothing is replaced: ``NeedItem.__getitem__`` is the class's own,
 and the filter functions test one module attribute, :data:`current`.
@@ -14,7 +15,7 @@ and the filter functions test one module attribute, :data:`current`.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Collection, Iterator
+from collections.abc import Callable, Collection, Container, Iterator
 from contextlib import contextmanager
 from typing import Any
 
@@ -28,22 +29,28 @@ was noted (a read the check reports)."""
 class Watch:
     """One open watch.
 
-    :ivar on_read: What a read is passed to.
-    :ivar filters_only: Only the reads of a filter or ``where`` are watched, not those
-        of the rest of the call.
-    :ivar recorded: The noted reads also kept while :func:`recording`, to replay them.
+    :ivar notify: What a read is passed to.
+    :ivar active: The reads are watched now: always for a watch of a whole call, while
+        a filter or ``where`` is evaluated for one of its filters only.
+    :ivar names: The names a read of which is passed on; any other is not.
+    :ivar replayed: What reads recorded for an earlier call are passed to, at once
+        (:func:`replay`); by default, each to :attr:`notify`.
     """
 
-    __slots__ = ("filters_only", "on_read", "recorded")
+    __slots__ = ("active", "names", "notify", "replayed")
 
-    def __init__(self, on_read: OnRead, *, filters_only: bool) -> None:
-        self.on_read = on_read
-        self.filters_only = filters_only
-        self.recorded: list[tuple[str, str]] | None = None
-
-    def read(self, need_id: str, name: str) -> None:
-        if self.on_read(need_id, name) and self.recorded is not None:
-            self.recorded.append((need_id, name))
+    def __init__(
+        self,
+        notify: OnRead,
+        *,
+        active: bool,
+        names: Container[str],
+        replayed: Callable[[list[tuple[str, str]]], None] | None = None,
+    ) -> None:
+        self.notify = notify
+        self.active = active
+        self.names = names
+        self.replayed = replayed
 
 
 #: the watch open, if any
@@ -53,8 +60,8 @@ _GETITEM = NeedItem.__getitem__
 
 
 def _watched_getitem(self: NeedItem, key: str) -> Any:
-    if current is not None:
-        current.read(self.id, key)
+    if (watch := current) is not None and watch.active and key in watch.names:
+        watch.notify(self._core["id"], key)
     return _GETITEM(self, key)
 
 
@@ -64,18 +71,27 @@ def _set_getitem(getitem: Callable[[NeedItem, str], Any]) -> None:
 
 
 @contextmanager
-def watching(on_read: OnRead, *, filters_only: bool) -> Iterator[Watch]:
+def watching(
+    on_read: OnRead,
+    *,
+    filters_only: bool,
+    names: Container[str],
+    replayed: Callable[[list[tuple[str, str]]], None] | None = None,
+) -> Iterator[Watch]:
     """Watch the reads of one call while the block runs.
 
     :param on_read: What each read is passed to.
-    :param filters_only: Watch only the evaluation of a filter or ``where``
-        (:func:`in_filter`), not the whole call.
+    :param filters_only: Watch only while a filter or ``where`` is evaluated (the
+        filter functions set :attr:`Watch.active` around it), not the whole call.
+    :param names: The names worth passing on: a read of any other is not.
+    :param replayed: What reads recorded for an earlier call are passed to at once.
     """
     global current
     assert current is None, "a watch is already open"
-    current = watch = Watch(on_read, filters_only=filters_only)
-    if not filters_only:
-        _set_getitem(_watched_getitem)
+    current = watch = Watch(
+        on_read, active=not filters_only, names=names, replayed=replayed
+    )
+    _set_getitem(_watched_getitem)
     try:
         yield watch
     finally:
@@ -84,49 +100,37 @@ def watching(on_read: OnRead, *, filters_only: bool) -> Iterator[Watch]:
 
 
 @contextmanager
-def in_filter() -> Iterator[None]:
-    """Watch every read while one filter or ``where`` is evaluated, under a watch that
-    watches the filters only."""
-    watch = current
-    assert watch is not None and watch.filters_only, "a watch of filters"
-    watch.filters_only = False
-    _set_getitem(_watched_getitem)
-    try:
-        yield
-    finally:
-        _set_getitem(_GETITEM)
-        watch.filters_only = True
-
-
-def filters_watched() -> bool:
-    """Whether a watch of filters is open, and no filter is evaluated under it yet."""
-    return current is not None and current.filters_only
-
-
-@contextmanager
 def recording() -> Iterator[list[tuple[str, str]]]:
     """Keep the noted reads made while the block runs, to replay them
     (:func:`replay`) where a result computed once is used again, such as a ``links``
     rule's candidates."""
-    watch = current
     found: list[tuple[str, str]] = []
-    if watch is None:
+    if (watch := current) is None:
         yield found
         return
-    outer, watch.recorded = watch.recorded, found
+    notify = watch.notify
+
+    def record(need_id: str, name: str) -> bool:
+        if noted := notify(need_id, name):
+            found.append((need_id, name))
+        return noted
+
+    watch.notify = record
     try:
         yield found
     finally:
-        watch.recorded = outer
-        if outer is not None:
-            outer.extend(found)
+        watch.notify = notify
 
 
-def replay(reads: Collection[tuple[str, str]]) -> None:
+def replay(reads: list[tuple[str, str]]) -> None:
     """Pass reads made for an earlier call to the watch open, as if made again."""
-    if (watch := current) is not None:
-        for need_id, name in reads:
-            watch.read(need_id, name)
+    if (watch := current) is None:
+        return
+    if watch.replayed is not None:
+        watch.replayed(reads)
+        return
+    for need_id, name in reads:
+        watch.notify(need_id, name)
 
 
 class ReadingContext(dict[str, Any]):
@@ -149,6 +153,11 @@ class ReadingContext(dict[str, Any]):
         self._not_fields = not_fields
 
     def __getitem__(self, key: str) -> Any:
-        if current is not None and key not in self._not_fields:
-            current.read(self._need_id, key)
+        if (
+            (watch := current) is not None
+            and watch.active
+            and key in watch.names
+            and key not in self._not_fields
+        ):
+            watch.notify(self._need_id, key)
         return super().__getitem__(key)
