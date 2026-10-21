@@ -5018,3 +5018,25 @@ findings = []
 type_name = "Requirement"
 [case.expect.nulls]
 REQ_1 = ["x"]
+
+[[case]]
+name = "default-type-entry-beside-a-declared-type-has-no-other-default"
+why = "beside an entry declaring a type, the other default types do not exist: a bare entry naming a default type that inherits another default type inherits no need type (type_inherits), and is that default, filled"
+config = '''
+[needs.types.story]
+title = "Story"
+prefix = "ST_"
+
+[needs.types.req]
+inherits = "spec"
+'''
+source = '''
+.. req:: Narrowed
+   :id: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+type_name = "Requirement"
+[[case.expect.findings]]
+code = "type_inherits"
+type = "req"
