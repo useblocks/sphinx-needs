@@ -1263,6 +1263,118 @@ filter = 'is_external'
 expected = []
 tier = "index"
 
+# --- constants -------------------------------------------------------------------------
+
+[[case]]
+name = "constants"
+why = "a filter that is a constant alone -- a string, bytes, a number, a signed one among them, or None, parenthesised or not -- says nothing about a need: it is refused before any tier answers it, selects nothing and is reported once; True and False alone are no such constant (see logic), and a constant inside a larger filter is an operand (#2355)"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :tags: a
+
+   :np:`(a) a part`
+
+.. req:: Beta
+   :id: REQ_002
+'''
+
+[[case.filters]]
+filter = '"x"'
+expected = []
+error = "filter"
+tier = "refused"
+why = "a string: the index path read it as true and selected every need (#2355)"
+
+[[case.filters]]
+filter = '""'
+expected = []
+error = "filter"
+tier = "refused"
+
+[[case.filters]]
+filter = '0'
+expected = []
+error = "filter"
+tier = "refused"
+
+[[case.filters]]
+filter = '-5'
+expected = []
+error = "filter"
+tier = "refused"
+why = "a negative number is a constant, as a needpie line -5 is"
+
+[[case.filters]]
+filter = '1.5'
+expected = []
+error = "filter"
+tier = "refused"
+
+[[case.filters]]
+filter = 'None'
+expected = []
+error = "filter"
+tier = "refused"
+
+[[case.filters]]
+filter = '("x")'
+expected = []
+error = "filter"
+tier = "refused"
+why = "parentheses do not make a constant a condition"
+
+[[case.filters]]
+filter = '+5'
+expected = []
+error = "filter"
+tier = "refused"
+
+[[case.filters]]
+filter = 'b"x"'
+expected = []
+error = "filter"
+tier = "refused"
+
+[[case.filters]]
+filter = '"x"'
+expected = []
+error = "filter"
+tier = "refused"
+include_parts = true
+why = "with parts included the constant is refused before a part is read"
+
+[[case.filters]]
+filter = '"x"'
+expected = []
+error = "filter"
+tier = "refused"
+in_document = false
+why = "with no document the constant is refused as well"
+
+[[case.filters]]
+filter = 'True and "a" in tags'
+expected = ["REQ_001"]
+tier = "index"
+why = "a constant inside a larger filter is an operand, read by its truth"
+
+[[case.filters]]
+filter = '-True'
+expected = ["REQ_001", "REQ_002"]
+tier = "eval"
+reason = "arithmetic"
+why = "a constant expression is no constant: -1 is true"
+
+[[case.filters]]
+filter = 'not 1'
+expected = []
+tier = "eval"
+reason = "literal"
+why = "a constant expression is no constant: not 1 is false"
+
 # --- names no field defines ------------------------------------------------------------
 
 [[case]]
