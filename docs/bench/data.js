@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792576985939,
+  "lastUpdate": 1792578059485,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26604,6 +26604,42 @@ window.BENCHMARK_DATA = {
             "value": 57.663862587000004,
             "unit": "s",
             "extra": "Commit: 5abeebdafd834d430fbc38794665882357a6b238\nBranch: master\nTime: 2026-10-21T12:01:29+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "89a85716a1ea4beb17a158fa5651d44d1c1f2ca0",
+          "message": "👌 Derive follow-ups: bare default-type entries, unions over late members, allow_dead_links beside an unreadable union (#2353)\n\n## What\n\n`packages/sphinx-needs`: four follow-ups to the union (#2343) and\nper-type fields work. All of them amend behaviour that is still under\n*Unreleased*.\n\n**A bare `needs_types` entry naming a default type narrows it.** An\nentry naming `req`, `spec`, `impl`, `test` or `need` with neither\n`title` nor `prefix` is that type: it takes the `title`, `prefix`,\n`color` and `style` it leaves out, and its own `fields`, `links` and\n`inherits` apply. A `needs_types` none of whose entries gives a `title`\nor a `prefix` keeps every default type, each narrowed in place, so\n\n```toml\n[needs.fields.x]\nschema = { type = \"string\" }\n\n[needs.types.req.fields.x]\nderive = { kind = \"copy\", field = \"title\" }\n```\n\ngives `req` a rule and keeps `spec`, `impl`, `test` and `need`. Until\nnow the entry was dropped with a `needs.config` warning, and every\ndefault directive became \"Unknown directive\".\n\nOnce an entry gives a `title` or a `prefix`, the list given replaces the\ndefaults as before, and a bare default-named entry stands, filled, at\nits own position. It is filled from the default type, never from another\nentry naming the same directive: the later duplicate is used and\nreported, as before. A bare entry naming no default type is still\nignored, with its warning, and declares nothing. An entry giving only\none of the two is still refused, and an empty value is still no types.\n\nThe defaults are `sphinx_needs.config.DEFAULT_NEED_TYPES`.\n`derive_by_type` is no longer documented as the route for a default\ntype; it stays the route for extension and service types, and for a rule\nsubtypes must not inherit.\n\n**A union reads a member computed after the built-in functions.** This\ncovers a union over a link type that the project's own function fills\n(e.g. sphinx-test-reports' `tr_link`), or that a call whose filter\ncannot be read fills (a `links_from_filter` naming `needs`). Such a\nunion is computed right after the last member computed so, among those\nnodes in need-id order; a union of it comes after it. It used to be\ncomputed first and miss the member, with one `needs.derive_scope`.\n\nThe nodes computed last keep their documented need-id order:\n- those after the union read it complete;\n- those before it read it empty. Such a call whose filter names the\nunion, by name or as a constant `current_need` key, is reported (a\nstatic `needs.derive_scope`). Your own functions, and reads through\n`needs[...]`, are not reported: that is the one trade-off, and the docs\nstate it.\n\nA built-in call or rule of that step reading such a union cannot wait\nfor it. It is not run, keeps its written links, and is one\n`needs.derive_scope` on every need computing it, decided statically:\nnever a silent `[]`. A `copy` reading it before it is reported when it\nruns. The \"keep `copy` for such a link type\" advice is lifted, and the\ndeprecation keeps one case: the readers that take only `links`.\n\n**`allow_dead_links` beside a union that cannot be read is kept.** A\nunion refused for a member, or on a cycle, holds no links and is no\nunion. The key beside it is now kept, decided from the rules as checked;\nit used to be dropped without a word, decided from the kinds as written.\nA `derive` cycling on some need types only is still a union on the\nothers, so the key is refused there. Every key refused beside such a\n`derive` (`allow_dead_links`, `target_types`, `copy`, `default`) is now\nsaid in the cycle's finding, which used to replace the refusal's own.\nubCode already keeps the key; its divergence-register row goes in the\ncompanion PR.\n\n**Messages lead with the need types' own entries.** Three texts change:\n- The `types`-role refusal says a rule for some need types is declared\nin those types' own entries, or under `derive_by_type` for a type an\nextension adds.\n- A key refused beside rules that come only from entries names those\nentries, each once, instead of a `derive_by_type` nobody wrote.\n- The Python API's narrowing error names the entries first.\n\n## Why\n\nFollow-ups to #2343 and the per-type fields work, ahead of the release\nthat ships them:\n- The likeliest way to give a default type a rule, its own entry,\ndeleted every default type.\n- A union, which is what `copy = true`'s deprecation points to, could\nnot read the link types `tr_link` fills.\n- `allow_dead_links` beside a broken union vanished silently, unlike in\nubCode.\n- Three messages pointed at the spelling the docs now play down.\n\nubCode mirrors the need-types rule and re-vendors both corpora in\nuseblocks/ubcode#4254.\n\n## Tests\n\n- **Shared corpora**, committed first and red against the code before\nthe fix, appended only:\n- `field_declaration_conformance.toml` 85 → 89: a new section, \"an entry\nnaming a default type\", with its header exception. The runner admits a\nbare entry only in that section's four cases.\n  - `derive_conformance.toml` 81 → 84:\n- `union-over-a-member-computed-last` and\n`union-computed-last-read-in-its-step` are `python_only`, since ubCode\ndoes not evaluate a filter naming `needs`;\n    - `union-that-cannot-be-read-keeps-allow-dead-links` is shared.\n  - One `why` line is reworded.\n- **`tests/test_needs_types_config.py`**: the rule as a pure-function\ntable:\n  - an all-bare list and mapping;\n  - a removed key falling back;\n  - mixed lists in both orders;\n  - a bare non-default entry alone and beside others;\n  - one of title/prefix refused and still declaring;\n  - all entries dropped;\n  - `[]` and `{}`.\n\nIt also checks that the defaults are left unmutated, and runs builds in\n`conf.py`'s list shape and `ubproject.toml`'s tables.\n- **`tests/test_derive_union.py`**:\n- The own-function test is flipped: the union now holds the member's\nlinks.\n- Nodes computed last keep need-id order, with a union slotted after its\nlast late member.\n- Readers before and after the slot: own functions, opaque calls naming\nthe union by name or by a `current_need` key, a `copy` at run time.\n- Built-in readers are static sinks, both through a dependency and\nthrough a sum's candidates.\n  - A union of such a union.\n- `allow_dead_links` is kept beside a bad member, a cycle, an unreadable\n`derive_by_type` entry and a need type's entry, and is refused and said\nbeside a union cycling on one type, alongside `target_types`, `copy` and\n`default`.\n- **`tests/test_derive_by_type.py`**: a key beside entry-only rules\nnames the entries, once each with inheriting types, for fields and link\ntypes.\n- **Mutation-checked**: every load-bearing branch was turned off in\nturn, and each turned at least one test red. That is 50+ mutations\nacross the builder's own and two reviewers'.\n\nFollow-ups (not here):\n- A built-in filter reading a link type your own function fills reads it\nempty with no warning. This is pre-existing: #2354.\n- A late member made a static sink leaves its union moved, so the\nunion's built-in readers get a warning they could avoid.\n- Bare-entry narrowing for extension and service types.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-21T12:19:31+02:00",
+          "tree_id": "e5ec7d50dc1306690837aed7586b2f84ccb4cc34",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/89a85716a1ea4beb17a158fa5651d44d1c1f2ca0"
+        },
+        "date": 1792578049410,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10262209700000824,
+            "unit": "s",
+            "extra": "Commit: 89a85716a1ea4beb17a158fa5651d44d1c1f2ca0\nBranch: master\nTime: 2026-10-21T12:19:31+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.21009309200001,
+            "unit": "s",
+            "extra": "Commit: 89a85716a1ea4beb17a158fa5651d44d1c1f2ca0\nBranch: master\nTime: 2026-10-21T12:19:31+02:00"
           }
         ]
       }
