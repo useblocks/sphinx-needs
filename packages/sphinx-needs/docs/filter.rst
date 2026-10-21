@@ -176,12 +176,22 @@ the related need is added to the filter result list -- an empty string, an empty
 so ``tags`` selects the needs that have tags.
 If it is invalid or its value is false, the related need is not taken into account for the current filter.
 
-A filter that is a constant alone -- a string, bytes, a number (a signed one included), ``None`` or ``...``,
-parenthesised or not, such as ``'x'``, ``-5`` or ``("x")`` -- says nothing about a need: it is refused before it is evaluated,
-with one warning, and selects nothing. The warning is ``needs.filter``;
-:ref:`needimport`, a predicate of :ref:`needs_fields` and ``links_from_filter`` report it as they report a filter that fails.
+A filter that is a constant alone says nothing about a need, as its value is the same on every need:
+a literal (a string, bytes, a number with one sign or none, ``None`` or ``...``),
+a tuple, list, set or dict display whatever it holds (``[1]``, ``{}``, and so the trailing-comma typo ``status == 'open',``),
+or an f-string with no placeholder, parenthesised or not, after any leading spaces.
 ``True`` and ``False`` are the exception: ``True`` selects every need, and ``False`` none.
-Inside a larger filter a constant is read like any other operand (``True and owner``).
+``--5`` and ``-True`` are arithmetic, and a comprehension or an f-string with a placeholder is read by its truth,
+as is a constant inside a larger filter (``True and owner``).
+
+The directives and roles that list or count needs -- :ref:`needlist`, :ref:`needtable` and the other views,
+:ref:`need_count`, a content line of :ref:`needpie` or :ref:`needbar`, :ref:`needextend` -- and
+:ref:`needs_warnings`, :ref:`needs_builder_filter`, the ``filter()`` of :ref:`needuml <needuml_jinja_filter>` and
+the dynamic function ``copy(filter=...)`` refuse a constant before it is evaluated, with one ``needs.filter`` warning,
+and select nothing.
+:ref:`needimport`, a predicate of :ref:`needs_fields`, ``links_from_filter`` and ``links_from_match`` refuse it the same
+way, with the warning they give for a filter that fails.
+Anywhere else, a constant fails the way a filter that cannot be evaluated fails there.
 
 .. dropdown:: Show example
 

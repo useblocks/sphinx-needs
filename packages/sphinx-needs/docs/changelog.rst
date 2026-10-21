@@ -46,12 +46,18 @@ Improvements
   A :ref:`filter string <filter_string>` selects the needs its value is true for, whatever the value's type and
   whichever tier answers it: ``eval`` refused a value that is not a boolean (``Filter did not evaluate to a
   boolean``) where the index path and the portable filter language read its truth, so ``tags`` and
-  ``[t for t in tags]`` answered differently. A filter that is a constant alone -- ``'x'``, ``-5``, ``10.5``,
-  ``None``, parenthesised or not -- says nothing about a need: it is refused before any tier runs, with one
-  warning, and selects nothing, so ``:filter: 'x'`` no longer selects every need without a word. ``True`` and
-  ``False`` alone still select every need and none. A content line of :ref:`needpie` or a cell of
-  :ref:`needbar` that is such a constant (``10.5``, ``-5``) still counts zero with a ``needs.filter`` warning,
-  and ``links_from_filter`` given one fails the call with a warning rather than link nothing.
+  ``[t for t in tags]`` answered differently. A filter that is a constant alone -- a literal such as ``'x'``,
+  ``-5``, ``10.5`` or ``None``, a display such as ``[1]`` or ``{}``, the trailing-comma typo
+  ``status == 'open',``, an f-string with no placeholder, parenthesised or not, after any leading spaces -- says
+  nothing about a need. The views, :ref:`need_count`, the content lines of :ref:`needpie` and :ref:`needbar`,
+  :ref:`needextend`, :ref:`needs_warnings`, :ref:`needs_builder_filter`, the ``filter()`` of :ref:`needuml` and
+  ``copy(filter=...)`` refuse it before any tier runs, with one ``needs.filter`` warning, and select nothing, so
+  ``:filter: 'x'`` no longer selects every need without a word; :ref:`needimport`, a predicate of
+  :ref:`needs_fields`, ``links_from_filter`` and ``links_from_match`` refuse it with the warning they give a
+  filter that fails, where the two functions linked nothing silently. Anywhere else a constant fails as a filter
+  that cannot be evaluated fails there. ``True`` and ``False`` alone still select every need and none. A
+  content line or cell that is a number such as ``10.5`` or ``-5`` still counts zero with a ``needs.filter``
+  warning; one that is a string such as ``'x'`` counted every need and now counts zero with that warning.
   :ref:`needs_debug_filters` records a constant's tier as ``"refused"``.
 
 - ✨ A derived union of link types: a link type deriving ``union`` holds the links of the link types it names
@@ -599,7 +605,8 @@ Documentation
 
   It wrote a raw string, ``search(r"[\w\s]{10,}", title)``, which the portable language has not, and the role
   removed its backslashes, so the pattern it ran was ``[ws]{10,}`` and the example counted no need. It now writes
-  each backslash twice for the role and twice for the string literal.
+  each backslash twice for the role and twice for the string literal, and the note under it says so: in a role a
+  backslash of a pattern is written four times, or avoided with a character class.
 
 - 📚 A need type's own entry is documented as the place for most rules about its needs,
   beside schema rules for the rest (:pr:`2295`)

@@ -160,8 +160,9 @@ See :ref:`filter_string` for more information.
 
 .. note::
 
-   If backslashes ``\`` are used inside the regex function ``search``, please make sure to double them as in python
-   one ``\`` needs to be represented by ``\\``.
+   If backslashes ``\`` are used inside the regex function ``search``, in a role the text loses one level of
+   backslashes before the filter is read, so a backslash of the pattern is written four times there
+   (``"\\\\d"``, as in the example above), or avoided with a character class (``"[.]"``).
 
 .. note::
 
