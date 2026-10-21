@@ -276,14 +276,17 @@ A declared call is ordered as a built-in call is:
 a read of the field the call computes itself is a :ref:`cycle <needs_derive_cycle>`,
 a read of a value computed in a later step (a field that is not a link field, read from a link field)
 is not run (:ref:`needs_derive_scope`),
-and a ``need.<field>`` argument is read on its own need first, so one computed in the same step
-blocks the call, as a ``need.<field>`` that selects what a built-in function reads does.
+and a ``need.<field>`` :ref:`argument <dynamic_functions_need_arguments>` is a read of its own need:
+one computed in the same step is waited for, and the declaration is called with a value it cannot use
+-- a declaration that needs it (one naming the field it reads by that argument) cannot be applied to that call,
+which is computed after the built-in functions, as a call of a function that declares nothing.
 A declaration that cannot be applied to a call -- it raises, or returns anything but such a mapping --
 is reported once per function, as a ``needs.config`` warning, and its calls are computed
 after the built-in functions, as calls of a function that declares nothing.
-As the function runs, every read of a computed value that its declaration does not name
+As the function runs, every read of a value computed in its own step that its declaration does not name
 is reported (:ref:`needs_derive_scope`), whether that value was computed yet or not:
 declare it, or the call is not ordered after it.
+A value of an earlier step is final, and need not be declared.
 A read is what the function's code reads through ``need[...]`` or ``need.get(...)``, or a filter it evaluates:
 ``dict(need)`` and ``{**need}`` read every field of the need, a computed one among them.
 
@@ -545,7 +548,7 @@ These reads are reported as ``needs.derive_scope``:
   before it is computed: through an argument, or through its filter or ``where``;
 - your own function, or a call whose filter cannot be read, that reads a value computed after it:
   by such a call later in the step, a union computed after them, or a later step;
-- a function that declares what it reads, reading a value computed in the pass that its declaration does not
+- a function that declares what it reads, reading a value computed in its own step that its declaration does not
   name, computed yet or not.
 
 A field whose call is not run reads nothing, so it is on no cycle; a value computed from it reads what it holds.

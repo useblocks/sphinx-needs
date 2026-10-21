@@ -36,11 +36,12 @@ Improvements
   value computed after it (by another of your functions, a call whose filter cannot be read, a union computed after
   them, or a later step). Each is now one ``needs.derive_scope`` per reader and cause, naming the needs read: your
   own function once for all its calls computing a field, a built-in call or rule once for every need it computes
-  the field on. A function that declares its reads is reported for every read of a computed value it does not
-  declare. No value changes: the reader still computes what it read. Only the reads that touched such a value are
-  reported, so a filter whose ``and`` stops before it is not; a whole-need read such as ``dict(need)`` reads every
-  field. The reads are watched only in a step with a call computed after the built-in functions, so a project
-  without one runs as before. See :ref:`needs_derive_scope`.
+  the field on. A function that declares its reads is reported for every read of a value computed in its own step
+  that it does not declare. No value changes: the reader still computes what it read. Only the reads that touched
+  such a value are reported, so a filter whose ``and`` stops before it is not; a whole-need read such as
+  ``dict(need)`` reads every field. A built-in function's filter is watched only in a step with a call computed
+  after the built-in functions, and your own functions' calls as they run, so a project without functions of its
+  own runs as before. See :ref:`needs_derive_scope`.
 
 - ⚡️ A filter string in the portable filter language is evaluated without Python's ``eval``, five to six times
   faster, for the whole language; a conformance corpus defines it and pins its answers (:issue:`2346`, :pr:`2350`)
@@ -115,7 +116,7 @@ Improvements
   union after that). Those computed after the union read it complete, those before it empty -- such a call whose
   filter names the union is one ``needs.derive_scope``, as is a ``copy`` reading it, when it runs, and the project's
   own functions, a read through ``needs`` and one of ``current_need`` by a key that is not written out, as they run
-  (below) -- and a built-in function or rule of that step reading such a union cannot wait for it, and is one
+  (above) -- and a built-in function or rule of that step reading such a union cannot wait for it, and is one
   ``needs.derive_scope`` (a ``links`` rule on every need computing it). It is what
   ``copy = true`` gave, declared (see *Deprecations*); see :ref:`needs_derive_union` for how to read it in place of
   ``links``. The derive conformance corpus pins it (``union-*``), as does the field-declaration corpus for a union

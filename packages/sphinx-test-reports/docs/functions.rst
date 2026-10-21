@@ -41,7 +41,9 @@ So Sphinx-Needs computes its links with its built-in functions, in order,
 and a ``links_from_filter``, a derived ``links`` or ``union`` link type,
 or any other built-in function reading those links holds them,
 where a Sphinx-Needs that orders it after the built-in functions read them empty.
-A ``target_option`` naming the link type the call fills is a cycle (``needs.derive_cycle``).
+A ``target_option`` naming the link type the call fills is a cycle (``needs.derive_cycle``),
+and a ``source_option`` or ``target_option`` computed after the link fields cannot be read while they are,
+so the call is not run (``needs.derive_scope``).
 
 **Example**::
 

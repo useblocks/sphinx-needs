@@ -14,7 +14,10 @@ Changed
   silently (`#2354 <https://github.com/useblocks/sphinx-needs/issues/2354>`__). It is an
   attribute of the function, which a Sphinx-Needs without the declaration ignores, so the
   floor on Sphinx-Needs is unchanged. A ``target_option`` naming the link type the call
-  fills, which read it empty, is now a ``needs.derive_cycle``.
+  fills is now a ``needs.derive_cycle``, and a ``source_option`` or ``target_option``
+  computed after the link fields (by a ``[[…]]`` or ``<<…>>`` of its own) is now a
+  ``needs.derive_scope``: the call is not run, where it read the option before it was
+  computed. The links are what they were in both cases.
 
 - 🏷️ ``sphinx_test_reports`` ships a ``py.typed`` marker (:pep:`561`) and the distribution
   the ``Typing :: Typed`` classifier, so a type checker reads its annotations instead of
