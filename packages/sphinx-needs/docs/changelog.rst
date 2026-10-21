@@ -10,6 +10,16 @@ Unreleased
 Improvements
 ............
 
+- ⚡️ A filter with a field on both sides of ``in`` no longer falls to ``eval`` (:issue:`2346`, :pr:`PRNUM`)
+
+  ``owner in tags``, ``owner not in tags``, ``nick in owner`` and ``platform in var.archs`` -- an operand
+  (a field, ``len(x)``, ``x.lower()``, ``x.upper()`` or a ``var.`` chain) ``in`` / ``not in`` a field or a
+  ``var.`` chain -- are part of the :ref:`portable filter language <filter_string_performance>`, and are answered
+  without ``eval`` with ``eval``'s answers: a substring of a string, an item of a list, and a need excluded and
+  reported where Python's ``in`` fails on it (a field holding no value after ``in``, a number in a string). A call
+  after ``in`` (``owner in tags.lower()``) is still evaluated by ``eval``, and :ref:`needs_debug_filters` names it
+  ``compare:in``; ``compare:name-in-name`` is no longer a reason.
+
 - ⚡️ A filter string in the portable filter language is evaluated without Python's ``eval``, five to six times
   faster, for the whole language; a conformance corpus defines it and pins its answers (:issue:`2346`, :pr:`2350`)
 
@@ -27,7 +37,7 @@ Improvements
   lists. A string newly in the language whose value is not a boolean -- ``len(tags)`` alone, ``title.lower()``,
   ``True and owner``, a ``var.`` chain alone holding a string -- selects the needs it is true for, where it was
   refused with ``Filter did not evaluate to a boolean`` and selected nothing; ``eval`` now reads every filter for
-  its truth too (below). A string the language does not hold -- a field ``in`` a field, a list beside ``==``, a subscript, a
+  its truth too (below). A string the language does not hold -- a list beside ``==``, a subscript, a
   comprehension, arithmetic, another call -- is evaluated by ``eval`` as before. Of the strings this repository's documentation and tests wrote, eleven of
   the sixteen that reached ``eval`` no longer do. ``tests/fixtures/filter_conformance.toml`` defines the
   language and pins every rule's answers, so the three tiers are held to the same results; see
@@ -37,7 +47,7 @@ Improvements
   holds ``tier``, ``"index"``, ``"fast"``, ``"eval"`` or ``"refused"`` (a constant, below), and for ``"eval"``
   ``fallback_reason``, the construct that
   kept the string out of the portable filter language (``subscript``, ``call:any``,
-  ``compare:name-in-name``, ...), or ``filter-code`` / ``filter-func`` for a directive's filter code
+  ``compare:list``, ...), or ``filter-code`` / ``filter-func`` for a directive's filter code
   (:issue:`2346`, :pr:`2350`)
 
 - 👌 A filter string selects the needs its value is true for on every tier, and a filter that is a constant is

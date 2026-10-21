@@ -3589,8 +3589,8 @@ or a filter in the configuration writes no record. A record holds:
   ``call:c.in_namespace``), ``call`` (a call of anything else, ``x()()``), ``method:<name>`` (``method:strip``),
   ``attribute:<root>`` (a dotted name not under ``var.``), ``name:<name>`` (``needs``, ``current_need``, ``c``,
   ``var``, ``search`` or a ``__dunder__`` name as a value), ``not`` (a ``not`` as an operand, ``(not x) == y``),
-  ``compare:<shape>`` (``compare:name-in-name``, ``compare:list``, ``compare:ordering``, ``compare:is``,
-  ``compare:chained``, ``compare:in``), the kind of any other expression (``ifexp``, ``fstring``, ``lambda``,
+  ``compare:<shape>`` (``compare:list``, ``compare:ordering``, ``compare:is``, ``compare:chained``,
+  ``compare:in``, which names a call after ``in`` among others, ``owner in tags.lower()``), the kind of any other expression (``ifexp``, ``fstring``, ``lambda``,
   ``tuple``, ...), and ``filter-code`` and ``filter-func`` for a directive's :ref:`filter code <filter_code>` and
   :ref:`filter_func`. ``syntax`` names a string that is no Python expression, but no record carries it today: such a
   filter stops the build before its record is written.

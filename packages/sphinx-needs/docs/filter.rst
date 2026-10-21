@@ -369,15 +369,20 @@ so writing filters the first two take is recommended:
      (``<`` and the others with a number literal only), or between two operands:
      ``status == 'open'``, ``5 <= priority``, ``owner == lead``, ``len(tags) > 0``;
    - **membership**: an operand ``in`` / ``not in`` a list of literals,
-     and a literal ``in`` / ``not in`` an operand -- an item of a list, a substring of a string:
-     ``type in ['req', 'spec']``, ``'safety' in tags``, ``'login' not in title.lower()``;
+     a literal ``in`` / ``not in`` an operand, and an operand ``in`` / ``not in`` a field or a ``var.`` chain
+     -- an item of a list, a substring of a string:
+     ``type in ['req', 'spec']``, ``'safety' in tags``, ``'login' not in title.lower()``,
+     ``owner in maintainers``, ``platform in var.archs``.
+     As in Python, a value of another type is no item of a list (``None`` neither, and ``True`` is ``1``),
+     and a field holding no value after ``in``, or a number ``in`` a string, fails for that need;
+     the field after ``in`` takes no call (``owner in tags.lower()`` is evaluated by ``eval``);
    - ``x is None`` / ``x is not None``;
    - ``x.startswith('...')`` / ``x.endswith('...')`` after an operand: ``id.lower().startswith('req')``;
    - ``search('pattern', x)`` (see :ref:`re_search`), with a plain string literal as the pattern;
    - ``c.this_doc()`` (see :ref:`filter_current_page`);
    - ``and``, ``or``, ``not``, parentheses, and an operand alone, which is read by its truthiness.
 
-   Not in it, and so evaluated by ``eval``: a field ``in`` a field (``sphinx_tag in tags``),
+   Not in it, and so evaluated by ``eval``:
    a list beside ``==`` or ``!=`` (``tags == ['a']``; write ``len(tags) == 1 and 'a' in tags``),
    arithmetic, subscripts (``sections[0]``), comprehensions, any other call or method (``any(...)``, ``bool(x)``, ``x.strip()``),
    ``is`` with anything but ``None``, a chain of comparisons (``1 < x < 5``), a dotted name not under ``var.``,
