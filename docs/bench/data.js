@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792605087264,
+  "lastUpdate": 1792611387290,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26712,6 +26712,42 @@ window.BENCHMARK_DATA = {
             "value": 47.914653986,
             "unit": "s",
             "extra": "Commit: fcc4540d9b7ac12a87dbbfd8623dbfb5147f1dd3\nBranch: master\nTime: 2026-10-21T19:50:08+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "856baac405ae9e6d0c7839126f29546be36df820",
+          "message": "✨ Functions of your own can declare what they read, and every remaining late read is reported (#2366)\n\n## What\n\n`packages/sphinx-needs` and `packages/sphinx-test-reports`: a dynamic\nfunction of your own can declare what it reads, and is then ordered like\na built-in one. Every read that is still out of order is reported\ninstead of silent, and nothing changes for a project that declares\nnothing.\n\n**Declaring what a function reads.** You declare it with\n`sphinx_needs.api.reads`, naming the parameters whose argument is a\nfield:\n\n```python\nfrom sphinx_needs.api import reads\n\n@reads(own=\"test_option\", every=\"target_option\")  # these parameters' arguments name fields\ndef my_link(app, need, needs, test_option, target_option): ...\n```\n\nEach of `own` and `every` takes a parameter name or a tuple of them; a\n`*args` parameter's items are each a field. For a function you do not\nown, use `add_dynamic_function(app, f, reads=reads(...))`. The\ndeclaration travels with the function, through `functools.wraps` too, so\nit reaches both `needs_functions` and `add_dynamic_function`. Its names\nare checked against the function's parameters at registration: an\nunknown name is one `needs.config` warning, and the function stays\nundeclared. A fixed field the function always reads cannot be declared\nyet; such a function stays undeclared, and the check below reports its\nreads.\n\nA declared call is an ordinary node of the pass:\n- its reads are waited for, and its readers wait for it;\n- a read of itself is a `needs.derive_cycle`, and a read of a later step\na `needs.derive_scope`;\n- a `need.<field>` argument computed in the same step is waited for.\n\nA call whose declared argument is not a field name written out (a\n`need.<field>`, a number, a missing argument) is computed last, as an\nundeclared one, with one `needs.config` warning per function giving the\nreason. A `need.<field>` argument of an undeclared parameter is waited\nfor, and its own field as that argument is a cycle naming the argument.\nUndeclared functions are computed exactly as before.\n\n**The late-read check.** Reads of needs' fields are watched in two\nplaces:\n- while one of your own functions runs;\n- while a built-in function's filter or a rule's `where` is evaluated,\nin a step that has calls computed after the built-in functions. The fast\npath and the `eval` tier are both watched.\n\nA read of a value not computed yet at that moment is reported, and so\nis, for a declared function, a read of a value of its own step that it\ndoes not declare. Each is one `needs.derive_scope` per reader and cause,\nnaming the needs read. No value changes. A filter that never reached\nsuch a value (an `and` stopping first, a part's own value) is not\nreported. A call whose filter and option read the same value is reported\nonce.\n\nThe cost is nil when nothing is late. In the worst case it is about +1.5\ns (≈35 %), on a 1800-need project whose undeclared `tr_link` is read by\na `links` rule over every need. A project with no functions of its own\nmeasures within noise of master.\n\n**sphinx-test-reports.** `tr_link` declares its reads: `test_option` on\nits own need, and `target_option` on every need. So its readers hold its\nlinks: `links_from_filter`, a `links` rule, a `union`. Its sphinx-needs\nfloor is unchanged: `tr_link` declares itself through `reads` only where\n`sphinx_needs.api.reads` exists, and 9.0.0, which has none, builds as\nbefore.\n\n## Why\n\nCloses #2354. A built-in function or rule whose filter reads a link type\nyour own function fills (`tr_link`) ran before it, read it empty, and\nsaid nothing, while the docs said such a read was reported.\n\nThis is the opt-in route:\n- **Declared functions get correct values.** On a project with 300\nrequirements and 1500 tests linked by `tr_link`, 2102 wrong values\nbecome 0. The build takes longer, because it now computes the 2.7 M\nlinks its `links` rule really selects, and warns `needs.derive_dense`,\nas the same project with the links written out does.\n- **Every read still out of order is reported, never silent.** That\ncovers an undeclared function's read, and a built-in filter's read of an\nundeclared function's output.\n\n#2363 is the alternative not taken. It moves every built-in reader of a\nlate value after it, which fixes those values without user action, at\nthe cost of reordering the late part of each step. With `tr_link`\ndeclared, the common case needs no reordering. What #2363 would still\nfix automatically, this reports, and declaring the function fixes it.\n\n## Tests\n\n- **`tests/test_functions_order.py`**: the declared node, covering:\n  - ordering, columns and cycles;\n  - later-step sinks;\n- `need.<field>` arguments, waited for, and a cycle naming its argument;\n- a declared argument that is no field name (`need.<field>`, a number,\nmissing, too many).\n- **`tests/test_dynamic_functions_reads.py`**:\n- the decorator, the `reads=` override and inheritance through\n`functools.wraps`;\n  - bare `@reads` refused;\n- the issue project, declared and undeclared, with the declared value\nequal to the undeclared one where an argument is computed in the same\nstep;\n- parameter names checked against the signature at registration, with\nthe once-per-function `needs.config` warning.\n- **`tests/test_dynamic_functions_late_reads.py`**: the check over every\nreader shape of #2354, on each filter tier:\n- your own functions reading later values: another function, an opaque\ncall, a union, a later step;\n  - strict mode for declared functions, same step only;\n- one report per reader and cause, with no duplicate for a filter and\noption reading the same value;\n  - `parent_need`;\n- negative pins: an `and` that never reaches the late value, a value\nalready computed, a part's own value, a join with no value, a step with\nnothing late.\n- **sphinx-test-reports**: `tr_link`'s readers hold its links.\n- **One existing test flips, as intended:**\n`test_a_union_computed_last_and_its_readers` now pins `read_union`'s\nreport. The derive corpus is unchanged, since a `conf.py` function\ncannot be a corpus case, and ubCode, which runs no `needs_functions`, is\nunaffected.\n- **Mutation-checked:** each load-bearing branch was disabled in turn\nand turned a test red: more than 40 mutations by the builder and two\nreviewers, the last 7 on the trimmed declaration.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-21T21:34:57+02:00",
+          "tree_id": "d0bcb6f021c5a8680d247cb6193ffd2cea714036",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/856baac405ae9e6d0c7839126f29546be36df820"
+        },
+        "date": 1792611378018,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1115348229999995,
+            "unit": "s",
+            "extra": "Commit: 856baac405ae9e6d0c7839126f29546be36df820\nBranch: master\nTime: 2026-10-21T21:34:57+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.89178271700001,
+            "unit": "s",
+            "extra": "Commit: 856baac405ae9e6d0c7839126f29546be36df820\nBranch: master\nTime: 2026-10-21T21:34:57+02:00"
           }
         ]
       }
