@@ -88,7 +88,9 @@ Rules per need type
 A need type's own entry (:ref:`needs_types_fields`) gives the rule to the needs of that type:
 a ``derive`` in its declaration of the field, under ``fields``, or of the link type, under ``links``.
 The entry is one of :ref:`needs_types`: the type is declared there, with its ``title`` and ``prefix``,
-and declaring need types replaces the default ones (see :ref:`need_types_howto`).
+and declaring need types replaces the default ones (see :ref:`need_types_howto`);
+an entry naming a default type with neither ``title`` nor ``prefix`` is that type, narrowed,
+so ``[needs.types.req.fields.<field>]`` alone gives ``req`` a rule and keeps every default type.
 A type inheriting from it uses the rule too, unless it declares one of its own.
 A need uses the rule of its type, else ``derive``, else none.
 A need type's own declaration of a derived field narrows its description, schema and ``nullable``,
@@ -187,9 +189,7 @@ A ``derive`` in a type's own entry is the field's ``derive_by_type`` entry for t
 and for each type inheriting from it that gives none of its own;
 its ``needs.derive_invalid`` warnings name the entry it came from.
 ``derive_by_type`` alone gives a need type a rule without declaring the type:
-one of the default types, on a project that keeps them
-(a :ref:`needs_types` entry, even one that is ignored, replaces them all),
-or a type an extension or a service adds
+a type an extension or a service adds
 (an entry must repeat its ``title`` and ``prefix``, which then replace the extension's);
 and it alone gives a type a rule that the types inheriting from it do not get.
 

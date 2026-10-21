@@ -5,7 +5,16 @@ import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import MISSING, Field, dataclass, field, fields
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, SupportsIndex, TypedDict, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Final,
+    Literal,
+    NoReturn,
+    SupportsIndex,
+    TypedDict,
+    cast,
+)
 
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
@@ -542,6 +551,52 @@ class NeedType(TypedDict):
     name nothing else declares is a link type of the types that declare it alone."""
 
 
+#: The default need types: the value of ``needs_types`` when it is not configured.
+#:
+#: A configured ``needs_types`` none of whose entries gives a ``title`` or a ``prefix``
+#: keeps them all; an entry naming one of them with neither key narrows it, taking
+#: the ``title``, ``prefix``, ``color`` and ``style`` it leaves out
+#: (:func:`sphinx_needs.needs.normalise_need_types`).
+DEFAULT_NEED_TYPES: Final[tuple[NeedType, ...]] = (
+    {
+        "directive": "req",
+        "title": "Requirement",
+        "prefix": "R_",
+        "color": "#BFD8D2",
+        "style": "node",
+    },
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "color": "#FEDCD2",
+        "style": "node",
+    },
+    {
+        "directive": "impl",
+        "title": "Implementation",
+        "prefix": "I_",
+        "color": "#DF744A",
+        "style": "node",
+    },
+    {
+        "directive": "test",
+        "title": "Test Case",
+        "prefix": "T_",
+        "color": "#DCB239",
+        "style": "node",
+    },
+    # Kept for backwards compatibility
+    {
+        "directive": "need",
+        "title": "Need",
+        "prefix": "N_",
+        "color": "#9856a5",
+        "style": "node",
+    },
+)
+
+
 class NeedTypeFieldDeclaration(TypedDict, total=False):
     """A need type's declaration of a field: a narrowing of the field's declaration."""
 
@@ -934,44 +989,7 @@ class NeedsSphinxConfig:
     """List of scenarios that are ignored for dumping debug information."""
 
     _types: list[NeedType] = field(
-        default_factory=lambda: [
-            {
-                "directive": "req",
-                "title": "Requirement",
-                "prefix": "R_",
-                "color": "#BFD8D2",
-                "style": "node",
-            },
-            {
-                "directive": "spec",
-                "title": "Specification",
-                "prefix": "S_",
-                "color": "#FEDCD2",
-                "style": "node",
-            },
-            {
-                "directive": "impl",
-                "title": "Implementation",
-                "prefix": "I_",
-                "color": "#DF744A",
-                "style": "node",
-            },
-            {
-                "directive": "test",
-                "title": "Test Case",
-                "prefix": "T_",
-                "color": "#DCB239",
-                "style": "node",
-            },
-            # Kept for backwards compatibility
-            {
-                "directive": "need",
-                "title": "Need",
-                "prefix": "N_",
-                "color": "#9856a5",
-                "style": "node",
-            },
-        ],
+        default_factory=lambda: [need_type.copy() for need_type in DEFAULT_NEED_TYPES],
         # "html", not "env" as ``_fields`` is: "env" compares this value alone, which
         # holds the configured need types only; those added from code (``add_need_type``,
         # the GitHub services) are kept in sphinx-needs' registry. The complete list,

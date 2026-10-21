@@ -36,6 +36,7 @@ from sphinx_needs.builder import (
 from sphinx_needs.card_layouts import compile_card_layouts
 from sphinx_needs.config import (
     _NEEDS_CONFIG,
+    DEFAULT_NEED_TYPES,
     LinkOptionsType,
     NeedLinksConfig,
     NeedsSphinxConfig,
@@ -963,13 +964,24 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
        ``directive`` inside the value that differs from the key is reported and the key
        used;
     4. an entry whose ``title`` or ``prefix`` is missing or not a string is dropped (an
-       empty string is valid);
+       empty string is valid), but for a *bare* entry, which gives neither key: one
+       naming a default need type (:data:`~sphinx_needs.config.DEFAULT_NEED_TYPES`)
+       is that type, narrowed, taking the ``title``, ``prefix``, ``color`` and
+       ``style`` it leaves out (or removes below); one naming no default type is
+       dropped;
     5. a ``color`` or ``style`` that is not a string, an ``inherits`` that is not a
        non-empty string, and a ``fields`` or ``links`` that is not a mapping, are
        removed from the entry;
     6. a key outside :data:`NEED_TYPE_KEYS` is removed from the entry;
     7. a directive declared by more than one entry (list shape only) resolves to the
        last of them, at its own position, the others removed.
+
+    The default need types are kept when the value has entries and none of them gives a
+    ``title`` or a ``prefix`` (all are bare, or are dropped): the list is then the
+    default types, in their order, each replaced by the bare entry naming it. Once an
+    entry gives either key, the list is the entries kept, as given, and a bare entry
+    naming a default type stands at its own position. A value with no entries is no
+    types.
 
     In ``fields`` and ``links``, an entry that is not a mapping is removed, and so is
     a key of an entry outside :data:`NEED_TYPE_FIELD_KEYS` (fields) or
@@ -1011,6 +1023,9 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
     findings: list[str] = []
     #: the entries kept, each with its position (1-based)
     kept: list[tuple[int, dict[str, Any]]] = []
+    defaults = {need_type["directive"]: need_type for need_type in DEFAULT_NEED_TYPES}
+    #: whether an entry gives a title or a prefix: the default types are then replaced
+    declares = False
     for position, (where, key, entry) in enumerate(entries, start=1):
         if not isinstance(entry, Mapping):
             findings.append(
@@ -1018,6 +1033,7 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
                 "the entry is ignored"
             )
             continue
+        declares = declares or "title" in entry or "prefix" in entry
         if not is_table:
             directive = entry.get("directive")
             if "directive" not in entry:
@@ -1047,6 +1063,12 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
             resolved = {"directive": key}
             resolved.update((k, v) for k, v in entry.items() if k != "directive")
 
+        # a bare entry naming a default type narrows it: it is filled below
+        default = (
+            defaults.get(resolved["directive"])
+            if "title" not in resolved and "prefix" not in resolved
+            else None
+        )
         required = [
             f"no {name!r}"
             if name not in resolved
@@ -1054,7 +1076,7 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
             for name in ("title", "prefix")
             if not isinstance(resolved.get(name), str)
         ]
-        if required:
+        if required and default is None:
             findings.append(
                 f"{named} has {' and '.join(required)}; the entry is ignored"
             )
@@ -1074,6 +1096,9 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
                 resolved[table] = _normalise_declarations(
                     named, table, cast(Mapping[Any, Any], resolved[table]), findings
                 )
+        if default is not None:
+            # the keys the entry leaves out, or that were removed, are the default's
+            resolved = {**default, **resolved}
         kept.append((position, resolved))
 
     # a duplicate is possible in the list shape only (a mapping cannot hold a key
@@ -1089,11 +1114,20 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
                 f"needs_types declares the directive {directive!r} {times}, at entries "
                 f"{at}; the last entry is used"
             )
-    return [
+    need_types = [
         cast(NeedType, resolved)
         for position, resolved in kept
         if positions[resolved["directive"]][-1] == position
-    ], findings
+    ]
+    if entries and not declares:
+        # every entry is bare (or dropped): the default types are kept, each narrowed
+        # in place by the entry naming it
+        narrowed = {need_type["directive"]: need_type for need_type in need_types}
+        need_types = [
+            narrowed.get(directive) or default.copy()
+            for directive, default in defaults.items()
+        ]
+    return need_types, findings
 
 
 def resolve_need_types(_app: Sphinx, config: Config) -> None:

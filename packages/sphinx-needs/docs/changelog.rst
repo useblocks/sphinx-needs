@@ -122,7 +122,10 @@ Improvements
   validated when the configuration is read, and what cannot be used is a ``needs.config`` warning
   instead of a traceback or silence: an entry that is not a dictionary, names no directive, or
   lacks a string ``title`` or ``prefix`` is ignored (a missing ``title`` used to end the build with
-  a ``KeyError``); a ``color`` or ``style`` that is not a string, and an unknown key, are ignored
+  a ``KeyError``), but for one naming a default type with neither ``title`` nor ``prefix``, which is
+  that type, narrowed: it takes the ``title``, ``prefix``, ``color`` and ``style`` it leaves out, and a
+  ``needs_types`` none of whose entries gives a ``title`` or a ``prefix`` keeps the default types, each
+  narrowed by its entry (an entry naming no default type declares nothing); a ``color`` or ``style`` that is not a string, and an unknown key, are ignored
   and the type kept -- the unknown key an old project most likely still carries is ``content``,
   which sphinx-needs 1.0 read and :pr:`610` stopped reading; a value of neither shape stops the
   build with an error. A directive declared twice in the list is now its last entry on every
@@ -134,7 +137,9 @@ Improvements
 - ✨ A need type declares its fields: an entry of :ref:`needs_types` may carry ``fields`` and ``links``,
   each a dictionary from a field or link type to the type's declaration of it (``description``,
   ``schema``, ``nullable``, ``default``, ``predicates``; a link type is not nullable), and ``inherits``,
-  one parent whose declarations the type starts from (:ref:`needs_types_fields`). A declaration narrows
+  one parent whose declarations the type starts from (:ref:`needs_types_fields`); a default type
+  declares its own in an entry naming it with neither ``title`` nor ``prefix``, which keeps the other
+  default types (``[needs.types.req.fields.x]`` alone). A declaration narrows
   the one before it -- the field's own, then each ancestor's -- and what cannot be used is reported and
   ignored as a whole, the build going on: ``needs.type_inherits`` for an ``inherits`` naming no need type
   or on a cycle (every type on it), ``needs.type_conflict`` for a declaration naming no field of its
