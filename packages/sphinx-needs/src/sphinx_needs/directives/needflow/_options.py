@@ -186,12 +186,10 @@ def show_link_names_option(argument: str | None) -> LinkLabels:
     """
     if not (value := (argument or "").strip().lower()):
         return "outgoing"
-    if value in _LINK_LABELS:
-        return value
-    # worded as docutils' `choice` refuses every other closed option
-    raise ValueError(
-        f'"{value}" unknown; choose from {directives.format_values(_LINK_LABELS)}'
-    )
+    # docutils refuses a value outside the set in its own words; what it accepts is
+    # returned as the member it equals, which is typed as the Literal
+    choice = directives.choice(value, _LINK_LABELS)
+    return next(label for label in _LINK_LABELS if label == choice)
 
 
 def show_legend_option(argument: str | None) -> str:

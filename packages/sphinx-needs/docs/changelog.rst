@@ -683,7 +683,7 @@ Internal changes
   the enumeration it is given. A ``needs_graphviz_styles`` element type other than ``root``,
   ``graph``, ``node`` or ``edge``, which no emitter reads, is no longer carried into a
   diagram's style, and a captioned graphviz ``needflow`` builds its figure itself, as Sphinx's
-  ``figure_wrapper`` does, since that function accepts only Sphinx's own ``graphviz`` node.
+  ``figure_wrapper`` does, since that function is typed to accept only Sphinx's own ``graphviz`` node.
   Options, warnings and diagrams are unchanged. Eight ``# ty: ignore`` comments go
   (:issue:`1835`)
 

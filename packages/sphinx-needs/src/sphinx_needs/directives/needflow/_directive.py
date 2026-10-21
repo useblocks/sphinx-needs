@@ -253,7 +253,7 @@ class NeedflowDirective(FilterBase):
             self.set_source_info(gnode)
 
             # wrapped as Sphinx's `figure_wrapper` wraps its own graphviz node -- which
-            # is all that function accepts -- with the alignment moved onto the figure
+            # is all that function is typed to accept -- with the alignment moved onto the figure
             figure = nodes.figure("", gnode)
             if "align" in gnode:
                 # NeedsFlowType cannot say that `align` leaves the node for the figure
