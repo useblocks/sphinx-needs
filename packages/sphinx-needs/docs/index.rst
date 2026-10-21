@@ -189,7 +189,7 @@ Contents
    Introduction <self>
    installation
    tutorial
-   v_model
+   Across the V-model <v_model>
 
 .. toctree::
    :caption: Components
