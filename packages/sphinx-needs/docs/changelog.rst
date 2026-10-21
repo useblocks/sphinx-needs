@@ -128,9 +128,10 @@ Improvements
   a ``KeyError``), but for one naming a default type with neither ``title`` nor ``prefix``, which is
   that type, narrowed: it takes the ``title``, ``prefix``, ``color`` and ``style`` it leaves out, and a
   ``needs_types`` none of whose entries gives a ``title`` or a ``prefix`` keeps the default types, each
-  narrowed by its entry (an entry naming no default type declares nothing); a ``color`` or ``style`` that is not a string, and an unknown key, are ignored
-  and the type kept -- the unknown key an old project most likely still carries is ``content``,
-  which sphinx-needs 1.0 read and :pr:`610` stopped reading; a value of neither shape stops the
+  narrowed by its entry (an entry naming no default type declares nothing); a ``color`` or
+  ``style`` that is not a string, and an unknown key, are ignored and the type kept -- the unknown
+  key an old project most likely still carries is ``content``, which sphinx-needs 1.0 read and
+  :pr:`610` stopped reading; a value of neither shape stops the
   build with an error. A directive declared twice in the list is now its last entry on every
   path -- a need of :ref:`list2need` took the first entry's prefix -- and is listed once in the
   legends and in :ref:`needreport`, and, when it was the first type, a :ref:`needservice` datum
@@ -323,8 +324,9 @@ Deprecations
   dead link is reported once, at the member. One case keeps ``copy`` until 10.0, with the warning
   (``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation): a project relying on
   :ref:`check_linked_values <check_linked_values>`, :ref:`calc_sum <calc_sum>` with ``links_only`` or the
-  ``need_outgoing`` and ``need_incoming`` roles written in a need, which read only ``links``. Where ``links`` is derived the copy copies nothing, and the warning says to
-  remove it. The documentation's own configuration no longer sets ``copy``.
+  ``need_outgoing`` and ``need_incoming`` roles written in a need, which read only ``links``. Where ``links`` is
+  derived the copy copies nothing, and the warning says to remove it. The documentation's own configuration no
+  longer sets ``copy``.
 
 - ♻️ :ref:`needimport` and :ref:`needs_external_needs` read a needs.json through the new
   ``ub-needs-exchange`` library, a new dependency of sphinx-needs
