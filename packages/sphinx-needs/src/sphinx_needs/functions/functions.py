@@ -9,6 +9,7 @@ in need configurations.
 from __future__ import annotations
 
 import ast
+import inspect
 import re
 from collections.abc import Callable, Container, Iterator, Mapping, Sequence
 from contextlib import AbstractContextManager, contextmanager, nullcontext
@@ -52,6 +53,7 @@ from sphinx_needs.views import NeedsView
 if TYPE_CHECKING:
     from sphinx_needs.functions.order import (
         Column,
+        Declaration,
         Node,
         NodeReads,
         OutOfScope,
@@ -391,9 +393,30 @@ class UnresolvedReads:
 
 _DynamicFunctionT = TypeVar("_DynamicFunctionT", bound=Callable[..., Any])
 
-#: the attribute of a dynamic function of your own declaring what it reads
-#: (:func:`sphinx_needs.api.reads`): a callable taking a call's arguments
+#: the attribute of a dynamic function of your own declaring what it reads: the
+#: :class:`Reads` :func:`sphinx_needs.api.reads` made
 READS_ATTRIBUTE: Final = "needs_reads"
+
+
+@dataclass(frozen=True, slots=True)
+class Reads:
+    """What a dynamic function of your own reads, as :func:`sphinx_needs.api.reads`
+    declares it: the parameters whose argument is a field name, read on the call's own
+    need (``own``) or on every need (``every``).
+
+    Applied to a function, it declares it: ``reads(own="option")(my_function)`` is
+    ``@reads(own="option")``. Given to
+    :func:`~sphinx_needs.api.configuration.add_dynamic_function` as ``reads``, it
+    declares a function you do not own.
+    """
+
+    own: tuple[str, ...] = ()
+    every: tuple[str, ...] = ()
+
+    def __call__(self, function: _DynamicFunctionT) -> _DynamicFunctionT:
+        # through ``vars``: the type checker refuses an attribute assignment on a callable
+        vars(function)[READS_ATTRIBUTE] = self
+        return function
 
 
 def records_reads(func: _DynamicFunctionT) -> _DynamicFunctionT:
@@ -1277,17 +1300,53 @@ def materialise_derive_rules(
     return rules
 
 
-def _declarations(config: NeedsSphinxConfig) -> dict[str, Callable[..., Any]]:
-    """The declaration of what it reads of each registered function carrying one:
-    ``add_dynamic_function``'s ``reads``, else the function's own (``needs_reads``)."""
-    declared: dict[str, Callable[..., Any]] = {}
-    for name, registered in config.functions.items():
-        spec = registered.get("reads") or getattr(
-            registered["function"], READS_ATTRIBUTE, None
+def _declarations(config: NeedsSphinxConfig) -> dict[str, Declaration]:
+    """The declaration of what it reads of each registered function carrying one, as
+    its registration checked it."""
+    return {
+        name: declaration
+        for name, registered in config.functions.items()
+        if (declaration := registered.get("reads")) is not None
+    }
+
+
+def declaration_of(
+    function: Callable[..., Any], reads: Any
+) -> Declaration | str | None:
+    """The declaration of what a function being registered reads, or why it is none.
+
+    :param function: The function.
+    :param reads: ``add_dynamic_function``'s ``reads``; ``None`` for the declaration the
+        function carries (``needs_reads``), if any.
+    :return: ``None`` for no declaration, else the declaration, or why it cannot be
+        used: it is no :class:`Reads`, or names what is not a parameter of the function
+        after ``app``, ``need`` and ``needs``.
+    """
+    # it imports this module
+    from sphinx_needs.functions.order import Declaration
+
+    if reads is None:
+        reads = getattr(function, READS_ATTRIBUTE, None)
+    if reads is None:
+        return None
+    if not isinstance(reads, Reads):
+        return (
+            f"its declaration is {type(reads).__name__}, not one "
+            "sphinx_needs.api.reads made"
         )
-        if spec is not None:
-            declared[name] = spec
-    return declared
+    try:
+        signature = inspect.signature(function)
+    except (TypeError, ValueError) as err:
+        return f"its parameters cannot be read: {err}"
+    parameters = list(signature.parameters.values())[3:]
+    known = {parameter.name: parameter for parameter in parameters}
+    for name in (*reads.own, *reads.every):
+        parameter = known.get(name)
+        if parameter is None:
+            return f"{name!r} is not a parameter of it after app, need and needs"
+        if parameter.kind is inspect.Parameter.VAR_KEYWORD:
+            return f"{name!r} is its keyword arguments, not a parameter"
+    return Declaration(signature.replace(parameters=parameters), reads.own, reads.every)
 
 
 def _warn_refused(project: Project, warned: set[str]) -> None:

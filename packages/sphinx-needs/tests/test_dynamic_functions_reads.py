@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from sphinx_needs.api import reads
+from sphinx_needs.functions.functions import Reads
 from sphinx_needs_testkit import build_warnings
 
 
@@ -234,8 +235,8 @@ def theirs(app, need, needs, *args, **kwargs):
     return ["REQ_1"]
 
 
-# a declaration that cannot be applied, which the override replaces
-theirs.needs_reads = lambda: 1 / 0
+# a declaration naming no parameter of it, which the override replaces
+reads(own="nope")(theirs)
 
 
 @reads()
@@ -249,7 +250,7 @@ def wrapped(app, need, needs, *args, **kwargs):
 
 
 def setup(app):
-    add_dynamic_function(app, theirs, reads=lambda *args, **kwargs: {})
+    add_dynamic_function(app, theirs, reads=reads())
     add_dynamic_function(app, wrapped, name="wrapped")
 """
 
@@ -282,7 +283,7 @@ Routes
 )
 def test_the_override_and_a_wrapper_are_declared(test_app):
     """``add_dynamic_function(..., reads=...)`` declares a function you do not own, over
-    the declaration it carries (here one that would raise, and is never called); a
+    the declaration it carries (here one naming no parameter of it, never checked); a
     wrapper made with ``functools.wraps`` carries the declaration of the function it
     wraps. Both are computed before the reader of ``blocks``."""
     app = test_app
@@ -313,12 +314,17 @@ def own_read(app, need, needs, option):
     return [need.get(option)] if need.get(option) else []
 
 
-@reads(lambda: {"own": "summary"})
-def bad(app, need, needs):
+@reads(own="option")
+def bad(app, need, needs, option):
     return ["REQ_1"]
 
 
-needs_functions = [scan, own_read, bad]
+@reads(own="nope")
+def unknown(app, need, needs, option):
+    return ["REQ_1"]
+
+
+needs_functions = [scan, own_read, bad, unknown]
 """
 
 INDEX_LIMITS = """\
@@ -338,10 +344,11 @@ Limits
    :summary: [[copy("title")]]
    :late: [[own_read('summary')]]
 
-.. spec:: A declaration that cannot be applied, twice
+.. spec:: A declared argument that is no field name, twice; a declaration naming no parameter
    :id: SPEC_3
-   :blocks: [[bad()]]
-   :via: [[bad()]]
+   :blocks: [[bad(need.summary)]]
+   :via: [[bad(need.summary)]]
+   :late: [[unknown('summary')]]
 """
 
 
@@ -351,17 +358,23 @@ Limits
 def test_what_a_declaration_cannot_order(test_app):
     """A declared read of the call's own field is a cycle, named by the declaration; a
     declared read of a field computed after the link fields, from a link field, is not
-    run; a declaration that cannot be applied is reported once per function, as a
-    ``needs.config`` warning, and its calls are computed after the built-in functions,
-    as calls of a function that declares nothing."""
+    run. A declared parameter whose argument is no field name written out (here a
+    ``need.<field>``) cannot be declared: one ``needs.config`` warning for the function,
+    and its calls are computed after the built-in functions, as calls of a function
+    that declares nothing. A declaration naming what is not a parameter of the function
+    is one ``needs.config`` warning when the function is registered, and the function
+    declares nothing."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
+        "WARNING: Dynamic function 'unknown' declares what it reads, but 'nope' is not "
+        "a parameter of it after app, need and needs; it is computed after the built-in "
+        "functions, as a function that declares nothing [needs.config]",
         "<srcdir>/index.rst:17: WARNING: dynamic function 'bad' declares what it "
         "reads, but the declaration cannot be applied to its call for option 'blocks' "
-        "of need 'SPEC_3': its 'own' is str, not a list; such a call is computed after "
-        "the built-in functions, as a call of a function that declares nothing "
-        "[needs.config]",
+        "of need 'SPEC_3': the argument of its parameter 'option' is need.summary, not "
+        "a field name written in the call; such a call is computed after the built-in "
+        "functions, as a call of a function that declares nothing [needs.config]",
         "<srcdir>/index.rst:8: WARNING: dynamic function 'scan' for option 'blocks' is "
         "on a cycle: 'blocks' on need 'SPEC_1', through scan's declared read of 'blocks' "
         "on every need; the field is left empty [needs.derive_cycle]",
@@ -383,7 +396,7 @@ from sphinx_needs.api import reads
 extensions = ["sphinx_needs"]
 needs_build_json = True
 suppress_warnings = ["config.cache"]
-needs_fields = {{k: {{"nullable": True}} for k in ("status2", "out", "out2")}}
+needs_fields = {{k: {{"nullable": True}} for k in ("status2", "out", "selfa")}}
 
 
 {declare}
@@ -392,12 +405,12 @@ def tagged(app, need, needs, value, target):
     return f"{{value}}:{{sum(1 for n in needs.values() if n.get(target))}}"
 
 
-@reads(lambda value: {{"own": [value]}})
-def uses(app, need, needs, value):
-    return need.get(value)
+@reads()
+def echo_arg(app, need, needs, value):
+    return str(value)
 
 
-needs_functions = [tagged, uses]
+needs_functions = [tagged, echo_arg]
 """
 
 INDEX_ARGUMENT = """\
@@ -408,7 +421,7 @@ Argument
    :id: SPEC_1
    :status2: [[copy("title")]]
    :out: [[tagged(need.status2, "status2")]]
-   :out2: [[uses(need.status2)]]
+   :selfa: [[echo_arg(need.selfa)]]
 """
 
 
@@ -423,103 +436,18 @@ Argument
     indirect=True,
 )
 def test_a_need_argument_computed_in_the_same_step_is_waited_for(test_app):
-    """``need.status2`` is data the call is given, computed by a built-in call of the
-    same step: the declared call is computed after it, so it holds what it held
-    undeclared. A declaration that needs the argument's value (``uses``, whose
-    argument names the field it reads) cannot be applied before the value is known:
-    that call is computed after the built-in functions, as undeclared, and the
-    declaration is reported once, as one that cannot be applied."""
+    """``need.status2`` is data the call is given (its parameter is not declared),
+    computed by a built-in call of the same step: the declared call is computed after
+    it, so it holds what it held undeclared. A declared call given its own field as
+    data is a cycle, and says it runs through the argument."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        "<srcdir>/index.rst:4: WARNING: dynamic function 'uses' declares what it "
-        "reads, but the declaration cannot be applied to its call for option 'out2' of "
-        "need 'SPEC_1': it needs the value of need.status2, computed in the same step, "
-        "so not known when the call is ordered; such a call is computed after the "
-        "built-in functions, as a call of a function that declares nothing "
-        "[needs.config]"
-    ]
-    need = _built(app)["SPEC_1"]
-    assert (need["status2"], need["out"], need["out2"]) == ("A", "A:1", None)
-
-
-CONF_COMPARING = """\
-from sphinx_needs.api import reads
-
-extensions = ["sphinx_needs"]
-needs_build_json = True
-suppress_warnings = ["config.cache"]
-needs_fields = {{k: {{"nullable": True}} for k in ("st", "out", "x", "selfa")}}
-
-
-{declare}
-def pick(app, need, needs, value):
-    return f"{{value}}:{{need.get('x')}}"
-
-
-@reads()
-def echo_arg(app, need, needs, value):
-    return str(value)
-
-
-needs_functions = [pick, echo_arg]
-"""
-
-INDEX_COMPARING = """\
-Comparing
-=========
-
-.. spec:: A
-   :id: SPEC_1
-   :st: [[copy("title")]]
-   :x: [[copy("id")]]
-   :out: [[pick(need.st)]]
-   :selfa: [[echo_arg(need.selfa)]]
-"""
-
-
-@pytest.mark.parametrize(
-    "test_app",
-    [
-        pytest.param(
-            _project(CONF_COMPARING.format(declare=declare), INDEX_COMPARING), id=name
-        )
-        for name, declare in (
-            (
-                "declared",
-                """@reads(lambda value: {{"own": ["x"]}} if value == "A" else {{}})""",
-            ),
-            ("plain", ""),
-        )
-    ],
-    indirect=True,
-)
-def test_a_declaration_cannot_compare_an_argument_not_computed_yet(test_app, request):
-    """A declaration comparing a ``need.<field>`` argument computed in the same step
-    would take a branch on a value not known yet: the comparison is refused, the
-    declaration cannot be applied, and the call holds what it holds undeclared. A
-    declared call whose argument is its own field is a cycle, and says so."""
-    app = test_app
-    app.build()
-    assert _built(app)["SPEC_1"]["out"] == "A:SPEC_1"
-    warnings = build_warnings(app)
-    assert (
         "<srcdir>/index.rst:4: WARNING: dynamic function 'echo_arg' for option "
         "'selfa' is on a cycle: 'selfa' on need 'SPEC_1', through its argument "
         "need.selfa; the field is left empty [needs.derive_cycle]"
-    ) in warnings
-    refused = [w for w in warnings if "[needs.config]" in w]
-    if "declared" in request.node.name:
-        assert refused == [
-            "<srcdir>/index.rst:4: WARNING: dynamic function 'pick' declares what it "
-            "reads, but the declaration cannot be applied to its call for option 'out' "
-            "of need 'SPEC_1': it needs the value of need.st, computed in the same step, "
-            "so not known when the call is ordered; such a call is computed after the "
-            "built-in functions, as a call of a function that declares nothing "
-            "[needs.config]"
-        ]
-    else:
-        assert refused == []
+    ]
+    assert _built(app)["SPEC_1"]["out"] == "A:1"
 
 
 CONF_LATER = """\
@@ -572,58 +500,30 @@ def test_a_declared_function_reading_a_later_step_is_told_so(test_app):
 # -- the decorator itself ----------------------------------------------------------
 
 
-def test_reads_sets_the_attribute_and_returns_the_function():
+def test_reads_declares_the_function_it_is_applied_to():
     def mine(app, need, needs, option, *more, flag=None):
         return None
 
-    assert reads(own="option", every="more")(mine) is mine
-    declaration = mine.needs_reads  # ty: ignore[unresolved-attribute]
-    assert declaration("a", "b", "c") == {"own": ["a"], "every": ["b", "c"]}
-    assert declaration(option="a") == {"own": ["a"], "every": []}
-
-    def spec(*args, **kwargs):
-        return {}
-
-    assert reads(spec)(mine).needs_reads is spec  # ty: ignore[unresolved-attribute]
-    assert reads()(mine).needs_reads() == {}  # ty: ignore[unresolved-attribute]
+    declaration = reads(own="option", every="more")
+    assert declaration == Reads(("option",), ("more",))
+    assert declaration(mine) is mine
+    assert mine.needs_reads is declaration  # ty: ignore[unresolved-attribute]
+    assert reads(own=("option", "flag")) == Reads(("option", "flag"), ())
+    assert reads() == Reads()
     # a wrapper copies the function's attributes, the declaration among them
-    assert functools.wraps(mine)(lambda *a: None).needs_reads is mine.needs_reads  # ty: ignore[unresolved-attribute]
+    wrapper = functools.wraps(mine)(lambda *a: None)
+    assert wrapper.needs_reads is declaration  # ty: ignore[unresolved-attribute]
 
 
-@pytest.mark.parametrize(
-    ("arguments", "message"),
-    [
-        pytest.param(
-            {"spec": lambda: {}, "own": "option"},
-            "reads takes a spec, or own and every, not both",
-            id="both",
-        ),
-        pytest.param(
-            {"every": "need"},
-            "'need' is not a parameter of 'mine' after app, need and needs",
-            id="leading-parameter",
-        ),
-        pytest.param(
-            {"own": ["option", "missing"]},
-            "'missing' is not a parameter of 'mine' after app, need and needs",
-            id="unknown",
-        ),
-    ],
-)
-def test_reads_refuses_what_it_cannot_declare(arguments, message):
-    def mine(app, need, needs, option):
-        return None
-
-    spec = arguments.pop("spec", None)
-    with pytest.raises(ValueError, match=message):
-        reads(spec, **arguments)(mine) if spec is None else reads(spec, **arguments)
-
-
-def test_reads_without_parentheses_is_refused():
-    """``@reads`` alone would take the function for its spec and replace it: refused."""
+def test_reads_refuses_what_it_cannot_declare():
+    """A name must be a string; ``@reads`` without parentheses is refused by Python,
+    as ``reads`` takes no positional argument, so it never replaces the function."""
 
     def mine(app, need, needs, option):
         return None
 
-    with pytest.raises(TypeError, match=r"write @reads\(\) with parentheses"):
-        reads(mine)
+    with pytest.raises(TypeError, match="1 is not a name"):
+        reads(own=("option", 1))  # ty: ignore[invalid-argument-type]
+    with pytest.raises(TypeError, match="positional"):
+        reads(mine)  # ty: ignore[too-many-positional-arguments]
+    assert not hasattr(mine, "needs_reads")

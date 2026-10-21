@@ -21,6 +21,8 @@ Configuration
 .. autoclass:: sphinx_needs.functions.functions.DynamicFunction
    :members: __name__,__call__
 
+.. autoclass:: sphinx_needs.functions.functions.Reads
+
 Need
 ----
 

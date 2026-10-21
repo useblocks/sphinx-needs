@@ -14,17 +14,17 @@ Improvements
   (:issue:`2354`)
 
   ``@sphinx_needs.api.reads(own="test_option", every="target_option")`` names the parameters whose argument is a
-  field the function reads on its own need or on every need; ``@reads(spec)`` takes a callable that returns, for
-  the arguments of a call, the fields it reads (``"own"``, ``"every"``, and ``"need"``, ``(need id, field)``
-  pairs), and ``add_dynamic_function(app, func, reads=...)`` declares a function you do not own. Such a call is
-  computed after what it declares and before what reads it, where a function of your own is computed after every
-  built-in function of its step: a ``links_from_filter``, a ``links`` or ``union`` derive rule, or any other
-  built-in function reading the links it computes holds them. A read of its own field is a
-  ``needs.derive_cycle``, a read of a later step is not run (``needs.derive_scope``), and a declaration that cannot
-  be applied leaves its calls computed last, with one ``needs.config`` warning per function. The declaration is
-  the function's ``needs_reads`` attribute, which an older Sphinx-Needs ignores, and a ``functools.wraps``
-  wrapper carries it; sphinx-test-reports' ``tr_link`` declares its reads. A function that declares nothing is
-  computed as before. See :ref:`dynamic_functions_reads`.
+  field the function reads on its own need or on every need, and ``add_dynamic_function(app, func,
+  reads=reads(...))`` declares a function you do not own. Such a call is computed after what it declares and
+  before what reads it, where a function of your own is computed after every built-in function of its step: a
+  ``links_from_filter``, a ``links`` or ``union`` derive rule, or any other built-in function reading the links it
+  computes holds them. A read of its own field is a ``needs.derive_cycle`` and a read of a later step is not run
+  (``needs.derive_scope``). A name that is not a parameter of the function is one ``needs.config`` warning when it
+  is registered, and a call whose declared argument is not a field name written out (a ``need.<field>``, a
+  number) is computed last, with one ``needs.config`` warning per function. A field the function reads by a name
+  written in its code cannot be declared yet. A ``functools.wraps`` wrapper carries the declaration;
+  sphinx-test-reports' ``tr_link`` declares its reads. A function that declares nothing is computed as before.
+  See :ref:`dynamic_functions_reads`.
 
 - 👌 A read of a value the pass has not computed yet is reported as it happens, where several were silent
   (:issue:`2354`)

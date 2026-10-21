@@ -98,9 +98,10 @@ class NewFieldParams:
 class NeedFunctionsType(TypedDict):
     name: str
     function: DynamicFunction
-    reads: NotRequired[Callable[..., Any]]
-    """What the function reads, as ``add_dynamic_function``'s ``reads`` declares it,
-    over the declaration the function itself carries."""
+    reads: NotRequired[Any]
+    """What the function reads (a ``Declaration`` of ``functions.order``), from
+    ``add_dynamic_function``'s ``reads`` or the function's own declaration, as its
+    registration checked it."""
 
 
 class _Config:
@@ -213,12 +214,14 @@ class _Config:
         function: DynamicFunction,
         name: str | None = None,
         *,
-        reads: Callable[..., Any] | None = None,
+        reads: Any = None,
     ) -> None:
         """Adds a dynamic function to the configuration.
 
-        :param reads: What the function reads, over the declaration it carries itself
-            (:func:`sphinx_needs.api.reads`).
+        :param reads: What the function reads (a ``Reads``), over the declaration it
+            carries itself (:func:`sphinx_needs.api.reads`). A declaration naming what
+            is not a parameter of the function is one ``needs.config`` warning, and the
+            function is registered as one that declares nothing.
 
         :raises NeedsApiConfigException: If ``name`` is not given and the function has
             no ``__name__`` to register it by, such as a ``functools.partial``.
@@ -243,8 +246,21 @@ class _Config:
                 None,
             )
         self._functions[func_name] = {"name": func_name, "function": function}
-        if reads is not None:
-            self._functions[func_name]["reads"] = reads
+        # it imports this module
+        from sphinx_needs.functions.functions import declaration_of
+
+        declaration = declaration_of(function, reads)
+        if isinstance(declaration, str):
+            log_warning(
+                LOGGER,
+                f"Dynamic function {func_name!r} declares what it reads, but "
+                f"{declaration}; it is computed after the built-in functions, as a "
+                "function that declares nothing",
+                "config",
+                None,
+            )
+        elif declaration is not None:
+            self._functions[func_name]["reads"] = declaration
 
     @property
     def warnings(

@@ -45,7 +45,6 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Final, TypeVar
 
-from sphinx_needs._wording import joined
 from sphinx_needs.derive import DeriveCall, is_union
 from sphinx_needs.functions.common import (
     calc_sum,
@@ -368,14 +367,29 @@ class OutOfScope:
 
 
 @dataclass(frozen=True, slots=True)
+class Declaration:
+    """What a function of your own declares it reads (:func:`sphinx_needs.api.reads`).
+
+    :ivar signature: Its parameters after ``app``, ``need`` and ``needs``, which a
+        call's arguments are bound to.
+    :ivar own: The parameters whose argument is a field read on the call's own need.
+    :ivar every: The parameters whose argument is a field read on every need.
+    """
+
+    signature: inspect.Signature
+    own: tuple[str, ...]
+    every: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class Declared:
     """What one call of a function that declares its reads reads, as it declares it.
 
     :ivar position: The call's position among the items of its node
         (:meth:`Project.items`).
     :ivar function: The name the function is registered by.
-    :ivar nodes: The ``(need id, field)`` it reads on one need: a field of its own need
-        (a ``need.<field>`` argument among them), or of a need it names.
+    :ivar nodes: The ``(need id, field)`` it reads on its own need (a ``need.<field>``
+        argument's among them).
     :ivar columns: The fields it reads on every need.
     :ivar arguments: The fields of its own need its ``need.<field>`` arguments read.
     """
@@ -480,8 +494,7 @@ class Project:
     :param fingerprint_names: The names a ``fingerprint`` rule reads on its own need,
         before its ``exclude``.
     :param declared: The declaration of what it reads of each registered function that
-        is not a built-in one and carries one (:func:`sphinx_needs.api.reads`): called
-        with a call's arguments, it returns the fields the call reads.
+        is not a built-in one and carries one (:func:`sphinx_needs.api.reads`).
     """
 
     def __init__(
@@ -497,7 +510,7 @@ class Project:
         sum_candidates: Callable[[str], Sequence[str]],
         content_refs: Callable[[str], Sequence[str]],
         fingerprint_names: Sequence[str] = (),
-        declared: Mapping[str, Callable[..., Any]] | None = None,
+        declared: Mapping[str, Declaration] | None = None,
     ) -> None:
         self.needs = needs
         self.link_fields = frozenset(link_fields)
@@ -511,9 +524,9 @@ class Project:
         self._sum_memo: dict[str, Sequence[str]] = {}
         self.content_refs = content_refs
         self.fingerprint_names = tuple(fingerprint_names)
-        self.declared: Mapping[str, Callable[..., Any]] = {
-            name: spec
-            for name, spec in (declared or {}).items()
+        self.declared: Mapping[str, Declaration] = {
+            name: declaration
+            for name, declaration in (declared or {}).items()
             if name not in self.builtins
         }
         #: each function whose declaration could not be applied to a call, with the
@@ -617,10 +630,10 @@ class Project:
                 _RuleReads(self, reads, need, name, stratum, item).read()
             elif isinstance(item, DynamicFunctionParsed):
                 if item.name not in self.builtins:
-                    spec = self.declared.get(item.name)
-                    if spec is None or not _DeclaredReads(
+                    declaration = self.declared.get(item.name)
+                    if declaration is None or not _DeclaredReads(
                         self, reads, need, name, stratum, item
-                    ).apply(spec, position):
+                    ).apply(declaration, position):
                         reads.user_functions = _appended(
                             reads.user_functions, item.name
                         )
@@ -934,147 +947,69 @@ class _CallReads:
                 self._column(read, None, filter_string)
 
 
-#: the keys a declaration of reads returns
-_DECLARED_KEYS: Final = frozenset({"own", "every", "need"})
-
-
-def _declaration(
-    value: Any,
-) -> tuple[list[str], list[str], list[tuple[str, str]]] | str:
-    """The reads a declaration returned (own, every, named), or why they are unusable.
-
-    A mapping with the keys ``own`` and ``every`` (lists of field names) and ``need``
-    (a list of ``(need id, field)`` pairs), each optional.
-    """
-    if not isinstance(value, Mapping):
-        return f"it returned {type(value).__name__}, not a mapping"
-    if unknown := sorted(str(key) for key in value if key not in _DECLARED_KEYS):
-        return f"it returned the key{'s' if len(unknown) > 1 else ''} {', '.join(map(repr, unknown))}"
-    found: list[list[Any]] = []
-    for key in ("own", "every", "need"):
-        items = value.get(key, ())
-        if not isinstance(items, list | tuple | set | frozenset):
-            return f"its {key!r} is {type(items).__name__}, not a list"
-        for item in items:
-            if key == "need":
-                if not (
-                    isinstance(item, list | tuple)
-                    and len(item) == 2
-                    and all(isinstance(part, str) for part in item)
-                ):
-                    return f"its 'need' holds {item!r}, not a (need id, field) pair"
-            elif not isinstance(item, str):
-                return f"its {key!r} holds {item!r}, not a field name"
-        found.append(sorted(items) if key != "need" else sorted(map(tuple, items)))
-    own, every, named = found
-    return own, every, named
-
-
-class _UnknownUsed(TypeError):
-    """A declaration used the value of an argument not computed yet (:class:`_Unknown`)."""
-
-
-class _Unknown:
-    """The value of a ``need.<field>`` argument computed in the same stratum, as a
-    declaration is called with it: not known yet. Comparing it, testing its truth,
-    hashing it, reading it as text, a number or a container, or one of its attributes
-    raises; it can be passed on, and its identity tested. A declaration that cannot
-    be applied with it is reported as one that raises."""
-
-    __slots__ = ()
-
-    def _refuse(self, *args: Any) -> Any:
-        raise _UnknownUsed("the argument's value is computed in the same step")
-
-    __eq__ = __ne__ = __lt__ = __le__ = __gt__ = __ge__ = __hash__ = _refuse
-    __bool__ = __str__ = __format__ = __int__ = __float__ = __index__ = _refuse
-    __iter__ = __len__ = __contains__ = __getitem__ = __getattr__ = _refuse
-
-
-def _holds_unknown(value: Any) -> bool:
-    """Whether a declaration returned the unknown value (by identity, not by ``==``)."""
-    if value is _UNKNOWN:
-        return True
-    if isinstance(value, Mapping):
-        return any(_holds_unknown(item) for item in value.values())
-    if isinstance(value, list | tuple | set | frozenset):
-        return any(_holds_unknown(item) for item in value)
-    return False
-
-
-#: the one :class:`_Unknown`
-_UNKNOWN: Final = _Unknown()
-
-
 class _DeclaredReads(_CallReads):
     """The reads of one call of a function that declares what it reads.
 
-    The declaration is called with the call's arguments as written, a ``need.<field>``
-    replaced by its value, and its reads are filed as a built-in call's are: a field of
-    its own need or of a need it names is a dependency (or out of scope, after the
-    stratum), a field on every need a column. A ``need.<field>`` argument is a read of
-    its own need too: one computed in the same stratum is a dependency, and the
-    declaration is called with a value that refuses to be compared, tested or read
-    (:class:`_Unknown`). A declaration that needs it, like one that raises or returns
-    what is not a declaration, cannot be applied: the call is computed last, as one
-    of a function declaring nothing, and :attr:`Project.refused` says why.
+    The call's arguments are bound to the function's parameters; the argument of each
+    parameter the declaration names (:class:`Declaration`) is a field name, read on
+    the call's own need (``own``) or on every need (``every``), filed as a built-in
+    call's reads are: a dependency (or out of scope, after the stratum), a column. A
+    ``need.<field>`` argument of any other parameter is data, a read of its own need: a
+    dependency when it is computed in the same stratum. A call whose arguments do not
+    fit the parameters, or whose argument of a declared parameter is not a field name
+    written out (a ``need.<field>``, a number), cannot be declared: it is computed
+    last, as one of a function declaring nothing, and :attr:`Project.refused` says why.
     """
 
-    def apply(self, spec: Callable[..., Any], position: int) -> bool:
+    def apply(self, declaration: Declaration, position: int) -> bool:
         """Add the call's declared reads to its node.
 
-        :param spec: The function's declaration.
+        :param declaration: The function's declaration.
         :param position: The call's position among its node's items.
-        :return: Whether the declaration was applied; when not (it raised, or returned
-            what is not a declaration), the call is computed last, as one of a
-            function that declares nothing, and :attr:`Project.refused` says why.
+        :return: Whether the declaration was applied to the call.
         """
         assert isinstance(self.call, DynamicFunctionParsed), "a call"
         call = self.call
-        unknown: list[str] = []
-        arguments: list[Node] = []
-
-        def value(argument: Any) -> Any:
-            if not isinstance(argument, NeedAttribute):
-                return argument
-            attr = argument.name
-            arguments.append((self.need.id, self.project.field_of(attr)))
-            if self.project.computed_in(self.need.id, attr) == self.stratum:
-                unknown.append(attr)
-                return _UNKNOWN
-            if not self.project.final_on(self.need.id, attr, self.stratum):
-                return None  # read below: out of scope
-            return self.need.get(attr)
-
-        args = [value(argument) for argument in call.args]
-        kwargs = {key: value(argument) for key, argument in call.kwargs}
-        needs_value = (
-            f"it needs the value of {joined([f'need.{a}' for a in unknown])}, "
-            "computed in the same step, so not known when the call is ordered"
-            if unknown
-            else ""
-        )
         try:
-            result = spec(*args, **kwargs)
-            declared = needs_value if _holds_unknown(result) else _declaration(result)
-        except _UnknownUsed:
-            declared = needs_value
-        except Exception as err:
-            declared = f"it raised {type(err).__name__}: {err}"
-        if isinstance(declared, str):
-            self.project.refused.setdefault(
-                call.name, ((self.need.id, self.field), declared)
+            bound = declaration.signature.bind(*call.args, **dict(call.kwargs))
+        except TypeError as err:
+            return self._refuse(f"its call does not fit its parameters: {err}")
+        bound.apply_defaults()
+        declared = {*declaration.own, *declaration.every}
+        fields: dict[str, list[str]] = {"own": [], "every": []}
+        arguments: list[Node] = []
+        for parameter, value in bound.arguments.items():
+            kind = declaration.signature.parameters[parameter].kind
+            values = (
+                list(value.values())
+                if kind is inspect.Parameter.VAR_KEYWORD
+                else list(value)
+                if kind is inspect.Parameter.VAR_POSITIONAL
+                else [value]
             )
-            return False
-        # the call's arguments, then what it declares
+            for item in values:
+                if parameter not in declared:
+                    if isinstance(item, NeedAttribute):
+                        arguments.append(
+                            (self.need.id, self.project.field_of(item.name))
+                        )
+                    continue
+                if not isinstance(item, str):
+                    shown = (
+                        f"need.{item.name}"
+                        if isinstance(item, NeedAttribute)
+                        else repr(item)
+                    )
+                    return self._refuse(
+                        f"the argument of its parameter {parameter!r} is {shown}, "
+                        "not a field name written in the call"
+                    )
+                fields["own" if parameter in declaration.own else "every"].append(item)
         for _, name in arguments:
             self._read(self.need.id, name)
-        own, every, named = declared
-        for name in own:
+        for name in fields["own"]:
             self._read(self.need.id, name)
-        for need_id, name in named:
-            self._read(need_id, name)
-        for name in every:
+        for name in fields["every"]:
             self._column(name, None, DeclaredRead(call.name))
         if self.scope:
             self.reads.scope = _appended(
@@ -1089,15 +1024,21 @@ class _DeclaredReads(_CallReads):
                 frozenset(
                     [
                         *arguments,
-                        *((self.need.id, field_of(name)) for name in own),
-                        *((need_id, field_of(name)) for need_id, name in named),
+                        *((self.need.id, field_of(name)) for name in fields["own"]),
                     ]
                 ),
-                frozenset(field_of(name) for name in every),
+                frozenset(field_of(name) for name in fields["every"]),
                 frozenset(name for _, name in arguments),
             ),
         )
         return True
+
+    def _refuse(self, why: str) -> bool:
+        assert isinstance(self.call, DynamicFunctionParsed), "a call"
+        self.project.refused.setdefault(
+            self.call.name, ((self.need.id, self.field), why)
+        )
+        return False
 
 
 class _RuleReads(_CallReads):

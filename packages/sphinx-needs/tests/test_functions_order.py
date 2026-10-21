@@ -6,6 +6,7 @@ over call texts), the cycles, the columns, the order of the steps and the empty 
 of a field. The build-level behaviour is pinned by ``test_dynamic_functions_strata``.
 """
 
+import inspect
 from typing import Any, Final
 from unittest.mock import Mock
 
@@ -19,6 +20,7 @@ from sphinx_needs.functions.order import (
     BUILTINS,
     JOIN_READ,
     Column,
+    Declaration,
     Declared,
     DeclaredRead,
     FilterNames,
@@ -965,19 +967,37 @@ def test_a_20000_node_chain_is_ordered_without_recursion():
 # -- a function of your own that declares what it reads ------------------------------
 
 
+def _declaration(
+    *parameters: str, own: tuple[str, ...] = (), every: tuple[str, ...] = ()
+) -> Declaration:
+    """A declaration over the parameters (after app, need, needs); ``*name`` is the
+    ``*args`` one."""
+    signature = inspect.Signature(
+        [
+            inspect.Parameter(
+                name.lstrip("*"),
+                inspect.Parameter.VAR_POSITIONAL
+                if name.startswith("*")
+                else inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            )
+            for name in parameters
+        ]
+    )
+    return Declaration(signature, own, every)
+
+
 def test_a_declared_call_is_ordered_like_a_built_in_one():
-    """Its declared reads are waited for, and its readers wait for it: ``A`` reads
-    ``B``'s summary, which a built-in copy computes, and ``C`` copies ``A``'s, so the
-    order is B, A, C -- where an undeclared ``mine`` would come last, after C."""
+    """Its declared reads are waited for, and its readers wait for it: ``A``'s summary
+    reads its ``comment``, which a built-in copy computes, and ``C`` copies ``A``'s
+    summary -- where an undeclared ``mine`` would come last, after C."""
     needs = (
-        _need("A", summary="[[mine('summary')]]"),
-        _need("B", summary="[[copy('title')]]"),
+        _need("A", summary="[[mine('comment')]]", comment="[[copy('title')]]"),
         _need("C", summary="[[copy('summary', 'A')]]"),
     )
-    declared = {"mine": lambda option: {"need": [("B", option)]}}
+    declared = {"mine": _declaration("option", own=("option",))}
     stratum = build_stratum(_project(*needs, declared=declared), 2)
     assert [s.nodes for s in stratum.steps] == [
-        (("B", "summary"),),
+        (("A", "comment"),),
         (("A", "summary"),),
         (("C", "summary"),),
     ]
@@ -985,10 +1005,10 @@ def test_a_declared_call_is_ordered_like_a_built_in_one():
     assert (reads.last, reads.user_functions, reads.deps) == (
         False,
         (),
-        [("B", "summary")],
+        [("A", "comment")],
     )
     assert reads.declared == [
-        Declared(0, "mine", frozenset({("B", "summary")}), frozenset())
+        Declared(0, "mine", frozenset({("A", "comment")}), frozenset())
     ]
     # undeclared, it is computed last
     undeclared = build_stratum(_project(*needs), 2)
@@ -997,16 +1017,25 @@ def test_a_declared_call_is_ordered_like_a_built_in_one():
 
 def test_a_declared_read_on_every_need_is_a_column():
     """``every`` reads the field on every need computing it: the call waits for them
-    all, and on a cycle the message names the declaration."""
+    all, and on a cycle the message names the declaration. The arguments of a
+    ``*args`` parameter are each a field."""
     project = _project(
         _need("A", summary="[[mine('summary')]]"),
         _need("B", summary="[[copy('title')]]"),
         _need("C", comment="[[mine('comment')]]"),
-        declared={"mine": lambda option: {"every": [option]}},
+        _need("D", grp="[[many('summary', 'comment')]]"),
+        declared={
+            "mine": _declaration("option", every=("option",)),
+            "many": _declaration("*options", every=("options",)),
+        },
     )
     stratum = build_stratum(project, 2)
     assert stratum.reads[("A", "summary")].columns == [
         (Column("summary"), DeclaredRead("mine"))
+    ]
+    assert [c for c, _ in stratum.reads[("D", "grp")].columns] == [
+        Column("summary"),
+        Column("comment"),
     ]
     order = [s.nodes for s in stratum.steps]
     assert order.index((("B", "summary"),)) < order.index((("A", "summary"),))
@@ -1027,8 +1056,8 @@ def test_a_declared_read_on_every_need_is_a_column():
 
 def test_a_declared_self_read_is_a_cycle():
     project = _project(
-        _need("A", summary="[[mine()]]"),
-        declared={"mine": lambda: {"own": ["summary"]}},
+        _need("A", summary="[[mine('summary')]]"),
+        declared={"mine": _declaration("option", own=("option",))},
     )
     assert build_stratum(project, 2).steps == [
         Step((("A", "summary"),), cycle=True, through=(None,))
@@ -1039,8 +1068,8 @@ def test_a_declared_read_of_a_later_step_is_out_of_scope():
     """A link field's call declaring a read of a field computed after the link fields
     cannot be ordered: it is not run (a sink), as a built-in call reading it."""
     project = _project(
-        _need("A", links="[[mine()]]", summary="[[copy('title')]]"),
-        declared={"mine": lambda: {"own": ["summary"], "every": ["comment"]}},
+        _need("A", links="[[mine('summary', 'comment')]]", summary="[[copy('title')]]"),
+        declared={"mine": _declaration("a", "b", own=("a",), every=("b",))},
     )
     reads = build_stratum(project, 1).reads[("A", "links")]
     assert reads.sink
@@ -1048,28 +1077,18 @@ def test_a_declared_read_of_a_later_step_is_out_of_scope():
 
 
 def test_a_need_argument_of_a_declared_call_is_a_dependency():
-    """A ``need.<field>`` argument is passed to the declaration by its value, and is a
-    read of its own need: final before the stratum, its value; computed in the same
-    stratum, a dependency, and the declaration gets a value it cannot use -- one that
-    does not use it is applied, one that does leaves the call last, unreported."""
-    seen: list[Any] = []
-
-    def declaration(*args: Any) -> dict[str, Any]:
-        seen.append(args)
-        return {}
-
-    def using(value: Any) -> dict[str, Any]:
-        return {"own": [value]}
-
+    """A ``need.<field>`` argument of a parameter the declaration does not name is
+    data, a read of its own need: computed in the same stratum, a dependency (its own
+    field, a cycle); final, nothing to wait for."""
     project = _project(
-        _need("A", summary="[[mine(need.grp)]]", grp="G"),
-        _need("B", summary="[[mine(need.comment)]]", comment="[[copy('title')]]"),
-        _need("C", summary="[[uses(need.comment)]]", comment="[[copy('title')]]"),
-        _need("D", summary="[[mine(need.summary)]]"),
-        declared={"mine": declaration, "uses": using},
+        _need("A", summary="[[mine('grp', need.grp)]]", grp="G"),
+        _need(
+            "B", summary="[[mine('grp', need.comment)]]", comment="[[copy('title')]]"
+        ),
+        _need("D", summary="[[mine('grp', need.summary)]]"),
+        declared={"mine": _declaration("option", "value", own=("option",))},
     )
     stratum = build_stratum(project, 2)
-    assert seen[0] == ("G",)
     declared = stratum.reads[("A", "summary")].declared
     assert [(d.nodes, d.arguments) for d in declared] == [
         (frozenset({("A", "grp")}), frozenset({"grp"}))
@@ -1078,62 +1097,47 @@ def test_a_need_argument_of_a_declared_call_is_a_dependency():
     assert (b.sink, b.last, b.deps) == (False, False, [("B", "comment")])
     order = [s.nodes[0] for s in stratum.steps]
     assert order.index(("B", "comment")) < order.index(("B", "summary"))
-    # the declaration uses the value: the call is computed last, and refused
-    c = stratum.reads[("C", "summary")]
-    assert (c.last, c.declared) == (True, ())
-    assert project.refused == {
-        "uses": (
-            ("C", "summary"),
-            "it needs the value of need.comment, computed in the same step, so not "
-            "known when the call is ordered",
-        )
-    }
-    # its own field as an argument: a cycle
     assert [s.nodes for s in stratum.steps if s.cycle] == [(("D", "summary"),)]
+    assert project.refused == {}
 
 
 @pytest.mark.parametrize(
-    ("declaration", "why"),
+    ("call", "why"),
     [
         pytest.param(
-            lambda: 1 / 0, "it raised ZeroDivisionError: division by zero", id="raises"
+            "[[mine(need.comment)]]",
+            "the argument of its parameter 'option' is need.comment, not a field name "
+            "written in the call",
+            id="need-argument",
         ),
         pytest.param(
-            lambda: ["summary"], "it returned list, not a mapping", id="not-a-mapping"
+            "[[mine(3)]]",
+            "the argument of its parameter 'option' is 3, not a field name written in "
+            "the call",
+            id="number",
         ),
         pytest.param(
-            lambda: {"ours": []}, "it returned the key 'ours'", id="unknown-key"
+            "[[mine()]]",
+            "its call does not fit its parameters: missing a required argument: "
+            "'option'",
+            id="missing",
         ),
         pytest.param(
-            lambda: {"own": "summary"},
-            "its 'own' is str, not a list",
-            id="own-a-string",
-        ),
-        pytest.param(
-            lambda: {"every": [1]},
-            "its 'every' holds 1, not a field name",
-            id="every-not-names",
-        ),
-        pytest.param(
-            lambda: {"need": ["B"]},
-            "its 'need' holds 'B', not a (need id, field) pair",
-            id="need-not-pairs",
-        ),
-        pytest.param(
-            "summary",
-            "it raised TypeError: 'str' object is not callable",
-            id="not-callable",
+            "[[mine('a', 'b')]]",
+            "its call does not fit its parameters: too many positional arguments",
+            id="too-many",
         ),
     ],
 )
-def test_a_declaration_that_cannot_be_applied_leaves_the_call_last(declaration, why):
-    """The call is then computed last, as one of a function declaring nothing, and the
-    project keeps why, for the first call only (the pass warns once per function)."""
+def test_a_call_whose_declared_argument_is_no_field_name_is_computed_last(call, why):
+    """The call cannot be declared: it is computed last, as a call of a function
+    declaring nothing, and the project keeps why, for the first call only (the pass
+    warns once per function)."""
     project = _project(
-        _need("A", summary="[[mine()]]"),
-        _need("B", summary="[[mine()]]"),
+        _need("A", summary=call, comment="[[copy('title')]]"),
+        _need("B", summary=call),
         _need("C", summary="[[copy('title')]]"),
-        declared={"mine": declaration},
+        declared={"mine": _declaration("option", own=("option",))},
     )
     stratum = build_stratum(project, 2)
     assert stratum.reads[("A", "summary")].last
@@ -1150,7 +1154,7 @@ def test_a_built_in_name_is_never_declared():
     replaced is ignored: the built-in's reads are known."""
     project = _project(
         _need("A", summary="[[copy('title')]]"),
-        declared={"copy": lambda *a, **k: {"own": ["summary"]}},
+        declared={"copy": _declaration("option", own=("option",))},
     )
     assert project.declared == {}
     assert not build_stratum(project, 2).steps[0].cycle

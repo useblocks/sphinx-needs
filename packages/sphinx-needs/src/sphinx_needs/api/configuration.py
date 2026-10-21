@@ -6,10 +6,9 @@ All functions here are available under ``sphinx_needs.api``.
 
 from __future__ import annotations
 
-import inspect
 import warnings
-from collections.abc import Callable, Mapping, Sequence
-from typing import Any, TypeVar
+from collections.abc import Callable, Sequence
+from typing import Any
 
 from sphinx.application import Sphinx
 from sphinx.util.logging import SphinxLoggerAdapter
@@ -17,7 +16,7 @@ from sphinx.util.logging import SphinxLoggerAdapter
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.defaults import LAYOUTS
 from sphinx_needs.exceptions import NeedsApiConfigException
-from sphinx_needs.functions.functions import READS_ATTRIBUTE, DynamicFunction
+from sphinx_needs.functions.functions import DynamicFunction, Reads
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.schema.config import FieldSchemaTypes
 
@@ -277,7 +276,7 @@ def add_dynamic_function(
     function: DynamicFunction,
     name: str | None = None,
     *,
-    reads: Callable[..., Mapping[str, Any]] | None = None,
+    reads: Reads | None = None,
 ) -> None:
     """
     Registers a new dynamic function for sphinx-needs.
@@ -287,10 +286,10 @@ def add_dynamic_function(
     or ``NeedsApiConfigException`` is raised.
     The used name must be unique.
 
-    ``reads`` declares what the function reads, as :func:`reads` does, for a function you
-    do not own: it is called with a call's arguments and returns the fields the call
-    reads (see :ref:`dynamic_functions_reads`). It wins over a declaration the function
-    carries itself.
+    ``reads`` declares what the function reads, for a function you do not own:
+    ``add_dynamic_function(app, their_function, reads=reads(own="option"))`` (see
+    :func:`reads` and :ref:`dynamic_functions_reads`). It wins over a declaration the
+    function carries itself.
 
     **Usage**::
 
@@ -316,30 +315,13 @@ def add_dynamic_function(
     _NEEDS_CONFIG.add_function(function, name, reads=reads)
 
 
-_FunctionT = TypeVar("_FunctionT", bound=Callable[..., Any])
-
-
-def _reads_nothing(*args: Any, **kwargs: Any) -> Mapping[str, Any]:
-    """The declaration of a function that reads no computed value."""
-    return {}
-
-
-#: the parameters every dynamic function takes before the call's arguments
-_LEADING = 3
-
-
-def reads(
-    spec: Callable[..., Mapping[str, Any]] | None = None,
-    /,
-    *,
-    own: str | Sequence[str] = (),
-    every: str | Sequence[str] = (),
-) -> Callable[[_FunctionT], _FunctionT]:
+def reads(*, own: str | Sequence[str] = (), every: str | Sequence[str] = ()) -> Reads:
     """Declare what a dynamic function of your own reads, so that it is computed in
     order, like a built-in function (see :ref:`dynamic_functions_reads`).
 
-    Either name the parameters whose argument is a field name the function reads, on its
-    own need (``own``) or on every need (``every``)::
+    Name the parameters whose argument is a field name the function reads, on the
+    call's own need (``own``) or on every need (``every``), each a name or a tuple of
+    names; the argument of a ``*args`` parameter is each a field name::
 
         from sphinx_needs.api import reads
 
@@ -347,99 +329,36 @@ def reads(
         def my_link(app, need, needs, test_option, target_option):
             ...
 
-    or give ``spec``, a callable that is called with a call's arguments, as written in
-    the call (a ``need.<field>`` argument replaced by the field's value), and returns
-    the fields the call reads, as a mapping of up to three keys: ``"own"``, the fields
-    it reads on its own need, ``"every"``, the fields it reads on every need, and
-    ``"need"``, ``(need id, field)`` pairs it reads on the needs it names, each a list::
+    ``@reads()`` declares that the function reads no computed value; a field nothing
+    computes need not be declared. A field the function reads by a name written in its
+    code, not given as an argument, cannot be declared yet: such a function is
+    computed after the built-in functions, as one that declares nothing.
 
-        @reads(lambda option, need_id: {"need": [(need_id, option)]})
-        def my_copy(app, need, needs, option, need_id):
-            return needs[need_id][option]
+    The result is a :class:`~sphinx_needs.functions.functions.Reads`, which declares the
+    function it is applied to (its attribute ``needs_reads``), and which
+    :func:`add_dynamic_function` takes as ``reads`` for a function you do not own. A
+    wrapper made with :func:`functools.wraps` carries the declaration of the function
+    it wraps. The names are checked against the function's parameters when it is
+    registered: one that is not a parameter after ``app``, ``need`` and ``needs`` is
+    one ``needs.config`` warning, and the function declares nothing.
 
-    ``@reads()`` declares that the function reads no computed value. A field nothing
-    computes need not be declared. The declaration is the function's attribute
-    ``needs_reads``, which an extension that also supports an older Sphinx-Needs may
-    set itself (with a ``spec``): such a version ignores it. A wrapper made with
-    :func:`functools.wraps` carries the declaration of the function it wraps.
-
-    :param spec: The callable returning the reads of a call.
     :param own: The parameters whose argument names a field read on the call's own
         need.
     :param every: The parameters whose argument names a field read on every need.
-    :return: The decorator, which returns the function it is given, declared.
-    :raises ValueError: If both ``spec`` and ``own`` or ``every`` are given, or a name
-        is not a parameter of the function.
-    :raises TypeError: If ``spec`` is a dynamic function itself (its parameters start
-        ``app, need, needs``): ``@reads`` written without parentheses.
+    :return: The declaration, which returns the function it is applied to, declared.
+    :raises TypeError: If a name is not a string; ``@reads`` written without
+        parentheses is refused by Python itself, as ``reads`` takes no positional
+        argument.
 
     .. versionadded:: 9.1.0
     """
-    if spec is not None and _is_dynamic_function(spec):
-        raise TypeError(
-            f"reads was given the function {getattr(spec, '__name__', spec)!r} to "
-            "declare: write @reads() with parentheses, or give the reads (a spec, own "
-            "or every)"
-        )
-    own_names = (own,) if isinstance(own, str) else tuple(own)
-    every_names = (every,) if isinstance(every, str) else tuple(every)
-    if spec is not None and (own_names or every_names):
-        raise ValueError("reads takes a spec, or own and every, not both")
-
-    def declare(function: _FunctionT) -> _FunctionT:
-        declaration = spec
-        if declaration is None:
-            declaration = _by_parameters(function, own_names, every_names)
-        # through ``vars``: the type checker refuses an attribute assignment on a callable
-        vars(function)[READS_ATTRIBUTE] = declaration
-        return function
-
-    return declare
-
-
-def _is_dynamic_function(spec: Callable[..., Any]) -> bool:
-    """Whether a callable takes ``app, need, needs`` first, as a dynamic function does,
-    not a call's arguments as a spec does."""
-    try:
-        parameters = list(inspect.signature(spec).parameters)
-    except (TypeError, ValueError):
-        return False
-    return parameters[:_LEADING] == ["app", "need", "needs"]
-
-
-def _by_parameters(
-    function: Callable[..., Any], own: tuple[str, ...], every: tuple[str, ...]
-) -> Callable[..., Mapping[str, Any]]:
-    """The declaration reading the fields the arguments of named parameters name."""
-    if not own and not every:
-        return _reads_nothing
-    signature = inspect.signature(function)
-    parameters = list(signature.parameters.values())[_LEADING:]
-    call = signature.replace(parameters=parameters)
-    known = {parameter.name: parameter for parameter in parameters}
-    for name in (*own, *every):
-        if name not in known:
-            raise ValueError(
-                f"{name!r} is not a parameter of {getattr(function, '__name__', function)!r} "
-                "after app, need and needs"
-            )
-
-    def fields(bound: inspect.BoundArguments, names: tuple[str, ...]) -> list[Any]:
-        found: list[Any] = []
-        for name in names:
-            value = bound.arguments.get(name)
-            if known[name].kind is inspect.Parameter.VAR_POSITIONAL:
-                found.extend(value or ())
-            elif value is not None:
-                found.append(value)
-        return found
-
-    def declaration(*args: Any, **kwargs: Any) -> Mapping[str, Any]:
-        bound = call.bind(*args, **kwargs)
-        bound.apply_defaults()
-        return {"own": fields(bound, own), "every": fields(bound, every)}
-
-    return declaration
+    names = tuple(
+        (value,) if isinstance(value, str) else tuple(value) for value in (own, every)
+    )
+    for value in (*names[0], *names[1]):
+        if not isinstance(value, str):
+            raise TypeError(f"reads names parameters, and {value!r} is not a name")
+    return Reads(names[0], names[1])
 
 
 # 'Need' is untyped, so we temporarily use 'Any' here

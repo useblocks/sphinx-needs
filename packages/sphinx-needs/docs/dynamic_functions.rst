@@ -251,42 +251,32 @@ after the values it declares, and before the values that read it.
 Each call ``[[my_link("references", "id")]]`` then reads ``references`` on its own need and ``id`` on every need,
 and is computed after them; a ``links_from_filter``, a ``links`` or ``union`` :ref:`derive rule <needs_derive>`,
 or any other built-in function reading the links it computes holds them, where it read them empty.
-For reads the parameters do not name, give a callable instead: it is called with the arguments of each call,
-as written (a ``need.<field>`` :ref:`argument <dynamic_functions_need_arguments>` replaced by the field's value),
-and returns the fields the call reads, as a mapping of up to three lists:
-``"own"``, the fields it reads on its own need, ``"every"``, the fields it reads on every need,
-and ``"need"``, the ``(need id, field)`` pairs it reads on the needs it names:
-
-.. code-block:: python
-
-   @reads(lambda option, need_id: {"need": [(need_id, option)]})
-   def my_copy(app, need, needs, option, need_id):
-       return needs[need_id][option]
-
+Each of ``own`` and ``every`` is a parameter's name or a tuple of names; the arguments of a ``*args`` parameter
+are each a field name.
 ``@reads()`` declares a function that reads no computed value. A field nothing computes need not be declared.
+A field the function reads by a name written in its code, not given to it as an argument, cannot be declared yet:
+such a function declares nothing, and is computed after the built-in functions (its reads are reported as it runs).
 For a function you do not own, give the declaration where you register it:
-``add_dynamic_function(app, their_function, reads=lambda *args, **kwargs: {"own": ["status"]})``,
+``add_dynamic_function(app, their_function, reads=reads(own="option"))``,
 which wins over a declaration the function carries.
-The declaration is the function's attribute ``needs_reads``, a callable as above:
-an extension that also supports an older Sphinx-Needs can set it itself, which such a version ignores
-(sphinx-test-reports declares its ``tr_link`` so);
-a wrapper made with :py:func:`functools.wraps` carries the declaration of the function it wraps.
+The names are checked against the function's parameters when it is registered:
+one that is not a parameter after ``app``, ``need`` and ``needs`` is one ``needs.config`` warning,
+and the function declares nothing.
+A wrapper made with :py:func:`functools.wraps` carries the declaration of the function it wraps.
+An extension that also supports an older Sphinx-Needs imports ``reads`` where it exists
+(sphinx-test-reports declares its ``tr_link`` so).
 
 A declared call is ordered as a built-in call is:
 a read of the field the call computes itself is a :ref:`cycle <needs_derive_cycle>`,
-a read of a value computed in a later step (a field that is not a link field, read from a link field)
-is not run (:ref:`needs_derive_scope`),
-and a ``need.<field>`` :ref:`argument <dynamic_functions_need_arguments>` is a read of its own need:
-one computed in the same step is waited for (the call's own field as its argument is a cycle),
-and the declaration is called with a stand-in for its value, which can be passed on but not compared,
-tested, hashed or read -- a declaration that needs the value (one naming the field it reads by that argument,
-or choosing its reads by it) cannot be applied to that call.
-The stand-in cannot refuse every test (``isinstance`` answers without asking it):
-a declaration that chooses its reads that way may declare too little, which the check of a declared call reports.
-A declaration that cannot be applied to a call -- it needs such a value, raises,
-or returns anything but such a mapping -- is reported once per function, as a ``needs.config`` warning,
-and the calls it cannot be applied to are computed after the built-in functions,
-as calls of a function that declares nothing.
+and a read of a value computed in a later step (a field that is not a link field, read from a link field)
+is not run (:ref:`needs_derive_scope`).
+A call whose argument of a declared parameter is not a field name written in the call
+-- a ``need.<field>``, a number, or no argument at all -- cannot be declared:
+it is reported once per function, as a ``needs.config`` warning,
+and such calls are computed after the built-in functions, as calls of a function that declares nothing.
+A ``need.<field>`` :ref:`argument <dynamic_functions_need_arguments>` of any other parameter is data,
+a read of its own need: one computed in the same step is waited for
+(the call's own field as its argument is a cycle).
 As the function runs, every read of a value computed in its own step that its declaration does not name
 is reported (:ref:`needs_derive_scope`), whether that value was computed yet or not:
 declare it, or the call is not ordered after it.
