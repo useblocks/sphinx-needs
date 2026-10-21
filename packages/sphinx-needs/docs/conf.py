@@ -75,6 +75,8 @@ nitpick_ignore = [
     ("py:class", "docutils.parsers.rst.states.RSTState"),
     ("py:class", "docutils.statemachine.StringList"),
     ("py:class", "sphinx_needs.debug.T"),
+    # the type variable of ``sphinx_needs.api.reads``, the decorated function's type
+    ("py:class", "sphinx_needs.api.configuration._FunctionT"),
     ("py:class", "sphinx_needs.views._LazyIndexes"),
     ("py:class", "sphinx_needs.config.NeedsSphinxConfig"),
     # the type of the built-ins' reserved ``reads`` keyword, which only the resolver passes

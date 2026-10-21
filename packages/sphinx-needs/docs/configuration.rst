@@ -2456,6 +2456,8 @@ Assigning a function to this option deactivates the incremental build feature of
 How to register a function, by this option or, better, with
 :py:func:`~sphinx_needs.api.configuration.add_dynamic_function` in ``setup()``, is described in
 :ref:`dynamic_functions_registration`; what a function can do, in :ref:`dynamic_functions`.
+A function that declares what it reads (:ref:`dynamic_functions_reads`) is computed in order, like a built-in
+one; one that does not is computed after the built-in functions of its step.
 
 .. _`needs_part_prefix`:
 

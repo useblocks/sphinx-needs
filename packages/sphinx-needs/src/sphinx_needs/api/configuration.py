@@ -7,7 +7,7 @@ All functions here are available under ``sphinx_needs.api``.
 from __future__ import annotations
 
 import warnings
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any
 
 from sphinx.application import Sphinx
@@ -16,7 +16,7 @@ from sphinx.util.logging import SphinxLoggerAdapter
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.defaults import LAYOUTS
 from sphinx_needs.exceptions import NeedsApiConfigException
-from sphinx_needs.functions.functions import DynamicFunction
+from sphinx_needs.functions.functions import DynamicFunction, Reads
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.schema.config import FieldSchemaTypes
 
@@ -272,7 +272,11 @@ def add_field(
 
 
 def add_dynamic_function(
-    app: Sphinx, function: DynamicFunction, name: str | None = None
+    app: Sphinx,
+    function: DynamicFunction,
+    name: str | None = None,
+    *,
+    reads: Reads | None = None,
 ) -> None:
     """
     Registers a new dynamic function for sphinx-needs.
@@ -281,6 +285,11 @@ def add_dynamic_function(
     A callable without a ``__name__``, such as a ``functools.partial``, must be given its ``name``,
     or ``NeedsApiConfigException`` is raised.
     The used name must be unique.
+
+    ``reads`` declares what the function reads, for a function you do not own:
+    ``add_dynamic_function(app, their_function, reads=reads(own="option"))`` (see
+    :func:`reads` and :ref:`dynamic_functions_reads`). It wins over a declaration the
+    function carries itself.
 
     **Usage**::
 
@@ -297,9 +306,59 @@ def add_dynamic_function(
     :param app: Sphinx application object
     :param function: Function to register
     :param name: Name of the dynamic function as string
+    :param reads: What the function reads (see :func:`reads`)
     :return: None
+
+    .. versionchanged:: 9.1.0
+       The ``reads`` parameter.
     """
-    _NEEDS_CONFIG.add_function(function, name)
+    _NEEDS_CONFIG.add_function(function, name, reads=reads)
+
+
+def reads(*, own: str | Sequence[str] = (), every: str | Sequence[str] = ()) -> Reads:
+    """Declare what a dynamic function of your own reads, so that it is computed in
+    order, like a built-in function (see :ref:`dynamic_functions_reads`).
+
+    Name the parameters whose argument is a field name the function reads, on the
+    call's own need (``own``) or on every need (``every``), each a name or a tuple of
+    names; the argument of a ``*args`` parameter is each a field name::
+
+        from sphinx_needs.api import reads
+
+        @reads(own="test_option", every="target_option")
+        def my_link(app, need, needs, test_option, target_option):
+            ...
+
+    ``@reads()`` declares that the function reads no computed value; a field nothing
+    computes need not be declared. A field the function reads by a name written in its
+    code, not given as an argument, cannot be declared yet: such a function is
+    computed after the built-in functions, as one that declares nothing.
+
+    The result is a :class:`~sphinx_needs.functions.functions.Reads`, which declares the
+    function it is applied to (its attribute ``needs_reads``), and which
+    :func:`add_dynamic_function` takes as ``reads`` for a function you do not own. A
+    wrapper made with :func:`functools.wraps` carries the declaration of the function
+    it wraps. The names are checked against the function's parameters when it is
+    registered: one that is not a parameter after ``app``, ``need`` and ``needs`` is
+    one ``needs.config`` warning, and the function declares nothing.
+
+    :param own: The parameters whose argument names a field read on the call's own
+        need.
+    :param every: The parameters whose argument names a field read on every need.
+    :return: The declaration, which returns the function it is applied to, declared.
+    :raises TypeError: If a name is not a string; ``@reads`` written without
+        parentheses is refused by Python itself, as ``reads`` takes no positional
+        argument.
+
+    .. versionadded:: 9.1.0
+    """
+    names = tuple(
+        (value,) if isinstance(value, str) else tuple(value) for value in (own, every)
+    )
+    for value in (*names[0], *names[1]):
+        if not isinstance(value, str):
+            raise TypeError(f"reads names parameters, and {value!r} is not a name")
+    return Reads(names[0], names[1])
 
 
 # 'Need' is untyped, so we temporarily use 'Any' here
