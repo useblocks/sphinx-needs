@@ -18,6 +18,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+import pytest
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs_testkit import build_warnings
@@ -675,3 +676,99 @@ def test_a_current_need_key_naming_what_the_call_itself_moves(
     )
     assert (needs["SPEC_1"]["flt"], needs["SPEC_1"]["all_flt"]) == ([], ["REQ_2"])
     assert needs["SPEC_2"]["lm"] == ["SPEC_1"]
+
+
+#: three calls whose filter cannot be read, each naming a field no node computed after
+#: it computes: none is reported, and each reads the field final
+NOT_LATER_CASES = {
+    "its-own-field": (
+        'needs_links = {"flt": {}}\n',
+        """\
+.. req:: One
+   :id: REQ_1
+   :flt: REQ_2
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Names the field it computes (on every need)
+   :id: SPEC_1
+   :flt: [[links_from_filter("len(needs) > 0 and 'REQ_2' in flt")]]
+""",
+        {"SPEC_1": {"flt": ["REQ_1"]}},
+        [],
+    ),
+    "a-current-need-key-written-on-its-own-need": (
+        """\
+def my_links(app, need, needs, *args, **kwargs):
+    return ["REQ_2"]
+
+
+needs_functions = [my_links]
+needs_links = {"blocks": {}, "cur": {}}
+""",
+        """\
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Its own blocks are written
+   :id: SPEC_1
+   :blocks: REQ_2
+   :cur: [[links_from_filter("len(needs) > 0 and 'REQ_2' in current_need['blocks'] and id == 'REQ_1'")]]
+
+.. spec:: Another need's blocks are your own function's, computed later
+   :id: SPEC_9
+   :blocks: [[my_links()]]
+""",
+        {"SPEC_1": {"cur": ["REQ_1"]}, "SPEC_9": {"blocks": ["REQ_2"]}},
+        [],
+    ),
+    "a-field-only-a-sunk-later-call-computes": (
+        'needs_links = {"flt": {}, "rd": {}, "lo": {}}\n',
+        """\
+.. req:: One
+   :id: REQ_1
+
+.. spec:: Names flt, which only a later call, a sink, computes
+   :id: SPEC_1
+   :lo: [[links_from_filter("len(needs) > 0 and 'REQ_1' in flt")]]
+
+.. spec:: A later call computed last, a sink (it names the reader it moves)
+   :id: SPEC_2
+   :flt: REQ_1, [[links_from_filter("len(needs) > 0 and 'X' in rd")]]
+
+.. spec:: A built-in reader of flt
+   :id: SPEC_3
+   :rd: [[links_from_filter("'REQ_1' in flt")]]
+""",
+        {"SPEC_1": {"lo": ["SPEC_2"]}, "SPEC_2": {"flt": ["REQ_1"]}},
+        ["option 'flt' reads 'rd' on need 'SPEC_3'"],
+    ),
+}
+
+
+@pytest.mark.parametrize("case", list(NOT_LATER_CASES))
+def test_a_call_naming_no_later_value_is_run(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path, case: str
+) -> None:
+    """What makes a call whose filter cannot be read wait in vain is a value computed
+    after it; nothing else sinks it. The field it computes is not one (it is computed
+    by the call itself); a ``current_need`` key reads its own need's field, which is
+    written there, whatever another need computes later; and a later call that is a
+    sink computes nothing later -- it holds its written links, final before the call.
+    Each runs, reads the field final, and only the sink is reported."""
+    extra, index, values, reported = NOT_LATER_CASES[case]
+    conf = (
+        'extensions = ["sphinx_needs"]\nneeds_build_json = True\n'
+        'suppress_warnings = ["config.cache"]\n' + extra
+    )
+    needs, warnings = _build(make_app, tmp_path / "src", conf, index)
+    assert len(warnings) == len(reported)
+    for warning, text in zip(warnings, reported, strict=True):
+        assert text in warning and "[needs.derive_scope]" in warning
+    for need_id, fields in values.items():
+        for name, value in fields.items():
+            assert needs[need_id][name] == value, (need_id, name)

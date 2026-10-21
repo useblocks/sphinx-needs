@@ -472,8 +472,9 @@ These reads are reported as ``needs.derive_scope``:
 - a ``needextend`` filter that names a field a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes:
   the filter sees the value from before it is computed, once for each ``needextend`` carrying it;
 - a call whose filter cannot be read, computed with your own functions, whose filter names a value
-  computed after it (a field one of them computes later in need-id order, or a built-in function or rule reading
-  what they compute: by name on any need, or as its own need's ``current_need`` key):
+  computed after it (a field one of them computes later in (need id, field) order,
+  or a built-in function or rule reading what they compute:
+  by name on any need, or as its own need's ``current_need`` key):
   the call is not run, and its field keeps the items written in it (a link or array field) or is left empty;
 - a call computed with your own functions (a ``copy`` whose filter cannot be read) that reads a value computed
   after it, your own function's or a built-in one's computed after them, before it is computed.

@@ -389,10 +389,11 @@ Bug fixes
   with a ``needs.derive_scope``. They now hold the values, with no warning; a cycle among them is still a
   ``needs.derive_cycle``. The project's own functions and those calls keep need-id order: a call whose filter cannot
   be read that names a value computed after it (such a built-in reader, or a field a later one of them computes; by
-  name, or as its own need's ``current_need`` key) is not run, and is reported, where it read it empty, silently; the
-  project's own functions, and a read through ``needs`` or ``current_need`` by a key that is not written out, before
-  such a value read it empty, unreported. A union whose only late member is such a call is computed with the
-  built-in functions again, so its readers are no longer reported (:issue:`2354`)
+  name, or as its own need's ``current_need`` key) is not run, and is reported, where it read it empty, silently
+  (one naming a union was reported already); the project's own functions, and a read through ``needs`` or
+  ``current_need`` by a key that is not written out, before such a value read it empty, unreported. A union whose
+  only late member is such a call is computed with the built-in functions again, so its readers are no longer
+  reported (:issue:`2354`)
 
 - 🐛 The filter fast path answers as ``eval`` does where it did not: a list or a tuple of literals after ``in``
   compares a list field item by item (``tags not in ['a']`` raised there and was true in ``eval``), and a name no
