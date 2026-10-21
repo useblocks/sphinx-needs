@@ -581,6 +581,7 @@ class DeriveProblem:
         and applies on every other type.
     :ivar type_reasons: For such a rule: each of those types with why it cannot be
         read there (the cycle closes along its own path on each).
+    :ivar beside: The keys refused beside ``derive`` that the finding is about.
     """
 
     name: str
@@ -591,6 +592,7 @@ class DeriveProblem:
     part: str = "derive"
     on_types: tuple[str, ...] = ()
     type_reasons: tuple[tuple[str, str], ...] = ()
+    beside: tuple[str, ...] = ()
 
     @property
     def order(self) -> tuple[bool, str, int, str]:
@@ -716,14 +718,14 @@ def by_type_message(
 _UNION_DEAD_LINKS: Final = " (a union's dead links are its members')"
 
 
-def dead_links_refused_clause() -> str:
-    """What a finding of a ``derive`` adds when ``allow_dead_links`` beside it is
-    refused, as every rule of the link type is a union, but the finding is another's
-    (a cycle on some need types only, which leaves the union a union on the others)."""
-    return (
-        "; 'allow_dead_links' cannot be given beside derive, and is ignored"
-        f"{_UNION_DEAD_LINKS}"
-    )
+def beside_clause(keys: Sequence[str]) -> str:
+    """What a finding of a ``derive`` adds for the keys refused beside it, when the
+    finding is another's: a cycle on some need types only, which leaves the rule
+    applying on the others, so the keys beside it are still refused."""
+    named = " and ".join(repr(key) for key in keys)
+    verb = "are" if len(keys) > 1 else "is"
+    union = _UNION_DEAD_LINKS if "allow_dead_links" in keys else ""
+    return f"; {named} cannot be given beside derive, and {verb} ignored{union}"
 
 
 def beside_by_type_message(

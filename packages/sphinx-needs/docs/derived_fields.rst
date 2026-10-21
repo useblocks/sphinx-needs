@@ -965,6 +965,9 @@ the rule applies. So is an ``allow_dead_links`` beside a ``union``, whose dead l
 So is a link type declared with ``copy = true`` while ``links`` is derived:
 nothing is copied into ``links``, which holds what its rule computes;
 and ``copy = true`` on a derived link type, which is not available in this release: nothing is copied.
+A ``derive`` that cannot be read is reported for that alone, not for a key beside it;
+one closing a cycle on some need types only still applies on the others,
+so the keys beside it are still refused, which its finding says.
 
 A rule that cannot be computed on a need leaves the field at its empty value, and is reported:
 a cycle of rules or calls reading one another (``needs.derive_cycle``, see :ref:`needs_derive_cycle`),

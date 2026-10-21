@@ -62,13 +62,13 @@ from sphinx_needs.derive import (
     DeriveProblem,
     DeriveRule,
     beside_by_type_message,
+    beside_clause,
     beside_message,
     by_type_message,
     check_derive_rules,
     copy_on_derived_message,
     copy_problem,
     core_message,
-    dead_links_refused_clause,
     invalid_entry_message,
     invalid_message,
     is_union,
@@ -2689,6 +2689,7 @@ def _derive_parse_problems(
                 name,
                 on_link,
                 beside_message(name, on_link=on_link, rule=derive, keys=beside),
+                beside=tuple(beside),
             )
         ]
     if copied:
@@ -2797,8 +2798,6 @@ def _report_derive_problems(
                 )
             target = dataclasses.replace(target, derive_by_type=by_type)
         schema.replace_field(target)
-    #: the findings refusing allow_dead_links that stand, by key
-    refusing: set[tuple[bool, str, str]] = set()
     for name, (refused, kept) in (dead_refusals or {}).items():
         link = schema.global_declaration(name)
         assert isinstance(link, LinkSchema), "a refusal is of a link type"
@@ -2809,7 +2808,6 @@ def _report_derive_problems(
             and not (isinstance(rule, DeriveInvalid) and rule.fallback)
         ]
         if rules and all(map(is_union, rules)):
-            refusing.update((p.on_link, p.name, p.part) for p in refused)
             continue
         schema.replace_field(dataclasses.replace(link, allow_dead_links=True))
         withdrawn = {id(problem) for problem in refused}
@@ -2823,14 +2821,15 @@ def _report_derive_problems(
         for p in read_problems
         if not p.core
     }
+    read = dict(findings)
     findings.update(checked)
-    # a check finding replacing a refusal of allow_dead_links that stands (a derive
-    # cycling on some need types only) says the refusal too
-    for key in refusing & checked.keys():
-        problem = checked[key]
-        findings[key] = dataclasses.replace(
-            problem, message=problem.message + dead_links_refused_clause()
-        )
+    # a derive cycling on some need types only still applies on the others, so the
+    # keys refused beside it still are: its cycle's finding, replacing theirs, says so
+    for key, problem in checked.items():
+        if problem.on_types and (beside := read.get(key)) is not None and beside.beside:
+            findings[key] = dataclasses.replace(
+                problem, message=problem.message + beside_clause(beside.beside)
+            )
     if (copied := copy_problem(schema)) is not None and (
         True,
         "links",

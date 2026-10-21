@@ -641,10 +641,22 @@ def test_allow_dead_links_beside_a_union_that_cannot_be_read_is_kept(test_app):
 CONF_CYCLE_ON_ONE_TYPE = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
+needs_fields = {
+    "fx": {
+        "schema": {"type": "string"},
+        "derive": {"kind": "copy", "field": "fy"},
+        "default": "d",
+    },
+    "fy": {
+        "schema": {"type": "string"},
+        "derive_by_type": {"spec": {"kind": "copy", "field": "fx"}},
+    },
+}
 needs_links = {
     "a": {
         "derive": {"kind": "union", "fields": ["links", "b"]},
         "allow_dead_links": True,
+        "target_types": ["req"],
     },
     "b": {"derive_by_type": {"spec": {"kind": "union", "fields": ["a"]}}},
 }
@@ -660,15 +672,24 @@ def test_allow_dead_links_beside_a_union_cycling_on_one_type_is_refused(test_app
     """A ``derive`` closing a cycle on some need types only is still a union on every
     other type: the marker standing for it on those types is no rule of the link
     type's own, so ``allow_dead_links`` beside it is still refused -- and said, in the
-    one finding of that ``derive``, the cycle's."""
+    one finding of that ``derive``, the cycle's, as is every other key refused beside
+    it (``target_types``; a field's ``default``)."""
     app = test_app
     app.build()
-    assert [w for w in build_warnings(app) if "link type 'a'" in w] == [
+    applies = "on every other need type the rule applies"
+    assert [
+        w for w in build_warnings(app) if "link type 'a'" in w or "field 'fx'" in w
+    ] == [
+        "WARNING: Invalid derive of field 'fx': on need type 'spec': kind 'copy': the "
+        "role 'field' reads 'fy', whose rule reads this field back (fx -> fy -> fx), "
+        "so no need can compute it; the field cannot be set in a need or by a "
+        f"needextend, and on that need type holds its empty value; {applies}; "
+        "'default' cannot be given beside derive, and is ignored [needs.derive_invalid]",
         "WARNING: Invalid derive of link type 'a': on need type 'spec': kind 'union': "
         "the role 'fields' reads 'b', whose rule reads this field back (a -> b -> a), "
         "so no need can compute it; the link type cannot be set in a need or by a "
-        "needextend, and on that need type holds no links; on every other need type "
-        "the rule applies; 'allow_dead_links' cannot be given beside derive, and is "
+        f"needextend, and on that need type holds no links; {applies}; "
+        "'target_types' and 'allow_dead_links' cannot be given beside derive, and are "
         "ignored (a union's dead links are its members') [needs.derive_invalid]",
     ]
     link = SphinxNeedsData(app.env).get_schema().global_declaration("a")
