@@ -23,22 +23,42 @@ Improvements
   ``eval`` costs is its context, a copy of every field of the need per evaluation, so the forms that used to reach
   it are five to six times faster now (over 14 000 needs, ``len(tags) > 0``: 29 ms to 5 ms), and a form the fast
   path already took costs what it cost. Its
-  answers are ``eval``'s, an error included, but for a filter whose value is not a boolean, which the portable
-  language reads by its truthiness and ``eval`` refuses (:issue:`1773`), and the three smaller cases
-  :ref:`filter_string_performance` lists. So a string newly in the language whose value is not a boolean --
-  ``len(tags)`` alone, ``title.lower()``, ``True and owner``, a ``var.`` chain alone holding a string -- now selects
-  the needs it is true for, where it was refused with ``Filter did not evaluate to a boolean`` and selected
-  nothing. A string the language does not hold -- a field ``in`` a field, a list beside ``==``, a subscript, a
+  answers are ``eval``'s, an error included, but for the three smaller cases :ref:`filter_string_performance`
+  lists. A string newly in the language whose value is not a boolean -- ``len(tags)`` alone, ``title.lower()``,
+  ``True and owner``, a ``var.`` chain alone holding a string -- selects the needs it is true for, where it was
+  refused with ``Filter did not evaluate to a boolean`` and selected nothing; ``eval`` now reads every filter for
+  its truth too (below). A string the language does not hold -- a field ``in`` a field, a list beside ``==``, a subscript, a
   comprehension, arithmetic, another call -- is evaluated by ``eval`` as before. Of the strings this repository's documentation and tests wrote, eleven of
   the sixteen that reached ``eval`` no longer do. ``tests/fixtures/filter_conformance.toml`` defines the
   language and pins every rule's answers, so the three tiers are held to the same results; see
   :ref:`filter_string_performance`.
 
 - 👌 :ref:`needs_debug_filters` says which tier answered each filter: every record of ``debug_filters.jsonl``
-  holds ``tier``, ``"index"``, ``"fast"`` or ``"eval"``, and for ``"eval"`` ``fallback_reason``, the construct that
+  holds ``tier``, ``"index"``, ``"fast"``, ``"eval"`` or ``"refused"`` (a constant, below), and for ``"eval"``
+  ``fallback_reason``, the construct that
   kept the string out of the portable filter language (``subscript``, ``call:any``,
   ``compare:name-in-name``, ...), or ``filter-code`` / ``filter-func`` for a directive's filter code
   (:issue:`2346`, :pr:`2350`)
+
+- 👌 A filter string selects the needs its value is true for on every tier, and a filter that is a constant is
+  reported instead of selecting every need or none (:issue:`1773`, :issue:`2355`, :pr:`2364`)
+
+  A :ref:`filter string <filter_string>` selects the needs its value is true for, whatever the value's type and
+  whichever tier answers it: ``eval`` refused a value that is not a boolean (``Filter did not evaluate to a
+  boolean``) where the index path and the portable filter language read its truth, so ``tags`` and
+  ``[t for t in tags]`` answered differently. A filter that is a constant alone -- a literal such as ``'x'``,
+  ``-5``, ``10.5`` or ``None``, a display such as ``[1]`` or ``{}``, the trailing-comma typo
+  ``status == 'open',``, a generator expression, which is true whatever it would yield, an f-string with no
+  placeholder, parenthesised or not, after any leading spaces and tabs -- says nothing about a need. The views, :ref:`need_count`, the content lines of :ref:`needpie` and :ref:`needbar`,
+  :ref:`needextend`, :ref:`needs_warnings`, :ref:`needs_builder_filter`, the ``filter()`` of :ref:`needuml` and
+  ``copy(filter=...)`` refuse it before any tier runs, with one ``needs.filter`` warning, and select nothing, so
+  ``:filter: 'x'`` no longer selects every need without a word; :ref:`needimport`, a predicate of
+  :ref:`needs_fields`, ``links_from_filter`` and ``links_from_match`` refuse it with the warning they give a
+  filter that fails, where the two functions linked nothing silently. Anywhere else a constant fails as a filter
+  that cannot be evaluated fails there. ``True`` and ``False`` alone still select every need and none. A
+  content line or cell that is a number such as ``10.5`` or ``-5`` still counts zero with a ``needs.filter``
+  warning; one that is a string such as ``'x'`` counted every need and now counts zero with that warning.
+  :ref:`needs_debug_filters` records a constant's tier as ``"refused"``.
 
 - ✨ A derived union of link types: a link type deriving ``union`` holds the links of the link types it names
   (:issue:`2279`, :pr:`2343`, :pr:`2353`)
@@ -381,6 +401,10 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 A filter in the portable filter language that fails on a need is reported once and the need left out, as in
+  ``eval``, whatever the error: an error of the kind a failed filter raises, from a value's own method, ended the
+  build there (:issue:`2360`, :pr:`2364`)
+
 - 🐛 The filter fast path answers as ``eval`` does where it did not: a list or a tuple of literals after ``in``
   compares a list field item by item (``tags not in ['a']`` raised there and was true in ``eval``), and a name no
   field defines that is a Python builtin is the builtin (``filter != 'x'`` was refused there as undefined, and is
@@ -575,6 +599,14 @@ Bug fixes
 
 Documentation
 .............
+
+- 📚 The :ref:`need_count` example counting the needs whose title is longer than ten characters is written in
+  the portable filter language, and counts them (:issue:`2359`, :pr:`2364`)
+
+  It wrote a raw string, ``search(r"[\w\s]{10,}", title)``, which the portable language has not, and the role
+  removed its backslashes, so the pattern it ran was ``[ws]{10,}`` and the example counted no need. It now writes
+  each backslash twice for the role and twice for the string literal, and the note under it says so: in a role a
+  backslash of a pattern is written four times, or avoided with a character class.
 
 - 📚 A need type's own entry is documented as the place for most rules about its needs,
   beside schema rules for the rest (:pr:`2295`)

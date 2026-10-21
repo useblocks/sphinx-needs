@@ -18,7 +18,8 @@
 # The grammar is ubCode's `rust/ubc_query/src/py_expr.pest`, as `ubc_query` converts it
 # (a form the grammar parses and the converter refuses -- a name `in` a name, a list
 # beside `==` -- is outside it). sphinx-needs' parsed tier (`sphinx_needs/ubquery.py`)
-# compiles every string inside it, and every other string falls to Python's `eval`. Its
+# compiles every string inside it, and every other string falls to Python's `eval`, except
+# a constant alone, which no tier answers. Its
 # answers are Python's: where `ubc_query` answers otherwise, the entry says so
 # (`divergent`). The grammar has no raw-string literal, so no `search(r'...')` here:
 # sphinx-needs reads one through Python, ubCode refuses it at the `r`.
@@ -45,18 +46,27 @@
 #     `error = "filter"` says it is reported, once; an entry without `error` reports
 #     nothing. sphinx-needs reports it as one `needs.filter` warning; ubCode's runner reads
 #     its own report of a failed filter
+#   - a filter is read for its truth: a need is selected when the filter's value is true
+#     by Python's rules, whatever its type, on every tier
 #   - an entry with `tier = "eval"` is OUTSIDE the portable language: ubCode's runner
 #     asserts that its engine refuses the string (it parses it to no query), unless the
 #     entry carries `divergent`, and sphinx-needs answers it through `eval`, which
-#     `expected` pins. Every other entry is
-#     inside it. `tier = "index"` or `tier = "fast"` pins which of sphinx-needs' two
-#     earlier tiers answers it; `reason` (with `tier = "eval"`) pins the construct
-#     sphinx-needs' debug report names. ubCode's runner ignores `tier`'s value and `reason`
-#   - `eval` (sphinx-needs only) pins what sphinx-needs' `eval` tier answers when it is
-#     made to answer a string inside the language and does not answer `expected`: its
-#     selection, and the words of the error it reports. It is #1773's rule: a filter whose
-#     value is not a boolean is read by its truthiness in the parsed tiers, and refused by
-#     `eval`
+#     `expected` pins
+#   - an entry with `tier = "refused"` is a filter that is a constant alone: a literal (a
+#     string, bytes, a number with one sign or none, None or `...`), a tuple, list, set or
+#     dict display that unpacks nothing, whatever it holds, a generator expression (true
+#     whatever it would yield), or an f-string with no placeholder, parenthesised or not,
+#     after any leading spaces and tabs. `--5` and `-True` are arithmetic, a display that
+#     unpacks (`[*tags]`), a list, set or dict comprehension and an f-string with a
+#     placeholder are read by their truth, and `True` and `False` are no constant: they
+#     select every need and none. A constant says nothing about a need, so every tool
+#     refuses it before evaluating it: it selects nothing and is reported once, and
+#     `error = "filter"` is required with it. ubCode's runner asserts that its engine
+#     refuses it (a parse refusal is that report), unless the entry carries `divergent`
+#   - every other entry is inside the language. `tier = "index"` or `tier = "fast"` pins
+#     which of sphinx-needs' two earlier tiers answers it; `reason` (with `tier = "eval"`)
+#     pins the construct sphinx-needs' debug report names. ubCode's runner ignores those
+#     two values of `tier`, and `reason`
 #   - a case or an entry with `python_only = true` is one only sphinx-needs runs, and
 #     ubCode's runner skips it; `ubcode_only = true` is the converse
 #   - an entry carrying `divergent` is skipped by the runner it names, counted, with the
@@ -85,11 +95,10 @@
 #     expected       - the ids it selects, sorted
 #     why            - optional; one line saying what the entry pins
 #     error          - optional; "filter": the filter is reported
-#     tier           - optional; "index", "fast" or "eval"
+#     tier           - optional; "index", "fast", "eval" or "refused"
 #     reason         - optional, with tier = "eval"; the construct sphinx-needs names
 #     in_document    - optional; false: evaluated with no document
 #     include_parts  - optional; true: the parts are evaluated too
-#     eval           - optional; { expected = [...], reports = "..." }, see the rules
 #     python_only    - optional; see the rules above
 #     ubcode_only    - optional; see the rules above
 #     divergent      - optional; { ubcode = "what ubc_query does" }
@@ -810,7 +819,19 @@ why = "a capital sigma ending a word lowers to the final sigma"
 [[case.filters]]
 filter = 'title == "Straße"'
 expected = ["REQ_001"]
+why = "a literal that is not ASCII"
+
+[[case.filters]]
+filter = 'title == "Stra\u00dfe"'
+expected = ["REQ_001"]
+why = "a \\u escape in a string literal is the code point, as in Python"
 divergent = { ubcode = "a \\u escape in a string literal is read as its characters, not as the code point" }
+
+[[case.filters]]
+filter = 'title == "Stra\xdfe"'
+expected = ["REQ_001"]
+why = "a \\x escape in a string literal is the code point, as in Python"
+divergent = { ubcode = "a \\x escape in a string literal is read as its characters, not as the code point" }
 
 # --- search ----------------------------------------------------------------------------
 
@@ -868,6 +889,18 @@ filter = 'search("a", "abc")'
 expected = ["REQ_001", "REQ_002", "SPEC_001"]
 tier = "eval"
 reason = "call:search"
+
+[[case.filters]]
+filter = 'search( "@", title)'
+expected = ["REQ_001"]
+why = "a space inside the call's parentheses is a Python expression's"
+divergent = { ubcode = "refused when the filter is parsed: no space is allowed after a call's opening parenthesis" }
+
+[[case.filters]]
+filter = 'search("(d)\\1", title)'
+expected = ["REQ_001"]
+why = "a backreference is Python's: the dd of address"
+divergent = { ubcode = "the regex dialect has no backreferences: the pattern is refused when the filter is parsed" }
 
 [[case.filters]]
 filter = 'search("^(?=SPEC)", id)'
@@ -931,6 +964,7 @@ expected = ["REQ_002"]
 in_document = false
 error = "filter"
 why = "the need whose or stops before c.this_doc() is answered"
+divergent = { ubcode = "an evaluation error fails the whole filter, so nothing is selected" }
 
 [[case.filters]]
 filter = 'c.this_doc() == True'
@@ -1139,6 +1173,18 @@ filter = 'not (not status == "open")'
 expected = ["REQ_001", "SPEC_001"]
 
 [[case.filters]]
+filter = "type=='spec'or status!='open'"
+expected = ["REQ_002", "SPEC_001"]
+why = "a filter is a Python expression: an operator needs no space around it"
+divergent = { ubcode = "refused when the filter is parsed: a keyword operator needs a space on each side" }
+
+[[case.filters]]
+filter = '(status == "open")and("a" in tags)'
+expected = ["REQ_001", "SPEC_001"]
+why = "nor does and between parentheses"
+divergent = { ubcode = "refused when the filter is parsed: a keyword operator needs a space on each side" }
+
+[[case.filters]]
 filter = 'True'
 expected = ["REQ_001", "REQ_002", "SPEC_001"]
 tier = "index"
@@ -1172,12 +1218,13 @@ filter = 'type == "req" or absent == 1'
 expected = ["REQ_001", "REQ_002"]
 error = "filter"
 why = "the reqs stop at the first operand; SPEC_001 reads absent, and fails"
+divergent = { ubcode = "an evaluation error fails the whole filter, so nothing is selected" }
 
 # --- truthiness ------------------------------------------------------------------------
 
 [[case]]
 name = "truthiness"
-why = "an operand alone, and under and, or and not, is read by Python's truthiness: an empty string, list, 0 and None are false (#1773)"
+why = "a filter is read for its truth on every tier, an operand alone and under and, or and not too: an empty string, list, 0 and None are false (#1773)"
 config = '''
 [needs.fields.owner]
 schema = { type = "string" }
@@ -1211,36 +1258,30 @@ why = "a boolean field alone"
 [[case.filters]]
 filter = 'owner'
 expected = ["REQ_001"]
-eval = { expected = [], reports = "did not evaluate to a boolean" }
 why = "a string, and None"
 
 [[case.filters]]
 filter = 'tags'
 expected = ["REQ_001"]
-eval = { expected = [], reports = "did not evaluate to a boolean" }
 why = "a list"
 
 [[case.filters]]
 filter = 'effort'
 expected = ["REQ_001"]
-eval = { expected = [], reports = "did not evaluate to a boolean" }
 why = "an integer, 0 among them"
 
 [[case.filters]]
 filter = 'status'
 expected = []
-eval = { expected = [], reports = "did not evaluate to a boolean" }
 why = "None"
 
 [[case.filters]]
 filter = 'len(tags)'
 expected = ["REQ_001"]
-eval = { expected = [], reports = "did not evaluate to a boolean" }
 
 [[case.filters]]
 filter = 'title.lower()'
 expected = ["REQ_001", "REQ_002"]
-eval = { expected = [], reports = "did not evaluate to a boolean" }
 
 [[case.filters]]
 filter = 'not owner'
@@ -1253,19 +1294,187 @@ expected = ["REQ_002"]
 [[case.filters]]
 filter = 'owner and done'
 expected = ["REQ_001"]
-eval = { expected = ["REQ_001"], reports = "did not evaluate to a boolean" }
-why = "eval's and gives REQ_002's None"
+why = "and gives REQ_002's None, which is false"
 
 [[case.filters]]
 filter = 'done or effort'
 expected = ["REQ_001"]
-eval = { expected = ["REQ_001"], reports = "did not evaluate to a boolean" }
-why = "eval's or gives REQ_002's 0"
+why = "or gives REQ_002's 0, which is false"
 
 [[case.filters]]
 filter = 'is_external'
 expected = []
 tier = "index"
+
+# --- constants -------------------------------------------------------------------------
+
+[[case]]
+name = "constants"
+why = "a filter that is a constant alone -- a literal, a number with one sign, a display that unpacks nothing, a generator expression, an f-string with no placeholder, parenthesised or not -- says nothing about a need: it is refused before any tier answers it, selects nothing and is reported once; True and False alone are no such constant (see logic), a constant inside a larger filter is an operand, and a constant expression or a comprehension is read by its truth (#2355)"
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :tags: a
+
+   :np:`(a) a part`
+
+.. req:: Beta
+   :id: REQ_002
+'''
+
+[[case.filters]]
+filter = '"x"'
+expected = []
+error = "filter"
+tier = "refused"
+why = "a string: the index path read it as true and selected every need (#2355)"
+
+[[case.filters]]
+filter = '""'
+expected = []
+error = "filter"
+tier = "refused"
+
+[[case.filters]]
+filter = '0'
+expected = []
+error = "filter"
+tier = "refused"
+
+[[case.filters]]
+filter = '-5'
+expected = []
+error = "filter"
+tier = "refused"
+why = "a negative number is a constant, as a needpie line -5 is"
+
+[[case.filters]]
+filter = '1.5'
+expected = []
+error = "filter"
+tier = "refused"
+
+[[case.filters]]
+filter = 'None'
+expected = []
+error = "filter"
+tier = "refused"
+
+[[case.filters]]
+filter = '("x")'
+expected = []
+error = "filter"
+tier = "refused"
+why = "parentheses do not make a constant a condition"
+
+[[case.filters]]
+filter = '+5'
+expected = []
+error = "filter"
+tier = "refused"
+
+[[case.filters]]
+filter = 'b"x"'
+expected = []
+error = "filter"
+tier = "refused"
+
+[[case.filters]]
+filter = '"x"'
+expected = []
+error = "filter"
+tier = "refused"
+include_parts = true
+why = "with parts included the constant is refused before a part is read"
+
+[[case.filters]]
+filter = '"x"'
+expected = []
+error = "filter"
+tier = "refused"
+in_document = false
+why = "with no document the constant is refused as well"
+
+[[case.filters]]
+filter = 'status == "open",'
+expected = []
+error = "filter"
+tier = "refused"
+why = "the trailing-comma typo: a tuple, true on every need"
+
+[[case.filters]]
+filter = '[1]'
+expected = []
+error = "filter"
+tier = "refused"
+why = "a list display"
+
+[[case.filters]]
+filter = '("x",)'
+expected = []
+error = "filter"
+tier = "refused"
+why = "a tuple display"
+
+[[case.filters]]
+filter = '{}'
+expected = []
+error = "filter"
+tier = "refused"
+why = "a dict display, empty"
+
+[[case.filters]]
+filter = 'f"x"'
+expected = []
+error = "filter"
+tier = "refused"
+why = "an f-string with no placeholder is a string"
+
+[[case.filters]]
+filter = '(t for t in tags)'
+expected = []
+error = "filter"
+tier = "refused"
+why = "a generator expression is a generator object, true whatever it would yield"
+
+[[case.filters]]
+filter = ' "x"'
+expected = []
+error = "filter"
+tier = "refused"
+in_document = false
+python_only = true
+why = "a filter configured outside every document keeps its leading space, which eval reads past"
+
+[[case.filters]]
+filter = '[t for t in tags]'
+expected = ["REQ_001"]
+tier = "eval"
+reason = "comprehension"
+why = "a comprehension is no display: its list is read by its truth"
+
+[[case.filters]]
+filter = 'True and "a" in tags'
+expected = ["REQ_001"]
+tier = "index"
+why = "a constant inside a larger filter is an operand, read by its truth"
+
+[[case.filters]]
+filter = '-True'
+expected = ["REQ_001", "REQ_002"]
+tier = "eval"
+reason = "arithmetic"
+why = "a constant expression is no constant: -1 is true"
+
+[[case.filters]]
+filter = 'not 1'
+expected = []
+tier = "eval"
+reason = "literal"
+why = "a constant expression is no constant: not 1 is false"
 
 # --- names no field defines ------------------------------------------------------------
 
@@ -1372,10 +1581,10 @@ reason = "arithmetic"
 
 [[case.filters]]
 filter = '[t for t in tags if t == "b"]'
-expected = []
-error = "filter"
+expected = ["REQ_001"]
 tier = "eval"
 reason = "comprehension"
+why = "a list, read by its truth: REQ_001's is ['b'], REQ_002's is empty"
 
 [[case.filters]]
 filter = 'status == "open" if True else False'
@@ -1461,11 +1670,13 @@ tier = "fast"
 filter = 'variant == current_variant'
 expected = ["REQ_001"]
 tier = "fast"
+divergent = { ubcode = "a view reads no [needs.filter_data]: current_variant is undefined and the filter fails" }
 
 [[case.filters]]
 filter = 'variant != current_variant'
 expected = ["IMPL_001", "REQ_002", "SPEC_001"]
 tier = "fast"
+divergent = { ubcode = "a view reads no [needs.filter_data]: current_variant is undefined and the filter fails" }
 
 [[case.filters]]
 filter = 'c.this_doc() and status is None'
@@ -1505,8 +1716,8 @@ tier = "fast"
 filter = '1'
 expected = []
 error = "filter"
-tier = "eval"
-reason = "literal"
+tier = "refused"
+why = "a constant, which no tier answers now"
 
 [[case.filters]]
 filter = 'var.platform == platform'
