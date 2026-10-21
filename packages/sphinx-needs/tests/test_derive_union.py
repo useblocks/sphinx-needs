@@ -793,30 +793,119 @@ Own function
 @pytest.mark.parametrize(
     "test_app", [_project(CONF_OWN_FUNCTION, INDEX_OWN_FUNCTION)], indirect=True
 )
-def test_a_union_cannot_read_a_member_computed_after_the_built_ins(test_app):
-    """Your own functions run after the built-in ones of their step, a union's rule
-    included, and so does a built-in call whose filter cannot be read (it names
-    ``needs``): a union over a member one of them computes cannot be computed. It is
-    one ``needs.derive_scope`` and holds no links, while ``copy`` still copies the
-    call. A known limit of this release, documented beside the deprecation."""
+def test_a_union_reads_a_member_computed_after_the_built_ins(test_app):
+    """Your own functions run after the built-in ones of their step, and so does a
+    built-in call whose filter cannot be read (it names ``needs``); a union over a
+    member one of them computes is computed after them, so it holds the member's
+    links -- and, with ``copy``, the copied call's in ``links`` too -- with no
+    ``needs.derive_scope``. On the needs whose members are all built-in the union
+    is computed with the built-ins, as before."""
     app = test_app
     app.build()
-    warnings = build_warnings(app)
-    assert [w for w in warnings if "derive_scope" in w] == [
-        "<srcdir>/index.rst:10: WARNING: derive rule 'union' for option 'all_links' "
-        "read 'links' on need 'SPEC_1' and 'blocks' on need 'SPEC_1' before they were "
-        "computed: they are computed by your own function 'my_links', which runs "
-        "after the built-in functions [needs.derive_scope]",
-        "<srcdir>/index.rst:15: WARNING: derive rule 'union' for option 'all_flt' "
-        "read 'flt' on need 'SPEC_2' before it was computed: it is computed by a "
-        "call whose filter cannot be read, which runs after the other built-in "
-        "functions [needs.derive_scope]",
-    ]
+    assert [w for w in build_warnings(app) if "derive_scope" in w] == []
     needs = _built(app)["needs"]
     assert needs["SPEC_1"]["links"] == ["REQ_1", "REQ_2"]
-    assert needs["SPEC_1"]["all_links"] == []
+    assert needs["SPEC_1"]["all_links"] == ["REQ_1", "REQ_2"]
+    assert needs["REQ_2"]["all_links_back"] == ["SPEC_1"]
     assert needs["SPEC_2"]["flt"] == ["REQ_1"]
-    assert needs["SPEC_2"]["all_flt"] == []
+    assert needs["SPEC_2"]["all_flt"] == ["REQ_1"]
+    assert needs["REQ_1"]["all_flt_back"] == ["SPEC_2"]
+
+
+CONF_READ_AFTER_LAST = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+
+
+def my_links(app, need, needs, *args, **kwargs):
+    return ["REQ_2"]
+
+
+def read_union(app, need, needs, *args, **kwargs):
+    return list(needs["SPEC_1"]["all_links"])
+
+
+needs_functions = [my_links, read_union]
+needs_links = {
+    "blocks": {},
+    "seen": {},
+    "via": {},
+    "late_copy": {},
+    "all_links": {"derive": {"kind": "union", "fields": ["links", "blocks"]}},
+    "again": {"derive": {"kind": "union", "fields": ["all_links"]}},
+    "where_rule": {"derive": {"kind": "links", "where": "'REQ_2' in all_links"}},
+}
+"""
+
+INDEX_READ_AFTER_LAST = """\
+Read after last
+===============
+
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Its blocks are your own function's
+   :id: SPEC_1
+   :blocks: [[my_links()]]
+   :links: REQ_1
+
+.. spec:: Reads the union
+   :id: SPEC_2
+   :via: REQ_1, [[links_from_filter("'REQ_2' in all_links")]]
+   :seen: [[read_union()]]
+   :late_copy: [[copy("all_links", filter="len(needs) > 0 and id == 'SPEC_1'")]]
+"""
+
+#: why a reader of the union computed last cannot wait for it
+_AFTER_LAST = (
+    "reads 'all_links' on need 'SPEC_1', a union computed at the end of the link "
+    "fields' step, after the members that your own functions or calls whose filter "
+    "cannot be read compute"
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(CONF_READ_AFTER_LAST, INDEX_READ_AFTER_LAST)],
+    indirect=True,
+)
+def test_a_union_computed_last_and_its_readers(test_app):
+    """A union over a member your own function computes is computed after it, and a
+    union of that union after that. A built-in call or rule of the link fields' step
+    reading it cannot wait for it: it is not run, holds its placeholder (its written
+    links), and is one ``needs.derive_scope`` -- on every need computing a ``links``
+    rule, which reads the union of every need; a call computed last that records its
+    reads (``copy`` whose filter names ``needs``) reports its read the same way.
+    Your own function reading it runs before it, and sees it empty: the trade-off
+    documented in the dynamic functions' order."""
+    app = test_app
+    app.build()
+    rule = "WARNING: derive rule 'links' for option 'where_rule' " + _AFTER_LAST
+    left = ": the rule is not run and the field is left empty [needs.derive_scope]"
+    assert [w for w in build_warnings(app) if "derive_scope" in w] == [
+        f"<srcdir>/index.rst:4: {rule}{left}",
+        f"<srcdir>/index.rst:7: {rule}{left}",
+        f"<srcdir>/index.rst:10: {rule}{left}",
+        "<srcdir>/index.rst:15: WARNING: dynamic function 'links_from_filter' for "
+        f"option 'via' {_AFTER_LAST}: the call is not run and the field keeps only its "
+        "written items [needs.derive_scope]",
+        f"<srcdir>/index.rst:15: {rule}{left}",
+        "<srcdir>/index.rst:15: WARNING: dynamic function 'copy' for option "
+        "'late_copy' read 'all_links' on need 'SPEC_1' before it was computed: it is "
+        "a union computed at the end of the link fields' step, after the members that "
+        "your own functions or calls whose filter cannot be read compute "
+        "[needs.derive_scope]",
+    ]
+    needs = _built(app)["needs"]
+    assert needs["SPEC_1"]["all_links"] == ["REQ_1", "REQ_2"]
+    assert needs["SPEC_1"]["again"] == ["REQ_1", "REQ_2"]
+    assert needs["SPEC_2"]["via"] == ["REQ_1"]
+    assert needs["SPEC_2"]["seen"] == []
+    assert needs["SPEC_2"]["late_copy"] == []
+    assert all(need["where_rule"] == [] for need in needs.values())
 
 
 CONF_HTML = """\

@@ -21,7 +21,10 @@ in the same stratum): it reads nothing, so it is on no cycle, and holds its
 placeholder too. Your own functions read what they like, so they are
 computed after every built-in node of their stratum, in ``(need id, field)`` order;
 so is a built-in call whose filter cannot be read (it names ``needs``, or reads
-``current_need`` by a key that is not written out).
+``current_need`` by a key that is not written out). A ``union`` a member of which is
+computed so is computed after them, and a union of such a union after it; a built-in
+node of the stratum reading such a union cannot wait for it: it reads nothing, and
+holds its placeholder.
 
 Nothing here touches Sphinx: the module only reads the needs and the call texts,
 and returns the order to compute them in, which ``resolve_functions`` follows.
@@ -37,7 +40,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Final, TypeVar
 
-from sphinx_needs.derive import DeriveCall
+from sphinx_needs.derive import DeriveCall, is_union
 from sphinx_needs.functions.common import (
     calc_sum,
     check_linked_values,
@@ -335,12 +338,15 @@ class OutOfScope:
         while their field is computed in the same stratum.
     :ivar linked: The back links and dead-link flags read on every need the reader's
         own ``links`` name, while those are computed in the same stratum.
+    :ivar unions: The ``(name, need id)`` reads of unions computed after the nodes
+        computed last in the stratum (:attr:`Stratum.after_last`).
     """
 
     what: str
     reads: tuple[tuple[str, str], ...] = ()
     selectors: tuple[str, ...] = ()
     linked: tuple[str, ...] = ()
+    unions: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(slots=True)
@@ -958,11 +964,16 @@ class Step:
 
 @dataclass(slots=True)
 class Stratum:
-    """The nodes of one stratum, what each reads, and the steps to compute them in."""
+    """The nodes of one stratum, what each reads, and the steps to compute them in.
+
+    :ivar after_last: The unions computed after the nodes computed last, as a member
+        of each is one of them (or such a union).
+    """
 
     stratum: int
     reads: dict[Node, NodeReads]
     steps: list[Step]
+    after_last: frozenset[Node] = frozenset()
 
 
 def build_stratum(project: Project, stratum: int) -> Stratum:
@@ -970,12 +981,22 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
 
     Called once the strata before it are computed, so the values a node's selectors
     and links name are final.
+
+    The built-in nodes come first, each after what it reads; then the nodes computed
+    last (your own functions, the calls whose filter cannot be read), in
+    ``(need id, field)`` order; then the unions reading one of those, each after the
+    unions it reads (:func:`_unions_after_last`). A built-in node reading such a union
+    is a sink (:func:`_sink_union_readers`).
     """
     reads = {
         node: project.node_reads(node, stratum)
         for node in project.stratum_nodes(stratum)
     }
-    built_in = [node for node, r in reads.items() if not r.last]
+    after_last = _unions_after_last(project, reads)
+    moved = frozenset(after_last)
+    if moved:
+        _sink_union_readers(project, reads, moved)
+    built_in = [node for node, r in reads.items() if not r.last and node not in moved]
     last = [node for node, r in reads.items() if r.last]
     by_field: dict[str, list[Node]] = {}
     for node in built_in:
@@ -1050,7 +1071,99 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
             )
         )
     steps.extend(Step((node,)) for node in sorted(last))
-    return Stratum(stratum, reads, steps)
+    steps.extend(Step((node,)) for node in after_last)
+    return Stratum(stratum, reads, steps, moved)
+
+
+def _unions_after_last(project: Project, reads: Mapping[Node, NodeReads]) -> list[Node]:
+    """The unions of a stratum computed after its nodes computed last, in order.
+
+    A union reads its own need's members, each known before the stratum runs: one a
+    member of which is computed last (your own function, a call whose filter cannot be
+    read) is computed after those, and so is a union reading such a union, after it.
+    Each comes after the unions it reads, else in ``(need id, field)`` order. A link
+    type of another kind is not moved: what it reads is other needs' values.
+    """
+    late = {node for node, r in reads.items() if r.last}
+    if not late:
+        return []
+    pending = [
+        node
+        for node, r in reads.items()
+        if not r.sink
+        and not r.last
+        and (call := project.rules.get(node)) is not None
+        and is_union(call.rule)
+    ]
+    moved: set[Node] = set()
+    grew = True
+    while grew:
+        grew = False
+        rest = []
+        for node in pending:
+            if any(dep in late or dep in moved for dep in reads[node].deps):
+                moved.add(node)
+                grew = True
+            else:
+                rest.append(node)
+        pending = rest
+    order: list[Node] = []
+    done: set[Node] = set()
+    remaining = sorted(moved)
+    while remaining:
+        ready = [
+            node
+            for node in remaining
+            if all(dep not in moved or dep in done for dep in reads[node].deps)
+        ]
+        # a union naming itself, or two naming each other, is refused at load: some
+        # union is always ready
+        assert ready, "the unions computed last read each other"
+        order.extend(ready)
+        done.update(ready)
+        remaining = [node for node in remaining if node not in done]
+    return order
+
+
+def _sink_union_readers(
+    project: Project, reads: Mapping[Node, NodeReads], moved: Collection[Node]
+) -> None:
+    """Make each built-in node of the stratum that reads a union in ``moved`` a sink.
+
+    It is computed before the nodes computed last, so it cannot wait for the union:
+    it reads nothing and holds its placeholder, as a node reading what its stratum
+    cannot wait for, and says so (``OutOfScope.unions``). A read through a column
+    counts when one of the column's members is such a union. A node reading the sink
+    reads its placeholder, which is final.
+    """
+    by_field: dict[str, list[Node]] = {}
+    for node in sorted(moved):
+        by_field.setdefault(node[1], []).append(node)
+    for node, node_reads in reads.items():
+        if node in moved or node_reads.sink or node_reads.last:
+            continue
+        found: dict[tuple[str, str], None] = {}
+        for dep in node_reads.deps:
+            if dep in moved:
+                found[(dep[1], dep[0])] = None
+        for column, _ in node_reads.columns:
+            members = (
+                by_field.get(column.field, [])
+                if column.candidates is None
+                else [
+                    (need_id, column.field)
+                    for need_id in project.sum_candidates(column.candidates)
+                    if (need_id, column.field) in moved
+                ]
+            )
+            for need_id, name in members:
+                found[(name, need_id)] = None
+        if found:
+            node_reads.scope = [
+                OutOfScope(node_reads.what, unions=tuple(sorted(found)))
+            ]
+            node_reads.deps = ()
+            node_reads.columns = ()
 
 
 def _column_on_cycle(

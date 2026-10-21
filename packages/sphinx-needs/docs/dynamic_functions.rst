@@ -394,7 +394,9 @@ They read the values the built-in functions computed
 a built-in function that reads a field your own function computes
 reads it before it is computed, which is reported (:ref:`needs_derive_scope`).
 A function of your own in a link field, such as sphinx-test-reports' ``tr_link``, runs at the end of step 2,
-so its links are in the back links of step 3
+so its links are in the back links of step 3,
+and a :ref:`union <needs_derive_union>` over its link type is computed after it, last in step 2
+(a built-in function reading that union in step 2 is reported, and your own functions read it empty)
 (its nearest built-in form is :ref:`links_from_match`, ordered as the other built-in functions are:
 see :ref:`needs_derive_join`).
 A later release is to let a function declare what it reads, which will order it like a built-in one.
@@ -461,7 +463,11 @@ These reads are reported as ``needs.derive_scope``:
   and its field keeps the items written in it (a link or array field) or is left empty;
 - a ``needextend`` filter that names a field a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes:
   the filter sees the value from before it is computed, once for each ``needextend`` carrying it;
-- a built-in function that reads a field your own function computes, before it is computed.
+- a built-in function that reads a field your own function computes, before it is computed;
+- a built-in function or rule of step 2 that reads a :ref:`union <needs_derive_union>`
+  over a link type your own function, or a call whose filter cannot be read, computes:
+  the union is computed after them, at the end of step 2,
+  so the call is not run, and its field keeps the links written in it.
 
 A field whose call is not run reads nothing, so it is on no cycle; a value computed from it reads what it holds.
 The last case is found as the call runs: the built-in functions note each field they read,

@@ -977,8 +977,9 @@ Each configured link can define:
      ``blocks`` were copied; a dead link of ``blocks`` is reported once, under ``blocks`` and as it allows dead links,
      where the copy reported it under ``links`` too;
      and a ``blocks`` filled by one of your own :ref:`functions <needs_functions>`, or by a call whose filter cannot be
-     read (a ``links_from_filter`` whose filter names ``needs``), cannot be read by the union
-     (``needs.derive_scope``, the union holding no links), where the copy copied the call: keep ``copy`` for it.
+     read (a ``links_from_filter`` whose filter names ``needs``), is read by a union computed after it,
+     at the end of the link fields' step, so a built-in function or rule reading ``all_links`` in that step cannot wait
+     for it (``needs.derive_scope``), where it could read the copies in ``links``.
      The readers that take only ``links`` (:ref:`needs_derive_union`) read no union in this release:
      a project that relies on them keeps ``copy`` until 10.0, and the warning with it
      (``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation).
