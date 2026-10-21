@@ -43,9 +43,21 @@ CONSTANTS = ['"x"', '""', "0", "-5", "1.5", "None", '("x")', "+5", 'b"x"']
 #: not).
 INDENTED = [" 1", '\t"x"', ' "x"']
 
-#: A display, whatever it holds, and an f-string with no placeholder: each is true or
-#: false on every need alike, as a literal is.
-DISPLAYS = ['status == "open",', "[1]", '("x",)', "{}", "[]", "()", 'f"x"', 'f""']
+#: A display that unpacks nothing, whatever it holds, a generator expression and an
+#: f-string with no placeholder: each is true or false on every need alike, as a
+#: literal is.
+DISPLAYS = [
+    'status == "open",',
+    "[1]",
+    '("x",)',
+    "{1}",
+    "{}",
+    "[]",
+    "()",
+    "(t for t in tags)",
+    'f"x"',
+    'f""',
+]
 
 #: Filters that are no bare constant: each is read for its truth, none is refused.
 NOT_CONSTANTS = [
@@ -67,7 +79,10 @@ NOT_CONSTANTS = [
     "[t for t in tags]",
     "{t for t in tags}",
     "{t: 1 for t in tags}",
-    "(t for t in tags)",
+    "[*tags]",
+    "(*tags,)",
+    "{*tags}",
+    "{**var}",
     'f"{status}"',
     "set()",
     " tags",

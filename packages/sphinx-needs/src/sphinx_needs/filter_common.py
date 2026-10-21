@@ -337,14 +337,17 @@ def _is_constant_filter(filter_string: str) -> bool:
     A filter is read for its truth, need by need, and a constant has the same truth on
     every need, so it says nothing about one: a literal (``"x"``, ``0``, ``1.5``,
     ``None``, ``b"x"``, ``...``), a number with one sign (``-5``, ``+5``), a tuple,
-    list, set or dict display whatever it holds (``[1]``, ``{}``, ``("x",)``, and so
-    the trailing-comma typo ``status == "open",``), or an f-string with no placeholder
-    (``f"x"``), parenthesised or not. Such a filter is reported, once, before any tier
-    runs, and selects nothing. ``True`` and ``False`` are the exception: they are the
-    spelling of "every need" and "no need". A constant inside a larger filter
-    (``True and owner``) is an operand like any other, and so is a constant
-    expression (``-True``, ``--5``, ``not 1``, ``1 == 1``); a comprehension and an
-    f-string with a placeholder are read by their truth, as any filter is.
+    list, set or dict display with no unpacking, whatever it holds (``[1]``, ``{1}``,
+    ``{}``, ``("x",)``, and so the trailing-comma typo ``status == "open",``), a
+    generator expression (``(t for t in tags)``, a generator object, true whatever it
+    would yield), or an f-string with no placeholder (``f"x"``), parenthesised or not.
+    Such a filter is reported, once, before any tier runs, and selects nothing.
+    ``True`` and ``False`` are the exception: they are the spelling of "every need" and
+    "no need". A constant inside a larger filter (``True and owner``) is an operand like
+    any other, and so is a constant expression (``-True``, ``--5``, ``not 1``,
+    ``1 == 1``); a display that unpacks (``[*tags]``, ``{**x}``), a list, set or dict
+    comprehension and an f-string with a placeholder depend on the need, and are read
+    by their truth, as any filter is.
 
     Leading spaces and tabs are read past, as Python's ``eval`` reads past them.
     It is decided by the string alone, once per string: the engine's tiers ask it on
@@ -362,8 +365,14 @@ def _is_constant_filter(filter_string: str) -> bool:
             and isinstance(node.value, int | float | complex)
             and not isinstance(node.value, bool)
         )
-    if isinstance(node, ast.Tuple | ast.List | ast.Set | ast.Dict):
-        # a display, whatever its items: true when it holds any, on every need
+    if isinstance(node, ast.Tuple | ast.List | ast.Set):
+        # a display holds as many items on every need, unless it unpacks one
+        return not any(isinstance(item, ast.Starred) for item in node.elts)
+    if isinstance(node, ast.Dict):
+        # a None key is a ** unpack
+        return None not in node.keys
+    if isinstance(node, ast.GeneratorExp):
+        # a generator object is true, whatever it would yield
         return True
     if isinstance(node, ast.JoinedStr):
         # an f-string with no placeholder is a string

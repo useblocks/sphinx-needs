@@ -54,14 +54,15 @@
 #     `expected` pins
 #   - an entry with `tier = "refused"` is a filter that is a constant alone: a literal (a
 #     string, bytes, a number with one sign or none, None or `...`), a tuple, list, set or
-#     dict display whatever it holds, or an f-string with no placeholder, parenthesised or
-#     not, after any leading spaces and tabs. `--5` and `-True` are arithmetic, a
-#     comprehension and an f-string with a placeholder are read by their truth, and `True`
-#     and `False` are no constant: they select every need and none. A constant says
-#     nothing about a need, so every tool refuses it before evaluating it: it selects
-#     nothing and is reported once, and `error = "filter"` is required with it. ubCode's
-#     runner asserts that its engine refuses it (a parse refusal is that report), unless
-#     the entry carries `divergent`
+#     dict display that unpacks nothing, whatever it holds, a generator expression (true
+#     whatever it would yield), or an f-string with no placeholder, parenthesised or not,
+#     after any leading spaces and tabs. `--5` and `-True` are arithmetic, a display that
+#     unpacks (`[*tags]`), a list, set or dict comprehension and an f-string with a
+#     placeholder are read by their truth, and `True` and `False` are no constant: they
+#     select every need and none. A constant says nothing about a need, so every tool
+#     refuses it before evaluating it: it selects nothing and is reported once, and
+#     `error = "filter"` is required with it. ubCode's runner asserts that its engine
+#     refuses it (a parse refusal is that report), unless the entry carries `divergent`
 #   - every other entry is inside the language. `tier = "index"` or `tier = "fast"` pins
 #     which of sphinx-needs' two earlier tiers answers it; `reason` (with `tier = "eval"`)
 #     pins the construct sphinx-needs' debug report names. ubCode's runner ignores those
@@ -893,7 +894,7 @@ reason = "call:search"
 filter = 'search( "@", title)'
 expected = ["REQ_001"]
 why = "a space inside the call's parentheses is a Python expression's"
-divergent = { ubcode = "refused when the filter is parsed: no space is allowed inside a call's parentheses" }
+divergent = { ubcode = "refused when the filter is parsed: no space is allowed after a call's opening parenthesis" }
 
 [[case.filters]]
 filter = 'search("(d)\\1", title)'
@@ -1309,7 +1310,7 @@ tier = "index"
 
 [[case]]
 name = "constants"
-why = "a filter that is a constant alone -- a literal, a number with one sign, a display whatever it holds, an f-string with no placeholder, parenthesised or not -- says nothing about a need: it is refused before any tier answers it, selects nothing and is reported once; True and False alone are no such constant (see logic), a constant inside a larger filter is an operand, and a constant expression or a comprehension is read by its truth (#2355)"
+why = "a filter that is a constant alone -- a literal, a number with one sign, a display that unpacks nothing, a generator expression, an f-string with no placeholder, parenthesised or not -- says nothing about a need: it is refused before any tier answers it, selects nothing and is reported once; True and False alone are no such constant (see logic), a constant inside a larger filter is an operand, and a constant expression or a comprehension is read by its truth (#2355)"
 config = '''
 [needs]
 '''
@@ -1431,6 +1432,13 @@ expected = []
 error = "filter"
 tier = "refused"
 why = "an f-string with no placeholder is a string"
+
+[[case.filters]]
+filter = '(t for t in tags)'
+expected = []
+error = "filter"
+tier = "refused"
+why = "a generator expression is a generator object, true whatever it would yield"
 
 [[case.filters]]
 filter = ' "x"'
