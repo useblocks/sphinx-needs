@@ -45,6 +45,14 @@ Improvements
   did.
   See :ref:`needs_derive_scope`.
 
+  Upgrading: a project whose built-in functions or rules read what its own functions compute, or what a call whose
+  filter cannot be read computes, may see new ``needs.derive_scope`` warnings where its values were silently wrong,
+  and a build with ``-W`` fails on them. Declare such a function's reads (:ref:`dynamic_functions_reads`) to have it
+  computed in order and its readers hold its values; for ``tr_link``, upgrade sphinx-test-reports to its release
+  that declares them. A reader then holds every value it selects, which can make a build slower and, for a ``links``
+  rule selecting many needs, report ``needs.derive_dense``. ``suppress_warnings = ["needs.derive_scope"]`` silences
+  the new warnings meanwhile, with every other scope finding.
+
 - ⚡️ A filter string in the portable filter language is evaluated without Python's ``eval``, five to six times
   faster, for the whole language; a conformance corpus defines it and pins its answers (:issue:`2346`, :pr:`2350`)
 
