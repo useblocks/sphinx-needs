@@ -286,7 +286,8 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
                 kind,
                 f"{prefix}: 'types' is not a role; a rule for some need types is "
                 "declared in those need types' own entries (a derive under the type's "
-                "fields or links)",
+                "fields or links), or under derive_by_type for a type an extension "
+                "adds",
             )
         return DeriveInvalid(kind, f"{prefix}: {unknown[0]!r} is not a role")
     if on_link and kind not in LINK_KINDS:

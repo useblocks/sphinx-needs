@@ -277,6 +277,8 @@ which is how a default type gets a field declaration or a rule of its own:
 
 Beside an entry giving a ``title`` or a ``prefix``, the list given is the project's need types, as without such entries:
 an entry naming a default type with neither is that default, filled, at its own position, and the other defaults do not exist.
+A bare entry is filled from the default type, never from another entry naming the same directive:
+in a list naming the directive twice, the later entry is used, as for any directive declared twice (and reported).
 A need type an extension or a service adds is not narrowed this way:
 an entry for it gives its ``title`` and ``prefix``, which then replace the extension's.
 

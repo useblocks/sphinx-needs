@@ -159,7 +159,8 @@ COPY = DeriveRule(kind="copy", field="hours")
                     "copy",
                     "kind 'copy': 'types' is not a role; a rule for some need types "
                     "is declared in those need types' own entries (a derive under the "
-                    "type's fields or links)",
+                    "type's fields or links), or under derive_by_type for a type an "
+                    "extension adds",
                 )
             },
             [
@@ -167,7 +168,8 @@ COPY = DeriveRule(kind="copy", field="hours")
                     "derive_by_type.req",
                     "kind 'copy': 'types' is not a role; a rule for some need types "
                     "is declared in those need types' own entries (a derive under the "
-                    "type's fields or links)",
+                    "type's fields or links), or under derive_by_type for a type an "
+                    "extension adds",
                 )
             ],
             id="entry-invalid",
@@ -580,7 +582,7 @@ def test_the_load_checks_in_their_order(test_app: Any) -> None:
             "types_role",
             "kind 'sum': 'types' is not a role; a rule for some need types is "
             "declared in those need types' own entries (a derive under the type's "
-            "fields or links)",
+            "fields or links), or under derive_by_type for a type an extension adds",
         ),
         _by_type("unknown_type", "'epic' is not a need type; the entry is ignored"),
         _beside("variant_default", "'default'", default=True),
