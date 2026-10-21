@@ -375,6 +375,66 @@ def test_what_a_declaration_cannot_order(test_app):
     assert needs["SPEC_3"]["blocks"] == needs["SPEC_3"]["via"] == ["REQ_1"]
 
 
+# -- a need.<field> argument computed in the same step ------------------------------
+
+CONF_ARGUMENT = """\
+from sphinx_needs.api import reads
+
+extensions = ["sphinx_needs"]
+needs_build_json = True
+suppress_warnings = ["config.cache"]
+needs_fields = {{k: {{"nullable": True}} for k in ("status2", "out", "out2")}}
+
+
+{declare}
+def tagged(app, need, needs, value, target):
+    # value is data; target names the field read on every need
+    return f"{{value}}:{{sum(1 for n in needs.values() if n.get(target))}}"
+
+
+@reads(lambda value: {{"own": [value]}})
+def uses(app, need, needs, value):
+    return need.get(value)
+
+
+needs_functions = [tagged, uses]
+"""
+
+INDEX_ARGUMENT = """\
+Argument
+========
+
+.. spec:: A
+   :id: SPEC_1
+   :status2: [[copy("title")]]
+   :out: [[tagged(need.status2, "status2")]]
+   :out2: [[uses(need.status2)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        pytest.param(
+            _project(CONF_ARGUMENT.format(declare=declare), INDEX_ARGUMENT), id=name
+        )
+        for name, declare in (("declared", '@reads(every="target")'), ("plain", ""))
+    ],
+    indirect=True,
+)
+def test_a_need_argument_computed_in_the_same_step_is_waited_for(test_app):
+    """``need.status2`` is data the call is given, computed by a built-in call of the
+    same step: the declared call is computed after it, so it holds what it held
+    undeclared. A declaration that needs the argument's value (``uses``, whose
+    argument names the field it reads) cannot be applied before the value is known:
+    that call is computed after the built-in functions, as undeclared, unreported."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    need = _built(app)["SPEC_1"]
+    assert (need["status2"], need["out"], need["out2"]) == ("A", "A:1", None)
+
+
 # -- the decorator itself ----------------------------------------------------------
 
 
@@ -423,3 +483,13 @@ def test_reads_refuses_what_it_cannot_declare(arguments, message):
     spec = arguments.pop("spec", None)
     with pytest.raises(ValueError, match=message):
         reads(spec, **arguments)(mine) if spec is None else reads(spec, **arguments)
+
+
+def test_reads_without_parentheses_is_refused():
+    """``@reads`` alone would take the function for its spec and replace it: refused."""
+
+    def mine(app, need, needs, option):
+        return None
+
+    with pytest.raises(TypeError, match=r"write @reads\(\) with parentheses"):
+        reads(mine)

@@ -56,13 +56,14 @@ class Watch:
 #: the watch open, if any
 current: Watch | None = None
 
-_GETITEM = NeedItem.__getitem__
+#: the ``NeedItem.__getitem__`` the open watch replaced, which a read still calls
+_getitem: Callable[[NeedItem, str], Any] = NeedItem.__getitem__
 
 
 def _watched_getitem(self: NeedItem, key: str) -> Any:
     if (watch := current) is not None and watch.active and key in watch.names:
         watch.notify(self._core["id"], key)
-    return _GETITEM(self, key)
+    return _getitem(self, key)
 
 
 def _set_getitem(getitem: Callable[[NeedItem, str], Any]) -> None:
@@ -86,17 +87,19 @@ def watching(
     :param names: The names worth passing on: a read of any other is not.
     :param replayed: What reads recorded for an earlier call are passed to at once.
     """
-    global current
+    global current, _getitem
     assert current is None, "a watch is already open"
     current = watch = Watch(
         on_read, active=not filters_only, names=names, replayed=replayed
     )
+    # the one in place now, which an extension or a test may have replaced since import
+    _getitem = previous = vars(NeedItem)["__getitem__"]
     _set_getitem(_watched_getitem)
     try:
         yield watch
     finally:
         current = None
-        _set_getitem(_GETITEM)
+        _set_getitem(previous)
 
 
 @contextmanager

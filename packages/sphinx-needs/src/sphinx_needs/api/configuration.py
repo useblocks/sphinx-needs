@@ -370,9 +370,17 @@ def reads(
     :return: The decorator, which returns the function it is given, declared.
     :raises ValueError: If both ``spec`` and ``own`` or ``every`` are given, or a name
         is not a parameter of the function.
+    :raises TypeError: If ``spec`` is a dynamic function itself (its parameters start
+        ``app, need, needs``): ``@reads`` written without parentheses.
 
     .. versionadded:: 9.1.0
     """
+    if spec is not None and _is_dynamic_function(spec):
+        raise TypeError(
+            f"reads was given the function {getattr(spec, '__name__', spec)!r} to "
+            "declare: write @reads() with parentheses, or give the reads (a spec, own "
+            "or every)"
+        )
     own_names = (own,) if isinstance(own, str) else tuple(own)
     every_names = (every,) if isinstance(every, str) else tuple(every)
     if spec is not None and (own_names or every_names):
@@ -387,6 +395,16 @@ def reads(
         return function
 
     return declare
+
+
+def _is_dynamic_function(spec: Callable[..., Any]) -> bool:
+    """Whether a callable takes ``app, need, needs`` first, as a dynamic function does,
+    not a call's arguments as a spec does."""
+    try:
+        parameters = list(inspect.signature(spec).parameters)
+    except (TypeError, ValueError):
+        return False
+    return parameters[:_LEADING] == ["app", "need", "needs"]
 
 
 def _by_parameters(

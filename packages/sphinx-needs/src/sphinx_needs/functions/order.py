@@ -19,11 +19,11 @@ field is empty). Nor is a node that reads what its stratum cannot wait for (a li
 field's call reading another field or a back link, a ``need.<field>`` selector computed
 in the same stratum): it reads nothing, so it is on no cycle, and holds its
 placeholder too. Your own functions read what they like, so they are
-computed after every built-in node of their stratum, in ``(need id, field)`` order --
-unless the function declares what it reads (:class:`Declared`): such a call is a node
-like a built-in one, after what it declares and before its readers; so is a built-in
-call whose filter cannot be read (it names ``needs``, or reads
-``current_need`` by a key that is not written out). A ``union`` a member of which is
+computed after every built-in node of their stratum, in ``(need id, field)`` order, and
+so is a built-in call whose filter cannot be read (it names ``needs``, or reads
+``current_need`` by a key that is not written out). A function that declares what it
+reads (:class:`Declared`) is not: its call is a node like a built-in one, after what it
+declares and before its readers. A ``union`` a member of which is
 computed so is computed among them right after the last such member, and a union of
 such a union after it: a node computed last after it reads it complete, one before it
 reads it empty. A built-in node of the stratum reading such a union cannot wait for
@@ -967,6 +967,23 @@ def _declaration(
     return own, every, named
 
 
+class _Unknown:
+    """The value of a ``need.<field>`` argument computed in the same stratum, as a
+    declaration is called with it: not known yet, so any use of it fails, and the
+    declaration then cannot be applied to the call."""
+
+    __slots__ = ()
+
+    def _refuse(self, *args: Any) -> Any:
+        raise TypeError("the argument's value is computed in the same step")
+
+    __str__ = __bool__ = __iter__ = __len__ = __format__ = __lt__ = _refuse
+
+
+#: the one :class:`_Unknown`
+_UNKNOWN: Final = _Unknown()
+
+
 class _DeclaredReads(_CallReads):
     """The reads of one call of a function that declares what it reads.
 
@@ -974,8 +991,10 @@ class _DeclaredReads(_CallReads):
     replaced by its value, and its reads are filed as a built-in call's are: a field of
     its own need or of a need it names is a dependency (or out of scope, after the
     stratum), a field on every need a column. A ``need.<field>`` argument is a read of
-    its own need, and must be final before the stratum, as a selector of a built-in
-    call must: one computed in the same stratum blocks the call.
+    its own need too: one computed in the same stratum is a dependency, and the
+    declaration is called with a value that refuses every use (:class:`_Unknown`). A
+    declaration that uses it cannot be applied, and the call is computed last, as one
+    of a function declaring nothing -- unreported, as the declaration is not at fault.
     """
 
     def apply(self, spec: Callable[..., Any], position: int) -> bool:
@@ -989,7 +1008,7 @@ class _DeclaredReads(_CallReads):
         """
         assert isinstance(self.call, DynamicFunctionParsed), "a call"
         call = self.call
-        blocking: list[str] = []
+        unknown: list[str] = []
         arguments: list[Node] = []
 
         def value(argument: Any) -> Any:
@@ -998,29 +1017,27 @@ class _DeclaredReads(_CallReads):
             attr = argument.name
             arguments.append((self.need.id, self.project.field_of(attr)))
             if self.project.computed_in(self.need.id, attr) == self.stratum:
-                blocking.append(f"need.{attr}")
-                return None
+                unknown.append(attr)
+                return _UNKNOWN
             if not self.project.final_on(self.need.id, attr, self.stratum):
-                self._read(self.need.id, attr)
-                return None
+                return None  # read below: out of scope
             return self.need.get(attr)
 
         args = [value(argument) for argument in call.args]
         kwargs = {key: value(argument) for key, argument in call.kwargs}
-        if blocking:
-            self.reads.scope = _appended(
-                self.reads.scope, OutOfScope(self.what, selectors=tuple(blocking))
-            )
-            return True
         try:
             declared = _declaration(spec(*args, **kwargs))
         except Exception as err:
             declared = f"it raised {type(err).__name__}: {err}"
         if isinstance(declared, str):
-            self.project.refused.setdefault(
-                call.name, ((self.need.id, self.field), declared)
-            )
+            if not unknown:
+                self.project.refused.setdefault(
+                    call.name, ((self.need.id, self.field), declared)
+                )
             return False
+        # the call's arguments, then what it declares
+        for _, name in arguments:
+            self._read(self.need.id, name)
         own, every, named = declared
         for name in own:
             self._read(self.need.id, name)

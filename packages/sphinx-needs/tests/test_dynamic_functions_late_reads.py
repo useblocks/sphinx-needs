@@ -348,9 +348,10 @@ def test_your_own_functions_reading_later_values_are_reported(test_app):
     read), a call whose filter cannot be read after it (``o``), a value of a later
     step (``SPEC_3``'s ``o`` in a link field reads ``ref``). A function computing a
     field on several needs is one warning naming them all (``scan``). A function
-    that declares what it reads is reported for every read of a computed value it
-    does not declare, computed yet or not (``under``), and for none of a value
-    nothing computes (``under_final``). The values are what they were."""
+    that declares what it reads is reported for every read of a value of its own step
+    it does not declare (``under``'s ``b``), and for none of an earlier step's value,
+    final (``under``'s ``via``), nor of a value nothing computes (``under_final``).
+    The values are what they were."""
     app = test_app
     app.build()
     later = (
@@ -375,10 +376,10 @@ def test_your_own_functions_reading_later_values_are_reported(test_app):
         _scope(
             INDEX_OWN,
             "SPEC_1",
-            "dynamic function 'under' for option 'f' read 'b' on need 'SPEC_9' and "
-            "'via' on need 'SPEC_1', which are computed in the pass and not among the "
-            "reads 'under' declares: the call is not ordered after them, and may read "
-            "them before they are computed; declare them among its reads",
+            "dynamic function 'under' for option 'f' read 'b' on need 'SPEC_9', which "
+            "is computed in its step and not among the reads 'under' declares: the call "
+            "is not ordered after it, and may read it before it is computed; declare it "
+            "among its reads",
         ),
         *(
             _scope(
@@ -528,3 +529,155 @@ def test_a_step_without_a_late_call_watches_nothing(test_app, monkeypatch):
     assert build_warnings(app) == []
     assert opened == []
     assert _built(app)["REQ_2"]["via"] == ["REQ_1"]
+
+
+# -- one report per read, one cause per warning, the names noted -------------------
+
+CONF_ONCE = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+suppress_warnings = ["config.cache"]
+needs_links = {"via": {}, "via2": {}, "opq": {}, "r_fast": {}, "r_eval": {}}
+needs_fields = {
+    "hours": {"schema": {"type": "integer"}, "nullable": True},
+    "s_both": {"schema": {"type": "number"}, "nullable": True},
+    "c_both": {"nullable": True},
+    "clv_both": {"nullable": True},
+    "a": {"nullable": True},
+    "b": {"nullable": True},
+    "o4": {"nullable": True},
+}
+
+
+def my_hours(app, need, needs, *args, **kwargs):
+    return 5
+
+
+def my_parent(app, need, needs, *args, **kwargs):
+    return ["REQ_1"]
+
+
+def make_b(app, need, needs, *args, **kwargs):
+    return "B"
+
+
+def both(app, need, needs, *args, **kwargs):
+    return f"{needs['SPEC_9']['b']}{needs['SPEC_5']['o4']}"
+
+
+needs_functions = [my_hours, my_parent, make_b, both]
+"""
+
+INDEX_ONCE = """\
+Once
+====
+
+.. req:: One
+   :id: REQ_1
+
+.. spec:: Late feeder
+   :id: SPEC_1
+   :hours: [[my_hours()]]
+   :parent_needs: [[my_parent()]]
+   :a: [[both()]]
+
+   A :np:`(p1) part one` here.
+
+.. spec:: Readers
+   :id: SPEC_2
+   :hours: 1
+   :links: SPEC_1
+   :s_both: [[calc_sum("hours", filter="hours is None or hours >= 0")]]
+   :c_both: [[copy("hours", filter="id == 'SPEC_1' and hours is None")]]
+   :clv_both: [[check_linked_values("yes", "hours", [5], filter_string="hours is None or hours > 0")]]
+   :via: [[links_from_filter("parent_need == 'REQ_1'")]]
+   :via2: [[links_from_filter("'REQ_1' in parent_needs")]]
+   :r_fast: [[links_from_filter("is_part and 'REQ_1' in parent_needs", include_parts=True)]]
+   :r_eval: [[links_from_filter("is_part and len([p for p in parent_needs]) > 0", include_parts=True)]]
+
+.. spec:: Opaque
+   :id: SPEC_5
+   :o4: [[copy("title", filter="len(needs) > 0 and id == 'REQ_1'")]]
+
+.. spec:: Later own
+   :id: SPEC_9
+   :b: [[make_b()]]
+"""
+
+
+@pytest.mark.parametrize("test_app", [_project(CONF_ONCE, INDEX_ONCE)], indirect=True)
+def test_each_read_is_reported_once_with_its_cause(test_app):
+    """A ``copy``, ``calc_sum`` or ``check_linked_values`` whose filter reads the value
+    its option reads is one warning, the call's own, as before. ``parent_need`` is the
+    name of a computed ``parent_needs`` too. A part's own values (its links, its
+    ``parent_need``) are no read of its need, on the fast path (``r_fast``) as through
+    ``eval`` (``r_eval``). A reader of values of two causes is one warning per cause,
+    each naming its own."""
+    app = test_app
+    app.build()
+    hours = (
+        "read 'hours' on need 'SPEC_1' before it was computed: it is computed by your "
+        "own function 'my_hours', which runs after the built-in functions"
+    )
+    parent = (
+        "on need 'SPEC_1' before it was computed: it is computed by your own function "
+        "'my_parent', which runs after the built-in functions"
+    )
+    later = (
+        "after this call: your own functions, and the calls whose filter cannot be "
+        "read, run after the built-in functions, in (need id, field) order"
+    )
+    lff = "dynamic function 'links_from_filter' for option"
+    reported = [w for w in build_warnings(app) if "derive_scope" in w]
+    assert sorted(reported) == sorted(
+        [
+            *(
+                _scope(
+                    INDEX_ONCE,
+                    "SPEC_2",
+                    f"dynamic function '{f}' for option '{o}' {hours}",
+                )
+                for f, o in (
+                    ("calc_sum", "s_both"),
+                    ("copy", "c_both"),
+                    ("check_linked_values", "clv_both"),
+                )
+            ),
+            _scope(INDEX_ONCE, "SPEC_2", f"{lff} 'via' read 'parent_need' {parent}"),
+            _scope(INDEX_ONCE, "SPEC_2", f"{lff} 'via2' read 'parent_needs' {parent}"),
+            _scope(
+                INDEX_ONCE,
+                "SPEC_1",
+                "dynamic function 'both' for option 'a' read 'b' on need 'SPEC_9' before it "
+                f"was computed: it is computed by your own function 'make_b', {later}",
+            ),
+            _scope(
+                INDEX_ONCE,
+                "SPEC_1",
+                "dynamic function 'both' for option 'a' read 'o4' on need 'SPEC_5' before it "
+                f"was computed: it is computed by a call whose filter cannot be read, {later}",
+            ),
+        ]
+    )
+    needs = _built(app)
+    assert needs["SPEC_2"]["r_fast"] == needs["SPEC_2"]["r_eval"] == []
+
+
+@pytest.mark.parametrize("test_app", [_project(CONF_ONCE, INDEX_ONCE)], indirect=True)
+def test_the_watch_restores_the_getitem_it_replaced(test_app, monkeypatch):
+    """A ``NeedItem.__getitem__`` replaced after import (by an extension, a test) is
+    called while a read is watched, and is in place again after the watch."""
+    from sphinx_needs.need_item import NeedItem
+
+    original = NeedItem.__getitem__
+    calls: list[str] = []
+
+    def patched(self, key):
+        calls.append(key)
+        return original(self, key)
+
+    monkeypatch.setattr(NeedItem, "__getitem__", patched)
+    app = test_app
+    app.build()
+    assert vars(NeedItem)["__getitem__"] is patched
+    assert "b" in calls  # read by your own function ``both``, under the watch

@@ -1047,27 +1047,40 @@ def test_a_declared_read_of_a_later_step_is_out_of_scope():
     assert reads.scope == [OutOfScope("dynamic function 'mine'", (("summary", "A"),))]
 
 
-def test_a_need_argument_of_a_declared_call_must_be_final():
+def test_a_need_argument_of_a_declared_call_is_a_dependency():
     """A ``need.<field>`` argument is passed to the declaration by its value, and is a
-    read of its own need: one computed in the same step blocks the call."""
+    read of its own need: final before the stratum, its value; computed in the same
+    stratum, a dependency, and the declaration gets a value it cannot use -- one that
+    does not use it is applied, one that does leaves the call last, unreported."""
     seen: list[Any] = []
 
     def declaration(*args: Any) -> dict[str, Any]:
         seen.append(args)
         return {}
 
+    def using(value: Any) -> dict[str, Any]:
+        return {"own": [value]}
+
     project = _project(
         _need("A", summary="[[mine(need.grp)]]", grp="G"),
         _need("B", summary="[[mine(need.comment)]]", comment="[[copy('title')]]"),
-        declared={"mine": declaration},
+        _need("C", summary="[[uses(need.comment)]]", comment="[[copy('title')]]"),
+        _need("D", summary="[[mine(need.summary)]]"),
+        declared={"mine": declaration, "uses": using},
     )
     stratum = build_stratum(project, 2)
-    assert seen == [("G",)]
+    assert seen[0] == ("G",)
     declared = stratum.reads[("A", "summary")].declared
     assert [d.nodes for d in declared] == [frozenset({("A", "grp")})]
-    assert stratum.reads[("B", "summary")].scope == [
-        OutOfScope("dynamic function 'mine'", selectors=("need.comment",))
-    ]
+    b = stratum.reads[("B", "summary")]
+    assert (b.sink, b.last, b.deps) == (False, False, [("B", "comment")])
+    order = [s.nodes[0] for s in stratum.steps]
+    assert order.index(("B", "comment")) < order.index(("B", "summary"))
+    # the declaration uses the value: the call is computed last, and nothing refused
+    c = stratum.reads[("C", "summary")]
+    assert (c.last, c.declared, project.refused) == (True, (), {})
+    # its own field as an argument: a cycle
+    assert [s.nodes for s in stratum.steps if s.cycle] == [(("D", "summary"),)]
 
 
 @pytest.mark.parametrize(

@@ -1099,10 +1099,14 @@ def filter_single_need(
         if _read_watch.current is not None:
             # the names the evaluation reads, for the check of the order of the pass; the
             # need's fields are what the context does not set over them
+            not_fields = {"needs", "current_need", "search", "c", "var"}
+            not_fields.update(config.filter_data)
+            if isinstance(need, NeedPartItem):
+                # what a part sets over its need's fields (its id, its links) is
+                # no read of the need
+                not_fields.update(need._overrides)
             filter_context = _read_watch.ReadingContext(
-                filter_context,
-                need["id_parent"],
-                {"needs", "current_need", "search", "c", "var", *config.filter_data},
+                filter_context, need["id_parent"], not_fields
             )
 
         try:
