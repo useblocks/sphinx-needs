@@ -22,6 +22,7 @@ from docutils.statemachine import StringList
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs import _read_watch
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, NeedsMutable
 from sphinx_needs.debug import measure_time, measure_time_func
@@ -835,6 +836,18 @@ def filter_needs_and_parts(
     if _is_constant_filter(filter_string):
         _report_constant_filter(filter_string, location, append_warning)
         return []
+    if _read_watch.filters_watched():
+        # the check of the order of the pass sees what the filter reads
+        with _read_watch.in_filter():
+            return filter_needs_and_parts(
+                needs,
+                config,
+                filter_string,
+                current_need,
+                location=location,
+                append_warning=append_warning,
+                origin_docname=origin_docname,
+            )
 
     # === Fast path: try compiled predicate to avoid eval() entirely ===
     compiled = compile_portable(filter_string)
@@ -1030,6 +1043,18 @@ def filter_single_need(
     """
     if _is_constant_filter(filter_string):
         raise NeedsInvalidFilter(_constant_filter_message(filter_string))
+    if _read_watch.filters_watched():
+        # the check of the order of the pass sees what the filter reads
+        with _read_watch.in_filter():
+            return filter_single_need(
+                need,
+                config,
+                filter_string,
+                needs,
+                current_need,
+                filter_compiled,
+                origin_docname=origin_docname,
+            )
     var_proxy = config.variant_data_proxy
 
     # === Fast path: short-circuit simple expressions ===
@@ -1070,6 +1095,14 @@ def filter_single_need(
     filter_context["search"] = need_search
 
     filter_context["c"] = NeedCheckContext(need, origin_docname)
+    if _read_watch.current is not None:
+        # the names the evaluation reads, for the check of the order of the pass; the
+        # need's fields are what the context does not set over them
+        filter_context = _read_watch.ReadingContext(
+            filter_context,
+            need["id_parent"],
+            {"needs", "current_need", "search", "c", "var", *config.filter_data},
+        )
 
     try:
         # Set filter_context as globals and not only locals in eval()!

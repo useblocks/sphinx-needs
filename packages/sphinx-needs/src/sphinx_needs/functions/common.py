@@ -19,6 +19,7 @@ from typing import Any
 from docutils import nodes
 from sphinx.application import Sphinx
 
+from sphinx_needs import _read_watch
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.derive import (
@@ -1410,22 +1411,30 @@ def _rule_links(
     """
     assert rule.where is not None, "links has a where"
     key = ("links", rule.where, rule.include_parts)
-    found: list[tuple[NeedLink, str]] | None = None if cache is None else cache.get(key)
-    if found is None:
-        found = [
-            (
-                NeedLink(id=candidate["id_parent"], part=candidate["id"])
-                if candidate["is_part"]
-                else NeedLink(id=candidate["id"]),
-                candidate["id_parent"] if candidate["is_part"] else candidate["id"],
-            )
-            for candidate in _every_need_and_part(
-                needs, include_parts=rule.include_parts
-            )
-            if _passes(candidate, rule.where, config, None)
-        ]
+    cached: tuple[list[tuple[NeedLink, str]], list[tuple[str, str]]] | None = (
+        None if cache is None else cache.get(key)
+    )
+    if cached is None:
+        # what ``where`` read, for the check of the order of the pass: each need
+        # computing the rule reads it, though it is tested once
+        with _read_watch.recording() as read:
+            found = [
+                (
+                    NeedLink(id=candidate["id_parent"], part=candidate["id"])
+                    if candidate["is_part"]
+                    else NeedLink(id=candidate["id"]),
+                    candidate["id_parent"] if candidate["is_part"] else candidate["id"],
+                )
+                for candidate in _every_need_and_part(
+                    needs, include_parts=rule.include_parts
+                )
+                if _passes(candidate, rule.where, config, None)
+            ]
         if cache is not None:
-            cache[key] = found
+            cache[key] = (found, read)
+    else:
+        found, read = cached
+        _read_watch.replay(read)
     if rule.include_self:
         return [link for link, _ in found]
     return [link for link, owner in found if owner != need["id"]]

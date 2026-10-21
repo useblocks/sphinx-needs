@@ -11,7 +11,7 @@ from __future__ import annotations
 import ast
 import re
 from collections.abc import Callable, Container, Iterator, Mapping, Sequence
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from functools import lru_cache
@@ -22,6 +22,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.logging import suppress_logging
 
+from sphinx_needs import _read_watch
 from sphinx_needs._wording import joined
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
@@ -371,6 +372,10 @@ class UnresolvedReads:
         if isinstance(need, NeedItem) and (need.id, name) in self._pending:
             self.note(name, need.id)
 
+    def noted(self, name: str, need_id: str) -> bool:
+        """Whether ``name`` of the need ``need_id`` was noted already."""
+        return need_id in self._reads.get(name, ())
+
     def is_pending(self, need_id: str, name: str) -> bool:
         """Whether the field or link ``name`` of the need ``need_id`` is computed in the
         pass and not computed yet."""
@@ -436,7 +441,11 @@ def _one(reads: Sequence[tuple[str, Sequence[str]]]) -> bool:
 
 
 def _derive_scope_message(
-    what: str, option: str, reads: Sequence[tuple[str, Sequence[str]]], cause: str
+    what: str,
+    option: str,
+    reads: Sequence[tuple[str, Sequence[str]]],
+    cause: str,
+    on: str = "",
 ) -> str:
     """Return the ``needs.derive_scope`` message for the reads of one call.
 
@@ -449,13 +458,15 @@ def _derive_scope_message(
     :param option: The field the reader computes.
     :param reads: Each name read, with the ids of the needs it was read on, in order.
     :param cause: Why the values were not computed yet.
+    :param on: The needs the reader computes the field on, when it is more than one
+        (``" on 3 needs (A, B, C)"``).
     :raises ValueError: If there is no read.
     """
     if not reads:
         raise ValueError("no read to report")
     when = "it was" if _one(reads) else "they were"
     return (
-        f"{what} for option '{option}' read {_reads_phrase(reads)} "
+        f"{what} for option '{option}'{on} read {_reads_phrase(reads)} "
         f"before {when} computed: {cause}"
     )
 
@@ -618,6 +629,81 @@ class _Pass:
         if self.project.field_of("parent_need") == node[1]:
             self.pending.discard((node[0], "parent_need"))
 
+    def kind(self, node: Node) -> tuple[str, Sequence[str]]:
+        """Why ``node``, not computed yet, is computed after its reader, with the
+        functions that compute it.
+
+        ``"union"``, a union computed after the nodes computed last; ``"user"``, your
+        own function; ``"opaque"``, a call whose filter cannot be read; ``"later"``, a
+        value of a later stratum; ``"other"``, a read the order did not account for.
+        """
+        node_reads = self.stratum.reads.get(node) if self.stratum is not None else None
+        if self.stratum is not None and node in self.stratum.after_last:
+            return "union", ()
+        if node_reads is not None and node_reads.user_functions:
+            return "user", node_reads.user_functions
+        if node_reads is not None and node_reads.opaque:
+            return "opaque", ()
+        if self.stratum is not None and self.project.nodes.get(node, 0) > (
+            self.stratum.stratum
+        ):
+            return "later", ()
+        return "other", ()
+
+    def cause(
+        self,
+        kind: str,
+        group: Sequence[tuple[str, Sequence[str]]],
+        functions: Sequence[str],
+        *,
+        reader_last: bool = False,
+    ) -> str:
+        """Why the values of ``group`` were read before they were computed.
+
+        :param kind: What computes them (:meth:`kind`).
+        :param functions: Your own functions computing them, for ``"user"``.
+        :param reader_last: The reader is computed after the built-in functions itself
+            (your own function, or a call whose filter cannot be read).
+        """
+        subject = "it is" if _one(group) else "they are"
+        after = (
+            ", after this call: your own functions, and the calls whose filter cannot "
+            "be read, run after the built-in functions, in (need id, field) order"
+        )
+        if kind == "user":
+            names = joined([f"'{f}'" for f in functions])
+            plural = len(functions) > 1
+            computed = f"{subject} computed by your own function{'s' if plural else ''} {names}"
+            if reader_last:
+                return computed + after
+            return f"{computed}, which run{'' if plural else 's'} after the built-in functions"
+        if kind == "opaque":
+            computed = f"{subject} computed by a call whose filter cannot be read"
+            if reader_last:
+                return computed + after
+            return f"{computed}, which runs after the other built-in functions"
+        if kind == "union":
+            return (
+                f"{'it is a union' if _one(group) else 'they are unions'} computed "
+                "after your own functions and the calls whose filter cannot be read "
+                f"that fill {'its' if _one(group) else 'their'} members, after this "
+                "call"
+            )
+        if kind == "later":
+            name, ids = group[0]
+            node = (ids[0], self.project.field_of(name))
+            if self.project.nodes.get(node) == 2:
+                return f"{subject} computed after the link fields, in a later step"
+            return (
+                f"{subject} computed in the late step, after every other field "
+                "(a derive rule of the kind 'hash' or 'fingerprint', or with "
+                'after = "derived")'
+            )
+        return (
+            "the order of the pass did not account for this read; please "
+            "report this at https://github.com/useblocks/sphinx-needs/issues"
+        )
+
     def causes(
         self, reads: Sequence[tuple[str, Sequence[str]]]
     ) -> list[tuple[str, list[tuple[str, list[str]]]]]:
@@ -632,52 +718,167 @@ class _Pass:
         functions: dict[str, None] = {}
         for name, ids in reads:
             for need_id in ids:
-                node = (need_id, self.project.field_of(name))
-                node_reads = (
-                    self.stratum.reads.get(node) if self.stratum is not None else None
-                )
-                if self.stratum is not None and node in self.stratum.after_last:
-                    kind = "union"
-                elif node_reads is not None and node_reads.user_functions:
-                    kind = "user"
-                    functions.update(dict.fromkeys(node_reads.user_functions))
-                elif node_reads is not None and node_reads.opaque:
-                    kind = "opaque"
-                else:
-                    kind = "other"
+                kind, computing = self.kind((need_id, self.project.field_of(name)))
+                functions.update(dict.fromkeys(computing))
                 group = groups.setdefault(kind, [])
                 if not group or group[-1][0] != name:
                     group.append((name, []))
                 group[-1][1].append(need_id)
-        result = []
-        for kind, group in groups.items():
-            subject = "it is" if _one(group) else "they are"
-            if kind == "user":
-                names = joined([f"'{f}'" for f in functions])
-                plural = len(functions) > 1
-                cause = (
-                    f"{subject} computed by your own function{'s' if plural else ''} "
-                    f"{names}, which run{'' if plural else 's'} after the built-in functions"
-                )
-            elif kind == "opaque":
-                cause = (
-                    f"{subject} computed by a call whose filter cannot be read, "
-                    "which runs after the other built-in functions"
-                )
-            elif kind == "union":
-                cause = (
-                    f"{'it is a union' if _one(group) else 'they are unions'} computed "
-                    "after your own functions and the calls whose filter cannot be read "
-                    f"that fill {'its' if _one(group) else 'their'} members, after this "
-                    "call"
+        return [
+            (self.cause(kind, group, list(functions)), group)
+            for kind, group in groups.items()
+        ]
+
+
+@dataclass
+class _Found:
+    """The reads of values not computed yet one reader made, for one cause."""
+
+    #: the reader's first need, where the warning is located
+    need: NeedItem
+    #: the needs the reader computes a value of, which read them
+    readers: dict[str, None] = dataclass_field(default_factory=dict)
+    #: each name read, with the needs it was read on
+    reads: dict[str, dict[str, None]] = dataclass_field(default_factory=dict)
+    #: your own functions computing them, for the kind ``"user"``
+    functions: dict[str, None] = dataclass_field(default_factory=dict)
+    reader_last: bool = False
+
+
+class _LateReads:
+    """The reads of values not computed yet that only a call's run shows, in one
+    stratum, and their report.
+
+    The order of a stratum cannot put everything before its readers: your own
+    functions that declare nothing, and the calls whose filter cannot be read, are
+    computed after the built-in functions, in ``(need id, field)`` order, and read
+    what they like. While such a call runs, and while a filter or ``where`` of a
+    built-in call or rule is evaluated in a stratum that has such calls, every read
+    of a value of the pass is watched (:mod:`sphinx_needs._read_watch`), and one not
+    computed yet at that moment is noted -- as is any read of a value computed in the
+    pass that a function's declaration does not name. Nothing is changed: the reader
+    runs as it would, and is told. Each reader is one ``needs.derive_scope`` per
+    cause, naming the needs read: your own function, every call of it computing a
+    field, or a built-in call or rule computing a field, on every need it computes
+    it.
+
+    :param pass_: The pass, at the stratum.
+    """
+
+    def __init__(self, pass_: _Pass) -> None:
+        self.pass_ = pass_
+        stratum = pass_.stratum
+        #: the stratum computes nodes after its built-in ones: only then can a
+        #: built-in node's filter read a value not computed yet
+        self.late = stratum is not None and any(r.last for r in stratum.reads.values())
+        self.found: dict[tuple[str, str, str], _Found] = {}
+
+    def watch(
+        self,
+        item: DynamicFunctionParsed | DeriveCall,
+        position: int,
+        need: NeedItem,
+        field: str,
+        record: UnresolvedReads,
+    ) -> AbstractContextManager[Any]:
+        """Watch the reads of one call of a node while it runs, if they can read a
+        value not computed yet.
+
+        :param item: The call or the rule.
+        :param position: Its position among the node's items.
+        :param need: The need the node is of.
+        :param field: The node's field.
+        :param record: The call's record: what it notes itself is not noted again.
+        """
+        pass_ = self.pass_
+        project = pass_.project
+        node_reads = pass_.stratum.reads[(need.id, field)] if pass_.stratum else None
+        own = (
+            isinstance(item, DynamicFunctionParsed)
+            and item.name not in project.builtins
+        )
+        if not own and not self.late:
+            return nullcontext()
+        declared = next(
+            (
+                d
+                for d in (node_reads.declared if node_reads is not None else ())
+                if d.position == position
+            ),
+            None,
+        )
+        what = (
+            f"dynamic function '{item.name}'"
+            if isinstance(item, DynamicFunctionParsed)
+            else item.describe()
+        )
+        current = (need.id, field)
+        reader_last = node_reads is not None and node_reads.last
+        pending = pass_.pending
+        field_of = project.field_of
+
+        def on_read(need_id: str, name: str) -> bool:
+            node = (need_id, field_of(name))
+            if node == current:
+                return False
+            if declared is not None:
+                if node not in project.nodes:
+                    return False
+                if not declared.covers(*node):
+                    self._note(what, field, "undeclared", need, need_id, name)
+                    return True
+            if (need_id, name) not in pending or record.noted(name, need_id):
+                return False
+            kind, functions = pass_.kind(node)
+            self._note(what, field, kind, need, need_id, name, functions, reader_last)
+            return True
+
+        return _read_watch.watching(on_read, filters_only=not own)
+
+    def _note(
+        self,
+        what: str,
+        option: str,
+        kind: str,
+        need: NeedItem,
+        need_id: str,
+        name: str,
+        functions: Sequence[str] = (),
+        reader_last: bool = False,
+    ) -> None:
+        found = self.found.get(key := (what, option, kind))
+        if found is None:
+            found = self.found[key] = _Found(need, reader_last=reader_last)
+        found.readers[need.id] = None
+        found.reads.setdefault(name, {})[need_id] = None
+        found.functions.update(dict.fromkeys(functions))
+
+    def report(self) -> None:
+        """Warn of every reader and cause noted, in the order first noted."""
+        for (what, option, kind), found in self.found.items():
+            reads = [(name, list(ids)) for name, ids in found.reads.items()]
+            on = (
+                ""
+                if len(found.readers) == 1
+                else f" on {counted_ids(found.readers, ' needs')}"
+            )
+            if kind == "undeclared":
+                it = "it" if _one(reads) else "them"
+                function = what.removeprefix("dynamic function ")
+                message = (
+                    f"{what} for option '{option}'{on} read {_reads_phrase(reads)}, "
+                    f"which {'is' if _one(reads) else 'are'} computed in the pass and "
+                    f"not among the reads {function} declares: the call is not ordered "
+                    f"after {it}, and may read {it} before {'it is' if _one(reads) else 'they are'} "
+                    f"computed; declare {it} among its reads"
                 )
             else:
-                cause = (
-                    "the order of the pass did not account for this read; please "
-                    "report this at https://github.com/useblocks/sphinx-needs/issues"
+                cause = self.pass_.cause(
+                    kind, reads, list(found.functions), reader_last=found.reader_last
                 )
-            result.append((cause, group))
-        return result
+                message = _derive_scope_message(what, option, reads, cause, on)
+            log_warning(logger, message, "derive_scope", location=_location(found.need))
+        self.found = {}
 
 
 @dataclass(frozen=True, slots=True)
@@ -685,9 +886,11 @@ class _ReadsContext:
     """What the record of one node's calls needs from the pass.
 
     :ivar pass_: The pass.
+    :ivar late: The reads of values not computed yet that the run of a call shows.
     """
 
     pass_: _Pass
+    late: _LateReads
 
     def record(self) -> UnresolvedReads:
         """A new record, for one call or ``<<…>>`` variant."""
@@ -1020,6 +1223,7 @@ def _resolve_stratum(
     _warn_refused(pass_.project, pass_.refused_warned)
     # a value your own function computes is final only at the end of its stratum
     pass_.stratum_cache = {}
+    reads_ctx = _ReadsContext(pass_, _LateReads(pass_))
     for step in stratum.steps:
         if step.cycle:
             for need_id, field in step.nodes:
@@ -1061,10 +1265,9 @@ def _resolve_stratum(
                     location=_location(need),
                 )
         else:
-            _resolve_field(
-                app, needs, need, field, schema, config, _ReadsContext(pass_)
-            )
+            _resolve_field(app, needs, need, field, schema, config, reads_ctx)
         pass_.finish((need_id, field))
+    reads_ctx.late.report()
 
 
 def _resolve_field(
@@ -1096,9 +1299,13 @@ def _resolve_field(
         # the links the link-valued calls compute, and the calls (``needs.derive_dense``)
         called: set[Any] = set()
         calls: set[str] = set()
-        for item in reads_ctx.pass_.project.items((need.id, field)):
+        items = reads_ctx.pass_.project.items((need.id, field))
+        for position, item in enumerate(items):
             if isinstance(item, DeriveCall):
-                with _reads_reported(item.describe(), field, need, reads_ctx) as reads:
+                with (
+                    _reads_reported(item.describe(), field, need, reads_ctx) as reads,
+                    reads_ctx.late.watch(item, position, need, field, reads),
+                ):
                     # imported here, as the common module imports this one
                     from sphinx_needs.functions.common import execute_rule
 
@@ -1156,9 +1363,10 @@ def _resolve_field(
                 with _reads_reported(
                     f"dynamic function '{item.name}'", field, need, reads_ctx
                 ) as reads:
-                    func_return = _execute_dynamic_func(
-                        app, need, needs, item, reads=reads
-                    )
+                    with reads_ctx.late.watch(item, position, need, field, reads):
+                        func_return = _execute_dynamic_func(
+                            app, need, needs, item, reads=reads
+                        )
                     if not (
                         field_schema.type_check(func_return)
                         or (
