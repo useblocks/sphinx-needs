@@ -2200,6 +2200,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
 
     #: the declarations writing ``copy = true``, each deprecated
     copy_declarations: list[tuple[str, str]] = []
+    #: per link type whose ``allow_dead_links`` is refused beside unions as read: the
+    #: findings as read, and those of the key kept, should a union not be readable
+    dead_refusals: dict[str, tuple[list[DeriveProblem], list[DeriveProblem]]] = {}
     for name, (link, config_source) in links.items():
         try:
             # create link schema, with defaults if not defined
@@ -2270,7 +2273,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             authored = derive is None and by_type is None
             # a union reports no dead link of its own, so where every rule is one its
             # allow_dead_links would say nothing: reported beside it, below, and
-            # ignored; beside another rule it is that rule's
+            # ignored; beside another rule it is that rule's. Decided here from the
+            # rules as read, and again from the rules as checked, where a union that
+            # cannot be read is no union and the key is kept
+            # (_report_derive_problems)
             rules = [r for r in (derive, *(by_type or {}).values()) if r is not None]
             dead_beside = (
                 "allow_dead_links" in link and bool(rules) and all(map(is_union, rules))
@@ -2313,24 +2319,32 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 derive_by_type=by_type,
             )
             if derive is not None:
-                derive_problems.extend(
-                    _derive_parse_problems(
-                        name,
-                        True,
-                        derive,
-                        beside=[
-                            key
-                            for key, beside_key in (
-                                ("default", "default" in link),
-                                ("predicates", "predicates" in link),
-                                ("target_types", given_targets),
-                                ("allow_dead_links", dead_beside),
-                            )
-                            if beside_key
-                        ],
-                        copied=bool(link.get("copy", False)),
+                beside = [
+                    key
+                    for key, beside_key in (
+                        ("default", "default" in link),
+                        ("predicates", "predicates" in link),
+                        ("target_types", given_targets),
+                        ("allow_dead_links", dead_beside),
                     )
+                    if beside_key
+                ]
+                copied = bool(link.get("copy", False))
+                read = _derive_parse_problems(
+                    name, True, derive, beside=beside, copied=copied
                 )
+                derive_problems.extend(read)
+                if dead_beside:
+                    dead_refusals[name] = (
+                        read,
+                        _derive_parse_problems(
+                            name,
+                            True,
+                            derive,
+                            beside=beside[:-1],  # allow_dead_links is the last
+                            copied=copied,
+                        ),
+                    )
             elif by_type is not None:
                 link_field, refused = _with_off_type_default(
                     link_field, link.get("default"), config_source
@@ -2345,41 +2359,36 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     )
                     if refused_key
                 ]
-                if beside:
-                    # a link type need types alone declare takes allow_dead_links from
-                    # its first root, whose own entry gives the first rule
-                    spelling = (
-                        next(
-                            (
-                                e.removesuffix(".derive")
-                                for _, e, own in type_rules.values()
-                                if own
-                            ),
-                            None,
-                        )
-                        if config_source == "needs_types"
-                        else None
+                # a link type need types alone declare takes allow_dead_links from its
+                # first root, whose own entry gives the first rule
+                spelling = (
+                    next(
+                        (
+                            e.removesuffix(".derive")
+                            for _, e, own in type_rules.values()
+                            if own
+                        ),
+                        None,
                     )
-                    derive_problems.append(
-                        DeriveProblem(
-                            name,
-                            True,
-                            beside_by_type_message(
-                                name, on_link=True, keys=beside, spelling=spelling
-                            ),
-                            part="beside",
-                        )
-                    )
-                elif link.get("copy", False):
-                    derive_problems.append(
-                        DeriveProblem(
-                            name,
-                            True,
-                            copy_on_derived_message(
-                                name, described=link_field.describe_derived()
-                            ),
-                            part="beside",
-                        )
+                    if config_source == "needs_types"
+                    else None
+                )
+                read = _beside_by_type_problems(
+                    link_field,
+                    beside,
+                    spelling=spelling,
+                    copied=link.get("copy", False),
+                )
+                derive_problems.extend(read)
+                if dead_beside:
+                    dead_refusals[name] = (
+                        read,
+                        _beside_by_type_problems(
+                            link_field,
+                            beside[:-1],  # allow_dead_links is the last
+                            spelling=spelling,
+                            copied=link.get("copy", False),
+                        ),
                     )
             else:
                 if "default" in link:
@@ -2444,7 +2453,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             declared=_declared_defaults(needs_config, registered, links, name),
         )
 
-    _report_derive_problems(schema, derive_problems, need_types, spellings)
+    _report_derive_problems(
+        schema, derive_problems, need_types, spellings, dead_refusals
+    )
 
     # ``links`` takes no target types while a link type copies into it
     if (
@@ -2673,11 +2684,46 @@ def _derive_parse_problems(
     return []
 
 
+def _beside_by_type_problems(
+    link_field: LinkSchema,
+    beside: list[str],
+    *,
+    spelling: str | None,
+    copied: bool,
+) -> list[DeriveProblem]:
+    """The finding of the keys beside a link type's ``derive_by_type`` alone, or of its
+    ``copy = true``: one, or none."""
+    name = link_field.name
+    if beside:
+        return [
+            DeriveProblem(
+                name,
+                True,
+                beside_by_type_message(
+                    name, on_link=True, keys=beside, spelling=spelling
+                ),
+                part="beside",
+            )
+        ]
+    if copied:
+        return [
+            DeriveProblem(
+                name,
+                True,
+                copy_on_derived_message(name, described=link_field.describe_derived()),
+                part="beside",
+            )
+        ]
+    return []
+
+
 def _report_derive_problems(
     schema: FieldsSchema,
     read_problems: list[DeriveProblem],
     need_types: Mapping[str, str],
     spellings: Mapping[tuple[bool, str, str], str] | None = None,
+    dead_refusals: Mapping[str, tuple[list[DeriveProblem], list[DeriveProblem]]]
+    | None = None,
 ) -> None:
     """Check the rules against the complete schema, and report every finding.
 
@@ -2691,6 +2737,13 @@ def _report_derive_problems(
     link types, each by name; within a name, ``derive``, the ``derive_by_type`` table,
     its entries by need type, and a key beside ``derive_by_type``. A finding of a rule
     a need type's entry gives names that entry (``spellings``), where the rule is read.
+
+    ``allow_dead_links`` is refused beside a link type every rule of which is a union
+    (``dead_refusals``: the findings as read, and those without the refusal). That is
+    decided again from the rules as checked: a union that cannot be read is no union,
+    so beside one the key is kept, and its refusal withdrawn. A ``derive`` cycling on
+    some need types only is still a union on the others, and its markers there do not
+    count.
     """
     checked = {
         (p.on_link, p.name, p.part): p
@@ -2725,6 +2778,23 @@ def _report_derive_problems(
                 )
             target = dataclasses.replace(target, derive_by_type=by_type)
         schema.replace_field(target)
+    for name, (refused, kept) in (dead_refusals or {}).items():
+        link = schema.global_declaration(name)
+        assert isinstance(link, LinkSchema), "a refusal is of a link type"
+        rules = [
+            rule
+            for rule in (link.derive, *(link.derive_by_type or {}).values())
+            if rule is not None
+            and not (isinstance(rule, DeriveInvalid) and rule.fallback)
+        ]
+        if rules and all(map(is_union, rules)):
+            continue
+        schema.replace_field(dataclasses.replace(link, allow_dead_links=True))
+        withdrawn = {id(problem) for problem in refused}
+        read_problems = [
+            *(p for p in read_problems if id(p) not in withdrawn),
+            *kept,
+        ]
     core = sorted((p for p in read_problems if p.core), key=lambda p: p.name)
     findings = {
         (p.on_link, p.name, p.part): _with_table_text(schema, p)

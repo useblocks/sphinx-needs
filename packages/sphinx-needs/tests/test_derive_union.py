@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.derive import DeriveInvalid, DeriveRule, parse_derive
 from sphinx_needs_testkit import build_warnings
 
@@ -500,6 +501,171 @@ def test_an_imported_union_is_checked_as_any_link_type(test_app):
         True,
         False,
     )
+
+
+CONF_UNREADABLE = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {
+    "blocks": {},
+    "bad_member": {
+        "derive": {"kind": "union", "fields": ["links", "nope"]},
+        "allow_dead_links": True,
+    },
+    "cyc_a": {
+        "derive": {"kind": "union", "fields": ["links", "cyc_b"]},
+        "allow_dead_links": True,
+    },
+    "cyc_b": {"derive": {"kind": "union", "fields": ["cyc_a"]}},
+    "bad_entry": {
+        "derive": {"kind": "union", "fields": ["blocks"]},
+        "derive_by_type": {"spec": {"kind": "union", "fields": ["nope"]}},
+        "allow_dead_links": True,
+    },
+    "bad_entry_targets": {
+        "derive": {"kind": "union", "fields": ["blocks"]},
+        "derive_by_type": {"spec": {"kind": "union", "fields": ["nope"]}},
+        "allow_dead_links": True,
+        "target_types": ["req"],
+    },
+}
+needs_types = [
+    {"directive": "req", "title": "Requirement", "prefix": "R_"},
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "links": {
+            "tl": {
+                "derive": {"kind": "union", "fields": ["nope"]},
+                "allow_dead_links": True,
+            }
+        },
+    },
+]
+"""
+
+UNREADABLE_JSON = json.dumps(
+    {
+        "current_version": "1.0",
+        "versions": {
+            "1.0": {
+                "needs": {
+                    "IMP_1": {
+                        "id": "IMP_1",
+                        "type": "spec",
+                        "title": "A dead link in each union that cannot be read",
+                        "bad_member": ["DEAD_1"],
+                        "cyc_a": ["DEAD_2"],
+                        "bad_entry": ["DEAD_3"],
+                        "tl": ["DEAD_4"],
+                    }
+                }
+            }
+        },
+    }
+)
+
+
+def _invalid_on_spec(name: str, reason: str) -> str:
+    return (
+        f"WARNING: Invalid derive of link type {name!r}: {reason}; the link type cannot "
+        "be set in a need or by a needextend, and on need type 'spec' holds no links "
+        "[needs.derive_invalid]"
+    )
+
+
+#: the link types beside whose unions that cannot be read allow_dead_links is kept
+UNREADABLE = ("bad_member", "cyc_a", "bad_entry", "bad_entry_targets", "tl")
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF_UNREADABLE),
+                (Path("imp.json"), UNREADABLE_JSON),
+                (
+                    Path("index.rst"),
+                    "Unreadable\n==========\n\n.. needimport:: imp.json\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_allow_dead_links_beside_a_union_that_cannot_be_read_is_kept(test_app):
+    """A union refused for a member, on a cycle, or in an entry for one need type, is
+    no union: it holds no links where it is computed, and ``allow_dead_links`` beside
+    it is kept, as beside any rule -- decided from the rules once checked, not from
+    the kinds as written. Its refusal is withdrawn, the other keys beside the rule
+    still reported; a dead link an imported need carries in such a link type is
+    allowed. In ``derive_by_type``, the readable ``derive`` beside the entry does not
+    make every rule a union."""
+    app = test_app
+    app.build()
+    union = "kind 'union': the role 'fields'"
+    nope = f"{union} names 'nope', which is not a link type"
+    assert build_warnings(app) == [
+        _invalid_on_spec("bad_entry", "derive_by_type.spec: " + nope),
+        "WARNING: Invalid derive of link type 'bad_entry_targets': kind 'union': "
+        "'target_types' cannot be given beside derive, and is ignored; the rule "
+        "applies [needs.derive_invalid]",
+        _invalid_on_spec("bad_entry_targets", "derive_by_type.spec: " + nope),
+        _invalid_link("bad_member", nope),
+        _invalid_link(
+            "cyc_a",
+            f"{union} reads 'cyc_b', whose rule reads this field back "
+            "(cyc_a -> cyc_b -> cyc_a), so no need can compute it",
+        ),
+        _invalid_link(
+            "cyc_b",
+            f"{union} reads 'cyc_a', whose rule reads this field back "
+            "(cyc_b -> cyc_a -> cyc_b), so no need can compute it",
+        ),
+        _invalid_on_spec("tl", "needs_types['spec'].links['tl'].derive: " + nope),
+    ]
+    schema = SphinxNeedsData(app.env).get_schema()
+    for name in UNREADABLE:
+        link = schema.global_declaration(name)
+        assert link is not None and link.allow_dead_links is True, name
+    imported = _built(app)["needs"]["IMP_1"]
+    assert (imported["has_dead_links"], imported["has_forbidden_dead_links"]) == (
+        True,
+        False,
+    )
+
+
+CONF_CYCLE_ON_ONE_TYPE = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {
+    "a": {
+        "derive": {"kind": "union", "fields": ["links", "b"]},
+        "allow_dead_links": True,
+    },
+    "b": {"derive_by_type": {"spec": {"kind": "union", "fields": ["a"]}}},
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(CONF_CYCLE_ON_ONE_TYPE, "Cycle\n=====\n\n.. req:: One\n   :id: REQ_1\n")],
+    indirect=True,
+)
+def test_allow_dead_links_beside_a_union_cycling_on_one_type_is_refused(test_app):
+    """A ``derive`` closing a cycle on some need types only is still a union on every
+    other type: the marker standing for it on those types is no rule of the link
+    type's own, so ``allow_dead_links`` beside it is still refused."""
+    app = test_app
+    app.build()
+    link = SphinxNeedsData(app.env).get_schema().global_declaration("a")
+    assert link is not None and link.allow_dead_links is False
+    assert isinstance(link.derive_by_type["spec"], DeriveInvalid)
+    assert link.derive_by_type["spec"].fallback
 
 
 CONF_PER_TYPE = """\

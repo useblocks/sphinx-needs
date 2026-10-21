@@ -627,7 +627,8 @@ a :ref:`needflow`, a filter or a :ref:`needtable` column (see **Reading it**, be
   So a dead link of a member allowing dead links is kept in the union and makes no dead link forbidden
   (``has_forbidden_dead_links``; ``has_dead_links`` counts it, as every dead link), it is drawn in a need's layout as
   the member allows it, and an ``allow_dead_links`` on a link type all of whose rules are unions is refused
-  (``needs.derive_invalid``) and ignored; beside a rule of another kind, for another need type, it is that rule's.
+  (``needs.derive_invalid``) and ignored; beside a rule of another kind, for another need type, it is that rule's,
+  and beside a union that cannot be read (a member refused, a cycle), which is no union and holds no links, it is kept.
   ``target_types`` is refused on it, as on every derived link type: the members' own apply.
 - **When.** In the link fields' step, after every :ref:`needextend`: a link a ``needextend`` adds to a member is in the union.
   The union itself is closed, as every derived field: links written in it, or by a ``needextend``, are reported
@@ -953,7 +954,8 @@ The field stays derived: it cannot be set, and it holds its empty value
 The empty value a derived field holds is its "no value", as ``None`` is for a nullable field:
 the field's ``schema`` does not check it, so an ``enum``, a ``minimum`` or a ``pattern`` that refuses it is no violation.
 A ``default`` or ``predicates`` beside ``derive`` is reported as ``needs.derive_invalid`` too, and ignored;
-the rule applies. So is an ``allow_dead_links`` beside a ``union``, whose dead links are its members'.
+the rule applies. So is an ``allow_dead_links`` beside a ``union``, whose dead links are its members'
+(beside a union that cannot be read, which is no union, it is kept).
 So is a link type declared with ``copy = true`` while ``links`` is derived:
 nothing is copied into ``links``, which holds what its rule computes;
 and ``copy = true`` on a derived link type, which is not available in this release: nothing is copied.
