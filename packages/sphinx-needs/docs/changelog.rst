@@ -41,7 +41,7 @@ Improvements
   (:issue:`2346`, :pr:`2350`)
 
 - ✨ A derived union of link types: a link type deriving ``union`` holds the links of the link types it names
-  (:issue:`2279`, :pr:`2343`)
+  (:issue:`2279`, :pr:`2343`, :pr:`2353`)
 
   ``derive = { kind = "union", fields = ["links", "blocks", "tests"] }`` on a :ref:`needs_links` entry (or
   ``[needs.links.<l>]``, a need type's ``links`` entry, ``derive_by_type``) gives each need the links of
@@ -170,7 +170,7 @@ Improvements
   path -- a need of :ref:`list2need` took the first entry's prefix -- and is listed once in the
   legends and in :ref:`needreport`, and, when it was the first type, a :ref:`needservice` datum
   without a type takes the type that now comes first; the duplicate is reported, where Sphinx
-  used to warn that the directive was already registered (:issue:`2262`, :pr:`2276`)
+  used to warn that the directive was already registered (:issue:`2262`, :pr:`2276`, :pr:`2353`)
 
 - ✨ A need type declares its fields: an entry of :ref:`needs_types` may carry ``fields`` and ``links``,
   each a dictionary from a field or link type to the type's declaration of it (``description``,
@@ -186,7 +186,7 @@ Improvements
   deleting a field now empties it as the need's type declares it (``None`` where nullable on that type,
   else the empty value of its type). The per-type declarations of :issue:`2269`, after the schema's
   two tiers (:pr:`2275`) and the ``needs_types`` table (:pr:`2276`)
-  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2278`)
+  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2278`, :pr:`2353`)
 
 - ✨ A field may be declared on the need types that have it alone: a ``fields`` entry of
   :ref:`needs_types` naming no field :ref:`needs_fields`, an extension or a service declares, and no
@@ -347,7 +347,8 @@ Deprecations
 ............
 
 - ⚠️ ``copy = true`` on a link type is deprecated, and is removed in 10.0: a link type deriving the
-  :ref:`union <needs_derive_union>` of ``links`` and the copying link types replaces it (:issue:`2279`, :pr:`2343`)
+  :ref:`union <needs_derive_union>` of ``links`` and the copying link types replaces it
+  (:issue:`2279`, :pr:`2343`, :pr:`2353`)
 
   The links are still copied into ``links``. Each declaration writing ``copy = true`` -- a :ref:`needs_links` or
   :ref:`needs_extra_links` entry, a ``[needs.links.<l>]`` table, a need type's entry of a link type need types alone
