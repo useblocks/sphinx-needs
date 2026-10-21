@@ -2303,8 +2303,8 @@ def narrowing_problems(
         )
     if overlay.derive != base.derive or overlay.derive_by_type != base.derive_by_type:
         problems.append(
-            "with another derivation: a field is derived per need type by its "
-            "derive_by_type."
+            "with another derivation: a field's rules per need type are declared in "
+            "the need types' entries (or its derive_by_type)."
         )
     if same_type:
         problems.extend(

@@ -641,7 +641,8 @@ def test_a_type_derives_a_field_by_derive_by_type() -> None:
         )
     assert str(exc_info.value) == (
         "Cannot declare field 'effort' for need type 'spec' with another derivation: "
-        "a field is derived per need type by its derive_by_type."
+        "a field's rules per need type are declared in the need types' entries (or "
+        "its derive_by_type)."
     )
     with pytest.raises(ValueError) as exc_info:
         schema.add_type_overlay(
@@ -652,7 +653,8 @@ def test_a_type_derives_a_field_by_derive_by_type() -> None:
         )
     assert str(exc_info.value) == (
         "Cannot declare field 'score' for need type 'spec' with another derivation: "
-        "a field is derived per need type by its derive_by_type."
+        "a field's rules per need type are declared in the need types' entries (or "
+        "its derive_by_type)."
     )
     assert schema.type_declarations("effort") == {}
     assert schema.type_declarations("score") == {}

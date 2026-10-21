@@ -142,8 +142,8 @@ def test_a_narrowing(
             CLOSED,
             replace(CLOSED, derive=DeriveRule(kind="copy", field="title")),
             [
-                "with another derivation: a field is derived per need type by its "
-                "derive_by_type."
+                "with another derivation: a field's rules per need type are declared "
+                "in the need types' entries (or its derive_by_type)."
             ],
             id="3-a-derive",
         ),
@@ -155,8 +155,8 @@ def test_a_narrowing(
                 CLOSED, derive_by_type={"spec": DeriveRule(kind="copy", field="title")}
             ),
             [
-                "with another derivation: a field is derived per need type by its "
-                "derive_by_type."
+                "with another derivation: a field's rules per need type are declared "
+                "in the need types' entries (or its derive_by_type)."
             ],
             id="3-another-derive-by-type",
         ),
@@ -503,7 +503,8 @@ def _schema(*fields: FieldSchema | LinkSchema) -> FieldsSchema:
                 nullable=True,
             ),
             "Cannot declare field 'asil' for need type 'spec' with another "
-            "derivation: a field is derived per need type by its derive_by_type.; "
+            "derivation: a field's rules per need type are declared in the need "
+            "types' entries (or its derive_by_type).; "
             "Cannot change 'nullable' from False to True in child.",
             id="a-derivation-and-nullable",
         ),

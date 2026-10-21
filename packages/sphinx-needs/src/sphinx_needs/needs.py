@@ -2092,6 +2092,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 else parse_derive(field_data.derive, on_link=False)
             )
             raw_by_type = field_data.derive_by_type
+            entries: dict[str, str] = {}
             if rules := field_rules.get(name):
                 raw_by_type, entries = _folded_rules(
                     name, raw_by_type, rules, f"{field_data.source}[{name!r}]"
@@ -2158,7 +2159,15 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         DeriveProblem(
                             name,
                             False,
-                            beside_by_type_message(name, on_link=False, keys=beside),
+                            beside_by_type_message(
+                                name,
+                                on_link=False,
+                                keys=beside,
+                                # the rules come only from need types' entries
+                                entries=()
+                                if field_data.derive_by_type is not None
+                                else list(entries.values()),
+                            ),
                             part="beside",
                         )
                     )
@@ -2373,10 +2382,15 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     if config_source == "needs_types"
                     else None
                 )
+                # the rules come only from need types' entries
+                entry_rules = (
+                    list(entries.values()) if "derive_by_type" not in link else []
+                )
                 read = _beside_by_type_problems(
                     link_field,
                     beside,
                     spelling=spelling,
+                    entries=entry_rules,
                     copied=link.get("copy", False),
                 )
                 derive_problems.extend(read)
@@ -2387,6 +2401,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                             link_field,
                             beside[:-1],  # allow_dead_links is the last
                             spelling=spelling,
+                            entries=entry_rules,
                             copied=link.get("copy", False),
                         ),
                     )
@@ -2689,6 +2704,7 @@ def _beside_by_type_problems(
     beside: list[str],
     *,
     spelling: str | None,
+    entries: Sequence[str],
     copied: bool,
 ) -> list[DeriveProblem]:
     """The finding of the keys beside a link type's ``derive_by_type`` alone, or of its
@@ -2700,7 +2716,7 @@ def _beside_by_type_problems(
                 name,
                 True,
                 beside_by_type_message(
-                    name, on_link=True, keys=beside, spelling=spelling
+                    name, on_link=True, keys=beside, spelling=spelling, entries=entries
                 ),
                 part="beside",
             )
