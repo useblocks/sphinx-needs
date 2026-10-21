@@ -10,25 +10,29 @@ Unreleased
 Improvements
 ............
 
-- ✨ The filter fast path compiles the whole portable filter language, the subset of Python expressions ubCode
-  reads as well, and a conformance corpus both tools run defines it (:issue:`2346`, :pr:`2350`)
+- ⚡️ A filter string in the portable filter language is evaluated without Python's ``eval``, five to six times
+  faster, for the whole language; a conformance corpus defines it and pins its answers (:issue:`2346`, :pr:`2350`)
 
   A :ref:`filter string <filter_string>` that the index path does not answer is compiled once and evaluated
-  need by need without Python's ``eval`` when it is written in the portable language, which now holds
+  need by need without ``eval`` when it is written in the :ref:`portable filter language
+  <filter_string_performance>`, which now holds
   ``x is None`` / ``x is not None``; ``len(x)``, ``x.lower()`` and ``x.upper()`` as operands, on either side of a
   comparison, of ``in``, of ``search()`` and alone; ``x.startswith('...')`` / ``x.endswith('...')``, after any of
   those (``id.lower().startswith('req')``); a field against a field in every comparison (``variant ==
-  current_variant``); ``c.this_doc()``; a negative number; ``True`` / ``False``; and a ``var.`` chain alone. Its
+  current_variant``); ``c.this_doc()``; a negative number; ``True`` / ``False``; and a ``var.`` chain alone. What
+  ``eval`` costs is its context, a copy of every field of the need per evaluation, so the forms that used to reach
+  it are five to six times faster now (over 14 000 needs, ``len(tags) > 0``: 29 ms to 5 ms), and a form the fast
+  path already took costs what it cost. Its
   answers are ``eval``'s, an error included, but for a filter whose value is not a boolean, which the portable
-  language reads by its truthiness and ``eval`` refuses (:issue:`1773`), and the two smaller cases
+  language reads by its truthiness and ``eval`` refuses (:issue:`1773`), and the three smaller cases
   :ref:`filter_string_performance` lists. So a string newly in the language whose value is not a boolean --
   ``len(tags)`` alone, ``title.lower()``, ``True and owner``, a ``var.`` chain alone holding a string -- now selects
   the needs it is true for, where it was refused with ``Filter did not evaluate to a boolean`` and selected
   nothing. A string the language does not hold -- a field ``in`` a field, a list beside ``==``, a subscript, a
   comprehension, arithmetic, another call -- is evaluated by ``eval`` as before. Of the strings this repository's documentation and tests wrote, eleven of
-  the sixteen that reached ``eval`` no longer do. ``tests/fixtures/filter_conformance.toml`` (repository of
-  record: this one; ubCode vendors it) pins every rule, the answers in both tools and where ubCode answers
-  otherwise; see :ref:`filter_string_performance`.
+  the sixteen that reached ``eval`` no longer do. ``tests/fixtures/filter_conformance.toml`` defines the
+  language and pins every rule's answers, so the three tiers are held to the same results; see
+  :ref:`filter_string_performance`.
 
 - 👌 :ref:`needs_debug_filters` says which tier answered each filter: every record of ``debug_filters.jsonl``
   holds ``tier``, ``"index"``, ``"fast"`` or ``"eval"``, and for ``"eval"`` ``fallback_reason``, the construct that

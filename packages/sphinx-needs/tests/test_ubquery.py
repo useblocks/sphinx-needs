@@ -572,7 +572,7 @@ def test_outside_the_grammar_names_its_construct(
 @pytest.mark.parametrize(
     "filter_string",
     [
-        # accepted before the portable grammar was the reference; ubc_query refuses them
+        # accepted before the portable grammar was the reference; outside it
         pytest.param('id < "ZZZ"', id="name-ordering-string"),
         pytest.param('type in ("requirement", "spec")', id="name-in-tuple"),
         pytest.param('type in {"requirement", "spec"}', id="name-in-set"),

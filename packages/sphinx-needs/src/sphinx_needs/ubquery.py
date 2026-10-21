@@ -3,11 +3,11 @@
 A filter string is answered by the first of three tiers that takes it: the index path
 (``filter_common._analyze_and_apply_expr``, a few shapes answered from the indexes of a
 :class:`.NeedsView`), the predicates compiled here, and Python's ``eval`` of the string
-against each need. This module compiles exactly the portable filter grammar: the subset
-of Python expressions that ubCode's ``ubc_query`` parses too (its
-``rust/ubc_query/src/py_expr.pest``), so that a string inside it is read alike by both
-tools. ``tests/fixtures/filter_conformance.toml`` holds the two tools to that, and the
-three tiers here to each other's answers.
+against each need. This module compiles exactly the portable filter grammar, the subset
+of Python expressions the portable filter language admits:
+``tests/fixtures/filter_conformance.toml`` defines it and holds the three tiers to each
+other's answers. The grammar is shared with ubCode's filter (``py_expr.pest`` there), so
+a string inside it is read alike by both tools; each arm below names the rule it mirrors.
 
 What a compiled predicate saves is cost, not semantics. ``eval`` resolves names lazily
 too, and short-circuits ``and``/``or`` as a predicate does, so
@@ -22,20 +22,19 @@ Its answers are ``eval``'s: for every string it compiles, a predicate gives the 
 ``needs_filter_data`` key and no Python builtin raises :class:`NameError`, a method of a
 value of the wrong type raises what Python raises, and ``c.this_doc()`` with no document
 to compare raises the error the ``eval`` tier's context raises. One difference is
-deliberate: a predicate reads every operand by Python truthiness, as ubCode does, where
-``eval`` refuses a filter whose value is not a boolean (#1773).
+deliberate: a predicate reads every operand by Python truthiness, where ``eval``
+refuses a filter whose value is not a boolean (#1773).
 
 A string outside the grammar is not an error here. :func:`try_build_simple_predicate`
 returns ``None`` for it, the caller falls back to ``eval``, and :func:`compile_portable`
 names the construct that kept it out, for the ``needs_debug_filters`` report.
 
-Each arm below names the ``py_expr.pest`` rule it mirrors. A few forms this module took
-before the grammar was its reference are kept, although ``ubc_query`` refuses them: an
-ordering comparison of a name with a literal that is no number, a tuple or a set of
-literals after ``in``, and a constant the grammar has no literal for (``b"x"``) beside a
-name. It reads the string's syntax tree, not its text, and has none of ``ubc_query``'s
-limits on its input, so it also compiles what ubCode refuses for its spelling or its
-size alone, each of which answers as eval answers it: ``not not x`` beside
+A few forms this module took before the grammar was its reference are kept, although
+the grammar lacks them: an ordering comparison of a name with a literal that is no
+number, a tuple or a set of literals after ``in``, and a constant the grammar has no
+literal for (``b"x"``) beside a name. It reads the string's syntax tree, not its text,
+and puts no limit on its size, so it also compiles what the grammar leaves out for
+spelling or size alone, each of which answers as eval answers it: ``not not x`` beside
 ``not (not x)``, a parenthesised operand, a trailing comma, a comment, triple quotes,
 ``.5``, ``1e+5``, ``-(1)``, a name that is not ASCII; an integer outside the signed 64-bit range, more
 than 10 000 alternatives of conjunctions once expanded, nesting deeper than 64, a
@@ -426,7 +425,7 @@ def _compare(node: ast.Compare) -> SimplePredicate:
     # the left one is read first, as eval reads it
     for side in (left, right):
         if isinstance(side, ast.List):
-            # `ubc_query` refuses a list beside a comparison (ubcode#3957)
+            # a list beside a comparison is outside the grammar
             raise _NotPortable("compare:list")
         if ordering and _literal(side) is not _NOT_LITERAL:
             # an ordering comparison takes no literal but a number
@@ -442,9 +441,8 @@ def _membership(left: ast.expr, right: ast.expr, *, negate: bool) -> SimplePredi
 
     The grammar has two: an operand in a list of literals (`in_list_expr`,
     `not_in_list_expr`), and a literal in an operand (`literal_in_var_field_expr`,
-    `literal_not_in_var_field_expr`). An operand in an operand is not one of them:
-    ``ubc_query`` parses it and then refuses it ("`var in var` operator not yet
-    supported"), so it stays with ``eval``.
+    `literal_not_in_var_field_expr`). An operand in an operand is not one of them, so
+    it stays with ``eval``.
 
     :raises _NotPortable: For any other membership test.
     """

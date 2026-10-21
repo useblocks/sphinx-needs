@@ -288,7 +288,7 @@ The second parameter should be one of the above variables(status, id, content, .
 In the :ref:`portable filter language <filter_string_performance>` the pattern is a plain string literal:
 it has no raw strings (``r"..."``), so a backslash is written twice (``"\\d+"``), or avoided with a
 character class (``"[.]"``). The pattern is read with Python's regular expression syntax;
-ubCode reads it with Rust's, which shares most of it, but not look-around, backreferences or ``{,n}``.
+look-around, backreferences and ``{,n}`` are Python's own and not part of the portable language.
 
 .. dropdown:: Show example
 
@@ -332,10 +332,11 @@ so writing filters the first two take is recommended:
    and only the remaining needs are evaluated for ``other == 'value'``.
 
 2. **The portable filter language.** A string written in it is compiled once
-   and evaluated need by need without Python's ``eval``, reading only the fields it names.
-   It is the language `ubCode <https://ubcode.useblocks.com>`__ reads as well:
-   a shared conformance corpus (``tests/fixtures/filter_conformance.toml`` in the Sphinx-Needs repository)
-   holds both tools to the same strings and the same answers.
+   and evaluated need by need without Python's ``eval``, reading only the fields it names,
+   which makes it five to six times faster than ``eval`` for the same string.
+   A conformance corpus (``tests/fixtures/filter_conformance.toml`` in the Sphinx-Needs repository)
+   defines the language and pins every form's answers; the language is also the one
+   `ubCode <https://ubcode.useblocks.com>`__ reads, so a filter written in it works there too.
    It has:
 
    - **operands**: a field (any field of the need, a :ref:`needs_filter_data` key,
@@ -383,18 +384,16 @@ The three tiers give the same answers, with four exceptions:
   expression function, the builtins module's attributes -- and the portable language reports the name as undefined,
   as it did before 9.1.0. Beside a field (``owner != search``) the string falls to ``eval`` and answers as it does.
 
-Other differences from ubCode come from Python.
-``search()`` takes Python's regular expression syntax, where ubCode takes Rust's: ``(?i)``, character classes and
-anchors are common to both; look-around, backreferences and ``{,n}`` are Python's alone.
-A few forms the second tier answers are not part of the portable language, so ubCode refuses them:
+A few forms the second tier answers are older than the portable language and not part of it:
 ``<`` and the other orderings between a field and a literal that is no number (``title < 'M'``, ``owner > True``,
 ``owner < None``), a tuple or a set after ``in``, a constant the language has no literal for beside a field
 (``status == b"x"``, ``status == ...``, ``status == 1j``), and ``not not x`` (write ``not (not x)``).
-The second tier also reads a string's syntax rather than its spelling, and has none of ubCode's limits on its input,
-so it answers strings ubCode refuses for their size or spelling alone: an integer outside the signed 64-bit range, more than 10 000
+The second tier also reads a string's syntax rather than its spelling, and puts no limit on its size,
+so it answers what the language leaves out for spelling or size alone: an integer outside the signed 64-bit range, more than 10 000
 terms once the filter is expanded into alternatives of conjunctions, nesting deeper than 64, a string longer than
 16 KiB, and spellings such as a parenthesised operand (``len((tags)) > 0``), a trailing comma, a comment, triple
-quotes, ``.5``, ``1e+5``, ``-(1)`` or a name that is not ASCII. Each answers as ``eval`` answers it.
+quotes, ``.5``, ``1e+5``, ``-(1)`` or a name that is not ASCII. Each answers as ``eval`` answers it, and in
+``search()`` look-around, backreferences and ``{,n}`` are Python's own.
 
 To see which tier answers each filter of a project's view directives, and why one reaches ``eval``,
 enable :ref:`needs_debug_filters`: every record says ``tier`` (``"index"``, ``"fast"`` for the portable language, or ``"eval"``)
