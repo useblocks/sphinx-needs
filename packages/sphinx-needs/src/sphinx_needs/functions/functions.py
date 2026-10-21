@@ -317,7 +317,9 @@ def find_and_replace_node_content(
 # a call computed last itself, before it. Nothing else is handed a record: an ``ndf`` role or a
 # ``:style_row:`` runs after the pass, and a user's own function, which the pass calls
 # without one, has none to give a built-in it calls; such a built-in gets
-# ``reads=None`` and notes nothing.
+# ``reads=None`` and notes nothing. What no record holds -- your own function's reads,
+# and those of a built-in call's filter or ``where`` -- is watched as it happens instead,
+# in a stratum where it can read a value not computed yet (:class:`_LateReads`).
 
 
 class UnresolvedReads:
@@ -327,8 +329,8 @@ class UnresolvedReads:
     by all the conditions it evaluates), hands it to the dynamic function as its
     ``reads`` keyword when the function is marked :func:`records_reads`, and reports
     what it holds as ``needs.derive_scope`` once the call is over. No other caller
-    creates one: after the pass every value read is final, and a user's function is
-    opaque (its reads, through a built-in or otherwise, are not reported).
+    creates one: after the pass every value read is final, and a user's function's
+    reads, through a built-in or otherwise, are watched instead (:class:`_LateReads`).
 
     Kept by the name read, in the order first read, each need named once per name.
 

@@ -222,6 +222,71 @@ giving its ``name``.
       def setup(app):
           add_dynamic_function(app, my_function)
 
+.. _dynamic_functions_reads:
+
+Declaring what a function reads
++++++++++++++++++++++++++++++++
+
+.. versionadded:: 9.1.0
+
+A function of your own reads what it likes, so it is computed after every built-in function of its step
+(:ref:`needs_processing_order`), and a built-in function, or a derive rule, reading a value it computes
+reads it before it is computed (reported, see :ref:`needs_derive_scope`).
+Declare what the function reads, and it is computed like a built-in function instead:
+after the values it declares, and before the values that read it.
+:py:func:`~sphinx_needs.api.configuration.reads` declares it, by the parameters whose argument names a field
+-- ``own``, read on the call's own need, and ``every``, read on every need:
+
+.. code-block:: python
+
+   from sphinx_needs.api import reads
+
+   @reads(own="test_option", every="target_option")
+   def my_link(app, need, needs, test_option, target_option):
+       value = need.get(test_option)
+       return [other["id"] for other in needs.values() if value and other.get(target_option) == value]
+
+   needs_functions = [my_link]
+
+Each call ``[[my_link("references", "id")]]`` then reads ``references`` on its own need and ``id`` on every need,
+and is computed after them; a ``links_from_filter``, a ``links`` or ``union`` :ref:`derive rule <needs_derive>`,
+or any other built-in function reading the links it computes holds them, where it read them empty.
+For reads the parameters do not name, give a callable instead: it is called with the arguments of each call,
+as written (a ``need.<field>`` :ref:`argument <dynamic_functions_need_arguments>` replaced by the field's value),
+and returns the fields the call reads, as a mapping of up to three lists:
+``"own"``, the fields it reads on its own need, ``"every"``, the fields it reads on every need,
+and ``"need"``, the ``(need id, field)`` pairs it reads on the needs it names:
+
+.. code-block:: python
+
+   @reads(lambda option, need_id: {"need": [(need_id, option)]})
+   def my_copy(app, need, needs, option, need_id):
+       return needs[need_id][option]
+
+``@reads()`` declares a function that reads no computed value. A field nothing computes need not be declared.
+For a function you do not own, give the declaration where you register it:
+``add_dynamic_function(app, their_function, reads=lambda *args, **kwargs: {"own": ["status"]})``,
+which wins over a declaration the function carries.
+The declaration is the function's attribute ``needs_reads``, a callable as above:
+an extension that also supports an older Sphinx-Needs can set it itself, which such a version ignores
+(sphinx-test-reports declares its ``tr_link`` so);
+a wrapper made with :py:func:`functools.wraps` carries the declaration of the function it wraps.
+
+A declared call is ordered as a built-in call is:
+a read of the field the call computes itself is a :ref:`cycle <needs_derive_cycle>`,
+a read of a value computed in a later step (a field that is not a link field, read from a link field)
+is not run (:ref:`needs_derive_scope`),
+and a ``need.<field>`` argument is read on its own need first, so one computed in the same step
+blocks the call, as a ``need.<field>`` that selects what a built-in function reads does.
+A declaration that cannot be applied to a call -- it raises, or returns anything but such a mapping --
+is reported once per function, as a ``needs.config`` warning, and its calls are computed
+after the built-in functions, as calls of a function that declares nothing.
+As the function runs, every read of a computed value that its declaration does not name
+is reported (:ref:`needs_derive_scope`), whether that value was computed yet or not:
+declare it, or the call is not ordered after it.
+A read is what the function's code reads through ``need[...]`` or ``need.get(...)``, or a filter it evaluates:
+``dict(need)`` and ``{**need}`` read every field of the need, a computed one among them.
+
 .. _needs_processing_order:
 
 Processing order
@@ -244,12 +309,13 @@ Once every document has been read, and before any page is written, the needs are
    besides calls: an array the items written before a call was appended to them, any other field its empty value.
 2. The ``[[…]]``, ``<<…>>`` and ``<{…}>`` of the :ref:`link fields <needs_links>` are computed,
    with the rules of the :ref:`derived link types <needs_derive>` (``links``, ``content_links``, ``union``),
-   each after the link fields it reads, and those that call your own :ref:`functions <needs_functions>` last.
+   each after the link fields it reads, and those that call your own :ref:`functions <needs_functions>` last
+   (but for a function that declares what it reads, ordered like a built-in one: :ref:`dynamic_functions_reads`).
 3. The back links are built from the links of steps 1 and 2, each back link list in :ref:`need-id order <needs_id_order>`.
 4. Every other ``[[…]]``, ``<<…>>`` and ``<{…}>`` is computed, with the rules of the
    :ref:`derived fields <needs_derive>`, each after every value it reads
    (a field of its own need or of another need, a field of a linked need, a back link),
-   and those that call your own functions last.
+   and those that call your own functions last, unless the function declares what it reads.
    Then the rules of the kind ``hash`` or ``fingerprint``, and those with ``after = "derived"``, are computed,
    each after the values it reads;
    a ``[[…]]`` of step 4 that reads one of their fields is not run (:ref:`needs_derive_scope`).
@@ -364,8 +430,9 @@ A ``filter`` that names only values final before its step is evaluated before th
 values nothing computes, and, in step 4, the link fields and back links of steps 2 and 3.
 One that names a value computed in the same step makes every need a candidate, and the call is computed after
 that field and ``x`` on every need.
-A filter reads the needs themselves, so only these rules order what it reads:
-the check at run time (:ref:`needs_derive_scope`) does not see a filter's reads.
+A filter reads the needs themselves, so only these rules order what it reads;
+the check at run time (:ref:`needs_derive_scope`) sees a filter's reads in a step with a call computed after
+the built-in functions, the only step where a filter can read a value not computed yet.
 
 .. _needs_id_order:
 
@@ -388,20 +455,22 @@ it is not run when one is a back link, a dead-link flag, or a field computed in 
 (:ref:`needs_derive_scope`);
 and a field no need computes is read as written.
 
-Your own functions run after every built-in function of their step, in :ref:`need-id order <needs_id_order>`, then by field.
+Your own functions that do not :ref:`declare what they read <dynamic_functions_reads>`
+run after every built-in function of their step, in :ref:`need-id order <needs_id_order>`, then by field.
 They read the values the built-in functions computed
 (but for a call whose filter cannot be read, which runs among them, see below);
-a built-in function that reads a field your own function computes
-reads it before it is computed, which is reported (:ref:`needs_derive_scope`).
-A function of your own in a link field, such as sphinx-test-reports' ``tr_link``, runs at the end of step 2,
-so its links are in the back links of step 3
-(its nearest built-in form is :ref:`links_from_match`, ordered as the other built-in functions are:
-see :ref:`needs_derive_join`).
-A :ref:`union <needs_derive_union>` over such a link type is computed among your functions,
-right after the last one filling a member of it, in that order:
-your functions after it read it complete, those before it read it empty, unreported,
-and a built-in function reading it in step 2 is reported.
-A later release is to let a function declare what it reads, which will order it like a built-in one.
+a built-in function that reads a field such a function computes, through an argument or a filter,
+reads it before it is computed, and one of your functions reading what one after it computes reads it too
+early: both are reported as they happen (:ref:`needs_derive_scope`), and keep the value they computed.
+A function that declares what it reads is computed like a built-in one instead,
+after what it declares and before the values that read it.
+A function of your own in a link field, such as sphinx-test-reports' ``tr_link`` (which declares its reads),
+runs in step 2, so its links are in the back links of step 3
+(its nearest built-in form is :ref:`links_from_match`: see :ref:`needs_derive_join`).
+A :ref:`union <needs_derive_union>` over a link type an undeclared function computes is computed among your
+functions, right after the last one filling a member of it, in that order:
+your functions after it read it complete, those before it read it empty (reported as they run),
+and a built-in function reading it in step 2 is not run, and reported.
 A ``filter`` that names ``needs``, or reads ``current_need`` by a key that is not written out,
 cannot be ordered either: its call runs with your own functions.
 ``calc_sum``'s filter may name ``needs`` (every need, as in the filter of a view),
@@ -471,15 +540,35 @@ These reads are reported as ``needs.derive_scope``:
   the union is computed after them, right after the last one filling a member of it,
   so the call is not run, and its field keeps the links written in it -- a rule's is left empty,
   and a ``links`` rule is reported on every need computing it;
-- a built-in function that reads a field your own function computes, before it is computed.
+- a built-in function or rule that reads a value your own function (one that does not
+  :ref:`declare what it reads <dynamic_functions_reads>`), or a call whose filter cannot be read, computes,
+  before it is computed: through an argument, or through its filter or ``where``;
+- your own function, or a call whose filter cannot be read, that reads a value computed after it:
+  by such a call later in the step, a union computed after them, or a later step;
+- a function that declares what it reads, reading a value computed in the pass that its declaration does not
+  name, computed yet or not.
 
 A field whose call is not run reads nothing, so it is on no cycle; a value computed from it reads what it holds.
-The last case is found as the call runs: the built-in functions note each field they read,
-and a read of a value not computed yet is reported with its cause.
+The last three are found as the calls run, and change no value: the reader computes what it computed before,
+from what it read, and is told.
+The built-in functions note each field they read through an argument, and while your own function runs,
+or a filter or ``where`` of a built-in function or rule is evaluated in a step with a call computed after the
+built-in functions, every read of a need's field is seen: a read of a value not computed yet at that moment
+is reported with its cause (a filter whose ``and`` stops before the value reads nothing).
+Each reader is one warning per cause, naming the needs it read
+-- your own function once for all its calls computing a field, a built-in call or rule once for every need it
+computes the field on:
+
+.. code-block:: text
+
+   index.rst:4: WARNING: derive rule 'links' for option 'via' on 4 needs (REQ_1, REQ_2, SPEC_1 and 1 more)
+   read 'blocks' on need 'SPEC_1' before it was computed: it is computed by your own function
+   'my_links', which runs after the built-in functions [needs.derive_scope]
+
+Declare what the function reads (:ref:`dynamic_functions_reads`), and the readers wait for it.
 Should the cause be neither your own function, nor a call whose filter cannot be read,
-nor a union computed after them,
+nor a union computed after them, nor a later step,
 the order itself missed the read, and the message asks you to report it.
-A filter's reads are not noted (see :ref:`needs_processing_order`).
 
 Move the read to a value that is final earlier,
 or write "set X when computed Y says so" as a ``[[…]]`` on X instead of as a ``needextend``.

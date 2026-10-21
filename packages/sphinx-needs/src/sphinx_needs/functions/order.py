@@ -29,7 +29,7 @@ such a union after it: a node computed last after it reads it complete, one befo
 reads it empty. A built-in node of the stratum reading such a union cannot wait for
 it, nor can a node computed last before it whose filter names it: it reads nothing,
 and holds its placeholder. Your own functions before it, and a read through ``needs``,
-read it empty, unreported.
+read it empty, which the pass reports as they run.
 
 Nothing here touches Sphinx: the module only reads the needs and the call texts,
 and returns the order to compute them in, which ``resolve_functions`` follows.
@@ -1369,8 +1369,8 @@ def _sink_union_readers(
     the union's field, or reads it as ``current_need`` by a constant key on the node's
     own need. What else a node computed last reads is not known: your own function, a
     read through ``needs`` or ``current_need`` by a key that is not written out, before
-    such a union reads it empty, unreported. A node reading the sink reads its
-    placeholder, which is final.
+    such a union reads it empty, which the pass reports as it runs (not here). A node
+    reading the sink reads its placeholder, which is final.
     """
     moved = slots.keys()
     by_field: dict[str, list[Node]] = {}
