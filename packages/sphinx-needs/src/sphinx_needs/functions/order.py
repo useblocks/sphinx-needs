@@ -368,7 +368,8 @@ class OutOfScope:
 
 @dataclass(frozen=True, slots=True)
 class Declaration:
-    """What a function of your own declares it reads (:func:`sphinx_needs.api.reads`).
+    """What a function of your own declares it reads
+    (:func:`~sphinx_needs.api.configuration.reads`).
 
     :ivar signature: Its parameters after ``app``, ``need`` and ``needs``, which a
         call's arguments are bound to.
@@ -494,7 +495,8 @@ class Project:
     :param fingerprint_names: The names a ``fingerprint`` rule reads on its own need,
         before its ``exclude``.
     :param declared: The declaration of what it reads of each registered function that
-        is not a built-in one and carries one (:func:`sphinx_needs.api.reads`).
+        is not a built-in one and carries one
+        (:func:`~sphinx_needs.api.configuration.reads`).
     """
 
     def __init__(

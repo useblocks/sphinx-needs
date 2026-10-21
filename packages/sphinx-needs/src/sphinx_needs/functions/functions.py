@@ -394,14 +394,15 @@ class UnresolvedReads:
 _DynamicFunctionT = TypeVar("_DynamicFunctionT", bound=Callable[..., Any])
 
 #: the attribute of a dynamic function of your own declaring what it reads: the
-#: :class:`Reads` :func:`sphinx_needs.api.reads` made
+#: :class:`Reads` :func:`~sphinx_needs.api.configuration.reads` made
 READS_ATTRIBUTE: Final = "needs_reads"
 
 
 @dataclass(frozen=True, slots=True)
 class Reads:
-    """What a dynamic function of your own reads, as :func:`sphinx_needs.api.reads`
-    declares it: the parameters whose argument is a field name, read on the call's own
+    """What a dynamic function of your own reads,
+    as :func:`~sphinx_needs.api.configuration.reads` declares it:
+    the parameters whose argument is a field name, read on the call's own
     need (``own``) or on every need (``every``).
 
     Applied to a function, it declares it: ``reads(own="option")(my_function)`` is

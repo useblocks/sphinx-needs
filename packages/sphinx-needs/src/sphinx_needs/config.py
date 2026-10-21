@@ -219,9 +219,10 @@ class _Config:
         """Adds a dynamic function to the configuration.
 
         :param reads: What the function reads (a ``Reads``), over the declaration it
-            carries itself (:func:`sphinx_needs.api.reads`). A declaration naming what
-            is not a parameter of the function is one ``needs.config`` warning, and the
-            function is registered as one that declares nothing.
+            carries itself (:func:`~sphinx_needs.api.configuration.reads`).
+            A declaration naming what is not a parameter of the function is one
+            ``needs.config`` warning, and the function is registered as one that
+            declares nothing.
 
         :raises NeedsApiConfigException: If ``name`` is not given and the function has
             no ``__name__`` to register it by, such as a ``functools.partial``.
