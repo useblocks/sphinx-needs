@@ -1849,22 +1849,13 @@ User value
     indirect=True,
 )
 def test_a_builtin_reading_a_user_function_field_is_out_of_scope(test_app):
-    """``jira`` runs after the built-in functions, so the sum reads ``U_1`` before it."""
+    """``jira`` runs after the built-in functions, and the sum reading what it computes
+    is computed after it: it reads ``U_1``'s final value, with no warning."""
     app = test_app
     app.build()
     needs = _needs(app)
-    assert (needs["SUM_U"]["total"], needs["U_1"]["hours"]) == (2.0, 7.0)
-    assert build_warnings(app) == [
-        _warning(
-            "index",
-            USER_VALUE_INDEX,
-            "SUM_U",
-            "dynamic function 'calc_sum' for option 'total' read 'hours' on need 'U_1' "
-            "before it was computed: it is computed by your own function 'jira', "
-            "which runs after the built-in functions",
-            "derive_scope",
-        )
-    ]
+    assert (needs["SUM_U"]["total"], needs["U_1"]["hours"]) == (9.0, 7.0)
+    assert build_warnings(app) == []
 
 
 # -- needextend filters ---------------------------------------------------------------
@@ -2064,7 +2055,12 @@ def later(app, need, needs):
     return "later"
 
 
-needs_functions = [later]
+def peek(app, need, needs, name):
+    # your own function, before X's: what X's field holds until it is computed
+    return repr(needs["X"][name])
+
+
+needs_functions = [later, peek]
 """
 )
 
@@ -2081,10 +2077,15 @@ Appended call
    :+summary: [[later()]]
    :+incoming: [[later()]]
 
-.. req:: Reads X before your function computes it
+.. req:: Reads X after your function computes it
    :id: Y
    :comment: [[copy("summary", "X")]]
    :refs: [[copy("incoming", "X")]]
+
+.. req:: Your own function, before X's
+   :id: W
+   :f1: [[peek("summary")]]
+   :f2: [[peek("incoming")]]
 """
 
 
@@ -2105,9 +2106,10 @@ def test_a_field_an_extend_appends_a_call_to_holds_its_placeholder(test_app):
     """Until its call is computed, a field a ``needextend`` appended a call to holds the
     value a cycle member would: an array its written items, a string its empty value.
 
-    Your own function runs after the built-in ones, so ``Y``'s copies read ``X``'s
-    fields before they are computed (and say so): ``summary`` is not its written
-    ``written``, which is now part of the call's value, and ``incoming`` is ``a, b``.
+    Your own function ``peek`` on ``W`` runs before ``X``'s (need-id order), so it reads
+    that: ``summary`` is not its written ``written``, which is now part of the call's
+    value, and ``incoming`` is ``a, b``. ``Y``'s copies, built-in functions reading what
+    your own function computes, are computed after it, and read the final values.
     """
     app = test_app
     app.build()
@@ -2116,20 +2118,12 @@ def test_a_field_an_extend_appends_a_call_to_holds_its_placeholder(test_app):
         "written later",
         ["a", "b", "later"],
     )
-    assert (needs["Y"]["comment"], needs["Y"]["refs"]) == (None, ["a", "b"])
-
-    def read(field: str, name: str) -> str:
-        return _warning(
-            "index",
-            APPENDED_USER_INDEX,
-            "Y",
-            f"dynamic function 'copy' for option '{field}' read '{name}' on need 'X' "
-            "before it was computed: it is computed by your own function 'later', "
-            "which runs after the built-in functions",
-            "derive_scope",
-        )
-
-    assert build_warnings(app) == [read("comment", "summary"), read("refs", "incoming")]
+    assert (needs["W"]["f1"], needs["W"]["f2"]) == ("None", "['a', 'b']")
+    assert (needs["Y"]["comment"], needs["Y"]["refs"]) == (
+        "written later",
+        ["a", "b", "later"],
+    )
+    assert build_warnings(app) == []
 
 
 UNSET_SELECTOR_CONF = (

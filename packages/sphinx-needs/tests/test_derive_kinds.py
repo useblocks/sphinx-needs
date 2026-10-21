@@ -2099,9 +2099,9 @@ def test_a_join_reads_final_values(test_app):
     ``where`` naming one is not (``needs.derive_scope``, naming the needs). A ``copy``
     join over its own result reads itself on every need: a cycle of every need
     holding it, through the join (``needs.derive_cycle``). Your own function computes
-    after every rule of its stratum, so a join reading what it computes says so, and
-    reads the placeholder (``o_user``); a late rule reads its value (``o_late2``): the
-    index of a stratum is built from the values final in it.
+    after every other rule of its stratum, and a join reading what it computes is
+    computed after it, so it reads its value (``o_user``), as a late rule does
+    (``o_late2``): the index of a stratum is built from the values final in it.
     """
     app = test_app
     app.build()
@@ -2110,7 +2110,8 @@ def test_a_join_reads_final_values(test_app):
     assert needs["TEST_1"]["o_late"] == "alice"
     assert needs["TEST_1"]["by_key_d"] == []
     assert needs["TEST_1"]["loop"] is None
-    assert needs["TEST_1"]["o_user"] == ["alice"]
+    # computed after your own function, as is the index it reads
+    assert needs["TEST_1"]["o_user"] == ["alice", "bob"]
     # the late rules read a new index, built once your own function has run
     assert needs["TEST_1"]["o_late2"] == ["alice", "bob"]
     loop = (
@@ -2130,10 +2131,6 @@ def test_a_join_reads_final_values(test_app):
         f"<srcdir>/index.rst:4: {loop}",
         f"<srcdir>/index.rst:10: {loop}",
         f"<srcdir>/index.rst:15: {loop}",
-        "<srcdir>/index.rst:15: WARNING: derive rule 'copy' for option 'o_user' read "
-        "'user_key' on need 'REQ_2' before it was computed: it is computed by your own "
-        "function 'later', which runs after the built-in functions "
-        "[needs.derive_scope]",
     ]
 
 
@@ -2213,29 +2210,17 @@ Readers without values
 )
 def test_a_join_without_values_reads_no_other_need(test_app):
     """A need whose ``equals`` gives no value matches nothing, whatever the other needs
-    hold, so it reads no need's ``field``: only the needs with values are told that
-    your own function computes a ``key`` after the rule read it. A need's own
-    ``equals`` is read whatever it holds: one your own function computes (``TEST_5``)
-    is told so, and matches nothing yet."""
+    hold (``TEST_4``). A join reading a ``key`` your own function computes, on any
+    need, is computed after it, on every need computing the rule, a need without
+    values included, and reads it final: with no warning, a need's own ``equals`` that
+    your own function computes (``TEST_5``) matches too."""
     app = test_app
     app.build()
     needs = _needs(app)
     assert needs["TEST_1"]["o_join"] == "alice"
     assert needs["TEST_4"]["o_join"] is None
-    assert needs["TEST_5"]["o_join"] is None
-    read = (
-        "WARNING: derive rule 'copy' for option 'o_join' read 'key' on need 'REQ_2' "
-        "before it was computed: it is computed by your own function 'later', which "
-        "runs after the built-in functions [needs.derive_scope]"
-    )
-    assert build_warnings(app) == [
-        f"<srcdir>/index.rst:14: {read}",
-        f"<srcdir>/index.rst:25: {read}",
-        "<srcdir>/index.rst:29: WARNING: derive rule 'copy' for option 'o_join' read "
-        "'ref' on need 'TEST_5' before it was computed: it is computed by your own "
-        "function 'later', which runs after the built-in functions "
-        "[needs.derive_scope]",
-    ]
+    assert needs["TEST_5"]["o_join"] == "alice"
+    assert build_warnings(app) == []
 
 
 TR_LINK_DOCUMENTED_CONF = """\

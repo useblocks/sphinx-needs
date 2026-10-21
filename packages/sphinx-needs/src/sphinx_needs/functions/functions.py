@@ -312,8 +312,8 @@ def find_and_replace_node_content(
 # evaluated conditions read, and a read of a value the pass has not computed yet is
 # reported once the call is over, as ``needs.derive_scope``. With the order right,
 # that is only a read of a value computed after the built-in functions -- by your own
-# function, by a call whose filter cannot be read, or a union over one of those -- by
-# a call computed last itself, before it. Nothing else is handed a record: an ``ndf`` role or a
+# function, by a call whose filter cannot be read, or a built-in one reading those --
+# by a call computed last itself, before it. Nothing else is handed a record: an ``ndf`` role or a
 # ``:style_row:`` runs after the pass, and a user's own function, which the pass calls
 # without one, has none to give a built-in it calls; such a built-in gets
 # ``reads=None`` and notes nothing.
@@ -544,17 +544,18 @@ def _out_of_scope_message(
             f"{'is' if len(selectors) == 1 else 'are'} computed in the same step: "
             f"{not_run} and {_kept(value)}"
         )
-    if out_of_scope.unions:
-        unions: dict[str, list[str]] = {}
-        for name, read_id in out_of_scope.unions:
-            unions.setdefault(name, []).append(read_id)
-        read = list(unions.items())
+    if out_of_scope.after:
+        after: dict[str, list[str]] = {}
+        for name, read_id in out_of_scope.after:
+            after.setdefault(name, []).append(read_id)
+        read = list(after.items())
+        one = _one(read)
         return (
-            f"{what} for option '{option}' reads {_reads_phrase(read)}, "
-            f"{'a union' if _one(read) else 'unions'} computed after your own "
-            "functions and the calls whose filter cannot be read that fill "
-            f"{'its' if _one(read) else 'their'} members, which this step cannot wait "
-            f"for: {not_run} and {_kept(value)}"
+            f"{what} for option '{option}' reads {_reads_phrase(read)}, which "
+            f"{'is' if one else 'are'} computed after your own functions and the calls "
+            f"whose filter cannot be read that {'it reads' if one else 'they read'}, so "
+            f"this step cannot wait for {'it' if one else 'them'}: {not_run} and "
+            f"{_kept(value)}"
         )
     names: dict[str, list[str]] = {}
     for name, read_id in out_of_scope.reads:
@@ -616,9 +617,9 @@ class _Pass:
         """The reads of a call, grouped by why they were read before being computed.
 
         Such a value is computed after the built-in functions: by your own function,
-        or by a call whose filter cannot be read, or it is a union computed after
-        those, as a member of it is. Any other is a read the order did not account
-        for.
+        or by a call whose filter cannot be read, or by a built-in function or rule
+        computed after those, as it reads one (a moved node). Any other is a read the
+        order did not account for.
         """
         groups: dict[str, list[tuple[str, list[str]]]] = {}
         functions: dict[str, None] = {}
@@ -629,7 +630,7 @@ class _Pass:
                     self.stratum.reads.get(node) if self.stratum is not None else None
                 )
                 if self.stratum is not None and node in self.stratum.after_last:
-                    kind = "union"
+                    kind = "moved"
                 elif node_reads is not None and node_reads.user_functions:
                     kind = "user"
                     functions.update(dict.fromkeys(node_reads.user_functions))
@@ -656,12 +657,12 @@ class _Pass:
                     f"{subject} computed by a call whose filter cannot be read, "
                     "which runs after the other built-in functions"
                 )
-            elif kind == "union":
+            elif kind == "moved":
+                one = _one(group)
                 cause = (
-                    f"{'it is a union' if _one(group) else 'they are unions'} computed "
-                    "after your own functions and the calls whose filter cannot be read "
-                    f"that fill {'its' if _one(group) else 'their'} members, after this "
-                    "call"
+                    f"{subject} computed after your own functions and the calls whose "
+                    f"filter cannot be read that {'it reads' if one else 'they read'}, "
+                    "after this call"
                 )
             else:
                 cause = (
@@ -737,7 +738,7 @@ def resolve_functions(
 
     The link fields first (stratum 1), then the back links are built, then every other
     field (stratum 2), each after every value it reads; your own functions last in each
-    stratum. A cycle's members are not computed, hold their placeholder (a list its
+    stratum, with the built-in functions reading what they compute. A cycle's members are not computed, hold their placeholder (a list its
     written items, any other field its empty value) and are reported as
     ``needs.derive_cycle``; a call that reads what its stratum cannot wait for is not
     run either, holds its placeholder and is reported as ``needs.derive_scope``.

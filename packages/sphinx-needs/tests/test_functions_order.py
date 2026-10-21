@@ -770,7 +770,9 @@ def test_a_filter_on_final_values_is_no_cycle():
 
 
 def test_user_functions_and_opaque_filters_come_last():
-    """In ``(need id, field)`` order, after every built-in node; nothing waits for them."""
+    """In ``(need id, field)`` order, after every built-in node not reading them; a
+    built-in node reading one is computed right after the last it reads: ``B`` after
+    ``A``, ``D``, whose sum reads ``summary`` on every need, after ``C``."""
     project = _project(
         _need("A", summary="[[mine()]]"),
         _need("B", summary="[[copy('summary', 'A')]]"),
@@ -778,11 +780,47 @@ def test_user_functions_and_opaque_filters_come_last():
         _need("D", total="[[calc_sum('summary')]]"),
     )
     assert [s.nodes for s in build_stratum(project, 2).steps] == [
-        (("B", "summary"),),
-        (("D", "total"),),
         (("A", "summary"),),
+        (("B", "summary"),),
         (("C", "summary"),),
+        (("D", "total"),),
     ]
+
+
+def test_built_ins_reading_late_nodes_are_moved_among_them():
+    """A built-in node reading a node computed last (``B``: ``A``; ``D``: a sum over
+    ``summary``, which ``A`` and ``C`` compute), or a moved node (``D``: ``B``), is
+    computed right after the last node computed last it reads, after what it reads.
+    Moved nodes reading each other are a cycle as any, placed after its slot (``H``'s
+    sum over ``hours``, which ``I`` computes, and its ``hours`` copying it); a built-in
+    node reading nothing late (``E``) stays first. ``after_last`` is the moved set."""
+    project = _project(
+        _need("A", summary="[[mine()]]"),
+        _need("B", summary="[[copy('summary', 'A')]]"),
+        _need("C", summary="[[mine()]]"),
+        _need("D", total="[[calc_sum('summary')]]", f1="[[copy('summary', 'B')]]"),
+        _need("E", summary="[[copy('title')]]"),
+        _need("H", total="[[calc_sum('hours')]]", hours="[[copy('total')]]"),
+        _need("I", hours="[[mine()]]"),
+    )
+    stratum = build_stratum(project, 2)
+    assert [(s.nodes, s.cycle) for s in stratum.steps] == [
+        ((("E", "summary"),), False),
+        ((("A", "summary"),), False),
+        ((("B", "summary"),), False),
+        ((("D", "f1"),), False),
+        ((("C", "summary"),), False),
+        ((("D", "total"),), False),
+        ((("I", "hours"),), False),
+        ((("H", "hours"), ("H", "total")), True),
+    ]
+    assert stratum.after_last == {
+        ("B", "summary"),
+        ("D", "f1"),
+        ("D", "total"),
+        ("H", "hours"),
+        ("H", "total"),
+    }
 
 
 def test_link_fields_are_stratum_one():

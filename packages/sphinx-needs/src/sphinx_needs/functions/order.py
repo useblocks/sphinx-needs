@@ -21,13 +21,14 @@ in the same stratum): it reads nothing, so it is on no cycle, and holds its
 placeholder too. Your own functions read what they like, so they are
 computed after every built-in node of their stratum, in ``(need id, field)`` order;
 so is a built-in call whose filter cannot be read (it names ``needs``, or reads
-``current_need`` by a key that is not written out). A ``union`` a member of which is
-computed so is computed among them right after the last such member, and a union of
-such a union after it: a node computed last after it reads it complete, one before it
-reads it empty. A built-in node of the stratum reading such a union cannot wait for
-it, nor can a node computed last before it whose filter names it: it reads nothing,
-and holds its placeholder. Your own functions before it, and a read through ``needs``,
-read it empty, unreported.
+``current_need`` by a key that is not written out). A built-in node reading one of
+them -- as an argument, through a filter on any need, a join, a ``where``; a union
+over its field -- and a built-in node reading such a node is *moved*: computed among
+them, right after the last of them it reads, so it reads them final. A node computed
+last after a moved node reads it complete, one before it reads it empty; one whose
+filter names it, before it, cannot wait for it: it reads nothing, and holds its
+placeholder. Your own functions before it, and a read through ``needs`` or
+``current_need`` by a key that is not written out, read it empty, unreported.
 
 Nothing here touches Sphinx: the module only reads the needs and the call texts,
 and returns the order to compute them in, which ``resolve_functions`` follows.
@@ -38,12 +39,13 @@ from __future__ import annotations
 import ast
 import heapq
 import inspect
+from collections import deque
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Final, TypeVar
 
-from sphinx_needs.derive import DeriveCall, is_union
+from sphinx_needs.derive import DeriveCall
 from sphinx_needs.functions.common import (
     calc_sum,
     check_linked_values,
@@ -341,15 +343,15 @@ class OutOfScope:
         while their field is computed in the same stratum.
     :ivar linked: The back links and dead-link flags read on every need the reader's
         own ``links`` name, while those are computed in the same stratum.
-    :ivar unions: The ``(name, need id)`` reads of unions computed after the nodes
-        computed last in the stratum (:attr:`Stratum.after_last`).
+    :ivar after: The ``(name, need id)`` reads of moved nodes computed after the node,
+        one of the nodes computed last (:attr:`Stratum.after_last`).
     """
 
     what: str
     reads: tuple[tuple[str, str], ...] = ()
     selectors: tuple[str, ...] = ()
     linked: tuple[str, ...] = ()
-    unions: tuple[tuple[str, str], ...] = ()
+    after: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(slots=True)
@@ -396,7 +398,8 @@ class NodeReads:
 
     @property
     def last(self) -> bool:
-        """Whether the node is computed after every built-in node of its stratum."""
+        """Whether the node is computed after the built-in nodes of its stratum that do
+        not read it (a node computed last)."""
         return not self.scope and (bool(self.user_functions) or self.opaque)
 
 
@@ -986,8 +989,8 @@ class Step:
 class Stratum:
     """The nodes of one stratum, what each reads, and the steps to compute them in.
 
-    :ivar after_last: The unions computed after the nodes computed last, as a member
-        of each is one of them (or such a union).
+    :ivar after_last: The built-in nodes computed among the nodes computed last, as
+        each reads one of them (or such a node): its *moved* nodes.
     """
 
     stratum: int
@@ -1004,29 +1007,70 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
 
     The built-in nodes come first, each after what it reads. The nodes computed last
     (your own functions, the calls whose filter cannot be read) follow, in
-    ``(need id, field)`` order; each union reading one of them is computed right after
-    the last of its members computed last, and after the unions it reads
-    (:func:`_unions_after_last`, :func:`_slots`). A node computed last before such a
-    union reads it empty, and one after it reads it complete. A built-in node reading
-    such a union, or a node computed last before it whose filter names it, is a sink
-    (:func:`_sink_union_readers`).
+    ``(need id, field)`` order. A built-in node reading one of them -- as a dependency,
+    or through a column one of whose members, on any need, is one -- and a built-in
+    node reading such a node, is *moved*: computed among them, right after the last of
+    them it reads (its *slot*), after what it reads, a cycle among moved nodes being a
+    cycle as any (:func:`_moved`). A node computed last before a moved node's slot reads
+    it empty, one after it complete; one whose filter names a moved node computed after
+    it is a sink.
     """
     reads = {
         node: project.node_reads(node, stratum)
         for node in project.stratum_nodes(stratum)
     }
-    after_last = _unions_after_last(project, reads)
-    moved = frozenset(after_last)
-    slots = _slots(reads, after_last)
-    if moved:
-        _sink_union_readers(project, reads, slots)
-    built_in = [node for node, r in reads.items() if not r.last and node not in moved]
-    last = sorted(node for node, r in reads.items() if r.last)
+    slots, live = _moved(project, reads)
+    built_in = [node for node, r in reads.items() if not r.last and node not in slots]
+    steps = [step for step, _ in _graph_steps(project, reads, built_in)]
+    # each component of moved nodes right after its slot, the last of the nodes computed
+    # last that its members read, in the order they read each other
+    keyed = sorted(
+        ((max(slots[member] for member in members), position), step)
+        for position, (step, members) in enumerate(
+            _graph_steps(project, reads, sorted(slots))
+        )
+    )
+    pending = deque(keyed)
+    for node in live:
+        while pending and pending[0][0][0] < node:
+            steps.append(pending.popleft()[1])
+        steps.append(Step((node,)))
+    steps.extend(step for _, step in pending)
+    return Stratum(stratum, reads, steps, frozenset(slots))
+
+
+def _members(
+    project: Project, column: Column, by_field: Mapping[str, Sequence[Node]]
+) -> Sequence[Node]:
+    """The nodes of ``by_field`` a column reads: every node of its field, or those of
+    the candidates of its filter."""
+    nodes = by_field.get(column.field, ())
+    if column.candidates is None:
+        return nodes
+    present = set(nodes)
+    return [
+        (need_id, column.field)
+        for need_id in project.sum_candidates(column.candidates)
+        if (need_id, column.field) in present
+    ]
+
+
+def _graph_steps(
+    project: Project, reads: Mapping[Node, NodeReads], nodes: Sequence[Node]
+) -> list[tuple[Step, list[Node]]]:
+    """The steps computing ``nodes``, each after what it reads among them, with the
+    members of each step.
+
+    A node's reads outside ``nodes`` are final before the first step: the strata before,
+    or computed before these nodes (the built-in nodes, for the moved ones; the nodes
+    computed last before a moved node's slot). A strongly connected group is a cycle.
+    """
+    node_set = set(nodes)
     by_field: dict[str, list[Node]] = {}
-    for node in built_in:
+    for node in nodes:
         by_field.setdefault(node[1], []).append(node)
 
-    vertices: list[_Vertex] = list(built_in)
+    vertices: list[_Vertex] = list(nodes)
     index: dict[_Vertex, int] = {v: i for i, v in enumerate(vertices)}
     # a node that reads no other has no list of its own
     edges: list[list[int] | None] = [None] * len(vertices)
@@ -1043,15 +1087,7 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
     def column_vertex(column: Column) -> int | None:
         if column in index:
             return index[column]
-        if column.candidates is None:
-            members = by_field.get(column.field, [])
-        else:
-            members = [
-                (need_id, column.field)
-                for need_id in project.sum_candidates(column.candidates)
-                if (need_id, column.field) in reads
-                and not reads[(need_id, column.field)].last
-            ]
+        members = _members(project, column, by_field)
         if not members:
             return None
         index[column] = len(vertices)
@@ -1059,11 +1095,11 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
         edges.append([index[member] for member in members])
         return index[column]
 
-    for node in built_in:
+    for node in nodes:
         source = index[node]
         node_reads = reads[node]
         for dep in node_reads.deps:
-            if dep in index:  # a node computed last is not waited for
+            if dep in node_set:
                 add_edge(source, index[dep])
         for column, reason in node_reads.columns:
             target = column_vertex(column)
@@ -1072,7 +1108,7 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
                 reasons.setdefault((source, target), reason)
 
     components = strongly_connected(edges)
-    steps: list[Step] = []
+    steps: list[tuple[Step, list[Node]]] = []
     for component in schedule(edges, components, _keys(vertices, components)):
         members = sorted(
             v for v in (vertices[i] for i in component) if not isinstance(v, Column)
@@ -1081,168 +1117,120 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
             continue
         cyclic = len(component) > 1 or component[0] in (edges[component[0]] or ())
         if not cyclic:
-            steps.append(Step((members[0],)))
+            steps.append((Step((members[0],)), members))
             continue
         inside = set(component)
         steps.append(
-            Step(
-                tuple(members),
-                cycle=True,
-                through=tuple(
-                    _column_on_cycle(vertices, edges, reasons, inside, index[member])
-                    for member in members
+            (
+                Step(
+                    tuple(members),
+                    cycle=True,
+                    through=tuple(
+                        _column_on_cycle(
+                            vertices, edges, reasons, inside, index[member]
+                        )
+                        for member in members
+                    ),
                 ),
+                members,
             )
         )
-    # each union right after its slot, the last of its members computed last (a member
-    # made a sink above keeps its place in that order), in the order they read each other
-    position = {node: number for number, node in enumerate(after_last)}
-    unions = sorted(after_last, key=lambda node: (slots[node], position[node]))
-    for node in last:
-        while unions and slots[unions[0]] < node:
-            steps.append(Step((unions.pop(0),)))
-        steps.append(Step((node,)))
-    steps.extend(Step((node,)) for node in unions)
-    return Stratum(stratum, reads, steps, moved)
+    return steps
 
 
-def _slots(
-    reads: Mapping[Node, NodeReads], after_last: Sequence[Node]
-) -> dict[Node, Node]:
-    """Each union computed last's *slot*: the last of its members computed last, in
-    ``(need id, field)`` order, or the slot of a union it reads, if later.
+def _moved(
+    project: Project, reads: Mapping[Node, NodeReads]
+) -> tuple[dict[Node, Node], list[Node]]:
+    """The moved nodes of a stratum, each with its slot, and the nodes computed last
+    that are computed, in ``(need id, field)`` order.
 
-    The union is computed right after its slot among the nodes computed last.
-
-    :param after_last: The unions, each after the unions it reads.
-    """
-    slots: dict[Node, Node] = {}
-    for union in after_last:
-        slots[union] = max(
-            dep if reads[dep].last else slots[dep]
-            for dep in reads[union].deps
-            if reads[dep].last or dep in slots
-        )
-    return slots
-
-
-def _unions_after_last(project: Project, reads: Mapping[Node, NodeReads]) -> list[Node]:
-    """The unions of a stratum computed after its nodes computed last, in order.
-
-    A union reads its own need's members, each known before the stratum runs: one a
-    member of which is computed last (your own function, a call whose filter cannot be
-    read) is computed after those, and so is a union reading such a union, after it.
-    Each comes after the unions it reads, else in ``(need id, field)`` order. A link
-    type of another kind is not moved: what it reads is other needs' values.
-    """
-    late = {node for node, r in reads.items() if r.last}
-    if not late:
-        return []
-    pending = [
-        node
-        for node, r in reads.items()
-        if not r.sink
-        and not r.last
-        and (call := project.rules.get(node)) is not None
-        and is_union(call.rule)
-    ]
-    moved: set[Node] = set()
-    grew = True
-    while grew:
-        grew = False
-        rest = []
-        for node in pending:
-            if any(dep in late or dep in moved for dep in reads[node].deps):
-                moved.add(node)
-                grew = True
-            else:
-                rest.append(node)
-        pending = rest
-    order: list[Node] = []
-    done: set[Node] = set()
-    remaining = sorted(moved)
-    while remaining:
-        ready = [
-            node
-            for node in remaining
-            if all(dep not in moved or dep in done for dep in reads[node].deps)
-        ]
-        # a union naming itself, or two naming each other, is refused at load: some
-        # union is always ready
-        assert ready, "the unions computed last read each other"
-        order.extend(ready)
-        done.update(ready)
-        remaining = [node for node in remaining if node not in done]
-    return order
-
-
-def _sink_union_readers(
-    project: Project, reads: Mapping[Node, NodeReads], slots: Mapping[Node, Node]
-) -> None:
-    """Make each node of the stratum computed before a union computed last (one in
-    ``slots``) that reads it a sink.
-
-    A built-in node is computed before the nodes computed last, so it cannot wait for
-    such a union; nor can a node computed last that comes before the union (at or
-    before its slot). It reads nothing and holds its placeholder, as a node reading
-    what its stratum cannot wait for, and says so (``OutOfScope.unions``). A built-in
-    node's read through a column counts when one of the column's members is such a
-    union; a node computed last's, when a filter of it that cannot be read still names
-    the union's field, or reads it as ``current_need`` by a constant key on the node's
-    own need. What else a node computed last reads is not known: your own function, a
+    A built-in node (not a sink) is moved when it reads a node computed last, as a
+    dependency or through a column one of whose members is one, or when it reads a
+    moved node. Its slot is the last node computed last it so reads. The nodes computed
+    last are decided from the last down: one whose filter that cannot be read names a
+    node moved by itself or by one after it (a free name: the field on any need; a
+    constant ``current_need`` key: the field on its own need) cannot wait for it, and
+    is a sink, moving nothing. What else it reads is not known: your own function, a
     read through ``needs`` or ``current_need`` by a key that is not written out, before
-    such a union reads it empty, unreported. A node reading the sink reads its
-    placeholder, which is final.
+    a moved node's slot reads it empty, unreported.
+
+    Each node and each column is expanded once per node computed last that moves it,
+    so the walk is linear in the reads.
     """
-    moved = slots.keys()
+    late = sorted(node for node, r in reads.items() if r.last)
+    if not late:
+        return {}, []
     by_field: dict[str, list[Node]] = {}
-    for node in sorted(moved):
+    for node in reads:
         by_field.setdefault(node[1], []).append(node)
-    for node, node_reads in sorted(reads.items()):
-        if not node_reads.last:
+    # who reads each node, and each column: the built-in nodes that are not sinks
+    dep_readers: dict[Node, list[Node]] = {}
+    column_readers: dict[Column, list[Node]] = {}
+    for node, node_reads in reads.items():
+        if node_reads.last or node_reads.sink:
             continue
-        before = {
+        for dep in node_reads.deps:
+            dep_readers.setdefault(dep, []).append(node)
+        for column, _ in node_reads.columns:
+            column_readers.setdefault(column, []).append(node)
+    columns_of: dict[Node, list[Column]] = {}
+    for column in column_readers:
+        for member in _members(project, column, by_field):
+            columns_of.setdefault(member, []).append(column)
+
+    slots: dict[Node, Node] = {}
+    moved_by_field: dict[str, list[Node]] = {}
+    #: the columns whose readers are moved: none of them is read again
+    expanded: set[Column] = set()
+    live: list[Node] = []
+    for node in reversed(late):
+        newly: list[Node] = []
+        opened: set[Column] = set()
+        seen = {node}
+        queue = deque([node])
+        while queue:
+            read = queue.popleft()
+            readers: list[Node] = list(dep_readers.get(read, ()))
+            for column in columns_of.get(read, ()):
+                if column not in expanded and column not in opened:
+                    opened.add(column)
+                    readers.extend(column_readers[column])
+            for reader in readers:
+                if reader in seen or reader in slots:
+                    continue
+                seen.add(reader)
+                newly.append(reader)
+                queue.append(reader)
+        node_reads = reads[node]
+        new_set = set(newly)
+        new_by_field: dict[str, list[Node]] = {}
+        for reader in newly:
+            new_by_field.setdefault(reader[1], []).append(reader)
+        named = {
             (name, need_id)
             for field in node_reads.opaque_names
-            for need_id, name in by_field.get(field, [])
-            if node <= slots[(need_id, name)]
-        }
-        before.update(
-            (name, node[0])
-            for name in node_reads.opaque_current
-            if (own := (node[0], name)) in slots and node <= slots[own]
-        )
-        if before:
-            node_reads.scope = [
-                OutOfScope(node_reads.what, unions=tuple(sorted(before)))
-            ]
-            node_reads.deps = ()
-            node_reads.columns = ()
-    for node, node_reads in reads.items():
-        if node in moved or node_reads.sink or node_reads.last:
-            continue
-        found: dict[tuple[str, str], None] = {}
-        for dep in node_reads.deps:
-            if dep in moved:
-                found[(dep[1], dep[0])] = None
-        for column, _ in node_reads.columns:
-            members = (
-                by_field.get(column.field, [])
-                if column.candidates is None
-                else [
-                    (need_id, column.field)
-                    for need_id in project.sum_candidates(column.candidates)
-                    if (need_id, column.field) in moved
-                ]
+            for need_id, name in (
+                *moved_by_field.get(field, ()),
+                *new_by_field.get(field, ()),
             )
-            for need_id, name in members:
-                found[(name, need_id)] = None
-        if found:
-            node_reads.scope = [
-                OutOfScope(node_reads.what, unions=tuple(sorted(found)))
-            ]
+        }
+        named.update(
+            (field, node[0])
+            for field in node_reads.opaque_current
+            if (own := (node[0], field)) in slots or own in new_set
+        )
+        if named:
+            node_reads.scope = [OutOfScope(node_reads.what, after=tuple(sorted(named)))]
             node_reads.deps = ()
             node_reads.columns = ()
+            continue
+        live.append(node)
+        expanded |= opened
+        for reader in newly:
+            slots[reader] = node
+            moved_by_field.setdefault(reader[1], []).append(reader)
+    live.reverse()
+    return slots, live
 
 
 def _column_on_cycle(

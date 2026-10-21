@@ -928,17 +928,11 @@ Read after last
    :opq: [[links_from_filter("len(needs) > 0 and 'REQ_2' in all_links")]]
 """
 
-#: why a reader of a union computed last cannot wait for it
-_UNION_LAST = (
+#: why a node computed last before a value computed after the nodes computed last it
+#: reads cannot wait for it
+_AFTER = (
     "computed after your own functions and the calls whose filter cannot be read that "
-    "fill {} members"
-)
-_UNION = "a union " + _UNION_LAST.format("its")
-#: the four unions computed last, read through a column
-_FOUR = (
-    "'all_links' on 4 needs (SPEC_1, SPEC_4, SPEC_5 and 1 more), unions "
-    + _UNION_LAST.format("their")
-    + ", which this step cannot wait for"
+    "they read, so this step cannot wait for them"
 )
 
 
@@ -950,65 +944,58 @@ _FOUR = (
 def test_a_union_computed_last_and_its_readers(test_app):
     """A union over a member your own function, or a call whose filter cannot be
     read, computes is computed right after the last such member, among the nodes
-    computed last in need-id order, and a union of that union after that. A node
-    computed last after it reads it complete (SPEC_2 after SPEC_1's union: ``seen``,
-    ``late_copy``; SPEC_9 after every union: ``opq``); one before it reads it empty
-    (SPEC_0's own function ``seen``: the trade-off), but a call whose filter cannot be
-    read and names the union cannot wait for it, and says so (SPEC_0's ``opq``,
-    SPEC_4's ``blocks``, which fills a member); a call that records its reads reports
-    reading it at run time (SPEC_5's ``copy`` of SPEC_6's union).
+    computed last in need-id order, and a union of that union after that; so is every
+    built-in function or rule reading such a union, or such a member, on any need:
+    ``me`` (``current_need['all_links']``), ``via`` (a filter on every need),
+    ``where_rule`` (a ``links`` rule, on every need computing it) hold the links they
+    select, with no warning. ``summed`` (a sum written in a link field) is computed
+    too, and its result is no link list (``needs.dynamic_function``).
 
-    A built-in call or rule of the link fields' step reading such a union cannot wait
-    for it: it is not run, holds its placeholder (its written links), and is one
-    ``needs.derive_scope`` -- whether it reads the union on its own need
-    (``current_need['all_links']``, ``me``), through a filter on every need (``via``),
-    through the candidates of a sum (``summed``), or as a ``links`` rule, on every
-    need computing it."""
+    A node computed last after the union reads it complete (SPEC_2's ``seen`` and
+    ``late_copy`` after SPEC_1's union, SPEC_9's ``opq`` after every union); one before
+    it reads it empty (SPEC_0's own function ``seen``: the trade-off), but a call whose
+    filter cannot be read and names the union cannot wait for it, and says so
+    (SPEC_0's ``opq``, SPEC_4's ``blocks``, which fills a member); a call that records
+    its reads reports reading it at run time (SPEC_5's ``copy`` of SPEC_6's union)."""
     app = test_app
     app.build()
-    rule = "WARNING: derive rule 'links' for option 'where_rule' reads " + _FOUR
-    left = ": the rule is not run and the field is left empty [needs.derive_scope]"
-    empty = ": the call is not run and the field is left empty [needs.derive_scope]"
-    assert [w for w in build_warnings(app) if "derive_scope" in w] == [
-        f"<srcdir>/index.rst:4: {rule}{left}",
-        f"<srcdir>/index.rst:7: {rule}{left}",
+    assert [w for w in build_warnings(app) if "config.cache" not in w] == [
         "<srcdir>/index.rst:10: WARNING: dynamic function 'links_from_filter' for "
-        f"option 'opq' reads {_FOUR}{empty}",
-        f"<srcdir>/index.rst:10: {rule}{left}",
-        "<srcdir>/index.rst:15: WARNING: dynamic function 'links_from_filter' for "
-        f"option 'me' reads 'all_links' on need 'SPEC_1', {_UNION}, which this step "
-        f"cannot wait for{empty}",
-        "<srcdir>/index.rst:15: WARNING: dynamic function 'calc_sum' for option "
-        f"'summed' reads {_FOUR}{empty}",
-        f"<srcdir>/index.rst:15: {rule}{left}",
-        "<srcdir>/index.rst:22: WARNING: dynamic function 'links_from_filter' for "
-        f"option 'via' reads {_FOUR}: the call is not run and the field keeps only its "
-        "written items [needs.derive_scope]",
-        f"<srcdir>/index.rst:22: {rule}{left}",
+        "option 'opq' reads 'all_links' on 3 needs (SPEC_1, SPEC_5, SPEC_6), which are "
+        f"{_AFTER}: the call is not run and the field is left empty "
+        "[needs.derive_scope]",
         "<srcdir>/index.rst:28: WARNING: dynamic function 'links_from_filter' for "
-        "option 'blocks' reads 'all_links' on 3 needs (SPEC_4, SPEC_5, SPEC_6), unions "
-        + _UNION_LAST.format("their")
-        + f", which this step cannot wait for{empty}",
-        f"<srcdir>/index.rst:28: {rule}{left}",
-        f"<srcdir>/index.rst:32: {rule}{left}",
-        f"<srcdir>/index.rst:36: {rule}{left}",
-        f"<srcdir>/index.rst:40: {rule}{left}",
+        "option 'blocks' reads 'all_links' on 3 needs (SPEC_4, SPEC_5, SPEC_6), which "
+        f"are {_AFTER}: the call is not run and the field is left empty "
+        "[needs.derive_scope]",
         "<srcdir>/index.rst:32: WARNING: dynamic function 'copy' for option 'blocks' "
-        "read 'all_links' on need 'SPEC_6' before it was computed: it is "
-        f"{_UNION}, after this call [needs.derive_scope]",
+        "read 'all_links' on need 'SPEC_6' before it was computed: it is computed after "
+        "your own functions and the calls whose filter cannot be read that it reads, "
+        "after this call [needs.derive_scope]",
+        "<srcdir>/index.rst:15: WARNING: Error while resolving dynamic values for field "
+        "'summed', of need 'SPEC_1': dynamic function value <class 'float'> is not of "
+        "type 'array' or item type 'string' [needs.dynamic_function]",
     ]
     needs = _built(app)["needs"]
     spec_1, spec_2 = needs["SPEC_1"], needs["SPEC_2"]
     assert spec_1["all_links"] == spec_1["again"] == ["REQ_1", "REQ_2"]
     assert needs["SPEC_6"]["all_links"] == ["REQ_2"]
-    assert (spec_1["me"], spec_1["summed"], spec_2["via"]) == ([], [], ["REQ_1"])
+    # built-in readers, computed after what they read
+    assert (spec_1["me"], spec_1["summed"]) == (["REQ_1", "REQ_2"], [])
+    assert spec_2["via"] == ["REQ_1", "SPEC_1", "SPEC_6"]
+    assert spec_1["where_rule"] == ["SPEC_6"]
+    assert needs["SPEC_6"]["where_rule"] == ["SPEC_1"]
+    assert all(
+        need["where_rule"] == ["SPEC_1", "SPEC_6"]
+        for need_id, need in needs.items()
+        if need_id not in ("SPEC_1", "SPEC_6")
+    )
     # computed last, after the union: complete
     assert spec_2["seen"] == spec_2["late_copy"] == ["REQ_1", "REQ_2"]
     assert needs["SPEC_9"]["opq"] == ["SPEC_1", "SPEC_6"]
     # computed last, before it: your own function reads it empty (the trade-off)
     assert (needs["SPEC_0"]["seen"], needs["SPEC_0"]["opq"]) == ([], [])
     assert needs["SPEC_4"]["blocks"] == needs["SPEC_5"]["blocks"] == []
-    assert all(need["where_rule"] == [] for need in needs.values())
 
 
 CONF_LAST_ORDER = """\
@@ -1241,10 +1228,10 @@ def test_a_filter_naming_a_union_by_current_need_key(test_app):
     app.build()
     assert [w for w in build_warnings(app) if "derive_scope" in w] == [
         "<srcdir>/index.rst:10: WARNING: dynamic function 'links_from_filter' for "
-        "option 'c_cur' reads 'u' on need 'SPEC_5', a union computed after your own "
-        "functions and the calls whose filter cannot be read that fill its members, "
-        "which this step cannot wait for: the call is not run and the field is left "
-        "empty [needs.derive_scope]",
+        "option 'c_cur' reads 'u' on need 'SPEC_5', which is computed after your own "
+        "functions and the calls whose filter cannot be read that it reads, so this "
+        "step cannot wait for it: the call is not run and the field is left empty "
+        "[needs.derive_scope]",
     ]
     needs = _built(app)["needs"]
     spec = needs["SPEC_5"]
