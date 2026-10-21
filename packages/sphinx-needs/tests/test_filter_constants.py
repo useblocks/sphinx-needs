@@ -1,9 +1,10 @@
 """A filter that is a constant alone is refused on every tier, and nothing else is.
 
 A filter is read for its truth, need by need, and a constant -- ``"x"``, ``0``, ``-5``,
-``None``, parenthesised or not -- has the same truth on every need, so it says nothing
-about one. Every consumer of a filter string refuses it before any tier runs, reports it
-once per use, and selects nothing (#2355); ``:filter: "x"`` used to select every need.
+``None``, a display such as ``[1]`` or ``("x",)``, an f-string with no placeholder,
+parenthesised or not, after any leading spaces -- has the same truth on every need, so
+it says nothing about one. The engine refuses it before any tier runs, reports it once
+per use, and selects nothing (#2355); ``:filter: "x"`` used to select every need.
 ``True`` and ``False`` are the exception: they are the spelling of "every need" and "no
 need". A constant inside a larger filter, or a constant expression, is read like any
 other filter (#1773: by its truth).
@@ -37,6 +38,15 @@ from tests.util import bar_sum_labels, chart_images, needs_by_id, pie_slice_coun
 #: One filter of every shape a bare constant takes.
 CONSTANTS = ['"x"', '""', "0", "-5", "1.5", "None", '("x")', "+5", 'b"x"']
 
+#: A constant after leading spaces or a tab, which Python's ``eval`` reads past: a
+#: filter configured outside a document keeps them (a directive option or a role does
+#: not).
+INDENTED = [" 1", '\t"x"', ' "x"']
+
+#: A display, whatever it holds, and an f-string with no placeholder: each is true or
+#: false on every need alike, as a literal is.
+DISPLAYS = ['status == "open",', "[1]", '("x",)', "{}", "[]", "()", 'f"x"', 'f""']
+
 #: Filters that are no bare constant: each is read for its truth, none is refused.
 NOT_CONSTANTS = [
     "True",
@@ -55,11 +65,18 @@ NOT_CONSTANTS = [
     "True and owner",
     "var.platform",
     "[t for t in tags]",
+    "{t for t in tags}",
+    "{t: 1 for t in tags}",
+    "(t for t in tags)",
+    'f"{status}"',
+    "set()",
+    " tags",
+    " True",
     "this ( is bad",
 ]
 
 
-@pytest.mark.parametrize("filter_string", CONSTANTS)
+@pytest.mark.parametrize("filter_string", [*CONSTANTS, *INDENTED, *DISPLAYS])
 def test_a_constant_is_refused_by_every_tier(filter_string: str) -> None:
     """The decision is the string's alone, and every entry point of the engine takes it:
     the need-by-need ones raise, the list one reports once and selects nothing."""
@@ -85,8 +102,9 @@ def test_a_constant_is_refused_by_every_tier(filter_string: str) -> None:
 
 @pytest.mark.parametrize("filter_string", NOT_CONSTANTS)
 def test_nothing_else_is_a_constant(filter_string: str) -> None:
-    """True and False alone, a constant inside a larger filter, a constant expression and
-    a string that does not parse are no bare constant: a tier answers each."""
+    """True and False alone, a constant inside a larger filter, a constant expression, a
+    comprehension, an f-string with a placeholder, a call and a string that does not
+    parse are no constant: a tier answers each."""
     assert not _is_constant_filter(filter_string)
     assert _filter_tier(filter_string)[0] != "refused"
 
@@ -240,3 +258,138 @@ def test_every_consumer_refuses_a_constant(test_app: Any) -> None:
     for n in range(shapes):
         assert needs["REQ_001"][f"by_predicate_{n}"] == "plain"
         assert needs[f"LINKER_{n}"]["links"] == []
+
+
+# --- a constant configured outside a document, after leading whitespace --------------
+
+INDENTED_WARNINGS = {f"indented_{n}": s for n, s in enumerate(INDENTED)}
+INDENTED_FIELDS = {
+    f"by_indented_{n}": {"default": "plain", "predicates": [(s, "matched")]}
+    for n, s in enumerate(INDENTED)
+}
+INDENTED_INDEX = (
+    "Indented\n========\n\n"
+    ".. req:: Alpha\n   :id: REQ_001\n   :tags: a\n\n"
+    ".. req:: Beta\n   :id: REQ_002\n"
+)
+
+
+def _indented_project(setting: str) -> dict[str, Any]:
+    conf = f'extensions = ["sphinx_needs"]\nneeds_build_json = True\n{setting}\n'
+    return {
+        "buildername": "html",
+        "files": [(Path("conf.py"), conf), (Path("index.rst"), INDENTED_INDEX)],
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_indented_project(f"needs_fields = {INDENTED_FIELDS!r}")],
+    indirect=True,
+)
+def test_a_default_predicate_after_leading_whitespace_is_refused(
+    test_app: Any,
+) -> None:
+    """A predicate in the configuration keeps its leading spaces, which ``eval`` reads
+    past: ``" 1"`` would match every need, so it is refused as ``1`` is, with one
+    warning each, and matches none."""
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert len(warnings) == len(INDENTED), warnings
+    assert all(w.endswith("[needs.config]") for w in warnings), warnings
+    assert all(
+        "it is a constant, which says nothing about a need" in w for w in warnings
+    )
+    needs = needs_by_id(app)
+    for n in range(len(INDENTED)):
+        assert needs["REQ_001"][f"by_indented_{n}"] == "plain"
+        assert needs["REQ_002"][f"by_indented_{n}"] == "plain"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_indented_project(f"needs_warnings = {INDENTED_WARNINGS!r}")],
+    indirect=True,
+)
+def test_a_warnings_filter_after_leading_whitespace_is_refused(test_app: Any) -> None:
+    """A ``needs_warnings`` filter with leading spaces is a constant all the same: one
+    ``needs.filter`` warning each, where the view path stopped the build on the
+    indentation."""
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert len(warnings) == len(INDENTED), warnings
+    assert all(w.endswith("[needs.filter]") for w in warnings), warnings
+    assert all(
+        "it is a constant, which says nothing about a need" in w for w in warnings
+    )
+
+
+# --- a value that is no boolean, on the two eval tails no other test reaches ---------
+
+TRUTH_JSON = json.dumps(
+    {
+        "current_version": "1",
+        "versions": {
+            "1": {
+                "needs": {
+                    "IMP_TAGGED": {
+                        "id": "IMP_TAGGED",
+                        "type": "req",
+                        "title": "Tagged",
+                        "tags": ["t"],
+                    },
+                    "IMP_PLAIN": {
+                        "id": "IMP_PLAIN",
+                        "type": "req",
+                        "title": "Plain",
+                        "tags": [],
+                    },
+                }
+            }
+        },
+    }
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    Path("conf.py"),
+                    'extensions = ["sphinx_needs"]\n'
+                    "needs_build_json = True\n"
+                    "needs_fields = {'by_tags': {'default': 'plain', "
+                    "'predicates': [('tags', 'matched')]}}\n",
+                ),
+                (
+                    Path("index.rst"),
+                    "Truth\n=====\n\n"
+                    ".. req:: Alpha\n   :id: REQ_001\n   :tags: a\n\n"
+                    ".. req:: Beta\n   :id: REQ_002\n\n"
+                    ".. needimport:: needs.json\n   :filter: tags\n",
+                ),
+                (Path("needs.json"), TRUTH_JSON),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_predicate_and_an_import_filter_are_read_for_their_truth(
+    test_app: Any,
+) -> None:
+    """A default predicate and a needimport filter are evaluated by ``eval`` alone, and
+    read for their truth as every filter is (#1773): ``tags`` matches the needs that
+    have tags, and nothing is reported."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = needs_by_id(app)
+    assert needs["REQ_001"]["by_tags"] == "matched"
+    assert needs["REQ_002"]["by_tags"] == "plain"
+    assert "IMP_TAGGED" in needs
+    assert "IMP_PLAIN" not in needs

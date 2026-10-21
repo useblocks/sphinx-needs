@@ -332,31 +332,42 @@ or ``"refused"`` for a constant, which no tier answers (:func:`_is_constant_filt
 
 @lru_cache(maxsize=256)
 def _is_constant_filter(filter_string: str) -> bool:
-    """Whether *filter_string* is a bare constant, which every tier refuses.
+    """Whether *filter_string* is a constant, which every tier refuses.
 
     A filter is read for its truth, need by need, and a constant has the same truth on
-    every need: ``"x"``, ``0``, ``-5``, ``1.5``, ``None``, ``b"x"``, parenthesised or
-    not, says nothing about a need. Such a filter is reported, once, before any tier
+    every need, so it says nothing about one: a literal (``"x"``, ``0``, ``1.5``,
+    ``None``, ``b"x"``, ``...``), a number with one sign (``-5``, ``+5``), a tuple,
+    list, set or dict display whatever it holds (``[1]``, ``{}``, ``("x",)``, and so
+    the trailing-comma typo ``status == "open",``), or an f-string with no placeholder
+    (``f"x"``), parenthesised or not. Such a filter is reported, once, before any tier
     runs, and selects nothing. ``True`` and ``False`` are the exception: they are the
     spelling of "every need" and "no need". A constant inside a larger filter
     (``True and owner``) is an operand like any other, and so is a constant
-    expression (``-True``, ``not 1``, ``1 == 1``).
+    expression (``-True``, ``--5``, ``not 1``, ``1 == 1``); a comprehension and an
+    f-string with a placeholder are read by their truth, as any filter is.
 
+    Leading spaces and tabs are read past, as Python's ``eval`` reads past them.
     It is decided by the string alone, once per string: the engine's tiers ask it on
     every call, :func:`filter_single_need` need by need.
     """
     try:
-        node = ast.parse(filter_string, mode="eval").body
+        node = ast.parse(filter_string.lstrip(" \t"), mode="eval").body
     except (SyntaxError, ValueError):
         return False
     if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub | ast.UAdd):
-        # a signed number; a signed boolean is arithmetic, not a constant
+        # a signed number; a signed boolean, or a second sign, is arithmetic
         node = node.operand
         return (
             isinstance(node, ast.Constant)
             and isinstance(node.value, int | float | complex)
             and not isinstance(node.value, bool)
         )
+    if isinstance(node, ast.Tuple | ast.List | ast.Set | ast.Dict):
+        # a display, whatever its items: true when it holds any, on every need
+        return True
+    if isinstance(node, ast.JoinedStr):
+        # an f-string with no placeholder is a string
+        return not any(isinstance(value, ast.FormattedValue) for value in node.values)
     return isinstance(node, ast.Constant) and not isinstance(node.value, bool)
 
 

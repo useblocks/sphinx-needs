@@ -821,8 +821,11 @@ def links_from_match(
             raise ValueError(
                 f"links_from_match: the argument {key!r} names {name!r}{problem}"
             )
-    # a filter that does not parse fails the call
+    # a filter that does not parse fails the call, as one that is a constant does:
+    # every candidate would refuse it, and the call would link nothing, silently
     compiled = None if not filter else compile(filter, "<links_from_match>", "eval")
+    if filter and _is_constant_filter(filter):
+        raise ValueError(_constant_filter_message(filter))
     if need is None:
         return []
     matched = join_matches(

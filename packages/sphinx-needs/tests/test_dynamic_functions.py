@@ -1468,12 +1468,19 @@ def test_links_from_match(test_app):
             "invalid syntax",
             id="filter-does-not-parse",
         ),
+        pytest.param(
+            """[[links_from_match("name", "ref", filter='"x"')]]""",
+            "Filter '\"x\"' not valid. Error: it is a constant, which says nothing "
+            "about a need",
+            id="filter-is-a-constant",
+        ),
     ],
 )
 def test_links_from_match_fails(make_app, tmp_path, call, message):
     """An empty name, a field that is not text (a number, a link type, nothing), and a
-    filter that does not parse fail the call: one ``needs.dynamic_function`` warning
-    naming why (the field and its type), and no links."""
+    filter that does not parse, or is a constant that every candidate would refuse, fail
+    the call: one ``needs.dynamic_function`` warning naming why (the field and its
+    type), and no links."""
     (tmp_path / "conf.py").write_text(LINKS_FROM_MATCH_CONF)
     (tmp_path / "index.rst").write_text(
         "Fails\n=====\n\n"

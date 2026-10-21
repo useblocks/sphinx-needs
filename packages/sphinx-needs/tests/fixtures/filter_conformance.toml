@@ -18,8 +18,8 @@
 # The grammar is ubCode's `rust/ubc_query/src/py_expr.pest`, as `ubc_query` converts it
 # (a form the grammar parses and the converter refuses -- a name `in` a name, a list
 # beside `==` -- is outside it). sphinx-needs' parsed tier (`sphinx_needs/ubquery.py`)
-# compiles every string inside it, and every other string falls to Python's `eval`, but a
-# constant alone, which no tier answers. Its
+# compiles every string inside it, and every other string falls to Python's `eval`, except
+# a constant alone, which no tier answers. Its
 # answers are Python's: where `ubc_query` answers otherwise, the entry says so
 # (`divergent`). The grammar has no raw-string literal, so no `search(r'...')` here:
 # sphinx-needs reads one through Python, ubCode refuses it at the `r`.
@@ -52,12 +52,16 @@
 #     asserts that its engine refuses the string (it parses it to no query), unless the
 #     entry carries `divergent`, and sphinx-needs answers it through `eval`, which
 #     `expected` pins
-#   - an entry with `tier = "refused"` is a filter that is a constant alone -- a string,
-#     bytes, a number (a signed one included), None or `...`, parenthesised or not; `True`
-#     and `False` are not, they select every need and none. It says nothing about a need, so
-#     every tool refuses it before evaluating it: it selects nothing and is reported once,
-#     and `error = "filter"` is required with it. ubCode's runner asserts that its engine
-#     refuses it (a parse refusal is that report), unless the entry carries `divergent`
+#   - an entry with `tier = "refused"` is a filter that is a constant alone: a literal (a
+#     string, bytes, a number with one sign or none, None or `...`), a tuple, list, set or
+#     dict display whatever it holds, or an f-string with no placeholder, parenthesised or
+#     not, after any leading spaces and tabs. `--5` and `-True` are arithmetic, a
+#     comprehension and an f-string with a placeholder are read by their truth, and `True`
+#     and `False` are no constant: they select every need and none. A constant says
+#     nothing about a need, so every tool refuses it before evaluating it: it selects
+#     nothing and is reported once, and `error = "filter"` is required with it. ubCode's
+#     runner asserts that its engine refuses it (a parse refusal is that report), unless
+#     the entry carries `divergent`
 #   - every other entry is inside the language. `tier = "index"` or `tier = "fast"` pins
 #     which of sphinx-needs' two earlier tiers answers it; `reason` (with `tier = "eval"`)
 #     pins the construct sphinx-needs' debug report names. ubCode's runner ignores those
@@ -1301,7 +1305,7 @@ tier = "index"
 
 [[case]]
 name = "constants"
-why = "a filter that is a constant alone -- a string, bytes, a number, a signed one among them, or None, parenthesised or not -- says nothing about a need: it is refused before any tier answers it, selects nothing and is reported once; True and False alone are no such constant (see logic), and a constant inside a larger filter is an operand (#2355)"
+why = "a filter that is a constant alone -- a literal, a number with one sign, a display whatever it holds, an f-string with no placeholder, parenthesised or not -- says nothing about a need: it is refused before any tier answers it, selects nothing and is reported once; True and False alone are no such constant (see logic), a constant inside a larger filter is an operand, and a constant expression or a comprehension is read by its truth (#2355)"
 config = '''
 [needs]
 '''
@@ -1388,6 +1392,57 @@ error = "filter"
 tier = "refused"
 in_document = false
 why = "with no document the constant is refused as well"
+
+[[case.filters]]
+filter = 'status == "open",'
+expected = []
+error = "filter"
+tier = "refused"
+why = "the trailing-comma typo: a tuple, true on every need"
+
+[[case.filters]]
+filter = '[1]'
+expected = []
+error = "filter"
+tier = "refused"
+why = "a list display"
+
+[[case.filters]]
+filter = '("x",)'
+expected = []
+error = "filter"
+tier = "refused"
+why = "a tuple display"
+
+[[case.filters]]
+filter = '{}'
+expected = []
+error = "filter"
+tier = "refused"
+why = "a dict display, empty"
+
+[[case.filters]]
+filter = 'f"x"'
+expected = []
+error = "filter"
+tier = "refused"
+why = "an f-string with no placeholder is a string"
+
+[[case.filters]]
+filter = ' "x"'
+expected = []
+error = "filter"
+tier = "refused"
+in_document = false
+python_only = true
+why = "a filter configured outside every document keeps its leading space, which eval reads past"
+
+[[case.filters]]
+filter = '[t for t in tags]'
+expected = ["REQ_001"]
+tier = "eval"
+reason = "comprehension"
+why = "a comprehension is no display: its list is read by its truth"
 
 [[case.filters]]
 filter = 'True and "a" in tags'
