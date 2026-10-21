@@ -62,8 +62,8 @@
 #     as any link type. A member computed after the built-in functions (by a call whose
 #     filter cannot be read, or by the project's own function) is computed before the
 #     union, which is computed after it, and a union of that union after that; a rule or
-#     call reading such a union in the link fields' step cannot wait for it, and is one
-#     `derive_scope`. A union that cannot be read (a member refused, a cycle) is no union:
+#     call reading such a union, or such a member, in the link fields' step is computed
+#     after it too. A union that cannot be read (a member refused, a cycle) is no union:
 #     an `allow_dead_links` beside it is kept
 #
 # `packages/sphinx-needs/tests/test_derive_conformance.py` runs every case with the `needs`
@@ -4556,7 +4556,7 @@ all_flt_back = ["SPEC_1"]
 
 [[case]]
 name = "union-computed-last-read-in-its-step"
-why = "a link type's rule reading such a union in the link fields' step cannot wait for it: it is one derive_scope on each need computing it, and holds no links"
+why = "a link type's rule reading such a union in the link fields' step is computed after it, on each need computing it, and holds the links it selects (a need is not its own)"
 python_only = true
 config = '''
 [needs.links.flt]
@@ -4576,19 +4576,12 @@ source = '''
    :flt: [[links_from_filter("len(needs) > 0 and id == 'REQ_1'")]]
 '''
 [case.expect]
+findings = []
 [case.expect.needs.SPEC_1]
 all_flt = ["REQ_1"]
 via = []
 [case.expect.needs.REQ_1]
-via = []
-[[case.expect.findings]]
-code = "derive_scope"
-need = "REQ_1"
-field = "via"
-[[case.expect.findings]]
-code = "derive_scope"
-need = "SPEC_1"
-field = "via"
+via = ["SPEC_1"]
 
 [[case]]
 name = "union-that-cannot-be-read-keeps-allow-dead-links"
@@ -4638,3 +4631,76 @@ field = "cyc_b"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "readable"
+
+[[case]]
+name = "links-where-over-a-member-computed-last"
+why = "a links rule, or a call, whose filter names a link type filled by a call whose filter cannot be read (it names needs) is computed after that call, as after the project's own functions, on each need computing it: it holds the links it selects (a need is not its own)"
+python_only = true
+config = '''
+[needs.links.flt]
+
+[needs.links.seen]
+
+[needs.links.via]
+derive = { kind = "links", where = "'REQ_1' in flt" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+   :seen: [[links_from_filter("'REQ_1' in flt")]]
+
+.. spec:: Filtered
+   :id: SPEC_1
+   :flt: [[links_from_filter("len(needs) > 0 and id == 'REQ_1'")]]
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+flt = ["REQ_1"]
+via = []
+[case.expect.needs.REQ_1]
+seen = ["SPEC_1"]
+via = ["SPEC_1"]
+
+[[case]]
+name = "union-feeder-made-a-sink-leaves-its-union-in-place"
+why = "a call whose filter cannot be read, filling a member of a union and naming that union, cannot wait for it: it is one derive_scope and holds its written links; the union, no member of which is then computed later, is computed with the built-in functions, and its readers read it complete"
+python_only = true
+config = '''
+[needs.links.flt]
+
+[needs.links.lm]
+
+[needs.links.opq]
+
+[needs.links.all_flt]
+derive = { kind = "union", fields = ["links", "flt"] }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Its call names the union it feeds
+   :id: SPEC_1
+   :links: REQ_2
+   :flt: REQ_1, [[links_from_filter("len(needs) > 0 and 'REQ_2' in all_flt")]]
+
+.. spec:: Reads the union
+   :id: SPEC_2
+   :lm: [[links_from_filter("'REQ_2' in all_flt")]]
+   :opq: [[links_from_filter("len(needs) > 0 and 'REQ_2' in all_flt")]]
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+flt = ["REQ_1"]
+all_flt = ["REQ_1", "REQ_2"]
+[case.expect.needs.SPEC_2]
+lm = ["SPEC_1"]
+opq = ["SPEC_1"]
+[[case.expect.findings]]
+code = "derive_scope"
+need = "SPEC_1"
+field = "flt"
