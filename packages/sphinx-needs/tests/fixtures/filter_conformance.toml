@@ -830,6 +830,7 @@ divergent = { ubcode = "a \\u escape in a string literal is read as its characte
 filter = 'title == "Stra\xdfe"'
 expected = ["REQ_001"]
 why = "a \\x escape in a string literal is the code point, as in Python"
+divergent = { ubcode = "a \\x escape in a string literal is read as its characters, not as the code point" }
 
 # --- search ----------------------------------------------------------------------------
 
@@ -892,6 +893,7 @@ reason = "call:search"
 filter = 'search( "@", title)'
 expected = ["REQ_001"]
 why = "a space inside the call's parentheses is a Python expression's"
+divergent = { ubcode = "refused when the filter is parsed: no space is allowed inside a call's parentheses" }
 
 [[case.filters]]
 filter = 'search("(d)\\1", title)'
@@ -1173,11 +1175,13 @@ expected = ["REQ_001", "SPEC_001"]
 filter = "type=='spec'or status!='open'"
 expected = ["REQ_002", "SPEC_001"]
 why = "a filter is a Python expression: an operator needs no space around it"
+divergent = { ubcode = "refused when the filter is parsed: a keyword operator needs a space on each side" }
 
 [[case.filters]]
 filter = '(status == "open")and("a" in tags)'
 expected = ["REQ_001", "SPEC_001"]
 why = "nor does and between parentheses"
+divergent = { ubcode = "refused when the filter is parsed: a keyword operator needs a space on each side" }
 
 [[case.filters]]
 filter = 'True'
