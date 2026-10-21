@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792576146784,
+  "lastUpdate": 1792576985939,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26568,6 +26568,42 @@ window.BENCHMARK_DATA = {
             "value": 46.629032451,
             "unit": "s",
             "extra": "Commit: b7d1dbf59df853d8e80efcc9174516252e29f105\nBranch: master\nTime: 2026-10-21T11:47:50+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5abeebdafd834d430fbc38794665882357a6b238",
+          "message": "⚡️ Filter strings in the portable filter language run without eval, five to six times faster, for the whole language; needs_debug_filters says which tier answered each filter (#2350)\n\n### What\n\nSlices 1–3 of #2346. A filter string written in the portable filter\nlanguage is now compiled once and evaluated\nneed by need without Python's `eval`, for the whole language rather than\na handful of shapes. The forms that used\nto reach `eval` are five to six times faster (`len(tags) > 0` over 14\n000 needs: 29 ms → 5 ms;\n`title.lower().startswith('s')`: 41 ms → 8 ms), and a form the fast path\nalready took costs what it cost.\n`needs_debug_filters` says which tier answered each filter and why one\nreached `eval`, and\n`tests/fixtures/filter_conformance.toml` defines the language and pins\nits answers.\n\n- New in the fast path: `x is None` / `x is not None`; `len(x)`,\n`x.lower()`, `x.upper()` as operands (either side\nof a comparison, of `in`, of `search()`, alone); `x.startswith('…')` /\n`x.endswith('…')` after any operand\n(`id.lower().startswith('req')`); a field against a field in every\ncomparison (`variant == current_variant`);\n`c.this_doc()`; a negative number; `True` / `False`; a `var.` chain\nalone.\n- Still on `eval`, as constructs outside the portable language: a field\n`in` a field, a list beside `==`,\nsubscripts, comprehensions, arithmetic, other calls and methods,\ncomparison chains.\n- `debug_filters.jsonl`: every record gains `tier` (`index` / `fast` /\n`eval`) and, for `eval`, `fallback_reason`\n(`subscript`, `call:any`, `compare:name-in-name`, …, `filter-code`,\n`filter-func`).\n- Two answers of the fast path now match `eval` where they did not:\n`tags not in ['a']` (a list field against a list\nliteral raised `unhashable type`), and `filter != 'x'` (a Python\nbuiltin's name, reported undefined; `eval` reads the\nbuiltin). `search`, `__builtins__` and other dunder names stay with\n`eval` as operands, so `owner != search` answers\n  as before.\n- Strings newly in the language whose value is not a boolean —\n`len(tags)` alone, `title.lower()`, `True and owner`,\na `var.` chain alone holding a string — now select by truthiness, where\n`eval` refused them with `Filter did not\nevaluate to a boolean` and they selected nothing (#1773's rule, which\nthe fast path already applied to a bare name).\n\n### Why\n\nWhat `eval` costs is its context: every field of a need is copied into a\nfresh dict before the expression runs,\nwhich is 13.9 of its 14.0 ms per 10 000 needs. A compiled predicate\nreads only the fields a filter names. Until\nnow only a few shapes avoided `eval`, and nothing told a project which\nof its filters were paying for it.\n\n### How\n\n- `ubquery.py`: a compiler per rule of the portable grammar (each arm\nnames its rule), refusing anything else with\na short stable reason (`compile_portable(...)`);\n`try_build_simple_predicate` keeps its signature. Answers are\n`eval`'s, errors included, but for four cases `filter.rst` lists: a\nnon-boolean value (read by truthiness in the\nparsed tiers, refused by `eval`, #1773), a field or filter-data key\nnamed `len`, a builtin's name alone under\n`not` / `and` / `or`, and `search` or a `__dunder__` name compared with\na literal or alone, where `eval` reads its\n  own binding (the last two as on the base).\n- `c.this_doc()` is compiled once per string: the document reaches the\npredicate through the existing per-call\n  mapping, only for a filter that reads it; no public signature changes.\n- The tier is read from the index path's and the fast path's own\ndecisions; the index path is untouched.\n- Plain-name reads call their reader directly, and `filter_single_need`\nbuilds no per-call mapping a predicate does\nnot read: the forms the fast path already had cost what they cost (over\n14 000 needs, `type == 'sw_req' or\nis_external` through `filter_needs_view`: 10.4 ms base, 9.9 ms branch;\n`status == 'open'` need by need through\n  `filter_single_need`: 10.9 ms base, 10.8 ms branch, CPU time).\n- The module docstring no longer says `eval` resolves names eagerly: it\nis lazy and short-circuits too; what the fast\n  path saves is the per-need context.\n\n### Tests\n\n- `tests/fixtures/filter_conformance.toml`: 19 projects, 205 filter\nstrings — every grammar rule, the error cases (a name\nno field defines, a method a value lacks, `c.this_doc()` without a\ndocument, a field holding no value), truthiness,\nthe sixteen strings this repository's docs and tests took to `eval`, and\nthe older forms the fast path keeps\n  outside the language.\n- `tests/test_filter_conformance.py`: builds each project once and\nasserts, per filter, the engine's selection and\nreport, the tier, and that the fast path and the `eval` tier agree need\nby need (errors and messages included).\n- `tests/test_ubquery.py`: the new arms, the refusal reasons, the kept\nforms, `c.this_doc()`, builtins, the names\n  `eval` binds otherwise, the origin key, unhashable values.\n- `tests/test_filter.py`: the `tier` / `fallback_reason` of each record\nof a debug build.\n\n### Docs\n\n`filter.rst` (the three tiers and the portable language; `search()`\npatterns are plain string literals),\n`configuration.rst` (`needs_debug_filters`' record), needbar / needpie,\nthe changelog, and the corpora rows of\n`AGENTS.md`.\n\nPart of #2346\nCloses #2255",
+          "timestamp": "2026-10-21T12:01:29+02:00",
+          "tree_id": "14fc252562cf9e989096e859abbf57a4966a3e19",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5abeebdafd834d430fbc38794665882357a6b238"
+        },
+        "date": 1792576976086,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1144925360000002,
+            "unit": "s",
+            "extra": "Commit: 5abeebdafd834d430fbc38794665882357a6b238\nBranch: master\nTime: 2026-10-21T12:01:29+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.663862587000004,
+            "unit": "s",
+            "extra": "Commit: 5abeebdafd834d430fbc38794665882357a6b238\nBranch: master\nTime: 2026-10-21T12:01:29+02:00"
           }
         ]
       }
