@@ -2683,13 +2683,15 @@ def _derive_parse_problems(
                 invalid_message(name, on_link=on_link, reason=derive.reason),
             )
         ]
+    # copy is refused too: said with the others by a finding replacing this one
+    refused = (*beside, "copy") if copied else tuple(beside)
     if beside:
         return [
             DeriveProblem(
                 name,
                 on_link,
                 beside_message(name, on_link=on_link, rule=derive, keys=beside),
-                beside=tuple(beside),
+                beside=refused,
             )
         ]
     if copied:
@@ -2698,6 +2700,7 @@ def _derive_parse_problems(
                 name,
                 on_link,
                 copy_on_derived_message(name, described=derive.describe()),
+                beside=refused,
             )
         ]
     return []

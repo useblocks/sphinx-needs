@@ -366,8 +366,9 @@ class NodeReads:
     :ivar user_functions: The user functions the node calls: it is computed last.
     :ivar opaque: A built-in call of the node has a filter that cannot be read: it is
         computed last.
-    :ivar opaque_names: The free names the filters that cannot be read name all the
-        same (a field each, read on every need); what else they read is not known.
+    :ivar opaque_names: The fields the filters that cannot be read name all the same:
+        their free names (read on every need) and the constant keys they read of
+        ``current_need``; what else they read is not known.
     :ivar reads_itself_by_variant: A variant condition of the node names its field.
     """
 
@@ -667,7 +668,8 @@ class _CallReads:
         names = filter_names(filter_string, self.project.not_fields)
         if names.opaque:
             self.reads.opaque = True
-            for name in sorted(names.names):
+            # the free names, and the constant keys of current_need, still read
+            for name in sorted(names.names | names.current):
                 self.reads.opaque_names = _appended(
                     self.reads.opaque_names, self.project.field_of(name)
                 )

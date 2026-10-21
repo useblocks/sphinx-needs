@@ -581,7 +581,8 @@ class DeriveProblem:
         and applies on every other type.
     :ivar type_reasons: For such a rule: each of those types with why it cannot be
         read there (the cycle closes along its own path on each).
-    :ivar beside: The keys refused beside ``derive`` that the finding is about.
+    :ivar beside: The keys refused beside ``derive`` (``copy`` among them) with the
+        rule as read: a finding replacing this one says them.
     """
 
     name: str

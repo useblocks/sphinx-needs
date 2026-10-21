@@ -659,8 +659,14 @@ needs_links = {
         "target_types": ["req"],
     },
     "b": {"derive_by_type": {"spec": {"kind": "union", "fields": ["a"]}}},
+    "e": {"derive": {"kind": "union", "fields": ["links", "f"]}, "copy": True},
+    "f": {"derive_by_type": {"spec": {"kind": "union", "fields": ["e"]}}},
 }
 """
+
+
+#: the rules whose cycle findings carry the keys refused beside them
+MINE = (("field", "fx"), ("link type", "a"), ("link type", "e"))
 
 
 @pytest.mark.parametrize(
@@ -673,12 +679,14 @@ def test_allow_dead_links_beside_a_union_cycling_on_one_type_is_refused(test_app
     other type: the marker standing for it on those types is no rule of the link
     type's own, so ``allow_dead_links`` beside it is still refused -- and said, in the
     one finding of that ``derive``, the cycle's, as is every other key refused beside
-    it (``target_types``; a field's ``default``)."""
+    it (``target_types``; ``copy``; a field's ``default``)."""
     app = test_app
     app.build()
     applies = "on every other need type the rule applies"
     assert [
-        w for w in build_warnings(app) if "link type 'a'" in w or "field 'fx'" in w
+        w
+        for w in build_warnings(app)
+        if any(f"{kind} {name!r}" in w for kind, name in MINE)
     ] == [
         "WARNING: Invalid derive of field 'fx': on need type 'spec': kind 'copy': the "
         "role 'field' reads 'fy', whose rule reads this field back (fx -> fy -> fx), "
@@ -691,6 +699,11 @@ def test_allow_dead_links_beside_a_union_cycling_on_one_type_is_refused(test_app
         f"needextend, and on that need type holds no links; {applies}; "
         "'target_types' and 'allow_dead_links' cannot be given beside derive, and are "
         "ignored (a union's dead links are its members') [needs.derive_invalid]",
+        "WARNING: Invalid derive of link type 'e': on need type 'spec': kind 'union': "
+        "the role 'fields' reads 'f', whose rule reads this field back (e -> f -> e), "
+        "so no need can compute it; the link type cannot be set in a need or by a "
+        f"needextend, and on that need type holds no links; {applies}; 'copy' cannot "
+        "be given beside derive, and is ignored [needs.derive_invalid]",
     ]
     link = SphinxNeedsData(app.env).get_schema().global_declaration("a")
     assert link is not None and link.allow_dead_links is False
@@ -1169,3 +1182,66 @@ def test_a_unions_dead_links_are_drawn_as_its_members_allow(test_app):
         # EXP_1, imported
         ("all links", [(forbidden, "DEAD_9")]),
     ]
+
+
+CONF_CURRENT_KEY = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+
+
+def t_fn(app, need, needs, *args, **kwargs):
+    return ["REQ_3"]
+
+
+needs_functions = [t_fn]
+needs_links = {
+    "tests": {},
+    "c_cur": {},
+    "z_cur": {},
+    "u": {"derive": {"kind": "union", "fields": ["links", "tests"]}},
+}
+"""
+
+INDEX_CURRENT_KEY = """\
+Current key
+===========
+
+.. req:: One
+   :id: REQ_1
+
+.. req:: Three
+   :id: REQ_3
+
+.. spec:: The union's need
+   :id: SPEC_5
+   :links: REQ_1
+   :tests: [[t_fn()]]
+   :c_cur: [[links_from_filter("len(needs) > 0 and 'REQ_3' in current_need['u'] and id == 'REQ_1'")]]
+   :z_cur: [[links_from_filter("len(needs) > 0 and 'REQ_3' in current_need['u'] and id == 'REQ_1'")]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_CURRENT_KEY, INDEX_CURRENT_KEY)], indirect=True
+)
+def test_a_filter_naming_a_union_by_current_need_key(test_app):
+    """A filter that cannot be read (it names ``needs``) but reads a union computed
+    last as ``current_need['u']``, a constant key, names it as a free name would:
+    before the union (``c_cur``, whose field sorts before the union's last late member
+    ``tests``) the call is not run and is reported; after it (``z_cur``) it reads the
+    union complete."""
+    app = test_app
+    app.build()
+    assert [w for w in build_warnings(app) if "derive_scope" in w] == [
+        "<srcdir>/index.rst:10: WARNING: dynamic function 'links_from_filter' for "
+        "option 'c_cur' reads 'u' on need 'SPEC_5', a union computed after your own "
+        "functions and the calls whose filter cannot be read that fill its members, "
+        "which this step cannot wait for: the call is not run and the field is left "
+        "empty [needs.derive_scope]",
+    ]
+    spec = _built(app)["needs"]["SPEC_5"]
+    assert (spec["u"], spec["c_cur"], spec["z_cur"]) == (
+        ["REQ_1", "REQ_3"],
+        [],
+        ["REQ_1"],
+    )

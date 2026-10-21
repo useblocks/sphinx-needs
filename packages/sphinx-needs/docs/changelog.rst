@@ -31,8 +31,8 @@ Improvements
   filter cannot be read (a ``links_from_filter`` whose filter names ``needs``), is computed before the union: those run
   after the built-in functions, in need-id order, and the union right after the last such member (a union of that
   union after that). Those computed after the union read it complete, those before it empty -- such a call whose
-  filter names the union is one ``needs.derive_scope``, the project's own functions and a read through ``needs`` are
-  not reported -- and a built-in function or rule of that step reading such a union cannot wait for it, and is one
+  filter names the union is one ``needs.derive_scope``, as is a ``copy`` reading it, when it runs; the project's own
+  functions and a read through ``needs`` are not reported -- and a built-in function or rule of that step reading such a union cannot wait for it, and is one
   ``needs.derive_scope`` (a ``links`` rule on every need computing it). It is what
   ``copy = true`` gave, declared (see *Deprecations*); see :ref:`needs_derive_union` for how to read it in place of
   ``links``. The derive conformance corpus pins it (``union-*``), as does the field-declaration corpus for a union
