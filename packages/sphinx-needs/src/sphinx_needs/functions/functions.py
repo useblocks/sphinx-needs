@@ -15,7 +15,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, Final, Protocol, TypeAlias, TypeVar
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -383,6 +383,10 @@ class UnresolvedReads:
 
 _DynamicFunctionT = TypeVar("_DynamicFunctionT", bound=Callable[..., Any])
 
+#: the attribute of a dynamic function of your own declaring what it reads
+#: (:func:`sphinx_needs.api.reads`): a callable taking a call's arguments
+READS_ATTRIBUTE: Final = "needs_reads"
+
 
 def records_reads(func: _DynamicFunctionT) -> _DynamicFunctionT:
     """Mark a dynamic function as one that takes the record of the reads of its call.
@@ -473,8 +477,10 @@ def _through_clause(through: tuple[Column, Reason] | None) -> str:
         return ""
     column, reason = through
     # it imports this module
-    from sphinx_needs.functions.order import JoinRead
+    from sphinx_needs.functions.order import DeclaredRead, JoinRead
 
+    if isinstance(reason, DeclaredRead):
+        return f", through {reason.function}'s declared read of {column.field!r} on every need"
     if isinstance(reason, tuple):
         return (
             f", through its {reason[1]}, which are computed in the same step, "
@@ -595,6 +601,8 @@ class _Pass:
         #: link field)`` computed into its list, once stored: what
         #: ``needs.derive_dense`` counts on a link type without a rule
         self.called_links: dict[Node, tuple[int, frozenset[str]]] = {}
+        #: the functions whose refused declaration was reported
+        self.refused_warned: set[str] = set()
         #: the ``(need id, name)`` values not computed yet, a name being the field's,
         #: or ``parent_need`` for a computed ``parent_needs``
         self.pending: set[tuple[str, str]] = set(project.nodes)
@@ -802,6 +810,7 @@ def resolve_functions(
         sum_candidates=sum_candidates,
         content_refs=content_refs,
         fingerprint_names=list(fingerprint_names(needs_schema)),
+        declared=_declarations(needs_config),
     )
     pass_ = _Pass(project)
     # the one reset of the pass: a link field's function reads no back link of an
@@ -965,6 +974,36 @@ def materialise_derive_rules(
     return rules
 
 
+def _declarations(config: NeedsSphinxConfig) -> dict[str, Callable[..., Any]]:
+    """The declaration of what it reads of each registered function carrying one:
+    ``add_dynamic_function``'s ``reads``, else the function's own (``needs_reads``)."""
+    declared: dict[str, Callable[..., Any]] = {}
+    for name, registered in config.functions.items():
+        spec = registered.get("reads") or getattr(
+            registered["function"], READS_ATTRIBUTE, None
+        )
+        if spec is not None:
+            declared[name] = spec
+    return declared
+
+
+def _warn_refused(project: Project, warned: set[str]) -> None:
+    """Warn once of each function whose declaration could not be applied to a call."""
+    for name, ((need_id, field), why) in project.refused.items():
+        if name in warned:
+            continue
+        warned.add(name)
+        log_warning(
+            logger,
+            f"dynamic function {name!r} declares what it reads, but the declaration "
+            f"cannot be applied to its call for option {field!r} of need {need_id!r}: "
+            f"{why}; such a call is computed after the built-in functions, as a call "
+            "of a function that declares nothing",
+            "config",
+            location=_location(project.needs[need_id]),
+        )
+
+
 def _resolve_stratum(
     app: Sphinx,
     needs: NeedsMutable,
@@ -978,6 +1017,7 @@ def _resolve_stratum(
     from sphinx_needs.functions.order import build_stratum, placeholder
 
     stratum = pass_.stratum = build_stratum(pass_.project, number)
+    _warn_refused(pass_.project, pass_.refused_warned)
     # a value your own function computes is final only at the end of its stratum
     pass_.stratum_cache = {}
     for step in stratum.steps:

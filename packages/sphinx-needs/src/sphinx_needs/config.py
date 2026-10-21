@@ -98,6 +98,9 @@ class NewFieldParams:
 class NeedFunctionsType(TypedDict):
     name: str
     function: DynamicFunction
+    reads: NotRequired[Callable[..., Any]]
+    """What the function reads, as ``add_dynamic_function``'s ``reads`` declares it,
+    over the declaration the function itself carries."""
 
 
 class _Config:
@@ -205,8 +208,17 @@ class _Config:
         """Dynamic functions that are added by the user."""
         return self._functions
 
-    def add_function(self, function: DynamicFunction, name: str | None = None) -> None:
+    def add_function(
+        self,
+        function: DynamicFunction,
+        name: str | None = None,
+        *,
+        reads: Callable[..., Any] | None = None,
+    ) -> None:
         """Adds a dynamic function to the configuration.
+
+        :param reads: What the function reads, over the declaration it carries itself
+            (:func:`sphinx_needs.api.reads`).
 
         :raises NeedsApiConfigException: If ``name`` is not given and the function has
             no ``__name__`` to register it by, such as a ``functools.partial``.
@@ -231,6 +243,8 @@ class _Config:
                 None,
             )
         self._functions[func_name] = {"name": func_name, "function": function}
+        if reads is not None:
+            self._functions[func_name]["reads"] = reads
 
     @property
     def warnings(
