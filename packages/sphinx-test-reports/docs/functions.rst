@@ -34,6 +34,15 @@ If this is the case, their IDs get stored and finally returned.
 ``source_option`` can also reference an option with comma separated values.
 In this case a comparions is performed for each value, which may lead to multiple links.
 
+``tr_link`` declares what it reads to Sphinx-Needs
+(`Declaring what a function reads <https://sphinx-needs.readthedocs.io/en/latest/dynamic_functions.html#dynamic-functions-reads>`_):
+the ``source_option`` of its own need, and the ``target_option`` of every need.
+So Sphinx-Needs computes its links with its built-in functions, in order,
+and a ``links_from_filter``, a derived ``links`` or ``union`` link type,
+or any other built-in function reading those links holds them,
+where a Sphinx-Needs that orders it after the built-in functions read them empty.
+A ``target_option`` naming the link type the call fills is a cycle (``needs.derive_cycle``).
+
 **Example**::
 
    .. spec:: sphinxcontrib.test_reports.test_reports

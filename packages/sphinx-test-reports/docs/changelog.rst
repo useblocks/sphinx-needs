@@ -7,6 +7,15 @@ Unreleased
 Changed
 .......
 
+- 👌 ``tr_link`` declares what it reads -- the ``source_option`` of its own need and the
+  ``target_option`` of every need -- so Sphinx-Needs computes its links in order, with its
+  built-in functions: a ``links_from_filter``, a derived ``links`` or ``union`` link type
+  or any other built-in function reading them holds them, where each read them empty,
+  silently (`#2354 <https://github.com/useblocks/sphinx-needs/issues/2354>`__). It is an
+  attribute of the function, which a Sphinx-Needs without the declaration ignores, so the
+  floor on Sphinx-Needs is unchanged. A ``target_option`` naming the link type the call
+  fills, which read it empty, is now a ``needs.derive_cycle``.
+
 - 🏷️ ``sphinx_test_reports`` ships a ``py.typed`` marker (:pep:`561`) and the distribution
   the ``Typing :: Typed`` classifier, so a type checker reads its annotations instead of
   treating it as untyped. The deprecated ``sphinxcontrib.test_reports`` aliases carry none

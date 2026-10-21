@@ -36,3 +36,33 @@ def test_the_documented_usage_builds_without_a_warning(test_app):
     # compared on the TARGET's classname: only the test-case has one, so it is the one
     # link, and the needs whose classname is None (the test-file, both specs) are skipped
     assert needs["TESTSPEC_002"]["links"] == ["TESTLINK_1"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/tr_link_readers"}],
+    indirect=True,
+)
+def test_the_readers_of_its_links_hold_them(test_app):
+    """``tr_link`` declares what it reads (its ``test_option`` on its own need, its
+    ``target_option`` on every need), so sphinx-needs computes it with the built-in
+    functions, before those that read its links: a ``links_from_filter`` on them, a
+    ``links`` rule's ``where`` on every need, a ``union`` over them, and a filter on
+    the union. Undeclared, it ran after them all, and each read the links empty.
+    """
+    app = test_app
+    app.build()
+    assert app._warning.getvalue() == ""
+
+    needs = dict(SphinxNeedsData(app.env).get_needs_view())
+    assert [needs[i]["links"] for i in ("TEST_1", "TEST_2", "TEST_3")] == [
+        ["REQ_A"],
+        ["REQ_B"],
+        ["REQ_A", "REQ_B"],
+    ]
+    assert needs["REQ_A"]["covers"] == ["TEST_1", "TEST_3"]
+    assert needs["REQ_B"]["covers"] == ["TEST_2", "TEST_3"]
+    assert needs["TEST_3"]["all_links"] == ["REQ_A", "REQ_B"]
+    assert needs["REQ_A"]["cov_u"] == ["TEST_1", "TEST_3"]
+    assert needs["REQ_A"]["verified"] == ["TEST_1", "TEST_2", "TEST_3"]
+    assert needs["TEST_1"]["verified"] == ["TEST_2", "TEST_3"]
