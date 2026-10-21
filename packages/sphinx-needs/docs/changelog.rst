@@ -23,22 +23,36 @@ Improvements
   ``eval`` costs is its context, a copy of every field of the need per evaluation, so the forms that used to reach
   it are five to six times faster now (over 14 000 needs, ``len(tags) > 0``: 29 ms to 5 ms), and a form the fast
   path already took costs what it cost. Its
-  answers are ``eval``'s, an error included, but for a filter whose value is not a boolean, which the portable
-  language reads by its truthiness and ``eval`` refuses (:issue:`1773`), and the three smaller cases
-  :ref:`filter_string_performance` lists. So a string newly in the language whose value is not a boolean --
-  ``len(tags)`` alone, ``title.lower()``, ``True and owner``, a ``var.`` chain alone holding a string -- now selects
-  the needs it is true for, where it was refused with ``Filter did not evaluate to a boolean`` and selected
-  nothing. A string the language does not hold -- a field ``in`` a field, a list beside ``==``, a subscript, a
+  answers are ``eval``'s, an error included, but for the three smaller cases :ref:`filter_string_performance`
+  lists. A string newly in the language whose value is not a boolean -- ``len(tags)`` alone, ``title.lower()``,
+  ``True and owner``, a ``var.`` chain alone holding a string -- selects the needs it is true for, where it was
+  refused with ``Filter did not evaluate to a boolean`` and selected nothing; ``eval`` now reads every filter for
+  its truth too (below). A string the language does not hold -- a field ``in`` a field, a list beside ``==``, a subscript, a
   comprehension, arithmetic, another call -- is evaluated by ``eval`` as before. Of the strings this repository's documentation and tests wrote, eleven of
   the sixteen that reached ``eval`` no longer do. ``tests/fixtures/filter_conformance.toml`` defines the
   language and pins every rule's answers, so the three tiers are held to the same results; see
   :ref:`filter_string_performance`.
 
 - 👌 :ref:`needs_debug_filters` says which tier answered each filter: every record of ``debug_filters.jsonl``
-  holds ``tier``, ``"index"``, ``"fast"`` or ``"eval"``, and for ``"eval"`` ``fallback_reason``, the construct that
+  holds ``tier``, ``"index"``, ``"fast"``, ``"eval"`` or ``"refused"`` (a constant, below), and for ``"eval"``
+  ``fallback_reason``, the construct that
   kept the string out of the portable filter language (``subscript``, ``call:any``,
   ``compare:name-in-name``, ...), or ``filter-code`` / ``filter-func`` for a directive's filter code
   (:issue:`2346`, :pr:`2350`)
+
+- 👌 A filter string selects the needs its value is true for on every tier, and a filter that is a constant is
+  reported instead of selecting every need or none (:issue:`1773`, :issue:`2355`, :pr:`PRNUM`)
+
+  A :ref:`filter string <filter_string>` selects the needs its value is true for, whatever the value's type and
+  whichever tier answers it: ``eval`` refused a value that is not a boolean (``Filter did not evaluate to a
+  boolean``) where the index path and the portable filter language read its truth, so ``tags`` and
+  ``[t for t in tags]`` answered differently. A filter that is a constant alone -- ``'x'``, ``-5``, ``10.5``,
+  ``None``, parenthesised or not -- says nothing about a need: it is refused before any tier runs, with one
+  warning, and selects nothing, so ``:filter: 'x'`` no longer selects every need without a word. ``True`` and
+  ``False`` alone still select every need and none. A content line of :ref:`needpie` or a cell of
+  :ref:`needbar` that is such a constant (``10.5``, ``-5``) still counts zero with a ``needs.filter`` warning,
+  and ``links_from_filter`` given one fails the call with a warning rather than link nothing.
+  :ref:`needs_debug_filters` records a constant's tier as ``"refused"``.
 
 - ✨ A derived union of link types: a link type deriving ``union`` holds the links of the link types it names
   (:issue:`2279`, :pr:`2343`, :pr:`2353`)
