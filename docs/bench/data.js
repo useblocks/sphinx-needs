@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792575570281,
+  "lastUpdate": 1792576146784,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26532,6 +26532,42 @@ window.BENCHMARK_DATA = {
             "value": 57.554962853000006,
             "unit": "s",
             "extra": "Commit: 5acab9ffdccb25d2786d7e340771dccb181043b7\nBranch: master\nTime: 2026-10-21T11:38:03+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b7d1dbf59df853d8e80efcc9174516252e29f105",
+          "message": "Bump pillow from 12.3.0 to 13.0.0 (#2352)\n\nBumps [pillow](https://github.com/python-pillow/Pillow) from 12.3.0 to\n13.0.0.\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-10-21T11:47:50+02:00",
+          "tree_id": "f6c82a6795910759dab96e53a00deb4fcfe76165",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/b7d1dbf59df853d8e80efcc9174516252e29f105"
+        },
+        "date": 1792576137578,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.08167047300000263,
+            "unit": "s",
+            "extra": "Commit: b7d1dbf59df853d8e80efcc9174516252e29f105\nBranch: master\nTime: 2026-10-21T11:47:50+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 46.629032451,
+            "unit": "s",
+            "extra": "Commit: b7d1dbf59df853d8e80efcc9174516252e29f105\nBranch: master\nTime: 2026-10-21T11:47:50+02:00"
           }
         ]
       }
