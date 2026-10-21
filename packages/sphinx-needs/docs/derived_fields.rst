@@ -616,8 +616,8 @@ a :ref:`needflow`, a filter or a :ref:`needtable` column (see **Reading it**, be
   and is reported (``needs.derive_scope``), as is a ``copy`` reading it, when it runs,
   while your own functions, a read through ``needs``, and one of ``current_need`` by a key that is not written out,
   are not reported.
-  A built-in function or rule of the link fields' step that reads such a union cannot wait for it:
-  it is not run, and is reported (for a ``links`` rule, on every need computing it).
+  A built-in function or rule of the link fields' step that reads such a union is computed after it, as the union is
+  after its members, and holds what it selects (:ref:`needs_processing_order`).
   ``parent_needs`` and the back links (``<link type>_back``, built after the link types) are not members,
   nor is a field, and a member is named once; the union itself, or two unions naming each other, can be computed
   on no need. Each is one ``needs.derive_invalid`` at load, and the union holds no links.

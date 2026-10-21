@@ -244,12 +244,13 @@ Once every document has been read, and before any page is written, the needs are
    besides calls: an array the items written before a call was appended to them, any other field its empty value.
 2. The ``[[…]]``, ``<<…>>`` and ``<{…}>`` of the :ref:`link fields <needs_links>` are computed,
    with the rules of the :ref:`derived link types <needs_derive>` (``links``, ``content_links``, ``union``),
-   each after the link fields it reads, and those that call your own :ref:`functions <needs_functions>` last.
+   each after the link fields it reads, and those that call your own :ref:`functions <needs_functions>` last,
+   with the built-in ones reading what those compute (see :ref:`needs_processing_order`).
 3. The back links are built from the links of steps 1 and 2, each back link list in :ref:`need-id order <needs_id_order>`.
 4. Every other ``[[…]]``, ``<<…>>`` and ``<{…}>`` is computed, with the rules of the
    :ref:`derived fields <needs_derive>`, each after every value it reads
    (a field of its own need or of another need, a field of a linked need, a back link),
-   and those that call your own functions last.
+   and those that call your own functions last, with the built-in ones reading what those compute.
    Then the rules of the kind ``hash`` or ``fingerprint``, and those with ``after = "derived"``, are computed,
    each after the values it reads;
    a ``[[…]]`` of step 4 that reads one of their fields is not run (:ref:`needs_derive_scope`).
@@ -388,19 +389,20 @@ it is not run when one is a back link, a dead-link flag, or a field computed in 
 (:ref:`needs_derive_scope`);
 and a field no need computes is read as written.
 
-Your own functions run after every built-in function of their step, in :ref:`need-id order <needs_id_order>`, then by field.
+Your own functions run after the built-in functions of their step, in :ref:`need-id order <needs_id_order>`, then by field.
 They read the values the built-in functions computed
-(but for a call whose filter cannot be read, which runs among them, see below);
-a built-in function that reads a field your own function computes
-reads it before it is computed, which is reported (:ref:`needs_derive_scope`).
+(but for a call whose filter cannot be read, which runs among them, see below).
+A built-in function or rule that reads a field your own function computes
+-- as an argument, through a filter or a ``where`` on any need, a join, a variant; a :ref:`union <needs_derive_union>`
+over its link type --
+is computed among your functions, right after the last one it reads, and so is one reading such a value:
+it reads them final.
+Your functions after it read its value complete;
+those before it read it empty, and nothing reports that (your functions do not say what they read).
 A function of your own in a link field, such as sphinx-test-reports' ``tr_link``, runs at the end of step 2,
-so its links are in the back links of step 3
-(its nearest built-in form is :ref:`links_from_match`, ordered as the other built-in functions are:
+so its links are in the back links of step 3, and a ``links`` rule, a ``links_from_filter`` or a union reading them
+holds them (its nearest built-in form is :ref:`links_from_match`, ordered as the other built-in functions are:
 see :ref:`needs_derive_join`).
-A :ref:`union <needs_derive_union>` over such a link type is computed among your functions,
-right after the last one filling a member of it, in that order:
-your functions after it read it complete, those before it read it empty, unreported,
-and a built-in function reading it in step 2 is reported.
 A later release is to let a function declare what it reads, which will order it like a built-in one.
 A ``filter`` that names ``needs``, or reads ``current_need`` by a key that is not written out,
 cannot be ordered either: its call runs with your own functions.
@@ -465,19 +467,18 @@ These reads are reported as ``needs.derive_scope``:
   and its field keeps the items written in it (a link or array field) or is left empty;
 - a ``needextend`` filter that names a field a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes:
   the filter sees the value from before it is computed, once for each ``needextend`` carrying it;
-- a built-in function or rule of step 2 that reads a :ref:`union <needs_derive_union>`
-  over a link type your own function, or a call whose filter cannot be read, computes,
-  or such a call computed before the union whose filter names it:
-  the union is computed after them, right after the last one filling a member of it,
-  so the call is not run, and its field keeps the links written in it -- a rule's is left empty,
-  and a ``links`` rule is reported on every need computing it;
-- a built-in function that reads a field your own function computes, before it is computed.
+- a call whose filter cannot be read, computed with your own functions, whose filter names a value
+  computed after it (a built-in function or rule reading what your own functions, or such calls, compute:
+  by name on any need, or as its own need's ``current_need`` key):
+  the call is not run, and its field keeps the items written in it (a link or array field) or is left empty;
+- a call computed with your own functions (a ``copy`` whose filter cannot be read) that reads a value computed
+  after it, your own function's or a built-in one's computed after them, before it is computed.
 
 A field whose call is not run reads nothing, so it is on no cycle; a value computed from it reads what it holds.
 The last case is found as the call runs: the built-in functions note each field they read,
 and a read of a value not computed yet is reported with its cause.
 Should the cause be neither your own function, nor a call whose filter cannot be read,
-nor a union computed after them,
+nor a built-in function or rule computed after them,
 the order itself missed the read, and the message asks you to report it.
 A filter's reads are not noted (see :ref:`needs_processing_order`).
 

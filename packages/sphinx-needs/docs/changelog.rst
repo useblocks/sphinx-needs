@@ -63,8 +63,7 @@ Improvements
   union after that). Those computed after the union read it complete, those before it empty -- such a call whose
   filter names the union is one ``needs.derive_scope``, as is a ``copy`` reading it, when it runs; the project's own
   functions, a read through ``needs`` and one of ``current_need`` by a key that is not written out are not reported
-  -- and a built-in function or rule of that step reading such a union cannot wait for it, and is one
-  ``needs.derive_scope`` (a ``links`` rule on every need computing it). It is what
+  -- and a built-in function or rule of that step reading such a union is computed after it too. It is what
   ``copy = true`` gave, declared (see *Deprecations*); see :ref:`needs_derive_union` for how to read it in place of
   ``links``. The derive conformance corpus pins it (``union-*``), as does the field-declaration corpus for a union
   declared on need types.
@@ -380,6 +379,17 @@ Deprecations
 
 Bug fixes
 .........
+
+- 🐛 A built-in function or derive rule reading a field the project's own function computes (``needs_functions``,
+  such as sphinx-test-reports' ``tr_link``), or a call whose filter cannot be read (it names ``needs``), is computed
+  after it, among them, right after the last one it reads, and so is one reading such a value: a
+  ``links_from_filter``, ``links_from_content`` or ``copy`` filter, a ``links`` or ``content_links`` rule's ``where``,
+  read it empty and said nothing; a ``calc_sum``, ``check_linked_values`` or ``copy`` argument, a join, an
+  over-rule or a variant read it before it was computed, with a ``needs.derive_scope``. They now hold the values,
+  with no warning; a cycle among them is still a ``needs.derive_cycle``. The project's own functions keep need-id
+  order: one computed before such a value reads it empty, unreported. A call whose filter cannot be read that names
+  a value computed after it is not run, and is reported; a union whose only late member is such a call is computed
+  with the built-in functions again, so its readers are no longer reported (:issue:`2354`)
 
 - 🐛 The filter fast path answers as ``eval`` does where it did not: a list or a tuple of literals after ``in``
   compares a list field item by item (``tags not in ['a']`` raised there and was true in ``eval``), and a name no
