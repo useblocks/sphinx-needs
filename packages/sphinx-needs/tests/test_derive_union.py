@@ -659,9 +659,18 @@ needs_links = {
 def test_allow_dead_links_beside_a_union_cycling_on_one_type_is_refused(test_app):
     """A ``derive`` closing a cycle on some need types only is still a union on every
     other type: the marker standing for it on those types is no rule of the link
-    type's own, so ``allow_dead_links`` beside it is still refused."""
+    type's own, so ``allow_dead_links`` beside it is still refused -- and said, in the
+    one finding of that ``derive``, the cycle's."""
     app = test_app
     app.build()
+    assert [w for w in build_warnings(app) if "link type 'a'" in w] == [
+        "WARNING: Invalid derive of link type 'a': on need type 'spec': kind 'union': "
+        "the role 'fields' reads 'b', whose rule reads this field back (a -> b -> a), "
+        "so no need can compute it; the link type cannot be set in a need or by a "
+        "needextend, and on that need type holds no links; on every other need type "
+        "the rule applies; 'allow_dead_links' cannot be given beside derive, and is "
+        "ignored (a union's dead links are its members') [needs.derive_invalid]",
+    ]
     link = SphinxNeedsData(app.env).get_schema().global_declaration("a")
     assert link is not None and link.allow_dead_links is False
     assert isinstance(link.derive_by_type["spec"], DeriveInvalid)

@@ -715,6 +715,16 @@ def by_type_message(
 _UNION_DEAD_LINKS: Final = " (a union's dead links are its members')"
 
 
+def dead_links_refused_clause() -> str:
+    """What a finding of a ``derive`` adds when ``allow_dead_links`` beside it is
+    refused, as every rule of the link type is a union, but the finding is another's
+    (a cycle on some need types only, which leaves the union a union on the others)."""
+    return (
+        "; 'allow_dead_links' cannot be given beside derive, and is ignored"
+        f"{_UNION_DEAD_LINKS}"
+    )
+
+
 def beside_by_type_message(
     name: str,
     *,

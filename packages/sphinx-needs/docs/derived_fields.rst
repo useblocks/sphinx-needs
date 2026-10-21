@@ -632,6 +632,8 @@ a :ref:`needflow`, a filter or a :ref:`needtable` column (see **Reading it**, be
   the member allows it, and an ``allow_dead_links`` on a link type all of whose rules are unions is refused
   (``needs.derive_invalid``) and ignored; beside a rule of another kind, for another need type, it is that rule's,
   and beside a union that cannot be read (a member refused, a cycle), which is no union and holds no links, it is kept.
+  A union cycling on some need types only is still a union on the others, so the key beside it is refused,
+  which the cycle's finding says.
   ``target_types`` is refused on it, as on every derived link type: the members' own apply.
 - **When.** In the link fields' step, after every :ref:`needextend`: a link a ``needextend`` adds to a member is in the union.
   The union itself is closed, as every derived field: links written in it, or by a ``needextend``, are reported

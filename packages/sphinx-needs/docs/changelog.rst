@@ -24,7 +24,8 @@ Improvements
   or external needs, as every derived link type. Dead links and link conditions are its members' where its rule
   computed it: a union reports neither, a dead link of a member that allows dead links makes no dead link forbidden
   (and is drawn as allowed), and an ``allow_dead_links`` on a link type all of whose rules are unions is refused
-  (beside a union that cannot be read, for a member or on a cycle, which is no union, it is kept); on
+  (beside a union that cannot be read, for a member or on a cycle, which is no union, it is kept; beside one cycling
+  on some need types only, still a union on the others, it is refused, as the cycle's finding says); on
   an imported need, which keeps its file's union, it is checked as any link type. ``needs.derive_dense`` does not
   count its list. A member filled by one of the project's own functions (``needs_functions``), or by a call whose
   filter cannot be read (a ``links_from_filter`` whose filter names ``needs``), is computed before the union, which is
