@@ -46,3 +46,15 @@ def tr_link(
                 links.append(need_target["id"])
 
     return links
+
+
+# What a call reads, for sphinx-needs to compute it in order, like a built-in function:
+# `test_option` of its own need, and `target_option` of every need (`id` is computed by
+# nothing). A sphinx-needs older than the declaration (9.0.0, the floor) has no
+# `reads`, and computes the call after its built-in functions, as before.
+try:
+    from sphinx_needs.api import reads
+except ImportError:
+    pass
+else:
+    reads(own="test_option", every="target_option")(tr_link)

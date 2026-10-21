@@ -19,15 +19,17 @@ field is empty). Nor is a node that reads what its stratum cannot wait for (a li
 field's call reading another field or a back link, a ``need.<field>`` selector computed
 in the same stratum): it reads nothing, so it is on no cycle, and holds its
 placeholder too. Your own functions read what they like, so they are
-computed after every built-in node of their stratum, in ``(need id, field)`` order;
+computed after every built-in node of their stratum, in ``(need id, field)`` order, and
 so is a built-in call whose filter cannot be read (it names ``needs``, or reads
-``current_need`` by a key that is not written out). A ``union`` a member of which is
+``current_need`` by a key that is not written out). A function that declares what it
+reads (:class:`Declared`) is not: its call is a node like a built-in one, after what it
+declares and before its readers. A ``union`` a member of which is
 computed so is computed among them right after the last such member, and a union of
 such a union after it: a node computed last after it reads it complete, one before it
 reads it empty. A built-in node of the stratum reading such a union cannot wait for
 it, nor can a node computed last before it whose filter names it: it reads nothing,
 and holds its placeholder. Your own functions before it, and a read through ``needs``,
-read it empty, unreported.
+read it empty, which the pass reports as they run.
 
 Nothing here touches Sphinx: the module only reads the needs and the call texts,
 and returns the order to compute them in, which ``resolve_functions`` follows.
@@ -86,6 +88,17 @@ _Vertex = Node | Column
 
 
 @dataclass(frozen=True, slots=True)
+class DeclaredRead:
+    """Why a column is read on every need: a function declares it reads the field on
+    every need.
+
+    :ivar function: The name the function is registered by.
+    """
+
+    function: str
+
+
+@dataclass(frozen=True, slots=True)
 class JoinRead:
     """Why a column is read on every need: a ``join`` (a derive rule's, or
     ``links_from_match``'s) matches the reader's values against every need's."""
@@ -94,11 +107,12 @@ class JoinRead:
 #: the one :class:`JoinRead`
 JOIN_READ: Final = JoinRead()
 
-Reason = str | Node | JoinRead | None
+Reason = str | Node | JoinRead | DeclaredRead | None
 """Why a column is read on every need, not on the candidates of a filter: the filter
 that names a computed field; the node of the reader's own ``links``, computed in the
 same stratum, so which needs they name is not known before; a join (:data:`JOIN_READ`);
-or ``None``, a sum over every need (or over the candidates of its filter)."""
+a function's declaration (:class:`DeclaredRead`); or ``None``, a sum over every need
+(or over the candidates of its filter)."""
 
 #: the built-in functions, which the order knows the reads of, by their name
 BUILTINS: Final[Mapping[str, Callable[..., Any]]] = {
@@ -352,6 +366,46 @@ class OutOfScope:
     unions: tuple[tuple[str, str], ...] = ()
 
 
+@dataclass(frozen=True, slots=True)
+class Declaration:
+    """What a function of your own declares it reads
+    (:func:`~sphinx_needs.api.configuration.reads`).
+
+    :ivar signature: Its parameters after ``app``, ``need`` and ``needs``, which a
+        call's arguments are bound to.
+    :ivar own: The parameters whose argument is a field read on the call's own need.
+    :ivar every: The parameters whose argument is a field read on every need.
+    """
+
+    signature: inspect.Signature
+    own: tuple[str, ...]
+    every: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class Declared:
+    """What one call of a function that declares its reads reads, as it declares it.
+
+    :ivar position: The call's position among the items of its node
+        (:meth:`Project.items`).
+    :ivar function: The name the function is registered by.
+    :ivar nodes: The ``(need id, field)`` it reads on its own need (a ``need.<field>``
+        argument's among them).
+    :ivar columns: The fields it reads on every need.
+    :ivar arguments: The fields of its own need its ``need.<field>`` arguments read.
+    """
+
+    position: int
+    function: str
+    nodes: frozenset[Node]
+    columns: frozenset[str]
+    arguments: frozenset[str] = frozenset()
+
+    def covers(self, need_id: str, field: str) -> bool:
+        """Whether the declaration names the read of ``field`` on ``need_id``."""
+        return field in self.columns or (need_id, field) in self.nodes
+
+
 @dataclass(slots=True)
 class NodeReads:
     """What one node reads, as the stratum it is computed in sees it.
@@ -363,7 +417,8 @@ class NodeReads:
     :ivar scope: The calls and variants that cannot be computed in the stratum: the
         node is then a *sink*, not computed, holding its placeholder; it reads
         nothing (no ``deps``, no ``columns``), so it is on no cycle.
-    :ivar user_functions: The user functions the node calls: it is computed last.
+    :ivar user_functions: The user functions the node calls without a declaration of
+        what they read (or with one that cannot be applied): it is computed last.
     :ivar opaque: A built-in call of the node has a filter that cannot be read: it is
         computed last.
     :ivar opaque_names: The fields the filters that cannot be read name all the same,
@@ -372,6 +427,8 @@ class NodeReads:
         constant key: each read on the node's own need. What else they read is not
         known.
     :ivar reads_itself_by_variant: A variant condition of the node names its field.
+    :ivar declared: The calls of the node whose function declares what it reads, and
+        whose declaration was applied: each is ordered as the declaration says.
     """
 
     first: DynamicFunctionParsed | VariantFunctionParsed | DeriveCall | None
@@ -383,6 +440,7 @@ class NodeReads:
     opaque_names: Sequence[str] = ()
     opaque_current: Sequence[str] = ()
     reads_itself_by_variant: bool = False
+    declared: Sequence[Declared] = ()
 
     @property
     def what(self) -> str:
@@ -436,6 +494,9 @@ class Project:
     :param content_refs: The ids a need's content references (``links_from_content``).
     :param fingerprint_names: The names a ``fingerprint`` rule reads on its own need,
         before its ``exclude``.
+    :param declared: The declaration of what it reads of each registered function that
+        is not a built-in one and carries one
+        (:func:`~sphinx_needs.api.configuration.reads`).
     """
 
     def __init__(
@@ -451,6 +512,7 @@ class Project:
         sum_candidates: Callable[[str], Sequence[str]],
         content_refs: Callable[[str], Sequence[str]],
         fingerprint_names: Sequence[str] = (),
+        declared: Mapping[str, Declaration] | None = None,
     ) -> None:
         self.needs = needs
         self.link_fields = frozenset(link_fields)
@@ -464,6 +526,14 @@ class Project:
         self._sum_memo: dict[str, Sequence[str]] = {}
         self.content_refs = content_refs
         self.fingerprint_names = tuple(fingerprint_names)
+        self.declared: Mapping[str, Declaration] = {
+            name: declaration
+            for name, declaration in (declared or {}).items()
+            if name not in self.builtins
+        }
+        #: each function whose declaration could not be applied to a call, with the
+        #: node of the first such call and why: those calls are computed last
+        self.refused: dict[str, tuple[Node, str]] = {}
         #: the rule of each node a derived field's rule computes
         self.rules: Mapping[Node, DeriveCall] = rules or {}
         #: every node, by stratum (1 for a link field, 3 for a late derive rule, 2 for
@@ -557,12 +627,18 @@ class Project:
                 None,
             )
         )
-        for item in items:
+        for position, item in enumerate(items):
             if isinstance(item, DeriveCall):
                 _RuleReads(self, reads, need, name, stratum, item).read()
             elif isinstance(item, DynamicFunctionParsed):
                 if item.name not in self.builtins:
-                    reads.user_functions = _appended(reads.user_functions, item.name)
+                    declaration = self.declared.get(item.name)
+                    if declaration is None or not _DeclaredReads(
+                        self, reads, need, name, stratum, item
+                    ).apply(declaration, position):
+                        reads.user_functions = _appended(
+                            reads.user_functions, item.name
+                        )
                     continue
                 _CallReads(self, reads, need, name, stratum, item).read()
             elif isinstance(item, VariantFunctionParsed):
@@ -871,6 +947,100 @@ class _CallReads:
                 self._read(self.need.id, key)
             for read in sorted(names.names):
                 self._column(read, None, filter_string)
+
+
+class _DeclaredReads(_CallReads):
+    """The reads of one call of a function that declares what it reads.
+
+    The call's arguments are bound to the function's parameters; the argument of each
+    parameter the declaration names (:class:`Declaration`) is a field name, read on
+    the call's own need (``own``) or on every need (``every``), filed as a built-in
+    call's reads are: a dependency (or out of scope, after the stratum), a column. A
+    ``need.<field>`` argument of any other parameter is data, a read of its own need: a
+    dependency when it is computed in the same stratum. A call whose arguments do not
+    fit the parameters, or whose argument of a declared parameter is not a field name
+    written out (a ``need.<field>``, a number), cannot be declared: it is computed
+    last, as one of a function declaring nothing, and :attr:`Project.refused` says why.
+    """
+
+    def apply(self, declaration: Declaration, position: int) -> bool:
+        """Add the call's declared reads to its node.
+
+        :param declaration: The function's declaration.
+        :param position: The call's position among its node's items.
+        :return: Whether the declaration was applied to the call.
+        """
+        assert isinstance(self.call, DynamicFunctionParsed), "a call"
+        call = self.call
+        try:
+            bound = declaration.signature.bind(*call.args, **dict(call.kwargs))
+        except TypeError as err:
+            return self._refuse(f"its call does not fit its parameters: {err}")
+        bound.apply_defaults()
+        declared = {*declaration.own, *declaration.every}
+        fields: dict[str, list[str]] = {"own": [], "every": []}
+        arguments: list[Node] = []
+        for parameter, value in bound.arguments.items():
+            kind = declaration.signature.parameters[parameter].kind
+            values = (
+                list(value.values())
+                if kind is inspect.Parameter.VAR_KEYWORD
+                else list(value)
+                if kind is inspect.Parameter.VAR_POSITIONAL
+                else [value]
+            )
+            for item in values:
+                if parameter not in declared:
+                    if isinstance(item, NeedAttribute):
+                        arguments.append(
+                            (self.need.id, self.project.field_of(item.name))
+                        )
+                    continue
+                if not isinstance(item, str):
+                    shown = (
+                        f"need.{item.name}"
+                        if isinstance(item, NeedAttribute)
+                        else repr(item)
+                    )
+                    return self._refuse(
+                        f"the argument of its parameter {parameter!r} is {shown}, "
+                        "not a field name written in the call"
+                    )
+                fields["own" if parameter in declaration.own else "every"].append(item)
+        for _, name in arguments:
+            self._read(self.need.id, name)
+        for name in fields["own"]:
+            self._read(self.need.id, name)
+        for name in fields["every"]:
+            self._column(name, None, DeclaredRead(call.name))
+        if self.scope:
+            self.reads.scope = _appended(
+                self.reads.scope, OutOfScope(self.what, tuple(self.scope))
+            )
+        field_of = self.project.field_of
+        self.reads.declared = _appended(
+            self.reads.declared,
+            Declared(
+                position,
+                call.name,
+                frozenset(
+                    [
+                        *arguments,
+                        *((self.need.id, field_of(name)) for name in fields["own"]),
+                    ]
+                ),
+                frozenset(field_of(name) for name in fields["every"]),
+                frozenset(name for _, name in arguments),
+            ),
+        )
+        return True
+
+    def _refuse(self, why: str) -> bool:
+        assert isinstance(self.call, DynamicFunctionParsed), "a call"
+        self.project.refused.setdefault(
+            self.call.name, ((self.need.id, self.field), why)
+        )
+        return False
 
 
 class _RuleReads(_CallReads):
@@ -1191,8 +1361,8 @@ def _sink_union_readers(
     the union's field, or reads it as ``current_need`` by a constant key on the node's
     own need. What else a node computed last reads is not known: your own function, a
     read through ``needs`` or ``current_need`` by a key that is not written out, before
-    such a union reads it empty, unreported. A node reading the sink reads its
-    placeholder, which is final.
+    such a union reads it empty, which the pass reports as it runs (not here). A node
+    reading the sink reads its placeholder, which is final.
     """
     moved = slots.keys()
     by_field: dict[str, list[Node]] = {}

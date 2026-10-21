@@ -7,6 +7,19 @@ Unreleased
 Changed
 .......
 
+- 👌 ``tr_link`` declares what it reads -- the ``source_option`` of its own need and the
+  ``target_option`` of every need -- so Sphinx-Needs computes its links in order, with its
+  built-in functions: a ``links_from_filter``, a derived ``links`` or ``union`` link type
+  or any other built-in function reading them holds them, where each read them empty,
+  silently (`#2354 <https://github.com/useblocks/sphinx-needs/issues/2354>`__,
+  `#2366 <https://github.com/useblocks/sphinx-needs/pull/2366>`__). It is declared
+  with ``sphinx_needs.api.reads`` where that exists; an older Sphinx-Needs computes it as
+  before, so the floor on Sphinx-Needs is unchanged. A ``target_option`` naming the link type the call
+  fills is now a ``needs.derive_cycle``, and a ``source_option`` or ``target_option``
+  computed after the link fields (by a ``[[…]]`` or ``<<…>>`` of its own) is now a
+  ``needs.derive_scope``: the call is not run, where it read the option before it was
+  computed. The links are what they were in both cases.
+
 - 🏷️ ``sphinx_test_reports`` ships a ``py.typed`` marker (:pep:`561`) and the distribution
   the ``Typing :: Typed`` classifier, so a type checker reads its annotations instead of
   treating it as untyped. The deprecated ``sphinxcontrib.test_reports`` aliases carry none

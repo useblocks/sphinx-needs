@@ -953,7 +953,7 @@ def test_a_union_computed_last_and_its_readers(test_app):
     computed last in need-id order, and a union of that union after that. A node
     computed last after it reads it complete (SPEC_2 after SPEC_1's union: ``seen``,
     ``late_copy``; SPEC_9 after every union: ``opq``); one before it reads it empty
-    (SPEC_0's own function ``seen``: the trade-off), but a call whose filter cannot be
+    (SPEC_0's own function ``seen``: the trade-off, reported as the function runs), but a call whose filter cannot be
     read and names the union cannot wait for it, and says so (SPEC_0's ``opq``,
     SPEC_4's ``blocks``, which fills a member); a call that records its reads reports
     reading it at run time (SPEC_5's ``copy`` of SPEC_6's union).
@@ -996,6 +996,10 @@ def test_a_union_computed_last_and_its_readers(test_app):
         "<srcdir>/index.rst:32: WARNING: dynamic function 'copy' for option 'blocks' "
         "read 'all_links' on need 'SPEC_6' before it was computed: it is "
         f"{_UNION}, after this call [needs.derive_scope]",
+        # your own function, before the union, is told as it runs, after the step
+        "<srcdir>/index.rst:10: WARNING: dynamic function 'read_union' for option "
+        "'seen' read 'all_links' on need 'SPEC_1' before it was computed: it is "
+        f"{_UNION}, after this call [needs.derive_scope]",
     ]
     needs = _built(app)["needs"]
     spec_1, spec_2 = needs["SPEC_1"], needs["SPEC_2"]
@@ -1005,7 +1009,8 @@ def test_a_union_computed_last_and_its_readers(test_app):
     # computed last, after the union: complete
     assert spec_2["seen"] == spec_2["late_copy"] == ["REQ_1", "REQ_2"]
     assert needs["SPEC_9"]["opq"] == ["SPEC_1", "SPEC_6"]
-    # computed last, before it: your own function reads it empty (the trade-off)
+    # computed last, before it: your own function reads it empty (the trade-off),
+    # reported above
     assert (needs["SPEC_0"]["seen"], needs["SPEC_0"]["opq"]) == ([], [])
     assert needs["SPEC_4"]["blocks"] == needs["SPEC_5"]["blocks"] == []
     assert all(need["where_rule"] == [] for need in needs.values())

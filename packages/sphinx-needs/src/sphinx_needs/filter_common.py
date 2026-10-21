@@ -22,6 +22,7 @@ from docutils.statemachine import StringList
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs import _read_watch
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, NeedsMutable
 from sphinx_needs.debug import measure_time, measure_time_func
@@ -835,6 +836,21 @@ def filter_needs_and_parts(
     if _is_constant_filter(filter_string):
         _report_constant_filter(filter_string, location, append_warning)
         return []
+    if (watch := _read_watch.current) is not None and not watch.active:
+        # the check of the order of the pass sees what the filter reads
+        watch.active = True
+        try:
+            return filter_needs_and_parts(
+                needs,
+                config,
+                filter_string,
+                current_need,
+                location=location,
+                append_warning=append_warning,
+                origin_docname=origin_docname,
+            )
+        finally:
+            watch.active = False
 
     # === Fast path: try compiled predicate to avoid eval() entirely ===
     compiled = compile_portable(filter_string)
@@ -1030,55 +1046,80 @@ def filter_single_need(
     """
     if _is_constant_filter(filter_string):
         raise NeedsInvalidFilter(_constant_filter_message(filter_string))
-    var_proxy = config.variant_data_proxy
+    # the check of the order of the pass sees what the filter reads, while it watches
+    # the filters of a call
+    watch = _read_watch.current
+    if watch is not None and not watch.active:
+        watch.active = True
+    else:
+        watch = None
+    try:
+        var_proxy = config.variant_data_proxy
 
-    # === Fast path: short-circuit simple expressions ===
-    compiled = compile_portable(filter_string)
-    simple_pred = compiled.predicate
-    if simple_pred is not None:
-        # called need by need: the mapping is built only for a predicate that reads it
-        filter_data = config.filter_data
-        fallback = (
-            _fast_path_context(filter_data, var_proxy, compiled, origin_docname)
-            if filter_data
-            or var_proxy is not None
-            or (origin_docname is not None and compiled.reads_origin)
-            else None
-        )
+        # === Fast path: short-circuit simple expressions ===
+        compiled = compile_portable(filter_string)
+        simple_pred = compiled.predicate
+        if simple_pred is not None:
+            # called need by need: the mapping is built only for a predicate that reads it
+            filter_data = config.filter_data
+            fallback = (
+                _fast_path_context(filter_data, var_proxy, compiled, origin_docname)
+                if filter_data
+                or var_proxy is not None
+                or (origin_docname is not None and compiled.reads_origin)
+                else None
+            )
+            try:
+                # read for its truth: a value's own method may give no boolean
+                return bool(simple_pred(need, fallback))
+            except NeedsInvalidFilter:
+                raise
+            except Exception as e:
+                raise NeedsInvalidFilter(
+                    f"Filter {filter_string!r} not valid. Error: {e}."
+                )
+
+        # === Slow path: fall back to eval() ===
+        filter_context: dict[str, Any] = need.filter_context()
+        if needs:
+            filter_context["needs"] = needs
+        if current_need:
+            filter_context["current_need"] = current_need
+        else:
+            filter_context["current_need"] = need
+
+        # Get needs external filter data and merge to filter_context
+        filter_context.update(config.filter_data)
+        if var_proxy is not None:
+            filter_context["var"] = var_proxy
+
+        filter_context["search"] = need_search
+
+        filter_context["c"] = NeedCheckContext(need, origin_docname)
+        if _read_watch.current is not None:
+            # the names the evaluation reads, for the check of the order of the pass; the
+            # need's fields are what the context does not set over them
+            not_fields = {"needs", "current_need", "search", "c", "var"}
+            not_fields.update(config.filter_data)
+            if isinstance(need, NeedPartItem):
+                # what a part sets over its need's fields (its id, its links) is
+                # no read of the need
+                not_fields.update(need._overrides)
+            filter_context = _read_watch.ReadingContext(
+                filter_context, need["id_parent"], not_fields
+            )
+
         try:
-            # read for its truth: a value's own method may give no boolean
-            return bool(simple_pred(need, fallback))
-        except NeedsInvalidFilter:
-            raise
+            # Set filter_context as globals and not only locals in eval()!
+            # Otherwise, the vars not be accessed in list comprehensions.
+            # a filter is read for its truth, whatever its value (#1773)
+            result = bool(eval(filter_compiled or filter_string, filter_context))
         except Exception as e:
             raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
-
-    # === Slow path: fall back to eval() ===
-    filter_context: dict[str, Any] = need.filter_context()
-    if needs:
-        filter_context["needs"] = needs
-    if current_need:
-        filter_context["current_need"] = current_need
-    else:
-        filter_context["current_need"] = need
-
-    # Get needs external filter data and merge to filter_context
-    filter_context.update(config.filter_data)
-    if var_proxy is not None:
-        filter_context["var"] = var_proxy
-
-    filter_context["search"] = need_search
-
-    filter_context["c"] = NeedCheckContext(need, origin_docname)
-
-    try:
-        # Set filter_context as globals and not only locals in eval()!
-        # Otherwise, the vars not be accessed in list comprehensions.
-        # a filter is read for its truth, whatever its value (#1773)
-        result = bool(eval(filter_compiled or filter_string, filter_context))
-    except Exception as e:
-        raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
-    return result
+        return result
+    finally:
+        if watch is not None:
+            watch.active = False
 
 
 class NeedCheckContext:
