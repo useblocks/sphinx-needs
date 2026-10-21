@@ -992,12 +992,12 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
     and links name are final.
 
     The built-in nodes come first, each after what it reads. The nodes computed last
-    (your own functions, the calls whose filter cannot be read) follow: first those
-    filling a member of a union (the *feeders*), in ``(need id, field)`` order; then
-    the unions reading one of those, each after the unions it reads
-    (:func:`_unions_after_last`); then every other node computed last, in
-    ``(need id, field)`` order, which so reads such a union complete. A built-in node
-    reading such a union, or a feeder whose filter names one, is a sink
+    (your own functions, the calls whose filter cannot be read) follow, in
+    ``(need id, field)`` order; each union reading one of them is computed right after
+    the last of its members computed last, and after the unions it reads
+    (:func:`_unions_after_last`, :func:`_slots`). A node computed last before such a
+    union reads it empty, and one after it reads it complete. A built-in node reading
+    such a union, or a node computed last before it whose filter names it, is a sink
     (:func:`_sink_union_readers`).
     """
     reads = {
@@ -1006,15 +1006,11 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
     }
     after_last = _unions_after_last(project, reads)
     moved = frozenset(after_last)
-    feeders: frozenset[Node] = frozenset(
-        dep for node in after_last for dep in reads[node].deps if reads[dep].last
-    )
+    slots = _slots(reads, after_last)
     if moved:
-        _sink_union_readers(project, reads, moved, feeders)
+        _sink_union_readers(project, reads, slots)
     built_in = [node for node, r in reads.items() if not r.last and node not in moved]
-    last = [node for node, r in reads.items() if r.last and node not in feeders]
-    # a feeder made a sink is computed with the built-in nodes, as every sink is
-    fed = [node for node in sorted(feeders) if reads[node].last]
+    last = sorted(node for node, r in reads.items() if r.last)
     by_field: dict[str, list[Node]] = {}
     for node in built_in:
         by_field.setdefault(node[1], []).append(node)
@@ -1087,10 +1083,36 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
                 ),
             )
         )
-    steps.extend(Step((node,)) for node in fed)
-    steps.extend(Step((node,)) for node in after_last)
-    steps.extend(Step((node,)) for node in sorted(last))
+    # each union right after its slot, the last of its members computed last (a member
+    # made a sink above keeps its place in that order), in the order they read each other
+    position = {node: number for number, node in enumerate(after_last)}
+    unions = sorted(after_last, key=lambda node: (slots[node], position[node]))
+    for node in last:
+        while unions and slots[unions[0]] < node:
+            steps.append(Step((unions.pop(0),)))
+        steps.append(Step((node,)))
+    steps.extend(Step((node,)) for node in unions)
     return Stratum(stratum, reads, steps, moved)
+
+
+def _slots(
+    reads: Mapping[Node, NodeReads], after_last: Sequence[Node]
+) -> dict[Node, Node]:
+    """Each union computed last's *slot*: the last of its members computed last, in
+    ``(need id, field)`` order, or the slot of a union it reads, if later.
+
+    The union is computed right after its slot among the nodes computed last.
+
+    :param after_last: The unions, each after the unions it reads.
+    """
+    slots: dict[Node, Node] = {}
+    for union in after_last:
+        slots[union] = max(
+            dep if reads[dep].last else slots[dep]
+            for dep in reads[union].deps
+            if reads[dep].last or dep in slots
+        )
+    return slots
 
 
 def _unions_after_last(project: Project, reads: Mapping[Node, NodeReads]) -> list[Node]:
@@ -1144,37 +1166,37 @@ def _unions_after_last(project: Project, reads: Mapping[Node, NodeReads]) -> lis
 
 
 def _sink_union_readers(
-    project: Project,
-    reads: Mapping[Node, NodeReads],
-    moved: Collection[Node],
-    feeders: Collection[Node],
+    project: Project, reads: Mapping[Node, NodeReads], slots: Mapping[Node, Node]
 ) -> None:
-    """Make each node of the stratum computed before the unions in ``moved`` that
-    reads one of them a sink.
+    """Make each node of the stratum computed before a union computed last (one in
+    ``slots``) that reads it a sink.
 
-    A built-in node is computed before the nodes computed last, and a feeder (a node
-    computed last that fills a member of such a union) before the unions: neither can
-    wait for the union. It reads nothing and holds its placeholder, as a node reading
+    A built-in node is computed before the nodes computed last, so it cannot wait for
+    such a union; nor can a node computed last that comes before the union (at or
+    before its slot). It reads nothing and holds its placeholder, as a node reading
     what its stratum cannot wait for, and says so (``OutOfScope.unions``). A built-in
     node's read through a column counts when one of the column's members is such a
-    union; a feeder's, when a filter of it that cannot be read still names the field
-    of one (what else it reads is not known: your own function filling a member of a
-    union reads that union empty, unreported). A node reading the sink reads its
-    placeholder, which is final.
+    union; a node computed last's, when a filter of it that cannot be read still names
+    the union's field. What else a node computed last reads is not known: your own
+    function, or a read through ``needs``, before such a union reads it empty,
+    unreported. A node reading the sink reads its placeholder, which is final.
     """
+    moved = slots.keys()
     by_field: dict[str, list[Node]] = {}
     for node in sorted(moved):
         by_field.setdefault(node[1], []).append(node)
-    for node in sorted(feeders):
-        node_reads = reads[node]
-        found_names = {
+    for node, node_reads in sorted(reads.items()):
+        if not node_reads.last:
+            continue
+        before = {
             (name, need_id)
             for field in node_reads.opaque_names
             for need_id, name in by_field.get(field, [])
+            if node <= slots[(need_id, name)]
         }
-        if found_names:
+        if before:
             node_reads.scope = [
-                OutOfScope(node_reads.what, unions=tuple(sorted(found_names)))
+                OutOfScope(node_reads.what, unions=tuple(sorted(before)))
             ]
             node_reads.deps = ()
             node_reads.columns = ()
