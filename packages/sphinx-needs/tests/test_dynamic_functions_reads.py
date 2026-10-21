@@ -30,7 +30,8 @@ def _project(conf: str, index: str) -> dict:
 
 
 def _warnings(app) -> list[str]:
-    return [w for w in build_warnings(app) if "config.cache" not in w]
+    # but Sphinx's own about caching a function (spelt "unpickable" by Sphinx 7)
+    return [w for w in build_warnings(app) if "cannot cache unpick" not in w]
 
 
 # -- the issue's project (#2354), its function declared ------------------------------
