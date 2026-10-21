@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792611387290,
+  "lastUpdate": 1792612087389,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26748,6 +26748,42 @@ window.BENCHMARK_DATA = {
             "value": 56.89178271700001,
             "unit": "s",
             "extra": "Commit: 856baac405ae9e6d0c7839126f29546be36df820\nBranch: master\nTime: 2026-10-21T21:34:57+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3c2e324627e4470519dd5bcc2d78c27cb97f0215",
+          "message": "📚 Changelog: what upgrading means for the new late-read warnings (#2367)\n\n## What\n\n`packages/sphinx-needs/docs/changelog.rst` only. The Unreleased entry\nfor #2366's late-read reports gains an *Upgrading* paragraph covering:\n\n- which projects may see new `needs.derive_scope` warnings: those whose\nbuilt-in functions or rules read what their own functions compute, or\nwhat a call whose filter cannot be read computes;\n- that a build with `-W` fails on them;\n- what to do about it:\n  - declare the function's reads with `sphinx_needs.api.reads`;\n- for `tr_link`, upgrade sphinx-test-reports to its release that\ndeclares them;\n- that a reader then holds every value it selects, which can make a\nbuild slower and raise `needs.derive_dense` for a `links` rule selecting\nmany needs;\n- how to silence the warnings meanwhile: `suppress_warnings =\n[\"needs.derive_scope\"]`.\n\n## Why\n\nThe entry described the new reports but not what an upgrading project\nsees. Its values were silently wrong before, and the change can now fail\na `-W` build. The paragraph says plainly why that happens and how to get\npast it, ahead of the release.\n\nThe sphinx-test-reports release that declares `tr_link`'s reads has no\nversion yet, so the paragraph names it by what it does. Once that\nversion is decided, it is worth putting the number here.\n\n## Tests\n\nNone; documentation only. `uv run poe lint` passes. A docs build shows\nno new warning; it was run offline, so its only warnings are the\nintersphinx inventories it cannot reach.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [ ] I ran the package's tests (`uv run poe test-<package>`) and they\npass. (Documentation only; not run.)\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` passes (typecheck not run: no code changed).",
+          "timestamp": "2026-10-21T21:46:27+02:00",
+          "tree_id": "366efa83802649c762e997f88dca0c83270532c3",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3c2e324627e4470519dd5bcc2d78c27cb97f0215"
+        },
+        "date": 1792612076996,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14761141400000355,
+            "unit": "s",
+            "extra": "Commit: 3c2e324627e4470519dd5bcc2d78c27cb97f0215\nBranch: master\nTime: 2026-10-21T21:46:27+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.873674567,
+            "unit": "s",
+            "extra": "Commit: 3c2e324627e4470519dd5bcc2d78c27cb97f0215\nBranch: master\nTime: 2026-10-21T21:46:27+02:00"
           }
         ]
       }
