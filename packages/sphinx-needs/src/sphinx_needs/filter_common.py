@@ -10,6 +10,7 @@ import json
 import math
 import re
 from collections.abc import Callable, Iterable, Mapping
+from functools import lru_cache
 from pathlib import Path
 from timeit import default_timer as timer
 from types import CodeType
@@ -323,9 +324,64 @@ def process_filters(
     return found_needs
 
 
-_FilterTier = Literal["index", "fast", "eval"]
+_FilterTier = Literal["index", "fast", "eval", "refused"]
 """The tier of filter evaluation that answers a filter string: the index path, the
-fast path of the portable grammar (:mod:`sphinx_needs.ubquery`), or Python's ``eval``."""
+fast path of the portable grammar (:mod:`sphinx_needs.ubquery`), or Python's ``eval``;
+or ``"refused"`` for a constant, which no tier answers (:func:`_is_constant_filter`)."""
+
+
+@lru_cache(maxsize=256)
+def _is_constant_filter(filter_string: str) -> bool:
+    """Whether *filter_string* is a bare constant, which every tier refuses.
+
+    A filter is read for its truth, need by need, and a constant has the same truth on
+    every need: ``"x"``, ``0``, ``-5``, ``1.5``, ``None``, ``b"x"``, parenthesised or
+    not, says nothing about a need. Such a filter is reported, once, before any tier
+    runs, and selects nothing. ``True`` and ``False`` are the exception: they are the
+    spelling of "every need" and "no need". A constant inside a larger filter
+    (``True and owner``) is an operand like any other, and so is a constant
+    expression (``-True``, ``not 1``, ``1 == 1``).
+
+    It is decided by the string alone, once per string: the engine's tiers ask it on
+    every call, :func:`filter_single_need` need by need.
+    """
+    try:
+        node = ast.parse(filter_string, mode="eval").body
+    except (SyntaxError, ValueError):
+        return False
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub | ast.UAdd):
+        # a signed number; a signed boolean is arithmetic, not a constant
+        node = node.operand
+        return (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, int | float | complex)
+            and not isinstance(node.value, bool)
+        )
+    return isinstance(node, ast.Constant) and not isinstance(node.value, bool)
+
+
+def _constant_filter_message(filter_string: str, prefix: str = "Filter") -> str:
+    """The report of a constant filter (see :func:`_is_constant_filter`)."""
+    return (
+        f"{prefix} {filter_string!r} not valid. Error: it is a constant, "
+        "which says nothing about a need, so it selects none."
+    )
+
+
+def _report_constant_filter(
+    filter_string: str,
+    location: tuple[str, int | None] | nodes.Node | None,
+    append_warning: str,
+) -> None:
+    """Report a constant filter as one ``needs.filter`` warning."""
+    if append_warning:
+        append_warning = f" {append_warning}"
+    log_warning(
+        log,
+        f"{_constant_filter_message(filter_string)}{append_warning}",
+        "filter",
+        location=location,
+    )
 
 
 def _filter_tier(filter_string: str | None) -> tuple[_FilterTier, str | None]:
@@ -338,10 +394,12 @@ def _filter_tier(filter_string: str | None) -> tuple[_FilterTier, str | None]:
     string (its own analysis, over an empty view), the fast path whether the string
     compiles. No filter at all is answered by the view's indexes.
 
-    :return: The tier, and the reason for ``eval`` (None for the other two).
+    :return: The tier, and the reason for ``eval`` (None for the others).
     """
     if not filter_string:
         return "index", None
+    if _is_constant_filter(filter_string):
+        return "refused", None
     try:
         body = ast.parse(filter_string).body
     except Exception:
@@ -515,7 +573,8 @@ def _analyze_and_apply_expr(
     """
     if isinstance(expr, ast.Constant):
         if isinstance(expr.value, str | bool):
-            # "value" / True / False
+            # True / False, or a string beside `and` ("value" and ...), read by its
+            # truth; a string alone is refused before this (_is_constant_filter)
             return needs if expr.value else needs.filter_ids([]), False
 
     elif isinstance(expr, ast.Name):
@@ -629,6 +688,9 @@ def filter_needs_view(
 ) -> list[NeedItem]:
     if not filter_string:
         return list(needs.values())
+    if _is_constant_filter(filter_string):
+        _report_constant_filter(filter_string, location, append_warning)
+        return []
 
     try:
         body = ast.parse(filter_string).body
@@ -670,6 +732,9 @@ def filter_needs_parts(
 ) -> list[NeedItem | NeedPartItem]:
     if not filter_string:
         return list(needs)
+    if _is_constant_filter(filter_string):
+        _report_constant_filter(filter_string, location, append_warning)
+        return []
 
     try:
         body = ast.parse(filter_string).body
@@ -747,6 +812,9 @@ def filter_needs_and_parts(
     """
     if not filter_string:
         return list(needs)
+    if _is_constant_filter(filter_string):
+        _report_constant_filter(filter_string, location, append_warning)
+        return []
 
     # === Fast path: try compiled predicate to avoid eval() entirely ===
     compiled = compile_portable(filter_string)
@@ -760,12 +828,8 @@ def filter_needs_and_parts(
         error_reported = False
         for filter_need in needs:
             try:
-                result = simple_pred(filter_need, fallback)
-                if not isinstance(result, bool):
-                    raise NeedsInvalidFilter(
-                        f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
-                    )
-                if result:
+                # read for its truth: a value's own method may give no boolean
+                if simple_pred(filter_need, fallback):
                     found_needs.append(filter_need)
             except NeedsInvalidFilter:
                 raise
@@ -873,8 +937,10 @@ def apply_default_predicate(
 ) -> bool:
     """Checks if a single need passes a default predicate.
 
-    :raises NeedsInvalidFilter: if the predicate is not valid
+    :raises NeedsInvalidFilter: if the predicate is not valid, or is a constant
     """
+    if _is_constant_filter(predicate):
+        raise NeedsInvalidFilter(_constant_filter_message(predicate, "Predicate"))
     predicate_context: dict[str, Any] = {
         **context,
         **extras,
@@ -886,11 +952,8 @@ def apply_default_predicate(
     try:
         # Set filter_context as globals and not only locals in eval()!
         # Otherwise, the vars not be accessed in list comprehensions.
-        result = eval(predicate, predicate_context)
-        if not isinstance(result, bool):
-            raise NeedsInvalidFilter(
-                f"Did not evaluate to a boolean, instead {type(result)}: {result}"
-            )
+        # a predicate is read for its truth, as a filter is
+        result = bool(eval(predicate, predicate_context))
     except Exception as e:
         raise NeedsInvalidFilter(f"Predicate {predicate!r} not valid. Error: {e}.")
     return result
@@ -899,7 +962,12 @@ def apply_default_predicate(
 def filter_import_item(
     context: dict[str, Any], config: NeedsSphinxConfig, filter_string: str
 ) -> bool:
-    """Filters a single item from an imported needs.json file."""
+    """Filters a single item from an imported needs.json file.
+
+    :raises NeedsInvalidFilter: if the filter is not valid, or is a constant
+    """
+    if _is_constant_filter(filter_string):
+        raise NeedsInvalidFilter(_constant_filter_message(filter_string))
     filter_context = context.copy()
     # Get needs external filter data and merge to filter_context
     filter_context.update(config.filter_data)
@@ -909,11 +977,8 @@ def filter_import_item(
     try:
         # Set filter_context as globals and not only locals in eval()!
         # Otherwise, the vars not be accessed in list comprehensions.
-        result = eval(filter_string, filter_context)
-        if not isinstance(result, bool):
-            raise NeedsInvalidFilter(
-                f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
-            )
+        # a filter is read for its truth, whatever its value
+        result = bool(eval(filter_string, filter_context))
     except Exception as e:
         raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
     return result
@@ -941,7 +1006,10 @@ def filter_single_need(
     :param origin_docname: The origin docname that the filter was called from, if any
 
     :return: True, if need passes the filter_string, else False
+    :raises NeedsInvalidFilter: if the filter fails on the need, or is a constant
     """
+    if _is_constant_filter(filter_string):
+        raise NeedsInvalidFilter(_constant_filter_message(filter_string))
     var_proxy = config.variant_data_proxy
 
     # === Fast path: short-circuit simple expressions ===
@@ -958,12 +1026,8 @@ def filter_single_need(
             else None
         )
         try:
-            result = simple_pred(need, fallback)
-            if not isinstance(result, bool):
-                raise NeedsInvalidFilter(
-                    f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
-                )
-            return result
+            # read for its truth: a value's own method may give no boolean
+            return bool(simple_pred(need, fallback))
         except NeedsInvalidFilter:
             raise
         except Exception as e:
@@ -990,11 +1054,8 @@ def filter_single_need(
     try:
         # Set filter_context as globals and not only locals in eval()!
         # Otherwise, the vars not be accessed in list comprehensions.
-        result = eval(filter_compiled or filter_string, filter_context)
-        if not isinstance(result, bool):
-            raise NeedsInvalidFilter(
-                f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
-            )
+        # a filter is read for its truth, whatever its value (#1773)
+        result = bool(eval(filter_compiled or filter_string, filter_context))
     except Exception as e:
         raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
     return result

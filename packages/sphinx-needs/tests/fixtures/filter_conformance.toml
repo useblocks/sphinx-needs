@@ -18,7 +18,8 @@
 # The grammar is ubCode's `rust/ubc_query/src/py_expr.pest`, as `ubc_query` converts it
 # (a form the grammar parses and the converter refuses -- a name `in` a name, a list
 # beside `==` -- is outside it). sphinx-needs' parsed tier (`sphinx_needs/ubquery.py`)
-# compiles every string inside it, and every other string falls to Python's `eval`. Its
+# compiles every string inside it, and every other string falls to Python's `eval`, but a
+# constant alone, which no tier answers. Its
 # answers are Python's: where `ubc_query` answers otherwise, the entry says so
 # (`divergent`). The grammar has no raw-string literal, so no `search(r'...')` here:
 # sphinx-needs reads one through Python, ubCode refuses it at the `r`.
@@ -45,18 +46,22 @@
 #     `error = "filter"` says it is reported, once; an entry without `error` reports
 #     nothing. sphinx-needs reports it as one `needs.filter` warning; ubCode's runner reads
 #     its own report of a failed filter
+#   - a filter is read for its truth: a need is selected when the filter's value is true
+#     by Python's rules, whatever its type, on every tier
 #   - an entry with `tier = "eval"` is OUTSIDE the portable language: ubCode's runner
 #     asserts that its engine refuses the string (it parses it to no query), unless the
 #     entry carries `divergent`, and sphinx-needs answers it through `eval`, which
-#     `expected` pins. Every other entry is
-#     inside it. `tier = "index"` or `tier = "fast"` pins which of sphinx-needs' two
-#     earlier tiers answers it; `reason` (with `tier = "eval"`) pins the construct
-#     sphinx-needs' debug report names. ubCode's runner ignores `tier`'s value and `reason`
-#   - `eval` (sphinx-needs only) pins what sphinx-needs' `eval` tier answers when it is
-#     made to answer a string inside the language and does not answer `expected`: its
-#     selection, and the words of the error it reports. It is #1773's rule: a filter whose
-#     value is not a boolean is read by its truthiness in the parsed tiers, and refused by
-#     `eval`
+#     `expected` pins
+#   - an entry with `tier = "refused"` is a filter that is a constant alone -- a string,
+#     bytes, a number (a signed one included), None or `...`, parenthesised or not; `True`
+#     and `False` are not, they select every need and none. It says nothing about a need, so
+#     every tool refuses it before evaluating it: it selects nothing and is reported once,
+#     and `error = "filter"` is required with it. ubCode's runner asserts that its engine
+#     refuses it (a parse refusal is that report), unless the entry carries `divergent`
+#   - every other entry is inside the language. `tier = "index"` or `tier = "fast"` pins
+#     which of sphinx-needs' two earlier tiers answers it; `reason` (with `tier = "eval"`)
+#     pins the construct sphinx-needs' debug report names. ubCode's runner ignores those
+#     two values of `tier`, and `reason`
 #   - a case or an entry with `python_only = true` is one only sphinx-needs runs, and
 #     ubCode's runner skips it; `ubcode_only = true` is the converse
 #   - an entry carrying `divergent` is skipped by the runner it names, counted, with the
@@ -85,11 +90,10 @@
 #     expected       - the ids it selects, sorted
 #     why            - optional; one line saying what the entry pins
 #     error          - optional; "filter": the filter is reported
-#     tier           - optional; "index", "fast" or "eval"
+#     tier           - optional; "index", "fast", "eval" or "refused"
 #     reason         - optional, with tier = "eval"; the construct sphinx-needs names
 #     in_document    - optional; false: evaluated with no document
 #     include_parts  - optional; true: the parts are evaluated too
-#     eval           - optional; { expected = [...], reports = "..." }, see the rules
 #     python_only    - optional; see the rules above
 #     ubcode_only    - optional; see the rules above
 #     divergent      - optional; { ubcode = "what ubc_query does" }
@@ -1177,7 +1181,7 @@ why = "the reqs stop at the first operand; SPEC_001 reads absent, and fails"
 
 [[case]]
 name = "truthiness"
-why = "an operand alone, and under and, or and not, is read by Python's truthiness: an empty string, list, 0 and None are false (#1773)"
+why = "a filter is read for its truth on every tier, an operand alone and under and, or and not too: an empty string, list, 0 and None are false (#1773)"
 config = '''
 [needs.fields.owner]
 schema = { type = "string" }
@@ -1211,36 +1215,30 @@ why = "a boolean field alone"
 [[case.filters]]
 filter = 'owner'
 expected = ["REQ_001"]
-eval = { expected = [], reports = "did not evaluate to a boolean" }
 why = "a string, and None"
 
 [[case.filters]]
 filter = 'tags'
 expected = ["REQ_001"]
-eval = { expected = [], reports = "did not evaluate to a boolean" }
 why = "a list"
 
 [[case.filters]]
 filter = 'effort'
 expected = ["REQ_001"]
-eval = { expected = [], reports = "did not evaluate to a boolean" }
 why = "an integer, 0 among them"
 
 [[case.filters]]
 filter = 'status'
 expected = []
-eval = { expected = [], reports = "did not evaluate to a boolean" }
 why = "None"
 
 [[case.filters]]
 filter = 'len(tags)'
 expected = ["REQ_001"]
-eval = { expected = [], reports = "did not evaluate to a boolean" }
 
 [[case.filters]]
 filter = 'title.lower()'
 expected = ["REQ_001", "REQ_002"]
-eval = { expected = [], reports = "did not evaluate to a boolean" }
 
 [[case.filters]]
 filter = 'not owner'
@@ -1253,14 +1251,12 @@ expected = ["REQ_002"]
 [[case.filters]]
 filter = 'owner and done'
 expected = ["REQ_001"]
-eval = { expected = ["REQ_001"], reports = "did not evaluate to a boolean" }
-why = "eval's and gives REQ_002's None"
+why = "and gives REQ_002's None, which is false"
 
 [[case.filters]]
 filter = 'done or effort'
 expected = ["REQ_001"]
-eval = { expected = ["REQ_001"], reports = "did not evaluate to a boolean" }
-why = "eval's or gives REQ_002's 0"
+why = "or gives REQ_002's 0, which is false"
 
 [[case.filters]]
 filter = 'is_external'
@@ -1372,10 +1368,10 @@ reason = "arithmetic"
 
 [[case.filters]]
 filter = '[t for t in tags if t == "b"]'
-expected = []
-error = "filter"
+expected = ["REQ_001"]
 tier = "eval"
 reason = "comprehension"
+why = "a list, read by its truth: REQ_001's is ['b'], REQ_002's is empty"
 
 [[case.filters]]
 filter = 'status == "open" if True else False'
@@ -1505,8 +1501,8 @@ tier = "fast"
 filter = '1'
 expected = []
 error = "filter"
-tier = "eval"
-reason = "literal"
+tier = "refused"
+why = "a constant, which no tier answers now"
 
 [[case.filters]]
 filter = 'var.platform == platform'

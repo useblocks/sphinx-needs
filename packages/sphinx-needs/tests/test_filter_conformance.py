@@ -11,10 +11,10 @@ with the ``needs`` builder; for every filter of it, four things are asserted:
   says ``error``;
 * the tier that answers it: the parsed tier compiles every string inside the language
   (``try_build_simple_predicate`` is not None) and none outside it (``tier = "eval"``),
-  and the tier and reason the debug report gives are the ones the entry pins;
+  the tier and reason the debug report gives are the ones the entry pins, and a
+  constant (``tier = "refused"``) is answered by no tier;
 * need by need, the parsed tier and the ``eval`` tier give the same answer, an error
-  included with its message -- or, where the entry pins ``eval``'s own (#1773), ``eval``
-  gives that;
+  included with its message, and for a constant that answer is its refusal;
 * need by need, the parsed tier selects ``expected`` too, so the index path, the parsed
   tier and ``eval`` agree.
 
@@ -88,11 +88,13 @@ _ENTRY_KEYS = {
     "reason",
     "in_document",
     "include_parts",
-    "eval",
     "python_only",
     "ubcode_only",
     "divergent",
 }
+
+#: The values of an entry's ``tier``.
+_TIERS = ("index", "fast", "eval", "refused")
 
 #: The one code a reported filter carries, compared bare.
 _FILTER_CODE = "filter"
@@ -148,14 +150,13 @@ def test_every_case_has_a_complete_expectation() -> None:
             assert all(isinstance(i, str) for i in expected), where
             assert expected == sorted(set(expected)), where
             assert entry.get("error", _FILTER_CODE) == _FILTER_CODE, where
-            assert entry.get("tier", "fast") in ("index", "fast", "eval"), where
+            assert entry.get("tier", "fast") in _TIERS, where
             assert "reason" not in entry or entry.get("tier") == "eval", where
+            # a constant selects nothing and is reported
+            if entry.get("tier") == "refused":
+                assert expected == [] and entry.get("error") == _FILTER_CODE, where
             assert entry.get("in_document", True) in (True, False), where
             assert entry.get("include_parts", False) in (True, False), where
-            if "eval" in entry:
-                assert set(entry["eval"]) == {"expected", "reports"}, where
-                assert entry["eval"]["expected"] == sorted(entry["eval"]["expected"])
-                assert entry.get("tier") != "eval", where
             if "divergent" in entry:
                 assert set(entry["divergent"]) == {"ubcode"}, where
                 assert entry["divergent"]["ubcode"], where
@@ -235,7 +236,10 @@ def _check(app: Any, entry: dict[str, Any]) -> list[str]:
     # the tier
     tier, reason = filter_common._filter_tier(filter_string)
     compiled = try_build_simple_predicate(filter_string) is not None
-    if entry.get("tier") == "eval":
+    if entry.get("tier") == "refused":
+        if (tier, reason) != ("refused", None):
+            problem(f"is answered by the {tier} tier, expected none (refused)")
+    elif entry.get("tier") == "eval":
         if compiled or tier != "eval":
             problem(f"is answered by the {tier} tier, expected eval")
         elif "reason" in entry and reason != entry["reason"]:
@@ -262,21 +266,16 @@ def _check(app: Any, entry: dict[str, Any]) -> list[str]:
         evaluated = answers()
     if (by_parsed := sorted(i for i, a in parsed.items() if a is True)) != expected:
         problem(f"selects {by_parsed} need by need, expected {expected}")
-    if "eval" in entry:
-        pinned = entry["eval"]
-        by_eval = sorted(i for i, a in evaluated.items() if a is True)
-        if by_eval != pinned["expected"]:
-            problem(f"eval selects {by_eval}, expected {pinned['expected']}")
-        if not any(
-            isinstance(a, str) and pinned["reports"] in a for a in evaluated.values()
-        ):
-            problem(f"eval reports no {pinned['reports']!r}: {evaluated}")
-    else:
-        for item_id, answer in parsed.items():
-            if answer != evaluated[item_id]:
-                problem(
-                    f"{item_id}: the parsed tier gives {answer!r}, eval {evaluated[item_id]!r}"
-                )
+    for item_id, answer in parsed.items():
+        if answer != evaluated[item_id]:
+            problem(
+                f"{item_id}: the parsed tier gives {answer!r}, eval {evaluated[item_id]!r}"
+            )
+    if entry.get("tier") == "refused":
+        # refused before either tier runs, so both answer every need with the refusal
+        refusal = f"error: {filter_common._constant_filter_message(filter_string)}"
+        if (wrong := {i: a for i, a in evaluated.items() if a != refusal}) != {}:
+            problem(f"is not refused need by need: {wrong}")
     return problems
 
 

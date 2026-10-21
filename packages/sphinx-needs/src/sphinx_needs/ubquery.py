@@ -21,9 +21,9 @@ Its answers are ``eval``'s: for every string it compiles, a predicate gives the 
 ``eval`` gives on the same need, errors included -- a name that is no field, no
 ``needs_filter_data`` key and no Python builtin raises :class:`NameError`, a method of a
 value of the wrong type raises what Python raises, and ``c.this_doc()`` with no document
-to compare raises the error the ``eval`` tier's context raises. One difference is
-deliberate: a predicate reads every operand by Python truthiness, where ``eval``
-refuses a filter whose value is not a boolean (#1773).
+to compare raises the error the ``eval`` tier's context raises. Both read a filter's
+value for its truth, by Python's rules, whatever its type (#1773); a filter that is a
+constant alone is refused before either runs (``filter_common._is_constant_filter``).
 
 A string outside the grammar is not an error here. :func:`try_build_simple_predicate`
 returns ``None`` for it, the caller falls back to ``eval``, and :func:`compile_portable`
@@ -299,9 +299,9 @@ def _expr(node: ast.expr) -> SimplePredicate:
         return lambda need, ctx=None, _v=node.value: _v
 
     # `var_field_op_expr` with no operator: the operand, read by its truthiness. A bare
-    # name that is no field stays undefined rather than reading a Python builtin: eval
-    # refuses a builtin there as no boolean, so the two tiers both exclude the need and
-    # report the filter
+    # name that is no field stays undefined rather than reading a Python builtin, which
+    # eval would read as true: the language has no builtins, so the need is excluded
+    # and the filter reported
     if (name := _plain_name(node)) is not None:
         return lambda need, ctx=None, _f=name, _r=_get_field: bool(_r(need, _f, ctx))
     get = _operand(node)

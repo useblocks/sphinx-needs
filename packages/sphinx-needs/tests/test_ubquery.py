@@ -646,17 +646,47 @@ class TestThisDoc:
 
 def test_a_builtin_name_reads_as_in_eval() -> None:
     """A name no field defines that is a Python builtin is the builtin, as eval reads it:
-    as an operand it is compared, and alone it stays undefined (eval refuses it there as
-    no boolean, so both tiers exclude the need and report the filter)."""
+    as an operand it is compared. Alone it stays undefined in the parsed tier, which has
+    no builtins, so the need is excluded and the filter reported; eval reads the builtin
+    for its truth, as it reads every value (#1773), and a function is true."""
     config = Mock()
     config.filter_data = {}
     need = _make_need()
     for filter_string in ("status != filter", "(status != filter) is True"):
         assert filter_single_need(need, config, filter_string) is True
+    assert compile_portable("filter").predicate is not None
     with pytest.raises(NeedsInvalidFilter, match="name 'filter' is not defined"):
         filter_single_need(need, config, "filter")
-    with pytest.raises(NeedsInvalidFilter, match="did not evaluate to a boolean"):
-        filter_single_need(need, config, "filter if True else False")
+    assert compile_portable("filter if True else False").predicate is None
+    assert filter_single_need(need, config, "filter if True else False") is True
+
+
+class _AnswersWithAString(str):
+    """A string whose ``startswith`` answers with a string, as a user's own value may."""
+
+    def startswith(self, *args: object, **kwargs: object) -> str:
+        return "yes" if super().startswith(*args, **kwargs) else ""
+
+
+@pytest.mark.parametrize(("prefix", "expected"), [("a", True), ("b", False)])
+def test_a_value_that_is_no_boolean_is_read_for_its_truth(
+    prefix: str, expected: bool
+) -> None:
+    """Every tier reads a filter's value for its truth, the parsed one too, where a
+    value's own method gives no boolean (#1773)."""
+    config = Mock()
+    config.filter_data = {}
+    config.variant_data_proxy = None
+    need = _make_need(extras={"owner": _AnswersWithAString("alice")})
+    filter_string = f'owner.startswith("{prefix}")'
+    assert compile_portable(filter_string).predicate is not None
+    assert filter_single_need(need, config, filter_string) is expected
+    assert filter_common.filter_needs_and_parts([need], config, filter_string) == (
+        [need] if expected else []
+    )
+    refused = CompiledFilter(None, "refused", False)
+    with patch.object(filter_common, "compile_portable", lambda _: refused):
+        assert filter_single_need(need, config, filter_string) is expected
 
 
 def _outcome(need: NeedItem, config: Mock, filter_string: str) -> object:
