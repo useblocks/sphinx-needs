@@ -616,7 +616,7 @@ def test_debug_filters_records_the_tier_and_why_eval(test_app):
         ("c.this_doc() and len(tags) == 0", 1, "fast", None),
         ("bool(title)", 2, "eval", "call:bool"),
         ('type == "req" and title[0] == "A"', 1, "eval", "subscript"),
-        ("sphinx_tag in tags", 1, "eval", "compare:name-in-name"),
+        ("sphinx_tag in tags", 1, "fast", None),
         (
             'results = [need for need in needs if need["status"] == "open"]',
             1,

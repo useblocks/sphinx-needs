@@ -16,8 +16,8 @@
 # tests. A change here is a change to the contract, and owes ubCode a re-vendor.
 #
 # The grammar is ubCode's `rust/ubc_query/src/py_expr.pest`, as `ubc_query` converts it
-# (a form the grammar parses and the converter refuses -- a name `in` a name, a list
-# beside `==` -- is outside it). sphinx-needs' parsed tier (`sphinx_needs/ubquery.py`)
+# (a form the grammar parses and the converter refuses -- a list beside `==` -- is
+# outside it). sphinx-needs' parsed tier (`sphinx_needs/ubquery.py`)
 # compiles every string inside it, and every other string falls to Python's `eval`, except
 # a constant alone, which no tier answers. Its
 # answers are Python's: where `ubc_query` answers otherwise, the entry says so
@@ -446,7 +446,7 @@ why = "the type's empty value is never read"
 
 [[case]]
 name = "membership"
-why = "in and not in take a field before a list of literals, or a literal before a field: membership of a list, a substring of a string"
+why = "in and not in take a field before a list of literals, a literal before a field, or a field before a field: membership of a list, a substring of a string"
 config = '''
 [needs.fields.owner]
 schema = { type = "string" }
@@ -553,9 +553,8 @@ expected = ["REQ_002", "SPEC_001"]
 [[case.filters]]
 filter = 'owner in tags'
 expected = []
-tier = "eval"
-reason = "compare:name-in-name"
-why = "a field in a field: ubc_query parses it and refuses it"
+tier = "fast"
+why = "a field in a field: no need's owner is one of its tags"
 
 [[case.filters]]
 filter = "tags == ['ui']"
@@ -581,6 +580,123 @@ why = "a list literal holds literals only"
 filter = '1 in tags'
 expected = []
 divergent = { ubcode = "the filter fails: an integer literal in a list of strings is an unsupported literal type" }
+
+[[case]]
+name = "membership-of-a-field-in-a-field"
+why = "an operand in and not in a field answer as Python's in: a substring of a string, an item of a list, where a value of another type, None among them, is no item; a field holding no value after in, or a number in a string, fails for that need, which is excluded and reported, the others answered; the field after in takes no call"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.fields.nick]
+schema = { type = "string" }
+
+[needs.fields.lead]
+schema = { type = "string" }
+
+[needs.fields.effort]
+schema = { type = "integer" }
+
+[needs.fields.levels]
+schema = { type = "array", items = { type = "integer" } }
+
+[needs.fields.flag]
+schema = { type = "boolean" }
+'''
+source = '''
+.. req:: Alpha
+   :id: REQ_001
+   :owner: alice
+   :nick: ali
+   :tags: alice, ui
+   :effort: 1
+   :levels: 1, 2
+   :flag: true
+
+.. req:: Beta
+   :id: REQ_002
+   :status: open
+   :owner: bob
+   :nick: bobby
+   :lead: bob
+   :tags: ui
+   :effort: 2
+   :levels: 3
+   :flag: false
+
+.. spec:: Gamma
+   :id: SPEC_001
+   :owner: carol
+   :nick: car
+   :lead: carol
+   :tags: Carol
+   :effort: 3
+   :levels: 0
+'''
+
+[[case.filters]]
+filter = 'nick in owner'
+expected = ["REQ_001", "SPEC_001"]
+tier = "fast"
+why = "on a string, in is a substring test"
+
+[[case.filters]]
+filter = 'nick not in owner'
+expected = ["REQ_002"]
+
+[[case.filters]]
+filter = 'owner in tags'
+expected = ["REQ_001"]
+why = "on a list, in is membership, compared exactly: carol is not Carol"
+
+[[case.filters]]
+filter = 'owner not in tags'
+expected = ["REQ_002", "SPEC_001"]
+
+[[case.filters]]
+filter = 'effort in levels'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'len(tags) in levels'
+expected = ["REQ_001"]
+why = "an operand's function before in"
+
+[[case.filters]]
+filter = 'effort in tags'
+expected = []
+why = "a number is no item of a list of strings"
+
+[[case.filters]]
+filter = 'status in tags'
+expected = []
+why = "nor is None"
+
+[[case.filters]]
+filter = 'owner in lead'
+expected = ["REQ_002", "SPEC_001"]
+error = "filter"
+why = "REQ_001's lead holds no value: in fails there"
+
+[[case.filters]]
+filter = 'type == "spec" or effort in owner'
+expected = ["SPEC_001"]
+error = "filter"
+why = "a number in a string fails, on the reqs; SPEC_001 stops before it"
+divergent = { ubcode = "an evaluation error fails the whole filter, so nothing is selected" }
+
+[[case.filters]]
+filter = 'flag in levels'
+expected = ["REQ_001"]
+why = "Python's True == 1: REQ_001's flag is in [1, 2]"
+divergent = { ubcode = "a boolean is never equal to a number: nothing is selected" }
+
+[[case.filters]]
+filter = 'nick in owner.lower()'
+expected = ["REQ_001", "SPEC_001"]
+tier = "eval"
+reason = "compare:in"
+why = "the field after in takes no call"
 
 # --- null checks -----------------------------------------------------------------------
 
@@ -1113,8 +1229,8 @@ error = "filter"
 [[case.filters]]
 filter = 'platform in var.archs'
 expected = ["REQ_001", "REQ_002"]
-tier = "eval"
-reason = "compare:name-in-name"
+tier = "fast"
+why = "a field in a var. chain; SPEC_001's None is no item of the list"
 
 # --- logic -----------------------------------------------------------------------------
 
@@ -1518,6 +1634,11 @@ expected = []
 error = "filter"
 
 [[case.filters]]
+filter = 'owner in absent'
+expected = []
+error = "filter"
+
+[[case.filters]]
 filter = 'absent is None'
 expected = []
 error = "filter"
@@ -1686,8 +1807,8 @@ tier = "fast"
 [[case.filters]]
 filter = 'sphinx_tag in tags'
 expected = ["REQ_001"]
-tier = "eval"
-reason = "compare:name-in-name"
+tier = "fast"
+divergent = { ubcode = "a view reads no [needs.filter_data]: sphinx_tag is undefined and the filter fails" }
 
 [[case.filters]]
 filter = 'bool(arch)'

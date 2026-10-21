@@ -511,6 +511,17 @@ class TestVariantDataFastPath:
         pytest.param(
             "effort in [-1, 0]", True, {"effort": -1}, id="in-negative-number"
         ),
+        # `var_in_var_field_expr`: an operand in / not in a field
+        pytest.param("owner in tags", True, {"owner": "safety"}, id="name-in-name"),
+        pytest.param(
+            "owner not in tags", False, {"owner": "safety"}, id="name-not-in-name"
+        ),
+        pytest.param("owner in title", True, {"owner": "Test"}, id="name-substring"),
+        pytest.param(
+            "owner.upper() in tags", False, {"owner": "safety"}, id="upper-in-name"
+        ),
+        pytest.param("len(owner) in tags", False, {"owner": "x"}, id="len-in-name"),
+        pytest.param("status in tags", False, {}, id="string-not-in-list"),
     ],
 )
 def test_portable_form_compiles_and_answers(
@@ -525,8 +536,10 @@ def test_portable_form_compiles_and_answers(
     ("filter_string", "reason"),
     [
         # outside the grammar: the construct the debug report names
-        pytest.param("sphinx_tag in tags", "compare:name-in-name", id="name-in-name"),
-        pytest.param("x in y.lower()", "compare:name-in-name", id="name-in-lower"),
+        pytest.param("x in y.lower()", "compare:in", id="name-in-lower"),
+        pytest.param("x in len(y)", "compare:in", id="name-in-len"),
+        pytest.param("n.x in tags", "attribute:n", id="n-chain-in-name"),
+        pytest.param("x in n.y", "attribute:n", id="name-in-n-chain"),
         pytest.param("x == [1]", "compare:list", id="list-beside-eq"),
         pytest.param("[] != x", "compare:list", id="list-beside-ne"),
         pytest.param('x.lower() < "a"', "compare:ordering", id="ordering-string"),
