@@ -26,9 +26,10 @@ them -- as an argument, through a filter on any need, a join, a ``where``; a uni
 over its field -- and a built-in node reading such a node is *moved*: computed among
 them, right after the last of them it reads, so it reads them final. A node computed
 last after a moved node reads it complete, one before it reads it empty; one whose
-filter names it, before it, cannot wait for it: it reads nothing, and holds its
-placeholder. Your own functions before it, and a read through ``needs`` or
-``current_need`` by a key that is not written out, read it empty, unreported.
+filter names it, before it, cannot wait for it, nor can one naming a field a node
+computed last after it computes: it reads nothing, and holds its placeholder. Your own
+functions before it, and a read through ``needs`` or ``current_need`` by a key that is
+not written out, read it empty, unreported.
 
 Nothing here touches Sphinx: the module only reads the needs and the call texts,
 and returns the order to compute them in, which ``resolve_functions`` follows.

@@ -383,13 +383,16 @@ Bug fixes
 - 🐛 A built-in function or derive rule reading a field the project's own function computes (``needs_functions``,
   such as sphinx-test-reports' ``tr_link``), or a call whose filter cannot be read (it names ``needs``), is computed
   after it, among them, right after the last one it reads, and so is one reading such a value: a
-  ``links_from_filter``, ``links_from_content`` or ``copy`` filter, a ``links`` or ``content_links`` rule's ``where``,
-  read it empty and said nothing; a ``calc_sum``, ``check_linked_values`` or ``copy`` argument, a join, an
-  over-rule or a variant read it before it was computed, with a ``needs.derive_scope``. They now hold the values,
-  with no warning; a cycle among them is still a ``needs.derive_cycle``. The project's own functions keep need-id
-  order: one computed before such a value reads it empty, unreported. A call whose filter cannot be read that names
-  a value computed after it is not run, and is reported; a union whose only late member is such a call is computed
-  with the built-in functions again, so its readers are no longer reported (:issue:`2354`)
+  ``links_from_filter``, ``links_from_content``, ``copy``, ``calc_sum`` or ``check_linked_values`` filter, a
+  ``links`` or ``content_links`` rule's ``where``, read it empty and said nothing; a ``calc_sum``,
+  ``check_linked_values`` or ``copy`` argument, a join, an over-rule or a variant read it before it was computed,
+  with a ``needs.derive_scope``. They now hold the values, with no warning; a cycle among them is still a
+  ``needs.derive_cycle``. The project's own functions and those calls keep need-id order: a call whose filter cannot
+  be read that names a value computed after it (such a built-in reader, or a field a later one of them computes; by
+  name, or as its own need's ``current_need`` key) is not run, and is reported, where it read it empty, silently; the
+  project's own functions, and a read through ``needs`` or ``current_need`` by a key that is not written out, before
+  such a value read it empty, unreported. A union whose only late member is such a call is computed with the
+  built-in functions again, so its readers are no longer reported (:issue:`2354`)
 
 - 🐛 The filter fast path answers as ``eval`` does where it did not: a list or a tuple of literals after ``in``
   compares a list field item by item (``tags not in ['a']`` raised there and was true in ``eval``), and a name no

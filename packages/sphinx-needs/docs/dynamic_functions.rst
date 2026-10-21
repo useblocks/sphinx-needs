@@ -392,13 +392,17 @@ and a field no need computes is read as written.
 Your own functions run after the built-in functions of their step, in :ref:`need-id order <needs_id_order>`, then by field.
 They read the values the built-in functions computed
 (but for a call whose filter cannot be read, which runs among them, see below).
-A built-in function or rule that reads a field your own function computes
--- as an argument, through a filter or a ``where`` on any need, a join, a variant; a :ref:`union <needs_derive_union>`
-over its link type --
-is computed among your functions, right after the last one it reads, and so is one reading such a value:
+A built-in function or rule that reads a field your own function, or a call whose filter cannot be read, computes
+-- as an argument, through a filter or a ``where`` on any need, a join, an over-rule, a variant;
+a :ref:`union <needs_derive_union>` over its link type --
+is computed among them, right after the last one it reads, and so is one reading such a value:
 it reads them final.
-Your functions after it read its value complete;
-those before it read it empty, and nothing reports that (your functions do not say what they read).
+Those computed after it read its value complete.
+Those computed before it, and before a field one of them computes later in that order, read it empty:
+a call whose filter cannot be read that names it (by name, or as its own need's ``current_need`` key written out)
+is not run, and is reported (:ref:`needs_derive_scope`);
+your own functions, and such a call reading it through ``needs`` or ``current_need`` by a key that is not written out,
+read it empty, and nothing reports that (what they read is not known).
 A function of your own in a link field, such as sphinx-test-reports' ``tr_link``, runs at the end of step 2,
 so its links are in the back links of step 3, and a ``links`` rule, a ``links_from_filter`` or a union reading them
 holds them (its nearest built-in form is :ref:`links_from_match`, ordered as the other built-in functions are:
@@ -468,8 +472,8 @@ These reads are reported as ``needs.derive_scope``:
 - a ``needextend`` filter that names a field a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes:
   the filter sees the value from before it is computed, once for each ``needextend`` carrying it;
 - a call whose filter cannot be read, computed with your own functions, whose filter names a value
-  computed after it (a built-in function or rule reading what your own functions, or such calls, compute:
-  by name on any need, or as its own need's ``current_need`` key):
+  computed after it (a field one of them computes later in need-id order, or a built-in function or rule reading
+  what they compute: by name on any need, or as its own need's ``current_need`` key):
   the call is not run, and its field keeps the items written in it (a link or array field) or is left empty;
 - a call computed with your own functions (a ``copy`` whose filter cannot be read) that reads a value computed
   after it, your own function's or a built-in one's computed after them, before it is computed.
