@@ -931,8 +931,8 @@ Read after last
 #: why a node computed last before a value computed after the nodes computed last it
 #: reads cannot wait for it
 _AFTER = (
-    "computed after your own functions and the calls whose filter cannot be read that "
-    "they read, so this step cannot wait for them"
+    "computed after this call, among your own functions and the calls whose filter "
+    "cannot be read, so this step cannot wait for them"
 )
 
 
@@ -1228,8 +1228,8 @@ def test_a_filter_naming_a_union_by_current_need_key(test_app):
     app.build()
     assert [w for w in build_warnings(app) if "derive_scope" in w] == [
         "<srcdir>/index.rst:10: WARNING: dynamic function 'links_from_filter' for "
-        "option 'c_cur' reads 'u' on need 'SPEC_5', which is computed after your own "
-        "functions and the calls whose filter cannot be read that it reads, so this "
+        "option 'c_cur' reads 'u' on need 'SPEC_5', which is computed after this call, "
+        "among your own functions and the calls whose filter cannot be read, so this "
         "step cannot wait for it: the call is not run and the field is left empty "
         "[needs.derive_scope]",
     ]

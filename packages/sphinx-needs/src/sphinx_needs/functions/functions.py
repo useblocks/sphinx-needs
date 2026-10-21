@@ -552,10 +552,9 @@ def _out_of_scope_message(
         one = _one(read)
         return (
             f"{what} for option '{option}' reads {_reads_phrase(read)}, which "
-            f"{'is' if one else 'are'} computed after your own functions and the calls "
-            f"whose filter cannot be read that {'it reads' if one else 'they read'}, so "
-            f"this step cannot wait for {'it' if one else 'them'}: {not_run} and "
-            f"{_kept(value)}"
+            f"{'is' if one else 'are'} computed after this call, among your own "
+            "functions and the calls whose filter cannot be read, so this step cannot "
+            f"wait for {'it' if one else 'them'}: {not_run} and {_kept(value)}"
         )
     names: dict[str, list[str]] = {}
     for name, read_id in out_of_scope.reads:
@@ -650,12 +649,13 @@ class _Pass:
                 plural = len(functions) > 1
                 cause = (
                     f"{subject} computed by your own function{'s' if plural else ''} "
-                    f"{names}, which run{'' if plural else 's'} after the built-in functions"
+                    f"{names}, which run{'' if plural else 's'} after this call, in "
+                    "need-id order"
                 )
             elif kind == "opaque":
                 cause = (
                     f"{subject} computed by a call whose filter cannot be read, "
-                    "which runs after the other built-in functions"
+                    "which runs after this call, in need-id order"
                 )
             elif kind == "moved":
                 one = _one(group)

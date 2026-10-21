@@ -724,9 +724,9 @@ def test_each_cycle_member_names_the_column_it_reads():
 def test_why_a_read_came_before_its_value():
     """The run-time check groups the reads it reports by what computes the value.
 
-    Your own function, or a call whose filter cannot be read, runs after the other
-    built-in functions; any other read before its value is a gap in the order, which
-    the message asks to be reported.
+    Your own function, or a call whose filter cannot be read, runs after the reader
+    (in need-id order, the reader being one of them); any other read before its value
+    is a gap in the order, which the message asks to be reported.
     """
     from sphinx_needs.functions.functions import _Pass
 
@@ -740,12 +740,12 @@ def test_why_a_read_came_before_its_value():
     assert pass_.causes([("summary", ["O", "U", "X"])]) == [
         (
             "it is computed by a call whose filter cannot be read, which runs after "
-            "the other built-in functions",
+            "this call, in need-id order",
             [("summary", ["O"])],
         ),
         (
-            "it is computed by your own function 'mine', which runs after the "
-            "built-in functions",
+            "it is computed by your own function 'mine', which runs after this call, "
+            "in need-id order",
             [("summary", ["U"])],
         ),
         (

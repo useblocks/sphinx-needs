@@ -400,8 +400,8 @@ def test_the_nodes_computed_last_are_decided_from_the_last_down(
     needs, warnings = _build(make_app, tmp_path / "src", SWEEP_CONF, SWEEP_INDEX)
     assert warnings == [
         "<srcdir>/index.rst:14: WARNING: dynamic function 'links_from_filter' for "
-        "option 'c2' reads 'u2' on need 'SPEC_3', which is computed after your own "
-        "functions and the calls whose filter cannot be read that it reads, so this "
+        "option 'c2' reads 'u2' on need 'SPEC_3', which is computed after this call, "
+        "among your own functions and the calls whose filter cannot be read, so this "
         "step cannot wait for it: the call is not run and the field keeps only its "
         "written items [needs.derive_scope]",
     ]
@@ -453,8 +453,8 @@ def test_a_feeder_made_a_sink_leaves_its_union_in_place(
     )
     assert warnings == [
         "<srcdir>/index.rst:10: WARNING: dynamic function 'links_from_filter' for "
-        "option 'flt' reads 'all_flt' on need 'SPEC_1', which is computed after your "
-        "own functions and the calls whose filter cannot be read that it reads, so "
+        "option 'flt' reads 'all_flt' on need 'SPEC_1', which is computed after this "
+        "call, among your own functions and the calls whose filter cannot be read, so "
         "this step cannot wait for it: the call is not run and the field keeps only its "
         "written items [needs.derive_scope]",
     ]
@@ -524,3 +524,154 @@ def test_links_your_own_function_computes_are_read_by_filters_and_rules(
         ["TEST_2"],
         ["TEST_1"],
     )
+
+
+LATER_LATE_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+suppress_warnings = ["config.cache"]
+
+
+def my_links(app, need, needs, *args, **kwargs):
+    return ["REQ_2"]
+
+
+needs_functions = [my_links]
+needs_links = {"blocks": {}, "opq_free": {}, "a_cur": {}, "opq_cur": {}, "opq_after": {}}
+"""
+
+LATER_LATE_INDEX = """\
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Before a later own function's field
+   :id: SPEC_0
+   :opq_free: [[links_from_filter("len(needs) > 0 and 'REQ_2' in blocks")]]
+
+.. spec:: Your own function's field, read by its own need's current_need key
+   :id: SPEC_5
+   :blocks: [[my_links()]]
+   :a_cur: [[links_from_filter("len(needs) > 0 and 'REQ_2' in current_need['blocks'] and id == 'REQ_1'")]]
+   :opq_cur: [[links_from_filter("len(needs) > 0 and 'REQ_2' in current_need['blocks'] and id == 'REQ_1'")]]
+
+.. spec:: After it
+   :id: SPEC_9
+   :opq_after: [[links_from_filter("len(needs) > 0 and 'REQ_2' in blocks")]]
+"""
+
+
+def test_a_call_naming_a_later_late_field_is_reported(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A call whose filter cannot be read runs among your own functions, in need-id
+    order; one naming a field computed by a later one of them -- by name on any need
+    (SPEC_0's ``opq_free``), or as its own need's constant ``current_need`` key
+    (SPEC_5's ``a_cur``, whose field sorts before ``blocks``) -- cannot wait for it: it
+    is not run, and is reported, where it read the field empty, silently. After it
+    (``opq_cur``, SPEC_9's ``opq_after``) it reads the field computed."""
+    needs, warnings = _build(
+        make_app, tmp_path / "src", LATER_LATE_CONF, LATER_LATE_INDEX
+    )
+    after = (
+        "which is computed after this call, among your own functions and the calls "
+        "whose filter cannot be read, so this step cannot wait for it: the call is not "
+        "run and the field is left empty [needs.derive_scope]"
+    )
+    assert warnings == [
+        "<srcdir>/index.rst:10: WARNING: dynamic function 'links_from_filter' for "
+        f"option 'opq_free' reads 'blocks' on need 'SPEC_5', {after}",
+        "<srcdir>/index.rst:14: WARNING: dynamic function 'links_from_filter' for "
+        f"option 'a_cur' reads 'blocks' on need 'SPEC_5', {after}",
+    ]
+    assert (needs["SPEC_0"]["opq_free"], needs["SPEC_5"]["a_cur"]) == ([], [])
+    assert needs["SPEC_5"]["opq_cur"] == ["REQ_1"]
+    assert needs["SPEC_9"]["opq_after"] == ["SPEC_5"]
+
+
+SINK_WALK_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {"flt": {}, "rd": {}}
+"""
+
+SINK_WALK_INDEX = """\
+.. req:: One
+   :id: REQ_1
+
+.. spec:: A call computed last, run
+   :id: SPEC_1
+   :flt: [[links_from_filter("len(needs) > 0 and id == 'REQ_1'")]]
+
+.. spec:: A call computed last naming the reader it moves: a sink
+   :id: SPEC_2
+   :flt: [[links_from_filter("len(needs) > 0 and 'X' in rd")]]
+
+.. spec:: A built-in reader of every need's flt
+   :id: SPEC_3
+   :rd: [[links_from_filter("'REQ_1' in flt")]]
+"""
+
+
+def test_a_sinks_walk_leaves_the_readers_to_the_nodes_before_it(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """SPEC_2's call names ``rd``, which it would move: it cannot wait for it, and is
+    a sink. What its walk reached is not kept, so SPEC_1's call, which is run, still
+    moves ``rd`` (through the same column): ``rd`` reads SPEC_1's ``flt`` computed."""
+    needs, warnings = _build(
+        make_app, tmp_path / "src", SINK_WALK_CONF, SINK_WALK_INDEX
+    )
+    assert [w.split("WARNING: ")[1][:60] for w in warnings] == [
+        "dynamic function 'links_from_filter' for option 'flt' reads "
+    ]
+    assert "reads 'rd' on need 'SPEC_3'" in warnings[0]
+    assert (needs["SPEC_1"]["flt"], needs["SPEC_2"]["flt"]) == (["REQ_1"], [])
+    assert needs["SPEC_3"]["rd"] == ["SPEC_1"]
+
+
+SELF_KEY_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {
+    "flt": {},
+    "lm": {},
+    "all_flt": {"derive": {"kind": "union", "fields": ["links", "flt"]}},
+}
+"""
+
+SELF_KEY_INDEX = """\
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Its call reads the union it fills by a constant current_need key
+   :id: SPEC_1
+   :links: REQ_2
+   :flt: [[links_from_filter("len(needs) > 0 and 'REQ_2' not in current_need['all_flt'] and id == 'REQ_1'")]]
+
+.. spec:: Reads the union
+   :id: SPEC_2
+   :lm: [[links_from_filter("'REQ_2' in all_flt")]]
+"""
+
+
+def test_a_current_need_key_naming_what_the_call_itself_moves(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A call whose filter cannot be read reading, by a constant ``current_need`` key,
+    the union over the link type it fills cannot wait for it: it is not run, and is
+    reported, rather than computed from the union's placeholder. The union, its only
+    late member a sink, is computed with the built-ins, and read complete."""
+    needs, warnings = _build(make_app, tmp_path / "src", SELF_KEY_CONF, SELF_KEY_INDEX)
+    assert len(warnings) == 1
+    assert (
+        "option 'flt' reads 'all_flt' on need 'SPEC_1', which is computed"
+        in (warnings[0])
+    )
+    assert (needs["SPEC_1"]["flt"], needs["SPEC_1"]["all_flt"]) == ([], ["REQ_2"])
+    assert needs["SPEC_2"]["lm"] == ["SPEC_1"]

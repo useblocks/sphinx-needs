@@ -1148,14 +1148,17 @@ def _moved(
     dependency or through a column one of whose members is one, or when it reads a
     moved node. Its slot is the last node computed last it so reads. The nodes computed
     last are decided from the last down: one whose filter that cannot be read names a
-    node moved by itself or by one after it (a free name: the field on any need; a
-    constant ``current_need`` key: the field on its own need) cannot wait for it, and
-    is a sink, moving nothing. What else it reads is not known: your own function, a
-    read through ``needs`` or ``current_need`` by a key that is not written out, before
-    a moved node's slot reads it empty, unreported.
+    node computed after it -- moved by itself or by one after it, or a node computed
+    last after it (a free name: the field on any need; a constant ``current_need`` key:
+    the field on its own need) -- cannot wait for it, and is a sink, moving nothing.
+    What else it reads is not known: your own function, a read through ``needs`` or
+    ``current_need`` by a key that is not written out, before such a node reads it
+    empty, unreported.
 
-    Each node and each column is expanded once per node computed last that moves it,
-    so the walk is linear in the reads.
+    The walks of the nodes computed last that are computed expand each node and each
+    column once in all, which is linear in the reads; the walk of one that is a sink is
+    thrown away, and the nodes it reached are walked again from the next one down, so
+    each sink adds up to a walk of what it reaches.
     """
     late = sorted(node for node, r in reads.items() if r.last)
     if not late:
@@ -1180,6 +1183,9 @@ def _moved(
 
     slots: dict[Node, Node] = {}
     moved_by_field: dict[str, list[Node]] = {}
+    #: the nodes computed last decided so far (after the one deciding), computed
+    live_by_field: dict[str, list[Node]] = {}
+    live_set: set[Node] = set()
     #: the columns whose readers are moved: none of them is read again
     expanded: set[Column] = set()
     live: list[Node] = []
@@ -1206,18 +1212,21 @@ def _moved(
         new_by_field: dict[str, list[Node]] = {}
         for reader in newly:
             new_by_field.setdefault(reader[1], []).append(reader)
+        # what it names that is computed after it: a moved node, or a node computed last
+        # after it in (need id, field) order
         named = {
             (name, need_id)
             for field in node_reads.opaque_names
             for need_id, name in (
                 *moved_by_field.get(field, ()),
                 *new_by_field.get(field, ()),
+                *live_by_field.get(field, ()),
             )
         }
         named.update(
             (field, node[0])
             for field in node_reads.opaque_current
-            if (own := (node[0], field)) in slots or own in new_set
+            if (own := (node[0], field)) in slots or own in new_set or own in live_set
         )
         if named:
             node_reads.scope = [OutOfScope(node_reads.what, after=tuple(sorted(named)))]
@@ -1225,6 +1234,11 @@ def _moved(
             node_reads.columns = ()
             continue
         live.append(node)
+        live_by_field.setdefault(node[1], []).append(node)
+        live_set.add(node)
+        # a column is walked once (tr_l, 1800 needs: build_stratum 0.056 s; walking it
+        # again for each node computed last, 0.25 s), but a sink's walk is not kept:
+        # its readers may still be moved by a node computed last before it
         expanded |= opened
         for reader in newly:
             slots[reader] = node
