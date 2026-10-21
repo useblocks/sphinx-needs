@@ -2166,7 +2166,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                                 # the rules come only from need types' entries
                                 entries=()
                                 if field_data.derive_by_type is not None
-                                else list(entries.values()),
+                                else list(dict.fromkeys(entries.values())),
                             ),
                             part="beside",
                         )
@@ -2384,7 +2384,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 )
                 # the rules come only from need types' entries
                 entry_rules = (
-                    list(entries.values()) if "derive_by_type" not in link else []
+                    list(dict.fromkeys(entries.values()))
+                    if "derive_by_type" not in link
+                    else []
                 )
                 read = _beside_by_type_problems(
                     link_field,

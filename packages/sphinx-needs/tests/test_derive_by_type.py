@@ -1624,6 +1624,10 @@ derive_by_type.spec = { kind = "copy", field = "title" }
 [needs.links.tl]
 allow_dead_links = true
 
+[needs.links.tl2]
+allow_dead_links = true
+derive_by_type.spec = { kind = "union", fields = ["links"] }
+
 [needs.types.req.fields.x]
 derive = { kind = "copy", field = "title" }
 
@@ -1632,6 +1636,21 @@ derive = { kind = "copy", field = "title" }
 
 [needs.types.req.links.tl]
 derive = { kind = "union", fields = ["links"] }
+
+[needs.types.req.links.tl2]
+derive = { kind = "union", fields = ["links"] }
+
+[needs.types.spec]
+
+[needs.types.sub]
+title = "Sub"
+prefix = "SUB_"
+inherits = "req"
+
+[needs.types.sub2]
+title = "Sub 2"
+prefix = "SUB2_"
+inherits = "req"
 """
 
 
@@ -1642,9 +1661,10 @@ derive = { kind = "union", fields = ["links"] }
 )
 def test_a_key_beside_the_rules_of_entries_names_them(test_app: Any) -> None:
     """A key refused beside rules that come only from need types' entries names those
-    entries, not a ``derive_by_type`` the configuration does not write; beside a
-    written ``derive_by_type`` (``y``, which a need type's entry adds to) it names that
-    table, as before."""
+    entries, not a ``derive_by_type`` the configuration does not write, each once
+    (``sub`` and ``sub2`` inherit ``req``'s rule, folded in for each of them); beside a
+    written ``derive_by_type`` (``y``, ``tl2``, which a need type's entry adds to) it
+    names that table, as before."""
     app = test_app
     app.build()
     assert [w for w in _warnings(app) if "derive_invalid" in w] == [
@@ -1659,4 +1679,7 @@ def test_a_key_beside_the_rules_of_entries_names_them(test_app: Any) -> None:
         "given beside the rules of need types' entries "
         "(needs_types['req'].links['tl'].derive), and is ignored (a union's dead "
         "links are its members'); the rules apply [needs.derive_invalid]",
+        "WARNING: Invalid derive of link type 'tl2': 'allow_dead_links' cannot be "
+        "given beside derive_by_type, and is ignored (a union's dead links are its "
+        "members'); the rules apply [needs.derive_invalid]",
     ]
