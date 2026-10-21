@@ -980,8 +980,8 @@ Each configured link can define:
      where the copy reported it under ``links`` too;
      and a ``blocks`` filled by one of your own :ref:`functions <needs_functions>`, or by a call whose filter cannot be
      read (a ``links_from_filter`` whose filter names ``needs``), is read by a union computed after it,
-     at the end of the link fields' step, so a built-in function or rule reading ``all_links`` in that step cannot wait
-     for it, and is reported (``needs.derive_scope``).
+     among your own functions in need-id order, so a built-in function or rule reading ``all_links`` in the link
+     fields' step cannot wait for it, and is reported (``needs.derive_scope``).
      The readers that take only ``links`` (:ref:`needs_derive_union`) read no union in this release:
      a project that relies on them keeps ``copy`` until 10.0, and the warning with it
      (``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation).

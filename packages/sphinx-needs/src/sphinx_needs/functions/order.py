@@ -22,11 +22,12 @@ placeholder too. Your own functions read what they like, so they are
 computed after every built-in node of their stratum, in ``(need id, field)`` order;
 so is a built-in call whose filter cannot be read (it names ``needs``, or reads
 ``current_need`` by a key that is not written out). A ``union`` a member of which is
-computed so is computed after the nodes filling its members, and a union of such a
-union after it; the other nodes computed last come after them, and read it complete.
-A built-in node of the stratum reading such a union cannot wait for it, nor can a
-node filling a member of one whose filter names it: it reads nothing, and holds its
-placeholder. Your own function filling a member of a union reads that union empty.
+computed so is computed among them right after the last such member, and a union of
+such a union after it: a node computed last after it reads it complete, one before it
+reads it empty. A built-in node of the stratum reading such a union cannot wait for
+it, nor can a node computed last before it whose filter names it: it reads nothing,
+and holds its placeholder. Your own functions before it, and a read through ``needs``,
+read it empty, unreported.
 
 Nothing here touches Sphinx: the module only reads the needs and the call texts,
 and returns the order to compute them in, which ``resolve_functions`` follows.

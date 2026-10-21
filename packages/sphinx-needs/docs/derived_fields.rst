@@ -608,13 +608,14 @@ a :ref:`needflow`, a filter or a :ref:`needtable` column (see **Reading it**, be
   or added by a ``needextend``.
   A member filled by one of your own :ref:`functions <needs_functions>` (such as sphinx-test-reports' ``tr_link``),
   or by a call whose filter cannot be read, such as a ``links_from_filter`` whose filter names ``needs``,
-  is computed after the other built-in functions of its step (see :ref:`needs_processing_order`),
-  and the union over it right after the members filled so -- a union of that union after that --
-  before your other own functions and calls whose filter cannot be read, which read it complete.
+  is computed after the other built-in functions of its step, with your own functions, in need-id order
+  (see :ref:`needs_processing_order`), and the union over it right after the last such member
+  -- a union of that union after that.
+  Those computed after the union read it complete; those computed before it read it empty:
+  such a call whose filter names the union is not run, and is reported (``needs.derive_scope``),
+  while your own functions, and a read through ``needs``, are not reported.
   A built-in function or rule of the link fields' step that reads such a union cannot wait for it:
-  it is not run, and is reported (``needs.derive_scope``; for a ``links`` rule, on every need computing it),
-  as is a call whose filter cannot be read that fills a member and names the union in that filter.
-  Your own function filling a member of a union reads that union empty.
+  it is not run, and is reported (for a ``links`` rule, on every need computing it).
   ``parent_needs`` and the back links (``<link type>_back``, built after the link types) are not members,
   nor is a field, and a member is named once; the union itself, or two unions naming each other, can be computed
   on no need. Each is one ``needs.derive_invalid`` at load, and the union holds no links.
