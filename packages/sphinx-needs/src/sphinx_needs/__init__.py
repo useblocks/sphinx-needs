@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from sphinx.application import Sphinx
 
-__version__ = "9.0.0"
+__version__ = "9.1.0"
 
 
 def setup(app: Sphinx) -> dict[str, Any]:
