@@ -439,10 +439,13 @@ def _compare(node: ast.Compare) -> SimplePredicate:
 def _membership(left: ast.expr, right: ast.expr, *, negate: bool) -> SimplePredicate:
     """Compile ``in`` / ``not in``.
 
-    The grammar has two: an operand in a list of literals (`in_list_expr`,
-    `not_in_list_expr`), and a literal in an operand (`literal_in_var_field_expr`,
-    `literal_not_in_var_field_expr`). An operand in an operand is not one of them, so
-    it stays with ``eval``.
+    The grammar has three: an operand in a list of literals (`in_list_expr`,
+    `not_in_list_expr` with a `list_literal`), a literal in an operand
+    (`literal_in_var_field_expr`, `literal_not_in_var_field_expr`), and an operand in a
+    field (`in_list_expr`, `not_in_list_expr` with a `var_field`), where the field after
+    ``in`` is a name or a ``var.`` chain and takes no call. Each answers as Python's ``in``: a substring of a string,
+    an item of a list, and the :class:`TypeError` Python raises for a value that holds
+    no items (``"x" in None``) or a number in a string.
 
     :raises _NotPortable: For any other membership test.
     """
@@ -475,8 +478,16 @@ def _membership(left: ast.expr, right: ast.expr, *, negate: bool) -> SimplePredi
             return lambda need, ctx=None, _g=get, _v=value: _v not in _g(need, ctx)
         return lambda need, ctx=None, _g=get, _v=value: _v in _g(need, ctx)
 
+    # <operand> in <field>: the left one is read first, as eval reads it
     if _is_operand_shape(left) and _is_operand_shape(right):
-        raise _NotPortable("compare:name-in-name")
+        get_left, get_right = _operand(left), _field(right, within="compare:in")
+        if negate:
+            return lambda need, ctx=None, _l=get_left, _r=get_right: (
+                _l(need, ctx) not in _r(need, ctx)
+            )
+        return lambda need, ctx=None, _l=get_left, _r=get_right: (
+            _l(need, ctx) in _r(need, ctx)
+        )
     raise _NotPortable("compare:in")
 
 
