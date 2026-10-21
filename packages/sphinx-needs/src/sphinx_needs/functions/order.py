@@ -22,9 +22,11 @@ placeholder too. Your own functions read what they like, so they are
 computed after every built-in node of their stratum, in ``(need id, field)`` order;
 so is a built-in call whose filter cannot be read (it names ``needs``, or reads
 ``current_need`` by a key that is not written out). A ``union`` a member of which is
-computed so is computed after them, and a union of such a union after it; a built-in
-node of the stratum reading such a union cannot wait for it: it reads nothing, and
-holds its placeholder.
+computed so is computed after the nodes filling its members, and a union of such a
+union after it; the other nodes computed last come after them, and read it complete.
+A built-in node of the stratum reading such a union cannot wait for it, nor can a
+node filling a member of one whose filter names it: it reads nothing, and holds its
+placeholder. Your own function filling a member of a union reads that union empty.
 
 Nothing here touches Sphinx: the module only reads the needs and the call texts,
 and returns the order to compute them in, which ``resolve_functions`` follows.
@@ -363,6 +365,8 @@ class NodeReads:
     :ivar user_functions: The user functions the node calls: it is computed last.
     :ivar opaque: A built-in call of the node has a filter that cannot be read: it is
         computed last.
+    :ivar opaque_names: The free names the filters that cannot be read name all the
+        same (a field each, read on every need); what else they read is not known.
     :ivar reads_itself_by_variant: A variant condition of the node names its field.
     """
 
@@ -372,6 +376,7 @@ class NodeReads:
     scope: Sequence[OutOfScope] = ()
     user_functions: Sequence[str] = ()
     opaque: bool = False
+    opaque_names: Sequence[str] = ()
     reads_itself_by_variant: bool = False
 
     @property
@@ -661,6 +666,10 @@ class _CallReads:
         names = filter_names(filter_string, self.project.not_fields)
         if names.opaque:
             self.reads.opaque = True
+            for name in sorted(names.names):
+                self.reads.opaque_names = _appended(
+                    self.reads.opaque_names, self.project.field_of(name)
+                )
             return None
         return names
 
@@ -982,11 +991,14 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
     Called once the strata before it are computed, so the values a node's selectors
     and links name are final.
 
-    The built-in nodes come first, each after what it reads; then the nodes computed
-    last (your own functions, the calls whose filter cannot be read), in
-    ``(need id, field)`` order; then the unions reading one of those, each after the
-    unions it reads (:func:`_unions_after_last`). A built-in node reading such a union
-    is a sink (:func:`_sink_union_readers`).
+    The built-in nodes come first, each after what it reads. The nodes computed last
+    (your own functions, the calls whose filter cannot be read) follow: first those
+    filling a member of a union (the *feeders*), in ``(need id, field)`` order; then
+    the unions reading one of those, each after the unions it reads
+    (:func:`_unions_after_last`); then every other node computed last, in
+    ``(need id, field)`` order, which so reads such a union complete. A built-in node
+    reading such a union, or a feeder whose filter names one, is a sink
+    (:func:`_sink_union_readers`).
     """
     reads = {
         node: project.node_reads(node, stratum)
@@ -994,10 +1006,15 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
     }
     after_last = _unions_after_last(project, reads)
     moved = frozenset(after_last)
+    feeders: frozenset[Node] = frozenset(
+        dep for node in after_last for dep in reads[node].deps if reads[dep].last
+    )
     if moved:
-        _sink_union_readers(project, reads, moved)
+        _sink_union_readers(project, reads, moved, feeders)
     built_in = [node for node, r in reads.items() if not r.last and node not in moved]
-    last = [node for node, r in reads.items() if r.last]
+    last = [node for node, r in reads.items() if r.last and node not in feeders]
+    # a feeder made a sink is computed with the built-in nodes, as every sink is
+    fed = [node for node in sorted(feeders) if reads[node].last]
     by_field: dict[str, list[Node]] = {}
     for node in built_in:
         by_field.setdefault(node[1], []).append(node)
@@ -1070,8 +1087,9 @@ def build_stratum(project: Project, stratum: int) -> Stratum:
                 ),
             )
         )
-    steps.extend(Step((node,)) for node in sorted(last))
+    steps.extend(Step((node,)) for node in fed)
     steps.extend(Step((node,)) for node in after_last)
+    steps.extend(Step((node,)) for node in sorted(last))
     return Stratum(stratum, reads, steps, moved)
 
 
@@ -1126,19 +1144,40 @@ def _unions_after_last(project: Project, reads: Mapping[Node, NodeReads]) -> lis
 
 
 def _sink_union_readers(
-    project: Project, reads: Mapping[Node, NodeReads], moved: Collection[Node]
+    project: Project,
+    reads: Mapping[Node, NodeReads],
+    moved: Collection[Node],
+    feeders: Collection[Node],
 ) -> None:
-    """Make each built-in node of the stratum that reads a union in ``moved`` a sink.
+    """Make each node of the stratum computed before the unions in ``moved`` that
+    reads one of them a sink.
 
-    It is computed before the nodes computed last, so it cannot wait for the union:
-    it reads nothing and holds its placeholder, as a node reading what its stratum
-    cannot wait for, and says so (``OutOfScope.unions``). A read through a column
-    counts when one of the column's members is such a union. A node reading the sink
-    reads its placeholder, which is final.
+    A built-in node is computed before the nodes computed last, and a feeder (a node
+    computed last that fills a member of such a union) before the unions: neither can
+    wait for the union. It reads nothing and holds its placeholder, as a node reading
+    what its stratum cannot wait for, and says so (``OutOfScope.unions``). A built-in
+    node's read through a column counts when one of the column's members is such a
+    union; a feeder's, when a filter of it that cannot be read still names the field
+    of one (what else it reads is not known: your own function filling a member of a
+    union reads that union empty, unreported). A node reading the sink reads its
+    placeholder, which is final.
     """
     by_field: dict[str, list[Node]] = {}
     for node in sorted(moved):
         by_field.setdefault(node[1], []).append(node)
+    for node in sorted(feeders):
+        node_reads = reads[node]
+        found_names = {
+            (name, need_id)
+            for field in node_reads.opaque_names
+            for need_id, name in by_field.get(field, [])
+        }
+        if found_names:
+            node_reads.scope = [
+                OutOfScope(node_reads.what, unions=tuple(sorted(found_names)))
+            ]
+            node_reads.deps = ()
+            node_reads.columns = ()
     for node, node_reads in reads.items():
         if node in moved or node_reads.sink or node_reads.last:
             continue

@@ -28,9 +28,11 @@ Improvements
   an imported need, which keeps its file's union, it is checked as any link type. ``needs.derive_dense`` does not
   count its list. A member filled by one of the project's own functions (``needs_functions``), or by a call whose
   filter cannot be read (a ``links_from_filter`` whose filter names ``needs``), is computed before the union, which is
-  computed after it, at the end of the link fields' step (a union of that union after that): a built-in function or
-  rule of that step reading such a union cannot wait for it, and is one ``needs.derive_scope``, and the project's own
-  functions read it empty. It is what
+  computed right after the members filled so (a union of that union after that) and before the project's other own
+  functions and such calls, which read it complete: a built-in function or rule of that step reading such a union
+  cannot wait for it, and is one ``needs.derive_scope`` (a ``links`` rule on every need computing it), as is such a
+  call filling a member whose filter names the union; the project's own function filling a member of a union reads
+  that union empty. It is what
   ``copy = true`` gave, declared (see *Deprecations*); see :ref:`needs_derive_union` for how to read it in place of
   ``links``. The derive conformance corpus pins it (``union-*``), as does the field-declaration corpus for a union
   declared on need types.

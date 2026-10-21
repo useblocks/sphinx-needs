@@ -825,11 +825,18 @@ def read_union(app, need, needs, *args, **kwargs):
     return list(needs["SPEC_1"]["all_links"])
 
 
-needs_functions = [my_links, read_union]
+def feed_reading(app, need, needs, *args, **kwargs):
+    return ["REQ_2"] if needs["SPEC_1"]["all_links"] else ["REQ_1"]
+
+
+needs_functions = [my_links, read_union, feed_reading]
 needs_links = {
     "blocks": {},
     "seen": {},
     "via": {},
+    "me": {},
+    "summed": {},
+    "opq": {},
     "late_copy": {},
     "all_links": {"derive": {"kind": "union", "fields": ["links", "blocks"]}},
     "again": {"derive": {"kind": "union", "fields": ["all_links"]}},
@@ -851,19 +858,37 @@ Read after last
    :id: SPEC_1
    :blocks: [[my_links()]]
    :links: REQ_1
+   :me: [[links_from_filter("'REQ_2' in current_need['all_links'] and type == 'req'")]]
+   :summed: [[calc_sum("all_links", filter="type == 'spec'")]]
 
 .. spec:: Reads the union
    :id: SPEC_2
    :via: REQ_1, [[links_from_filter("'REQ_2' in all_links")]]
    :seen: [[read_union()]]
+   :opq: [[links_from_filter("len(needs) > 0 and 'REQ_2' in all_links")]]
    :late_copy: [[copy("all_links", filter="len(needs) > 0 and id == 'SPEC_1'")]]
+
+.. spec:: Its own function reads the union it fills
+   :id: SPEC_3
+   :blocks: [[feed_reading()]]
+
+.. spec:: A call whose filter cannot be read fills it, and names it
+   :id: SPEC_4
+   :blocks: [[links_from_filter("len(needs) > 0 and 'REQ_2' in all_links")]]
+
+.. spec:: A copy whose filter cannot be read fills it
+   :id: SPEC_5
+   :blocks: [[copy("all_links", filter="len(needs) > 0 and id == 'SPEC_1'")]]
 """
 
-#: why a reader of the union computed last cannot wait for it
-_AFTER_LAST = (
-    "reads 'all_links' on need 'SPEC_1', a union computed at the end of the link "
-    "fields' step, after the members that your own functions or calls whose filter "
-    "cannot be read compute"
+#: why a reader of a union computed last cannot wait for it
+_UNION_LAST = (
+    "computed at the end of the link fields' step, after the members that your own "
+    "functions or calls whose filter cannot be read compute"
+)
+#: the four unions computed last, read through a column
+_FOUR = (
+    "'all_links' on 4 needs (SPEC_1, SPEC_3, SPEC_4 and 1 more), unions " + _UNION_LAST
 )
 
 
@@ -873,38 +898,59 @@ _AFTER_LAST = (
     indirect=True,
 )
 def test_a_union_computed_last_and_its_readers(test_app):
-    """A union over a member your own function computes is computed after it, and a
-    union of that union after that. A built-in call or rule of the link fields' step
-    reading it cannot wait for it: it is not run, holds its placeholder (its written
-    links), and is one ``needs.derive_scope`` -- on every need computing a ``links``
-    rule, which reads the union of every need; a call computed last that records its
-    reads (``copy`` whose filter names ``needs``) reports its read the same way.
-    Your own function reading it runs before it, and sees it empty: the trade-off
-    documented in the dynamic functions' order."""
+    """A union over a member your own function, or a call whose filter cannot be
+    read, computes is computed after the nodes filling its members (the *feeders*),
+    and a union of that union after that; every other node computed last comes after
+    them, and reads it complete (``seen``, ``opq``, ``late_copy``).
+
+    A built-in call or rule of the link fields' step reading it cannot wait for it:
+    it is not run, holds its placeholder (its written links), and is one
+    ``needs.derive_scope`` -- whether it reads the union on its own need
+    (``current_need['all_links']``, ``me``), through a filter on every need (``via``),
+    through the candidates of a sum (``summed``), or as a ``links`` rule, on every
+    need computing it. A feeder whose filter cannot be read but names the union
+    (SPEC_4) cannot wait for it either, and says so; a feeder that records its reads
+    (``copy``, SPEC_5) reports reading it at run time. Your own function filling a
+    member reads the union empty, unreported (SPEC_3): the one trade-off."""
     app = test_app
     app.build()
-    rule = "WARNING: derive rule 'links' for option 'where_rule' " + _AFTER_LAST
+    rule = "WARNING: derive rule 'links' for option 'where_rule' reads " + _FOUR
     left = ": the rule is not run and the field is left empty [needs.derive_scope]"
     assert [w for w in build_warnings(app) if "derive_scope" in w] == [
         f"<srcdir>/index.rst:4: {rule}{left}",
         f"<srcdir>/index.rst:7: {rule}{left}",
-        f"<srcdir>/index.rst:10: {rule}{left}",
-        "<srcdir>/index.rst:15: WARNING: dynamic function 'links_from_filter' for "
-        f"option 'via' {_AFTER_LAST}: the call is not run and the field keeps only its "
-        "written items [needs.derive_scope]",
-        f"<srcdir>/index.rst:15: {rule}{left}",
-        "<srcdir>/index.rst:15: WARNING: dynamic function 'copy' for option "
-        "'late_copy' read 'all_links' on need 'SPEC_1' before it was computed: it is "
-        "a union computed at the end of the link fields' step, after the members that "
-        "your own functions or calls whose filter cannot be read compute "
+        "<srcdir>/index.rst:10: WARNING: dynamic function 'links_from_filter' for "
+        f"option 'me' reads 'all_links' on need 'SPEC_1', a union {_UNION_LAST}: the "
+        "call is not run and the field is left empty [needs.derive_scope]",
+        "<srcdir>/index.rst:10: WARNING: dynamic function 'calc_sum' for option "
+        f"'summed' reads {_FOUR}: the call is not run and the field is left empty "
         "[needs.derive_scope]",
+        f"<srcdir>/index.rst:10: {rule}{left}",
+        "<srcdir>/index.rst:17: WARNING: dynamic function 'links_from_filter' for "
+        f"option 'via' reads {_FOUR}: the call is not run and the field keeps only its "
+        "written items [needs.derive_scope]",
+        f"<srcdir>/index.rst:17: {rule}{left}",
+        f"<srcdir>/index.rst:24: {rule}{left}",
+        "<srcdir>/index.rst:28: WARNING: dynamic function 'links_from_filter' for "
+        f"option 'blocks' reads {_FOUR}: the call is not run and the field is left "
+        "empty [needs.derive_scope]",
+        f"<srcdir>/index.rst:28: {rule}{left}",
+        f"<srcdir>/index.rst:32: {rule}{left}",
+        "<srcdir>/index.rst:32: WARNING: dynamic function 'copy' for option 'blocks' "
+        "read 'all_links' on need 'SPEC_1' before it was computed: it is a union "
+        f"{_UNION_LAST} [needs.derive_scope]",
     ]
     needs = _built(app)["needs"]
-    assert needs["SPEC_1"]["all_links"] == ["REQ_1", "REQ_2"]
-    assert needs["SPEC_1"]["again"] == ["REQ_1", "REQ_2"]
-    assert needs["SPEC_2"]["via"] == ["REQ_1"]
-    assert needs["SPEC_2"]["seen"] == []
-    assert needs["SPEC_2"]["late_copy"] == []
+    spec_1, spec_2, spec_3 = needs["SPEC_1"], needs["SPEC_2"], needs["SPEC_3"]
+    assert spec_1["all_links"] == spec_1["again"] == ["REQ_1", "REQ_2"]
+    assert (spec_1["me"], spec_1["summed"]) == ([], [])
+    assert spec_2["via"] == ["REQ_1"]
+    # computed last, not filling a member: after the union, which they read complete
+    assert spec_2["seen"] == spec_2["late_copy"] == ["REQ_1", "REQ_2"]
+    assert spec_2["opq"] == ["SPEC_1"]
+    # the trade-off: your own function filling a member reads the union empty
+    assert spec_3["blocks"] == spec_3["all_links"] == ["REQ_1"]
+    assert needs["SPEC_4"]["blocks"] == needs["SPEC_5"]["blocks"] == []
     assert all(need["where_rule"] == [] for need in needs.values())
 
 

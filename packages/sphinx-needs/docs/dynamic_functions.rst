@@ -395,8 +395,10 @@ a built-in function that reads a field your own function computes
 reads it before it is computed, which is reported (:ref:`needs_derive_scope`).
 A function of your own in a link field, such as sphinx-test-reports' ``tr_link``, runs at the end of step 2,
 so its links are in the back links of step 3,
-and a :ref:`union <needs_derive_union>` over its link type is computed after it, last in step 2
-(a built-in function reading that union in step 2 is reported, and your own functions read it empty)
+and a :ref:`union <needs_derive_union>` over its link type is computed right after the functions and calls
+filling the union's members, before your other functions, which read it complete
+(a built-in function reading that union in step 2 is reported; your own function filling a member of a union reads
+that union empty)
 (its nearest built-in form is :ref:`links_from_match`, ordered as the other built-in functions are:
 see :ref:`needs_derive_join`).
 A later release is to let a function declare what it reads, which will order it like a built-in one.
@@ -463,16 +465,19 @@ These reads are reported as ``needs.derive_scope``:
   and its field keeps the items written in it (a link or array field) or is left empty;
 - a ``needextend`` filter that names a field a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes:
   the filter sees the value from before it is computed, once for each ``needextend`` carrying it;
-- a built-in function that reads a field your own function computes, before it is computed;
 - a built-in function or rule of step 2 that reads a :ref:`union <needs_derive_union>`
-  over a link type your own function, or a call whose filter cannot be read, computes:
+  over a link type your own function, or a call whose filter cannot be read, computes
+  (or such a call, filling a member of the union, whose filter names it):
   the union is computed after them, at the end of step 2,
-  so the call is not run, and its field keeps the links written in it.
+  so the call is not run, and its field keeps the links written in it -- a rule's is left empty,
+  and a ``links`` rule is reported on every need computing it;
+- a built-in function that reads a field your own function computes, before it is computed.
 
 A field whose call is not run reads nothing, so it is on no cycle; a value computed from it reads what it holds.
 The last case is found as the call runs: the built-in functions note each field they read,
 and a read of a value not computed yet is reported with its cause.
-Should the cause be neither your own function nor a call whose filter cannot be read,
+Should the cause be neither your own function, nor a call whose filter cannot be read,
+nor a union computed after them,
 the order itself missed the read, and the message asks you to report it.
 A filter's reads are not noted (see :ref:`needs_processing_order`).
 
