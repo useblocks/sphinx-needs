@@ -393,7 +393,7 @@ Bug fixes
   (one naming a union was reported already); the project's own functions, and a read through ``needs`` or
   ``current_need`` by a key that is not written out, before such a value read it empty, unreported. A union whose
   only late member is such a call is computed with the built-in functions again, so its readers are no longer
-  reported (:issue:`2354`)
+  reported (:issue:`2354`, :pr:`2363`)
 
 - 🐛 The filter fast path answers as ``eval`` does where it did not: a list or a tuple of literals after ``in``
   compares a list field item by item (``tags not in ['a']`` raised there and was true in ``eval``), and a name no
