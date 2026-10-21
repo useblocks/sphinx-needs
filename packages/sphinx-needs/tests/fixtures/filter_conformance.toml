@@ -814,7 +814,18 @@ why = "a capital sigma ending a word lowers to the final sigma"
 [[case.filters]]
 filter = 'title == "Straße"'
 expected = ["REQ_001"]
+why = "a literal that is not ASCII"
+
+[[case.filters]]
+filter = 'title == "Stra\u00dfe"'
+expected = ["REQ_001"]
+why = "a \\u escape in a string literal is the code point, as in Python"
 divergent = { ubcode = "a \\u escape in a string literal is read as its characters, not as the code point" }
+
+[[case.filters]]
+filter = 'title == "Stra\xdfe"'
+expected = ["REQ_001"]
+why = "a \\x escape in a string literal is the code point, as in Python"
 
 # --- search ----------------------------------------------------------------------------
 
@@ -872,6 +883,17 @@ filter = 'search("a", "abc")'
 expected = ["REQ_001", "REQ_002", "SPEC_001"]
 tier = "eval"
 reason = "call:search"
+
+[[case.filters]]
+filter = 'search( "@", title)'
+expected = ["REQ_001"]
+why = "a space inside the call's parentheses is a Python expression's"
+
+[[case.filters]]
+filter = 'search("(d)\\1", title)'
+expected = ["REQ_001"]
+why = "a backreference is Python's: the dd of address"
+divergent = { ubcode = "the regex dialect has no backreferences: the pattern is refused when the filter is parsed" }
 
 [[case.filters]]
 filter = 'search("^(?=SPEC)", id)'
@@ -935,6 +957,7 @@ expected = ["REQ_002"]
 in_document = false
 error = "filter"
 why = "the need whose or stops before c.this_doc() is answered"
+divergent = { ubcode = "an evaluation error fails the whole filter, so nothing is selected" }
 
 [[case.filters]]
 filter = 'c.this_doc() == True'
@@ -1143,6 +1166,16 @@ filter = 'not (not status == "open")'
 expected = ["REQ_001", "SPEC_001"]
 
 [[case.filters]]
+filter = "type=='spec'or status!='open'"
+expected = ["REQ_002", "SPEC_001"]
+why = "a filter is a Python expression: an operator needs no space around it"
+
+[[case.filters]]
+filter = '(status == "open")and("a" in tags)'
+expected = ["REQ_001", "SPEC_001"]
+why = "nor does and between parentheses"
+
+[[case.filters]]
 filter = 'True'
 expected = ["REQ_001", "REQ_002", "SPEC_001"]
 tier = "index"
@@ -1176,6 +1209,7 @@ filter = 'type == "req" or absent == 1'
 expected = ["REQ_001", "REQ_002"]
 error = "filter"
 why = "the reqs stop at the first operand; SPEC_001 reads absent, and fails"
+divergent = { ubcode = "an evaluation error fails the whole filter, so nothing is selected" }
 
 # --- truthiness ------------------------------------------------------------------------
 
@@ -1569,11 +1603,13 @@ tier = "fast"
 filter = 'variant == current_variant'
 expected = ["REQ_001"]
 tier = "fast"
+divergent = { ubcode = "a view reads no [needs.filter_data]: current_variant is undefined and the filter fails" }
 
 [[case.filters]]
 filter = 'variant != current_variant'
 expected = ["IMPL_001", "REQ_002", "SPEC_001"]
 tier = "fast"
+divergent = { ubcode = "a view reads no [needs.filter_data]: current_variant is undefined and the filter fails" }
 
 [[case.filters]]
 filter = 'c.this_doc() and status is None'
