@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792537455597,
+  "lastUpdate": 1792575570281,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26496,6 +26496,42 @@ window.BENCHMARK_DATA = {
             "value": 38.82599968299999,
             "unit": "s",
             "extra": "Commit: e29e35bc5a41ff2588a88a8c5777c0f62ed94fbb\nBranch: master\nTime: 2026-10-21T01:03:11+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5acab9ffdccb25d2786d7e340771dccb181043b7",
+          "message": "Bump certifi from 2026.7.22 to 2026.10.19 (#2351)\n\nBumps [certifi](https://github.com/certifi/python-certifi) from\n2026.7.22 to 2026.10.19.\n\nSigned-off-by: dependabot[bot] <support@github.com>\nCo-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>",
+          "timestamp": "2026-10-21T11:38:03+02:00",
+          "tree_id": "0318b1b264e1fff202a4d693c85777e2b3214a3b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5acab9ffdccb25d2786d7e340771dccb181043b7"
+        },
+        "date": 1792575561781,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11122002300000133,
+            "unit": "s",
+            "extra": "Commit: 5acab9ffdccb25d2786d7e340771dccb181043b7\nBranch: master\nTime: 2026-10-21T11:38:03+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.554962853000006,
+            "unit": "s",
+            "extra": "Commit: 5acab9ffdccb25d2786d7e340771dccb181043b7\nBranch: master\nTime: 2026-10-21T11:38:03+02:00"
           }
         ]
       }
