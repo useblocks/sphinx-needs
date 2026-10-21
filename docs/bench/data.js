@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792595188911,
+  "lastUpdate": 1792605087264,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26676,6 +26676,42 @@ window.BENCHMARK_DATA = {
             "value": 51.34938407200001,
             "unit": "s",
             "extra": "Commit: 97026db969c3d50c6e9f349a1f5b7db07e0d138e\nBranch: master\nTime: 2026-10-21T17:05:04+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fcc4540d9b7ac12a87dbbfd8623dbfb5147f1dd3",
+          "message": "📚 Sphinx-Needs across the V-model: a page that maps define, implement, verify, iterate and prove (#2365)\n\n## What\n\n`packages/sphinx-needs`: a new docs page, **Sphinx-Needs across the\nV-model** (`docs/v_model.rst`), in *The Basics* after the tutorial,\nwhere the sidebar lists it as *Across the V-model*.\nIt maps the five steps of engineering along the V-model to what\nSphinx-Needs and its sibling extensions offer, and links the pages that\ndescribe each:\n\n- **Define**: the `need` directive and the tutorial, `needs_types` and\nthe need-types how-to, link types, schema validation.\n- **Implement**: Sphinx-CodeLinks.\n- **Verify**: Sphinx-Test-Reports, and schema findings reported as\nwarnings or errors by severity, with `-W` failing the build.\n- **Iterate**: back links, filter strings, `needextend`, the `needs`\nbuilder's version history (given the previous `needs.json` through\n`needs_file`), and `needimport`. One sentence says Sphinx-Needs has no\nimpact analysis of its own and that ubCode adds it with `ubc diff`.\n- **Prove**: `needtable`, `needflow`, `needpie`, `needextract`, the\nbuilders, and `needs.json` export.\n\nIt has one small Mermaid diagram (`sphinxcontrib.mermaid` is already\nloaded).\n\n## Why\n\nThe docs explain each feature but not where it fits in the engineering\nlifecycle the extension is used for; nothing in them mentions the\nV-model.\nA companion ubCode PR organises its requirements reading route by the\nsame five steps: https://github.com/useblocks/ubcode/pull/4299.\nThere is no issue.\n\n## Tests\n\nNone: a new docs page. `uv run poe docs-needs` succeeds with 0 warnings,\nand `uv run poe lint` passes and leaves the tree unchanged.\nEvery claim was checked against the docs it links (and the code where\nthe docs were not explicit), in an independent review whose findings are\nfixed.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [ ] I ran the package's tests (`uv run poe test-<package>`) and they\npass. (Not run; no code changed. The docs build is above.)\n- [ ] Documentation is updated where behaviour or options change. (No\nbehaviour or option changes.)\n- [ ] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. (Left to the release; a new explanation page.)\n- [ ] `uv run poe lint` and `uv run poe typecheck` pass. (`lint` passes;\n`typecheck` not run, as no Python changed.)",
+          "timestamp": "2026-10-21T19:50:08+02:00",
+          "tree_id": "da52d1e5a282b0a821efd8087c0741c1721804fe",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/fcc4540d9b7ac12a87dbbfd8623dbfb5147f1dd3"
+        },
+        "date": 1792605078353,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.08641090500000104,
+            "unit": "s",
+            "extra": "Commit: fcc4540d9b7ac12a87dbbfd8623dbfb5147f1dd3\nBranch: master\nTime: 2026-10-21T19:50:08+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 47.914653986,
+            "unit": "s",
+            "extra": "Commit: fcc4540d9b7ac12a87dbbfd8623dbfb5147f1dd3\nBranch: master\nTime: 2026-10-21T19:50:08+02:00"
           }
         ]
       }
