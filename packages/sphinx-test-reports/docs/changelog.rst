@@ -1,8 +1,15 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:3.0.1`:
+
+3.0.1
+-----
+
+:Released: 21.10.2026
+
+A compatibility release beside sphinx-needs 9.1.0, which this version requires. The package is typed and its
+documentation site moved to furo; nothing changes in the directives, the converter or the pytest plugin.
 
 Changed
 .......
