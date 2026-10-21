@@ -20,11 +20,13 @@ which need types its links may point to; a derived ``union`` of link types repla
 :ref:`join <needs_derive_join>` role and :ref:`links_from_match` link needs whose field values match. A filter
 string in the portable filter language is evaluated without Python's ``eval``, five to six times faster, with a
 conformance corpus that defines the language and a :ref:`needs_debug_filters` record naming the tier that answered
-each filter. A needs.json is read through the new ``ub-needs-exchange`` library and may carry a ``format_version``,
+each filter; every tier reads a filter for its truth, and a filter that is a constant is refused instead of selecting
+every need or none. A needs.json is read through the new ``ub-needs-exchange`` library and may carry a ``format_version``,
 and a file written without its defaults restores them from its own schema. The package ships ``py.typed``. Two
 changes are breaking, each with its migration under *Breaking changes* below: the built-in GitHub services are
 registered only when :ref:`needs_services` names them, and ``app.config.needs_types`` and ``needs_layouts`` no
-longer hold the types and layouts that extensions add.
+longer hold the types and layouts that extensions add. The documentation gains a page mapping Sphinx-Needs,
+Sphinx-CodeLinks and Sphinx-Test-Reports across the V-model's five steps.
 
 Improvements
 ............
