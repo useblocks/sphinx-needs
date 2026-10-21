@@ -689,6 +689,40 @@ def test_a_value_that_is_no_boolean_is_read_for_its_truth(
         assert filter_single_need(need, config, filter_string) is expected
 
 
+class _RefusesToAnswer(str):
+    """A string whose ``startswith`` raises the error a failed filter raises."""
+
+    def startswith(self, *args: object, **kwargs: object) -> bool:
+        raise NeedsInvalidFilter("this value refuses to answer")
+
+
+def test_a_value_that_fails_the_parsed_tier_is_reported_once() -> None:
+    """In the parsed tier's loop, a need whose value fails the filter is excluded and
+    the filter reported once, as in the eval loop, whatever the error: the other needs
+    are still answered, and nothing ends the build (#2360)."""
+    config = Mock()
+    config.filter_data = {}
+    config.variant_data_proxy = None
+    failing = [
+        _make_need(id=f"REQ_00{i}", extras={"owner": _RefusesToAnswer("alice")})
+        for i in (1, 2)
+    ]
+    plain = _make_need(id="REQ_003", extras={"owner": "alice"})
+    filter_string = 'owner.startswith("a")'
+    assert compile_portable(filter_string).predicate is not None
+    with patch.object(filter_common, "log_warning") as warn:
+        found = filter_common.filter_needs_and_parts(
+            [*failing, plain], config, filter_string
+        )
+    assert found == [plain]
+    assert warn.call_count == 1
+    _, message, code = warn.call_args.args
+    assert code == "filter"
+    assert message == (
+        f"Filter {filter_string!r} not valid. Error: this value refuses to answer."
+    )
+
+
 def _outcome(need: NeedItem, config: Mock, filter_string: str) -> object:
     """The answer of ``filter_single_need``, or the message of the error it reports."""
     try:

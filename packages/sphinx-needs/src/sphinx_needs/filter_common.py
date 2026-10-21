@@ -831,9 +831,9 @@ def filter_needs_and_parts(
                 # read for its truth: a value's own method may give no boolean
                 if simple_pred(filter_need, fallback):
                     found_needs.append(filter_need)
-            except NeedsInvalidFilter:
-                raise
             except Exception as e:
+                # whatever a value's method raises, as the eval loop below: the need
+                # is excluded and the filter reported once, and the build goes on
                 if not error_reported:
                     if append_warning:
                         append_warning = f" {append_warning}"

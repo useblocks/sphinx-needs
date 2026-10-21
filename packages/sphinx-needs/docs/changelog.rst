@@ -395,6 +395,10 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 A filter in the portable filter language that fails on a need is reported once and the need left out, as in
+  ``eval``, whatever the error: an error of the kind a failed filter raises, from a value's own method, ended the
+  build there (:issue:`2360`, :pr:`PRNUM`)
+
 - 🐛 The filter fast path answers as ``eval`` does where it did not: a list or a tuple of literals after ``in``
   compares a list field item by item (``tags not in ['a']`` raised there and was true in ``eval``), and a name no
   field defines that is a Python builtin is the builtin (``filter != 'x'`` was refused there as undefined, and is
