@@ -8,6 +8,9 @@ import pytest
 from sphinx import version_info
 from sphinx.testing.util import SphinxTestApp
 
+from sphinx_needs_testkit import build_warnings
+from tests.util import chart_images, pie_slice_counts
+
 
 def _assert_no_default_renderer(app: SphinxTestApp) -> None:
     """This suite's `make_app` rule, asserted where it is easiest to lose.
@@ -120,3 +123,55 @@ def test_sphinx_api_needpie(tmp_path: Path, make_app: type[SphinxTestApp]):
 
     sphinx_app.build()
     assert sphinx_app.statuscode == 0
+
+
+#: The needs every chart below counts: two of the three carry tags.
+CHART_NEEDS = """\
+.. req:: One
+   :id: REQ_1
+   :tags: a
+
+.. req:: Two
+   :id: REQ_2
+   :tags: b
+
+.. req:: Three
+   :id: REQ_3
+"""
+
+CHART_CONF = 'extensions = ["sphinx_needs"]\n'
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CHART_CONF),
+                (
+                    Path("index.rst"),
+                    "Pie\n===\n\n"
+                    + CHART_NEEDS
+                    + "\n.. needpie:: lines\n\n   10\n   10.5\n   -5\n   tags\n   True\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_line_is_a_static_value_or_counts_the_needs_it_is_true_for(test_app):
+    """A non-negative integer is a static value; anything else is a filter, which counts
+    the needs it is true for (``tags``: the two with tags, ``True``: all three), and a
+    filter that is any other constant (``10.5``, ``-5``) says nothing about a need: it is
+    warned about and counts zero."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:15: WARNING: Filter {line!r} not valid. Error: it is a "
+        "constant, which says nothing about a need, so it selects none. [needs.filter]"
+        for line in ("10.5", "-5")
+    ]
+    images = chart_images(Path(app.outdir, "index.html").read_text())
+    svg = Path(app.outdir, "_images", images["lines"]).read_text()
+    assert pie_slice_counts(svg) == [10, 0, 0, 2, 3]

@@ -3,7 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from sphinx_needs_testkit import assert_no_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
+from tests.util import bar_sum_labels, chart_images
 
 
 @pytest.mark.parametrize(
@@ -113,3 +114,40 @@ def test_chart_element_ids_are_unique_per_chart(test_app):
             f"element id shared between charts: {sorted(seen & ids)}"
         )
         seen |= ids
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), 'extensions = ["sphinx_needs"]\n'),
+                (
+                    Path("index.rst"),
+                    "Bar\n===\n\n"
+                    ".. req:: One\n   :id: REQ_1\n   :tags: a\n\n"
+                    ".. req:: Two\n   :id: REQ_2\n   :tags: b\n\n"
+                    ".. req:: Three\n   :id: REQ_3\n\n"
+                    ".. needbar:: cells\n   :show_sum:\n\n   10,10.5,-5,tags,True\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_cell_is_a_static_value_or_counts_the_needs_it_is_true_for(test_app):
+    """A non-negative integer is a static value; anything else is a filter, which counts
+    the needs it is true for (``tags``: the two with tags, ``True``: all three), and a
+    filter that is any other constant (``10.5``, ``-5``) says nothing about a need: it is
+    warned about and counts zero."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:15: WARNING: Filter {cell!r} not valid. Error: it is a "
+        "constant, which says nothing about a need, so it selects none. [needs.filter]"
+        for cell in ("10.5", "-5")
+    ]
+    images = chart_images(Path(app.outdir, "index.html").read_text())
+    svg = Path(app.outdir, "_images", images["cells"]).read_text()
+    assert bar_sum_labels(svg, "cells") == ["10", "0", "0", "2", "3"]
