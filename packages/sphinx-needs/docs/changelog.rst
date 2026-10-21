@@ -594,6 +594,13 @@ Bug fixes
 Documentation
 .............
 
+- 📚 The :ref:`need_count` example counting the needs whose title is longer than ten characters is written in
+  the portable filter language, and counts them (:issue:`2359`, :pr:`PRNUM`)
+
+  It wrote a raw string, ``search(r"[\w\s]{10,}", title)``, which the portable language has not, and the role
+  removed its backslashes, so the pattern it ran was ``[ws]{10,}`` and the example counted no need. It now writes
+  each backslash twice for the role and twice for the string literal.
+
 - 📚 A need type's own entry is documented as the place for most rules about its needs,
   beside schema rules for the rest (:pr:`2295`)
 
