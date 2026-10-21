@@ -13,7 +13,7 @@ There are three mechanisms to achieve this, and which one to use depends on what
    * - mechanism
      - written as
      - use it when
-   * - a :ref:`declared derive rule <dynamic_functions_derived>` (recommended)
+   * - a :ref:`declared derive rule <needs_derive>` (recommended)
      - in the configuration: ``[needs.fields.<name>] derive = {…}``, or under ``[needs.links.<name>]``
      - a field is computed the same way on every need:
        a roll-up over links or back links, a lookup, a hash, a filtered link list.
@@ -33,71 +33,21 @@ it is checked when the build starts, before any document is read, so a typo is r
 it is closed to authors, so no stale value written in a need overrides it (``needs.derive_authored``);
 `ubCode <https://ubcode.useblocks.com/>`__ computes the same values from its phase-2 release, but for the differences its documentation lists;
 and the schema in :ref:`needs.json <needs_builder_format>` marks the field ``"readOnly": true``.
-A rule applies to every need of the project, or, declared under ``derive_by_type``, to the need types it names
+A rule applies to every need of the project, or, declared in a need type's own entry, to the needs of that type
 (a need of another type uses ``derive`` if given, else holds the field's default; see :ref:`needs_derive_by_type`);
 a rule's ``where`` narrows the candidates it reads, not the needs that carry the field.
 
-.. _dynamic_functions_derived:
+Derived fields
+==============
 
-Derived fields: the declared form
-=================================
+A :ref:`derived field <needs_derive>` declares a computation once, in :ref:`needs_fields` or :ref:`needs_links`,
+for every need of the project, where a built-in call computes a value for the one need it is written in;
+a :ref:`table on that page <dynamic_functions_derived>` maps each built-in call to the kind of rule it spells.
 
-.. versionadded:: 9.0.0
+.. toctree::
+   :maxdepth: 1
 
-A built-in call computes a value for the one need it is written in.
-A :ref:`derived field <needs_derive>` declares the same computation once, in :ref:`needs_fields` or :ref:`needs_links`,
-for every need of the project:
-
-.. code-block:: toml
-
-   [needs.fields.total_hours]
-   schema = { type = "number" }
-   derive = { kind = "sum", field = "hours", over = "links" }
-
-is the declared form of ``:total_hours: [[calc_sum("hours", links_only=True)]]`` written in every need,
-and both are computed in the same step (see :ref:`needs_processing_order`): a declared rule is the field's value,
-as a call written in it would be, but an author cannot set the field.
-The built-in functions are the per-need spellings of the kinds:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 46 54
-
-   * - inline call
-     - the kind it spells
-   * - ``copy("x")``, ``copy("x", "ID")``
-     - ``copy`` with ``field = "x"``, and ``from = "ID"``
-   * - ``copy("x", filter=…)``
-     - no declared form: the lowest-id need the filter keeps, read from every need
-   * - ``calc_sum("x", links_only=True)``
-     - ``sum`` with ``field = "x"`` and ``over = "links"``; its ``filter`` is the ``where``
-   * - ``calc_sum("x")``, ``calc_sum("x", filter=…)``
-     - no declared form: a sum over every need
-   * - ``check_linked_values(result, "x", values, filter, one_hit)``
-     - ``all`` over ``links`` (``any`` with ``one_hit``), with the ``test`` ``x in values`` and the ``where`` ``filter``,
-       giving ``result``; with ``one_hit``, ``result`` even when no linked need matches, which ``any`` does not
-   * - ``links_from_content()``, ``links_from_content("ID", filter=…)``
-     - ``content_links``, with ``from = "ID"`` and the ``where`` ``filter``
-   * - ``links_from_filter(filter, include_self, include_parts)``
-     - ``links``, with the ``where`` ``filter`` and the same ``include_self`` and ``include_parts``
-   * - ``links_from_match(field, equals, include_self, filter)``
-     - ``links`` with ``join = { field = field, equals = equals }``, the same ``include_self``,
-       and the ``where`` ``filter``
-
-A ``where`` that cannot be evaluated on a candidate (one lacking a field it names) drops that candidate,
-without a warning, in every kind and in ``links_from_filter``;
-the ``filter`` of ``calc_sum``, ``check_linked_values`` and ``links_from_content`` keeps its own behaviour.
-
-Written in many needs, ``links_from_filter``, ``links_from_content`` and ``links_from_match`` store a list on each,
-counted as a rule's lists are: see :ref:`needs_derive_cost`.
-
-The ``join`` role (:ref:`needs_derive_join`) spells such a correlated lookup, as sphinx-test-reports' ``tr_link`` does,
-and :ref:`links_from_match` is its inline spelling.
-A ``copy("x", filter=…)`` whose filter compares a need with ``current_need`` (``name == current_need['ref']``)
-is such a lookup too, its filter tested on every need for each need it is in:
-a ``copy`` with ``join`` is the declared form of such a lookup (it splits the values,
-and finds no value rather than this need's own when nothing matches).
-A rule for some need types is declared under ``derive_by_type`` (:ref:`needs_derive_by_type`), not with a role.
+   derived_fields
 
 .. _dynamic_functions:
 
@@ -233,6 +183,8 @@ links_from_match
 Develop own functions
 ---------------------
 
+.. _dynamic_functions_registration:
+
 Registration
 ~~~~~~~~~~~~
 
@@ -261,14 +213,14 @@ giving its ``name``.
 
    .. code-block:: python
 
-         from sphinx_needs.api import add_dynamic_function
+      from sphinx_needs.api import add_dynamic_function
 
-            def my_function(app, need, needs, *args, **kwargs):
-                # Do magic here
-                return "some data"
+      def my_function(app, need, needs, *args, **kwargs):
+          # Do magic here
+          return "some data"
 
-            def setup(app):
-                  add_dynamic_function(app, my_function)
+      def setup(app):
+          add_dynamic_function(app, my_function)
 
 .. _needs_processing_order:
 
@@ -293,7 +245,7 @@ Once every document has been read, and before any page is written, the needs are
 2. The ``[[…]]``, ``<<…>>`` and ``<{…}>`` of the :ref:`link fields <needs_links>` are computed,
    with the rules of the :ref:`derived link types <needs_derive>` (``links``, ``content_links``, ``union``),
    each after the link fields it reads, and those that call your own :ref:`functions <needs_functions>` last.
-3. The back links are built from the links of steps 1 and 2, each back link list in need-id order.
+3. The back links are built from the links of steps 1 and 2, each back link list in :ref:`need-id order <needs_id_order>`.
 4. Every other ``[[…]]``, ``<<…>>`` and ``<{…}>`` is computed, with the rules of the
    :ref:`derived fields <needs_derive>`, each after every value it reads
    (a field of its own need or of another need, a field of a linked need, a back link),
@@ -414,10 +366,14 @@ One that names a value computed in the same step makes every need a candidate, a
 that field and ``x`` on every need.
 A filter reads the needs themselves, so only these rules order what it reads:
 the check at run time (:ref:`needs_derive_scope`) does not see a filter's reads.
+
+.. _needs_id_order:
+
 The needs of a set are read in need-id order, comparing ids as strings, by code point
 (``REQ_10``, ``REQ_2``, ``REQ_9``), where a sorted link list, of step 5 and of ``needs.json``,
 is in natural order (``REQ_2``, ``REQ_9``, ``REQ_10``):
-the candidates of a ``calc_sum`` or a ``filter``, and a back link list.
+the candidates of a ``calc_sum`` or a ``filter``, those of a rule's ``join`` and of a ``links`` rule,
+and a back link list.
 A link list is read in the order it is written, followed by the links a ``needextend`` added;
 a link written twice is read twice, so a ``calc_sum`` with ``links_only`` adds its value twice.
 The link lists are sorted, and a link written twice kept once, only in step 5.
@@ -432,14 +388,15 @@ it is not run when one is a back link, a dead-link flag, or a field computed in 
 (:ref:`needs_derive_scope`);
 and a field no need computes is read as written.
 
-Your own functions run after every built-in function of their step, in need-id order, then by field.
+Your own functions run after every built-in function of their step, in :ref:`need-id order <needs_id_order>`, then by field.
 They read the values the built-in functions computed
 (but for a call whose filter cannot be read, which runs among them, see below);
 a built-in function that reads a field your own function computes
 reads it before it is computed, which is reported (:ref:`needs_derive_scope`).
 A function of your own in a link field, such as sphinx-test-reports' ``tr_link``, runs at the end of step 2,
 so its links are in the back links of step 3
-(:ref:`links_from_match` is the built-in function for ``tr_link``'s links, ordered as the other built-in functions are).
+(its nearest built-in form is :ref:`links_from_match`, ordered as the other built-in functions are:
+see :ref:`needs_derive_join`).
 A later release is to let a function declare what it reads, which will order it like a built-in one.
 A ``filter`` that names ``needs``, or reads ``current_need`` by a key that is not written out,
 cannot be ordered either: its call runs with your own functions.
