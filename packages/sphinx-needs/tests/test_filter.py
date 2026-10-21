@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -518,3 +519,113 @@ def test_filter_needs_then_parts():
         .filter_has_tag(["a"])
     )
     assert {n["id"] for n in npl} == {"story_a_b_1", "part_a"}
+
+
+_DEBUG_TIER_CONF = """\
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath("."))
+
+extensions = ["sphinx_needs"]
+needs_debug_filters = True
+"""
+
+_DEBUG_TIER_INDEX = """\
+Tiers
+=====
+
+.. req:: Alpha
+   :id: REQ_001
+   :status: open
+
+.. req:: Beta
+   :id: REQ_002
+   :status: closed
+   :tags: x
+
+.. needlist::
+   :filter: type == "req"
+
+.. needlist::
+   :filter: status in ["open"] and "x" in tags
+
+.. needlist::
+   :status: open
+
+.. needlist::
+   :filter: status == "open" or is_external
+
+.. needlist::
+   :filter: c.this_doc() and len(tags) == 0
+
+.. needlist::
+   :filter: bool(title)
+
+.. needlist::
+   :filter: type == "req" and title[0] == "A"
+
+.. needlist::
+   :filter: sphinx_tag in tags
+
+.. needlist::
+
+   results = [need for need in needs if need["status"] == "open"]
+
+.. needlist::
+   :filter-func: debug_tier_filters.only_open
+"""
+
+_DEBUG_TIER_FILTERS = """\
+def only_open(needs, results, **kwargs):
+    results.extend(need for need in needs if need["status"] == "open")
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), _DEBUG_TIER_CONF),
+                (Path("index.rst"), _DEBUG_TIER_INDEX),
+                (Path("debug_tier_filters.py"), _DEBUG_TIER_FILTERS),
+            ],
+            "confoverrides": {"needs_filter_data": {"sphinx_tag": "x"}},
+        }
+    ],
+    indirect=True,
+)
+def test_debug_filters_records_the_tier_and_why_eval(test_app):
+    """Each record of ``debug_filters.jsonl`` says which tier answered its filter, and,
+    for one that reached ``eval``, the construct that kept it from the portable grammar."""
+    app = test_app
+    app.build()
+    assert [w for w in build_warnings(app) if "needs.deprecated" not in w] == []
+    lines = Path(app.outdir, "debug_filters.jsonl").read_text("utf8").splitlines()
+    records = [json.loads(line) for line in lines]
+    assert [
+        (r["filter"], r["needs_count"], r["tier"], r.get("fallback_reason"))
+        for r in records
+    ] == [
+        ('type == "req"', 2, "index", None),
+        ('status in ["open"] and "x" in tags', 0, "index", None),
+        ("status in ['open']", 1, "index", None),
+        ('status == "open" or is_external', 1, "fast", None),
+        ("c.this_doc() and len(tags) == 0", 1, "fast", None),
+        ("bool(title)", 2, "eval", "call:bool"),
+        ('type == "req" and title[0] == "A"', 1, "eval", "subscript"),
+        ("sphinx_tag in tags", 1, "eval", "compare:name-in-name"),
+        (
+            'results = [need for need in needs if need["status"] == "open"]',
+            1,
+            "eval",
+            "filter-code",
+        ),
+        ("debug_tier_filters.only_open", 1, "eval", "filter-func"),
+    ]
+    # the reason is there for eval alone
+    assert ["fallback_reason" in r for r in records] == [
+        r["tier"] == "eval" for r in records
+    ]

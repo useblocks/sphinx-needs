@@ -285,6 +285,11 @@ search(pattern, variable) is based on
 The first parameter must be a regular expression pattern.
 The second parameter should be one of the above variables(status, id, content, ..)
 
+In the :ref:`portable filter language <filter_string_performance>` the pattern is a plain string literal:
+it has no raw strings (``r"..."``), so a backslash is written twice (``"\\d+"``), or avoided with a
+character class (``"[.]"``). The pattern is read with Python's regular expression syntax;
+look-around, backreferences and ``{,n}`` are Python's own and not part of the portable language.
+
 .. dropdown:: Show example
 
    This example uses a regular expressions to find all needs with an e-mail address in title.
@@ -294,7 +299,7 @@ The second parameter should be one of the above variables(status, id, content, .
       .. req:: Set admin e-mail to admin@mycompany.com
 
       .. needlist::
-         :filter: search(r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)
+         :filter: search("([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+[.][a-zA-Z0-9-.]+$)", title)
 
 .. _filter_string_performance:
 
@@ -303,29 +308,101 @@ Filter string performance
 
 .. versionadded:: 4.0.0
 
-The filter string is evaluated by default for each need and need part
+.. versionchanged:: 9.1.0
+   The second tier compiles the whole portable filter language,
+   and :ref:`needs_debug_filters` records which tier answered each filter.
+
+The filter string is evaluated for each need and need part
 and, therefore, can become a performance bottleneck for projects with large numbers of needs.
+Sphinx-Needs answers a filter string with the first of three tiers that takes it,
+so writing filters the first two take is recommended:
 
-To improve performance, certain common patterns are identified and optimized by the filter engine, and so using such patterns is recommended:
+1. **The index path.** A few shapes are answered from indexes the needs keep,
+   without evaluating the filter need by need:
 
-- ``is_external`` / ``is_external == True`` / ``is_external == False``
-- ``id == 'value'`` / ``id == "value"`` / ``'value' == id`` / ``"value" == id``
-- ``id in ['value1', 'value2', ...]`` / ``id in ("value1", "value2", ...)``
-- ``type == 'value'`` / ``type == "value"`` / ``'value' == type`` / ``"value" == type``
-- ``type in ['value1', 'value2', ...]`` / ``type in ("value1", "value2", ...)``
-- ``status == 'value'`` / ``status == "value"`` / ``'value' == status`` / ``"value" == status``
-- ``status in ['value1', 'value2', ...]`` / ``status in ("value1", "value2", ...)``
-- ``'value' in tags`` / ``"value" in tags``
-- ``var.key == 'value'`` / ``var.nested.key == 'value'`` (see :ref:`filter_variant_data`)
-- ``'value' in var.key`` / ``'value' not in var.key``
+   - ``is_external`` / ``is_external == True`` / ``is_external == False``
+   - ``id == 'value'`` / ``'value' == id`` / ``id in ['value1', 'value2', ...]``
+   - ``type == 'value'`` / ``'value' == type`` / ``type in ['value1', 'value2', ...]``
+   - ``status == 'value'`` / ``'value' == status`` / ``status in ['value1', 'value2', ...]``
+   - ``'value' in tags``
+   - ``True`` / ``False``
 
-Also filters containing ``and`` will be split into multiple filters and evaluated separately for the above patterns.
-For example, ``type == 'spec' and other == 'value'`` will first be filtered performantly by ``type == 'spec'`` and then the remaining needs will be filtered by ``other == 'value'``.
+   A filter of the form ``a and b and ...`` is split, and each of its parts of these shapes narrows the needs first:
+   ``type == 'spec' and other == 'value'`` is filtered by ``type == 'spec'`` from the index,
+   and only the remaining needs are evaluated for ``other == 'value'``.
+
+2. **The portable filter language.** A string written in it is compiled once
+   and evaluated need by need without Python's ``eval``, reading only the fields it names,
+   which makes it five to six times faster than ``eval`` for the same string.
+   A conformance corpus (``tests/fixtures/filter_conformance.toml`` in the Sphinx-Needs repository)
+   defines the language and pins every form's answers; the language is also the one
+   `ubCode <https://ubcode.useblocks.com>`__ reads, so a filter written in it works there too.
+   It has:
+
+   - **operands**: a field (any field of the need, a :ref:`needs_filter_data` key,
+     a :ref:`variant data <filter_variant_data>` key such as ``var.build.debug``),
+     ``len(field)``, ``field.lower()`` and ``field.upper()``;
+   - **literals**: a string in single or double quotes, an integer or a float (``-1``, ``2.5``, ``1e-3``),
+     ``True``, ``False``, ``None``, and a list of those after ``in``;
+   - **comparisons** ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=`` between an operand and a literal, either way round
+     (``<`` and the others with a number literal only), or between two operands:
+     ``status == 'open'``, ``5 <= priority``, ``owner == lead``, ``len(tags) > 0``;
+   - **membership**: an operand ``in`` / ``not in`` a list of literals,
+     and a literal ``in`` / ``not in`` an operand -- an item of a list, a substring of a string:
+     ``type in ['req', 'spec']``, ``'safety' in tags``, ``'login' not in title.lower()``;
+   - ``x is None`` / ``x is not None``;
+   - ``x.startswith('...')`` / ``x.endswith('...')`` after an operand: ``id.lower().startswith('req')``;
+   - ``search('pattern', x)`` (see :ref:`re_search`), with a plain string literal as the pattern;
+   - ``c.this_doc()`` (see :ref:`filter_current_page`);
+   - ``and``, ``or``, ``not``, parentheses, and an operand alone, which is read by its truthiness.
+
+   Not in it, and so evaluated by ``eval``: a field ``in`` a field (``sphinx_tag in tags``),
+   a list beside ``==`` or ``!=`` (``tags == ['a']``; write ``len(tags) == 1 and 'a' in tags``),
+   arithmetic, subscripts (``sections[0]``), comprehensions, any other call or method (``any(...)``, ``bool(x)``, ``x.strip()``),
+   ``is`` with anything but ``None``, a chain of comparisons (``1 < x < 5``), a dotted name not under ``var.``,
+   and the names ``needs`` and ``current_need``.
+
+3. **Python's** ``eval``, for every other string: it is evaluated need by need against a context holding every field of the need,
+   which costs far more than the first two tiers, nearly all of it building that context.
+
+The three tiers give the same answers, with four exceptions:
+
+- **A filter whose value is not a boolean** (:issue:`1773`). The portable language reads an operand alone,
+  and under ``and``, ``or`` and ``not``, by Python's truthiness -- an empty string, an empty list, ``0`` and ``None``
+  are false -- so ``tags`` selects the needs that have tags, where ``eval`` refuses a filter whose value is not a
+  boolean (``Filter did not evaluate to a boolean``), as for ``status == 'open' and tags[0]``. A string that is in
+  the portable language since 9.1.0 and whose value is not a boolean -- ``len(tags)`` alone, ``title.lower()``,
+  ``True and owner``, a ``var.`` chain alone holding a string -- therefore selects by its truthiness, where it was
+  refused with that warning and selected nothing.
+- **A field or** :ref:`needs_filter_data` **key named** ``len``: ``eval`` calls it in ``len(x)``, the portable
+  language calls Python's ``len``.
+- **The name of a Python builtin alone under** ``not``, ``and`` **or** ``or`` (``filter and status == 'open'``):
+  ``eval`` reads the builtin, the portable language reports the name as undefined. As the whole filter
+  (``filter``), both refuse it.
+- ``search`` **and the** ``__dunder__`` **names** (``__name__``, ``__debug__``) **compared with a literal, or alone**
+  (``search == 'x'``, ``__name__ == 'builtins'``, ``__debug__``): ``eval`` reads its own binding -- the regular
+  expression function, the builtins module's attributes -- and the portable language reports the name as undefined,
+  as it did before 9.1.0. Beside a field (``owner != search``) the string falls to ``eval`` and answers as it does.
+
+A few forms the second tier answers are older than the portable language and not part of it:
+``<`` and the other orderings between a field and a literal that is no number (``title < 'M'``, ``owner > True``,
+``owner < None``), a tuple or a set after ``in``, a constant the language has no literal for beside a field
+(``status == b"x"``, ``status == ...``, ``status == 1j``), and ``not not x`` (write ``not (not x)``).
+The second tier also reads a string's syntax rather than its spelling, and puts no limit on its size,
+so it answers what the language leaves out for spelling or size alone: an integer outside the signed 64-bit range, more than 10 000
+terms once the filter is expanded into alternatives of conjunctions, nesting deeper than 64, a string longer than
+16 KiB, and spellings such as a parenthesised operand (``len((tags)) > 0``), a trailing comma, a comment, triple
+quotes, ``.5``, ``1e+5``, ``-(1)`` or a name that is not ASCII. Each answers as ``eval`` answers it, and in
+``search()`` look-around, backreferences and ``{,n}`` are Python's own.
+
+To see which tier answers each filter of a project's view directives, and why one reaches ``eval``,
+enable :ref:`needs_debug_filters`: every record says ``tier`` (``"index"``, ``"fast"`` for the portable language, or ``"eval"``)
+and, for ``"eval"``, ``fallback_reason``, the construct that kept the string out of the portable language.
 
 To guard against long running filters, the :ref:`needs_filter_max_time` configuration option can be used to set a maximum time limit for filter evaluation.
 Also see :ref:`needs_uml_process_max_time`, to guard against long running ``needuml`` / ``needarch`` processes containing :ref:`filters <needuml_jinja_filter>`.
 
-To debug which filters are being used across your project and their run times, you can enable the :ref:`needs_debug_filters` configuration option.
+To debug which filters are being used across your project, their run times and the tier answering each, you can enable the :ref:`needs_debug_filters` configuration option.
 
 .. _export_id:
 .. deprecated:: 4.0.0

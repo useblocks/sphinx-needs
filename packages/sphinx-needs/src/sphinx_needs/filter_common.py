@@ -9,11 +9,11 @@ import ast
 import json
 import math
 import re
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 from timeit import default_timer as timer
 from types import CodeType
-from typing import Any, TypedDict, TypeVar, overload
+from typing import Any, Literal, TypedDict, TypeVar, overload
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -28,7 +28,7 @@ from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.needs_schema import AllowedTypes
-from sphinx_needs.ubquery import try_build_simple_predicate
+from sphinx_needs.ubquery import ORIGIN_KEY, CompiledFilter, compile_portable
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
@@ -182,6 +182,8 @@ def process_filters(
     )
 
     found_needs: list[NeedItem | NeedPartItem] = []
+    # which tier answered the filter, and why one reached eval: the debug report's
+    tier: tuple[_FilterTier, str | None]
 
     if (not filter_code or filter_code.isspace()) and not ff_result:
         # TODO these may not be correct for parts
@@ -212,6 +214,11 @@ def process_filters(
             location=location,
             origin_docname=filter_data["docname"],
         )
+        tier = (
+            _filter_tier(filter_data["filter"])
+            if needs_config.debug_filters
+            else ("index", None)
+        )
     else:
         # The filter results may be dirty, as it may continue manipulated needs.
         found_dirty_needs: list[NeedItem | NeedPartItem] = []
@@ -226,6 +233,7 @@ def process_filters(
             }
             exec(filter_code, context)
             found_dirty_needs = context["results"]
+            tier = ("eval", "filter-code")
         elif ff_result:  # code from external file
             full_filter.append(ff_result.sig)
             args = []
@@ -242,6 +250,7 @@ def process_filters(
                 results=found_dirty_needs,
                 **args_context,
             )
+            tier = ("eval", "filter-func")
         else:
             log_warning(
                 log, "Something went wrong running filter", "filter", location=location
@@ -294,22 +303,59 @@ def process_filters(
     if needs_config.debug_filters and full_filter:
         # Store basic filter configuration and result global list.
         # Needed mainly for exporting the result to needs.json (if builder "needs" is used).
-        json_line = json.dumps(
-            {
-                "origin": origin,
-                "source": str(location.source) if location.source else None,
-                "line": location.line,
-                "filter": full_filter[0]
-                if len(full_filter) == 1
-                else " and ".join(f"({f})" for f in full_filter),
-                "needs_count": len(found_needs),
-                "runtime": duration,
-            }
-        )
+        record: dict[str, Any] = {
+            "origin": origin,
+            "source": str(location.source) if location.source else None,
+            "line": location.line,
+            "filter": full_filter[0]
+            if len(full_filter) == 1
+            else " and ".join(f"({f})" for f in full_filter),
+            "needs_count": len(found_needs),
+            "runtime": duration,
+            "tier": tier[0],
+        }
+        if tier[0] == "eval":
+            record["fallback_reason"] = tier[1]
+        json_line = json.dumps(record)
         with Path(str(app.outdir), "debug_filters.jsonl").open("a") as f:
             f.write(json_line + "\n")
 
     return found_needs
+
+
+_FilterTier = Literal["index", "fast", "eval"]
+"""The tier of filter evaluation that answers a filter string: the index path, the
+fast path of the portable grammar (:mod:`sphinx_needs.ubquery`), or Python's ``eval``."""
+
+
+def _filter_tier(filter_string: str | None) -> tuple[_FilterTier, str | None]:
+    """The tier that answers *filter_string* over a view of needs, as
+    :func:`filter_needs_view` and :func:`filter_needs_parts` take it, and, for ``eval``,
+    the construct that kept the string out of the portable grammar.
+
+    The first two tiers decide by the string alone, never by the needs, so this asks
+    each the question it asks itself: the index path whether it answers the whole
+    string (its own analysis, over an empty view), the fast path whether the string
+    compiles. No filter at all is answered by the view's indexes.
+
+    :return: The tier, and the reason for ``eval`` (None for the other two).
+    """
+    if not filter_string:
+        return "index", None
+    try:
+        body = ast.parse(filter_string).body
+    except Exception:
+        body = []
+    if len(body) == 1 and isinstance((expr := body[0]), ast.Expr):
+        _, requires_eval = _analyze_and_apply_expr(
+            NeedsView._from_needs({}), expr.value
+        )
+        if not requires_eval:
+            return "index", None
+    compiled = compile_portable(filter_string)
+    if compiled.predicate is not None:
+        return "fast", None
+    return "eval", compiled.rejection
 
 
 def filter_scope_ids(
@@ -703,15 +749,13 @@ def filter_needs_and_parts(
         return list(needs)
 
     # === Fast path: try compiled predicate to avoid eval() entirely ===
-    simple_pred = try_build_simple_predicate(filter_string)
-    var_proxy = config.variant_data_proxy
+    compiled = compile_portable(filter_string)
+    simple_pred = compiled.predicate
 
     if simple_pred is not None:
-        fallback: dict[str, Any] | None = None
-        if config.filter_data or var_proxy is not None:
-            fallback = dict(config.filter_data) if config.filter_data else {}
-            if var_proxy is not None:
-                fallback["var"] = var_proxy
+        fallback = _fast_path_context(
+            config.filter_data, config.variant_data_proxy, compiled, origin_docname
+        )
         found_needs: list[_NeedOrPartT] = []
         error_reported = False
         for filter_need in needs:
@@ -769,6 +813,37 @@ def filter_needs_and_parts(
                 error_reported = True
 
     return found_needs_slow
+
+
+def _fast_path_context(
+    filter_data: Mapping[str, Any],
+    var_proxy: Any,
+    compiled: CompiledFilter,
+    origin_docname: str | None,
+) -> dict[str, Any] | None:
+    """The mapping a compiled filter's predicate reads beside the need.
+
+    What the ``eval`` tier's context holds besides the need's fields: the
+    ``needs_filter_data`` keys, the variant data under ``var``, and, for a predicate
+    that reads it (``c.this_doc()``), the document the filter is written in. The
+    document is passed per call, never compiled in: one compiled filter serves every
+    document a string is written in.
+
+    The caller passes the two configuration values it has read: a read of one costs
+    more than the rest of a per-need call, and :func:`filter_single_need` is called
+    need by need.
+
+    :return: The mapping, or None when the predicate needs nothing of it.
+    """
+    origin = origin_docname if compiled.reads_origin else None
+    if not filter_data and var_proxy is None and origin is None:
+        return None
+    fallback: dict[str, Any] = dict(filter_data) if filter_data else {}
+    if var_proxy is not None:
+        fallback["var"] = var_proxy
+    if origin is not None:
+        fallback[ORIGIN_KEY] = origin
+    return fallback
 
 
 def need_search(*args: Any, **kwargs: Any) -> bool:
@@ -870,13 +945,18 @@ def filter_single_need(
     var_proxy = config.variant_data_proxy
 
     # === Fast path: short-circuit simple expressions ===
-    simple_pred = try_build_simple_predicate(filter_string)
+    compiled = compile_portable(filter_string)
+    simple_pred = compiled.predicate
     if simple_pred is not None:
-        fallback: dict[str, Any] | None = None
-        if config.filter_data or var_proxy is not None:
-            fallback = dict(config.filter_data) if config.filter_data else {}
-            if var_proxy is not None:
-                fallback["var"] = var_proxy
+        # called need by need: the mapping is built only for a predicate that reads it
+        filter_data = config.filter_data
+        fallback = (
+            _fast_path_context(filter_data, var_proxy, compiled, origin_docname)
+            if filter_data
+            or var_proxy is not None
+            or (origin_docname is not None and compiled.reads_origin)
+            else None
+        )
         try:
             result = simple_pred(need, fallback)
             if not isinstance(result, bool):

@@ -26,8 +26,8 @@ Those two then give a ``needs.filter`` warning and count as zero,
 because a filter is expected to evaluate to a boolean and a number does not.
 
 Not every non-boolean filter is rejected that way, though:
-a simple enough expression, such as the bare field name ``tags``,
-is answered by the query fast path, which coerces the result with ``bool()``
+an expression of the :ref:`portable filter language <filter_string_performance>`,
+such as the bare field name ``tags``, reads its operands by their truthiness,
 and counts the matching needs instead of warning.
 
 You can use :ref:`filter_func` with Python codes to define custom filters for ``needpie``.
