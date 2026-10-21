@@ -41,7 +41,7 @@ Improvements
   (:issue:`2346`, :pr:`2350`)
 
 - 👌 A filter string selects the needs its value is true for on every tier, and a filter that is a constant is
-  reported instead of selecting every need or none (:issue:`1773`, :issue:`2355`, :pr:`PRNUM`)
+  reported instead of selecting every need or none (:issue:`1773`, :issue:`2355`, :pr:`2364`)
 
   A :ref:`filter string <filter_string>` selects the needs its value is true for, whatever the value's type and
   whichever tier answers it: ``eval`` refused a value that is not a boolean (``Filter did not evaluate to a
@@ -403,7 +403,7 @@ Bug fixes
 
 - 🐛 A filter in the portable filter language that fails on a need is reported once and the need left out, as in
   ``eval``, whatever the error: an error of the kind a failed filter raises, from a value's own method, ended the
-  build there (:issue:`2360`, :pr:`PRNUM`)
+  build there (:issue:`2360`, :pr:`2364`)
 
 - 🐛 The filter fast path answers as ``eval`` does where it did not: a list or a tuple of literals after ``in``
   compares a list field item by item (``tags not in ['a']`` raised there and was true in ``eval``), and a name no
@@ -601,7 +601,7 @@ Documentation
 .............
 
 - 📚 The :ref:`need_count` example counting the needs whose title is longer than ten characters is written in
-  the portable filter language, and counts them (:issue:`2359`, :pr:`PRNUM`)
+  the portable filter language, and counts them (:issue:`2359`, :pr:`2364`)
 
   It wrote a raw string, ``search(r"[\w\s]{10,}", title)``, which the portable language has not, and the role
   removed its backslashes, so the pattern it ran was ``[ws]{10,}`` and the example counted no need. It now writes
