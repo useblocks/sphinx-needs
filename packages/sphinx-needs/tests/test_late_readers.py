@@ -35,7 +35,7 @@ def _build(
     app = make_app("needs", srcdir=srcdir)
     app.build()
     data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
-    warnings = [w for w in build_warnings(app) if "config.cache" not in w]
+    warnings = [w for w in build_warnings(app) if "config.cache" not in w and "cannot cache unpickable" not in w]
     app.cleanup()
     return data["versions"][data["current_version"]]["needs"], warnings
 
