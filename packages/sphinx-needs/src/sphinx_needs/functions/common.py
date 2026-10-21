@@ -29,6 +29,8 @@ from sphinx_needs.derive import (
 )
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import (
+    _constant_filter_message,
+    _is_constant_filter,
     filter_needs_and_parts,
     filter_single_need,
 )
@@ -713,8 +715,11 @@ def links_from_filter(
         )
     candidates = _every_need_and_part(needs, include_parts=include_parts)
     config = NeedsSphinxConfig(app.config)
-    # a filter that does not parse fails the call
+    # a filter that does not parse fails the call, as one that is a constant does:
+    # every candidate would refuse it, and the call would link nothing, silently
     compiled = compile(filter, "<links_from_filter>", "eval")
+    if _is_constant_filter(filter):
+        raise ValueError(_constant_filter_message(filter))
     origin_docname = need["docname"] if need else None
     found: list[NeedItem | NeedPartItem] = []
     for candidate in candidates:
@@ -816,8 +821,11 @@ def links_from_match(
             raise ValueError(
                 f"links_from_match: the argument {key!r} names {name!r}{problem}"
             )
-    # a filter that does not parse fails the call
+    # a filter that does not parse fails the call, as one that is a constant does:
+    # every candidate would refuse it, and the call would link nothing, silently
     compiled = None if not filter else compile(filter, "<links_from_match>", "eval")
+    if filter and _is_constant_filter(filter):
+        raise ValueError(_constant_filter_message(filter))
     if need is None:
         return []
     matched = join_matches(

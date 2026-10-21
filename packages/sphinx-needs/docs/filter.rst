@@ -34,7 +34,7 @@ For **:status:**, **:tags:** and **:types:** values are separated by "**;**".
 
 The logic, if a need belongs to the final result list, is as followed::
 
-    status = (open OR in_progress) AND tags = (user OR login) AND types = (req OR spec) AND eval(filter) is True
+    status = (open OR in_progress) AND tags = (user OR login) AND types = (req OR spec) AND filter is true
 
 
 .. _option_status:
@@ -171,8 +171,29 @@ Finally, the following are available:
 * :ref:`re_search`, as Python function for performing searches with a regular expression
 * **needs** as :class:`.NeedsAndPartsListView` object, which contains all needs and need_parts.
 
-If your expression is valid and it's True, the related need is added to the filter result list.
-If it is invalid or returns False, the related need is not taken into account for the current filter.
+A filter is read for its truth: if your expression is valid and its value is true by Python's rules, whatever its type,
+the related need is added to the filter result list -- an empty string, an empty list, ``0`` and ``None`` are false,
+so ``tags`` selects the needs that have tags.
+If it is invalid or its value is false, the related need is not taken into account for the current filter.
+
+A filter that is a constant alone says nothing about a need, as its value is the same on every need:
+a literal (a string, bytes, a number with one sign or none, ``None`` or ``...``),
+a tuple, list, set or dict display that unpacks nothing, whatever it holds
+(``[1]``, ``{1}``, ``{}``, and so the trailing-comma typo ``status == 'open',``),
+a generator expression (``(t for t in tags)``, which is true whatever it would yield),
+or an f-string with no placeholder, parenthesised or not, after any leading spaces and tabs.
+``True`` and ``False`` are the exception: ``True`` selects every need, and ``False`` none.
+``--5`` and ``-True`` are arithmetic, and a display that unpacks (``[*tags]``), a list, set or dict comprehension
+or an f-string with a placeholder is read by its truth, as is a constant inside a larger filter (``True and owner``).
+
+The directives and roles that list or count needs -- :ref:`needlist`, :ref:`needtable` and the other views,
+:ref:`need_count`, a content line of :ref:`needpie` or :ref:`needbar`, :ref:`needextend` -- and
+:ref:`needs_warnings`, :ref:`needs_builder_filter`, the ``filter()`` of :ref:`needuml <needuml_jinja_filter>` and
+the dynamic function ``copy(filter=...)`` refuse a constant before it is evaluated, with one ``needs.filter`` warning,
+and select nothing.
+:ref:`needimport`, a predicate of :ref:`needs_fields`, ``links_from_filter`` and ``links_from_match`` refuse it the same
+way, with the warning they give for a filter that fails.
+Anywhere else, a constant fails the way a filter that cannot be evaluated fails there.
 
 .. dropdown:: Show example
 
@@ -365,20 +386,13 @@ so writing filters the first two take is recommended:
 3. **Python's** ``eval``, for every other string: it is evaluated need by need against a context holding every field of the need,
    which costs far more than the first two tiers, nearly all of it building that context.
 
-The three tiers give the same answers, with four exceptions:
+The three tiers give the same answers, with three exceptions:
 
-- **A filter whose value is not a boolean** (:issue:`1773`). The portable language reads an operand alone,
-  and under ``and``, ``or`` and ``not``, by Python's truthiness -- an empty string, an empty list, ``0`` and ``None``
-  are false -- so ``tags`` selects the needs that have tags, where ``eval`` refuses a filter whose value is not a
-  boolean (``Filter did not evaluate to a boolean``), as for ``status == 'open' and tags[0]``. A string that is in
-  the portable language since 9.1.0 and whose value is not a boolean -- ``len(tags)`` alone, ``title.lower()``,
-  ``True and owner``, a ``var.`` chain alone holding a string -- therefore selects by its truthiness, where it was
-  refused with that warning and selected nothing.
 - **A field or** :ref:`needs_filter_data` **key named** ``len``: ``eval`` calls it in ``len(x)``, the portable
   language calls Python's ``len``.
 - **The name of a Python builtin alone under** ``not``, ``and`` **or** ``or`` (``filter and status == 'open'``):
   ``eval`` reads the builtin, the portable language reports the name as undefined. As the whole filter
-  (``filter``), both refuse it.
+  (``filter``), the portable language reports it as undefined too, where ``eval`` would read the builtin, which is true.
 - ``search`` **and the** ``__dunder__`` **names** (``__name__``, ``__debug__``) **compared with a literal, or alone**
   (``search == 'x'``, ``__name__ == 'builtins'``, ``__debug__``): ``eval`` reads its own binding -- the regular
   expression function, the builtins module's attributes -- and the portable language reports the name as undefined,
@@ -396,8 +410,8 @@ quotes, ``.5``, ``1e+5``, ``-(1)`` or a name that is not ASCII. Each answers as 
 ``search()`` look-around, backreferences and ``{,n}`` are Python's own.
 
 To see which tier answers each filter of a project's view directives, and why one reaches ``eval``,
-enable :ref:`needs_debug_filters`: every record says ``tier`` (``"index"``, ``"fast"`` for the portable language, or ``"eval"``)
-and, for ``"eval"``, ``fallback_reason``, the construct that kept the string out of the portable language.
+enable :ref:`needs_debug_filters`: every record says ``tier`` (``"index"``, ``"fast"`` for the portable language, ``"eval"``,
+or ``"refused"`` for a constant) and, for ``"eval"``, ``fallback_reason``, the construct that kept the string out of the portable language.
 
 To guard against long running filters, the :ref:`needs_filter_max_time` configuration option can be used to set a maximum time limit for filter evaluation.
 Also see :ref:`needs_uml_process_max_time`, to guard against long running ``needuml`` / ``needarch`` processes containing :ref:`filters <needuml_jinja_filter>`.

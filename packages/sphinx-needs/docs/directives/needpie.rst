@@ -21,14 +21,10 @@ Each content line gets interpreted either as a static value or as a :ref:`filter
 The amount of found needs by the filter string is then used as value.
 
 A static value has to be written as a non-negative integer, like ``10``.
-Anything else, ``10.5`` and ``-5`` included, is read as a filter string.
-Those two then give a ``needs.filter`` warning and count as zero,
-because a filter is expected to evaluate to a boolean and a number does not.
-
-Not every non-boolean filter is rejected that way, though:
-an expression of the :ref:`portable filter language <filter_string_performance>`,
-such as the bare field name ``tags``, reads its operands by their truthiness,
-and counts the matching needs instead of warning.
+Anything else is read as a filter string, which counts the needs it is true for:
+a field name such as ``tags`` counts the needs whose ``tags`` are not empty, and ``True`` counts every need.
+A filter that is any other constant, such as ``10.5``, ``-5`` or ``'x'``, says nothing about a need,
+so it gives a ``needs.filter`` warning and counts zero.
 
 You can use :ref:`filter_func` with Python codes to define custom filters for ``needpie``.
 Give either content lines or ``:filter-func:``: if both are given,

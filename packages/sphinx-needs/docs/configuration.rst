@@ -3579,10 +3579,11 @@ or a filter in the configuration writes no record. A record holds:
 - ``needs_count`` and ``runtime``: how many needs it selected, and in how many seconds;
 - ``tier``: which of the :ref:`three tiers <filter_string_performance>` answered the ``:filter:``:
   ``"index"`` (from the indexes, a directive with no ``:filter:`` included), ``"fast"`` (the portable filter language)
-  or ``"eval"`` (Python's ``eval``);
+  or ``"eval"`` (Python's ``eval``), or ``"refused"`` for a filter that is a constant
+  (see :ref:`filter_string`), which no tier answers and which selects nothing;
 - ``fallback_reason``, for ``"eval"`` only: the construct that kept the string out of the portable language, a short
   name that stays the same across releases --
-  ``subscript``, ``comprehension``, ``arithmetic``, ``literal`` (a literal where the language has none, ``1`` alone),
+  ``subscript``, ``comprehension``, ``arithmetic``, ``literal`` (a literal where the language has none, ``1 == 1``),
   ``call:<function>`` (a call of a function the language lacks, or of one of its own in a shape it lacks: ``call:any``,
   ``call:len``; a method of a ``var.`` value or of ``c`` is named by its chain, ``call:var.build.strip``,
   ``call:c.in_namespace``), ``call`` (a call of anything else, ``x()()``), ``method:<name>`` (``method:strip``),

@@ -154,14 +154,15 @@ See :ref:`filter_string` for more information.
    | Specification needs: :need_count:`type=='spec'`
    | Open specification needs: :need_count:`type=='spec' and status=='open'`
    | Needs with tag *test*: :need_count:`'test' in tags`
-   | Needs with title longer 10 chars: :need_count:`search(r"[\w\s]{10,}", title)`
+   | Needs with title longer 10 chars: :need_count:`search("[\\\\w\\\\s]{10,}", title)`
    | All need_parts: :need_count:`is_part`
    | All needs containing need_parts: :need_count:`is_need and len(parts)>0`
 
 .. note::
 
-   If backslashes ``\`` are used inside the regex function ``search``, please make sure to double them as in python
-   one ``\`` needs to be represented by ``\\``.
+   If backslashes ``\`` are used inside the regex function ``search``, in a role the text loses one level of
+   backslashes before the filter is read, so a backslash of the pattern is written four times there
+   (``"\\\\d"``, as in the example above), or avoided with a character class (``"[.]"``).
 
 .. note::
 
