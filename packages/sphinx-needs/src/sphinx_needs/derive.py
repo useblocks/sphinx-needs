@@ -33,7 +33,7 @@ from __future__ import annotations
 
 import ast
 import enum
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, TypeGuard
 
@@ -285,7 +285,9 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
             return DeriveInvalid(
                 kind,
                 f"{prefix}: 'types' is not a role; a rule for some need types is "
-                "declared under derive_by_type",
+                "declared in those need types' own entries (a derive under the type's "
+                "fields or links), or under derive_by_type for a type an extension "
+                "adds",
             )
         return DeriveInvalid(kind, f"{prefix}: {unknown[0]!r} is not a role")
     if on_link and kind not in LINK_KINDS:
@@ -579,6 +581,8 @@ class DeriveProblem:
         and applies on every other type.
     :ivar type_reasons: For such a rule: each of those types with why it cannot be
         read there (the cycle closes along its own path on each).
+    :ivar beside: The keys refused beside ``derive`` (``copy`` among them) with the
+        rule as read: a finding replacing this one says them.
     """
 
     name: str
@@ -589,6 +593,7 @@ class DeriveProblem:
     part: str = "derive"
     on_types: tuple[str, ...] = ()
     type_reasons: tuple[tuple[str, str], ...] = ()
+    beside: tuple[str, ...] = ()
 
     @property
     def order(self) -> tuple[bool, str, int, str]:
@@ -714,8 +719,23 @@ def by_type_message(
 _UNION_DEAD_LINKS: Final = " (a union's dead links are its members')"
 
 
+def beside_clause(keys: Sequence[str]) -> str:
+    """What a finding of a ``derive`` adds for the keys refused beside it, when the
+    finding is another's: a cycle on some need types only, which leaves the rule
+    applying on the others, so the keys beside it are still refused."""
+    named = " and ".join(repr(key) for key in keys)
+    verb = "are" if len(keys) > 1 else "is"
+    union = _UNION_DEAD_LINKS if "allow_dead_links" in keys else ""
+    return f"; {named} cannot be given beside derive, and {verb} ignored{union}"
+
+
 def beside_by_type_message(
-    name: str, *, on_link: bool, keys: list[str], spelling: str | None = None
+    name: str,
+    *,
+    on_link: bool,
+    keys: list[str],
+    spelling: str | None = None,
+    entries: Sequence[str] = (),
 ) -> str:
     """The ``needs.derive_invalid`` warning for a key beside ``derive_by_type`` alone:
     ``predicates``, a ``default`` that is not a literal, or an ``allow_dead_links``
@@ -724,6 +744,9 @@ def beside_by_type_message(
     :param spelling: The need type's entry the key came from, if it did (a link type
         need types alone declare, whose rules are folded into ``derive_by_type``): the
         entry is named, and the key is beside its ``derive``.
+    :param entries: The need types' entries the rules come from, when no
+        ``derive_by_type`` is written (their rules are folded into it): the key is
+        beside their rules, which are named.
     """
     named = " and ".join(repr(key) for key in keys)
     verb = "are" if len(keys) > 1 else "is"
@@ -738,9 +761,14 @@ def beside_by_type_message(
         if "default" in keys
         else ""
     )
+    beside = (
+        f"the rules of need types' entries ({', '.join(entries)})"
+        if entries
+        else "derive_by_type"
+    )
     return (
         f"Invalid derive of {_what(on_link)} {name!r}: {named} cannot be given beside "
-        f"derive_by_type, and {verb} ignored{union}{why}; the rules apply"
+        f"{beside}, and {verb} ignored{union}{why}; the rules apply"
     )
 
 

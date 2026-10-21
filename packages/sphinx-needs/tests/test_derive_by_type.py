@@ -158,14 +158,18 @@ COPY = DeriveRule(kind="copy", field="hours")
                 "req": DeriveInvalid(
                     "copy",
                     "kind 'copy': 'types' is not a role; a rule for some need types "
-                    "is declared under derive_by_type",
+                    "is declared in those need types' own entries (a derive under the "
+                    "type's fields or links), or under derive_by_type for a type an "
+                    "extension adds",
                 )
             },
             [
                 (
                     "derive_by_type.req",
                     "kind 'copy': 'types' is not a role; a rule for some need types "
-                    "is declared under derive_by_type",
+                    "is declared in those need types' own entries (a derive under the "
+                    "type's fields or links), or under derive_by_type for a type an "
+                    "extension adds",
                 )
             ],
             id="entry-invalid",
@@ -577,7 +581,8 @@ def test_the_load_checks_in_their_order(test_app: Any) -> None:
         _invalid(
             "types_role",
             "kind 'sum': 'types' is not a role; a rule for some need types is "
-            "declared under derive_by_type",
+            "declared in those need types' own entries (a derive under the type's "
+            "fields or links), or under derive_by_type for a type an extension adds",
         ),
         _by_type("unknown_type", "'epic' is not a need type; the entry is ignored"),
         _beside("variant_default", "'default'", default=True),
@@ -1605,3 +1610,78 @@ def test_a_rule_result_is_checked_against_the_field_not_the_type(
         need_id: [(v["subtype"], v["details"]["field"]) for v in violations]
         for need_id, violations in report["validation_warnings"].items()
     } == {"REQ_1": [("field_fail", "title_copy")]}
+
+
+ENTRY_RULES_TOML = """\
+[needs.fields.x]
+schema = { type = "string" }
+default = "[[copy('title')]]"
+predicates = [["type == 'spec'", "s"]]
+
+[needs.fields.y]
+schema = { type = "string" }
+predicates = [["type == 'spec'", "s"]]
+derive_by_type.spec = { kind = "copy", field = "title" }
+
+[needs.links.tl]
+allow_dead_links = true
+
+[needs.links.tl2]
+allow_dead_links = true
+derive_by_type.spec = { kind = "union", fields = ["links"] }
+
+[needs.types.req.fields.x]
+derive = { kind = "copy", field = "title" }
+
+[needs.types.req.fields.y]
+derive = { kind = "copy", field = "title" }
+
+[needs.types.req.links.tl]
+derive = { kind = "union", fields = ["links"] }
+
+[needs.types.req.links.tl2]
+derive = { kind = "union", fields = ["links"] }
+
+[needs.types.spec]
+
+[needs.types.sub]
+title = "Sub"
+prefix = "SUB_"
+inherits = "req"
+
+[needs.types.sub2]
+title = "Sub 2"
+prefix = "SUB2_"
+inherits = "req"
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_toml_project(ENTRY_RULES_TOML, ".. req:: One\n   :id: REQ_1\n")],
+    indirect=True,
+)
+def test_a_key_beside_the_rules_of_entries_names_them(test_app: Any) -> None:
+    """A key refused beside rules that come only from need types' entries names those
+    entries, not a ``derive_by_type`` the configuration does not write, each once
+    (``sub`` and ``sub2`` inherit ``req``'s rule, folded in for each of them); beside a
+    written ``derive_by_type`` (``y``, ``tl2``, which a need type's entry adds to) it
+    names that table, as before."""
+    app = test_app
+    app.build()
+    assert [w for w in _warnings(app) if "derive_invalid" in w] == [
+        "WARNING: Invalid derive of field 'x': 'default' and 'predicates' cannot be "
+        "given beside the rules of need types' entries "
+        "(needs_types['req'].fields['x'].derive), and are ignored; the default of "
+        "the need types without a rule must be a literal value; the rules apply "
+        "[needs.derive_invalid]",
+        "WARNING: Invalid derive of field 'y': 'predicates' cannot be given beside "
+        "derive_by_type, and is ignored; the rules apply [needs.derive_invalid]",
+        "WARNING: Invalid derive of link type 'tl': 'allow_dead_links' cannot be "
+        "given beside the rules of need types' entries "
+        "(needs_types['req'].links['tl'].derive), and is ignored (a union's dead "
+        "links are its members'); the rules apply [needs.derive_invalid]",
+        "WARNING: Invalid derive of link type 'tl2': 'allow_dead_links' cannot be "
+        "given beside derive_by_type, and is ignored (a union's dead links are its "
+        "members'); the rules apply [needs.derive_invalid]",
+    ]

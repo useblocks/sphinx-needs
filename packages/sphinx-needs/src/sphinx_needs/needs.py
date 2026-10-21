@@ -36,6 +36,7 @@ from sphinx_needs.builder import (
 from sphinx_needs.card_layouts import compile_card_layouts
 from sphinx_needs.config import (
     _NEEDS_CONFIG,
+    DEFAULT_NEED_TYPES,
     LinkOptionsType,
     NeedLinksConfig,
     NeedsSphinxConfig,
@@ -61,6 +62,7 @@ from sphinx_needs.derive import (
     DeriveProblem,
     DeriveRule,
     beside_by_type_message,
+    beside_clause,
     beside_message,
     by_type_message,
     check_derive_rules,
@@ -963,13 +965,24 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
        ``directive`` inside the value that differs from the key is reported and the key
        used;
     4. an entry whose ``title`` or ``prefix`` is missing or not a string is dropped (an
-       empty string is valid);
+       empty string is valid), but for a *bare* entry, which gives neither key: one
+       naming a default need type (:data:`~sphinx_needs.config.DEFAULT_NEED_TYPES`)
+       is that type, narrowed, taking the ``title``, ``prefix``, ``color`` and
+       ``style`` it leaves out (or removes below); one naming no default type is
+       dropped;
     5. a ``color`` or ``style`` that is not a string, an ``inherits`` that is not a
        non-empty string, and a ``fields`` or ``links`` that is not a mapping, are
        removed from the entry;
     6. a key outside :data:`NEED_TYPE_KEYS` is removed from the entry;
     7. a directive declared by more than one entry (list shape only) resolves to the
        last of them, at its own position, the others removed.
+
+    The default need types are kept when the value has entries and none of them gives a
+    ``title`` or a ``prefix`` (all are bare, or are dropped): the list is then the
+    default types, in their order, each replaced by the bare entry naming it. Once an
+    entry gives either key, the list is the entries kept, as given, and a bare entry
+    naming a default type stands at its own position. A value with no entries is no
+    types.
 
     In ``fields`` and ``links``, an entry that is not a mapping is removed, and so is
     a key of an entry outside :data:`NEED_TYPE_FIELD_KEYS` (fields) or
@@ -1011,6 +1024,9 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
     findings: list[str] = []
     #: the entries kept, each with its position (1-based)
     kept: list[tuple[int, dict[str, Any]]] = []
+    defaults = {need_type["directive"]: need_type for need_type in DEFAULT_NEED_TYPES}
+    #: whether an entry gives a title or a prefix: the default types are then replaced
+    declares = False
     for position, (where, key, entry) in enumerate(entries, start=1):
         if not isinstance(entry, Mapping):
             findings.append(
@@ -1018,6 +1034,7 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
                 "the entry is ignored"
             )
             continue
+        declares = declares or "title" in entry or "prefix" in entry
         if not is_table:
             directive = entry.get("directive")
             if "directive" not in entry:
@@ -1047,6 +1064,12 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
             resolved = {"directive": key}
             resolved.update((k, v) for k, v in entry.items() if k != "directive")
 
+        # a bare entry naming a default type narrows it: it is filled below
+        default = (
+            defaults.get(resolved["directive"])
+            if "title" not in resolved and "prefix" not in resolved
+            else None
+        )
         required = [
             f"no {name!r}"
             if name not in resolved
@@ -1054,7 +1077,7 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
             for name in ("title", "prefix")
             if not isinstance(resolved.get(name), str)
         ]
-        if required:
+        if required and default is None:
             findings.append(
                 f"{named} has {' and '.join(required)}; the entry is ignored"
             )
@@ -1074,6 +1097,9 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
                 resolved[table] = _normalise_declarations(
                     named, table, cast(Mapping[Any, Any], resolved[table]), findings
                 )
+        if default is not None:
+            # the keys the entry leaves out, or that were removed, are the default's
+            resolved = {**default, **resolved}
         kept.append((position, resolved))
 
     # a duplicate is possible in the list shape only (a mapping cannot hold a key
@@ -1089,11 +1115,20 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
                 f"needs_types declares the directive {directive!r} {times}, at entries "
                 f"{at}; the last entry is used"
             )
-    return [
+    need_types = [
         cast(NeedType, resolved)
         for position, resolved in kept
         if positions[resolved["directive"]][-1] == position
-    ], findings
+    ]
+    if entries and not declares:
+        # every entry is bare (or dropped): the default types are kept, each narrowed
+        # in place by the entry naming it
+        narrowed = {need_type["directive"]: need_type for need_type in need_types}
+        need_types = [
+            narrowed.get(directive) or default.copy()
+            for directive, default in defaults.items()
+        ]
+    return need_types, findings
 
 
 def resolve_need_types(_app: Sphinx, config: Config) -> None:
@@ -2058,6 +2093,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 else parse_derive(field_data.derive, on_link=False)
             )
             raw_by_type = field_data.derive_by_type
+            entries: dict[str, str] = {}
             if rules := field_rules.get(name):
                 raw_by_type, entries = _folded_rules(
                     name, raw_by_type, rules, f"{field_data.source}[{name!r}]"
@@ -2124,7 +2160,15 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         DeriveProblem(
                             name,
                             False,
-                            beside_by_type_message(name, on_link=False, keys=beside),
+                            beside_by_type_message(
+                                name,
+                                on_link=False,
+                                keys=beside,
+                                # the rules come only from need types' entries
+                                entries=()
+                                if field_data.derive_by_type is not None
+                                else list(dict.fromkeys(entries.values())),
+                            ),
                             part="beside",
                         )
                     )
@@ -2166,6 +2210,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
 
     #: the declarations writing ``copy = true``, each deprecated
     copy_declarations: list[tuple[str, str]] = []
+    #: per link type whose ``allow_dead_links`` is refused beside unions as read: the
+    #: findings as read, and those of the key kept, should a union not be readable
+    dead_refusals: dict[str, tuple[list[DeriveProblem], list[DeriveProblem]]] = {}
     for name, (link, config_source) in links.items():
         try:
             # create link schema, with defaults if not defined
@@ -2236,7 +2283,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             authored = derive is None and by_type is None
             # a union reports no dead link of its own, so where every rule is one its
             # allow_dead_links would say nothing: reported beside it, below, and
-            # ignored; beside another rule it is that rule's
+            # ignored; beside another rule it is that rule's. Decided here from the
+            # rules as read, and again from the rules as checked, where a union that
+            # cannot be read is no union and the key is kept
+            # (_report_derive_problems)
             rules = [r for r in (derive, *(by_type or {}).values()) if r is not None]
             dead_beside = (
                 "allow_dead_links" in link and bool(rules) and all(map(is_union, rules))
@@ -2279,24 +2329,32 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 derive_by_type=by_type,
             )
             if derive is not None:
-                derive_problems.extend(
-                    _derive_parse_problems(
-                        name,
-                        True,
-                        derive,
-                        beside=[
-                            key
-                            for key, beside_key in (
-                                ("default", "default" in link),
-                                ("predicates", "predicates" in link),
-                                ("target_types", given_targets),
-                                ("allow_dead_links", dead_beside),
-                            )
-                            if beside_key
-                        ],
-                        copied=bool(link.get("copy", False)),
+                beside = [
+                    key
+                    for key, beside_key in (
+                        ("default", "default" in link),
+                        ("predicates", "predicates" in link),
+                        ("target_types", given_targets),
+                        ("allow_dead_links", dead_beside),
                     )
+                    if beside_key
+                ]
+                copied = bool(link.get("copy", False))
+                read = _derive_parse_problems(
+                    name, True, derive, beside=beside, copied=copied
                 )
+                derive_problems.extend(read)
+                if dead_beside:
+                    dead_refusals[name] = (
+                        read,
+                        _derive_parse_problems(
+                            name,
+                            True,
+                            derive,
+                            beside=beside[:-1],  # allow_dead_links is the last
+                            copied=copied,
+                        ),
+                    )
             elif by_type is not None:
                 link_field, refused = _with_off_type_default(
                     link_field, link.get("default"), config_source
@@ -2311,41 +2369,44 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     )
                     if refused_key
                 ]
-                if beside:
-                    # a link type need types alone declare takes allow_dead_links from
-                    # its first root, whose own entry gives the first rule
-                    spelling = (
-                        next(
-                            (
-                                e.removesuffix(".derive")
-                                for _, e, own in type_rules.values()
-                                if own
-                            ),
-                            None,
-                        )
-                        if config_source == "needs_types"
-                        else None
+                # a link type need types alone declare takes allow_dead_links from its
+                # first root, whose own entry gives the first rule
+                spelling = (
+                    next(
+                        (
+                            e.removesuffix(".derive")
+                            for _, e, own in type_rules.values()
+                            if own
+                        ),
+                        None,
                     )
-                    derive_problems.append(
-                        DeriveProblem(
-                            name,
-                            True,
-                            beside_by_type_message(
-                                name, on_link=True, keys=beside, spelling=spelling
-                            ),
-                            part="beside",
-                        )
-                    )
-                elif link.get("copy", False):
-                    derive_problems.append(
-                        DeriveProblem(
-                            name,
-                            True,
-                            copy_on_derived_message(
-                                name, described=link_field.describe_derived()
-                            ),
-                            part="beside",
-                        )
+                    if config_source == "needs_types"
+                    else None
+                )
+                # the rules come only from need types' entries
+                entry_rules = (
+                    list(dict.fromkeys(entries.values()))
+                    if "derive_by_type" not in link
+                    else []
+                )
+                read = _beside_by_type_problems(
+                    link_field,
+                    beside,
+                    spelling=spelling,
+                    entries=entry_rules,
+                    copied=link.get("copy", False),
+                )
+                derive_problems.extend(read)
+                if dead_beside:
+                    dead_refusals[name] = (
+                        read,
+                        _beside_by_type_problems(
+                            link_field,
+                            beside[:-1],  # allow_dead_links is the last
+                            spelling=spelling,
+                            entries=entry_rules,
+                            copied=link.get("copy", False),
+                        ),
                     )
             else:
                 if "default" in link:
@@ -2410,7 +2471,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             declared=_declared_defaults(needs_config, registered, links, name),
         )
 
-    _report_derive_problems(schema, derive_problems, need_types, spellings)
+    _report_derive_problems(
+        schema, derive_problems, need_types, spellings, dead_refusals
+    )
 
     # ``links`` takes no target types while a link type copies into it
     if (
@@ -2620,12 +2683,15 @@ def _derive_parse_problems(
                 invalid_message(name, on_link=on_link, reason=derive.reason),
             )
         ]
+    # copy is refused too: said with the others by a finding replacing this one
+    refused = (*beside, "copy") if copied else tuple(beside)
     if beside:
         return [
             DeriveProblem(
                 name,
                 on_link,
                 beside_message(name, on_link=on_link, rule=derive, keys=beside),
+                beside=refused,
             )
         ]
     if copied:
@@ -2634,6 +2700,41 @@ def _derive_parse_problems(
                 name,
                 on_link,
                 copy_on_derived_message(name, described=derive.describe()),
+                beside=refused,
+            )
+        ]
+    return []
+
+
+def _beside_by_type_problems(
+    link_field: LinkSchema,
+    beside: list[str],
+    *,
+    spelling: str | None,
+    entries: Sequence[str],
+    copied: bool,
+) -> list[DeriveProblem]:
+    """The finding of the keys beside a link type's ``derive_by_type`` alone, or of its
+    ``copy = true``: one, or none."""
+    name = link_field.name
+    if beside:
+        return [
+            DeriveProblem(
+                name,
+                True,
+                beside_by_type_message(
+                    name, on_link=True, keys=beside, spelling=spelling, entries=entries
+                ),
+                part="beside",
+            )
+        ]
+    if copied:
+        return [
+            DeriveProblem(
+                name,
+                True,
+                copy_on_derived_message(name, described=link_field.describe_derived()),
+                part="beside",
             )
         ]
     return []
@@ -2644,6 +2745,8 @@ def _report_derive_problems(
     read_problems: list[DeriveProblem],
     need_types: Mapping[str, str],
     spellings: Mapping[tuple[bool, str, str], str] | None = None,
+    dead_refusals: Mapping[str, tuple[list[DeriveProblem], list[DeriveProblem]]]
+    | None = None,
 ) -> None:
     """Check the rules against the complete schema, and report every finding.
 
@@ -2657,6 +2760,13 @@ def _report_derive_problems(
     link types, each by name; within a name, ``derive``, the ``derive_by_type`` table,
     its entries by need type, and a key beside ``derive_by_type``. A finding of a rule
     a need type's entry gives names that entry (``spellings``), where the rule is read.
+
+    ``allow_dead_links`` is refused beside a link type every rule of which is a union
+    (``dead_refusals``: the findings as read, and those without the refusal). That is
+    decided again from the rules as checked: a union that cannot be read is no union,
+    so beside one the key is kept, and its refusal withdrawn. A ``derive`` cycling on
+    some need types only is still a union on the others, and its markers there do not
+    count.
     """
     checked = {
         (p.on_link, p.name, p.part): p
@@ -2691,13 +2801,38 @@ def _report_derive_problems(
                 )
             target = dataclasses.replace(target, derive_by_type=by_type)
         schema.replace_field(target)
+    for name, (refused, kept) in (dead_refusals or {}).items():
+        link = schema.global_declaration(name)
+        assert isinstance(link, LinkSchema), "a refusal is of a link type"
+        rules = [
+            rule
+            for rule in (link.derive, *(link.derive_by_type or {}).values())
+            if rule is not None
+            and not (isinstance(rule, DeriveInvalid) and rule.fallback)
+        ]
+        if rules and all(map(is_union, rules)):
+            continue
+        schema.replace_field(dataclasses.replace(link, allow_dead_links=True))
+        withdrawn = {id(problem) for problem in refused}
+        read_problems = [
+            *(p for p in read_problems if id(p) not in withdrawn),
+            *kept,
+        ]
     core = sorted((p for p in read_problems if p.core), key=lambda p: p.name)
     findings = {
         (p.on_link, p.name, p.part): _with_table_text(schema, p)
         for p in read_problems
         if not p.core
     }
+    read = dict(findings)
     findings.update(checked)
+    # a derive cycling on some need types only still applies on the others, so the
+    # keys refused beside it still are: its cycle's finding, replacing theirs, says so
+    for key, problem in checked.items():
+        if problem.on_types and (beside := read.get(key)) is not None and beside.beside:
+            findings[key] = dataclasses.replace(
+                problem, message=problem.message + beside_clause(beside.beside)
+            )
     if (copied := copy_problem(schema)) is not None and (
         True,
         "links",

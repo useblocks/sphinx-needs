@@ -24,7 +24,18 @@
 #   - a case declares ITS OWN need types, each with a `title` and a `prefix`: a
 #     `needs_types` that is given replaces the default list, so no case relies on `req` or
 #     `spec` existing unless it declares them. The cases use the mapping shape,
-#     `[needs.types.<t>]`, but one, which pins the list shape, `[[needs.types]]`
+#     `[needs.types.<t>]`, but one, which pins the list shape, `[[needs.types]]`. The
+#     exception is the section "an entry naming a default type", whose cases pin it: an
+#     entry naming a default type (`req`, `spec`, `impl`, `test`) with neither a `title`
+#     nor a `prefix` narrows that default, taking the `title`, `prefix`, `color` and
+#     `style` it leaves out, its own `fields`, `links` and `inherits` applying; a
+#     `needs_types` none of whose entries gives a `title` or a `prefix` keeps the default
+#     list, each such entry narrowing its default in place; once an entry gives either,
+#     the list given replaces the defaults, a bare entry naming a default type being that
+#     default, filled, at its own position. A bare entry naming no default type is
+#     ignored (each tool's configuration finding, not compared) and declares nothing; an
+#     entry giving one of `title` and `prefix` but not the other is refused, as before.
+#     Those cases name no `need` type: it is a default type of sphinx-needs only
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`)
 #   - the agreement rule: a type's declaration of a field starts from the field's own
 #     declaration and takes its ancestors' from the root down, then its own; each must
@@ -4931,4 +4942,101 @@ all_links = ["REQ_1"]
 [[case.expect.findings]]
 code = "type_conflict"
 field = "all_links"
+type = "req"
+
+# --- an entry naming a default type ---------------------------------------------------
+
+[[case]]
+name = "default-type-entry-narrows-it"
+why = "an entry naming a default type with no title and no prefix narrows that default: it takes the default's title and prefix, its rule applies, and the other default types are kept"
+config = '''
+[needs.fields.x]
+schema = { type = "string" }
+
+[needs.types.req.fields.x]
+derive = { kind = "copy", field = "title" }
+'''
+source = '''
+.. req:: Narrowed
+   :id: REQ_1
+
+.. spec:: Still a default type
+   :id: SPEC_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+type_name = "Requirement"
+x = "Narrowed"
+[case.expect.needs.SPEC_1]
+type_name = "Specification"
+[case.expect.nulls]
+SPEC_1 = ["x"]
+
+[[case]]
+name = "default-type-entry-beside-a-declared-type"
+why = "beside an entry declaring a type, the default list is replaced as ever: a bare entry naming a default type is that default, filled, kept at its position, and the other defaults do not exist"
+config = '''
+[needs.types.story]
+title = "Story"
+prefix = "ST_"
+
+[needs.types.req]
+color = "#000000"
+'''
+source = '''
+.. story:: Declared
+   :id: STORY_1
+
+.. req:: Narrowed
+   :id: REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.STORY_1]
+type_name = "Story"
+[case.expect.needs.REQ_1]
+type_name = "Requirement"
+
+[[case]]
+name = "bare-entry-of-no-default-type-is-ignored"
+why = "a bare entry naming no default type is ignored (each tool's configuration finding, not compared), and declares nothing: the default types are kept"
+config = '''
+[needs.fields.x]
+schema = { type = "string" }
+
+[needs.types.story.fields.x]
+derive = { kind = "copy", field = "title" }
+'''
+source = '''
+.. req:: A default type
+   :id: REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+type_name = "Requirement"
+[case.expect.nulls]
+REQ_1 = ["x"]
+
+[[case]]
+name = "default-type-entry-beside-a-declared-type-has-no-other-default"
+why = "beside an entry declaring a type, the other default types do not exist: a bare entry naming a default type that inherits another default type inherits no need type (type_inherits), and is that default, filled"
+config = '''
+[needs.types.story]
+title = "Story"
+prefix = "ST_"
+
+[needs.types.req]
+inherits = "spec"
+'''
+source = '''
+.. req:: Narrowed
+   :id: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+type_name = "Requirement"
+[[case.expect.findings]]
+code = "type_inherits"
 type = "req"

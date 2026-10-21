@@ -259,6 +259,29 @@ By default it is set to:
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`__ for more.
 * **inherits**, **fields**, **links** (optional): the fields and link types the type declares anew for its needs, see :ref:`needs_types_fields`.
 
+A configured ``needs_types`` replaces the default types once one of its entries gives a ``title`` or a ``prefix``.
+An entry naming a default type (``req``, ``spec``, ``impl``, ``test`` or ``need``) with neither of the two
+is that type, narrowed: it takes the ``title``, ``prefix``, ``color`` and ``style`` it leaves out,
+and its own ``inherits``, ``fields`` and ``links`` apply.
+A ``needs_types`` made only of such entries keeps every default type, in the order above, each narrowed by its entry,
+which is how a default type gets a field declaration or a rule of its own:
+
+.. code-block:: toml
+
+   [needs.fields.linked]
+   schema = { type = "integer" }
+
+   # the default type req, counting its links; spec, impl, test and need are kept
+   [needs.types.req.fields.linked]
+   derive = { kind = "count", over = "links" }
+
+Beside an entry giving a ``title`` or a ``prefix``, the list given is the project's need types, as without such entries:
+an entry naming a default type with neither is that default, filled, at its own position, and the other defaults do not exist.
+A bare entry is filled from the default type, never from another entry naming the same directive:
+in a list naming the directive twice, the later entry is used, as for any directive declared twice (and reported).
+A need type an extension or a service adds is not narrowed this way:
+an entry for it gives its ``title`` and ``prefix``, which then replace the extension's.
+
 Every one of these items is stored on, or decides, the needs of the type,
 so an incremental build after a change to ``needs_types`` re-reads every document, as one after a change to :ref:`needs_fields` does,
 and so does one after a change to a need type added by an extension (below),
@@ -267,6 +290,8 @@ or after a built-in :ref:`GitHub service <github_service>` is configured or remo
 .. versionchanged:: 9.1.0
 
    ``needs_types`` can also be a dictionary keyed by directive name, and is validated when the configuration is read.
+   An entry naming a default type with neither ``title`` nor ``prefix`` narrows that type,
+   and a ``needs_types`` made only of such entries keeps the default types.
 
    A change to ``needs_types`` re-reads every document.
    Before, the needs of the documents an incremental build did not re-read kept what the previous need types gave them,
@@ -332,6 +357,8 @@ Otherwise each problem is a ``needs.config`` warning, and the build goes on with
 * an entry that names no directive is ignored: in the list, a ``directive`` that is missing or not a non-empty string; in the dictionary, an empty key.
   A ``directive`` inside a dictionary entry that differs from its key is reported, and the key is used;
 * an entry whose ``title`` or ``prefix`` is missing or not a string is ignored: its type does not exist;
+  but an entry giving neither that names a default type narrows that type (above),
+  and one giving neither that names no default type declares nothing, so on its own it does not replace the default types;
 * a ``color`` or ``style`` that is not a string, an ``inherits`` that is not a non-empty string,
   and a ``fields`` or ``links`` that is not a dictionary, are ignored, and the type kept;
 * a key other than ``directive``, ``title``, ``prefix``, ``color``, ``style``, ``inherits``, ``fields`` and ``links`` is ignored, and the type kept;
@@ -952,8 +979,9 @@ Each configured link can define:
      ``blocks`` were copied; a dead link of ``blocks`` is reported once, under ``blocks`` and as it allows dead links,
      where the copy reported it under ``links`` too;
      and a ``blocks`` filled by one of your own :ref:`functions <needs_functions>`, or by a call whose filter cannot be
-     read (a ``links_from_filter`` whose filter names ``needs``), cannot be read by the union
-     (``needs.derive_scope``, the union holding no links), where the copy copied the call: keep ``copy`` for it.
+     read (a ``links_from_filter`` whose filter names ``needs``), is read by a union computed after it,
+     among your own functions in need-id order, so a built-in function or rule reading ``all_links`` in the link
+     fields' step cannot wait for it, and is reported (``needs.derive_scope``).
      The readers that take only ``links`` (:ref:`needs_derive_union`) read no union in this release:
      a project that relies on them keeps ``copy`` until 10.0, and the warning with it
      (``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation).

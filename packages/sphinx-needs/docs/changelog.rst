@@ -41,7 +41,7 @@ Improvements
   (:issue:`2346`, :pr:`2350`)
 
 - ✨ A derived union of link types: a link type deriving ``union`` holds the links of the link types it names
-  (:issue:`2279`, :pr:`2343`)
+  (:issue:`2279`, :pr:`2343`, :pr:`2353`)
 
   ``derive = { kind = "union", fields = ["links", "blocks", "tests"] }`` on a :ref:`needs_links` entry (or
   ``[needs.links.<l>]``, a need type's ``links`` entry, ``derive_by_type``) gives each need the links of
@@ -53,11 +53,18 @@ Improvements
   needextend adds to a member is in it, closed to authors, left out of fingerprints and not computed on imported
   or external needs, as every derived link type. Dead links and link conditions are its members' where its rule
   computed it: a union reports neither, a dead link of a member that allows dead links makes no dead link forbidden
-  (and is drawn as allowed), and an ``allow_dead_links`` on a link type all of whose rules are unions is refused; on
+  (and is drawn as allowed), and an ``allow_dead_links`` on a link type all of whose rules are unions is refused
+  (beside a union that cannot be read, for a member or on a cycle, which is no union, it is kept; beside one cycling
+  on some need types only, still a union on the others, it is refused, as the cycle's finding says); on
   an imported need, which keeps its file's union, it is checked as any link type. ``needs.derive_dense`` does not
   count its list. A member filled by one of the project's own functions (``needs_functions``), or by a call whose
-  filter cannot be read (a ``links_from_filter`` whose filter names ``needs``), cannot be read by a union in this
-  release (``needs.derive_scope``). It is what
+  filter cannot be read (a ``links_from_filter`` whose filter names ``needs``), is computed before the union: those run
+  after the built-in functions, in need-id order, and the union right after the last such member (a union of that
+  union after that). Those computed after the union read it complete, those before it empty -- such a call whose
+  filter names the union is one ``needs.derive_scope``, as is a ``copy`` reading it, when it runs; the project's own
+  functions, a read through ``needs`` and one of ``current_need`` by a key that is not written out are not reported
+  -- and a built-in function or rule of that step reading such a union cannot wait for it, and is one
+  ``needs.derive_scope`` (a ``links`` rule on every need computing it). It is what
   ``copy = true`` gave, declared (see *Deprecations*); see :ref:`needs_derive_union` for how to read it in place of
   ``links``. The derive conformance corpus pins it (``union-*``), as does the field-declaration corpus for a union
   declared on need types.
@@ -152,19 +159,25 @@ Improvements
   validated when the configuration is read, and what cannot be used is a ``needs.config`` warning
   instead of a traceback or silence: an entry that is not a dictionary, names no directive, or
   lacks a string ``title`` or ``prefix`` is ignored (a missing ``title`` used to end the build with
-  a ``KeyError``); a ``color`` or ``style`` that is not a string, and an unknown key, are ignored
-  and the type kept -- the unknown key an old project most likely still carries is ``content``,
-  which sphinx-needs 1.0 read and :pr:`610` stopped reading; a value of neither shape stops the
+  a ``KeyError``), but for one naming a default type with neither ``title`` nor ``prefix``, which is
+  that type, narrowed: it takes the ``title``, ``prefix``, ``color`` and ``style`` it leaves out, and a
+  ``needs_types`` none of whose entries gives a ``title`` or a ``prefix`` keeps the default types, each
+  narrowed by its entry (an entry naming no default type declares nothing); a ``color`` or
+  ``style`` that is not a string, and an unknown key, are ignored and the type kept -- the unknown
+  key an old project most likely still carries is ``content``, which sphinx-needs 1.0 read and
+  :pr:`610` stopped reading; a value of neither shape stops the
   build with an error. A directive declared twice in the list is now its last entry on every
   path -- a need of :ref:`list2need` took the first entry's prefix -- and is listed once in the
   legends and in :ref:`needreport`, and, when it was the first type, a :ref:`needservice` datum
   without a type takes the type that now comes first; the duplicate is reported, where Sphinx
-  used to warn that the directive was already registered (:issue:`2262`, :pr:`2276`)
+  used to warn that the directive was already registered (:issue:`2262`, :pr:`2276`, :pr:`2353`)
 
 - ✨ A need type declares its fields: an entry of :ref:`needs_types` may carry ``fields`` and ``links``,
   each a dictionary from a field or link type to the type's declaration of it (``description``,
   ``schema``, ``nullable``, ``default``, ``predicates``; a link type is not nullable), and ``inherits``,
-  one parent whose declarations the type starts from (:ref:`needs_types_fields`). A declaration narrows
+  one parent whose declarations the type starts from (:ref:`needs_types_fields`); a default type
+  declares its own in an entry naming it with neither ``title`` nor ``prefix``, which keeps the other
+  default types (``[needs.types.req.fields.x]`` alone). A declaration narrows
   the one before it -- the field's own, then each ancestor's -- and what cannot be used is reported and
   ignored as a whole, the build going on: ``needs.type_inherits`` for an ``inherits`` naming no need type
   or on a cycle (every type on it), ``needs.type_conflict`` for a declaration naming no field of its
@@ -173,7 +186,7 @@ Improvements
   deleting a field now empties it as the need's type declares it (``None`` where nullable on that type,
   else the empty value of its type). The per-type declarations of :issue:`2269`, after the schema's
   two tiers (:pr:`2275`) and the ``needs_types`` table (:pr:`2276`)
-  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2278`)
+  (`discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`__; :pr:`2278`, :pr:`2353`)
 
 - ✨ A field may be declared on the need types that have it alone: a ``fields`` entry of
   :ref:`needs_types` naming no field :ref:`needs_fields`, an extension or a service declares, and no
@@ -334,7 +347,8 @@ Deprecations
 ............
 
 - ⚠️ ``copy = true`` on a link type is deprecated, and is removed in 10.0: a link type deriving the
-  :ref:`union <needs_derive_union>` of ``links`` and the copying link types replaces it (:issue:`2279`, :pr:`2343`)
+  :ref:`union <needs_derive_union>` of ``links`` and the copying link types replaces it
+  (:issue:`2279`, :pr:`2343`, :pr:`2353`)
 
   The links are still copied into ``links``. Each declaration writing ``copy = true`` -- a :ref:`needs_links` or
   :ref:`needs_extra_links` entry, a ``[needs.links.<l>]`` table, a need type's entry of a link type need types alone
@@ -342,14 +356,12 @@ Deprecations
   where the key is already refused (beside a derive rule, in a need type's entry of a link type declared outright).
   A union differs from the copies in three ways: a link a needextend adds to a member is in it, a need from
   :ref:`needimport` or :ref:`needs_external_needs` keeps the union its needs.json carries rather than copying, and a
-  dead link is reported once, at the member. Two cases keep ``copy`` until 10.0, with the warning
-  (``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation): a link type filled by
-  one of the project's own functions (``needs_functions``, such as sphinx-test-reports' ``tr_link``) or by a call
-  whose filter cannot be read (a ``links_from_filter`` whose filter names ``needs``), which a union cannot read in
-  this release, and a project relying on :ref:`check_linked_values <check_linked_values>`,
-  :ref:`calc_sum <calc_sum>` with ``links_only`` or the ``need_outgoing`` and ``need_incoming`` roles written in a
-  need, which read only ``links``. Where ``links`` is derived the copy copies nothing, and the warning says to
-  remove it. The documentation's own configuration no longer sets ``copy``.
+  dead link is reported once, at the member. One case keeps ``copy`` until 10.0, with the warning
+  (``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation): a project relying on
+  :ref:`check_linked_values <check_linked_values>`, :ref:`calc_sum <calc_sum>` with ``links_only`` or the
+  ``need_outgoing`` and ``need_incoming`` roles written in a need, which read only ``links``. Where ``links`` is
+  derived the copy copies nothing, and the warning says to remove it. The documentation's own configuration no
+  longer sets ``copy``.
 
 - ♻️ :ref:`needimport` and :ref:`needs_external_needs` read a needs.json through the new
   ``ub-needs-exchange`` library, a new dependency of sphinx-needs

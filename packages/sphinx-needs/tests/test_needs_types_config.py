@@ -31,7 +31,7 @@ from sphinx.util.console import strip_colors
 
 from sphinx_needs.api import get_need_types
 from sphinx_needs.api.need import _get_need_type
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import DEFAULT_NEED_TYPES, NeedsSphinxConfig
 from sphinx_needs.directives.need import NeedDirective
 from sphinx_needs.exceptions import InvalidNeedException, NeedsConfigException
 from sphinx_needs.needs import normalise_need_types
@@ -679,6 +679,218 @@ def test_the_mapping_shape_is_the_list_in_its_order() -> None:
 def test_a_value_of_neither_shape_is_refused(value: object) -> None:
     with pytest.raises(NeedsConfigException, match="must be a list of need type"):
         normalise_need_types(value)
+
+
+# -- an entry naming a default type ----------------------------------------------------
+
+#: the default need types, as the list every reader sees
+DEFAULTS = [dict(need_type) for need_type in DEFAULT_NEED_TYPES]
+DEFAULT = {need_type["directive"]: need_type for need_type in DEFAULTS}
+STORY = {"directive": "story", "title": "Story", "prefix": "ST_"}
+#: a field a bare entry declares a rule of
+RULE = {"x": {"derive": {"kind": "copy", "field": "title"}}}
+
+
+def _narrowed(directive: str, **keys: Any) -> dict[str, Any]:
+    return {**DEFAULT[directive], **keys}
+
+
+@pytest.mark.parametrize(
+    ("value", "resolved", "findings"),
+    [
+        pytest.param(
+            [{"directive": "req", "fields": RULE}],
+            [_narrowed("req", fields=RULE), *DEFAULTS[1:]],
+            [],
+            id="all-bare-list",
+        ),
+        pytest.param(
+            {"spec": {"color": "#000000"}, "req": {}},
+            [DEFAULT["req"], _narrowed("spec", color="#000000"), *DEFAULTS[2:]],
+            [],
+            id="all-bare-mapping-in-default-order",
+        ),
+        pytest.param(
+            {"req": {"color": 1}},
+            DEFAULTS,
+            [
+                "needs_types['req'] has a 'color' that is not a string (got int); "
+                "the key is ignored"
+            ],
+            id="a-key-removed-is-the-default-s",
+        ),
+        pytest.param(
+            {"story": {**STORY, "directive": "story"}, "req": {"color": "#000000"}},
+            [STORY, _narrowed("req", color="#000000")],
+            [],
+            id="mixed-bare-after",
+        ),
+        pytest.param(
+            [{"directive": "req", "inherits": "story"}, STORY],
+            [_narrowed("req", inherits="story"), STORY],
+            [],
+            id="mixed-bare-first-keeps-its-position",
+        ),
+        pytest.param(
+            {"story": {"fields": RULE}},
+            DEFAULTS,
+            [
+                "needs_types['story'] has no 'title' and no 'prefix'; the entry is "
+                "ignored"
+            ],
+            id="bare-non-default-declares-nothing",
+        ),
+        pytest.param(
+            [{"directive": "story"}, {"directive": "req"}],
+            [DEFAULT["req"], *DEFAULTS[1:]],
+            [
+                "needs_types entry 1 ('story') has no 'title' and no 'prefix'; the "
+                "entry is ignored"
+            ],
+            id="bare-non-default-beside-a-bare-default",
+        ),
+        pytest.param(
+            [{"directive": "story"}, STORY | {"directive": "epic"}],
+            [STORY | {"directive": "epic"}],
+            [
+                "needs_types entry 1 ('story') has no 'title' and no 'prefix'; the "
+                "entry is ignored"
+            ],
+            id="bare-non-default-beside-a-declared-type",
+        ),
+        pytest.param(
+            [{"directive": "req", "prefix": "R_"}],
+            [],
+            ["needs_types entry 1 ('req') has no 'title'; the entry is ignored"],
+            id="only-a-prefix-is-refused-and-declares",
+        ),
+        pytest.param(
+            {"req": {"title": "Requirement"}, "spec": {}},
+            [DEFAULT["spec"]],
+            ["needs_types['req'] has no 'prefix'; the entry is ignored"],
+            id="only-a-title-is-refused-and-declares",
+        ),
+        pytest.param(
+            {"req": {"title": 1}},
+            [],
+            [
+                "needs_types['req'] has a 'title' that is not a string (got int) and "
+                "no 'prefix'; the entry is ignored"
+            ],
+            id="a-title-not-a-string-declares",
+        ),
+        pytest.param(
+            ["req", {}],
+            DEFAULTS,
+            [
+                "needs_types entry 1 is not a mapping (got str); the entry is ignored",
+                "needs_types entry 2 has no 'directive'; the entry is ignored",
+            ],
+            id="every-entry-dropped",
+        ),
+        pytest.param([], [], [], id="empty-list-is-no-types"),
+        pytest.param({}, [], [], id="empty-mapping-is-no-types"),
+    ],
+)
+def test_a_bare_entry_naming_a_default_type_narrows_it(
+    value: object, resolved: list[dict[str, Any]], findings: list[str]
+) -> None:
+    """An entry naming a default type with neither ``title`` nor ``prefix`` is that
+    type, narrowed: it takes the keys it leaves out (or that are removed), and its own
+    apply. Whether the default types are kept is decided by the entries alone: none
+    giving a ``title`` or a ``prefix`` keeps them all, in their order, each narrowed by
+    the entry naming it; one giving either -- even one refused for lacking the other --
+    replaces them, the bare entry standing at its own position. A bare entry naming no
+    default type is ignored, as before, and declares nothing; an empty value is no
+    types, as before."""
+    assert normalise_need_types(value) == (resolved, findings)
+
+
+def test_narrowing_leaves_the_defaults_as_they_are() -> None:
+    """The resolved entries are new: changing one changes no default type."""
+    before = copy.deepcopy(DEFAULT_NEED_TYPES)
+    resolved, _ = normalise_need_types({"req": {"color": "#000000"}})
+    for entry in resolved:
+        entry["title"] = "changed"
+    assert before == DEFAULT_NEED_TYPES
+
+
+#: a bare ``req`` entry with a rule on ``x``, and one need of ``req`` and ``spec``
+NARROW_INDEX = """\
+.. req:: Narrowed
+   :id: REQ_1
+
+.. spec:: Still a default type
+   :id: SPEC_1
+"""
+NARROW_LIST_CONF = (
+    CONF
+    + 'needs_fields = {"x": {"schema": {"type": "string"}}}\n'
+    + f"needs_types = {[{'directive': 'req', 'fields': RULE}]!r}\n"
+)
+NARROW_TOML = """\
+[needs]
+build_json = true
+
+[needs.fields.x]
+schema = { type = "string" }
+
+[needs.types.req.fields.x]
+derive = { kind = "copy", field = "title" }
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        pytest.param(_project(NARROW_LIST_CONF, NARROW_INDEX), id="conf-list"),
+        pytest.param(_toml_project(NARROW_TOML, NARROW_INDEX), id="ubproject-mapping"),
+    ],
+    indirect=True,
+)
+def test_a_rule_on_a_default_type_in_its_own_entry(test_app: Any) -> None:
+    """The likeliest route to a bare entry: a rule on a default type, written in the
+    type's own entry. The type keeps its title and prefix, the rule applies, and every
+    other default type is kept, with no warning -- in ``conf.py``'s list shape and
+    ``ubproject.toml``'s tables alike."""
+    app = test_app
+    assert get_need_types(app) == [t["directive"] for t in DEFAULTS]
+    app.build()
+    assert build_warnings(app) == []
+    needs = _needs(app)
+    assert (needs["REQ_1"]["type_name"], needs["REQ_1"]["x"]) == (
+        "Requirement",
+        "Narrowed",
+    )
+    assert (needs["SPEC_1"]["type_name"], needs["SPEC_1"]["x"]) == (
+        "Specification",
+        None,
+    )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        pytest.param(
+            _toml_project(
+                '[needs.types.story]\ntitle = "Story"\nprefix = "ST_"\n\n'
+                '[needs.types.req]\ncolor = "#000000"\n',
+                ".. req:: Narrowed\n   :id: REQ_1\n",
+            ),
+            id="ubproject-mapping",
+        ),
+    ],
+    indirect=True,
+)
+def test_beside_a_declared_type_the_defaults_are_replaced(test_app: Any) -> None:
+    """Once an entry declares a type, the list given is the need types, as before: the
+    bare ``req`` is the default ``req``, filled, and ``spec`` does not exist."""
+    app = test_app
+    assert get_need_types(app) == ["story", "req"]
+    assert _resolved(app)[1] == _narrowed("req", color="#000000")
+    app.build()
+    assert _needs(app)["REQ_1"]["type_name"] == "Requirement"
+    assert "spec" not in directives._directives
 
 
 # -- the duplicate on every creation path ------------------------------------------------

@@ -397,6 +397,10 @@ A function of your own in a link field, such as sphinx-test-reports' ``tr_link``
 so its links are in the back links of step 3
 (its nearest built-in form is :ref:`links_from_match`, ordered as the other built-in functions are:
 see :ref:`needs_derive_join`).
+A :ref:`union <needs_derive_union>` over such a link type is computed among your functions,
+right after the last one filling a member of it, in that order:
+your functions after it read it complete, those before it read it empty, unreported,
+and a built-in function reading it in step 2 is reported.
 A later release is to let a function declare what it reads, which will order it like a built-in one.
 A ``filter`` that names ``needs``, or reads ``current_need`` by a key that is not written out,
 cannot be ordered either: its call runs with your own functions.
@@ -461,12 +465,19 @@ These reads are reported as ``needs.derive_scope``:
   and its field keeps the items written in it (a link or array field) or is left empty;
 - a ``needextend`` filter that names a field a ``[[…]]``, ``<<…>>`` or ``<{…}>`` computes:
   the filter sees the value from before it is computed, once for each ``needextend`` carrying it;
+- a built-in function or rule of step 2 that reads a :ref:`union <needs_derive_union>`
+  over a link type your own function, or a call whose filter cannot be read, computes,
+  or such a call computed before the union whose filter names it:
+  the union is computed after them, right after the last one filling a member of it,
+  so the call is not run, and its field keeps the links written in it -- a rule's is left empty,
+  and a ``links`` rule is reported on every need computing it;
 - a built-in function that reads a field your own function computes, before it is computed.
 
 A field whose call is not run reads nothing, so it is on no cycle; a value computed from it reads what it holds.
 The last case is found as the call runs: the built-in functions note each field they read,
 and a read of a value not computed yet is reported with its cause.
-Should the cause be neither your own function nor a call whose filter cannot be read,
+Should the cause be neither your own function, nor a call whose filter cannot be read,
+nor a union computed after them,
 the order itself missed the read, and the message asks you to report it.
 A filter's reads are not noted (see :ref:`needs_processing_order`).
 

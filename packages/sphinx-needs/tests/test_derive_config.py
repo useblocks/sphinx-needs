@@ -1066,7 +1066,8 @@ def test_parse_derive_reads_a_rule(raw, on_link, expected):
             False,
             "copy",
             "kind 'copy': 'types' is not a role; a rule for some need types is "
-            "declared under derive_by_type",
+            "declared in those need types' own entries (a derive under the type's "
+            "fields or links), or under derive_by_type for a type an extension adds",
             id="types-not-a-role",
         ),
         pytest.param(

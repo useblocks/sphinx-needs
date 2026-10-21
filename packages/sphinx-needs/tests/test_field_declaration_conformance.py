@@ -53,7 +53,18 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 85
+EXPECTED_CASE_COUNT = 89
+
+#: The cases of the section "an entry naming a default type", the only ones whose
+#: ``needs_types`` may hold an entry with neither a ``title`` nor a ``prefix``.
+BARE_ENTRY_CASES = frozenset(
+    {
+        "default-type-entry-narrows-it",
+        "default-type-entry-beside-a-declared-type",
+        "bare-entry-of-no-default-type-is-ignored",
+        "default-type-entry-beside-a-declared-type-has-no-other-default",
+    }
+)
 
 #: The codes of the per-type declaration contract, compared as bare subcodes; every
 #: other finding (a ``needs.config`` warning, a dead link) is each tool's own.
@@ -149,13 +160,23 @@ def test_every_case_has_a_complete_expectation() -> None:
         }, name
         assert case["why"] and case["config"] and case["source"], name
         assert not (case.get("python_only") and case.get("ubcode_only")), name
-        # the default need types are replaced by any `needs_types`: a case declares
-        # every type it uses, each with a title and a prefix
+        # the default need types are replaced by a `needs_types` declaring a type: a
+        # case declares every type it uses, each with a title and a prefix, but for a
+        # bare entry (neither) in the section "an entry naming a default type", which
+        # narrows a default type or is ignored, and names no `need`, a default type of
+        # sphinx-needs only
         types = tomllib.loads(case["config"])["needs"]["types"]
-        entries = types.values() if isinstance(types, dict) else types
+        entries = (
+            list(types.items())
+            if isinstance(types, dict)
+            else [(entry.get("directive"), entry) for entry in types]
+        )
         assert entries, name
-        for entry in entries:
-            assert "title" in entry and "prefix" in entry, name
+        for directive, entry in entries:
+            assert ("title" in entry) == ("prefix" in entry), (name, directive)
+            assert "title" in entry or (
+                name in BARE_ENTRY_CASES and directive != "need"
+            ), (name, directive)
         expect = case["expect"]
         assert "findings" in expect, name
         assert set(expect) <= {

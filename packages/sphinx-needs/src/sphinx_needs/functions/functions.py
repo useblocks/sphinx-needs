@@ -311,11 +311,12 @@ def find_and_replace_node_content(
 # keyword and notes what it reads, ``_get_variant`` notes the names the variant's
 # evaluated conditions read, and a read of a value the pass has not computed yet is
 # reported once the call is over, as ``needs.derive_scope``. With the order right,
-# that is only a read of a value your own function computes, after the built-in
-# functions. Nothing else is handed a record: an ``ndf`` role or a ``:style_row:``
-# runs after the pass, and a user's own function, which the pass calls without one,
-# has none to give a built-in it calls; such a built-in gets ``reads=None`` and notes
-# nothing.
+# that is only a read of a value computed after the built-in functions -- by your own
+# function, by a call whose filter cannot be read, or a union over one of those -- by
+# a call computed last itself, before it. Nothing else is handed a record: an ``ndf`` role or a
+# ``:style_row:`` runs after the pass, and a user's own function, which the pass calls
+# without one, has none to give a built-in it calls; such a built-in gets
+# ``reads=None`` and notes nothing.
 
 
 class UnresolvedReads:
@@ -543,6 +544,18 @@ def _out_of_scope_message(
             f"{'is' if len(selectors) == 1 else 'are'} computed in the same step: "
             f"{not_run} and {_kept(value)}"
         )
+    if out_of_scope.unions:
+        unions: dict[str, list[str]] = {}
+        for name, read_id in out_of_scope.unions:
+            unions.setdefault(name, []).append(read_id)
+        read = list(unions.items())
+        return (
+            f"{what} for option '{option}' reads {_reads_phrase(read)}, "
+            f"{'a union' if _one(read) else 'unions'} computed after your own "
+            "functions and the calls whose filter cannot be read that fill "
+            f"{'its' if _one(read) else 'their'} members, which this step cannot wait "
+            f"for: {not_run} and {_kept(value)}"
+        )
     names: dict[str, list[str]] = {}
     for name, read_id in out_of_scope.reads:
         names.setdefault(name, []).append(read_id)
@@ -603,19 +616,21 @@ class _Pass:
         """The reads of a call, grouped by why they were read before being computed.
 
         Such a value is computed after the built-in functions: by your own function,
-        or by a call whose filter cannot be read. Any other is a read the order did
-        not account for.
+        or by a call whose filter cannot be read, or it is a union computed after
+        those, as a member of it is. Any other is a read the order did not account
+        for.
         """
         groups: dict[str, list[tuple[str, list[str]]]] = {}
         functions: dict[str, None] = {}
         for name, ids in reads:
             for need_id in ids:
+                node = (need_id, self.project.field_of(name))
                 node_reads = (
-                    self.stratum.reads.get((need_id, self.project.field_of(name)))
-                    if self.stratum is not None
-                    else None
+                    self.stratum.reads.get(node) if self.stratum is not None else None
                 )
-                if node_reads is not None and node_reads.user_functions:
+                if self.stratum is not None and node in self.stratum.after_last:
+                    kind = "union"
+                elif node_reads is not None and node_reads.user_functions:
                     kind = "user"
                     functions.update(dict.fromkeys(node_reads.user_functions))
                 elif node_reads is not None and node_reads.opaque:
@@ -640,6 +655,13 @@ class _Pass:
                 cause = (
                     f"{subject} computed by a call whose filter cannot be read, "
                     "which runs after the other built-in functions"
+                )
+            elif kind == "union":
+                cause = (
+                    f"{'it is a union' if _one(group) else 'they are unions'} computed "
+                    "after your own functions and the calls whose filter cannot be read "
+                    f"that fill {'its' if _one(group) else 'their'} members, after this "
+                    "call"
                 )
             else:
                 cause = (

@@ -59,7 +59,12 @@
 #     computed it, it reports no dead link and no link condition of its own, which are its
 #     members', so a dead link it holds is a forbidden one only through the member's own
 #     `allow_dead_links`; on an imported need, which keeps its file's value, it is checked
-#     as any link type
+#     as any link type. A member computed after the built-in functions (by a call whose
+#     filter cannot be read, or by the project's own function) is computed before the
+#     union, which is computed after it, and a union of that union after that; a rule or
+#     call reading such a union in the link fields' step cannot wait for it, and is one
+#     `derive_scope`. A union that cannot be read (a member refused, a cycle) is no union:
+#     an `allow_dead_links` beside it is kept
 #
 # `packages/sphinx-needs/tests/test_derive_conformance.py` runs every case with the `needs`
 # builder AND asserts the case COUNT, so a truncated copy is a red test rather than reduced
@@ -1341,7 +1346,7 @@ field = "reads_digest"
 
 [[case]]
 name = "types-reserved"
-why = "types is not a role (a rule for some need types is declared under derive_by_type, a key beside derive): a rule naming it, on a field or a link type, is refused"
+why = "types is not a role (a rule for some need types is declared in those need types' own entries): a rule naming it, on a field or a link type, is refused"
 config = '''
 [needs.fields.bad_types]
 derive = { kind = "copy", field = "title", types = ["req"] }
@@ -4509,3 +4514,127 @@ mentions_back = ["SPEC_1"]
 [case.expect.needs.IMPL_1]
 all_links_back = ["SPEC_1"]
 mentions_impl_back = ["SPEC_1"]
+
+[[case]]
+name = "union-over-a-member-computed-last"
+why = "a union over a member filled by a call whose filter cannot be read (it names needs) is computed after that call, as after the project's own functions: it holds the member's links, and a union of that union too"
+python_only = true
+config = '''
+[needs.links.flt]
+
+[needs.links.all_flt]
+derive = { kind = "union", fields = ["links", "flt"] }
+
+[needs.links.again]
+derive = { kind = "union", fields = ["all_flt"] }
+
+[needs.fields.n]
+schema = { type = "integer" }
+derive = { kind = "count", over = "all_flt" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Filtered
+   :id: SPEC_1
+   :links: REQ_2
+   :flt: [[links_from_filter("len(needs) > 0 and id == 'REQ_1'")]]
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+flt = ["REQ_1"]
+all_flt = ["REQ_1", "REQ_2"]
+again = ["REQ_1", "REQ_2"]
+n = 2
+[case.expect.needs.REQ_1]
+all_flt_back = ["SPEC_1"]
+
+[[case]]
+name = "union-computed-last-read-in-its-step"
+why = "a link type's rule reading such a union in the link fields' step cannot wait for it: it is one derive_scope on each need computing it, and holds no links"
+python_only = true
+config = '''
+[needs.links.flt]
+
+[needs.links.all_flt]
+derive = { kind = "union", fields = ["flt"] }
+
+[needs.links.via]
+derive = { kind = "links", where = "'REQ_1' in all_flt" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. spec:: Filtered
+   :id: SPEC_1
+   :flt: [[links_from_filter("len(needs) > 0 and id == 'REQ_1'")]]
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+all_flt = ["REQ_1"]
+via = []
+[case.expect.needs.REQ_1]
+via = []
+[[case.expect.findings]]
+code = "derive_scope"
+need = "REQ_1"
+field = "via"
+[[case.expect.findings]]
+code = "derive_scope"
+need = "SPEC_1"
+field = "via"
+
+[[case]]
+name = "union-that-cannot-be-read-keeps-allow-dead-links"
+why = "a union refused for a member, or on a cycle, is no union: allow_dead_links beside it is kept, so a dead link an imported need carries in it is allowed; beside a readable union it is refused, and that dead link is forbidden"
+config = '''
+[needs.links.bad_member]
+derive = { kind = "union", fields = ["links", "nope"] }
+allow_dead_links = true
+
+[needs.links.cyc_a]
+derive = { kind = "union", fields = ["links", "cyc_b"] }
+allow_dead_links = true
+
+[needs.links.cyc_b]
+derive = { kind = "union", fields = ["cyc_a"] }
+
+[needs.links.readable]
+derive = { kind = "union", fields = ["links"] }
+allow_dead_links = true
+'''
+source = '''
+.. needimport:: imported.json
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "spec", "title": "A dead link beside a refused member", "bad_member": ["DEAD_1"]}, "IMP_2": {"id": "IMP_2", "type": "spec", "title": "A dead link in a union on a cycle", "cyc_a": ["DEAD_2"]}, "IMP_3": {"id": "IMP_3", "type": "spec", "title": "A dead link in a readable union", "readable": ["DEAD_3"]}}}}}''' }
+[case.expect]
+[case.expect.needs.IMP_1]
+bad_member = ["DEAD_1"]
+has_dead_links = true
+has_forbidden_dead_links = false
+[case.expect.needs.IMP_2]
+cyc_a = ["DEAD_2"]
+has_dead_links = true
+has_forbidden_dead_links = false
+[case.expect.needs.IMP_3]
+readable = ["DEAD_3"]
+has_dead_links = true
+has_forbidden_dead_links = true
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_member"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "cyc_a"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "cyc_b"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "readable"

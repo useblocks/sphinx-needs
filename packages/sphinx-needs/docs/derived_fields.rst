@@ -88,7 +88,9 @@ Rules per need type
 A need type's own entry (:ref:`needs_types_fields`) gives the rule to the needs of that type:
 a ``derive`` in its declaration of the field, under ``fields``, or of the link type, under ``links``.
 The entry is one of :ref:`needs_types`: the type is declared there, with its ``title`` and ``prefix``,
-and declaring need types replaces the default ones (see :ref:`need_types_howto`).
+and declaring need types replaces the default ones (see :ref:`need_types_howto`);
+an entry naming a default type with neither ``title`` nor ``prefix`` is that type, narrowed,
+so ``[needs.types.req.fields.<field>]`` alone gives ``req`` a rule and keeps every default type.
 A type inheriting from it uses the rule too, unless it declares one of its own.
 A need uses the rule of its type, else ``derive``, else none.
 A need type's own declaration of a derived field narrows its description, schema and ``nullable``,
@@ -187,9 +189,7 @@ A ``derive`` in a type's own entry is the field's ``derive_by_type`` entry for t
 and for each type inheriting from it that gives none of its own;
 its ``needs.derive_invalid`` warnings name the entry it came from.
 ``derive_by_type`` alone gives a need type a rule without declaring the type:
-one of the default types, on a project that keeps them
-(a :ref:`needs_types` entry, even one that is ignored, replaces them all),
-or a type an extension or a service adds
+a type an extension or a service adds
 (an entry must repeat its ``title`` and ``prefix``, which then replace the extension's);
 and it alone gives a type a rule that the types inheriting from it do not get.
 
@@ -606,12 +606,18 @@ a :ref:`needflow`, a filter or a :ref:`needtable` column (see **Reading it**, be
   one need types declare alone, a derived link type, another union -- each computed before the union,
   whether its links are written, computed by a rule, a built-in function such as ``links_from_filter``, a variant,
   or added by a ``needextend``.
-  Not a member filled by one of your own :ref:`functions <needs_functions>` (such as sphinx-test-reports' ``tr_link``),
-  nor by a call whose filter cannot be read, such as a ``links_from_filter`` whose filter names ``needs``:
-  those run after the other built-in functions of their step, a union's rule included
-  (see :ref:`needs_processing_order`), so the union cannot read the member, which is one
-  ``needs.derive_scope`` warning, the union holding no links. Keep ``copy`` for such a link type until a later
-  release lets a union read it.
+  A member filled by one of your own :ref:`functions <needs_functions>` (such as sphinx-test-reports' ``tr_link``),
+  or by a call whose filter cannot be read, such as a ``links_from_filter`` whose filter names ``needs``,
+  is computed after the other built-in functions of its step, with your own functions, in need-id order
+  (see :ref:`needs_processing_order`), and the union over it right after the last such member
+  -- a union of that union after that.
+  Those computed after the union read it complete; those computed before it read it empty:
+  such a call whose filter names the union (by name, or as its own need's ``current_need`` key) is not run,
+  and is reported (``needs.derive_scope``), as is a ``copy`` reading it, when it runs,
+  while your own functions, a read through ``needs``, and one of ``current_need`` by a key that is not written out,
+  are not reported.
+  A built-in function or rule of the link fields' step that reads such a union cannot wait for it:
+  it is not run, and is reported (for a ``links`` rule, on every need computing it).
   ``parent_needs`` and the back links (``<link type>_back``, built after the link types) are not members,
   nor is a field, and a member is named once; the union itself, or two unions naming each other, can be computed
   on no need. Each is one ``needs.derive_invalid`` at load, and the union holds no links.
@@ -627,7 +633,10 @@ a :ref:`needflow`, a filter or a :ref:`needtable` column (see **Reading it**, be
   So a dead link of a member allowing dead links is kept in the union and makes no dead link forbidden
   (``has_forbidden_dead_links``; ``has_dead_links`` counts it, as every dead link), it is drawn in a need's layout as
   the member allows it, and an ``allow_dead_links`` on a link type all of whose rules are unions is refused
-  (``needs.derive_invalid``) and ignored; beside a rule of another kind, for another need type, it is that rule's.
+  (``needs.derive_invalid``) and ignored; beside a rule of another kind, for another need type, it is that rule's,
+  and beside a union that cannot be read (a member refused, a cycle), which is no union and holds no links, it is kept.
+  A union cycling on some need types only is still a union on the others, so the key beside it is refused,
+  which the cycle's finding says.
   ``target_types`` is refused on it, as on every derived link type: the members' own apply.
 - **When.** In the link fields' step, after every :ref:`needextend`: a link a ``needextend`` adds to a member is in the union.
   The union itself is closed, as every derived field: links written in it, or by a ``needextend``, are reported
@@ -953,10 +962,14 @@ The field stays derived: it cannot be set, and it holds its empty value
 The empty value a derived field holds is its "no value", as ``None`` is for a nullable field:
 the field's ``schema`` does not check it, so an ``enum``, a ``minimum`` or a ``pattern`` that refuses it is no violation.
 A ``default`` or ``predicates`` beside ``derive`` is reported as ``needs.derive_invalid`` too, and ignored;
-the rule applies. So is an ``allow_dead_links`` beside a ``union``, whose dead links are its members'.
+the rule applies. So is an ``allow_dead_links`` beside a ``union``, whose dead links are its members'
+(beside a union that cannot be read, which is no union, it is kept).
 So is a link type declared with ``copy = true`` while ``links`` is derived:
 nothing is copied into ``links``, which holds what its rule computes;
 and ``copy = true`` on a derived link type, which is not available in this release: nothing is copied.
+A ``derive`` that cannot be read is reported for that alone, not for a key beside it;
+one closing a cycle on some need types only still applies on the others,
+so the keys beside it are still refused, which its finding says.
 
 A rule that cannot be computed on a need leaves the field at its empty value, and is reported:
 a cycle of rules or calls reading one another (``needs.derive_cycle``, see :ref:`needs_derive_cycle`),
