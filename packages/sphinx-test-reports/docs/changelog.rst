@@ -11,7 +11,8 @@ Changed
   ``target_option`` of every need -- so Sphinx-Needs computes its links in order, with its
   built-in functions: a ``links_from_filter``, a derived ``links`` or ``union`` link type
   or any other built-in function reading them holds them, where each read them empty,
-  silently (`#2354 <https://github.com/useblocks/sphinx-needs/issues/2354>`__). It is declared
+  silently (`#2354 <https://github.com/useblocks/sphinx-needs/issues/2354>`__,
+  `#2366 <https://github.com/useblocks/sphinx-needs/pull/2366>`__). It is declared
   with ``sphinx_needs.api.reads`` where that exists; an older Sphinx-Needs computes it as
   before, so the floor on Sphinx-Needs is unchanged. A ``target_option`` naming the link type the call
   fills is now a ``needs.derive_cycle``, and a ``source_option`` or ``target_option``

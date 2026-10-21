@@ -11,7 +11,7 @@ Improvements
 ............
 
 - ✨ A function of your own can declare what it reads, and is then computed in order, like a built-in function
-  (:issue:`2354`)
+  (:issue:`2354`, :pr:`2366`)
 
   ``@sphinx_needs.api.reads(own="test_option", every="target_option")`` names the parameters whose argument is a
   field the function reads on its own need or on every need, and ``add_dynamic_function(app, func,
@@ -27,7 +27,7 @@ Improvements
   See :ref:`dynamic_functions_reads`.
 
 - 👌 A read of a value the pass has not computed yet is reported as it happens, where several were silent
-  (:issue:`2354`)
+  (:issue:`2354`, :pr:`2366`)
 
   A built-in function or derive rule whose filter or ``where`` reads a value your own function (one that declares
   nothing) or a call whose filter cannot be read computes -- the filter of ``links_from_filter``,
