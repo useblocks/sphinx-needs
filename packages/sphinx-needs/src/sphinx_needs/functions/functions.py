@@ -53,6 +53,7 @@ if TYPE_CHECKING:
     from sphinx_needs.functions.order import (
         Column,
         Node,
+        NodeReads,
         OutOfScope,
         Project,
         Reason,
@@ -509,6 +510,26 @@ def _through_clause(through: tuple[Column, Reason] | None) -> str:
     if column.candidates is not None:
         return f", through the filter {column.candidates!r}, which keeps a need on the cycle"
     return ", through a sum over every need"
+
+
+def _argument_clause(
+    node_reads: NodeReads, need_id: str, members: Sequence[Node]
+) -> str:
+    """A cycle member's ``need.<field>`` arguments on the cycle, as its message says
+    them: a declared call reads each before it is computed."""
+    on_cycle = sorted(
+        {
+            name
+            for declared in node_reads.declared
+            for name in declared.arguments
+            if (need_id, name) in members
+        }
+    )
+    if not on_cycle:
+        return ""
+    return f", through its argument{'s' if len(on_cycle) > 1 else ''} " + joined(
+        [f"need.{name}" for name in on_cycle]
+    )
 
 
 def _derive_cycle_message(
@@ -1323,7 +1344,9 @@ def _resolve_stratum(
                         node_reads.what,
                         field,
                         step.nodes,
-                        _through_clause(through) + own,
+                        _through_clause(through)
+                        + _argument_clause(node_reads, need_id, step.nodes)
+                        + own,
                         needs[need_id][field],
                     ),
                     "derive_cycle",

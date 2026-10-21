@@ -277,12 +277,14 @@ a read of the field the call computes itself is a :ref:`cycle <needs_derive_cycl
 a read of a value computed in a later step (a field that is not a link field, read from a link field)
 is not run (:ref:`needs_derive_scope`),
 and a ``need.<field>`` :ref:`argument <dynamic_functions_need_arguments>` is a read of its own need:
-one computed in the same step is waited for, and the declaration is called with a value it cannot use
--- a declaration that needs it (one naming the field it reads by that argument) cannot be applied to that call,
-which is computed after the built-in functions, as a call of a function that declares nothing.
-A declaration that cannot be applied to a call -- it raises, or returns anything but such a mapping --
-is reported once per function, as a ``needs.config`` warning, and its calls are computed
-after the built-in functions, as calls of a function that declares nothing.
+one computed in the same step is waited for (the call's own field as its argument is a cycle),
+and the declaration is called with a stand-in for its value, which can be passed on but not compared,
+tested, hashed or read -- a declaration that needs the value (one naming the field it reads by that argument,
+or choosing its reads by it) cannot be applied to that call.
+A declaration that cannot be applied to a call -- it needs such a value, raises,
+or returns anything but such a mapping -- is reported once per function, as a ``needs.config`` warning,
+and the calls it cannot be applied to are computed after the built-in functions,
+as calls of a function that declares nothing.
 As the function runs, every read of a value computed in its own step that its declaration does not name
 is reported (:ref:`needs_derive_scope`), whether that value was computed yet or not:
 declare it, or the call is not ordered after it.

@@ -45,6 +45,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Final, TypeVar
 
+from sphinx_needs._wording import joined
 from sphinx_needs.derive import DeriveCall, is_union
 from sphinx_needs.functions.common import (
     calc_sum,
@@ -376,12 +377,14 @@ class Declared:
     :ivar nodes: The ``(need id, field)`` it reads on one need: a field of its own need
         (a ``need.<field>`` argument among them), or of a need it names.
     :ivar columns: The fields it reads on every need.
+    :ivar arguments: The fields of its own need its ``need.<field>`` arguments read.
     """
 
     position: int
     function: str
     nodes: frozenset[Node]
     columns: frozenset[str]
+    arguments: frozenset[str] = frozenset()
 
     def covers(self, need_id: str, field: str) -> bool:
         """Whether the declaration names the read of ``field`` on ``need_id``."""
@@ -967,17 +970,36 @@ def _declaration(
     return own, every, named
 
 
+class _UnknownUsed(TypeError):
+    """A declaration used the value of an argument not computed yet (:class:`_Unknown`)."""
+
+
 class _Unknown:
     """The value of a ``need.<field>`` argument computed in the same stratum, as a
-    declaration is called with it: not known yet, so any use of it fails, and the
-    declaration then cannot be applied to the call."""
+    declaration is called with it: not known yet. Comparing it, testing its truth,
+    hashing it, reading it as text, a number or a container, or one of its attributes
+    raises; it can be passed on, and its identity tested. A declaration that cannot
+    be applied with it is reported as one that raises."""
 
     __slots__ = ()
 
     def _refuse(self, *args: Any) -> Any:
-        raise TypeError("the argument's value is computed in the same step")
+        raise _UnknownUsed("the argument's value is computed in the same step")
 
-    __str__ = __bool__ = __iter__ = __len__ = __format__ = __lt__ = _refuse
+    __eq__ = __ne__ = __lt__ = __le__ = __gt__ = __ge__ = __hash__ = _refuse
+    __bool__ = __str__ = __format__ = __int__ = __float__ = __index__ = _refuse
+    __iter__ = __len__ = __contains__ = __getitem__ = __getattr__ = _refuse
+
+
+def _holds_unknown(value: Any) -> bool:
+    """Whether a declaration returned the unknown value (by identity, not by ``==``)."""
+    if value is _UNKNOWN:
+        return True
+    if isinstance(value, Mapping):
+        return any(_holds_unknown(item) for item in value.values())
+    if isinstance(value, list | tuple | set | frozenset):
+        return any(_holds_unknown(item) for item in value)
+    return False
 
 
 #: the one :class:`_Unknown`
@@ -992,9 +1014,10 @@ class _DeclaredReads(_CallReads):
     its own need or of a need it names is a dependency (or out of scope, after the
     stratum), a field on every need a column. A ``need.<field>`` argument is a read of
     its own need too: one computed in the same stratum is a dependency, and the
-    declaration is called with a value that refuses every use (:class:`_Unknown`). A
-    declaration that uses it cannot be applied, and the call is computed last, as one
-    of a function declaring nothing -- unreported, as the declaration is not at fault.
+    declaration is called with a value that refuses to be compared, tested or read
+    (:class:`_Unknown`). A declaration that needs it, like one that raises or returns
+    what is not a declaration, cannot be applied: the call is computed last, as one
+    of a function declaring nothing, and :attr:`Project.refused` says why.
     """
 
     def apply(self, spec: Callable[..., Any], position: int) -> bool:
@@ -1025,15 +1048,23 @@ class _DeclaredReads(_CallReads):
 
         args = [value(argument) for argument in call.args]
         kwargs = {key: value(argument) for key, argument in call.kwargs}
+        needs_value = (
+            f"it needs the value of {joined([f'need.{a}' for a in unknown])}, "
+            "computed in the same step, so not known when the call is ordered"
+            if unknown
+            else ""
+        )
         try:
-            declared = _declaration(spec(*args, **kwargs))
+            result = spec(*args, **kwargs)
+            declared = needs_value if _holds_unknown(result) else _declaration(result)
+        except _UnknownUsed:
+            declared = needs_value
         except Exception as err:
             declared = f"it raised {type(err).__name__}: {err}"
         if isinstance(declared, str):
-            if not unknown:
-                self.project.refused.setdefault(
-                    call.name, ((self.need.id, self.field), declared)
-                )
+            self.project.refused.setdefault(
+                call.name, ((self.need.id, self.field), declared)
+            )
             return False
         # the call's arguments, then what it declares
         for _, name in arguments:
@@ -1063,6 +1094,7 @@ class _DeclaredReads(_CallReads):
                     ]
                 ),
                 frozenset(field_of(name) for name in every),
+                frozenset(name for _, name in arguments),
             ),
         )
         return True

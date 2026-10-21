@@ -427,12 +427,146 @@ def test_a_need_argument_computed_in_the_same_step_is_waited_for(test_app):
     same step: the declared call is computed after it, so it holds what it held
     undeclared. A declaration that needs the argument's value (``uses``, whose
     argument names the field it reads) cannot be applied before the value is known:
-    that call is computed after the built-in functions, as undeclared, unreported."""
+    that call is computed after the built-in functions, as undeclared, and the
+    declaration is reported once, as one that cannot be applied."""
     app = test_app
     app.build()
-    assert build_warnings(app) == []
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:4: WARNING: dynamic function 'uses' declares what it "
+        "reads, but the declaration cannot be applied to its call for option 'out2' of "
+        "need 'SPEC_1': it needs the value of need.status2, computed in the same step, "
+        "so not known when the call is ordered; such a call is computed after the "
+        "built-in functions, as a call of a function that declares nothing "
+        "[needs.config]"
+    ]
     need = _built(app)["SPEC_1"]
     assert (need["status2"], need["out"], need["out2"]) == ("A", "A:1", None)
+
+
+CONF_COMPARING = """\
+from sphinx_needs.api import reads
+
+extensions = ["sphinx_needs"]
+needs_build_json = True
+suppress_warnings = ["config.cache"]
+needs_fields = {{k: {{"nullable": True}} for k in ("st", "out", "x", "selfa")}}
+
+
+{declare}
+def pick(app, need, needs, value):
+    return f"{{value}}:{{need.get('x')}}"
+
+
+@reads()
+def echo_arg(app, need, needs, value):
+    return str(value)
+
+
+needs_functions = [pick, echo_arg]
+"""
+
+INDEX_COMPARING = """\
+Comparing
+=========
+
+.. spec:: A
+   :id: SPEC_1
+   :st: [[copy("title")]]
+   :x: [[copy("id")]]
+   :out: [[pick(need.st)]]
+   :selfa: [[echo_arg(need.selfa)]]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        pytest.param(
+            _project(CONF_COMPARING.format(declare=declare), INDEX_COMPARING), id=name
+        )
+        for name, declare in (
+            (
+                "declared",
+                """@reads(lambda value: {{"own": ["x"]}} if value == "A" else {{}})""",
+            ),
+            ("plain", ""),
+        )
+    ],
+    indirect=True,
+)
+def test_a_declaration_cannot_compare_an_argument_not_computed_yet(test_app, request):
+    """A declaration comparing a ``need.<field>`` argument computed in the same step
+    would take a branch on a value not known yet: the comparison is refused, the
+    declaration cannot be applied, and the call holds what it holds undeclared. A
+    declared call whose argument is its own field is a cycle, and says so."""
+    app = test_app
+    app.build()
+    assert _built(app)["SPEC_1"]["out"] == "A:SPEC_1"
+    warnings = build_warnings(app)
+    assert (
+        "<srcdir>/index.rst:4: WARNING: dynamic function 'echo_arg' for option "
+        "'selfa' is on a cycle: 'selfa' on need 'SPEC_1', through its argument "
+        "need.selfa; the field is left empty [needs.derive_cycle]"
+    ) in warnings
+    refused = [w for w in warnings if "[needs.config]" in w]
+    if "declared" in request.node.name:
+        assert refused == [
+            "<srcdir>/index.rst:4: WARNING: dynamic function 'pick' declares what it "
+            "reads, but the declaration cannot be applied to its call for option 'out' "
+            "of need 'SPEC_1': it needs the value of need.st, computed in the same step, "
+            "so not known when the call is ordered; such a call is computed after the "
+            "built-in functions, as a call of a function that declares nothing "
+            "[needs.config]"
+        ]
+    else:
+        assert refused == []
+
+
+CONF_LATER = """\
+from sphinx_needs.api import reads
+
+extensions = ["sphinx_needs"]
+needs_build_json = True
+suppress_warnings = ["config.cache"]
+needs_fields = {"s": {"nullable": True}}
+needs_links = {"blocks": {}}
+
+
+@reads()
+def lk(app, need, needs, *args, **kwargs):
+    return [] if needs["SPEC_1"]["s"] is None else ["REQ_1"]
+
+
+needs_functions = [lk]
+"""
+
+INDEX_LATER = """\
+Later
+=====
+
+.. req:: One
+   :id: REQ_1
+
+.. spec:: S
+   :id: SPEC_1
+   :s: [[copy("title")]]
+   :blocks: [[lk()]]
+"""
+
+
+@pytest.mark.parametrize("test_app", [_project(CONF_LATER, INDEX_LATER)], indirect=True)
+def test_a_declared_function_reading_a_later_step_is_told_so(test_app):
+    """A declared function in a link field reading a field computed after the link
+    fields reads it before it is computed: reported with that cause, not as a read
+    its declaration lacks (the declaration names its own step's values)."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:7: WARNING: dynamic function 'lk' for option 'blocks' read "
+        "'s' on need 'SPEC_1' before it was computed: it is computed after the link "
+        "fields, in a later step [needs.derive_scope]"
+    ]
+    assert _built(app)["SPEC_1"]["blocks"] == []
 
 
 # -- the decorator itself ----------------------------------------------------------

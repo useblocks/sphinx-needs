@@ -1071,14 +1071,23 @@ def test_a_need_argument_of_a_declared_call_is_a_dependency():
     stratum = build_stratum(project, 2)
     assert seen[0] == ("G",)
     declared = stratum.reads[("A", "summary")].declared
-    assert [d.nodes for d in declared] == [frozenset({("A", "grp")})]
+    assert [(d.nodes, d.arguments) for d in declared] == [
+        (frozenset({("A", "grp")}), frozenset({"grp"}))
+    ]
     b = stratum.reads[("B", "summary")]
     assert (b.sink, b.last, b.deps) == (False, False, [("B", "comment")])
     order = [s.nodes[0] for s in stratum.steps]
     assert order.index(("B", "comment")) < order.index(("B", "summary"))
-    # the declaration uses the value: the call is computed last, and nothing refused
+    # the declaration uses the value: the call is computed last, and refused
     c = stratum.reads[("C", "summary")]
-    assert (c.last, c.declared, project.refused) == (True, (), {})
+    assert (c.last, c.declared) == (True, ())
+    assert project.refused == {
+        "uses": (
+            ("C", "summary"),
+            "it needs the value of need.comment, computed in the same step, so not "
+            "known when the call is ordered",
+        )
+    }
     # its own field as an argument: a cycle
     assert [s.nodes for s in stratum.steps if s.cycle] == [(("D", "summary"),)]
 
