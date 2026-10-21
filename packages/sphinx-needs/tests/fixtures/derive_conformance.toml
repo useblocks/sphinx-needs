@@ -1346,7 +1346,7 @@ field = "reads_digest"
 
 [[case]]
 name = "types-reserved"
-why = "types is not a role (a rule for some need types is declared under derive_by_type, a key beside derive): a rule naming it, on a field or a link type, is refused"
+why = "types is not a role (a rule for some need types is declared in those need types' own entries): a rule naming it, on a field or a link type, is refused"
 config = '''
 [needs.fields.bad_types]
 derive = { kind = "copy", field = "title", types = ["req"] }
