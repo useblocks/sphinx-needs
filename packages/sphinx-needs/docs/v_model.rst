@@ -5,12 +5,12 @@ Sphinx-Needs across the V-model
 
 Engineering along the V-model runs in five steps:
 **define** what the system must do, **implement** it, **verify** it, **iterate** when something changes,
-and **prove** at a release that every requirement is implemented, verified and traced.
+and **prove**, at a release, how each requirement is implemented, verified and traced.
 This page maps each step to what Sphinx-Needs and its sibling extensions offer,
 and links the pages that describe it.
 
 .. mermaid::
-   :alt: define, then implement, then verify, then prove; a change sends the work back through iterate to define
+   :alt: define, implement, verify and prove in turn; a change after prove goes through iterate back to define
 
    flowchart LR
      define["Define<br/>need types, links, schemas"]
@@ -19,7 +19,7 @@ and links the pages that describe it.
      prove["Prove<br/>tables, charts, needs.json"]
      iterate["Iterate<br/>back links, filters, needextend"]
      define --> implement --> verify --> prove
-     verify -.->|a change| iterate -.-> define
+     prove -.->|a change| iterate -.-> define
 
 .. _v_model_define:
 
@@ -55,7 +55,8 @@ Test results traced to the needs they verify, and a build that fails when a rule
 
 - `Sphinx-Test-Reports <https://sphinx-test-reports.readthedocs.io/en/latest/>`__ turns JUnit XML and JSON test results
   into needs, which you can link to the specifications they test, filter and report on.
-- A broken schema rule is reported in the build log, as a warning or an error by its :ref:`severity <severity_levels>`;
+- A need that breaks a schema rule is reported in the build log,
+  as a warning or an error by its :ref:`severity <severity_handling>`;
   build with ``-W`` to make the build fail on it (:ref:`config-warnings`).
 
 .. _v_model_iterate:
@@ -70,8 +71,8 @@ A change to one need, and the needs it touches.
 - A :ref:`filter string <filter_string>` selects the needs a question is about,
   such as every test linked to one requirement.
 - :ref:`needextend` changes existing needs in bulk, for example the status of every need a filter selects.
-- The :ref:`needs builder <needs_builder>` can store each documentation version's needs
-  side by side in one ``needs.json``,
+- The :ref:`needs builder <needs_builder>`, given the previous ``needs.json`` through :ref:`needs_file`,
+  stores each documentation version's needs side by side in it,
   and :ref:`needimport` imports the needs of a ``needs.json``, such as another project's.
 
 Sphinx-Needs has no impact analysis of its own;
