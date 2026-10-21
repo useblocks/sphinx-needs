@@ -373,8 +373,10 @@ so writing filters the first two take is recommended:
      -- an item of a list, a substring of a string:
      ``type in ['req', 'spec']``, ``'safety' in tags``, ``'login' not in title.lower()``,
      ``owner in maintainers``, ``platform in var.archs``.
-     As in Python, a value of another type is no item of a list (``None`` neither, and ``True`` is ``1``),
-     and a field holding no value after ``in``, or a number ``in`` a string, fails for that need;
+     As in Python, a list holds a value equal to one of its items -- ``2.0`` is ``2`` and ``True`` is ``1``,
+     but a string is no number and ``None`` is no item -- and a string holds a string it contains;
+     a need fails where the field after ``in`` holds no value, a number or a boolean,
+     or where a string field meets anything but a string;
      the field after ``in`` takes no call (``owner in tags.lower()`` is evaluated by ``eval``);
    - ``x is None`` / ``x is not None``;
    - ``x.startswith('...')`` / ``x.endswith('...')`` after an operand: ``id.lower().startswith('req')``;

@@ -583,7 +583,7 @@ divergent = { ubcode = "the filter fails: an integer literal in a list of string
 
 [[case]]
 name = "membership-of-a-field-in-a-field"
-why = "an operand in and not in a field answer as Python's in: a substring of a string, an item of a list, where a value of another type, None among them, is no item; a field holding no value after in, or a number in a string, fails for that need, which is excluded and reported, the others answered; the field after in takes no call"
+why = "an operand in and not in a field answer as Python's in: a list holds a value equal to one of its items -- 2.0 is 2 and True is 1, but a string is no number and None is no item -- and a string holds a string it contains; a need fails where the field after in holds no value, a number or a boolean, or where a string field meets anything but a string, and is excluded and reported, the others answered; the left one is read first, and the field after in takes no call"
 config = '''
 [needs.fields.owner]
 schema = { type = "string" }
@@ -677,6 +677,18 @@ filter = 'owner in lead'
 expected = ["REQ_002", "SPEC_001"]
 error = "filter"
 why = "REQ_001's lead holds no value: in fails there"
+
+[[case.filters]]
+filter = 'len(lead) in absent'
+expected = []
+error = "filter"
+why = "the left one is read first: REQ_001's lead holds no value, the others fail on absent"
+
+[[case.filters]]
+filter = 'owner in filter'
+expected = []
+error = "filter"
+why = "a name no field defines after in is the Python builtin, as it is to eval, and holds no items"
 
 [[case.filters]]
 filter = 'type == "spec" or effort in owner'

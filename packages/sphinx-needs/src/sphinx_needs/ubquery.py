@@ -443,9 +443,10 @@ def _membership(left: ast.expr, right: ast.expr, *, negate: bool) -> SimplePredi
     `not_in_list_expr` with a `list_literal`), a literal in an operand
     (`literal_in_var_field_expr`, `literal_not_in_var_field_expr`), and an operand in a
     field (`in_list_expr`, `not_in_list_expr` with a `var_field`), where the field after
-    ``in`` is a name or a ``var.`` chain and takes no call. Each answers as Python's ``in``: a substring of a string,
-    an item of a list, and the :class:`TypeError` Python raises for a value that holds
-    no items (``"x" in None``) or a number in a string.
+    ``in`` is a name or a ``var.`` chain and takes no call. Each answers as Python's
+    ``in``: a substring of a string, an item of a list, and the :class:`TypeError`
+    Python raises for a value that holds no items (``"x" in None``) or a number in a
+    string.
 
     :raises _NotPortable: For any other membership test.
     """

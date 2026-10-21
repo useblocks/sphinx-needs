@@ -38,8 +38,8 @@ Improvements
   ``True and owner``, a ``var.`` chain alone holding a string -- selects the needs it is true for, where it was
   refused with ``Filter did not evaluate to a boolean`` and selected nothing; ``eval`` now reads every filter for
   its truth too (below). A string the language does not hold -- a list beside ``==``, a subscript, a
-  comprehension, arithmetic, another call -- is evaluated by ``eval`` as before. Of the strings this repository's documentation and tests wrote, eleven of
-  the sixteen that reached ``eval`` no longer do. ``tests/fixtures/filter_conformance.toml`` defines the
+  comprehension, arithmetic, another call -- is evaluated by ``eval`` as before. Of the strings this repository's documentation and tests wrote, twelve of
+  the sixteen that reached ``eval`` are answered without it now, and a thirteenth, a constant, is refused. ``tests/fixtures/filter_conformance.toml`` defines the
   language and pins every rule's answers, so the three tiers are held to the same results; see
   :ref:`filter_string_performance`.
 
