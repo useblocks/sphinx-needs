@@ -1198,6 +1198,7 @@ needs_links = {
     "tests": {},
     "c_cur": {},
     "z_cur": {},
+    "a_own": {},
     "u": {"derive": {"kind": "union", "fields": ["links", "tests"]}},
 }
 """
@@ -1218,6 +1219,11 @@ Current key
    :tests: [[t_fn()]]
    :c_cur: [[links_from_filter("len(needs) > 0 and 'REQ_3' in current_need['u'] and id == 'REQ_1'")]]
    :z_cur: [[links_from_filter("len(needs) > 0 and 'REQ_3' in current_need['u'] and id == 'REQ_1'")]]
+
+.. spec:: An earlier need, whose own union is computed with the built-ins
+   :id: SPEC_1
+   :links: REQ_3
+   :a_own: [[links_from_filter("len(needs) > 0 and 'REQ_3' in current_need['u'] and id == 'REQ_1'")]]
 """
 
 
@@ -1229,7 +1235,8 @@ def test_a_filter_naming_a_union_by_current_need_key(test_app):
     last as ``current_need['u']``, a constant key, names it as a free name would:
     before the union (``c_cur``, whose field sorts before the union's last late member
     ``tests``) the call is not run and is reported; after it (``z_cur``) it reads the
-    union complete."""
+    union complete. The key is read on the need's own union only: SPEC_1's ``a_own``,
+    before SPEC_5's union, reads SPEC_1's, which is not computed last, and is run."""
     app = test_app
     app.build()
     assert [w for w in build_warnings(app) if "derive_scope" in w] == [
@@ -1239,9 +1246,11 @@ def test_a_filter_naming_a_union_by_current_need_key(test_app):
         "which this step cannot wait for: the call is not run and the field is left "
         "empty [needs.derive_scope]",
     ]
-    spec = _built(app)["needs"]["SPEC_5"]
+    needs = _built(app)["needs"]
+    spec = needs["SPEC_5"]
     assert (spec["u"], spec["c_cur"], spec["z_cur"]) == (
         ["REQ_1", "REQ_3"],
         [],
         ["REQ_1"],
     )
+    assert (needs["SPEC_1"]["u"], needs["SPEC_1"]["a_own"]) == (["REQ_3"], ["REQ_1"])

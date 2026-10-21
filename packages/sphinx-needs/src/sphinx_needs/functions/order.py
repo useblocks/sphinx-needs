@@ -366,9 +366,11 @@ class NodeReads:
     :ivar user_functions: The user functions the node calls: it is computed last.
     :ivar opaque: A built-in call of the node has a filter that cannot be read: it is
         computed last.
-    :ivar opaque_names: The fields the filters that cannot be read name all the same:
-        their free names (read on every need) and the constant keys they read of
-        ``current_need``; what else they read is not known.
+    :ivar opaque_names: The fields the filters that cannot be read name all the same,
+        as free names: each read on every need.
+    :ivar opaque_current: The fields those filters read as ``current_need`` by a
+        constant key: each read on the node's own need. What else they read is not
+        known.
     :ivar reads_itself_by_variant: A variant condition of the node names its field.
     """
 
@@ -379,6 +381,7 @@ class NodeReads:
     user_functions: Sequence[str] = ()
     opaque: bool = False
     opaque_names: Sequence[str] = ()
+    opaque_current: Sequence[str] = ()
     reads_itself_by_variant: bool = False
 
     @property
@@ -668,10 +671,15 @@ class _CallReads:
         names = filter_names(filter_string, self.project.not_fields)
         if names.opaque:
             self.reads.opaque = True
-            # the free names, and the constant keys of current_need, still read
-            for name in sorted(names.names | names.current):
+            # the free names, read on every need, and the constant keys of
+            # current_need, read on the node's own need, are still known
+            for name in sorted(names.names):
                 self.reads.opaque_names = _appended(
                     self.reads.opaque_names, self.project.field_of(name)
+                )
+            for key in sorted(names.current):
+                self.reads.opaque_current = _appended(
+                    self.reads.opaque_current, self.project.field_of(key)
                 )
             return None
         return names
@@ -1180,9 +1188,11 @@ def _sink_union_readers(
     what its stratum cannot wait for, and says so (``OutOfScope.unions``). A built-in
     node's read through a column counts when one of the column's members is such a
     union; a node computed last's, when a filter of it that cannot be read still names
-    the union's field. What else a node computed last reads is not known: your own
-    function, or a read through ``needs``, before such a union reads it empty,
-    unreported. A node reading the sink reads its placeholder, which is final.
+    the union's field, or reads it as ``current_need`` by a constant key on the node's
+    own need. What else a node computed last reads is not known: your own function, a
+    read through ``needs`` or ``current_need`` by a key that is not written out, before
+    such a union reads it empty, unreported. A node reading the sink reads its
+    placeholder, which is final.
     """
     moved = slots.keys()
     by_field: dict[str, list[Node]] = {}
@@ -1197,6 +1207,11 @@ def _sink_union_readers(
             for need_id, name in by_field.get(field, [])
             if node <= slots[(need_id, name)]
         }
+        before.update(
+            (name, node[0])
+            for name in node_reads.opaque_current
+            if (own := (node[0], name)) in slots and node <= slots[own]
+        )
         if before:
             node_reads.scope = [
                 OutOfScope(node_reads.what, unions=tuple(sorted(before)))
