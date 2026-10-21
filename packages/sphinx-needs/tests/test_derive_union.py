@@ -959,7 +959,11 @@ def test_a_union_computed_last_and_its_readers(test_app):
     its reads reports reading it at run time (SPEC_5's ``copy`` of SPEC_6's union)."""
     app = test_app
     app.build()
-    assert [w for w in build_warnings(app) if "config.cache" not in w and "cannot cache unpickable" not in w] == [
+    assert [
+        w
+        for w in build_warnings(app)
+        if "config.cache" not in w and "cannot cache unpickable" not in w
+    ] == [
         "<srcdir>/index.rst:10: WARNING: dynamic function 'links_from_filter' for "
         "option 'opq' reads 'all_links' on 3 needs (SPEC_1, SPEC_5, SPEC_6), which are "
         f"{_AFTER}: the call is not run and the field is left empty "
