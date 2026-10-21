@@ -41,7 +41,8 @@ Improvements
   such a value are reported, so a filter whose ``and`` stops before it is not; a whole-need read such as
   ``dict(need)`` reads every field. A built-in function's filter is watched only in a step with a call computed
   after the built-in functions, and your own functions' calls as they run, so a project without functions of its
-  own and without a filter that cannot be read runs as before; in any project the values are what they were.
+  own and without a filter that cannot be read runs as before; a project that declares nothing computes the values it
+  did.
   See :ref:`needs_derive_scope`.
 
 - ⚡️ A filter string in the portable filter language is evaluated without Python's ``eval``, five to six times

@@ -281,6 +281,8 @@ one computed in the same step is waited for (the call's own field as its argumen
 and the declaration is called with a stand-in for its value, which can be passed on but not compared,
 tested, hashed or read -- a declaration that needs the value (one naming the field it reads by that argument,
 or choosing its reads by it) cannot be applied to that call.
+The stand-in cannot refuse every test (``isinstance`` answers without asking it):
+a declaration that chooses its reads that way may declare too little, which the check of a declared call reports.
 A declaration that cannot be applied to a call -- it needs such a value, raises,
 or returns anything but such a mapping -- is reported once per function, as a ``needs.config`` warning,
 and the calls it cannot be applied to are computed after the built-in functions,
