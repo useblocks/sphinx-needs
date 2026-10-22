@@ -430,5 +430,27 @@
       "src/script.js",
       "src/widget.jsx"
     ]
+  },
+  {
+    "name": "vhdl_comment_type",
+    "description": "VHDL comment type discovers .vhd and .vhdl files",
+    "git_init": false,
+    "files": {
+      "src/counter.vhd": "-- counter",
+      "src/top.vhdl": "-- top",
+      "src/main.cpp": "// not vhdl",
+      "src/util.py": "# not vhdl"
+    },
+    "config": {
+      "src_dir": "src",
+      "include": [],
+      "exclude": [],
+      "gitignore": false,
+      "comment_type": "vhdl"
+    },
+    "expected": [
+      "src/counter.vhd",
+      "src/top.vhdl"
+    ]
   }
 ]

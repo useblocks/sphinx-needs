@@ -2858,6 +2858,7 @@ dependencies = [
     { name = "tree-sitter-python" },
     { name = "tree-sitter-rust" },
     { name = "tree-sitter-typescript" },
+    { name = "tree-sitter-vhdl" },
     { name = "tree-sitter-yaml" },
     { name = "typer" },
     { name = "ub-project" },
@@ -2906,6 +2907,7 @@ requires-dist = [
     { name = "tree-sitter-python", specifier = ">=0.23.6" },
     { name = "tree-sitter-rust", specifier = ">=0.23.0" },
     { name = "tree-sitter-typescript", specifier = ">=0.23.2" },
+    { name = "tree-sitter-vhdl", specifier = ">=1.4.0" },
     { name = "tree-sitter-yaml", specifier = ">=0.7.1" },
     { name = "typer", specifier = ">=0.16.0" },
     { name = "ub-project", editable = "packages/ub-project" },
@@ -3872,6 +3874,22 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/7f/cb/f57b149d7beed1a85b8266d0c60ebe4c46e79c9ba56bc17b898e17daf88e/tree_sitter_typescript-0.23.2-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:8d4f0f9bcb61ad7b7509d49a1565ff2cc363863644a234e1e0fe10960e55aea0", size = 340245, upload-time = "2024-11-11T02:36:06.473Z" },
     { url = "https://files.pythonhosted.org/packages/8b/ab/dd84f0e2337296a5f09749f7b5483215d75c8fa9e33738522e5ed81f7254/tree_sitter_typescript-0.23.2-cp39-abi3-win_amd64.whl", hash = "sha256:3f730b66396bc3e11811e4465c41ee45d9e9edd6de355a58bbbc49fa770da8f9", size = 278015, upload-time = "2024-11-11T02:36:07.631Z" },
     { url = "https://files.pythonhosted.org/packages/9f/e4/81f9a935789233cf412a0ed5fe04c883841d2c8fb0b7e075958a35c65032/tree_sitter_typescript-0.23.2-cp39-abi3-win_arm64.whl", hash = "sha256:05db58f70b95ef0ea126db5560f3775692f609589ed6f8dd0af84b7f19f1cbb7", size = 274052, upload-time = "2024-11-11T02:36:09.514Z" },
+]
+
+[[package]]
+name = "tree-sitter-vhdl"
+version = "2.0.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/77/9fdf401e08d32903ca48b22504b7f337d23caa1c8cb536c40395509907df/tree_sitter_vhdl-2.0.3.tar.gz", hash = "sha256:c31e5ef7313834d96fddf45584f9a3c72c09c9e5cc427dddecb135a39f2793a7", size = 405175, upload-time = "2026-09-14T05:14:11.9Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/87/80/ec803e413142127b29cdcb9a0d758544c16573c7fdb56ae2d9475c3e4ac1/tree_sitter_vhdl-2.0.3-cp310-abi3-macosx_10_9_x86_64.whl", hash = "sha256:f25273dae8b52523578d552f712b8db74f6a17f7a4e0687a25df9f2b74be7aa8", size = 206684, upload-time = "2026-09-14T05:14:02.867Z" },
+    { url = "https://files.pythonhosted.org/packages/72/71/7384c37a1173943c18cc36547c2c435ed7f7fd077837476b62b156461f81/tree_sitter_vhdl-2.0.3-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:61eb610c999cdc8b8e4a6b6822471b4fcf80a6abeb19ee516779a89bb5504c02", size = 220160, upload-time = "2026-09-14T05:14:04.14Z" },
+    { url = "https://files.pythonhosted.org/packages/44/63/0a6fa62d092562e2b6b85990f56393bc1c24a3a6919a9daa40d77e99c1f7/tree_sitter_vhdl-2.0.3-cp310-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:41ca563c95c4c73b9339ce84c3926070e0880f472e6fd2caf93d17cd5ef7d01f", size = 437839, upload-time = "2026-09-14T05:14:05.147Z" },
+    { url = "https://files.pythonhosted.org/packages/82/f4/24d52f65bd776d55ad20dc4431ddbedd7e538b29aac09f331548c9059c6b/tree_sitter_vhdl-2.0.3-cp310-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:0b568f952b8dcc318170cc1f3670c8a8164fc4925a6b5ec4e6285d1409c2349b", size = 454236, upload-time = "2026-09-14T05:14:06.26Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/5b/1815b7c84e7c7f80230c7b2d89f0d097b466515510d24ec170e6a9c11a12/tree_sitter_vhdl-2.0.3-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:6ff45e49db21fe8ea88da1bfc81ea876bc3bf45b03deb8fe8756e5b7d7cefe82", size = 453964, upload-time = "2026-09-14T05:14:07.29Z" },
+    { url = "https://files.pythonhosted.org/packages/70/b7/630b505b738b7ab1fd7e2182a96c536e17e67c633eca991b0555e5a79b11/tree_sitter_vhdl-2.0.3-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:be6f3416d9729eb9f9b609b868133ec7847a887ea9145231d4f1f1ac00f87a42", size = 436006, upload-time = "2026-09-14T05:14:08.496Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/da/7de44f030228c5fcfeb2b8b259d397568fe113db264d921505b6e9d902d2/tree_sitter_vhdl-2.0.3-cp310-abi3-win_amd64.whl", hash = "sha256:d436c01f0fe5eb83d7161d56a3a7e33d22ecce1f089993a653df7e263c66e626", size = 204045, upload-time = "2026-09-14T05:14:09.68Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/ca/e49d878f5ecf4c936e1fd7f9ec47dc5afe4b7e08a906c7e76fa231c4a3ad/tree_sitter_vhdl-2.0.3-cp310-abi3-win_arm64.whl", hash = "sha256:bae0d2894df998fe184a2059a2e1270ee86ec447ff079d5492af15b166cab2b3", size = 203481, upload-time = "2026-09-14T05:14:10.852Z" },
 ]
 
 [[package]]

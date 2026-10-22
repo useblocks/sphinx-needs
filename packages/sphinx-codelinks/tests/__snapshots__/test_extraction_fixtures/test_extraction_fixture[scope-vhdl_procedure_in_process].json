@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 46
+      }
+    },
+    "tagged_scope": "procedure foo is begin end procedure;",
+    "need": {
+      "title": "Helper procedure",
+      "id": "IMPL_VHDL_PROC",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_definition"
+  }
+]

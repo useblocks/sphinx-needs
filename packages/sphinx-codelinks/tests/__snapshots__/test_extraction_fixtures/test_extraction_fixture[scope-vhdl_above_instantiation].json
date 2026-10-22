@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 6
+      },
+      "end": {
+        "row": 2,
+        "column": 41
+      }
+    },
+    "tagged_scope": "u_fifo : entity work.fifo port map (clk => clk);",
+    "need": {
+      "title": "Fifo instance",
+      "id": "IMPL_VHDL_INST",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "component_instantiation_statement"
+  }
+]

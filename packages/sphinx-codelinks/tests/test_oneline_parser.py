@@ -5,6 +5,7 @@ from sphinx_codelinks.analyse.oneline_parser import (
     OnelineParserInvalidWarning,
     WarningSubTypeEnum,
     docstring_tag,
+    doxygen_tag,
     jsdoc_tag,
     oneline_parser,
 )
@@ -762,3 +763,27 @@ def test_jsdoc_tag(line: str, expected: str | None) -> None:
     start sequence ends at a space, a tab, a ``{``, a ``}`` or the end of the line. The
     same table as ubCode's."""
     assert jsdoc_tag(line, "@") == expected
+
+
+@pytest.mark.parametrize(
+    ("line", "expected"),
+    [
+        pytest.param("--! @param clk Clock input, rising edge", "param", id="param"),
+        pytest.param("--! @param[in] rst Reset, active high", "param", id="bracket"),
+        pytest.param("--! @code{.vhd} x, y", "code", id="brace"),
+        pytest.param("--! @brief", "brief", id="bare_command"),
+        pytest.param("--! @brief\n", "brief", id="bare_command_terminated"),
+        pytest.param("--!\t@note\tOne, two", "note", id="tab"),
+        pytest.param("--! @Param check, IMPL_1, impl", None, id="case_sensitive"),
+        pytest.param("--! @parameters Check, IMPL_1, impl", None, id="longer_word"),
+        pytest.param("--! @param1 text", None, id="digit_glued_to_command"),
+        pytest.param("--! @param: text", None, id="colon_glued_to_command"),
+        pytest.param("--! see @param a text", None, id="text_before_start"),
+        pytest.param("--! @Real Need, IMPL_1, impl", None, id="not_a_command"),
+    ],
+)
+def test_doxygen_tag(line: str, expected: str | None) -> None:
+    """A Doxygen comment line is a ``doxygen_tag`` only when a listed command right after
+    the start sequence ends at a space, a tab, a ``[``, a ``{`` or the end of the line.
+    The same table as ubCode's."""
+    assert doxygen_tag(line, "@") == expected

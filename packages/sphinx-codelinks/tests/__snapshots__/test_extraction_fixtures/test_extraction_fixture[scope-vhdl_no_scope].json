@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 34
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "No Scope",
+      "id": "IMPL_VHDL_NONE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

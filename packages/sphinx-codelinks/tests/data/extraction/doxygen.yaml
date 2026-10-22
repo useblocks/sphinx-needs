@@ -1,0 +1,120 @@
+# Doxygen comments.
+#
+# Doxygen's VHDL comment is a line comment opened by ``--!``. A line of such a comment
+# (under ``comment_type = "vhdl"``) is a ``doxygen_tag`` warning, and never a need, when
+# ALL hold: the one-line start sequence is ``@`` (Doxygen's own sigil -- with any other
+# start sequence the check does not run, so ``[[param a, b]]`` is the marker its author
+# wrote); nothing alphanumeric precedes the ``@`` on the line; a command of the list
+# below directly follows it and ends at a space, a tab, ``[``, ``{`` or the line end
+# (``@param clk text``, ``@param[in] clk``, ``@code{.vhd}``, ``@brief``); and the one-line
+# parser would otherwise have read the line as a marker or warned about it. A command
+# line the one-line parser would have ignored (``@brief Counter``) stays silent.
+# Commands are case-sensitive. Every other line goes to the one-line parser, and a
+# ``--`` comment is no Doxygen comment.
+#
+# A start sequence that Doxygen also uses cannot tell a need from documentation; the
+# warning says to choose another one.
+#
+# The commands (197), Doxygen's special commands by name:
+#
+#   a, addindex, addtogroup, anchor, arg, attention, author, authors, b, brief, bug,
+#   c, callergraph, callgraph, category, cite, class, code, collaborationgraph,
+#   concept, cond, copybrief, copydetails, copydoc, copyright, date, def, defgroup,
+#   deprecated, details, diafile, dir, directorygraph, docbookinclude, docbookonly,
+#   dontinclude, dot, dotfile, doxyconfig, e, else, elseif, em, emoji, endcode,
+#   endcond, enddocbookonly, enddot, endhtmlonly, endif, endinternal, endlatexonly,
+#   endlink, endmanonly, endmsc, endparblock, endrtfonly, endsecreflist, enduml,
+#   endverbatim, endxmlonly, enum, example, exception, extends, file, fileinfo, fn,
+#   groupgraph, headerfile, hidecallergraph, hidecallgraph, hidecollaborationgraph,
+#   hidedirectorygraph, hidegroupgraph, hideincludedbygraph, hideincludegraph,
+#   hideinheritancegraph, hideinitializer, hideinlinesource, hiderefby, hiderefs,
+#   htmlinclude, htmlonly, idlexcept, if, ifnot, image, implements, include,
+#   includedbygraph, includedoc, includegraph, includelineno, ingroup,
+#   inheritancegraph, interface, internal, invariant, latexinclude, latexonly, li,
+#   line, lineinfo, link, mainpage, maninclude, manonly, memberof, module, msc,
+#   mscfile, n, name, namespace, noop, nosubgrouping, note, overload, p, package,
+#   page, par, paragraph, param, parblock, plantumlfile, post, pre, private,
+#   privatesection, property, protected, protectedsection, protocol, public,
+#   publicsection, pure, qualifier, raisewarning, ref, refitem, related, relatedalso,
+#   relates, relatesalso, remark, remarks, result, return, returns, retval,
+#   rtfinclude, rtfonly, sa, secreflist, section, see, short, showdate,
+#   showinitializer, showinlinesource, showrefby, showrefs, since, skip, skipline,
+#   snippet, snippetdoc, snippetlineno, startuml, static, struct, subpage,
+#   subparagraph, subsection, subsubparagraph, subsubsection, tableofcontents, test,
+#   throw, throws, todo, tparam, typedef, union, until, var, verbatim, verbinclude,
+#   version, vhdlflow, warning, weakgroup, xmlinclude, xmlonly, xrefitem
+
+doxygen_tags:
+  # A command line warns where the one-line parser would read it (the three lines holding
+  # a comma); "@brief Counter" would be ignored, so it stays silent. The marker that is
+  # no command is a need.
+  lang: vhdl
+  config: default
+  source: |
+    --! @brief Counter with enable, reset and load
+    --! @param clk Clock input, rising edge active
+    --! @param[in] rst Reset, active high
+    --! @brief Counter
+    --! @Real Need, IMPL_DOXY, impl, [REQ_VHDL]
+    entity counter is
+    end entity counter;
+
+doxygen_command_end:
+  # A command ends at a space, a ``[``, a ``{`` or the end of the line; ``@parameters`` is
+  # no command. The bare ``@brief`` holds nothing the one-line parser would read, so it
+  # stays silent.
+  lang: vhdl
+  config: default
+  source: |
+    --! @code{.vhd} x, y
+    --! @brief
+    --! @parameters Check, IMPL_PARAMETERS, impl
+    entity e is
+    end entity e;
+
+doxygen_command_is_case_sensitive:
+  lang: vhdl
+  config: default
+  source: |
+    --! @Param check, IMPL_CASE, impl
+    entity e is
+    end entity e;
+
+not_a_doxygen_comment:
+  # A ``--`` comment is no Doxygen comment: its command lines are left to the one-line
+  # parser, so this @see line is a need.
+  lang: vhdl
+  config: default
+  source: |
+    -- @see Retry policy, IMPL_RETRY, impl
+    entity e is
+    end entity e;
+
+doxygen_need_ids:
+  # A ``@need-ids:`` line in a ``--!`` comment: both ids are references, and the line is
+  # neither a need nor a ``doxygen_tag`` warning.
+  lang: vhdl
+  config: default
+  source: |
+    --! @need-ids: REQ_1, REQ_2
+    entity e is
+    end entity e;
+
+doxygen_with_other_start_sequence:
+  # With a start sequence other than ``@`` the check does not run: the ``@param`` line is
+  # plain text, and ``[[param a, b]]`` is the need its author wrote.
+  lang: vhdl
+  config:
+    start_sequence: "[["
+    end_sequence: "]]"
+    field_split_char: ","
+    needs_fields:
+      - {name: title}
+      - {name: id}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+  source: |
+    --! @param a First, second
+    --! [[param a, b]]
+    entity e is
+    end entity e;

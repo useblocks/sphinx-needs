@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 43
+      }
+    },
+    "tagged_scope": "entity e is\nend entity e;",
+    "need": {
+      "title": "Vhdl Title",
+      "id": "IMPL_VHDL",
+      "type": "impl",
+      "links": [
+        "REQ_VHDL"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "entity_declaration"
+  }
+]

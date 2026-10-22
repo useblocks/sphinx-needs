@@ -1,0 +1,48 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 6
+      },
+      "end": {
+        "row": 2,
+        "column": 45
+      }
+    },
+    "tagged_scope": "led_o <= '1';",
+    "need": {
+      "title": "Led above",
+      "id": "IMPL_VHDL_ASSIGN_ABOVE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "concurrent_simple_signal_assignment"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 21
+      },
+      "end": {
+        "row": 4,
+        "column": 67
+      }
+    },
+    "tagged_scope": "busy_o <= '0';",
+    "need": {
+      "title": "Busy trailing",
+      "id": "IMPL_VHDL_ASSIGN_TRAILING",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "concurrent_simple_signal_assignment"
+  }
+]

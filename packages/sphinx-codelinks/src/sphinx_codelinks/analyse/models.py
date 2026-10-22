@@ -27,6 +27,8 @@ class WarningSubTypeEnum(str, Enum):  # noqa: UP042  # StrEnum changes str(membe
     """A Python docstring line holding a field-shaped tag, ``@param a: text``."""
     jsdoc_tag = "jsdoc_tag"
     """A line of a TypeScript or JavaScript JSDoc comment starting with a JSDoc tag."""
+    doxygen_tag = "doxygen_tag"
+    """A line of a VHDL ``--!`` Doxygen comment starting with a Doxygen command."""
     multiline_need_header = "multiline_need_header"
     """The open word starts a line that does not match the open-line grammar."""
     multiline_need_unterminated = "multiline_need_unterminated"

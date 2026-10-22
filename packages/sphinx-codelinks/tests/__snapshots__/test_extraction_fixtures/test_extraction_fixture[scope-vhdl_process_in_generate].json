@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 46
+      }
+    },
+    "tagged_scope": "p : process (clk) begin end process p;",
+    "need": {
+      "title": "Lane process",
+      "id": "IMPL_VHDL_GEN_PROC",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "process_statement"
+  }
+]

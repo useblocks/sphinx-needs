@@ -177,3 +177,19 @@ ref_then_need_on_one_row:
   source: |
     /* @need-ids: REQ_1 */ /* [[IMPL_X, X need]] */
     void f() {}
+
+vhdl_line_comment_end:
+  # A VHDL ``--`` comment's node holds its newline; the marker still ends on its own
+  # row, at the end of the line, and a comment after code starts after the code.
+  lang: vhdl
+  config: default
+  source: |
+    -- @Own line, IMPL_VHDL_OWN, impl
+    entity top is
+    end entity top; -- @After code, IMPL_VHDL_AFTER, impl
+
+vhdl_no_newline_at_eof:
+  # The last comment has no newline after it.
+  lang: vhdl
+  config: default
+  source: "entity top is\nend entity top;\n-- @Last line, IMPL_VHDL_EOF, impl"

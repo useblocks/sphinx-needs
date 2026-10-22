@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 48
+      }
+    },
+    "tagged_scope": "function f return integer is begin return 1; end function;",
+    "need": {
+      "title": "Block function",
+      "id": "IMPL_VHDL_BLOCK_FN",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_definition"
+  }
+]
