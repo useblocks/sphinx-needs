@@ -13,6 +13,7 @@ entry of the field for that type, and reaches the type's children.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 from pathlib import Path
 from typing import Any, get_args
@@ -951,6 +952,14 @@ def test_required_on_the_types_that_declare_it(test_app: Any) -> None:
 # -- an extension's field, and the readers of the configuration ---------------------
 
 
+@pytest.mark.skipif(
+    importlib.util.find_spec("sphinx_test_reports") is None,
+    # sphinx-test-reports is a workspace sibling, not a dependency: the release
+    # workflow's compat cell runs this suite against the released dependencies
+    # alone, where it is absent, and this is the only test that loads it (the
+    # skip must sit on the test, not in it: the app fixture loads the extension).
+    reason="sphinx-test-reports is not installed",
+)
 @pytest.mark.parametrize(
     "test_app",
     [
