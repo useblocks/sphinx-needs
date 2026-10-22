@@ -9,7 +9,7 @@ Changelog
 9.1.0
 -----
 
-:Released: 21.10.2026
+:Released: 22.10.2026
 :Full Changelog: `sphinx-needs-v9.0.0...sphinx-needs-v9.1.0 <https://github.com/useblocks/sphinx-needs/compare/sphinx-needs-v9.0.0...sphinx-needs-v9.1.0>`__
 
 Fields and link types declared per need type are the heart of this release. A :ref:`needs_types` entry may
