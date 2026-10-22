@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792672806310,
+  "lastUpdate": 1792674118316,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26820,6 +26820,42 @@ window.BENCHMARK_DATA = {
             "value": 54.688434712,
             "unit": "s",
             "extra": "Commit: ae71ef57b164f808a7b39becaaadbf8e77af26c5\nBranch: master\nTime: 2026-10-22T14:38:36+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "189783aa3f8d40f36005eeca3693763b6eb2128b",
+          "message": "🧪 The extension-field test skips without sphinx-test-reports, which the release compat cell never installs (#2369)\n\n### What\n\n`test_an_extensions_field_is_never_declared_on_need_types_alone` is the\none test of the sphinx-needs suite whose\nproject loads a workspace sibling, `sphinx_test_reports`, as its\n\"extension that registers a field\". It now carries a\ncollection-time `skipif` on that module's presence, with a comment\nsaying why it must sit on the test rather than in\nit (the `test_app` fixture loads the extension, so an `importorskip` in\nthe body would come too late).\n\n### Why\n\nThe release workflow's compat cell runs the suite against the wheel's\ndependencies *as published* and nothing else,\nso the sibling is absent there and the test errored at setup with `Could\nnot import extension sphinx_test_reports`:\nthe `sphinx-needs-v9.1.0` run (`39780699398`) went red in \"Build and\ngate\" after 3778 passes, and publish was skipped.\nEvery other cell of CI installs the workspace, where the test keeps\nrunning.\n\n### Tests\n\nThe test passes in the workspace environment (`1 passed`), and with\n`importlib.util.find_spec` hidden for the module it\nreports `SKIPPED … sphinx-test-reports is not installed` (`1 skipped`),\nso the compat cell's run names its skip.\n`prek` (ruff check, ruff format) passes on the file.\n\n### Docs\n\nNone: a test-only change.",
+          "timestamp": "2026-10-22T15:00:22+02:00",
+          "tree_id": "0e30f77f775f47d72c7c892e6f2ec59eccfeb4f3",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/189783aa3f8d40f36005eeca3693763b6eb2128b"
+        },
+        "date": 1792674108332,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10707816000000037,
+            "unit": "s",
+            "extra": "Commit: 189783aa3f8d40f36005eeca3693763b6eb2128b\nBranch: master\nTime: 2026-10-22T15:00:22+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.29456894500001,
+            "unit": "s",
+            "extra": "Commit: 189783aa3f8d40f36005eeca3693763b6eb2128b\nBranch: master\nTime: 2026-10-22T15:00:22+02:00"
           }
         ]
       }
