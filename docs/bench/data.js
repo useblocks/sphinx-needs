@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792612087389,
+  "lastUpdate": 1792672806310,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26784,6 +26784,42 @@ window.BENCHMARK_DATA = {
             "value": 63.873674567,
             "unit": "s",
             "extra": "Commit: 3c2e324627e4470519dd5bcc2d78c27cb97f0215\nBranch: master\nTime: 2026-10-21T21:46:27+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ae71ef57b164f808a7b39becaaadbf8e77af26c5",
+          "message": "🚀 Release: sphinx-needs 9.1.0, with sphinx-codelinks 2.0.1 and sphinx-test-reports 3.0.1 (#2368)\n\n### What\n\nThe release pull request for **sphinx-needs 9.1.0**, with the two\nmembers whose floor on it moves: **sphinx-codelinks\n2.0.1** and **sphinx-test-reports 3.0.1**. Three commits, one per\nmember, each the output of `uv run poe bump`\n(version, `__version__`, the floors, the lock, the changelog entry\nstamped from `Unreleased`) plus the summary\nparagraph written by hand under the new heading; sphinx-needs' commit\nalso moves the docker workflow's\n`NEEDS_VERSION` fallback to `sphinx-needs-v9.1.0`.\n\n- `packages/sphinx-needs/docs/changelog.rst`: the 9.1.0 entry, every\nbullet of `Unreleased` kept (the two commits\nthat landed after the branch was cut, #2364's truthiness rule and\n#2365's V-model page, are merged in), with its\nsummary paragraph (per-type fields and link types; `target_types`; the\nderived union and the join; the portable\nfilter language without `eval` and the truthiness rule;\n`ub-needs-exchange` and `format_version`; `py.typed`; the\n  two breaking changes named; the V-model page).\n- `packages/sphinx-codelinks/docs/changelog.rst`: 2.0.1, converted in\nplace, with a one-paragraph summary.\n- `packages/sphinx-test-reports/docs/changelog.rst`: 3.0.1, converted in\nplace, with a one-paragraph summary.\n\n### Why\n\nsphinx-codelinks' released 2.0.0 was adapted on master to sphinx-needs'\nnew fields schema (#2275's two tiers, #2289's\nrefusal of a write to a derived field), so the published 2.0.0 is not a\nsafe pairing with 9.1.0: it releases\nbeside it, with its floor raised to `>=9.1.0` by `propagate_floors.py`.\nsphinx-test-reports' floor moves by the same\nrule and it has only typing and docs commits since 3.0.0, so it takes a\npatch release and the family ships together\nagain. ub-project, sphinx-mounts, ub-test-reports, sphinx-ai-index and\nub-needs-exchange are untouched: nothing in\n9.1.0 needs a version of them that PyPI does not have.\n\nA minor, not a major: the two ‼️ entries (the built-in GitHub services\nregistered only when `needs_services` names\nthem; `app.config.needs_types` / `needs_layouts` no longer holding\nextension-added types and layouts) sit under a\n*Breaking changes* heading with their migration, as the 8.2.0 and 8.4.0\nminors carried theirs, and every deprecation\nin the entry already says \"removed in 10.0\".\n\n### How\n\nAfter the merge, from `master`, the tags in dependency order, each after\nthe previous one's workflow has published,\nsince every tag's workflow resolves the built wheel against PyPI alone:\n\n```bash\ngit tag sphinx-needs-v9.1.0 && git push origin sphinx-needs-v9.1.0\ngit tag sphinx-codelinks-v2.0.1 && git push origin sphinx-codelinks-v2.0.1\ngit tag sphinx-test-reports-v3.0.1 && git push origin sphinx-test-reports-v3.0.1\n```\n\n`:Released:` says 22.10.2026 in all three entries; if the tags go out on\nanother day, change the three lines in the merge.\n\n### Tests\n\n`uv run poe lint` (check-workspace included) and `uv run poe\nsmoke-needs` (the 9.1.0 wheel built, `docs/` present,\n`tests/` and `performance/` absent, the static assets copied) green on\nthe tip. The Docs-Linkcheck 404 on the compare\nlink is expected until the tag exists.\n\n### Docs\n\nThe three changelog entries. The release-notes paragraph of 9.1.0 is the\none to read.",
+          "timestamp": "2026-10-22T14:38:36+02:00",
+          "tree_id": "2b0b2386ea32a3bd108d90a528f94048d212be37",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ae71ef57b164f808a7b39becaaadbf8e77af26c5"
+        },
+        "date": 1792672794604,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10556286599999964,
+            "unit": "s",
+            "extra": "Commit: ae71ef57b164f808a7b39becaaadbf8e77af26c5\nBranch: master\nTime: 2026-10-22T14:38:36+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.688434712,
+            "unit": "s",
+            "extra": "Commit: ae71ef57b164f808a7b39becaaadbf8e77af26c5\nBranch: master\nTime: 2026-10-22T14:38:36+02:00"
           }
         ]
       }
