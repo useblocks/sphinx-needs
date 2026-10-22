@@ -4,8 +4,31 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:9.1.0`:
+
+9.1.0
+-----
+
+:Released: 22.10.2026
+:Full Changelog: `sphinx-needs-v9.0.0...sphinx-needs-v9.1.0 <https://github.com/useblocks/sphinx-needs/compare/sphinx-needs-v9.0.0...sphinx-needs-v9.1.0>`__
+
+Fields and link types declared per need type are the heart of this release. A :ref:`needs_types` entry may
+``inherits`` another and declare ``fields`` and ``links`` of its own, each with its description, schema, default,
+predicates and ``derive`` rule; a field or link type may be declared on the need types that have it alone, under one
+rule, "one name, one shape"; ``needs_types`` may be a table keyed by directive; a link type's ``target_types`` says
+which need types its links may point to; a derived ``union`` of link types replaces ``copy = true``, and the
+:ref:`join <needs_derive_join>` role and :ref:`links_from_match` link needs whose field values match. A dynamic
+function of your own can declare what it reads and is then computed in order, like a built-in one, and every read
+of a value not yet computed is reported where it was silent. A filter
+string in the portable filter language is evaluated without Python's ``eval``, five to six times faster, with a
+conformance corpus that defines the language and a :ref:`needs_debug_filters` record naming the tier that answered
+each filter; every tier reads a filter for its truth, and a filter that is a constant is refused instead of selecting
+every need or none. A needs.json is read through the new ``ub-needs-exchange`` library and may carry a ``format_version``,
+and a file written without its defaults restores them from its own schema. The package ships ``py.typed``. Two
+changes are breaking, each with its migration under *Breaking changes* below: the built-in GitHub services are
+registered only when :ref:`needs_services` names them, and ``app.config.needs_types`` and ``needs_layouts`` no
+longer hold the types and layouts that extensions add. The documentation gains a page mapping Sphinx-Needs,
+Sphinx-CodeLinks and Sphinx-Test-Reports across the V-model's five steps.
 
 Improvements
 ............

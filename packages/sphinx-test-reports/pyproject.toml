@@ -1,6 +1,6 @@
 [project]
 name = "sphinx-test-reports"
-version = "3.0.0"
+version = "3.0.1"
 description = "Sphinx extension for showing test results and test environment information inside sphinx documentations"
 readme = "README.rst"
 license = { text = "MIT" }
@@ -43,7 +43,7 @@ requires-python = ">=3.11,<4"
 dependencies = [
   "sphinx>=7.4",
   "docutils>=0.21",
-  "sphinx-needs>=9.0.0,<10",
+  "sphinx-needs>=9.1.0,<10",
   "ub-test-reports>=1.1.0,<2",
 ]
 
@@ -71,7 +71,7 @@ docs = [
   "pillow",
   "sphinx-ai-index>=1.0.0,<2",
   "sphinx-design",
-  "sphinx-needs>=9.0.0,<10",
+  "sphinx-needs>=9.1.0,<10",
   "sphinx",
   "sphinxcontrib-plantuml",
 ]

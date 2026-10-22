@@ -30,7 +30,7 @@ env:
   # predates the move, so this path stays red until the first monorepo release, at which
   # point the release recipe bumps it to `sphinx-needs-v<version>`. (The `pre-release`
   # branch of the Dockerfile is never exercised by CI at all.)
-  NEEDS_VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'sphinx-needs-v9.0.0' }}
+  NEEDS_VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'sphinx-needs-v9.1.0' }}
   DEPLOY_IMAGE: ${{ github.event_name != 'pull_request' }}
 
 jobs:

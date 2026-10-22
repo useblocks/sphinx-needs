@@ -1,8 +1,17 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:3.0.1`:
+
+3.0.1
+-----
+
+:Released: 22.10.2026
+
+A compatibility release beside sphinx-needs 9.1.0, which this version requires. ``tr_link`` declares what it
+reads, so Sphinx-Needs computes its links before the built-in functions that read them; the package is typed
+and its documentation site moved to furo. Nothing changes in the directives' options, the converter or the
+pytest plugin.
 
 Changed
 .......

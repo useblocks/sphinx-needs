@@ -3,8 +3,17 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:2.0.1`:
+
+2.0.1
+-----
+
+:Released: 22.10.2026
+
+A compatibility release beside sphinx-needs 9.1.0, which this version requires: its schema checks follow the
+fields schema's two tiers and a need that refuses a write to a derived field, its copy of ``measure_time`` takes
+the same fix as sphinx-needs', and the package ships ``py.typed``. Nothing changes in how source links are traced
+or rendered.
 
 New and Improved
 ................
