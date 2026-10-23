@@ -385,7 +385,8 @@ Specifies the comment syntax style used in the source code files. This determine
      - ``.sh``, ``.bash``, ``.zsh``, ``.ksh``
    * - PowerShell
      - ``"powershell"``
-     - ``#`` (single-line)
+     - ``#`` (single-line),
+       ``<# #>`` (multi-line)
      - ``.ps1``, ``.psm1``, ``.psd1``
 
 .. note:: Future versions may support additional programming languages.
