@@ -16,7 +16,8 @@ which this repository holds canonically and ubCode is to vendor.
 
 Audience: implementers of a second reader, and anyone changing this package.
 
-Status: describes the implementation as it is (version 1.1.0). When behaviour changes, this
+Status: describes the implementation as it is: version 1.1.0, and the `namespaced_ids`
+marker and `split_id` of §5.4, which no release carries yet. When behaviour changes, this
 document, the corpus and the tests change in the same commit. Every rule names what
 enforces it: "corpus: `name`" is the conformance case of that name, run by
 `tests/test_conformance.py::test_case` (and, from a file, `::test_case_read_from_a_file`);
@@ -166,7 +167,57 @@ object identity). A rule marked **(not pinned)** has neither.
 3. **`needs_defaults_removed`**: `true` says the writer left out every value equal to its
    default, to be restored from `needs_schema` (§7.3). Any other value, or none, says
    nothing was left out.
-4. **`needs_amount`**, **`created`** and **`creator`** are informative: not read, and a
+4. **`namespaced_ids`**: `true` says the version's ids are **namespaced**: each id that
+   holds `::`, and each such link target written in the version, is a namespace of one or
+   more segments and a local id, joined by `::` and split at the **last** `::`; an id
+   without `::` has no namespace. `nc::testcase::T_001` is the namespace `nc::testcase`,
+   of the segments `nc` and `testcase`, and the local id `T_001`. Any other value —
+   `false`, `"true"`, `1` — or none says nothing, and the ids are read as today, a `::` in
+   one being characters of it; as for
+   `needs_defaults_removed`, a value other than `true` is no finding. The marker is the
+   version's, not the file's: a `namespaced_ids` of the envelope is ignored as every other
+   unknown envelope key is (§3.4), because a file accumulates versions built before and
+   after a project turns namespaces on, and only the versions marked are namespaced. No
+   writer writes the key yet.
+
+   The separator is `::`, fixed here rather than written in the file, and the grammar is
+   fixed with it:
+
+   - a **segment** is `[A-Za-z][A-Za-z0-9_-]*`: an ASCII letter, then ASCII letters,
+     digits, `_` or `-`;
+   - a **namespace** is one or more segments joined by `::`;
+   - a **namespaced id** is a namespace, `::`, and a **local id** that is not empty, does
+     not begin with `:`, and holds neither `::` nor `.`.
+
+   An id with no `::` is its own local id. A link target's `.part`
+   and its conditions are not part of the id: a reader strips them, as it does today, and
+   splits what remains. `split_id` is the rule: `split_id("a::b::X")` is
+   `(("a", "b"), "X")` and `split_id("X")` is `((), "X")`, an id with no `::` returned
+   whole and unchecked (a plain id's shape is each consumer's, §11); an id that has a `::`
+   and breaks the grammar — `::X`, `a::`, `a::::X`, `a:::X`, `1a::X`, `a.b::X`, `a::X.y`
+   — raises `ValueError`, whose message names the id and the rule it breaks.
+
+   The package reads the marker and does not act on it. `Version.namespaced_ids` is
+   `true` exactly when the version's `namespaced_ids` is the JSON `true`; a record's key
+   stays its id as written (§6.2), the package splits no key, and an id of a marked
+   version that does not split is read like any other and is no finding: whether a
+   reader splits a version's ids, and what it makes of one that does not split, is
+   identity policy, each consumer's (§11).
+   Enforced by: corpus: `namespaced-ids-true-marks-the-version`,
+   `namespaced-ids-false-says-nothing`, `namespaced-ids-absent-says-nothing`,
+   `namespaced-ids-a-string-is-not-true`, `namespaced-ids-a-number-is-not-true`,
+   `namespaced-ids-of-the-envelope-is-ignored`,
+   `namespaced-ids-the-marked-version-of-two`,
+   `namespaced-ids-the-unmarked-version-of-two`,
+   `namespaced-ids-links-are-read-as-written`,
+   `namespaced-ids-an-id-that-does-not-split-is-read-as-written` (the corpus states the
+   split of a record key with the expectation keys `split` and `unsplittable`, which its
+   runner checks with `split_id`);
+   `test_reader.py::test_only_true_marks_a_version`,
+   `…::test_a_version_built_by_hand_reads_its_own_marker`, `…::test_split_id`,
+   `…::test_split_id_refuses_what_is_not_a_namespaced_id` (strings no record key carries,
+   and the messages).
+5. **`needs_amount`**, **`created`** and **`creator`** are informative: not read, and a
    `needs_amount` that disagrees with `needs` is not a finding. Every other key of a version
    is ignored too.
    Enforced by: corpus: `needs-amount-is-not-checked`, `unknown-envelope-keys-are-ignored`.
@@ -178,7 +229,8 @@ object identity). A rule marked **(not pinned)** has neither.
    are read.
    Enforced by: corpus: `record-not-an-object-is-skipped`,
    `record-values-of-every-other-type-are-skipped`; `test_reader.py::test_a_record_that_is_not_an_object_is_skipped` (the message).
-2. **The key is the need's id.** A record's `fields["id"]` is always its key. A record
+2. **The key is the need's id**, as written, in a version marked `namespaced_ids` too:
+   the key is not split (§5.4). A record's `fields["id"]` is always its key. A record
    without an `id` gets the key; one whose `id` differs from the key — another string, a
    number, `null` — is reported (`id_mismatch`, path `versions.<version>.needs.<key>.id`)
    and the stated `id` is ignored.
@@ -354,6 +406,9 @@ As `ub-project`'s contract says of discovery, each of these stays with each cons
   prefixed ids. `content` is opaque markup: every whole-word occurrence of a file id in it
   is such a reference, inside code blocks and file names too **(not pinned here: the
   ingest layer, pinned by sphinx-needs' `tests/test_exchange_readers.py`)**;
+- **namespaced ids** (§5.4): whether a reader splits a version's ids, what it does with an
+  unmarked version whose ids hold `::` and with a marked version's id that does not
+  split, and how a namespace or prefix of its own composes with the file's;
 - **`:ids:`, `:filter:`, `:tags:`**, duplicates across sources, and where a need is
   recorded (`docname`, `lineno`);
 - **whether a finding is worth a warning**, and its wording.
