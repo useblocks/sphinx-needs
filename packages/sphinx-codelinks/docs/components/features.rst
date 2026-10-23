@@ -266,6 +266,40 @@ Features
    .. fault:: Sphinx-codelinks hallucinates traceability objects in Bash
       :id: FAULT_BASH_2
 
+.. feature:: PowerShell Language Support
+   :id: FE_POWERSHELL
+
+   Support for defining traceability objects in PowerShell scripts, script modules
+   and module manifests.
+
+   The PowerShell language parser leverages tree-sitter to identify and extract
+   comments from PowerShell source.
+
+   ``.ps1``, ``.psm1`` and ``.psd1`` files are auto-discovered when
+   ``comment_type = "powershell"``.
+
+   Key capabilities:
+
+   * Hash-style comment (``#``) detection
+   * Shebang lines (``#!/usr/bin/env pwsh``) never produce spurious markers
+   * A ``#`` line inside a here-string is string content, never a marker, even
+     where the grammar parses it as a comment
+   * A UTF-8 byte order mark, as Windows PowerShell 5.1 writes it, does not
+     disturb a one-line marker on the first line
+
+   .. note::
+
+      A multi-line double-quoted string whose closing quote ends a line that
+      starts with ``#`` confuses the ``tree-sitter-powershell`` grammar: it reads
+      the quote as part of a comment, and every marker after it is lost. Use a
+      here-string for such text.
+
+   .. fault:: Traceability objects are not detected in PowerShell
+      :id: FAULT_POWERSHELL_1
+
+   .. fault:: Sphinx-codelinks hallucinates traceability objects in PowerShell
+      :id: FAULT_POWERSHELL_2
+
 .. feature:: TypeScript Language Support
    :id: FE_TS
 

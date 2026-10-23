@@ -68,6 +68,8 @@ SCOPE_NODE_TYPES = {
     },
     # @Bash Scope Node Types, IMPL_BASH_2, impl, [FE_BASH]
     CommentType.bash: {"function_definition"},
+    # @PowerShell Scope Node Types, IMPL_PS_2, impl, [FE_POWERSHELL]
+    CommentType.powershell: {"function_statement"},
 }
 
 logger = get_logger(__name__)
@@ -98,6 +100,13 @@ TYPE_SCRIPT_QUERY = """
 RUST_QUERY = """
     (line_comment) @comment
     (block_comment) @comment
+"""
+# PowerShell's grammar reads a ``#`` line inside an expandable (double-quoted)
+# here-string as a comment node within the string, unless it is the string's first
+# line. It is string content: captured as such, it is left out of the comments.
+POWERSHELL_QUERY = """
+    (comment) @comment
+    (expandable_here_string_literal (comment) @string_content)
 """
 
 # JSON value node types that can be associated with a comment.
@@ -149,7 +158,7 @@ def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
         return False
 
 
-# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS]
+# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS, FE_POWERSHELL]
 def init_tree_sitter(
     comment_type: CommentType, src_path: Path | None = None
 ) -> tuple[Parser, Query]:
@@ -221,6 +230,13 @@ def init_tree_sitter(
 
         parsed_language = Language(tree_sitter_bash.language())
         query = Query(parsed_language, SIMPLE_COMMENT_QUERY)
+    elif comment_type == CommentType.powershell:
+        # @PowerShell comment query for tree-sitter, IMPL_PS_3, impl, [FE_POWERSHELL]
+        # ``#`` and ``<# #>`` comments are both ``comment`` nodes in this grammar.
+        import tree_sitter_powershell
+
+        parsed_language = Language(tree_sitter_powershell.language())
+        query = Query(parsed_language, POWERSHELL_QUERY)
     else:
         raise ValueError(f"Unsupported comment style: {comment_type}")
     parser = Parser(parsed_language)
@@ -240,12 +256,19 @@ def extract_comments(
     callback: a chunk boundary inside a character breaks the parse the same way (a
     from-offset chunk of four bytes or more happens to work; a block-aligned one
     does not).
+
+    A query may also capture ``string_content``: comment nodes a grammar places
+    inside a string (PowerShell's here-strings), which are left out.
     """
     tree = parser.parse(src_string)
     query_cursor = QueryCursor(query)
     captures: dict[str, list[TreeSitterNode]] = query_cursor.captures(tree.root_node)
 
-    return captures.get("comment")
+    comments = captures.get("comment")
+    string_content = captures.get("string_content")
+    if comments and string_content:
+        comments = [comment for comment in comments if comment not in string_content]
+    return comments
 
 
 # What a TypeScript declaration's value can be wrapped in without changing what it

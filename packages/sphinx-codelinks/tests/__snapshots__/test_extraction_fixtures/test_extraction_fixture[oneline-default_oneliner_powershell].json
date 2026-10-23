@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 0,
+        "column": 44
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "PowerShell Title",
+      "id": "IMPL_PS",
+      "type": "impl",
+      "links": [
+        "REQ_PS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]
