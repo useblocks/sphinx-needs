@@ -564,6 +564,15 @@ def _describe(
             EntityName("item", None, None),
             id="yaml-item",
         ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "filter Get-Odd { $_ }",
+            "function_statement",
+            0,
+            EntityName("function", "Get-Odd", _s(("function", "Get-Odd"))),
+            id="powershell-filter-is-a-function",
+        ),
     ],
 )
 def test_describe_entity(
@@ -732,6 +741,7 @@ def test_render_semantic(
         (CommentType.yaml, "a.yml", "yaml"),
         (CommentType.jsonc, "a.json", "jsonc"),
         (CommentType.bash, "a.sh", "bash"),
+        (CommentType.powershell, "a.psm1", "powershell"),
     ],
 )
 def test_scope_language(

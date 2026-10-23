@@ -112,6 +112,8 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
        - ``.jsonc``, and a ``.json`` file that opens with a comment: JSON with comments.
      * - ``bash``
        - Every shell file the bash grammar reads: ``.sh``, ``.bash``, ``.zsh`` and ``.ksh``.
+     * - ``powershell``
+       - ``.ps1``, ``.psm1`` and ``.psd1``
 
   One language is one name, so the value groups files that editors may tell apart:
   a ``.h`` header is ``cpp`` whether C or C++ includes it,
@@ -356,6 +358,7 @@ What counts as an entity
   signatures; a ``const``, ``let`` or ``var``, a class field, an assignment or a default export only when it holds a
   function or a class (one written with ``declare`` always does).
 - **Bash**: functions.
+- **PowerShell**: functions and filters.
 
 Data members, variables, lambdas bound to a name and macro invocations are not entities, nor, yet, a C
 ``typedef struct {...} T;``: a marker above one is attached to the entity it is inside, or to the file.

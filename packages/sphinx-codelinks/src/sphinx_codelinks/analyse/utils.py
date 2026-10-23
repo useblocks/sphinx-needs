@@ -73,6 +73,13 @@ RUST_QUERY = """
     (line_comment) @comment
     (block_comment) @comment
 """
+# PowerShell's grammar reads a ``#`` line inside an expandable (double-quoted)
+# here-string as a comment node within the string, unless it is the string's first
+# line. It is string content: captured as such, it is left out of the comments.
+POWERSHELL_QUERY = """
+    (comment) @comment
+    (expandable_here_string_literal (comment) @string_content)
+"""
 
 # JSON value node types that can be associated with a comment.
 JSON_STRUCTURE_TYPES = {
@@ -123,7 +130,7 @@ def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
         return False
 
 
-# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS]
+# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS, FE_POWERSHELL]
 def init_tree_sitter(
     comment_type: CommentType, src_path: Path | None = None
 ) -> tuple[Parser, Query]:
@@ -195,6 +202,13 @@ def init_tree_sitter(
 
         parsed_language = Language(tree_sitter_bash.language())
         query = Query(parsed_language, SIMPLE_COMMENT_QUERY)
+    elif comment_type == CommentType.powershell:
+        # @PowerShell comment query for tree-sitter, IMPL_PS_3, impl, [FE_POWERSHELL]
+        # ``#`` and ``<# #>`` comments are both ``comment`` nodes in this grammar.
+        import tree_sitter_powershell
+
+        parsed_language = Language(tree_sitter_powershell.language())
+        query = Query(parsed_language, POWERSHELL_QUERY)
     else:
         raise ValueError(f"Unsupported comment style: {comment_type}")
     parser = Parser(parsed_language)
@@ -229,10 +243,18 @@ def parse_source(
 
 
 def captured_comments(tree: Tree, query: Query) -> list[TreeSitterNode] | None:
-    """The comment nodes ``query`` captures in ``tree``."""
+    """The comment nodes ``query`` captures in ``tree``.
+
+    A query may also capture ``string_content``: comment nodes a grammar places
+    inside a string (PowerShell's here-strings), which are left out.
+    """
     query_cursor = QueryCursor(query)
     captures: dict[str, list[TreeSitterNode]] = query_cursor.captures(tree.root_node)
-    return captures.get("comment")
+    comments = captures.get("comment")
+    string_content = captures.get("string_content")
+    if comments and string_content:
+        comments = [comment for comment in comments if comment not in string_content]
+    return comments
 
 
 # @Comment extraction from source code using tree-sitter, IMPL_EXTR_1, impl, [FE_DEF]

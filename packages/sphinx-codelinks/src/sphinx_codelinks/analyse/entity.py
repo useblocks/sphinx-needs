@@ -228,6 +228,8 @@ ENTITY_NODE_TYPES: dict[CommentType, set[str]] = {
     },
     # @Bash Scope Node Types, IMPL_BASH_2, impl, [FE_BASH]
     CommentType.bash: {"function_definition"},
+    # @PowerShell Scope Node Types, IMPL_PS_2, impl, [FE_POWERSHELL]
+    CommentType.powershell: {"function_statement"},
 }
 SCOPE_NODE_TYPES = ENTITY_NODE_TYPES
 """The name this table had before entities were named; kept for importers."""
@@ -2885,13 +2887,25 @@ def _ts_describe(node: TreeSitterNode) -> EntityName | None:
     )
 
 
-# --- Bash, YAML and JSON -----------------------------------------------------
+# --- Bash, PowerShell, YAML and JSON -----------------------------------------
 
 
 def _bash_describe(node: TreeSitterNode) -> EntityName | None:
     if node.type != "function_definition":
         return None
     own = _text(node.child_by_field_name("name")) or None
+    return _named("function", own, [_element("function", own or "")])
+
+
+def _powershell_describe(node: TreeSitterNode) -> EntityName | None:
+    """A PowerShell function or filter, named by its ``function_name`` child: the
+    grammar gives it no field."""
+    if node.type != "function_statement":
+        return None
+    name = next(
+        (child for child in node.named_children if child.type == "function_name"), None
+    )
+    own = _text(name) or None
     return _named("function", own, [_element("function", own or "")])
 
 
@@ -2909,6 +2923,7 @@ _DESCRIBERS: dict[CommentType, Callable[[TreeSitterNode], EntityName | None]] = 
     CommentType.go: _go_describe,
     CommentType.ts: _ts_describe,
     CommentType.bash: _bash_describe,
+    CommentType.powershell: _powershell_describe,
     CommentType.yaml: _data_describe,
     CommentType.jsonc: _data_describe,
 }
@@ -3039,7 +3054,7 @@ def render_semantic(
     no path, and folds the modules before an impl into a self type written bare
     (``m::G``). Python joins them with ``.``, with ``<locals>`` after a function or a
     method another component follows (CPython's ``__qualname__``). C#, Go,
-    TypeScript, JavaScript and Bash join them with ``.``.
+    TypeScript, JavaScript, Bash and PowerShell join them with ``.``.
 
     :param semantic: An entity's components, as :func:`describe_entity` gives them.
     :param language: The language of the entity's file, as ``scope.language``
@@ -3124,7 +3139,7 @@ def scope_language(comment_type: CommentType, path: PurePath) -> str:
     ``csharp``; ``javascript`` for a ``.js``, ``.jsx``, ``.mjs`` or ``.cjs`` file, in
     any case, and ``typescript`` for every other file of the ``ts`` comment type,
     ``.tsx`` included; otherwise the comment type (``python``, ``rust``, ``go``,
-    ``yaml``, ``jsonc``, ``bash``). A ``.c`` file is parsed with the C++ grammar too,
+    ``yaml``, ``jsonc``, ``bash``, ``powershell``). A ``.c`` file is parsed with the C++ grammar too,
     and its components render as C++'s.
 
     :param comment_type: The project's comment type.
