@@ -50,6 +50,7 @@ EntityKind = Literal[
     "event",
     "indexer",
     "delegate",
+    "test",
     "key",
     "item",
 ]
@@ -229,7 +230,15 @@ ENTITY_NODE_TYPES: dict[CommentType, set[str]] = {
     # @Bash Scope Node Types, IMPL_BASH_2, impl, [FE_BASH]
     CommentType.bash: {"function_definition"},
     # @PowerShell Scope Node Types, IMPL_PS_2, impl, [FE_POWERSHELL]
-    CommentType.powershell: {"function_statement"},
+    # A command is an entity only when it is a Pester block: see ENTITY_PREDICATES.
+    CommentType.powershell: {
+        "function_statement",
+        "class_statement",
+        "class_method_definition",
+        "class_property_definition",
+        "enum_statement",
+        "command",
+    },
 }
 SCOPE_NODE_TYPES = ENTITY_NODE_TYPES
 """The name this table had before entities were named; kept for importers."""
@@ -360,6 +369,24 @@ def _cpp_has_body(node: TreeSitterNode) -> bool:
 
 
 # Entity node types that are an entity only when their predicate holds, per language.
+# Pester's blocks, lower-cased: PowerShell resolves command names in any case.
+PESTER_BLOCKS = frozenset({"describe", "context", "it"})
+PESTER_MODULE = "pester"
+
+
+def _is_pester_block(node: TreeSitterNode) -> bool:
+    """A command that is a Pester block (``Describe``, ``Context``, ``It``), called
+    bare or through Pester's module qualifier (``Pester\\It``): a test, or a group of
+    tests, rather than a command a script merely runs."""
+    name = next(
+        (child for child in node.named_children if child.type == "command_name"), None
+    )
+    if name is None or name.text is None:
+        return False
+    module, _, command = name.text.decode("utf-8").lower().rpartition("\\")
+    return command in PESTER_BLOCKS and module in ("", PESTER_MODULE)
+
+
 ENTITY_PREDICATES: dict[CommentType, dict[str, Callable[[TreeSitterNode], bool]]] = {
     CommentType.cpp: {
         "declaration": _cpp_prototype,
@@ -378,6 +405,8 @@ ENTITY_PREDICATES: dict[CommentType, dict[str, Callable[[TreeSitterNode], bool]]
         "assignment_expression": _assigns_function,
         "export_statement": _value_is_function,
     },
+    # @Pester blocks are PowerShell entities, IMPL_PS_5, impl, [FE_POWERSHELL]
+    CommentType.powershell: {"command": _is_pester_block},
 }
 SCOPE_PREDICATES = ENTITY_PREDICATES
 """The name this table had before entities were named; kept for importers."""
@@ -2897,16 +2926,90 @@ def _bash_describe(node: TreeSitterNode) -> EntityName | None:
     return _named("function", own, [_element("function", own or "")])
 
 
-def _powershell_describe(node: TreeSitterNode) -> EntityName | None:
-    """A PowerShell function or filter, named by its ``function_name`` child: the
-    grammar gives it no field."""
-    if node.type != "function_statement":
-        return None
-    name = next(
-        (child for child in node.named_children if child.type == "function_name"), None
+_POWERSHELL_KINDS: dict[str, EntityKind] = {
+    "function_statement": "function",
+    "class_statement": "class",
+    "class_method_definition": "method",
+    "class_property_definition": "property",
+    "enum_statement": "enum",
+    "command": "test",
+}
+
+
+def _powershell_child(node: TreeSitterNode, kind: str) -> TreeSitterNode | None:
+    return next((child for child in node.named_children if child.type == kind), None)
+
+
+def _pester_name(command: TreeSitterNode) -> str | None:
+    """A Pester block's name: its first argument, a string without its quotes or a
+    bare word, as written; ``None`` when the block is named another way."""
+    elements = _powershell_child(command, "command_elements")
+    argument = next(
+        (
+            child
+            for child in (elements.named_children if elements is not None else [])
+            if child.type != "command_argument_sep"
+        ),
+        None,
     )
-    own = _text(name) or None
-    return _named("function", own, [_element("function", own or "")])
+    while argument is not None and argument.type not in (
+        "string_literal",
+        "generic_token",
+    ):
+        argument = argument.named_children[0] if argument.named_children else None
+    if argument is None:
+        return None
+    text = _text(argument)
+    if argument.type == "string_literal" and len(text) >= 2:
+        return text[1:-1]
+    return text
+
+
+def _powershell_own_name(node: TreeSitterNode) -> str | None:
+    if node.type == "command":
+        return _pester_name(node)
+    if node.type == "function_statement":
+        return _text(_powershell_child(node, "function_name")) or None
+    if node.type == "class_property_definition":
+        return _text(_powershell_child(node, "variable")).lstrip("$") or None
+    return _text(_powershell_child(node, "simple_name")) or None
+
+
+def _powershell_describe(node: TreeSitterNode) -> EntityName | None:
+    """A PowerShell function or filter, class, method, property, enum or Pester block.
+
+    A method or a property is qualified by its class (``Shape.Area``), a Pester block
+    by the blocks around it, as Pester's ``ExpandedPath`` joins them (``px.starts``);
+    a function, a class and an enum are named alone.
+    """
+    kind = _POWERSHELL_KINDS.get(node.type)
+    if kind is None or (node.type == "command" and not _is_pester_block(node)):
+        return None
+    own = _powershell_own_name(node)
+    if own is None:
+        return EntityName(kind, None, None)
+    outer: list[SemanticElement] = []
+    if kind in ("method", "property"):
+        parent = node.parent
+        if parent is not None and parent.type == "class_statement":
+            name = _powershell_own_name(parent)
+            if name is None:
+                return EntityName(kind, None, None)
+            outer.append(_element("class", name))
+    elif kind == "test":
+        ancestor = node.parent
+        while ancestor is not None:
+            if ancestor.type == "command" and _is_pester_block(ancestor):
+                name = _pester_name(ancestor)
+                if name is None:
+                    return EntityName(kind, None, None)
+                outer.insert(0, _element("test", name))
+            ancestor = ancestor.parent
+    return _named(
+        kind,
+        ".".join([*(element["name"] for element in outer), own]),
+        [*outer, _element(kind, own)],
+    )
 
 
 def _data_describe(node: TreeSitterNode) -> EntityName:

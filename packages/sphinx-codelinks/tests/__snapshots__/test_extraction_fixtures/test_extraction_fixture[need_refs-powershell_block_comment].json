@@ -12,14 +12,28 @@
         "column": 26
       }
     },
-    "tagged_scope": null,
-    "scope": null,
+    "tagged_scope": "function f { }",
+    "scope": {
+      "kind": "function_statement",
+      "start": 2,
+      "end": 2,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need_ids": [
       "REQ_1",
       "REQ_2"
     ],
     "marker": "@need-ids:",
     "type": "need-id-refs",
-    "tagged_scope_type": null
+    "tagged_scope_type": "function_statement"
   }
 ]

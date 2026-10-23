@@ -44,7 +44,9 @@ New and Improved
   filter, or a name stored elsewhere, that selects one of them needs updating once.
 - ✨ PowerShell: ``comment_type = "powershell"`` discovers ``.ps1``, ``.psm1`` and
   ``.psd1`` files and reads markers from their ``#`` and ``<# #>`` comments, parsed with the
-  ``tree-sitter-powershell`` grammar, a new dependency.
+  ``tree-sitter-powershell`` grammar, a new dependency. A marker binds to the function,
+  filter, class, method, property or enum it annotates, and to Pester's ``Describe``,
+  ``Context`` and ``It`` blocks, an entity of the new kind ``test`` (:ref:`attachment`).
 
 Fixes
 .....

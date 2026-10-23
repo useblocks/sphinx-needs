@@ -573,6 +573,59 @@ def _describe(
             EntityName("function", "Get-Odd", _s(("function", "Get-Odd"))),
             id="powershell-filter-is-a-function",
         ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "class Shape { [int]$Size\n [int] Area() { return 1 } }",
+            "class_method_definition",
+            0,
+            EntityName(
+                "method", "Shape.Area", _s(("class", "Shape"), ("method", "Area"))
+            ),
+            id="powershell-method",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "class Shape { [int]$Size\n [int] Area() { return 1 } }",
+            "class_property_definition",
+            0,
+            EntityName(
+                "property", "Shape.Size", _s(("class", "Shape"), ("property", "Size"))
+            ),
+            id="powershell-property-without-its-dollar",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "enum Mode { Direct }",
+            "enum_statement",
+            0,
+            EntityName("enum", "Mode", _s(("enum", "Mode"))),
+            id="powershell-enum",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "Describe 'px' { Pester\\Context ctx { It \"starts $x\" { } } }",
+            "command",
+            2,
+            EntityName(
+                "test",
+                "px.ctx.starts $x",
+                _s(("test", "px"), ("test", "ctx"), ("test", "starts $x")),
+            ),
+            id="powershell-pester-blocks-joined-as-pester-joins-them",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "Write-Host 'x'",
+            "command",
+            0,
+            None,
+            id="powershell-plain-command-is-no-entity",
+        ),
     ],
 )
 def test_describe_entity(

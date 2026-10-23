@@ -128,11 +128,14 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   A ``.c`` file is read with the C++ grammar too, though it records ``c``, and its names follow C++'s rule;
 - ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
   ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,
-  ``property``, ``event``, ``indexer`` or ``delegate``; in YAML and JSON ``key`` or ``item``;
+  ``property``, ``event``, ``indexer`` or ``delegate``; ``test`` for a Pester block; in YAML and JSON ``key`` or
+  ``item``;
 - ``qualified_name`` -- the entity's name within its file, qualified by the containers the file shows:
   ``ns::Widget::draw`` in C++, ``Shape.area`` and ``outer.<locals>.inner`` in Python (its ``__qualname__``),
   ``Widget::new`` and ``<Widget as Shape>::area`` (and ``<dyn Shape>::area`` for a type that is no path) in Rust,
-  ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in TypeScript.
+  ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in TypeScript,
+  ``Shape.Area`` in PowerShell, where a Pester block is named after the blocks around it as Pester joins them
+  (``px.starts`` for ``It 'starts'`` in ``Describe 'px'``).
   No module, crate or package prefix: the file's path decides that.
   ``null`` in YAML and JSON, and for an entity without a name;
 - ``semantic`` -- that name in its parts, outermost first and the entity itself last, each a ``kind`` and a ``name``
@@ -358,7 +361,8 @@ What counts as an entity
   signatures; a ``const``, ``let`` or ``var``, a class field, an assignment or a default export only when it holds a
   function or a class (one written with ``declare`` always does).
 - **Bash**: functions.
-- **PowerShell**: functions and filters.
+- **PowerShell**: functions and filters, classes, methods, properties, enums, and Pester's ``Describe``,
+  ``Context`` and ``It`` blocks (in any letter case, bare or as ``Pester\It``); no other command.
 
 Data members, variables, lambdas bound to a name and macro invocations are not entities, nor, yet, a C
 ``typedef struct {...} T;``: a marker above one is attached to the entity it is inside, or to the file.
