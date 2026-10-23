@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 7
+      },
+      "end": {
+        "row": 2,
+        "column": 61
+      }
+    },
+    "tagged_scope": "function Start-Px {\n    Write-Host 'start'\n    # @Inside Function, IMPL_PS_INSIDE, impl, [REQ_PS_INSIDE]\n}",
+    "need": {
+      "title": "Inside Function",
+      "id": "IMPL_PS_INSIDE",
+      "type": "impl",
+      "links": [
+        "REQ_PS_INSIDE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  }
+]

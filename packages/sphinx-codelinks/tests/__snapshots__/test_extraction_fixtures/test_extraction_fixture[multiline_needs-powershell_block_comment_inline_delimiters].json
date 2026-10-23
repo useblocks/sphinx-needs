@@ -12,7 +12,7 @@
         "column": 8
       }
     },
-    "tagged_scope": null,
+    "tagged_scope": "function Start-Deploy { }",
     "need": {
       "type": "impl",
       "title": "Deploy script",
@@ -38,9 +38,13 @@
       "option_lines": {
         "id": 2
       },
-      "scope": null
+      "scope": {
+        "kind": "function_statement",
+        "start": 4,
+        "end": 4
+      }
     },
     "type": "multiline-need",
-    "tagged_scope_type": null
+    "tagged_scope_type": "function_statement"
   }
 ]

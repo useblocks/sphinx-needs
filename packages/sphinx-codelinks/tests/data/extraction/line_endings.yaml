@@ -42,3 +42,16 @@ multi_line_scope_cr:
     void g() {}
     // @extra, IMPL_2, impl, [REQ_1], oops
     void h() {}
+
+powershell_scope_crlf:
+  # A Windows checkout of a PowerShell script: CRLF endings, a marker with a link
+  # above a multi-line function.
+  lang: powershell
+  config: default
+  line_endings: crlf
+  source: |
+    # @Multi-line title, IMPL_PS_CRLF, impl, [REQ_1]
+    function Start-Px {
+        param([string] $Config)
+        Write-Host $Config
+    }

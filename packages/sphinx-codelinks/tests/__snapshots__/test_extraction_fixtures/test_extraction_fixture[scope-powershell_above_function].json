@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 0,
+        "column": 54
+      }
+    },
+    "tagged_scope": "function Start-Px { }",
+    "need": {
+      "title": "Above Function",
+      "id": "IMPL_PS_ABOVE",
+      "type": "impl",
+      "links": [
+        "REQ_PS_ABOVE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  }
+]
