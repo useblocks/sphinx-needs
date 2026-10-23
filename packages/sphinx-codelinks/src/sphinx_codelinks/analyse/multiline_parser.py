@@ -18,7 +18,10 @@ logical line maps to exactly one source row:
 comment kind                              stripped from each line                             languages
 ========================================  ==================================================  ===========================================
 line comment ``//``, ``///``, ``//!``     the delimiter, then ONE space if present            C/C++, C#, Rust, Go, TS/JS, JSONC
-line comment ``#``                        the delimiter, then ONE space if present            Python, YAML, Bash
+line comment ``#``                        the delimiter, then ONE space if present            Python, YAML, Bash, PowerShell
+block comment ``<# … #>``                 a first row holding only ``<#`` and a last row      PowerShell
+                                          holding only ``#>`` are dropped; the delimiters
+                                          are removed (no leader rule)
 block comment ``/* … */``, ``/** … */``,  a first row holding only the opener (``/*`` with  C/C++, C#, Rust, Go, TS/JS, JSONC
 ``/*! … */``                              any stars, or ``/*!``) and a last row holding only
                                           the closer (stars then ``*/``) are dropped; the
@@ -62,6 +65,10 @@ CommentKind = Literal["line", "block", "docstring", "unknown"]
 
 #: line-comment delimiters, longest first so that ``///`` is not read as ``//``
 LINE_DELIMITERS: tuple[str, ...] = ("///", "//!", "//", "#")
+
+#: PowerShell's block comment delimiters
+POWERSHELL_BLOCK_OPENER = "<#"
+POWERSHELL_BLOCK_CLOSER = "#>"
 
 _LEADER = re.compile(r"^[ \t]*\*(?: |$)")
 """A doxygen leader: optional whitespace, ``*``, then one space or the line end."""
@@ -195,6 +202,8 @@ def _classify(comment: SourceComment, text: str) -> tuple[CommentKind, str]:
     stripped = text.lstrip()
     if stripped.startswith("/*"):
         return "block", "/*"
+    if stripped.startswith(POWERSHELL_BLOCK_OPENER):
+        return "block", POWERSHELL_BLOCK_OPENER
     for delimiter in LINE_DELIMITERS:
         if stripped.startswith(delimiter):
             return "line", delimiter
@@ -258,6 +267,8 @@ def _continues(previous: _Comment, view: _Comment) -> bool:
 
 def _make_run(views: list[_Comment]) -> CommentRun:
     if len(views) == 1 and views[0].kind == "block":
+        if views[0].delimiter == POWERSHELL_BLOCK_OPENER:
+            return CommentRun([views[0].comment], _powershell_block_lines(views[0]))
         lines, leader_stripped, mixed = _block_comment_lines(views[0])
         return CommentRun([views[0].comment], lines, not leader_stripped, mixed)
     run_lines: list[LogicalLine] = []
@@ -269,6 +280,8 @@ def _make_run(views: list[_Comment]) -> CommentRun:
 def _logical_lines(view: _Comment) -> list[LogicalLine]:
     if view.kind == "line":
         return [_line_comment_line(view)]
+    if view.kind == "block" and view.delimiter == POWERSHELL_BLOCK_OPENER:
+        return _powershell_block_lines(view)
     if view.kind == "block":
         return _block_comment_lines(view)[0]
     if view.kind == "docstring":
@@ -292,6 +305,30 @@ def _line_comment_line(view: _Comment) -> LogicalLine:
         rest = rest[1:]
         col += 1
     return LogicalLine(view.row, col, rest)
+
+
+# @PowerShell block comment stripping, IMPL_PS_4, impl, [FE_POWERSHELL]
+def _powershell_block_lines(view: _Comment) -> list[LogicalLine]:
+    """A ``<# … #>`` comment's logical lines: the delimiters removed, and a first row
+    left holding nothing but ``<#``, or a last row nothing but ``#>``, dropped.
+    PowerShell has no leader convention, so nothing else is stripped."""
+    texts = view.text.split("\n")
+    count = len(texts)
+    cols = [view.col] + [0] * (count - 1)
+    body = texts[0].lstrip()
+    cols[0] += len(texts[0]) - len(body) + len(POWERSHELL_BLOCK_OPENER)
+    texts[0] = body[len(POWERSHELL_BLOCK_OPENER) :]
+    last = texts[-1].rstrip()
+    if last.endswith(POWERSHELL_BLOCK_CLOSER):
+        texts[-1] = last[: -len(POWERSHELL_BLOCK_CLOSER)]
+    keep = [True] * count
+    if count > 1 and not texts[0].strip():
+        keep[0] = False
+    if count > 1 and not texts[-1].strip():
+        keep[-1] = False
+    return [
+        LogicalLine(view.row + i, cols[i], texts[i]) for i in range(count) if keep[i]
+    ]
 
 
 def _block_comment_lines(view: _Comment) -> tuple[list[LogicalLine], bool, bool]:

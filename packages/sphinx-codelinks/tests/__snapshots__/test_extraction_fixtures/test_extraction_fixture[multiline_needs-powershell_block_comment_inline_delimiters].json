@@ -1,0 +1,46 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 2,
+        "column": 8
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "type": "impl",
+      "title": "Deploy script",
+      "id": "IMPL_PS_INLINE",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.ps1",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 3
+      },
+      "end": {
+        "line": 3,
+        "col": 8
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 2
+      },
+      "scope": null
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": null
+  }
+]

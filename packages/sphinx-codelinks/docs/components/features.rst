@@ -281,6 +281,9 @@ Features
    Key capabilities:
 
    * Hash-style comment (``#``) detection
+   * Block comments (``<# #>``), comment-based help included, with their
+     delimiters stripped for one-line markers, need-id references and
+     multi-line needs
    * Shebang lines (``#!/usr/bin/env pwsh``) never produce spurious markers
    * A ``#`` line inside a here-string is string content, never a marker, even
      where the grammar parses it as a comment

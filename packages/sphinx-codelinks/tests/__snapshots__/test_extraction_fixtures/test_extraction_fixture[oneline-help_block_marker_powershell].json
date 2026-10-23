@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 1
+      },
+      "end": {
+        "row": 3,
+        "column": 41
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "Help Title",
+      "id": "IMPL_PS_HELP",
+      "type": "impl",
+      "links": [
+        "REQ_PS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

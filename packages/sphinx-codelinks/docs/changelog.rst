@@ -10,7 +10,7 @@ New and Improved
 ................
 
 - ✨ PowerShell: ``comment_type = "powershell"`` discovers ``.ps1``, ``.psm1`` and
-  ``.psd1`` files and reads markers from their comments, parsed with the
+  ``.psd1`` files and reads markers from their ``#`` and ``<# #>`` comments, parsed with the
   ``tree-sitter-powershell`` grammar, a new dependency.
 
 .. _`release:2.0.1`:
