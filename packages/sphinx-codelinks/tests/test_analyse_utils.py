@@ -58,6 +58,41 @@ def init_bash_tree_sitter() -> tuple[Parser, Query]:
     return utils.init_tree_sitter(CommentType.bash)
 
 
+@pytest.fixture(scope="session")
+def init_powershell_tree_sitter() -> tuple[Parser, Query]:
+    return utils.init_tree_sitter(CommentType.powershell)
+
+
+def test_init_tree_sitter_powershell(init_powershell_tree_sitter):
+    """Both PowerShell comment forms, ``#`` and ``<# #>``, are comment nodes."""
+    parser, query = init_powershell_tree_sitter
+    comments = utils.extract_comments(b"# a\n<# b #>\nfunction f { }\n", parser, query)
+    assert comments
+    assert [comment.text for comment in comments] == [b"# a", b"<# b #>"]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        # a here-string whose ``#`` line is not its first line
+        b'$stub = @"\nfunction Test-It {\n# @Generated, IMPL_GEN, impl\n}\n"@\n',
+        # an interpolating here-string
+        b'$name = "px"\n$t = @"\nHello $name\n# @Interp, IMPL_INTERP, impl\n"@\n',
+    ],
+)
+def test_a_hash_line_in_a_powershell_here_string_is_no_comment(
+    code, init_powershell_tree_sitter
+):
+    """The grammar reads a ``#`` line inside an expandable here-string as a comment
+    node; it is string content, so extraction leaves it out."""
+    parser, query = init_powershell_tree_sitter
+    comments = utils.extract_comments(
+        code + b"# real\nfunction f { }\n", parser, query
+    )
+    assert comments
+    assert [comment.text for comment in comments] == [b"# real"]
+
+
 def test_every_comment_type_is_wired():
     """A comment type is a ``CommentType`` member plus an entry in each of several
     tables; a member one of them misses fails here, rather than as a ``KeyError`` in

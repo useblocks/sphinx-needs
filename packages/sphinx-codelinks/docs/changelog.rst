@@ -42,6 +42,9 @@ New and Improved
   everything but a friend that a class or namespace kept that way holds. The names of these
   shapes change, in ``marked_content.json`` and on the needs' source: a ``c.source.symbol``
   filter, or a name stored elsewhere, that selects one of them needs updating once.
+- ✨ PowerShell: ``comment_type = "powershell"`` discovers ``.ps1``, ``.psm1`` and
+  ``.psd1`` files and reads markers from their comments, parsed with the
+  ``tree-sitter-powershell`` grammar, a new dependency.
 
 Fixes
 .....

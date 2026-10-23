@@ -391,3 +391,26 @@ def test_dump_marked_content_when_its_directory_appears_after_the_check(
 
     marked = json.loads((outdir / "marked_content.json").read_text(encoding="utf-8"))
     assert marked == []
+
+
+def test_a_bom_before_a_powershell_marker_keeps_the_title_clean(tmp_path: Path):
+    """Windows PowerShell 5.1 saves a script with a UTF-8 BOM: the marker on the
+    first line is still a need on that line, and the BOM is not part of its title."""
+    source = tmp_path / "demo.ps1"
+    source.write_bytes("﻿# @Bom Title, IMPL_BOM, impl\nfunction f { }\n".encode())
+    config = SourceAnalyseConfig(
+        src_files=[source],
+        src_dir=tmp_path,
+        get_oneline_needs=True,
+        comment_type=CommentType.powershell,
+    )
+    analyse = SourceAnalyse(config)
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run()
+
+    assert len(analyse.oneline_needs) == 1
+    need = analyse.oneline_needs[0]
+    assert need.need["title"] == "Bom Title"
+    assert need.need["id"] == "IMPL_BOM"
+    assert need.source_map["start"]["row"] == 0

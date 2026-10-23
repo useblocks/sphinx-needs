@@ -135,6 +135,7 @@ _LANGUAGES = {
     "go": "go",
     "jsonc": "jsonc",
     "bash": "bash",
+    "powershell": "powershell",
     "typescript": "typescript",
     "tsx": "typescript",
     "js": "javascript",
