@@ -286,6 +286,26 @@ def find_enclosing_scope(
     return None
 
 
+# The nodes a PowerShell script or script block holds its statements in. A comment
+# before the first statement of a body is their sibling, not the statements'.
+POWERSHELL_BODY_TYPES = frozenset(
+    {"statement_list", "script_block", "script_block_body"}
+)
+# The nodes every PowerShell command sits in: a command is tested as an entity inside
+# them.
+POWERSHELL_PIPELINE_TYPES = frozenset({"pipeline", "pipeline_chain"})
+
+
+def _first_named_inside(
+    node: TreeSitterNode, wrappers: frozenset[str]
+) -> TreeSitterNode:
+    """``node``'s first named child, followed while the node is one of ``wrappers``, or
+    ``node`` itself when it is none of them or wraps nothing."""
+    while node.type in wrappers and node.named_children:
+        node = node.named_children[0]
+    return node
+
+
 def find_next_scope(
     node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
 ) -> TreeSitterNode | None:
@@ -297,6 +317,11 @@ def find_next_scope(
     body is followed by the body's first statement; in every other grammar a block
     after a comment is the body of the entity the comment is inside. The entity found
     is looked through its wrappers (``@decorator``, ``template <…>``, ``export``).
+
+    PowerShell's grammar places a comment before a body's first statement beside the
+    body (its statement list, or the script block holding it), so such a comment is
+    followed by that first statement too; and a statement is looked through the
+    pipeline it sits in, which holds every command.
     """
     sibling = node.next_named_sibling
     while sibling is not None and is_trivia(sibling, comment_type):
@@ -309,6 +334,12 @@ def find_next_scope(
         sibling = next(
             (c for c in sibling.named_children if not is_trivia(c, comment_type)),
             None,
+        )
+    # @PowerShell next entity across statement bodies, IMPL_PS_6, impl, [FE_POWERSHELL]
+    if comment_type == CommentType.powershell and sibling is not None:
+        sibling = _first_named_inside(
+            _first_named_inside(sibling, POWERSHELL_BODY_TYPES),
+            POWERSHELL_PIPELINE_TYPES,
         )
     return unwrap_entity(sibling, comment_type)
 

@@ -12,8 +12,22 @@
         "column": 44
       }
     },
-    "tagged_scope": null,
-    "scope": null,
+    "tagged_scope": "function Start-Demo { }",
+    "scope": {
+      "kind": "function_statement",
+      "start": 2,
+      "end": 2,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Start-Demo",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Start-Demo"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "PowerShell Title",
       "id": "IMPL_PS",
@@ -23,6 +37,6 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": null
+    "tagged_scope_type": "function_statement"
   }
 ]
