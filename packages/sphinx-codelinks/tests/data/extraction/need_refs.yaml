@@ -83,6 +83,15 @@ empty_marker_is_no_reference:
     /* @need-ids: */
     void f() {}
 
+powershell_block_comment:
+  # A reference in a one-line PowerShell <# #> comment: its closing #> is not an id.
+  lang: powershell
+  config: default
+  extract: [need_refs]
+  source: |
+    <# @need-ids: REQ_1, REQ_2 #>
+    function f { }
+
 line_comment_ending_in_closer:
   # A line comment that ends in */: the */ is not an id either.
   lang: cpp

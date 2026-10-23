@@ -100,6 +100,26 @@ here_string_content_line_powershell:
     # @Real, IMPL_PS_REAL_AFTER, impl
     function Start-Demo { }
 
+# a one-line <# #> comment: its closing #> is not part of the last field
+block_oneliner_powershell:
+  lang: powershell
+  config: default
+  source: |
+    <# @Block Title, IMPL_PS_BLOCK, impl, [REQ_PS] #>
+    function Start-Demo { }
+
+# comment-based help is a <# #> comment like any other: a marker in it counts
+help_block_marker_powershell:
+  lang: powershell
+  config: default
+  source: |
+    <#
+    .SYNOPSIS
+        Starts the demo.
+    @Help Title, IMPL_PS_HELP, impl, [REQ_PS]
+    #>
+    function Start-Demo { }
+
 default_oneliner_typescript:
   lang: typescript
   config: default

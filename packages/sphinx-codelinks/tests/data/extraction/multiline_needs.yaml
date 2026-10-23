@@ -280,6 +280,43 @@ bash_hash_run:
       echo deploy
     }
 
+powershell_hash_run:
+  # A run of PowerShell # comments forms one block, as in Bash.
+  lang: powershell
+  config: default
+  source: |
+    # @need impl: Deploy script
+    # :id: IMPL_PS_RUN
+    #
+    # Runs the deployment.
+    # @endneed
+    function Start-Deploy { }
+
+powershell_block_comment:
+  # A <# #> comment is a run of its own; the rows holding only <# and #> are dropped.
+  lang: powershell
+  config: default
+  source: |
+    <#
+    @need impl: Deploy script
+    :id: IMPL_PS_BLOCK
+
+    Runs the deployment.
+    @endneed
+    #>
+    function Start-Deploy { }
+
+powershell_block_comment_inline_delimiters:
+  # <# and #> share their rows with the open line and the close word: the delimiters
+  # are stripped, so the open line starts with its open word.
+  lang: powershell
+  config: default
+  source: |
+    <# @need impl: Deploy script
+    :id: IMPL_PS_INLINE
+    @endneed #>
+    function Start-Deploy { }
+
 cpp_bang_block_opener:
   # The "/*!" opener (Qt style) is a block comment opener like "/*" and "/**": on a row
   # of its own it is a delimiter row and dropped; on the open line's row it is removed
