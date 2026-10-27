@@ -218,18 +218,22 @@ edition = "pro"
      held to its type (§6.1, §6.2), every finding of §7 is reported as it would be
      without the override, and the override itself is never one — it is not a key of
      the document, so it is never reported as ignored (`variant_data_location`);
+   - **an override may name no file** (`NO_DATA_FILE`; sphinx-needs: `-D
+     needs_variant_data_file=`; ubCode: a `-c` of either key set to `""`): the location's
+     data file is then replaced by none — not opened, not validated — and its inline
+     table is the whole map, the location, refusals and findings staying the document's;
    - **its own file is opened** and held to §8.2. It is used as given: this package does
      not anchor it, and a relative override is anchored by the consumer by its own
      route's rule (sphinx-needs: the `confdir`; ubCode: where it anchors every `-c`
      path). Its refusal is its own file's, not attributed to the TOML or its table.
 
-   Every other key of a command line is the consumer's ordinary configuration layer, and
-   what an override that names no file means (sphinx-needs' `-D
-   needs_variant_data_file=`) is the consumer's too (§10.1). For ubCode this makes the
+   Every other key of a command line is the consumer's ordinary configuration layer. For
+   ubCode this makes the
    two `-c` spellings one value, lifted out of the `-c` layer before the location is
    chosen; a key in a file the project `extend`s stays a declaration of the document.
    Enforced by: `tests/test_variants.py::TestOverride` (the location, the findings, the
-   override used as given, the refusals' wording); corpus: the ten `override-*` cases.
+   override used as given, the refusals' wording), `tests/test_variants.py::TestNoDataFile`;
+   corpus: the eleven `override-*` cases (`override-with-no-file` for `NO_DATA_FILE`).
 
 ## 7. Diagnostics
 
@@ -329,7 +333,8 @@ edition = "pro"
 4. **Rules for every runner** (stated in the header too): a case writes only inside its
    own directory; a case carrying `needs_table` or `variants_table` is Python-only and
    ubCode's runner skips it; a case carrying `data_file_override` is read with that file,
-   joined onto the case directory, as the override of §6.8; codes compare as the bare
+   joined onto the case directory, as the override of §6.8 (`""` is the override that
+   names no file, `NO_DATA_FILE`); codes compare as the bare
    subcode; integers beyond the signed 64-bit range are
    unspecified. A refusal is compared as a refusal, not by its reason — two rows
    (`data-file-empty-string`, `invalid-file-not-an-object`) would refuse for another
@@ -344,8 +349,8 @@ What a consumer has to do that this package deliberately does not:
    (`needs_variant_data_file = ""`) and sphinx-mounts read an empty data-file value as "no
    file". This package takes `Path | None` and refuses an empty `data_file` in the TOML
    (§6.1), so a consumer keeps its own route's meaning by mapping `""` to `None` itself.
-   The same holds for `data_file_override` (§6.8): `None` is "no override", so an
-   override that names no file is the consumer's to apply after the read.
+   For `data_file_override` (§6.8) the consumer maps it to `NO_DATA_FILE`, the override
+   that names no file: `None` there is "no override".
 2. **Decide what each finding is worth** (§7): warn, log at a verbose level, or drop.
 3. **Re-raise `ProjectConfigError` in its own vocabulary** (§1.4): a Sphinx configuration
    error, a non-zero exit.

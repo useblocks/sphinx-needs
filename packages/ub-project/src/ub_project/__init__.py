@@ -30,10 +30,12 @@ from ub_project.variant_data import (
     validate_variant_data,
 )
 from ub_project.variants import (
+    NO_DATA_FILE,
     VARIANT_DATA_LEGACY_LOCATION,
     VARIANT_DATA_LOCATION,
     VARIANTS_UNKNOWN_KEY,
     Diagnostic,
+    NoDataFile,
     VariantsResult,
     read_variants,
 )
@@ -42,10 +44,12 @@ __version__ = "1.1.0"
 
 __all__ = [
     "DEFAULT_FILENAME",
+    "NO_DATA_FILE",
     "VARIANTS_UNKNOWN_KEY",
     "VARIANT_DATA_LEGACY_LOCATION",
     "VARIANT_DATA_LOCATION",
     "Diagnostic",
+    "NoDataFile",
     "ProjectConfigError",
     "VariantsResult",
     "__version__",

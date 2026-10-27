@@ -14,10 +14,12 @@ from pathlib import Path
 import pytest
 
 from ub_project import (
+    NO_DATA_FILE,
     VARIANT_DATA_LEGACY_LOCATION,
     VARIANT_DATA_LOCATION,
     VARIANTS_UNKNOWN_KEY,
     Diagnostic,
+    NoDataFile,
     ProjectConfigError,
     load_toml,
     read_variants,
@@ -30,7 +32,7 @@ def _read(
     files: dict[str, object] | None = None,
     needs_table: str = "needs",
     variants_table: str = "variants",
-    data_file_override: Path | None = None,
+    data_file_override: Path | NoDataFile | None = None,
 ):
     for name, payload in (files or {}).items():
         (tmp_path / name).write_text(json.dumps(payload), encoding="utf-8")
@@ -546,6 +548,69 @@ class TestOverride:
                 {"lfp.json": {"chem": "lfp"}},
                 data_file_override=tmp_path / "lfp.json",
             )
+
+
+class TestNoDataFile:
+    """An override may name NO file (``NO_DATA_FILE``): the location's file is replaced
+    by none -- not opened, not validated -- and everything else is the document's."""
+
+    @pytest.mark.parametrize(
+        ("toml", "location", "data"),
+        [
+            (
+                '[variants]\ndata_file = "absent.json"\n[variants.data]\nx = 1\n',
+                "variants",
+                {"x": 1},
+            ),
+            (
+                '[needs]\nvariant_data_file = "absent.json"\n'
+                "[needs.variant_data]\nx = 1\n",
+                "needs",
+                {"x": 1},
+            ),
+            ('[variants]\ndata_file = "absent.json"\n', "variants", {}),
+            ('[project]\nname = "demo"\n', "variants", {}),
+        ],
+        ids=["variants", "needs", "file-only", "neither"],
+    )
+    def test_the_file_is_replaced_by_none(
+        self, tmp_path: Path, toml: str, location: str, data: dict[str, object]
+    ) -> None:
+        result = _read(tmp_path, toml, data_file_override=NO_DATA_FILE)
+        assert result.location == location
+        assert result.data_file is None
+        assert result.data == data
+
+    def test_a_malformed_replaced_file_is_not_validated(self, tmp_path: Path) -> None:
+        (tmp_path / "bad.json").write_text("{not json", encoding="utf-8")
+        result = _read(
+            tmp_path,
+            '[variants]\ndata_file = "bad.json"\n',
+            data_file_override=NO_DATA_FILE,
+        )
+        assert result.data == {}
+
+    def test_the_findings_are_the_documents(self, tmp_path: Path) -> None:
+        toml = (
+            '[variants]\ndata_file = "absent.json"\n'
+            '[needs]\nvariant_data_file = "absent.json"\n'
+        )
+        result = _read(tmp_path, toml, data_file_override=NO_DATA_FILE)
+        assert _codes(result.diagnostics) == [
+            (VARIANT_DATA_LOCATION, "needs.variant_data_file")
+        ]
+
+    def test_the_replaced_value_is_still_held_to_its_type(self, tmp_path: Path) -> None:
+        with pytest.raises(ProjectConfigError, match="must be one non-empty path"):
+            _read(
+                tmp_path,
+                '[variants]\ndata_file = ""\n',
+                data_file_override=NO_DATA_FILE,
+            )
+
+    def test_the_sentinel_is_one_value(self) -> None:
+        assert NO_DATA_FILE is NoDataFile.NO_DATA_FILE
+        assert repr(NO_DATA_FILE) == "ub_project.NO_DATA_FILE"
 
 
 class TestRefusals:

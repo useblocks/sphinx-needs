@@ -37,7 +37,9 @@
 #   - a case carrying `data_file_override` is read WITH a data-file override (contract
 #     section 6.8): the runner passes that file, joined onto the case directory, as the
 #     reader's override -- ubCode's runner as the file a `-c` of `variants.data_file`
-#     would name, lifted out of the document before the location is chosen
+#     would name, lifted out of the document before the location is chosen. The empty
+#     string is the override that names NO file (Python: `ub_project.NO_DATA_FILE`;
+#     ubCode: a `-c` of `variants.data_file = ""`), never a path
 #
 # `packages/ub-project/tests/test_conformance.py` runs every `[[case]]` against the Python
 # reader AND asserts the case COUNT, so a truncated copy is a red test rather than reduced
@@ -67,8 +69,8 @@
 #                  "variants". Python-only (see the rules above)
 #   data_file_override
 #                - optional; a data file that replaces the data file of the location
-#                  read, relative to the case directory (see the rules above). Absent:
-#                  no override
+#                  read, relative to the case directory (see the rules above). "" : the
+#                  override that names no file. Absent: no override
 #   [case.expect]
 #     error             - true when the reader must REFUSE the input: every other
 #                         expectation is then absent. A refusal's message is not compared
@@ -1064,3 +1066,17 @@ data_file_override = "does-not-exist.json"
 files = { "nmc.json" = '{"chem": "nmc"}' }
 [case.expect]
 error = true
+
+[[case]]
+name = "override-with-no-file"
+why = "an override naming no file replaces the location's file by none: it is not opened, and the inline table applies"
+toml = '''
+[variants]
+data_file = "does-not-exist.json"
+[variants.data]
+edition = "pro"
+'''
+data_file_override = ""
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = []
