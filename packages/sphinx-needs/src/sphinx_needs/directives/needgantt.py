@@ -154,7 +154,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
         gantt_node = Needgantt("", **attributes)
         self.set_source_info(gantt_node)
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needgantt")
 
         return [targetnode, gantt_node]
 

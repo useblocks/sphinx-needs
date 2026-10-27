@@ -298,7 +298,7 @@ class NeedtableDirective(FilterBase):
         node = Needtable("", **attributes)
         self.set_source_info(node)
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needtable")
 
         return [targetnode, node]
 

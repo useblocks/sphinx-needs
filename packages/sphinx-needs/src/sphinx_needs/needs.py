@@ -160,6 +160,7 @@ from sphinx_needs.environment import (
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
+from sphinx_needs.incremental import get_updated_docs, stash_purged_doc
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.needs_schema import (
     FieldLiteralValue,
@@ -436,11 +437,17 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
     app.connect("env-before-read-docs", load_external_needs)
 
+    # before purge_needs drops them: what the purged documents gave, to compare with
+    # what they give when re-read (an incremental build re-writes the pages showing a
+    # need that changed)
+    app.connect("env-purge-doc", stash_purged_doc, priority=400)
     app.connect("env-purge-doc", purge_needs)
 
     app.connect("doctree-read", analyse_need_locations)
 
     app.connect("env-merge-info", merge_data)
+
+    app.connect("env-get-updated", get_updated_docs)
 
     # the needtable client assets go only on the pages that have a needtable (#462)
     app.connect("html-page-context", install_needtable_assets)
