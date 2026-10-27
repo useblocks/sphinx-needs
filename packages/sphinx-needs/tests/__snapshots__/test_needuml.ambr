@@ -71,6 +71,9 @@
       'template': None,
       'title': 'Test component',
       'type': 'comp',
+      'type_ancestors': list([
+        'comp',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'Component',
       'type_prefix': 'C_',
@@ -136,6 +139,9 @@
       'template': None,
       'title': 'Test interface',
       'type': 'int',
+      'type_ancestors': list([
+        'int',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'Interface',
       'type_prefix': 'I_',
@@ -234,6 +240,9 @@
       'template': None,
       'title': 'Test interface2',
       'type': 'int',
+      'type_ancestors': list([
+        'int',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'Interface',
       'type_prefix': 'I_',
@@ -331,6 +340,9 @@
       'template': None,
       'title': 'Test interface3',
       'type': 'int',
+      'type_ancestors': list([
+        'int',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'Interface',
       'type_prefix': 'I_',
@@ -443,6 +455,9 @@
       'template': None,
       'title': 'Test interface4',
       'type': 'int',
+      'type_ancestors': list([
+        'int',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'Interface',
       'type_prefix': 'I_',
@@ -514,6 +529,9 @@
       'template': None,
       'title': 'Test Product',
       'type': 'prod',
+      'type_ancestors': list([
+        'prod',
+      ]),
       'type_color': '#FF68D2',
       'type_name': 'Product',
       'type_prefix': 'P_',
@@ -579,6 +597,9 @@
       'template': None,
       'title': 'Test story',
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',
@@ -644,6 +665,9 @@
       'template': None,
       'title': 'Test story2',
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',
@@ -718,6 +742,9 @@
       'template': None,
       'title': 'Test System',
       'type': 'sys',
+      'type_ancestors': list([
+        'sys',
+      ]),
       'type_color': '#FF68D2',
       'type_name': 'System',
       'type_prefix': 'S_',

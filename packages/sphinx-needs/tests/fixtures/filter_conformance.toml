@@ -32,7 +32,8 @@
 #     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
 #     the default ones (`req`, `spec`, `impl`, `test`) unless the case's `config` declares
-#     its own
+#     its own. An `inherits` naming no need type is a configuration finding of each
+#     tool's own, not compared, and the type it is on is a root
 #   - no case declares a field named `c`, `var`, `search`, `needs` or `current_need`:
 #     which of a field and the context name a filter reads there is not pinned yet
 #   - each `[[case.filters]]` entry is one filter string, evaluated over the needs of the
@@ -1843,3 +1844,102 @@ divergent = { ubcode = "the filter fails: a boolean is no number to order" }
 filter = 'tags == links'
 expected = ["REQ_001"]
 divergent = { ubcode = "the filter fails: a list field is no value to compare with" }
+
+# --- need types and inherits -----------------------------------------------------------
+
+[[case]]
+name = "type-ancestors-follow-inherits"
+why = "type_ancestors is the need's type, then each type it inherits from, nearest first: a literal in it follows inherits where type == compares the name alone, and a type whose inherits names no need type is a root"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.safety_req]
+title = "Safety requirement"
+prefix = "SR_"
+inherits = "req"
+
+[needs.types.asil_d_req]
+title = "ASIL D requirement"
+prefix = "AD_"
+inherits = "safety_req"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.stray]
+title = "Stray"
+prefix = "ST_"
+inherits = "nope"
+'''
+source = '''
+.. req:: A requirement
+   :id: REQ_001
+
+   :np:`(a) a part`
+
+.. safety_req:: A safety requirement
+   :id: SREQ_001
+
+.. asil_d_req:: An ASIL D requirement
+   :id: ASIL_001
+
+.. spec:: An unrelated root
+   :id: SPEC_001
+
+.. stray:: Inherits no need type
+   :id: STRAY_001
+'''
+
+[[case.filters]]
+filter = '"req" in type_ancestors'
+expected = ["ASIL_001", "REQ_001", "SREQ_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = '"safety_req" in type_ancestors'
+expected = ["ASIL_001", "SREQ_001"]
+
+[[case.filters]]
+filter = '"req" not in type_ancestors'
+expected = ["SPEC_001", "STRAY_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'type == "req"'
+expected = ["REQ_001"]
+tier = "index"
+why = "type compares the name literally: it does not follow inherits"
+
+[[case.filters]]
+filter = '"nope" in type_ancestors'
+expected = []
+why = "a name that is no need type selects nothing, and is not reported -- the inherits naming it included"
+
+[[case.filters]]
+filter = 'len(type_ancestors) == 1'
+expected = ["REQ_001", "SPEC_001", "STRAY_001"]
+why = "a root's, and a type's whose inherits names no need type, is the type alone"
+
+[[case.filters]]
+filter = 'len(type_ancestors) == 3'
+expected = ["ASIL_001"]
+
+[[case.filters]]
+filter = '"req" in type_ancestors and type != "req"'
+expected = ["ASIL_001", "SREQ_001"]
+
+[[case.filters]]
+filter = '"req" in type_ancestors'
+expected = ["ASIL_001", "REQ_001", "REQ_001.a", "SREQ_001"]
+include_parts = true
+why = "a part's is its need's"
+
+[[case.filters]]
+filter = 'type_ancestors == ["safety_req", "req"]'
+expected = ["SREQ_001"]
+tier = "eval"
+reason = "compare:list"
+why = "nearest first; a list beside == is outside the language"

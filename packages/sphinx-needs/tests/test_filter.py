@@ -350,6 +350,7 @@ def create_needs_view():
         "type": "type",
         "type_name": "type title",
         "type_prefix": "type prefix",
+        "type_ancestors": ["type"],
         "type_color": "#000000",
         "type_style": "node",
         "status": None,

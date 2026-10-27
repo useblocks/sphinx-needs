@@ -32,6 +32,7 @@ def _make_need(
         "type": "requirement",
         "type_name": "Req",
         "type_prefix": "REQ_",
+        "type_ancestors": ["requirement"],
         "type_color": "#000000",
         "type_style": "node",
         "status": "open",

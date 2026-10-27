@@ -47,6 +47,7 @@ CORE: dict[str, Any] = {
     "type": "req",
     "type_name": "Req",
     "type_prefix": "R_",
+    "type_ancestors": ["req"],
     "type_color": "",
     "type_style": "node",
     "status": None,

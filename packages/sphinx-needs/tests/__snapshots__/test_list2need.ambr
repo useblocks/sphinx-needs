@@ -71,6 +71,9 @@
       'triggers_back': list([
       ]),
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',
@@ -145,6 +148,9 @@
       'triggers_back': list([
       ]),
       'type': 'spec',
+      'type_ancestors': list([
+        'spec',
+      ]),
       'type_color': '#FEDCD2',
       'type_name': 'Specification',
       'type_prefix': 'SP_',
@@ -219,6 +225,9 @@
       'triggers_back': list([
       ]),
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',
@@ -296,6 +305,9 @@
       'triggers_back': list([
       ]),
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',
@@ -373,6 +385,9 @@
       'triggers_back': list([
       ]),
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',
@@ -447,6 +462,9 @@
       'triggers_back': list([
       ]),
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',
@@ -521,6 +539,9 @@
       'triggers_back': list([
       ]),
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',
@@ -596,6 +617,9 @@
       'triggers_back': list([
       ]),
       'type': 'spec',
+      'type_ancestors': list([
+        'spec',
+      ]),
       'type_color': '#FEDCD2',
       'type_name': 'Specification',
       'type_prefix': 'SP_',
@@ -670,6 +694,9 @@
         'NEED-B',
       ]),
       'type': 'test',
+      'type_ancestors': list([
+        'test',
+      ]),
       'type_color': '#DCB239',
       'type_name': 'Test Case',
       'type_prefix': 'TC_',
@@ -747,6 +774,9 @@
       'triggers_back': list([
       ]),
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',
@@ -826,6 +856,9 @@
       'triggers_back': list([
       ]),
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',
@@ -905,6 +938,9 @@
       'triggers_back': list([
       ]),
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',
@@ -982,6 +1018,9 @@
       'triggers_back': list([
       ]),
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',
@@ -1060,6 +1099,9 @@
       'triggers_back': list([
       ]),
       'type': 'spec',
+      'type_ancestors': list([
+        'spec',
+      ]),
       'type_color': '#FEDCD2',
       'type_name': 'Specification',
       'type_prefix': 'SP_',
@@ -1137,6 +1179,9 @@
       'triggers_back': list([
       ]),
       'type': 'test',
+      'type_ancestors': list([
+        'test',
+      ]),
       'type_color': '#DCB239',
       'type_name': 'Test Case',
       'type_prefix': 'TC_',
@@ -1210,6 +1255,9 @@
       'triggers_back': list([
       ]),
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',

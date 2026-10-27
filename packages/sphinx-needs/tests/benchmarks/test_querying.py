@@ -60,6 +60,7 @@ def _make_needs_with_constrained_links(
         "type": "requirement",
         "type_name": "Req",
         "type_prefix": "REQ_",
+        "type_ancestors": ["requirement"],
         "type_color": "#000000",
         "type_style": "node",
         "status": "open",

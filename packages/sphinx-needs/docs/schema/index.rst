@@ -365,6 +365,10 @@ and the need path gives the chain: the ``verifies`` link of ``T_005`` to ``R_002
    To restrict the types of the needs a link points to, give the link type ``target_types`` instead,
    which accepts the types inheriting from those it lists;
    use a rule for what it cannot say, such as "a ``req`` but not a ``safety_req``", listing the types literally.
+   A rule follows ``inherits`` through ``type_ancestors``, the need's type and each type it inherits from
+   (see :ref:`filter_type_ancestors`):
+   ``"type_ancestors": { "contains": { "const": "req" } }`` holds for a ``req`` and a ``safety_req``,
+   in ``local`` properties and in a ``select`` alike.
 
 The next sections guide through an example and how to use the type and schema system to enforce
 constraints on need items and links between them.

@@ -44,6 +44,7 @@ CORE_BASE: dict[str, Any] = {
     "type": "story",
     "type_name": "User Story",
     "type_prefix": "US_",
+    "type_ancestors": ["story"],
     "type_color": "#BFD8D2",
     "type_style": "node",
     "status": None,

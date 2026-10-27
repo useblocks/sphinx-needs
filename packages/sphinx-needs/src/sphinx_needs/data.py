@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 13
+ENV_DATA_VERSION: Final = 14
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -89,6 +89,11 @@ Version 13 adds the names of the derived fields to every stored need (a slot of
 one). An unbumped rebuild over an existing ``_build`` unpickles needs without it, and
 the first write into one ends with an ``AttributeError`` rather than re-reading the
 documents.
+
+Version 14 adds the core field ``type_ancestors`` to every stored need. An unbumped
+rebuild over an existing ``_build`` unpickles the needs of every unchanged document
+without it, so a filter reading it fails on them (and a schema rule naming it misses
+them) rather than the documents being re-read.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
@@ -272,6 +277,13 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_external": True,
         "exclude_import": True,
         "deprecate_df": True,
+    },
+    "type_ancestors": {
+        "description": "The need's type, then each type it inherits from, nearest first.",
+        "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "exclude_json": True,
+        "exclude_external": True,
+        "exclude_import": True,
     },
     "type_prefix": {
         "description": "Prefix of the type.",
@@ -528,6 +540,8 @@ class NeedsInfoType(TypedDict):
 
     # type information (initially based on needs_types config)
     type_name: str
+    type_ancestors: list[str]
+    """The need's type, then each type it inherits from, nearest first."""
     type_prefix: str
     type_color: str
     """Hexadecimal color code of the type."""

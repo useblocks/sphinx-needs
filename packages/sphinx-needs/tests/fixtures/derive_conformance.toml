@@ -4638,3 +4638,49 @@ field = "cyc_b"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "readable"
+
+# --- type_ancestors in a where ------------------------------------------------------
+
+[[case]]
+name = "where-follows-inherits"
+why = "a where reads type_ancestors as a filter does: 'req' in type_ancestors counts a req and every type inheriting from it, type == 'req' a req alone; a bare entry naming a default type keeps the default types"
+config = '''
+[needs.types.spec]
+inherits = "req"
+
+[needs.types.impl]
+inherits = "spec"
+
+[needs.fields.n_req_like]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "'req' in type_ancestors" }
+
+[needs.fields.n_req]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "type == 'req'" }
+'''
+source = '''
+.. req:: A requirement
+   :id: REQ_1
+
+.. spec:: Inherits req
+   :id: SPEC_1
+
+.. impl:: Inherits spec
+   :id: IMPL_1
+
+.. test:: Links all of them
+   :id: TEST_1
+   :links: REQ_1, SPEC_1, IMPL_1, TEST_2
+
+.. test:: Links none
+   :id: TEST_2
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+n_req_like = 3
+n_req = 1
+[case.expect.needs.TEST_2]
+n_req_like = 0
+n_req = 0

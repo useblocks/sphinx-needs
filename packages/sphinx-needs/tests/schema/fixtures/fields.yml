@@ -992,3 +992,110 @@ required_content_missing:
                 type: string
                 minLength: 1
             required: ["content"]
+
+type_ancestors_contains:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.types.req]
+    title = "Requirement"
+    prefix = "R_"
+
+    [needs.types.safety_req]
+    title = "Safety requirement"
+    prefix = "SR_"
+    inherits = "req"
+
+    [needs.types.spec]
+    title = "Specification"
+    prefix = "S_"
+  rst: |
+    .. req:: title
+        :id: REQ_1
+
+    .. safety_req:: title
+        :id: SREQ_1
+
+    .. spec:: title
+        :id: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - id: req-like
+        validate:
+          local:
+            properties:
+              type_ancestors:
+                contains:
+                  const: req
+
+type_ancestors_select:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.types.req]
+    title = "Requirement"
+    prefix = "R_"
+
+    [needs.types.safety_req]
+    title = "Safety requirement"
+    prefix = "SR_"
+    inherits = "req"
+
+    [needs.types.spec]
+    title = "Specification"
+    prefix = "S_"
+
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. req:: title
+        :id: REQ_1
+        :asil: QM
+
+    .. safety_req:: title
+        :id: SREQ_1
+
+    .. spec:: title
+        :id: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - id: req-like-rated
+        select:
+          properties:
+            type_ancestors:
+              contains:
+                const: req
+        validate:
+          local:
+            required: ["asil"]
+
+tags_contains_without_items:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs]
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :tags: a, b
+
+    .. impl:: title
+        :id: IMPL_2
+        :tags: b
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              tags:
+                contains:
+                  const: a

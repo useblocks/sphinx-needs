@@ -4,6 +4,43 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Improvements
+............
+
+- ✨ Filters and schema rules can follow ``inherits``: every need carries ``type_ancestors`` (:issue:`2322`)
+
+  ``type_ancestors`` is the need's type, then each type it :ref:`inherits <needs_types_fields>` from, nearest
+  first: ``["safety_req", "req"]`` for a ``safety_req`` that inherits ``req``, ``["req"]`` for a ``req``. A
+  filter written ``'req' in type_ancestors`` selects a ``req`` and every type inheriting from it, where
+  ``type == 'req'`` still compares the name alone; it is in the portable filter language, so it is answered
+  without ``eval``, and it reads the same in a derived field's ``where``, a :ref:`needextend` filter and a
+  :ref:`needtable` column. A schema rule reads it too, in its ``local`` properties and its ``select``:
+  ``"type_ancestors": {"contains": {"const": "req"}}``. An ``inherits`` the build ignores (``needs.type_inherits``)
+  adds nothing, and a name that is no need type selects nothing, unreported. It is computed from the project's
+  need types and cannot be set; a need read from a ``needs.json`` takes the reading project's value. It is not
+  written to the ``needs.json`` unless :ref:`needs_json_exclude_fields` leaves it out. See
+  :ref:`filter_type_ancestors`.
+
+Breaking changes
+................
+
+- ‼️ ``type_ancestors`` is a core field name (:issue:`2322`)
+
+  A field of your own named ``type_ancestors`` is no longer one: a :ref:`needs_fields` entry of that name declares
+  no field, a need type's ``fields`` entry of that name is ignored with a ``needs.type_conflict`` warning, and
+  ``add_field`` refuses it, as for every core field name. A need that sets ``:type_ancestors:`` is reported as
+  setting an unknown option. Rename the field.
+
+Bug fixes
+.........
+
+- 🐛 A schema rule's array property may give ``contains`` without ``items``
+  (``"tags": {"contains": {"const": "a"}}``); it stopped the build with a schema error, where the rule now applies
+  (:issue:`2322`)
+
 .. _`release:9.1.0`:
 
 9.1.0

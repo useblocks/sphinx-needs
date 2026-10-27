@@ -440,7 +440,9 @@ class NeedItem:
         "_source",
     )
 
-    _immutable_core = {"id", "type"}
+    #: the type, and what follows from it alone (its ancestors, as ``inherits`` gives
+    #: them), are fixed when the need is created
+    _immutable_core = {"id", "type", "type_ancestors"}
 
     def __init__(
         self,
@@ -802,7 +804,9 @@ class NeedItem:
     def __getitem__(self, key: Literal["lineno", "lineno_content"]) -> int | None: ...
 
     @overload
-    def __getitem__(self, key: Literal["tags", "constraints"]) -> Sequence[str]: ...
+    def __getitem__(
+        self, key: Literal["tags", "constraints", "type_ancestors"]
+    ) -> Sequence[str]: ...
 
     @overload
     def __getitem__(self, key: Literal["arch"]) -> Mapping[str, str]: ...
@@ -1387,7 +1391,9 @@ class NeedPartItem:
     def __getitem__(self, key: Literal["lineno", "lineno_content"]) -> int | None: ...
 
     @overload
-    def __getitem__(self, key: Literal["tags", "constraints"]) -> Sequence[str]: ...
+    def __getitem__(
+        self, key: Literal["tags", "constraints", "type_ancestors"]
+    ) -> Sequence[str]: ...
 
     @overload
     def __getitem__(self, key: Literal["parts"]) -> Mapping[str, NeedsPartType]: ...

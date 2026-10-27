@@ -1505,9 +1505,9 @@ def reread_on_need_types_change(
     """Re-read every document if the need types changed since the documents were read.
 
     A need type gives its needs their ``type_name`` and ``type_prefix`` (and the ids
-    generated from it), its diagram color and style, and, through ``inherits``,
-    ``fields`` and ``links``, the fields, link types, defaults and ``derive`` rules they
-    are created with. The needs of an unchanged document are kept from the pickled
+    generated from it), its diagram color and style, through ``inherits`` their
+    ``type_ancestors``, and, through ``inherits``, ``fields`` and ``links``, the fields,
+    link types, defaults and ``derive`` rules they are created with. The needs of an unchanged document are kept from the pickled
     environment, so they would keep what the previous entries gave them (#2287).
 
     The list compared is the complete one, ``NeedsSphinxConfig.types``: the configured
@@ -1876,6 +1876,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     #: inherits; their findings are reported with the types' declarations, last
     type_entries, entry_findings = _checked_type_entries(needs_config.types)
     order, parent, inherits_findings = _inherits_order(type_entries)
+    #: what each need's ``type_ancestors`` is read from
+    schema.set_type_parents(parent)
     #: each need type with the types inheriting from it, as ``target_types`` reads them
     below = _type_descendants(order, parent)
     #: one rule for the name of a link type's back links, wherever the field or link

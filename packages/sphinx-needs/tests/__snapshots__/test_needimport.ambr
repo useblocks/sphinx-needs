@@ -2054,6 +2054,9 @@
       'template': None,
       'title': 'TEST_101 TITLE',
       'type': 'impl',
+      'type_ancestors': list([
+        'impl',
+      ]),
       'type_color': '#DF744A',
       'type_name': 'Implementation',
       'type_prefix': 'IM_',
@@ -2119,6 +2122,9 @@
       'template': None,
       'title': 'A Spec',
       'type': 'spec',
+      'type_ancestors': list([
+        'spec',
+      ]),
       'type_color': '#FEDCD2',
       'type_name': 'Specification',
       'type_prefix': 'SP_',
@@ -2184,6 +2190,9 @@
       'template': None,
       'title': 'A story',
       'type': 'story',
+      'type_ancestors': list([
+        'story',
+      ]),
       'type_color': '#BFD8D2',
       'type_name': 'User Story',
       'type_prefix': 'US_',

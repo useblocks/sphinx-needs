@@ -41,6 +41,9 @@
             ]),
             'title': 'Specification 1',
             'type': 'spec',
+            'type_ancestors': list([
+              'spec',
+            ]),
             'type_name': 'Specification',
           }),
           'SPEC_2': dict({
@@ -74,6 +77,9 @@
             ]),
             'title': 'Specification 2',
             'type': 'spec',
+            'type_ancestors': list([
+              'spec',
+            ]),
             'type_name': 'Specification',
           }),
           'SPEC_3': dict({
@@ -104,6 +110,9 @@
             'status': 'other',
             'title': 'Specification 3',
             'type': 'spec',
+            'type_ancestors': list([
+              'spec',
+            ]),
             'type_name': 'Specification',
           }),
         }),
@@ -600,6 +609,16 @@
               'description': 'Type of the need.',
               'field_type': 'core',
               'type': 'string',
+            }),
+            'type_ancestors': dict({
+              'default': list([
+              ]),
+              'description': "The need's type, then each type it inherits from, nearest first.",
+              'field_type': 'core',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
             }),
             'type_name': dict({
               'default': '',

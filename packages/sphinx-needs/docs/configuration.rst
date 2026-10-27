@@ -396,7 +396,8 @@ A need type may declare fields and link types anew for its needs, in its entry:
   or a name nothing else declares, a field of this type's needs alone (below) -- to the type's declaration of it;
 * ``links``: a dictionary from the name of a link type -- one of :ref:`needs_links`, or ``links``,
   or a name nothing else declares, a link type of this type's needs alone -- to the type's declaration of it;
-* ``inherits``: the directive name of one other need type, whose declarations this type starts from.
+* ``inherits``: the directive name of one other need type, whose declarations this type starts from;
+  a need's ``type_ancestors`` lists its type and the types it inherits from (:ref:`filter_type_ancestors`).
 
 A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` takes it:
 

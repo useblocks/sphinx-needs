@@ -295,6 +295,49 @@ using it there raises ``this_doc can not be used in this context``.
 It is likewise unavailable in ``needimport`` ``:filter:``, which runs against
 needs imported from another project, and in ``needuml`` content filters.
 
+.. _filter_type_ancestors:
+
+Filtering for a type and the types inheriting from it
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.2.0
+
+``type == 'req'`` compares the type's name: it selects the needs of type ``req`` and no other,
+not those of a type that :ref:`inherits <needs_types_fields>` from ``req``.
+Every need carries ``type_ancestors``, its type and then each type it inherits from, nearest first,
+so a filter can follow ``inherits`` with the membership test of the portable filter language:
+
+.. code-block:: toml
+
+   [needs.types.safety_req]
+   title = "Safety requirement"
+   prefix = "SR_"
+   inherits = "req"
+
+.. code-block:: rst
+
+   .. needtable::
+      :filter: 'req' in type_ancestors
+
+selects every ``req`` and every ``safety_req``; a ``safety_req`` need has ``type_ancestors`` ``["safety_req", "req"]``.
+
+- A type that inherits from no other type has itself alone, ``["req"]``,
+  as has a type whose ``inherits`` names no need type or is on a cycle:
+  that ``inherits`` is ignored, with a ``needs.type_inherits`` warning.
+- A name that is no need type selects nothing, and is not reported: ``'rq' in type_ancestors`` is false on every need,
+  as ``type == 'rq'`` is.
+- A need part has its need's.
+- It is computed from the project's need types, and cannot be set: it is no directive option,
+  :ref:`needextend` cannot change it, and a :ref:`needs_fields` entry of that name declares no field.
+  A need read from a ``needs.json`` (:ref:`needimport`, :ref:`needs_external_needs`)
+  takes the value the reading project's need types give it, whatever the file says.
+- It is not written to the :ref:`needs.json <needs_builder>`:
+  to write it, set :ref:`needs_json_exclude_fields` to a list without it.
+
+It is a field like any other where a field is read:
+in a derived field's ``where`` (:ref:`needs_derive`), in a :ref:`needtable` column,
+and in a :ref:`schema rule <schema_validation>`, as ``type_ancestors: {contains: {const: req}}``.
+
 .. _re_search:
 
 search
@@ -370,7 +413,8 @@ so writing filters the first two take is recommended:
      ``status == 'open'``, ``5 <= priority``, ``owner == lead``, ``len(tags) > 0``;
    - **membership**: an operand ``in`` / ``not in`` a list of literals,
      and a literal ``in`` / ``not in`` an operand -- an item of a list, a substring of a string:
-     ``type in ['req', 'spec']``, ``'safety' in tags``, ``'login' not in title.lower()``;
+     ``type in ['req', 'spec']``, ``'safety' in tags``, ``'login' not in title.lower()``,
+     ``'req' in type_ancestors`` (see :ref:`filter_type_ancestors`);
    - ``x is None`` / ``x is not None``;
    - ``x.startswith('...')`` / ``x.endswith('...')`` after an operand: ``id.lower().startswith('req')``;
    - ``search('pattern', x)`` (see :ref:`re_search`), with a plain string literal as the pattern;

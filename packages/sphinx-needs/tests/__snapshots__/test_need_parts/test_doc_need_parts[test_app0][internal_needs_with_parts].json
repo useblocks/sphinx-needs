@@ -59,6 +59,9 @@
     "template": null,
     "title": "Other",
     "type": "test",
+    "type_ancestors": [
+      "test"
+    ],
     "type_color": "#DCB239",
     "type_name": "Test Case",
     "type_prefix": "TC_",
@@ -121,6 +124,9 @@
     "template": null,
     "title": "Other 2",
     "type": "test",
+    "type_ancestors": [
+      "test"
+    ],
     "type_color": "#DCB239",
     "type_name": "Test Case",
     "type_prefix": "TC_",
@@ -220,6 +226,9 @@
     "template": null,
     "title": "Command line interface",
     "type": "spec",
+    "type_ancestors": [
+      "spec"
+    ],
     "type_color": "#FEDCD2",
     "type_name": "Specification",
     "type_prefix": "SP_",
@@ -285,6 +294,9 @@
     "template": null,
     "title": "Command line interface",
     "type": "spec",
+    "type_ancestors": [
+      "spec"
+    ],
     "type_color": "#FEDCD2",
     "type_name": "Specification",
     "type_prefix": "SP_",
@@ -348,6 +360,9 @@
     "template": null,
     "title": "Command line interface",
     "type": "spec",
+    "type_ancestors": [
+      "spec"
+    ],
     "type_color": "#FEDCD2",
     "type_name": "Specification",
     "type_prefix": "SP_",
@@ -411,6 +426,9 @@
     "template": null,
     "title": "Command line interface",
     "type": "spec",
+    "type_ancestors": [
+      "spec"
+    ],
     "type_color": "#FEDCD2",
     "type_name": "Specification",
     "type_prefix": "SP_",
@@ -474,6 +492,9 @@
     "template": null,
     "title": "Command line interface",
     "type": "spec",
+    "type_ancestors": [
+      "spec"
+    ],
     "type_color": "#FEDCD2",
     "type_name": "Specification",
     "type_prefix": "SP_",
@@ -537,6 +558,9 @@
     "template": null,
     "title": "Command line interface",
     "type": "spec",
+    "type_ancestors": [
+      "spec"
+    ],
     "type_color": "#FEDCD2",
     "type_name": "Specification",
     "type_prefix": "SP_",
@@ -600,6 +624,9 @@
     "template": null,
     "title": "Command line interface",
     "type": "spec",
+    "type_ancestors": [
+      "spec"
+    ],
     "type_color": "#FEDCD2",
     "type_name": "Specification",
     "type_prefix": "SP_",
@@ -667,6 +694,9 @@
     "template": null,
     "title": "TEST_2",
     "type": "spec",
+    "type_ancestors": [
+      "spec"
+    ],
     "type_color": "#FEDCD2",
     "type_name": "Specification",
     "type_prefix": "SP_",
@@ -727,6 +757,9 @@
     "template": null,
     "title": "TEST_2",
     "type": "spec",
+    "type_ancestors": [
+      "spec"
+    ],
     "type_color": "#FEDCD2",
     "type_name": "Specification",
     "type_prefix": "SP_",
