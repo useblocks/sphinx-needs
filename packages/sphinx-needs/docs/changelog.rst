@@ -50,8 +50,9 @@ Bug fixes
 
   It wrote ``"default": []`` for every link type but one derived by type alone, also for one with a literal
   ``default``, such as ``[needs.links.rel] default = ["REQ_1"]``: a reader of the schema took the wrong value for
-  an absent ``rel``. It now writes that default as the needs hold it, link strings sorted and deduplicated as a
-  written link list. A default a dynamic function or a variant computes, and a derived link type, still write
+  an absent ``rel``. It now writes that default as a need holding it writes its links, sorted and deduplicated,
+  with each link's condition under :ref:`needs_json_include_link_conditions` (the default) and without it
+  otherwise. A default a dynamic function or a variant computes, and a derived link type, still write
   ``[]``; a need type's own default is not written. Under :ref:`needs_json_remove_defaults` a need holding the
   link type's default now leaves it out, and a reader restores it from the file's own schema, as
   ``ub-needs-exchange`` (:ref:`needimport`, :ref:`needs_external_needs`) does; a reader that does not restore

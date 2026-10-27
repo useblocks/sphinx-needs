@@ -50,7 +50,8 @@ that can be one of: ``core``, ``links``, ``backlinks``, ``extra``.
 A field, core or extra, is written as the project declares it for all need types together (a need type's own declaration is not written),
 a :ref:`needs_fields` entry narrowing a core field included:
 its type (with ``null`` where it is nullable), its item type and its default, but not its other constraints, such as an ``enum``.
-A link type is written with its default links, as link strings, sorted and deduplicated as a need's links are written:
+A link type is written with its default links as a need holding them writes its links --
+sorted and deduplicated, each with its condition under :ref:`needs_json_include_link_conditions` (the default) and without it otherwise:
 the literal ``default`` of its :ref:`needs_links` entry
 (a default a dynamic function or a variant computes is written ``[]``, as is a derived link type's,
 but for one derived by type alone, whose default is the links of a need type without a rule).

@@ -151,3 +151,82 @@ def test_a_link_default_left_out_is_restored_from_the_schema(test_app: Any) -> N
         "REQ_2": ["REQ_0"],
     }
     assert records["REQ_1"]["links"] == ["REQ_0"]
+
+
+COND_TOML = """\
+[needs]
+build_json = true
+json_remove_defaults = true
+{extra}
+
+[needs.links.cond]
+default = ["REQ_1[status == 'open']", "REQ_0"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+"""
+
+COND_INDEX = """\
+Case
+====
+
+.. req:: Target
+   :id: REQ_0
+
+.. req:: Takes the default
+   :id: REQ_1
+   :status: open
+
+.. req:: Sets its own
+   :id: REQ_2
+   :cond: REQ_0
+"""
+
+
+def _cond_project(extra: str) -> dict[str, Any]:
+    return {
+        "buildername": "html",
+        "files": [
+            (Path("conf.py"), CONF),
+            (Path("ubproject.toml"), COND_TOML.format(extra=extra)),
+            (Path("index.rst"), COND_INDEX),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    ("test_app", "default"),
+    [
+        (_cond_project(""), ["REQ_0", "REQ_1[status == 'open']"]),
+        (
+            _cond_project("json_include_link_conditions = false"),
+            ["REQ_0", "REQ_1"],
+        ),
+    ],
+    indirect=["test_app"],
+    ids=["with_conditions_by_default", "without_conditions"],
+)
+def test_a_conditioned_link_default_is_written_as_the_needs_write_it(
+    test_app: Any, default: list[str]
+) -> None:
+    """A link's condition is written in a need's links under
+    ``needs_json_include_link_conditions`` (the default) and left out without it; the
+    schema's default follows, so it is the
+    list a need holding the default writes, which ``needs_json_remove_defaults`` then
+    leaves out and a reader restores."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    version = _version(app)
+    assert version["needs_schema"]["properties"]["cond"]["default"] == default
+    written = version["needs"]
+    assert "cond" not in written["REQ_1"]
+    assert written["REQ_2"]["cond"] == ["REQ_0"]
+    records = {
+        record.key: record.fields
+        for record in load(Path(app.outdir, "needs.json"))
+        .select_version(None)
+        .records()
+    }
+    assert records["REQ_1"]["cond"] == default

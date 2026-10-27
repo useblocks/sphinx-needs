@@ -71,7 +71,10 @@ class NeedsJsonType(TypedDict):
 
 
 def generate_needs_schema(
-    needs_schema: FieldsSchema, exclude_properties: Iterable[str] = ()
+    needs_schema: FieldsSchema,
+    exclude_properties: Iterable[str] = (),
+    *,
+    include_link_conditions: bool = False,
 ) -> dict[str, Any]:
     """Generate a JSON schema for all fields in each need item.
 
@@ -85,6 +88,10 @@ def generate_needs_schema(
     A derived field or link type (one with a ``derive`` or ``derive_by_type`` rule) is
     marked ``"readOnly": true``; its ``default`` is the value of a need type without a
     rule.
+
+    A link type's ``default`` is written as a need's links are: each link with its
+    condition under ``include_link_conditions`` (``needs_json_include_link_conditions``),
+    else without, so that a need holding the default writes exactly that list.
 
     It is the schema of the fields every need type shares: the global view of the
     schema (:meth:`~sphinx_needs.needs_schema.FieldsSchema.for_type` of no need type),
@@ -118,7 +125,9 @@ def generate_needs_schema(
             "field_type": "links",
             "default": [
                 li.to_link_string()
-                # in the order the export writes a link list
+                if include_link_conditions
+                else li.to_filter_string()
+                # in the order, and the form, the export writes a need's link list
                 for li in sorted(set(_link_default(link)), key=_link_natural_sort_key)
             ],
         }
@@ -219,7 +228,11 @@ class NeedsList:
 
         schema = SphinxNeedsData(env).get_schema()
         self._schema = (
-            generate_needs_schema(schema, exclude_properties=self._exclude_need_keys)
+            generate_needs_schema(
+                schema,
+                exclude_properties=self._exclude_need_keys,
+                include_link_conditions=self.needs_config.json_include_link_conditions,
+            )
             if add_schema
             else None
         )
