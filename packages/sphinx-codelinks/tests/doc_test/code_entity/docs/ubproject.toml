@@ -1,0 +1,11 @@
+[codelinks]
+set_code_entity = true
+
+[codelinks.projects.src.source_discover]
+src_dir = "../src"
+comment_type = "python"
+
+[codelinks.projects.src.analyse]
+get_oneline_needs = true
+get_need_id_refs = true
+get_multiline_needs = true

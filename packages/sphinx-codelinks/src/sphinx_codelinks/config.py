@@ -661,6 +661,7 @@ class CodeLinksConfigType(TypedDict):
     local_url_field: str
     set_remote_url: bool
     remote_url_field: str
+    set_code_entity: bool
     outdir: Path
     projects: dict[str, CodeLinksProjectConfigType]
     debug_measurement: bool
@@ -816,6 +817,20 @@ class CodeLinksConfig:
         },
     )
     """The field name for the remote URL in the extracted need."""
+
+    set_code_entity: bool = field(
+        default=False,
+        metadata={
+            "rebuild": "env",
+            "types": (bool,),
+            "schema": {
+                "type": "boolean",
+            },
+        },
+    )
+    """Set the code entity a marker is attached to on the needs created from code: the
+    ``code_entity``, ``code_entity_kind``, ``code_entity_lines`` and
+    ``code_entity_mechanism`` fields."""
 
     outdir: Path = field(
         default=Path("output"),

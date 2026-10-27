@@ -27,6 +27,7 @@ from sphinx_codelinks.config import (
 )
 from sphinx_codelinks.logger import configure_sphinx
 from sphinx_codelinks.sphinx_extension import debug
+from sphinx_codelinks.sphinx_extension.code_entity import register_code_entity_fields
 from sphinx_codelinks.sphinx_extension.directives.src_trace import (
     SourceTracing,
     SourceTracingDirective,
@@ -387,11 +388,13 @@ def update_sn_extra_options(_app: Sphinx, config: _SphinxConfig) -> None:
         _register_sn_field(
             src_trace_sphinx_config.remote_url_field, "Remote source URL"
         )
+    user_fields = _user_declared_fields(config)
+    if src_trace_sphinx_config.set_code_entity:
+        register_code_entity_fields(user_fields)
     # One list-valued field per distinct ``ref_url_field``, shared by the projects naming
     # it. ``nullable`` with no default, so a need no reference names carries ``None``,
     # which is stripped before schema validation: a strict ``unevaluatedProperties:
     # false`` schema never sees the field on it (a ``[]`` default would not be stripped).
-    user_fields = _user_declared_fields(config)
     for field_name in sorted(
         set(need_id_refs_fields(src_trace_sphinx_config).values())
     ):
