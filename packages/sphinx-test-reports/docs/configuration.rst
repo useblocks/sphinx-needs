@@ -97,7 +97,8 @@ that carry it alone
        ``result``, the source location (``case_file``, ``case_line``), and ``result_text`` and
        ``remote_url``, which only the converter writes
 
-The :ref:`tr_extra_options` are declared on all three. On every other need type the fields are absent:
+The :ref:`tr_extra_options` are declared on all three (unless ``needs_fields`` or ``needs_extra_options``
+also names one, which is then the project's field, on every need type). On every other need type the fields are absent:
 a need holds null there, and a value set there is reported (``needs.undeclared_for_type``) and ignored.
 A need type of your own that carries one -- a ``test`` need giving the ``case_name`` or ``classname``
 a :doc:`tr_link <functions>` or a derived link type joins on -- names it in its ``needs_types`` entry,
@@ -253,7 +254,9 @@ tr_extra_options
 .. versionadded:: 1.2.0
 
 Defines extra options you can use in `test-file` `test-case` and `test-suite`.
-These options also have to be registered in either needs_extra_options or needs_extra_links.
+The extension registers each as a field of those three need types alone (:ref:`tr_fields_per_type`);
+a name also registered in ``needs_fields`` or ``needs_extra_options`` (or a link type of ``needs_links``)
+is that field instead, on every need type, so a need of another type may set it too.
 
 **Example**
 
@@ -262,7 +265,7 @@ These options also have to be registered in either needs_extra_options or needs_
    # In conf.py
    tr_extra_options = ['more_info', 'related_to', 'priority']
 
-   # Define as regular options
+   # Optional: make two of them fields of every need type, not only of the test-report needs
    needs_extra_options = ['more_info', 'priority']
 
 Write them on a directive in lower case: docutils lowercases an option's name before it looks it up,

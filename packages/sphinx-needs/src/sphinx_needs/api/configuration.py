@@ -106,8 +106,9 @@ def add_need_type(
     configured = NeedsSphinxConfig(app.config)._types
     named = _NEEDS_CONFIG.type_entries
     if named is None and isinstance(configured, list | Mapping):
-        # needs_types is not resolved yet: what its entries name is read the same way
-        named = _normalise_need_types(configured, defer=True)[2]
+        # needs_types is not resolved yet: the list it resolves to, and what its
+        # entries name, are read the same way
+        configured, _, named, _ = _normalise_need_types(configured, defer=True)
     if directive in _NEEDS_CONFIG.types or (
         # a configured type no entry of the project names is a default type
         isinstance(configured, list)

@@ -1908,26 +1908,34 @@ def _back_link_claims(
 
 
 #: what a bare ``needs_types`` entry no extension's need type claims is reported with,
-#: after the text of an entry that is ignored
+#: after the text of an entry that is ignored and what it names
 UNCLAIMED_NARROWING_HINT = (
-    "it names no need type an extension registers, and to attach a rule to a type "
-    "the project does not declare, use `derive_by_type` on the field or link type"
+    "to attach a rule to a type the project does not declare, use `derive_by_type` "
+    "on the field or link type"
 )
 
 
 def report_unclaimed_narrowings() -> None:
     """Report each bare ``needs_types`` entry naming no default type that no
     extension's need type has claimed: it is ignored, as it always was, but only now,
-    once every extension has had its chance to add the type (#2371)."""
+    once every extension has had its chance to add the type (#2371). An entry naming
+    a configured GitHub service's need type, which is not narrowed, says so."""
     for directive, narrowing in _NEEDS_CONFIG.type_narrowings.items():
-        if directive not in _NEEDS_CONFIG.types:
-            log_warning(
-                LOGGER,
-                f"{narrowing.named} has no 'title' and no 'prefix'; the entry is "
-                f"ignored: {UNCLAIMED_NARROWING_HINT}",
-                "config",
-                None,
-            )
+        if directive in _NEEDS_CONFIG.types:
+            continue
+        names = (
+            "a GitHub service's need type, which only an entry with a 'title' and a "
+            "'prefix' replaces,"
+            if directive in _NEEDS_CONFIG.builtin_types
+            else "no need type an extension registers,"
+        )
+        log_warning(
+            LOGGER,
+            f"{narrowing.named} has no 'title' and no 'prefix'; the entry is ignored: "
+            f"it names {names} and {UNCLAIMED_NARROWING_HINT}",
+            "config",
+            None,
+        )
 
 
 def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:

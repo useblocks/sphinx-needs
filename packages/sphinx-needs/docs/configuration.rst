@@ -287,7 +287,7 @@ such as sphinx-test-reports' ``testfile``, ``testsuite`` and ``testcase``) narro
 with or without a ``title`` and a ``prefix``: the keys the entry gives win,
 the ``title``, ``prefix``, ``color`` and ``style`` it leaves out are the extension's,
 and its ``inherits``, ``fields`` and ``links`` apply to the type's needs as on any type the project declares.
-When the extension adds the type does not matter, although that is after the configuration is read.
+When the extension adds the type does not matter, even when that is after the configuration is read.
 A bare entry declares no type: beside it the default types are kept, as beside a bare entry naming a default type.
 An entry giving a ``title`` and a ``prefix`` declares the project's types, as any such entry does:
 
@@ -297,14 +297,19 @@ An entry giving a ``title`` and a ``prefix`` declares the project's types, as an
    [needs.types.testcase.links.evidence_for]
    derive = { kind = "links", join = { field = "case_name", equals = "case_name" }, where = "type == 'test'" }
 
+   # the project's own test needs give the case_name the join reads, a field the extension
+   # declares on its test cases alone: this entry declares it on test too
+   [needs.types.test.fields.case_name]
+
 A bare entry naming no default type and no type an extension adds is ignored, with a ``needs.config`` warning
 given once the schema is built (no earlier: the extension may add its type late)::
 
    needs_types['epic'] has no 'title' and no 'prefix'; the entry is ignored: it names no need type an extension registers, and to attach a rule to a type the project does not declare, use `derive_by_type` on the field or link type
 
 The need types of the configured :ref:`GitHub services <github_service>` are not narrowed this way:
-an entry for one is the project's own type, which replaces the service's,
-and :ref:`derive_by_type <needs_derive_by_type>` gives such a type a rule.
+an entry for one with a ``title`` and a ``prefix`` is the project's own type, which replaces the service's,
+and a bare one is ignored, with the warning above saying it names a GitHub service's need type;
+:ref:`derive_by_type <needs_derive_by_type>` gives such a type a rule.
 
 Every one of these items is stored on, or decides, the needs of the type,
 so an incremental build after a change to ``needs_types`` re-reads every document, as one after a change to :ref:`needs_fields` does,

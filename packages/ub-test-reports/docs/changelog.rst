@@ -20,9 +20,10 @@ Changed
   (or the fields ``source_file_option`` and ``source_line_option`` name) and ``case_parameter``
   where the report gives no source file, no line or no parameter, where it wrote ``""``
   (changed output; `#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__), as its
-  ``needs_schema`` already declared them nullable. ``split_case_name`` returns ``None`` for the
-  parameter of a name pytest did not parameterise (``""`` stays the parameter of an empty
-  ``[]``). A filter written ``case_line == ''`` no longer matches such a case: write
+  ``needs_schema`` already declared them nullable. **API change:** ``split_case_name`` now
+  returns ``tuple[str, str | None]``: ``None`` for the parameter of a name pytest did not
+  parameterise (``""`` stays the parameter of an empty ``[]``), so a caller that concatenated
+  or compared the parameter as a string handles ``None``. A filter written ``case_line == ''`` no longer matches such a case: write
   ``case_line is None`` (or ``not case_line``) instead. sphinx-test-reports' directives write
   the same.
 

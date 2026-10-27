@@ -14,7 +14,8 @@ Changed
   ``result_text``, ``remote_url`` and the source location) on test cases, and the report path and
   the ``tr_extra_options`` on all three, through Sphinx-Needs' ``add_field(..., types=[...])``. A
   need of another type holds null in them, as before, but a value set there is now reported
-  (``needs.undeclared_for_type``) and ignored. **Migration:** a need type of your own that carries
+  (``needs.undeclared_for_type``) and ignored, and a ``needextend`` setting one on such needs is refused
+  (``needs.needextend``). **Migration:** a need type of your own that carries
   one -- a ``test`` need giving the ``case_name`` or ``classname`` a ``tr_link`` or a derived link
   type joins on -- names it in its ``needs_types`` entry, which declares it there too:
   ``[needs.types.test.fields.case_name]`` (or ``needs_types = {"test": {"fields": {"case_name":
@@ -30,7 +31,9 @@ Changed
   were already declared nullable; pytest's default ``junit_family = xunit2`` writes no ``file``
   or ``line``, so on its reports every case changes. A filter written ``case_line == ''`` no
   longer matches such a case: write ``case_line is None`` (or ``not case_line``, which matches
-  both) instead. The converter of ub-test-reports writes the same.
+  both) instead. Under ``needs_json_remove_defaults`` the three keys are now left out of the
+  ``needs.json`` for such a case (null is their default), where ``""`` was written. The converter
+  of ub-test-reports writes the same.
 
 .. _`release:3.0.1`:
 

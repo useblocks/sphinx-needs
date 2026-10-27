@@ -264,3 +264,56 @@ def test_add_need_type_still_refuses_a_default_type_no_entry_names(
         "color": "#ff0000",
         "style": "node",
     }
+
+
+#: a bare entry naming the need type of a configured GitHub service
+SERVICE = """\
+[needs.services.github-issues]
+
+[needs.types.issue]
+color = "#000000"
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(WHEN["config-inited-500"], SERVICE, ".. req:: A\n   :id: R_00001\n")],
+    indirect=True,
+)
+def test_a_bare_entry_naming_a_service_type_is_reported_as_such(test_app: Any) -> None:
+    """A GitHub service's need type is not narrowed: a bare entry for it is ignored,
+    and the finding says it names the service's type, which only an entry with a
+    title and a prefix replaces -- not that no extension registers it."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types['issue'] has no 'title' and no 'prefix'; the entry is "
+        "ignored: it names a GitHub service's need type, which only an entry with a "
+        "'title' and a 'prefix' replaces, and to attach a rule to a type the project "
+        "does not declare, use `derive_by_type` on the field or link type "
+        "[needs.config]"
+    ]
+    assert _type(app, "issue")["color"] != "#000000"
+
+
+@pytest.mark.parametrize("priority", [11, 500])
+def test_add_need_type_refuses_a_default_type_whenever_it_is_called(
+    make_app: Any, tmp_path: Path, priority: int
+) -> None:
+    """A default type no entry names is refused however early the extension adds it:
+    before ``needs_types`` is resolved, the list it resolves to is read, so a project
+    whose bare entries keep the default types refuses ``req`` at priority 11 as at
+    500, rather than accepting it there and shadowing it with the default."""
+    (tmp_path / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\n'
+        'needs_types = {"spec": {"color": "#000000"}}\n'
+        "def _add(app, config):\n"
+        "    from sphinx_needs.api import add_need_type\n"
+        '    add_need_type(app, "req", "Theirs", "TH_")\n'
+        "def setup(app):\n"
+        f'    app.connect("config-inited", _add, priority={priority})\n',
+        encoding="utf-8",
+    )
+    (tmp_path / "index.rst").write_text("Case\n====\n", encoding="utf-8")
+    with pytest.raises(Exception, match="req already exists as need type"):
+        make_app("needs", srcdir=tmp_path)

@@ -376,6 +376,12 @@ class _Config:
         if name not in self._builtin_services:
             self._builtin_services.append(name)
 
+    @property
+    def builtin_types(self) -> Mapping[str, NeedType]:
+        """The need types sphinx-needs itself provides (the configured GitHub
+        services'), by directive (:meth:`add_builtin_need_type`)."""
+        return self._builtin_types
+
     def add_builtin_need_type(self, need_type: NeedType) -> None:
         """Adds a need type sphinx-needs itself provides (the configured GitHub
         services' ones).

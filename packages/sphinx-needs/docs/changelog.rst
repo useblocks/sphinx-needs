@@ -18,12 +18,15 @@ Improvements
   ``color`` and ``style`` it leaves out are the extension's, and its ``inherits``, ``fields`` and ``links`` (with
   ``derive``, ``target_types``, ``minItems`` / ``maxItems``, a narrower ``schema``) apply to the type's needs, as on
   a type the project declares, whenever the extension adds the type. So
-  ``[needs.types.testcase.links.evidence_for] derive = {...}`` gives test cases a derived link type of their own. A
+  ``[needs.types.testcase.links.evidence_for] derive = {...}`` gives test cases a derived link type of their own
+  (joining on the ``case_name`` of ``test`` needs takes ``[needs.types.test.fields.case_name]`` too, once
+  sphinx-test-reports declares its fields on its own types, below). A
   bare entry still declares no type (the default types are kept beside it). A bare entry naming no default type and
   no type an extension adds is ignored as before, but reported once the schema is built, naming
   ``derive_by_type`` as the spelling that attaches a rule to a type the project does not declare -- the
   documentation now says that is what ``derive_by_type`` is for, rather than only that it is older. The GitHub
-  services' types are not narrowed: an entry for one replaces it. See :ref:`needs_types_extension`.
+  services' types are not narrowed: an entry with a ``title`` and a ``prefix`` replaces one, and a bare entry for one
+  is ignored, with a warning naming the service's type. See :ref:`needs_types_extension`.
 
 - ✨ An extension declares a field on its own need types alone: ``add_field(name, description, types=[...])``
   (:issue:`2372`)
