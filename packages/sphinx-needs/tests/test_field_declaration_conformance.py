@@ -25,6 +25,7 @@ their field in a form the warning stream can be read for, and which are read fro
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import tomllib
@@ -53,7 +54,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 89
+EXPECTED_CASE_COUNT = 90
 
 #: The cases of the section "an entry naming a default type", the only ones whose
 #: ``needs_types`` may hold an entry with neither a ``title`` nor a ``prefix``.
@@ -89,12 +90,18 @@ SHARED_CODES = frozenset(
 #: The codes only ubCode reports: none in this corpus.
 UBCODE_ONLY_CODES: frozenset[str] = frozenset()
 
-#: The configuration the runner gives every case besides its ``ubproject.toml``.
+#: The configuration the runner gives every case besides its ``ubproject.toml``: its
+#: ``extensions`` are sphinx-needs, then the case's own.
 CONF_PY = """\
-extensions = ["sphinx_needs"]
+extensions = {extensions!r}
 needs_from_toml = "ubproject.toml"
 needs_build_json = True
 """
+
+#: The extensions a case may load besides sphinx-needs (its ``extensions`` key): those
+#: whose need types and fields ubCode models from the same ``ubproject.toml`` table, so
+#: both tools can run the case.
+EXTENSIONS = frozenset({"sphinx_test_reports"})
 
 #: The title the runner puts above every case's ``source``.
 TITLE = "Case\n====\n\n"
@@ -156,8 +163,10 @@ def test_every_case_has_a_complete_expectation() -> None:
             "files",
             "python_only",
             "ubcode_only",
+            "extensions",
             "expect",
         }, name
+        assert set(case.get("extensions", [])) <= EXTENSIONS, name
         assert case["why"] and case["config"] and case["source"], name
         assert not (case.get("python_only") and case.get("ubcode_only")), name
         # the default need types are replaced by a `needs_types` declaring a type: a
@@ -212,9 +221,45 @@ def test_the_corpus_header_records_where_it_is_canonical() -> None:
     assert "THIS copy is CANONICAL" in header
 
 
+def test_a_case_loading_an_extension_loads_it_beside_sphinx_needs() -> None:
+    """A case's ``extensions`` are added to its ``conf.py`` after sphinx-needs; a case
+    naming none loads sphinx-needs alone."""
+    conf = {str(path): text for path, text in _files(EXTENSION_CASE)}["conf.py"]
+    assert conf.startswith("extensions = ['sphinx_needs', 'sphinx_test_reports']\n"), (
+        conf
+    )
+    plain = {"config": "", "source": ""}
+    conf = {str(path): text for path, text in _files(plain)}["conf.py"]
+    assert conf.startswith("extensions = ['sphinx_needs']\n"), conf
+
+
+def test_a_case_loading_an_extension_that_is_not_installed_is_skipped(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The release's compat cell installs sphinx-needs' own dependencies alone, where
+    the extension is absent: its cases are skipped, by name, not failed (#2369)."""
+    assert _skip({"config": "", "source": ""}) is None
+    assert _skip(EXTENSION_CASE) is None
+    monkeypatch.setattr(importlib.util, "find_spec", lambda _name: None)
+    assert _skip(EXTENSION_CASE) == "sphinx_test_reports is not installed"
+
+
+#: a case loading sphinx-test-reports
+EXTENSION_CASE = {"config": "", "source": "", "extensions": ["sphinx_test_reports"]}
+
+
 def _files(case: Mapping[str, Any]) -> list[tuple[Path, str]]:
     """The case's project: its configuration, its document, and its other files."""
-    return case_files(case, conf_py=CONF_PY, title=TITLE)
+    extensions = ["sphinx_needs", *case.get("extensions", [])]
+    return case_files(case, conf_py=CONF_PY.format(extensions=extensions), title=TITLE)
+
+
+def _skip(case: Mapping[str, Any]) -> str | None:
+    """Why the case cannot run here: an extension it loads is not installed."""
+    for extension in case.get("extensions", []):
+        if importlib.util.find_spec(extension) is None:
+            return f"{extension} is not installed"
+    return None
 
 
 @pytest.mark.parametrize(
@@ -312,7 +357,7 @@ def _violations(subtype: str) -> Reader:
 
 
 @pytest.mark.parametrize(
-    "test_app,case", params(CASES, files=_files), indirect=["test_app"]
+    "test_app,case", params(CASES, files=_files, skip=_skip), indirect=["test_app"]
 )
 def test_case(test_app: Any, case: dict[str, Any]) -> None:
     app = test_app

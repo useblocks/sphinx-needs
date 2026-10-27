@@ -17,7 +17,7 @@
 #
 # Rules for every runner:
 #   - a case is one project. `config` is its `ubproject.toml` (the `[needs]` configuration
-#     only); `source` is the body of its one reStructuredText document, `index.rst`, under
+#     only, but for a case loading an extension, below); `source` is the body of its one reStructuredText document, `index.rst`, under
 #     a title the runner adds; `files` (optional) are other files of the project, relative
 #     to the case directory. A case writes only inside its own directory: a `files` key
 #     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
@@ -75,6 +75,16 @@
 #     value instead
 #   - a case with `python_only = true` is one only sphinx-needs runs, and ubCode's runner
 #     skips it; `ubcode_only = true` is the converse
+#   - a case with `extensions` loads those Sphinx extensions besides sphinx-needs. The one
+#     a case may name is `sphinx_test_reports`, whose need types (`testfile`, `testsuite`,
+#     `testcase`) and fields ubCode models from the `[test_reports]` table of the same
+#     file: such a case's `config` may carry `[test_reports]` beside `[needs]`, its JUnit
+#     reports are `files`, and its source may use the extension's directives and the need
+#     types the extension registers, which the case does not declare. A need such a
+#     directive creates has the id the extension gives it, which both tools compute
+#     alike. The Python runner adds the extensions to `conf.py` and SKIPS a case whose
+#     extension is not installed (a run against sphinx-needs' released dependencies
+#     alone has none); ubCode's runner, which loads no extension, runs every such case
 #   - values are compared as `needs.json` writes them, TYPE INCLUDED: `7.0` is a float and
 #     `7` an integer, and the two differ; a link list is a list of id strings, as
 #     `needs.json` writes it
@@ -185,6 +195,8 @@
 #   files        - optional; other files, relative to the case directory, and their text
 #   python_only  - optional; see the rules above
 #   ubcode_only  - optional; see the rules above
+#   extensions   - optional; the extensions the case loads besides sphinx-needs (see the
+#                  rules above)
 #   [case.expect]
 #     findings         - the findings, `[]` for none; or one `[[case.expect.findings]]`
 #                        table per finding: `code`, and `need`, `field` and `type` where
@@ -5040,3 +5052,57 @@ type_name = "Requirement"
 [[case.expect.findings]]
 code = "type_inherits"
 type = "req"
+
+# --- the need types and fields an extension registers ---------------------------------
+
+[[case]]
+name = "an-extensions-field-narrowed-on-a-project-type"
+why = "a project type's entry of a field an extension registers narrows it on that type, a value outside the narrowing failing it (field_fail), and the extension's own needs keep their values"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.suite]
+schema = { pattern = "^suite_" }
+'''
+source = '''
+.. spec:: In a suite
+   :id: S_0001
+   :suite: suite_a
+
+.. spec:: Not in a suite
+   :id: S_0002
+   :suite: other
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.needs.S_0001]
+suite = "suite_a"
+[case.expect.needs.TF_0001_F0D]
+type = "testsuite"
+suite = "suite_a"
+[case.expect.needs.TF_0001_F0D_61F00]
+type = "testcase"
+suite = "suite_a"
+case_name = "test_pass"
+result = "passed"
+[[case.expect.findings]]
+code = "field_fail"
+need = "S_0002"
+field = "suite"
