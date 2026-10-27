@@ -1016,6 +1016,10 @@ def execute_rule(
                 return len(candidates)
             return sum(1 for c in candidates if _read(c, rule.field, reads) is not None)
         case "any" | "all":
+            if not candidates and rule.empty is not None:
+                # ``empty`` names the value over no candidate; unset, it is the
+                # kind's own: ``any`` false, ``all`` true, as below
+                return rule.empty
             if rule.test is not None:
                 hits = [_passes(c, rule.test, config, reads) for c in candidates]
             else:

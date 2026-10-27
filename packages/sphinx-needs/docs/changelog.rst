@@ -10,6 +10,15 @@ Unreleased
 Improvements
 ............
 
+- ✨ A derive rule of kind ``any`` or ``all`` takes ``empty``, the value it gives over no candidate
+  (:ref:`needs_derive_kind_any_all`, :issue:`2377`)
+
+  Over no candidate ``all`` is ``true``, which on a requirement nothing tests reads as "every test passed";
+  ``all_passed = { kind = "all", test = "status == 'passed'", over = "tests_back", empty = false }`` gives ``false``
+  there instead. No candidate is what is left once ``where`` has dropped the needs it does not hold on. Unset,
+  ``empty`` is the kind's own value (``all`` ``true``, ``any`` ``false``), so no existing rule changes; on any other
+  kind, or with a value that is not a boolean, the rule is refused (``needs.derive_invalid``).
+
 - 👌 The ``needs.derive_scope`` warning at a :ref:`needextend` whose filter names a computed field says what
   computes it: "a derive rule" for a field a :ref:`derive <needs_derive>` rule computes, "a dynamic function or
   variant" for a ``[[…]]``, ``<<…>>`` or ``<{…}>``, and "a derive rule, a dynamic function or a variant" when the

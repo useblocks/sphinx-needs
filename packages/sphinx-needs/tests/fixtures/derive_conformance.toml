@@ -410,6 +410,116 @@ all_field = true
 any_field = false
 
 [[case]]
+name = "any-all-empty"
+why = "empty names what any / all give over no candidate, the candidates left once where has dropped those it does not hold on (REQ_SPEC: a spec its where drops; REQ_NONE: no link); without it, all is true and any false; over candidates it is not read (REQ_PASS, REQ_FAIL), and a candidate leaving the field unset still reads false (REQ_FAIL)"
+config = '''
+[needs.links.tests]
+
+[needs.fields.passed]
+schema = { type = "boolean" }
+
+[needs.fields.all_default]
+schema = { type = "boolean" }
+derive = { kind = "all", test = "status == 'passed'", over = "tests_back", where = "type == 'test'" }
+
+[needs.fields.all_true]
+schema = { type = "boolean" }
+derive = { kind = "all", test = "status == 'passed'", over = "tests_back", where = "type == 'test'", empty = true }
+
+[needs.fields.all_false]
+schema = { type = "boolean" }
+derive = { kind = "all", test = "status == 'passed'", over = "tests_back", where = "type == 'test'", empty = false }
+
+[needs.fields.any_default]
+schema = { type = "boolean" }
+derive = { kind = "any", test = "status == 'passed'", over = "tests_back", where = "type == 'test'" }
+
+[needs.fields.any_true]
+schema = { type = "boolean" }
+derive = { kind = "any", test = "status == 'passed'", over = "tests_back", where = "type == 'test'", empty = true }
+
+[needs.fields.any_false]
+schema = { type = "boolean" }
+derive = { kind = "any", test = "status == 'passed'", over = "tests_back", where = "type == 'test'", empty = false }
+
+[needs.fields.all_field_false]
+schema = { type = "boolean" }
+derive = { kind = "all", field = "passed", over = "tests_back", where = "type == 'test'", empty = false }
+
+[needs.fields.any_field_true]
+schema = { type = "boolean" }
+derive = { kind = "any", field = "passed", over = "tests_back", where = "type == 'test'", empty = true }
+'''
+source = '''
+.. req:: Passed
+   :id: REQ_PASS
+
+.. req:: Failed
+   :id: REQ_FAIL
+
+.. req:: Only a spec links here
+   :id: REQ_SPEC
+
+.. req:: Nothing links here
+   :id: REQ_NONE
+
+.. test:: Passes
+   :id: TEST_P
+   :tests: REQ_PASS
+   :status: passed
+   :passed: true
+
+.. test:: Fails, passed unset
+   :id: TEST_F
+   :tests: REQ_FAIL
+   :status: failed
+
+.. spec:: Not a test, though passed
+   :id: SPEC_1
+   :tests: REQ_SPEC
+   :status: passed
+   :passed: true
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PASS]
+all_default = true
+all_true = true
+all_false = true
+any_default = true
+any_true = true
+any_false = true
+all_field_false = true
+any_field_true = true
+[case.expect.needs.REQ_FAIL]
+all_default = false
+all_true = false
+all_false = false
+any_default = false
+any_true = false
+any_false = false
+all_field_false = false
+any_field_true = false
+[case.expect.needs.REQ_SPEC]
+all_default = true
+all_true = true
+all_false = false
+any_default = false
+any_true = true
+any_false = false
+all_field_false = false
+any_field_true = true
+[case.expect.needs.REQ_NONE]
+all_default = true
+all_true = true
+all_false = false
+any_default = false
+any_true = true
+any_false = false
+all_field_false = false
+any_field_true = true
+
+[[case]]
 name = "min-max-over-links"
 why = "min / max of a number by value, of a string with an enum by the enum's order; unset values skipped; over no candidate the field is unset"
 config = '''
@@ -1151,6 +1261,14 @@ derive = { kind = "count", over = "links", where = "  " }
 schema = { type = "boolean" }
 derive = { kind = "any", over = "links", test = "" }
 
+[needs.fields.bad_empty_on_sum]
+schema = { type = "number" }
+derive = { kind = "sum", field = "hours", over = "links", empty = false }
+
+[needs.fields.bad_empty_not_boolean]
+schema = { type = "boolean" }
+derive = { kind = "all", over = "links", test = "status == 'open'", empty = "no" }
+
 [needs.fields.bad_result]
 schema = { type = "string" }
 derive = { kind = "count", over = "links" }
@@ -1180,7 +1298,7 @@ status = "open"
 bad_default = "alice"
 bad_value_kind = []
 [case.expect.nulls]
-REQ_1 = ["bad_kind", "bad_no_kind", "bad_not_table", "bad_unknown_role", "bad_role_not_taken", "bad_missing", "bad_role_type", "bad_copy_both", "bad_select_no_over", "bad_any_both", "bad_include_self", "bad_link_kind", "bad_over", "bad_field", "bad_where_needs", "bad_where_current", "bad_where_c", "bad_where_syntax", "bad_result", "bad_select_list", "bad_blank_where", "bad_blank_test"]
+REQ_1 = ["bad_kind", "bad_no_kind", "bad_not_table", "bad_unknown_role", "bad_role_not_taken", "bad_missing", "bad_role_type", "bad_copy_both", "bad_select_no_over", "bad_any_both", "bad_include_self", "bad_link_kind", "bad_over", "bad_field", "bad_where_needs", "bad_where_current", "bad_where_c", "bad_where_syntax", "bad_result", "bad_select_list", "bad_blank_where", "bad_blank_test", "bad_empty_on_sum", "bad_empty_not_boolean"]
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "bad_kind"
@@ -1244,6 +1362,12 @@ field = "bad_blank_where"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "bad_blank_test"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_empty_on_sum"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_empty_not_boolean"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "bad_result"

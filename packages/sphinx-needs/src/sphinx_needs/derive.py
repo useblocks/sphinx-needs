@@ -89,6 +89,7 @@ ROLES: Final = (
     "join",
     "where",
     "test",
+    "empty",
     "select",
     "transitive",
     "include_self",
@@ -119,8 +120,14 @@ _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
         frozenset({"field", "over"}),
         frozenset({"where", "transitive", "include_self", "after"}),
     ),
-    "any": (frozenset({"over"}), frozenset({"field", "test", "where", "after"})),
-    "all": (frozenset({"over"}), frozenset({"field", "test", "where", "after"})),
+    "any": (
+        frozenset({"over"}),
+        frozenset({"field", "test", "where", "empty", "after"}),
+    ),
+    "all": (
+        frozenset({"over"}),
+        frozenset({"field", "test", "where", "empty", "after"}),
+    ),
     "collect": (frozenset({"field", "over"}), frozenset({"where", "after"})),
     "hash": (frozenset({"fields"}), frozenset({"after"})),
     "fingerprint": (frozenset(), frozenset({"exclude"})),
@@ -134,7 +141,9 @@ _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
 }
 
 _STRING_ROLES: Final = frozenset({"field", "over", "from", "where", "test"})
-_BOOLEAN_ROLES: Final = frozenset({"transitive", "include_self", "include_parts"})
+_BOOLEAN_ROLES: Final = frozenset(
+    {"empty", "transitive", "include_self", "include_parts"}
+)
 _SELECT: Final = ("first", "unique", "list")
 #: The keys of the ``join`` role.
 _JOIN_KEYS: Final = ("field", "equals")
@@ -170,6 +179,9 @@ class DeriveRule:
         one of this need's values.
     :ivar where: The ``where`` role: the predicate narrowing the candidates.
     :ivar test: The ``test`` role: the predicate asserted of each candidate.
+    :ivar empty: The ``empty`` role (``any``, ``all``): the value over no candidate,
+        once ``where`` has dropped the candidates it does not hold on; ``None``, unset,
+        is the kind's own value there, ``False`` for ``any`` and ``True`` for ``all``.
     :ivar select: The ``select`` role of a ``copy`` over several targets.
     :ivar transitive: The ``transitive`` role of ``min`` / ``max``.
     :ivar include_self: The ``include_self`` role.
@@ -186,6 +198,7 @@ class DeriveRule:
     join: DeriveJoin | None = None
     where: str | None = None
     test: str | None = None
+    empty: bool | None = None
     select: Literal["first", "unique", "list"] = "first"
     transitive: bool = False
     include_self: bool = False
@@ -334,6 +347,7 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
         else None,
         where=raw.get("where"),
         test=raw.get("test"),
+        empty=raw.get("empty"),
         select=raw.get("select", "first"),
         transitive=raw.get("transitive", False),
         include_self=raw.get("include_self", False),

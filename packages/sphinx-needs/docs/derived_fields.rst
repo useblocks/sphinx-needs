@@ -244,7 +244,7 @@ The kinds at a glance
    * - ``any``, ``all``
      - a field
      - ``over``, and exactly one of ``field`` (a boolean field) and ``test``
-     - ``where``
+     - ``where``, ``empty``
      - a ``boolean``
    * - ``collect``
      - a field
@@ -557,6 +557,24 @@ Use them for a verdict over linked needs, such as whether every test of a requir
 
 A requirement whose tests all passed holds ``verified`` ``true``, one with a ``failed`` test ``false``,
 and one no test names ``true``, as ``all`` over no candidate is.
+
+On a requirement nothing tests, that ``true`` reads as "every test passed".
+``empty`` names the value over no candidate instead, such as ``empty = false``:
+
+.. code-block:: toml
+
+   [needs.fields.verified]
+   schema = { type = "boolean" }
+   derive = { kind = "all", test = "status == 'passed'", over = "tests_back", where = "type == 'test'", empty = false }
+
+Now the requirement no test names holds ``verified`` ``false``, and so does one that only a specification names,
+which ``where`` drops: no candidate is what is left once ``where`` has dropped the needs it does not hold on.
+Over candidates ``empty`` is not read, and a candidate that leaves a boolean ``field`` unset still reads as false.
+Without ``empty``, each kind keeps its own value over no candidate.
+
+.. versionadded:: 9.2.0
+
+   The ``empty`` role.
 
 .. _`needs_derive_kind_collect`:
 
@@ -886,7 +904,11 @@ The roles
    * - ``test``
      - a filter string
      - ``any`` / ``all``: what is asserted of each remaining candidate.
-       Over no candidates, ``all`` is ``true`` and ``any`` is ``false``.
+       Over no candidates, ``all`` is ``true`` and ``any`` is ``false`` (see ``empty``).
+   * - ``empty``
+     - ``true`` / ``false``
+     - ``any`` / ``all``: the value over no candidate, once ``where`` has dropped the candidates it does not hold on.
+       Unset, ``all`` is ``true`` and ``any`` is ``false``.
    * - ``select``
      - ``"first"`` (default), ``"unique"``, ``"list"``
      - ``copy`` over several targets (with ``over`` or ``join``): the target with the lowest need id among those that set the field;
@@ -936,7 +958,8 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
   and ``count`` with a ``field`` (which so counts the candidates that set it);
   ``any`` and ``all`` read it as false.
   ``sum`` skips a value that is not a number.
-- **No candidate.** ``sum`` and ``count`` are ``0`` (``0.0`` in a ``number`` field), ``any`` ``false``, ``all`` ``true``,
+- **No candidate.** When none is left once ``where`` has dropped those it does not hold on,
+  ``sum`` and ``count`` are ``0`` (``0.0`` in a ``number`` field), ``any`` ``false`` and ``all`` ``true`` (or their ``empty``),
   ``collect`` and ``copy`` with ``select = "list"`` ``[]`` (a list, also when no candidate sets the field);
   ``min``, ``max`` and ``copy`` with ``select = "first"`` or ``"unique"`` find no value,
   over no candidate or over candidates none of which sets the field, and leave the field at its empty value.
