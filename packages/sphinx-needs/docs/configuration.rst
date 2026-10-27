@@ -752,7 +752,9 @@ For new fields the following can be defined:
     *New in version 9.0.0.*
 
 Any other key in an entry, such as a misspelt ``derive``, is ignored and the entry kept,
-one ``needs.config`` warning per key, naming the entry, the key and the keys an entry has::
+one ``needs.config`` warning per key, naming the entry, the key and the keys an entry has
+(a ``name``, left from a :ref:`needs_extra_options` entry, is accepted where it repeats the entry's name,
+and reported where it gives another, ``needs_fields['level'] gives 'name' = 'lvl', which differs from the entry's name 'level'; it is ignored``)::
 
    needs_fields['total'] has an unknown key 'dervie'; known keys are default, derive, derive_by_type, description, nullable, parse_dynamic_functions, parse_variants, predicates, schema; the key is ignored
 
@@ -1066,7 +1068,8 @@ Each configured link can define:
 
 Any other key in an entry, such as a misspelt ``target_types``, and a keyword the ``schema`` of a link type
 (or its ``items`` or ``contains``) does not have, such as ``uniqueItems``, is reported and ignored as in a
-:ref:`needs_fields` entry, one ``needs.config`` warning per key::
+:ref:`needs_fields` entry, one ``needs.config`` warning per key
+(an ``option``, left from a :ref:`needs_extra_links` entry, is accepted where it repeats the entry's name, and reported where it gives another)::
 
    needs_links['verifies'] has an unknown key 'target_type'; known keys are allow_dead_links, color, copy, default, derive, derive_by_type, description, incoming, outgoing, parse_conditions, parse_dynamic_functions, parse_variants, predicates, schema, style, style_end, style_part, style_start, target_types; the key is ignored
    needs_links['verifies'].schema has an unknown keyword 'uniqueItems'; known keywords of a link type's schema are contains, items, maxContains, maxItems, minContains, minItems, type; the keyword is ignored

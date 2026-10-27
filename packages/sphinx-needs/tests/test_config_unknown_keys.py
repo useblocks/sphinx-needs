@@ -11,6 +11,7 @@ key and the keys that are known; the key is ignored and the entry kept.
 
 from __future__ import annotations
 
+import io
 import json
 import textwrap
 from pathlib import Path
@@ -183,13 +184,23 @@ needs_fields = {
     "asil": {"schema": {"type": "string", "enmu": ["A", "B"]}, "nullable": True},
     "level": {"schema": {"type": "string", "minimum": 1}, "nullable": True},
     "labels": {
-        "schema": {"type": "array", "items": {"type": "string", "enmu": ["a"]}},
+        "schema": {
+            "type": "array",
+            "items": {"type": "string", "enmu": ["a"]},
+            "contains": {"type": "string", "enmu": ["b"]},
+        },
         "nullable": True,
     },
     "status": {"schema": {"enmu": ["open"]}},
 }
 needs_links = {
-    "verifies": {"schema": {"uniqueItems": True, "items": {"enum": ["X"]}}},
+    "verifies": {
+        "schema": {
+            "uniqueItems": True,
+            "items": {"enum": ["X"]},
+            "contains": {"enum": ["Y"], "minLength": 1},
+        },
+    },
 }
 
 
@@ -216,9 +227,9 @@ def test_an_unknown_schema_keyword_is_reported_and_dropped(test_app: Any) -> Non
     """A keyword the schema of its type does not have is one warning, and dropped: the
     field keeps the rest of its schema, and the build goes on (it stopped the build,
     ``Invalid schema: Additional properties are not allowed``). That holds for a
-    field's schema, its ``items``, a core field's specialisation (whose type it
-    inherits), a link type's schema and its ``items``, and a field an extension
-    registers."""
+    field's schema, its ``items`` and ``contains``, a core field's specialisation
+    (whose type it inherits), a link type's schema, its ``items`` and ``contains``,
+    and a field an extension registers. The configuration itself keeps them."""
     app = test_app
     app.build()
     assert _config_warnings(app) == [
@@ -237,13 +248,28 @@ def test_an_unknown_schema_keyword_is_reported_and_dropped(test_app: Any) -> Non
         f"WARNING: needs_fields['labels'].schema.items has an unknown keyword 'enmu'; "
         f"known keywords of a schema of type 'string' are {STRING_KEYWORDS}; the keyword is "
         "ignored [needs.config]",
+        f"WARNING: needs_fields['labels'].schema.contains has an unknown keyword "
+        f"'enmu'; known keywords of a schema of type 'string' are {STRING_KEYWORDS}; the "
+        "keyword is ignored [needs.config]",
         f"WARNING: needs_links['verifies'].schema has an unknown keyword 'uniqueItems'; "
         f"known keywords of a link type's schema are {LINK_KEYWORDS}; the keyword is "
         "ignored [needs.config]",
         f"WARNING: needs_links['verifies'].schema.items has an unknown keyword 'enum'; "
         f"known keywords of a link type's items are {LINK_ITEM_KEYWORDS}; the keyword "
         "is ignored [needs.config]",
+        f"WARNING: needs_links['verifies'].schema.contains has an unknown keyword "
+        f"'enum'; known keywords of a link type's contains are {LINK_ITEM_KEYWORDS}; the "
+        "keyword is ignored [needs.config]",
     ]
+    # the keywords are dropped from a copy: the configuration is not changed
+    fields, links = app.config.needs_fields, app.config.needs_links
+    assert fields["asil"]["schema"] == {"type": "string", "enmu": ["A", "B"]}
+    assert fields["status"]["schema"]["enmu"] == ["open"]
+    assert fields["labels"]["schema"]["items"]["enmu"] == ["a"]
+    assert fields["labels"]["schema"]["contains"]["enmu"] == ["b"]
+    assert links["verifies"]["schema"]["uniqueItems"] is True
+    assert links["verifies"]["schema"]["items"]["enum"] == ["X"]
+    assert links["verifies"]["schema"]["contains"]["enum"] == ["Y"]
     # nothing else is reported: the dropped keywords constrain nothing
     assert build_warnings(app) == _config_warnings(app)
     need = _needs(app)["REQ_1"]
@@ -294,3 +320,62 @@ def test_an_unknown_schema_keyword_in_a_toml_table_is_reported(test_app: Any) ->
     ]
     need = _needs(app)["REQ_1"]
     assert (need["efforts"], need["links"]) == ("e", ["REQ_1"])
+
+
+OWN_NAME_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {
+    "asil": {"name": "asil", "schema": {"type": "string"}, "nullable": True},
+    "level": {"name": "lvl", "schema": {"type": "string"}, "nullable": True},
+}
+needs_links = {
+    "verifies": {"option": "verifies"},
+    "blocks": {"option": "block"},
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(OWN_NAME_CONF, ".. req:: A\n   :id: REQ_1\n   :level: x\n")],
+    indirect=True,
+)
+def test_a_name_left_from_the_list_spelling_is_accepted_where_it_repeats(
+    test_app: Any,
+) -> None:
+    """A ``name`` in a ``needs_fields`` entry, or an ``option`` in a ``needs_links``
+    entry, is the key the list spelling (``needs_extra_options``,
+    ``needs_extra_links``) names an entry by; the table spelling takes the name from
+    its key, and has always ignored it. Repeating the entry's name, as a migrated entry
+    does, it is accepted in silence; giving another name, it is reported, and ignored
+    as before: the entry keeps its key's name."""
+    app = test_app
+    app.build()
+    assert _config_warnings(app) == [
+        "WARNING: needs_fields['level'] gives 'name' = 'lvl', which differs from the "
+        "entry's name 'level'; it is ignored [needs.config]",
+        "WARNING: needs_links['blocks'] gives 'option' = 'block', which differs from "
+        "the entry's name 'blocks'; it is ignored [needs.config]",
+    ]
+    need = _needs(app)["REQ_1"]
+    assert need["level"] == "x"
+    assert "lvl" not in need
+    assert need["blocks"] == []
+    assert "block" not in need
+
+
+def test_an_entry_that_is_not_a_table_gets_no_unknown_key_per_character(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A ``needs_links`` entry that is a string fails as before (its reader cannot
+    complete it), and is not first read as a mapping of its characters: no
+    ``unknown key 'a'`` per character."""
+    (tmp_path / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\nneeds_links = {"rel": "abc"}\n'
+    )
+    (tmp_path / "index.rst").write_text("Case\n====\n")
+    warning = io.StringIO()
+    with pytest.raises(Exception):  # noqa: B017  -- the reader's own failure
+        make_app(srcdir=tmp_path, freshenv=True, warning=warning)
+    assert "unknown key" not in warning.getvalue()

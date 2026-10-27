@@ -17,6 +17,9 @@ Improvements
   does not have, such as a misspelt ``derive`` or ``target_types``, was ignored in silence, so a field meant to be
   derived stayed authorable and a link type meant to be restricted was not. Each is now one ``needs.config``
   warning, naming the entry, the key and the keys the entry has; the key is ignored and the entry kept. A
+  ``name`` in a ``needs_fields`` entry, or an ``option`` in a ``needs_links`` entry, left from the list spelling,
+  is accepted in silence where it repeats the entry's name, as a migrated entry does, and reported where it
+  gives another (it was always ignored: the entry is named by its key). A
   ``needs_extra_options`` entry is read for ``name``, ``description``, ``schema``, ``derive`` and
   ``derive_by_type`` alone, as before, and its other keys, such as ``nullable``, are now reported. A keyword the
   ``schema`` of such an entry does not have (``enmu``, ``minimum`` on a ``string``, ``uniqueItems`` on a link

@@ -913,7 +913,8 @@ def _unknown(
         return [], ""
     return unknown, (
         f"{where} has {'an unknown key' if len(unknown) == 1 else 'unknown keys'} "
-        f"{', '.join(repr(k) for k in unknown)}; known keys are {', '.join(known)}; the "
+        f"{', '.join(repr(k) for k in unknown)}; known keys are "
+        f"{', '.join(sorted(known))}; the "
         f"{'key is' if len(unknown) == 1 else 'keys are'} ignored"
     )
 
@@ -933,12 +934,37 @@ EXTRA_LINK_ENTRY_KEYS: Final[tuple[str, ...]] = _entry_keys(LinkOptionsType)
 
 
 def _report_unknown_keys(
-    where: str, entry: Mapping[Any, Any], known: tuple[str, ...]
+    where: str,
+    entry: Any,
+    known: tuple[str, ...],
+    *,
+    own_name: tuple[str, str] | None = None,
 ) -> None:
     """One ``needs.config`` warning per key of a global field or link type entry that
     the entry does not have; the readers of the entry read only the known keys, so the
-    key is ignored and the entry kept."""
+    key is ignored and the entry kept. An entry that is not a mapping is left to its
+    reader, which reports it.
+
+    :param own_name: the key the entry's list spelling names it by (``name`` of a
+        ``needs_extra_options`` entry, ``option`` of a ``needs_extra_links`` one) and the
+        entry's name, for an entry of the table spelling (``needs_fields``,
+        ``needs_links``), which takes its name from its table key: that key, left over
+        from the list spelling, is accepted where it repeats the entry's name, and
+        reported where it gives another (it was always ignored).
+    """
+    if not isinstance(entry, Mapping):
+        return
     for key in entry:
+        if own_name is not None and key == own_name[0]:
+            if entry[key] != own_name[1]:
+                log_warning(
+                    LOGGER,
+                    f"{where} gives {key!r} = {entry[key]!r}, which differs from the "
+                    f"entry's name {own_name[1]!r}; it is ignored",
+                    "config",
+                    None,
+                )
+            continue
         if key not in known:
             log_warning(
                 LOGGER,
@@ -1305,7 +1331,10 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             )
             continue
         _report_unknown_keys(
-            f"needs_fields[{option_name!r}]", option_params, FIELD_ENTRY_KEYS
+            f"needs_fields[{option_name!r}]",
+            option_params,
+            FIELD_ENTRY_KEYS,
+            own_name=("name", option_name),
         )
         if option_name in NeedsCoreFields or option_name in _link_type_names(
             needs_config
@@ -1678,17 +1707,21 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
         }
 
     # Ensure all links have outgoing and incoming defined, so that we can rely on it later on.
-    for name, link, (source, known) in chain(
-        (
-            (name, link, ("needs_links", LINK_ENTRY_KEYS))
-            for name, link in needs_config._links.items()
-        ),
-        (
-            (v["option"], v, ("needs_extra_links", EXTRA_LINK_ENTRY_KEYS))
-            for v in needs_config._extra_links
-        ),
+    for name, link in needs_config._links.items():
+        _report_unknown_keys(
+            f"needs_links[{name!r}]",
+            link,
+            LINK_ENTRY_KEYS,
+            own_name=("option", name),
+        )
+    for link in needs_config._extra_links:
+        _report_unknown_keys(
+            f"needs_extra_links[{link['option']!r}]", link, EXTRA_LINK_ENTRY_KEYS
+        )
+    for name, link in chain(
+        needs_config._links.items(),
+        ((v["option"], v) for v in needs_config._extra_links),
     ):
-        _report_unknown_keys(f"{source}[{name!r}]", link, known)
         if "outgoing" not in link:
             link["outgoing"] = name
         if "incoming" not in link:
