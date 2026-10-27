@@ -797,6 +797,45 @@ l_parts_self = ["REQ_1.p1", "REQ_1.p2", "REQ_1.p10"]
 l_family = []
 
 [[case]]
+name = "links-include-parts-of-imported-and-external-needs"
+why = "the parts of a need from needimport and from needs_external_needs are candidates of a links rule with include_parts too, each after its need in part-id order: an imported need's parts are those its content gives (its content is parsed), an external need's those its record's parts give (its content is not parsed, so EXT_2's :np: makes no part); without include_parts only the needs; no rule runs on the imported need (IMP_1 keeps its empty l_imp). The external needs are not in sphinx-needs' needs.json, so only the links to them are pinned"
+# not pinned: an imported record's own `parts` key where its content gives none -- sphinx-needs
+# takes the parts its content gives (none), ubCode the record's; the tools differ there, and
+# this contract does not yet say which is right
+config = '''
+[needs]
+external_needs = [{ base_url = "http://example.org/", json_path = "external.json" }]
+
+[needs.links.l_imp]
+derive = { kind = "links", where = "is_part and id_parent == 'IMP_1'", include_parts = true }
+
+[needs.links.l_ext]
+derive = { kind = "links", where = "is_part and id_parent in ['EXT_1', 'EXT_2']", include_parts = true }
+
+[needs.links.l_whole]
+derive = { kind = "links", where = "id_parent in ['IMP_1', 'EXT_1', 'EXT_2']" }
+
+[needs.links.l_family]
+derive = { kind = "links", where = "id_parent in ['IMP_1', 'EXT_1', 'EXT_2']", include_parts = true }
+'''
+source = '''
+.. spec:: Links them
+   :id: SPEC_1
+
+.. needimport:: imported.json
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "Three parts: :np:`(p2) second`, :np:`(p10) tenth` and :np:`(p1) first`."}}}}}''', "external.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"EXT_1": {"id": "EXT_1", "type": "req", "title": "External", "parts": {"b": {"id": "b", "content": "bee"}, "a": {"id": "a", "content": "ay"}}}, "EXT_2": {"id": "EXT_2", "type": "req", "title": "External, a part in its content", "content": "One part: :np:`(c) see`."}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+l_imp = ["IMP_1.p1", "IMP_1.p2", "IMP_1.p10"]
+l_ext = ["EXT_1.a", "EXT_1.b"]
+l_whole = ["EXT_1", "EXT_2", "IMP_1"]
+l_family = ["EXT_1", "EXT_1.a", "EXT_1.b", "EXT_2", "IMP_1", "IMP_1.p1", "IMP_1.p2", "IMP_1.p10"]
+[case.expect.needs.IMP_1]
+l_imp = []
+
+[[case]]
 name = "content-links-from-where"
 why = "content_links: the content's :need: references, each once (a part reference a part link, a dead one and the need itself kept; a disabled one and those in a nested need not); where keeps the references to needs it holds on (a part through its need); from reads another need's content"
 config = '''
@@ -1486,7 +1525,7 @@ field = "total"
 
 [[case]]
 name = "filter-inline-spellings"
-why = "calc_sum with a filter sums every need passing it; copy with a filter takes the lowest id passing it (REQ_1, written after REQ_2: the lowest id, not the first in the document), and with no match the need need_id names, else its own need; links_from_filter links every need passing it"
+why = "calc_sum with a filter sums every need passing it; copy with a filter takes the lowest id passing it (REQ_1, written after REQ_2: the lowest id, not the first in the document), and with no match the need need_id names, else its own need; its candidates are needs, never a part (who_part: no need is a part, so its own need); links_from_filter links every need passing it, and with include_parts=True every part passing it too, after its need (IMPL_1.p1)"
 config = '''
 [needs.fields.hours]
 schema = { type = "number" }
@@ -1506,7 +1545,14 @@ schema = { type = "string" }
 [needs.fields.who_first]
 schema = { type = "string" }
 
+[needs.fields.who_part]
+schema = { type = "string" }
+
 [needs.links.inline_links]
+
+[needs.links.inline_parts]
+
+[needs.links.inline_no_parts]
 '''
 source = '''
 .. req:: Three hours
@@ -1526,7 +1572,16 @@ source = '''
    :who: [[copy("owner", filter="type == 'nothing'")]]
    :who_named: [[copy("owner", "REQ_2", filter="type == 'nothing'")]]
    :who_first: [[copy("owner", filter="type == 'req'")]]
+   :who_part: [[copy("owner", filter="is_part")]]
    :inline_links: [[links_from_filter("type == 'req'")]]
+   :inline_parts: [[links_from_filter("id_parent == 'IMPL_1'", include_parts=True)]]
+   :inline_no_parts: [[links_from_filter("id_parent == 'IMPL_1'")]]
+
+.. impl:: With a part
+   :id: IMPL_1
+   :owner: dave
+
+   One part: :np:`(p1) the part`.
 '''
 [case.expect]
 findings = []
@@ -1535,7 +1590,10 @@ sum_req = 5.0
 who = "carol"
 who_named = "bob"
 who_first = "alice"
+who_part = "carol"
 inline_links = ["REQ_1", "REQ_2"]
+inline_parts = ["IMPL_1", "IMPL_1.p1"]
+inline_no_parts = ["IMPL_1"]
 
 [[case]]
 name = "inline-copy-case-of-a-list"
@@ -2598,6 +2656,126 @@ fp = "da55a16ec834fc426ce4f6641040139d1ea8235ad8c9e947b94406f1d01cf959"
 legacy = ""
 fp = "d51d1facf79607c5da7e39c0a85c22150cd9f847e742f479f14ff5f69cd7bdc3"
 
+[[case]]
+name = "fingerprint-nested-need"
+why = "a need nested in another's content is a need of its own: the parent's content holds the nested directive as written and the child's only its own body, and neither fingerprint reads where a need sits (REQ_C's parent_needs, which the nesting sets, does not enter)"
+# the JSON texts hashed:
+#   REQ_P {"content":"Parent text before.\n\n.. req:: Child\n   :id: REQ_C\n\n   Child text.\n\nParent text after.","id":"REQ_P","title":"Parent","type":"req"}
+#   REQ_C {"content":"Child text.","id":"REQ_C","title":"Child","type":"req"}
+config = '''
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+'''
+source = '''
+.. req:: Parent
+   :id: REQ_P
+
+   Parent text before.
+
+   .. req:: Child
+      :id: REQ_C
+
+      Child text.
+
+   Parent text after.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_P]
+content = "Parent text before.\n\n.. req:: Child\n   :id: REQ_C\n\n   Child text.\n\nParent text after."
+fp = "814250414244821c05a729e914c757a977906ec067e0ce9c18f74d3bfefaad65"
+[case.expect.needs.REQ_C]
+content = "Child text."
+parent_needs = ["REQ_P"]
+fp = "10b5c2a7324bdaad3f8278eaea755531b638a8593435152cd5d36d443892b650"
+
+[[case]]
+name = "fingerprint-computed-tags-default"
+why = "a [[...]] default of tags is computed on each need (REQ_3 copies its labels), a value the need sets wins (REQ_4); a computed default is no literal default, so a fingerprint compares tags with [] and an empty computed value adds no key (REQ_1)"
+# the JSON texts hashed:
+#   REQ_1 {"id":"REQ_1","title":"One","type":"req"}
+#   REQ_3 {"id":"REQ_3","labels":["x","y"],"tags":["x","y"],"title":"Three","type":"req"}
+#   REQ_4 {"id":"REQ_4","labels":["x","y"],"tags":["z"],"title":"Own tags","type":"req"}
+config = '''
+[needs.fields.labels]
+schema = { type = "array", items = { type = "string" } }
+default = []
+
+[needs.fields.tags]
+default = "[[copy('labels')]]"
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Three
+   :id: REQ_3
+   :labels: x, y
+
+.. req:: Own tags
+   :id: REQ_4
+   :labels: x, y
+   :tags: z
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+tags = []
+fp = "7f4bdaf3aabd58f1856a45668842cef81d7ad22a35b2cf3b4450fc4710f9b832"
+[case.expect.needs.REQ_3]
+tags = ["x", "y"]
+fp = "3d6c305e6557abbdc630dc56581f7995012d9299102d4046dbc795e1dd033e20"
+[case.expect.needs.REQ_4]
+tags = ["z"]
+fp = "8e4c9da58fe097070c4b790471b627313c8b92a86c397be42070c46df1c529c8"
+
+[[case]]
+name = "fingerprint-computed-link-default-from-global-options"
+why = "a link type's [[...]] default given through [needs.global_options] is computed on each need as one in the link type's own entry is (SPEC_A copies its links into covers), a value the need sets wins (SPEC_B); a fingerprint compares it with [], so an empty computed value adds no key (REQ_1). global_options' deprecation warning is each tool's own"
+# the JSON texts hashed:
+#   REQ_1  {"id":"REQ_1","title":"One","type":"req"}
+#   SPEC_A {"covers":["REQ_1"],"id":"SPEC_A","links":["REQ_1"],"title":"Linked","type":"spec"}
+#   SPEC_B {"covers":["SPEC_A"],"id":"SPEC_B","links":["REQ_1"],"title":"Covers its own","type":"spec"}
+config = '''
+[needs.links.covers]
+
+[needs.global_options.covers]
+default = "[[copy('links')]]"
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. spec:: Linked
+   :id: SPEC_A
+   :links: REQ_1
+
+.. spec:: Covers its own
+   :id: SPEC_B
+   :links: REQ_1
+   :covers: SPEC_A
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+covers = []
+fp = "7f4bdaf3aabd58f1856a45668842cef81d7ad22a35b2cf3b4450fc4710f9b832"
+[case.expect.needs.SPEC_A]
+covers = ["REQ_1"]
+fp = "a49c1d518fd1b023935c64afa1c552ed25f50b63dbee38473416286fa436040d"
+[case.expect.needs.SPEC_B]
+covers = ["SPEC_A"]
+fp = "569f70bfed02f3f94ba4208bcd750a0ce380303a09fb653071afa03b3d7228d7"
+
 # --- rules per need type: derive_by_type ----------------------------------------------
 
 [[case]]
@@ -2700,7 +2878,7 @@ SPEC_1 = ["total_n"]
 
 [[case]]
 name = "by-type-invalid-shapes"
-why = "derive_by_type is checked at load, one derive_invalid per rule entry or key: a type key naming no need type (a title included) is ignored; an empty or non-table derive_by_type, a non-table entry and an invalid entry are reported and the field stays closed (a derive beside an empty one computes on every type), needs of that type holding their empty value while the other types are unaffected; 'types' inside a rule is not a role; a default beside derive is refused as before; predicates, and a non-literal default, beside derive_by_type alone are refused"
+why = "derive_by_type is checked at load, one derive_invalid per rule entry or key: a type key naming no need type (a title included) is ignored; an empty or non-table derive_by_type, a non-table entry and an invalid entry are reported and the field stays closed (a derive beside an empty one computes on every type), needs of that type holding their empty value, not the field's default (REQ_1: null, where the default is 7), while the other types are unaffected (SPEC_1 computes, IMPL_1 holds the default); 'types' inside a rule is not a role; a default beside derive is refused as before; predicates, and a non-literal default, beside derive_by_type alone are refused"
 config = '''
 [needs.fields.hours]
 schema = { type = "number" }
@@ -2724,11 +2902,13 @@ derive_by_type = [1, 2]
 
 [needs.fields.entry_not_table]
 schema = { type = "number" }
+default = 7
 derive_by_type.req = 3
 derive_by_type.spec = { kind = "sum", field = "hours", over = "links" }
 
 [needs.fields.entry_invalid]
 schema = { type = "number" }
+default = 7
 derive_by_type.req = { kind = "sum", field = "nope", over = "links" }
 derive_by_type.spec = { kind = "sum", field = "hours", over = "links" }
 
@@ -2770,6 +2950,9 @@ source = '''
    :id: SPEC_1
    :hours: 4
    :links: REQ_1
+
+.. impl:: C
+   :id: IMPL_1
 '''
 [case.expect]
 [case.expect.needs.REQ_1]
@@ -2783,6 +2966,9 @@ beside_default = 4.0
 beside_predicates = 4.0
 dynamic_default = "B"
 table_beside_derive = 4.0
+[case.expect.needs.IMPL_1]
+entry_not_table = 7.0
+entry_invalid = 7.0
 [case.expect.nulls]
 REQ_1 = ["title_key", "empty_table", "not_a_table", "entry_not_table", "entry_invalid", "types_role", "beside_predicates", "dynamic_default"]
 SPEC_1 = ["unknown_type", "title_key", "empty_table", "not_a_table", "types_role"]
