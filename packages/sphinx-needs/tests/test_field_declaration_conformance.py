@@ -245,11 +245,15 @@ def test_a_case_loading_an_extension_that_is_not_installed_is_skipped(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """The release's compat cell installs sphinx-needs' own dependencies alone, where
-    the extension is absent: its cases are skipped, by name, not failed (#2369)."""
+    the extension is absent: its cases are skipped, by name, not failed (#2369).
+    Whether it is installed here is decided by ``find_spec``, patched both ways, so
+    this test holds in that cell too."""
     assert _skip({"config": "", "source": ""}) is None
+    monkeypatch.setattr(importlib.util, "find_spec", lambda _name: object())
     assert _skip(EXTENSION_CASE) is None
     monkeypatch.setattr(importlib.util, "find_spec", lambda _name: None)
     assert _skip(EXTENSION_CASE) == "sphinx_test_reports is not installed"
+    assert _skip({"config": "", "source": ""}) is None
 
 
 #: a case loading sphinx-test-reports
