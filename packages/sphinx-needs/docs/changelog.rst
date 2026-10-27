@@ -18,6 +18,14 @@ Improvements
   It said "a dynamic function or variant" for a derived field too, where the project wrote neither. The warning's
   code and severity are unchanged.
 
+Documentation
+.............
+
+- 📚 :ref:`needs_derive` shows how to start a list roll-up one rung up (:ref:`needs_derive_rollup_rung_up`):
+  a ``copy`` of ``id`` over ``satisfies`` with ``select = "list"`` on the specification, then a ``collect`` on each
+  rung below, and why the list does not start on the requirement itself; and the same chain read upwards, which gives
+  each need the tests that reach it (:issue:`2379`)
+
 .. _`release:9.1.0`:
 
 9.1.0

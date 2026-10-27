@@ -324,6 +324,59 @@ A test whose ``links`` names a specification with ``owner`` ``alice`` holds ``sp
 (``select = "first"``), the same and a ``needs.derive_unique`` warning when several set it (``"unique"``),
 or every value in the order written (in :ref:`need-id order <needs_id_order>` over a ``join``), a list's items each (``"list"``).
 
+.. _`needs_derive_rollup_rung_up`:
+
+Starting a list roll-up one rung up
++++++++++++++++++++++++++++++++++++
+
+To show on every need of a chain the requirements it traces to,
+start the list on the rung above the requirements with ``copy`` of ``id`` and ``select = "list"``,
+then ``collect`` it on each rung below:
+
+.. code-block:: toml
+
+   [needs.links.satisfies]
+   [needs.links.implements]
+   [needs.links.tests]
+
+   [needs.fields.req_ids]
+   schema = { type = "array", items = { type = "string" } }
+
+   [needs.types.spec.fields.req_ids]
+   derive = { kind = "copy", field = "id", over = "satisfies", select = "list" }
+
+   [needs.types.impl.fields.req_ids]
+   derive = { kind = "collect", field = "req_ids", over = "implements" }
+
+   [needs.types.test.fields.req_ids]
+   derive = { kind = "collect", field = "req_ids", over = "tests" }
+
+A specification satisfying ``REQ_1`` and ``REQ_2`` holds ``req_ids`` ``["REQ_1", "REQ_2"]``,
+and so do the implementations of it and their tests.
+The list starts on the specification, not on the requirement:
+there a plain ``copy`` of ``id`` reads one string, which an array field does not hold,
+and ``select`` takes a list only with ``over`` or ``join``; both are refused (``needs.derive_invalid``).
+
+The same chain read upwards gives each need the tests that reach it,
+the back links of each rung (``<link type>_back``) as ``over``:
+
+.. code-block:: toml
+
+   [needs.fields.reached_by]
+   schema = { type = "array", items = { type = "string" } }
+
+   [needs.types.impl.fields.reached_by]
+   derive = { kind = "collect", field = "id", over = "tests_back" }
+
+   [needs.types.spec.fields.reached_by]
+   derive = { kind = "collect", field = "reached_by", over = "implements_back" }
+
+   [needs.types.req.fields.reached_by]
+   derive = { kind = "collect", field = "reached_by", over = "satisfies_back" }
+
+With ``TEST_1`` and ``TEST_2`` testing the implementation,
+the implementation, the specification and both requirements hold ``reached_by`` ``["TEST_1", "TEST_2"]``.
+
 .. _`needs_derive_join`:
 
 Matching a field: the join role
@@ -522,6 +575,8 @@ Use it to show on one need what its linked needs hold, such as the tags of a req
 A need linking implementations tagged ``io, parser`` and ``io, cache`` holds ``linked_tags`` ``["io", "parser", "cache"]``.
 
 ``collect`` keeps each value once, in the order of the candidates, a list's items each.
+Collecting a derived list field over the next rung of a chain carries the list down it
+(:ref:`needs_derive_rollup_rung_up`).
 
 .. _`needs_derive_link_lists`:
 
