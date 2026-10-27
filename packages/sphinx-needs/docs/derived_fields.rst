@@ -854,6 +854,8 @@ The roles
 A ``where`` or ``test`` reads the candidate only:
 a filter naming ``needs``, ``current_need`` or a ``c.`` check (such as ``c.this_doc()``) cannot be declared,
 so that a rule means the same in every tool that reads the configuration.
+``c.is_a('req')`` with a string literal is the exception: it reads the candidate's ``type_ancestors`` alone
+(see :ref:`filter_type_ancestors`).
 
 A ``join`` matches the needs whose field equals one of this need's values (:ref:`needs_derive_join`).
 

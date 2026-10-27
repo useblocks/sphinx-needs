@@ -1943,3 +1943,59 @@ expected = ["SREQ_001"]
 tier = "eval"
 reason = "compare:list"
 why = "nearest first; a list beside == is outside the language"
+
+[[case.filters]]
+filter = 'c.is_a("req")'
+expected = ["ASIL_001", "REQ_001", "SREQ_001"]
+tier = "fast"
+why = "c.is_a(name) is name in type_ancestors"
+
+[[case.filters]]
+filter = "c.is_a('safety_req')"
+expected = ["ASIL_001", "SREQ_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'not c.is_a("req")'
+expected = ["SPEC_001", "STRAY_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'c.is_a("req") and not c.is_a("safety_req")'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'c.is_a("nope")'
+expected = []
+why = "a name that is no need type selects nothing, and is not reported"
+
+[[case.filters]]
+filter = 'c.is_a("req")'
+expected = ["ASIL_001", "REQ_001", "SREQ_001"]
+in_document = false
+why = "unlike c.this_doc(), it reads the need alone, so a filter configured outside every document takes it"
+
+[[case.filters]]
+filter = 'c.is_a("req")'
+expected = ["ASIL_001", "REQ_001", "REQ_001.a", "SREQ_001"]
+include_parts = true
+
+[[case.filters]]
+filter = 'c.is_a(type)'
+expected = ["ASIL_001", "REQ_001", "SPEC_001", "SREQ_001", "STRAY_001"]
+tier = "eval"
+reason = "call:c.is_a"
+why = "the argument is a string literal in the language; any other is eval's"
+
+[[case.filters]]
+filter = 'c.is_a()'
+expected = []
+error = "filter"
+tier = "eval"
+reason = "call:c.is_a"
+
+[[case.filters]]
+filter = 'c.is_a("req") == True'
+expected = ["ASIL_001", "REQ_001", "SREQ_001"]
+tier = "eval"
+reason = "call:c.is_a"

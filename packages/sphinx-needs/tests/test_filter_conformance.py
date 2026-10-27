@@ -55,7 +55,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "filter_conformance.toml"
 #: it needs a reason in the commit message, and ubCode's vendored copy has to follow
 #: either way.
 EXPECTED_CASE_COUNT = 21
-EXPECTED_FILTER_COUNT = 243
+EXPECTED_FILTER_COUNT = 253
 
 #: The configuration the runner gives every case besides its ``ubproject.toml``.
 CONF_PY = """\

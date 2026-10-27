@@ -24,6 +24,13 @@ Improvements
   written to the ``needs.json`` unless :ref:`needs_json_exclude_fields` leaves it out. See
   :ref:`filter_type_ancestors`.
 
+- ✨ ``c.is_a('req')`` is true for a need whose type is ``req`` or inherits from it (:issue:`2322`)
+
+  It is ``'req' in type_ancestors``, spelled as a check beside ``c.this_doc()``: in the portable filter language
+  with a string literal as its argument, answered without ``eval``, and in the ``eval`` tier for any other argument.
+  A name that is no need type selects nothing, unreported. It reads the need alone, so it is available in a filter
+  configured in ``conf.py`` and in a derived field's ``where``, where ``c.this_doc()`` is not.
+
 Breaking changes
 ................
 

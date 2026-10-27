@@ -24,7 +24,9 @@ import pytest
 from sphinx_needs.api.need import _import_key_sets
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
+from sphinx_needs.derive import filter_problem
 from sphinx_needs.exceptions import NeedsApiConfigWarning
+from sphinx_needs.functions.order import filter_names
 from sphinx_needs.needs_schema import FieldsSchema
 from sphinx_needs_testkit import build_warnings
 
@@ -297,6 +299,8 @@ def test_an_extension_cannot_register_a_field_of_the_name(name: str) -> None:
             + "\n.. needextend:: SPEC_001\n   :type_ancestors: req\n"
             + "\n.. needextend:: 'req' in type_ancestors and type != 'req'\n"
             + "   :status: inherited\n"
+            # one word is an id unless it is quoted
+            + "\n.. needextend:: \"c.is_a('safety_req')\"\n   :tags: safety\n"
         )
     ],
     indirect=True,
@@ -316,6 +320,10 @@ def test_needextend_cannot_set_it_and_its_filter_reads_it(test_app: Any) -> None
         "SPEC_001": None,
         "STRAY_001": None,
     }
+    assert sorted(i for i, n in view.items() if "safety" in n["tags"]) == [
+        "ASIL_001",
+        "SREQ_001",
+    ]
 
 
 @pytest.mark.parametrize(
@@ -372,3 +380,44 @@ def test_an_imported_need_takes_the_reading_projects_types(test_app: Any) -> Non
     app.build()
     view = SphinxNeedsData(app.env).get_needs_view()
     assert list(view["IMP_001"]["type_ancestors"]) == ["safety_req", "req"]
+
+
+# -- c.is_a -----------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("where", "problem"),
+    [
+        ("c.is_a('req')", None),
+        ("c.is_a('req') and status == 'open'", None),
+        ("c.is_a(type)", "calls 'c.is_a', which a declared rule cannot read"),
+        ("c.is_a()", "calls 'c.is_a', which a declared rule cannot read"),
+        ("c.is_a('a', 'b')", "calls 'c.is_a', which a declared rule cannot read"),
+        ("c.is_a(name='req')", "calls 'c.is_a', which a declared rule cannot read"),
+        (
+            "c.is_a('req') and c.this_doc()",
+            "calls 'c.this_doc', which a declared rule cannot read",
+        ),
+    ],
+)
+def test_a_derive_where_takes_is_a_with_a_literal_alone(
+    where: str, problem: str | None
+) -> None:
+    """``c.is_a('<type>')`` reads the candidate alone, so a declared rule may read it,
+    as ubCode does; any other shape of it, like every other ``c.`` check, it may not."""
+    assert filter_problem(where) == problem
+
+
+@pytest.mark.parametrize(
+    ("filter_string", "reads"),
+    [
+        ("c.is_a('req')", {"type_ancestors"}),
+        ("c.this_doc()", {"docname"}),
+        (
+            "c.is_a('req') and c.this_doc() and status",
+            {"type_ancestors", "docname", "status"},
+        ),
+    ],
+)
+def test_what_a_check_reads(filter_string: str, reads: set[str]) -> None:
+    assert filter_names(filter_string).names == frozenset(reads)

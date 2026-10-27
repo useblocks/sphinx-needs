@@ -1137,3 +1137,8 @@ class NeedCheckContext:
         if self._origin_docname is None:
             raise ValueError("`this_doc` can not be used in this context")
         return self._need.is_in_document(self._origin_docname)
+
+    def is_a(self, name: str) -> bool:
+        """Whether the need's type is *name*, or a type inheriting from it: *name* is in
+        its ``type_ancestors``. A name that is no need type is false on every need."""
+        return name in self._need["type_ancestors"]

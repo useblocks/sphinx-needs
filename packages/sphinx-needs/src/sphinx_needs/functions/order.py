@@ -277,8 +277,9 @@ def filter_names(
     nor are the names the filter context supplies over the need's fields (``search``,
     ``c``, ``var``, and ``not_fields``, the keys of ``needs_filter_data``). A builtin's
     name is kept: a field of that name shadows it, and no other is computed.
-    ``c.this_doc()`` reads ``docname``, which nothing computes. A filter that does not
-    parse reads nothing here; evaluating it reports the error.
+    ``c.this_doc()`` reads ``docname`` and ``c.is_a(...)`` ``type_ancestors``, which
+    nothing computes. A filter that does not parse reads nothing here; evaluating it
+    reports the error.
 
     :param filter_string: The filter.
     :param not_fields: The names supplied by ``needs_filter_data``.
@@ -324,8 +325,15 @@ def filter_names(
             opaque = opaque or id(node) not in constant_current
         elif node.id not in _FILTER_GLOBALS and node.id not in not_fields:
             names.add(node.id)
-        elif node.id == "c":
-            names.add("docname")
+    for node in ast.walk(tree):
+        # what each check of `c` reads (`c` itself is no field)
+        if (
+            isinstance(node, ast.Attribute)
+            and isinstance(node.value, ast.Name)
+            and node.value.id == "c"
+            and "c" not in bound
+        ):
+            names.add("type_ancestors" if node.attr == "is_a" else "docname")
     return FilterNames(frozenset(names), frozenset(current), opaque)
 
 

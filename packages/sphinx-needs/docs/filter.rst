@@ -338,6 +338,19 @@ It is a field like any other where a field is read:
 in a derived field's ``where`` (:ref:`needs_derive`), in a :ref:`needtable` column,
 and in a :ref:`schema rule <schema_validation>`, as ``type_ancestors: {contains: {const: req}}``.
 
+``c.is_a('req')`` says the same as ``'req' in type_ancestors``, and reads better in a longer filter:
+
+.. code-block:: rst
+
+   .. needtable::
+      :filter: c.is_a('req') and not c.is_a('safety_req')
+
+selects the ``req`` needs and the needs of every other type inheriting from ``req``, but not the ``safety_req`` ones.
+Its argument is a string literal in the portable filter language: ``c.is_a(type)`` or ``c.is_a('req') == True``
+is evaluated by ``eval``, as ``c.this_doc() == True`` is.
+Unlike :ref:`c.this_doc() <filter_current_page>` it reads the need alone, so it is available wherever a filter string is,
+in **conf.py** too, and in a derived field's ``where``.
+
 .. _re_search:
 
 search
@@ -418,7 +431,8 @@ so writing filters the first two take is recommended:
    - ``x is None`` / ``x is not None``;
    - ``x.startswith('...')`` / ``x.endswith('...')`` after an operand: ``id.lower().startswith('req')``;
    - ``search('pattern', x)`` (see :ref:`re_search`), with a plain string literal as the pattern;
-   - ``c.this_doc()`` (see :ref:`filter_current_page`);
+   - ``c.this_doc()`` (see :ref:`filter_current_page`), and ``c.is_a('...')`` with a string literal
+     (see :ref:`filter_type_ancestors`);
    - ``and``, ``or``, ``not``, parentheses, and an operand alone, which is read by its truthiness.
 
    Not in it, and so evaluated by ``eval``: a field ``in`` a field (``sphinx_tag in tags``),

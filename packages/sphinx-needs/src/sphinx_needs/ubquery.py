@@ -254,15 +254,20 @@ def _expr_to_predicate(expr: ast.expr) -> SimplePredicate | None:
         return None
 
 
-def _is_this_doc(node: ast.AST) -> bool:
-    """Whether *node* is a call of ``c.this_doc``, whatever its arguments."""
+def _is_c_check(node: ast.AST, check: str) -> bool:
+    """Whether *node* is a call of ``c.<check>``, whatever its arguments."""
     return (
         isinstance(node, ast.Call)
         and isinstance(node.func, ast.Attribute)
-        and node.func.attr == "this_doc"
+        and node.func.attr == check
         and isinstance(node.func.value, ast.Name)
         and node.func.value.id == "c"
     )
+
+
+def _is_this_doc(node: ast.AST) -> bool:
+    """Whether *node* is a call of ``c.this_doc``, whatever its arguments."""
+    return _is_c_check(node, "this_doc")
 
 
 # --- expressions: `or_expr`, `and_expr`, `not_expr`, `expr` ---
@@ -311,11 +316,11 @@ def _expr(node: ast.expr) -> SimplePredicate:
 def _call(node: ast.Call) -> SimplePredicate | None:
     """Compile a call that is an expression of its own, or return None for another.
 
-    The grammar has three: ``c.this_doc()``, ``search(...)``, and a string predicate
-    method (``x.startswith("...")``). ``len(x)``, ``x.lower()`` and ``x.upper()`` are
-    operands, which :func:`_operand` compiles.
+    The grammar has four: ``c.this_doc()``, ``c.is_a("...")``, ``search(...)``, and a
+    string predicate method (``x.startswith("...")``). ``len(x)``, ``x.lower()`` and
+    ``x.upper()`` are operands, which :func:`_operand` compiles.
 
-    :raises _NotPortable: For one of the three in a shape the grammar has no rule for.
+    :raises _NotPortable: For one of the four in a shape the grammar has no rule for.
     """
     func = node.func
 
@@ -324,6 +329,13 @@ def _call(node: ast.Call) -> SimplePredicate | None:
         if node.args or node.keywords:
             raise _NotPortable("call:c.this_doc")
         return _this_doc
+
+    # `is_a_check`: c.is_a("<type>"), which is "<type>" in type_ancestors
+    if _is_c_check(node, "is_a"):
+        name = _string(node.args[0]) if len(node.args) == 1 else None
+        if name is None or node.keywords:
+            raise _NotPortable("call:c.is_a")
+        return partial(_is_a, name)
 
     # `search_check`: search("<pattern>", <operand>)
     if isinstance(func, ast.Name) and func.id == "search":
@@ -367,6 +379,17 @@ def _this_doc(
     if origin is None:
         raise ValueError("`this_doc` can not be used in this context")
     return need.is_in_document(origin)
+
+
+def _is_a(
+    name: str, need: NeedItem | NeedPartItem, ctx: Mapping[str, Any] | None = None
+) -> bool:
+    """``c.is_a("<name>")``: whether the need's type is *name* or inherits from it.
+
+    As the ``eval`` tier's ``NeedCheckContext.is_a``, it reads the need's own
+    ``type_ancestors``, never a ``needs_filter_data`` key of that name.
+    """
+    return name in need["type_ancestors"]
 
 
 # --- comparisons: `comparison_expr`, `literal_cmp_var_field_expr`, `in`, `is None` ---

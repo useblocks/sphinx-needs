@@ -1267,7 +1267,8 @@ def filter_problem(text: str) -> str | None:
 
     It must parse as a filter, and read the candidate alone: a predicate naming
     ``needs`` (every need), ``current_need`` (the reader) or a ``c.`` check (such as
-    ``c.this_doc()``) is not portable, as ubCode cannot evaluate it.
+    ``c.this_doc()``) is not portable, as ubCode cannot evaluate it -- but
+    ``c.is_a("<type>")``, which reads the candidate's ``type_ancestors`` alone.
 
     :param text: The predicate.
     """
@@ -1277,6 +1278,20 @@ def filter_problem(text: str) -> str | None:
     except (SyntaxError, ValueError) as exc:
         detail = exc.msg if isinstance(exc, SyntaxError) else str(exc)
         return f"does not parse as a filter ({detail})"
+    #: the ``c.is_a("<type>")`` checks, which read the candidate alone
+    is_a = {
+        id(node.func)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "is_a"
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == "c"
+        and len(node.args) == 1
+        and not node.keywords
+        and isinstance(node.args[0], ast.Constant)
+        and isinstance(node.args[0].value, str)
+    }
     for node in ast.walk(tree):
         if isinstance(node, ast.Name) and node.id in {"needs", "current_need"}:
             return f"names {node.id!r}, which a declared rule cannot read"
@@ -1284,6 +1299,7 @@ def filter_problem(text: str) -> str | None:
             isinstance(node, ast.Attribute)
             and isinstance(node.value, ast.Name)
             and node.value.id == "c"
+            and id(node) not in is_a
         ):
             return f"calls 'c.{node.attr}', which a declared rule cannot read"
     return None
