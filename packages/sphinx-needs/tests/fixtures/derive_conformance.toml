@@ -762,7 +762,6 @@ field = "inline_empty"
 [[case]]
 name = "links-include-parts"
 why = "links with include_parts tests every need's parts too, linked as <need>.<part>, a part after its need in part-id order, the ids in code-point order: REQ_1 writes p2, p10, p1, and the list a copy into an array field reads is p1, p10, p2, while needs.json writes it in natural order, p1, p2, p10 (A-24); the need's own parts are left out unless include_self"
-python_only = true
 config = '''
 [needs.links.l_parts]
 derive = { kind = "links", where = "is_part and id_parent == 'REQ_1'", include_parts = true }
