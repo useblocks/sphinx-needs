@@ -1032,6 +1032,40 @@ def test_a_placeholder_is_not_validated(test_app):
             id="copy-join",
         ),
         pytest.param(
+            {
+                "kind": "copy",
+                "field": "owner",
+                "join": {"field": "key", "equals": "ref"},
+                "where": "status == 'open'",
+            },
+            False,
+            DeriveRule(
+                kind="copy",
+                field="owner",
+                join=DeriveJoin("key", "ref"),
+                where="status == 'open'",
+            ),
+            id="copy-join-where",
+        ),
+        pytest.param(
+            {
+                "kind": "copy",
+                "field": "owner",
+                "over": "links",
+                "where": "status == 'open'",
+                "select": "list",
+            },
+            False,
+            DeriveRule(
+                kind="copy",
+                field="owner",
+                over="links",
+                where="status == 'open'",
+                select="list",
+            ),
+            id="copy-over-where",
+        ),
+        pytest.param(
             # the default of the flag, beside a role it does not go with, says nothing
             {"kind": "copy", "field": "owner", "over": "links", "include_self": False},
             False,
@@ -1377,11 +1411,18 @@ _JOIN = {"kind": "links", "join": {"field": "name", "equals": "ref"}}
             id="copy-include-self-without-join",
         ),
         pytest.param(
-            {"kind": "copy", "field": "x", "join": _JOIN["join"], "where": "a"},
+            {"kind": "copy", "field": "x", "where": "a"},
             False,
             "copy",
-            "kind 'copy' does not take the role 'where'",
-            id="copy-join-takes-no-where",
+            "kind 'copy' takes the role 'where' only with 'over' or 'join'",
+            id="copy-own-where",
+        ),
+        pytest.param(
+            {"kind": "copy", "field": "x", "from": "REQ_1", "where": "a"},
+            False,
+            "copy",
+            "kind 'copy' takes the role 'where' only with 'over' or 'join'",
+            id="copy-from-where",
         ),
         pytest.param(
             # a role's value is checked before how the roles go together

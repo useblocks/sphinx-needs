@@ -1269,6 +1269,12 @@ derive = { kind = "sum", field = "hours", over = "links", empty = false }
 schema = { type = "boolean" }
 derive = { kind = "all", over = "links", test = "status == 'open'", empty = "no" }
 
+[needs.fields.bad_where_own_copy]
+derive = { kind = "copy", field = "owner", where = "status == 'open'" }
+
+[needs.fields.bad_where_from_copy]
+derive = { kind = "copy", field = "owner", from = "REQ_1", where = "status == 'open'" }
+
 [needs.fields.bad_result]
 schema = { type = "string" }
 derive = { kind = "count", over = "links" }
@@ -1298,7 +1304,7 @@ status = "open"
 bad_default = "alice"
 bad_value_kind = []
 [case.expect.nulls]
-REQ_1 = ["bad_kind", "bad_no_kind", "bad_not_table", "bad_unknown_role", "bad_role_not_taken", "bad_missing", "bad_role_type", "bad_copy_both", "bad_select_no_over", "bad_any_both", "bad_include_self", "bad_link_kind", "bad_over", "bad_field", "bad_where_needs", "bad_where_current", "bad_where_c", "bad_where_syntax", "bad_result", "bad_select_list", "bad_blank_where", "bad_blank_test", "bad_empty_on_sum", "bad_empty_not_boolean"]
+REQ_1 = ["bad_kind", "bad_no_kind", "bad_not_table", "bad_unknown_role", "bad_role_not_taken", "bad_missing", "bad_role_type", "bad_copy_both", "bad_select_no_over", "bad_any_both", "bad_include_self", "bad_link_kind", "bad_over", "bad_field", "bad_where_needs", "bad_where_current", "bad_where_c", "bad_where_syntax", "bad_result", "bad_select_list", "bad_blank_where", "bad_blank_test", "bad_empty_on_sum", "bad_empty_not_boolean", "bad_where_own_copy", "bad_where_from_copy"]
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "bad_kind"
@@ -1368,6 +1374,12 @@ field = "bad_empty_on_sum"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "bad_empty_not_boolean"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_where_own_copy"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_where_from_copy"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "bad_result"
@@ -3767,6 +3779,159 @@ TEST_2 = ["o_first", "o_unique"]
 code = "derive_unique"
 need = "TEST_1"
 field = "o_unique"
+
+[[case]]
+name = "copy-join-where"
+why = "where beside a copy join is tested on each match, before select: first and unique take the lowest id among the matches it holds on that set the field (REQ_A, the lowest-id setter, is dropped), list every value of those; a match it cannot be evaluated on (REQ_A has no hours) is dropped silently; the where reads phase_d, computed in the same step on every need and declared last, so the copy waits for it on READER_1, whose id sorts before its matches"
+config = '''
+[needs.fields.key]
+schema = { type = "string" }
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.fields.owner]
+schema = { type = "string" }
+[needs.fields.hours]
+schema = { type = "number" }
+[needs.fields.phase]
+schema = { type = "string" }
+[needs.fields.o_first]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", join = { field = "key", equals = "ref" }, where = "phase_d == 'active'" }
+[needs.fields.o_unique]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", join = { field = "key", equals = "ref" }, where = "phase_d == 'active'", select = "unique" }
+[needs.fields.o_list]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "owner", join = { field = "key", equals = "ref" }, where = "phase_d == 'active'", select = "list" }
+[needs.fields.o_big]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", join = { field = "key", equals = "ref" }, where = "hours > 1" }
+[needs.fields.o_none]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "owner", join = { field = "key", equals = "ref" }, where = "phase_d == 'gone'", select = "list" }
+[needs.fields.phase_d]
+schema = { type = "string" }
+derive = { kind = "copy", field = "phase" }
+'''
+source = '''
+.. req:: Alice's, retired, no hours
+   :id: REQ_A
+   :key: K
+   :owner: alice
+   :phase: retired
+
+.. req:: Bob's
+   :id: REQ_B
+   :key: K
+   :owner: bob
+   :phase: active
+   :hours: 3
+
+.. req:: Carol's
+   :id: REQ_C
+   :key: K
+   :owner: carol
+   :phase: active
+   :hours: 0.5
+
+.. req:: Active, no owner
+   :id: REQ_D
+   :key: K
+   :phase: active
+   :hours: 5
+
+.. test:: Reader
+   :id: READER_1
+   :ref: K
+
+.. test:: No match
+   :id: READER_2
+   :ref: nothing
+'''
+[case.expect]
+[case.expect.needs.READER_1]
+o_first = "bob"
+o_unique = "bob"
+o_list = ["bob", "carol"]
+o_big = "bob"
+o_none = []
+[case.expect.needs.READER_2]
+o_list = []
+o_none = []
+[case.expect.nulls]
+READER_2 = ["o_first", "o_unique", "o_big"]
+[[case.expect.findings]]
+code = "derive_unique"
+need = "READER_1"
+field = "o_unique"
+
+[[case]]
+name = "copy-over-where"
+why = "where beside a copy over a link type is tested on each target, before select: first and unique take the lowest id among the targets it holds on that set the field (REQ_A, the lowest-id setter, is dropped), list every value of those in written order, a target named twice read twice; a target it cannot be evaluated on (REQ_A has no hours) is dropped silently; the where reads phase_d, computed in the same step and declared last, so the copy waits for it on CHILD_1, whose id sorts before its targets; with every target dropped (CHILD_2) first is unset and list []"
+config = '''
+[needs.links.parent]
+[needs.fields.owner]
+schema = { type = "string" }
+[needs.fields.hours]
+schema = { type = "number" }
+[needs.fields.phase]
+schema = { type = "string" }
+[needs.fields.c_first]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", over = "parent", where = "phase_d == 'active'" }
+[needs.fields.c_unique]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", over = "parent", where = "phase_d == 'active'", select = "unique" }
+[needs.fields.c_list]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "owner", over = "parent", where = "phase_d == 'active'", select = "list" }
+[needs.fields.c_big]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", over = "parent", where = "hours > 1" }
+[needs.fields.phase_d]
+schema = { type = "string" }
+derive = { kind = "copy", field = "phase" }
+'''
+source = '''
+.. req:: Alice's, retired, no hours
+   :id: REQ_A
+   :owner: alice
+   :phase: retired
+
+.. req:: Bob's
+   :id: REQ_B
+   :owner: bob
+   :phase: active
+   :hours: 3
+
+.. req:: Carol's
+   :id: REQ_C
+   :owner: carol
+   :phase: active
+   :hours: 0.5
+
+.. spec:: Child
+   :id: CHILD_1
+   :parent: REQ_C, REQ_A, REQ_B, REQ_C
+
+.. spec:: Only a retired parent
+   :id: CHILD_2
+   :parent: REQ_A
+'''
+[case.expect]
+[case.expect.needs.CHILD_1]
+c_first = "bob"
+c_unique = "bob"
+c_list = ["carol", "bob", "carol"]
+c_big = "bob"
+[case.expect.needs.CHILD_2]
+c_list = []
+[case.expect.nulls]
+CHILD_2 = ["c_first", "c_unique", "c_big"]
+[[case.expect.findings]]
+code = "derive_unique"
+need = "CHILD_1"
+field = "c_unique"
 
 [[case]]
 name = "join-strata"

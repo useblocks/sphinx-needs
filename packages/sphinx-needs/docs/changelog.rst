@@ -10,6 +10,15 @@ Unreleased
 Improvements
 ............
 
+- ✨ A derive rule of kind ``copy`` takes ``where`` beside ``over`` or ``join`` (:ref:`needs_derive_kind_copy`,
+  :issue:`2246`)
+
+  ``where`` narrows the targets before ``select`` reads them, as it does for the other kinds and for ``links`` with
+  ``join``: ``select = "first"`` takes the lowest-id target that passes ``where`` and sets the field, ``"unique"``
+  counts only those, and ``"list"`` keeps their values. A target the filter cannot be evaluated on is dropped, without
+  a warning. A ``copy`` of the need's own field, or of the need ``from`` names, still takes no ``where``
+  (``needs.derive_invalid``).
+
 - ✨ A derive rule of kind ``any`` or ``all`` takes ``empty``, the value it gives over no candidate
   (:ref:`needs_derive_kind_any_all`, :issue:`2377`)
 

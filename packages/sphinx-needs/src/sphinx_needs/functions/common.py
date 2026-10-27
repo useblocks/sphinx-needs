@@ -955,12 +955,10 @@ def execute_rule(
             include_self=rule.include_self,
             reads=reads,
         )
+        # a ``where`` is tested on each match, before a copy's ``select``
+        matched = [m for m in matched if _passes(m, rule.where, config, reads)]
         if rule.kind == "links":
-            return [
-                NeedLink(id=match["id"])
-                for match in matched
-                if _passes(match, rule.where, config, reads)
-            ]
+            return [NeedLink(id=match["id"]) for match in matched]
         return _rule_copy_over(need, matched, rule, field_schema, reads)
     if rule.kind == "links":
         return _rule_links(need, needs, rule, config, cache)

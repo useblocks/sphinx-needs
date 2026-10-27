@@ -108,7 +108,7 @@ CORE_LINK_TYPES: Final = frozenset({"parent_needs"})
 _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
     "copy": (
         frozenset({"field"}),
-        frozenset({"from", "over", "join", "select", "include_self", "after"}),
+        frozenset({"from", "over", "join", "where", "select", "include_self", "after"}),
     ),
     "sum": (frozenset({"field", "over"}), frozenset({"where", "after"})),
     "count": (frozenset({"over"}), frozenset({"field", "where", "after"})),
@@ -177,7 +177,8 @@ class DeriveRule:
     :ivar from_need: The ``from`` role: the id of the one need read.
     :ivar join: The ``join`` role (``links``, ``copy``): the needs whose field equals
         one of this need's values.
-    :ivar where: The ``where`` role: the predicate narrowing the candidates.
+    :ivar where: The ``where`` role: the predicate narrowing the candidates (on
+        ``copy``, with ``over`` or ``join`` only).
     :ivar test: The ``test`` role: the predicate asserted of each candidate.
     :ivar empty: The ``empty`` role (``any``, ``all``): the value over no candidate,
         once ``where`` has dropped the candidates it does not hold on; ``None``, unset,
@@ -462,6 +463,9 @@ def _combination_problem(kind: str, raw: Mapping[str, Any]) -> str | None:
             return "takes one of the roles 'from', 'over' and 'join', not more"
         if "select" in raw and "over" not in raw and "join" not in raw:
             return "takes the role 'select' only with 'over' or 'join'"
+        # a where narrows the candidates, and a copy of one need has none
+        if "where" in raw and "over" not in raw and "join" not in raw:
+            return "takes the role 'where' only with 'over' or 'join'"
         # ``false``, the default, says nothing, as on min and max without transitive
         if raw.get("include_self") and "join" not in raw:
             return "takes the role 'include_self' only with 'join'"
