@@ -773,21 +773,28 @@ def test_an_empty_confoverride_file_means_no_file(build):
     assert app.config.needs_variant_data == {"edition": "pro"}
 
 
-def test_an_empty_confoverride_file_still_reads_the_toml_file(make_app, tmp_path):
-    """An override naming no file is sphinx-needs' own (ub-project's section 10.1), so
-    it is applied after the read, and the TOML's file is read as it is without ``-D``:
-    a missing one is refused. (Until section 6.8 the key was removed first.)"""
-    srcdir = _write(
-        tmp_path / "src",
+@pytest.mark.parametrize("table", ["variants", "needs"])
+def test_an_empty_confoverride_file_does_not_open_the_toml_file(build, table):
+    """``-D needs_variant_data_file=`` is the override that names no file
+    (``ub_project.NO_DATA_FILE``): the toml's file is replaced by none, so a missing one
+    is no error, and the location's inline table is used alone."""
+    file_key = "data_file" if table == "variants" else "variant_data_file"
+    inline_key = "data" if table == "variants" else "variant_data"
+    app = build(
         {
             "conf.py": TOML_CONF,
-            "ubproject.toml": '[variants]\ndata_file = "nope.json"\n',
+            "ubproject.toml": f"""\
+                [{table}]
+                {file_key} = "nope.json"
+                [{table}.{inline_key}]
+                edition = "pro"
+                """,
         },
+        confoverrides={"needs_variant_data_file": ""},
     )
-    with pytest.raises(NeedsConfigException, match="variant data file not found"):
-        make_app(
-            srcdir=srcdir, freshenv=True, confoverrides={"needs_variant_data_file": ""}
-        )
+    assert_no_warnings(app)
+    assert app.config.needs_variant_data == {"edition": "pro"}
+    assert app.config.needs_variant_data_file == ""
 
 
 def test_an_overridden_inline_table_keeps_the_override(build):

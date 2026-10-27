@@ -202,8 +202,10 @@ from sphinx_needs.utils import node_match
 from sphinx_needs.variant_data import VariantDataProxy
 from sphinx_needs.warnings import process_warnings
 from ub_project import (
+    NO_DATA_FILE,
     VARIANT_DATA_LOCATION,
     VARIANTS_UNKNOWN_KEY,
+    NoDataFile,
     ProjectConfigError,
     load_toml,
     read_variants,
@@ -706,9 +708,9 @@ def _load_variants_from_toml(
       contract, section 6.8): it names a file, not a location, so it replaces the data
       file of the location read without opening it, and the location, the refusals and
       the findings stay the document's. A relative one is anchored at the ``confdir``,
-      as :func:`resolve_variant_data_config` anchors it. ``-D
-      needs_variant_data_file=`` (no file) is this route's own meaning, applied after
-      the read: the confval stays empty;
+      as :func:`resolve_variant_data_config` anchors it, and ``-D
+      needs_variant_data_file=`` (no file) is ``NO_DATA_FILE``: the toml's file is
+      replaced by none, unopened;
     - each declared key of the location read is written to its confval, as the
       ``[needs]`` loop wrote it, unless ``-D`` set that confval, and the merge with
       ``conf.py`` values and the file load stay with
@@ -723,12 +725,11 @@ def _load_variants_from_toml(
     """
     needs_table = (*prefix, "needs")
     variants_table = (*prefix, "variants")
-    override: Path | None = None
-    # "" means "no file" on this route (ub-project's section 10.1): no override
-    if _is_overridden("variant_data_file", overridden_keys) and (
-        value := NeedsSphinxConfig(config).variant_data_file
-    ):
-        override = confdir / value
+    override: Path | NoDataFile | None = None
+    if _is_overridden("variant_data_file", overridden_keys):
+        value = NeedsSphinxConfig(config).variant_data_file
+        # "" means "no file" on this route (ub-project's section 10.1)
+        override = confdir / value if value else NO_DATA_FILE
 
     try:
         result = read_variants(

@@ -16,12 +16,12 @@ Improvements
   :file:`ubproject.toml`, and sphinx-needs passes the value to it rather than removing keys from the toml itself.
   For a project that builds without warnings, nothing changes: the value replaces the data file of the location
   read, ``[variants]`` or ``[needs]``, without opening the toml's own file, and that location's inline table still
-  applies. The location, the refusals and the warnings are now always those of the toml as written, so three
+  applies; ``-D needs_variant_data_file=`` (no file) replaces it by none, so the location's inline table is used
+  alone. The location, the refusals and the warnings are now always those of the toml as written, so two
   projects that already warned or failed without ``-D`` now do so with it too: a ``[variants]`` declared by its
   ``data_file`` alone stays the location read, with the ``needs.variant_data_location`` warning for the
-  ``[needs]`` keys beside it, where ``[needs]`` used to be read silently; an empty or non-string ``data_file`` is
-  refused; and under ``-D needs_variant_data_file=`` (no file) the toml's data file is still read, though not
-  used. See :ref:`needs_from_toml_variants`.
+  ``[needs]`` keys beside it, where ``[needs]`` used to be read silently; and an empty or non-string
+  ``data_file`` is refused. See :ref:`needs_from_toml_variants`.
 
 .. _`release:9.1.0`:
 
