@@ -637,6 +637,7 @@ class NeedTypeFieldDeclaration(TypedDict, total=False):
     default: Any
     predicates: list[tuple[str, Any]]
     derive: dict[str, Any]
+    severity: Literal["violation", "warning", "info"]
 
 
 class NeedTypeLinkDeclaration(TypedDict, total=False):
@@ -653,6 +654,7 @@ class NeedTypeLinkDeclaration(TypedDict, total=False):
     predicates: list[tuple[str, Any]]
     derive: dict[str, Any]
     target_types: list[str]
+    severity: Literal["violation", "warning", "info"]
     incoming: str
     outgoing: str
     copy: bool
