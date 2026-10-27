@@ -1080,3 +1080,20 @@ data_file_override = ""
 [case.expect]
 variant_data = { edition = "pro" }
 diagnostics = []
+
+[[case]]
+name = "override-with-no-file-keeps-the-legacy-inline-table"
+why = "an override naming no file replaces a [needs] data file by none: it is not opened, and the [needs] inline table applies"
+toml = '''
+[needs]
+variant_data_file = "does-not-exist.json"
+[needs.variant_data]
+edition = "pro"
+'''
+data_file_override = ""
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = [
+  { code = "variant_data_legacy_location", path = "needs.variant_data" },
+  { code = "variant_data_legacy_location", path = "needs.variant_data_file" },
+]

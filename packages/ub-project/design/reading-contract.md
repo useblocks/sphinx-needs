@@ -28,7 +28,7 @@ corpus and the tests change in the same commit. Every rule names the test that e
    exception, the variant data file, whose override every reader applies alike (§6.8):
    which values of a command line are such an override stays the consumer's.
    Enforced by: the API itself — no function takes a logger, a Sphinx object or a
-   command line, and the one override `read_variants` takes is a file; §6 findings are
+   command line, and the one override `read_variants` takes is a file, or `NO_DATA_FILE`; §6 findings are
    returned (`tests/test_variants.py::TestDiagnostics`).
 2. The variant-**condition** grammar (`var.edition == 'pro'`) is not here. It has its own
    corpus, `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml`.
@@ -200,7 +200,8 @@ edition = "pro"
    Enforced by: `tests/test_variants.py::TestDiagnostics::test_an_unknown_key_in_variants_is_reported_not_raised`;
    corpus: `unknown-key-beside-data`, `legacy-spelling-inside-variants-is-unknown`.
 7. The result carries `data` (the merged map, §8.4), `data_file` (the anchored file of the
-   location read, the override when there is one (§6.8), or `None`), `location`
+   location read, the override file when there is one (`None` for `NO_DATA_FILE`, §6.8),
+   or `None`), `location`
    (`"variants"`, `"needs"` or `None`) and `diagnostics`.
 8. **Overrides: a data-file override names a file, not a location.** A consumer may take
    one data file from outside the document — sphinx-needs: `-D needs_variant_data_file`,
@@ -227,13 +228,16 @@ edition = "pro"
      route's rule (sphinx-needs: the `confdir`; ubCode: where it anchors every `-c`
      path). Its refusal is its own file's, not attributed to the TOML or its table.
 
-   Every other key of a command line is the consumer's ordinary configuration layer. For
-   ubCode this makes the
+   A consumer with two spellings of the override that is given both with different
+   values reports a configuration error of its own: this package receives at most one
+   override. Every other key of a command line is the consumer's ordinary configuration
+   layer. For ubCode this makes the
    two `-c` spellings one value, lifted out of the `-c` layer before the location is
    chosen; a key in a file the project `extend`s stays a declaration of the document.
    Enforced by: `tests/test_variants.py::TestOverride` (the location, the findings, the
    override used as given, the refusals' wording), `tests/test_variants.py::TestNoDataFile`;
-   corpus: the eleven `override-*` cases (`override-with-no-file` for `NO_DATA_FILE`).
+   corpus: the twelve `override-*` cases (the two `override-with-no-file*` for
+   `NO_DATA_FILE`).
 
 ## 7. Diagnostics
 

@@ -15,7 +15,7 @@ Unreleased
   override that names no file: the location's file is replaced by none, unopened, and its
   inline table is the whole map. The reading contract gains section 6.8, and the
   conformance corpus a ``data_file_override`` case key (``""`` for ``NO_DATA_FILE``) and
-  eleven cases (60 to 71, none Python-only), so ubCode owes a re-vendor and a runner that
+  twelve cases (60 to 72, none Python-only), so ubCode owes a re-vendor and a runner that
   passes the key
   (`sphinx-needs#2378 <https://github.com/useblocks/sphinx-needs/issues/2378>`__).
   The default, and every existing call, is unchanged.
