@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 41
+      }
+    },
+    "tagged_scope": "struct Foo",
+    "scope": {
+      "kind": "struct_specifier",
+      "start": 3,
+      "end": 3,
+      "entity_kind": "struct",
+      "qualified_name": "Foo",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Forward declaration",
+      "id": "IMPL_R_FWD",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "struct_specifier"
+  }
+]

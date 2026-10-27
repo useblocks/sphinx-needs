@@ -1,0 +1,717 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 4
+      },
+      "end": {
+        "row": 3,
+        "column": 41
+      }
+    },
+    "tagged_scope": "pub trait Shape {\n    // @Area trait method, RS_02, impl, [REQ_AREA]\n    fn area(&self) -> f64;\n\n    fn name(&self) -> &'static str {\n        \"shape\"\n    }\n}",
+    "scope": {
+      "kind": "trait_item",
+      "start": 5,
+      "end": 12,
+      "entity_kind": "trait",
+      "qualified_name": "Shape",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Shape trait",
+      "id": "RS_01",
+      "type": "impl",
+      "links": [
+        "REQ_SHAPE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "trait_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 8
+      },
+      "end": {
+        "row": 5,
+        "column": 50
+      }
+    },
+    "tagged_scope": "fn name(&self) -> &'static str {\n        \"shape\"\n    }",
+    "scope": {
+      "kind": "function_item",
+      "start": 9,
+      "end": 11,
+      "entity_kind": "method",
+      "qualified_name": "Shape::name",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Area trait method",
+      "id": "RS_02",
+      "type": "impl",
+      "links": [
+        "REQ_AREA"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 13,
+        "column": 4
+      },
+      "end": {
+        "row": 13,
+        "column": 44
+      }
+    },
+    "tagged_scope": "pub struct Widget {\n    pub w: f64,\n    pub h: f64,\n}",
+    "scope": {
+      "kind": "struct_item",
+      "start": 15,
+      "end": 18,
+      "entity_kind": "struct",
+      "qualified_name": "Widget",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Widget struct",
+      "id": "RS_03",
+      "type": "impl",
+      "links": [
+        "REQ_WIDGET"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "struct_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 19,
+        "column": 4
+      },
+      "end": {
+        "row": 19,
+        "column": 51
+      }
+    },
+    "tagged_scope": "impl Widget {\n    // @Widget constructor, RS_05, impl, [REQ_CTOR]\n    pub fn new(w: f64, h: f64) -> Self {\n        Self { w, h }\n    }\n\n    pub fn untraced_method(&self) -> f64 {\n        self.w\n    }\n}",
+    "scope": {
+      "kind": "impl_item",
+      "start": 21,
+      "end": 30,
+      "entity_kind": "impl",
+      "qualified_name": "Widget",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Widget inherent impl",
+      "id": "RS_04",
+      "type": "impl",
+      "links": [
+        "REQ_WIDGET"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "impl_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 21,
+        "column": 8
+      },
+      "end": {
+        "row": 21,
+        "column": 51
+      }
+    },
+    "tagged_scope": "pub fn new(w: f64, h: f64) -> Self {\n        Self { w, h }\n    }",
+    "scope": {
+      "kind": "function_item",
+      "start": 23,
+      "end": 25,
+      "entity_kind": "method",
+      "qualified_name": "Widget::new",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Widget constructor",
+      "id": "RS_05",
+      "type": "impl",
+      "links": [
+        "REQ_CTOR"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 32,
+        "column": 8
+      },
+      "end": {
+        "row": 32,
+        "column": 54
+      }
+    },
+    "tagged_scope": "fn area(&self) -> f64 {\n        // @need-ids: RSREF_07\n        self.w * self.h\n    }",
+    "scope": {
+      "kind": "function_item",
+      "start": 34,
+      "end": 37,
+      "entity_kind": "method",
+      "qualified_name": "<Widget as Shape>::area",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Widget area via trait",
+      "id": "RS_06",
+      "type": "impl",
+      "links": [
+        "REQ_AREA"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 34,
+        "column": 22
+      },
+      "end": {
+        "row": 34,
+        "column": 30
+      }
+    },
+    "tagged_scope": "fn area(&self) -> f64 {\n        // @need-ids: RSREF_07\n        self.w * self.h\n    }",
+    "scope": {
+      "kind": "function_item",
+      "start": 34,
+      "end": 37,
+      "entity_kind": "method",
+      "qualified_name": "<Widget as Shape>::area",
+      "mechanism": "enclosing"
+    },
+    "need_ids": [
+      "RSREF_07"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 40,
+        "column": 5
+      },
+      "end": {
+        "row": 40,
+        "column": 47
+      }
+    },
+    "tagged_scope": "pub fn documented() -> u32 {\n    1\n}",
+    "scope": {
+      "kind": "function_item",
+      "start": 42,
+      "end": 44,
+      "entity_kind": "function",
+      "qualified_name": "documented",
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Doc comment marker",
+      "id": "RS_08",
+      "type": "impl",
+      "links": [
+        "REQ_DOC"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 46,
+        "column": 8
+      },
+      "end": {
+        "row": 46,
+        "column": 45
+      }
+    },
+    "tagged_scope": "pub fn helper(v: u32) -> u32 {\n        v * 2\n    }",
+    "scope": {
+      "kind": "function_item",
+      "start": 48,
+      "end": 50,
+      "entity_kind": "function",
+      "qualified_name": "inner::helper",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Inner helper",
+      "id": "RS_09",
+      "type": "impl",
+      "links": [
+        "REQ_HELP"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 55,
+        "column": 16
+      },
+      "end": {
+        "row": 55,
+        "column": 52
+      }
+    },
+    "tagged_scope": "fn area(&self) -> f64 {\n                0.0\n            }",
+    "scope": {
+      "kind": "function_item",
+      "start": 57,
+      "end": 59,
+      "entity_kind": "method",
+      "qualified_name": "<inner::deeper::Gadget as Shape>::area",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Gadget area",
+      "id": "RS_10",
+      "type": "impl",
+      "links": [
+        "REQ_AREA"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 63,
+        "column": 4
+      },
+      "end": {
+        "row": 63,
+        "column": 46
+      }
+    },
+    "tagged_scope": "pub fn platform_name() -> &'static str {\n    \"linux\"\n}",
+    "scope": {
+      "kind": "function_item",
+      "start": 66,
+      "end": 68,
+      "entity_kind": "function",
+      "qualified_name": "platform_name",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Cfg gated function",
+      "id": "RS_11",
+      "type": "impl",
+      "links": [
+        "REQ_CFG"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 82,
+        "column": 4
+      },
+      "end": {
+        "row": 82,
+        "column": 50
+      }
+    },
+    "tagged_scope": "pub fn largest<T: PartialOrd + Copy>(items: &[T]) -> T {\n    let mut best = items[0];\n    for &item in items {\n        if item > best {\n            best = item;\n        }\n    }\n    best\n}",
+    "scope": {
+      "kind": "function_item",
+      "start": 87,
+      "end": 95,
+      "entity_kind": "function",
+      "qualified_name": "largest",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Macro generated getter",
+      "id": "RS_12",
+      "type": "impl",
+      "links": [
+        "REQ_GEN"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 85,
+        "column": 4
+      },
+      "end": {
+        "row": 85,
+        "column": 48
+      }
+    },
+    "tagged_scope": "pub fn largest<T: PartialOrd + Copy>(items: &[T]) -> T {\n    let mut best = items[0];\n    for &item in items {\n        if item > best {\n            best = item;\n        }\n    }\n    best\n}",
+    "scope": {
+      "kind": "function_item",
+      "start": 87,
+      "end": 95,
+      "entity_kind": "function",
+      "qualified_name": "largest",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Generic function",
+      "id": "RS_13",
+      "type": "impl",
+      "links": [
+        "REQ_GENERIC"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 96,
+        "column": 4
+      },
+      "end": {
+        "row": 96,
+        "column": 42
+      }
+    },
+    "tagged_scope": "pub enum Status {\n    Ok,\n    Failed(u32),\n}",
+    "scope": {
+      "kind": "enum_item",
+      "start": 98,
+      "end": 101,
+      "entity_kind": "enum",
+      "qualified_name": "Status",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Status enum",
+      "id": "RS_14",
+      "type": "impl",
+      "links": [
+        "REQ_STATUS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "enum_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 103,
+        "column": 8
+      },
+      "end": {
+        "row": 103,
+        "column": 43
+      }
+    },
+    "tagged_scope": "fn area(&self) -> f64 {\n        0.0\n    }",
+    "scope": {
+      "kind": "function_item",
+      "start": 105,
+      "end": 107,
+      "entity_kind": "method",
+      "qualified_name": "<(T, T) as Shape>::area",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Tuple area",
+      "id": "RS_15",
+      "type": "impl",
+      "links": [
+        "REQ_AREA"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 117,
+        "column": 8
+      },
+      "end": {
+        "row": 117,
+        "column": 42
+      }
+    },
+    "tagged_scope": "fn area_is_product() {\n        use super::Shape;\n        assert_eq!(super::Widget::new(2.0, 3.0).area(), 6.0);\n    }",
+    "scope": {
+      "kind": "function_item",
+      "start": 120,
+      "end": 123,
+      "entity_kind": "function",
+      "qualified_name": "tests::area_is_product",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Unit test",
+      "id": "RS_16",
+      "type": "test",
+      "links": [
+        "REQ_AREA"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 129,
+        "column": 9
+      },
+      "end": {
+        "row": 129,
+        "column": 46
+      }
+    },
+    "tagged_scope": "pub fn doubled(&self) -> f64 {\n        self.w * 2.0\n    }",
+    "scope": {
+      "kind": "function_item",
+      "start": 131,
+      "end": 133,
+      "entity_kind": "method",
+      "qualified_name": "Widget::doubled",
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Doc on method",
+      "id": "RS_17",
+      "type": "impl",
+      "links": [
+        "REQ_DOC"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 134,
+        "column": 9
+      },
+      "end": {
+        "row": 134,
+        "column": 53
+      }
+    },
+    "tagged_scope": "pub fn halved(&self) -> f64 {\n        self.w / 2.0\n    }",
+    "scope": {
+      "kind": "function_item",
+      "start": 136,
+      "end": 138,
+      "entity_kind": "method",
+      "qualified_name": "Widget::halved",
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Block doc on method",
+      "id": "RS_18",
+      "type": "impl",
+      "links": [
+        "REQ_DOC"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 140,
+        "column": 4
+      },
+      "end": {
+        "row": 140,
+        "column": 49
+      }
+    },
+    "tagged_scope": "pub fn compute_path() -> u32 {\n    1\n}",
+    "scope": {
+      "kind": "function_item",
+      "start": 143,
+      "end": 145,
+      "entity_kind": "function",
+      "qualified_name": "compute_path",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Fast feature variant",
+      "id": "RS_19",
+      "type": "impl",
+      "links": [
+        "REQ_PATH"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 146,
+        "column": 4
+      },
+      "end": {
+        "row": 146,
+        "column": 49
+      }
+    },
+    "tagged_scope": "pub fn compute_path() -> u32 {\n    2\n}",
+    "scope": {
+      "kind": "function_item",
+      "start": 149,
+      "end": 151,
+      "entity_kind": "function",
+      "qualified_name": "compute_path",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Slow default variant",
+      "id": "RS_20",
+      "type": "impl",
+      "links": [
+        "REQ_PATH"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 162,
+        "column": 9
+      },
+      "end": {
+        "row": 162,
+        "column": 57
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Doc passed through macro",
+      "id": "RS_21",
+      "type": "impl",
+      "links": [
+        "REQ_GEN"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 169,
+        "column": 8
+      },
+      "end": {
+        "row": 169,
+        "column": 54
+      }
+    },
+    "tagged_scope": "fn area(&self) -> f64 {\n        self.len() as f64\n    }",
+    "scope": {
+      "kind": "function_item",
+      "start": 171,
+      "end": 173,
+      "entity_kind": "method",
+      "qualified_name": "<Vec<T> as Shape>::area",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Vec area generic impl",
+      "id": "RS_25",
+      "type": "impl",
+      "links": [
+        "REQ_AREA"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  }
+]

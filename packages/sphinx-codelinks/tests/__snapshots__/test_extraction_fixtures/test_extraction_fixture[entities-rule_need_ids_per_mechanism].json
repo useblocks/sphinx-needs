@@ -1,0 +1,118 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 15
+      },
+      "end": {
+        "row": 0,
+        "column": 24
+      }
+    },
+    "tagged_scope": "void documented() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "documented",
+      "mechanism": "doc_comment"
+    },
+    "need_ids": [
+      "REQ_R_DOC"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 14
+      },
+      "end": {
+        "row": 2,
+        "column": 24
+      }
+    },
+    "tagged_scope": "void leading() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 4,
+      "end": 4,
+      "entity_kind": "function",
+      "qualified_name": "leading",
+      "mechanism": "leading"
+    },
+    "need_ids": [
+      "REQ_R_LEAD"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 33
+      },
+      "end": {
+        "row": 4,
+        "column": 44
+      }
+    },
+    "tagged_scope": "void enclosing() {\n    // @need-ids: REQ_R_ENCL\n    int x = 0;\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 6,
+      "end": 9,
+      "entity_kind": "function",
+      "qualified_name": "enclosing",
+      "mechanism": "leading"
+    },
+    "need_ids": [
+      "REQ_R_TRAIL"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 18
+      },
+      "end": {
+        "row": 6,
+        "column": 28
+      }
+    },
+    "tagged_scope": "void enclosing() {\n    // @need-ids: REQ_R_ENCL\n    int x = 0;\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 6,
+      "end": 9,
+      "entity_kind": "function",
+      "qualified_name": "enclosing",
+      "mechanism": "enclosing"
+    },
+    "need_ids": [
+      "REQ_R_ENCL"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  }
+]

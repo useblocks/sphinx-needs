@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 6
+      },
+      "end": {
+        "row": 1,
+        "column": 41
+      }
+    },
+    "tagged_scope": "render(): void {}",
+    "scope": {
+      "kind": "method_definition",
+      "start": 4,
+      "end": 4,
+      "entity_kind": "method",
+      "qualified_name": "Panel.render",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Decorated method",
+      "id": "IMPL_R_DECO",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "method_definition"
+  }
+]

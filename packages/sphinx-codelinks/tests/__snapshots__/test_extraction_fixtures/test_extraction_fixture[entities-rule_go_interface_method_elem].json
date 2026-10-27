@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.go",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 5
+      },
+      "end": {
+        "row": 3,
+        "column": 40
+      }
+    },
+    "tagged_scope": "Shape interface {\n\t// @Interface method, IMPL_R_ELEM, impl\n\tArea() int\n}",
+    "scope": {
+      "kind": "type_spec",
+      "start": 3,
+      "end": 6,
+      "entity_kind": "interface",
+      "qualified_name": "Shape",
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Interface method",
+      "id": "IMPL_R_ELEM",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "type_spec"
+  }
+]

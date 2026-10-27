@@ -1,0 +1,163 @@
+[
+  {
+    "filepath": "case.go",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 42
+      }
+    },
+    "tagged_scope": "type Widget struct {\n\tW, H int\n}",
+    "scope": {
+      "kind": "type_declaration",
+      "start": 4,
+      "end": 6,
+      "entity_kind": "struct",
+      "qualified_name": "Widget",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Widget type",
+      "id": "GO_01",
+      "type": "impl",
+      "links": [
+        "REQ_WIDGET"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "type_declaration"
+  },
+  {
+    "filepath": "case.go",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 4
+      },
+      "end": {
+        "row": 7,
+        "column": 40
+      }
+    },
+    "tagged_scope": "func (w *Widget) Area() int {\n\t// @need-ids: GOREF_03\n\treturn w.W * w.H\n}",
+    "scope": {
+      "kind": "method_declaration",
+      "start": 9,
+      "end": 12,
+      "entity_kind": "method",
+      "qualified_name": "Widget.Area",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Area method",
+      "id": "GO_02",
+      "type": "impl",
+      "links": [
+        "REQ_AREA"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "method_declaration"
+  },
+  {
+    "filepath": "case.go",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 15
+      },
+      "end": {
+        "row": 9,
+        "column": 23
+      }
+    },
+    "tagged_scope": "func (w *Widget) Area() int {\n\t// @need-ids: GOREF_03\n\treturn w.W * w.H\n}",
+    "scope": {
+      "kind": "method_declaration",
+      "start": 9,
+      "end": 12,
+      "entity_kind": "method",
+      "qualified_name": "Widget.Area",
+      "mechanism": "enclosing"
+    },
+    "need_ids": [
+      "GOREF_03"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "method_declaration"
+  },
+  {
+    "filepath": "case.go",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 13,
+        "column": 4
+      },
+      "end": {
+        "row": 13,
+        "column": 43
+      }
+    },
+    "tagged_scope": "func New(w, h int) *Widget { return &Widget{w, h} }",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 15,
+      "end": 15,
+      "entity_kind": "function",
+      "qualified_name": "New",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "New constructor",
+      "id": "GO_04",
+      "type": "impl",
+      "links": [
+        "REQ_NEW"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.go",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 16,
+        "column": 4
+      },
+      "end": {
+        "row": 16,
+        "column": 45
+      }
+    },
+    "tagged_scope": "type Shape interface {\n\tArea() int\n}",
+    "scope": {
+      "kind": "type_declaration",
+      "start": 18,
+      "end": 20,
+      "entity_kind": "interface",
+      "qualified_name": "Shape",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Shape interface",
+      "id": "GO_05",
+      "type": "impl",
+      "links": [
+        "REQ_SHAPE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "type_declaration"
+  }
+]

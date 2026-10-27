@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 16
+      },
+      "end": {
+        "row": 0,
+        "column": 58
+      }
+    },
+    "tagged_scope": "void g() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "g",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Trailing on a function",
+      "id": "IMPL_R_TRAIL",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

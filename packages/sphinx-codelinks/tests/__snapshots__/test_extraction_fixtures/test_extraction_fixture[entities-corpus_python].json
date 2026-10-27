@@ -1,0 +1,796 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 3
+      },
+      "end": {
+        "row": 8,
+        "column": 48
+      }
+    },
+    "tagged_scope": "def module_function(x: int) -> int:\n    # @need-ids: PYREF_02\n    return x * 2",
+    "scope": {
+      "kind": "function_definition",
+      "start": 10,
+      "end": 12,
+      "entity_kind": "function",
+      "qualified_name": "module_function",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Module level function",
+      "id": "PY_01",
+      "type": "impl",
+      "links": [
+        "REQ_MOD"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 10,
+        "column": 17
+      },
+      "end": {
+        "row": 10,
+        "column": 25
+      }
+    },
+    "tagged_scope": "def module_function(x: int) -> int:\n    # @need-ids: PYREF_02\n    return x * 2",
+    "scope": {
+      "kind": "function_definition",
+      "start": 10,
+      "end": 12,
+      "entity_kind": "function",
+      "qualified_name": "module_function",
+      "mechanism": "enclosing"
+    },
+    "need_ids": [
+      "PYREF_02"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 18,
+        "column": 3
+      },
+      "end": {
+        "row": 18,
+        "column": 40
+      }
+    },
+    "tagged_scope": "class Shape:\n    \"\"\"A shape.\n\n    @need-ids: PYREF_04\n    \"\"\"\n\n    # @Nested class, PY_05, impl, [REQ_NESTED]\n    class Meta:\n        kind = \"shape\"\n\n    # @Area method, PY_06, impl, [REQ_AREA]\n    def area(self) -> float:\n        return 0.0\n\n    # @Decorated method, PY_07, impl, [REQ_CACHE]\n    @functools.lru_cache(maxsize=None)\n    def cached(self) -> int:\n        return 1\n\n    # @Name property, PY_08, impl, [REQ_PROP]\n    @property\n    def name(self) -> str:\n        return \"shape\"\n\n    @staticmethod\n    def untraced_static() -> int:\n        return 3\n\n    def docstring_marked(self) -> int:\n        \"\"\"Return four.\n\n        @need-ids: PYREF_09\n        \"\"\"\n        return 4",
+    "scope": {
+      "kind": "class_definition",
+      "start": 20,
+      "end": 53,
+      "entity_kind": "class",
+      "qualified_name": "Shape",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Shape class",
+      "id": "PY_03",
+      "type": "impl",
+      "links": [
+        "REQ_SHAPE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "class_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 22,
+        "column": 15
+      },
+      "end": {
+        "row": 22,
+        "column": 23
+      }
+    },
+    "tagged_scope": "class Shape:\n    \"\"\"A shape.\n\n    @need-ids: PYREF_04\n    \"\"\"\n\n    # @Nested class, PY_05, impl, [REQ_NESTED]\n    class Meta:\n        kind = \"shape\"\n\n    # @Area method, PY_06, impl, [REQ_AREA]\n    def area(self) -> float:\n        return 0.0\n\n    # @Decorated method, PY_07, impl, [REQ_CACHE]\n    @functools.lru_cache(maxsize=None)\n    def cached(self) -> int:\n        return 1\n\n    # @Name property, PY_08, impl, [REQ_PROP]\n    @property\n    def name(self) -> str:\n        return \"shape\"\n\n    @staticmethod\n    def untraced_static() -> int:\n        return 3\n\n    def docstring_marked(self) -> int:\n        \"\"\"Return four.\n\n        @need-ids: PYREF_09\n        \"\"\"\n        return 4",
+    "scope": {
+      "kind": "class_definition",
+      "start": 20,
+      "end": 53,
+      "entity_kind": "class",
+      "qualified_name": "Shape",
+      "mechanism": "doc_comment"
+    },
+    "need_ids": [
+      "PYREF_04"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "class_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 25,
+        "column": 7
+      },
+      "end": {
+        "row": 25,
+        "column": 46
+      }
+    },
+    "tagged_scope": "class Meta:\n        kind = \"shape\"",
+    "scope": {
+      "kind": "class_definition",
+      "start": 27,
+      "end": 28,
+      "entity_kind": "class",
+      "qualified_name": "Shape.Meta",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Nested class",
+      "id": "PY_05",
+      "type": "impl",
+      "links": [
+        "REQ_NESTED"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "class_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 29,
+        "column": 7
+      },
+      "end": {
+        "row": 29,
+        "column": 43
+      }
+    },
+    "tagged_scope": "def area(self) -> float:\n        return 0.0",
+    "scope": {
+      "kind": "function_definition",
+      "start": 31,
+      "end": 32,
+      "entity_kind": "method",
+      "qualified_name": "Shape.area",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Area method",
+      "id": "PY_06",
+      "type": "impl",
+      "links": [
+        "REQ_AREA"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 33,
+        "column": 7
+      },
+      "end": {
+        "row": 33,
+        "column": 49
+      }
+    },
+    "tagged_scope": "def docstring_marked(self) -> int:\n        \"\"\"Return four.\n\n        @need-ids: PYREF_09\n        \"\"\"\n        return 4",
+    "scope": {
+      "kind": "function_definition",
+      "start": 48,
+      "end": 53,
+      "entity_kind": "method",
+      "qualified_name": "Shape.docstring_marked",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Decorated method",
+      "id": "PY_07",
+      "type": "impl",
+      "links": [
+        "REQ_CACHE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 38,
+        "column": 7
+      },
+      "end": {
+        "row": 38,
+        "column": 45
+      }
+    },
+    "tagged_scope": "def docstring_marked(self) -> int:\n        \"\"\"Return four.\n\n        @need-ids: PYREF_09\n        \"\"\"\n        return 4",
+    "scope": {
+      "kind": "function_definition",
+      "start": 48,
+      "end": 53,
+      "entity_kind": "method",
+      "qualified_name": "Shape.docstring_marked",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Name property",
+      "id": "PY_08",
+      "type": "impl",
+      "links": [
+        "REQ_PROP"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 50,
+        "column": 19
+      },
+      "end": {
+        "row": 50,
+        "column": 27
+      }
+    },
+    "tagged_scope": "def docstring_marked(self) -> int:\n        \"\"\"Return four.\n\n        @need-ids: PYREF_09\n        \"\"\"\n        return 4",
+    "scope": {
+      "kind": "function_definition",
+      "start": 48,
+      "end": 53,
+      "entity_kind": "method",
+      "qualified_name": "Shape.docstring_marked",
+      "mechanism": "doc_comment"
+    },
+    "need_ids": [
+      "PYREF_09"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 55,
+        "column": 3
+      },
+      "end": {
+        "row": 55,
+        "column": 55
+      }
+    },
+    "tagged_scope": "def outer() -> int:\n    # @Inner nested function, PY_11, impl, [REQ_INNER]\n    def inner() -> int:\n        return 1\n\n    return inner()",
+    "scope": {
+      "kind": "function_definition",
+      "start": 57,
+      "end": 62,
+      "entity_kind": "function",
+      "qualified_name": "outer",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Outer with nested function",
+      "id": "PY_10",
+      "type": "impl",
+      "links": [
+        "REQ_OUTER"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 57,
+        "column": 7
+      },
+      "end": {
+        "row": 57,
+        "column": 54
+      }
+    },
+    "tagged_scope": "def inner() -> int:\n        return 1",
+    "scope": {
+      "kind": "function_definition",
+      "start": 59,
+      "end": 60,
+      "entity_kind": "function",
+      "qualified_name": "outer.<locals>.inner",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Inner nested function",
+      "id": "PY_11",
+      "type": "impl",
+      "links": [
+        "REQ_INNER"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 68,
+        "column": 3
+      },
+      "end": {
+        "row": 68,
+        "column": 48
+      }
+    },
+    "tagged_scope": "def convert(x):\n    # @need-ids: PYREF_13\n    return x",
+    "scope": {
+      "kind": "function_definition",
+      "start": 74,
+      "end": 76,
+      "entity_kind": "function",
+      "qualified_name": "convert",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Convert str overload",
+      "id": "PY_12",
+      "type": "impl",
+      "links": [
+        "REQ_CONV"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 74,
+        "column": 17
+      },
+      "end": {
+        "row": 74,
+        "column": 25
+      }
+    },
+    "tagged_scope": "def convert(x):\n    # @need-ids: PYREF_13\n    return x",
+    "scope": {
+      "kind": "function_definition",
+      "start": 74,
+      "end": 76,
+      "entity_kind": "function",
+      "qualified_name": "convert",
+      "mechanism": "enclosing"
+    },
+    "need_ids": [
+      "PYREF_13"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 78,
+        "column": 3
+      },
+      "end": {
+        "row": 78,
+        "column": 47
+      }
+    },
+    "tagged_scope": "class Square(Shape):\n    # @Square area override, PY_15, impl, [REQ_AREA]\n    def area(self) -> float:\n        return 1.0\n\n    async def untraced_async(self) -> None:\n        pass",
+    "scope": {
+      "kind": "class_definition",
+      "start": 83,
+      "end": 89,
+      "entity_kind": "class",
+      "qualified_name": "Square",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Lambda assignment",
+      "id": "PY_14",
+      "type": "impl",
+      "links": [
+        "REQ_LAMBDA"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "class_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 83,
+        "column": 7
+      },
+      "end": {
+        "row": 83,
+        "column": 52
+      }
+    },
+    "tagged_scope": "def area(self) -> float:\n        return 1.0",
+    "scope": {
+      "kind": "function_definition",
+      "start": 85,
+      "end": 86,
+      "entity_kind": "method",
+      "qualified_name": "Square.area",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Square area override",
+      "id": "PY_15",
+      "type": "impl",
+      "links": [
+        "REQ_AREA"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 96,
+        "column": 3
+      },
+      "end": {
+        "row": 96,
+        "column": 44
+      }
+    },
+    "tagged_scope": "def make_registry():\n    registry = {}\n\n    def register(fn):\n        registry[fn.__name__] = fn\n        return fn\n\n    return register",
+    "scope": {
+      "kind": "function_definition",
+      "start": 142,
+      "end": 149,
+      "entity_kind": "function",
+      "qualified_name": "make_registry",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Dataclass point",
+      "id": "PY_16",
+      "type": "impl",
+      "links": [
+        "REQ_POINT"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 102,
+        "column": 7
+      },
+      "end": {
+        "row": 102,
+        "column": 59
+      }
+    },
+    "tagged_scope": "def compute(self) -> int:\n        # @Local helper in method, PY_20, impl, [REQ_LOCAL]\n        def helper(v: int) -> int:\n            return v + 1\n\n        return helper(self.x)",
+    "scope": {
+      "kind": "function_definition",
+      "start": 118,
+      "end": 123,
+      "entity_kind": "method",
+      "qualified_name": "Point.compute",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Temperature property setter",
+      "id": "PY_17",
+      "type": "impl",
+      "links": [
+        "REQ_PROP"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 109,
+        "column": 21
+      },
+      "end": {
+        "row": 109,
+        "column": 29
+      }
+    },
+    "tagged_scope": "def norm(self, value: int) -> None:\n        # @need-ids: PYREF_18\n        self.x = value",
+    "scope": {
+      "kind": "function_definition",
+      "start": 109,
+      "end": 111,
+      "entity_kind": "method",
+      "qualified_name": "Point.norm",
+      "mechanism": "enclosing"
+    },
+    "need_ids": [
+      "PYREF_18"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 112,
+        "column": 7
+      },
+      "end": {
+        "row": 112,
+        "column": 54
+      }
+    },
+    "tagged_scope": "def compute(self) -> int:\n        # @Local helper in method, PY_20, impl, [REQ_LOCAL]\n        def helper(v: int) -> int:\n            return v + 1\n\n        return helper(self.x)",
+    "scope": {
+      "kind": "function_definition",
+      "start": 118,
+      "end": 123,
+      "entity_kind": "method",
+      "qualified_name": "Point.compute",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Classmethod factory",
+      "id": "PY_19",
+      "type": "impl",
+      "links": [
+        "REQ_FACTORY"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 118,
+        "column": 11
+      },
+      "end": {
+        "row": 118,
+        "column": 59
+      }
+    },
+    "tagged_scope": "def helper(v: int) -> int:\n            return v + 1",
+    "scope": {
+      "kind": "function_definition",
+      "start": 120,
+      "end": 121,
+      "entity_kind": "function",
+      "qualified_name": "Point.compute.<locals>.helper",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Local helper in method",
+      "id": "PY_20",
+      "type": "impl",
+      "links": [
+        "REQ_LOCAL"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 126,
+        "column": 15
+      },
+      "end": {
+        "row": 126,
+        "column": 62
+      }
+    },
+    "tagged_scope": "def deep(self) -> int:\n                return 5",
+    "scope": {
+      "kind": "function_definition",
+      "start": 128,
+      "end": 129,
+      "entity_kind": "method",
+      "qualified_name": "Point.Inner.Deeper.deep",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Deeply nested method",
+      "id": "PY_21",
+      "type": "impl",
+      "links": [
+        "REQ_NESTED"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 132,
+        "column": 7
+      },
+      "end": {
+        "row": 132,
+        "column": 53
+      }
+    },
+    "tagged_scope": "def variant() -> str:\n        return \"new\"",
+    "scope": {
+      "kind": "function_definition",
+      "start": 134,
+      "end": 135,
+      "entity_kind": "function",
+      "qualified_name": "variant",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "New python variant",
+      "id": "PY_22",
+      "type": "impl",
+      "links": [
+        "REQ_VARIANT"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 136,
+        "column": 7
+      },
+      "end": {
+        "row": 136,
+        "column": 53
+      }
+    },
+    "tagged_scope": "def variant() -> str:\n        return \"old\"",
+    "scope": {
+      "kind": "function_definition",
+      "start": 138,
+      "end": 139,
+      "entity_kind": "function",
+      "qualified_name": "variant",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Old python variant",
+      "id": "PY_23",
+      "type": "impl",
+      "links": [
+        "REQ_VARIANT"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 154,
+        "column": 3
+      },
+      "end": {
+        "row": 154,
+        "column": 59
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Registered via decorator factory",
+      "id": "PY_24",
+      "type": "impl",
+      "links": [
+        "REQ_REG"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 159,
+        "column": 15
+      },
+      "end": {
+        "row": 159,
+        "column": 23
+      }
+    },
+    "tagged_scope": "async def handler(event: str) -> None:\n    \"\"\"Handle an event.\n\n    @need-ids: PYREF_25\n    \"\"\"",
+    "scope": {
+      "kind": "function_definition",
+      "start": 157,
+      "end": 161,
+      "entity_kind": "function",
+      "qualified_name": "handler",
+      "mechanism": "doc_comment"
+    },
+    "need_ids": [
+      "PYREF_25"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  }
+]

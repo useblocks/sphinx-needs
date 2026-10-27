@@ -1,0 +1,1017 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 10,
+        "column": 4
+      },
+      "end": {
+        "row": 10,
+        "column": 44
+      }
+    },
+    "tagged_scope": "class Widget {\npublic:\n    // @Widget constructor, CPP_02, impl, [REQ_CTOR]\n    Widget(int w, int h) : w_(w), h_(h) {}\n\n    // @Draw declaration, CPP_03, impl, [REQ_DRAW]\n    void draw() const;\n\n    void resize(int w, int h);\n\n    // @Inline area, CPP_04, impl, [REQ_AREA]\n    int area() const { return w_ * h_; }\n\n    ~Widget();\n\nprivate:\n    int w_;\n    int h_;\n}",
+    "scope": {
+      "kind": "class_specifier",
+      "start": 12,
+      "end": 30,
+      "entity_kind": "class",
+      "qualified_name": "ns::Widget",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Widget class",
+      "id": "CPP_01",
+      "type": "impl",
+      "links": [
+        "REQ_WIDGET"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "class_specifier"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 13,
+        "column": 8
+      },
+      "end": {
+        "row": 13,
+        "column": 52
+      }
+    },
+    "tagged_scope": "Widget(int w, int h) : w_(w), h_(h) {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 15,
+      "end": 15,
+      "entity_kind": "constructor",
+      "qualified_name": "ns::Widget::Widget",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Widget constructor",
+      "id": "CPP_02",
+      "type": "impl",
+      "links": [
+        "REQ_CTOR"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 16,
+        "column": 8
+      },
+      "end": {
+        "row": 16,
+        "column": 50
+      }
+    },
+    "tagged_scope": "int area() const { return w_ * h_; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 23,
+      "end": 23,
+      "entity_kind": "method",
+      "qualified_name": "ns::Widget::area",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Draw declaration",
+      "id": "CPP_03",
+      "type": "impl",
+      "links": [
+        "REQ_DRAW"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 21,
+        "column": 8
+      },
+      "end": {
+        "row": 21,
+        "column": 45
+      }
+    },
+    "tagged_scope": "int area() const { return w_ * h_; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 23,
+      "end": 23,
+      "entity_kind": "method",
+      "qualified_name": "ns::Widget::area",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Inline area",
+      "id": "CPP_04",
+      "type": "impl",
+      "links": [
+        "REQ_AREA"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 31,
+        "column": 4
+      },
+      "end": {
+        "row": 31,
+        "column": 46
+      }
+    },
+    "tagged_scope": "void Widget::draw() const {\n    // @need-ids: CPPREF_06\n    int x = w_ + h_;\n    std::printf(\"%d\\n\", x);\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 33,
+      "end": 37,
+      "entity_kind": "method",
+      "qualified_name": "ns::Widget::draw",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Draw out-of-line",
+      "id": "CPP_05",
+      "type": "impl",
+      "links": [
+        "REQ_DRAW"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 33,
+        "column": 18
+      },
+      "end": {
+        "row": 33,
+        "column": 27
+      }
+    },
+    "tagged_scope": "void Widget::draw() const {\n    // @need-ids: CPPREF_06\n    int x = w_ + h_;\n    std::printf(\"%d\\n\", x);\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 33,
+      "end": 37,
+      "entity_kind": "method",
+      "qualified_name": "ns::Widget::draw",
+      "mechanism": "enclosing"
+    },
+    "need_ids": [
+      "CPPREF_06"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 41,
+        "column": 4
+      },
+      "end": {
+        "row": 41,
+        "column": 56
+      }
+    },
+    "tagged_scope": "static int helper(int v) { return v * 2; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 43,
+      "end": 43,
+      "entity_kind": "function",
+      "qualified_name": "ns::detail::helper",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Helper in nested namespace",
+      "id": "CPP_07",
+      "type": "impl",
+      "links": [
+        "REQ_HELP"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 48,
+        "column": 4
+      },
+      "end": {
+        "row": 48,
+        "column": 59
+      }
+    },
+    "tagged_scope": "void ns::Widget::resize(int w, int h) {\n    w_ = w;\n    h_ = h;\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 50,
+      "end": 53,
+      "entity_kind": "method",
+      "qualified_name": "ns::Widget::resize",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Fully qualified out-of-line",
+      "id": "CPP_08",
+      "type": "impl",
+      "links": [
+        "REQ_RESIZE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 54,
+        "column": 4
+      },
+      "end": {
+        "row": 54,
+        "column": 45
+      }
+    },
+    "tagged_scope": "int scale(int v) { return v * 2; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 62,
+      "end": 62,
+      "entity_kind": "function",
+      "qualified_name": "scale",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Clamp template",
+      "id": "CPP_09",
+      "type": "impl",
+      "links": [
+        "REQ_CLAMP"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 60,
+        "column": 4
+      },
+      "end": {
+        "row": 60,
+        "column": 49
+      }
+    },
+    "tagged_scope": "int scale(int v) { return v * 2; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 62,
+      "end": 62,
+      "entity_kind": "function",
+      "qualified_name": "scale",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Scale int overload",
+      "id": "CPP_10",
+      "type": "impl",
+      "links": [
+        "REQ_SCALE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 63,
+        "column": 4
+      },
+      "end": {
+        "row": 63,
+        "column": 52
+      }
+    },
+    "tagged_scope": "double scale(double v) { return v * 2.0; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 65,
+      "end": 65,
+      "entity_kind": "function",
+      "qualified_name": "scale",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Scale double overload",
+      "id": "CPP_11",
+      "type": "impl",
+      "links": [
+        "REQ_SCALE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 66,
+        "column": 4
+      },
+      "end": {
+        "row": 66,
+        "column": 50
+      }
+    },
+    "tagged_scope": "EXPORT_API void exported_fn() { std::printf(\"x\\n\"); }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 71,
+      "end": 71,
+      "entity_kind": "function",
+      "qualified_name": "exported_fn",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Exported prototype",
+      "id": "CPP_12",
+      "type": "impl",
+      "links": [
+        "REQ_EXPORT"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 69,
+        "column": 4
+      },
+      "end": {
+        "row": 69,
+        "column": 51
+      }
+    },
+    "tagged_scope": "EXPORT_API void exported_fn() { std::printf(\"x\\n\"); }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 71,
+      "end": 71,
+      "entity_kind": "function",
+      "qualified_name": "exported_fn",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Exported definition",
+      "id": "CPP_13",
+      "type": "impl",
+      "links": [
+        "REQ_EXPORT"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 72,
+        "column": 4
+      },
+      "end": {
+        "row": 72,
+        "column": 50
+      }
+    },
+    "tagged_scope": "bool operator==(const ns::Widget& a, const ns::Widget& b) { return a.area() == b.area(); }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 89,
+      "end": 89,
+      "entity_kind": "operator",
+      "qualified_name": "operator==",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Generated handler",
+      "id": "CPP_14",
+      "type": "impl",
+      "links": [
+        "REQ_HANDLER"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 81,
+        "column": 4
+      },
+      "end": {
+        "row": 81,
+        "column": 48
+      }
+    },
+    "tagged_scope": "bool operator==(const ns::Widget& a, const ns::Widget& b) { return a.area() == b.area(); }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 89,
+      "end": 89,
+      "entity_kind": "operator",
+      "qualified_name": "operator==",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Box get out-of-line",
+      "id": "CPP_15",
+      "type": "impl",
+      "links": [
+        "REQ_BOX"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 87,
+        "column": 4
+      },
+      "end": {
+        "row": 87,
+        "column": 52
+      }
+    },
+    "tagged_scope": "bool operator==(const ns::Widget& a, const ns::Widget& b) { return a.area() == b.area(); }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 89,
+      "end": 89,
+      "entity_kind": "operator",
+      "qualified_name": "operator==",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Widget equality operator",
+      "id": "CPP_16",
+      "type": "impl",
+      "links": [
+        "REQ_EQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 91,
+        "column": 4
+      },
+      "end": {
+        "row": 91,
+        "column": 62
+      }
+    },
+    "tagged_scope": "int version() { return 2; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 93,
+      "end": 93,
+      "entity_kind": "function",
+      "qualified_name": "ns::v2::version",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Version in C++17 nested namespace",
+      "id": "CPP_17",
+      "type": "impl",
+      "links": [
+        "REQ_VER"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 99,
+        "column": 4
+      },
+      "end": {
+        "row": 99,
+        "column": 43
+      }
+    },
+    "tagged_scope": "struct Point {\n    int x;\n    int y;\n    int sum() const { return x + y; }\n}",
+    "scope": {
+      "kind": "struct_specifier",
+      "start": 101,
+      "end": 105,
+      "entity_kind": "struct",
+      "qualified_name": "Point",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Point struct",
+      "id": "CPP_18",
+      "type": "impl",
+      "links": [
+        "REQ_POINT"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "struct_specifier"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 108,
+        "column": 18
+      },
+      "end": {
+        "row": 108,
+        "column": 27
+      }
+    },
+    "tagged_scope": "int main() {\n    ns::Widget w(1, 2);\n    // @need-ids: CPPREF_19\n    w.draw();\n    Box<int> b{3};\n    handle_click(clamp(b.get(), 0, 10));\n    exported_fn();\n    return scale(3) + static_cast<int>(scale(1.5)) + ns::detail::use_helper() + ns::v2::version() +\n           untraced_internal() + Point{1, 2}.sum() + (w == w);\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 107,
+      "end": 116,
+      "entity_kind": "function",
+      "qualified_name": "main",
+      "mechanism": "enclosing"
+    },
+    "need_ids": [
+      "CPPREF_19"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 119,
+        "column": 5
+      },
+      "end": {
+        "row": 119,
+        "column": 48
+      }
+    },
+    "tagged_scope": "int doc_slash() { return 20; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 121,
+      "end": 121,
+      "entity_kind": "function",
+      "qualified_name": "doc_slash",
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Doc slash function",
+      "id": "CPP_20",
+      "type": "impl",
+      "links": [
+        "REQ_DOC"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 122,
+        "column": 5
+      },
+      "end": {
+        "row": 122,
+        "column": 45
+      }
+    },
+    "tagged_scope": "class Gauge {\npublic:\n    /// @Gauge set int decl, CPP_22, impl, [REQ_SET]\n    void set(int v);\n    /// @Gauge set double decl, CPP_23, impl, [REQ_SET]\n    void set(double v);\n    int level = 0;  ///< @Trailing member doc, CPP_24, impl, [REQ_LEVEL]\nprotected:\n    // @Protected hook, CPP_25, impl, [REQ_HOOK]\n    virtual void on_change() {}\nprivate:\n    static int count_;\n}",
+    "scope": {
+      "kind": "class_specifier",
+      "start": 125,
+      "end": 137,
+      "entity_kind": "class",
+      "qualified_name": "Gauge",
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Doc block class",
+      "id": "CPP_21",
+      "type": "impl",
+      "links": [
+        "REQ_DOC"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "class_specifier"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 126,
+        "column": 9
+      },
+      "end": {
+        "row": 126,
+        "column": 52
+      }
+    },
+    "tagged_scope": "virtual void on_change() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 134,
+      "end": 134,
+      "entity_kind": "method",
+      "qualified_name": "Gauge::on_change",
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Gauge set int decl",
+      "id": "CPP_22",
+      "type": "impl",
+      "links": [
+        "REQ_SET"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 128,
+        "column": 9
+      },
+      "end": {
+        "row": 128,
+        "column": 55
+      }
+    },
+    "tagged_scope": "virtual void on_change() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 134,
+      "end": 134,
+      "entity_kind": "method",
+      "qualified_name": "Gauge::on_change",
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Gauge set double decl",
+      "id": "CPP_23",
+      "type": "impl",
+      "links": [
+        "REQ_SET"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 130,
+        "column": 26
+      },
+      "end": {
+        "row": 130,
+        "column": 72
+      }
+    },
+    "tagged_scope": "virtual void on_change() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 134,
+      "end": 134,
+      "entity_kind": "method",
+      "qualified_name": "Gauge::on_change",
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Trailing member doc",
+      "id": "CPP_24",
+      "type": "impl",
+      "links": [
+        "REQ_LEVEL"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 132,
+        "column": 8
+      },
+      "end": {
+        "row": 132,
+        "column": 48
+      }
+    },
+    "tagged_scope": "virtual void on_change() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 134,
+      "end": 134,
+      "entity_kind": "method",
+      "qualified_name": "Gauge::on_change",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Protected hook",
+      "id": "CPP_25",
+      "type": "impl",
+      "links": [
+        "REQ_HOOK"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 140,
+        "column": 4
+      },
+      "end": {
+        "row": 140,
+        "column": 49
+      }
+    },
+    "tagged_scope": "void Gauge::set(double v) { level = static_cast<int>(v); }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 142,
+      "end": 142,
+      "entity_kind": "method",
+      "qualified_name": "Gauge::set",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Gauge set double def",
+      "id": "CPP_26",
+      "type": "impl",
+      "links": [
+        "REQ_SET"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 143,
+        "column": 4
+      },
+      "end": {
+        "row": 143,
+        "column": 52
+      }
+    },
+    "tagged_scope": "int use_more() {\n    Gauge g;\n    g.set(1);\n    g.set(2.0);\n    handle_key(compute_path());\n    return doc_slash() + Box<bool>{}.get() + static_cast<int>(clamp<long>(1, 2, 3));\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 167,
+      "end": 173,
+      "entity_kind": "function",
+      "qualified_name": "use_more",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Box bool specialisation",
+      "id": "CPP_27",
+      "type": "impl",
+      "links": [
+        "REQ_BOX"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 149,
+        "column": 4
+      },
+      "end": {
+        "row": 149,
+        "column": 56
+      }
+    },
+    "tagged_scope": "int use_more() {\n    Gauge g;\n    g.set(1);\n    g.set(2.0);\n    handle_key(compute_path());\n    return doc_slash() + Box<bool>{}.get() + static_cast<int>(clamp<long>(1, 2, 3));\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 167,
+      "end": 173,
+      "entity_kind": "function",
+      "qualified_name": "use_more",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Clamp long specialisation",
+      "id": "CPP_28",
+      "type": "impl",
+      "links": [
+        "REQ_CLAMP"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 155,
+        "column": 5
+      },
+      "end": {
+        "row": 155,
+        "column": 55
+      }
+    },
+    "tagged_scope": "int use_more() {\n    Gauge g;\n    g.set(1);\n    g.set(2.0);\n    handle_key(compute_path());\n    return doc_slash() + Box<bool>{}.get() + static_cast<int>(clamp<long>(1, 2, 3));\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 167,
+      "end": 173,
+      "entity_kind": "function",
+      "qualified_name": "use_more",
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Doc generated handler",
+      "id": "CPP_29",
+      "type": "impl",
+      "links": [
+        "REQ_HANDLER"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 159,
+        "column": 4
+      },
+      "end": {
+        "row": 159,
+        "column": 47
+      }
+    },
+    "tagged_scope": "int compute_path() { return 1; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 161,
+      "end": 161,
+      "entity_kind": "function",
+      "qualified_name": "compute_path",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Fast path variant",
+      "id": "CPP_30",
+      "type": "impl",
+      "links": [
+        "REQ_PATH"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 162,
+        "column": 4
+      },
+      "end": {
+        "row": 162,
+        "column": 47
+      }
+    },
+    "tagged_scope": "int compute_path() { return 2; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 164,
+      "end": 164,
+      "entity_kind": "function",
+      "qualified_name": "compute_path",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Slow path variant",
+      "id": "CPP_31",
+      "type": "impl",
+      "links": [
+        "REQ_PATH"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

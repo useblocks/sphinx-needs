@@ -1,0 +1,68 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 5
+      },
+      "end": {
+        "row": 1,
+        "column": 46
+      }
+    },
+    "tagged_scope": "pub fn outline_fn() -> u32 {\n    3\n}",
+    "scope": {
+      "kind": "function_item",
+      "start": 5,
+      "end": 7,
+      "entity_kind": "function",
+      "qualified_name": "outline_fn",
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Module doc marker",
+      "id": "RS_22",
+      "type": "impl",
+      "links": [
+        "REQ_MOD"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 4
+      },
+      "end": {
+        "row": 3,
+        "column": 44
+      }
+    },
+    "tagged_scope": "pub fn outline_fn() -> u32 {\n    3\n}",
+    "scope": {
+      "kind": "function_item",
+      "start": 5,
+      "end": 7,
+      "entity_kind": "function",
+      "qualified_name": "outline_fn",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Outline function",
+      "id": "RS_23",
+      "type": "impl",
+      "links": [
+        "REQ_OUT"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  }
+]

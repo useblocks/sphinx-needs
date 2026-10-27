@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
+      },
+      "end": {
+        "row": 1,
+        "column": 49
+      }
+    },
+    "tagged_scope": "def inner():\n        pass",
+    "scope": {
+      "kind": "function_definition",
+      "start": 4,
+      "end": 5,
+      "entity_kind": "function",
+      "qualified_name": "outer.<locals>.inner",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Above a statement",
+      "id": "IMPL_R_BLOCK_STMT",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

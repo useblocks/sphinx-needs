@@ -1,0 +1,196 @@
+[
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 8
+      },
+      "end": {
+        "row": 2,
+        "column": 47
+      }
+    },
+    "tagged_scope": "public class Widget\n    {\n        // @Ctor, CS_02, impl, [REQ_CTOR]\n        public Widget(int w) { W = w; }\n\n        // @W property, CS_03, impl, [REQ_PROP]\n        public int W { get; set; }\n\n        // @Draw method, CS_04, impl, [REQ_DRAW]\n        public void Draw()\n        {\n            // @need-ids: CSREF_05\n            System.Console.WriteLine(W);\n        }\n\n        // @Nested struct, CS_06, impl, [REQ_POINT]\n        public struct Point { public int X; }\n\n        public void UntracedCs() { }\n    }",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 4,
+      "end": 23,
+      "entity_kind": "class",
+      "qualified_name": "Acme.Gfx.Widget",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Widget class",
+      "id": "CS_01",
+      "type": "impl",
+      "links": [
+        "REQ_WIDGET"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  },
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 12
+      },
+      "end": {
+        "row": 5,
+        "column": 41
+      }
+    },
+    "tagged_scope": "public int W { get; set; }",
+    "scope": {
+      "kind": "property_declaration",
+      "start": 10,
+      "end": 10,
+      "entity_kind": "property",
+      "qualified_name": "Acme.Gfx.Widget.W",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Ctor",
+      "id": "CS_02",
+      "type": "impl",
+      "links": [
+        "REQ_CTOR"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "property_declaration"
+  },
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 12
+      },
+      "end": {
+        "row": 8,
+        "column": 47
+      }
+    },
+    "tagged_scope": "public int W { get; set; }",
+    "scope": {
+      "kind": "property_declaration",
+      "start": 10,
+      "end": 10,
+      "entity_kind": "property",
+      "qualified_name": "Acme.Gfx.Widget.W",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "W property",
+      "id": "CS_03",
+      "type": "impl",
+      "links": [
+        "REQ_PROP"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "property_declaration"
+  },
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 11,
+        "column": 12
+      },
+      "end": {
+        "row": 11,
+        "column": 48
+      }
+    },
+    "tagged_scope": "public void Draw()\n        {\n            // @need-ids: CSREF_05\n            System.Console.WriteLine(W);\n        }",
+    "scope": {
+      "kind": "method_declaration",
+      "start": 13,
+      "end": 17,
+      "entity_kind": "method",
+      "qualified_name": "Acme.Gfx.Widget.Draw",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Draw method",
+      "id": "CS_04",
+      "type": "impl",
+      "links": [
+        "REQ_DRAW"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "method_declaration"
+  },
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 14,
+        "column": 26
+      },
+      "end": {
+        "row": 14,
+        "column": 34
+      }
+    },
+    "tagged_scope": "public void Draw()\n        {\n            // @need-ids: CSREF_05\n            System.Console.WriteLine(W);\n        }",
+    "scope": {
+      "kind": "method_declaration",
+      "start": 13,
+      "end": 17,
+      "entity_kind": "method",
+      "qualified_name": "Acme.Gfx.Widget.Draw",
+      "mechanism": "enclosing"
+    },
+    "need_ids": [
+      "CSREF_05"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "method_declaration"
+  },
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 18,
+        "column": 12
+      },
+      "end": {
+        "row": 18,
+        "column": 51
+      }
+    },
+    "tagged_scope": "public void UntracedCs() { }",
+    "scope": {
+      "kind": "method_declaration",
+      "start": 22,
+      "end": 22,
+      "entity_kind": "method",
+      "qualified_name": "Acme.Gfx.Widget.UntracedCs",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Nested struct",
+      "id": "CS_06",
+      "type": "impl",
+      "links": [
+        "REQ_POINT"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "method_declaration"
+  }
+]

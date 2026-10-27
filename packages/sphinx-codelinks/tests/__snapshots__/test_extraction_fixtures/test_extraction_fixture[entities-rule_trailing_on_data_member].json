@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 23
+      },
+      "end": {
+        "row": 1,
+        "column": 70
+      }
+    },
+    "tagged_scope": "struct Gauge {\n    int level = 0; // @Trailing on a member, IMPL_R_TRAIL_MEMBER, impl\n    void set(int v);\n}",
+    "scope": {
+      "kind": "struct_specifier",
+      "start": 1,
+      "end": 4,
+      "entity_kind": "struct",
+      "qualified_name": "Gauge",
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Trailing on a member",
+      "id": "IMPL_R_TRAIL_MEMBER",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "struct_specifier"
+  }
+]

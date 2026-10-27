@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 9
+      },
+      "end": {
+        "row": 1,
+        "column": 38
+      }
+    },
+    "tagged_scope": "fn f() {}",
+    "scope": {
+      "kind": "function_item",
+      "start": 3,
+      "end": 3,
+      "entity_kind": "function",
+      "qualified_name": "m::f",
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Inner doc",
+      "id": "IMPL_R_INNER",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  }
+]

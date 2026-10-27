@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 36
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 3,
+      "end": 3,
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "File header",
+      "id": "IMPL_R_HEADER",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

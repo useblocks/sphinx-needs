@@ -1,0 +1,46 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 2
+      },
+      "end": {
+        "row": 2,
+        "column": 10
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "type": "impl",
+      "title": "Decorated handler",
+      "id": "IMPL_R_ML_DEC",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.py",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 2
+      },
+      "end": {
+        "line": 3,
+        "col": 10
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 2
+      },
+      "scope": null
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": null
+  }
+]

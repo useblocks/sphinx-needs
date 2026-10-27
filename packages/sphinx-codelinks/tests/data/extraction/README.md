@@ -63,6 +63,12 @@ custom_brackets_c:
   must produce the same output.
 - `defines` (optional, libclang only): preprocessor defines, e.g.
   `["VARIANT_A=1", "PROTOCOL_VERSION=3"]`.
+- `truth` (optional): for each marker id, the entity the marker belongs to by
+  compiler ground truth or by an attachment rule — `{id, outcome, entity_kind,
+  qualified_name, start, mechanism?, compiler}`. The extraction harness ignores it;
+  `tests/test_entity_truth.py` compares every marker's `scope` with it.
+  `entities.yaml` holds the cases that carry it and documents each key and how the
+  truth was measured.
 
 ## Snapshots: the production shape
 

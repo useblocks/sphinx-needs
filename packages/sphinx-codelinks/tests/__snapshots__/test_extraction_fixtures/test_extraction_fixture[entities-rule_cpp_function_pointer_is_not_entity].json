@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 40
+      }
+    },
+    "tagged_scope": "void g() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 4,
+      "end": 4,
+      "entity_kind": "function",
+      "qualified_name": "g",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Function pointer",
+      "id": "IMPL_R_FNPTR",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]
