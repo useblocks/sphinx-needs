@@ -32,9 +32,13 @@ needs_fields = {
     "hours": {"schema": {"type": "number"}},
     "total": {
         "schema": {"type": "number"},
-        "derive": {"kind": "sum", "field": "hours", "over": "links"},
+        "derive_by_type": {
+            "spec": {"kind": "sum", "field": "hours", "over": "links"},
+            "impl": {"kind": "sum", "field": "total", "over": "links"},
+        },
     },
 }
+needs_show_link_title = True
 needs_duration_option = "hours"
 needs_links = {"mentions": {"derive": {"kind": "content_links"}}}
 
@@ -63,10 +67,13 @@ Index
 
    reqs
    specs
+   copies
    extends
    views
    charts
    roles
+   trace
+   rollup
    unrelated
 """,
     "reqs.rst": """\
@@ -105,6 +112,10 @@ The specifications refine the requirements.
 .. spec:: Refines gamma
    :id: SPEC_002
    :links: REQ_003
+""",
+    "copies.rst": """\
+Copies
+======
 
 .. spec:: Copies a status
    :id: SPEC_003
@@ -116,10 +127,10 @@ The specifications refine the requirements.
 Extends
 =======
 
-.. needextend:: REQ_002
+.. needextend:: IMPL_001
    :status: extended
 
-.. needextend:: type == 'spec'
+.. needextend:: type == 'test'
    :+tags: ext
 """,
     "views.rst": """\
@@ -175,6 +186,22 @@ Roles
 See :need:`REQ_001`, the part :need:`REQ_002.p1`,
 what links to :need_incoming:`REQ_002` and what :need_outgoing:`SPEC_002` links to.
 """,
+    "trace.rst": """\
+Trace
+=====
+
+.. test:: Tests alpha
+   :id: TEST_001
+   :links: REQ_001
+""",
+    "rollup.rst": """\
+Rollup
+======
+
+.. impl:: Sums the specification
+   :id: IMPL_002
+   :links: SPEC_001
+""",
     "unrelated.rst": """\
 Unrelated
 =========
@@ -210,14 +237,14 @@ EDITS: dict[str, tuple[str, str, str]] = {
         "",
     ),
     "content-reference-added": (
-        "specs.rst",
+        "copies.rst",
         "   Mentions :need:`REQ_002`.\n",
-        "   Mentions :need:`REQ_002` and :need:`REQ_001`.\n",
+        "   Mentions :need:`REQ_002` and :need:`TEST_001`.\n",
     ),
     "extend-by-id-changed": ("extends.rst", ":status: extended", ":status: reviewed"),
     "extend-by-id-removed": (
         "extends.rst",
-        ".. needextend:: REQ_002\n   :status: extended\n",
+        ".. needextend:: IMPL_001\n   :status: extended\n",
         "",
     ),
     "extend-by-filter-changed": ("extends.rst", ":+tags: ext", ":+tags: ext2"),
@@ -357,17 +384,21 @@ def test_title_edit_rewrites_the_pages_showing_the_need(
 ) -> None:
     """Not every need-relevant page: a page that shows nothing of the need is not.
 
-    ``views`` and ``charts`` hold views, ``specs`` the need linking to it (and the
-    dynamic function and the ``derive`` rule reading it), ``roles`` a role naming it;
-    ``unrelated`` holds a need, but shows nothing of ``REQ_001``, and ``extends`` only
-    extends other needs by id or by a filter that does not change.
+    ``views`` and ``charts`` hold views, ``specs`` a need linking to it (whose
+    ``derive`` rule reads it), ``copies`` a dynamic function reading it, ``trace`` a need
+    linking to it, ``rollup`` a need whose rule reads the ``specs`` one's, ``roles`` a
+    role naming it; ``unrelated`` holds a need, but shows nothing of ``REQ_001``, and
+    ``extends`` only extends other needs, by id or by a filter, neither of which changed.
     """
     written = _assert_equivalent(make_app, tmp_path, _edited("title"))
     assert sorted(written) == [
         "charts",
+        "copies",
         "index",
         "reqs",
         "roles",
+        "rollup",
         "specs",
+        "trace",
         "views",
     ]
