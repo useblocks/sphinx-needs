@@ -332,7 +332,9 @@ These need schema rules:
   ``links.<l>_back`` entry (:ref:`need_types_incoming`);
 - **conditions between fields**, such as "``approval`` is required when ``efforts`` is greater than 15";
 - **multi-hop chains** (:ref:`nested network validation <network_validation>`);
-- a **pattern for the IDs** of one type (``id`` cannot be declared in a type's entry);
+- a **pattern for the IDs** of one type that reports a need and keeps it:
+  a type's ``id_regex`` (:ref:`needs_types`) is checked as :ref:`needs_id_regex` is, and a need whose id does not match is not created
+  (``id`` itself cannot be declared in a type's ``fields``);
 - a **message** per rule, or a **severity** per constraint keyword (:ref:`rule_severity`):
   a type's entry gives one ``severity`` to every constraint of its declaration of a field (:ref:`need_types_severity`);
 - **leaving out external or imported needs**, with a ``select`` on ``is_external`` or ``is_import``.

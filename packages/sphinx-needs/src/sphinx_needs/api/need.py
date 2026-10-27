@@ -235,6 +235,21 @@ def generate_need(
             "invalid_id",
             f"Given ID {need_id!r} does not match configured regex {needs_config.id_regex!r}",
         )
+    # and the id_regex of its need type, and of each type that one inherits from
+    for declared_by, pattern in (
+        () if from_outside else needs_schema.id_patterns(need_type)
+    ):
+        if not re.match(pattern, need_id):
+            inherited = (
+                ""
+                if declared_by == need_type
+                else f", which need type {need_type!r} inherits"
+            )
+            raise InvalidNeedException(
+                "invalid_id",
+                f"Given ID {need_id!r} does not match the id_regex {pattern!r} of need "
+                f"type {declared_by!r}{inherited}",
+            )
 
     # Convert all schema-enabled core fields
     _raw_core: dict[str, Any] = {

@@ -37,6 +37,15 @@ Improvements
   Such an entry used to be refused; a ``fields`` entry of that name still is, and now names the ``links`` entry.
   This supersedes the proposal of :issue:`2323`. See :ref:`need_types_incoming`.
 
+- ✨ A need type declares the shape of its ids: ``id_regex`` on a ``[needs.types.<t>]`` entry (:issue:`2373`)
+
+  The id of a need of the type matches the pattern, beside :ref:`needs_id_regex` and the ``id_regex`` of every type
+  it inherits from, checked where and as ``needs_id_regex`` is (``re.match``, an authored or a generated id, never
+  an imported or external need's): a need whose id does not match is not created (``needs.create_need``, naming the
+  pattern and the type that gives it). So an ``id-prefix-<type>`` schema rule folds into the type's declaration when a
+  wrong id should refuse the need; one that should only be reported stays a rule. A pattern that is not a regular
+  expression is a ``needs.type_conflict`` warning, and is ignored. See :ref:`need_types_id_regex`.
+
 .. _`release:9.1.0`:
 
 9.1.0

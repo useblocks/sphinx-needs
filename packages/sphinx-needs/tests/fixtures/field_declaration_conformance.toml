@@ -91,7 +91,7 @@
 #     facts). Only the codes of the per-type declaration contract are compared --
 #         type_inherits, type_conflict, type_widening, undeclared_for_type, needextend,
 #         derive_authored, derive_invalid, dynamic_function, create_need, field_fail,
-#         link_fail, link_target_type, external_link_target_type
+#         link_fail, link_target_type, external_link_target_type, id_regex
 #     -- every other finding is each tool's own. `config` is not among them: it is every
 #     configuration finding, so a bare `config` would match any; a case that would pin a
 #     `needs.config` warning pins its consequence for a value instead, and says so
@@ -114,7 +114,14 @@
 #     (`target need type '<t>'`, its link type `field '<l>'`); a
 #     finding of another code (`field_fail`, `derive_authored`) has none
 #   - `create_need` is the finding of a need that is not created: here, one without a value
-#     of a field its type makes not nullable, with no default (`Field '<f>'` is its field)
+#     of a field its type makes not nullable, with no default (`Field '<f>'` is its field),
+#     or one whose id fails `needs_id_regex` or the `id_regex` of its type or of a type it
+#     inherits from (a `[needs.types.<t>] id_regex`, matched as Python's `re.match`
+#     matches: anchored at the start, open at the end; a pattern that does not compile is
+#     a `type_conflict`, ignored; a need `needimport` imports or `needs_external_needs`
+#     loads is not checked). ubCode keeps such a need and reports it instead, `id_regex`
+#     at the need: the cases that refuse an id are a `python_only` and `ubcode_only` pair,
+#     and `id_regex` is a code only ubCode's runner reads
 #   - `field_fail` and `link_fail` are the schema validation's findings of a need whose
 #     value of a field (`field_fail`: an enum, a `minItems`) or whose links of a link type
 #     (`link_fail`: a `maxItems`) fail the schema as its need type declares it; a value
@@ -5647,6 +5654,212 @@ field = "satisfies_back"
 code = "type_conflict"
 type = "spec"
 field = "satisfies_back"
+
+# --- the ids of a need type -----------------------------------------------------------
+
+[[case]]
+name = "type-id-regex-refuses-an-id"
+why = "a need type's id_regex is matched (re.match: anchored at the start) beside needs_id_regex, and the id_regex of each type it inherits from: an id failing any of them is a need not created (create_need); ids matching all of them are kept"
+python_only = true
+config = '''
+[needs]
+id_regex = "^[A-Z0-9_]{5,}[0-9]$"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+id_regex = "REQ_"
+
+[needs.types.safety]
+title = "Safety requirement"
+prefix = "S_"
+inherits = "req"
+id_regex = "[A-Z]+_S[0-9]"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "SP_"
+'''
+source = '''
+.. req:: Matches its type and the project
+   :id: REQ_001
+
+.. req:: Fails its type's id_regex
+   :id: SPEC_001
+
+.. req:: Matches its type, fails the project's
+   :id: REQ_00A
+
+.. safety:: Matches its own and the inherited
+   :id: REQ_S01
+
+.. safety:: Matches the inherited, fails its own
+   :id: REQ_002
+
+.. safety:: Matches its own, fails the inherited
+   :id: XYZ_S01
+
+.. spec:: A type without one
+   :id: REQ_003
+'''
+[case.expect]
+missing = ["SPEC_001", "REQ_00A", "REQ_002", "XYZ_S01"]
+[case.expect.needs.REQ_001]
+type = "req"
+[case.expect.needs.REQ_S01]
+type = "safety"
+[case.expect.needs.REQ_003]
+type = "spec"
+[[case.expect.findings]]
+code = "create_need"
+severity = "violation"
+[[case.expect.findings]]
+code = "create_need"
+severity = "violation"
+[[case.expect.findings]]
+code = "create_need"
+severity = "violation"
+[[case.expect.findings]]
+code = "create_need"
+severity = "violation"
+
+[[case]]
+name = "type-id-regex-refuses-an-id-kept-by-ubcode"
+why = "the case before, as ubCode runs it: a need whose id fails needs_id_regex or an id_regex of its type (its own or an inherited one) is kept, and reported (id_regex at the need)"
+ubcode_only = true
+config = '''
+[needs]
+id_regex = "^[A-Z0-9_]{5,}[0-9]$"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+id_regex = "REQ_"
+
+[needs.types.safety]
+title = "Safety requirement"
+prefix = "S_"
+inherits = "req"
+id_regex = "[A-Z]+_S[0-9]"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "SP_"
+'''
+source = '''
+.. req:: Matches its type and the project
+   :id: REQ_001
+
+.. req:: Fails its type's id_regex
+   :id: SPEC_001
+
+.. req:: Matches its type, fails the project's
+   :id: REQ_00A
+
+.. safety:: Matches its own and the inherited
+   :id: REQ_S01
+
+.. safety:: Matches the inherited, fails its own
+   :id: REQ_002
+
+.. safety:: Matches its own, fails the inherited
+   :id: XYZ_S01
+
+.. spec:: A type without one
+   :id: REQ_003
+'''
+[case.expect]
+[case.expect.needs.REQ_001]
+type = "req"
+[case.expect.needs.SPEC_001]
+type = "req"
+[case.expect.needs.REQ_00A]
+type = "req"
+[case.expect.needs.REQ_S01]
+type = "safety"
+[case.expect.needs.REQ_002]
+type = "safety"
+[case.expect.needs.XYZ_S01]
+type = "safety"
+[case.expect.needs.REQ_003]
+type = "spec"
+[[case.expect.findings]]
+code = "id_regex"
+need = "SPEC_001"
+[[case.expect.findings]]
+code = "id_regex"
+need = "REQ_00A"
+[[case.expect.findings]]
+code = "id_regex"
+need = "REQ_002"
+[[case.expect.findings]]
+code = "id_regex"
+need = "XYZ_S01"
+
+[[case]]
+name = "type-id-regex-exempts-imported-needs"
+why = "a need a needimport imports keeps its id, as for needs_id_regex: an imported req whose id fails req's id_regex is created, with no finding"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+id_regex = "REQ_"
+'''
+source = '''
+.. needimport:: other.json
+   :filter: id == 'SPEC_009'
+
+.. req:: Authored
+   :id: REQ_001
+'''
+files = { "other.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "SPEC_009": {"id": "SPEC_009", "type": "req", "title": "From outside"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_009]
+type = "req"
+[case.expect.needs.REQ_001]
+type = "req"
+
+[[case]]
+name = "type-id-regex-that-does-not-compile-is-ignored"
+why = "an id_regex that is not a regular expression is one type_conflict and ignored: the type's needs, and those of the types inheriting from it, are checked against the rest alone (here the default needs_id_regex)"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+id_regex = "REQ_["
+
+[needs.types.sub]
+title = "Sub"
+prefix = "SU_"
+inherits = "req"
+'''
+source = '''
+.. req:: Any id
+   :id: ANY_001
+
+.. sub:: Any id
+   :id: ANY_002
+'''
+[case.expect]
+[case.expect.needs.ANY_001]
+type = "req"
+[case.expect.needs.ANY_002]
+type = "sub"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "req"
 
 # --- an entry naming a default type ---------------------------------------------------
 

@@ -574,6 +574,9 @@ class NeedType(TypedDict):
     """The default node style to use in diagrams (default: "node")."""
     inherits: NotRequired[str]
     """The need type whose declarations of fields and link types this type starts from."""
+    id_regex: NotRequired[str]
+    """A regular expression the id of a need of this type matches (``re.match``), as it
+    matches ``needs_id_regex``, and the ``id_regex`` of every type it inherits from."""
     fields: NotRequired[dict[str, NeedTypeFieldDeclaration]]
     """The fields this type declares anew: field name to its declaration. A name
     nothing else declares is a field of the types that declare it alone."""

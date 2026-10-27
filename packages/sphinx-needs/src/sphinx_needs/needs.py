@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import dataclasses
 import json
+import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from copy import deepcopy
 from functools import partial
@@ -772,6 +773,7 @@ def _load_variants_from_toml(
 
 
 #: The keys a ``needs_types`` entry may carry; any other key is reported and ignored.
+#: ``id_regex``: the pattern the ids of the type's needs match, beside ``needs_id_regex``.
 NEED_TYPE_KEYS = (
     "directive",
     "title",
@@ -779,6 +781,7 @@ NEED_TYPE_KEYS = (
     "color",
     "style",
     "inherits",
+    "id_regex",
     "fields",
     "links",
 )
@@ -859,6 +862,7 @@ _SHAPES: Mapping[str, tuple[str, Callable[[object], bool]]] = {
     "color": ("a string", lambda v: isinstance(v, str)),
     "style": ("a string", lambda v: isinstance(v, str)),
     "inherits": ("a non-empty string", lambda v: isinstance(v, str) and bool(v)),
+    "id_regex": ("a string", lambda v: isinstance(v, str)),
     "fields": ("a mapping", lambda v: isinstance(v, Mapping)),
     "links": ("a mapping", lambda v: isinstance(v, Mapping)),
     "description": ("a string", lambda v: isinstance(v, str)),
@@ -989,9 +993,9 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
        is that type, narrowed, taking the ``title``, ``prefix``, ``color`` and
        ``style`` it leaves out (or removes below); one naming no default type is
        dropped;
-    5. a ``color`` or ``style`` that is not a string, an ``inherits`` that is not a
-       non-empty string, and a ``fields`` or ``links`` that is not a mapping, are
-       removed from the entry;
+    5. a ``color``, ``style`` or ``id_regex`` that is not a string, an ``inherits``
+       that is not a non-empty string, and a ``fields`` or ``links`` that is not a
+       mapping, are removed from the entry;
     6. a key outside :data:`NEED_TYPE_KEYS` is removed from the entry;
     7. a directive declared by more than one entry (list shape only) resolves to the
        last of them, at its own position, the others removed.
@@ -2518,6 +2522,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         {"fields": shape_refused, "links": link_refused},
         type_tree=(below, need_types),
     )
+    _resolve_id_patterns(schema, type_entries, order, parent)
     # the schema is complete: nothing declares a field once it is built
     schema.freeze()
 
@@ -3696,6 +3701,46 @@ def _declare_for_type(
                 )
         return None
     return field
+
+
+def _resolve_id_patterns(
+    schema: FieldsSchema,
+    types: Mapping[str, Mapping[str, Any]],
+    order: list[str],
+    parent: Mapping[str, str],
+) -> None:
+    """Register the ``id_regex`` patterns the ids of each need type's needs match:
+    its own and those of every type it inherits from, the root's first
+    (:meth:`FieldsSchema.set_id_patterns`), each checked where ``needs_id_regex`` is.
+
+    A pattern that does not compile is one ``needs.type_conflict`` warning, and is
+    ignored: the type and the types inheriting from it are not checked against it.
+
+    :param schema: The schema, complete but for freezing.
+    :param types: Each configured need type's entry.
+    :param order: The need types, each after its parent.
+    :param parent: The parent of each type that has one.
+    """
+    patterns: dict[str, tuple[tuple[str, str], ...]] = {}
+    for need_type in order:
+        own = patterns.get(parent.get(need_type, ""), ())
+        pattern = types[need_type].get("id_regex")
+        if isinstance(pattern, str):
+            try:
+                re.compile(pattern)
+            except re.error as exc:
+                log_warning(
+                    LOGGER,
+                    f"needs_types[{need_type!r}] has an id_regex {pattern!r} that is "
+                    f"not a regular expression ({exc}); the key is ignored",
+                    "type_conflict",
+                    None,
+                )
+            else:
+                own = (*own, (need_type, pattern))
+        patterns[need_type] = own
+        if own:
+            schema.set_id_patterns(need_type, own)
 
 
 def _declare_back_links(

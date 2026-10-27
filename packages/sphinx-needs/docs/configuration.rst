@@ -258,6 +258,23 @@ By default it is set to:
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well. Can also be ""
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`__ for more.
 * **inherits**, **fields**, **links** (optional): the fields and link types the type declares anew for its needs, see :ref:`needs_types_fields`.
+* **id_regex** (optional): a regular expression the id of every need of the type matches, beside :ref:`needs_id_regex` (below).
+
+A type's ``id_regex`` is matched as :ref:`needs_id_regex` is, where it is: with Python's ``re.match``,
+so it is anchored at the start of the id and open at its end (``"REQ_"`` accepts ``REQ_001`` and refuses ``XREQ_001``;
+end it with ``$`` to anchor the end too), on an id given in the need or generated from the type's ``prefix``,
+and never on a need :ref:`needimport` imports or :ref:`needs_external_needs` loads.
+The id of a need matches :ref:`needs_id_regex`, its type's ``id_regex``, and that of every type its type inherits from
+(through ``inherits``): a type narrows the ids of the type it inherits from, never widens them.
+A need whose id does not match is not created, as for :ref:`needs_id_regex`, one ``needs.create_need`` warning
+naming the pattern and the type that gives it::
+
+   Need could not be created: Given ID 'XYZ_S01' does not match the id_regex 'REQ_' of need type 'req', which need type 'safety_req' inherits
+
+To report such ids and keep the needs instead, use a schema rule with a ``pattern`` on ``id``.
+A pattern that is not a regular expression is one ``needs.type_conflict`` warning, and is ignored::
+
+   needs_types['req'] has an id_regex 'REQ_[' that is not a regular expression (unterminated character set at position 4); the key is ignored
 
 A configured ``needs_types`` replaces the default types once one of its entries gives a ``title`` or a ``prefix``.
 An entry naming a default type (``req``, ``spec``, ``impl``, ``test`` or ``need``) with neither of the two
@@ -2487,6 +2504,9 @@ The regular expression applies to the needs defined in this project's sources. I
 applied to imported needs (:ref:`needimport`) or to external needs
 (:ref:`needs_external_needs`): their ids are the data of the project that wrote them, and an
 ``id_prefix`` may not match any pattern of this project.
+
+A need type may add a pattern of its own, the ``id_regex`` of its :ref:`needs_types` entry:
+the id of a need of that type matches both, and the ``id_regex`` of every type it inherits from.
 
 .. warning::
 

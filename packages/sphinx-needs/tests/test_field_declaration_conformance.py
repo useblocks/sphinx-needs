@@ -54,7 +54,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 101
+EXPECTED_CASE_COUNT = 105
 
 #: The cases of the section "an entry naming a default type", the only ones whose
 #: ``needs_types`` may hold an entry with neither a ``title`` nor a ``prefix``.
@@ -84,11 +84,13 @@ SHARED_CODES = frozenset(
         "link_fail",
         "link_target_type",
         "external_link_target_type",
+        "id_regex",
     }
 )
 
-#: The codes only ubCode reports: none in this corpus.
-UBCODE_ONLY_CODES: frozenset[str] = frozenset()
+#: The codes only ubCode reports: ``id_regex``, a need whose id fails an id_regex,
+#: which ubCode keeps where sphinx-needs does not create it (``create_need``).
+UBCODE_ONLY_CODES: frozenset[str] = frozenset({"id_regex"})
 
 #: The configuration the runner gives every case besides its ``ubproject.toml``.
 CONF_PY = """\
@@ -212,6 +214,9 @@ def test_every_case_has_a_complete_expectation() -> None:
         for finding in expect["findings"]:
             assert set(finding) <= set(KEYS), name
             assert finding["code"] in SHARED_CODES, name
+            # a code only ubCode reports is pinned by a case only ubCode runs
+            if finding["code"] in UBCODE_ONLY_CODES:
+                assert case.get("ubcode_only"), name
             # only a need failing its type's declaration has a severity
             if "severity" in finding:
                 assert finding["code"] in SEVERITY_CODES, name

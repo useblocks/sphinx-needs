@@ -332,6 +332,38 @@ Here ``hw_test`` inherits ``test``:
 A declaration that widens is ignored as a whole, its other keys included,
 with a ``needs.type_widening`` warning (see :ref:`needs_types_fields`).
 
+.. _`need_types_id_regex`:
+
+The ids of a type
+-----------------
+
+``id_regex`` in a type's entry is a pattern the ids of its needs match,
+beside :ref:`needs_id_regex`, and beside the ``id_regex`` of every type it inherits from:
+
+.. code-block:: toml
+
+   [needs.types.req]
+   title = "Requirement"
+   prefix = "REQ_"
+   id_regex = "REQ_"
+
+   [needs.types.safety_req]
+   title = "Safety requirement"
+   prefix = "REQ_S"
+   inherits = "req"
+   id_regex = "REQ_S"
+
+A ``req`` id starts with ``REQ_``, a ``safety_req`` id with ``REQ_S``, and so it is a ``req`` id too.
+The pattern is matched as :ref:`needs_id_regex` is, with Python's ``re.match`` (anchored at the start only),
+on ids written in a need and ids generated from the type's ``prefix`` alike
+-- a generated id is the prefix and a hash of upper-case letters and digits, which the pattern must accept --
+and a need whose id does not match is **not created**::
+
+   Need could not be created: Given ID 'SR_001' does not match the id_regex 'REQ_' of need type 'req', which need type 'safety_req' inherits
+
+A need imported by :ref:`needimport` or loaded from :ref:`needs_external_needs` keeps its id unchecked.
+To report an id and keep the need, use a schema rule with a ``pattern`` on ``id`` instead.
+
 .. _`need_types_incoming`:
 
 Links a type must receive

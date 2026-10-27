@@ -1350,6 +1350,7 @@ class FieldsSchema:
         "_extra_fields",
         "_frozen",
         "_global_view",
+        "_id_patterns",
         "_link_fields",
         "_local",
         "_need_types",
@@ -1369,6 +1370,8 @@ class FieldsSchema:
         self._type_overlays: dict[str, dict[str, FieldSchema | LinkSchema]] = {}
         #: need type -> back links name -> the type's declaration of those back links
         self._back_links: dict[str, dict[str, BackLinksSchema]] = {}
+        #: need type -> the (declaring need type, ``id_regex``) its needs' ids match
+        self._id_patterns: dict[str, tuple[tuple[str, str], ...]] = {}
         #: field name -> its declaration on a need type that does not declare it, one
         #: for every such type
         self._absent: dict[str, FieldSchema | LinkSchema] = {}
@@ -1616,6 +1619,31 @@ class FieldsSchema:
                 f"there is no link type {back_links.link_type!r}."
             )
         self._back_links.setdefault(need_type, {})[back_links.name] = back_links
+
+    def set_id_patterns(
+        self, need_type: str, patterns: Iterable[tuple[str, str]]
+    ) -> None:
+        """Set the ``id_regex`` patterns the id of a need of ``need_type`` matches,
+        beside ``needs_id_regex``: each a (declaring need type, pattern) pair, the
+        type's own and those of the types it inherits from. A second call replaces
+        the first.
+
+        :raises ValueError: if the need type is not configured
+        :raises TypeError: if the schema is frozen, or the schema of one need type
+        """
+        self._mutating()
+        if self._need_types is not None and need_type not in self._need_types:
+            raise ValueError(
+                f"Cannot declare an id_regex for need type {need_type!r}: "
+                f"{need_type!r} is not a configured need type."
+            )
+        self._id_patterns[need_type] = tuple(patterns)
+
+    def id_patterns(self, need_type: str) -> tuple[tuple[str, str], ...]:
+        """The (declaring need type, ``id_regex``) pairs the id of a need of
+        ``need_type`` matches (:meth:`set_id_patterns`), the root's first; empty
+        where neither the type nor an ancestor gives one."""
+        return self._base()._id_patterns.get(need_type, ())
 
     def back_links(self) -> Mapping[str, BackLinksSchema]:
         """The declarations of back links of the need type this is the schema of

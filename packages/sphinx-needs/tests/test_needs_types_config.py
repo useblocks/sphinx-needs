@@ -45,7 +45,10 @@ needs_build_json = True
 TOML_CONF = CONF + 'needs_from_toml = "ubproject.toml"\n'
 
 #: the known keys, as the unknown-key finding lists them
-KNOWN = "known keys are directive, title, prefix, color, style, inherits, fields, links"
+KNOWN = (
+    "known keys are directive, title, prefix, color, style, inherits, id_regex, fields, "
+    "links"
+)
 
 #: three types in an order that is not alphabetical, so that a sort would show
 ZETA = {"title": "Zeta", "prefix": "Z_", "color": "#000001", "style": "node"}
@@ -1177,3 +1180,30 @@ def test_resolving_the_types_changes_no_configuration_option(
             assert {name for name in names if name.startswith("needs_")} == set()
     finally:
         second.cleanup()
+
+
+@pytest.mark.parametrize(
+    ("id_regex", "kept", "findings"),
+    [
+        pytest.param("^REQ_[0-9]+$", True, [], id="a-string"),
+        pytest.param("", True, [], id="an-empty-string"),
+        pytest.param(
+            3,
+            False,
+            [
+                "needs_types['req'] has an 'id_regex' that is not a string (got int); "
+                "the key is ignored"
+            ],
+            id="not-a-string",
+        ),
+    ],
+)
+def test_an_id_regex_is_a_string(
+    id_regex: Any, kept: bool, findings: list[str]
+) -> None:
+    """#2373: ``id_regex`` is a key of a need type's entry, its shape checked where the
+    configuration is read; whether it compiles is checked where the schema is built."""
+    entry = {"title": "Requirement", "prefix": "R_", "id_regex": id_regex}
+    need_types, found = normalise_need_types({"req": entry})
+    assert found == findings
+    assert ("id_regex" in need_types[0]) is kept

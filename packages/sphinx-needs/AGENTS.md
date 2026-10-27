@@ -253,6 +253,9 @@ A `links` entry named after a link type's back links, `<l>_back`, declares no li
 a `severity`), registered with `FieldsSchema.add_back_links` for the type and every type inheriting
 from it, read through `for_type(t).back_links()`, and validated beside the type's link types in
 `schema/core.py` (never on a need from `needs_external_needs`).
+A type's `id_regex` (with its ancestors', root first) is registered by `_resolve_id_patterns` through
+`FieldsSchema.set_id_patterns`, and `generate_need` matches `id_patterns(type)` where it matches
+`needs_id_regex` (`re.match`, never on an imported or external need).
 The normaliser at `config-inited` checks only the shape of those keys, and the resolver checks it
 again, with the normaliser's helpers, for an entry added after it. The schema has two tiers.
 The union, `FieldsSchema` itself, answers a field's shape (`FieldShape`, `LinkShape`: its name,
