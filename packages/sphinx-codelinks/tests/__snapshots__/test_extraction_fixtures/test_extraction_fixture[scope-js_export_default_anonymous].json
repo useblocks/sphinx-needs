@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "export default () => {};",
+    "scope": {
+      "kind": "export_statement",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "default",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Default Export",
       "id": "IMPL_JS_DEFAULT",

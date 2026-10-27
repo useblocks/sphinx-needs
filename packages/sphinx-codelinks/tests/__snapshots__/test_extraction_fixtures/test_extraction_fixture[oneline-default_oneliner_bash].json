@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "greet() { echo hi; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "greet",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Bash Title",
       "id": "IMPL_BASH",

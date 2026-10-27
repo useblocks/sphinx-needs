@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "run(): void {}",
+    "scope": {
+      "kind": "method_definition",
+      "start": 3,
+      "end": 3,
+      "entity_kind": "method",
+      "qualified_name": "Service.run",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Method",
       "id": "IMPL_TS_METHOD",

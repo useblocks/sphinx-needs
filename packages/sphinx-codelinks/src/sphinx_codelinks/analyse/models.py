@@ -5,6 +5,8 @@ from typing import Any, TypedDict
 
 from tree_sitter import Node as TreeSitterNode
 
+from sphinx_codelinks.analyse.entity import CodeScope
+
 
 class MarkedContentType(str, Enum):  # noqa: UP042  # StrEnum changes str(member), which reaches CLI warnings and error messages
     need = "need"
@@ -86,17 +88,29 @@ class Metadata:
     source_comment: SourceComment
     tagged_scope: TreeSitterNode | None
     type: MarkedContentType
+    scope: CodeScope | None = field(default=None, kw_only=True)
+    """The entity the marker is attached to (``tagged_scope``, named), if any.
 
-    def to_dict(self) -> dict[str, str | int | list[str]]:
-        obj = self.__dict__.copy()
+    Keyword-only, so that its default does not precede the subclasses' own fields.
+    A one-line need and a reference write it as ``scope``, right after
+    ``tagged_scope``; a multi-line need carries it in ``source.scope`` instead."""
+
+    def to_dict(self) -> dict[str, Any]:
+        obj: dict[str, Any] = {}
+        for key, value in self.__dict__.items():
+            if key in ("source_comment", "scope"):
+                continue
+            obj[key] = value
+            if key == "tagged_scope":
+                obj[key] = (
+                    str(self.tagged_scope.text.decode("utf-8"))
+                    if self.tagged_scope and self.tagged_scope.text
+                    else None
+                )
+                if self.type != MarkedContentType.multiline_need:
+                    obj["scope"] = self.scope
         obj["filepath"] = str(self.filepath)
-        obj["tagged_scope"] = (
-            str(self.tagged_scope.text.decode("utf-8"))
-            if self.tagged_scope and self.tagged_scope.text
-            else None
-        )
         obj["type"] = self.type.value
-        del obj["source_comment"]
         return obj
 
     def add_src_comment(self, src_comment: SourceComment) -> None:

@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "void f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "mechanism": "leading"
+    },
     "need": {
       "id": "IMPL_12",
       "title": "title 12",

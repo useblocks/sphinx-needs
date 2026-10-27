@@ -13,6 +13,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "C++17 inline variable",
       "id": "IMPL_CPP17",

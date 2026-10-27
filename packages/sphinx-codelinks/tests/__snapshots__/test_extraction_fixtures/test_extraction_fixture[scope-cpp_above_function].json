@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "void dummy_func1() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "dummy_func1",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Above Function",
       "id": "IMPL_CPP_ABOVE",

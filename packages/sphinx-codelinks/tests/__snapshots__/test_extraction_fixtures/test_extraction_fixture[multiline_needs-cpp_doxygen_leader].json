@@ -48,7 +48,10 @@
       "scope": {
         "kind": "function_definition",
         "start": 14,
-        "end": 14
+        "end": 14,
+        "entity_kind": "function",
+        "qualified_name": "login",
+        "mechanism": "doc_comment"
       }
     },
     "type": "multiline-need",

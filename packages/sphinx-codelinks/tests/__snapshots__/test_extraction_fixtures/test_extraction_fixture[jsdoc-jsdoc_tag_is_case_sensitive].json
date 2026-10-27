@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "function f(): void {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 4,
+      "end": 4,
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "mechanism": "doc_comment"
+    },
     "need": {
       "title": "Param check",
       "id": "IMPL_CASE",

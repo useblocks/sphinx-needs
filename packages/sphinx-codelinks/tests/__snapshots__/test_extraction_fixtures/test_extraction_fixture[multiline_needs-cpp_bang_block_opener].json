@@ -41,7 +41,10 @@
       "scope": {
         "kind": "function_definition",
         "start": 6,
-        "end": 6
+        "end": 6,
+        "entity_kind": "function",
+        "qualified_name": "bang_row",
+        "mechanism": "doc_comment"
       }
     },
     "type": "multiline-need",
@@ -92,7 +95,10 @@
       "scope": {
         "kind": "function_definition",
         "start": 14,
-        "end": 14
+        "end": 14,
+        "entity_kind": "function",
+        "qualified_name": "bang_open",
+        "mechanism": "doc_comment"
       }
     },
     "type": "multiline-need",

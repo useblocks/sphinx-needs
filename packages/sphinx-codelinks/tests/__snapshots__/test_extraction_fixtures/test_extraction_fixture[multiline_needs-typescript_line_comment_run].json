@@ -44,7 +44,10 @@
       "scope": {
         "kind": "function_declaration",
         "start": 6,
-        "end": 8
+        "end": 8,
+        "entity_kind": "function",
+        "qualified_name": "handle",
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

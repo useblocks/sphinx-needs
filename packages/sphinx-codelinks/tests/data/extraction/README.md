@@ -102,6 +102,7 @@ output of one case):
     "remote_url": null,
     "source_map": {"start": {"row": 0, "column": 4}, "end": {"row": 0, "column": 35}},
     "tagged_scope": "void f() {}",
+    "scope": {"kind": "function_definition", "start": 2, "end": 2, "entity_kind": "function", "qualified_name": "f", "mechanism": "leading"},
     "need": {"title": "My Title", "id": "IMPL_1", "type": "impl", "links": ["REQ_1"]},
     "type": "need",
     "tagged_scope_type": "function_definition"
@@ -111,6 +112,7 @@ output of one case):
     "remote_url": null,
     "source_map": {"start": {"row": 0, "column": 14}, "end": {"row": 0, "column": 33}},
     "tagged_scope": "void f() {}",
+    "scope": {"kind": "function_definition", "start": 2, "end": 2, "entity_kind": "function", "qualified_name": "f", "mechanism": "leading"},
     "need_ids": ["REQ_1", "REQ_2", "REQ_3"],
     "marker": "@need-ids:",
     "type": "need-id-refs",
@@ -136,6 +138,15 @@ The fields of a marked-content entry, as `Metadata.to_dict()` writes them:
   need starts at its title, a reference at its first id and ends after its last.
 - `tagged_scope` — the full text of the declaration `find_associated_scope`
   associates with the marker, or `null`.
+- `scope` (a need and a reference; a multi-line need carries it as `source.scope`) —
+  that declaration, named, or `null` exactly when `tagged_scope` is: `kind` (its
+  tree-sitter kind), `start` and `end` (its 1-based first and last lines),
+  `entity_kind` (`function`, `method`, `class`, `namespace`, …, `key` or `item` in a
+  data file; `null` if it cannot be named), `qualified_name` (the name within the
+  file, qualified by its containers — `ns::Widget::draw`, `Shape.area`,
+  `<Widget as Shape>::area`; `null` if it has none, and always in a data file) and
+  `mechanism` (`doc_comment`, `leading`, `trailing` or `enclosing`: how the marker
+  was attached). `analyse/entity.py` is the naming.
 - `type` — `"need"`, `"need-id-refs"` or `"multiline-need"`; a need's own `type` (e.g.
   `"impl"`) is inside `need`.
 - the payload — `need` (the `OneLineNeed.need` dict as is), `need_ids` and
@@ -148,14 +159,14 @@ strings, `content`, `doctype`), `markup` (the resolved tag) and `source`: here
 always `project` `""`, `path` `case.<ext>` with `root` `"src_dir"` and `commit` `null`, the
 `start`/`end`/`content_start` positions (1-based `line`, 0-based character
 `col`; `content_start` `null` without a body), `option_lines` and `scope`
-(`{kind, start, end}` or `null`). Its refusals and notes are warning records
+(the object above, or `null`). Its refusals and notes are warning records
 with `type` `"multiline-need"` and a `multiline_need_*` `sub_type`.
 
 A warning record has `file_path`, `lineno`, `msg`, `type` (the
 `MarkedContentType` being parsed: `"need"` from the one-line parser,
 `"multiline-need"` from the multi-line one) and `sub_type` (the kind, e.g. `"too_many_fields"`).
 No `SourceComment` or tree-sitter node object is snapshotted: production's
-`to_dict()` drops the comment and writes the scope as its text.
+`to_dict()` drops the comment and writes the scope as its text and its `scope` object.
 
 Two entries on one row are listed in source order, so a case may put two
 on a row (#2150). Entries starting at the same position are possible only

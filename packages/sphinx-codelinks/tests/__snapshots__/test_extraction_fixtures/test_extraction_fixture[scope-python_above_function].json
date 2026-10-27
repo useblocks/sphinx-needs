@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "def dummy_func1():\n    pass",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 3,
+      "entity_kind": "function",
+      "qualified_name": "dummy_func1",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Above Function",
       "id": "IMPL_PY_ABOVE",

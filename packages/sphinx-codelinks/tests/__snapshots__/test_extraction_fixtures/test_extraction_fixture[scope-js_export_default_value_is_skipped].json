@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "function tick() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 3,
+      "end": 3,
+      "entity_kind": "function",
+      "qualified_name": "tick",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Skip Default",
       "id": "IMPL_JS_SKIP_DEFAULT",

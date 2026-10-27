@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "function render(): void;",
+    "scope": {
+      "kind": "function_signature",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "render",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Declare Function",
       "id": "IMPL_TS_DECLARE_FN",
@@ -38,6 +46,14 @@
       }
     },
     "tagged_scope": "module \"widgets\" {}",
+    "scope": {
+      "kind": "module",
+      "start": 4,
+      "end": 4,
+      "entity_kind": "namespace",
+      "qualified_name": "\"widgets\"",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Declare Module",
       "id": "IMPL_TS_DECLARE_MODULE",

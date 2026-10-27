@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "enum Mode { Fast, Safe }",
+    "scope": {
+      "kind": "enum_declaration",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "enum",
+      "qualified_name": "Mode",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Enum",
       "id": "IMPL_TS_ENUM",

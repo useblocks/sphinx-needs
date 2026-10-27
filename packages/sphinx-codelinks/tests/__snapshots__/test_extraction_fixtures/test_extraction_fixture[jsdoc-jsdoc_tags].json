@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "function add(a: number, b: number): number {\n  return a + b;\n}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 10,
+      "end": 12,
+      "entity_kind": "function",
+      "qualified_name": "add",
+      "mechanism": "doc_comment"
+    },
     "need": {
       "title": "Real Need",
       "id": "IMPL_REAL",

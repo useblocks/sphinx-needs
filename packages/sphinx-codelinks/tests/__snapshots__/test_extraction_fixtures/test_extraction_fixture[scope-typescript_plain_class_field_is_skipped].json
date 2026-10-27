@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "render(): void {}",
+    "scope": {
+      "kind": "method_definition",
+      "start": 4,
+      "end": 4,
+      "entity_kind": "method",
+      "qualified_name": "Button.render",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Skip Field",
       "id": "IMPL_TS_SKIP_FIELD",

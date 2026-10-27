@@ -1,7 +1,11 @@
 # @Test suite for needextend RST generation from extracted markers, TEST_WRITE_1, test, [IMPL_CLI_WRITE]
+from pathlib import Path
+
 import pytest
 
+from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.analyse.models import MarkedContentType
+from sphinx_codelinks.config import SourceAnalyseConfig
 from sphinx_codelinks.needextend_write import (
     MarkedContentSchema,
     convert_marked_content,
@@ -126,4 +130,47 @@ def test_a_multiline_need_record_needs_its_need() -> None:
 
     assert schema.check_conditional_required_fields() == [
         "Need definition is required for marked content of type 'multiline-need'"
+    ]
+
+
+def test_convert_marked_content_reads_the_records_analyse_writes(
+    tmp_path: Path,
+) -> None:
+    """Every key ``codelinks analyse`` writes for a reference is one ``write rst``
+    accepts: a key the schema lacks makes it drop the record with an error. The records
+    carry the attached entity, ``scope``, since the analysis names it."""
+    source = tmp_path / "demo.cpp"
+    source.write_text(
+        "// @need-ids: NEED_001\nvoid demo() {}\n// @need-ids: NEED_002\n",
+        encoding="utf-8",
+    )
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(src_files=[source], src_dir=tmp_path, get_need_id_refs=True)
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run()
+    records = [item.to_dict() for item in analyse.all_marked_content]
+    assert [record["scope"] for record in records] == [
+        {
+            "kind": "function_definition",
+            "start": 2,
+            "end": 2,
+            "entity_kind": "function",
+            "qualified_name": "demo",
+            "mechanism": "leading",
+        },
+        None,
+    ]
+    for record in records:
+        record["remote_url"] = (
+            f"https://example.com/demo.cpp#L{record['source_map']['start']['row'] + 1}"
+        )
+
+    needextend_texts, errors = convert_marked_content(records)
+
+    assert not errors
+    assert needextend_texts == [
+        ".. needextend:: NEED_001\n   :remote-url: https://example.com/demo.cpp#L1\n\n",
+        ".. needextend:: NEED_002\n   :remote-url: https://example.com/demo.cpp#L3\n\n",
     ]

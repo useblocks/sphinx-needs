@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "def f():\n    \"\"\"Summary.\n\n    @Last line, IMPL_LAST, impl\"\"\"",
+    "scope": {
+      "kind": "function_definition",
+      "start": 1,
+      "end": 4,
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "mechanism": "doc_comment"
+    },
     "need": {
       "title": "Last line",
       "id": "IMPL_LAST",

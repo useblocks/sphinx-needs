@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "const App = () => (\n  <div>\n    {/*\n      @Tsx Title, IMPL_TSX, impl, [REQ_TSX]\n    */}\n  </div>\n);",
+    "scope": {
+      "kind": "lexical_declaration",
+      "start": 1,
+      "end": 7,
+      "entity_kind": "function",
+      "qualified_name": "App",
+      "mechanism": "enclosing"
+    },
     "need": {
       "title": "Tsx Title",
       "id": "IMPL_TSX",

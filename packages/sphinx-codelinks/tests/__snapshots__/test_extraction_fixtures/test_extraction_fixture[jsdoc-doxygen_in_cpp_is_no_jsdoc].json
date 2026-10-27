@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "void retry() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 4,
+      "end": 4,
+      "entity_kind": "function",
+      "qualified_name": "retry",
+      "mechanism": "doc_comment"
+    },
     "need": {
       "title": "see Retry policy",
       "id": "IMPL_RETRY",

@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "function handle(): void {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 3,
+      "end": 3,
+      "entity_kind": "function",
+      "qualified_name": "handle",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Skip Const",
       "id": "IMPL_TS_SKIP",

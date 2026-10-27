@@ -13,6 +13,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Top",
       "id": "IMPL_TOP",
@@ -38,6 +39,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Outer On",
       "id": "IMPL_OUTER",
@@ -63,6 +65,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Inner On",
       "id": "IMPL_INNER",

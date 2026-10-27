@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "module.exports = function handle() {}",
+    "scope": {
+      "kind": "assignment_expression",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "module.exports",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Module Exports",
       "id": "IMPL_JS_EXPORTS",
@@ -38,6 +46,14 @@
       }
     },
     "tagged_scope": "Widget.prototype.render = function () {}",
+    "scope": {
+      "kind": "assignment_expression",
+      "start": 4,
+      "end": 4,
+      "entity_kind": "function",
+      "qualified_name": "Widget.prototype.render",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Prototype",
       "id": "IMPL_JS_PROTOTYPE",

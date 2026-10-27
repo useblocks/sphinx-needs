@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "abstract run(): void",
+    "scope": {
+      "kind": "abstract_method_signature",
+      "start": 3,
+      "end": 3,
+      "entity_kind": "method",
+      "qualified_name": "Job.run",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Abstract Method",
       "id": "IMPL_TS_ABSTRACT_METHOD",

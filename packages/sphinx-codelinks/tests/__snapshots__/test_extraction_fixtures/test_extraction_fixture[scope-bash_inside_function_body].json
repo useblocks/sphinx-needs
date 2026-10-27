@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "greet() {\n    echo hi\n    # @Inside Function, IMPL_BASH_INSIDE, impl, [REQ_BASH_INSIDE]\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 1,
+      "end": 4,
+      "entity_kind": "function",
+      "qualified_name": "greet",
+      "mechanism": "enclosing"
+    },
     "need": {
       "title": "Inside Function",
       "id": "IMPL_BASH_INSIDE",
