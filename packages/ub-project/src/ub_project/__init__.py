@@ -8,7 +8,9 @@ distribution.
 
 It decides no policy. Discovery (walk up or read the ``confdir``), whether a finding is
 worth a warning, and how ``-D`` / ``-c`` on a command line interact with the file are each
-consumer's to decide; this package returns what it found and raises
+consumer's to decide -- except a variant data file taken from a command line, which
+``read_variants`` applies for every consumer alike (``data_file_override``: it names a
+file, not a location). This package returns what it found and raises
 :class:`ProjectConfigError` for what it cannot accept.
 """
 
