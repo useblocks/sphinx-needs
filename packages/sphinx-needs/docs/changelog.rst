@@ -21,7 +21,8 @@ Improvements
   severity (schema path ``fields > nullable``), so switching the schema validation off
   (:ref:`needs_schema_validation_enabled`) silences it; the needs.json writes such a field nullable. A type
   inheriting the declaration keeps its severity and may raise it; one lowering a severity an ancestor gives is a
-  ``needs.type_widening`` warning, and is ignored. Without a ``severity`` nothing changes. The fields-per-type
+  ``needs.type_widening`` warning, and is ignored. A ``severity`` on a :ref:`needs_fields` or :ref:`needs_links`
+  entry, which takes none, is a ``needs.config`` warning. Without a ``severity`` nothing changes. The fields-per-type
   conformance corpus may now pin a finding's severity. See :ref:`need_types_severity`.
 
 - ✨ A need type declares how many links it must receive: ``[needs.types.<t>.links.<l>_back]`` takes a count
@@ -30,7 +31,8 @@ Improvements
   ``schema = { minItems = 1 }`` on a ``links`` entry named after a link type's back links says that every need of the
   type is the target of at least one ``l`` link (``maxItems``: of at most so many), so a ``coverage-*-back`` schema
   rule that only counts folds into the type's declaration. The count is every link of ``l`` to the need, as
-  ``minItems`` counts the outgoing ones; it is inherited, and narrowed, by the types inheriting from the type; it is
+  ``minItems`` counts the outgoing ones (a link to a part of the need included); it is inherited, and narrowed, by
+  the types inheriting from the type; it is
   checked by the schema validation once every link is final, a ``link_fail`` of the field ``<l>_back`` at the
   entry's ``severity``; a need from :ref:`needs_external_needs` is not counted, an imported need is. The entry takes a
   ``description``, ``minItems`` and ``maxItems``, and a ``severity``; any other key is a ``needs.type_conflict``.

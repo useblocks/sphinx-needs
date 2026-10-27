@@ -707,8 +707,10 @@ and a need failing it is a ``link_fail`` of the field ``<l>_back`` at that need,
      Schema message: [] has less than 1 item [sn_schema_violation.link_fail]
 
 So :ref:`needs_schema_validation_enabled` ``= False`` switches it off.
-A need from :ref:`needs_external_needs` is not counted: no need of this project can link to it from its own project;
-a need :ref:`needimport` imports is this project's, and is.
+A need from :ref:`needs_external_needs` is not counted: its own project's links to it are not loaded here,
+so its count would be partial; a need :ref:`needimport` imports is this project's, and is.
+A link to a part of the need (``<id>.<part>``) counts for the need, and so does a link to a part the need lacks:
+that link is a dead link where it is written (``needs.link_outgoing``), and still one of the need's back links.
 The :ref:`needs.json <needs_builder_format>` writes nothing new: the back links are in it as before.
 
 A name belongs to one declaration, and the back links of a link type ``l`` claim ``l_back``.
@@ -731,13 +733,22 @@ A need failing its type's declaration -- a value outside its ``schema``, a link 
 is reported by the :ref:`schema validation <schema_validation>` as a ``violation`` (``sn_schema_violation.field_fail``, ``.link_fail``),
 and a need without a field its type declares ``nullable = false``, with no default, is not created (``needs.create_need``).
 A declaration's ``severity`` changes that for every constraint of the declaration as the type has it, its ancestors' and the field's own included:
-at ``"warning"`` or ``"info"`` the failure is reported as ``sn_schema_warning.*`` or ``sn_schema_info.*`` (a warning, not an error),
+at ``"warning"`` or ``"info"`` the failure is reported as ``sn_schema_warning.*`` or ``sn_schema_info.*`` (a warning, not an error;
+both are logged at Sphinx's ``WARNING`` level, as a schema rule's are, so a ``-W`` build fails on either unless ``suppress_warnings`` names it),
 and a need without a value of a field not nullable is created, the field ``None``, and reported at that severity
 (``Field 'x' is not nullable, but no value or default was given.``, schema path ``fields > nullable``).
 It is then checked by the schema validation alone, so :ref:`needs_schema_validation_enabled` ``= False`` silences it.
-The :ref:`needs.json <needs_builder_format>` writes such a field nullable, with a ``null`` default, as a need may hold ``null`` of it.
+The :ref:`needs.json <needs_builder_format>` writes such a field nullable, with a ``null`` default, as a need may hold ``null`` of it:
+its ``needs_schema`` is one block for every need type, so the field is nullable there as a whole,
+while one every need type declares not nullable at ``violation`` is written as it is declared.
 A type inheriting a declaration keeps its severity (see **Narrowing**).
-A :ref:`needs_fields` or :ref:`needs_links` entry takes no ``severity``: what it declares fails as a ``violation`` where no need type gives one.
+A :ref:`needs_fields` or :ref:`needs_links` entry takes no ``severity``: what it declares fails as a ``violation`` where no need type gives one,
+and a ``severity`` there is one ``needs.config`` warning, and ignored::
+
+   needs_fields['asil'] sets 'severity', which is declared on a need type's entry ([needs.types.<type>.fields.asil]); it is ignored here
+
+A lowered severity is reported as the type whose entry gave it declares it, which may be an ancestor further up
+than the nearest type with an entry of the field (``... widens the field as need type 'req' declares it: Child 'severity' 'info' is lower than parent 'severity' 'warning'.``).
 
 **The value of a need.**
 A field a need of the type does not set takes the first matching predicate of the type's declaration

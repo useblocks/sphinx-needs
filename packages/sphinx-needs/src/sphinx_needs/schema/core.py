@@ -168,7 +168,8 @@ def validate_field_link_schemas(
     ``field_fail`` at that severity (``fields > nullable``).
     The back links a need type declares a count of (``<l>_back``) are validated as a
     link type is, a ``link_fail`` of that name, but on a need from
-    ``needs_external_needs``, which no need of this project can be counted for.
+    ``needs_external_needs``: its own project's links to it are not loaded here, so
+    its count would be partial.
 
     :param config: The Sphinx-Needs configuration.
     :param fields_schema: The fields schema containing core, extra, and link field definitions.

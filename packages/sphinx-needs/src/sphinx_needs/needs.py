@@ -1275,6 +1275,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 None,
             )
             continue
+        _refuse_global_severity("needs_fields", "fields", option_name, option_params)
         if option_name in NeedsCoreFields or option_name in _link_type_names(
             needs_config
         ):
@@ -1363,8 +1364,33 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     # Process needs_links (new dict-based format)
     if not isinstance(needs_config._links, dict):
         raise NeedsConfigException("Config option 'needs_links' must be a dict.")
+    for link_name, link_params in needs_config._links.items():
+        if isinstance(link_params, Mapping):
+            _refuse_global_severity("needs_links", "links", link_name, link_params)
 
     load_schemas_config_from_json(app, app.config)
+
+
+def _refuse_global_severity(
+    option: str, table: str, name: object, params: Mapping[str, Any]
+) -> None:
+    """Report a ``severity`` on a ``needs_fields`` or ``needs_links`` entry, which
+    takes none: a severity is a need type's declaration's, and the key is ignored.
+
+    :param option: The configuration option, ``needs_fields`` or ``needs_links``.
+    :param table: The table of a need type's entry that takes it, ``fields`` or
+        ``links``.
+    :param name: The entry's name.
+    :param params: The entry.
+    """
+    if "severity" in params:
+        log_warning(
+            LOGGER,
+            f"{option}[{name!r}] sets 'severity', which is declared on a need type's "
+            f"entry ([needs.types.<type>.{table}.{name}]); it is ignored here",
+            "config",
+            None,
+        )
 
 
 def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
@@ -3440,9 +3466,12 @@ def _resolve_type_declarations(
     #: need type -> the fields and link types it declares: its ancestors' and its own
     #: entries, used or not, each naming one of its table's kind
     names: dict[str, set[str]] = {}
+    #: need type -> name -> the type whose entry gave the severity it has, if one did
+    severity_by: dict[str, dict[str, str]] = {}
     for need_type in order:
         own = dict(declared[p]) if (p := parent.get(need_type)) else {}
         back_own = dict(back_declared[p]) if p else {}
+        severity_own = dict(severity_by[p]) if p else {}
         names[need_type] = set(names[p]) if p else set()
         for table, kind, what, other in (
             ("fields", "field", "a field", "a link type"),
@@ -3468,10 +3497,17 @@ def _resolve_type_declarations(
                             previous, by = back_own.get(name, (None, None))
                             if (
                                 back := _declare_back_links(
-                                    previous, owner.name, keys, where, by
+                                    previous,
+                                    owner.name,
+                                    keys,
+                                    where,
+                                    by,
+                                    severity_by=severity_own.get(name),
                                 )
                             ) is not None:
                                 back_own[name] = (back, need_type)
+                                if "severity" in keys:
+                                    severity_own[name] = need_type
                             continue
                         is_ = (
                             "a link type's back links, whose count a need type "
@@ -3547,11 +3583,15 @@ def _resolve_type_declarations(
                         local=name in local,
                         need_type=need_type,
                         type_tree=type_tree,
+                        severity_by=severity_own.get(name),
                     )
                 ) is not None:
                     own[name] = (field, need_type)
+                    if "severity" in keys:
+                        severity_own[name] = need_type
         declared[need_type] = own
         back_declared[need_type] = back_own
+        severity_by[need_type] = severity_own
         for field, _ in own.values():
             schema.add_type_overlay(need_type, field)
         for back, _ in back_own.values():
@@ -3570,6 +3610,7 @@ def _declare_for_type(
     local: bool = False,
     need_type: str = "",
     type_tree: tuple[Mapping[str, frozenset[str]], Mapping[str, str]] = ({}, {}),
+    severity_by: str | None = None,
 ) -> FieldSchema | LinkSchema | None:
     """The declaration a need type's entry makes of a field, from the one before it
     (the global declaration, or an ancestor's); ``None``, reported, if the entry
@@ -3584,6 +3625,8 @@ def _declare_for_type(
     :param need_type: The need type whose entry it is.
     :param type_tree: What a ``target_types`` is read against
         (:func:`_resolve_type_declarations`).
+    :param severity_by: The need type whose entry gave ``previous`` its severity, if
+        one did: a severity lowered is reported as that type declares it.
     """
     on_link = previous.kind == "link"
     keys = {
@@ -3678,10 +3721,10 @@ def _declare_for_type(
         # declaration's, and the empty value rule 9 lets pass is the global one's
         previous is not glob and (problems := narrowing_problems(glob, field))
     ):
-        as_declared = (
-            "" if declared_by is None else f" as need type {declared_by!r} declares it"
-        )
         for reason in problems:
+            as_declared = _as_declared(
+                severity_by if _is_severity_reason(reason) else declared_by
+            )
             if reason.startswith("with "):
                 # the field's type or derivation, the same on every need type: a
                 # reason of these reads on from the field's name
@@ -3749,6 +3792,8 @@ def _declare_back_links(
     keys: Mapping[str, Any],
     where: str,
     declared_by: str | None,
+    *,
+    severity_by: str | None = None,
 ) -> BackLinksSchema | None:
     """The declaration a need type's ``links`` entry makes of a link type's back links,
     ``<l>_back``, from the one before it (an ancestor's, or none); ``None``, reported,
@@ -3765,6 +3810,7 @@ def _declare_back_links(
     :param keys: The entry.
     :param where: The entry, as the configuration names it.
     :param declared_by: The need type whose entry made ``previous``.
+    :param severity_by: The need type whose entry gave ``previous`` its severity.
     """
     name = f"{link_type}_back"
     if other := [key for key in keys if key not in NEED_TYPE_BACK_LINK_KEYS]:
@@ -3817,10 +3863,10 @@ def _declare_back_links(
             *severity_problems(previous.severity, back.severity),
         ]
     ):
-        as_declared = (
-            "" if declared_by is None else f" as need type {declared_by!r} declares it"
-        )
         for reason in problems:
+            as_declared = _as_declared(
+                severity_by if _is_severity_reason(reason) else declared_by
+            )
             log_warning(
                 LOGGER,
                 f"{where} widens the field{as_declared}: {reason}",
@@ -3829,6 +3875,18 @@ def _declare_back_links(
             )
         return None
     return back
+
+
+def _as_declared(need_type: str | None) -> str:
+    """Where a widened declaration comes from, as a ``type_widening`` finding says it."""
+    return "" if need_type is None else f" as need type {need_type!r} declares it"
+
+
+def _is_severity_reason(reason: str) -> bool:
+    """Whether a narrowing problem is about the ``severity`` (rule 12 of
+    :func:`~sphinx_needs.needs_schema.narrowing_problems`), whose source is the type
+    that gave it, not the nearest declaring type."""
+    return "parent 'severity'" in reason
 
 
 def _reason(exc: Exception) -> str:

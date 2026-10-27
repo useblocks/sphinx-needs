@@ -87,8 +87,10 @@
 #     and `create_need`, a need not created, always `violation`. A pin gives `severity` on
 #     no other code. sphinx-needs' runner reads it from the type the schema validation
 #     logs the finding under: `sn_schema_violation` is `violation`, `sn_schema_warning`
-#     `warning`, `sn_schema_info` `info` (ubCode's runner reads its own grade for the same
-#     facts). Only the codes of the per-type declaration contract are compared --
+#     `warning`, `sn_schema_info` `info`. ubCode's runner reads the grade of its own
+#     diagnostic: `Error` is `violation`, `Warning` `warning`, `Information` `info`, and
+#     its `create_need` is graded `Error`. Only the codes of the per-type declaration
+#     contract are compared --
 #         type_inherits, type_conflict, type_widening, undeclared_for_type, needextend,
 #         derive_authored, derive_invalid, dynamic_function, create_need, field_fail,
 #         link_fail, link_target_type, external_link_target_type, id_regex
@@ -131,8 +133,12 @@
 #     any other key or schema keyword is a `type_conflict`, the entry ignored): it is
 #     `len(<l>_back)`, every such link whatever its source, checked once every link is
 #     final on the needs of the type and of the types inheriting from it, a `link_fail`
-#     whose `field` is `<l>_back` and whose `need` is the need counted; a need from
-#     `needs_external_needs` is not counted, an imported one is. Each finding is at the
+#     whose `field` is `<l>_back` and whose `need` is the need counted. A link to a part
+#     of the need counts for the need, and so does a link to a part the need lacks: that
+#     link is a dead link where it is written (the dead-link finding, each tool's own),
+#     and is still one of the need's back links. A need from `needs_external_needs` is
+#     not counted, since its own project's links to it are not loaded here and its count
+#     would be partial; an imported one is. Each finding is at the
 #     severity its declaration gives (`severity`, below `violation` reported, not
 #     enforced: a need without a field not nullable is then created, null, and is a
 #     `field_fail`), else a `violation`, in both tools. sphinx-needs reports them as
@@ -5203,7 +5209,7 @@ REQ_1 = ["asil"]
 
 [[case]]
 name = "severity-is-inherited-raised-not-lowered"
-why = "a type inheriting a declaration keeps its severity (sub: warning), may raise it (strict: violation), and may not lower one an ancestor gives (lax: info under req's warning is type_widening, the entry ignored, so warning); an ancestor giving none leaves its children free (child: info under base's default)"
+why = "a type inheriting a declaration keeps its severity (sub, whose own entry gives none: warning), may raise it (strict: violation), and may not lower one an ancestor gives (lax: info under req's warning is type_widening, the entry ignored, so warning); an ancestor giving none leaves its children free (child: info under base's default)"
 config = '''
 [needs.fields.category]
 schema = { type = "string", enum = ["a", "b"] }
@@ -5219,6 +5225,9 @@ severity = "warning"
 title = "Sub"
 prefix = "SU_"
 inherits = "req"
+
+[needs.types.sub.fields.category]
+description = "Narrowed, its severity kept"
 
 [needs.types.strict]
 title = "Strict"
@@ -5340,6 +5349,131 @@ category = "z"
 code = "field_fail"
 need = "REQ_1"
 field = "category"
+severity = "violation"
+
+[[case]]
+name = "needs-json-writes-nullable-only-below-violation"
+why = "needs.json's needs_schema is one block for every need type: asil, not nullable, is written nullable only because one type (req) lets its needs hold null of it, at warning; owner, which a type declares not nullable at violation only, is not, and stays the type the field declares"
+config = '''
+[needs.fields.asil]
+schema = { type = "string" }
+nullable = false
+default = "QM"
+
+[needs.fields.owner]
+schema = { type = "string" }
+nullable = false
+default = "nobody"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.asil]
+severity = "warning"
+
+[needs.types.req.fields.owner]
+description = "Who answers for the requirement"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: Defaults
+   :id: REQ_1
+
+.. spec:: Defaults
+   :id: SPEC_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+asil = "QM"
+owner = "nobody"
+[case.expect.needs.SPEC_1]
+asil = "QM"
+owner = "nobody"
+[case.expect.schema.asil]
+type = ["string", "null"]
+[case.expect.schema.owner]
+type = "string"
+
+[[case]]
+name = "a-derived-field-below-violation-holds-its-empty-value"
+why = "a severity below violation lets a need hold null of a field it does not set, not of a derived field: one not nullable holds its empty value until its rule computes it (here a count, 0 where no link), and needs.json writes it not nullable"
+config = '''
+[needs.fields.n]
+schema = { type = "integer" }
+nullable = false
+derive = { kind = "count", over = "links" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.n]
+severity = "warning"
+'''
+source = '''
+.. req:: Links nothing
+   :id: REQ_1
+
+.. req:: Links one
+   :id: REQ_2
+   :links: REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+n = 0
+[case.expect.needs.REQ_2]
+n = 1
+[case.expect.schema.n]
+type = "integer"
+
+[[case]]
+name = "a-severity-on-a-global-entry-is-ignored"
+why = "a severity is a need type's declaration's: on a needs_fields or needs_links entry it is ignored (each tool's configuration finding, not compared, so the case pins its consequence): the field's enum and the link type's maxItems a type declares fail as violations"
+config = '''
+[needs.fields.category]
+schema = { type = "string", enum = ["a", "b"] }
+severity = "warning"
+
+[needs.links.satisfies]
+severity = "info"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.satisfies]
+schema = { maxItems = 1 }
+'''
+source = '''
+.. req:: Target
+   :id: REQ_1
+
+.. req:: Outside the enum, too many links
+   :id: REQ_2
+   :category: z
+   :satisfies: REQ_1, REQ_3
+
+.. req:: Target
+   :id: REQ_3
+'''
+[case.expect]
+[case.expect.needs.REQ_2]
+category = "z"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_2"
+field = "category"
+severity = "violation"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_2"
+field = "satisfies"
 severity = "violation"
 
 # --- the count of a link type's back links --------------------------------------------
@@ -5568,7 +5702,7 @@ severity = "info"
 
 [[case]]
 name = "back-links-count-exempts-external-needs"
-why = "a need from needs_external_needs is not counted, since no need of this project can be linked to it from its own (an external req satisfied by nothing is clean); a need a needimport imports is this project's, and is (link_fail at it)"
+why = "a need from needs_external_needs is not counted, since its own project's links to it are not loaded here and its count would be partial (an external req satisfied by nothing is clean); a need a needimport imports is this project's, and is (link_fail at it)"
 config = '''
 [needs]
 external_needs = [{ base_url = "http://example.org", json_path = "other.json", id_prefix = "E_" }]
@@ -5655,11 +5789,63 @@ code = "type_conflict"
 type = "spec"
 field = "satisfies_back"
 
+[[case]]
+name = "back-links-count-links-to-parts"
+why = "a link to a part of a need is one of the need's back links, so it counts for the need (SPEC_1, satisfied through its part p1); so is a link to a part the need lacks, a dead link where it is written (the dead-link finding, each tool's own) which still counts (SPEC_2); SPEC_3, linked by nothing, fails minItems"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.satisfies_back]
+schema = { minItems = 1 }
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+'''
+source = '''
+.. spec:: With a part
+   :id: SPEC_1
+
+   A part :np:`(p1) here`.
+
+.. spec:: Without parts
+   :id: SPEC_2
+
+.. spec:: Linked by nothing
+   :id: SPEC_3
+
+.. impl:: To a part
+   :id: IMPL_1
+   :satisfies: SPEC_1.p1
+
+.. impl:: To a part its target lacks
+   :id: IMPL_2
+   :satisfies: SPEC_2.p9
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+satisfies_back = ["IMPL_1"]
+[case.expect.needs.SPEC_2]
+satisfies_back = ["IMPL_2"]
+[case.expect.needs.SPEC_3]
+satisfies_back = []
+[case.expect.needs.IMPL_2]
+satisfies = ["SPEC_2.p9"]
+[[case.expect.findings]]
+code = "link_fail"
+need = "SPEC_3"
+field = "satisfies_back"
+severity = "violation"
+
 # --- the ids of a need type -----------------------------------------------------------
 
 [[case]]
 name = "type-id-regex-refuses-an-id"
-why = "a need type's id_regex is matched (re.match: anchored at the start) beside needs_id_regex, and the id_regex of each type it inherits from: an id failing any of them is a need not created (create_need); ids matching all of them are kept"
+why = "a need type's id_regex is matched (re.match: anchored at the start, so X_REQ_001 fails REQ_) beside needs_id_regex, and the id_regex of each type it inherits from: an id failing any of them is a need not created (create_need); ids matching all of them are kept"
 python_only = true
 config = '''
 [needs]
@@ -5690,6 +5876,9 @@ source = '''
 .. req:: Matches its type, fails the project's
    :id: REQ_00A
 
+.. req:: Holds its type's pattern, not at the start
+   :id: X_REQ_001
+
 .. safety:: Matches its own and the inherited
    :id: REQ_S01
 
@@ -5703,7 +5892,7 @@ source = '''
    :id: REQ_003
 '''
 [case.expect]
-missing = ["SPEC_001", "REQ_00A", "REQ_002", "XYZ_S01"]
+missing = ["SPEC_001", "REQ_00A", "X_REQ_001", "REQ_002", "XYZ_S01"]
 [case.expect.needs.REQ_001]
 type = "req"
 [case.expect.needs.REQ_S01]
@@ -5722,10 +5911,13 @@ severity = "violation"
 [[case.expect.findings]]
 code = "create_need"
 severity = "violation"
+[[case.expect.findings]]
+code = "create_need"
+severity = "violation"
 
 [[case]]
 name = "type-id-regex-refuses-an-id-kept-by-ubcode"
-why = "the case before, as ubCode runs it: a need whose id fails needs_id_regex or an id_regex of its type (its own or an inherited one) is kept, and reported (id_regex at the need)"
+why = "the case before, as ubCode runs it: a need whose id fails needs_id_regex or an id_regex of its type (its own or an inherited one; X_REQ_001 holds REQ_ but not at the start) is kept, and reported (id_regex at the need)"
 ubcode_only = true
 config = '''
 [needs]
@@ -5756,6 +5948,9 @@ source = '''
 .. req:: Matches its type, fails the project's
    :id: REQ_00A
 
+.. req:: Holds its type's pattern, not at the start
+   :id: X_REQ_001
+
 .. safety:: Matches its own and the inherited
    :id: REQ_S01
 
@@ -5775,6 +5970,8 @@ type = "req"
 type = "req"
 [case.expect.needs.REQ_00A]
 type = "req"
+[case.expect.needs.X_REQ_001]
+type = "req"
 [case.expect.needs.REQ_S01]
 type = "safety"
 [case.expect.needs.REQ_002]
@@ -5789,6 +5986,9 @@ need = "SPEC_001"
 [[case.expect.findings]]
 code = "id_regex"
 need = "REQ_00A"
+[[case.expect.findings]]
+code = "id_regex"
+need = "X_REQ_001"
 [[case.expect.findings]]
 code = "id_regex"
 need = "REQ_002"

@@ -1220,8 +1220,10 @@ class BackLinksSchema:
     The count is the length of the need's ``<l>_back``: every link of the link type
     to it, whatever the type of the need it comes from. It is checked by the schema
     validation, once every link is final, on the needs of the declaring type and of
-    the types inheriting from it, but those from ``needs_external_needs``, which
-    cannot be linked to from their own project here; a need that fails it is a
+    the types inheriting from it, but those from ``needs_external_needs``: the links
+    of such a need's own project to it are not loaded here, so its count would be
+    partial. A link to a part of the need counts for the need, a part it lacks too
+    (a dead link where it is written). A need that fails it is a
     ``link_fail`` of the field ``<l>_back`` at the :attr:`severity` the declaration
     gives (``violation`` when it gives none).
     """

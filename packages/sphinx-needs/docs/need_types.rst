@@ -241,7 +241,13 @@ Since a severity below ``violation`` moves the check of a required field into th
 switching the validation off (:ref:`needs_schema_validation_enabled`) silences it:
 the need is created with ``None``, and nothing is reported.
 The :ref:`needs.json <needs_builder>` writes such a field as nullable (``"type": ["string", "null"]``),
-as a need may hold ``null`` of it.
+as a need may hold ``null`` of it. Its ``needs_schema`` is one block for every need type,
+so the field is written nullable as a whole, also where the other types' needs never hold ``null``;
+a field every type declares not nullable at ``violation`` is not.
+
+An ``info`` finding is still logged at Sphinx's ``WARNING`` level (as a schema rule's is),
+so a ``-W`` build fails on it as on a ``warning``;
+silence one with :ref:`suppress_warnings <suppress_validation_messages>`, such as ``sn_schema_info.field_fail``.
 
 A link type only one type may use
 ---------------------------------
@@ -356,7 +362,8 @@ beside :ref:`needs_id_regex`, and beside the ``id_regex`` of every type it inher
 A ``req`` id starts with ``REQ_``, a ``safety_req`` id with ``REQ_S``, and so it is a ``req`` id too.
 The pattern is matched as :ref:`needs_id_regex` is, with Python's ``re.match`` (anchored at the start only),
 on ids written in a need and ids generated from the type's ``prefix`` alike
--- a generated id is the prefix and a hash of upper-case letters and digits, which the pattern must accept --
+-- a generated id is the prefix, then (with :ref:`needs_id_from_title`) the title in upper case, then a hash of
+upper-case letters and digits, all of which the pattern must accept --
 and a need whose id does not match is **not created**::
 
    Need could not be created: Given ID 'SR_001' does not match the id_regex 'REQ_' of need type 'req', which need type 'safety_req' inherits
@@ -394,8 +401,10 @@ The count is every ``verifies`` link to the need, whatever its source:
 ``S_001`` is verified by ``T_003``, whose link ``target_types`` refuses (above), and that link counts.
 Like ``minItems`` on the outgoing side, it is checked by the schema validation, once every link is final;
 a ``severity`` on the entry reports it at that severity, and a type inheriting it may narrow it.
-A need from :ref:`needs_external_needs` is not counted, since nothing in this project can link to it;
-an imported need is.
+A need from :ref:`needs_external_needs` is not counted: its own project's links to it are not loaded here,
+so its count would be partial; an imported need is.
+A link to a part of a need (``S_001.p1``) counts for the need,
+and so does a link to a part the need lacks, which is reported as a dead link where it is written.
 "Verified by at least one ``test``" among sources of several types takes a schema rule
 (:ref:`network_back_validation`); the rules in full are in :ref:`needs_types_fields`.
 

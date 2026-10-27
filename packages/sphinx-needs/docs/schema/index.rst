@@ -303,9 +303,11 @@ When and how violations are reported
      - not switched off by :ref:`needs_schema_validation_enabled`; silenced by ``suppress_warnings``
    * - external needs
      - checked too: a need from :ref:`needs_external_needs` is validated as its type declares;
-       a type's entry cannot leave such needs out
+       a type's entry cannot leave such needs out, but for a ``links.<l>_back`` count,
+       which is not checked on them (:ref:`need_types_incoming`)
      - applied too, with warnings that give no place in a document
-       (``needs.load_external_need`` for a need that is not created), see :ref:`needs_types_fields`
+       (``needs.load_external_need`` for a need that is not created), see :ref:`needs_types_fields`;
+       but a type's ``id_regex``, which is not checked on them, as :ref:`needs_id_regex` is not
      - checked too, with warnings that give the need's URL and no place in a document
        (``needs.external_link_target_type``, ``needs.link_condition_failed``)
 

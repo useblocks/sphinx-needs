@@ -54,7 +54,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 105
+EXPECTED_CASE_COUNT = 109
 
 #: The cases of the section "an entry naming a default type", the only ones whose
 #: ``needs_types`` may hold an entry with neither a ``title`` nor a ``prefix``.
