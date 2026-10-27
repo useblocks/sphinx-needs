@@ -10,7 +10,8 @@ project, built with the ``needs`` builder, and three things are asserted:
   it left them out (``needs_defaults_removed``), as a reader reads them,
   the fields pinned as unset, the fields pinned as absent, the needs pinned as not
   created, the fields a written record pinned as leaving out, the pinned keys of a
-  field's schema, and the findings of the per-type declaration contract, as a multiset;
+  field's schema, and the findings of the per-type declaration contract, as a multiset
+  (with the severity of a need failing its type's declaration where a pin gives one);
 * the number of cases, so that a trimmed corpus is a red test rather than quietly reduced
   coverage;
 * the shape of every case, so that a case without a complete expectation cannot pass by
@@ -53,7 +54,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 89
+EXPECTED_CASE_COUNT = 90
 
 #: The cases of the section "an entry naming a default type", the only ones whose
 #: ``needs_types`` may hold an entry with neither a ``title`` nor a ``prefix``.
@@ -100,7 +101,18 @@ needs_build_json = True
 TITLE = "Case\n====\n\n"
 
 #: The positions of a found finding.
-KEYS = ("code", "need", "field", "type")
+KEYS = ("code", "need", "field", "type", "severity")
+
+#: The codes whose findings have a severity: a need failing its type's declaration.
+SEVERITY_CODES = frozenset({"field_fail", "link_fail", "create_need"})
+
+#: The severities of the contract, from the type the schema validation logs a finding
+#: under (``schema_violations.json`` writes it as each finding's ``type``).
+SEVERITY_OF_LOG_TYPE = {
+    "sn_schema_violation": "violation",
+    "sn_schema_warning": "warning",
+    "sn_schema_info": "info",
+}
 
 #: the entry a finding of the schema's build names, and the field or link type in it
 _ENTRY = re.compile(r"needs_types\['([^']+)'\](?:\.(?:fields|links)\['([^']+)'\])?")
@@ -200,6 +212,10 @@ def test_every_case_has_a_complete_expectation() -> None:
         for finding in expect["findings"]:
             assert set(finding) <= set(KEYS), name
             assert finding["code"] in SHARED_CODES, name
+            # only a need failing its type's declaration has a severity
+            if "severity" in finding:
+                assert finding["code"] in SEVERITY_CODES, name
+                assert finding["severity"] in SEVERITY_OF_LOG_TYPE.values(), name
 
 
 def test_the_corpus_header_records_where_it_is_canonical() -> None:
@@ -268,8 +284,8 @@ def test_an_omitted_pin_needs_a_version_that_says_it_left_defaults_out() -> None
     ]
 
 
-def _describe(code: str, message: str) -> tuple[str | None, str | None]:
-    """The field and the need type a finding names.
+def _describe(code: str, message: str) -> tuple[str | None, str | None, str | None]:
+    """The field and the need type a finding names, and its severity.
 
     A finding of the schema's build names its entry, ``needs_types['<t>']``, and the
     field or link type in it, ``.fields['<f>']`` or ``.links['<f>']``; any other names
@@ -277,15 +293,17 @@ def _describe(code: str, message: str) -> tuple[str | None, str | None]:
     and its type as its code says (``Need type '<t>'`` for ``type_inherits``;
     ``on need type '<t>'`` for ``undeclared_for_type`` and ``needextend``; the TARGET's
     ``target need type '<t>'`` for ``link_target_type`` and
-    ``external_link_target_type``).
+    ``external_link_target_type``). Of the codes read from the warning stream, only
+    ``create_need`` has a severity: a need not created is a ``violation``.
     """
     field = _FIELD.search(message)
     field_name = field[1] if field else None
+    severity = "violation" if code == "create_need" else None
     entry = _ENTRY.search(message)
     if entry is not None:
-        return entry[2] or field_name, entry[1]
+        return entry[2] or field_name, entry[1], severity
     need_type = _TYPE[code].search(message) if code in _TYPE else None
-    return field_name, need_type[1] if need_type else None
+    return field_name, need_type[1] if need_type else None, severity
 
 
 def _violations(subtype: str) -> Reader:
@@ -293,7 +311,8 @@ def _violations(subtype: str) -> Reader:
     ``link_fail``), from the ``schema_violations.json`` the validation writes beside
     ``needs.json`` (``sphinx_needs.schema.process``): its ``validation_warnings`` maps a
     need id to that need's violations, each with its ``subtype`` and the field or link
-    type in its ``details``. The file is written on every build that validates, so its
+    type in its ``details``, and the type it is logged under, which is its severity
+    (:data:`SEVERITY_OF_LOG_TYPE`). The file is written on every build that validates, so its
     absence fails the case; a build whose configuration switches the validation off
     (``schema_validation_enabled = false``) has neither the file nor these findings."""
 
@@ -306,7 +325,13 @@ def _violations(subtype: str) -> Reader:
         for need_id, violations in report["validation_warnings"].items():
             for violation in violations:
                 if violation["subtype"] == subtype:
-                    yield (subtype, need_id, violation["details"].get("field"), None)
+                    yield (
+                        subtype,
+                        need_id,
+                        violation["details"].get("field"),
+                        None,
+                        SEVERITY_OF_LOG_TYPE[violation["type"]],
+                    )
 
     return read
 

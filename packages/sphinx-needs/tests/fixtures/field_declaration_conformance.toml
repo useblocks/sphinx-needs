@@ -78,11 +78,17 @@
 #   - values are compared as `needs.json` writes them, TYPE INCLUDED: `7.0` is a float and
 #     `7` an integer, and the two differ; a link list is a list of id strings, as
 #     `needs.json` writes it
-#   - findings are compared as a MULTISET of `code`, and of `need`, `field` and `type`
-#     where the finding names them; a key a finding leaves out is not compared. `code` is
-#     the BARE subcode (`type_conflict`, not `needs.type_conflict`). Messages and
-#     severities are NOT compared. Only the codes of the per-type declaration contract are
-#     compared --
+#   - findings are compared as a MULTISET of `code`, and of `need`, `field`, `type` and
+#     `severity` where the finding names them; a key a finding leaves out is not compared.
+#     `code` is the BARE subcode (`type_conflict`, not `needs.type_conflict`). Messages are
+#     NOT compared. A `severity` is compared only where a pin gives one, and only a finding
+#     of a need failing its type's declaration has one: `field_fail` and `link_fail` at the
+#     severity of the declaration that failed (`violation`, `warning` or `info`; below),
+#     and `create_need`, a need not created, always `violation`. A pin gives `severity` on
+#     no other code. sphinx-needs' runner reads it from the type the schema validation
+#     logs the finding under: `sn_schema_violation` is `violation`, `sn_schema_warning`
+#     `warning`, `sn_schema_info` `info` (ubCode's runner reads its own grade for the same
+#     facts). Only the codes of the per-type declaration contract are compared --
 #         type_inherits, type_conflict, type_widening, undeclared_for_type, needextend,
 #         derive_authored, derive_invalid, dynamic_function, create_need, field_fail,
 #         link_fail, link_target_type, external_link_target_type
@@ -112,12 +118,13 @@
 #   - `field_fail` and `link_fail` are the schema validation's findings of a need whose
 #     value of a field (`field_fail`: an enum, a `minItems`) or whose links of a link type
 #     (`link_fail`: a `maxItems`) fail the schema as its need type declares it; a value
-#     failing two keywords is two findings, one per keyword, in both tools.
-#     sphinx-needs reports them as `[sn_schema_violation.field_fail]` and
-#     `[sn_schema_violation.link_fail]` with no source location, and its runner reads the
-#     need and the field or link type from the `schema_violations.json` the validation
-#     writes beside `needs.json` (`validation_warnings.<need id>[]`, `subtype` and
-#     `details.field`), not from the warning stream, so each is counted once
+#     failing two keywords is two findings, one per keyword, in both tools. Each is a
+#     `violation`, in both tools. sphinx-needs reports them as
+#     `[sn_schema_violation.field_fail]` and `[sn_schema_violation.link_fail]` with no
+#     source location, and its runner reads the need, the field or link type and the
+#     severity from the `schema_violations.json` the validation writes beside
+#     `needs.json` (`validation_warnings.<need id>[]`, `subtype`, `details.field` and
+#     `type`), not from the warning stream, so each is counted once
 #   - `link_target_type` is the finding of a resolved link to a need whose type is not one
 #     of the `target_types` of its link type, as the source need's type declares it -- a
 #     listed type, or a type inheriting from one, transitively, is one of them -- found
@@ -187,8 +194,8 @@
 #   ubcode_only  - optional; see the rules above
 #   [case.expect]
 #     findings         - the findings, `[]` for none; or one `[[case.expect.findings]]`
-#                        table per finding: `code`, and `need`, `field` and `type` where
-#                        named
+#                        table per finding: `code`, and `need`, `field`, `type` and
+#                        `severity` where named
 #     needs.<ID>       - one table per pinned need: field = value
 #     nulls            - <ID> = [the fields pinned as unset] (TOML has no null)
 #     absent           - <ID> = [the fields pinned as not existing]
@@ -4943,6 +4950,70 @@ all_links = ["REQ_1"]
 code = "type_conflict"
 field = "all_links"
 type = "req"
+
+# --- the severity of a failed declaration ---------------------------------------------
+
+[[case]]
+name = "a-failed-declaration-is-a-violation"
+why = "a need failing its type's declaration fails a violation: an enum (field_fail), a maxItems (link_fail), and nullable = false with no value (create_need, the need not created), each pinned with its severity"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.category]
+schema = { type = "string", enum = ["a", "b"] }
+
+[needs.types.req.fields.owner]
+nullable = false
+
+[needs.types.req.links.links]
+schema = { maxItems = 1 }
+'''
+source = '''
+.. req:: Outside the enum
+   :id: REQ_1
+   :owner: alice
+   :category: z
+
+.. req:: Too many links
+   :id: REQ_2
+   :owner: bob
+   :links: REQ_1, REQ_4
+
+.. req:: No owner
+   :id: REQ_3
+
+.. req:: Clean
+   :id: REQ_4
+   :owner: carol
+   :category: a
+'''
+[case.expect]
+missing = ["REQ_3"]
+[case.expect.needs.REQ_1]
+category = "z"
+[case.expect.needs.REQ_2]
+links = ["REQ_1", "REQ_4"]
+[case.expect.needs.REQ_4]
+category = "a"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "category"
+severity = "violation"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_2"
+field = "links"
+severity = "violation"
+[[case.expect.findings]]
+code = "create_need"
+field = "owner"
+severity = "violation"
 
 # --- an entry naming a default type ---------------------------------------------------
 
