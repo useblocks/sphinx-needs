@@ -45,6 +45,20 @@ from sphinx_needs.variants import VariantFunctionParsed
 if TYPE_CHECKING:
     from sphinx_needs.functions.functions import DynamicFunctionParsed
 
+#: The severity a need failing a declaration is reported at: the ``severity`` of a
+#: need type's entry of a field or link type. Unset, it is ``violation``.
+Severity: TypeAlias = Literal["violation", "warning", "info"]
+
+#: The severities, lowest first: a need type's declaration may raise the severity an
+#: ancestor gives, never lower it (:func:`narrowing_problems`).
+SEVERITIES: Final[tuple[Severity, ...]] = ("info", "warning", "violation")
+
+
+def _check_severity(severity: object) -> None:
+    """:raises ValueError: if ``severity`` is neither ``None`` nor a severity."""
+    if severity is not None and severity not in SEVERITIES:
+        raise ValueError("severity must be one of 'violation', 'warning' or 'info'.")
+
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class FieldSchema:
@@ -95,6 +109,16 @@ class FieldSchema:
     An empty mapping is a field derived on no need type (its ``derive_by_type`` could
     not be read).
     """
+    severity: Severity | None = None
+    """The severity a need failing this declaration is reported at -- its ``schema``
+    keywords, and ``nullable = false`` -- or ``None``, not given: ``violation``
+    (:attr:`failure_severity`). A need type's entry gives it; a type inheriting the
+    declaration keeps it, and may raise it but not lower it.
+
+    Below ``violation``, ``nullable = false`` is reported rather than enforced: a need
+    without a value is created, holding ``None`` (:attr:`admits_null`), and the schema
+    validation reports it.
+    """
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -106,6 +130,7 @@ class FieldSchema:
         ):
             raise ValueError("derive must be a DeriveRule or a DeriveInvalid.")
         _check_derive_by_type(self.derive_by_type)
+        _check_severity(self.severity)
         try:
             validate_field_schema(self.schema)
         except TypeError as exc:
@@ -162,6 +187,22 @@ class FieldSchema:
     def kind(self) -> Literal["field"]:
         """What it declares: a field (a core field or an extra field)."""
         return "field"
+
+    @property
+    def failure_severity(self) -> Severity:
+        """The severity a need failing this declaration is reported at: its
+        :attr:`severity`, else ``violation``."""
+        return self.severity or "violation"
+
+    @property
+    def admits_null(self) -> bool:
+        """Whether a need of this declaration may hold ``None``: it is nullable, or
+        not nullable at a severity below ``violation`` (:attr:`severity`), which a
+        need without a value fails without being refused. A derived field holds its
+        empty value, not ``None``, where it is not nullable."""
+        return self.nullable or (
+            not self.derived and self.failure_severity != "violation"
+        )
 
     @property
     def derived(self) -> bool:
@@ -820,6 +861,10 @@ class LinkSchema:
     rule holds :meth:`off_type_value`: the literal ``default``, which only
     ``derive_by_type`` without ``derive`` may carry, else no links.
     """
+    severity: Severity | None = None
+    """The severity a need whose links fail this declaration's ``schema`` is reported
+    at, or ``None``, not given: ``violation`` (:attr:`failure_severity`). As
+    :attr:`FieldSchema.severity`."""
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -831,6 +876,7 @@ class LinkSchema:
         ):
             raise ValueError("derive must be a DeriveRule or a DeriveInvalid.")
         _check_derive_by_type(self.derive_by_type)
+        _check_severity(self.severity)
         if self.target_types is not None:
             if not isinstance(self.target_types, LinkTargetTypes):
                 raise ValueError("target_types must be a LinkTargetTypes.")
@@ -874,6 +920,12 @@ class LinkSchema:
     def kind(self) -> Literal["link"]:
         """What it declares: a link type."""
         return "link"
+
+    @property
+    def failure_severity(self) -> Severity:
+        """The severity a need whose links fail this declaration is reported at: its
+        :attr:`severity`, else ``violation``."""
+        return self.severity or "violation"
 
     @property
     def derived(self) -> bool:
@@ -2282,7 +2334,11 @@ def narrowing_problems(
         sets compared) are among those of ``base``: a link a need of the type may
         hold is one a need of any type may. An overlay without ``target_types`` under
         a base with them drops them: defensive, since a declaration from the
-        configuration that gives none (or names no need type) keeps the base's.
+        configuration that gives none (or names no need type) keeps the base's;
+    12. a ``severity`` no lower than the ``severity`` ``base`` gives (``info`` below
+        ``warning`` below ``violation``): what a declaration enforces, a narrower
+        one enforces too. Where ``base`` gives none it is free, an overlay giving none
+        under a base giving one drops it (defensive, as for ``target_types``).
 
     The ``description`` is free. A reason of the rules 1 to 3 reads on from the name
     of the field ("Cannot declare field 'x' for need type 't' ..."), the others are
@@ -2369,7 +2425,24 @@ def narrowing_problems(
                     f"inheriting from {'it' if len(parent.names) == 1 else 'them'}) "
                     "do not."
                 )
+    problems.extend(severity_problems(base.severity, overlay.severity))
     return problems
+
+
+def severity_problems(base: Severity | None, overlay: Severity | None) -> list[str]:
+    """Why a declaration's ``severity`` ``overlay`` lowers ``base``, the one before it
+    (rule 12 of :func:`narrowing_problems`): empty when it does not."""
+    if base is None:
+        return []
+    if overlay is None:
+        # defensive: a declaration from the configuration keeps the severity before
+        # it when it gives none
+        return [f"Child drops parent 'severity' {base!r}."]
+    if SEVERITIES.index(overlay) < SEVERITIES.index(base):
+        return [
+            f"Child 'severity' {overlay!r} is lower than parent 'severity' {base!r}."
+        ]
+    return []
 
 
 def _default_problems(

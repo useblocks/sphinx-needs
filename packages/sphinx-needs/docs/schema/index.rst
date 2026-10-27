@@ -124,7 +124,8 @@ A type's entry constrains its needs in three ways, which are checked differently
   ``pattern``, ``minItems``, ``maxItems``, ...) is checked by the schema validation, together with the schema rules,
   and a need that breaks it is reported and kept;
 - a **structural declaration** -- a field that is not nullable on the type, or a field or link type that only some types
-  declare -- is checked when the need is created, and what does not fit it is dropped: the value, or the whole need;
+  declare -- is checked when the need is created, and what does not fit it is dropped: the value, or the whole need
+  (a field not nullable at a ``severity`` below ``violation`` is the exception: the need is kept, and the schema validation reports it);
 - a link type's ``target_types`` -- the need types its links may point to -- is checked where the links are resolved,
   as a link's ``[condition]`` is, and a link that breaks it is reported at its need and kept.
 
@@ -255,9 +256,14 @@ with the severity and the message the rule gives:
      User message:   a requirement states its ASIL
      Schema message: "asil" is a required property [sn_schema_warning.local_fail]
 
+Between the two, ``nullable = false`` with ``severity = "warning"`` (or ``"info"``) in the type's entry
+reports a need without the field and keeps it, the field ``None``, as a ``field_fail`` at that severity
+(see :ref:`need_types_severity`); it is a check of the schema validation then, so switching the validation off silences it.
+
 A ``minLength`` in a type's entry does not require a nullable field:
 a need that leaves the field unset is not validated against it.
-Use ``nullable = false`` when a need without the value must not exist, and a schema rule's ``required`` when it should be reported.
+Use ``nullable = false`` when a need without the value must not exist,
+and ``nullable = false`` below ``violation``, or a schema rule's ``required``, when it should be reported.
 
 When and how violations are reported
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -280,7 +286,8 @@ When and how violations are reported
      - once every link is final, after the documents are read, before the schema validation
    * - reported as
      - ``sn_schema_violation.field_fail`` or ``sn_schema_violation.link_fail``,
-       always of severity ``violation``, with no custom message and no source location
+       of severity ``violation`` unless the declaration gives a lower ``severity`` (``sn_schema_warning.*``, ``sn_schema_info.*``),
+       with no custom message and no source location
      - a warning (``needs.create_need``, ``needs.import_need``, ``needs.undeclared_for_type``),
        with its place in the document for a need read from the documents
      - a warning per link (``needs.link_target_type``, ``needs.link_condition_failed``),
@@ -291,7 +298,8 @@ When and how violations are reported
      - is kept, with the link; not listed in :ref:`schema_violation_json`
    * - switched off by
      - :ref:`needs_schema_validation_enabled` ``= False``, which switches off the schema rules too
-     - not switched off by :ref:`needs_schema_validation_enabled`
+     - not switched off by :ref:`needs_schema_validation_enabled`,
+       but for a field not nullable at a ``severity`` below ``violation``, which the schema validation reports
      - not switched off by :ref:`needs_schema_validation_enabled`; silenced by ``suppress_warnings``
    * - external needs
      - checked too: a need from :ref:`needs_external_needs` is validated as its type declares;
@@ -323,7 +331,8 @@ These need schema rules:
 - **conditions between fields**, such as "``approval`` is required when ``efforts`` is greater than 15";
 - **multi-hop chains** (:ref:`nested network validation <network_validation>`);
 - a **pattern for the IDs** of one type (``id`` cannot be declared in a type's entry);
-- a **severity or message** per rule (:ref:`rule_severity`);
+- a **message** per rule, or a **severity** per constraint keyword (:ref:`rule_severity`):
+  a type's entry gives one ``severity`` to every constraint of its declaration of a field (:ref:`need_types_severity`);
 - **leaving out external or imported needs**, with a ``select`` on ``is_external`` or ``is_import``.
 
 The ``target_types`` of ``verifies`` says that a ``test`` verifies a ``req``, a ``safety_req`` included.
@@ -932,7 +941,9 @@ console output can be configured and how to :ref:`suppress errors <suppress_vali
 
 Schema violations are categorised with :ref:`message types <message_types>`. Each
 message type is assigned a default severity of ``violation``.
-The default can be overwritten in :ref:`schema rules <rule_severity>`.
+The default can be overwritten in :ref:`schema rules <rule_severity>`,
+and for ``field_fail`` and ``link_fail`` by the ``severity`` of a need type's declaration of the field or link type
+(:ref:`need_types_severity`).
 
 .. _`schema_components`:
 
@@ -1511,7 +1522,8 @@ Network validation:
 
 If not overridden in the :ref:`schema rules <rule_severity>`, a default severity of ``violation``
 is used for all message types.
-``field_fail`` and ``link_fail`` are always of severity ``violation``:
+``field_fail`` and ``link_fail`` are of the severity the failed declaration gives,
+the ``severity`` of a need type's ``fields`` or ``links`` entry (:ref:`need_types_severity`), else ``violation``:
 no schema rule sets their severity.
 
 .. _`suppress_validation_messages`:
@@ -1619,7 +1631,7 @@ Best practices
 1. **Use descriptive IDs**: Give your schemas meaningful IDs for easier debugging
 #. **Leverage $defs**: Define reusable schema components to avoid duplication
 #. **Start with warnings**: Use ``warning`` severity during development, then upgrade to ``violation``
-   (a schema rule's severity only: a field's or a need type's constraints are always ``violation``)
+   (a schema rule's ``severity``, or a need type's declaration's: a :ref:`needs_fields` entry's constraints are always ``violation``)
 #. **Provide clear messages**: Include helpful ``message`` fields to guide users
 #. **Test incrementally**: Add schemas gradually to avoid overwhelming validation errors
 #. **Use select wisely**: Only apply schemas to relevant need types using ``select``

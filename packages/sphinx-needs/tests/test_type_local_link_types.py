@@ -968,7 +968,7 @@ def test_what_a_declaration_of_a_link_type_cannot_give(test_app: Any) -> None:
         "WARNING: needs_types['spec'].links['rel'] has unknown keys 'parse_variants', "
         "'parse_dynamic_functions', 'parse_conditions', 'derive_by_type'; known keys "
         "are description, schema, default, predicates, derive, target_types, "
-        "incoming, outgoing, copy, allow_dead_links, color, style, style_part, "
+        "severity, incoming, outgoing, copy, allow_dead_links, color, style, style_part, "
         "style_start, style_end; "
         "the keys are ignored [needs.config]",
     ]

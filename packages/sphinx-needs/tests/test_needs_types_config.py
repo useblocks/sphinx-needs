@@ -420,7 +420,11 @@ FINDINGS = [
                         "default": "open",
                     }
                 },
-                "links": {"links": {"predicates": [["a", "b", "c"], [5, "x"]]}},
+                "links": {
+                    "links": {"predicates": [["a", "b", "c"], [5, "x"]]},
+                    "tests": {"severity": "error"},
+                    "covers": {"severity": 3},
+                },
             }
         },
         [
@@ -431,12 +435,17 @@ FINDINGS = [
             "needs_types['req'].links['links'] has a 'predicates' that is not a list "
             "of (filter, value) pairs (got a list with an item that is not a (filter, "
             "value) pair); the key is ignored",
+            # the severities of the schema validation, by name
+            "needs_types['req'].links['tests'] has a 'severity' that is not one of "
+            "'violation', 'warning' and 'info' (got 'error'); the key is ignored",
+            "needs_types['req'].links['covers'] has a 'severity' that is not one of "
+            "'violation', 'warning' and 'info' (got int); the key is ignored",
         ],
         [
             {
                 **REQ,
                 "fields": {"status": {"default": "open"}},
-                "links": {"links": {}},
+                "links": {"links": {}, "tests": {}, "covers": {}},
             }
         ],
         id="declaration-keys-not-of-their-shape",
@@ -454,11 +463,12 @@ FINDINGS = [
             "a mapping (got str); the key is ignored",
             "needs_types entry 1 ('req').fields['status'] has an unknown key "
             "'parse_variants'; known keys are description, schema, nullable, "
-            "default, predicates, derive; the key is ignored",
+            "default, predicates, derive, severity; the key is ignored",
             "needs_types entry 1 ('req').links['links'] has an unknown key "
             "'nullable'; known keys are description, schema, default, predicates, "
-            "derive, target_types, incoming, outgoing, copy, allow_dead_links, color, "
-            "style, style_part, style_start, style_end; the key is ignored",
+            "derive, target_types, severity, incoming, outgoing, copy, "
+            "allow_dead_links, color, style, style_part, style_start, style_end; the key "
+            "is ignored",
             # a link type's display is a key of every links entry, and refused when
             # the schema is built on a link type declared otherwise
             "needs_types['req'].links['links'] sets 'incoming', which a need type "

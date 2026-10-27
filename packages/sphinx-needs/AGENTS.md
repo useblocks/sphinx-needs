@@ -214,6 +214,7 @@ This module defines the schema data structures that serve as the single source o
   - `name`, `description`, `schema` (JSON Schema type/constraints)
   - `nullable`, `directive_option`, `parse_dynamic_functions`, `parse_variants`
   - `allow_defaults`, `allow_extend`, `default`, `predicate_defaults`
+  - `severity`: what a need failing the declaration is reported at (a need type's entry gives it; unset is `violation`)
   - Methods: `convert_directive_option()`, `type_check()`, `json_schema()`
 
 - `LinkSchema` - Immutable dataclass for link fields with similar structure to `FieldSchema`

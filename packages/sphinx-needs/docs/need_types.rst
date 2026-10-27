@@ -201,8 +201,47 @@ A field declared ``nullable = false`` with no default is required on the needs o
 
       index.rst:25: WARNING: Need could not be created: Field 'hazard' is not nullable, but no value or default was given. [needs.create_need]
 
-   To report a need without the field and keep it, use a schema rule's ``required`` instead:
-   see :ref:`schema_per_type_or_rules`.
+   To report a need without the field and keep it, give the entry a ``severity`` below ``violation`` (next section),
+   or use a schema rule's ``required``: see :ref:`schema_per_type_or_rules`.
+
+.. _`need_types_severity`:
+
+A constraint reported, not failed
+---------------------------------
+
+A need failing what its type declares is reported as a schema **violation**,
+and one without a required field is not created.
+``severity = "warning"`` (or ``"info"``) on the entry reports it at that severity instead,
+for every constraint of the declaration: its ``schema`` keywords and its ``nullable = false``.
+A required field below ``violation`` is asked for, not enforced: the need is created, the field ``None``, and it is reported.
+``spec`` declares ``owner`` so:
+
+.. literalinclude:: ../tests/doc_test/doc_need_types/ubproject.toml
+   :language: toml
+   :start-after: # [severity]
+   :end-before: # [/severity]
+
+A ``spec`` without an owner is kept, and reported as a warning:
+
+.. code-block:: text
+
+   WARNING: Need 'S_001' has schema warnings:
+     Severity:       warning
+     Field:          owner
+     Need path:      S_001
+     Schema path:    fields > nullable
+     Schema message: Field 'owner' is not nullable, but no value or default was given. [sn_schema_warning.field_fail]
+
+A ``severity`` on a ``links`` entry is the severity of its ``schema`` (``minItems``, ``maxItems``).
+A type inheriting the declaration keeps its severity, and may raise it, never lower it:
+a ``severity = "info"`` under a parent's explicit ``"warning"`` is ignored, as a ``needs.type_widening`` warning.
+A parent that gives none is a ``violation`` by default, and leaves its children free.
+
+Since a severity below ``violation`` moves the check of a required field into the schema validation,
+switching the validation off (:ref:`needs_schema_validation_enabled`) silences it:
+the need is created with ``None``, and nothing is reported.
+The :ref:`needs.json <needs_builder>` writes such a field as nullable (``"type": ["string", "null"]``),
+as a need may hold ``null`` of it.
 
 A link type only one type may use
 ---------------------------------

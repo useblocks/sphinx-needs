@@ -70,3 +70,11 @@ default = true
 title = "Specification"
 prefix = "S_"
 # [/spec]
+
+# [severity]
+[needs.types.spec.fields.owner]
+description = "Who answers for the specification"
+schema = { type = "string" }
+nullable = false
+severity = "warning"
+# [/severity]

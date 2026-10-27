@@ -5015,6 +5015,321 @@ code = "create_need"
 field = "owner"
 severity = "violation"
 
+[[case]]
+name = "severity-lowers-what-a-failed-declaration-reports"
+why = "severity on a type's entry is the severity of every constraint of its declaration: req's enum (a needs_fields enum it gives warning), its links' minItems and maxItems (warning) and a link type it declares alone (info) are reported at those severities; spec, with no entry, fails the same enum as a violation"
+config = '''
+[needs.fields.category]
+schema = { type = "string", enum = ["a", "b"] }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.category]
+severity = "warning"
+
+[needs.types.req.links.links]
+schema = { minItems = 1, maxItems = 1 }
+severity = "warning"
+
+[needs.types.req.links.verifies]
+schema = { minItems = 1 }
+severity = "info"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. spec:: Outside the enum
+   :id: SPEC_1
+   :category: z
+
+.. req:: Outside the enum, no links
+   :id: REQ_1
+   :category: z
+
+.. req:: Too many links
+   :id: REQ_2
+   :links: SPEC_1, REQ_1
+   :verifies: SPEC_1
+
+.. req:: Clean
+   :id: REQ_3
+   :category: a
+   :links: SPEC_1
+   :verifies: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+category = "z"
+links = []
+verifies = []
+[case.expect.needs.REQ_2]
+links = ["REQ_1", "SPEC_1"]
+[case.expect.needs.REQ_3]
+category = "a"
+[[case.expect.findings]]
+code = "field_fail"
+need = "SPEC_1"
+field = "category"
+severity = "violation"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "category"
+severity = "warning"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_1"
+field = "links"
+severity = "warning"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_1"
+field = "verifies"
+severity = "info"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_2"
+field = "links"
+severity = "warning"
+
+[[case]]
+name = "nullable-false-at-warning-creates-the-need"
+why = "below violation, nullable = false is reported, not enforced: req's need without asil (a needs_fields field not nullable, which req's entry gives severity warning) and without owner (a field req alone declares not nullable, at info) is created, holding null, one field_fail each at that severity; spec's need without asil is not created (create_need), and needs.json writes asil nullable, as a need may hold null of it"
+config = '''
+[needs.fields.asil]
+schema = { type = "string" }
+nullable = false
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.asil]
+severity = "warning"
+
+[needs.types.req.fields.owner]
+schema = { type = "string" }
+nullable = false
+severity = "info"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: No asil, no owner
+   :id: REQ_1
+
+.. req:: Both
+   :id: REQ_2
+   :asil: QM
+   :owner: alice
+
+.. spec:: No asil
+   :id: SPEC_1
+
+.. spec:: Asil
+   :id: SPEC_2
+   :asil: QM
+'''
+[case.expect]
+missing = ["SPEC_1"]
+[case.expect.needs.REQ_2]
+asil = "QM"
+owner = "alice"
+[case.expect.needs.SPEC_2]
+asil = "QM"
+[case.expect.nulls]
+REQ_1 = ["asil", "owner"]
+SPEC_2 = ["owner"]
+[case.expect.schema.asil]
+type = ["string", "null"]
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "asil"
+severity = "warning"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "owner"
+severity = "info"
+[[case.expect.findings]]
+code = "create_need"
+field = "asil"
+severity = "violation"
+
+[[case]]
+name = "nullable-false-at-warning-without-schema-validation"
+why = "nullable = false below violation is checked by the schema validation alone: with sphinx-needs' schema_validation_enabled switched off (a setting ubCode does not have), req's need without asil is created, holding null, and nothing is reported"
+python_only = true
+config = '''
+[needs]
+schema_validation_enabled = false
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.asil]
+schema = { type = "string" }
+nullable = false
+severity = "warning"
+'''
+source = '''
+.. req:: No asil
+   :id: REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.nulls]
+REQ_1 = ["asil"]
+
+[[case]]
+name = "severity-is-inherited-raised-not-lowered"
+why = "a type inheriting a declaration keeps its severity (sub: warning), may raise it (strict: violation), and may not lower one an ancestor gives (lax: info under req's warning is type_widening, the entry ignored, so warning); an ancestor giving none leaves its children free (child: info under base's default)"
+config = '''
+[needs.fields.category]
+schema = { type = "string", enum = ["a", "b"] }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.category]
+severity = "warning"
+
+[needs.types.sub]
+title = "Sub"
+prefix = "SU_"
+inherits = "req"
+
+[needs.types.strict]
+title = "Strict"
+prefix = "ST_"
+inherits = "req"
+
+[needs.types.strict.fields.category]
+severity = "violation"
+
+[needs.types.lax]
+title = "Lax"
+prefix = "L_"
+inherits = "req"
+
+[needs.types.lax.fields.category]
+severity = "info"
+
+[needs.types.base]
+title = "Base"
+prefix = "B_"
+
+[needs.types.base.fields.category]
+schema = { enum = ["a"] }
+
+[needs.types.child]
+title = "Child"
+prefix = "C_"
+inherits = "base"
+
+[needs.types.child.fields.category]
+severity = "info"
+'''
+source = '''
+.. req:: Req
+   :id: REQ_1
+   :category: z
+
+.. sub:: Sub
+   :id: SUB_1
+   :category: z
+
+.. strict:: Strict
+   :id: STRICT_1
+   :category: z
+
+.. lax:: Lax
+   :id: LAX_1
+   :category: z
+
+.. base:: Base
+   :id: BASE_1
+   :category: b
+
+.. child:: Child
+   :id: CHILD_1
+   :category: b
+'''
+[case.expect]
+[case.expect.needs.LAX_1]
+category = "z"
+[case.expect.needs.CHILD_1]
+category = "b"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "category"
+severity = "warning"
+[[case.expect.findings]]
+code = "field_fail"
+need = "SUB_1"
+field = "category"
+severity = "warning"
+[[case.expect.findings]]
+code = "field_fail"
+need = "STRICT_1"
+field = "category"
+severity = "violation"
+[[case.expect.findings]]
+code = "field_fail"
+need = "LAX_1"
+field = "category"
+severity = "warning"
+[[case.expect.findings]]
+code = "type_widening"
+type = "lax"
+field = "category"
+[[case.expect.findings]]
+code = "field_fail"
+need = "BASE_1"
+field = "category"
+severity = "violation"
+[[case.expect.findings]]
+code = "field_fail"
+need = "CHILD_1"
+field = "category"
+severity = "info"
+
+[[case]]
+name = "a-severity-of-no-such-name-is-ignored"
+why = "a severity that is not violation, warning or info is ignored (each tool's configuration finding, not compared, so the case pins its consequence): the rest of the entry is used, at the default, a violation"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.category]
+schema = { type = "string", enum = ["a", "b"] }
+severity = "error"
+'''
+source = '''
+.. req:: Outside the enum
+   :id: REQ_1
+   :category: z
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+category = "z"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "category"
+severity = "violation"
+
 # --- an entry naming a default type ---------------------------------------------------
 
 [[case]]

@@ -419,6 +419,9 @@ A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` ta
    * - ``derive``
      - rule computing the field on the type's needs and on those of the types inheriting from it (below;
        ``derive_by_type`` is the older spelling, :ref:`needs_derive_by_type`)
+   * - ``severity``
+     - severity a need failing the declaration -- its ``schema`` keywords, its ``nullable = false`` -- is reported at:
+       ``"violation"`` (the default), ``"warning"`` or ``"info"`` (below)
 
 and a declaration in ``links`` these, as :ref:`needs_links` takes them:
 
@@ -441,6 +444,8 @@ and a declaration in ``links`` these, as :ref:`needs_links` takes them:
        ``derive_by_type`` is the older spelling, :ref:`needs_derive_by_type`)
    * - ``target_types``
      - need types the links of the type's needs may point to (a listed type or one inheriting from it): within those it inherits (the subtypes of a listed type included), never others (below)
+   * - ``severity``
+     - severity a need whose links fail the ``schema`` is reported at: ``"violation"`` (the default), ``"warning"`` or ``"info"`` (below)
    * - ``incoming``, ``outgoing``
      - the labels of the links, on every need type: set by the root declaration of a link type declared on need types alone (below)
    * - ``copy``
@@ -524,6 +529,10 @@ Then ``hw_test`` may give ``["safety_req"]``, because a ``safety_req`` inherits 
 It may not give ``["spec"]`` or ``["req", "spec"]``: a ``spec`` is not accepted for a ``test``, so that widens.
 A declaration that gives no ``target_types``, or names no need type in it, keeps the target types before it;
 where no declaration before it gives any, the links may point to any type.
+A ``severity`` may be raised, never lowered below one a declaration before it gives
+(``info`` is below ``warning``, below ``violation``);
+where none gives one, a declaration is free to give any
+(``Child 'severity' 'info' is lower than parent 'severity' 'warning'.``).
 A declaration that widens is ignored as a whole, its other keys included, and the type keeps the declaration before it;
 each reason is one ``needs.type_widening`` warning, such as::
 
@@ -661,10 +670,23 @@ A link type refused for its back links leaves its own name to a need type's fiel
 unless that name is the back links of a link type that remains (as ``x_back`` in the chain above, or ``links_back``).
 A core field may be declared like any other: ``status`` takes a default and an ``enum``.
 A :ref:`derived <needs_derive>` field or link type (one with ``derive`` or ``derive_by_type``) takes only a ``description``,
-a narrower ``schema`` and (a field) ``nullable``: its rules give its value, so a ``default`` or ``predicates`` is refused,
+a narrower ``schema``, (a field) ``nullable``, and a ``severity``: its rules give its value, so a ``default`` or ``predicates`` is refused,
 and so is a link type's ``target_types`` in this release,
 and so is a ``schema`` adding an ``enum`` to a field that has none, as its rules are checked against the field's own declaration
 (a derived field declared on need types alone takes none).
+
+**Severity.**
+A need failing its type's declaration -- a value outside its ``schema``, a link count outside ``minItems`` and ``maxItems`` --
+is reported by the :ref:`schema validation <schema_validation>` as a ``violation`` (``sn_schema_violation.field_fail``, ``.link_fail``),
+and a need without a field its type declares ``nullable = false``, with no default, is not created (``needs.create_need``).
+A declaration's ``severity`` changes that for every constraint of the declaration as the type has it, its ancestors' and the field's own included:
+at ``"warning"`` or ``"info"`` the failure is reported as ``sn_schema_warning.*`` or ``sn_schema_info.*`` (a warning, not an error),
+and a need without a value of a field not nullable is created, the field ``None``, and reported at that severity
+(``Field 'x' is not nullable, but no value or default was given.``, schema path ``fields > nullable``).
+It is then checked by the schema validation alone, so :ref:`needs_schema_validation_enabled` ``= False`` silences it.
+The :ref:`needs.json <needs_builder_format>` writes such a field nullable, with a ``null`` default, as a need may hold ``null`` of it.
+A type inheriting a declaration keeps its severity (see **Narrowing**).
+A :ref:`needs_fields` or :ref:`needs_links` entry takes no ``severity``: what it declares fails as a ``violation`` where no need type gives one.
 
 **The value of a need.**
 A field a need of the type does not set takes the first matching predicate of the type's declaration
@@ -677,7 +699,7 @@ A :ref:`needextend` deleting a field (``:-x:``) empties it as the need's type de
 A default a type declares is not the one a :ref:`fingerprint <needs_derive>` compares against:
 a need's value equal to its type's default enters the fingerprint, unless it equals the field's own default too.
 Nor is it in the :ref:`needs.json <needs_builder_format>`, whose ``needs_schema`` is the schema every need type shares:
-no need type's narrowing is in it (its ``enum``, its default, a field it makes not nullable),
+no need type's narrowing is in it (its ``enum``, its default, a field it makes not nullable at the default severity),
 the ``default`` it gives a field, which :ref:`needs_json_remove_defaults` compares against, is never a need type's,
 and a reader that has only the file checks less than the project that wrote it did.
 
@@ -720,7 +742,8 @@ For new fields the following can be defined:
     The other constraints are checked by the schema validation, see :ref:`schema_validation` for more details.
     By default the field schema will be ``{"type": "string"}``.
 - ``nullable``: If set to ``True``, the field can be set to ``None`` (optional), e.g. if no value is specifically given and no default applies,
-    If ``False``, the field must have a value (either explicitly set or via default/predicates), otherwise the need is invalid and will not be created.
+    If ``False``, the field must have a value (either explicitly set or via default/predicates), otherwise the need is invalid and will not be created
+    (unless a need type's entry gives the field a ``severity`` below ``violation``, which reports it instead: :ref:`needs_types_fields`).
 - ``predicates``: A list of ``(match expression, value)`` tuples (optional).
     If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
 - ``default``: A default value for the field (optional).

@@ -4,6 +4,26 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Improvements
+............
+
+- ✨ A need type's declaration of a field or link type carries a ``severity``: a constraint reported, not failed
+  (:issue:`2374`)
+
+  ``severity = "warning"`` (or ``"info"``) on a ``[needs.types.<t>.fields.<f>]`` or ``.links.<l>`` entry is the
+  severity of every constraint of the type's declaration -- its ``schema`` keywords, its links' ``minItems`` and
+  ``maxItems``, and ``nullable = false`` -- where each was a ``violation``. The failures are reported as
+  ``sn_schema_warning.field_fail`` (``sn_schema_info.*``), a warning rather than an error. A field not nullable below
+  ``violation`` is asked for, not enforced: a need without it is created, the field ``None``, and reported at that
+  severity (schema path ``fields > nullable``), so switching the schema validation off
+  (:ref:`needs_schema_validation_enabled`) silences it; the needs.json writes such a field nullable. A type
+  inheriting the declaration keeps its severity and may raise it; one lowering a severity an ancestor gives is a
+  ``needs.type_widening`` warning, and is ignored. Without a ``severity`` nothing changes. The fields-per-type
+  conformance corpus may now pin a finding's severity. See :ref:`need_types_severity`.
+
 .. _`release:9.1.0`:
 
 9.1.0

@@ -660,13 +660,18 @@ def _unwrap_field_value(
 ) -> tuple[Any, FieldFunctionArray | None]:
     """Unwrap a converted field value into a concrete value and optional dynamic function.
 
+    A field without a value holds ``None`` where its declaration admits it
+    (:attr:`~sphinx_needs.needs_schema.FieldSchema.admits_null`): it is nullable, or
+    not nullable at a ``severity`` below ``violation``, which the schema validation
+    reports rather than the need being refused.
+
     :param field_schema: The schema for the field.
     :param converted: The converted value from ``convert_or_type_check``.
     :return: A tuple of (concrete_value, dynamic_func_or_none).
     :raises InvalidNeedException: If the value is invalid for the field.
     """
     if converted is None:
-        if not field_schema.nullable:
+        if not field_schema.admits_null:
             raise InvalidNeedException(
                 "invalid_value",
                 f"Field {field_schema.name!r} is not nullable, but no value or default was given.",

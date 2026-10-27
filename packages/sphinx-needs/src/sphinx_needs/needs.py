@@ -780,7 +780,8 @@ NEED_TYPE_KEYS = (
 )
 
 #: The keys of an entry of a need type's ``fields`` table (``derive``: the field's
-#: ``derive_by_type`` entry for the type, and the types inheriting from it).
+#: ``derive_by_type`` entry for the type, and the types inheriting from it;
+#: ``severity``: what a need failing the declaration is reported at).
 NEED_TYPE_FIELD_KEYS = (
     "description",
     "schema",
@@ -788,6 +789,7 @@ NEED_TYPE_FIELD_KEYS = (
     "default",
     "predicates",
     "derive",
+    "severity",
 )
 
 #: The keys of an entry of a need type's ``links`` table: a link type is not nullable.
@@ -799,6 +801,7 @@ NEED_TYPE_LINK_KEYS = (
     "predicates",
     "derive",
     "target_types",
+    "severity",
 )
 
 #: The keys of a link type that are the same on every need type -- how its links are
@@ -854,6 +857,10 @@ _SHAPES: Mapping[str, tuple[str, Callable[[object], bool]]] = {
     "predicates": ("a list of (filter, value) pairs", _is_pairs),
     "derive": ("a mapping", lambda v: isinstance(v, Mapping)),
     "target_types": ("a non-empty list of need type names", _is_names),
+    "severity": (
+        "one of 'violation', 'warning' and 'info'",
+        lambda v: v in ("violation", "warning", "info"),
+    ),
     "incoming": ("a string", lambda v: isinstance(v, str)),
     "outgoing": ("a string", lambda v: isinstance(v, str)),
     "copy": ("a boolean", lambda v: isinstance(v, bool)),
@@ -896,6 +903,8 @@ def _got(name: str, value: object) -> str:
             if not value
             else "a list with an item that is not a non-empty string"
         )
+    if name == "severity" and isinstance(value, str):
+        return repr(value)
     return repr(value) if value == "" else _type_name(value)
 
 
@@ -990,7 +999,8 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
     of its shape: a ``description``, an ``incoming``, ``outgoing``, ``color`` or
     ``style*`` that is not a string, a ``schema`` or a ``derive`` that is not a
     mapping, a ``nullable``, ``copy`` or ``allow_dead_links`` that is not a boolean,
-    ``predicates`` that are not a list of (filter, value) pairs. Only the
+    ``predicates`` that are not a list of (filter, value) pairs, a ``severity`` that
+    is not one of ``violation``, ``warning`` and ``info``. Only the
     shape is checked here: what a declaration names, and whether its values apply to
     the field, is for :func:`create_schema`, which knows the fields and every need type.
 
@@ -3555,14 +3565,14 @@ def _declare_for_type(
             LOGGER,
             f"{where} sets {' and '.join(map(repr, refused))}, but {previous.name!r} is "
             f"derived ({previous.describe_derived()}): a need type declares only its "
-            f"{'description and schema' if on_link else 'description, schema and nullable'}"
+            f"{'description, schema and severity' if on_link else 'description, schema, nullable and severity'}"
             "; the entry is ignored",
             "type_conflict",
             None,
         )
         return None
     changes: dict[str, Any] = {
-        key: keys[key] for key in ("description", "nullable") if key in keys
+        key: keys[key] for key in ("description", "nullable", "severity") if key in keys
     }
     if "schema" in keys:
         # a declaration names only what it changes: it takes the rest from before

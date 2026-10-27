@@ -82,14 +82,27 @@ def generate_needs_schema(
 
     It is the schema of the fields every need type shares: the global view of the
     schema (:meth:`~sphinx_needs.needs_schema.FieldsSchema.for_type` of no need type),
-    whatever a need type declares anew.
+    whatever a need type declares anew -- but that a field a need type declares not
+    nullable at a ``severity`` below ``violation`` is written nullable, as one a need
+    of that type may hold ``null`` of.
     """
+    # the fields a need may hold null of, where the global declaration does not
+    nulls = {
+        field.name
+        for field in needs_schema.iter_all_fields()
+        if any(
+            declaration.kind == "field" and declaration.admits_null
+            for declaration in needs_schema.type_declarations(field.name).values()
+        )
+    }
     # the union by design: one projection for the needs of every type
     needs_schema = needs_schema.for_type(None)
     properties: dict[str, Any] = {}
 
     for field in needs_schema.iter_extra_fields():
-        properties[field.name] = _field_property(field, "extra")
+        properties[field.name] = _field_property(
+            field, "extra", nullable=field.name in nulls
+        )
 
     # TODO currently extra fields can overlap with core fields,
     # in which case they are ignored,
@@ -98,7 +111,7 @@ def generate_needs_schema(
     for name, core_params in NeedsCoreFields.items():
         if (field := needs_schema.get_core_field(name)) is not None:
             # as the project declares it, a needs_fields entry narrowing it included
-            properties[name] = _field_property(field, "core")
+            properties[name] = _field_property(field, "core", nullable=name in nulls)
             continue
         properties[name] = deepcopy(core_params["schema"])
         properties[name]["description"] = f"{core_params['description']}"
@@ -140,12 +153,16 @@ def generate_needs_schema(
     }
 
 
-def _field_property(field: FieldSchema, field_type: str, /) -> dict[str, Any]:
+def _field_property(
+    field: FieldSchema, field_type: str, /, *, nullable: bool = False
+) -> dict[str, Any]:
     """The ``needs_schema`` property of a field, from its global declaration: its type
-    (with ``null`` where it is nullable), item type and default; its other constraints
-    (an ``enum``, a ``pattern``) are not written."""
+    (with ``null`` where it is nullable, or ``nullable`` says a need type's declaration
+    lets a need hold null), item type and default; its other constraints (an ``enum``,
+    a ``pattern``) are not written."""
+    nullable = nullable or field.nullable
     prop: dict[str, Any] = {
-        "type": [field.type, "null"] if field.nullable else field.type,
+        "type": [field.type, "null"] if nullable else field.type,
         "description": field.description,
         "field_type": field_type,
     }
@@ -153,7 +170,7 @@ def _field_property(field: FieldSchema, field_type: str, /) -> dict[str, Any]:
         prop["items"] = {"type": field.item_type}
     if isinstance(field.default, FieldLiteralValue):
         prop["default"] = field.default.value
-    elif field.nullable:
+    elif nullable:
         prop["default"] = None
     if field.derived:
         # derived: an importer takes the value as data, and does not compute it
