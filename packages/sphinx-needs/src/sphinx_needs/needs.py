@@ -652,7 +652,12 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
         )
 
     _load_variants_from_toml(
-        config, toml_doc, toml_file, tuple(toml_path), overridden_keys
+        config,
+        toml_doc,
+        toml_file,
+        tuple(toml_path),
+        overridden_keys,
+        Path(app.confdir),
     )
 
 
@@ -678,21 +683,9 @@ def _is_present(doc: dict[str, object], path: tuple[str, ...]) -> bool:
     return True
 
 
-def _without_key(
-    doc: dict[str, object], path: tuple[str, ...], key: str
-) -> dict[str, object]:
-    """*doc* without *key* in the table at *path*, which is copied along the path only.
-
-    *doc* is returned itself when there is nothing to remove, so the parsed document is
-    never modified.
-    """
-    if not path:
-        return {k: v for k, v in doc.items() if k != key} if key in doc else doc
-    child = doc.get(path[0])
-    if not isinstance(child, dict):
-        return doc
-    new_child = _without_key(child, path[1:], key)
-    return doc if new_child is child else {**doc, path[0]: new_child}
+def _is_overridden(legacy_key: str, overridden_keys: set[str]) -> bool:
+    """Whether the confval of *legacy_key* was set with ``-D``, in either spelling."""
+    return legacy_key in overridden_keys or f"needs_{legacy_key}" in overridden_keys
 
 
 def _load_variants_from_toml(
@@ -701,6 +694,7 @@ def _load_variants_from_toml(
     toml_file: Path,
     prefix: tuple[str, ...],
     overridden_keys: set[str],
+    confdir: Path,
 ) -> None:
     """Read the variant data of the ``needs_from_toml`` file, through ``ub_project``.
 
@@ -708,14 +702,19 @@ def _load_variants_from_toml(
     variant_data*`` the legacy one; ``ub_project`` decides which one is read, WHOLE, and
     reports the other's keys. What stays here is sphinx-needs' policy:
 
-    - a key overridden with ``-D`` is removed from both locations before the read, so it
-      neither opens a file nor decides the location, just as a ``-D`` overrides any
-      other ``[needs]`` key one at a time;
+    - ``-D needs_variant_data_file`` is ub-project's data-file override (its reading
+      contract, section 6.8): it names a file, not a location, so it replaces the data
+      file of the location read without opening it, and the location, the refusals and
+      the findings stay the document's. A relative one is anchored at the ``confdir``,
+      as :func:`resolve_variant_data_config` anchors it. ``-D
+      needs_variant_data_file=`` (no file) is this route's own meaning, applied after
+      the read: the confval stays empty;
     - each declared key of the location read is written to its confval, as the
-      ``[needs]`` loop wrote it, and the merge with ``conf.py`` values and the file load
-      stay with :func:`resolve_variant_data_config`, which therefore reads the data file
-      a second time. Writing the merged map instead would override a ``conf.py`` value
-      for a key the TOML does not set, which must fill that gap;
+      ``[needs]`` loop wrote it, unless ``-D`` set that confval, and the merge with
+      ``conf.py`` values and the file load stay with
+      :func:`resolve_variant_data_config`, which therefore reads the data file a second
+      time. Writing the merged map instead would override a ``conf.py`` value for a key
+      the TOML does not set, which must fill that gap;
     - the findings are reported as warnings, except the legacy location, which is
       reported with ``-v`` only for now.
 
@@ -724,15 +723,20 @@ def _load_variants_from_toml(
     """
     needs_table = (*prefix, "needs")
     variants_table = (*prefix, "variants")
-    doc = toml_doc
-    for key, legacy_key in zip(_VARIANT_KEYS, _LEGACY_VARIANT_KEYS, strict=True):
-        if legacy_key in overridden_keys or f"needs_{legacy_key}" in overridden_keys:
-            doc = _without_key(doc, variants_table, key)
-            doc = _without_key(doc, needs_table, legacy_key)
+    override: Path | None = None
+    # "" means "no file" on this route (ub-project's section 10.1): no override
+    if _is_overridden("variant_data_file", overridden_keys) and (
+        value := NeedsSphinxConfig(config).variant_data_file
+    ):
+        override = confdir / value
 
     try:
         result = read_variants(
-            doc, toml_file, needs_table=needs_table, variants_table=variants_table
+            toml_doc,
+            toml_file,
+            needs_table=needs_table,
+            variants_table=variants_table,
+            data_file_override=override,
         )
     except (ProjectConfigError, ValueError) as error:
         # ValueError: a table path ub_project refuses (an empty needs_from_toml_table
@@ -752,14 +756,18 @@ def _load_variants_from_toml(
     if result.location is None:
         return
     if result.location == "variants":
-        table, keys = select_table(doc, variants_table), _VARIANT_KEYS
+        # absent when an override is read with neither location declared
+        table, keys = select_table(toml_doc, variants_table) or {}, _VARIANT_KEYS
     else:
-        table, keys = select_table(doc, needs_table), _LEGACY_VARIANT_KEYS
-    assert table is not None, "a location that was read is a table"
+        table, keys = select_table(toml_doc, needs_table) or {}, _LEGACY_VARIANT_KEYS
     inline_key, file_key = keys
-    if (inline := table.get(inline_key)) is not None:
+    if (inline := table.get(inline_key)) is not None and not _is_overridden(
+        "variant_data", overridden_keys
+    ):
         config["needs_variant_data"] = inline
-    if (file_value := table.get(file_key)) is not None:
+    if (file_value := table.get(file_key)) is not None and not _is_overridden(
+        "variant_data_file", overridden_keys
+    ):
         # today's converter (``_abs_path``), so the confval's string is what the [needs]
         # loop wrote; ``result.data_file`` is joined, not resolved
         config["needs_variant_data_file"] = NeedsSphinxConfig.convert_field_value(

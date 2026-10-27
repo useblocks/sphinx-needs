@@ -646,9 +646,52 @@ def test_confoverride_file_over_variants_whose_own_file_is_missing(build):
     assert app.config.needs_variant_data_file == "b.json"
 
 
-def test_an_overridden_key_does_not_decide_the_location(build):
-    """``[variants]`` loses its only key to ``-D``, so ``[needs]`` is the declared
-    location: its inline table is read, with no ``variant_data_location`` warning."""
+@pytest.mark.parametrize("table", ["variants", "needs"])
+def test_confoverride_file_replaces_the_file_of_either_location(build, table):
+    """``-D needs_variant_data_file`` names a file, not a location (ub-project's
+    reading contract, section 6.8): it replaces the data file of whichever location is
+    read, without opening it, and that location's inline table still applies -- so a
+    project on the legacy location alone keeps its ``[needs]`` inline table."""
+    file_key = "data_file" if table == "variants" else "variant_data_file"
+    inline_key = "data" if table == "variants" else "variant_data"
+    app = build(
+        {
+            "conf.py": TOML_CONF,
+            "ubproject.toml": f"""\
+                [{table}]
+                {file_key} = "nmc.json"
+                [{table}.{inline_key}]
+                edition = "pro"
+                """,
+            "lfp.json": {"chem": "lfp", "edition": "base"},
+        },
+        confoverrides={"needs_variant_data_file": "lfp.json"},
+    )
+    assert_no_warnings(app)
+    assert app.config.needs_variant_data == {"chem": "lfp", "edition": "pro"}
+    assert app.config.needs_variant_data_file == "lfp.json"
+
+
+def test_confoverride_file_with_neither_location(build):
+    """With no variant data in the TOML, ``-D needs_variant_data_file`` is the data."""
+    app = build(
+        {
+            "conf.py": TOML_CONF,
+            "ubproject.toml": "[needs]\nid_required = false\n",
+            "lfp.json": {"chem": "lfp"},
+        },
+        confoverrides={"needs_variant_data_file": "lfp.json"},
+    )
+    assert_no_warnings(app)
+    assert app.config.needs_variant_data == {"chem": "lfp"}
+
+
+def test_an_overridden_file_does_not_decide_the_location(build):
+    """``[variants]`` declares by its data file, which ``-D`` replaces: the location is
+    still ``[variants]``, the document's, so the ``[needs]`` inline table stays ignored
+    and is reported as it is without ``-D``. (Until ub-project's section 6.8, ``-D``
+    removed the key first, and ``[needs]`` was read silently; such a project already
+    warned, and failed on its missing file, without ``-D``.)"""
     app = build(
         {
             "conf.py": TOML_CONF,
@@ -661,11 +704,110 @@ def test_an_overridden_key_does_not_decide_the_location(build):
             "b.json": {"cpu": "b"},
         },
         confoverrides={"needs_variant_data_file": "b.json"},
-        verbosity=1,
+    )
+    assert build_warnings(app) == [
+        "WARNING: <srcdir>/ubproject.toml: [needs] variant_data is ignored because [variants] is set, "
+        "and only one location is read; remove the [needs] key "
+        "[needs.variant_data_location]",
+    ]
+    assert app.config.needs_variant_data == {"cpu": "b"}
+
+
+def test_an_overridden_file_key_is_still_held_to_its_type(make_app, tmp_path):
+    """The value ``-D`` replaces is not opened, but it is still the document's, and an
+    empty ``data_file`` is refused as it is without ``-D``."""
+    srcdir = _write(
+        tmp_path / "src",
+        {
+            "conf.py": TOML_CONF,
+            "ubproject.toml": '[variants]\ndata_file = ""\n',
+            "b.json": {"cpu": "b"},
+        },
+    )
+    with pytest.raises(NeedsConfigException, match="must be one non-empty path"):
+        make_app(
+            srcdir=srcdir,
+            freshenv=True,
+            confoverrides={"needs_variant_data_file": "b.json"},
+        )
+
+
+@pytest.mark.parametrize("toml", ['[variants]\ndata_file = "vd.json"\n', None])
+def test_a_missing_confoverride_file_is_refused_in_its_own_words(
+    make_app, tmp_path, toml
+):
+    """The override's file is opened, and a missing one is refused in the same words
+    with and without a TOML file: the TOML did not name it."""
+    files: dict[str, str | dict] = {"vd.json": {"cpu": "arm"}}
+    if toml is None:
+        files["conf.py"] = _conf()
+    else:
+        files |= {"conf.py": TOML_CONF, "ubproject.toml": toml}
+    srcdir = _write(tmp_path / "src", files)
+    with pytest.raises(NeedsConfigException) as excinfo:
+        make_app(
+            srcdir=srcdir,
+            freshenv=True,
+            confoverrides={"needs_variant_data_file": "nope.json"},
+        )
+    assert str(excinfo.value) == f"variant data file not found: {srcdir / 'nope.json'}"
+
+
+def test_an_empty_confoverride_file_means_no_file(build):
+    """``-D needs_variant_data_file=`` is "no file" on this route: the TOML's inline
+    table is used alone."""
+    app = build(
+        {
+            "conf.py": TOML_CONF,
+            "ubproject.toml": """\
+                [variants]
+                data_file = "vd.json"
+                [variants.data]
+                edition = "pro"
+                """,
+            "vd.json": {"cpu": "arm"},
+        },
+        confoverrides={"needs_variant_data_file": ""},
     )
     assert_no_warnings(app)
-    assert app.config.needs_variant_data == {"cpu": "b", "edition": "legacy"}
-    assert "legacy location [needs] variant_data;" in app._status.getvalue()
+    assert app.config.needs_variant_data == {"edition": "pro"}
+
+
+def test_an_empty_confoverride_file_still_reads_the_toml_file(make_app, tmp_path):
+    """An override naming no file is sphinx-needs' own (ub-project's section 10.1), so
+    it is applied after the read, and the TOML's file is read as it is without ``-D``:
+    a missing one is refused. (Until section 6.8 the key was removed first.)"""
+    srcdir = _write(
+        tmp_path / "src",
+        {
+            "conf.py": TOML_CONF,
+            "ubproject.toml": '[variants]\ndata_file = "nope.json"\n',
+        },
+    )
+    with pytest.raises(NeedsConfigException, match="variant data file not found"):
+        make_app(
+            srcdir=srcdir, freshenv=True, confoverrides={"needs_variant_data_file": ""}
+        )
+
+
+def test_an_overridden_inline_table_keeps_the_override(build):
+    """A ``needs_variant_data`` override is kept, key by key as every other option,
+    and the TOML's data file is still read under it."""
+    app = build(
+        {
+            "conf.py": TOML_CONF,
+            "ubproject.toml": """\
+                [variants]
+                data_file = "vd.json"
+                [variants.data]
+                edition = "toml"
+                """,
+            "vd.json": {"cpu": "arm", "edition": "file"},
+        },
+        confoverrides={"needs_variant_data": {"edition": "cli"}},
+    )
+    assert_no_warnings(app)
+    assert app.config.needs_variant_data == {"cpu": "arm", "edition": "cli"}
 
 
 def test_conf_inline_fills_over_a_variants_file(build):
