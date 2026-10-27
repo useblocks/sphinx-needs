@@ -4,6 +4,20 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Improvements
+............
+
+- 👌 The ``needs.derive_scope`` warning at a :ref:`needextend` whose filter names a computed field says what
+  computes it: "a derive rule" for a field a :ref:`derive <needs_derive>` rule computes, "a dynamic function or
+  variant" for a ``[[…]]``, ``<<…>>`` or ``<{…}>``, and "a derive rule, a dynamic function or a variant" when the
+  filter names fields of both, as ubCode words it (:issue:`2207`)
+
+  It said "a dynamic function or variant" for a derived field too, where the project wrote neither. The warning's
+  code and severity are unchanged.
+
 .. _`release:9.1.0`:
 
 9.1.0
