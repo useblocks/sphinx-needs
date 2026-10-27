@@ -628,6 +628,7 @@
         }),
         'type': 'array',
       }),
+      summary=False,
       target_types=None,
     ),
     'parent_needs': LinkSchema(
@@ -664,6 +665,7 @@
         }),
         'type': 'array',
       }),
+      summary=False,
       target_types=None,
     ),
     'post_template': FieldSchema(
