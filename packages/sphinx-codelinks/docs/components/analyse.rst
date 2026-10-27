@@ -50,6 +50,83 @@ Limitations
 - **Language Support**: C/C++ (``//``, ``/* */``), C# (``//``, ``/* */``, ``///``), TypeScript/JavaScript (``//``, ``/* */``, and the legacy one-line ``<!--``), Python (``#``), YAML (``#``), Rust (``//``, ``/* */``, ``///``), Go (``//``, ``/* */``), JSONC (``//``, ``/* */``) and Bash (``#``) comment styles are supported
 - **Single Comment Style**: Each analysis run processes only one comment style at a time
 
+.. _attachment:
+
+Which code a marker is attached to
+----------------------------------
+
+Every marker -- a one-line need, a multi-line need (by the comment holding its open line) or an ``@need-ids:``
+reference -- is attached to at most one **code entity**: a function, a method, a class, a namespace, a module.
+The analysis records it in two forms: ``tagged_scope``, the entity's full text, and ``scope``, the entity named:
+
+.. code-block:: json
+
+   "scope": {
+       "kind": "function_definition", "start": 33, "end": 37,
+       "entity_kind": "method", "qualified_name": "ns::Widget::draw", "mechanism": "leading"
+   }
+
+- ``kind`` -- the syntax node of the entity (tree-sitter's name for it);
+- ``start`` and ``end`` -- its first and last line, 1-based. The definition itself: a decorator, an attribute or a
+  template header above it is not part of it;
+- ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
+  ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,
+  ``property``, ``event``, ``indexer`` or ``delegate``; in YAML and JSON ``key`` or ``item``;
+- ``qualified_name`` -- the entity's name within its file, qualified by the containers the file shows: ``ns::Widget::draw``
+  in C++, ``Shape.area`` and ``outer.<locals>.inner`` in Python (its ``__qualname__``), ``Widget::new`` and
+  ``<Widget as Shape>::area`` in Rust, ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in
+  TypeScript. No module, crate or package prefix: the file's path decides that. ``null`` in YAML and JSON, and for an
+  entity without a name;
+- ``mechanism`` -- how the marker was attached: ``doc_comment`` (a documentation comment -- ``///``, ``//!``, ``/**``,
+  ``/*!``, a C# ``///``, a JSDoc ``/**`` -- or a Python docstring), ``leading`` (a comment on the lines before the
+  entity), ``trailing`` (after code on the entity's own line) or ``enclosing`` (inside its body).
+
+``scope`` is ``null`` exactly when ``tagged_scope`` is: the marker is attached to no entity (the file), and always
+under the libclang engine. The names are best effort, from the syntax alone: overloads share a name, and a free
+function defined with a namespace qualifier (``void ns::f() {}``) reads as a method. With :ref:`set_code_entity`, the
+needs ``src-trace`` creates carry the entity as fields.
+
+The rules
+~~~~~~~~~
+
+In this order:
+
+1. **YAML and JSON**: the key/value pair or item on the comment's line, else the next one, else the enclosing one.
+2. **A Python docstring** documents the function or class it is in.
+3. **A Rust inner doc comment** (``//!``, ``/*!``) documents what it is inside: the module, or the file.
+4. **A trailing marker** -- code before it on its line -- belongs to the entity on that line (a Doxygen ``///<`` after
+   a declaration is the classic case), else to the entity it is inside.
+5. **The first comment block of a file**, when a blank line separates it from the first item, belongs to the file.
+6. **A leading marker** belongs to the entity right after it, when only *trivia* stands between: other comments,
+   blank lines, attributes (Rust ``#[...]``, C++ ``[[...]]``) and decorators (TypeScript). The entity is looked for
+   through what wraps it: a Python decorator, a C++ ``template <...>`` header or ``extern "C"``, a TypeScript
+   ``export`` or ``declare``. In Python, a comment between ``def f():`` and the first line of its body belongs to that
+   first line's entity, if it is one.
+7. **Otherwise**, the entity the marker is inside, if any.
+
+Anything else between a leading marker and an entity -- a statement, a variable, a macro call -- breaks the
+attachment: the marker belongs to the entity it is inside, or to the file. A marker is never attached across code.
+
+What counts as an entity
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+- **C and C++**: functions, prototypes and in-class method declarations (not a function pointer, nor a local that
+  merely parses like a prototype), classes, structs, unions and enums with a body (not a forward declaration),
+  namespaces.
+- **Python**: functions and classes.
+- **Rust**: functions, required trait methods, structs, enums, unions, traits, impl blocks, modules, type aliases,
+  ``macro_rules!`` definitions.
+- **C#**: methods, constructors, destructors, properties, indexers, operators, events, delegates, local functions,
+  classes, structs, interfaces, records, enums, namespaces.
+- **Go**: functions, methods, type declarations, interface methods.
+- **TypeScript and JavaScript**: functions, classes, interfaces, enums, type aliases, namespaces, methods and method
+  signatures; a ``const``, ``let`` or ``var``, a class field, an assignment or a default export only when it holds a
+  function or a class (one written with ``declare`` always does).
+- **Bash**: functions.
+
+Data members, variables, lambdas bound to a name and macro invocations are not entities: a marker above one is
+attached to the entity it is inside, or to the file.
+
 Extraction Examples
 -------------------
 
@@ -90,6 +167,10 @@ Below is an example of a C++ source file containing need ID references and the c
                     "end": { "row": 2, "column": 52 }
                 },
                 "tagged_scope": "void dummy_func1(){\n     //...\n }",
+                "scope": {
+                    "kind": "function_definition", "start": 4, "end": 6,
+                    "entity_kind": "function", "qualified_name": "dummy_func1", "mechanism": "leading"
+                },
                 "need_ids": ["need_001", "need_002", "need_003", "need_004"],
                 "marker": "@need-ids:",
                 "type": "need-id-refs"
@@ -102,6 +183,10 @@ Below is an example of a C++ source file containing need ID references and the c
                     "end": { "row": 7, "column": 22 }
                 },
                 "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
+                "scope": {
+                    "kind": "function_definition", "start": 9, "end": 14,
+                    "entity_kind": "function", "qualified_name": "main", "mechanism": "leading"
+                },
                 "need_ids": ["need_003"],
                 "marker": "@need-ids:",
                 "type": "need-id-refs"
@@ -113,7 +198,9 @@ Below is an example of a C++ source file containing need ID references and the c
 - ``filepath`` - Path to the source file containing the reference
 - ``remote_url`` - URL to the source code in the remote repository
 - ``source_map`` - Location information (row/column) of the marker
-- ``tagged_scope`` - The code scope associated with the marker
+- ``tagged_scope`` - The full text of the code entity the marker is attached to, or ``null``
+- ``scope`` - That entity, named: its kind, lines and name, and how the marker was attached
+  (see :ref:`attachment`), or ``null``
 - ``need_ids`` - List of referenced need IDs
 - ``marker`` - The marker string used for identification
 - ``type`` - Type of extraction ("need-id-refs")
@@ -431,7 +518,10 @@ The record
            "end": { "line": 11, "col": 11 },
            "content_start": { "line": 9, "col": 3 },
            "option_lines": { "id": 5, "links": 6, "status": 7 },
-           "scope": { "kind": "function_definition", "start": 13, "end": 15 }
+           "scope": {
+               "kind": "function_definition", "start": 13, "end": 15,
+               "entity_kind": "function", "qualified_name": "login", "mechanism": "doc_comment"
+           }
        },
        "type": "multiline-need"
    }
@@ -442,8 +532,8 @@ The record
 - ``source`` -- the codelinks project; the file, relative to the git root (``root: "git"``) or else
   to the project's source directory (``root: "src_dir"``), POSIX; the commit; the open line's start,
   the close line's end and the first body line's start (``null`` without a body), each with a
-  1-based ``line`` and a 0-based ``col``; each option's line; and the code scope the block is
-  attached to (``null`` under the libclang engine).
+  1-based ``line`` and a 0-based ``col``; each option's line; and the code entity the block is
+  attached to, the ``scope`` object of :ref:`attachment` (``null`` under the libclang engine).
 - ``filepath``, ``remote_url``, ``source_map`` and ``tagged_scope`` are the fields every
   ``marked_content.json`` record has; ``source_map`` spans the open line to the close line, 0-based.
 

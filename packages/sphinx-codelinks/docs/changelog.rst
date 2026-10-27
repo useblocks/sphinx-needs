@@ -3,6 +3,51 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+New and Improved
+................
+
+- ✨ The analysis names the code entity each marker is attached to.
+
+  Every record of ``codelinks analyse`` -- a one-line need, a reference, a multi-line need -- says which entity its
+  marker belongs to: a one-line need and a reference gain a ``scope`` object, right after ``tagged_scope``, and a
+  multi-line need's ``source.scope`` gains the same keys. Besides the syntax node and its lines, ``entity_kind``
+  (``function``, ``method``, ``class``, ``namespace``, ...), ``qualified_name``, the entity's name within its file
+  (``ns::Widget::draw``, ``Shape.area``, ``<Widget as Shape>::area``), and ``mechanism``, how the marker was attached
+  (``doc_comment``, ``leading``, ``trailing`` or ``enclosing``). ``tagged_scope`` is unchanged, and ``codelinks write
+  rst`` reads the new key. See :ref:`attachment`.
+
+- ✨ :ref:`set_code_entity` puts the attached entity on the need.
+
+  Off by default. When on, every need ``src-trace`` creates from a marker carries ``code_entity``,
+  ``code_entity_kind``, ``code_entity_lines`` (``[start, end]``) and ``code_entity_mechanism``, registered typed and
+  nullable; a need an ``@need-ids:`` reference names gets none. A schema with ``unevaluatedProperties: false`` must
+  declare them once the option is on.
+
+Fixes
+.....
+
+- 🐛 A marker attaches only to an adjacent code entity.
+
+  A marker used to bind the next function, class or struct at its level however much code stood in between: a
+  template, a decorated definition, a prototype, an in-class method declaration, a constructor, a macro call or a
+  statement was walked past, so the marker landed on a later entity. Against compiler ground truth, 24 of 98 markers
+  of a measured corpus in six languages were attached wrongly; now none is. A leading marker now belongs to the
+  entity right after it when only comments, blank lines, attributes and decorators stand between; a trailing marker
+  to the entity on its line; a Rust ``//!`` comment to what it is inside; a file's first comment block, a blank line
+  after it, to the file; anything else to the entity it is inside, or the file. More declarations are entities: C++
+  prototypes, in-class method declarations and namespaces, Rust required trait methods, C# constructors, structs,
+  records and interfaces, Go interface methods. See :ref:`attachment`.
+
+  **Existing markers re-bind**, which changes ``tagged_scope`` (and the new ``scope``) in ``marked_content.json``;
+  nothing changes in the needs ``src-trace`` creates unless :ref:`set_code_entity` is on. In TypeScript and
+  JavaScript, a marker above a plain ``const``, ``let`` or ``var``, a class field without a function, an assignment
+  of a value or an ``export default`` of a value used to skip it and bind the next function; it now binds the enclosing
+  class, or nothing, as in every other language. A marker after code on its line (``int x = 1; // @...``) at file
+  level now binds nothing, where it bound the next function.
+
 .. _`release:2.0.1`:
 
 2.0.1

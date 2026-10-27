@@ -108,6 +108,38 @@ Specifies the custom field name used for remote source code links.
    [codelinks]
    remote_url_field = "remote-url"
 
+.. _`set_code_entity`:
+
+set_code_entity
+~~~~~~~~~~~~~~~
+
+Puts the code entity a marker is attached to (see :ref:`attachment`) on every need **src-trace** creates from a
+marker, one-line or multi-line, in four fields:
+
+- ``code_entity`` -- the entity's name within its file (``Shape.area``, ``ns::Widget::draw``);
+- ``code_entity_kind`` -- what it is: ``function``, ``method``, ``class``, ``namespace``, ...;
+- ``code_entity_lines`` -- its first and last line, ``[start, end]``, 1-based;
+- ``code_entity_mechanism`` -- how the marker is attached: ``doc_comment``, ``leading``, ``trailing`` or ``enclosing``.
+
+The fields are registered typed (a string, a string, an array of integers, a string) and nullable, with no default:
+a need whose marker is attached to no entity carries none of them, and a need without a name or a kind lacks that
+field. A need an ``@need-ids:`` reference names gets none: it may be referenced from many places. Declaring one of the
+four names in ``needs_fields`` as well warns (``codelinks.config``): codelinks registers it.
+
+The names come from the syntax alone and are best effort -- overloads share a name, and a free function defined
+with a namespace qualifier reads as a method -- which is why the option is off by default.
+
+.. caution:: A schema with ``unevaluatedProperties: false`` must declare the four fields on every need type created
+   from code once the option is on, or every such need fails validation.
+
+**Type:** ``bool``
+**Default:** ``False``
+
+.. code-block:: toml
+
+   [codelinks]
+   set_code_entity = true
+
 outdir
 ~~~~~~
 
