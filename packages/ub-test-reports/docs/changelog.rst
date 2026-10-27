@@ -3,6 +3,22 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Changed
+.......
+
+- 👌 The ``test-reports build needs`` converter writes ``null`` in ``case_file``, ``case_line``
+  (or the fields ``source_file_option`` and ``source_line_option`` name) and ``case_parameter``
+  where the report gives no source file, no line or no parameter, where it wrote ``""``
+  (changed output; `#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__), as its
+  ``needs_schema`` already declared them nullable. ``split_case_name`` returns ``None`` for the
+  parameter of a name pytest did not parameterise (``""`` stays the parameter of an empty
+  ``[]``). A filter written ``case_line == ''`` no longer matches such a case: write
+  ``case_line is None`` (or ``not case_line``) instead. sphinx-test-reports' directives write
+  the same.
+
 .. _`release:1.1.0`:
 
 1.1.0

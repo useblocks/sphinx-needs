@@ -5067,7 +5067,7 @@ type = "req"
 
 [[case]]
 name = "an-extensions-field-narrowed-on-a-project-type"
-why = "a project type's entry of a field an extension registers narrows it on that type, a value outside the narrowing failing it (field_fail), and the extension's own needs keep their values"
+why = "a project type's entry of a field an extension registers narrows it on that type, a value outside the narrowing failing it (field_fail), and the extension's own needs keep their values: a case the report gives no file, line or parameter for holds null there, never an empty string"
 extensions = ["sphinx_test_reports"]
 config = '''
 [needs.types.spec]
@@ -5112,6 +5112,12 @@ type = "testcase"
 suite = "suite_a"
 case_name = "test_pass"
 result = "passed"
+[case.expect.needs.TF_0001_F0D_85463]
+case_name = "test_fail"
+case_parameter = "a-b"
+[case.expect.nulls]
+TF_0001_F0D_61F00 = ["case_parameter", "case_file", "case_line"]
+TF_0001_F0D_85463 = ["case_file", "case_line"]
 [[case.expect.findings]]
 code = "field_fail"
 need = "S_0002"

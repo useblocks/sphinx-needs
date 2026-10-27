@@ -258,8 +258,9 @@ class TestCommonDirective(Directive):
 
         The parser reports ``"unknown"``/``-1`` when the attributes are absent,
         which is the norm for pytest: its default ``junit_family = xunit2``
-        filters them out. Those sentinels become empty strings, so the fields
-        are always present and never carry a fake location.
+        filters them out. Those sentinels become ``None``, so the fields are
+        null -- never a fake location, and never ``""`` -- as the converter
+        writes them.
         """
         file_field = getattr(self.app.config, "tr_source_file_option", "case_file")
         line_field = getattr(self.app.config, "tr_source_line_option", "case_line")
@@ -268,8 +269,10 @@ class TestCommonDirective(Directive):
         source_line = case.get("line", -1)
 
         return {
-            file_field: "" if source_file in ("unknown", None) else str(source_file),
-            line_field: "" if source_line in (-1, None) else str(source_line),
+            file_field: None
+            if source_file in ("unknown", None, "")
+            else str(source_file),
+            line_field: None if source_line in (-1, None, "") else str(source_line),
         }
 
     def deterministic_case_id_for(self, case: dict[str, Any]) -> str | None:

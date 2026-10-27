@@ -1,6 +1,21 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Changed
+.......
+
+- 👌 A test case the report gives no source file or line for, or that has no parameter, holds
+  ``null`` in ``case_file``, ``case_line`` and ``case_parameter`` (or the fields
+  ``tr_source_file_option`` and ``tr_source_line_option`` name), where it held ``""``
+  (changed output; `#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__). The fields
+  were already declared nullable; pytest's default ``junit_family = xunit2`` writes no ``file``
+  or ``line``, so on its reports every case changes. A filter written ``case_line == ''`` no
+  longer matches such a case: write ``case_line is None`` (or ``not case_line``, which matches
+  both) instead. The converter of ub-test-reports writes the same.
+
 .. _`release:3.0.1`:
 
 3.0.1

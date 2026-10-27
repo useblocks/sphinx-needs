@@ -151,8 +151,9 @@ with a configuration error. For the :ref:`build needs command <cli>` to write
 the renamed fields as well, put the renames in ``ubproject.toml``
 (:ref:`tr_config_from_toml`): it cannot see ``conf.py``.
 
-The field is empty when the XML carries no ``file`` attribute. With pytest this
-is the norm: it emits ``file``/``line`` only with ``junit_family = xunit1`` (or
+The field is null (``None`` to a filter) when the XML carries no ``file``
+attribute, and so is the line field without a ``line``. With pytest this is the
+norm: it emits ``file``/``line`` only with ``junit_family = xunit1`` (or
 ``legacy``), while its default ``xunit2`` filters those attributes out.
 
 Default: **case_file**

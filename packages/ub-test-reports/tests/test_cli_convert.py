@@ -557,7 +557,7 @@ class TestDiagnostics:
             tmp_path, "--no-config", xml=UTILS / "pytest_nested_example.xml"
         )
         assert code == 0
-        assert all(need["case_line"] == "" for need in _needs(data).values())
+        assert all(need["case_line"] is None for need in _needs(data).values())
         assert "junit_family" in capsys.readouterr().err
 
     def test_reports_with_line_attributes_do_not_warn(self, tmp_path, capsys):
