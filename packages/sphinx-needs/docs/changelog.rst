@@ -27,6 +27,18 @@ Improvements
   types, whose ``NeedField`` now lists the keys a ``needs_extra_options`` entry is read for, and the keywords
   those of the schema types the schema is validated against.
 
+- 👌 A field or link type declared on need types alone whose name is close to a declared one is reported, "did
+  you mean" (:issue:`2299`)
+
+  A ``fields`` or ``links`` entry of a :ref:`needs_types` entry naming nothing declared elsewhere declares a field
+  (or link type) of the need types that declare it alone, so a misspelt name, ``asl`` meant to narrow ``asil``,
+  constrained nothing and was not reported. When the name is within ``difflib.get_close_matches(name, known, n=1,
+  cutoff=0.8)`` of a core field an author sets, a registered field (a :ref:`needs_fields` entry, an extension's,
+  a service's) or a global link type, it is now one ``needs.type_near_name`` warning, ``needs_types['req'].fields['asl']
+  declares a field of need types 'req' alone; did you mean 'asil'?``; the field is declared all the same. A deliberate
+  near name, such as a ``tag`` of one type beside ``tags``, is reported too: ``suppress_warnings =
+  ["needs.type_near_name"]`` silences these alone. See :ref:`need_types_misspelt`.
+
 Bug fixes
 .........
 

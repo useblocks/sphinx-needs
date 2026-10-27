@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import difflib
 import json
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from copy import deepcopy
@@ -1961,7 +1962,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     back_links = {f"{name}_back" for name in link_types}
     #: the fields need types declare alone: declared below as a needs_fields entry is
     #: (before the rules are checked), each then declared by its need types
-    type_local, shape_refused, shape_findings = _type_local_fields(
+    type_local, shape_refused, shape_findings, field_declarers = _type_local_fields(
         type_entries,
         order,
         parent,
@@ -1971,7 +1972,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     #: is (after the needs_links and needs_extra_links entries), with the display,
     #: copy and dead links their first root declaration gives; a name declared under
     #: fields too is a field, and the back links of a link type are none
-    local_links, link_refused, link_findings = _type_local_links(
+    local_links, link_refused, link_findings, link_declarers = _type_local_links(
         type_entries,
         order,
         parent,
@@ -1981,6 +1982,13 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             **dict.fromkeys(back_links, "a link type's back links"),
         },
     )
+    #: a name of either close to a declared field's or link type's is likely misspelt
+    for text in _near_name_findings(
+        field_declarers,
+        link_declarers,
+        sorted({*_AUTHORED_CORE_FIELDS, *registered, *link_types}),
+    ):
+        log_warning(LOGGER, text, "type_near_name", None)
     #: each field's and link type's rules from the types' entries: folded below into
     #: its ``derive_by_type``, where it is read, so they are checked with the others
     field_rules, link_rules = (
@@ -3067,7 +3075,9 @@ def _type_local_fields(
     order: list[str],
     parent: Mapping[str, str],
     known: set[str],
-) -> tuple[dict[str, NewFieldParams], set[tuple[str, str]], list[str]]:
+) -> tuple[
+    dict[str, NewFieldParams], set[tuple[str, str]], list[str], dict[str, list[str]]
+]:
     """The fields need types declare that nothing else declares (no core field, no
     registered field, no link type, nor a link type's back links -- the resolver
     refuses such an entry): each the field of the types that declare it, of
@@ -3094,7 +3104,8 @@ def _type_local_fields(
     :param parent: The parent of each type that has one.
     :param known: The names declared otherwise.
     :return: The fields, by name; the (need type, field) entries that do not declare
-        their field; and the findings, by field, in ``order``.
+        their field; the findings, by field, in ``order``; and the need types whose
+        root declarations declare each field, in ``order``.
     """
 
     #: field -> its declarations, in order
@@ -3104,6 +3115,7 @@ def _type_local_fields(
             if isinstance(name, str) and name and name not in known:
                 entries.setdefault(name, []).append((need_type, keys))
     local: dict[str, NewFieldParams] = {}
+    declarers: dict[str, list[str]] = {}
     refused: set[tuple[str, str]] = set()
     inherited = partial(_declared_by_ancestor, types, parent, "fields", refused)
     findings: list[str] = []
@@ -3177,14 +3189,58 @@ def _type_local_fields(
                         f"{_derivation_text(derived, agreed[2])}; the entry is ignored"
                     )
                     refused.add((need_type, name))
-        declaring = ", ".join(repr(t) for t in roots if (t, name) not in refused)
+        declarers[name] = [t for t in roots if (t, name) not in refused]
+        declaring = ", ".join(repr(t) for t in declarers[name])
         local[name] = NewFieldParams(
             source="needs_types",
             description=f"Declared by need types {declaring}",
             schema=cast(Any, _field_schema_of(agreed[0], agreed[1])),
             nullable=True,
         )
-    return local, refused, findings
+    return local, refused, findings, declarers
+
+
+#: the core fields an author sets, which a field declared on need types alone may be
+#: a misspelling of: the id and the core fields of the fields schema
+_AUTHORED_CORE_FIELDS: Final[tuple[str, ...]] = (
+    "id",
+    *(
+        name
+        for name, data in NeedsCoreFields.items()
+        if data.get("add_to_field_schema")
+    ),
+)
+
+
+def _near_name_findings(
+    field_declarers: Mapping[str, list[str]],
+    link_declarers: Mapping[str, list[str]],
+    known: list[str],
+) -> list[str]:
+    """For each field and link type declared on need types alone (each with the need
+    types declaring it) whose name is close to a name in ``known`` (a core field an
+    author sets, a registered field, a global link type), a finding naming the first
+    declaring entry and the close name.
+
+    Close is ``difflib.get_close_matches(name, known, n=1, cutoff=0.8)``: a misspelt
+    name, or a deliberate near name (a plural), which is why it is a finding of its
+    own subtype; the field or link type is declared all the same.
+    """
+    findings: list[str] = []
+    for table, what, declarers in (
+        ("fields", "a field", field_declarers),
+        ("links", "a link type", link_declarers),
+    ):
+        for name, need_types in declarers.items():
+            close = difflib.get_close_matches(name, known, n=1, cutoff=0.8)
+            if not close or not need_types:
+                continue
+            findings.append(
+                f"needs_types[{need_types[0]!r}].{table}[{name!r}] declares {what} of "
+                f"need types {', '.join(repr(t) for t in need_types)} alone; did you "
+                f"mean {close[0]!r}?"
+            )
+    return findings
 
 
 def _declared_by_ancestor(
@@ -3211,7 +3267,9 @@ def _type_local_links(
     order: list[str],
     parent: Mapping[str, str],
     known: Mapping[str, str],
-) -> tuple[dict[str, NeedLinksConfig], set[tuple[str, str]], list[str]]:
+) -> tuple[
+    dict[str, NeedLinksConfig], set[tuple[str, str]], list[str], dict[str, list[str]]
+]:
     """The link types need types declare that nothing else declares (no link type, no
     field, no core field): each the link type of the types that declare it, of the one
     shape they agree on -- whether it is derived, and its display, ``copy`` and
@@ -3244,8 +3302,9 @@ def _type_local_links(
         alone are among them (a name one type declares under ``fields`` and another
         under ``links`` is a field).
     :return: The link types, by name, in the order of their first root declarations;
-        the (need type, link type) entries ignored; and the findings, by link type, in
-        ``order``.
+        the (need type, link type) entries ignored; the findings, by link type, in
+        ``order``; and the need types whose root declarations declare each link type,
+        in ``order``.
     """
     #: link type -> its declarations, in order
     entries: dict[str, list[tuple[str, Mapping[str, Any]]]] = {}
@@ -3257,6 +3316,7 @@ def _type_local_links(
     for name in [n for n in entries if n.endswith("_back") and n[:-5] in entries]:
         del entries[name]
     local: dict[str, NeedLinksConfig] = {}
+    declarers: dict[str, list[str]] = {}
     refused: set[tuple[str, str]] = set()
     inherited = partial(_declared_by_ancestor, types, parent, "links", refused)
     findings: list[str] = []
@@ -3301,11 +3361,12 @@ def _type_local_links(
                 f"needs_types[{need_type!r}].links[{name!r}] {text}; the entry is ignored"
             )
             refused.add((need_type, name))
+        declarers[name] = roots
         declaring = ", ".join(repr(t) for t in roots)
         local[name] = NeedLinksConfig(
             description=f"Declared by need types {declaring}", **given
         )
-    return local, refused, findings
+    return local, refused, findings, declarers
 
 
 def _link_shape_defaults(name: str) -> dict[str, Any]:

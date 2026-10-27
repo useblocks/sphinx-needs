@@ -561,6 +561,12 @@ A declaration of another type, or derived where the field is not (or the other w
 and the entry is ignored, and does not declare the field, so a child's entry under it is a declaration of its own
 (refused too if its type or derivation is not the agreed one; an empty one takes the agreed type);
 an entry that cannot be used for another reason -- it widens, or its default cannot be used -- declares its field all the same, as it was.
+A field so declared whose name is close to that of a core field an author sets, a registered field or a link type
+(``difflib.get_close_matches``, cutoff 0.8) is likely misspelt, and is one ``needs.type_near_name`` warning,
+declared all the same (:ref:`need_types_misspelt`)::
+
+   needs_types['req'].fields['asl'] declares a field of need types 'req' alone; did you mean 'asil'?
+
 The field is declared once for all, nullable and without a default, which each declaring type narrows:
 one that declares it not nullable, with no default, requires it on its own needs alone.
 On a need of a type that does not declare it, the field holds ``None``, a derived one too.
@@ -606,6 +612,8 @@ or is derived where the link type is not (or the other way round), is one ``need
 
 and the entry is ignored: one of a type without a declaring ancestor does not declare the link type
 (a child's entry under it is a declaration of its own), a child's still declares it, through its parent.
+A name close to that of a field or link type declared elsewhere is one ``needs.type_near_name`` warning,
+as for a field (``needs_types['req'].links['verifes'] declares a link type of need types 'req' alone; did you mean 'verifies'?``).
 On a need of a type that does not declare it, the link type holds ``[]``, no links -- where a field holds ``None``:
 a list of links is never ``None``, a needs.json carries every link type on every need, and an empty one is no links.
 A link set for it in a need is ignored, as one ``needs.undeclared_for_type`` warning::
