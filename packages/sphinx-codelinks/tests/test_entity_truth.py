@@ -22,58 +22,7 @@ import yaml
 
 from .test_extraction_fixtures import FIXTURE_DIR, _extract
 
-KNOWN_WRONG_TODAY: frozenset[str] = frozenset(
-    {
-        # C++: a template, a prototype or an in-class declaration walked past, a macro call
-        "CPP_03",
-        "CPP_09",
-        "CPP_12",
-        "CPP_14",
-        "CPP_15",
-        "CPP_22",
-        "CPP_23",
-        "CPP_24",
-        "CPP_27",
-        "CPP_28",
-        "CPP_29",
-        # Python: a decorated definition walked past, a lambda, a decorated last definition
-        "PY_07",
-        "PY_08",
-        "PY_12",
-        "PY_14",
-        "PY_16",
-        "PY_17",
-        "PY_19",
-        "PY_24",
-        # Rust: a required trait method, a macro call, an inner doc comment
-        "RS_02",
-        "RS_12",
-        "RS_22",
-        # C#: a constructor and a nested struct walked past
-        "CS_02",
-        "CS_06",
-        # the rule cases' expectations
-        "IMPL_R_ADJ",
-        "IMPL_R_HEADER",
-        "IMPL_R_HEADER_RS",
-        "IMPL_R_TRAIL",
-        "IMPL_R_TRAIL_PY",
-        "IMPL_R_INNER",
-        "IMPL_R_BLOCK_STMT",
-        "IMPL_R_EXTERN",
-        "IMPL_R_FNPTR",
-        "IMPL_R_NS",
-        "IMPL_R_NS_IN",
-        "IMPL_R_FWD",
-        "IMPL_R_RECORD",
-        "IMPL_R_IFACE",
-        "IMPL_R_ELEM",
-        "IMPL_R_MACRO",
-        "IMPL_R_HDR",
-        "IMPL_R_ML_DEC",
-        "REQ_R_TRAIL",
-    }
-)
+KNOWN_WRONG_TODAY: frozenset[str] = frozenset()
 """Marker ids whose ``scope`` differs from their truth today."""
 
 

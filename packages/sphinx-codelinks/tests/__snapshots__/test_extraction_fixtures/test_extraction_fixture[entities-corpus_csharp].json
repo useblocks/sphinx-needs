@@ -45,13 +45,13 @@
         "column": 41
       }
     },
-    "tagged_scope": "public int W { get; set; }",
+    "tagged_scope": "public Widget(int w) { W = w; }",
     "scope": {
-      "kind": "property_declaration",
-      "start": 10,
-      "end": 10,
-      "entity_kind": "property",
-      "qualified_name": "Acme.Gfx.Widget.W",
+      "kind": "constructor_declaration",
+      "start": 7,
+      "end": 7,
+      "entity_kind": "constructor",
+      "qualified_name": "Acme.Gfx.Widget.Widget",
       "mechanism": "leading"
     },
     "need": {
@@ -63,7 +63,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "property_declaration"
+    "tagged_scope_type": "constructor_declaration"
   },
   {
     "filepath": "case.cs",
@@ -173,13 +173,13 @@
         "column": 51
       }
     },
-    "tagged_scope": "public void UntracedCs() { }",
+    "tagged_scope": "public struct Point { public int X; }",
     "scope": {
-      "kind": "method_declaration",
-      "start": 22,
-      "end": 22,
-      "entity_kind": "method",
-      "qualified_name": "Acme.Gfx.Widget.UntracedCs",
+      "kind": "struct_declaration",
+      "start": 20,
+      "end": 20,
+      "entity_kind": "struct",
+      "qualified_name": "Acme.Gfx.Widget.Point",
       "mechanism": "leading"
     },
     "need": {
@@ -191,6 +191,6 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "method_declaration"
+    "tagged_scope_type": "struct_declaration"
   }
 ]

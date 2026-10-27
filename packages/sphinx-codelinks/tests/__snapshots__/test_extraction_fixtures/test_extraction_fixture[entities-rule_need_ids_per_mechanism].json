@@ -70,14 +70,14 @@
         "column": 44
       }
     },
-    "tagged_scope": "void enclosing() {\n    // @need-ids: REQ_R_ENCL\n    int x = 0;\n}",
+    "tagged_scope": "void trailing() {}",
     "scope": {
       "kind": "function_definition",
-      "start": 6,
-      "end": 9,
+      "start": 5,
+      "end": 5,
       "entity_kind": "function",
-      "qualified_name": "enclosing",
-      "mechanism": "leading"
+      "qualified_name": "trailing",
+      "mechanism": "trailing"
     },
     "need_ids": [
       "REQ_R_TRAIL"

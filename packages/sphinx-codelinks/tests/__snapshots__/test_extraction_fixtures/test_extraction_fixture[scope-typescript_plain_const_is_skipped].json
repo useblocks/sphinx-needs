@@ -12,15 +12,8 @@
         "column": 44
       }
     },
-    "tagged_scope": "function handle(): void {}",
-    "scope": {
-      "kind": "function_declaration",
-      "start": 3,
-      "end": 3,
-      "entity_kind": "function",
-      "qualified_name": "handle",
-      "mechanism": "leading"
-    },
+    "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Skip Const",
       "id": "IMPL_TS_SKIP",
@@ -30,6 +23,6 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_declaration"
+    "tagged_scope_type": null
   }
 ]

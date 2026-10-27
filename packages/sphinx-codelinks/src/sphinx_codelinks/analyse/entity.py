@@ -99,7 +99,7 @@ class CodeScope(TypedDict):
 
 
 # ---------------------------------------------------------------------------
-# Today's association tables: the node kinds a comment binds to
+# What is an entity: the node kinds a marker can be attached to
 # ---------------------------------------------------------------------------
 #
 # YAML and JSONC are intentionally absent. They are data formats, not code, so a
@@ -108,17 +108,50 @@ class CodeScope(TypedDict):
 # needs a different algorithm (inline same-row association first, scalar targets,
 # grammar-specific traversal), implemented in find_yaml_associated_structure and
 # find_jsonc_associated_structure and dispatched from find_associated_scope.
-# Those bespoke finders never read this table (only find_next_scope and
-# find_enclosing_scope do), so an entry here would be dead.
-SCOPE_NODE_TYPES = {
+# Those bespoke finders never read this table, so an entry here would be dead.
+#
+# Deliberately no entities yet: data members and variables, Python assignments
+# (a lambda bound to a name included), Rust ``const``/``static``, Go ``var``/``const``,
+# TypeScript plain consts, and macro invocations. A marker above one of them is
+# attached to the enclosing entity, or to the file.
+ENTITY_NODE_TYPES: dict[CommentType, set[str]] = {
     # @Python Scope Node Types, IMPL_PY_2, impl, [FE_PY]
     CommentType.python: {"function_definition", "class_definition"},
     # @C and C++ Scope Node Types, IMPL_C_2, impl, [FE_C_SUPPORT, FE_CPP]
-    CommentType.cpp: {"function_definition", "class_specifier", "struct_specifier"},
-    CommentType.cs: {"method_declaration", "class_declaration", "property_declaration"},
+    # A declaration, a field declaration, a class, struct, union or enum is an entity
+    # only when its predicate holds: see ENTITY_PREDICATES.
+    CommentType.cpp: {
+        "function_definition",
+        "declaration",
+        "field_declaration",
+        "class_specifier",
+        "struct_specifier",
+        "union_specifier",
+        "enum_specifier",
+        "namespace_definition",
+    },
+    CommentType.cs: {
+        "method_declaration",
+        "class_declaration",
+        "property_declaration",
+        "constructor_declaration",
+        "destructor_declaration",
+        "struct_declaration",
+        "interface_declaration",
+        "enum_declaration",
+        "record_declaration",
+        "operator_declaration",
+        "conversion_operator_declaration",
+        "indexer_declaration",
+        "delegate_declaration",
+        "event_declaration",
+        "local_function_statement",
+        "namespace_declaration",
+        "file_scoped_namespace_declaration",
+    },
     # @TypeScript Scope Node Types, IMPL_TS_2, impl, [FE_TS]
     # The last five are scopes only when they hold a function or a class: see
-    # SCOPE_PREDICATES.
+    # ENTITY_PREDICATES.
     CommentType.ts: {
         "function_declaration",
         "generator_function_declaration",
@@ -142,11 +175,15 @@ SCOPE_NODE_TYPES = {
     # @Rust Scope Node Types, IMPL_RUST_2, impl, [FE_RUST]
     CommentType.rust: {
         "function_item",
+        "function_signature_item",
         "struct_item",
         "enum_item",
+        "union_item",
         "impl_item",
         "trait_item",
         "mod_item",
+        "type_item",
+        "macro_definition",
     },
     # @Go Scope Node Types, IMPL_GO_4, impl, [FE_GO]
     CommentType.go: {
@@ -154,10 +191,13 @@ SCOPE_NODE_TYPES = {
         "method_declaration",
         "type_declaration",
         "type_spec",
+        "method_elem",
     },
     # @Bash Scope Node Types, IMPL_BASH_2, impl, [FE_BASH]
     CommentType.bash: {"function_definition"},
 }
+SCOPE_NODE_TYPES = ENTITY_NODE_TYPES
+"""The name this table had before entities were named; kept for importers."""
 
 # What a TypeScript declaration's value can be wrapped in without changing what it
 # is: ``(() => {}) as Handler``, ``<Handler>(() => {})``, ``f!``, ``x satisfies T``.
@@ -199,7 +239,7 @@ def _declares_function(node: TreeSitterNode) -> bool:
     or one declared with ``declare`` (``declare const x: T``), which holds no value and
     is the declared thing itself. Only the ``declare``-prefixed form: a variable inside a
     ``declare namespace``, ``module`` or ``global`` body, or a bare ``export const x: T;``
-    in a ``.d.ts``, is no scope here and binds the next declaration."""
+    in a ``.d.ts``, is no entity."""
     if node.parent is not None and node.parent.type == "ambient_declaration":
         return True
     return any(
@@ -219,20 +259,63 @@ def _assigns_function(node: TreeSitterNode) -> bool:
     return _is_function_like(node.child_by_field_name("right"))
 
 
-# Node types a scope can be wrapped in, per language: when the next sibling of a comment
-# is one of them, its children are searched for the scope. Every language has ``block``.
-DEFAULT_SCOPE_CONTAINER_TYPES = frozenset({"block"})
-SCOPE_CONTAINER_TYPES: dict[CommentType, frozenset[str]] = {
-    # ``export …``, ``declare …``, and an expression statement holding an assignment
-    # or a top-level ``namespace``
-    CommentType.ts: DEFAULT_SCOPE_CONTAINER_TYPES
-    | {"export_statement", "ambient_declaration", "expression_statement"},
+# The declarators a function declarator can be wrapped in: ``int *f();``,
+# ``int &f();``, ``int f [[nodiscard]] ();``.
+_CPP_DECLARATOR_WRAPPERS = {
+    "pointer_declarator",
+    "reference_declarator",
+    "attributed_declarator",
 }
 
-# Scope node types that are a scope only when their predicate holds, per language, so
-# that a comment does not bind to a declaration that merely precedes the one it
-# documents (``const flag = true;`` before a function).
-SCOPE_PREDICATES: dict[CommentType, dict[str, Callable[[TreeSitterNode], bool]]] = {
+
+def _cpp_declares_function(node: TreeSitterNode) -> bool:
+    """The declarator chain reaches a function declarator: ``int f(int);``, not the
+    variable ``int x;`` nor the function pointer ``int (*fp)(int);``."""
+    declarator = node.child_by_field_name("declarator")
+    for _ in range(8):
+        if declarator is None:
+            return False
+        if declarator.type == "function_declarator":
+            inner = declarator.child_by_field_name("declarator")
+            return inner is not None and inner.type != "parenthesized_declarator"
+        if declarator.type not in _CPP_DECLARATOR_WRAPPERS:
+            return False
+        declarator = declarator.child_by_field_name("declarator") or (
+            declarator.named_children[-1] if declarator.named_children else None
+        )
+    return False
+
+
+def _cpp_prototype(node: TreeSitterNode) -> bool:
+    """A function prototype outside a function body: inside one, ``SDLoc dl(Op);`` is a
+    local variable that merely parses like a prototype."""
+    if not _cpp_declares_function(node):
+        return False
+    parent = node.parent
+    while parent is not None:
+        if parent.type == "compound_statement":
+            return False
+        parent = parent.parent
+    return True
+
+
+def _cpp_has_body(node: TreeSitterNode) -> bool:
+    """A class, struct, union or enum with a body: ``struct Foo;`` declares no entity."""
+    return node.child_by_field_name("body") is not None
+
+
+# Entity node types that are an entity only when their predicate holds, per language.
+ENTITY_PREDICATES: dict[CommentType, dict[str, Callable[[TreeSitterNode], bool]]] = {
+    CommentType.cpp: {
+        "declaration": _cpp_prototype,
+        "field_declaration": _cpp_declares_function,
+        "class_specifier": _cpp_has_body,
+        "struct_specifier": _cpp_has_body,
+        "union_specifier": _cpp_has_body,
+        "enum_specifier": _cpp_has_body,
+    },
+    # so that a comment does not bind to a declaration that merely precedes the one
+    # it documents (``const flag = true;`` before a function)
     CommentType.ts: {
         "lexical_declaration": _declares_function,
         "variable_declaration": _declares_function,
@@ -241,14 +324,69 @@ SCOPE_PREDICATES: dict[CommentType, dict[str, Callable[[TreeSitterNode], bool]]]
         "export_statement": _value_is_function,
     },
 }
+SCOPE_PREDICATES = ENTITY_PREDICATES
+"""The name this table had before entities were named; kept for importers."""
+
+COMMENT_TYPES = frozenset({"comment", "line_comment", "block_comment", "html_comment"})
+"""The node kinds of a comment, in every grammar."""
+
+# What may stand between a leading marker and its entity, besides comments; a blank
+# line has no node, so it is trivia in every language.
+TRIVIA_TYPES: dict[CommentType, frozenset[str]] = {
+    CommentType.rust: frozenset({"attribute_item", "inner_attribute_item"}),
+    CommentType.ts: frozenset({"decorator"}),
+    CommentType.cpp: frozenset({"attribute_declaration"}),
+}
+
+# The node kinds an entity can be wrapped in, and where the wrapped node is: a field
+# name, or ``None`` for the last named child that is no comment. The entity is the
+# wrapped node, so a decorated or templated definition's lines exclude its decorators
+# or its template header.
+WRAPPER_TYPES: dict[CommentType, dict[str, str | None]] = {
+    CommentType.cpp: {"template_declaration": None, "linkage_specification": "body"},
+    CommentType.python: {"decorated_definition": "definition"},
+    # an ``export_statement`` is an entity itself when it exports a function or class
+    # value (``export default () => {}``)
+    CommentType.ts: {
+        "export_statement": "declaration",
+        "ambient_declaration": None,
+        "expression_statement": None,
+    },
+}
 
 
-def matches_scope(node: TreeSitterNode, comment_type: CommentType) -> bool:
-    """Whether ``node`` is a scope a comment binds to (kind and predicate)."""
-    if node.type not in SCOPE_NODE_TYPES.get(comment_type, ()):
+def is_entity(node: TreeSitterNode, comment_type: CommentType) -> bool:
+    """Whether ``node`` is an entity of its language (kind and predicate)."""
+    if node.type not in ENTITY_NODE_TYPES.get(comment_type, ()):
         return False
-    predicate = SCOPE_PREDICATES.get(comment_type, {}).get(node.type)
+    predicate = ENTITY_PREDICATES.get(comment_type, {}).get(node.type)
     return predicate is None or predicate(node)
+
+
+def is_trivia(node: TreeSitterNode, comment_type: CommentType) -> bool:
+    """Whether ``node`` may stand between a leading marker and its entity."""
+    return node.type in COMMENT_TYPES or node.type in TRIVIA_TYPES.get(comment_type, ())
+
+
+def unwrap_entity(
+    node: TreeSitterNode | None, comment_type: CommentType
+) -> TreeSitterNode | None:
+    """The entity ``node`` is, or wraps (``@decorator``, ``template <…>``, ``export``)."""
+    wrappers = WRAPPER_TYPES.get(comment_type, {})
+    for _ in range(4):
+        if node is None:
+            return None
+        if is_entity(node, comment_type):
+            return node
+        if node.type not in wrappers:
+            return None
+        field = wrappers[node.type]
+        inner = node.child_by_field_name(field) if field is not None else None
+        if inner is None:
+            named = [c for c in node.named_children if c.type not in COMMENT_TYPES]
+            inner = named[-1] if named else None
+        node = inner
+    return None
 
 
 # ---------------------------------------------------------------------------

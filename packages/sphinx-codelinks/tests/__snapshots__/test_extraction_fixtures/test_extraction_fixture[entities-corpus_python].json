@@ -202,13 +202,13 @@
         "column": 49
       }
     },
-    "tagged_scope": "def docstring_marked(self) -> int:\n        \"\"\"Return four.\n\n        @need-ids: PYREF_09\n        \"\"\"\n        return 4",
+    "tagged_scope": "def cached(self) -> int:\n        return 1",
     "scope": {
       "kind": "function_definition",
-      "start": 48,
-      "end": 53,
+      "start": 36,
+      "end": 37,
       "entity_kind": "method",
-      "qualified_name": "Shape.docstring_marked",
+      "qualified_name": "Shape.cached",
       "mechanism": "leading"
     },
     "need": {
@@ -235,13 +235,13 @@
         "column": 45
       }
     },
-    "tagged_scope": "def docstring_marked(self) -> int:\n        \"\"\"Return four.\n\n        @need-ids: PYREF_09\n        \"\"\"\n        return 4",
+    "tagged_scope": "def name(self) -> str:\n        return \"shape\"",
     "scope": {
       "kind": "function_definition",
-      "start": 48,
-      "end": 53,
+      "start": 41,
+      "end": 42,
       "entity_kind": "method",
-      "qualified_name": "Shape.docstring_marked",
+      "qualified_name": "Shape.name",
       "mechanism": "leading"
     },
     "need": {
@@ -363,11 +363,11 @@
         "column": 48
       }
     },
-    "tagged_scope": "def convert(x):\n    # @need-ids: PYREF_13\n    return x",
+    "tagged_scope": "def convert(x: str) -> str: ...",
     "scope": {
       "kind": "function_definition",
-      "start": 74,
-      "end": 76,
+      "start": 71,
+      "end": 71,
       "entity_kind": "function",
       "qualified_name": "convert",
       "mechanism": "leading"
@@ -425,15 +425,8 @@
         "column": 47
       }
     },
-    "tagged_scope": "class Square(Shape):\n    # @Square area override, PY_15, impl, [REQ_AREA]\n    def area(self) -> float:\n        return 1.0\n\n    async def untraced_async(self) -> None:\n        pass",
-    "scope": {
-      "kind": "class_definition",
-      "start": 83,
-      "end": 89,
-      "entity_kind": "class",
-      "qualified_name": "Square",
-      "mechanism": "leading"
-    },
+    "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Lambda assignment",
       "id": "PY_14",
@@ -443,7 +436,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "class_definition"
+    "tagged_scope_type": null
   },
   {
     "filepath": "case.py",
@@ -491,13 +484,13 @@
         "column": 44
       }
     },
-    "tagged_scope": "def make_registry():\n    registry = {}\n\n    def register(fn):\n        registry[fn.__name__] = fn\n        return fn\n\n    return register",
+    "tagged_scope": "class Point:\n    x: int = 0\n    y: int = 0\n\n    # @Temperature property setter, PY_17, impl, [REQ_PROP]\n    @property\n    def norm(self) -> int:\n        return self.x + self.y\n\n    @norm.setter\n    def norm(self, value: int) -> None:\n        # @need-ids: PYREF_18\n        self.x = value\n\n    # @Classmethod factory, PY_19, impl, [REQ_FACTORY]\n    @classmethod\n    def origin(cls) -> \"Point\":\n        return cls()\n\n    def compute(self) -> int:\n        # @Local helper in method, PY_20, impl, [REQ_LOCAL]\n        def helper(v: int) -> int:\n            return v + 1\n\n        return helper(self.x)\n\n    class Inner:\n        class Deeper:\n            # @Deeply nested method, PY_21, impl, [REQ_NESTED]\n            def deep(self) -> int:\n                return 5",
     "scope": {
-      "kind": "function_definition",
-      "start": 142,
-      "end": 149,
-      "entity_kind": "function",
-      "qualified_name": "make_registry",
+      "kind": "class_definition",
+      "start": 99,
+      "end": 129,
+      "entity_kind": "class",
+      "qualified_name": "Point",
       "mechanism": "leading"
     },
     "need": {
@@ -509,7 +502,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_definition"
+    "tagged_scope_type": "class_definition"
   },
   {
     "filepath": "case.py",
@@ -524,13 +517,13 @@
         "column": 59
       }
     },
-    "tagged_scope": "def compute(self) -> int:\n        # @Local helper in method, PY_20, impl, [REQ_LOCAL]\n        def helper(v: int) -> int:\n            return v + 1\n\n        return helper(self.x)",
+    "tagged_scope": "def norm(self) -> int:\n        return self.x + self.y",
     "scope": {
       "kind": "function_definition",
-      "start": 118,
-      "end": 123,
+      "start": 105,
+      "end": 106,
       "entity_kind": "method",
-      "qualified_name": "Point.compute",
+      "qualified_name": "Point.norm",
       "mechanism": "leading"
     },
     "need": {
@@ -586,13 +579,13 @@
         "column": 54
       }
     },
-    "tagged_scope": "def compute(self) -> int:\n        # @Local helper in method, PY_20, impl, [REQ_LOCAL]\n        def helper(v: int) -> int:\n            return v + 1\n\n        return helper(self.x)",
+    "tagged_scope": "def origin(cls) -> \"Point\":\n        return cls()",
     "scope": {
       "kind": "function_definition",
-      "start": 118,
-      "end": 123,
+      "start": 115,
+      "end": 116,
       "entity_kind": "method",
-      "qualified_name": "Point.compute",
+      "qualified_name": "Point.origin",
       "mechanism": "leading"
     },
     "need": {
@@ -751,8 +744,15 @@
         "column": 59
       }
     },
-    "tagged_scope": null,
-    "scope": null,
+    "tagged_scope": "async def handler(event: str) -> None:\n    \"\"\"Handle an event.\n\n    @need-ids: PYREF_25\n    \"\"\"",
+    "scope": {
+      "kind": "function_definition",
+      "start": 157,
+      "end": 161,
+      "entity_kind": "function",
+      "qualified_name": "handler",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Registered via decorator factory",
       "id": "PY_24",
@@ -762,7 +762,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": null
+    "tagged_scope_type": "function_definition"
   },
   {
     "filepath": "case.py",

@@ -12,14 +12,14 @@
         "column": 58
       }
     },
-    "tagged_scope": "void g() {}",
+    "tagged_scope": "void f() {}",
     "scope": {
       "kind": "function_definition",
-      "start": 2,
-      "end": 2,
+      "start": 1,
+      "end": 1,
       "entity_kind": "function",
-      "qualified_name": "g",
-      "mechanism": "leading"
+      "qualified_name": "f",
+      "mechanism": "trailing"
     },
     "need": {
       "title": "Trailing on a function",

@@ -12,15 +12,8 @@
         "column": 41
       }
     },
-    "tagged_scope": "struct Foo",
-    "scope": {
-      "kind": "struct_specifier",
-      "start": 3,
-      "end": 3,
-      "entity_kind": "struct",
-      "qualified_name": "Foo",
-      "mechanism": "leading"
-    },
+    "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Forward declaration",
       "id": "IMPL_R_FWD",
@@ -28,6 +21,6 @@
       "links": []
     },
     "type": "need",
-    "tagged_scope_type": "struct_specifier"
+    "tagged_scope_type": null
   }
 ]

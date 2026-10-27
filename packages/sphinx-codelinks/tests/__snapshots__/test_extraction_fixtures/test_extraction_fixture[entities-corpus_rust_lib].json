@@ -45,13 +45,13 @@
         "column": 50
       }
     },
-    "tagged_scope": "fn name(&self) -> &'static str {\n        \"shape\"\n    }",
+    "tagged_scope": "fn area(&self) -> f64;",
     "scope": {
-      "kind": "function_item",
-      "start": 9,
-      "end": 11,
+      "kind": "function_signature_item",
+      "start": 7,
+      "end": 7,
       "entity_kind": "method",
-      "qualified_name": "Shape::name",
+      "qualified_name": "Shape::area",
       "mechanism": "leading"
     },
     "need": {
@@ -63,7 +63,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_item"
+    "tagged_scope_type": "function_signature_item"
   },
   {
     "filepath": "case.rs",
@@ -371,15 +371,8 @@
         "column": 50
       }
     },
-    "tagged_scope": "pub fn largest<T: PartialOrd + Copy>(items: &[T]) -> T {\n    let mut best = items[0];\n    for &item in items {\n        if item > best {\n            best = item;\n        }\n    }\n    best\n}",
-    "scope": {
-      "kind": "function_item",
-      "start": 87,
-      "end": 95,
-      "entity_kind": "function",
-      "qualified_name": "largest",
-      "mechanism": "leading"
-    },
+    "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Macro generated getter",
       "id": "RS_12",
@@ -389,7 +382,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_item"
+    "tagged_scope_type": null
   },
   {
     "filepath": "case.rs",

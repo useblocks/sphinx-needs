@@ -12,15 +12,8 @@
         "column": 46
       }
     },
-    "tagged_scope": "void f() {}",
-    "scope": {
-      "kind": "function_definition",
-      "start": 3,
-      "end": 3,
-      "entity_kind": "function",
-      "qualified_name": "f",
-      "mechanism": "leading"
-    },
+    "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Adjacency broken by code",
       "id": "IMPL_R_ADJ",
@@ -28,6 +21,6 @@
       "links": []
     },
     "type": "need",
-    "tagged_scope_type": "function_definition"
+    "tagged_scope_type": null
   }
 ]

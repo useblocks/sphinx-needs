@@ -78,13 +78,13 @@
         "column": 50
       }
     },
-    "tagged_scope": "int area() const { return w_ * h_; }",
+    "tagged_scope": "void draw() const;",
     "scope": {
-      "kind": "function_definition",
-      "start": 23,
-      "end": 23,
+      "kind": "field_declaration",
+      "start": 18,
+      "end": 18,
       "entity_kind": "method",
-      "qualified_name": "ns::Widget::area",
+      "qualified_name": "ns::Widget::draw",
       "mechanism": "leading"
     },
     "need": {
@@ -96,7 +96,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_definition"
+    "tagged_scope_type": "field_declaration"
   },
   {
     "filepath": "case.cpp",
@@ -272,13 +272,13 @@
         "column": 45
       }
     },
-    "tagged_scope": "int scale(int v) { return v * 2; }",
+    "tagged_scope": "T clamp(T v, T lo, T hi) {\n    return v < lo ? lo : (v > hi ? hi : v);\n}",
     "scope": {
       "kind": "function_definition",
-      "start": 62,
-      "end": 62,
+      "start": 57,
+      "end": 59,
       "entity_kind": "function",
-      "qualified_name": "scale",
+      "qualified_name": "clamp",
       "mechanism": "leading"
     },
     "need": {
@@ -371,11 +371,11 @@
         "column": 50
       }
     },
-    "tagged_scope": "EXPORT_API void exported_fn() { std::printf(\"x\\n\"); }",
+    "tagged_scope": "EXPORT_API void exported_fn();",
     "scope": {
-      "kind": "function_definition",
-      "start": 71,
-      "end": 71,
+      "kind": "declaration",
+      "start": 68,
+      "end": 68,
       "entity_kind": "function",
       "qualified_name": "exported_fn",
       "mechanism": "leading"
@@ -389,7 +389,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_definition"
+    "tagged_scope_type": "declaration"
   },
   {
     "filepath": "case.cpp",
@@ -437,15 +437,8 @@
         "column": 50
       }
     },
-    "tagged_scope": "bool operator==(const ns::Widget& a, const ns::Widget& b) { return a.area() == b.area(); }",
-    "scope": {
-      "kind": "function_definition",
-      "start": 89,
-      "end": 89,
-      "entity_kind": "operator",
-      "qualified_name": "operator==",
-      "mechanism": "leading"
-    },
+    "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Generated handler",
       "id": "CPP_14",
@@ -455,7 +448,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_definition"
+    "tagged_scope_type": null
   },
   {
     "filepath": "case.cpp",
@@ -470,13 +463,13 @@
         "column": 48
       }
     },
-    "tagged_scope": "bool operator==(const ns::Widget& a, const ns::Widget& b) { return a.area() == b.area(); }",
+    "tagged_scope": "T Box<T>::get() const {\n    return value;\n}",
     "scope": {
       "kind": "function_definition",
-      "start": 89,
-      "end": 89,
-      "entity_kind": "operator",
-      "qualified_name": "operator==",
+      "start": 84,
+      "end": 86,
+      "entity_kind": "method",
+      "qualified_name": "Box::get",
       "mechanism": "leading"
     },
     "need": {
@@ -697,13 +690,13 @@
         "column": 52
       }
     },
-    "tagged_scope": "virtual void on_change() {}",
+    "tagged_scope": "void set(int v);",
     "scope": {
-      "kind": "function_definition",
-      "start": 134,
-      "end": 134,
+      "kind": "field_declaration",
+      "start": 128,
+      "end": 128,
       "entity_kind": "method",
-      "qualified_name": "Gauge::on_change",
+      "qualified_name": "Gauge::set",
       "mechanism": "doc_comment"
     },
     "need": {
@@ -715,7 +708,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_definition"
+    "tagged_scope_type": "field_declaration"
   },
   {
     "filepath": "case.cpp",
@@ -730,13 +723,13 @@
         "column": 55
       }
     },
-    "tagged_scope": "virtual void on_change() {}",
+    "tagged_scope": "void set(double v);",
     "scope": {
-      "kind": "function_definition",
-      "start": 134,
-      "end": 134,
+      "kind": "field_declaration",
+      "start": 130,
+      "end": 130,
       "entity_kind": "method",
-      "qualified_name": "Gauge::on_change",
+      "qualified_name": "Gauge::set",
       "mechanism": "doc_comment"
     },
     "need": {
@@ -748,7 +741,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_definition"
+    "tagged_scope_type": "field_declaration"
   },
   {
     "filepath": "case.cpp",
@@ -763,14 +756,14 @@
         "column": 72
       }
     },
-    "tagged_scope": "virtual void on_change() {}",
+    "tagged_scope": "class Gauge {\npublic:\n    /// @Gauge set int decl, CPP_22, impl, [REQ_SET]\n    void set(int v);\n    /// @Gauge set double decl, CPP_23, impl, [REQ_SET]\n    void set(double v);\n    int level = 0;  ///< @Trailing member doc, CPP_24, impl, [REQ_LEVEL]\nprotected:\n    // @Protected hook, CPP_25, impl, [REQ_HOOK]\n    virtual void on_change() {}\nprivate:\n    static int count_;\n}",
     "scope": {
-      "kind": "function_definition",
-      "start": 134,
-      "end": 134,
-      "entity_kind": "method",
-      "qualified_name": "Gauge::on_change",
-      "mechanism": "doc_comment"
+      "kind": "class_specifier",
+      "start": 125,
+      "end": 137,
+      "entity_kind": "class",
+      "qualified_name": "Gauge",
+      "mechanism": "enclosing"
     },
     "need": {
       "title": "Trailing member doc",
@@ -781,7 +774,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_definition"
+    "tagged_scope_type": "class_specifier"
   },
   {
     "filepath": "case.cpp",
@@ -862,13 +855,13 @@
         "column": 52
       }
     },
-    "tagged_scope": "int use_more() {\n    Gauge g;\n    g.set(1);\n    g.set(2.0);\n    handle_key(compute_path());\n    return doc_slash() + Box<bool>{}.get() + static_cast<int>(clamp<long>(1, 2, 3));\n}",
+    "tagged_scope": "struct Box<bool> {\n    bool get() const { return true; }\n}",
     "scope": {
-      "kind": "function_definition",
-      "start": 167,
-      "end": 173,
-      "entity_kind": "function",
-      "qualified_name": "use_more",
+      "kind": "struct_specifier",
+      "start": 146,
+      "end": 148,
+      "entity_kind": "struct",
+      "qualified_name": "Box<bool>",
       "mechanism": "leading"
     },
     "need": {
@@ -880,7 +873,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_definition"
+    "tagged_scope_type": "struct_specifier"
   },
   {
     "filepath": "case.cpp",
@@ -895,13 +888,13 @@
         "column": 56
       }
     },
-    "tagged_scope": "int use_more() {\n    Gauge g;\n    g.set(1);\n    g.set(2.0);\n    handle_key(compute_path());\n    return doc_slash() + Box<bool>{}.get() + static_cast<int>(clamp<long>(1, 2, 3));\n}",
+    "tagged_scope": "long clamp<long>(long v, long lo, long hi) {\n    return v < lo ? lo : (v > hi ? hi : v);\n}",
     "scope": {
       "kind": "function_definition",
-      "start": 167,
-      "end": 173,
+      "start": 152,
+      "end": 154,
       "entity_kind": "function",
-      "qualified_name": "use_more",
+      "qualified_name": "clamp<long>",
       "mechanism": "leading"
     },
     "need": {
@@ -928,15 +921,8 @@
         "column": 55
       }
     },
-    "tagged_scope": "int use_more() {\n    Gauge g;\n    g.set(1);\n    g.set(2.0);\n    handle_key(compute_path());\n    return doc_slash() + Box<bool>{}.get() + static_cast<int>(clamp<long>(1, 2, 3));\n}",
-    "scope": {
-      "kind": "function_definition",
-      "start": 167,
-      "end": 173,
-      "entity_kind": "function",
-      "qualified_name": "use_more",
-      "mechanism": "doc_comment"
-    },
+    "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Doc generated handler",
       "id": "CPP_29",
@@ -946,7 +932,7 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_definition"
+    "tagged_scope_type": null
   },
   {
     "filepath": "case.cpp",

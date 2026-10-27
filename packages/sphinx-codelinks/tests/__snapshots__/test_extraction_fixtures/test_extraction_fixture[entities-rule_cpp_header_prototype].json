@@ -12,8 +12,15 @@
         "column": 38
       }
     },
-    "tagged_scope": null,
-    "scope": null,
+    "tagged_scope": "void hdr_always(void);",
+    "scope": {
+      "kind": "declaration",
+      "start": 3,
+      "end": 3,
+      "entity_kind": "function",
+      "qualified_name": "hdr_always",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Header prototype",
       "id": "IMPL_R_HDR",
@@ -21,6 +28,6 @@
       "links": []
     },
     "type": "need",
-    "tagged_scope_type": null
+    "tagged_scope_type": "declaration"
   }
 ]

@@ -12,8 +12,15 @@
         "column": 36
       }
     },
-    "tagged_scope": null,
-    "scope": null,
+    "tagged_scope": "namespace gfx {\n// @Inside namespace, IMPL_R_NS_IN, impl\nint counter = 0;\n}",
+    "scope": {
+      "kind": "namespace_definition",
+      "start": 2,
+      "end": 5,
+      "entity_kind": "namespace",
+      "qualified_name": "gfx",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Namespace above",
       "id": "IMPL_R_NS",
@@ -21,7 +28,7 @@
       "links": []
     },
     "type": "need",
-    "tagged_scope_type": null
+    "tagged_scope_type": "namespace_definition"
   },
   {
     "filepath": "case.cpp",
@@ -36,8 +43,15 @@
         "column": 40
       }
     },
-    "tagged_scope": null,
-    "scope": null,
+    "tagged_scope": "namespace gfx {\n// @Inside namespace, IMPL_R_NS_IN, impl\nint counter = 0;\n}",
+    "scope": {
+      "kind": "namespace_definition",
+      "start": 2,
+      "end": 5,
+      "entity_kind": "namespace",
+      "qualified_name": "gfx",
+      "mechanism": "enclosing"
+    },
     "need": {
       "title": "Inside namespace",
       "id": "IMPL_R_NS_IN",
@@ -45,6 +59,6 @@
       "links": []
     },
     "type": "need",
-    "tagged_scope_type": null
+    "tagged_scope_type": "namespace_definition"
   }
 ]

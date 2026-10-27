@@ -12,13 +12,13 @@
         "column": 38
       }
     },
-    "tagged_scope": "fn f() {}",
+    "tagged_scope": "mod m {\n    //! @Inner doc, IMPL_R_INNER, impl\n    fn f() {}\n}",
     "scope": {
-      "kind": "function_item",
-      "start": 3,
-      "end": 3,
-      "entity_kind": "function",
-      "qualified_name": "m::f",
+      "kind": "mod_item",
+      "start": 1,
+      "end": 4,
+      "entity_kind": "module",
+      "qualified_name": "m",
       "mechanism": "doc_comment"
     },
     "need": {
@@ -28,6 +28,6 @@
       "links": []
     },
     "type": "need",
-    "tagged_scope_type": "function_item"
+    "tagged_scope_type": "mod_item"
   }
 ]

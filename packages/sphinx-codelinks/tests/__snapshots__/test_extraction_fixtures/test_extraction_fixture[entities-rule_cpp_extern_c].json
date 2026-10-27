@@ -12,8 +12,15 @@
         "column": 43
       }
     },
-    "tagged_scope": null,
-    "scope": null,
+    "tagged_scope": "void handler(int code);",
+    "scope": {
+      "kind": "declaration",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "handler",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Extern C prototype",
       "id": "IMPL_R_EXTERN",
@@ -21,6 +28,6 @@
       "links": []
     },
     "type": "need",
-    "tagged_scope_type": null
+    "tagged_scope_type": "declaration"
   }
 ]

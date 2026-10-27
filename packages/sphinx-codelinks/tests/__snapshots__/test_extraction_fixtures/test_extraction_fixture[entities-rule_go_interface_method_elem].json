@@ -12,14 +12,14 @@
         "column": 40
       }
     },
-    "tagged_scope": "Shape interface {\n\t// @Interface method, IMPL_R_ELEM, impl\n\tArea() int\n}",
+    "tagged_scope": "Area() int",
     "scope": {
-      "kind": "type_spec",
-      "start": 3,
-      "end": 6,
-      "entity_kind": "interface",
-      "qualified_name": "Shape",
-      "mechanism": "enclosing"
+      "kind": "method_elem",
+      "start": 5,
+      "end": 5,
+      "entity_kind": "method",
+      "qualified_name": "Shape.Area",
+      "mechanism": "leading"
     },
     "need": {
       "title": "Interface method",
@@ -28,6 +28,6 @@
       "links": []
     },
     "type": "need",
-    "tagged_scope_type": "type_spec"
+    "tagged_scope_type": "method_elem"
   }
 ]

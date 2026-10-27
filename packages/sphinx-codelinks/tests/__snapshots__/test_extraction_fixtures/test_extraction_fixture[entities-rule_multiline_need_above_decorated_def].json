@@ -12,7 +12,7 @@
         "column": 10
       }
     },
-    "tagged_scope": null,
+    "tagged_scope": "def handler(event):\n    pass",
     "need": {
       "type": "impl",
       "title": "Decorated handler",
@@ -38,9 +38,16 @@
       "option_lines": {
         "id": 2
       },
-      "scope": null
+      "scope": {
+        "kind": "function_definition",
+        "start": 5,
+        "end": 6,
+        "entity_kind": "function",
+        "qualified_name": "handler",
+        "mechanism": "leading"
+      }
     },
     "type": "multiline-need",
-    "tagged_scope_type": null
+    "tagged_scope_type": "function_definition"
   }
 ]

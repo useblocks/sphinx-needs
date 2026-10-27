@@ -12,15 +12,8 @@
         "column": 54
       }
     },
-    "tagged_scope": "function tick() {}",
-    "scope": {
-      "kind": "function_declaration",
-      "start": 3,
-      "end": 3,
-      "entity_kind": "function",
-      "qualified_name": "tick",
-      "mechanism": "leading"
-    },
+    "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Skip Default",
       "id": "IMPL_JS_SKIP_DEFAULT",
@@ -30,6 +23,6 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_declaration"
+    "tagged_scope_type": null
   }
 ]

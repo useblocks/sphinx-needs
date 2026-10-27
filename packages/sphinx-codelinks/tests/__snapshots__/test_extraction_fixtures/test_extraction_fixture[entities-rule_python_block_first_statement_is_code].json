@@ -12,14 +12,14 @@
         "column": 49
       }
     },
-    "tagged_scope": "def inner():\n        pass",
+    "tagged_scope": "def outer():\n    # @Above a statement, IMPL_R_BLOCK_STMT, impl\n    value = 1\n    def inner():\n        pass",
     "scope": {
       "kind": "function_definition",
-      "start": 4,
+      "start": 1,
       "end": 5,
       "entity_kind": "function",
-      "qualified_name": "outer.<locals>.inner",
-      "mechanism": "leading"
+      "qualified_name": "outer",
+      "mechanism": "enclosing"
     },
     "need": {
       "title": "Above a statement",

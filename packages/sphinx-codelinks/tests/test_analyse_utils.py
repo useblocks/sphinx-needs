@@ -69,7 +69,8 @@ def test_every_comment_type_is_wired():
         CommentType.yaml,
         CommentType.jsonc,
     }
-    assert set(utils.SCOPE_CONTAINER_TYPES) <= set(utils.SCOPE_NODE_TYPES)
+    assert set(utils.WRAPPER_TYPES) <= set(utils.ENTITY_NODE_TYPES)
+    assert set(utils.TRIVIA_TYPES) <= set(utils.ENTITY_NODE_TYPES)
     for comment_type, predicates in utils.SCOPE_PREDICATES.items():
         assert set(predicates) <= utils.SCOPE_NODE_TYPES[comment_type]
     for member in members:
@@ -522,17 +523,6 @@ def test_find_associated_scope_bash(code, result, init_bash_tree_sitter):
             """,
             "dummyFunc1",
         ),
-        # a plain (non-function) const between the comment and the function it
-        # documents must not steal the association
-        (
-            b"""
-                // @req-id: need_001
-                const helperFlag = true;
-                function dummyFunc1() {
-                }
-            """,
-            "function dummyFunc1()",
-        ),
         # arrow-function const still resolves to itself
         (
             b"""
@@ -739,15 +729,6 @@ def test_find_next_scope_csharp(code, result, init_csharp_tree_sitter):
             """,
             "function dummyFunc1()",
         ),
-        (
-            b"""
-                // @req-id: need_001
-                const helperFlag = true;
-                function dummyFunc1() {
-                }
-            """,
-            "function dummyFunc1()",
-        ),
     ],
 )
 def test_find_next_scope_typescript(code, result, init_typescript_tree_sitter):
@@ -758,6 +739,22 @@ def test_find_next_scope_typescript(code, result, init_typescript_tree_sitter):
     assert node.text
     func_def = node.text.decode("utf-8")
     assert result in func_def
+
+
+def test_a_plain_const_breaks_adjacency_typescript(init_typescript_tree_sitter):
+    """A plain (non-function) const between the comment and a function is code, not
+    trivia: the comment is attached to neither, here to the file."""
+    code = b"""
+        // @req-id: need_001
+        const helperFlag = true;
+        function dummyFunc1() {
+        }
+    """
+    parser, query = init_typescript_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    assert comments
+    assert utils.find_next_scope(comments[0], CommentType.ts) is None
+    assert utils.find_associated_scope(comments[0], CommentType.ts) is None
 
 
 def test_find_associated_scope_typescript_jsx_no_parse_error(

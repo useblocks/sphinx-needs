@@ -12,20 +12,13 @@
         "column": 27
       }
     },
-    "tagged_scope": "void f() {}",
-    "scope": {
-      "kind": "function_definition",
-      "start": 4,
-      "end": 4,
-      "entity_kind": "function",
-      "qualified_name": "f",
-      "mechanism": "leading"
-    },
+    "tagged_scope": null,
+    "scope": null,
     "need_ids": [
       "FF1"
     ],
     "marker": "@need-ids:",
     "type": "need-id-refs",
-    "tagged_scope_type": "function_definition"
+    "tagged_scope_type": null
   }
 ]

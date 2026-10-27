@@ -12,8 +12,15 @@
         "column": 31
       }
     },
-    "tagged_scope": null,
-    "scope": null,
+    "tagged_scope": "public record Point(int X, int Y);",
+    "scope": {
+      "kind": "record_declaration",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "record",
+      "qualified_name": "Point",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Record",
       "id": "IMPL_R_RECORD",
@@ -21,7 +28,7 @@
       "links": []
     },
     "type": "need",
-    "tagged_scope_type": null
+    "tagged_scope_type": "record_declaration"
   },
   {
     "filepath": "case.cs",
@@ -36,8 +43,15 @@
         "column": 33
       }
     },
-    "tagged_scope": null,
-    "scope": null,
+    "tagged_scope": "public interface IShape { double Area(); }",
+    "scope": {
+      "kind": "interface_declaration",
+      "start": 4,
+      "end": 4,
+      "entity_kind": "interface",
+      "qualified_name": "IShape",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Interface",
       "id": "IMPL_R_IFACE",
@@ -45,6 +59,6 @@
       "links": []
     },
     "type": "need",
-    "tagged_scope_type": null
+    "tagged_scope_type": "interface_declaration"
   }
 ]

@@ -6,23 +6,31 @@ from giturlparse import parse
 from tree_sitter import Language, Parser, Query, QueryCursor
 from tree_sitter import Node as TreeSitterNode
 
-# The association tables live with the naming in ``entity``; they stay importable
-# from here, where they were.
+# The entity tables live with the naming in ``entity``; they stay importable from
+# here, where they were.
 from sphinx_codelinks.analyse.entity import (
-    DEFAULT_SCOPE_CONTAINER_TYPES,
+    COMMENT_TYPES,
     Association,
     Mechanism,
     is_doc_comment,
-    matches_scope,
+    is_entity,
+    is_trivia,
+    unwrap_entity,
 )
 from sphinx_codelinks.analyse.entity import (
-    SCOPE_CONTAINER_TYPES as SCOPE_CONTAINER_TYPES,
+    ENTITY_NODE_TYPES as ENTITY_NODE_TYPES,
 )
 from sphinx_codelinks.analyse.entity import (
     SCOPE_NODE_TYPES as SCOPE_NODE_TYPES,
 )
 from sphinx_codelinks.analyse.entity import (
     SCOPE_PREDICATES as SCOPE_PREDICATES,
+)
+from sphinx_codelinks.analyse.entity import (
+    TRIVIA_TYPES as TRIVIA_TYPES,
+)
+from sphinx_codelinks.analyse.entity import (
+    WRAPPER_TYPES as WRAPPER_TYPES,
 )
 from sphinx_codelinks.config import CommentCategory
 from sphinx_codelinks.logger import get_logger
@@ -209,39 +217,103 @@ def extract_comments(
 def find_enclosing_scope(
     node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
 ) -> TreeSitterNode | None:
-    """Find the enclosing scope of a comment."""
-    current: TreeSitterNode = node
-    while current:
-        if matches_scope(current, comment_type):
+    """The nearest entity ``node`` is inside of, if any."""
+    current = node.parent
+    while current is not None:
+        if is_entity(current, comment_type):
             return current
-        current: TreeSitterNode | None = current.parent  # required for node traversal
+        current = current.parent
     return None
 
 
 def find_next_scope(
     node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
 ) -> TreeSitterNode | None:
-    """Find the next scope of a comment."""
-    containers = SCOPE_CONTAINER_TYPES.get(comment_type, DEFAULT_SCOPE_CONTAINER_TYPES)
-    current: TreeSitterNode = node
-    while current:
-        if matches_scope(current, comment_type):
-            return current
-        current: TreeSitterNode | None = (
-            current.next_named_sibling
-        )  # required for node traversal
-        if current and current.type in containers:
-            for child in current.named_children:
-                if matches_scope(child, comment_type):
-                    return child
-                # a container in a container, as ``export declare …`` nests an
-                # ``ambient_declaration`` in an ``export_statement``
-                if child.type in containers and child.type != "block":
-                    for grandchild in child.named_children:
-                        if matches_scope(grandchild, comment_type):
-                            return grandchild
+    """The entity right after the comment ``node``, if only trivia stands between.
 
+    Comments, blank lines and the language's other trivia (attributes, decorators) are
+    skipped; anything else, a statement or a declaration that is no entity, ends the
+    search. A comment Python's grammar places between a header (``def f():``) and its
+    body is followed by the body's first statement. The entity found is looked through
+    its wrappers (``@decorator``, ``template <…>``, ``export``).
+    """
+    sibling = node.next_named_sibling
+    while sibling is not None and is_trivia(sibling, comment_type):
+        sibling = sibling.next_named_sibling
+    if sibling is not None and sibling.type == "block":
+        sibling = next(
+            (c for c in sibling.named_children if not is_trivia(c, comment_type)),
+            None,
+        )
+    return unwrap_entity(sibling, comment_type)
+
+
+def _code_before_on_row(node: TreeSitterNode) -> bool:
+    """Whether code precedes the comment ``node`` on its first row.
+
+    Walks the previous siblings, anonymous tokens included and comments skipped,
+    climbing to the parent when there are none. A token that ends at column 0 of the
+    row (a preprocessor directive's newline, a Rust line comment) is not on it.
+    """
+    current: TreeSitterNode | None = node
+    while current is not None:
+        previous = current.prev_sibling
+        while previous is not None and previous.type in COMMENT_TYPES:
+            previous = previous.prev_sibling
+        if previous is not None:
+            return (
+                previous.end_point.row == node.start_point.row
+                and previous.end_point.column > 0
+            )
+        current = current.parent
+    return False
+
+
+def _entity_on_row(
+    node: TreeSitterNode, comment_type: CommentType
+) -> TreeSitterNode | None:
+    """The entity that ends on the trailing comment ``node``'s row, before it."""
+    previous = node.prev_named_sibling
+    while previous is not None and previous.type in COMMENT_TYPES:
+        previous = previous.prev_named_sibling
+    if (
+        previous is not None
+        and previous.end_point.row == node.start_point.row
+        and previous.end_point.column > 0
+    ):
+        return unwrap_entity(previous, comment_type)
     return None
+
+
+def _is_file_header(node: TreeSitterNode) -> bool:
+    """Whether the comment ``node`` is in the file's first comment block, and a blank
+    line separates that block from the first item."""
+    parent = node.parent
+    if parent is None or parent.parent is not None:
+        return False
+    siblings = parent.children
+    index = 0
+    in_block = False
+    last_comment: TreeSitterNode | None = None
+    while index < len(siblings) and siblings[index].type in COMMENT_TYPES:
+        if siblings[index].id == node.id:
+            in_block = True
+        last_comment = siblings[index]
+        index += 1
+    if not in_block or last_comment is None or index >= len(siblings):
+        return in_block
+    end_row = last_comment.end_point.row
+    if last_comment.end_point.column == 0:
+        # a Rust line comment's node takes its line break, so it ends a row later
+        end_row -= 1
+    return siblings[index].start_point.row - end_row > 1
+
+
+def _is_inner_doc(node: TreeSitterNode, comment_type: CommentType) -> bool:
+    """A Rust inner doc comment (``//!``, ``/*!``): it documents what it is inside."""
+    if comment_type != CommentType.rust:
+        return False
+    return (node.text or b"").startswith((b"//!", b"/*!"))
 
 
 def _find_yaml_structure_in_block_node(
@@ -371,10 +443,28 @@ def find_jsonc_associated_structure(node: TreeSitterNode) -> TreeSitterNode | No
     return association.node if association is not None else None
 
 
+# @Attach a marker to the adjacent code entity, IMPL_ENTITY_1, impl, [FE_DEF]
 def associate(
     node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
 ) -> Association | None:
     """The entity a comment is attached to, and how (see :data:`Mechanism`).
+
+    The rules, in order:
+
+    1. YAML and JSONC: the data structure on the comment's row, else the next one,
+       else the enclosing one.
+    2. A Python docstring documents the definition it is in.
+    3. A Rust inner doc comment (``//!``) documents what it is inside.
+    4. A trailing comment (code before it on its row) belongs to the entity on its
+       row, else to the enclosing one.
+    5. The file's first comment block, when a blank line separates it from the first
+       item, belongs to the file: no entity.
+    6. A leading comment belongs to the entity right after it, when only trivia
+       stands between (comments, blank lines, attributes, decorators), through its
+       wrappers; never across other code.
+    7. Otherwise, the enclosing entity, if any.
+
+    A documentation comment attached by rule 4 or 6 is a ``doc_comment``.
 
     :param node: The comment node, or a Python docstring's ``expression_statement``.
     :param comment_type: The language of the file ``node`` was parsed from.
@@ -389,19 +479,26 @@ def associate(
         # JSONC uses data-aware structure association logic
         return _jsonc_associate(node)
 
-    if node.type == CommentCategory.docstring:
-        # Only for python's docstring
-        enclosing = find_enclosing_scope(node, comment_type)
-        return Association(enclosing, "doc_comment") if enclosing else None
-    # General comments regardless of comment types
-    following = find_next_scope(node, comment_type)
-    if following is not None:
-        mechanism: Mechanism = (
-            "doc_comment" if is_doc_comment(node, comment_type) else "leading"
-        )
-        return Association(following, mechanism)
-    enclosing = find_enclosing_scope(node, comment_type)
-    return Association(enclosing, "enclosing") if enclosing else None
+    def enclosing() -> Association | None:
+        scope = find_enclosing_scope(node, comment_type)
+        return Association(scope, "enclosing") if scope is not None else None
+
+    declared: Mechanism = "doc_comment"
+    if node.type == CommentCategory.docstring or _is_inner_doc(node, comment_type):
+        scope = find_enclosing_scope(node, comment_type)
+        return Association(scope, declared) if scope is not None else None
+    is_doc = is_doc_comment(node, comment_type)
+    if _code_before_on_row(node):
+        entity = _entity_on_row(node, comment_type)
+        if entity is None:
+            return enclosing()
+        return Association(entity, declared if is_doc else "trailing")
+    if _is_file_header(node):
+        return None
+    entity = find_next_scope(node, comment_type)
+    if entity is None:
+        return enclosing()
+    return Association(entity, declared if is_doc else "leading")
 
 
 def find_associated_scope(

@@ -12,14 +12,14 @@
         "column": 52
       }
     },
-    "tagged_scope": "render(): void {}",
+    "tagged_scope": "class Button {\n  // @Skip Field, IMPL_TS_SKIP_FIELD, impl, [REQ_TS]\n  label = \"ok\";\n  render(): void {}\n}",
     "scope": {
-      "kind": "method_definition",
-      "start": 4,
-      "end": 4,
-      "entity_kind": "method",
-      "qualified_name": "Button.render",
-      "mechanism": "leading"
+      "kind": "class_declaration",
+      "start": 1,
+      "end": 5,
+      "entity_kind": "class",
+      "qualified_name": "Button",
+      "mechanism": "enclosing"
     },
     "need": {
       "title": "Skip Field",
@@ -30,6 +30,6 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "method_definition"
+    "tagged_scope_type": "class_declaration"
   }
 ]
