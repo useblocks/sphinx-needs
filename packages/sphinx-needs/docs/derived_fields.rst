@@ -181,16 +181,17 @@ beside ``derive`` every need type has a rule, and a ``default`` is reported as `
 A ``default`` that is a ``[[…]]`` or a variant, and ``predicates``, are reported beside such rules too, and ignored:
 a value that varies per need is what a rule is for.
 
-``derive_by_type`` on the field's or link type's own entry is an older spelling of the same rules,
-kept for existing projects: a table from need type, by its directive name
+``derive_by_type`` on the field's or link type's own entry is the spelling of the same rules
+for a need type the project does not declare, and an older one for a type it does:
+a table from need type, by its directive name
 (the value ``type`` holds, as a filter reads it: ``type == 'story'``), to a rule, as ``derive`` takes one,
 such as ``derive_by_type.story = { kind = "sum", field = "total_effort", over = "links" }``.
 A ``derive`` in a type's own entry is the field's ``derive_by_type`` entry for that type,
 and for each type inheriting from it that gives none of its own;
 its ``needs.derive_invalid`` warnings name the entry it came from.
-``derive_by_type`` alone gives a need type a rule without declaring the type:
-a type an extension or a service adds
-(an entry must repeat its ``title`` and ``prefix``, which then replace the extension's);
+``derive_by_type`` alone gives a need type a rule without an entry for the type:
+a type a :ref:`GitHub service <github_service>` adds, which an entry would replace
+(a type an extension adds takes an entry of its own too, which narrows it, :ref:`needs_types_extension`);
 and it alone gives a type a rule that the types inheriting from it do not get.
 
 Rules per need type are checked when the configuration is read, one ``needs.derive_invalid`` per entry:

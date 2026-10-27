@@ -54,7 +54,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 90
+EXPECTED_CASE_COUNT = 93
 
 #: The cases of the section "an entry naming a default type", the only ones whose
 #: ``needs_types`` may hold an entry with neither a ``title`` nor a ``prefix``.
@@ -100,8 +100,9 @@ needs_build_json = True
 
 #: The extensions a case may load besides sphinx-needs (its ``extensions`` key): those
 #: whose need types and fields ubCode models from the same ``ubproject.toml`` table, so
-#: both tools can run the case.
-EXTENSIONS = frozenset({"sphinx_test_reports"})
+#: both tools can run the case; each with the need types it registers, which a bare
+#: entry of such a case may name.
+EXTENSIONS = {"sphinx_test_reports": frozenset({"testfile", "testsuite", "testcase"})}
 
 #: The title the runner puts above every case's ``source``.
 TITLE = "Case\n====\n\n"
@@ -166,7 +167,7 @@ def test_every_case_has_a_complete_expectation() -> None:
             "extensions",
             "expect",
         }, name
-        assert set(case.get("extensions", [])) <= EXTENSIONS, name
+        assert set(case.get("extensions", [])) <= set(EXTENSIONS), name
         assert case["why"] and case["config"] and case["source"], name
         assert not (case.get("python_only") and case.get("ubcode_only")), name
         # the default need types are replaced by a `needs_types` declaring a type: a
@@ -181,10 +182,17 @@ def test_every_case_has_a_complete_expectation() -> None:
             else [(entry.get("directive"), entry) for entry in types]
         )
         assert entries, name
+        extension_types = {
+            need_type
+            for extension in case.get("extensions", [])
+            for need_type in EXTENSIONS[extension]
+        }
         for directive, entry in entries:
             assert ("title" in entry) == ("prefix" in entry), (name, directive)
-            assert "title" in entry or (
-                name in BARE_ENTRY_CASES and directive != "need"
+            assert (
+                "title" in entry
+                or (name in BARE_ENTRY_CASES and directive != "need")
+                or directive in extension_types
             ), (name, directive)
         expect = case["expect"]
         assert "findings" in expect, name

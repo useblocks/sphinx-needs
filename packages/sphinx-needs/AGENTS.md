@@ -376,7 +376,11 @@ app.connect("config-inited", check_configuration, priority=600)   # Validate con
 (the list, or a table keyed by directive) into the list, reports what it cannot use as `needs.config`
 findings through the pure `normalise_need_types`, and writes it back, so `load_config`,
 `add_need_type` and every later reader see one list, and `_register_need_directive` registers each
-type's directive once whichever of the two runs first.
+type's directive once whichever of the two runs first. A bare entry naming no default type is
+not in that list: it is kept in `_NEEDS_CONFIG.type_narrowings` as a pending narrowing of the
+type an extension adds under its directive, which `merged_types` applies on every read (so when
+the extension adds it does not matter), and `create_schema` reports one no extension claimed. A
+configured entry naming an added type narrows it the same way (#2371).
 
 **Variant data in the TOML comes through `ub-project`** (`read_variants`, a runtime
 dependency): it decides which location is read — `[<prefix>.variants]`, or the legacy

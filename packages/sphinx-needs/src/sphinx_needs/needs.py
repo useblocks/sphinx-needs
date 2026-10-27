@@ -42,6 +42,7 @@ from sphinx_needs.config import (
     NeedsSphinxConfig,
     NeedType,
     NewFieldParams,
+    TypeNarrowing,
     type_field_names,
 )
 from sphinx_needs.data import (
@@ -949,6 +950,20 @@ def _normalise_declarations(
 
 
 def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
+    """Resolve a ``needs_types`` value to the list every reader of it expects, as it
+    stands when no extension adds a need type: see :func:`_normalise_need_types`.
+
+    :param value: The configured value.
+    :return: The resolved list, and the findings: in entry order, the duplicates last.
+    :raises NeedsConfigException: If the value is neither a list nor a mapping.
+    """
+    need_types, _, _, findings = _normalise_need_types(value, defer=False)
+    return need_types, findings
+
+
+def _normalise_need_types(
+    value: object, *, defer: bool
+) -> tuple[list[NeedType], dict[str, TypeNarrowing], frozenset[str], list[str]]:
     """Resolve a ``needs_types`` value to the list every reader of it expects.
 
     Two shapes are accepted: a list of mappings, each naming its ``directive``, and a
@@ -969,7 +984,9 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
        naming a default need type (:data:`~sphinx_needs.config.DEFAULT_NEED_TYPES`)
        is that type, narrowed, taking the ``title``, ``prefix``, ``color`` and
        ``style`` it leaves out (or removes below); one naming no default type is
-       dropped;
+       dropped, or with ``defer`` kept, of its shape, as a pending narrowing of the
+       type an extension may add under its directive (#2371), and reported only once
+       the schema is built and no extension has;
     5. a ``color`` or ``style`` that is not a string, an ``inherits`` that is not a
        non-empty string, and a ``fields`` or ``links`` that is not a mapping, are
        removed from the entry;
@@ -1001,7 +1018,12 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
     list resolves to itself, with no findings.
 
     :param value: The configured value.
-    :return: The resolved list, and the findings: in entry order, the duplicates last.
+    :param defer: Keep a bare entry naming no default type as a pending narrowing,
+        rather than report it ignored.
+    :return: The resolved list; the pending narrowings, by directive (with ``defer``
+        alone); the directives the value's own entries name, kept ones and pending
+        narrowings (none for the default list itself, whose types no entry names);
+        and the findings: in entry order, the duplicates last.
     :raises NeedsConfigException: If the value is neither a list nor a mapping.
     """
     if isinstance(value, Mapping):
@@ -1022,8 +1044,9 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
         )
 
     findings: list[str] = []
-    #: the entries kept, each with its position (1-based)
-    kept: list[tuple[int, dict[str, Any]]] = []
+    #: the entries kept, each with its position (1-based), and how a finding names it
+    #: where it is a pending narrowing (``None`` otherwise)
+    kept: list[tuple[int, dict[str, Any], str | None]] = []
     defaults = {need_type["directive"]: need_type for need_type in DEFAULT_NEED_TYPES}
     #: whether an entry gives a title or a prefix: the default types are then replaced
     declares = False
@@ -1077,7 +1100,14 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
             for name in ("title", "prefix")
             if not isinstance(resolved.get(name), str)
         ]
-        if required and default is None:
+        #: a bare entry naming no default type: the narrowing of an extension's type
+        pending = (
+            defer
+            and default is None
+            and "title" not in resolved
+            and "prefix" not in resolved
+        )
+        if required and default is None and not pending:
             findings.append(
                 f"{named} has {' and '.join(required)}; the entry is ignored"
             )
@@ -1100,12 +1130,12 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
         if default is not None:
             # the keys the entry leaves out, or that were removed, are the default's
             resolved = {**default, **resolved}
-        kept.append((position, resolved))
+        kept.append((position, resolved, named if pending else None))
 
     # a duplicate is possible in the list shape only (a mapping cannot hold a key
     # twice): the last entry is used, at its own position, and the others are removed
     positions: dict[str, list[int]] = {}
-    for position, resolved in kept:
+    for position, resolved, _ in kept:
         positions.setdefault(resolved["directive"], []).append(position)
     for directive, declared in positions.items():
         if len(declared) > 1:
@@ -1115,11 +1145,25 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
                 f"needs_types declares the directive {directive!r} {times}, at entries "
                 f"{at}; the last entry is used"
             )
-    need_types = [
-        cast(NeedType, resolved)
-        for position, resolved in kept
+    used = [
+        (resolved, pending)
+        for position, resolved, pending in kept
         if positions[resolved["directive"]][-1] == position
     ]
+    need_types = [
+        cast(NeedType, resolved) for resolved, pending in used if pending is None
+    ]
+    narrowings = {
+        resolved["directive"]: TypeNarrowing(pending, resolved)
+        for resolved, pending in used
+        if pending is not None
+    }
+    # the default list itself (``needs_types`` not configured) names no type
+    named = (
+        frozenset()
+        if value == [dict(need_type) for need_type in defaults.values()]
+        else frozenset(resolved["directive"] for resolved, _ in used)
+    )
     if entries and not declares:
         # every entry is bare (or dropped): the default types are kept, each narrowed
         # in place by the entry naming it
@@ -1128,7 +1172,7 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
             narrowed.get(directive) or default.copy()
             for directive, default in defaults.items()
         ]
-    return need_types, findings
+    return need_types, narrowings, named, findings
 
 
 def resolve_need_types(_app: Sphinx, config: Config) -> None:
@@ -1143,10 +1187,15 @@ def resolve_need_types(_app: Sphinx, config: Config) -> None:
     :param config: The Sphinx configuration.
     :raises NeedsConfigException: If the value is neither a list nor a mapping.
     """
-    need_types, findings = normalise_need_types(config.needs_types)
+    need_types, narrowings, named, findings = _normalise_need_types(
+        config.needs_types, defer=True
+    )
     for text in findings:
         log_warning(LOGGER, text, "config", None)
     config["needs_types"] = need_types
+    # a bare entry naming no default type waits for the extension that adds its type,
+    # whenever that is: create_schema reports one no extension has added
+    _NEEDS_CONFIG.set_type_entries(named, narrowings)
 
 
 def _register_need_directive(app: Sphinx, name: str) -> None:
@@ -1858,9 +1907,33 @@ def _back_link_claims(
     )
 
 
+#: what a bare ``needs_types`` entry no extension's need type claims is reported with,
+#: after the text of an entry that is ignored
+UNCLAIMED_NARROWING_HINT = (
+    "it names no need type an extension registers, and to attach a rule to a type "
+    "the project does not declare, use `derive_by_type` on the field or link type"
+)
+
+
+def report_unclaimed_narrowings() -> None:
+    """Report each bare ``needs_types`` entry naming no default type that no
+    extension's need type has claimed: it is ignored, as it always was, but only now,
+    once every extension has had its chance to add the type (#2371)."""
+    for directive, narrowing in _NEEDS_CONFIG.type_narrowings.items():
+        if directive not in _NEEDS_CONFIG.types:
+            log_warning(
+                LOGGER,
+                f"{narrowing.named} has no 'title' and no 'prefix'; the entry is "
+                f"ignored: {UNCLAIMED_NARROWING_HINT}",
+                "config",
+                None,
+            )
+
+
 def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     schema = FieldsSchema()
+    report_unclaimed_narrowings()
     #: the ``derive`` findings, reported once the schema is complete
     derive_problems: list[DeriveProblem] = []
     #: the declared need types, each directive name with its title

@@ -4,6 +4,35 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Improvements
+............
+
+- ✨ A :ref:`needs_types` entry naming a need type an extension adds narrows that type, where it was ignored
+  (:issue:`2371`)
+
+  An entry for sphinx-test-reports' ``testcase``, or any type an extension adds with ``add_need_type``, is a
+  narrowing of it, as an entry naming a default type is: the keys it gives win, the ``title``, ``prefix``,
+  ``color`` and ``style`` it leaves out are the extension's, and its ``inherits``, ``fields`` and ``links`` (with
+  ``derive``, ``target_types``, ``minItems`` / ``maxItems``, a narrower ``schema``) apply to the type's needs, as on
+  a type the project declares, whenever the extension adds the type. So
+  ``[needs.types.testcase.links.evidence_for] derive = {...}`` gives test cases a derived link type of their own. A
+  bare entry still declares no type (the default types are kept beside it). A bare entry naming no default type and
+  no type an extension adds is ignored as before, but reported once the schema is built, naming
+  ``derive_by_type`` as the spelling that attaches a rule to a type the project does not declare -- the
+  documentation now says that is what ``derive_by_type`` is for, rather than only that it is older. The GitHub
+  services' types are not narrowed: an entry for one replaces it. See :ref:`needs_types_extension`.
+
+Bug fixes
+.........
+
+- 🐛 A :ref:`needs_types` entry with a ``title`` and a ``prefix`` naming a need type an extension adds no longer
+  stops the build with ``NeedsApiConfigException: testcase already exists as need type`` from the extension's
+  ``add_need_type``: the entry narrows the type (:issue:`2371`). ``add_need_type`` still refuses a directive
+  another extension added, and a default type no entry of the project names.
+
 .. _`release:9.1.0`:
 
 9.1.0

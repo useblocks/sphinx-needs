@@ -279,8 +279,32 @@ Beside an entry giving a ``title`` or a ``prefix``, the list given is the projec
 an entry naming a default type with neither is that default, filled, at its own position, and the other defaults do not exist.
 A bare entry is filled from the default type, never from another entry naming the same directive:
 in a list naming the directive twice, the later entry is used, as for any directive declared twice (and reported).
-A need type an extension or a service adds is not narrowed this way:
-an entry for it gives its ``title`` and ``prefix``, which then replace the extension's.
+
+.. _needs_types_extension:
+
+An entry naming a need type an extension adds (with :func:`~sphinx_needs.api.configuration.add_need_type`,
+such as sphinx-test-reports' ``testfile``, ``testsuite`` and ``testcase``) narrows that type, as one naming a default type does,
+with or without a ``title`` and a ``prefix``: the keys the entry gives win,
+the ``title``, ``prefix``, ``color`` and ``style`` it leaves out are the extension's,
+and its ``inherits``, ``fields`` and ``links`` apply to the type's needs as on any type the project declares.
+When the extension adds the type does not matter, although that is after the configuration is read.
+A bare entry declares no type: beside it the default types are kept, as beside a bare entry naming a default type.
+An entry giving a ``title`` and a ``prefix`` declares the project's types, as any such entry does:
+
+.. code-block:: toml
+
+   # sphinx-test-reports' testcase, with a link type its needs alone carry
+   [needs.types.testcase.links.evidence_for]
+   derive = { kind = "links", join = { field = "case_name", equals = "case_name" }, where = "type == 'test'" }
+
+A bare entry naming no default type and no type an extension adds is ignored, with a ``needs.config`` warning
+given once the schema is built (no earlier: the extension may add its type late)::
+
+   needs_types['epic'] has no 'title' and no 'prefix'; the entry is ignored: it names no need type an extension registers, and to attach a rule to a type the project does not declare, use `derive_by_type` on the field or link type
+
+The need types of the configured :ref:`GitHub services <github_service>` are not narrowed this way:
+an entry for one is the project's own type, which replaces the service's,
+and :ref:`derive_by_type <needs_derive_by_type>` gives such a type a rule.
 
 Every one of these items is stored on, or decides, the needs of the type,
 so an incremental build after a change to ``needs_types`` re-reads every document, as one after a change to :ref:`needs_fields` does,
@@ -292,6 +316,12 @@ or after a built-in :ref:`GitHub service <github_service>` is configured or remo
    ``needs_types`` can also be a dictionary keyed by directive name, and is validated when the configuration is read.
    An entry naming a default type with neither ``title`` nor ``prefix`` narrows that type,
    and a ``needs_types`` made only of such entries keeps the default types.
+
+.. versionchanged:: 9.2.0
+
+   An entry naming a need type an extension adds narrows that type (:ref:`needs_types_extension`),
+   rather than being ignored (an entry with neither ``title`` nor ``prefix``)
+   or stopping the build when the extension adds its type (one with both).
 
    A change to ``needs_types`` re-reads every document.
    Before, the needs of the documents an incremental build did not re-read kept what the previous need types gave them,
@@ -345,7 +375,7 @@ The need types added by extensions (with :func:`~sphinx_needs.api.configuration.
 and by the configured :ref:`GitHub services <github_service>` are not part of the option's value:
 they follow the configured types wherever the types are read,
 and :func:`~sphinx_needs.api.configuration.get_need_types` lists them all.
-A configured type replaces one of its directive added by either.
+A configured type narrows one of its directive an extension adds (above), and replaces a service's.
 An incremental build after a change to a type added by an extension re-reads every document,
 as one after a change to ``needs_types`` does, although the option's value is unchanged.
 
@@ -358,7 +388,8 @@ Otherwise each problem is a ``needs.config`` warning, and the build goes on with
   A ``directive`` inside a dictionary entry that differs from its key is reported, and the key is used;
 * an entry whose ``title`` or ``prefix`` is missing or not a string is ignored: its type does not exist;
   but an entry giving neither that names a default type narrows that type (above),
-  and one giving neither that names no default type declares nothing, so on its own it does not replace the default types;
+  and one giving neither that names no default type narrows the type an extension adds under its name,
+  or else declares nothing (it is then reported once the schema is built, above); either way, on its own it does not replace the default types;
 * a ``color`` or ``style`` that is not a string, an ``inherits`` that is not a non-empty string,
   and a ``fields`` or ``links`` that is not a dictionary, are ignored, and the type kept;
 * a key other than ``directive``, ``title``, ``prefix``, ``color``, ``style``, ``inherits``, ``fields`` and ``links`` is ignored, and the type kept;
@@ -418,7 +449,7 @@ A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` ta
      - ``(match expression, value)`` pairs, in place of the field's (an empty list: none)
    * - ``derive``
      - rule computing the field on the type's needs and on those of the types inheriting from it (below;
-       ``derive_by_type`` is the older spelling, :ref:`needs_derive_by_type`)
+       ``derive_by_type`` is the spelling for a type no entry declares, :ref:`needs_derive_by_type`)
 
 and a declaration in ``links`` these, as :ref:`needs_links` takes them:
 
@@ -438,7 +469,7 @@ and a declaration in ``links`` these, as :ref:`needs_links` takes them:
      - ``(match expression, links)`` pairs, in place of the link type's (an empty list: none)
    * - ``derive``
      - rule computing the links of the type's needs and of those of the types inheriting from it (below;
-       ``derive_by_type`` is the older spelling, :ref:`needs_derive_by_type`)
+       ``derive_by_type`` is the spelling for a type no entry declares, :ref:`needs_derive_by_type`)
    * - ``target_types``
      - need types the links of the type's needs may point to (a listed type or one inheriting from it): within those it inherits (the subtypes of a listed type included), never others (below)
    * - ``incoming``, ``outgoing``
@@ -735,7 +766,8 @@ For new fields the following can be defined:
     A derived field cannot be set in a need or by a ``needextend``, and takes no ``default`` or ``predicates``.
     *New in version 9.0.0.*
 - ``derive_by_type``: Rules per need type (optional), which make it a :ref:`derived field <needs_derive>` too,
-    an older spelling of a ``derive`` in a need type's own entry (:ref:`needs_derive_by_type`):
+    the spelling of a ``derive`` for a need type the project does not declare, such as a GitHub service's,
+    and an older one of a ``derive`` in a need type's own entry (:ref:`needs_derive_by_type`):
     a table of need type (the directive name, as ``type`` holds it) to a rule, as ``derive`` takes one,
     overriding ``derive`` on that type.
     A need of a type without a rule holds the ``default`` (a literal, given only without ``derive``),
@@ -936,7 +968,8 @@ Each configured link can define:
     A derived link type cannot be set in a need or by a ``needextend``, and takes no ``default`` or ``predicates``.
     *New in version 9.0.0.*
 - ``derive_by_type`` (optional): Rules per need type, which make the link type :ref:`derived <needs_derive>` too,
-    an older spelling of a ``derive`` in a need type's own entry (:ref:`needs_derive_by_type`):
+    the spelling of a ``derive`` for a need type the project does not declare, such as a GitHub service's,
+    and an older one of a ``derive`` in a need type's own entry (:ref:`needs_derive_by_type`):
     a table of need type (the directive name) to a rule, as ``derive`` takes one, overriding ``derive`` on that type.
     A need of a type without a rule holds the ``default`` (a literal, given only without ``derive``), else no links.
     See :ref:`needs_derive_by_type`.

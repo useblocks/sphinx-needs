@@ -104,6 +104,22 @@ class NeedFunctionsType(TypedDict):
     registration checked it."""
 
 
+@dataclass(frozen=True)
+class TypeNarrowing:
+    """A ``needs_types`` entry with neither a ``title`` nor a ``prefix`` that names no
+    default type: a narrowing of the need type an extension registers under its
+    directive, whenever the extension registers it (#2371).
+
+    It is kept from ``config-inited`` (priority 12, where ``needs_types`` is resolved)
+    to the building of the schema, where one no extension's type claims is reported.
+    """
+
+    named: str
+    """The entry as a finding names it (``needs_types['story']``)."""
+    entry: dict[str, Any]
+    """The entry, of its shape: its ``directive``, and the keys it gives."""
+
+
 class _Config:
     """Stores sphinx-needs configuration values that can be set both via the sphinx configuration,
     and also via the API functions.
@@ -120,6 +136,8 @@ class _Config:
         self._builtin_types: dict[str, NeedType] = {}
         self._builtin_layouts: dict[str, dict[str, Any]] = {}
         self._builtin_services: list[str] = []
+        self._type_narrowings: dict[str, TypeNarrowing] = {}
+        self._type_entries: frozenset[str] | None = None
 
     def clear(self) -> None:
         self._fields = {}
@@ -130,6 +148,8 @@ class _Config:
         self._builtin_types = {}
         self._builtin_layouts = {}
         self._builtin_services = []
+        self._type_narrowings = {}
+        self._type_entries = None
 
     @property
     def fields(self) -> Mapping[str, NewFieldParams]:
@@ -366,16 +386,61 @@ class _Config:
         services' one), the lowest tier, as :meth:`add_builtin_need_type`."""
         self._builtin_layouts[name] = copy.deepcopy(layout)
 
+    @property
+    def type_narrowings(self) -> Mapping[str, TypeNarrowing]:
+        """The bare ``needs_types`` entries naming no default type, by directive: each
+        narrows the need type an extension adds under its directive, once one does
+        (:meth:`merged_types`)."""
+        return self._type_narrowings
+
+    @property
+    def type_entries(self) -> frozenset[str] | None:
+        """The directives the project's own ``needs_types`` entries name, bare ones
+        included; ``None`` until ``needs_types`` is resolved. A default type no entry
+        names is not one: an extension adding its directive is refused."""
+        return self._type_entries
+
+    def set_type_entries(
+        self, named: frozenset[str], narrowings: Mapping[str, TypeNarrowing]
+    ) -> None:
+        """Record what the resolved ``needs_types`` names, and its pending narrowings
+        (:attr:`type_entries`, :attr:`type_narrowings`)."""
+        self._type_entries = named
+        self._type_narrowings = dict(narrowings)
+
     def merged_types(self, configured: list[NeedType]) -> list[NeedType]:
         """The configured need types, then the added ones, then the built-in ones,
-        each tier without the directives an earlier one has."""
-        merged = list(configured)
-        seen = {need_type["directive"] for need_type in configured}
-        for tier in (self._types, self._builtin_types):
-            for directive, need_type in tier.items():
-                if directive not in seen:
-                    seen.add(directive)
-                    merged.append(need_type)
+        each tier without the directives an earlier one has.
+
+        A configured entry naming a type added from code narrows it: the keys the entry
+        gives win, and the ``color`` and ``style`` it leaves out are the added type's.
+        So does a pending narrowing (:attr:`type_narrowings`), at the added type's
+        position. The built-in types (the GitHub services') are not narrowed: a
+        configured type replaces one of its directive.
+        """
+        merged: list[NeedType] = []
+        seen: set[str] = set()
+        for need_type in configured:
+            directive = need_type["directive"]
+            seen.add(directive)
+            added = self._types.get(directive)
+            merged.append(
+                need_type if added is None else cast(NeedType, {**added, **need_type})
+            )
+        for directive, need_type in self._types.items():
+            if directive in seen:
+                continue
+            seen.add(directive)
+            narrowing = self._type_narrowings.get(directive)
+            merged.append(
+                need_type
+                if narrowing is None
+                else cast(NeedType, {**need_type, **narrowing.entry})
+            )
+        for directive, need_type in self._builtin_types.items():
+            if directive not in seen:
+                seen.add(directive)
+                merged.append(need_type)
         return merged
 
     def merged_layouts(
@@ -394,7 +459,8 @@ _NEEDS_CONFIG = _Config()
 
 
 def type_field_names(config: _SphinxConfig) -> set[str]:
-    """The names the ``fields`` of the ``needs_types`` entries declare.
+    """The names the ``fields`` of the ``needs_types`` entries declare, the pending
+    narrowings of the types extensions add included (:attr:`_Config.type_narrowings`).
 
     The configuration readers that run before the fields schema is built read them
     beside the registered fields: a name only a need type declares is the name of a
@@ -402,14 +468,19 @@ def type_field_names(config: _SphinxConfig) -> set[str]:
     as the configuration holds it, which is the list once ``config-inited`` has
     resolved it; a configuration without ``needs_types`` declares none.
     """
-    # the configured types only, not NeedsSphinxConfig.types: a type added from code
-    # (add_need_type, the GitHub services) cannot declare fields, as it takes none
+    # the configured types and the pending narrowings of the types extensions add,
+    # not NeedsSphinxConfig.types: a type added from code (add_need_type, the GitHub
+    # services) declares no fields itself, as it takes none; an entry narrowing it
+    # does, whether or not the extension has added the type yet
     need_types = getattr(config, "needs_types", [])
     if not isinstance(need_types, list):
         return set()
+    narrowings = [
+        narrowing.entry for narrowing in _NEEDS_CONFIG.type_narrowings.values()
+    ]
     return {
         name
-        for entry in need_types
+        for entry in [*need_types, *narrowings]
         if isinstance(entry, Mapping)
         and isinstance(table := entry.get("fields"), Mapping)
         for name in table
