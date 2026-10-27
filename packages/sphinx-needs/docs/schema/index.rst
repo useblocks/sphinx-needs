@@ -327,7 +327,9 @@ These need schema rules:
 - **how many links point to a need of a given type**, such as "at least one ``req``" among links that may point to several types:
   a network rule's ``contains`` with ``minContains`` (:ref:`schema_link_count_constraints`);
   a link type's ``minItems`` and ``maxItems`` count every link, whatever its target's type, a dead link too;
-- **incoming links**, such as "every requirement is verified by a test" (:ref:`network_back_validation`);
+- **incoming links from needs of a given type, or with given fields**, such as "every requirement is verified by a test"
+  (:ref:`network_back_validation`); how many links point to a need, whatever their source, is a type's
+  ``links.<l>_back`` entry (:ref:`need_types_incoming`);
 - **conditions between fields**, such as "``approval`` is required when ``efforts`` is greater than 15";
 - **multi-hop chains** (:ref:`nested network validation <network_validation>`);
 - a **pattern for the IDs** of one type (``id`` cannot be declared in a type's entry);
@@ -867,6 +869,15 @@ Incoming link validation (``network_back``)
 By default, ``network`` validates a need's *outgoing* links.
 Sometimes a constraint is more naturally expressed from the target's point of view —
 for example *"every requirement must be covered by at least one test"*.
+
+.. tip::
+
+   Where the constraint is a count alone -- "every requirement is the target of at least one ``verifies`` link",
+   whatever the source's type -- the need type's own entry says it more simply:
+   ``[needs.types.req.links.verifies_back]`` with ``schema = { minItems = 1 }``
+   (see :ref:`need_types_incoming` and :ref:`needs_types_fields`).
+   It is inherited by the types inheriting from ``req``, and not checked on needs from :ref:`needs_external_needs`.
+   A rule on ``network_back`` is still the way to say which types the sources must have, or anything about their fields.
 
 The ``network_back`` key mirrors ``network`` but traverses the *incoming* links of a need:
 the needs that link **to** this need via the given outgoing link type

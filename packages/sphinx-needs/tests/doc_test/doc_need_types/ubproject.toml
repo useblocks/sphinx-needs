@@ -78,3 +78,9 @@ schema = { type = "string" }
 nullable = false
 severity = "warning"
 # [/severity]
+
+# [incoming]
+[needs.types.spec.links.verifies_back]
+description = "The tests verifying the specification"
+schema = { minItems = 1 }
+# [/incoming]

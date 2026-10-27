@@ -24,6 +24,19 @@ Improvements
   ``needs.type_widening`` warning, and is ignored. Without a ``severity`` nothing changes. The fields-per-type
   conformance corpus may now pin a finding's severity. See :ref:`need_types_severity`.
 
+- ✨ A need type declares how many links it must receive: ``[needs.types.<t>.links.<l>_back]`` takes a count
+  (:issue:`2375`)
+
+  ``schema = { minItems = 1 }`` on a ``links`` entry named after a link type's back links says that every need of the
+  type is the target of at least one ``l`` link (``maxItems``: of at most so many), so a ``coverage-*-back`` schema
+  rule that only counts folds into the type's declaration. The count is every link of ``l`` to the need, as
+  ``minItems`` counts the outgoing ones; it is inherited, and narrowed, by the types inheriting from the type; it is
+  checked by the schema validation once every link is final, a ``link_fail`` of the field ``<l>_back`` at the
+  entry's ``severity``; a need from :ref:`needs_external_needs` is not counted, an imported need is. The entry takes a
+  ``description``, ``minItems`` and ``maxItems``, and a ``severity``; any other key is a ``needs.type_conflict``.
+  Such an entry used to be refused; a ``fields`` entry of that name still is, and now names the ``links`` entry.
+  This supersedes the proposal of :issue:`2323`. See :ref:`need_types_incoming`.
+
 .. _`release:9.1.0`:
 
 9.1.0

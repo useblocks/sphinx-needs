@@ -395,7 +395,8 @@ A need type may declare fields and link types anew for its needs, in its entry:
   or a core field such as ``status``,
   or a name nothing else declares, a field of this type's needs alone (below) -- to the type's declaration of it;
 * ``links``: a dictionary from the name of a link type -- one of :ref:`needs_links`, or ``links``,
-  or a name nothing else declares, a link type of this type's needs alone -- to the type's declaration of it;
+  or a name nothing else declares, a link type of this type's needs alone -- to the type's declaration of it,
+  or from the name of a link type's back links, ``<l>_back``, to how many links of ``l`` point to a need of the type (below);
 * ``inherits``: the directive name of one other need type, whose declarations this type starts from.
 
 A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` takes it:
@@ -650,15 +651,48 @@ A declaration that cannot be applied is ignored as a whole, as one ``needs.type_
    needs_types['spec'].links['x'] declares 'x', which is a field, not a link type; the entry is ignored
 
 when it names no field of its table (a link type or a link type's back links (``links_back``) under ``fields``,
-a field or a link type's back links under ``links``, an empty name,
+a field under ``links``, an empty name,
 or under ``fields`` a name no need type gives a ``schema`` ``type``, above),
 changes the field's type, which is the same on every need type
 (``... cannot be declared with type 'integer' (items None): its type is 'string' (items None) on every need type; the entry is ignored``),
 or carries a ``schema``, ``default`` or ``predicates`` that cannot be used (a value of another type, a default of ``title``, which takes none).
-A link type's back links are computed on every need, so an entry naming them, in either table, declares nothing,
-and the back links are computed and validated as without it::
+A link type's back links are computed on every need: a ``fields`` entry naming them declares nothing,
+and the back links are computed as without it::
 
-   needs_types['spec'].fields['links_back'] declares 'links_back', which is a link type's back links; the entry is ignored
+   needs_types['spec'].fields['links_back'] declares 'links_back', which is a link type's back links, whose count a need type declares under 'links' (needs_types['spec'].links['links_back']); the entry is ignored
+
+**Incoming links.**
+A ``links`` entry naming a link type's back links, ``[needs.types.<t>.links.<l>_back]``, declares how many links of ``l``
+point to a need of the type: ``schema = { minItems = 1 }`` says "every ``<t>`` is the target of at least one ``l`` link",
+``maxItems = 1`` "of one at most".
+It declares no link type, and the back links are computed on every need as without it.
+It takes a ``description``, a ``schema`` of ``minItems`` and ``maxItems`` alone (each a non-negative integer) and a ``severity``;
+any other key, or another schema keyword, is one ``needs.type_conflict`` warning, and the entry is ignored as a whole::
+
+   needs_types['req'].links['satisfies_back'] sets 'default', but 'satisfies_back' is a link type's back links: a need type declares only their description, schema (minItems, maxItems) and severity; the entry is ignored
+   needs_types['req'].links['satisfies_back'] gives the schema 'uniqueItems', but 'satisfies_back' is a link type's back links: their schema takes only 'minItems' and 'maxItems'; the entry is ignored
+
+The count is the length of the need's ``<l>_back``: every link of ``l`` to it, whatever the type of the need it comes from,
+a link that need's ``target_types`` refuses included -- as ``minItems`` counts the outgoing links.
+"At least one ``test``" among sources of several types takes a schema rule (:ref:`network_back_validation`).
+It holds for the declaring type and every type inheriting from it, which may narrow it as any declaration
+(a ``minItems`` not lower, a ``maxItems`` not higher, a ``severity`` not lower; ``needs.type_widening`` otherwise).
+It is checked by the :ref:`schema validation <schema_validation>` once every link is final,
+and a need failing it is a ``link_fail`` of the field ``<l>_back`` at that need, at the entry's ``severity`` (``violation`` by default):
+
+.. code-block:: text
+
+   ERROR: Need 'REQ_1' has schema violations:
+     Severity:       violation
+     Field:          satisfies_back
+     Need path:      REQ_1
+     Schema path:    links > schema > properties > satisfies_back > minItems
+     Schema message: [] has less than 1 item [sn_schema_violation.link_fail]
+
+So :ref:`needs_schema_validation_enabled` ``= False`` switches it off.
+A need from :ref:`needs_external_needs` is not counted: no need of this project can link to it from its own project;
+a need :ref:`needimport` imports is this project's, and is.
+The :ref:`needs.json <needs_builder_format>` writes nothing new: the back links are in it as before.
 
 A name belongs to one declaration, and the back links of a link type ``l`` claim ``l_back``.
 Where two declarations claim one name, the back links of ``links`` and ``parent_needs`` win over any other declaration,

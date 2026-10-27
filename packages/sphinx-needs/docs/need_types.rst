@@ -332,6 +332,41 @@ Here ``hw_test`` inherits ``test``:
 A declaration that widens is ignored as a whole, its other keys included,
 with a ``needs.type_widening`` warning (see :ref:`needs_types_fields`).
 
+.. _`need_types_incoming`:
+
+Links a type must receive
+-------------------------
+
+A type can declare how many links of a link type point *to* its needs:
+a ``links`` entry named after the link type's back links, ``<link type>_back``,
+with a ``schema`` of ``minItems`` and ``maxItems``.
+Every ``spec`` must be verified by a test:
+
+.. literalinclude:: ../tests/doc_test/doc_need_types/ubproject.toml
+   :language: toml
+   :start-after: # [incoming]
+   :end-before: # [/incoming]
+
+A ``spec`` no need verifies is reported, at the ``spec``:
+
+.. code-block:: text
+
+   ERROR: Need 'S_002' has schema violations:
+     Severity:       violation
+     Field:          verifies_back
+     Need path:      S_002
+     Schema path:    links > schema > properties > verifies_back > minItems
+     Schema message: [] has less than 1 item [sn_schema_violation.link_fail]
+
+The count is every ``verifies`` link to the need, whatever its source:
+``S_001`` is verified by ``T_003``, whose link ``target_types`` refuses (above), and that link counts.
+Like ``minItems`` on the outgoing side, it is checked by the schema validation, once every link is final;
+a ``severity`` on the entry reports it at that severity, and a type inheriting it may narrow it.
+A need from :ref:`needs_external_needs` is not counted, since nothing in this project can link to it;
+an imported need is.
+"Verified by at least one ``test``" among sources of several types takes a schema rule
+(:ref:`network_back_validation`); the rules in full are in :ref:`needs_types_fields`.
+
 Defaults per type
 -----------------
 
@@ -433,7 +468,8 @@ A misspelt field name
 When to use schema rules
 ------------------------
 
-A type's entry says what a need of the type may hold, and the types of the needs its links may point to.
-Rules about the needs it links to beyond their type, incoming links, conditions between fields
+A type's entry says what a need of the type may hold, the types of the needs its links may point to,
+and how many links point to it.
+Rules about the needs it links to beyond their type, incoming links from needs of a given type, conditions between fields
 and the other cases of :ref:`schema_per_type_still_rules` take :ref:`schema rules <schema_validation>`;
 :ref:`schema_per_type_or_rules` compares the two, and how each reports.

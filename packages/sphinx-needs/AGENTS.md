@@ -248,6 +248,11 @@ A `links` entry naming no link type and no field (fields are synthesised first) 
 `needs_extra_links` entries, so the loop that builds those builds it; its shape is its derivation
 and its display, `copy` and dead links, which the first root declaration sets and the others may
 only repeat, and its absence is the same projection, holding `[]`.
+A `links` entry named after a link type's back links, `<l>_back`, declares no link type: it is a
+`BackLinksSchema` (a `minItems`/`maxItems` count of the links of `l` pointing to the type's needs, and
+a `severity`), registered with `FieldsSchema.add_back_links` for the type and every type inheriting
+from it, read through `for_type(t).back_links()`, and validated beside the type's link types in
+`schema/core.py` (never on a need from `needs_external_needs`).
 The normaliser at `config-inited` checks only the shape of those keys, and the resolver checks it
 again, with the normaliser's helpers, for an entry added after it. The schema has two tiers.
 The union, `FieldsSchema` itself, answers a field's shape (`FieldShape`, `LinkShape`: its name,

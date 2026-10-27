@@ -1207,6 +1207,63 @@ class LinkSchema:
                 )
 
 
+#: The keywords a need type's declaration of a link type's back links may give in its
+#: ``schema``: how many needs link to a need of the type.
+BACK_LINKS_KEYWORDS: Final[tuple[str, ...]] = ("minItems", "maxItems")
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class BackLinksSchema:
+    """A need type's declaration of the back links of a link type, ``<l>_back``: how
+    many links of that link type point to a need of the type.
+
+    The count is the length of the need's ``<l>_back``: every link of the link type
+    to it, whatever the type of the need it comes from. It is checked by the schema
+    validation, once every link is final, on the needs of the declaring type and of
+    the types inheriting from it, but those from ``needs_external_needs``, which
+    cannot be linked to from their own project here; a need that fails it is a
+    ``link_fail`` of the field ``<l>_back`` at the :attr:`severity` the declaration
+    gives (``violation`` when it gives none).
+    """
+
+    name: str
+    """The back links' name, ``<link_type>_back``."""
+    link_type: str
+    """The link type whose links are counted."""
+    description: str = ""
+    schema: Mapping[str, int]
+    """The ``minItems`` and ``maxItems`` given, each a non-negative integer."""
+    severity: Severity | None = None
+    """The severity a need failing the count is reported at; ``None``: violation."""
+
+    def __post_init__(self) -> None:
+        if self.name != f"{self.link_type}_back":
+            raise ValueError("name must be the link type's name and '_back'.")
+        if not isinstance(self.description, str):
+            raise ValueError("description must be a string.")
+        if not isinstance(self.schema, Mapping) or any(
+            key not in BACK_LINKS_KEYWORDS
+            or isinstance(value, bool)
+            or not isinstance(value, int)
+            or value < 0
+            for key, value in self.schema.items()
+        ):
+            raise ValueError(
+                "schema must give only 'minItems' and 'maxItems', each a "
+                "non-negative integer."
+            )
+        _check_severity(self.severity)
+
+    @property
+    def failure_severity(self) -> Severity:
+        """The severity a need failing the count is reported at."""
+        return self.severity or "violation"
+
+    def json_schema(self) -> dict[str, Any]:
+        """The schema the back links of a need of the type are validated against."""
+        return {"type": "array", "items": {"type": "string"}, **self.schema}
+
+
 class FieldShape(Protocol):
     """The shape of a field: what is the same on every need type.
 
@@ -1287,6 +1344,7 @@ class FieldsSchema:
 
     __slots__ = (
         "_absent",
+        "_back_links",
         "_core_fields",
         "_derived_names",
         "_extra_fields",
@@ -1309,6 +1367,8 @@ class FieldsSchema:
         self._project_fields: set[str] = set()
         #: need type -> field name -> the field's declaration for that need type
         self._type_overlays: dict[str, dict[str, FieldSchema | LinkSchema]] = {}
+        #: need type -> back links name -> the type's declaration of those back links
+        self._back_links: dict[str, dict[str, BackLinksSchema]] = {}
         #: field name -> its declaration on a need type that does not declare it, one
         #: for every such type
         self._absent: dict[str, FieldSchema | LinkSchema] = {}
@@ -1391,7 +1451,7 @@ class FieldsSchema:
             return
         self._frozen = True
         self._derived_names = self._collect_derived_names()
-        for need_type in (*self._type_overlays, *self._lacking()):
+        for need_type in (*self._type_overlays, *self._back_links, *self._lacking()):
             self._resolved(need_type)
         self._resolved(None)
 
@@ -1483,7 +1543,7 @@ class FieldsSchema:
         if self._need_types is not None:
             raise ValueError("The need types of the fields schema are already set.")
         need_types = frozenset(names)
-        for need_type in self._type_overlays:
+        for need_type in (*self._type_overlays, *self._back_links):
             if need_type not in need_types:
                 raise ValueError(
                     f"Need type {need_type!r} declares fields anew, but {need_type!r} "
@@ -1529,6 +1589,43 @@ class FieldsSchema:
             raise ValueError(f"{head}{joint}{'; '.join(problems)}")
         self._type_overlays.setdefault(need_type, {})[field.name] = field
 
+    def add_back_links(self, need_type: str, back_links: BackLinksSchema) -> None:
+        """Declare how many links of a link type point to a need of one need type: the
+        type's declaration of the link type's back links (:class:`BackLinksSchema`).
+
+        It is read by :meth:`back_links` of the schema of that need type (:meth:`for_type`);
+        a second declaration of the same back links for the same need type replaces the
+        first. Registered for each type it reaches -- the declaring type and every type
+        inheriting from it -- as an overlay is.
+
+        :raises ValueError: if the need type is not configured, or the schema has no
+            link type whose back links they are
+        :raises TypeError: if the schema is frozen, or the schema of one need type
+        """
+        self._mutating()
+        if not isinstance(need_type, str) or not need_type:
+            raise ValueError("need_type must be a non-empty string.")
+        if self._need_types is not None and need_type not in self._need_types:
+            raise ValueError(
+                f"Cannot declare {back_links.name!r} for need type {need_type!r}: "
+                f"{need_type!r} is not a configured need type."
+            )
+        if back_links.link_type not in self._link_fields:
+            raise ValueError(
+                f"Cannot declare {back_links.name!r} for need type {need_type!r}: "
+                f"there is no link type {back_links.link_type!r}."
+            )
+        self._back_links.setdefault(need_type, {})[back_links.name] = back_links
+
+    def back_links(self) -> Mapping[str, BackLinksSchema]:
+        """The declarations of back links of the need type this is the schema of
+        (:meth:`for_type`), by name, read-only: empty for the global view, and for the
+        schema itself, which is the schema of no need type."""
+        if self._view_of is None or self._view_of[1] is None:
+            return MappingProxyType({})
+        base, need_type = self._view_of
+        return MappingProxyType(dict(base._back_links.get(need_type, {})))
+
     def for_type(self, need_type: str | None) -> TypeFieldsSchema:
         """The schema of the needs of ``need_type``, every field in full.
 
@@ -1554,7 +1651,9 @@ class FieldsSchema:
         for every need type with overlays, every need type that does not declare a
         field declared on need types alone, and the global view)."""
         if need_type is not None and (
-            need_type in self._type_overlays or self._lacks_local(need_type)
+            need_type in self._type_overlays
+            or need_type in self._back_links
+            or self._lacks_local(need_type)
         ):
             if (view := self._type_views.get(need_type)) is None:
                 view = self._type_views[need_type] = self._resolve_type(need_type)

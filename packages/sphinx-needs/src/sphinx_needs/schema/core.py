@@ -66,6 +66,9 @@ class _FieldValidation:
     #: the fields not nullable whose need may hold ``None`` all the same: a severity
     #: below ``violation`` reports a need without a value instead of refusing it
     required: frozenset[str]
+    #: the back links the need type declares a count of (``<l>_back``), validated as
+    #: its link types are, but on a need from ``needs_external_needs``
+    back_links: frozenset[str]
 
 
 def _field_validation(fields_schema: TypeFieldsSchema) -> _FieldValidation | None:
@@ -115,6 +118,12 @@ def _field_validation(fields_schema: TypeFieldsSchema) -> _FieldValidation | Non
         link_names.add(link.name)
         if link.severity is not None:
             severities[link.name] = SeverityEnum[link.severity]
+    back_links = fields_schema.back_links()
+    for back in back_links.values():
+        combined_properties[back.name] = back.json_schema()
+        link_names.add(back.name)
+        if back.severity is not None:
+            severities[back.name] = SeverityEnum[back.severity]
 
     if not combined_properties:
         return None
@@ -130,6 +139,7 @@ def _field_validation(fields_schema: TypeFieldsSchema) -> _FieldValidation | Non
         with_off_type_default=with_off_type_default,
         severities=severities,
         required=frozenset(required),
+        back_links=frozenset(back_links),
     )
 
 
@@ -156,6 +166,9 @@ def validate_field_link_schemas(
     the need type's entry), else ``violation``. A field its type declares not nullable
     at a lower severity, which a need without a value holds ``None`` of, is one
     ``field_fail`` at that severity (``fields > nullable``).
+    The back links a need type declares a count of (``<l>_back``) are validated as a
+    link type is, a ``link_fail`` of that name, but on a need from
+    ``needs_external_needs``, which no need of this project can be counted for.
 
     :param config: The Sphinx-Needs configuration.
     :param fields_schema: The fields schema containing core, extra, and link field definitions.
@@ -195,6 +208,7 @@ def validate_field_link_schemas(
             for key, value in need.items()
             if key in schema_properties
             and value is not None
+            and not (key in validation.back_links and need["is_external"])
             and not (
                 key in placeholders
                 and value == placeholders[key]

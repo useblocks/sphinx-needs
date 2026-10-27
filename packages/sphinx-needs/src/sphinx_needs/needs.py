@@ -162,6 +162,8 @@ from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.needs_schema import (
+    BACK_LINKS_KEYWORDS,
+    BackLinksSchema,
     FieldLiteralValue,
     FieldSchema,
     FieldsSchema,
@@ -172,6 +174,8 @@ from sphinx_needs.needs_schema import (
     _inherit_keywords,
     create_inherited_field,
     narrowing_problems,
+    schema_narrowing_problems,
+    severity_problems,
 )
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles import NeedsXRefRole
@@ -803,6 +807,12 @@ NEED_TYPE_LINK_KEYS = (
     "target_types",
     "severity",
 )
+
+#: The keys of an entry of a need type's ``links`` table naming a link type's back
+#: links, ``<l>_back``: how many links of ``l`` point to a need of the type
+#: (``schema``, of :data:`~sphinx_needs.needs_schema.BACK_LINKS_KEYWORDS` alone), and
+#: the severity of a need failing the count. Any other key refuses the entry.
+NEED_TYPE_BACK_LINK_KEYS = ("description", "schema", "severity")
 
 #: The keys of a link type that are the same on every need type -- how its links are
 #: drawn, whether they are copied into ``links``, whether a dead link is allowed: an
@@ -3419,11 +3429,15 @@ def _resolve_type_declarations(
     #: need type -> field name -> its declaration for the type, and the type whose
     #: entry made it
     declared: dict[str, dict[str, tuple[FieldSchema | LinkSchema, str]]] = {}
+    #: need type -> back links name -> the type's declaration of them, and the type
+    #: whose entry made it
+    back_declared: dict[str, dict[str, tuple[BackLinksSchema, str]]] = {}
     #: need type -> the fields and link types it declares: its ancestors' and its own
     #: entries, used or not, each naming one of its table's kind
     names: dict[str, set[str]] = {}
     for need_type in order:
         own = dict(declared[p]) if (p := parent.get(need_type)) else {}
+        back_own = dict(back_declared[p]) if p else {}
         names[need_type] = set(names[p]) if p else set()
         for table, kind, what, other in (
             ("fields", "field", "a field", "a link type"),
@@ -3444,7 +3458,21 @@ def _resolve_type_declarations(
                     # declares nothing is refused before it reaches here (no state is
                     # known where ``owner`` is a field), so it would read "not ..."
                     if owner is not None and owner.kind == "link":
-                        is_ = "a link type's back links"
+                        if table == "links":
+                            # how many links point to the type's needs
+                            previous, by = back_own.get(name, (None, None))
+                            if (
+                                back := _declare_back_links(
+                                    previous, owner.name, keys, where, by
+                                )
+                            ) is not None:
+                                back_own[name] = (back, need_type)
+                            continue
+                        is_ = (
+                            "a link type's back links, whose count a need type "
+                            f"declares under 'links' (needs_types[{need_type!r}]"
+                            f".links[{name!r}])"
+                        )
                     elif glob is None:
                         is_ = f"not {what}"
                     else:
@@ -3518,8 +3546,11 @@ def _resolve_type_declarations(
                 ) is not None:
                     own[name] = (field, need_type)
         declared[need_type] = own
+        back_declared[need_type] = back_own
         for field, _ in own.values():
             schema.add_type_overlay(need_type, field)
+        for back, _ in back_own.values():
+            schema.add_back_links(need_type, back)
     for name in local:
         schema._localise(name, [t for t in order if name in names[t]])
 
@@ -3665,6 +3696,94 @@ def _declare_for_type(
                 )
         return None
     return field
+
+
+def _declare_back_links(
+    previous: BackLinksSchema | None,
+    link_type: str,
+    keys: Mapping[str, Any],
+    where: str,
+    declared_by: str | None,
+) -> BackLinksSchema | None:
+    """The declaration a need type's ``links`` entry makes of a link type's back links,
+    ``<l>_back``, from the one before it (an ancestor's, or none); ``None``, reported,
+    if the entry cannot be used.
+
+    The entry takes only :data:`NEED_TYPE_BACK_LINK_KEYS`, and its ``schema`` only
+    ``minItems`` and ``maxItems``, each a non-negative integer: anything else is a
+    ``needs.type_conflict``, the entry ignored. The keys it leaves out are kept from
+    the declaration before it, which it narrows: a ``minItems`` not lower, a
+    ``maxItems`` not higher, a ``severity`` not lower (``needs.type_widening``).
+
+    :param previous: The declaration before the entry, an ancestor's.
+    :param link_type: The link type whose back links the entry names.
+    :param keys: The entry.
+    :param where: The entry, as the configuration names it.
+    :param declared_by: The need type whose entry made ``previous``.
+    """
+    name = f"{link_type}_back"
+    if other := [key for key in keys if key not in NEED_TYPE_BACK_LINK_KEYS]:
+        log_warning(
+            LOGGER,
+            f"{where} sets {joined([repr(key) for key in other])}, but {name!r} is "
+            "a link type's back links: a need type declares only their description, "
+            "schema (minItems, maxItems) and severity; the entry is ignored",
+            "type_conflict",
+            None,
+        )
+        return None
+    given = dict(keys.get("schema", {}))
+    if other := [key for key in given if key not in BACK_LINKS_KEYWORDS]:
+        log_warning(
+            LOGGER,
+            f"{where} gives the schema {joined([repr(key) for key in other])}, but "
+            f"{name!r} is a link type's back links: their schema takes only "
+            "'minItems' and 'maxItems'; the entry is ignored",
+            "type_conflict",
+            None,
+        )
+        return None
+    before: Mapping[str, Any] = {} if previous is None else previous.schema
+    try:
+        back = BackLinksSchema(
+            name=name,
+            link_type=link_type,
+            description=keys.get(
+                "description", "" if previous is None else previous.description
+            ),
+            schema={**before, **given},
+            severity=keys.get(
+                "severity", None if previous is None else previous.severity
+            ),
+        )
+    except ValueError as exc:
+        log_warning(
+            LOGGER,
+            f"{where} cannot be declared: {_reason(exc)}; the entry is ignored",
+            "type_conflict",
+            None,
+        )
+        return None
+    if previous is not None and (
+        problems := [
+            *schema_narrowing_problems(
+                previous.json_schema(), back.json_schema(), dropped_is_widening=False
+            ),
+            *severity_problems(previous.severity, back.severity),
+        ]
+    ):
+        as_declared = (
+            "" if declared_by is None else f" as need type {declared_by!r} declares it"
+        )
+        for reason in problems:
+            log_warning(
+                LOGGER,
+                f"{where} widens the field{as_declared}: {reason}",
+                "type_widening",
+                None,
+            )
+        return None
+    return back
 
 
 def _reason(exc: Exception) -> str:

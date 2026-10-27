@@ -61,3 +61,7 @@ Tests of the wrong type
 .. test:: A test that verifies a specification
    :id: T_003
    :verifies: S_001
+
+.. spec:: A specification no test verifies
+   :id: S_002
+   :owner: alice

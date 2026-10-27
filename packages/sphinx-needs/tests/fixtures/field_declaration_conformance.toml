@@ -118,8 +118,17 @@
 #   - `field_fail` and `link_fail` are the schema validation's findings of a need whose
 #     value of a field (`field_fail`: an enum, a `minItems`) or whose links of a link type
 #     (`link_fail`: a `maxItems`) fail the schema as its need type declares it; a value
-#     failing two keywords is two findings, one per keyword, in both tools. Each is a
-#     `violation`, in both tools. sphinx-needs reports them as
+#     failing two keywords is two findings, one per keyword, in both tools. A
+#     `[needs.types.<t>.links.<l>_back]` entry is a count of the links of `l` pointing to
+#     a need of the type (its `minItems` and `maxItems`, a `description`, a `severity`;
+#     any other key or schema keyword is a `type_conflict`, the entry ignored): it is
+#     `len(<l>_back)`, every such link whatever its source, checked once every link is
+#     final on the needs of the type and of the types inheriting from it, a `link_fail`
+#     whose `field` is `<l>_back` and whose `need` is the need counted; a need from
+#     `needs_external_needs` is not counted, an imported one is. Each finding is at the
+#     severity its declaration gives (`severity`, below `violation` reported, not
+#     enforced: a need without a field not nullable is then created, null, and is a
+#     `field_fail`), else a `violation`, in both tools. sphinx-needs reports them as
 #     `[sn_schema_violation.field_fail]` and `[sn_schema_violation.link_fail]` with no
 #     source location, and its runner reads the need, the field or link type and the
 #     severity from the `schema_violations.json` the validation writes beside
@@ -2942,7 +2951,7 @@ type = "i"
 
 [[case]]
 name = "link-type-named-as-back-links"
-why = "a links entry named as a link type's back links (links_back) declares nothing: it is one type_conflict, and the back links are computed on every need as without it (a derived count over them); a link type whose back links would have the name of a field is one type_conflict on each entry, and does not exist"
+why = "a links entry named as a link type's back links (links_back) without a schema declares no count: no finding, and the back links are computed on every need as without it (a derived count over them); a link type whose back links would have the name of a field is one type_conflict on each entry, and does not exist"
 config = '''
 [needs.fields.n]
 schema = { type = "integer" }
@@ -2990,10 +2999,6 @@ SPEC_1 = ["x"]
 REQ_1 = ["x"]
 [[case.expect.findings]]
 code = "type_conflict"
-type = "spec"
-field = "links_back"
-[[case.expect.findings]]
-code = "type_conflict"
 type = "req"
 field = "x"
 [[case.expect.findings]]
@@ -3003,7 +3008,7 @@ field = "x"
 
 [[case]]
 name = "field-named-as-back-links"
-why = "a fields entry named as a link type's back links (links_back, or rel_back beside a [needs.links.rel] entry) declares no field: it is one type_conflict, and the back links are computed on every need as without it, no need validated against the entry's schema"
+why = "a fields entry named as a link type's back links (links_back, or rel_back beside a [needs.links.rel] entry) declares no field (their count is a links entry): it is one type_conflict, and the back links are computed on every need as without it, no need validated against the entry's schema"
 config = '''
 [needs.links.rel]
 
@@ -5329,6 +5334,319 @@ code = "field_fail"
 need = "REQ_1"
 field = "category"
 severity = "violation"
+
+# --- the count of a link type's back links --------------------------------------------
+
+[[case]]
+name = "back-links-count-incoming-links"
+why = "a links entry naming a link type's back links (satisfies_back) declares how many links of it point to a need of the type: a req no need satisfies fails minItems, one satisfied by two fails maxItems (link_fail, field satisfies_back, at the target need), one satisfied once is clean; spec, which declares none, is not counted"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.satisfies_back]
+description = "The architecture elements satisfying the requirement"
+schema = { minItems = 1, maxItems = 1 }
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: Not satisfied
+   :id: REQ_1
+
+.. req:: Satisfied twice
+   :id: REQ_2
+
+.. req:: Satisfied once
+   :id: REQ_3
+
+.. spec:: Satisfies two
+   :id: SPEC_1
+   :satisfies: REQ_2, REQ_3
+
+.. spec:: Satisfies one
+   :id: SPEC_2
+   :satisfies: REQ_2
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+satisfies_back = []
+[case.expect.needs.REQ_2]
+satisfies_back = ["SPEC_1", "SPEC_2"]
+[case.expect.needs.REQ_3]
+satisfies_back = ["SPEC_1"]
+[case.expect.needs.SPEC_1]
+satisfies_back = []
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_1"
+field = "satisfies_back"
+severity = "violation"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_2"
+field = "satisfies_back"
+severity = "violation"
+
+[[case]]
+name = "back-links-count-is-inherited-and-narrowed"
+why = "a type inheriting a count of back links keeps it (sub: minItems 1), may narrow it (strict: minItems 2, at warning), and may not widen it (lax: minItems 0 is type_widening, the entry ignored, so minItems 1); a need of a type inheriting none is not counted"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.satisfies_back]
+schema = { minItems = 1 }
+
+[needs.types.sub]
+title = "Sub"
+prefix = "SU_"
+inherits = "req"
+
+[needs.types.strict]
+title = "Strict"
+prefix = "ST_"
+inherits = "req"
+
+[needs.types.strict.links.satisfies_back]
+schema = { minItems = 2 }
+severity = "warning"
+
+[needs.types.lax]
+title = "Lax"
+prefix = "L_"
+inherits = "req"
+
+[needs.types.lax.links.satisfies_back]
+schema = { minItems = 0 }
+
+[needs.types.arch]
+title = "Architecture"
+prefix = "A_"
+'''
+source = '''
+.. sub:: Not satisfied
+   :id: SUB_1
+
+.. strict:: Satisfied once
+   :id: STRICT_1
+
+.. lax:: Not satisfied
+   :id: LAX_1
+
+.. arch:: Satisfies the strict one
+   :id: ARCH_1
+   :satisfies: STRICT_1
+'''
+[case.expect]
+[case.expect.needs.STRICT_1]
+satisfies_back = ["ARCH_1"]
+[case.expect.needs.ARCH_1]
+satisfies_back = []
+[[case.expect.findings]]
+code = "link_fail"
+need = "SUB_1"
+field = "satisfies_back"
+severity = "violation"
+[[case.expect.findings]]
+code = "link_fail"
+need = "STRICT_1"
+field = "satisfies_back"
+severity = "warning"
+[[case.expect.findings]]
+code = "link_fail"
+need = "LAX_1"
+field = "satisfies_back"
+severity = "violation"
+[[case.expect.findings]]
+code = "type_widening"
+type = "lax"
+field = "satisfies_back"
+
+[[case]]
+name = "back-links-count-every-link"
+why = "the count of back links is every link of the link type pointing to the need, as minItems counts outgoing links: one from a need whose type's target_types refuses the target still counts (link_target_type at its source), and links of another link type do not"
+config = '''
+[needs.links.verifies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.verifies_back]
+schema = { minItems = 1 }
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+target_types = ["test"]
+'''
+source = '''
+.. req:: Verified by a link its source refuses
+   :id: REQ_1
+
+.. req:: Only linked
+   :id: REQ_2
+
+.. test:: Verifies a req
+   :id: TEST_1
+   :verifies: REQ_1
+   :links: REQ_2
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+verifies_back = ["TEST_1"]
+[case.expect.needs.REQ_2]
+verifies_back = []
+links_back = ["TEST_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "req"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_2"
+field = "verifies_back"
+
+[[case]]
+name = "back-links-count-of-a-type-local-link-type"
+why = "a count of the back links of a link type need types declare alone (verifies, declared by test), at severity info: a req no test verifies is reported at info"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.verifies_back]
+schema = { minItems = 1 }
+severity = "info"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+'''
+source = '''
+.. req:: Verified
+   :id: REQ_1
+
+.. req:: Not verified
+   :id: REQ_2
+
+.. test:: Verifies
+   :id: TEST_1
+   :verifies: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+verifies_back = ["TEST_1"]
+[case.expect.needs.REQ_2]
+verifies_back = []
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_2"
+field = "verifies_back"
+severity = "info"
+
+[[case]]
+name = "back-links-count-exempts-external-needs"
+why = "a need from needs_external_needs is not counted, since no need of this project can be linked to it from its own (an external req satisfied by nothing is clean); a need a needimport imports is this project's, and is (link_fail at it)"
+config = '''
+[needs]
+external_needs = [{ base_url = "http://example.org", json_path = "other.json", id_prefix = "E_" }]
+
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.satisfies_back]
+schema = { minItems = 1 }
+'''
+source = '''
+.. needimport:: other.json
+   :filter: id == 'REQ_9'
+
+.. req:: Satisfied by nothing
+   :id: REQ_1
+'''
+files = { "other.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "REQ_9": {"id": "REQ_9", "type": "req", "title": "From outside"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+[case.expect.needs.REQ_9]
+satisfies_back = []
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_1"
+field = "satisfies_back"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_9"
+field = "satisfies_back"
+
+[[case]]
+name = "back-links-entry-takes-a-count-alone"
+why = "an entry of a link type's back links takes only a description, a schema of minItems and maxItems, and a severity: one giving a default, or a schema keyword of another name, is one type_conflict and ignored whole, so its count does not apply"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.satisfies_back]
+schema = { minItems = 1 }
+default = ["SPEC_1"]
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.satisfies_back]
+schema = { minItems = 1, uniqueItems = true }
+'''
+source = '''
+.. req:: Not satisfied
+   :id: REQ_1
+
+.. spec:: Not satisfied
+   :id: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+satisfies_back = []
+[case.expect.needs.SPEC_1]
+satisfies_back = []
+[[case.expect.findings]]
+code = "type_conflict"
+type = "req"
+field = "satisfies_back"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "spec"
+field = "satisfies_back"
 
 # --- an entry naming a default type ---------------------------------------------------
 
