@@ -4,6 +4,18 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Bug fixes
+.........
+
+- 🐛 A build that fails with :ref:`needs_build_json`, :ref:`needs_build_json_per_id` or :ref:`needs_build_needumls`
+  set stops with its own error. Each of these writers ran after the failure as well and raised in turn, so a
+  configuration error was reported as ``Handler <function build_needs_json ...> for event 'build-finished' threw an
+  exception (exception: Needs schema has not been initialized yet.)``, with the real cause only in the chained
+  traceback
+
 .. _`release:9.1.0`:
 
 9.1.0
