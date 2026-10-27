@@ -858,6 +858,7 @@ _SHAPES: Mapping[str, tuple[str, Callable[[object], bool]]] = {
     "outgoing": ("a string", lambda v: isinstance(v, str)),
     "copy": ("a boolean", lambda v: isinstance(v, bool)),
     "allow_dead_links": ("a boolean", lambda v: isinstance(v, bool)),
+    "summary": ("a boolean", lambda v: isinstance(v, bool)),
     "style_part": ("a string", lambda v: isinstance(v, str)),
     "style_start": ("a string", lambda v: isinstance(v, str)),
     "style_end": ("a string", lambda v: isinstance(v, str)),
@@ -934,6 +935,14 @@ def _normalise_declarations(
                 "the entry is ignored"
             )
             continue
+        if table == "links" and "summary" in entry:
+            # a walker reads a link type by its name, so its stance is one per name
+            findings.append(
+                f"{where} has 'summary', which a need type's entry cannot give: "
+                "whether a link type is a summary is the same on every need type, and "
+                "is given on its needs_links entry; the key is ignored"
+            )
+            entry = {key: item for key, item in entry.items() if key != "summary"}
         wrong, text = _not_of_their_shape(where, entry, known)
         if wrong:
             findings.append(text)
@@ -2307,6 +2316,12 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 if given_targets and authored
                 else None
             )
+            summary = link.get("summary", False)
+            if "summary" in link:
+                wrong, text = _not_of_their_shape(where, link, ("summary",))
+                if wrong:
+                    log_warning(LOGGER, text, "config", None)
+                    summary = False
             link_field = LinkSchema(
                 name=name,
                 description=link.get("description", "Link field"),
@@ -2324,6 +2339,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 copy=link.get("copy", False),
                 allow_dead_links=link.get("allow_dead_links", False)
                 and not dead_beside,
+                summary=summary,
                 target_types=target_types,
                 derive=derive,
                 derive_by_type=by_type,

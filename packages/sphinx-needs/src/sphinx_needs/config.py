@@ -504,6 +504,15 @@ class NeedLinksConfig(TypedDict, total=False):
     """Used for needflow. Default: '->'"""
     allow_dead_links: bool
     """If True, add a 'forbidden' class to dead links"""
+    summary: NotRequired[bool]
+    """Whether the link type is a summary: its links materialise a path, not an edge.
+
+    It is read where it is named (a filter, a needtable column, a rule's ``over``, a
+    needflow's ``link_types``, a schema rule) and in a need's links and back links, and
+    is left out of every view that reads all link types (a needflow without
+    ``link_types``). A link type a ``copy`` or ``collect`` rule computes is one. Default:
+    False.
+    """
     target_types: NotRequired[list[str]]
     """
     The need types the links may point to, by directive name: a link to a need of

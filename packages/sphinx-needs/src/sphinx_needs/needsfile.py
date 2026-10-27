@@ -78,7 +78,8 @@ def generate_needs_schema(
 
     A derived field or link type (one with a ``derive`` or ``derive_by_type`` rule) is
     marked ``"readOnly": true``; its ``default`` is the value of a need type without a
-    rule.
+    rule. A summary link type (``summary``) is marked ``"summary": true``, and so are
+    its back links: a reader walking every link type as edges leaves them out.
 
     It is the schema of the fields every need type shares: the global view of the
     schema (:meth:`~sphinx_needs.needs_schema.FieldsSchema.for_type` of no need type),
@@ -129,6 +130,10 @@ def generate_needs_schema(
             "field_type": "backlinks",
             "default": [],
         }
+        if link.summary:
+            # a path, not an edge: a reader walking every link type leaves both out
+            properties[link.name]["summary"] = True
+            properties[link.name + "_back"]["summary"] = True
 
     for name in exclude_properties:
         properties.pop(name, None)

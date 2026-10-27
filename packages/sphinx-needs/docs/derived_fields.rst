@@ -624,6 +624,24 @@ Link lists
 These kinds compute a link type's links, and are declared on a link type, in its :ref:`needs_links` entry.
 Each computes with the link fields, so its links are in the back links (``<link type>_back``) as written ones are.
 
+.. _`needs_derive_summary`:
+
+Summary link types
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.2.0
+
+A link type whose :ref:`needs_links` entry says ``summary = true`` is a **summary**:
+its links materialise a path through other links, not an edge of the trace.
+It is read where it is named -- a filter, a needtable column, a rule's ``over`` or ``field``,
+a needflow's ``:link_types:`` -- and a need holds its links and back links as any link type's,
+while a view that reads every link type leaves it out (a :ref:`needflow` without ``:link_types:``),
+and a ``union`` cannot name it as a member.
+The stance is the link type's, on every need type, so it is given on its :ref:`needs_links` entry, beside ``derive``:
+in a rule ``summary`` is no role (``needs.derive_invalid``).
+Any link type may be one, a derived one or one written in the needs, such as a ``mitigates`` that says
+what a risk is about rather than what it traces to.
+
 .. _`needs_derive_kind_links`:
 
 links
@@ -712,7 +730,8 @@ a :ref:`needflow`, a filter or a :ref:`needtable` column (see **Reading it**, be
   A built-in function or rule of the link fields' step that reads such a union cannot wait for it:
   it is not run, and is reported (for a ``links`` rule, on every need computing it).
   ``parent_needs`` and the back links (``<link type>_back``, built after the link types) are not members,
-  nor is a field, and a member is named once; the union itself, or two unions naming each other, can be computed
+  nor is a field, nor a summary link type (``summary`` in :ref:`needs_links`, :ref:`needs_derive_summary`),
+  whose links are a path, not edges, and a member is named once; the union itself, or two unions naming each other, can be computed
   on no need. Each is one ``needs.derive_invalid`` at load, and the union holds no links.
   On a need of a type that does not have a member, the member holds no links, and adds none.
 - **The links.** Each member's links, in the order ``fields`` names the members, each member's in its own order;
@@ -1055,7 +1074,8 @@ an empty ``where`` on ``links`` (it would link every need),
 a ``where`` or ``select`` on a ``copy`` with neither ``over`` nor ``join``,
 a ``join`` that is not a table of a ``field`` and an ``equals`` naming text fields, or is given beside ``include_parts``,
 a ``union`` naming what is not a link type (a field, a ``<link type>_back``, a name declared nowhere), ``parent_needs``,
-no link type, or one twice,
+a summary link type, no link type, or one twice,
+``summary`` in a rule, where it is no role,
 and rules reading one another's own fields in a circle (``copy`` without ``over`` or ``from``, ``hash``, and ``union``,
 a union naming itself or two naming each other),
 which no need could compute.

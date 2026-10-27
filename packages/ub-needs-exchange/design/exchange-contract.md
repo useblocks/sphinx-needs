@@ -219,10 +219,16 @@ object identity). A rule marked **(not pinned)** has neither.
    `backlinks`, `extra`, or anything else), its `type`, `readOnly` and the rest decide
    nothing here. A `needs_schema` or `properties` that is not an object, and a property
    that is not an object, give no defaults and no finding.
+   A link type's property, and its back links' (`<l>_back`), may carry `"summary": true`:
+   the writer's mark of a summary link type, whose links materialise a path rather than
+   an edge (sphinx-needs' `summary` on a link type). A reader passes it through with the
+   rest of the version (`Version.data`) and decides nothing by it; a consumer that walks
+   every link type as edges leaves such a link type out.
    Enforced by: corpus: `only-default-is-read-from-a-property`,
    `a-schema-that-is-not-an-object-merges-nothing`,
    `schema-properties-not-an-object-merge-nothing`,
-   `a-property-that-is-not-an-object-is-ignored`.
+   `a-property-that-is-not-an-object-is-ignored`;
+   `test_reader.py::test_a_summary_marker_is_passed_through`.
 2. The defaults are **merged under each record**: a default fills a field the record does
    not have, a stated value wins, and a property without a default adds nothing. A default
    is any JSON value, `null` included; a default for `id` never replaces the key (§6.2).

@@ -348,6 +348,23 @@ def test_schema_defaults_can_be_left_out():
     assert version.records()[0].fields["priority"] == "medium"
 
 
+def test_a_summary_marker_is_passed_through():
+    """A link type's ``"summary": true`` (the contract's section 7.1) decides nothing
+    here: it is in the version as the file has it, and the defaults are read beside it."""
+    schema = {
+        "properties": {
+            "chain": {"type": "array", "default": [], "summary": True},
+            "chain_back": {"type": "array", "default": [], "summary": True},
+        }
+    }
+    version = nx.parse(
+        json.dumps(envelope({"A": record("A")}, needs_schema=schema))
+    ).select_version(None)
+    assert version.data["needs_schema"]["properties"]["chain"]["summary"] is True
+    assert version.schema_defaults() == {"chain": [], "chain_back": []}
+    assert version.records()[0].fields["chain"] == []
+
+
 def test_records_do_not_alter_the_document():
     doc = nx.parse(json.dumps(envelope({"A": {"description": "x"}})))
     doc.select_version(None).records()[0].fields["title"] = "changed"

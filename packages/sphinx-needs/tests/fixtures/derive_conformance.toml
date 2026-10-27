@@ -55,6 +55,18 @@
 #     writes every declared field (and link type) on every need, null included, so a
 #     runner asserts the need and the field are PRESENT, then that the value is null; a
 #     missing need or field fails the case
+#   - a `schema.<name>` table (optional) pins keys of the entry of a link type, or of its
+#     back links (`<l>_back`), in the `needs_schema` properties `needs.json` writes, each
+#     compared type-strict; a key it leaves out is not compared, and a name with no entry
+#     fails the case. A SUMMARY link type -- `summary = true` on its `[needs.links.*]`
+#     entry -- carries `"summary": true` there, and so do its back links; no other link
+#     type carries a `summary` key. `summary` is no key of a need type's entry, nor a role
+#     of a rule: a need type's `summary` is each tool's configuration finding (not
+#     compared) and ignored, as is one that is not a boolean, while one in a `derive` or a
+#     `derive_by_type` entry is `derive_invalid`, and the rule holds no links. A summary
+#     link type holds and reads as any other (its links, its back links, a rule naming it
+#     in `over` or `field`); a `union` cannot name one as a member (`derive_invalid`, the
+#     union holds no links)
 #   - a `union` link type holds the links of its members (`fields`, in that order), each
 #     link once by its target, part and condition, carried as written; where its rule
 #     computed it, it reports no dead link and no link condition of its own, which are its
@@ -85,6 +97,7 @@
 #                        table per finding: `code`, and `need` and `field` where named
 #     needs.<ID>       - one table per pinned need: field = value
 #     nulls            - <ID> = [the fields pinned as unset] (TOML has no null)
+#     schema.<name>    - optional; one table per pinned schema property: key = value
 
 # --- copy ---------------------------------------------------------------------------
 
@@ -5113,3 +5126,121 @@ field = "cyc_b"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "readable"
+
+# --- summary link types -------------------------------------------------------------
+
+[[case]]
+name = "summary-key-shapes"
+why = "summary = true on a link type's entry marks it, and its back links, as a summary in needs.json's schema, an authored and a derived one alike, and changes no value: its links and back links are held as any link type's; summary in a rule is no role (derive_invalid, the rule holds no links); a summary that is not a boolean, or one a need type's entry gives, is ignored, so a union may name those link types"
+config = '''
+[needs.links.satisfies]
+
+[needs.links.mitigates]
+summary = true
+
+[needs.links.tagged]
+summary = "yes"
+
+[needs.links.mentions]
+summary = true
+derive = { kind = "content_links" }
+
+[needs.links.bad]
+derive = { kind = "links", where = "type == 'req'", summary = true }
+
+[needs.links.trace]
+derive = { kind = "union", fields = ["satisfies", "tagged"] }
+
+[needs.types.spec.links.satisfies]
+summary = true
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_1
+   :tagged: REQ_1
+   :mitigates: REQ_1
+
+   It mentions :need:`REQ_1`.
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+satisfies = ["REQ_1"]
+mitigates = ["REQ_1"]
+tagged = ["REQ_1"]
+mentions = ["REQ_1"]
+trace = ["REQ_1"]
+bad = []
+[case.expect.needs.REQ_1]
+mitigates_back = ["SPEC_1"]
+mentions_back = ["SPEC_1"]
+trace_back = ["SPEC_1"]
+bad = []
+[case.expect.schema.mitigates]
+summary = true
+[case.expect.schema.mitigates_back]
+summary = true
+[case.expect.schema.mentions]
+summary = true
+[case.expect.schema.mentions_back]
+summary = true
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad"
+
+[[case]]
+name = "union-refuses-summary-member"
+why = "a union cannot name a summary link type as a member, an authored or a derived one: it is derive_invalid and the union holds no links; a union of link types that are no summaries is read"
+config = '''
+[needs.links.satisfies]
+
+[needs.links.mitigates]
+summary = true
+
+[needs.links.mentions]
+summary = true
+derive = { kind = "content_links" }
+
+[needs.links.trace]
+derive = { kind = "union", fields = ["satisfies", "mitigates"] }
+
+[needs.links.seen]
+derive = { kind = "union", fields = ["links", "mentions"] }
+
+[needs.links.kept]
+derive = { kind = "union", fields = ["links", "satisfies"] }
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. req:: Another
+   :id: REQ_2
+
+.. spec:: Specification
+   :id: SPEC_1
+   :links: REQ_2
+   :satisfies: REQ_1
+   :mitigates: REQ_1
+
+   It mentions :need:`REQ_1`.
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+mitigates = ["REQ_1"]
+mentions = ["REQ_1"]
+trace = []
+seen = []
+kept = ["REQ_1", "REQ_2"]
+[case.expect.needs.REQ_1]
+trace_back = []
+kept_back = ["SPEC_1"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "trace"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "seen"

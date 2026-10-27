@@ -797,6 +797,11 @@ class LinkSchema:
     a ``union`` link type replaces it)."""
     allow_dead_links: bool = False
     """If True, add a 'forbidden' class to dead links instead of warning."""
+    summary: bool = False
+    """Whether the link type is a summary (``summary = true``, or a ``copy`` or
+    ``collect`` rule computes it): its links materialise a path, not an edge, so it is
+    read where it is named, and left out of every view reading all link types (a
+    needflow without ``link_types``). Like ``display``, the same on every need type."""
     target_types: LinkTargetTypes | None = None
     """The need types the links may point to (``target_types``); ``None``: any.
 
@@ -856,6 +861,8 @@ class LinkSchema:
             raise ValueError("allow_extend must be a boolean.")
         if not isinstance(self.directive_option, bool):
             raise ValueError("directive_option must be a boolean.")
+        if not isinstance(self.summary, bool):
+            raise ValueError("summary must be a boolean.")
         if not isinstance(self.predicate_defaults, tuple) or not all(
             isinstance(pair, tuple) and len(pair) == 2
             for pair in self.predicate_defaults
@@ -1195,8 +1202,9 @@ class LinkShape(FieldShape, Protocol):
     """The shape of a link type: what is the same on every need type.
 
     Besides a field's shape, how its links are drawn (``display``), whether they are
-    copied into ``links`` (``copy``) and whether a dead link is allowed
-    (``allow_dead_links``): every need type declares a link type with the same ones.
+    copied into ``links`` (``copy``), whether a dead link is allowed
+    (``allow_dead_links``) and whether it is a summary (``summary``): every need type
+    declares a link type with the same ones.
     """
 
     @property
@@ -1213,6 +1221,9 @@ class LinkShape(FieldShape, Protocol):
 
     @property
     def allow_dead_links(self) -> bool: ...
+
+    @property
+    def summary(self) -> bool: ...
 
     def union_on(self, need: NeedItem) -> DeriveRule | None: ...
 
@@ -2274,9 +2285,9 @@ def narrowing_problems(
        against the schema of ``base`` (that defect is the field's, which validation
        reports on each need); a literal the declaration introduces must be valid
        against its schema; a dynamic function or a variant is not checked;
-    10. for a link type, the same ``display``, ``copy``, ``allow_dead_links`` and
-        ``parse_conditions``: a link type is drawn and resolved the same on every need
-        type;
+    10. for a link type, the same ``display``, ``copy``, ``allow_dead_links``,
+        ``summary`` and ``parse_conditions``: a link type is drawn and resolved the
+        same on every need type;
     11. for a link type whose ``base`` has ``target_types``, ``target_types`` whose
         accepted types (a listed type and the types inheriting from it, the EXPANDED
         sets compared) are among those of ``base``: a link a need of the type may
@@ -2340,6 +2351,7 @@ def narrowing_problems(
             ("display", overlay.display == base.display),
             ("copy", overlay.copy == base.copy),
             ("allow_dead_links", overlay.allow_dead_links == base.allow_dead_links),
+            ("summary", overlay.summary == base.summary),
             ("parse_conditions", overlay.parse_conditions == base.parse_conditions),
         ):
             if not same:

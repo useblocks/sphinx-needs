@@ -303,6 +303,13 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
                 "fields or links), or under derive_by_type for a type an extension "
                 "adds",
             )
+        if unknown[0] == "summary":
+            # the stance is the link type's, the same under every rule of it
+            return DeriveInvalid(
+                kind,
+                f"{prefix}: 'summary' is not a role; whether a link type is a summary "
+                "is given on its needs_links entry, beside derive",
+            )
         return DeriveInvalid(kind, f"{prefix}: {unknown[0]!r} is not a role")
     if on_link and kind not in LINK_KINDS:
         return DeriveInvalid(
@@ -1043,7 +1050,7 @@ def _rule_problem(
                 "which is not a field, a link type or the back links of one"
             )
     if rule.kind == "union":
-        return _union_problem(rule, links)
+        return _union_problem(rule, links, schema)
     for name in rule.fields:
         if name.endswith("_back") and name[:-5] in links:
             return (
@@ -1079,9 +1086,12 @@ def _rule_problem(
     return _result_problem(rule, source, target)
 
 
-def _union_problem(rule: DeriveRule, links: set[str]) -> str | None:
+def _union_problem(
+    rule: DeriveRule, links: set[str], schema: FieldsSchema
+) -> str | None:
     """Why a ``union`` cannot be read against the configuration, if it cannot: each
-    member must be a link type, other than ``parent_needs``.
+    member must be a link type, other than ``parent_needs``, and no summary link type
+    (a union is read as one set of edges, and a summary link materialises a path).
 
     The union itself, or a union naming it back, is the cycle check's to refuse.
     """
@@ -1101,7 +1111,22 @@ def _union_problem(rule: DeriveRule, links: set[str]) -> str | None:
             return (
                 f"{prefix}: the role 'fields' names {name!r}, which is not a link type"
             )
+        if is_summary(schema, name):
+            return (
+                f"{prefix}: the role 'fields' names {name!r}, a summary link type, "
+                "which a union cannot read: a union is read as one set of edges, and a "
+                "summary link is a shortcut, not an edge"
+            )
     return None
+
+
+def is_summary(schema: FieldsSchema, name: str) -> bool:
+    """Whether the link type ``name`` is a summary, as its global declaration says."""
+    # imported here, as the schema module imports this one
+    from sphinx_needs.needs_schema import LinkSchema
+
+    link = schema.global_declaration(name)
+    return isinstance(link, LinkSchema) and link.summary
 
 
 def is_union(rule: Derive | None) -> TypeGuard[DeriveRule]:

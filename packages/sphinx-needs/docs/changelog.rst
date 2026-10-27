@@ -10,6 +10,16 @@ Unreleased
 Improvements
 ............
 
+- ✨ A link type may be a **summary**, ``summary = true`` on its :ref:`needs_links` entry, whose links materialise
+  a path rather than an edge of the trace (:ref:`needs_derive_summary`, :issue:`2370`)
+
+  It is read where it is named (a filter, a needtable column, a rule's ``over``, a needflow's ``:link_types:``, a
+  schema rule) and a need holds its links and back links as any link type's, while a :ref:`needflow` without
+  ``:link_types:`` neither draws it nor walks it from ``:root_id:``, and a ``union`` cannot name it as a member
+  (``needs.derive_invalid``). The schema of the ``needs.json`` marks it, and its back links, ``"summary": true``.
+  It is the link type's on every need type: a need type's entry giving it is a ``needs.config`` warning, and in a
+  rule it is no role (``needs.derive_invalid``). Without it nothing changes.
+
 - ✨ A derive rule of kind ``copy`` takes ``where`` beside ``over`` or ``join`` (:ref:`needs_derive_kind_copy`,
   :issue:`2246`)
 
