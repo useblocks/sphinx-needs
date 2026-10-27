@@ -58,6 +58,7 @@ from sphinx_needs.defaults import (
 )
 from sphinx_needs.derive import (
     CORE_LINK_TYPES,
+    PATH_KINDS,
     DeriveInvalid,
     DeriveProblem,
     DeriveRule,
@@ -2300,6 +2301,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             dead_beside = (
                 "allow_dead_links" in link and bool(rules) and all(map(is_union, rules))
             )
+            # a link type a copy or collect computes is a summary: its links are paths
+            path = any(getattr(rule, "kind", None) in PATH_KINDS for rule in rules)
+            summary_beside = path and link.get("summary") is False
             where = f"{config_source}[{name!r}]"
             # a target_types not of its shape is ignored, as a need type's entry's is
             given_targets = "target_types" in link
@@ -2322,6 +2326,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 if wrong:
                     log_warning(LOGGER, text, "config", None)
                     summary = False
+            summary = summary or path
             link_field = LinkSchema(
                 name=name,
                 description=link.get("description", "Link field"),
@@ -2351,6 +2356,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         ("default", "default" in link),
                         ("predicates", "predicates" in link),
                         ("target_types", given_targets),
+                        ("summary", summary_beside),
                         ("allow_dead_links", dead_beside),
                     )
                     if beside_key
@@ -2381,6 +2387,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         ("default", refused),
                         ("predicates", "predicates" in link),
                         ("target_types", given_targets),
+                        ("summary", summary_beside),
                         ("allow_dead_links", dead_beside),
                     )
                     if refused_key

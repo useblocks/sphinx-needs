@@ -1132,10 +1132,10 @@ def test_parse_derive_reads_a_rule(raw, on_link, expected):
             id="link-kind-on-field",
         ),
         pytest.param(
-            {"kind": "copy", "field": "x"},
+            {"kind": "sum", "field": "x"},
             True,
-            "copy",
-            "kind 'copy' computes a value, so it is declared on a field "
+            "sum",
+            "kind 'sum' computes a value, so it is declared on a field "
             "(needs_fields), not on a link type",
             id="value-kind-on-link",
         ),

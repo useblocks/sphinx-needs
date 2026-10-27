@@ -193,9 +193,10 @@ def test_parse_derive_by_type(raw: Any, rules: dict, problems: list) -> None:
 
 
 def test_parse_derive_by_type_on_a_link_type() -> None:
-    """On a link type an entry must compute a link list, as ``derive`` must."""
+    """On a link type an entry must compute a link list, as ``derive`` must (a
+    ``copy`` or ``collect`` there computes a path, ``tests/test_derive_link_paths.py``)."""
     rules, problems = parse_derive_by_type(
-        {"req": {"kind": "copy", "field": "hours"}},
+        {"req": {"kind": "sum", "field": "hours", "over": "links"}},
         on_link=True,
         need_types=NEED_TYPES,
     )
@@ -203,7 +204,7 @@ def test_parse_derive_by_type_on_a_link_type() -> None:
     assert problems == [
         (
             "derive_by_type.req",
-            "kind 'copy' computes a value, so it is declared on a field (needs_fields), "
+            "kind 'sum' computes a value, so it is declared on a field (needs_fields), "
             "not on a link type",
         )
     ]

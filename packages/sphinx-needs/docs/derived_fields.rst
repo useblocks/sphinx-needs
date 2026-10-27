@@ -61,7 +61,8 @@ gives a ``story`` the sum of the ``effort`` of the needs it links,
 and a need of another type ``None``.
 
 A link type is derived the same way, with ``derive`` on its :ref:`needs_links` entry
-and one of the kinds that compute a link list: ``links``, ``content_links`` and ``union``.
+and one of the kinds that compute a link list: ``links``, ``content_links`` and ``union``,
+or ``copy`` and ``collect``, which there compute a path through other links (:ref:`needs_derive_link_chain`).
 A derived field is closed to authors: a value written for it in a need is ignored, and reported
 (see :ref:`needs_derive_holds`).
 How a rule relates to the ``[[…]]`` calls that compute a value per need is described in :ref:`dynamic_functions_derived`.
@@ -226,6 +227,11 @@ The kinds at a glance
      - one of ``from``, ``over`` and ``join``; ``select`` and ``where`` (with ``over`` or ``join``);
        ``include_self`` (with ``join``)
      - the type of the field read; with ``select = "list"``, an array of it
+   * -
+     - a link type
+     - ``field = "id"``, ``over``
+     - ``where``; ``select = "list"``
+     - a link list: a link to each need ``over`` names (:ref:`needs_derive_link_chain`)
    * - ``sum``
      - a field
      - ``field``, ``over``
@@ -251,6 +257,11 @@ The kinds at a glance
      - ``field``, ``over``
      - ``where``
      - an array of the item type of the field read
+   * -
+     - a link type
+     - ``field`` (a link type), ``over``
+     - ``where``
+     - a link list: the links ``field`` holds on each need ``over`` names (:ref:`needs_derive_link_chain`)
    * - ``hash``
      - a field
      - ``fields``
@@ -277,7 +288,8 @@ The kinds at a glance
      - (none)
      - a link list: the links of the link types ``fields`` names (:ref:`needs_derive_union`)
 
-Every kind that computes a value, but ``fingerprint``, also takes ``after = "derived"``,
+Every kind that computes a value, but ``fingerprint``, also takes ``after = "derived"``
+(``copy`` and ``collect`` on a field only),
 which computes the field after every other rule of the need, as ``hash`` and ``fingerprint`` always are.
 
 .. note::
@@ -640,7 +652,8 @@ and a ``union`` cannot name it as a member.
 The stance is the link type's, on every need type, so it is given on its :ref:`needs_links` entry, beside ``derive``:
 in a rule ``summary`` is no role (``needs.derive_invalid``).
 Any link type may be one, a derived one or one written in the needs, such as a ``mitigates`` that says
-what a risk is about rather than what it traces to.
+what a risk is about rather than what it traces to;
+a link type a ``copy`` or ``collect`` computes is one whether or not it says so (:ref:`needs_derive_link_chain`).
 
 .. _`needs_derive_kind_links`:
 
@@ -777,6 +790,66 @@ Some readers read only ``links`` in this release, and take no link type yet: :re
 in a need's content. While ``copy = true`` is in use they see the copies, as before.
 A project that relies on them keeps ``copy = true`` until 10.0, and with it the ``needs.deprecated`` warning;
 ``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation with it.
+
+.. _`needs_derive_link_chain`:
+
+A chain as links: copy and collect on a link type
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.2.0
+
+``copy`` and ``collect`` declared on a link type carry a chain's far ends down it as links, rung by rung,
+where on a field they carry them as an array of ids (:ref:`needs_derive_rollup_rung_up`):
+
+.. code-block:: toml
+
+   [needs.links.satisfies]
+   [needs.links.implements]
+   [needs.links.tests]
+
+   [needs.links.chain]
+   outgoing = "traces to"
+   incoming = "is reached by"
+
+   [needs.types.spec.links.chain]
+   derive = { kind = "copy", field = "id", over = "satisfies" }
+
+   [needs.types.impl.links.chain]
+   derive = { kind = "collect", field = "chain", over = "implements" }
+
+   [needs.types.test.links.chain]
+   derive = { kind = "collect", field = "chain", over = "tests" }
+
+A specification satisfying ``REQ_1`` and ``REQ_2`` links both in ``chain``, and so do the implementations of it
+and their tests; ``REQ_1`` holds every one of them in ``chain_back``, "the needs that reach me",
+which the field form gives only as a second roll-up up the chain's back links.
+The field form stays the one for a table column or a filter of ids; the link form adds what links have:
+the links rendered on the card, back links, and in ``needs.json`` a link list with its ``_back``.
+
+- **copy.** ``field = "id"`` and ``over``: a link to each need ``over`` names, in the order written, each once;
+  a link to a part links the part's need, and a link to no need is skipped.
+  ``select`` is ``"list"`` (a link list holds every target), which it need not say.
+- **collect.** ``field``, a link type (a derived one too, which carries a chain rung by rung), and ``over``:
+  the links ``field`` holds on each need ``over`` names, in their order, each once by its target and its part.
+  A link's condition is dropped: it qualifies the link it is written on, not the path.
+  A dead link is carried, and reported where it is written, as that link type allows dead links, not again here.
+- ``where`` tests each need ``over`` names, as on the other kinds.
+- **When.** With the link fields (:ref:`needs_processing_order`), so each reads what is known then:
+  ``over`` names a link type no rule computes, and not back links (built after the link types);
+  ``field`` names no value field and no back links.
+  Each is refused at load (``needs.derive_invalid``), and the link type holds no links.
+  A need is computed after the needs it reads; needs reading one another's chain around a ring,
+  or a need naming itself, are each reported (``needs.derive_cycle``) and hold no links,
+  as for a roll-up of a field's own value.
+  Where a call computes a need's ``over`` with the link fields (``[[links_from_filter(...)]]``),
+  which needs it names is known only once it is computed, so the rule reads ``field`` on every need computing it:
+  a ``collect`` of its own link type there reads itself, and is a cycle.
+- **A summary.** The link type is a summary link type (:ref:`needs_derive_summary`), whether its entry says so or not:
+  a needflow draws it only when ``:link_types:`` names it, and a ``union`` cannot name it.
+  ``summary = false`` beside such a rule is refused (``needs.derive_invalid``) and ignored: the rule applies.
+- **Cost.** A leaf stores a link per need its chain reaches, depth times fan-in, and each of those a back link:
+  ``needs.derive_dense`` counts them (:ref:`needs_derive_cost`).
+  It is left out of every ``fingerprint``, as every derived link type is.
 
 .. _`needs_derive_digests`:
 
@@ -981,7 +1054,8 @@ How rules are computed
 ----------------------
 
 A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_order`):
-``links``, ``content_links`` and ``union`` with the link fields, ``hash``, ``fingerprint`` and the rules with
+``links``, ``content_links``, ``union``, and ``copy`` and ``collect`` on a link type, with the link fields,
+``hash``, ``fingerprint`` and the rules with
 ``after = "derived"`` after every other field, every other kind with the other fields; each after every value it reads
 (a ``union`` after the derived link types it names).
 
@@ -1063,6 +1137,9 @@ A rule that cannot be read is reported as ``needs.derive_invalid``, once per rul
 an unknown kind, an unknown role, a role the kind does not take or requires,
 a role holding the wrong type of value,
 a kind computing a link list declared on a field, or one computing a value declared on a link type,
+a ``copy`` or ``collect`` on a link type that reads what the link types cannot wait for
+(an ``over`` naming back links or a link type a rule computes, a ``field`` naming a value field or back links,
+a ``copy`` of a field other than ``id``, ``after``) or a ``select`` other than ``"list"`` on one,
 an ``over`` naming no link type, a ``field`` naming nothing a need has,
 a result the field's ``schema`` cannot hold,
 a ``min`` or ``max`` reading a field that has no order,

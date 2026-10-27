@@ -922,6 +922,21 @@ class LinkSchema:
         rule = self.rule_for(need["type"])
         return rule if is_union(rule) else None
 
+    def path_on(self, need: NeedItem) -> DeriveRule | None:
+        """The ``copy`` or ``collect`` rule that computed this link type on ``need``,
+        if one did (:attr:`~sphinx_needs.derive.DeriveRule.path`).
+
+        Its links are read from other needs' links, so, as for a union, it reports no
+        dead link of its own, nor does a dead link of it make one forbidden: the link
+        type it collects does, where the link is written. A need from ``needimport`` or
+        ``needs_external_needs`` keeps the links its file gives: there the link type is
+        checked as any other.
+        """
+        if need["is_import"] or need["is_external"]:
+            return None
+        rule = self.rule_for(need["type"])
+        return rule if isinstance(rule, DeriveRule) and rule.path else None
+
     def off_type_value(self) -> list[NeedLink]:
         """The links a need holds when its type has no rule (see :meth:`rule_for`).
 
@@ -1226,6 +1241,8 @@ class LinkShape(FieldShape, Protocol):
     def summary(self) -> bool: ...
 
     def union_on(self, need: NeedItem) -> DeriveRule | None: ...
+
+    def path_on(self, need: NeedItem) -> DeriveRule | None: ...
 
 
 class FieldsSchema:

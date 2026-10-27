@@ -931,7 +931,8 @@ Each configured link can define:
 - ``parse_conditions``: If set to ``False``, the ``[condition]`` bracket syntax will not be parsed for this link type.
     Default: ``True``. *New in version 8.0.0.*
 - ``derive`` (optional): A rule computing the links of every need, which makes the link type :ref:`derived <needs_derive>`:
-    a table naming the kind ``links``, ``content_links`` or ``union`` (:ref:`needs_derive_union`), and its roles;
+    a table naming the kind ``links``, ``content_links`` or ``union`` (:ref:`needs_derive_union`),
+    or ``copy`` or ``collect``, a path through other links (:ref:`needs_derive_link_chain`), and its roles;
     with ``derive_by_type`` beside it, of every need of a type ``derive_by_type`` does not list.
     A derived link type cannot be set in a need or by a ``needextend``, and takes no ``default`` or ``predicates``.
     *New in version 9.0.0.*
@@ -1001,6 +1002,8 @@ Each configured link can define:
   A :ref:`union <needs_derive_union>` cannot name it as a member (``needs.derive_invalid``),
   and the schema of the :ref:`needs.json <needs_builder_format>` marks it, and its back links, ``"summary": true``,
   so that a tool reading the file knows to leave it out where it walks every link type.
+  A link type a ``copy`` or ``collect`` rule computes is a summary whether or not it says so
+  (:ref:`needs_derive_link_chain`), and ``summary = false`` beside such a rule is refused (``needs.derive_invalid``).
   It is a link type's on every need type: a need type's entry (:ref:`needs_types_fields`) does not give it,
   and one that does is a ``needs.config`` warning, the key ignored;
   nor does a rule (``derive``, ``derive_by_type``), where it is no role (``needs.derive_invalid``).

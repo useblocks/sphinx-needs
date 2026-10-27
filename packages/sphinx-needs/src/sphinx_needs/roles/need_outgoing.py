@@ -154,6 +154,11 @@ def _forbidden(schema: FieldsSchema, need: NeedItem, link_type: str, link: str) 
     link_field = schema.get_link_field(link_type)
     if link_field is None:
         return True
+    if (path := link_field.path_on(need)) is not None:
+        # a collected link is written on another need: forbidden as the link type it
+        # collects allows it there (a copy of id links needs that exist)
+        collected = None if path.field is None else schema.get_link_field(path.field)
+        return collected is not None and not collected.allow_dead_links
     if (union := link_field.union_on(need)) is None:
         return not link_field.allow_dead_links
     return any(

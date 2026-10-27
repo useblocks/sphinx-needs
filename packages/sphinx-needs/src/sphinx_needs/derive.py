@@ -76,8 +76,13 @@ KINDS: Final[tuple[DeriveKind, ...]] = (
 )
 
 #: The kinds that compute a link list, declared on a link type; every other kind
-#: computes a value, declared on a field.
+#: computes a value, declared on a field, but :data:`PATH_KINDS`.
 LINK_KINDS: Final = frozenset({"links", "content_links", "union"})
+
+#: The kinds declared on a field or on a link type. On a link type they compute a path
+#: through other links (``copy`` of ``id``, ``collect`` of a link type, over a link
+#: type), and the link type is a summary.
+PATH_KINDS: Final = frozenset({"copy", "collect"})
 
 #: The roles, in the order a rule's problems are looked for.
 ROLES: Final = (
@@ -140,6 +145,13 @@ _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
     "union": (frozenset({"fields"}), frozenset()),
 }
 
+#: Per kind of :data:`PATH_KINDS`, the roles it requires and may take besides on a
+#: link type: it is computed with the link types, from the links written in them.
+_PATH_ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
+    "copy": (frozenset({"field", "over"}), frozenset({"where", "select"})),
+    "collect": (frozenset({"field", "over"}), frozenset({"where"})),
+}
+
 _STRING_ROLES: Final = frozenset({"field", "over", "from", "where", "test"})
 _BOOLEAN_ROLES: Final = frozenset(
     {"empty", "transitive", "include_self", "include_parts"}
@@ -188,6 +200,8 @@ class DeriveRule:
     :ivar include_self: The ``include_self`` role.
     :ivar include_parts: The ``include_parts`` role (``links``).
     :ivar after_derived: The ``after = "derived"`` role.
+    :ivar on_link: Whether a ``copy`` or ``collect`` is declared on a link type: it
+        computes a path (:attr:`path`), a link list.
     """
 
     kind: DeriveKind
@@ -205,6 +219,7 @@ class DeriveRule:
     include_self: bool = False
     include_parts: bool = False
     after_derived: bool = False
+    on_link: bool = False
 
     @property
     def late(self) -> bool:
@@ -214,7 +229,13 @@ class DeriveRule:
     @property
     def link_valued(self) -> bool:
         """Whether the rule computes a link list."""
-        return self.kind in LINK_KINDS
+        return self.kind in LINK_KINDS or self.on_link
+
+    @property
+    def path(self) -> bool:
+        """Whether the rule computes a path through other links: a ``copy`` or a
+        ``collect`` on a link type, which makes the link type a summary."""
+        return self.on_link and self.kind in PATH_KINDS
 
     def describe(self) -> str:
         """The rule as messages name it: ``kind 'sum'``."""
@@ -311,7 +332,7 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
                 "is given on its needs_links entry, beside derive",
             )
         return DeriveInvalid(kind, f"{prefix}: {unknown[0]!r} is not a role")
-    if on_link and kind not in LINK_KINDS:
+    if on_link and kind not in LINK_KINDS | PATH_KINDS:
         return DeriveInvalid(
             kind,
             f"{prefix} computes a value, so it is declared on a field (needs_fields), "
@@ -323,13 +344,16 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
             f"{prefix} computes a link list, so it is declared on a link type "
             "(needs_links), not on a field",
         )
-    required, optional = _ROLES_OF[kind]
+    path = on_link and kind in PATH_KINDS
+    required, optional = (_PATH_ROLES_OF if path else _ROLES_OF)[kind]
+    # a path's refusals name where the kind is declared: on a field it takes more
+    where = f"{prefix} on a link type" if path else prefix
     for role in ROLES:
         if role in raw and role not in required and role not in optional:
-            return DeriveInvalid(kind, f"{prefix} does not take the role {role!r}")
+            return DeriveInvalid(kind, f"{where} does not take the role {role!r}")
     for role in ROLES:
         if role in required and role not in raw:
-            return DeriveInvalid(kind, f"{prefix} requires the role {role!r}")
+            return DeriveInvalid(kind, f"{where} requires the role {role!r}")
     if kind == "links" and "where" not in raw and "join" not in raw:
         return DeriveInvalid(kind, f"{prefix} requires the role 'where' or 'join'")
     for role in ROLES:
@@ -341,7 +365,9 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
         )
     if kind == "union" and (twice := _named_twice(raw["fields"])) is not None:
         return DeriveInvalid(kind, f"{prefix}: the role 'fields' names {twice!r} twice")
-    if (problem := _combination_problem(kind, raw)) is not None:
+    if path and (problem := _path_problem(kind, raw)) is not None:
+        return DeriveInvalid(kind, f"{where}: {problem}")
+    if not path and (problem := _combination_problem(kind, raw)) is not None:
         return DeriveInvalid(kind, f"{prefix} {problem}")
     return DeriveRule(
         kind=kind,
@@ -356,11 +382,13 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
         where=raw.get("where"),
         test=raw.get("test"),
         empty=raw.get("empty"),
-        select=raw.get("select", "first"),
+        # a path is a list of links: every target
+        select=raw.get("select", "list" if path else "first"),
         transitive=raw.get("transitive", False),
         include_self=raw.get("include_self", False),
         include_parts=raw.get("include_parts", False),
         after_derived="after" in raw,
+        on_link=path,
     )
 
 
@@ -460,6 +488,21 @@ def _named_twice(names: Iterable[str]) -> str | None:
         if name in seen:
             return name
         seen.add(name)
+    return None
+
+
+def _path_problem(kind: str, raw: Mapping[str, Any]) -> str | None:
+    """What is wrong with a ``copy`` or ``collect`` on a link type, of its shape."""
+    if kind == "copy" and raw["field"] != "id":
+        return (
+            f"the role 'field' names {raw['field']!r}; a copy on a link type copies "
+            "'id', linking each need 'over' names"
+        )
+    if "select" in raw and raw["select"] != "list":
+        return (
+            f"the role 'select' is {raw['select']!r}; a link list holds every target, "
+            'so it is "list"'
+        )
     return None
 
 
@@ -743,6 +786,17 @@ def by_type_message(
 #: Why ``allow_dead_links`` cannot be given beside a link type whose rules are unions.
 _UNION_DEAD_LINKS: Final = " (a union's dead links are its members')"
 
+#: Why ``summary = false`` cannot be given beside a ``copy`` or ``collect`` of a link
+#: type.
+_PATH_SUMMARY: Final = " (a link a copy or collect computes is a path, not an edge)"
+
+
+def _why_beside(keys: Sequence[str]) -> str:
+    """Why the keys refused beside a rule are, for those whose reason is not plain."""
+    return (_UNION_DEAD_LINKS if "allow_dead_links" in keys else "") + (
+        _PATH_SUMMARY if "summary" in keys else ""
+    )
+
 
 def beside_clause(keys: Sequence[str]) -> str:
     """What a finding of a ``derive`` adds for the keys refused beside it, when the
@@ -750,8 +804,7 @@ def beside_clause(keys: Sequence[str]) -> str:
     applying on the others, so the keys beside it are still refused."""
     named = " and ".join(repr(key) for key in keys)
     verb = "are" if len(keys) > 1 else "is"
-    union = _UNION_DEAD_LINKS if "allow_dead_links" in keys else ""
-    return f"; {named} cannot be given beside derive, and {verb} ignored{union}"
+    return f"; {named} cannot be given beside derive, and {verb} ignored{_why_beside(keys)}"
 
 
 def beside_by_type_message(
@@ -775,7 +828,7 @@ def beside_by_type_message(
     """
     named = " and ".join(repr(key) for key in keys)
     verb = "are" if len(keys) > 1 else "is"
-    union = _UNION_DEAD_LINKS if "allow_dead_links" in keys else ""
+    union = _why_beside(keys)
     if spelling is not None:
         return (
             f"Invalid derive of {_what(on_link)} {name!r}: {spelling}: {named} cannot "
@@ -826,7 +879,7 @@ def beside_message(name: str, *, on_link: bool, rule: Derive, keys: list[str]) -
     """The ``needs.derive_invalid`` warning for a default beside a rule."""
     named = " and ".join(repr(key) for key in keys)
     verb = "are" if len(keys) > 1 else "is"
-    union = _UNION_DEAD_LINKS if "allow_dead_links" in keys else ""
+    union = _why_beside(keys)
     return (
         f"Invalid derive of {_what(on_link)} {name!r}: {rule.describe()}: {named} "
         f"cannot be given beside derive, and {verb} ignored{union}; the rule applies"
@@ -1049,6 +1102,8 @@ def _rule_problem(
                 f"{prefix}: the role 'field' names {rule.field!r}, "
                 "which is not a field, a link type or the back links of one"
             )
+    if rule.path and (problem := _path_names_problem(rule, schema, links)):
+        return problem
     if rule.kind == "union":
         return _union_problem(rule, links, schema)
     for name in rule.fields:
@@ -1084,6 +1139,51 @@ def _rule_problem(
     if rule.link_valued:
         return None
     return _result_problem(rule, source, target)
+
+
+def _path_names_problem(
+    rule: DeriveRule, schema: FieldsSchema, links: set[str]
+) -> str | None:
+    """Why a ``copy`` or ``collect`` on a link type cannot be read against the
+    configuration, if it cannot.
+
+    It is computed with the link types, before the back links are built and before any
+    value field is computed: its ``over`` must name a link type no rule computes (whose
+    links are known when the link types are ordered), and a ``collect``'s ``field`` a
+    link type, derived or not. Each is known at load, so it is refused there rather
+    than reported on every need.
+    """
+    # imported here, as the schema module imports this one
+    from sphinx_needs.needs_schema import LinkSchema
+
+    prefix = rule.describe()
+    assert rule.over is not None and rule.field is not None, "a path has both"
+    if rule.over not in links:
+        return (
+            f"{prefix}: the role 'over' names the back links {rule.over!r}, which a "
+            "link type's rule cannot read: they are built after the link types"
+        )
+    over = schema.global_declaration(rule.over)
+    if isinstance(over, LinkSchema) and over.derived:
+        return (
+            f"{prefix}: the role 'over' names {rule.over!r}, a link type a rule "
+            "computes; a link type's rule walks a link type written in the needs, as "
+            "the link types are computed together"
+        )
+    if rule.kind == "collect":
+        if rule.field not in links and _is_link_name(rule.field, links):
+            return (
+                f"{prefix}: the role 'field' names the back links {rule.field!r}, "
+                "which a link type's rule cannot read: they are built after the link "
+                "types"
+            )
+        if rule.field not in links:
+            return (
+                f"{prefix}: the role 'field' names {rule.field!r}, which is not a "
+                "link type; a collect on a link type gathers the links of a link type "
+                "(a copy of 'id' links the needs themselves)"
+            )
+    return None
 
 
 def _union_problem(

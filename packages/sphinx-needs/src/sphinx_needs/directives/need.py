@@ -503,14 +503,17 @@ def _unions(
     schema: FieldsSchema, need: NeedItem, cache: dict[str, frozenset[str]]
 ) -> frozenset[str]:
     """The link types a ``union`` computed on ``need``
-    (:meth:`~sphinx_needs.needs_schema.LinkSchema.union_on`), read once per need type:
-    their links are their members', which alone report dead links and conditions.
-    None on a need from a needs.json, whose links no rule computed."""
+    (:meth:`~sphinx_needs.needs_schema.LinkSchema.union_on`), or a ``copy`` or
+    ``collect`` (:meth:`~sphinx_needs.needs_schema.LinkSchema.path_on`), read once per
+    need type: their links are other link types', which alone report dead links and
+    conditions. None on a need from a needs.json, whose links no rule computed."""
     if need["is_import"] or need["is_external"]:
         return frozenset()
     if (unions := cache.get(need["type"])) is None:
         unions = cache[need["type"]] = frozenset(
-            link.name for link in schema.iter_link_fields() if link.union_on(need)
+            link.name
+            for link in schema.iter_link_fields()
+            if link.union_on(need) or link.path_on(need)
         )
     return unions
 

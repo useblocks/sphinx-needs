@@ -10,6 +10,19 @@ Unreleased
 Improvements
 ............
 
+- ✨ A link type derives a chain's far ends as links: ``copy`` of ``id`` and ``collect`` of a link type, over a
+  link type, declared on a link type (:ref:`needs_derive_link_chain`, :issue:`2370`)
+
+  ``{ kind = "copy", field = "id", over = "satisfies" }`` on a specification and
+  ``{ kind = "collect", field = "chain", over = "implements" }`` on the rungs below give every need of the chain the
+  requirements it traces to as links, and each requirement the needs that reach it as back links. Each link is kept
+  once by its target and part, its condition dropped; a dead link is carried, and reported where it is written.
+  Such a link type is a summary (``summary = false`` beside the rule is refused), counts toward
+  ``needs.derive_dense``, and is computed with the link types: an ``over`` naming back links or a derived link
+  type, and a ``field`` naming a value field or back links, are refused at load (``needs.derive_invalid``), and
+  needs reading one another's chain around a ring are ``needs.derive_cycle``. On a field, ``copy`` and ``collect``
+  are unchanged.
+
 - ✨ A link type may be a **summary**, ``summary = true`` on its :ref:`needs_links` entry, whose links materialise
   a path rather than an edge of the trace (:ref:`needs_derive_summary`, :issue:`2370`)
 
