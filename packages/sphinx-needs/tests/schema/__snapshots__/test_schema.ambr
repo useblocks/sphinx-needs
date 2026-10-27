@@ -498,16 +498,6 @@
       "^IMPL_(?!SAFE)"
   '''
 # ---
-# name: test_schema_config[extra_option_unknown_keys]
-  '''
-  Invalid field 'efforts': Invalid schema: Additional properties are not allowed ('unknown' was unexpected)
-  
-  Failed validating "additionalProperties" in schema
-  
-  On instance:
-      {"type":"string","unknown":"unknown"}
-  '''
-# ---
 # name: test_schema_config[link_array_wrong_item_type]
   '''
   Invalid link 'links': Invalid schema: "string" was expected
@@ -536,16 +526,6 @@
   
   On instance["properties"]["links"]["items"]["pattern"]:
       "^IMPL_(?!SAFE)"
-  '''
-# ---
-# name: test_schema_config[link_unknown_keys]
-  '''
-  Invalid link 'links': Invalid schema: Additional properties are not allowed ('unknown' was unexpected)
-  
-  Failed validating "additionalProperties" in schema
-  
-  On instance:
-      {"items":{"type":"string"},"type":"array","unknown":"unknown"}
   '''
 # ---
 # name: test_schema_config[local_error]

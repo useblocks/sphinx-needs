@@ -743,6 +743,23 @@ For new fields the following can be defined:
     The field is derived on every need type, see :ref:`needs_derive_by_type`.
     *New in version 9.0.0.*
 
+Any other key in an entry, such as a misspelt ``derive``, is ignored and the entry kept,
+one ``needs.config`` warning per key, naming the entry, the key and the keys an entry has::
+
+   needs_fields['total'] has an unknown key 'dervie'; known keys are default, derive, derive_by_type, description, nullable, parse_dynamic_functions, parse_variants, predicates, schema; the key is ignored
+
+A keyword the ``schema`` of the field's type does not have (``enmu``, or ``minimum`` on a ``string``),
+at the top of the schema or in its ``items`` or ``contains``, is dropped and the rest of the schema kept,
+one ``needs.config`` warning per keyword::
+
+   needs_fields['asil'].schema has an unknown keyword 'enmu'; known keywords of a schema of type 'string' are const, enum, format, maxLength, minLength, pattern, type; the keyword is ignored
+
+The same holds for a core field's entry, whose ``type`` it may leave out,
+and for the schema of a field an extension or a service registers (``add_field['x'].schema ...``).
+Such a keyword stopped the build until this release.
+A need type's own entry is checked apart: a declaration there with an unknown key or keyword
+is reported as described in :ref:`needs_types_fields`.
+
 A need type may declare a field anew for its needs, narrowing it, or declare one no ``needs_fields`` entry declares,
 for the needs of the types that declare it alone: see :ref:`needs_types_fields`.
 
@@ -1038,6 +1055,13 @@ Each configured link can define:
   See :ref:`links_style`.
 - ``style_start`` (optional): See :ref:`needflow_style_start`.
 - ``style_end`` (optional): See :ref:`needflow_style_start`.
+
+Any other key in an entry, such as a misspelt ``target_types``, and a keyword the ``schema`` of a link type
+(or its ``items`` or ``contains``) does not have, such as ``uniqueItems``, is reported and ignored as in a
+:ref:`needs_fields` entry, one ``needs.config`` warning per key::
+
+   needs_links['verifies'] has an unknown key 'target_type'; known keys are allow_dead_links, color, copy, default, derive, derive_by_type, description, incoming, outgoing, parse_conditions, parse_dynamic_functions, parse_variants, predicates, schema, style, style_end, style_part, style_start, target_types; the key is ignored
+   needs_links['verifies'].schema has an unknown keyword 'uniqueItems'; known keywords of a link type's schema are contains, items, maxContains, maxItems, minContains, minItems, type; the keyword is ignored
 
 A need type may declare a link type anew for its needs, narrowing it: see :ref:`needs_types_fields`.
 A link type the need types that have it declare alone, with its labels, ``copy`` and dead links, needs no entry here (:ref:`needs_types_fields`).
@@ -3924,6 +3948,11 @@ And use it like:
    A dictionary entry can carry a ``derive`` rule, or ``derive_by_type`` rules, which make the option a
    :ref:`derived field <needs_derive>`, as on a :ref:`needs_fields` entry.
 
+A dictionary entry is read for ``name``, ``description``, ``schema``, ``derive`` and ``derive_by_type`` alone.
+Any other key, such as ``nullable`` or ``default``, which only a :ref:`needs_fields` entry reads,
+is reported and ignored as in a :ref:`needs_fields` entry, one ``needs.config`` warning per key
+(``needs_extra_options['efforts'] has an unknown key 'nullable'; ...``), and so is a keyword its ``schema`` does not have.
+
 .. _`needs_global_options`:
 .. _`global_option_filters`:
 
@@ -4192,6 +4221,8 @@ Each configured link should define:
 
 The back links of a link type are named ``<option>_back``, and one whose back links would have the name of a field
 or of another link type is refused, one ``needs.config`` warning, as for :ref:`needs_links`.
+Any other key in an entry, and a keyword its ``schema`` does not have, is reported and ignored as for :ref:`needs_links`
+(``needs_extra_links['blocks'] has an unknown key ...``).
 
 Configuration example:
 

@@ -7,6 +7,26 @@ Changelog
 Unreleased
 ----------
 
+Improvements
+............
+
+- 👌 An unknown key in a field's or a link type's entry, and an unknown keyword in its ``schema``, is reported
+  and ignored (:issue:`2206`)
+
+  A key a :ref:`needs_fields`, :ref:`needs_links`, :ref:`needs_extra_options` or :ref:`needs_extra_links` entry
+  does not have, such as a misspelt ``derive`` or ``target_types``, was ignored in silence, so a field meant to be
+  derived stayed authorable and a link type meant to be restricted was not. Each is now one ``needs.config``
+  warning, naming the entry, the key and the keys the entry has; the key is ignored and the entry kept. A
+  ``needs_extra_options`` entry is read for ``name``, ``description``, ``schema``, ``derive`` and
+  ``derive_by_type`` alone, as before, and its other keys, such as ``nullable``, are now reported. A keyword the
+  ``schema`` of such an entry does not have (``enmu``, ``minimum`` on a ``string``, ``uniqueItems`` on a link
+  type), at its top or in its ``items`` or ``contains``, is one ``needs.config`` warning too, and dropped, the
+  rest of the schema kept, where it stopped the build (``Invalid schema: Additional properties are not
+  allowed``); so is one in the schema of a field an extension registers with ``add_field``. The keys known are
+  those of the configuration's ``NeedFields``, ``NeedField``, ``NeedLinksConfig`` and ``LinkOptionsType``
+  types, whose ``NeedField`` now lists the keys a ``needs_extra_options`` entry is read for, and the keywords
+  those of the schema types the schema is validated against.
+
 Bug fixes
 .........
 

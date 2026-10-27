@@ -9,7 +9,7 @@ from functools import partial
 from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Literal, TypedDict, TypeVar, cast
+from typing import Any, Final, Literal, TypedDict, TypeVar, cast
 
 from docutils import nodes
 from docutils.parsers.rst import directives as rst_directives
@@ -38,6 +38,8 @@ from sphinx_needs.config import (
     _NEEDS_CONFIG,
     DEFAULT_NEED_TYPES,
     LinkOptionsType,
+    NeedField,
+    NeedFields,
     NeedLinksConfig,
     NeedsSphinxConfig,
     NeedType,
@@ -185,6 +187,8 @@ from sphinx_needs.roles.variant import VariantRole
 from sphinx_needs.schema.config import (
     FieldIntegerSchemaType,
     SchemasFileRootType,
+    UnknownKeyword,
+    drop_unknown_keywords,
     validate_field_schema,
 )
 from sphinx_needs.schema.config_utils import (
@@ -913,6 +917,51 @@ def _unknown(
     )
 
 
+def _entry_keys(klass: Any) -> tuple[str, ...]:
+    """The keys of a configuration entry: those of its TypedDict, sorted."""
+    return tuple(sorted(klass.__required_keys__ | klass.__optional_keys__))
+
+
+#: the keys of an entry of ``needs_fields``, of ``needs_extra_options``, of
+#: ``needs_links`` and of ``needs_extra_links``: their TypedDicts', so that a key added
+#: to one is known at once
+FIELD_ENTRY_KEYS: Final[tuple[str, ...]] = _entry_keys(NeedFields)
+EXTRA_OPTION_ENTRY_KEYS: Final[tuple[str, ...]] = _entry_keys(NeedField)
+LINK_ENTRY_KEYS: Final[tuple[str, ...]] = _entry_keys(NeedLinksConfig)
+EXTRA_LINK_ENTRY_KEYS: Final[tuple[str, ...]] = _entry_keys(LinkOptionsType)
+
+
+def _report_unknown_keys(
+    where: str, entry: Mapping[Any, Any], known: tuple[str, ...]
+) -> None:
+    """One ``needs.config`` warning per key of a global field or link type entry that
+    the entry does not have; the readers of the entry read only the known keys, so the
+    key is ignored and the entry kept."""
+    for key in entry:
+        if key not in known:
+            log_warning(
+                LOGGER,
+                f"{where} has an unknown key {key!r}; known keys are "
+                f"{', '.join(known)}; the key is ignored",
+                "config",
+                None,
+            )
+
+
+def _report_unknown_keywords(where: str, unknown: list[UnknownKeyword]) -> None:
+    """One ``needs.config`` warning per keyword :func:`drop_unknown_keywords` dropped
+    from the ``schema`` of a global field or link type entry."""
+    for item in unknown:
+        log_warning(
+            LOGGER,
+            f"{where}{item.path} has an unknown keyword {item.keyword!r}; known "
+            f"keywords of {item.what} are {', '.join(item.known)}; the keyword is "
+            "ignored",
+            "config",
+            None,
+        )
+
+
 def _normalise_declarations(
     named: str, table: str, value: Mapping[Any, Any], findings: list[str]
 ) -> dict[Any, dict[str, Any]]:
@@ -1208,6 +1257,9 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                     None,
                 )
                 continue
+            _report_unknown_keys(
+                f"needs_extra_options[{name!r}]", option, EXTRA_OPTION_ENTRY_KEYS
+            )
             description = option.get("description", description)
             schema = option.get("schema")
             derive = option.get("derive")
@@ -1251,6 +1303,9 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 None,
             )
             continue
+        _report_unknown_keys(
+            f"needs_fields[{option_name!r}]", option_params, FIELD_ENTRY_KEYS
+        )
         if option_name in NeedsCoreFields or option_name in _link_type_names(
             needs_config
         ):
@@ -1622,10 +1677,17 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
         }
 
     # Ensure all links have outgoing and incoming defined, so that we can rely on it later on.
-    for name, link in chain(
-        needs_config._links.items(),
-        ((v["option"], v) for v in needs_config._extra_links),
+    for name, link, (source, known) in chain(
+        (
+            (name, link, ("needs_links", LINK_ENTRY_KEYS))
+            for name, link in needs_config._links.items()
+        ),
+        (
+            (v["option"], v, ("needs_extra_links", EXTRA_LINK_ENTRY_KEYS))
+            for v in needs_config._extra_links
+        ),
     ):
+        _report_unknown_keys(f"{source}[{name!r}]", link, known)
         if "outgoing" not in link:
             link["outgoing"] = name
         if "incoming" not in link:
@@ -2007,6 +2069,17 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         )
 
         if (core_override := needs_config._fields.get(name)) is not None:
+            if isinstance(core_override, dict) and "schema" in core_override:
+                # a keyword its type does not have is reported and dropped (from a
+                # copy: the configuration is not changed)
+                cleaned, unknown = drop_unknown_keywords(
+                    core_override["schema"], link=False, inherited=field.schema
+                )
+                _report_unknown_keywords(f"needs_fields[{name!r}].schema", unknown)
+                if unknown:
+                    core_override = cast(
+                        NeedFields, {**core_override, "schema": cleaned}
+                    )
             try:
                 field = create_inherited_field(
                     field,
@@ -2062,9 +2135,14 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     None,
                 )
 
+            # a keyword the schema of its type does not have is reported and dropped
+            declared_schema, unknown = drop_unknown_keywords(
+                field_data.schema, link=False
+            )
+            _report_unknown_keywords(f"{field_data.source}[{name!r}].schema", unknown)
             _schema = (
-                deepcopy(field_data.schema)
-                if field_data.schema is not None
+                deepcopy(declared_schema)
+                if declared_schema is not None
                 else {"type": "string"}
             )
             nullable = True
@@ -2221,6 +2299,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 if "schema" in link
                 else {"type": "array", "items": {"type": "string"}}
             )
+            # a keyword the schema of a link type does not have is reported and dropped
+            _schema, unknown = drop_unknown_keywords(_schema, link=True)
+            _report_unknown_keywords(f"{config_source}[{name!r}].schema", unknown)
             if "type" not in _schema:
                 _schema["type"] = "array"
             if "items" not in _schema:
