@@ -210,3 +210,35 @@ def test_types_must_name_need_types(types: Any) -> None:
     sequence of characters) is refused rather than read letter by letter."""
     with pytest.raises(NeedsApiConfigException, match="types"):
         add_field("x", "X", types=types)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            TYPES + '\n[needs.types.req.fields.points]\nschema = { type = "string" }\n',
+            INDEX + "\n.. req:: Sets it\n   :id: R_00002\n   :points: abc\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_refused_entry_does_not_declare_the_field_on_its_type(
+    test_app: Any,
+) -> None:
+    """An entry naming the field on a type the extension does not declare it on, but
+    refused (it changes the field's type), declares nothing: the type stays without
+    the field, as for a field a project's types declare alone, so a value there is
+    ``needs.undeclared_for_type`` and the need is created -- not refused for a value
+    the extension's integer cannot hold. The finding names the declaring type."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types['req'].fields['points'] cannot be declared with type "
+        "'string' (items None): its type is 'integer' (items None), as need type "
+        "'story' declares it; the entry is ignored [needs.type_conflict]",
+        "<srcdir>/index.rst:14: WARNING: Field 'points' is not declared on need type "
+        "'req' and cannot be set in need 'R_00002'; the value 'abc' is ignored "
+        "[needs.undeclared_for_type]",
+    ]
+    assert (_declares(app, "story"), _declares(app, "req")) == (True, False)
+    assert _version(app)["needs"]["R_00002"]["points"] is None

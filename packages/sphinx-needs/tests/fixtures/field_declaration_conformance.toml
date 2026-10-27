@@ -17,10 +17,11 @@
 #
 # Rules for every runner:
 #   - a case is one project. `config` is its `ubproject.toml` (the `[needs]` configuration
-#     only, but for a case loading an extension, below); `source` is the body of its one reStructuredText document, `index.rst`, under
-#     a title the runner adds; `files` (optional) are other files of the project, relative
-#     to the case directory. A case writes only inside its own directory: a `files` key
-#     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
+#     only, but for a case loading an extension, below); `source` is the body of its one
+#     reStructuredText document, `index.rst`, under a title the runner adds; `files`
+#     (optional) are other files of the project, relative to the case directory. A case
+#     writes only inside its own directory: a `files` key that would land outside it
+#     (`../x.json`) is a broken case, and the runner refuses it
 #   - a case declares ITS OWN need types, each with a `title` and a `prefix`: a
 #     `needs_types` that is given replaces the default list, so no case relies on `req` or
 #     `spec` existing unless it declares them. The cases use the mapping shape,
@@ -94,7 +95,11 @@
 #     it, as beside a bare entry naming a default type); one giving a `title` and a
 #     `prefix` declares the project's types, as any such entry. A bare entry naming no
 #     default type and no type an extension registers is ignored (each tool's
-#     configuration finding, not compared)
+#     configuration finding, not compared). In the walk order (below), a type an entry
+#     with a `title` and a `prefix` narrows stands where `config` gives the entry; one a
+#     bare entry narrows stands where the extension registers it, after the types
+#     `config` declares (sphinx-test-reports registers `testfile`, `testsuite`,
+#     `testcase`, in that order)
 #   - an extension declares each of its fields on the need types that carry it, as a
 #     field declared on need types alone is -- but with the extension's own declaration
 #     (its type, description, `nullable` and default): sphinx-test-reports' `suites` on
@@ -104,8 +109,10 @@
 #     the source location (`case_file`, `case_line`) on `testcase`; the report path
 #     (`file`) and every `tr_extra_options` name on all three. On every other type the
 #     field is absent: null, a value set there `undeclared_for_type`. A project's entry
-#     naming such a field on a type of its own declares it there too; a
-#     `[needs.fields.<name>]` entry is the field, on every type
+#     naming such a field on a type of its own declares it there too -- an entry that
+#     can be used: one refused (`type_conflict`, `type_widening`) declares nothing, and
+#     the type stays without the field; a `[needs.fields.<name>]` entry is the field, on
+#     every type
 #   - values are compared as `needs.json` writes them, TYPE INCLUDED: `7.0` is a float and
 #     `7` an integer, and the two differ; a link list is a list of id strings, as
 #     `needs.json` writes it
@@ -5183,7 +5190,7 @@ evidence_for = []
 
 [[case]]
 name = "a-bare-entry-narrows-an-extensions-field-on-its-type"
-why = "a bare entry naming a need type an extension registers narrows the extension's field on that type: a value its narrower schema refuses is field_fail on that type's needs, not on the extension's other types"
+why = "a bare entry naming a need type an extension registers narrows the extension's field on that type, the type keeping the extension's title: a value its narrower schema refuses is field_fail on that type's needs, not on the extension's other types"
 extensions = ["sphinx_test_reports"]
 config = '''
 [needs.types.testcase.fields.suite]
@@ -5210,6 +5217,7 @@ files = { "report.xml" = '''
 suite = "suite_a"
 [case.expect.needs.TF_0001_F0D_61F00]
 suite = "suite_a"
+type_name = "Test-Case"
 [[case.expect.findings]]
 code = "field_fail"
 need = "TF_0001_F0D_61F00"
@@ -5301,3 +5309,146 @@ code = "undeclared_for_type"
 need = "T_0001"
 field = "classname"
 type = "test"
+
+[[case]]
+name = "a-refused-entry-does-not-declare-an-extensions-field-on-its-type"
+why = "a project type's entry naming a field an extension declares on its own types alone, refused for changing the field's type (type_conflict), declares nothing: the type stays without the field, a value there undeclared_for_type, the need created"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.fields.classname]
+schema = { type = "integer" }
+'''
+source = '''
+.. test:: A test spec
+   :id: T_0001
+   :classname: tests.test_x
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.needs.T_0001]
+title = "A test spec"
+[case.expect.needs.TF_0001_F0D_61F00]
+classname = "tests.test_x"
+[case.expect.nulls]
+T_0001 = ["classname"]
+[[case.expect.findings]]
+code = "type_conflict"
+field = "classname"
+type = "test"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "T_0001"
+field = "classname"
+type = "test"
+
+[[case]]
+name = "a-full-entry-of-an-extensions-type-stands-where-config-gives-it"
+why = "a type an entry with a title and a prefix narrows stands where config gives the entry in the walk order: given before another type, it is the first root declaration of a field both declare alone, which sets its type, and the other's is refused"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.testcase]
+title = "Case"
+prefix = "C_"
+
+[needs.types.testcase.fields.weight]
+schema = { type = "integer" }
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.fields.weight]
+schema = { type = "string" }
+'''
+source = '''
+.. test:: A test spec
+   :id: T_0001
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.nulls]
+T_0001 = ["weight"]
+TF_0001_F0D_61F00 = ["weight"]
+[case.expect.schema.weight]
+type = ["integer", "null"]
+[[case.expect.findings]]
+code = "type_conflict"
+field = "weight"
+type = "test"
+
+[[case]]
+name = "a-bare-entry-of-an-extensions-type-stands-where-the-extension-registers-it"
+why = "a type a bare entry narrows stands where the extension registers it in the walk order, after the types config declares, wherever config gives the entry: a type config declares after it is the first root declaration of a field both declare alone, and the narrowed type's is refused"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.testcase.fields.weight]
+schema = { type = "integer" }
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.fields.weight]
+schema = { type = "string" }
+'''
+source = '''
+.. test:: A test spec
+   :id: T_0001
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.nulls]
+T_0001 = ["weight"]
+TF_0001_F0D_61F00 = ["weight"]
+[case.expect.schema.weight]
+type = ["string", "null"]
+[[case.expect.findings]]
+code = "type_conflict"
+field = "weight"
+type = "testcase"

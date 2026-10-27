@@ -3507,7 +3507,10 @@ def _resolve_type_declarations(
     :param declared_by_extensions: The fields an extension declares on need types
         alone, each with the types it names (``add_field``'s ``types``): each type
         named declares the field, as an empty entry of its own would, and so do the
-        types inheriting from it, and those whose entries name it.
+        types inheriting from it, and those whose entries name it -- an entry that
+        can be used: one refused (a type conflict, a widening) adds nothing, unlike an
+        entry of a field the project's types declare alone, whose shape is refused
+        before (``refused``) and whose other refusals still declare it.
     """
     entry_findings, inherits_findings, shape_findings = findings
     #: a need type's ``links`` takes no target types beside them either
@@ -3599,9 +3602,17 @@ def _resolve_type_declarations(
                         "deprecated",
                         None,
                     )
+                #: the types an extension declares the field on alone, if it does
+                extension_types = (declared_by_extensions or {}).get(name)
+                #: an extension's field the entry would add to a type not declaring
+                #: it (itself, or by an ancestor): only if the entry can be used
+                adds_extension_field = (
+                    extension_types is not None and name not in names[need_type]
+                )
                 # declared, also if the entry cannot be used: the type keeps the
-                # declaration before it
-                names[need_type].add(name)
+                # declaration before it -- but for an extension's field it adds
+                if not adds_extension_field:
+                    names[need_type].add(name)
                 previous, by = own.get(name, (glob, None))
                 if (
                     table == "links"
@@ -3621,9 +3632,13 @@ def _resolve_type_declarations(
                         local=name in local,
                         need_type=need_type,
                         type_tree=type_tree,
+                        extension_types=[
+                            t for t in order if t in (extension_types or ())
+                        ],
                     )
                 ) is not None:
                     own[name] = (field, need_type)
+                    names[need_type].add(name)
         declared[need_type] = own
         for field, _ in own.values():
             schema.add_type_overlay(need_type, field)
@@ -3638,6 +3653,7 @@ def _declare_for_type(
     where: str,
     declared_by: str | None,
     *,
+    extension_types: Sequence[str] = (),
     local: bool = False,
     need_type: str = "",
     type_tree: tuple[Mapping[str, frozenset[str]], Mapping[str, str]] = ({}, {}),
@@ -3651,6 +3667,8 @@ def _declare_for_type(
     :param keys: The entry.
     :param where: The entry, as the configuration names it.
     :param declared_by: The need type whose entry made ``previous``, if not global.
+    :param extension_types: The need types an extension declares the field on alone
+        (``add_field``'s ``types``), in resolution order, which a type conflict names.
     :param local: Whether the field is declared on need types alone.
     :param need_type: The need type whose entry it is.
     :param type_tree: What a ``target_types`` is read against
@@ -3755,7 +3773,16 @@ def _declare_for_type(
         for reason in problems:
             if reason.startswith("with "):
                 # the field's type or derivation, the same on every need type: a
-                # reason of these reads on from the field's name
+                # reason of these reads on from the field's name -- for an
+                # extension's field declared on need types alone, on those types
+                if extension_types and reason.endswith(" on every need type."):
+                    many = len(extension_types) > 1
+                    reason = (
+                        f"{reason.removesuffix(' on every need type.')}, as need "
+                        f"type{'s' if many else ''} "
+                        f"{joined([repr(t) for t in extension_types])} "
+                        f"declare{'' if many else 's'} it"
+                    )
                 log_warning(
                     LOGGER,
                     f"{where} cannot be declared {reason.removesuffix('.')}; the entry "
