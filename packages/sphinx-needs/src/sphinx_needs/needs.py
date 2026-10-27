@@ -1505,10 +1505,11 @@ def reread_on_need_types_change(
     """Re-read every document if the need types changed since the documents were read.
 
     A need type gives its needs their ``type_name`` and ``type_prefix`` (and the ids
-    generated from it), its diagram color and style, through ``inherits`` their
-    ``type_ancestors``, and, through ``inherits``, ``fields`` and ``links``, the fields,
-    link types, defaults and ``derive`` rules they are created with. The needs of an unchanged document are kept from the pickled
-    environment, so they would keep what the previous entries gave them (#2287).
+    generated from it) and its diagram color and style; through ``inherits``, their
+    ``type_ancestors``; and through ``inherits``, ``fields`` and ``links``, the fields,
+    link types, defaults and ``derive`` rules they are created with. The needs of an
+    unchanged document are kept from the pickled environment, so they would keep what
+    the previous entries gave them (#2287).
 
     The list compared is the complete one, ``NeedsSphinxConfig.types``: the configured
     need types and those added from code (``add_need_type``, the configured GitHub
@@ -1949,6 +1950,16 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 LOGGER,
                 f"needs_fields entry {name!r} names the {what} {name!r}, "
                 "which is not a field; the entry is ignored",
+                "config",
+                None,
+            )
+        elif not NeedsCoreFields[name].get("add_to_field_schema", False):
+            # a core field a need computes (``type_name``, ``type_ancestors``, ...):
+            # nothing below reads the entry
+            log_warning(
+                LOGGER,
+                f"needs_fields entry {name!r} names the core field {name!r}, "
+                "which a project cannot declare; the entry is ignored",
                 "config",
                 None,
             )

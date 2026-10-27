@@ -22,7 +22,9 @@
 #     to the case directory. A case writes only inside its own directory: a `files` key
 #     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
-#     the default ones (`req`, `spec`, `impl`, `test`)
+#     the default ones (`req`, `spec`, `impl`, `test`). A case may give one of them an
+#     `inherits` through a bare `[needs.types.<t>]` entry (no `title`, no `prefix`), which
+#     keeps the four: the bare-entry rule of `field_declaration_conformance.toml`
 #   - a hidden need's content is unpinned until the hidden-needs follow-up (ubCode reads its
 #     references; sphinx-needs 9.0.0 does not)
 #   - a `[needs.fields.<name>]` entry without `nullable` is nullable in both tools
@@ -4643,7 +4645,7 @@ field = "readable"
 
 [[case]]
 name = "where-follows-inherits"
-why = "a where reads type_ancestors as a filter does: 'req' in type_ancestors counts a req and every type inheriting from it, as c.is_a('spec') a spec and every type inheriting from it, type == 'req' a req alone; a bare entry naming a default type keeps the default types"
+why = "a where reads type_ancestors as a filter does: 'req' in type_ancestors counts a req and every type inheriting from it, as c.is_a('spec') a spec and every type inheriting from it, type == 'req' a req alone; a copy reads it nearest first; a bare entry naming a default type keeps the default types"
 config = '''
 [needs.types.spec]
 inherits = "req"
@@ -4662,6 +4664,10 @@ derive = { kind = "count", over = "links", where = "type == 'req'" }
 [needs.fields.n_spec_like]
 schema = { type = "integer" }
 derive = { kind = "count", over = "links", where = "c.is_a('spec')" }
+
+[needs.fields.lineage]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "type_ancestors" }
 '''
 source = '''
 .. req:: A requirement
@@ -4682,10 +4688,15 @@ source = '''
 '''
 [case.expect]
 findings = []
+[case.expect.needs.IMPL_1]
+lineage = ["impl", "spec", "req"]
+[case.expect.needs.REQ_1]
+lineage = ["req"]
 [case.expect.needs.TEST_1]
 n_req_like = 3
 n_req = 1
 n_spec_like = 2
+lineage = ["test"]
 [case.expect.needs.TEST_2]
 n_req_like = 0
 n_req = 0

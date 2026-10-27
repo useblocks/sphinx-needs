@@ -220,12 +220,28 @@ def test_needs_json_writes_it_when_the_project_opts_in(test_app: Any) -> None:
     assert needs_schema["properties"]["type_ancestors"]["type"] == "array"
 
 
-def test_a_need_cannot_be_given_one() -> None:
-    """Not a directive option, nor a value ``need[...] = ...`` writes: it follows the
-    type, which is immutable too."""
-    from sphinx_needs.need_item import NeedItem
+@pytest.mark.parametrize("test_app", [_project()], indirect=True)
+def test_a_need_cannot_be_given_one(test_app: Any) -> None:
+    """Not a value ``need[...] = ...`` writes: it follows the type, which is immutable
+    too (``needs-before-post-processing`` is where an extension writes into a need)."""
+    app = test_app
+    refused: list[str] = []
 
-    assert "type_ancestors" in NeedItem._immutable_core
+    def write(_app: Any, needs: Any) -> None:
+        for name in ("type_ancestors", "type"):
+            try:
+                needs["SREQ_001"][name] = ["spec"]
+            except KeyError as error:
+                refused.append(str(error))
+
+    app.connect("needs-before-post-processing", write)
+    app.build()
+    assert refused == [
+        "\"Cannot modify immutable key 'type_ancestors' in NeedItem.\"",
+        "\"Cannot modify immutable key 'type' in NeedItem.\"",
+    ]
+    view = SphinxNeedsData(app.env).get_needs_view()
+    assert list(view["SREQ_001"]["type_ancestors"]) == ["safety_req", "req"]
 
 
 #: a project that declares a field of each name the three ways a project can
@@ -261,12 +277,16 @@ schema = { type = "string" }
 def test_the_name_is_reserved_as_type_names_is(test_app: Any) -> None:
     """A project field of the name is refused as one of ``type_name`` is, route by
     route: a need type's entry is a ``needs.type_conflict``, a ``needs_fields`` entry
-    declares no field (the core field's value stands, and an author cannot set it), and
-    neither name is a directive option."""
+    declares no field and says so (the core field's value stands, and an author cannot
+    set it), and neither name is a directive option."""
     app = test_app
     app.build()
     warnings = build_warnings(app)
     for name in ("type_name", "type_ancestors"):
+        assert (
+            f"WARNING: needs_fields entry '{name}' names the core field '{name}', which "
+            "a project cannot declare; the entry is ignored [needs.config]"
+        ) in warnings
         assert (
             f"WARNING: needs_types['req'].fields['{name}'] declares '{name}', which is "
             "not a field; the entry is ignored [needs.type_conflict]"
@@ -421,3 +441,24 @@ def test_a_derive_where_takes_is_a_with_a_literal_alone(
 )
 def test_what_a_check_reads(filter_string: str, reads: set[str]) -> None:
     assert filter_names(filter_string).names == frozenset(reads)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            ".. needtable::\n   :filter: 'req' in type_ancestors\n",
+            conf=CONF + 'needs_external_needs = [{"json_path": "imported.json", '
+            '"base_url": "https://example.com", "id_prefix": "EXT_"}]\n',
+            **{"imported.json": IMPORTED},
+        )
+    ],
+    indirect=True,
+)
+def test_an_external_need_takes_the_reading_projects_types(test_app: Any) -> None:
+    """An external need's record is read as an imported one's is: the value it carries
+    is dropped, and the reading project's types give it."""
+    app = test_app
+    app.build()
+    view = SphinxNeedsData(app.env).get_needs_view()
+    assert list(view["EXT_IMP_001"]["type_ancestors"]) == ["safety_req", "req"]

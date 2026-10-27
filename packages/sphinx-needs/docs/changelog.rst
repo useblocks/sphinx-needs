@@ -21,15 +21,23 @@ Improvements
   ``"type_ancestors": {"contains": {"const": "req"}}``. An ``inherits`` the build ignores (``needs.type_inherits``)
   adds nothing, and a name that is no need type selects nothing, unreported. It is computed from the project's
   need types and cannot be set; a need read from a ``needs.json`` takes the reading project's value. It is not
-  written to the ``needs.json`` unless :ref:`needs_json_exclude_fields` leaves it out. See
-  :ref:`filter_type_ancestors`.
+  available in a :ref:`needimport` ``:filter:``, which reads the imported file's records, nor in the ``predicates``
+  of a :ref:`needs_fields` entry. It is not written to the ``needs.json`` unless :ref:`needs_json_exclude_fields`
+  leaves it out: a project that sets ``needs_json_exclude_fields`` itself writes it on every need from now on, and
+  adds ``type_ancestors`` to that list to keep its ``needs.json`` as it was. See :ref:`filter_type_ancestors`.
 
 - ✨ ``c.is_a('req')`` is true for a need whose type is ``req`` or inherits from it (:issue:`2322`)
 
   It is ``'req' in type_ancestors``, spelled as a check beside ``c.this_doc()``: in the portable filter language
   with a string literal as its argument, answered without ``eval``, and in the ``eval`` tier for any other argument.
   A name that is no need type selects nothing, unreported. It reads the need alone, so it is available in a filter
-  configured in ``conf.py`` and in a derived field's ``where``, where ``c.this_doc()`` is not.
+  configured in ``conf.py`` and in a derived field's ``where``, where ``c.this_doc()`` is not; like
+  ``c.this_doc()``, it is not available in a :ref:`needimport` ``:filter:`` nor in the ``predicates`` of a
+  :ref:`needs_fields` entry.
+
+- 👌 A :ref:`needs_fields` entry naming a core field a need computes (``type_name``, ``docname``,
+  ``type_ancestors`` and the others that take no declaration) is reported as ignored, with a ``needs.config``
+  warning, where it was ignored silently (:issue:`2322`)
 
 Breaking changes
 ................
@@ -37,9 +45,13 @@ Breaking changes
 - ‼️ ``type_ancestors`` is a core field name (:issue:`2322`)
 
   A field of your own named ``type_ancestors`` is no longer one: a :ref:`needs_fields` entry of that name declares
-  no field, a need type's ``fields`` entry of that name is ignored with a ``needs.type_conflict`` warning, and
-  ``add_field`` refuses it, as for every core field name. A need that sets ``:type_ancestors:`` is reported as
-  setting an unknown option. Rename the field.
+  no field and is ignored with a ``needs.config`` warning, a need type's ``fields`` entry of that name is ignored
+  with a ``needs.type_conflict`` warning, and ``add_field`` refuses it, as for every core field name. A need that
+  sets ``:type_ancestors:`` is reported as setting an unknown option. Rename the field.
+
+  Code that builds a need's data itself, a :class:`~sphinx_needs.need_item.NeedItem` from a ``core`` mapping or a
+  :class:`~sphinx_needs.data.NeedsInfoType`, now gives ``type_ancestors`` too (``[type]`` for a type that
+  inherits from none): ``NeedItem`` refuses a ``core`` without it.
 
 Bug fixes
 .........

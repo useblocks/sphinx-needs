@@ -96,8 +96,16 @@ _ENTRY_KEYS = {
 #: The values of an entry's ``tier``.
 _TIERS = ("index", "fast", "eval", "refused")
 
-#: The warnings a case's build may give besides none (:func:`test_case`).
-_TOLERATED_WARNINGS = ("[needs.deprecated]", "[needs.type_inherits]")
+#: The warning a case's build may give besides none (:func:`test_case`): the
+#: deprecation of `filter_data`, which the residue's own filters read.
+_DEPRECATED = "[needs.deprecated]"
+
+#: The finding of an `inherits` naming no need type, which the header leaves uncompared;
+#: an `inherits` on a cycle gives the same code, and is no case's to give.
+_UNKNOWN_INHERITS = re.compile(
+    r"WARNING: Need type '[^']+' inherits '[^']+', which is not a need type; "
+    r"its inherits is ignored\. \[needs\.type_inherits\]"
+)
 
 #: The one code a reported filter carries, compared bare.
 _FILTER_CODE = "filter"
@@ -294,7 +302,9 @@ def test_case(test_app: Any, case: dict[str, Any]) -> None:
     # finding of an `inherits` naming no need type, a configuration finding the header
     # leaves uncompared)
     assert [
-        w for w in build_warnings(app) if not w.endswith(_TOLERATED_WARNINGS)
+        w
+        for w in build_warnings(app)
+        if not w.endswith(_DEPRECATED) and not _UNKNOWN_INHERITS.fullmatch(w)
     ] == [], case["name"]
     problems = [
         problem

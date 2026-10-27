@@ -328,15 +328,25 @@ selects every ``req`` and every ``safety_req``; a ``safety_req`` need has ``type
   as ``type == 'rq'`` is.
 - A need part has its need's.
 - It is computed from the project's need types, and cannot be set: it is no directive option,
-  :ref:`needextend` cannot change it, and a :ref:`needs_fields` entry of that name declares no field.
+  :ref:`needextend` cannot change it, and a :ref:`needs_fields` entry of that name declares no field
+  (it is ignored with a ``needs.config`` warning).
   A need read from a ``needs.json`` (:ref:`needimport`, :ref:`needs_external_needs`)
   takes the value the reading project's need types give it, whatever the file says.
 - It is not written to the :ref:`needs.json <needs_builder>`:
   to write it, set :ref:`needs_json_exclude_fields` to a list without it.
 
-It is a field like any other where a field is read:
+It is a field like any other where a need of the project is read:
+in the filters of the need-listing and diagram directives, of :ref:`needextend`, of a
+:ref:`link condition <need_conditional_links>` and of :ref:`needs_warnings`,
 in a derived field's ``where`` (:ref:`needs_derive`), in a :ref:`needtable` column,
 and in a :ref:`schema rule <schema_validation>`, as ``type_ancestors: {contains: {const: req}}``.
+It is *not* available where a filter reads something else than such a need:
+in :ref:`needimport` ``:filter:``, which runs against the records of the imported file
+(a record holds it only if the file was written with it, and then the filter reads the file's value),
+nor in the ``predicates`` of a :ref:`needs_fields` entry, which read a need before it is created
+(``id``, ``type``, ``title``, ``tags``, ``status``, ``docname``, ``is_import`` and ``is_external``);
+naming it there fails as a name no field defines does.
+A :ref:`needs_filter_data` key named ``type_ancestors`` shadows the field in a filter string, as such a key shadows any field.
 
 ``c.is_a('req')`` says the same as ``'req' in type_ancestors``, and reads better in a longer filter:
 
@@ -348,8 +358,13 @@ and in a :ref:`schema rule <schema_validation>`, as ``type_ancestors: {contains:
 selects the ``req`` needs and the needs of every other type inheriting from ``req``, but not the ``safety_req`` ones.
 Its argument is a string literal in the portable filter language: ``c.is_a(type)`` or ``c.is_a('req') == True``
 is evaluated by ``eval``, as ``c.this_doc() == True`` is.
-Unlike :ref:`c.this_doc() <filter_current_page>` it reads the need alone, so it is available wherever a filter string is,
-in **conf.py** too, and in a derived field's ``where``.
+It reads the need's own ``type_ancestors``, never a :ref:`needs_filter_data` key of that name.
+Unlike :ref:`c.this_doc() <filter_current_page>` it reads the need alone, not the document the filter is written in,
+so it is available in the filters configured in **conf.py**, such as :ref:`needs_warnings` and :ref:`needs_constraints`,
+and in a derived field's ``where``.
+Like ``c.this_doc()``, it is *not* available in :ref:`needimport` ``:filter:``, which runs against
+the records of the imported file, nor in the ``predicates`` of a :ref:`needs_fields` entry;
+using it there fails with ``name 'c' is not defined``.
 
 .. _re_search:
 
