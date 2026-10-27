@@ -38,7 +38,7 @@ Needs from ``needs_external_needs`` are not compared (#353).
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Final
 
 from sphinx.application import Sphinx
@@ -190,7 +190,8 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
         return everything
 
     schema = data.get_schema()
-    reads = {need_id: _reads(need, schema) for need_id, need in needs.items()}
+    by_type: dict[str, _Reads] = {}
+    reads = {need_id: _reads(need, schema, by_type) for need_id, need in needs.items()}
     if any(r is not None and r.unnamed_links for r in reads.values()):
         # links computed to needs that are not known before the needs are resolved
         return everything
@@ -332,9 +333,24 @@ class _Reads:
     ``links`` rule, a ``content_links`` rule reading another need's content."""
 
 
-def _reads(need: NeedItem, schema: FieldsSchema) -> _Reads | None:
-    """What of other needs a need's computed values read; ``None`` for nothing."""
+def _reads(
+    need: NeedItem, schema: FieldsSchema, by_type: dict[str, _Reads]
+) -> _Reads | None:
+    """What of other needs a need's computed values read; ``None`` for nothing.
+
+    :param by_type: What the ``derive`` rules of each need type read, filled as the
+        types are met.
+    """
     reads = _Reads()
+    if not (need["is_import"] or need["is_external"]):
+        # no rule runs on an imported or external need
+        need_type = need["type"]
+        if (of_type := by_type.get(need_type)) is None:
+            of_type = by_type[need_type] = _Reads()
+            for derived in (*schema.iter_extra_fields(), *schema.iter_link_fields()):
+                if derived.derived:
+                    _read_rule(derived.rule_for(need_type), schema, of_type)
+        reads = replace(of_type, needs=set(of_type.needs))
     for name, value in _dynamic_fields(need).items():
         if not any(isinstance(item, DynamicFunctionParsed) for item in value.value):
             continue
@@ -342,12 +358,6 @@ def _reads(need: NeedItem, schema: FieldsSchema) -> _Reads | None:
             reads.unnamed_links = True
         else:
             reads.always = True
-    if not (need["is_import"] or need["is_external"]):
-        # no rule runs on an imported or external need
-        need_type = need["type"]
-        for derived in (*schema.iter_extra_fields(), *schema.iter_link_fields()):
-            if derived.derived:
-                _read_rule(derived.rule_for(need_type), schema, reads)
     if reads == _Reads():
         return None
     return reads
