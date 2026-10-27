@@ -1967,6 +1967,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         for name, params in _NEEDS_CONFIG.fields.items()
         if name not in refused_fields
     }
+    #: the fields an extension declares on need types alone (``add_field``'s
+    #: ``types``), each with the types of them that exist: a project's needs_fields
+    #: entry of the name replaced the registration, so is not among them
+    extension_local = _extension_local_fields(registered, need_types)
     #: the back links of the global link types: no need type declares a field of
     #: their name, nor a link type
     back_links = {f"{name}_back" for name in link_types}
@@ -2567,9 +2571,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         order,
         parent,
         (entry_findings, inherits_findings, shape_findings + link_findings),
-        (*type_local, *local_links),
+        (*type_local, *local_links, *extension_local),
         {"fields": shape_refused, "links": link_refused},
         type_tree=(below, need_types),
+        declared_by_extensions=extension_local,
     )
     # the schema is complete: nothing declares a field once it is built
     schema.freeze()
@@ -3416,6 +3421,35 @@ def _field_schema_of(type_: Any, items: Any) -> dict[str, Any]:
     return {"type": type_}
 
 
+def _extension_local_fields(
+    registered: Mapping[str, NewFieldParams], need_types: Mapping[str, str]
+) -> dict[str, frozenset[str]]:
+    """The fields an extension declares on need types alone (``add_field``'s
+    ``types``), each with the need types of them that exist.
+
+    A type named that no configuration or extension declares is one ``needs.config``
+    warning per field; the field is declared on the others (on none, if none exists,
+    but the types whose entries name it).
+    """
+    local: dict[str, frozenset[str]] = {}
+    for name, params in registered.items():
+        if params.types is None:
+            continue
+        if missing := [t for t in params.types if t not in need_types]:
+            log_warning(
+                LOGGER,
+                f"Field {name!r} (from {params.source}) is declared on need types "
+                f"{joined([repr(t) for t in params.types])} alone, but "
+                f"{joined([repr(t) for t in missing])} "
+                f"{'is no need type' if len(missing) == 1 else 'are no need types'}; "
+                "the field is declared on the others",
+                "config",
+                None,
+            )
+        local[name] = frozenset(t for t in params.types if t in need_types)
+    return local
+
+
 def _resolve_type_declarations(
     schema: FieldsSchema,
     types: Mapping[str, Mapping[str, Any]],
@@ -3426,6 +3460,7 @@ def _resolve_type_declarations(
     refused: Mapping[Literal["fields", "links"], set[tuple[str, str]]],
     *,
     type_tree: tuple[Mapping[str, frozenset[str]], Mapping[str, str]] = ({}, {}),
+    declared_by_extensions: Mapping[str, frozenset[str]] | None = None,
 ) -> None:
     """Declare the fields and link types of each need type anew, as its ``needs_types``
     entry says: ``inherits``, ``fields`` and ``links``.
@@ -3469,6 +3504,10 @@ def _resolve_type_declarations(
         the field or link type they declare.
     :param type_tree: What a ``target_types`` is read against: each need type with the
         types inheriting from it, and each need type's title.
+    :param declared_by_extensions: The fields an extension declares on need types
+        alone, each with the types it names (``add_field``'s ``types``): each type
+        named declares the field, as an empty entry of its own would, and so do the
+        types inheriting from it, and those whose entries name it.
     """
     entry_findings, inherits_findings, shape_findings = findings
     #: a need type's ``links`` takes no target types beside them either
@@ -3488,6 +3527,11 @@ def _resolve_type_declarations(
     for need_type in order:
         own = dict(declared[p]) if (p := parent.get(need_type)) else {}
         names[need_type] = set(names[p]) if p else set()
+        names[need_type].update(
+            name
+            for name, declaring in (declared_by_extensions or {}).items()
+            if need_type in declaring
+        )
         for table, kind, what, other in (
             ("fields", "field", "a field", "a link type"),
             ("links", "link", "a link type", "a field"),

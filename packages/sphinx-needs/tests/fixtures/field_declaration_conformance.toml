@@ -95,6 +95,17 @@
 #     `prefix` declares the project's types, as any such entry. A bare entry naming no
 #     default type and no type an extension registers is ignored (each tool's
 #     configuration finding, not compared)
+#   - an extension declares each of its fields on the need types that carry it, as a
+#     field declared on need types alone is -- but with the extension's own declaration
+#     (its type, description, `nullable` and default): sphinx-test-reports' `suites` on
+#     `testfile`; `cases`, `passed`, `skipped`, `failed` and `errors` on `testfile` and
+#     `testsuite`; `suite` on `testsuite` and `testcase`; `case`, `case_name`,
+#     `case_parameter`, `classname`, `time`, `result`, `result_text`, `remote_url` and
+#     the source location (`case_file`, `case_line`) on `testcase`; the report path
+#     (`file`) and every `tr_extra_options` name on all three. On every other type the
+#     field is absent: null, a value set there `undeclared_for_type`. A project's entry
+#     naming such a field on a type of its own declares it there too; a
+#     `[needs.fields.<name>]` entry is the field, on every type
 #   - values are compared as `needs.json` writes them, TYPE INCLUDED: `7.0` is a float and
 #     `7` an integer, and the two differ; a link list is a list of id strings, as
 #     `needs.json` writes it
@@ -5240,3 +5251,53 @@ type_name = "Case"
 result = "passed"
 [case.expect.needs.TF_0001_F0D]
 type_name = "Test-Suite"
+
+[[case]]
+name = "an-extensions-field-is-declared-on-its-types-alone"
+why = "a field an extension declares on its own need types alone is absent on every other type: a project need setting it is undeclared_for_type and holds null, and the extension's needs of a type not declaring it hold null"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. test:: A test spec
+   :id: T_0001
+   :classname: tests.test_x
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.needs.TF_0001]
+cases = 2
+file = "report.xml"
+[case.expect.needs.TF_0001_F0D]
+cases = 2
+suite = "suite_a"
+[case.expect.needs.TF_0001_F0D_61F00]
+classname = "tests.test_x"
+suite = "suite_a"
+[case.expect.nulls]
+T_0001 = ["classname"]
+TF_0001 = ["suite", "classname"]
+TF_0001_F0D = ["classname", "suites"]
+TF_0001_F0D_61F00 = ["cases", "suites"]
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "T_0001"
+field = "classname"
+type = "test"

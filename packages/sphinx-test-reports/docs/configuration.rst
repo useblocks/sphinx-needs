@@ -73,6 +73,51 @@ By default ``tr_case`` is set to::
 
 Please read :ref:`tr_file` for more details.
 
+.. _tr_fields_per_type:
+
+The need types and their fields
+-------------------------------
+
+The three need types are the extension's, and each of its fields is declared on the need types
+that carry it alone
+(`fields per need type <https://sphinx-needs.readthedocs.io/en/latest/configuration.html#needs-types-fields>`__):
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - need type
+     - fields
+   * - test file
+     - the report path (``file``), ``suites``, ``cases``, ``passed``, ``skipped``, ``failed``, ``errors``
+   * - test suite
+     - the report path, ``suite``, ``cases``, ``passed``, ``skipped``, ``failed``, ``errors``
+   * - test case
+     - the report path, ``suite``, ``case``, ``case_name``, ``case_parameter``, ``classname``, ``time``,
+       ``result``, the source location (``case_file``, ``case_line``), and ``result_text`` and
+       ``remote_url``, which only the converter writes
+
+The :ref:`tr_extra_options` are declared on all three. On every other need type the fields are absent:
+a need holds null there, and a value set there is reported (``needs.undeclared_for_type``) and ignored.
+A need type of your own that carries one -- a ``test`` need giving the ``case_name`` or ``classname``
+a :doc:`tr_link <functions>` or a derived link type joins on -- names it in its ``needs_types`` entry,
+which declares it there too:
+
+.. code-block:: toml
+
+   [needs.types.test.fields.case_name]
+
+A ``needs_fields`` (or ``needs_extra_options``) entry of the same name is the field instead, on every need
+type. A ``needs_types`` entry naming one of the three types narrows it: the keys it gives win, and its
+``fields`` and ``links`` apply to the type's needs
+(`needs_types <https://sphinx-needs.readthedocs.io/en/latest/configuration.html#needs-types-extension>`__),
+for example a link type the test cases alone carry:
+
+.. code-block:: toml
+
+   [needs.types.testcase.links.evidence_for]
+   derive = { kind = "links", join = { field = "case_name", equals = "case_name" }, where = "type == 'test'" }
+
 .. _tr_report_template:
 
 tr_report_template

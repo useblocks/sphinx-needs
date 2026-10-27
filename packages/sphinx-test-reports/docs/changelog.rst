@@ -7,6 +7,22 @@ Unreleased
 Changed
 .......
 
+- ‼️ Each field is declared on the need types that carry it, no longer on every need
+  (changed output; `#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__): the
+  counters on test files and test suites, ``suite`` on test suites and test cases, the case's own
+  fields (``case``, ``case_name``, ``case_parameter``, ``classname``, ``time``, ``result``,
+  ``result_text``, ``remote_url`` and the source location) on test cases, and the report path and
+  the ``tr_extra_options`` on all three, through Sphinx-Needs' ``add_field(..., types=[...])``. A
+  need of another type holds null in them, as before, but a value set there is now reported
+  (``needs.undeclared_for_type``) and ignored. **Migration:** a need type of your own that carries
+  one -- a ``test`` need giving the ``case_name`` or ``classname`` a ``tr_link`` or a derived link
+  type joins on -- names it in its ``needs_types`` entry, which declares it there too:
+  ``[needs.types.test.fields.case_name]`` (or ``needs_types = {"test": {"fields": {"case_name":
+  {}}}}`` in ``conf.py``); a ``needs_fields`` entry of the name is the field on every need type,
+  as before. A ``needs_types`` entry naming ``testcase``, ``testsuite`` or ``testfile`` now
+  narrows that type, where a bare one was ignored and a full one stopped the build. Requires the
+  Sphinx-Needs release with ``add_field``'s ``types``. See :ref:`tr_fields_per_type`.
+
 - 👌 A test case the report gives no source file or line for, or that has no parameter, holds
   ``null`` in ``case_file``, ``case_line`` and ``case_parameter`` (or the fields
   ``tr_source_file_option`` and ``tr_source_line_option`` name), where it held ``""``

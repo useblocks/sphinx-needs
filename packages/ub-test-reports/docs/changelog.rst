@@ -9,6 +9,13 @@ Unreleased
 Changed
 .......
 
+- 👌 ``ub_test_reports.fields`` says which kinds of need carry each field: ``need_kinds(name,
+  role)`` over ``NEED_KINDS`` (``file``, ``suite``, ``case``), with the new ``FILE_NEED_FIELDS``
+  and ``SUITE_NEED_FIELDS`` beside ``CASE_FIELDS`` -- the tables ubCode's ``ubc_test_reports``
+  has -- so sphinx-test-reports declares each field on the need types that carry it
+  (`#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__). The converter's output is
+  unchanged by it: it writes test cases, and its ``needs_schema`` declares the test-case fields.
+
 - 👌 The ``test-reports build needs`` converter writes ``null`` in ``case_file``, ``case_line``
   (or the fields ``source_file_option`` and ``source_line_option`` name) and ``case_parameter``
   where the report gives no source file, no line or no parameter, where it wrote ``""``

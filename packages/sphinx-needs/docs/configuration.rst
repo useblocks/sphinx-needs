@@ -614,6 +614,29 @@ and its schema once, nullable, with no default, and the description ``Declared b
 which names the declarations without a declaring ancestor that are not refused, not the types declaring it by inheritance.
 A ``derive`` makes it derived on every type that declares it (a child inheriting its parent's rule), and a derived one takes no ``enum``.
 
+.. _needs_types_extension_fields:
+
+**Fields an extension declares on need types alone.**
+An extension declares a field on its own need types alone with
+:func:`add_field(name, description, types=[...]) <sphinx_needs.api.configuration.add_field>`,
+as sphinx-test-reports declares ``case_name`` on its test cases.
+The field is then declared as one the types' entries declare, absent on every other type in the same way
+(``None``, and a value set there one ``needs.undeclared_for_type`` warning), but its declaration is the extension's:
+its schema, ``nullable`` and default, which a declaring type's entry narrows, as for any field.
+A need type of the project that carries the field names it in its entry, which declares it there too
+(an empty entry declares it as the extension does)::
+
+   [needs.types.test.fields.case_name]
+
+A :ref:`needs_fields` entry of the same name is the field instead, on every need type, as for any field an extension registers.
+A need type ``types`` names that nothing declares by the time the schema is built is one ``needs.config`` warning,
+the field declared on the others::
+
+   Field 'points' (from add_field) is declared on need types 'story' and 'epic' alone, but 'epic' is no need type; the field is declared on the others
+
+The :ref:`needs.json <needs_builder_format>` schema carries the extension's declaration, its description included,
+nullable where the extension's is not: the needs of the other types hold ``null``.
+
 **Link types declared on need types alone.**
 A ``links`` entry naming a link type that nothing else declares -- no :ref:`needs_links` or :ref:`needs_extra_links` entry,
 not ``links`` or ``parent_needs``, no field, one declared on need types alone included, nor a link type's back links, ``<l>_back`` --

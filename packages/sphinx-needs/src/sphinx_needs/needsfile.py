@@ -85,11 +85,16 @@ def generate_needs_schema(
     whatever a need type declares anew.
     """
     # the union by design: one projection for the needs of every type
+    full = needs_schema
     needs_schema = needs_schema.for_type(None)
     properties: dict[str, Any] = {}
 
     for field in needs_schema.iter_extra_fields():
         properties[field.name] = _field_property(field, "extra")
+        if not field.nullable and full.declaring_types(field.name) is not None:
+            # declared on some need types alone, where it may be not nullable: the
+            # needs of the others hold null
+            properties[field.name]["type"] = [field.type, "null"]
 
     # TODO currently extra fields can overlap with core fields,
     # in which case they are ignored,

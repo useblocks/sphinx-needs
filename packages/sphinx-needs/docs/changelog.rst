@@ -25,6 +25,20 @@ Improvements
   documentation now says that is what ``derive_by_type`` is for, rather than only that it is older. The GitHub
   services' types are not narrowed: an entry for one replaces it. See :ref:`needs_types_extension`.
 
+- ✨ An extension declares a field on its own need types alone: ``add_field(name, description, types=[...])``
+  (:issue:`2372`)
+
+  The field is the extension's declaration -- its schema, ``nullable`` and default -- on the need types named (and
+  the types inheriting from them), and absent on every other type, exactly as a field a project's need type entries
+  declare alone: ``None`` there, and a value set there is one ``needs.undeclared_for_type`` warning. A project need
+  type that carries the field names it in its entry (``[needs.types.test.fields.case_name]``, an empty entry
+  included), which declares it there too; a ``needs_fields`` entry of the same name is the field, on every type, as
+  before. A type named that nothing declares when the schema is built is one ``needs.config`` warning, the field
+  declared on the others. ``FieldsSchema.declaring_types(name)`` names the types declaring a field declared on need
+  types alone, either way, and the needs.json schema writes such a field nullable where the extension's declaration
+  is not. sphinx-test-reports declares its eighteen fields this way from its next release. See
+  :ref:`needs_types_extension_fields`.
+
 Bug fixes
 .........
 

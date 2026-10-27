@@ -93,6 +93,9 @@ class NewFieldParams:
     derive_by_type: Any | None = None
     """The rules per need type computing the field, as configured (a dict of need
     type to rule), if any: each overrides ``derive`` on its need type."""
+    types: tuple[str, ...] | None = None
+    """The need types an extension declares the field on alone (``add_field``'s
+    ``types``), or ``None``: the field is declared on every need type."""
 
 
 class NeedFunctionsType(TypedDict):
@@ -188,6 +191,7 @@ class _Config:
         parse_dynamic_functions: bool | None = None,
         derive: Any | None = None,
         derive_by_type: Any | None = None,
+        types: tuple[str, ...] | None = None,
         override: bool = False,
     ) -> None:
         """Adds a need field to the configuration."""
@@ -222,6 +226,7 @@ class _Config:
             parse_dynamic_functions=parse_dynamic_functions,
             derive=derive,
             derive_by_type=derive_by_type,
+            types=types,
         )
 
     @property

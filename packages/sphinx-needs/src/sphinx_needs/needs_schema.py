@@ -1554,13 +1554,19 @@ class FieldsSchema:
         It keeps the global ``default`` and ``predicate_defaults``, which no reader
         applies: creation gives an absent field its empty value without defaults, the
         validation's off-type default is a derived field's only, and the readers of a
-        default read the global view.
+        default read the global view. A field is nullable where it is absent, so that
+        empty value is null, whatever the declaring types say: an extension's field
+        (``add_field``'s ``types``) may be not nullable where it is declared.
         """
         if field.derived:
             return field
         if (absent := self._absent.get(field.name)) is None:
-            absent = self._absent[field.name] = replace(
-                field, directive_option=False, allow_extend=False
+            absent = self._absent[field.name] = (
+                replace(
+                    field, directive_option=False, allow_extend=False, nullable=True
+                )
+                if isinstance(field, FieldSchema)
+                else replace(field, directive_option=False, allow_extend=False)
             )
         return absent
 
@@ -1601,6 +1607,13 @@ class FieldsSchema:
     def is_project_field(self, name: str) -> bool:
         """Whether the extra field ``name`` is one the project declares."""
         return name in self._project_fields
+
+    def declaring_types(self, name: str) -> frozenset[str] | None:
+        """The need types declaring ``name``, a field or link type declared on need
+        types alone -- by their entries (:ref:`needs_types_fields`), or by an
+        extension's ``add_field(..., types=...)`` -- or ``None`` for one every need
+        type has (:meth:`_localise`)."""
+        return self._base()._local.get(name)
 
     def add_link_field(self, field: LinkSchema) -> None:
         """Add a link field to the schema.
