@@ -35,6 +35,7 @@
 #   - values are compared as `needs.json` writes them, TYPE INCLUDED: `7.0` is a float and
 #     `7` an integer, and the two differ; a link list is a list of id strings
 #     (`<need>.<part>` for a part), as `needs.json` writes it
+#   - a float is compared by its bits: `-0.0` and `0.0` differ, and every NaN is one value
 #   - findings are compared as a MULTISET of `code`, and of `need` and `field` where the
 #     finding names them; a key a finding leaves out is not compared. `code` is the BARE
 #     subcode (`derive_invalid`, not `needs.derive_invalid` or `config.derive_invalid`).

@@ -566,7 +566,8 @@ def _report_filters_on_computed_fields(
             for field in derived:
                 # a need of a type without a rule holds a value that is final
                 if isinstance(field.rule_for(need["type"]), DeriveRule):
-                    # a rule wins over a call on its (closed) field
+                    # a rule wins over a call on its (closed) field; defensive, as
+                    # no build has been found where the order is observable
                     computed.setdefault(field.name, {})[need.id] = True
     if not computed:
         return
