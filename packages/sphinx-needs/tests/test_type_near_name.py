@@ -144,3 +144,44 @@ def test_a_near_name_warning_is_suppressed_alone(test_app: Any) -> None:
     app.build()
     assert build_warnings(app) == []
     assert _needs(app)["R_001"]["tag"] == "one"
+
+
+REFUSED_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_fields = {"asil": {"schema": {"type": "string"}, "nullable": True}}
+needs_types = {
+    "req": {
+        "title": "Requirement",
+        "prefix": "R_",
+        # a misspelt narrowing without a type: refused, so it declares nothing
+        "fields": {"asl": {"schema": {"enum": ["A", "B"]}}},
+    },
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), REFUSED_CONF),
+                (Path("index.rst"), "Case\n====\n\n.. req:: A\n   :id: R_001\n"),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_name_refused_on_every_entry_is_not_a_near_name(test_app: Any) -> None:
+    """A field whose every declaration is refused declares nothing, so its name is no
+    field's and is not compared: the ``needs.type_conflict`` is the one warning."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types['req'].fields['asl'] declares 'asl', which no needs_fields "
+        "entry declares, and no need type without an ancestor declaring it gives it a "
+        "'schema' 'type'; the entry is ignored [needs.type_conflict]"
+    ]
+    assert "asl" not in _needs(app)["R_001"]
