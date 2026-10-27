@@ -672,6 +672,30 @@ def test_confoverride_file_replaces_the_file_of_either_location(build, table):
     assert app.config.needs_variant_data_file == "lfp.json"
 
 
+def test_a_relative_confoverride_file_is_anchored_at_the_confdir(make_app, tmp_path):
+    """A relative ``-D needs_variant_data_file`` is the command line's, so it is
+    anchored at the ``conf.py`` directory, as on the ``conf.py`` route -- never at the
+    toml's directory, which holds no such file. (A decoy there would not tell the two
+    apart: the confval is resolved again at the confdir after the toml is read.)"""
+    _write(
+        tmp_path,
+        {
+            "ubproject.toml": '[variants]\ndata_file = "missing.json"\n',
+            "docs/conf.py": _conf('needs_from_toml = "../ubproject.toml"'),
+            "docs/index.rst": RST,
+            "docs/lfp.json": {"chem": "lfp"},
+        },
+    )
+    app = make_app(
+        srcdir=tmp_path / "docs",
+        freshenv=True,
+        confoverrides={"needs_variant_data_file": "lfp.json"},
+    )
+    app.build()
+    assert_no_warnings(app)
+    assert app.config.needs_variant_data == {"chem": "lfp"}
+
+
 def test_confoverride_file_with_neither_location(build):
     """With no variant data in the TOML, ``-D needs_variant_data_file`` is the data."""
     app = build(

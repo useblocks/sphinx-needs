@@ -14,7 +14,8 @@ Improvements
 
   The rule is now ub-project's reading contract (section 6.8), shared by every tool that reads
   :file:`ubproject.toml`, and sphinx-needs passes the value to it rather than removing keys from the toml itself.
-  For a project that builds without warnings, nothing changes: the value replaces the data file of the location
+  For a project that builds without warnings, nothing changes in the output (a project on the legacy location gains
+  one ``-v`` line naming it, as it has without ``-D``): the value replaces the data file of the location
   read, ``[variants]`` or ``[needs]``, without opening the toml's own file, and that location's inline table still
   applies; ``-D needs_variant_data_file=`` (no file) replaces it by none, so the location's inline table is used
   alone. The location, the refusals and the warnings are now always those of the toml as written, so two

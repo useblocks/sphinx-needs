@@ -183,9 +183,10 @@ and a ``needs_variant_data_file`` when it sets no file; the file is then loaded 
 without opening the toml's own file, and that location's inline table is still merged over it,
 so a project on the legacy location keeps its ``[needs.variant_data]``.
 It never decides the location: the location, the refusals and the warnings are those of the toml as written,
-and with neither location declared the override file is the whole data.
+and with neither location declared the override file is the whole of the toml's variant data
+(a :file:`conf.py` ``needs_variant_data`` still merges over it, key by key as above).
 A relative path is resolved against the :file:`conf.py` directory, and an empty value, ``-D needs_variant_data_file=``, means no file:
-the toml's file is replaced by none, also without being opened, and the location's inline table is used alone.
+the toml's file is replaced by none, also without being opened, and the location's inline table is used without a file.
 
 **With needs_from_toml_table**, the prefix applies to both tables:
 with ``needs_from_toml_table = ["tool"]`` they are ``[tool.needs]`` and ``[tool.variants]``,
