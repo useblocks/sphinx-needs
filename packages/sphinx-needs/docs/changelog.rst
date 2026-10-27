@@ -42,6 +42,18 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 The ``needs_schema`` of a :ref:`needs.json <needs_builder_format>` writes a link type's literal default
+  **(changed output)** (:issue:`2208`)
+
+  It wrote ``"default": []`` for every link type but one derived by type alone, also for one with a literal
+  ``default``, such as ``[needs.links.rel] default = ["REQ_1"]``: a reader of the schema took the wrong value for
+  an absent ``rel``. It now writes that default as the needs hold it, link strings sorted and deduplicated as a
+  written link list. A default a dynamic function or a variant computes, and a derived link type, still write
+  ``[]``; a need type's own default is not written. Under :ref:`needs_json_remove_defaults` a need holding the
+  link type's default now leaves it out, and a reader restores it from the file's own schema, as
+  ``ub-needs-exchange`` (:ref:`needimport`, :ref:`needs_external_needs`) does; a reader that does not restore
+  defaults from the schema reads such a need as having no links of that type.
+
 - 🐛 A build that fails with :ref:`needs_build_json`, :ref:`needs_build_json_per_id` or :ref:`needs_build_needumls`
   set stops with its own error. Each of these writers ran after the failure as well and raised in turn, so a
   configuration error was reported as ``Handler <function build_needs_json ...> for event 'build-finished' threw an

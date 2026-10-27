@@ -50,6 +50,10 @@ that can be one of: ``core``, ``links``, ``backlinks``, ``extra``.
 A field, core or extra, is written as the project declares it for all need types together (a need type's own declaration is not written),
 a :ref:`needs_fields` entry narrowing a core field included:
 its type (with ``null`` where it is nullable), its item type and its default, but not its other constraints, such as an ``enum``.
+A link type is written with its default links, as link strings, sorted and deduplicated as a need's links are written:
+the literal ``default`` of its :ref:`needs_links` entry
+(a default a dynamic function or a variant computes is written ``[]``, as is a derived link type's,
+but for one derived by type alone, whose default is the links of a need type without a rule).
 
 How a needs.json is read is specified once, in the `needs.json exchange contract <https://github.com/useblocks/sphinx-needs/blob/master/packages/ub-needs-exchange/design/exchange-contract.md>`__ of the ``ub-needs-exchange`` library, through which :ref:`needimport` and :ref:`needs_external_needs` read it (ubCode is to vendor the contract's conformance corpus, and to be held to it); :ref:`needs_file` still reads the file with Python's ``json`` module, and moves to the library with the writer.
 
