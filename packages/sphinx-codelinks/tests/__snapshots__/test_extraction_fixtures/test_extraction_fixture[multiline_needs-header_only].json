@@ -41,7 +41,10 @@
       "scope": {
         "kind": "function_definition",
         "start": 4,
-        "end": 4
+        "end": 4,
+        "entity_kind": "function",
+        "qualified_name": "header_only",
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

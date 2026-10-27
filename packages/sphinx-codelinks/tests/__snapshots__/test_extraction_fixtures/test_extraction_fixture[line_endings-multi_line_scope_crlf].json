@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "void f(\n    int a,\n    int b\n) {\n    return;\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 7,
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Multi-line title",
       "id": "IMPL_CRLF",
@@ -38,6 +46,14 @@
       }
     },
     "tagged_scope": "void g() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 9,
+      "end": 9,
+      "entity_kind": "function",
+      "qualified_name": "g",
+      "mechanism": "leading"
+    },
     "need_ids": [
       "REQ_2",
       "REQ_3"

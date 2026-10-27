@@ -41,7 +41,10 @@
       "scope": {
         "kind": "function_definition",
         "start": 6,
-        "end": 6
+        "end": 6,
+        "entity_kind": "function",
+        "qualified_name": "closer",
+        "mechanism": "doc_comment"
       }
     },
     "type": "multiline-need",
@@ -92,7 +95,10 @@
       "scope": {
         "kind": "function_definition",
         "start": 15,
-        "end": 15
+        "end": 15,
+        "entity_kind": "function",
+        "qualified_name": "banner",
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

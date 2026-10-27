@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "function render(): void;",
+    "scope": {
+      "kind": "function_signature",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "render",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Export Declare",
       "id": "IMPL_TS_EXPORT_DECLARE",

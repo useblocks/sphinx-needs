@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "void outer() {\n    int x = 1;\n    // @Inside Function, IMPL_CPP_INSIDE, impl, [REQ_CPP_INSIDE]\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 1,
+      "end": 4,
+      "entity_kind": "function",
+      "qualified_name": "outer",
+      "mechanism": "enclosing"
+    },
     "need": {
       "title": "Inside Function",
       "id": "IMPL_CPP_INSIDE",

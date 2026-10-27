@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "load(id: string): void",
+    "scope": {
+      "kind": "method_signature",
+      "start": 3,
+      "end": 3,
+      "entity_kind": "method",
+      "qualified_name": "Store.load",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Signature",
       "id": "IMPL_TS_SIGNATURE",

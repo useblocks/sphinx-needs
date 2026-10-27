@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "def f():\n    pass",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 3,
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Py Title",
       "id": "IMPL_PY",

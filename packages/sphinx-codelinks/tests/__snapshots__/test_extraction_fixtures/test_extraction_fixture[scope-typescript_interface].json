@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "interface Options {\n  retries: number;\n}",
+    "scope": {
+      "kind": "interface_declaration",
+      "start": 2,
+      "end": 4,
+      "entity_kind": "interface",
+      "qualified_name": "Options",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Interface",
       "id": "IMPL_TS_INTERFACE",

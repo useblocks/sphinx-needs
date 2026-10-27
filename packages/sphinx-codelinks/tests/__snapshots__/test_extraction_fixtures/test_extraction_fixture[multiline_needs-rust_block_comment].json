@@ -44,7 +44,10 @@
       "scope": {
         "kind": "function_item",
         "start": 8,
-        "end": 8
+        "end": 8,
+        "entity_kind": "function",
+        "qualified_name": "block",
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

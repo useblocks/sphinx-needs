@@ -44,7 +44,10 @@
       "scope": {
         "kind": "block_mapping_pair",
         "start": 6,
-        "end": 6
+        "end": 6,
+        "entity_kind": "key",
+        "qualified_name": null,
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "function f(b: number): void {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 6,
+      "end": 6,
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "mechanism": "doc_comment"
+    },
     "need": {
       "title": "parameters Check",
       "id": "IMPL_PARAMETERS",

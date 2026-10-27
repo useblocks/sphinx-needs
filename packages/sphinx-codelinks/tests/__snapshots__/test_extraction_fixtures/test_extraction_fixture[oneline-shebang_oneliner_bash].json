@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "function greet { echo hi; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 3,
+      "end": 3,
+      "entity_kind": "function",
+      "qualified_name": "greet",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Bash Title",
       "id": "IMPL_BASH_SHEBANG",

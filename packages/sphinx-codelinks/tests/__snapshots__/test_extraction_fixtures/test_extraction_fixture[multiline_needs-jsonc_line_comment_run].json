@@ -44,7 +44,10 @@
       "scope": {
         "kind": "pair",
         "start": 7,
-        "end": 7
+        "end": 7,
+        "entity_kind": "key",
+        "qualified_name": null,
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

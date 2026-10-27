@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "func dummyFunc1() {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "dummyFunc1",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Above Function",
       "id": "IMPL_GO_ABOVE",

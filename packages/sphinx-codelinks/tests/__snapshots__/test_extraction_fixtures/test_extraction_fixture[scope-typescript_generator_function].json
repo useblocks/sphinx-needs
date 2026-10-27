@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "function* ids(): Generator<number> {}",
+    "scope": {
+      "kind": "generator_function_declaration",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "ids",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Generator",
       "id": "IMPL_TS_GENERATOR",

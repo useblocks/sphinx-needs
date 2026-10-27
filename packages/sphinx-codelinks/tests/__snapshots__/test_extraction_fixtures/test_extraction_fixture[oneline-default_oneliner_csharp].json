@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "class C {}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "class",
+      "qualified_name": "C",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Cs Title",
       "id": "IMPL_CS",

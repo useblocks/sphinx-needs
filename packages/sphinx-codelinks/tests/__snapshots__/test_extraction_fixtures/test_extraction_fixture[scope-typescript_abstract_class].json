@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "abstract class Base {}",
+    "scope": {
+      "kind": "abstract_class_declaration",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "class",
+      "qualified_name": "Base",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Abstract Class",
       "id": "IMPL_TS_ABSTRACT",

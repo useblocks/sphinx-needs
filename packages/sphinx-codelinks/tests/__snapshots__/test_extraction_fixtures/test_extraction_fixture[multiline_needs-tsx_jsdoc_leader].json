@@ -44,7 +44,10 @@
       "scope": {
         "kind": "lexical_declaration",
         "start": 8,
-        "end": 8
+        "end": 8,
+        "entity_kind": "function",
+        "qualified_name": "LoginButton",
+        "mechanism": "doc_comment"
       }
     },
     "type": "multiline-need",

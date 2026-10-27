@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "key: \"\u00e9\"",
+    "scope": {
+      "kind": "block_mapping_pair",
+      "start": 1,
+      "end": 1,
+      "entity_kind": "key",
+      "qualified_name": null,
+      "mechanism": "trailing"
+    },
     "need": {
       "title": "After \u00e9",
       "id": "IMPL_YAML_UTF8",

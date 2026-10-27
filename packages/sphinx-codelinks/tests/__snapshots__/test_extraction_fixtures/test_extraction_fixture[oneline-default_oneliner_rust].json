@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "fn f() {}",
+    "scope": {
+      "kind": "function_item",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Rs Title",
       "id": "IMPL_RS",

@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "namespace Geometry {\n  export const unit = 1;\n}",
+    "scope": {
+      "kind": "internal_module",
+      "start": 2,
+      "end": 4,
+      "entity_kind": "namespace",
+      "qualified_name": "Geometry",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Namespace",
       "id": "IMPL_TS_NAMESPACE",

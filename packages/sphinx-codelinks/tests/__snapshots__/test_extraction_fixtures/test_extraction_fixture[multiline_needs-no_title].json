@@ -44,7 +44,10 @@
       "scope": {
         "kind": "function_definition",
         "start": 6,
-        "end": 6
+        "end": 6,
+        "entity_kind": "function",
+        "qualified_name": "untitled",
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

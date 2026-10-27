@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "const Login = () => <p>// @Fake line, FAKE_LINE, impl</p>;",
+    "scope": {
+      "kind": "lexical_declaration",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "Login",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Login button",
       "id": "IMPL_TSX_LOGIN",

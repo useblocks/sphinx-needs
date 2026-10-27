@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "function Button(): JSX.Element {\n  return <button>Click</button>;\n}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 2,
+      "end": 4,
+      "entity_kind": "function",
+      "qualified_name": "Button",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Component",
       "id": "IMPL_TSX_JSX",

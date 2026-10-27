@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "func outer() {\n    x := 1\n    // @Inside Function, IMPL_GO_INSIDE, impl, [REQ_GO_INSIDE]\n}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 1,
+      "end": 4,
+      "entity_kind": "function",
+      "qualified_name": "outer",
+      "mechanism": "enclosing"
+    },
     "need": {
       "title": "Inside Function",
       "id": "IMPL_GO_INSIDE",

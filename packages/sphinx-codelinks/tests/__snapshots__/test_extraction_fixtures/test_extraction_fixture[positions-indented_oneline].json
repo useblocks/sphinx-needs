@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "void f() {\n    // @Indented, IMPL_INDENT, impl, [REQ_1]\n    return;\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 1,
+      "end": 4,
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "mechanism": "enclosing"
+    },
     "need": {
       "title": "Indented",
       "id": "IMPL_INDENT",

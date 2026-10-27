@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "const onFocus = <Handler>(() => {});",
+    "scope": {
+      "kind": "lexical_declaration",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "onFocus",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Assertion",
       "id": "IMPL_TS_ASSERTION",

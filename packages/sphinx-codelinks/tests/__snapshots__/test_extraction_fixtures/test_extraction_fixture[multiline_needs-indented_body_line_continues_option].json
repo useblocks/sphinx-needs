@@ -41,7 +41,10 @@
       "scope": {
         "kind": "function_definition",
         "start": 5,
-        "end": 5
+        "end": 5,
+        "entity_kind": "function",
+        "qualified_name": "swallowed",
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "key: v",
+    "scope": {
+      "kind": "block_mapping_pair",
+      "start": 1,
+      "end": 1,
+      "entity_kind": "key",
+      "qualified_name": null,
+      "mechanism": "trailing"
+    },
     "need_ids": [
       "REQ_IN"
     ],

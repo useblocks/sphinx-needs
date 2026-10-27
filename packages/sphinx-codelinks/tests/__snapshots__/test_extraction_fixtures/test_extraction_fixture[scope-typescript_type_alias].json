@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "type Handler = (event: string) => void;",
+    "scope": {
+      "kind": "type_alias_declaration",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "type",
+      "qualified_name": "Handler",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Type Alias",
       "id": "IMPL_TS_ALIAS",

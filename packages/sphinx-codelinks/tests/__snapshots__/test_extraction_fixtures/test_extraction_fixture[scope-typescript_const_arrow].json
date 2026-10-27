@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "const handle = (): void => {};",
+    "scope": {
+      "kind": "lexical_declaration",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "handle",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Arrow",
       "id": "IMPL_TS_ARROW",

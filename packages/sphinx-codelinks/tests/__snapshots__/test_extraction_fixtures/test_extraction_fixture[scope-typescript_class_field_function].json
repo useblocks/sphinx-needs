@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "onClick = () => {}",
+    "scope": {
+      "kind": "public_field_definition",
+      "start": 3,
+      "end": 3,
+      "entity_kind": "method",
+      "qualified_name": "Button.onClick",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Field",
       "id": "IMPL_TS_FIELD",

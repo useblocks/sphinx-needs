@@ -13,6 +13,14 @@
       }
     },
     "tagged_scope": "const handle: () => void;",
+    "scope": {
+      "kind": "lexical_declaration",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "handle",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Declare Const",
       "id": "IMPL_TS_DECLARE_CONST",
@@ -38,6 +46,14 @@
       }
     },
     "tagged_scope": "let fn: (a: number) => void;",
+    "scope": {
+      "kind": "lexical_declaration",
+      "start": 4,
+      "end": 4,
+      "entity_kind": "function",
+      "qualified_name": "fn",
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Declare Let",
       "id": "IMPL_TS_DECLARE_LET",
@@ -61,6 +77,14 @@
       }
     },
     "tagged_scope": "var version: string;",
+    "scope": {
+      "kind": "variable_declaration",
+      "start": 6,
+      "end": 6,
+      "entity_kind": null,
+      "qualified_name": null,
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Declare Var",
       "id": "IMPL_TS_DECLARE_VAR",
