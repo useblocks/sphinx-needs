@@ -26,6 +26,22 @@ from ._templates import (
 NAME = "ub-template"
 
 
+#: Top-level context keys the engine gives a template itself (§4.7, §4.8).
+RESERVED = ("var", "loop", "self")
+
+
+def _reserved(data: dict[str, Any]) -> None:
+    """Refuse a top-level key that would shadow one the engine gives a template.
+
+    :raises ValueError: Naming the key.
+    """
+    for key in RESERVED:
+        if key in data:
+            what = "the variant data" if key == "var" else f"the engine's own {key}"
+            msg = f"it has a top-level {key} key, and {key} is always {what}"
+            raise ValueError(msg)
+
+
 class UbTemplate(Directive):
     """Render the body, or a ``:file:``, with a named context, ``:ctx:`` and ``var``."""
 
@@ -77,11 +93,7 @@ class UbTemplate(Directive):
                 return []
             try:
                 data = context_value(env, root, name, contexts[name])
-                if "var" in data:
-                    msg = (
-                        "it has a top-level var key, and var is always the variant data"
-                    )
-                    raise ValueError(msg)
+                _reserved(data)
             except ValueError as error:
                 warn(
                     "template_context_invalid",
@@ -98,9 +110,7 @@ class UbTemplate(Directive):
                     msg = "it is not a JSON object"
                     raise ValueError(msg)
                 _engine.check_data(inline, "ctx")
-                if "var" in inline:
-                    msg = "it has a var key, and var is always the variant data"
-                    raise ValueError(msg)
+                _reserved(inline)
             except ValueError as error:
                 warn(
                     "template_context_invalid",

@@ -67,13 +67,16 @@ Each ``[parse.directive_presets.<name>]`` entry takes:
    and a need type spelled with upper-case letters cannot be a base:
    Sphinx looks every directive name up in lower case, so such a type is not usable as a directive.
    A preset of a directive that also has a self-preset is the original directive, without the self-preset's values.
+   Bases are taken when the build starts: an extension that registers a self-preset's directive again later
+   drops the project defaults, and the build warns (``ub_directives.preset_base_replaced``).
 ``description`` (string)
    The text an editor shows for the preset (ubCode); Sphinx does not use it.
 ``argument`` (string or number)
    The argument a use gets when it writes none, for a base that takes one.
 ``options``, ``append_options``, ``force_options`` (tables of strings, booleans or numbers)
    Option values by the base's option names. Write a flag option as ``true``;
-   ``false`` cannot switch a flag off. A number is its decimal text;
+   ``false`` cannot switch a flag off. A number is its decimal text
+   (a float with no exponent, and ``.0`` when it is whole: ``1e-7`` is ``0.0000001``);
    ``true`` for an option that is not a flag is the text ``true``.
 
 A use that writes a forced option is warned (``ub_directives.preset_forced_option``) and the preset's value is used.
@@ -91,7 +94,8 @@ Each check runs once per build; the warning names the entry path (``[parse.direc
    * - ``directive_preset_base_is_preset``
      - ``base`` names another preset.
    * - ``directive_preset_name_taken``
-     - The name is already a directive other than the preset's base, or two presets' names differ only in case.
+     - The name is already a directive other than the preset's base, or two presets' names differ only in case
+       (the first in sorted order is kept).
    * - ``directive_preset_unknown_option``
      - An option the base does not take.
    * - ``directive_preset_invalid_value``

@@ -2,7 +2,7 @@ sphinx-ub-directives
 ====================
 
 A Sphinx extension that reads directive declarations from ``ubproject.toml``,
-so the same project builds the same with Sphinx and with `ubCode <https://ubcode.useblocks.com/>`__:
+so that a project is held to one contract with Sphinx and with `ubCode <https://ubcode.useblocks.com/>`__:
 
 - **directive presets** (``[parse.directive_presets.<name>]``):
   a new directive name that is an existing directive with preset options,

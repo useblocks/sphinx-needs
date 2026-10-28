@@ -78,3 +78,34 @@ def test_a_need_preset_keeps_accepting_every_need_option(
     text = (Path(app.outdir) / "needs.json").read_text(encoding="utf-8")
     assert '"REQ_001"' in text
     assert not [w for w in build_warnings(app) if "nknown option" in w]
+
+
+def test_a_self_preset_whose_base_is_replaced_later_warns(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """§3.4.7 (L6): bases are snapshotted at ``builder-inited``; an extension that registers
+    a self-preset's directive again after that drops the self-preset, and the build says so."""
+    (tmp_path / "late.py").write_text(
+        "from docutils.parsers.rst.directives.admonitions import Note\n"
+        "class Late(Note):\n    pass\n"
+        "def _late(app):\n    app.add_directive('note', Late, override=True)\n"
+        "def setup(app):\n    app.connect('builder-inited', _late, priority=900)\n",
+        encoding="utf-8",
+    )
+    conf = (
+        "import os, sys\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\n"
+        + CONF_PY
+        + "extensions = [*extensions, 'late']\n"
+    )
+    toml = '[parse.directive_presets.note]\nbase = "note"\noptions = { class = "d" }\n'
+    tmp_path.mkdir(exist_ok=True)
+    (tmp_path / "conf.py").write_text(conf, encoding="utf-8")
+    (tmp_path / "ubproject.toml").write_text(toml, encoding="utf-8")
+    (tmp_path / "index.rst").write_text(
+        "Case\n====\n\n.. note::\n\n   Body.\n", encoding="utf-8"
+    )
+    app = make_app("needs", srcdir=tmp_path, freshenv=True)
+    app.build()
+    assert [
+        w for w in build_warnings(app) if "ub_directives.preset_base_replaced" in w
+    ], build_warnings(app)

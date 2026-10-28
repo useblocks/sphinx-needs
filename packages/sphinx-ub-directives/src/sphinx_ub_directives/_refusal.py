@@ -14,7 +14,7 @@ is inert outside template output.
 from __future__ import annotations
 
 import contextlib
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextvars import ContextVar
 from typing import Any
 
@@ -66,6 +66,12 @@ WITH_OPTION = {
 WITH_ARGUMENT = frozenset({"graphviz", "mermaid", "plantuml", "uml"})
 #: A need directive's options that read a template.
 NEED_TEMPLATE_OPTIONS = ("template", "pre_template", "post_template", "jinja_content")
+
+#: What a preset's class carries (set by ``_presets``): its base's name, the option keys
+#: it merges in (defaults and forced), and whether it supplies a default argument.
+PRESET_BASE = "ub_directives_base"
+PRESET_KEYS = "ub_directives_preset_keys"
+PRESET_ARGUMENT = "ub_directives_preset_argument"
 
 #: The marker a template directive's class carries.
 TEMPLATE_MARKER = "ub_directives_template"
@@ -141,7 +147,9 @@ class _Inert(Directive):
     option_spec = _AnyOptions()
 
     def run(self) -> list[nodes.Node]:
-        return []
+        # one inline placeholder: a substitution definition (whose directive this may be)
+        # needs some content to be one, and the structural look must see it (§7.9)
+        return [nodes.inline("", "inert")]
 
 
 def _refuser(name: str, use: str, code: str, why: str) -> type[Directive]:
@@ -211,44 +219,85 @@ def _is_need_directive(cls: type[Directive] | None) -> bool:
     return issubclass(cls, NeedDirective)
 
 
+def test_report_names(env: Any) -> frozenset[str]:
+    """The sphinx-test-reports directives of this project (§7.10): with the extension
+    loaded, the names it is configured to register; else its defaults."""
+    config = getattr(env, "config", None)
+    configured: set[str] = set()
+    for confval in ("tr_file", "tr_suite", "tr_case"):
+        value = getattr(config, confval, None) if config is not None else None
+        first = value[0] if isinstance(value, list | tuple) and value else None
+        if isinstance(first, str):
+            configured.add(first.lower())
+    if not configured:
+        return TEST_REPORTS
+    return frozenset({"test-report", "test-results", "test-env", *configured})
+
+
+def canonical(
+    name: str, cls: type[Directive] | None, language_module: Any
+) -> tuple[str, frozenset[str], bool]:
+    """The name a lookup of ``name`` is judged by, the option keys a preset merges in, and
+    whether it supplies an argument (§7.10): a preset is judged as its BASE written with its
+    merged options; a localized docutils name as the directive it translates."""
+    lower = name.lower()
+    base = getattr(cls, PRESET_BASE, None) if cls is not None else None
+    if isinstance(base, str):
+        keys = getattr(cls, PRESET_KEYS, None)
+        merged: frozenset[str] = frozenset(
+            str(k) for k in (keys if isinstance(keys, frozenset) else ())
+        )
+        return str(base).lower(), merged, getattr(cls, PRESET_ARGUMENT, False) is True
+    table = getattr(language_module, "directives", None)
+    translated = table.get(lower) if isinstance(table, dict) else None
+    if isinstance(translated, str):
+        lower = translated
+    return lower, frozenset(str(k) for k in ()), False
+
+
 def _refusal(
-    name: str, cls: type[Directive] | None, use: str
+    name: str,
+    cls: type[Directive] | None,
+    use: str,
+    language_module: Any = None,
+    env: Any = None,
 ) -> type[Directive] | None:
     """The class a lookup of ``name`` on output of ``use`` resolves to, or ``None`` when
     the directive is allowed."""
-    lower = name.lower()
     if cls is not None and getattr(cls, TEMPLATE_MARKER, False):
         return _refuser(
-            lower,
+            name.lower(),
             use,
             "template_nested_expansion",
             "the rendered text holds a {name!r} directive; a template's output is not "
             "expanded again",
         )
-    if lower in ALWAYS or lower in TEST_REPORTS:
+    lower, merged, argument = canonical(name, cls, language_module)
+    shown = name.lower()
+    if lower in ALWAYS or lower in test_report_names(env):
         return _refuser(
-            lower,
+            shown,
             use,
             "template_output_reads_file",
             "the rendered text holds a {name!r} directive that reads a file; a "
             "template's output reads only what the template declares",
         )
+
+    def has(d: Directive, keys: Iterable[str]) -> bool:
+        return any(k in d.options or k in merged for k in keys)
+
     if lower in WITH_OPTION:
         keys = WITH_OPTION[lower]
-        return _conditional(
-            cls, lower, use, lambda d: any(k in d.options for k in keys)
-        )
+        return _conditional(cls, shown, use, lambda d: has(d, keys))
     if lower in WITH_ARGUMENT:
         return _conditional(
-            cls, lower, use, lambda d: bool(d.arguments and d.arguments[0].strip())
+            cls,
+            shown,
+            use,
+            lambda d: argument or bool(d.arguments and d.arguments[0].strip()),
         )
     if _is_need_directive(cls):
-        return _conditional(
-            cls,
-            lower,
-            use,
-            lambda d: any(k in d.options for k in NEED_TEMPLATE_OPTIONS),
-        )
+        return _conditional(cls, shown, use, lambda d: has(d, NEED_TEMPLATE_OPTIONS))
     return None
 
 
@@ -281,7 +330,8 @@ def install() -> None:
         use = active_use(document)
         if use is None:
             return cls, messages
-        refused = _refusal(name, cls, use)
+        env = getattr(getattr(document, "settings", None), "env", None)
+        refused = _refusal(name, cls, use, language_module, env)
         if refused is None:
             return (_scoped(cls, use) if cls is not None else None), messages
         return refused, []

@@ -133,3 +133,120 @@ def test_var_without_sphinx_needs_is_read_by_ub_project(
     assert "Edition pro." in (Path(app.outdir) / "index.html").read_text(
         encoding="utf-8"
     )
+
+
+def test_a_symlink_out_of_the_root_is_refused(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """§2.4 (fix round 1, M8): the clamp is by REAL path, so a context file or a template
+    file that is a symlink to outside the source root is refused and never read."""
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "secret.json").write_text('{"s": "SECRET"}\n', encoding="utf-8")
+    (outside / "secret.rst.j2").write_text("SECRET\n", encoding="utf-8")
+    for kind, toml, code in (
+        # each build declares its own name: the first app's directives stay registered in
+        # docutils until the test ends
+        (
+            "context",
+            '[parse.template_contexts.c]\nfile = "data.json"\n\n[parse.directive_templates.uc]\nbody = "{{ contexts.c.s }}"\n',
+            "template_context_invalid",
+        ),
+        (
+            "template",
+            '[parse.directive_templates.ut]\ntemplate = "t.rst.j2"\n',
+            "template_outside_root",
+        ),
+    ):
+        root = tmp_path / kind
+        root.mkdir()
+        (root / "data.json").symlink_to(outside / "secret.json")
+        (root / "t.rst.j2").symlink_to(outside / "secret.rst.j2")
+        name = "uc" if kind == "context" else "ut"
+        app = _build(
+            make_app,
+            root,
+            {"ubproject.toml": toml, "index.rst": f"Case\n====\n\n.. {name}::\n"},
+        )
+        warnings = build_warnings(app)
+        assert [w for w in warnings if f"ub_directives.{code}" in w], (kind, warnings)
+        assert "SECRET" not in (Path(app.outdir) / "index.html").read_text(
+            encoding="utf-8"
+        )
+
+
+def test_a_refused_context_path_is_a_dependency(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """§7.11 (M8): a context path outside the root is refused, and still noted."""
+    files = {
+        "ubproject.toml": '[parse.template_contexts.c]\nfile = "../outside.json"\n\n[parse.directive_templates.u]\nbody = "x"\n',
+        "index.rst": "Case\n====\n\n.. u::\n",
+    }
+    app = _build(make_app, tmp_path / "src", files)
+    deps = {Path(p).name for p in app.env.dependencies["index"]}
+    assert "outside.json" in deps, deps
+
+
+def test_a_nul_in_a_template_path_is_refused_not_a_crash(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """L1: a NUL in a declared path is a path outside the root, never an exception."""
+    files = {
+        "ubproject.toml": '[parse.directive_templates.n]\ntemplate = "a\\u0000.rst.j2"\n',
+        "index.rst": "Case\n====\n\n.. n::\n",
+    }
+    app = _build(make_app, tmp_path, files)
+    assert [
+        w for w in build_warnings(app) if "ub_directives.template_outside_root" in w
+    ]
+
+
+def test_a_localized_name_of_a_reading_directive_is_refused(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """§7.10 (H1): with ``language = "de"`` docutils reads ``einfügen`` as ``include``; the
+    refusal judges the directive it translates to. (ubCode has no ``language``, so this is
+    a test of this package and not a corpus case.)"""
+    files = {
+        "ubproject.toml": '[parse.directive_templates.emit]\nbody = ".. einfügen:: secret.txt"\n',
+        "secret.txt": "SECRET\n",
+        "index.rst": "Case\n====\n\n.. emit::\n",
+    }
+    app = _build(make_app, tmp_path, files, conf=CONF_PY + 'language = "de"\n')
+    assert [
+        w
+        for w in build_warnings(app)
+        if "ub_directives.template_output_reads_file" in w
+    ]
+    assert "SECRET" not in (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
+
+
+def test_a_syntax_error_names_the_template(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """L2 (§1.2): a render error names the template, a syntax error included."""
+    files = {
+        "ubproject.toml": '[parse.directive_templates.t]\ntemplate = "_t/broken.rst.j2"\n',
+        "_t/broken.rst.j2": "ok\n{% for %}\n",
+        "index.rst": "Case\n====\n\n.. t::\n",
+    }
+    app = _build(make_app, tmp_path, files)
+    errors = [
+        w for w in build_warnings(app) if "ub_directives.template_render_error" in w
+    ]
+    assert errors and "_t/broken.rst.j2, line 2" in errors[0], errors
+
+
+def test_a_configuration_finding_is_located_in_ubproject_toml(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """L3: a configuration finding names ``ubproject.toml`` and its table's line, not a
+    document (Sphinx reads a location without a ``:`` as a document name)."""
+    files = {
+        "ubproject.toml": '# a comment\n\n[parse.directive_templates.note]\nbody = "x"\n',
+        "index.rst": "Case\n====\n",
+    }
+    app = _build(make_app, tmp_path, files)
+    found = [w for w in build_warnings(app) if "directive_template_invalid" in w]
+    assert found and found[0].startswith("<srcdir>/ubproject.toml:3: "), found

@@ -12,7 +12,6 @@ import hashlib
 import json
 import math
 import os
-import re
 import tomllib
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -51,7 +50,7 @@ class Root:
         """``name`` (a template name, or a path relative to the root; a leading ``/`` is
         the root) as a path inside the root, or ``None`` when it would leave it."""
         posix = PurePosixPath(name.replace("\\", "/").lstrip("/"))
-        if ".." in posix.parts or ":" in name:
+        if ".." in posix.parts or ":" in name or "\0" in name:
             return None
         candidate = self.path.joinpath(*posix.parts)
         self.reads.append(candidate)
@@ -63,6 +62,8 @@ class Root:
 
     def contains(self, path: Path) -> bool:
         """Whether ``path`` (absolute) is inside the root, symlinks resolved."""
+        if "\0" in str(path):
+            return False
         self.reads.append(path)
         real = Path(os.path.realpath(path))
         root = Path(os.path.realpath(self.path))
@@ -102,29 +103,52 @@ class Root:
 # --- data -----------------------------------------------------------------------------
 
 
-def check_data(value: object, path: str) -> None:
+#: The deepest context data may nest (§4.2): a file's top table is level 1.
+MAX_DEPTH = 64
+#: The signed 64-bit range integers in context data must fall in (§4.2).
+I64 = range(-(2**63), 2**63)
+
+
+def _check_text(text: str, path: str) -> None:
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError as error:
+        msg = f"{path} holds a lone surrogate, which is not text"
+        raise ValueError(msg) from error
+
+
+def check_data(value: object, path: str, depth: int = 1) -> None:
     """Refuse what the context data model (§4.2) does not allow, naming where.
+
+    ``depth`` is the level of ``value`` when it is a table or an array (a file's top
+    table is level 1).
 
     :raises ValueError: Naming the dotted path and the rule broken.
     """
+    if isinstance(value, Mapping | list | tuple) and depth > MAX_DEPTH:
+        msg = f"{path} is nested deeper than {MAX_DEPTH} levels"
+        raise ValueError(msg)
     if isinstance(value, Mapping):
         for key, item in value.items():
             if not isinstance(key, str):
                 msg = f"{path} has a key that is not a string"
                 raise ValueError(msg)
-            check_data(item, f"{path}.{key}")
+            _check_text(key, path)
+            check_data(item, f"{path}.{key}", depth + 1)
         return
     if isinstance(value, list | tuple):
         if not value:
             return
         if all(isinstance(item, Mapping) for item in value):
             for index, item in enumerate(value):
-                check_data(item, f"{path}[{index}]")
+                check_data(item, f"{path}[{index}]", depth + 1)
             return
         kinds = {type(item) for item in value}
         if len(kinds) != 1 or not kinds <= {str, bool, int, float}:
             msg = f"{path} is an array that mixes kinds of value, or holds arrays"
             raise ValueError(msg)
+        for index, item in enumerate(value):
+            check_data(item, f"{path}[{index}]", depth + 1)
         return
     if value is None:
         msg = f"{path} is null, which context data cannot hold"
@@ -135,7 +159,13 @@ def check_data(value: object, path: str) -> None:
     if isinstance(value, float) and not math.isfinite(value):
         msg = f"{path} is a float that is not finite"
         raise ValueError(msg)
-    if not isinstance(value, str | bool | int | float):
+    if type(value) is int and value not in I64:
+        msg = f"{path} is an integer outside the signed 64-bit range"
+        raise ValueError(msg)
+    if isinstance(value, str):
+        _check_text(value, path)
+        return
+    if not isinstance(value, bool | int | float):
         msg = f"{path} is a {type(value).__name__}, which context data cannot hold"
         raise ValueError(msg)
 
@@ -171,7 +201,27 @@ def parse_data(text: str, suffix: str, name: str) -> dict[str, Any]:
     return data
 
 
-_IDENTIFIER = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
+def read_data(text: str, suffix: str, name: str) -> dict[str, Any]:
+    """:func:`parse_data`, with data too deep for the parsers themselves refused too.
+
+    :raises ValueError: Saying why the file cannot be used.
+    """
+    try:
+        return parse_data(text, suffix, name)
+    except RecursionError as error:
+        msg = f"{name} is nested deeper than {MAX_DEPTH} levels"
+        raise ValueError(msg) from error
+
+
+#: Names the engine reads as literals: a context key spelled so cannot be named, and is
+#: left out (§4.8).
+LITERAL_NAMES = frozenset({"true", "false", "none", "True", "False", "None", "in"})
+
+
+def nameable(key: str) -> bool:
+    """Whether a template can name ``key`` as a variable: an identifier (Unicode ones
+    too: minijinja's ``unicode`` feature, §7.1) that is not a literal's name."""
+    return key.isidentifier() and key not in LITERAL_NAMES
 
 
 def preamble(context: Mapping[str, Any]) -> str:
@@ -189,7 +239,7 @@ def preamble(context: Mapping[str, Any]) -> str:
     statements = [
         f"{{% set {key} = {literal(value)} %}}"
         for key, value in context.items()
-        if _IDENTIFIER.fullmatch(key)
+        if nameable(key)
     ]
     return "".join(statements)
 
@@ -287,7 +337,9 @@ def render(source: str, name: str, context: Mapping[str, Any], root: Root) -> Re
             raise Failure("template_context_unavailable", msg)
     try:
         env.add_template(name, preamble(context) + source)
-        text = env.render_template(name, **context)
+        # the preamble is the only way in: a context passed as keywords would reach the
+        # template as Python objects too (an un-nameable key, or one the preamble skips)
+        text = env.render_template(name)
     except minijinja.TemplateError as error:
         if error.kind == "OutOfFuel" or "recursion" in error.message.lower():
             raise Failure("template_compute_limit", _describe(error, name)) from error
@@ -305,5 +357,7 @@ def _limit_message() -> str:
 
 
 def _describe(error: minijinja.TemplateError, name: str) -> str:
-    where = f" ({error.name or name}, line {error.line})" if error.line else ""
+    # a syntax error found before the render names minijinja's "<string>", not the template
+    shown = name if error.name in (None, "<string>") else error.name
+    where = f" ({shown}, line {error.line})" if error.line else ""
     return f"the template cannot be rendered: {error.message}{where}"

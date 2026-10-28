@@ -24,6 +24,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     _refusal.install()
     # after every extension's `config-inited`, before any document is read (contract §2.2)
     app.connect("builder-inited", _presets.register)
+    app.connect("env-before-read-docs", _presets.check_replaced)
     app.connect("builder-inited", _templates.register)
     app.add_directive(_ub_template.NAME, _ub_template.UbTemplate)
     return {

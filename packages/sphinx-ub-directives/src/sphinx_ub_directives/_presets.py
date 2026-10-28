@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
+from decimal import Decimal
 from importlib import import_module
 from typing import Any, cast
 
@@ -19,6 +20,7 @@ from sphinx.application import Sphinx
 
 from ub_project.project import render_path
 
+from . import _refusal
 from ._config import resolved
 from ._log import warn
 
@@ -153,13 +155,22 @@ def need_options(app: Sphinx) -> frozenset[str]:
     return frozenset(names)
 
 
+def float_text(value: float) -> str:
+    """A float as option text (§3.1.1): the shortest decimal that reads back as the same
+    float, with no exponent, and ``.0`` appended when it is integral."""
+    text = format(Decimal(repr(value)), "f")
+    return text if "." in text else f"{text}.0"
+
+
 def _text(value: object, converter: Converter | None) -> str | None:
     """A TOML scalar as option text (§3.1.1), or ``None`` when it cannot be one."""
     if isinstance(value, bool):
         if converter is directives.flag:
             return "" if value else None
         return "true" if value else "false"
-    if isinstance(value, int | float):
+    if isinstance(value, float):
+        return float_text(value)
+    if isinstance(value, int):
         return str(value)
     if isinstance(value, str):
         return value
@@ -517,6 +528,10 @@ def preset_class(preset: Preset) -> type[Directive]:
         return base.cls.run(self)
 
     attrs["run"] = run
+    # what the output refusal judges a preset by (§7.10): its base, with its merged options
+    attrs[_refusal.PRESET_BASE] = base.name
+    attrs[_refusal.PRESET_KEYS] = frozenset({*defaults, *forced})
+    attrs[_refusal.PRESET_ARGUMENT] = preset.argument is not None
     safe = re.sub(r"\W", "_", preset.name)
     cls = type(f"Preset_{safe}", (base.cls,), attrs)
     assert issubclass(cls, Directive)
@@ -532,6 +547,7 @@ def register(app: Sphinx) -> None:
     presets = Resolver(app, table, reading["file"]).resolve()
     # [A4] the classes are built from the snapshotted bases before registering any
     classes = [(preset, preset_class(preset)) for preset in presets]
+    _SELF_PRESETS[:] = []
     for preset, cls in classes:
         if preset.self_preset and preset.base.domain is not None:
             app.add_directive_to_domain(
@@ -539,3 +555,24 @@ def register(app: Sphinx) -> None:
             )
         else:
             app.add_directive(preset.name.lower(), cls, override=preset.self_preset)
+            if preset.self_preset:
+                _SELF_PRESETS.append((preset.name.lower(), cls, reading["file"]))
+
+
+#: The self-presets registered in the docutils registry this build (§3.4.7).
+_SELF_PRESETS: list[tuple[str, type[Directive], str | None]] = []
+
+
+def check_replaced(app: Sphinx, *_args: Any) -> None:
+    """``env-before-read-docs``: warn once per self-preset whose directive another
+    extension registered over it after ``builder-inited`` (§3.4.7)."""
+    registry = cast("dict[str, Any]", getattr(directives, "_directives"))  # noqa: B009
+    for name, cls, file in _SELF_PRESETS:
+        if registry.get(name) is not cls:
+            warn(
+                "preset_base_replaced",
+                render_path(("parse", "directive_presets", name)),
+                f"another extension registered {name!r} after the presets were, so the "
+                "project defaults of this self-preset are not applied",
+                location=file,
+            )

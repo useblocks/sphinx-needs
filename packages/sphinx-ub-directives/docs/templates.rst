@@ -26,11 +26,15 @@ either inline or as a JSON or TOML file under the source directory:
    lead = "Ada"
    members = ["Bob", "Cy"]
 
-Context data is plain data: strings, booleans, integers, floats,
-arrays (of one kind of scalar, or of tables) and tables.
-A null, a date or time, a mixed array, a YAML file or a file that does not parse
+Context data is plain data: strings, booleans, integers (in the signed 64-bit range), finite floats,
+arrays (of one kind of scalar, or of tables) and tables, at most 64 levels deep.
+A null, a date or time, ``inf`` or ``nan``, a mixed array, an array of arrays,
+a file whose top level is not a table, a YAML file, a file of any other extension than ``.json`` or ``.toml``
+(read case-insensitively), or a file that does not parse
 is reported at each use (``ub_directives.template_context_invalid``), which then renders nothing.
-A mapping iterates in the order the data writes it.
+A mapping iterates in the order the data writes it, and so do ``options`` and ``contexts``.
+For ``ub-template``, a top-level ``var``, ``loop`` or ``self`` key is refused the same way,
+and a key no template can name (``true``, ``none``, ``in``, …) is skipped.
 
 Every template also sees ``var``: the project's variant data,
 the same values ``.. if::`` evaluates against (``[variants]`` in ``ubproject.toml``).
@@ -80,10 +84,17 @@ A declaration whose name is already a directive (in any case), that differs only
 or that gives both or neither of ``template`` and ``body`` is reported once (``ub_directives.directive_template_invalid``) and ignored.
 
 **Markup.** A declared template writes reStructuredText or MyST Markdown:
-``markup = "rst"`` or ``"md"``, else its file's name (``*.rst.j2``, ``*.md.j2``), else reStructuredText.
-In a page of the same markup the output may hold headings, which join the page;
+``markup = "rst"`` or ``"md"``, else its file's name (``*.rst.j2``, ``*.md.j2``, ``*.rst.jinja``, ``*.md.jinja``),
+else reStructuredText.
+In a page of the same markup the output may hold headings, which join the page (see below);
 in a page of the other markup it is parsed as its own markup and may not hold a heading
-(``ub_directives.template_markup_heading``).
+(``ub_directives.template_markup_heading``), nor a substitution definition, an auto-numbered footnote
+or a citation (``ub_directives.template_markup_construct``).
+
+A declaration's fields have fixed shapes (``default`` a string, ``choices`` an array of strings,
+``flag``, ``required`` and ``content`` booleans, ``argument`` a table);
+a wrong one refuses the declaration (``ub_directives.directive_template_invalid``),
+and an unknown key is reported (``ub_directives.directive_template_unknown_key``) and ignored.
 
 .. _templates_ub_template:
 
@@ -123,12 +134,19 @@ Its argument names a context, whose keys are the template's variables. Options:
 How output joins the page
 -------------------------
 
-Output is inserted as if it were written in place of the directive:
-its headings join the page's sections, and the page's content after the directive
-continues in the output's last section.
+Output is inserted as if it were written in place of the directive, and its headings join the page's sections,
+with two rules that keep the needs' ``sections`` the same in ubCode:
+
+- a heading in output must nest strictly below the section that holds the directive,
+  and cannot be used where the page allows no section (inside a ``note``, a need's body, a list item):
+  ``ub_directives.template_heading_level``;
+- output that holds a heading may not be followed by host content (anything but a heading),
+  which would continue in the output's last section: ``ub_directives.template_open_section``.
+  End such output at the end of its section, or follow the directive with a heading.
 
 The output may not hold another template directive (it is never expanded again)
-nor a directive that reads a file the template did not declare:
+nor a directive that reads a file the template did not declare (nor a preset of one,
+written with the preset's options):
 ``include``, ``literalinclude``, ``csv-table`` and ``raw`` with ``:file:`` or ``:url:``,
 ``needimport``, ``needreport`` with ``:template:``, ``needservice``, ``src-trace``,
 ``graphviz``, ``mermaid``, ``plantuml`` and ``uml`` given a file, the ``auto*`` directives,
@@ -156,6 +174,8 @@ Limits
 
 A render may write at most 1 MiB (``ub_directives.template_output_limit``)
 and spend a bounded amount of work; a use over a limit renders nothing.
+The output is checked once rendered, and the values a template builds on the way are not bounded
+in a Sphinx build (ubCode bounds them too), so a runaway template can use a lot of memory before it is refused.
 In one page, once a template has hit a limit with three different inputs,
 its later uses there with yet other inputs are not rendered (``ub_directives.template_disabled``).
 Every template, context file and included file a use reads is a dependency of the page.

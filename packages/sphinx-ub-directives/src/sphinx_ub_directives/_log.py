@@ -10,6 +10,7 @@ finding at a use is attributed to -- which is what the conformance runners compa
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from sphinx.util import logging
@@ -20,6 +21,23 @@ LOGGER = logging.getLogger("sphinx_ub_directives")
 WARNING_TYPE = "ub_directives"
 
 
+def file_location(file: str, attribution: str) -> str:
+    """``file:line`` for a configuration finding (L3): the line of the deepest table
+    header of ``attribution``'s path that the file writes, else line 1. (Sphinx reads a
+    location without a ``:`` as a document name.)"""
+    try:
+        lines = Path(file).read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeDecodeError):
+        return f"{file}:1"
+    segments = attribution.split(".")
+    for length in range(len(segments), 0, -1):
+        header = "[" + ".".join(segments[:length]) + "]"
+        for number, line in enumerate(lines, start=1):
+            if line.strip() == header:
+                return f"{file}:{number}"
+    return f"{file}:1"
+
+
 def warn(code: str, attribution: str, message: str, location: Any = None) -> None:
     """Report one finding.
 
@@ -28,6 +46,8 @@ def warn(code: str, attribution: str, message: str, location: Any = None) -> Non
     :param message: The human half of the message.
     :param location: Where Sphinx should say it is (a docname and line, or a path).
     """
+    if isinstance(location, str):
+        location = file_location(location, attribution)
     LOGGER.warning(
         f"[{attribution}] {message}",
         type=WARNING_TYPE,

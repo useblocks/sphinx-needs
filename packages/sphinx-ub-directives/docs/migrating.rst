@@ -4,7 +4,7 @@ Migrating from sphinx-jinja2 (and sphinx-jinja)
 ``ub-template`` does what the ``jinja`` directive of
 `sphinx-jinja2 <https://github.com/sphinx-extensions2/sphinx-jinja2>`__ and
 `sphinx-jinja <https://github.com/tardyp/sphinx-jinja>`__ does,
-restricted so that a template reads only the data you declare,
+restricted so that a template reads only the data and templates you declare (and its output is refused any directive known to read other content, presets of one included),
 and so that the same project renders the same in ubCode.
 It has its own name, so it coexists with sphinx-jinja2 in one project
 (sphinx-jinja and sphinx-jinja2 cannot be loaded together: both are ``jinja``).
@@ -56,6 +56,9 @@ or by a declared template, and write ``is defined`` where a template relied on l
    * - Jinja2 (sphinx-jinja, sphinx-jinja2 0.0.1)
      - minijinja 2
      - No ``{% do %}`` and no Jinja2 extensions; ``min``/``max`` compare case-sensitively.
+   * - Printing a container (``{{ rows }}``, ``{{ d }}``)
+     - The engine's own form: ``{"a": 1}``, ``[1, "a"]``
+     - sphinx-jinja2 hands minijinja Python objects, which print as Python's ``repr`` (``{'a': 1}``).
    * - The ``jinja`` directive
      - ``ub-template``, switched on with ``[parse] ub_template_enabled = true``
      - It is opt-in, as listing an extension is.
