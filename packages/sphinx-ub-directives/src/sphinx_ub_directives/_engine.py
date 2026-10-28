@@ -48,10 +48,15 @@ class Root:
 
     def resolve(self, name: str) -> Path | None:
         """``name`` (a template name, or a path relative to the root; a leading ``/`` is
-        the root) as a path inside the root, or ``None`` when it would leave it."""
-        posix = PurePosixPath(name.replace("\\", "/").lstrip("/"))
-        if ".." in posix.parts or ":" in name or "\0" in name:
+        the root) as a path inside the root, or ``None`` when it would leave it.
+
+        The path rule (§2.4): a name is ``/``-separated, and a ``\\`` anywhere refuses it;
+        ``..`` is resolved as the filesystem resolves it (the path is opened as written, so a
+        missing intermediate directory is a missing file); then the real path must be
+        inside the root."""
+        if "\\" in name or ":" in name or "\0" in name:
             return None
+        posix = PurePosixPath(name.lstrip("/"))
         candidate = self.path.joinpath(*posix.parts)
         self.reads.append(candidate)
         real = Path(os.path.realpath(candidate))

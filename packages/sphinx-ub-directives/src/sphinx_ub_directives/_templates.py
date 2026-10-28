@@ -117,9 +117,19 @@ def variants(app: Sphinx) -> Mapping[str, Any]:
     else ub-project's read of the file."""
     if "sphinx_needs" in app.extensions:
         data = getattr(app.config, "needs_variant_data", None)
-        return data if isinstance(data, Mapping) else {}
-    data = resolved(app)["variants"]
-    return data if isinstance(data, Mapping) else {}
+    else:
+        data = resolved(app)["variants"]
+    return sorted_data(data) if isinstance(data, Mapping) else {}
+
+
+def sorted_data(value: Any) -> Any:
+    """``value`` with every mapping in SORTED key order, recursively: ``var`` iterates
+    sorted (§4.4's carve-out, §4.6), as ubCode's variant map does."""
+    if isinstance(value, Mapping):
+        return {key: sorted_data(value[key]) for key in sorted(value)}
+    if isinstance(value, list | tuple):
+        return [sorted_data(item) for item in value]
+    return value
 
 
 # --- the shared tail: render, breaker, splice -----------------------------------------
@@ -482,6 +492,13 @@ def _shape_problem(spec: Mapping[str, Any]) -> str | None:
     for option, option_spec in options.items():
         if not isinstance(option_spec, Mapping):
             return f"the option {option!r} must be a table"
+        if option != option.lower():
+            return (
+                f"the option {option!r} has upper-case letters; a page writes option "
+                "names in lower case (docutils lower-cases them), so it could never be used"
+            )
+        if option_spec.get("flag") is True and option_spec.get("required") is True:
+            return f"the option {option!r} is a flag, which cannot be required"
         for key in ("required", "flag"):
             if key in option_spec and not isinstance(option_spec[key], bool):
                 return f"the option {option!r}: {key} must be true or false"
@@ -617,6 +634,15 @@ def declared_class(app: Sphinx, name: str, spec: Mapping[str, Any]) -> type[Dire
         context["contexts"] = contexts
         context["var"] = variants(app)
         if isinstance(template, str):
+            if "\\" in template:
+                warn(
+                    "template_missing",
+                    use,
+                    f"the template {template} of {use!r} names no file: a name is "
+                    "'/'-separated, and a '\\' is never part of one",
+                    location=location,
+                )
+                return []
             path = root.resolve(template)
             if path is None:
                 note(env, root.path / template.lstrip("/"))

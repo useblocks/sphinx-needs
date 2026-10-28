@@ -130,6 +130,15 @@ class UbTemplate(Directive):
                     "both the 'file' option and a body are given; the body is ignored",
                     location=location,
                 )
+            if "\\" in file:
+                warn(
+                    "template_missing",
+                    NAME,
+                    f"the template {file} names no file: a name is '/'-separated, and a "
+                    "'\\' is never part of one",
+                    location=location,
+                )
+                return []
             if file.startswith("/"):
                 path = root.resolve(file)
             else:

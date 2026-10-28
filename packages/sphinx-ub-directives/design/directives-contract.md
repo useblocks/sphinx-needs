@@ -77,11 +77,19 @@ cases (corpus: `identity-note-rst`, `host-content-continues-in-the-last-section`
 4. **Path anchoring: the source root.** Template and context paths are anchored at the
    project's SOURCE ROOT (the Sphinx `srcdir`), as content is, like `.. include::` —
    a named exception to ub-project's reading contract §5.1, which anchors a path at the
-   directory of the file that declared it. A leading `/` is the source root too. A path
-   whose real path (symlinks resolved) is outside the source root is refused, and never
-   read.
+   directory of the file that declared it. A leading `/` is the source root too.
+   **The path rule**, for every name (`:file:`, a declared `template`, a context `file`, an
+   `include` / `import` / `extends` name): a name is `/`-separated, and a `\` anywhere
+   refuses it (a missing file); `..` is resolved AS THE FILESYSTEM DOES (the path is
+   opened as written, so a missing intermediate directory is a missing file, and a `..`
+   that stays inside the root is fine); then a path whose real path (symlinks resolved)
+   is outside the source root is refused, and never read.
    Enforced by: corpus `include-is-from-the-source-root`, `context-refused-outside-the-root`,
-   `declared-template-outside-the-root`, `ub-template-file-outside-the-root`.
+   `declared-template-outside-the-root`, `ub-template-file-outside-the-root`,
+   `lx-template-path-with-dot-dot-inside-the-root`, `lx-context-path-with-dot-dot-inside-the-root`,
+   `lx-include-path-dot-dot-inside-the-root`, `lx-ub-template-file-with-dot-dot-inside-the-root`,
+   `lx-ub-template-file-with-dot-dot-through-an-existing-directory`,
+   `lx-template-path-with-a-backslash`, `lx-context-path-with-a-backslash`, `lx-include-path-backslash`.
 
 ## 3. Directive presets
 
@@ -134,8 +142,10 @@ force_options = { collapse = true }  # a use cannot change these
 5. **The base** is the need type of that name (case-insensitively; need types are lower
    case, see 3.2.6), else the directive registered under that name (docutils, Sphinx, any
    domain, any loaded extension). Nothing found is `directive_preset_unknown_base` at
-   `….base`. Enforced by: corpus `refused-unknown-base`, `base-is-case-insensitive`,
-   `identity-confval-rst`.
+   `….base`, and so is a TEMPLATE directive (`ub-template`, or a declared one), which is no
+   preset base. Enforced by: corpus `refused-unknown-base`, `base-is-case-insensitive`,
+   `identity-confval-rst`, `px-preset-of-ub-template`, `px-preset-of-ub-template-generates-a-need`,
+   `px-preset-of-ub-template-switched-off`, `px-preset-of-a-declared-template`.
 6. **A need type spelled with upper-case letters is refused as a base**
    (`directive_preset_unknown_base`, saying why): a Sphinx build registers such a type
    verbatim but looks every directive up in lower case, so the type is unusable there, and
@@ -156,8 +166,10 @@ sorted; the path is `….<name>.<table>.<key>`.
    `directive_preset_identity_option`. Enforced by: corpus `refused-identity-option-name`,
    `refused-identity-option-id`.
 3. A key the base does not take is `directive_preset_unknown_option`. For a need-type base
-   the options are the type's fields and links plus the need directive's own options.
-   Enforced by: corpus `refused-unknown-option`, `refused-unknown-need-option`.
+   the options are the type's fields and links plus the need directive's own options. Keys
+   compare as written: a key with capitals (`STATUS`) is no option of any base.
+   Enforced by: corpus `refused-unknown-option`, `refused-unknown-need-option`,
+   `px-option-key-in-capitals`.
 4. An `append_options` key other than `class` or `class-*` is
    `directive_preset_append_not_list`. Enforced by: corpus `refused-append-to-a-scalar`.
 5. A value the base's option rejects is `directive_preset_invalid_value`. The Sphinx half
@@ -257,7 +269,9 @@ sorted; the path is `….<name>.<table>.<key>`.
    `context-refused-invalid-json`.
 4. **Map order is FILE order.** A mapping iterates in the order its data writes it, for a
    file and an inline table alike; a mapping a template builds keeps insertion order; only
-   `dictsort` sorts. Enforced by: corpus `map-order-is-file-order-json-file`,
+   `dictsort` sorts. The one carve-out is `var` (§4.6), which iterates in SORTED key order,
+   recursively. A TOML table defined implicitly before its own header has an unspecified
+   position (no case depends on it). Enforced by: corpus `map-order-is-file-order-json-file`,
    `map-order-is-file-order-toml-file`, `map-order-is-file-order-inline`,
    `map-order-literal-and-dictsort`.
 5. **Context data is the engine's own data.** It reaches a template as engine-native
@@ -279,8 +293,14 @@ sorted; the path is `….<name>.<table>.<key>`.
    A key it does not define is undefined, and undefined is an error (`is defined` tests
    it). On the Sphinx side it is `app.config.needs_variant_data` when sphinx-needs is
    loaded, else `ub_project.read_variants(...).data`; the data file is a dependency.
+   `var` iterates in SORTED key order, recursively (the carve-out from §4.4: ubCode's
+   variant map is sorted, and is part of every project's configuration hash).
    `var` is validated by ub-project's own shape rule, not by §4.2's bounds: variant data
-   nested deeper than 64 levels is unspecified, and no case holds any.
+   nested deeper than 64 levels, and an integer beyond the signed 64-bit range in it, are
+   unspecified, and no case holds either.
+   Enforced by: corpus `vx-var-iterates-in-sorted-order`,
+   `vx-var-from-a-data-file-iterates-in-sorted-order`, `vx-var-prints-as-a-map`,
+   `vx-var-data-file-and-inline-merge-is-sorted`.
    Enforced by: corpus `var-is-the-variant-data`, `var-merges-the-data-file`,
    `var-missing-key-is-undefined`, `var-is-defined-test`, `ub-template-sees-var`.
 7. **`var` is reserved.** A context NAMED `var` is `template_context_reserved` at
@@ -315,7 +335,11 @@ draft = { flag = true }
 ```
 
 1. A declaration is refused at load (`directive_template_invalid` at its entry) and ignored
-   when its name, in any case, is already a directive (built in, a need type); when it
+   when its name, in any case, is already a directive (built in, a need type, a preset,
+   `ub-template`) — and a preset named like a declaration is refused the same way
+   (`directive_preset_name_taken`); when an option NAME has upper-case letters (a page
+   writes option names in lower case: docutils lower-cases them); when a flag is
+   `required = true`; when it
    differs only in case from another declaration (the later in sorted (code point) order
    is refused, whatever the file order); when it gives both or neither of `template` and
    `body`; when `markup` is not `"rst"` or `"md"`; when `markup` contradicts its template
@@ -364,7 +388,17 @@ Enforced by: corpus `declared-file-template`, `declared-options-surface`,
 An option that is not declared, a missing required option or argument, a value outside
 `choices`, a flag written with a value, an argument to a directive that declares none, or
 a body on a directive without `content` is `template_signature` at the use, which renders
-nothing. Enforced by: corpus `signature-undeclared-option`,
+nothing. A `default` satisfies `required`, and a `default` outside `choices` is
+`template_signature` at a use that does not write the option. Written reStructuredText
+option names compare case-insensitively (docutils lower-cases them); MyST option names
+compare as written. (ubCode's RST parser keeps an option name's case everywhere else, and
+keeps the first of an option written twice where docutils refuses the directive: a
+registered difference, so no case writes an RST option name with capitals outside the ones
+that pin this rule, nor any option twice.) Enforced by: corpus
+`sx-option-name-in-capitals-in-a-use-rst`, `sx-option-name-in-capitals-in-a-use-md`,
+`sx-required-option-with-a-default`, `sx-default-outside-the-choices`,
+`sx-required-flag-is-refused`, `sx-declared-option-name-in-capitals`,
+`sx-declaration-named-like-a-preset`, `sx-declaration-named-ub-template`, Enforced by: corpus `signature-undeclared-option`,
 `signature-missing-required-option`, `signature-bad-choice`, `signature-missing-argument`,
 `signature-argument-not-declared`, `signature-unexpected-body`,
 `signature-flag-given-a-value`.
@@ -419,8 +453,10 @@ nothing. Enforced by: corpus `signature-undeclared-option`,
    which is then ordinary data.
    Enforced by: corpus `ub-template-env-is-unavailable`, `declared-env-is-unavailable`,
    `ub-template-context-may-define-env`.
-3. **Includes** (`include`, `import`, `extends`) name files relative to the source root; one
-   that would leave it is not read (a render error). Templates are read as UTF-8.
+3. **Includes** (`include`, `import`, `extends`) name files relative to the source root,
+   under §2.4's path rule; one that would leave it, or that names no file, is not read (a
+   render error). Templates are read as UTF-8 (a byte-order mark stays in the output), and
+   a context FILE that starts with one does not parse (`template_context_invalid`).
    Enforced by: corpus `include-is-from-the-source-root`,
    `include-outside-the-root-is-an-error`.
 4. **Recursion** is minijinja's default limit on both sides; no corpus case pins it.
@@ -439,8 +475,10 @@ nothing. Enforced by: corpus `signature-undeclared-option`,
 6. **The per-page breaker.** In one page, once a template has hit a limit with three
    different inputs, its later uses there with yet other inputs are not rendered
    (`template_disabled`); a use with inputs that already failed reports its limit again.
+   A use's input is its template and its context AS WRITTEN, the keys §4.8 skips included.
    An input-keyed render memo is NOT required (it is ubCode's optimisation); determinism
-   is. Enforced by: corpus `breaker-disables-a-runaway-template-for-the-page`.
+   is. Enforced by: corpus `breaker-disables-a-runaway-template-for-the-page`,
+   `fx-breaker-counts-inputs-differing-only-in-a-literal-named-key`.
 7. **A render error** (undefined, syntax, unknown filter) is `template_render_error`, and
    the use renders nothing; the rest of the page renders.
    Enforced by: corpus `render-error-undefined`, `render-error-syntax`,

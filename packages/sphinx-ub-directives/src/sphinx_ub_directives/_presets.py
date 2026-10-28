@@ -185,6 +185,10 @@ class Resolver:
         self.table = table
         self.location = file
         self.types = need_types(app)
+        #: the template directives of the project (§3.2.5: none is a preset base)
+        self.template_names = {"ub-template"} | {
+            str(n).lower() for n in resolved(app)["directive_templates"]
+        }
         self._need_options: frozenset[str] | None = None
 
     def warn(self, code: str, segments: Iterable[str], message: str) -> None:
@@ -203,10 +207,14 @@ class Resolver:
             cls = _lookup_docutils(lowered[0])
             if cls is not None:
                 return Base(lowered[0], cls, need_type=True)
+        if base.lower() in self.template_names:
+            return f"{base!r} is a template directive, which is no preset base"
         found = lookup(self.app, base)
         if found is None:
             return f"{base!r} names no directive this project knows"
         cls, domain = found
+        if getattr(cls, _refusal.TEMPLATE_MARKER, False):
+            return f"{base!r} is a template directive, which is no preset base"
         return Base(base.lower(), cls, domain=domain)
 
     def taken(self, name: str) -> bool:
@@ -542,6 +550,8 @@ def register(app: Sphinx) -> None:
     """``builder-inited``: check every entry and register the accepted presets."""
     reading = resolved(app)
     table = reading["directive_presets"]
+    # process state: a build without presets must not see a previous build's (D12)
+    _SELF_PRESETS[:] = []
     if not table:
         return
     presets = Resolver(app, table, reading["file"]).resolve()
