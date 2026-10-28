@@ -20,19 +20,23 @@ When something changed, the pages re-written are:
 - every view: the documents of each :data:`VIEW_CATEGORIES` category, whose filters are
   not evaluated here;
 - the pages of the *affected* needs: the needs that changed, the needs a changed
-  ``needextend`` names by id, every need computing a value with a dynamic function (its
-  arguments may name any need), and every need whose ``derive`` rule reads an affected
-  need -- over its links, over its back links, or ``from`` it -- until no more is (a
-  rule reading needs it does not name, a ``join`` say, is affected by any change);
+  ``needextend`` names by id, and every need computing a value from an affected need,
+  until no more is: a dynamic function (written, or set by an extend by id) by its
+  arguments (:func:`_read_calls`; a call of your own or with a filter is affected by any
+  change), a ``derive`` rule over its links (an extend's included), over its back links,
+  or ``from`` a need (a ``join``, ``transitive`` or ``where`` rule by any change);
 - the pages of their link targets, old and new, which show them as back links;
 - the pages of the needs linking to them, which show their titles;
 - the pages whose need roles name any of those needs.
 
-A changed ``needextend`` with a filter, or a need whose links are computed from other
-needs (a dynamic function in a link field, a ``links`` rule), can affect needs that
-cannot be named before the needs are resolved: then every need-relevant page is
-re-written. Nothing changed -- an edit of prose only -- re-writes nothing more.
-Needs from ``needs_external_needs`` are not compared (#353).
+A need that changed in its line numbers alone re-writes the views alone; an edit that
+changes no need, prose say, nothing more. Every need-relevant page is re-written when a
+changed ``needextend`` has a filter, on every change in a project with links computed to
+needs not named before the needs are resolved (a dynamic function in a link field or in
+an extend's links, a ``links`` rule, a ``content_links`` rule with ``from``) or with an
+extend by filter whose call reads needs it does not name, and when a need affected is one
+an extend by filter links to or names in its call. Needs from ``needs_external_needs`` are
+not compared (#353).
 """
 
 from __future__ import annotations

@@ -16,9 +16,12 @@ Bug fixes
   the needs a ``needextend`` changed or no longer changes (:issue:`2376`, :issue:`346`)
 
   The needs of every document re-read are compared, as read, with what that document gave before; on a
-  change, the pages showing it are re-written, never re-read, and an edit that changes no need, such as
-  prose, re-writes nothing more. A changed ``needextend`` with a filter, or links computed to needs they
-  do not name, re-write every need-relevant page. A view without a sort, such as a ``needlist`` or a
+  change, the pages showing it are re-written, never re-read. An edit that changes no need, such as prose
+  below the needs, re-writes nothing more, and one that only moves needs (lines added above them) re-writes
+  the views alone. A dynamic function is read by its arguments, so ``copy`` of a need's own field does not
+  make its need depend on others. A changed ``needextend`` with a filter re-writes every need-relevant page,
+  as does every change in a project whose needs or extends link to needs they do not name before the needs
+  are resolved. A view without a sort, such as a ``needlist`` or a
   ``needflow``, now lists the needs in document order on every build, where an incremental build listed
   those of the re-read documents last and a parallel one in the order its readers finished. Needs from
   ``needs_external_needs`` are not compared (:issue:`353`). See :ref:`incremental_builds`.
