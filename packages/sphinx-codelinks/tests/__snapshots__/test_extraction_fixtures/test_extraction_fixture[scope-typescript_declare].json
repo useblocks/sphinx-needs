@@ -17,8 +17,15 @@
       "kind": "function_signature",
       "start": 2,
       "end": 2,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "render",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "render"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -50,8 +57,15 @@
       "kind": "module",
       "start": 4,
       "end": 4,
+      "language": "ts",
       "entity_kind": "namespace",
       "qualified_name": "\"widgets\"",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "\"widgets\""
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

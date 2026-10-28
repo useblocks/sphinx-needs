@@ -17,8 +17,19 @@
       "kind": "method_signature",
       "start": 3,
       "end": 3,
+      "language": "ts",
       "entity_kind": "method",
       "qualified_name": "Store.load",
+      "semantic": [
+        {
+          "kind": "interface",
+          "name": "Store"
+        },
+        {
+          "kind": "method",
+          "name": "load"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

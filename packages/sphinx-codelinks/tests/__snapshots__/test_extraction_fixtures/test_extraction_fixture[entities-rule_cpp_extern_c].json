@@ -17,8 +17,15 @@
       "kind": "declaration",
       "start": 2,
       "end": 2,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "handler",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "handler"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

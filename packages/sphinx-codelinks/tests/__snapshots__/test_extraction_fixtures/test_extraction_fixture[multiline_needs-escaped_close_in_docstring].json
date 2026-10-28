@@ -45,8 +45,15 @@
         "kind": "function_definition",
         "start": 1,
         "end": 9,
+        "language": "python",
         "entity_kind": "function",
         "qualified_name": "escaped",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "escaped"
+          }
+        ],
         "mechanism": "doc_comment"
       }
     },

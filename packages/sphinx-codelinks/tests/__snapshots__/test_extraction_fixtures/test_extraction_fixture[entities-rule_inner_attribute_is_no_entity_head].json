@@ -41,8 +41,15 @@
       "kind": "mod_item",
       "start": 4,
       "end": 7,
+      "language": "rust",
       "entity_kind": "module",
       "qualified_name": "m",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "m"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need": {

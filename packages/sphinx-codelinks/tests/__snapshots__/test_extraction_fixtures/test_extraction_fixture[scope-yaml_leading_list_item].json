@@ -17,8 +17,10 @@
       "kind": "block_sequence_item",
       "start": 2,
       "end": 2,
+      "language": "yaml",
       "entity_kind": "item",
       "qualified_name": null,
+      "semantic": null,
       "mechanism": "leading"
     },
     "need": {

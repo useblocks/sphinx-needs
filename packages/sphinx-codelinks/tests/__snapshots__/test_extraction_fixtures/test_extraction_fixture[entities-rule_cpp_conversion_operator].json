@@ -17,8 +17,23 @@
       "kind": "declaration",
       "start": 5,
       "end": 5,
+      "language": "cpp",
       "entity_kind": "operator",
       "qualified_name": "ns::W::operator bool",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator bool"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -48,8 +63,23 @@
       "kind": "function_definition",
       "start": 7,
       "end": 7,
+      "language": "cpp",
       "entity_kind": "operator",
       "qualified_name": "ns::W::operator int",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator int"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -79,8 +109,23 @@
       "kind": "declaration",
       "start": 9,
       "end": 9,
+      "language": "cpp",
       "entity_kind": "operator",
       "qualified_name": "ns::W::operator const char*",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator const char*"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -110,8 +155,23 @@
       "kind": "declaration",
       "start": 11,
       "end": 11,
+      "language": "cpp",
       "entity_kind": "operator",
       "qualified_name": "ns::W::operator int&",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator int&"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -141,8 +201,23 @@
       "kind": "declaration",
       "start": 13,
       "end": 13,
+      "language": "cpp",
       "entity_kind": "operator",
       "qualified_name": "ns::W::operator std::function<void(int)>",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator std::function<void(int)>"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -172,8 +247,23 @@
       "kind": "function_definition",
       "start": 18,
       "end": 18,
+      "language": "cpp",
       "entity_kind": "operator",
       "qualified_name": "ns::W::operator bool",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator bool"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -203,8 +293,23 @@
       "kind": "function_definition",
       "start": 20,
       "end": 20,
+      "language": "cpp",
       "entity_kind": "operator",
       "qualified_name": "ns::W::operator std::function<void(int)>",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator std::function<void(int)>"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

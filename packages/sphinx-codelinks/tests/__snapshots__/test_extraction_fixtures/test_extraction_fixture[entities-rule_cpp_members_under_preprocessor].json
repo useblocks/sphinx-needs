@@ -17,8 +17,23 @@
       "kind": "declaration",
       "start": 6,
       "end": 6,
+      "language": "cpp",
       "entity_kind": "constructor",
       "qualified_name": "ns::W::W",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "constructor",
+          "name": "W"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -48,8 +63,23 @@
       "kind": "declaration",
       "start": 8,
       "end": 8,
+      "language": "cpp",
       "entity_kind": "destructor",
       "qualified_name": "ns::W::~W",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "destructor",
+          "name": "~W"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -79,8 +109,23 @@
       "kind": "function_definition",
       "start": 10,
       "end": 10,
+      "language": "cpp",
       "entity_kind": "method",
       "qualified_name": "ns::W::dump",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "method",
+          "name": "dump"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -110,8 +155,23 @@
       "kind": "declaration",
       "start": 13,
       "end": 13,
+      "language": "cpp",
       "entity_kind": "constructor",
       "qualified_name": "ns::W::W",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "constructor",
+          "name": "W"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

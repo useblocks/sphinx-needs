@@ -45,8 +45,15 @@
         "kind": "function_definition",
         "start": 7,
         "end": 7,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "nested",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "nested"
+          }
+        ],
         "mechanism": "leading"
       }
     },

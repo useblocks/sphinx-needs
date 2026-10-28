@@ -47,8 +47,15 @@
         "kind": "function_definition",
         "start": 7,
         "end": 7,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "indented",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "indented"
+          }
+        ],
         "mechanism": "leading"
       }
     },
@@ -101,8 +108,15 @@
         "kind": "function_definition",
         "start": 15,
         "end": 15,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "opener_row",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "opener_row"
+          }
+        ],
         "mechanism": "doc_comment"
       }
     },

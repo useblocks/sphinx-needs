@@ -17,8 +17,19 @@
       "kind": "class_declaration",
       "start": 3,
       "end": 9,
+      "language": "ts",
       "entity_kind": "class",
       "qualified_name": "Gfx.Widget",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "Gfx"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -50,8 +61,23 @@
       "kind": "method_definition",
       "start": 5,
       "end": 8,
+      "language": "ts",
       "entity_kind": "method",
       "qualified_name": "Gfx.Widget.draw",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "Gfx"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "draw"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -83,8 +109,23 @@
       "kind": "method_definition",
       "start": 5,
       "end": 8,
+      "language": "ts",
       "entity_kind": "method",
       "qualified_name": "Gfx.Widget.draw",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "Gfx"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "draw"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need_ids": [
@@ -112,8 +153,15 @@
       "kind": "lexical_declaration",
       "start": 13,
       "end": 13,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "onClick",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "onClick"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -145,8 +193,15 @@
       "kind": "function_declaration",
       "start": 16,
       "end": 18,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "area",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "area"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -178,8 +233,15 @@
       "kind": "interface_declaration",
       "start": 21,
       "end": 23,
+      "language": "ts",
       "entity_kind": "interface",
       "qualified_name": "Shape",
+      "semantic": [
+        {
+          "kind": "interface",
+          "name": "Shape"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

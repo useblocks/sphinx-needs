@@ -45,8 +45,19 @@
         "kind": "method_declaration",
         "start": 8,
         "end": 8,
+        "language": "cs",
         "entity_kind": "method",
         "qualified_name": "Calc.Add",
+        "semantic": [
+          {
+            "kind": "class",
+            "name": "Calc"
+          },
+          {
+            "kind": "method",
+            "name": "Add"
+          }
+        ],
         "mechanism": "doc_comment"
       }
     },

@@ -3,9 +3,12 @@
 A marker is attached to a definition node of the syntax tree (a function, a class,
 a namespace, ...): its *entity*. This module holds the per-language tables that say
 which node kinds are entities, and the one naming function, :func:`describe_entity`,
-that turns such a node into its kind and its qualified name *within its file* (no
+that turns such a node into its kind, its qualified name *within its file* (no
 module or package prefix: that is derived from the file's path, which this module
-never reads -- every function here is pure).
+never reads -- every function here is pure) and that name's components, its
+``semantic``. :func:`render_semantic` joins the components back into the name by the
+rule of the file's language (:func:`scope_language`), and :func:`name_chain` is what
+identifies an entity among them: names, never kinds.
 
 The traversal that picks the node for a comment is ``find_associated_scope`` /
 ``associate`` in :mod:`sphinx_codelinks.analyse.utils`; this module only answers
@@ -15,9 +18,10 @@ questions about a node.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
-from typing import Literal, TypedDict
+from pathlib import PurePath
+from typing import Literal, NotRequired, TypedDict
 
 from tree_sitter import Node as TreeSitterNode
 
@@ -48,7 +52,7 @@ EntityKind = Literal[
     "key",
     "item",
 ]
-"""The kind of an entity, as the analysis output and the need fields spell it."""
+"""The kind of an entity, as the analysis output spells it."""
 
 Mechanism = Literal["doc_comment", "leading", "trailing", "enclosing"]
 """How a marker came to be attached to its entity.
@@ -61,6 +65,21 @@ body (``enclosing``).
 """
 
 
+class SemanticElement(TypedDict):
+    """One component of an entity's qualified name: a container, or the entity."""
+
+    kind: str
+    """What it is: an :data:`EntityKind`, or ``scope`` for a C++ qualifier the syntax
+    cannot classify (the ``ns`` of ``void ns::W::f() {}``). A Rust impl is an
+    ``impl``, a Go receiver's type a ``type``."""
+    name: str
+    """Its name, as the qualified name spells it: ``Box<bool>`` keeps the arguments of
+    an explicit specialisation, an expression name (``module.exports.f``) is whole,
+    and a Rust impl is its self type (``Widget``, ``dyn Shape``)."""
+    trait: NotRequired[str]
+    """The trait of a Rust trait impl, on its ``impl`` component."""
+
+
 @dataclass(frozen=True)
 class EntityName:
     """A definition node, named."""
@@ -71,6 +90,10 @@ class EntityName:
     """The name within its file, qualified by the containers the file shows
     (``ns::Widget::draw``, ``Shape.area``, ``<Widget as Shape>::area``); ``None`` when
     the entity has no name (an anonymous class, a data-file entry)."""
+    semantic: tuple[SemanticElement, ...] | None
+    """``qualified_name`` as its components, outermost first and the entity last
+    (``namespace ns``, ``class Widget``, ``method draw``); ``None`` exactly when
+    ``qualified_name`` is. :func:`render_semantic` spells them back."""
 
 
 @dataclass(frozen=True)
@@ -90,10 +113,15 @@ class CodeScope(TypedDict):
     """The node's first line (1-based)."""
     end: int
     """The node's last line (1-based)."""
+    language: str
+    """The file's language (:func:`scope_language`): the rule ``semantic`` renders by."""
     entity_kind: str | None
     """The entity's kind (:data:`EntityKind`), ``None`` if it could not be named."""
     qualified_name: str | None
     """The entity's in-file qualified name, ``None`` if it has none."""
+    semantic: list[SemanticElement] | None
+    """The qualified name's components (:class:`SemanticElement`), outermost first and
+    the entity last; ``None`` exactly when ``qualified_name`` is."""
     mechanism: Mechanism
     """How the marker was attached (:data:`Mechanism`)."""
 
@@ -461,8 +489,12 @@ def is_doc_comment(node: TreeSitterNode, comment_type: CommentType) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Naming: a definition node -> (kind, in-file qualified name)
+# Naming: a definition node -> (kind, in-file qualified name, its components)
 # ---------------------------------------------------------------------------
+#
+# Every namer builds the qualified name and its components (``semantic``) side by
+# side, from the same walk; ``render_semantic`` spells the components back, and the
+# shared fixtures' truth test holds the two together.
 
 
 def _text(node: TreeSitterNode | None) -> str:
@@ -522,6 +554,19 @@ def _join(separator: str, segments: list[str], own: str | None) -> str | None:
     return separator.join([*segments, own])
 
 
+def _element(kind: str, name: str) -> SemanticElement:
+    return {"kind": kind, "name": name}
+
+
+def _named(
+    kind: EntityKind, qualified_name: str | None, semantic: Iterable[SemanticElement]
+) -> EntityName:
+    """An entity's name and its components; no components when it has no name."""
+    if qualified_name is None:
+        return EntityName(kind, None, None)
+    return EntityName(kind, qualified_name, tuple(semantic))
+
+
 # --- C and C++ ---------------------------------------------------------------
 
 _CPP_CLASS_KINDS: dict[str, EntityKind] = {
@@ -530,6 +575,9 @@ _CPP_CLASS_KINDS: dict[str, EntityKind] = {
     "union_specifier": "union",
     "enum_specifier": "enum",
 }
+
+# The kinds the namer gives a function only when a class qualifies it.
+_CPP_MEMBER_KINDS = frozenset({"method", "constructor", "destructor"})
 
 
 def _cpp_templated(node: TreeSitterNode) -> bool:
@@ -553,18 +601,75 @@ def _cpp_namespace_name(node: TreeSitterNode) -> str:
     return _squeeze(_text(name)) if name is not None else "(anonymous namespace)"
 
 
-def _cpp_containers(node: TreeSitterNode) -> list[str]:
+def _cpp_operator_at(text: str, index: int) -> bool:
+    """``text`` has the word ``operator`` at ``index``."""
+    end = index + len("operator")
+    return text.startswith("operator", index) and (
+        end == len(text) or not _is_ident_char(text[end])
+    )
+
+
+def _cpp_split(text: str) -> list[str]:
+    """The components of a name as written, at its ``::``: none inside ``<…>`` or
+    ``(…)``, and none after ``operator`` (``W::operator std::string`` is ``W`` and
+    ``operator std::string``; ``Box<std::string>::get`` is ``Box<std::string>`` and
+    ``get``)."""
+    parts: list[str] = []
+    start = depth = index = 0
+    while index < len(text) and not (index == start and _cpp_operator_at(text, index)):
+        char = text[index]
+        if char in "<(":
+            depth += 1
+        elif char in ">)" and depth:
+            depth -= 1
+        elif depth == 0 and text.startswith("::", index):
+            parts.append(text[start:index])
+            index += 2
+            start = index
+            continue
+        index += 1
+    parts.append(text[start:])
+    return parts
+
+
+def _cpp_qualified(text: str, kind: str, *, member: bool) -> list[SemanticElement]:
+    """The components of a name written qualified (``ns::W::f``), the last one of
+    ``kind``. What a qualifier is, the syntax cannot tell: each is a ``scope``, except
+    the one right before a ``member`` (a method, constructor, destructor or conversion
+    operator), which is its ``class``."""
+    *qualifiers, own = _cpp_split(text)
+    elements = [_element("scope", qualifier) for qualifier in qualifiers]
+    if member and qualifiers:
+        elements[-1] = _element("class", qualifiers[-1])
+    return [*elements, _element(kind, own)]
+
+
+def _cpp_containers(node: TreeSitterNode) -> tuple[list[str], list[SemanticElement]]:
+    """The namespaces and classes around ``node``, outermost first: their names, and
+    their components (``namespace a::b`` is two namespaces)."""
     segments: list[str] = []
+    groups: list[list[SemanticElement]] = []
     parent = node.parent
     while parent is not None:
         if parent.type == "namespace_definition":
-            segments.append(_cpp_namespace_name(parent))
+            namespace = _cpp_namespace_name(parent)
+            segments.append(namespace)
+            groups.append([_element("namespace", p) for p in _cpp_split(namespace)])
         elif parent.type in ("class_specifier", "struct_specifier", "union_specifier"):
             name = parent.child_by_field_name("name")
             if name is not None:
-                segments.append(_cpp_name(_text(name), _cpp_templated(parent)))
+                container = _cpp_name(_text(name), _cpp_templated(parent))
+                segments.append(container)
+                groups.append(
+                    _cpp_qualified(
+                        container, _CPP_CLASS_KINDS[parent.type], member=False
+                    )
+                )
         parent = parent.parent
-    return list(reversed(segments))
+    return (
+        list(reversed(segments)),
+        [element for group in reversed(groups) for element in group],
+    )
 
 
 def cpp_function_declarator(node: TreeSitterNode) -> TreeSitterNode | None:
@@ -652,12 +757,16 @@ def _cpp_conversion_name(node: TreeSitterNode, cast: TreeSitterNode) -> str:
 
 
 def _cpp_describe(node: TreeSitterNode) -> EntityName | None:
-    prefix = _cpp_containers(node)
+    prefix, outer = _cpp_containers(node)
     if node.type in ("function_definition", "declaration", "field_declaration"):
         cast = _cpp_operator_cast(node)
         if cast is not None:
-            return EntityName(
-                "operator", "::".join([*prefix, _cpp_conversion_name(node, cast)])
+            conversion = _cpp_conversion_name(node, cast)
+            # a conversion operator is always a member: its qualifier is its class
+            return _named(
+                "operator",
+                "::".join([*prefix, conversion]),
+                [*outer, *_cpp_qualified(conversion, "operator", member=True)],
             )
         if _cpp_defined_by_macro(node):
             return None
@@ -689,19 +798,49 @@ def _cpp_describe(node: TreeSitterNode) -> EntityName | None:
             kind = "method"
         else:
             kind = "function"
-        return EntityName(kind, "::".join([*prefix, own]))
-    if node.type in _CPP_CLASS_KINDS:
-        name = node.child_by_field_name("name")
-        own_name = (
-            _cpp_name(_text(name), _cpp_templated(node)) if name is not None else None
+        return _named(
+            kind,
+            "::".join([*prefix, own]),
+            [*outer, *_cpp_qualified(own, kind, member=kind in _CPP_MEMBER_KINDS)],
         )
-        return EntityName(_CPP_CLASS_KINDS[node.type], _join("::", prefix, own_name))
+    if node.type in _CPP_CLASS_KINDS:
+        class_kind = _CPP_CLASS_KINDS[node.type]
+        name = node.child_by_field_name("name")
+        if name is None:
+            return EntityName(class_kind, None, None)
+        own_name = _cpp_name(_text(name), _cpp_templated(node))
+        return _named(
+            class_kind,
+            "::".join([*prefix, own_name]),
+            [*outer, *_cpp_qualified(own_name, class_kind, member=False)],
+        )
     if node.type == "namespace_definition":
-        return EntityName("namespace", "::".join([*prefix, _cpp_namespace_name(node)]))
+        namespace = _cpp_namespace_name(node)
+        return _named(
+            "namespace",
+            "::".join([*prefix, namespace]),
+            [*outer, *(_element("namespace", p) for p in _cpp_split(namespace))],
+        )
     return None
 
 
 # --- Python ------------------------------------------------------------------
+
+
+def _python_semantic(definitions: list[tuple[str, str]]) -> list[SemanticElement]:
+    """The components of a ``__qualname__``, from its definitions (node type, name),
+    outermost first: a class, or a function -- a ``method`` directly in a class.
+    CPython's ``<locals>`` is not one: :func:`render_semantic` writes it."""
+    elements: list[SemanticElement] = []
+    container: str | None = None
+    for node_type, name in definitions:
+        if node_type == "class_definition":
+            kind = "class"
+        else:
+            kind = "method" if container == "class_definition" else "function"
+        elements.append(_element(kind, name))
+        container = node_type
+    return elements
 
 
 def _python_describe(node: TreeSitterNode) -> EntityName | None:
@@ -712,6 +851,7 @@ def _python_describe(node: TreeSitterNode) -> EntityName | None:
     if name is None:
         return None
     segments: list[str] = []
+    definitions = [(node.type, _text(name))]
     nearest: str | None = None
     parent = node.parent
     while parent is not None:
@@ -723,12 +863,14 @@ def _python_describe(node: TreeSitterNode) -> EntityName | None:
                 if parent.type == "class_definition"
                 else f"{parent_name}.<locals>"
             )
+            definitions.append((parent.type, parent_name))
         parent = parent.parent
     qualified = ".".join([*reversed(segments), _text(name)])
+    semantic = _python_semantic(definitions[::-1])
     if node.type == "class_definition":
-        return EntityName("class", qualified)
-    return EntityName(
-        "method" if nearest == "class_definition" else "function", qualified
+        return _named("class", qualified, semantic)
+    return _named(
+        "method" if nearest == "class_definition" else "function", qualified, semantic
     )
 
 
@@ -788,9 +930,30 @@ def _rust_impl_segment(impl: TreeSitterNode) -> str:
     return f"<{self_type} as {_rust_type(trait, modules)}>"
 
 
+def _rust_impl_element(impl: TreeSitterNode) -> SemanticElement:
+    """An impl as a component: its self type, and for a trait impl the trait, each as
+    written, so with the module path of a bare name (``<m::G as Shape>`` is
+    ``m::G`` and ``Shape``): no ``module`` component precedes an impl."""
+    modules = _rust_modules(impl)
+    element = _element("impl", _rust_type(impl.child_by_field_name("type"), modules))
+    trait = impl.child_by_field_name("trait")
+    if trait is not None:
+        element["trait"] = _rust_type(trait, modules)
+    return element
+
+
+def _rust_functions(functions: list[str], *, in_item: bool) -> list[SemanticElement]:
+    """The functions between an item and its impl, trait or module, outermost first:
+    the one directly in an impl or a trait (``in_item``) is a method."""
+    return [
+        _element("method" if in_item and index == 0 else "function", name)
+        for index, name in enumerate(functions)
+    ]
+
+
 def _rust_describe(node: TreeSitterNode) -> EntityName | None:
     if node.type == "impl_item":
-        return EntityName("impl", _rust_impl_segment(node))
+        return _named("impl", _rust_impl_segment(node), [_rust_impl_element(node)])
     kind = _RUST_KINDS.get(node.type)
     name = node.child_by_field_name("name")
     if kind is None or name is None:
@@ -803,24 +966,47 @@ def _rust_describe(node: TreeSitterNode) -> EntityName | None:
         # a function directly in an impl or a trait is a method; one nested in a
         # method is a function
         method = is_fn and not functions
+        own_kind: EntityKind = "method" if method else kind
         if parent.type == "impl_item":
-            return EntityName(
-                "method" if method else kind,
-                "::".join([_rust_impl_segment(parent), *reversed(functions), own]),
+            outer = list(reversed(functions))
+            return _named(
+                own_kind,
+                "::".join([_rust_impl_segment(parent), *outer, own]),
+                [
+                    _rust_impl_element(parent),
+                    *_rust_functions(outer, in_item=True),
+                    _element(own_kind, own),
+                ],
             )
         if parent.type == "trait_item":
-            trait = [*_rust_modules(parent), _text(parent.child_by_field_name("name"))]
-            return EntityName(
-                "method" if method else kind,
-                "::".join([*trait, *reversed(functions), own]),
+            modules = _rust_modules(parent)
+            trait_name = _text(parent.child_by_field_name("name"))
+            outer = list(reversed(functions))
+            return _named(
+                own_kind,
+                "::".join([*modules, trait_name, *outer, own]),
+                [
+                    *(_element("module", module) for module in modules),
+                    _element("trait", trait_name),
+                    *_rust_functions(outer, in_item=True),
+                    _element(own_kind, own),
+                ],
             )
         if parent.type == "function_item":
             functions.append(_text(parent.child_by_field_name("name")))
         if parent.type == "mod_item":
             break
         parent = parent.parent
-    return EntityName(
-        kind, "::".join([*_rust_modules(node), *reversed(functions), own])
+    modules = _rust_modules(node)
+    outer = list(reversed(functions))
+    return _named(
+        kind,
+        "::".join([*modules, *outer, own]),
+        [
+            *(_element("module", module) for module in modules),
+            *_rust_functions(outer, in_item=False),
+            _element(kind, own),
+        ],
     )
 
 
@@ -880,11 +1066,21 @@ def _csharp_own_name(node: TreeSitterNode) -> str | None:
     return f"~{own}" if node.type == "destructor_declaration" else own
 
 
+def _csharp_elements(node: TreeSitterNode, own: str) -> list[SemanticElement]:
+    """``node``, named ``own``, as components: a namespace's dotted name
+    (``Acme.Gfx``) is a namespace per part."""
+    kind = _CSHARP_KINDS[node.type]
+    if kind == "namespace":
+        return [_element(kind, part) for part in own.split(".")]
+    return [_element(kind, own)]
+
+
 def _csharp_describe(node: TreeSitterNode) -> EntityName | None:
     kind = _CSHARP_KINDS.get(node.type)
     if kind is None:
         return None
     segments: list[str] = []
+    groups: list[list[SemanticElement]] = []
     parent = node.parent
     root = node
     while parent is not None:
@@ -892,17 +1088,29 @@ def _csharp_describe(node: TreeSitterNode) -> EntityName | None:
             container = _csharp_own_name(parent)
             if container is not None:
                 segments.append(container)
+                groups.append(_csharp_elements(parent, container))
         root = parent
         parent = parent.parent
     segments.reverse()
+    groups.reverse()
     # a file-scoped namespace (``namespace A.B;``) is a sibling of what it holds
     if node.type != "file_scoped_namespace_declaration":
         for child in root.named_children:
             if child.start_byte >= node.start_byte:
                 break
             if child.type == "file_scoped_namespace_declaration":
-                segments.insert(0, _csharp_own_name(child) or "")
-    return EntityName(kind, _join(".", segments, _csharp_own_name(node)))
+                namespace = _csharp_own_name(child) or ""
+                segments.insert(0, namespace)
+                groups.insert(0, _csharp_elements(child, namespace))
+    own = _csharp_own_name(node)
+    return _named(
+        kind,
+        _join(".", segments, own),
+        [
+            *(element for group in groups for element in group),
+            *_csharp_elements(node, own or ""),
+        ],
+    )
 
 
 # --- Go ----------------------------------------------------------------------
@@ -938,11 +1146,19 @@ def _go_receiver(node: TreeSitterNode) -> str | None:
 
 def _go_describe(node: TreeSitterNode) -> EntityName | None:
     if node.type == "function_declaration":
-        return EntityName("function", _text(node.child_by_field_name("name")) or None)
+        own = _text(node.child_by_field_name("name")) or None
+        return _named("function", own, [_element("function", own or "")])
     if node.type == "method_declaration":
         own = _text(node.child_by_field_name("name"))
+        # the receiver's type: what it is, its declaration (maybe in another file) says
         receiver = _go_receiver(node)
-        return EntityName("method", f"{receiver}.{own}" if receiver else own)
+        if receiver:
+            return _named(
+                "method",
+                f"{receiver}.{own}",
+                [_element("type", receiver), _element("method", own)],
+            )
+        return _named("method", own, [_element("method", own)])
     if node.type == "type_declaration":
         specs = [
             child
@@ -950,19 +1166,25 @@ def _go_describe(node: TreeSitterNode) -> EntityName | None:
             if child.type in ("type_spec", "type_alias")
         ]
         if len(specs) != 1:
-            return EntityName("type", None)
+            return EntityName("type", None, None)
         node = specs[0]
     if node.type in ("type_spec", "type_alias"):
-        return EntityName(
-            _go_spec_kind(node), _text(node.child_by_field_name("name")) or None
-        )
+        spec_kind = _go_spec_kind(node)
+        spec_name = _text(node.child_by_field_name("name")) or None
+        return _named(spec_kind, spec_name, [_element(spec_kind, spec_name or "")])
     if node.type == "method_elem":
         own = _text(node.child_by_field_name("name"))
         parent = node.parent
         while parent is not None and parent.type != "type_spec":
             parent = parent.parent
         owner = _text(parent.child_by_field_name("name")) if parent is not None else ""
-        return EntityName("method", f"{owner}.{own}" if owner else own)
+        if parent is not None and owner:
+            return _named(
+                "method",
+                f"{owner}.{own}",
+                [_element(_go_spec_kind(parent), owner), _element("method", own)],
+            )
+        return _named("method", own, [_element("method", own)])
     return None
 
 
@@ -1027,49 +1249,72 @@ def _ts_declarator(
     return (declarators[0] if declarators else None), None
 
 
-def _ts_containers(node: TreeSitterNode) -> list[str]:
+def _ts_elements(kind: str, name: TreeSitterNode) -> list[SemanticElement]:
+    """A declaration's name as components: a dotted namespace name (``namespace
+    A.B``) is a namespace per part; any other name, a string one included, is one."""
+    text = _collapse(_text(name))
+    if name.type == "nested_identifier":
+        return [_element(kind, part) for part in text.split(".")]
+    return [_element(kind, text)]
+
+
+def _ts_containers(node: TreeSitterNode) -> tuple[list[str], list[SemanticElement]]:
     segments: list[str] = []
+    groups: list[list[SemanticElement]] = []
     parent = node.parent
     while parent is not None:
         if parent.type in _TS_NAMED_CONTAINERS:
             name = parent.child_by_field_name("name")
             if name is not None:
                 segments.append(_collapse(_text(name)))
-        elif parent.type == "variable_declarator" and _ts_value_kind(
-            parent.child_by_field_name("value")
-        ):
-            segments.append(_text(parent.child_by_field_name("name")))
+                groups.append(_ts_elements(_TS_KINDS[parent.type], name))
+        elif parent.type == "variable_declarator":
+            value_kind = _ts_value_kind(parent.child_by_field_name("value"))
+            if value_kind is not None:
+                declared = _text(parent.child_by_field_name("name"))
+                segments.append(declared)
+                groups.append([_element(value_kind, declared)])
         parent = parent.parent
-    return list(reversed(segments))
+    return (
+        list(reversed(segments)),
+        [element for group in reversed(groups) for element in group],
+    )
 
 
 def _ts_describe(node: TreeSitterNode) -> EntityName | None:
-    prefix = _ts_containers(node)
+    prefix, outer = _ts_containers(node)
     if node.type in ("lexical_declaration", "variable_declaration"):
         declarator, kind = _ts_declarator(node)
         if declarator is None or kind is None:
             return None
-        return EntityName(
-            kind, _join(".", prefix, _text(declarator.child_by_field_name("name")))
+        declared = _text(declarator.child_by_field_name("name"))
+        return _named(
+            kind, _join(".", prefix, declared), [*outer, _element(kind, declared)]
         )
     if node.type == "assignment_expression":
         kind = _ts_value_kind(node.child_by_field_name("right"))
         if kind is None:
             return None
-        return EntityName(
-            kind, _join(".", prefix, _collapse(_text(node.child_by_field_name("left"))))
-        )
+        # the left-hand side is an expression, not a chain of containers: one component
+        left = _collapse(_text(node.child_by_field_name("left")))
+        return _named(kind, _join(".", prefix, left), [*outer, _element(kind, left)])
     if node.type == "export_statement":
         kind = _ts_value_kind(node.child_by_field_name("value"))
         if kind is None:
             return None
-        return EntityName(kind, _join(".", prefix, "default"))
+        return _named(
+            kind, _join(".", prefix, "default"), [*outer, _element(kind, "default")]
+        )
     kind = _TS_KINDS.get(node.type)
     if kind is None:
         return None
     name = node.child_by_field_name("name")
-    return EntityName(
-        kind, _join(".", prefix, _collapse(_text(name)) if name is not None else None)
+    if name is None:
+        return EntityName(kind, None, None)
+    return _named(
+        kind,
+        _join(".", prefix, _collapse(_text(name))),
+        [*outer, *_ts_elements(kind, name)],
     )
 
 
@@ -1079,13 +1324,14 @@ def _ts_describe(node: TreeSitterNode) -> EntityName | None:
 def _bash_describe(node: TreeSitterNode) -> EntityName | None:
     if node.type != "function_definition":
         return None
-    return EntityName("function", _text(node.child_by_field_name("name")) or None)
+    own = _text(node.child_by_field_name("name")) or None
+    return _named("function", own, [_element("function", own or "")])
 
 
 def _data_describe(node: TreeSitterNode) -> EntityName:
     """A YAML or JSON entry: a key/value pair is a ``key``, anything else an ``item``."""
     is_pair = node.type in ("block_mapping_pair", "flow_pair", "pair")
-    return EntityName("key" if is_pair else "item", None)
+    return EntityName("key" if is_pair else "item", None, None)
 
 
 _DESCRIBERS: dict[CommentType, Callable[[TreeSitterNode], EntityName | None]] = {
@@ -1104,7 +1350,8 @@ _DESCRIBERS: dict[CommentType, Callable[[TreeSitterNode], EntityName | None]] = 
 def describe_entity(
     node: TreeSitterNode, comment_type: CommentType
 ) -> EntityName | None:
-    """Name the definition ``node``: its kind and its in-file qualified name.
+    """Name the definition ``node``: its kind, its in-file qualified name, and the
+    components of that name.
 
     Pure: it reads the node and its ancestors (and, for a C# file-scoped namespace, the
     file's top-level siblings), never the file system.
@@ -1117,15 +1364,133 @@ def describe_entity(
     return describer(node) if describer is not None else None
 
 
-def code_scope(association: Association, comment_type: CommentType) -> CodeScope:
-    """The ``scope`` object of an analysis record, for ``association``."""
+# --- Rendering the components ------------------------------------------------
+
+
+def _rust_is_path(text: str) -> bool:
+    """``text`` is a type rustc writes without brackets in a path: a name, a path or a
+    primitive, with any generic arguments (``Widget``, ``a::Widget<dyn Fn() -> u8>``,
+    ``u32``) -- not ``dyn Shape``, ``&T``, ``[T]``, a tuple or a function type."""
+    if text and not (_is_ident_char(text[0]) or text[0] == ":"):
+        return False
+    depth = 0
+    previous = ""
+    for char in text:
+        if char in "<([":
+            depth += 1
+        elif depth and (char in ")]" or (char == ">" and previous != "-")):
+            depth -= 1
+        elif depth == 0 and not (_is_ident_char(char) or char == ":"):
+            return False
+        previous = char
+    return True
+
+
+def _rust_render(element: SemanticElement) -> str:
+    if element["kind"] != "impl":
+        return element["name"]
+    if "trait" in element:
+        return f"<{element['name']} as {element['trait']}>"
+    if _rust_is_path(element["name"]):
+        return element["name"]
+    return f"<{element['name']}>"
+
+
+def render_semantic(
+    semantic: Sequence[SemanticElement] | None, language: str
+) -> str | None:
+    """Spell ``semantic`` as its language writes a qualified name: the entity's
+    ``qualified_name``.
+
+    C and C++ join the components with ``::``. Rust does too, and writes an ``impl``
+    as ``<Widget as Shape>`` for a trait impl and ``<dyn Shape>`` for a self type that
+    is no path. Python joins them with ``.``, with ``<locals>`` after a function or a
+    method another component follows (CPython's ``__qualname__``). C#, Go,
+    TypeScript, JavaScript and Bash join them with ``.``.
+
+    :param semantic: An entity's components, as :func:`describe_entity` gives them.
+    :param language: The language of the entity's file, as ``scope.language``
+        records it (:func:`scope_language`).
+    :return: The qualified name; ``None`` for no components.
+    """
+    if semantic is None:
+        return None
+    if language in ("c", "cpp"):
+        return "::".join(element["name"] for element in semantic)
+    if language == "rust":
+        return "::".join(_rust_render(element) for element in semantic)
+    if language == "python":
+        parts: list[str] = []
+        for index, element in enumerate(semantic):
+            parts.append(element["name"])
+            if element["kind"] in ("function", "method") and index < len(semantic) - 1:
+                parts.append("<locals>")
+        return ".".join(parts)
+    return ".".join(element["name"] for element in semantic)
+
+
+def name_chain(
+    semantic: Sequence[SemanticElement] | None,
+) -> tuple[tuple[tuple[str, str], ...], ...] | None:
+    """What identifies an entity in its file: its components without their kinds.
+
+    Kinds describe, names identify. A kind is a best-effort classification, for
+    filtering and rendering, and one entity's kinds depend on how it is written: a
+    method defined in its class is ``namespace ns``, ``class W``, ``method f``, the
+    same method defined out of line ``scope ns``, ``class W``, ``method f``. So two
+    entities are the same, or one is inside the other, by their name chains: each
+    component's ``name`` and its other keys (a Rust impl's ``trait``), never its
+    ``kind``.
+
+    :param semantic: An entity's components (``scope.semantic``).
+    :return: One ``(key, value)`` tuple per component, its keys sorted, ``kind``
+        left out; ``None`` for no components.
+    """
+    if semantic is None:
+        return None
+    return tuple(
+        tuple(
+            sorted((key, str(value)) for key, value in element.items() if key != "kind")
+        )
+        for element in semantic
+    )
+
+
+def scope_language(comment_type: CommentType, path: PurePath) -> str:
+    """The language of a source file, as ``scope.language`` records it: the prefix of
+    a symbol ID.
+
+    ``c`` for a ``.c`` file, ``cpp`` for every other C and C++ file (a ``.h`` header
+    included: its language is not in its name), otherwise the comment type
+    (``python``, ``rust``, ``cs``, ``ts``, ``go``, ``yaml``, ``jsonc``, ``bash``).
+    A ``.c`` file is parsed with the C++ grammar and its components render as C++'s.
+
+    :param comment_type: The comment type the file was analysed as.
+    :param path: The file's path; only its suffix is read (in any case).
+    """
+    if comment_type == CommentType.cpp:
+        return "c" if path.suffix.lower() == ".c" else "cpp"
+    return comment_type.value
+
+
+def code_scope(
+    association: Association, comment_type: CommentType, language: str
+) -> CodeScope:
+    """The ``scope`` object of an analysis record, for ``association`` in a file of
+    ``language`` (:func:`scope_language`)."""
     node = association.node
     name = describe_entity(node, comment_type)
     return {
         "kind": node.type,
         "start": node.start_point.row + 1,
         "end": node.end_point.row + 1,
+        "language": language,
         "entity_kind": name.kind if name is not None else None,
         "qualified_name": name.qualified_name if name is not None else None,
+        "semantic": (
+            list(name.semantic)
+            if name is not None and name.semantic is not None
+            else None
+        ),
         "mechanism": association.mechanism,
     }

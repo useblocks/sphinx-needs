@@ -45,8 +45,15 @@
         "kind": "function_definition",
         "start": 10,
         "end": 10,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "reserved",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "reserved"
+          }
+        ],
         "mechanism": "leading"
       }
     },

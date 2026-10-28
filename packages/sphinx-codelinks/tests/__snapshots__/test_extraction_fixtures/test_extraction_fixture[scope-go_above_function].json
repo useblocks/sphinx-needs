@@ -17,8 +17,15 @@
       "kind": "function_declaration",
       "start": 2,
       "end": 2,
+      "language": "go",
       "entity_kind": "function",
       "qualified_name": "dummyFunc1",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "dummyFunc1"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

@@ -17,8 +17,15 @@
       "kind": "lexical_declaration",
       "start": 2,
       "end": 2,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "handle",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "handle"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -50,8 +57,15 @@
       "kind": "lexical_declaration",
       "start": 4,
       "end": 4,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "fn",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "fn"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -81,8 +95,10 @@
       "kind": "variable_declaration",
       "start": 6,
       "end": 6,
+      "language": "ts",
       "entity_kind": null,
       "qualified_name": null,
+      "semantic": null,
       "mechanism": "leading"
     },
     "need": {

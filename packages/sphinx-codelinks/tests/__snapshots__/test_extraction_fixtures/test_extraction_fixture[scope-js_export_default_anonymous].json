@@ -17,8 +17,15 @@
       "kind": "export_statement",
       "start": 2,
       "end": 2,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "default",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "default"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

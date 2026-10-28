@@ -17,8 +17,19 @@
       "kind": "method_definition",
       "start": 3,
       "end": 3,
+      "language": "ts",
       "entity_kind": "method",
       "qualified_name": "C.foo",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "C"
+        },
+        {
+          "kind": "method",
+          "name": "foo"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -48,8 +59,15 @@
       "kind": "class_declaration",
       "start": 6,
       "end": 7,
+      "language": "ts",
       "entity_kind": "class",
       "qualified_name": "Service",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Service"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

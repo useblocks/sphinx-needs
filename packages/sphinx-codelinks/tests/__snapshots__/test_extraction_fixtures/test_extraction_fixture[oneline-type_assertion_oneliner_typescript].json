@@ -17,8 +17,15 @@
       "kind": "function_declaration",
       "start": 2,
       "end": 2,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "a",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "a"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -50,8 +57,15 @@
       "kind": "function_declaration",
       "start": 5,
       "end": 5,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "b",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "b"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

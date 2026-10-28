@@ -45,8 +45,10 @@
         "kind": "block_mapping_pair",
         "start": 6,
         "end": 6,
+        "language": "yaml",
         "entity_kind": "key",
         "qualified_name": null,
+        "semantic": null,
         "mechanism": "leading"
       }
     },

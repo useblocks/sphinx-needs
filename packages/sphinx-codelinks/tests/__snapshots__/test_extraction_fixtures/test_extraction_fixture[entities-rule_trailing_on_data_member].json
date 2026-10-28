@@ -17,8 +17,15 @@
       "kind": "struct_specifier",
       "start": 1,
       "end": 4,
+      "language": "cpp",
       "entity_kind": "struct",
       "qualified_name": "Gauge",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Gauge"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need": {

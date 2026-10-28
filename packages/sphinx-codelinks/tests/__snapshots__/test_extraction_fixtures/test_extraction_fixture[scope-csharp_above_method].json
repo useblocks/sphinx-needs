@@ -17,8 +17,19 @@
       "kind": "method_declaration",
       "start": 4,
       "end": 4,
+      "language": "cs",
       "entity_kind": "method",
       "qualified_name": "DummyClass.Method",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "DummyClass"
+        },
+        {
+          "kind": "method",
+          "name": "Method"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

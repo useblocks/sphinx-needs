@@ -17,8 +17,15 @@
       "kind": "function_signature_item",
       "start": 3,
       "end": 3,
+      "language": "rust",
       "entity_kind": "function",
       "qualified_name": "abs",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "abs"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

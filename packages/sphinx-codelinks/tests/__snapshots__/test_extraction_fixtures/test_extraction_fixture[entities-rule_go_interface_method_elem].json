@@ -17,8 +17,19 @@
       "kind": "method_elem",
       "start": 5,
       "end": 5,
+      "language": "go",
       "entity_kind": "method",
       "qualified_name": "Shape.Area",
+      "semantic": [
+        {
+          "kind": "interface",
+          "name": "Shape"
+        },
+        {
+          "kind": "method",
+          "name": "Area"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

@@ -44,8 +44,15 @@
         "kind": "function_definition",
         "start": 10,
         "end": 12,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "dummy_func1",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "dummy_func1"
+          }
+        ],
         "mechanism": "doc_comment"
       }
     },
@@ -96,8 +103,15 @@
         "kind": "function_definition",
         "start": 19,
         "end": 24,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "main",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "main"
+          }
+        ],
         "mechanism": "leading"
       }
     },
@@ -121,8 +135,15 @@
       "kind": "function_definition",
       "start": 4,
       "end": 6,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "dummy_func1",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "dummy_func1"
+        }
+      ],
       "mechanism": "leading"
     },
     "need_ids": [
@@ -152,8 +173,15 @@
       "kind": "function_definition",
       "start": 9,
       "end": 14,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "main",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "main"
+        }
+      ],
       "mechanism": "leading"
     },
     "need_ids": [
@@ -180,8 +208,15 @@
       "kind": "function_definition",
       "start": 2,
       "end": 2,
+      "language": "c",
       "entity_kind": "function",
       "qualified_name": "foo",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "foo"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -210,8 +245,15 @@
       "kind": "function_definition",
       "start": 5,
       "end": 5,
+      "language": "c",
       "entity_kind": "function",
       "qualified_name": "bar",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "bar"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -240,8 +282,15 @@
       "kind": "function_definition",
       "start": 8,
       "end": 8,
+      "language": "c",
       "entity_kind": "function",
       "qualified_name": "baz",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "baz"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -270,8 +319,15 @@
       "kind": "function_definition",
       "start": 11,
       "end": 11,
+      "language": "c",
       "entity_kind": "function",
       "qualified_name": "bar",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "bar"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

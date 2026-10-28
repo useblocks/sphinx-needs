@@ -17,8 +17,15 @@
       "kind": "declaration",
       "start": 2,
       "end": 3,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "checked",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "checked"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

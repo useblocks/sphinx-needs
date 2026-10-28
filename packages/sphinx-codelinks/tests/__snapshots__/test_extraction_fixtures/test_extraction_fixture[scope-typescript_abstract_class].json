@@ -17,8 +17,15 @@
       "kind": "abstract_class_declaration",
       "start": 2,
       "end": 2,
+      "language": "ts",
       "entity_kind": "class",
       "qualified_name": "Base",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Base"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

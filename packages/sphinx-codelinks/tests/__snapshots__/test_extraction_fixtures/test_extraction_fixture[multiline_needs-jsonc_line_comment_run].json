@@ -45,8 +45,10 @@
         "kind": "pair",
         "start": 7,
         "end": 7,
+        "language": "jsonc",
         "entity_kind": "key",
         "qualified_name": null,
+        "semantic": null,
         "mechanism": "leading"
       }
     },

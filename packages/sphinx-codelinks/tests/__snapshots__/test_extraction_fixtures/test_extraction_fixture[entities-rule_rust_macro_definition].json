@@ -17,8 +17,15 @@
       "kind": "macro_definition",
       "start": 2,
       "end": 6,
+      "language": "rust",
       "entity_kind": "macro",
       "qualified_name": "square",
+      "semantic": [
+        {
+          "kind": "macro",
+          "name": "square"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

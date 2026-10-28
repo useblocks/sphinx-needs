@@ -17,8 +17,15 @@
       "kind": "interface_declaration",
       "start": 2,
       "end": 4,
+      "language": "ts",
       "entity_kind": "interface",
       "qualified_name": "Options",
+      "semantic": [
+        {
+          "kind": "interface",
+          "name": "Options"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

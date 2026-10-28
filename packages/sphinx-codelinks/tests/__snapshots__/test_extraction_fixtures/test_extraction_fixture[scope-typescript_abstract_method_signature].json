@@ -17,8 +17,19 @@
       "kind": "abstract_method_signature",
       "start": 3,
       "end": 3,
+      "language": "ts",
       "entity_kind": "method",
       "qualified_name": "Job.run",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Job"
+        },
+        {
+          "kind": "method",
+          "name": "run"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

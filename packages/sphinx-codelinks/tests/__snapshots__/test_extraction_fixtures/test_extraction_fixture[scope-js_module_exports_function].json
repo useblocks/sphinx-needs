@@ -17,8 +17,15 @@
       "kind": "assignment_expression",
       "start": 2,
       "end": 2,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "module.exports",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "module.exports"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -50,8 +57,15 @@
       "kind": "assignment_expression",
       "start": 4,
       "end": 4,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "Widget.prototype.render",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Widget.prototype.render"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

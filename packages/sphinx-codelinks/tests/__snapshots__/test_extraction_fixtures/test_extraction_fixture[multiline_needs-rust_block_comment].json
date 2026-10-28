@@ -45,8 +45,15 @@
         "kind": "function_item",
         "start": 8,
         "end": 8,
+        "language": "rust",
         "entity_kind": "function",
         "qualified_name": "block",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "block"
+          }
+        ],
         "mechanism": "leading"
       }
     },

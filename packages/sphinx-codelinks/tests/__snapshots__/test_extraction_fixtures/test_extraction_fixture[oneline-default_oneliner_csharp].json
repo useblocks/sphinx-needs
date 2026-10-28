@@ -17,8 +17,15 @@
       "kind": "class_declaration",
       "start": 2,
       "end": 2,
+      "language": "cs",
       "entity_kind": "class",
       "qualified_name": "C",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "C"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

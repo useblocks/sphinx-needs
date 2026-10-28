@@ -45,8 +45,15 @@
         "kind": "function_definition",
         "start": 5,
         "end": 5,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "no_space",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "no_space"
+          }
+        ],
         "mechanism": "leading"
       }
     },

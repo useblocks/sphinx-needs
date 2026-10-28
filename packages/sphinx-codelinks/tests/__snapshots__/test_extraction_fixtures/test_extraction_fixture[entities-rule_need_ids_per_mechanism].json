@@ -17,8 +17,15 @@
       "kind": "function_definition",
       "start": 2,
       "end": 2,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "documented",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "documented"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need_ids": [
@@ -46,8 +53,15 @@
       "kind": "function_definition",
       "start": 4,
       "end": 4,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "leading",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "leading"
+        }
+      ],
       "mechanism": "leading"
     },
     "need_ids": [
@@ -75,8 +89,15 @@
       "kind": "function_definition",
       "start": 5,
       "end": 5,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "trailing",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "trailing"
+        }
+      ],
       "mechanism": "trailing"
     },
     "need_ids": [
@@ -104,8 +125,15 @@
       "kind": "function_definition",
       "start": 6,
       "end": 9,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "enclosing",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "enclosing"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need_ids": [

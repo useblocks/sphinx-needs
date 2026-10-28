@@ -17,8 +17,15 @@
       "kind": "class_declaration",
       "start": 1,
       "end": 5,
+      "language": "ts",
       "entity_kind": "class",
       "qualified_name": "Button",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Button"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need": {

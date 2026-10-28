@@ -17,8 +17,19 @@
       "kind": "method_declaration",
       "start": 3,
       "end": 4,
+      "language": "cs",
       "entity_kind": "method",
       "qualified_name": "C.M",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "C"
+        },
+        {
+          "kind": "method",
+          "name": "M"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

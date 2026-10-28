@@ -17,8 +17,15 @@
       "kind": "trait_item",
       "start": 5,
       "end": 12,
+      "language": "rust",
       "entity_kind": "trait",
       "qualified_name": "Shape",
+      "semantic": [
+        {
+          "kind": "trait",
+          "name": "Shape"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -50,8 +57,19 @@
       "kind": "function_signature_item",
       "start": 7,
       "end": 7,
+      "language": "rust",
       "entity_kind": "method",
       "qualified_name": "Shape::area",
+      "semantic": [
+        {
+          "kind": "trait",
+          "name": "Shape"
+        },
+        {
+          "kind": "method",
+          "name": "area"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -83,8 +101,15 @@
       "kind": "struct_item",
       "start": 15,
       "end": 18,
+      "language": "rust",
       "entity_kind": "struct",
       "qualified_name": "Widget",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -116,8 +141,15 @@
       "kind": "impl_item",
       "start": 21,
       "end": 30,
+      "language": "rust",
       "entity_kind": "impl",
       "qualified_name": "Widget",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "Widget"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -149,8 +181,19 @@
       "kind": "function_item",
       "start": 23,
       "end": 25,
+      "language": "rust",
       "entity_kind": "method",
       "qualified_name": "Widget::new",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "new"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -182,8 +225,20 @@
       "kind": "function_item",
       "start": 34,
       "end": 37,
+      "language": "rust",
       "entity_kind": "method",
       "qualified_name": "<Widget as Shape>::area",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "Widget",
+          "trait": "Shape"
+        },
+        {
+          "kind": "method",
+          "name": "area"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -215,8 +270,20 @@
       "kind": "function_item",
       "start": 34,
       "end": 37,
+      "language": "rust",
       "entity_kind": "method",
       "qualified_name": "<Widget as Shape>::area",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "Widget",
+          "trait": "Shape"
+        },
+        {
+          "kind": "method",
+          "name": "area"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need_ids": [
@@ -244,8 +311,15 @@
       "kind": "function_item",
       "start": 42,
       "end": 44,
+      "language": "rust",
       "entity_kind": "function",
       "qualified_name": "documented",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "documented"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need": {
@@ -277,8 +351,19 @@
       "kind": "function_item",
       "start": 48,
       "end": 50,
+      "language": "rust",
       "entity_kind": "function",
       "qualified_name": "inner::helper",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "inner"
+        },
+        {
+          "kind": "function",
+          "name": "helper"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -310,8 +395,20 @@
       "kind": "function_item",
       "start": 57,
       "end": 59,
+      "language": "rust",
       "entity_kind": "method",
       "qualified_name": "<inner::deeper::Gadget as Shape>::area",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "inner::deeper::Gadget",
+          "trait": "Shape"
+        },
+        {
+          "kind": "method",
+          "name": "area"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -343,8 +440,15 @@
       "kind": "function_item",
       "start": 66,
       "end": 68,
+      "language": "rust",
       "entity_kind": "function",
       "qualified_name": "platform_name",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "platform_name"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -402,8 +506,15 @@
       "kind": "function_item",
       "start": 87,
       "end": 95,
+      "language": "rust",
       "entity_kind": "function",
       "qualified_name": "largest",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "largest"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -435,8 +546,15 @@
       "kind": "enum_item",
       "start": 98,
       "end": 101,
+      "language": "rust",
       "entity_kind": "enum",
       "qualified_name": "Status",
+      "semantic": [
+        {
+          "kind": "enum",
+          "name": "Status"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -468,8 +586,20 @@
       "kind": "function_item",
       "start": 105,
       "end": 107,
+      "language": "rust",
       "entity_kind": "method",
       "qualified_name": "<(T, T) as Shape>::area",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "(T, T)",
+          "trait": "Shape"
+        },
+        {
+          "kind": "method",
+          "name": "area"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -501,8 +631,19 @@
       "kind": "function_item",
       "start": 120,
       "end": 123,
+      "language": "rust",
       "entity_kind": "function",
       "qualified_name": "tests::area_is_product",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "tests"
+        },
+        {
+          "kind": "function",
+          "name": "area_is_product"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -534,8 +675,19 @@
       "kind": "function_item",
       "start": 131,
       "end": 133,
+      "language": "rust",
       "entity_kind": "method",
       "qualified_name": "Widget::doubled",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "doubled"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need": {
@@ -567,8 +719,19 @@
       "kind": "function_item",
       "start": 136,
       "end": 138,
+      "language": "rust",
       "entity_kind": "method",
       "qualified_name": "Widget::halved",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "halved"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need": {
@@ -600,8 +763,15 @@
       "kind": "function_item",
       "start": 143,
       "end": 145,
+      "language": "rust",
       "entity_kind": "function",
       "qualified_name": "compute_path",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "compute_path"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -633,8 +803,15 @@
       "kind": "function_item",
       "start": 149,
       "end": 151,
+      "language": "rust",
       "entity_kind": "function",
       "qualified_name": "compute_path",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "compute_path"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -692,8 +869,20 @@
       "kind": "function_item",
       "start": 171,
       "end": 173,
+      "language": "rust",
       "entity_kind": "method",
       "qualified_name": "<Vec<T> as Shape>::area",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "Vec<T>",
+          "trait": "Shape"
+        },
+        {
+          "kind": "method",
+          "name": "area"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

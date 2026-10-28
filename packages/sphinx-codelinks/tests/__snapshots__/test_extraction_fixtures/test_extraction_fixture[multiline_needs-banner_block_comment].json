@@ -42,8 +42,15 @@
         "kind": "function_definition",
         "start": 6,
         "end": 6,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "closer",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "closer"
+          }
+        ],
         "mechanism": "doc_comment"
       }
     },
@@ -96,8 +103,15 @@
         "kind": "function_definition",
         "start": 15,
         "end": 15,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "banner",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "banner"
+          }
+        ],
         "mechanism": "leading"
       }
     },

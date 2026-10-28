@@ -17,8 +17,15 @@
       "kind": "function_definition",
       "start": 5,
       "end": 6,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "test_f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "test_f"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -48,8 +55,19 @@
       "kind": "function_definition",
       "start": 11,
       "end": 12,
+      "language": "python",
       "entity_kind": "method",
       "qualified_name": "TestA.test_m",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "TestA"
+        },
+        {
+          "kind": "method",
+          "name": "test_m"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

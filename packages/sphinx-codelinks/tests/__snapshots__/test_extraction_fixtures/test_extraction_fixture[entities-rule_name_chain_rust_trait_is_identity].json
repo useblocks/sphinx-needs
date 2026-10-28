@@ -1,0 +1,88 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 8
+      },
+      "end": {
+        "row": 9,
+        "column": 45
+      }
+    },
+    "tagged_scope": "fn area(&self) -> f64 { 0.0 }",
+    "scope": {
+      "kind": "function_item",
+      "start": 11,
+      "end": 11,
+      "language": "rust",
+      "entity_kind": "method",
+      "qualified_name": "<Widget as Shape>::area",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "Widget",
+          "trait": "Shape"
+        },
+        {
+          "kind": "method",
+          "name": "area"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Area as a Shape",
+      "id": "IMPL_R_CHAIN_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 14,
+        "column": 8
+      },
+      "end": {
+        "row": 14,
+        "column": 46
+      }
+    },
+    "tagged_scope": "fn area(&self) -> f64 { 1.0 }",
+    "scope": {
+      "kind": "function_item",
+      "start": 16,
+      "end": 16,
+      "language": "rust",
+      "entity_kind": "method",
+      "qualified_name": "<Widget as Other>::area",
+      "semantic": [
+        {
+          "kind": "impl",
+          "name": "Widget",
+          "trait": "Other"
+        },
+        {
+          "kind": "method",
+          "name": "area"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Area as an Other",
+      "id": "IMPL_R_CHAIN_4",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  }
+]

@@ -13,11 +13,13 @@ New and Improved
 
   Every record of ``codelinks analyse`` -- a one-line need, a reference, a multi-line need -- says which entity its
   marker belongs to: a one-line need and a reference gain a ``scope`` object, right after ``tagged_scope``, and a
-  multi-line need's ``source.scope`` gains the same keys. Besides the syntax node and its lines, ``entity_kind``
-  (``function``, ``method``, ``class``, ``namespace``, ...), ``qualified_name``, the entity's name within its file
-  (``ns::Widget::draw``, ``Shape.area``, ``<Widget as Shape>::area``), and ``mechanism``, how the marker was attached
-  (``doc_comment``, ``leading``, ``trailing`` or ``enclosing``). ``tagged_scope`` is unchanged, and ``codelinks write
-  rst`` reads the new key. The needs ``src-trace`` creates carry no field for the entity yet. See :ref:`attachment`.
+  multi-line need's ``source.scope`` gains the same keys. Besides the syntax node and its lines, ``language`` (``c``,
+  ``cpp``, ``python``, ``rust``, ...), ``entity_kind`` (``function``, ``method``, ``class``, ``namespace``, ...),
+  ``qualified_name``, the entity's name within its file (``ns::Widget::draw``, ``Shape.area``,
+  ``<Widget as Shape>::area``), ``semantic``, that name in its parts (``namespace ns``, ``class Widget``,
+  ``method draw``), and ``mechanism``, how the marker was attached (``doc_comment``, ``leading``, ``trailing`` or
+  ``enclosing``). ``tagged_scope`` is unchanged, and ``codelinks write rst`` reads the new key. The needs
+  ``src-trace`` creates carry no field for the entity yet. See :ref:`attachment`.
 
 Fixes
 .....

@@ -17,8 +17,15 @@
       "kind": "generator_function_declaration",
       "start": 2,
       "end": 2,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "ids",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "ids"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

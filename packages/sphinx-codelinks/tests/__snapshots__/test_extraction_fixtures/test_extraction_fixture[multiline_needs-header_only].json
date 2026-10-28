@@ -42,8 +42,15 @@
         "kind": "function_definition",
         "start": 4,
         "end": 4,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "header_only",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "header_only"
+          }
+        ],
         "mechanism": "leading"
       }
     },

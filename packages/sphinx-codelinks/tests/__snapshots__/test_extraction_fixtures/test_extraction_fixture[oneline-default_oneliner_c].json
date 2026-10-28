@@ -17,8 +17,15 @@
       "kind": "function_definition",
       "start": 2,
       "end": 2,
+      "language": "c",
       "entity_kind": "function",
       "qualified_name": "g",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "g"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

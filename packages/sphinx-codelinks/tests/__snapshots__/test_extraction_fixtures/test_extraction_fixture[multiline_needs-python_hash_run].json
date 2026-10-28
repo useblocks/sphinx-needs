@@ -47,8 +47,15 @@
         "kind": "function_definition",
         "start": 7,
         "end": 8,
+        "language": "python",
         "entity_kind": "function",
         "qualified_name": "backoff",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "backoff"
+          }
+        ],
         "mechanism": "leading"
       }
     },

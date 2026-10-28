@@ -10,17 +10,24 @@ the entries and where the truth comes from.
 ``KNOWN_WRONG_TODAY`` lists the markers the analysis attaches wrongly today. Each one
 is asserted to STILL be wrong, so the list cannot go stale: a fix that rights one fails
 here until the fix also delists it.
+
+The fence of ``semantic``: in every case of every shared fixture, each ``scope``'s
+components, rendered by the rule of its ``language``, spell its ``qualified_name``
+exactly. And kinds describe, names identify: the name chain of one entity does not
+depend on how it is written.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 
 import pytest
 import yaml
 
-from .test_extraction_fixtures import FIXTURE_DIR, _extract
+from sphinx_codelinks.analyse.entity import EntityKind, name_chain, render_semantic
+
+from .test_extraction_fixtures import FIXTURE_DIR, _extract, _load_cases
 
 KNOWN_WRONG_TODAY: frozenset[str] = frozenset()
 """Marker ids whose ``scope`` differs from their truth today."""
@@ -106,3 +113,111 @@ def test_known_wrong_today_names_real_markers() -> None:
         entry["id"] for param in _truth_cases() for entry in param.values[0]["truth"]
     }
     assert KNOWN_WRONG_TODAY <= ids, sorted(KNOWN_WRONG_TODAY - ids)
+
+
+# The kinds a component may have: the entity kinds, and ``scope`` for a C++ qualifier
+# the syntax cannot classify.
+_COMPONENT_KINDS = frozenset(get_args(EntityKind)) | {"scope"}
+
+
+# The ``scope.language`` of each fixture ``lang``: the symbol-ID prefix, ``c`` for a
+# ``.c`` file and ``cpp`` for a ``.h`` one.
+_LANGUAGES = {
+    "cpp": "cpp",
+    "c": "c",
+    "cpp_header": "cpp",
+    "python": "python",
+    "csharp": "cs",
+    "rust": "rust",
+    "yaml": "yaml",
+    "go": "go",
+    "jsonc": "jsonc",
+    "bash": "bash",
+    "typescript": "ts",
+    "tsx": "ts",
+    "js": "ts",
+}
+
+
+def _fence_difference(scope: dict[str, Any], lang: str) -> str | None:
+    """How ``scope``'s ``semantic`` fails the fence, or ``None`` if it holds."""
+    if scope["language"] != _LANGUAGES[lang]:
+        return f"language {scope['language']!r}, not {_LANGUAGES[lang]!r}"
+    semantic = scope["semantic"]
+    if scope["qualified_name"] is None:
+        return None if semantic is None else f"no name, but components {semantic}"
+    if not semantic:
+        return f"{scope['qualified_name']!r} has no components"
+    for element in semantic:
+        extra = set(element) - {"kind", "name"}
+        if element["kind"] not in _COMPONENT_KINDS:
+            return f"component of unknown kind: {element}"
+        if extra and (extra != {"trait"} or element["kind"] != "impl"):
+            return f"component with extra keys: {element}"
+    if semantic[-1]["kind"] != scope["entity_kind"]:
+        return f"last component {semantic[-1]} is not the {scope['entity_kind']}"
+    rendered = render_semantic(semantic, scope["language"])
+    if rendered != scope["qualified_name"]:
+        return f"{semantic} renders {rendered!r}, not {scope['qualified_name']!r}"
+    return None
+
+
+@pytest.mark.parametrize("case", _load_cases())
+def test_semantic_spells_the_qualified_name(
+    case: dict[str, Any], tmp_path: Path
+) -> None:
+    """Every ``scope`` of the case: its components, outermost first and the entity
+    last, rendered by the rule of its ``language``, are its ``qualified_name``; it has
+    none exactly when it has no name."""
+    content, _ = _extract(case, tmp_path, case["source"])
+    failures = {
+        index: difference
+        for index, item in enumerate(content)
+        if (scope := _scope(item)) is not None
+        and (difference := _fence_difference(scope, case["lang"])) is not None
+    }
+    assert not failures, "\n".join(
+        f"  record {index}: {difference}" for index, difference in failures.items()
+    )
+
+
+def _semantic_of(case_name: str, tmp_path: Path) -> dict[str, list[dict[str, Any]]]:
+    """The ``semantic`` of each marker of ``entities.yaml``'s case ``case_name``."""
+    cases = yaml.safe_load((FIXTURE_DIR / "entities.yaml").read_text(encoding="utf-8"))
+    case = cases[case_name]
+    root = tmp_path / case_name
+    root.mkdir()
+    content, _ = _extract(case, root, case["source"])
+    semantic = {}
+    for item in content:
+        scope = _scope(item)
+        assert scope is not None
+        semantic[_marker_id(item)] = scope["semantic"]
+    return semantic
+
+
+def _kinds(semantic: list[dict[str, Any]]) -> list[str]:
+    return [element["kind"] for element in semantic]
+
+
+def test_name_chain_ignores_kinds(tmp_path: Path) -> None:
+    """Kinds describe, names identify: one C++ method, defined in its class and out of
+    line, has two kind sequences and one name chain."""
+    in_class = _semantic_of("rule_name_chain_cpp_method_in_class", tmp_path)
+    out_of_line = _semantic_of("rule_name_chain_cpp_method_out_of_line", tmp_path)
+    nested, defined = in_class["IMPL_R_CHAIN_1"], out_of_line["IMPL_R_CHAIN_2"]
+    assert _kinds(nested) == ["namespace", "class", "method"]
+    assert _kinds(defined) == ["scope", "class", "method"]
+    assert name_chain(nested) == name_chain(defined)
+
+
+def test_name_chain_keeps_the_trait(tmp_path: Path) -> None:
+    """A Rust impl's ``trait`` identifies, as a name does: the ``area`` of two trait
+    impls of one type have the same names and kinds, and two name chains."""
+    semantic = _semantic_of("rule_name_chain_rust_trait_is_identity", tmp_path)
+    shape, other = semantic["IMPL_R_CHAIN_3"], semantic["IMPL_R_CHAIN_4"]
+    assert [element["name"] for element in shape] == ["Widget", "area"]
+    assert [element["name"] for element in other] == ["Widget", "area"]
+    assert _kinds(shape) == _kinds(other) == ["impl", "method"]
+    assert (shape[0]["trait"], other[0]["trait"]) == ("Shape", "Other")
+    assert name_chain(shape) != name_chain(other)

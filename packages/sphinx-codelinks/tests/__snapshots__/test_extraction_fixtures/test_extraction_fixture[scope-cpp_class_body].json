@@ -17,8 +17,15 @@
       "kind": "class_specifier",
       "start": 1,
       "end": 4,
+      "language": "cpp",
       "entity_kind": "class",
       "qualified_name": "Widget",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Widget"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need": {

@@ -17,8 +17,15 @@
       "kind": "lexical_declaration",
       "start": 2,
       "end": 2,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "ids",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "ids"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -50,8 +57,15 @@
       "kind": "lexical_declaration",
       "start": 4,
       "end": 4,
+      "language": "ts",
       "entity_kind": "class",
       "qualified_name": "Widget",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Widget"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

@@ -17,8 +17,15 @@
       "kind": "enum_declaration",
       "start": 2,
       "end": 2,
+      "language": "ts",
       "entity_kind": "enum",
       "qualified_name": "Mode",
+      "semantic": [
+        {
+          "kind": "enum",
+          "name": "Mode"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

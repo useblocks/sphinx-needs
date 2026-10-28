@@ -17,8 +17,15 @@
       "kind": "declaration",
       "start": 4,
       "end": 4,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need_ids": [

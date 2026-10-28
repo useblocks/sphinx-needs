@@ -43,8 +43,15 @@
       "kind": "function_item",
       "start": 5,
       "end": 7,
+      "language": "rust",
       "entity_kind": "function",
       "qualified_name": "outline_fn",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "outline_fn"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

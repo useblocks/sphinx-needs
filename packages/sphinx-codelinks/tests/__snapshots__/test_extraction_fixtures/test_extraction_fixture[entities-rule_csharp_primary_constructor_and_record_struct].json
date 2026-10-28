@@ -17,8 +17,19 @@
       "kind": "class_declaration",
       "start": 4,
       "end": 8,
+      "language": "cs",
       "entity_kind": "class",
       "qualified_name": "Geo.Point",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "Geo"
+        },
+        {
+          "kind": "class",
+          "name": "Point"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -48,8 +59,23 @@
       "kind": "method_declaration",
       "start": 7,
       "end": 7,
+      "language": "cs",
       "entity_kind": "method",
       "qualified_name": "Geo.Point.Distance",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "Geo"
+        },
+        {
+          "kind": "class",
+          "name": "Point"
+        },
+        {
+          "kind": "method",
+          "name": "Distance"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -79,8 +105,19 @@
       "kind": "record_declaration",
       "start": 11,
       "end": 11,
+      "language": "cs",
       "entity_kind": "record",
       "qualified_name": "Geo.Pair",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "Geo"
+        },
+        {
+          "kind": "record",
+          "name": "Pair"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

@@ -92,8 +92,15 @@
         "kind": "function_definition",
         "start": 8,
         "end": 16,
+        "language": "python",
         "entity_kind": "function",
         "qualified_name": "handler",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "handler"
+          }
+        ],
         "mechanism": "doc_comment"
       }
     },

@@ -17,8 +17,15 @@
       "kind": "record_declaration",
       "start": 2,
       "end": 2,
+      "language": "cs",
       "entity_kind": "record",
       "qualified_name": "Point",
+      "semantic": [
+        {
+          "kind": "record",
+          "name": "Point"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -48,8 +55,15 @@
       "kind": "interface_declaration",
       "start": 4,
       "end": 4,
+      "language": "cs",
       "entity_kind": "interface",
       "qualified_name": "IShape",
+      "semantic": [
+        {
+          "kind": "interface",
+          "name": "IShape"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

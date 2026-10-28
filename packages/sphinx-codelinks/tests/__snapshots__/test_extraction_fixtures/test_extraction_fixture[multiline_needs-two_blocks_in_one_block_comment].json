@@ -42,8 +42,15 @@
         "kind": "function_definition",
         "start": 10,
         "end": 10,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "two",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "two"
+          }
+        ],
         "mechanism": "leading"
       }
     },
@@ -93,8 +100,15 @@
         "kind": "function_definition",
         "start": 10,
         "end": 10,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "two",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "two"
+          }
+        ],
         "mechanism": "leading"
       }
     },

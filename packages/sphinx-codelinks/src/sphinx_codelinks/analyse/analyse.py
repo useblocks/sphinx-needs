@@ -9,7 +9,7 @@ from tree_sitter import Node as TreeSitterNode
 from tree_sitter import Parser, Query
 
 from sphinx_codelinks.analyse import multiline_parser, utils
-from sphinx_codelinks.analyse.entity import CodeScope, code_scope
+from sphinx_codelinks.analyse.entity import CodeScope, code_scope, scope_language
 from sphinx_codelinks.analyse.models import (
     MarkedContentType,
     MultilineNeed,
@@ -701,7 +701,7 @@ class SourceAnalyse:
             ),
             run.comments[0],
         )
-        tagged_scope, scope = self._associate(src_comment)
+        tagged_scope, scope = self._associate(src_comment, filepath)
         lineno = block.open_row + 1
         remote_url = self.git_remote_url
         if self.git_remote_url and self.git_commit_rev:
@@ -745,9 +745,10 @@ class SourceAnalyse:
         )
 
     def _associate(
-        self, src_comment: SourceComment
+        self, src_comment: SourceComment, filepath: Path
     ) -> tuple[TreeSitterNode | None, CodeScope | None]:
-        """The entity a comment is attached to: its node and its ``scope`` object.
+        """The entity a comment of ``filepath`` is attached to: its node and its
+        ``scope`` object.
 
         A libclang comment has no tree-sitter node, so it is attached to nothing.
         """
@@ -757,7 +758,9 @@ class SourceAnalyse:
         association = utils.associate(src_comment.node, comment_type)
         if association is None or not association.node.text:
             return None, None
-        return association.node, code_scope(association, comment_type)
+        return association.node, code_scope(
+            association, comment_type, scope_language(comment_type, filepath)
+        )
 
     def extract_marked_content(self) -> None:
         claimed: dict[int, set[int]] = {}
@@ -771,7 +774,7 @@ class SourceAnalyse:
             )
             if not filepath:
                 continue
-            tagged_scope, scope = self._associate(src_comment)
+            tagged_scope, scope = self._associate(src_comment, filepath)
             for text, first_row, first_column in _scanned_texts(
                 src_comment, claimed.get(id(src_comment))
             ):

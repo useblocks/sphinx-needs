@@ -17,8 +17,19 @@
       "kind": "method_definition",
       "start": 4,
       "end": 4,
+      "language": "ts",
       "entity_kind": "method",
       "qualified_name": "Panel.render",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Panel"
+        },
+        {
+          "kind": "method",
+          "name": "render"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

@@ -17,8 +17,15 @@
       "kind": "function_definition",
       "start": 1,
       "end": 2,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need_ids": [

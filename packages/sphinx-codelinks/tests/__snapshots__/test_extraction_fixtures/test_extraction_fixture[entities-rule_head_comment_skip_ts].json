@@ -17,8 +17,15 @@
       "kind": "class_declaration",
       "start": 1,
       "end": 2,
+      "language": "ts",
       "entity_kind": "class",
       "qualified_name": "Service",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Service"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

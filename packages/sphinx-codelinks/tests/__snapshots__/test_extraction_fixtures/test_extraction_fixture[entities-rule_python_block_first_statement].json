@@ -17,8 +17,19 @@
       "kind": "function_definition",
       "start": 3,
       "end": 4,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "outer.<locals>.inner",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "outer"
+        },
+        {
+          "kind": "function",
+          "name": "inner"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

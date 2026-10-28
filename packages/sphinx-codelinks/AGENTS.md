@@ -42,7 +42,7 @@ src/sphinx_codelinks/   # Main source code
 ├── needextend_write.py # Write RST files with Sphinx-Needs directives (`write rst`, deprecated)
 ├── analyse/            # Code analysis module
 │   ├── analyse.py      # Main analysis orchestration
-│   ├── entity.py       # What a marker is attached to: entity kinds, trivia, wrappers, `describe_entity`
+│   ├── entity.py       # What a marker is attached to: entity kinds, trivia, wrappers, `describe_entity`, `semantic` and `render_semantic`
 │   ├── models.py       # dataclasses/TypedDicts/Enums for analysis results
 │   ├── multiline_parser.py # Multi-line needs: comment runs, prefixes stripped by comment kind, the block grammar
 │   ├── oneline_parser.py # One-line comment parser

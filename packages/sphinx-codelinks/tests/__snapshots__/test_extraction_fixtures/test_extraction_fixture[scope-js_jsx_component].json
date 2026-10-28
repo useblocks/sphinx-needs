@@ -17,8 +17,15 @@
       "kind": "function_declaration",
       "start": 2,
       "end": 4,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "Button",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Button"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

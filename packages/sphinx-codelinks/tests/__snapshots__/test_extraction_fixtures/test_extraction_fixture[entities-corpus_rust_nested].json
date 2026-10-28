@@ -17,8 +17,15 @@
       "kind": "function_item",
       "start": 2,
       "end": 4,
+      "language": "rust",
       "entity_kind": "function",
       "qualified_name": "nested_fn",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "nested_fn"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

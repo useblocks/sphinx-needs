@@ -45,8 +45,15 @@
         "kind": "function_definition",
         "start": 7,
         "end": 7,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "duplicate",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "duplicate"
+          }
+        ],
         "mechanism": "leading"
       }
     },

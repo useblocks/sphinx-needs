@@ -17,8 +17,15 @@
       "kind": "function_definition",
       "start": 3,
       "end": 3,
+      "language": "bash",
       "entity_kind": "function",
       "qualified_name": "greet",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "greet"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

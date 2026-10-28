@@ -1661,3 +1661,68 @@ rule_file_tag_non_ascii_letter_ends_the_word:
     void f();
   truth:
     - {id: REQ_R_TAG_NON_ASCII, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case (ASCII command names)"}
+
+rule_name_chain_cpp_method_in_class:
+  # Kinds describe, names identify. This case and the next define one method, here in
+  # its class and there out of line: their ``semantic`` name chains (the names, and a
+  # Rust impl's trait) are equal, their kinds are not -- the out-of-line qualifier
+  # ``ns`` is a ``scope``, which the syntax cannot classify.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace ns {
+    class W {
+    public:
+        // @Defined in its class, IMPL_R_CHAIN_1, impl
+        void f() {}
+    };
+    }
+  truth:
+    - {id: IMPL_R_CHAIN_1, outcome: exact, entity_kind: "method", qualified_name: "ns::W::f", start: 5, mechanism: leading, compiler: "clang++ 18 nm -C (odr-used): ns::W::f()"}
+
+rule_name_chain_cpp_method_out_of_line:
+  # The method of the case above, defined out of line.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace ns {
+    class W {
+    public:
+        void f();
+    };
+    }
+
+    // @Defined out of line, IMPL_R_CHAIN_2, impl
+    void ns::W::f() {}
+  truth:
+    - {id: IMPL_R_CHAIN_2, outcome: exact, entity_kind: "method", qualified_name: "ns::W::f", start: 9, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::f()"}
+
+rule_name_chain_rust_trait_is_identity:
+  # Two methods of one type, one per trait impl: their name chains differ only by the
+  # impl's ``trait``, which identifies, as a name does.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    pub trait Shape {
+        fn area(&self) -> f64;
+    }
+    pub trait Other {
+        fn area(&self) -> f64;
+    }
+    pub struct Widget;
+
+    impl Shape for Widget {
+        // @Area as a Shape, IMPL_R_CHAIN_3, impl
+        fn area(&self) -> f64 { 0.0 }
+    }
+
+    impl Other for Widget {
+        // @Area as an Other, IMPL_R_CHAIN_4, impl
+        fn area(&self) -> f64 { 1.0 }
+    }
+  truth:
+    - {id: IMPL_R_CHAIN_3, outcome: exact, entity_kind: "method", qualified_name: "<Widget as Shape>::area", start: 11, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::Widget as t::Shape>::area"}
+    - {id: IMPL_R_CHAIN_4, outcome: exact, entity_kind: "method", qualified_name: "<Widget as Other>::area", start: 16, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::Widget as t::Other>::area"}

@@ -17,8 +17,15 @@
       "kind": "internal_module",
       "start": 2,
       "end": 4,
+      "language": "ts",
       "entity_kind": "namespace",
       "qualified_name": "Geometry",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "Geometry"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

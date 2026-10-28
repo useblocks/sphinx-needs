@@ -17,8 +17,15 @@
       "kind": "function_definition",
       "start": 1,
       "end": 4,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need": {

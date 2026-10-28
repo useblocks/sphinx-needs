@@ -17,8 +17,15 @@
       "kind": "function_item",
       "start": 1,
       "end": 5,
+      "language": "rust",
       "entity_kind": "function",
       "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need": {

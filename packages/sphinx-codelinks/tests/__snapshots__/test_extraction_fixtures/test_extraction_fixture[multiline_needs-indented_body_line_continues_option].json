@@ -42,8 +42,15 @@
         "kind": "function_definition",
         "start": 5,
         "end": 5,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "swallowed",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "swallowed"
+          }
+        ],
         "mechanism": "leading"
       }
     },

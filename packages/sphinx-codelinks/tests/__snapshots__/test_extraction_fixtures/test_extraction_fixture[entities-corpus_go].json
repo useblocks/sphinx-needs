@@ -17,8 +17,15 @@
       "kind": "type_declaration",
       "start": 4,
       "end": 6,
+      "language": "go",
       "entity_kind": "struct",
       "qualified_name": "Widget",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Widget"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -50,8 +57,19 @@
       "kind": "method_declaration",
       "start": 9,
       "end": 12,
+      "language": "go",
       "entity_kind": "method",
       "qualified_name": "Widget.Area",
+      "semantic": [
+        {
+          "kind": "type",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "Area"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -83,8 +101,19 @@
       "kind": "method_declaration",
       "start": 9,
       "end": 12,
+      "language": "go",
       "entity_kind": "method",
       "qualified_name": "Widget.Area",
+      "semantic": [
+        {
+          "kind": "type",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "Area"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need_ids": [
@@ -112,8 +141,15 @@
       "kind": "function_declaration",
       "start": 15,
       "end": 15,
+      "language": "go",
       "entity_kind": "function",
       "qualified_name": "New",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "New"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -145,8 +181,15 @@
       "kind": "type_declaration",
       "start": 18,
       "end": 20,
+      "language": "go",
       "entity_kind": "interface",
       "qualified_name": "Shape",
+      "semantic": [
+        {
+          "kind": "interface",
+          "name": "Shape"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

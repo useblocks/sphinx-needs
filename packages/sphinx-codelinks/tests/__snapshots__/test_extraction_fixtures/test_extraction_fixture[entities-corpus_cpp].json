@@ -17,8 +17,19 @@
       "kind": "class_specifier",
       "start": 12,
       "end": 30,
+      "language": "cpp",
       "entity_kind": "class",
       "qualified_name": "ns::Widget",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -50,8 +61,23 @@
       "kind": "function_definition",
       "start": 15,
       "end": 15,
+      "language": "cpp",
       "entity_kind": "constructor",
       "qualified_name": "ns::Widget::Widget",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        },
+        {
+          "kind": "constructor",
+          "name": "Widget"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -83,8 +109,23 @@
       "kind": "field_declaration",
       "start": 18,
       "end": 18,
+      "language": "cpp",
       "entity_kind": "method",
       "qualified_name": "ns::Widget::draw",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "draw"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -116,8 +157,23 @@
       "kind": "function_definition",
       "start": 23,
       "end": 23,
+      "language": "cpp",
       "entity_kind": "method",
       "qualified_name": "ns::Widget::area",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "area"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -149,8 +205,23 @@
       "kind": "function_definition",
       "start": 33,
       "end": 37,
+      "language": "cpp",
       "entity_kind": "method",
       "qualified_name": "ns::Widget::draw",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "draw"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -182,8 +253,23 @@
       "kind": "function_definition",
       "start": 33,
       "end": 37,
+      "language": "cpp",
       "entity_kind": "method",
       "qualified_name": "ns::Widget::draw",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "draw"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need_ids": [
@@ -211,8 +297,23 @@
       "kind": "function_definition",
       "start": 43,
       "end": 43,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "ns::detail::helper",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "namespace",
+          "name": "detail"
+        },
+        {
+          "kind": "function",
+          "name": "helper"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -244,8 +345,23 @@
       "kind": "function_definition",
       "start": 50,
       "end": 53,
+      "language": "cpp",
       "entity_kind": "method",
       "qualified_name": "ns::Widget::resize",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "resize"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -277,8 +393,15 @@
       "kind": "function_definition",
       "start": 57,
       "end": 59,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "clamp",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "clamp"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -310,8 +433,15 @@
       "kind": "function_definition",
       "start": 62,
       "end": 62,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "scale",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "scale"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -343,8 +473,15 @@
       "kind": "function_definition",
       "start": 65,
       "end": 65,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "scale",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "scale"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -376,8 +513,15 @@
       "kind": "declaration",
       "start": 68,
       "end": 68,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "exported_fn",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "exported_fn"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -409,8 +553,15 @@
       "kind": "function_definition",
       "start": 71,
       "end": 71,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "exported_fn",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "exported_fn"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -468,8 +619,19 @@
       "kind": "function_definition",
       "start": 84,
       "end": 86,
+      "language": "cpp",
       "entity_kind": "method",
       "qualified_name": "Box::get",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Box"
+        },
+        {
+          "kind": "method",
+          "name": "get"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -501,8 +663,15 @@
       "kind": "function_definition",
       "start": 89,
       "end": 89,
+      "language": "cpp",
       "entity_kind": "operator",
       "qualified_name": "operator==",
+      "semantic": [
+        {
+          "kind": "operator",
+          "name": "operator=="
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -534,8 +703,23 @@
       "kind": "function_definition",
       "start": 93,
       "end": 93,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "ns::v2::version",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "namespace",
+          "name": "v2"
+        },
+        {
+          "kind": "function",
+          "name": "version"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -567,8 +751,15 @@
       "kind": "struct_specifier",
       "start": 101,
       "end": 105,
+      "language": "cpp",
       "entity_kind": "struct",
       "qualified_name": "Point",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Point"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -600,8 +791,15 @@
       "kind": "function_definition",
       "start": 107,
       "end": 116,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "main",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "main"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need_ids": [
@@ -629,8 +827,15 @@
       "kind": "function_definition",
       "start": 121,
       "end": 121,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "doc_slash",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "doc_slash"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need": {
@@ -662,8 +867,15 @@
       "kind": "class_specifier",
       "start": 125,
       "end": 137,
+      "language": "cpp",
       "entity_kind": "class",
       "qualified_name": "Gauge",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Gauge"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need": {
@@ -695,8 +907,19 @@
       "kind": "field_declaration",
       "start": 128,
       "end": 128,
+      "language": "cpp",
       "entity_kind": "method",
       "qualified_name": "Gauge::set",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Gauge"
+        },
+        {
+          "kind": "method",
+          "name": "set"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need": {
@@ -728,8 +951,19 @@
       "kind": "field_declaration",
       "start": 130,
       "end": 130,
+      "language": "cpp",
       "entity_kind": "method",
       "qualified_name": "Gauge::set",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Gauge"
+        },
+        {
+          "kind": "method",
+          "name": "set"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need": {
@@ -761,8 +995,15 @@
       "kind": "class_specifier",
       "start": 125,
       "end": 137,
+      "language": "cpp",
       "entity_kind": "class",
       "qualified_name": "Gauge",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Gauge"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need": {
@@ -794,8 +1035,19 @@
       "kind": "function_definition",
       "start": 134,
       "end": 134,
+      "language": "cpp",
       "entity_kind": "method",
       "qualified_name": "Gauge::on_change",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Gauge"
+        },
+        {
+          "kind": "method",
+          "name": "on_change"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -827,8 +1079,19 @@
       "kind": "function_definition",
       "start": 142,
       "end": 142,
+      "language": "cpp",
       "entity_kind": "method",
       "qualified_name": "Gauge::set",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Gauge"
+        },
+        {
+          "kind": "method",
+          "name": "set"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -860,8 +1123,15 @@
       "kind": "struct_specifier",
       "start": 146,
       "end": 148,
+      "language": "cpp",
       "entity_kind": "struct",
       "qualified_name": "Box<bool>",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Box<bool>"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -893,8 +1163,15 @@
       "kind": "function_definition",
       "start": 152,
       "end": 154,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "clamp<long>",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "clamp<long>"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -952,8 +1229,15 @@
       "kind": "function_definition",
       "start": 161,
       "end": 161,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "compute_path",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "compute_path"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -985,8 +1269,15 @@
       "kind": "function_definition",
       "start": 164,
       "end": 164,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "compute_path",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "compute_path"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

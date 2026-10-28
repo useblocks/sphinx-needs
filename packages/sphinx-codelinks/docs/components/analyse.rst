@@ -62,8 +62,14 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
 .. code-block:: json
 
    "scope": {
-       "kind": "function_definition", "start": 33, "end": 37,
-       "entity_kind": "method", "qualified_name": "ns::Widget::draw", "mechanism": "leading"
+       "kind": "function_definition", "start": 33, "end": 37, "language": "cpp",
+       "entity_kind": "method", "qualified_name": "ns::Widget::draw",
+       "semantic": [
+           {"kind": "namespace", "name": "ns"},
+           {"kind": "class", "name": "Widget"},
+           {"kind": "method", "name": "draw"}
+       ],
+       "mechanism": "leading"
    }
 
 - ``kind`` -- the syntax node of the entity (tree-sitter's name for it);
@@ -71,6 +77,10 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   Python decorator, a decorator on a TypeScript class member and a C++ template header above it are not part of it; a
   C# attribute list, a C++ attribute and a decorator on a TypeScript class are (unless the class is exported: then the
   decorator is the export's);
+- ``language`` -- the language of the file, as a symbol ID's prefix names it: ``c`` for a ``.c`` file, ``cpp`` for every
+  other C and C++ file (a ``.h`` header included, since its name does not say which it is), otherwise ``python``,
+  ``rust``, ``cs``, ``ts`` (TypeScript and JavaScript), ``go``, ``yaml``, ``jsonc`` or ``bash``. A ``.c`` file is
+  read with the C++ grammar, and its names follow C++'s rule;
 - ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
   ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,
   ``property``, ``event``, ``indexer`` or ``delegate``; in YAML and JSON ``key`` or ``item``;
@@ -80,6 +90,25 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in TypeScript.
   No module, crate or package prefix: the file's path decides that.
   ``null`` in YAML and JSON, and for an entity without a name;
+- ``semantic`` -- that name in its parts, outermost first and the entity itself last, each a ``kind`` and a ``name``
+  (``null`` exactly when ``qualified_name`` is). The kinds are those of ``entity_kind`` and two more, for what the
+  syntax alone cannot classify: ``scope``, a C++ qualifier such as the ``ns`` of ``void ns::W::f() {}`` (the qualifier
+  right before a method, a constructor, a destructor or a conversion operator is its ``class``), and ``type``, the
+  type a Go method's receiver names. A Rust ``impl`` is a part of kind ``impl`` named after its self type as written
+  (``Widget``, ``dyn Shape``), with a ``trait`` key for a trait impl; nested Python functions are consecutive
+  ``function`` parts (``<locals>`` is no part); a name that is an expression, the left-hand side of a JavaScript
+  assignment (``module.exports.f``), is one part; and a C++ name keeps the arguments of an explicit specialisation
+  (``Box<bool>``) and drops a class template's parameters (``Box::get``), as ``qualified_name`` does. Joined by the
+  rule of the ``language`` -- ``::`` for C, C++ and Rust (with ``<Widget as Shape>`` from a ``trait`` and
+  ``<dyn Shape>`` for a self type that is no path), ``.`` for Python (with ``<locals>`` after a function or a method
+  another part follows) and every other language -- the parts are ``qualified_name``, exactly.
+
+  **Kinds describe, names identify.** A kind is a best-effort classification, for filtering and rendering, and one
+  entity's kinds can depend on how it is written: a method defined in its class is ``namespace ns``, ``class W``,
+  ``method f``, and the same method defined out of line is ``scope ns``, ``class W``, ``method f``. Whether two
+  ``semantic`` lists name the same entity, or one is inside the other, is decided by their names and their other keys
+  (a ``trait``), never by their kinds: ``<Widget as Shape>::area`` and ``<Widget as Other>::area`` differ by
+  their ``trait`` alone;
 - ``mechanism`` -- how the marker was attached: ``doc_comment`` (a documentation comment -- ``///``, ``//!``, ``/**``,
   ``/*!``, a C# ``///``, a JSDoc ``/**`` -- or a Python docstring),
   ``leading`` (a comment on the lines before the entity, or directly inside or right after an attribute, a decorator
@@ -96,7 +125,8 @@ since the compiler's function is the macro's expansion
 A class declared with an export macro (``class EXPORT_API Widget``) is misread by the grammar:
 it is bound without a name, or not at all.
 In Rust, an ``impl`` inside a function is named without the function's path,
-and an ``impl W`` for a ``W`` brought in with ``use`` is named in the module the ``impl`` is written in.
+and an ``impl W`` for a ``W`` brought in with ``use`` is named in the module the ``impl`` is written in
+(an ``impl``'s part carries the module path of a bare type name, ``m::G``, so no ``module`` part comes before it).
 The needs ``src-trace`` creates carry no field for the entity: it is recorded here, in the analysis output,
 and will be exposed on the need together with the need's source record.
 
@@ -198,8 +228,9 @@ Below is an example of a C++ source file containing need ID references and the c
                 },
                 "tagged_scope": "void dummy_func1(){\n     //...\n }",
                 "scope": {
-                    "kind": "function_definition", "start": 4, "end": 6,
-                    "entity_kind": "function", "qualified_name": "dummy_func1", "mechanism": "leading"
+                    "kind": "function_definition", "start": 4, "end": 6, "language": "cpp",
+                    "entity_kind": "function", "qualified_name": "dummy_func1",
+                    "semantic": [{ "kind": "function", "name": "dummy_func1" }], "mechanism": "leading"
                 },
                 "need_ids": ["need_001", "need_002", "need_003", "need_004"],
                 "marker": "@need-ids:",
@@ -214,8 +245,9 @@ Below is an example of a C++ source file containing need ID references and the c
                 },
                 "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
                 "scope": {
-                    "kind": "function_definition", "start": 9, "end": 14,
-                    "entity_kind": "function", "qualified_name": "main", "mechanism": "leading"
+                    "kind": "function_definition", "start": 9, "end": 14, "language": "cpp",
+                    "entity_kind": "function", "qualified_name": "main",
+                    "semantic": [{ "kind": "function", "name": "main" }], "mechanism": "leading"
                 },
                 "need_ids": ["need_003"],
                 "marker": "@need-ids:",
@@ -229,8 +261,8 @@ Below is an example of a C++ source file containing need ID references and the c
 - ``remote_url`` - URL to the source code in the remote repository
 - ``source_map`` - Location information (row/column) of the marker
 - ``tagged_scope`` - The full text of the code entity the marker is attached to, or ``null``
-- ``scope`` - That entity, named: its kind, lines and name, and how the marker was attached
-  (see :ref:`attachment`), or ``null``
+- ``scope`` - That entity, named: its kind, lines, language, name and the name's parts, and how the
+  marker was attached (see :ref:`attachment`), or ``null``
 - ``need_ids`` - List of referenced need IDs
 - ``marker`` - The marker string used for identification
 - ``type`` - Type of extraction ("need-id-refs")
@@ -549,8 +581,9 @@ The record
            "content_start": { "line": 9, "col": 3 },
            "option_lines": { "id": 5, "links": 6, "status": 7 },
            "scope": {
-               "kind": "function_definition", "start": 13, "end": 15,
-               "entity_kind": "function", "qualified_name": "login", "mechanism": "doc_comment"
+               "kind": "function_definition", "start": 13, "end": 15, "language": "c",
+               "entity_kind": "function", "qualified_name": "login",
+               "semantic": [{ "kind": "function", "name": "login" }], "mechanism": "doc_comment"
            }
        },
        "type": "multiline-need"

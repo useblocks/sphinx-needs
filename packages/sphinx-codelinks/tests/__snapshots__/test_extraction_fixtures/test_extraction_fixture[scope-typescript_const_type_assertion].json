@@ -17,8 +17,15 @@
       "kind": "lexical_declaration",
       "start": 2,
       "end": 2,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "onFocus",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "onFocus"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

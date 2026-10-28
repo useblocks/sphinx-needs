@@ -17,8 +17,15 @@
       "kind": "function_definition",
       "start": 11,
       "end": 11,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "precedence",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "precedence"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need": {
@@ -76,8 +83,15 @@
         "kind": "function_definition",
         "start": 11,
         "end": 11,
+        "language": "cpp",
         "entity_kind": "function",
         "qualified_name": "precedence",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "precedence"
+          }
+        ],
         "mechanism": "doc_comment"
       }
     },
@@ -102,8 +116,15 @@
       "kind": "function_definition",
       "start": 11,
       "end": 11,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "precedence",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "precedence"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need_ids": [
@@ -131,8 +152,15 @@
       "kind": "function_definition",
       "start": 15,
       "end": 15,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "outside",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "outside"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -162,8 +190,15 @@
       "kind": "function_definition",
       "start": 15,
       "end": 15,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "outside",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "outside"
+        }
+      ],
       "mechanism": "leading"
     },
     "need_ids": [

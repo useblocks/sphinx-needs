@@ -17,8 +17,15 @@
       "kind": "function_definition",
       "start": 10,
       "end": 12,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "module_function",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "module_function"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -50,8 +57,15 @@
       "kind": "function_definition",
       "start": 10,
       "end": 12,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "module_function",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "module_function"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need_ids": [
@@ -79,8 +93,15 @@
       "kind": "class_definition",
       "start": 20,
       "end": 53,
+      "language": "python",
       "entity_kind": "class",
       "qualified_name": "Shape",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Shape"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -112,8 +133,15 @@
       "kind": "class_definition",
       "start": 20,
       "end": 53,
+      "language": "python",
       "entity_kind": "class",
       "qualified_name": "Shape",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Shape"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need_ids": [
@@ -141,8 +169,19 @@
       "kind": "class_definition",
       "start": 27,
       "end": 28,
+      "language": "python",
       "entity_kind": "class",
       "qualified_name": "Shape.Meta",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Shape"
+        },
+        {
+          "kind": "class",
+          "name": "Meta"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -174,8 +213,19 @@
       "kind": "function_definition",
       "start": 31,
       "end": 32,
+      "language": "python",
       "entity_kind": "method",
       "qualified_name": "Shape.area",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Shape"
+        },
+        {
+          "kind": "method",
+          "name": "area"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -207,8 +257,19 @@
       "kind": "function_definition",
       "start": 36,
       "end": 37,
+      "language": "python",
       "entity_kind": "method",
       "qualified_name": "Shape.cached",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Shape"
+        },
+        {
+          "kind": "method",
+          "name": "cached"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -240,8 +301,19 @@
       "kind": "function_definition",
       "start": 41,
       "end": 42,
+      "language": "python",
       "entity_kind": "method",
       "qualified_name": "Shape.name",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Shape"
+        },
+        {
+          "kind": "method",
+          "name": "name"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -273,8 +345,19 @@
       "kind": "function_definition",
       "start": 48,
       "end": 53,
+      "language": "python",
       "entity_kind": "method",
       "qualified_name": "Shape.docstring_marked",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Shape"
+        },
+        {
+          "kind": "method",
+          "name": "docstring_marked"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need_ids": [
@@ -302,8 +385,15 @@
       "kind": "function_definition",
       "start": 57,
       "end": 62,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "outer",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "outer"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -335,8 +425,19 @@
       "kind": "function_definition",
       "start": 59,
       "end": 60,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "outer.<locals>.inner",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "outer"
+        },
+        {
+          "kind": "function",
+          "name": "inner"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -368,8 +469,15 @@
       "kind": "function_definition",
       "start": 71,
       "end": 71,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "convert",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "convert"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -401,8 +509,15 @@
       "kind": "function_definition",
       "start": 74,
       "end": 76,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "convert",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "convert"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need_ids": [
@@ -456,8 +571,19 @@
       "kind": "function_definition",
       "start": 85,
       "end": 86,
+      "language": "python",
       "entity_kind": "method",
       "qualified_name": "Square.area",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Square"
+        },
+        {
+          "kind": "method",
+          "name": "area"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -489,8 +615,15 @@
       "kind": "class_definition",
       "start": 99,
       "end": 129,
+      "language": "python",
       "entity_kind": "class",
       "qualified_name": "Point",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Point"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -522,8 +655,19 @@
       "kind": "function_definition",
       "start": 105,
       "end": 106,
+      "language": "python",
       "entity_kind": "method",
       "qualified_name": "Point.norm",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Point"
+        },
+        {
+          "kind": "method",
+          "name": "norm"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -555,8 +699,19 @@
       "kind": "function_definition",
       "start": 109,
       "end": 111,
+      "language": "python",
       "entity_kind": "method",
       "qualified_name": "Point.norm",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Point"
+        },
+        {
+          "kind": "method",
+          "name": "norm"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need_ids": [
@@ -584,8 +739,19 @@
       "kind": "function_definition",
       "start": 115,
       "end": 116,
+      "language": "python",
       "entity_kind": "method",
       "qualified_name": "Point.origin",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Point"
+        },
+        {
+          "kind": "method",
+          "name": "origin"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -617,8 +783,23 @@
       "kind": "function_definition",
       "start": 120,
       "end": 121,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "Point.compute.<locals>.helper",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Point"
+        },
+        {
+          "kind": "method",
+          "name": "compute"
+        },
+        {
+          "kind": "function",
+          "name": "helper"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -650,8 +831,27 @@
       "kind": "function_definition",
       "start": 128,
       "end": 129,
+      "language": "python",
       "entity_kind": "method",
       "qualified_name": "Point.Inner.Deeper.deep",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Point"
+        },
+        {
+          "kind": "class",
+          "name": "Inner"
+        },
+        {
+          "kind": "class",
+          "name": "Deeper"
+        },
+        {
+          "kind": "method",
+          "name": "deep"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -683,8 +883,15 @@
       "kind": "function_definition",
       "start": 134,
       "end": 135,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "variant",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "variant"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -716,8 +923,15 @@
       "kind": "function_definition",
       "start": 138,
       "end": 139,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "variant",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "variant"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -749,8 +963,15 @@
       "kind": "function_definition",
       "start": 157,
       "end": 161,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "handler",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "handler"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -782,8 +1003,15 @@
       "kind": "function_definition",
       "start": 157,
       "end": 161,
+      "language": "python",
       "entity_kind": "function",
       "qualified_name": "handler",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "handler"
+        }
+      ],
       "mechanism": "doc_comment"
     },
     "need_ids": [

@@ -17,8 +17,15 @@
       "kind": "declaration",
       "start": 3,
       "end": 3,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "hdr_always",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "hdr_always"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

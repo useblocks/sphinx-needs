@@ -17,8 +17,15 @@
       "kind": "function_definition",
       "start": 2,
       "end": 7,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -50,8 +57,15 @@
       "kind": "function_definition",
       "start": 9,
       "end": 9,
+      "language": "cpp",
       "entity_kind": "function",
       "qualified_name": "g",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "g"
+        }
+      ],
       "mechanism": "leading"
     },
     "need_ids": [

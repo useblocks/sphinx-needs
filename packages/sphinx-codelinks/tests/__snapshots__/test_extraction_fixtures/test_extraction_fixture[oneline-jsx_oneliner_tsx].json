@@ -17,8 +17,15 @@
       "kind": "lexical_declaration",
       "start": 1,
       "end": 7,
+      "language": "ts",
       "entity_kind": "function",
       "qualified_name": "App",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "App"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need": {

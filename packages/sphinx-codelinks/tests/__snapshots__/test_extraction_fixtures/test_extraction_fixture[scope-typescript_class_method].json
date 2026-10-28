@@ -17,8 +17,19 @@
       "kind": "method_definition",
       "start": 3,
       "end": 3,
+      "language": "ts",
       "entity_kind": "method",
       "qualified_name": "Service.run",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Service"
+        },
+        {
+          "kind": "method",
+          "name": "run"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
