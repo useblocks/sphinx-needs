@@ -247,7 +247,8 @@ sorted; the path is `….<name>.<table>.<key>`.
    values: read-only (a method that would change it — `pop`, `append`, `clear` — is a
    render error, and no render changes the data another sees), iterated in file order,
    and printed as the engine prints its values (`{{ rows }}` is `[1, "a"]`).
-   Enforced by: corpus `context-is-read-only`, `dialect-values-render-pythonically`.
+   Enforced by: corpus `context-is-read-only`, `dialect-values-render-pythonically`,
+   `context-data-prints-as-the-engine-prints`.
 
    *The Sphinx half (informative):* minijinja-py hands a Python `dict` or `list` to a
    template as a Python object — printed as Python's `repr` (`{'a': [1, 2]}`), with

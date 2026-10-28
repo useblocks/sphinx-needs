@@ -1003,6 +1003,30 @@ REQ_A01 REQ_A02 0''',
 findings = []
 
 [[case]]
+name = "context-data-prints-as-the-engine-prints"
+why = "context data is the engine's own: a list, a map and its items() print as the engine prints them, in file order"
+config = '''
+[parse.template_contexts.c]
+file = "c.json"
+
+[parse.directive_templates.printed]
+body = "{{ contexts.c.rows }} {{ contexts.c.m }} {{ contexts.c.m.items() }} {{ contexts.c.f }} {{ contexts.c }}"
+'''
+source = '''
+.. printed::
+'''
+[case.files]
+"c.json" = '''
+{"rows": [1, 2], "m": {"z": 1, "a": [true]}, "f": 1.0}
+'''
+[case.expect]
+expansions = [
+'''
+[1, 2] {"z": 1, "a": [True]} [["z", 1], ["a", [True]]] 1.0 {"rows": [1, 2], "m": {"z": 1, "a": [True]}, "f": 1.0}''',
+]
+findings = []
+
+[[case]]
 name = "context-is-read-only"
 why = "context data is read-only: a method that would change it is an error"
 config = '''
