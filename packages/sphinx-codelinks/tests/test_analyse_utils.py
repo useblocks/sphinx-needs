@@ -1990,3 +1990,23 @@ def test_yaml_inline_comments_comprehensive(
         assert expected_associations[i] in structure_text, (
             f"Comment {i} '{comment.text.decode('utf-8')}' -> Expected '{expected_associations[i]}' in '{structure_text}'"
         )
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        pytest.param("a@file.com", False, id="address"),
+        pytest.param("x@module", False, id="no-left-boundary"),
+        pytest.param("* @file", True, id="after-star"),
+        pytest.param("\\file widget.h", True, id="backslash-at-start"),
+        pytest.param("@filename", False, id="longer-word"),
+        pytest.param("@file_x", False, id="underscore"),
+        pytest.param("/// @fileoverview Widgets.", True, id="fileoverview"),
+        pytest.param("@fileͅ x", True, id="non-ascii-mark-ends-the-word"),
+    ],
+)
+def test_documents_file(text: str, expected: bool) -> None:
+    """A file tag counts at the start of the text or after whitespace, ``*``, ``/`` or
+    ``!``, and only as a whole ASCII word; the same rule as the other implementation's,
+    so the two cannot split on an address, a longer word or a non-ASCII mark."""
+    assert utils.documents_file(text) is expected

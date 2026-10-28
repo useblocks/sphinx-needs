@@ -1308,7 +1308,7 @@ rule_cpp_function_defining_macro:
 rule_cpp_conversion_operator:
   # A conversion operator is a function: declared in its class, defined in it, and
   # defined out of line. Its name keeps the target type as written, up to the
-  # parameter list.
+  # conversion's own parameter list (not one inside the target type).
   lang: cpp
   config: default
   extract: [oneline, need_refs]
@@ -1324,17 +1324,23 @@ rule_cpp_conversion_operator:
         operator const char*() const;
         // @Conversion to a reference, IMPL_R_CONV_5, impl
         operator int&();
+        // @Conversion to a function wrapper, IMPL_R_CONV_6, impl
+        operator std::function<void(int)>() const;
     };
     }
 
     // @Out-of-line conversion, IMPL_R_CONV_3, impl
     ns::W::operator bool() const { return true; }
+    // @Out-of-line conversion to a function wrapper, IMPL_R_CONV_7, impl
+    ns::W::operator std::function<void(int)>() const { return {}; }
   truth:
     - {id: IMPL_R_CONV_1, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator bool", start: 5, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator bool() const"}
     - {id: IMPL_R_CONV_2, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator int", start: 7, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator int() const"}
     - {id: IMPL_R_CONV_4, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator const char*", start: 9, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator char const*() const (the target as written: const char*)"}
     - {id: IMPL_R_CONV_5, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator int&", start: 11, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator int&()"}
-    - {id: IMPL_R_CONV_3, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator bool", start: 16, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator bool() const"}
+    - {id: IMPL_R_CONV_6, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator std::function<void(int)>", start: 13, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator std::function<void (int)>() const (the target as written: std::function<void(int)>)"}
+    - {id: IMPL_R_CONV_3, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator bool", start: 18, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator bool() const"}
+    - {id: IMPL_R_CONV_7, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator std::function<void(int)>", start: 20, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator std::function<void (int)>() const (the target as written: std::function<void(int)>)"}
 
 rule_cpp_members_under_preprocessor:
   # Class members inside #if / #else are still members: constructor, destructor, method.
@@ -1508,3 +1514,135 @@ rule_inner_attribute_is_no_entity_head:
   truth:
     - {id: IMPL_R_INNER_ATTR_1, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "rustc: an inner attribute applies to the enclosing crate"}
     - {id: IMPL_R_INNER_ATTR_2, outcome: exact, entity_kind: "module", qualified_name: "m", start: 4, mechanism: enclosing, compiler: "rustc: an inner attribute applies to the enclosing module"}
+
+rule_file_tag_needs_a_left_boundary:
+  # A file tag counts only at the start of the comment or after a space, ``*``, ``/`` or
+  # ``!``: an address like ``a@file.com`` in a header doc block is prose, so the block
+  # documents the next item.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /**
+     * Widgets; mail a@file.com for help.
+     * @need-ids: REQ_R_TAG_LEFT
+     */
+
+    void f();
+  truth:
+    - {id: REQ_R_TAG_LEFT, outcome: exact, entity_kind: "function", qualified_name: "f", start: 6, mechanism: doc_comment, compiler: "Doxygen: no file command, so the block documents the next declaration"}
+
+rule_file_tag_is_a_whole_word:
+  # A file tag must end the word: ``@filename`` is no ``@file``, so the block documents
+  # the next item.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /** @filename widget.h
+     * @need-ids: REQ_R_TAG_WORD */
+
+    void f();
+  truth:
+    - {id: REQ_R_TAG_WORD, outcome: exact, entity_kind: "function", qualified_name: "f", start: 4, mechanism: doc_comment, compiler: "Doxygen: @filename is no file command"}
+
+rule_file_tag_ascii_boundary:
+  # The word ends at the first character that is not an ASCII letter, digit or ``_``:
+  # Doxygen and JSDoc commands are ASCII, so ``@file`` followed by a combining mark is
+  # still ``@file``, and the block is file level.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /** @fileͅ widget.h
+     * @need-ids: REQ_R_TAG_ASCII */
+
+    void f();
+  truth:
+    - {id: REQ_R_TAG_ASCII, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case (ASCII command names)"}
+
+rule_file_tag_backslash_form:
+  # Doxygen's ``\file`` is ``@file``: the block is file level.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /** \file widget.h
+     * @need-ids: REQ_R_TAG_BACKSLASH */
+
+    void f();
+  truth:
+    - {id: REQ_R_TAG_BACKSLASH, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "Doxygen: \\file documents the file"}
+
+rule_file_tag_module_ts:
+  # JSDoc's ``@module`` documents the file: the block is file level.
+  lang: typescript
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /**
+     * @module widgets
+     * @need-ids: REQ_R_TAG_MODULE
+     */
+
+    export function f(): void {}
+  truth:
+    - {id: REQ_R_TAG_MODULE, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "JSDoc: @module documents the file"}
+
+rule_file_tag_package_documentation_ts:
+  # TSDoc's ``@packageDocumentation`` documents the file: the block is file level.
+  lang: typescript
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /**
+     * @packageDocumentation
+     * @need-ids: REQ_R_TAG_PACKAGE
+     */
+
+    export function f(): void {}
+  truth:
+    - {id: REQ_R_TAG_PACKAGE, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "TSDoc: @packageDocumentation documents the file"}
+
+rule_head_comment_skip_csharp:
+  # Another comment between an attribute and the marker does not take the marker out
+  # of the entity's head: it still leads the method.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    class A
+    {
+        [Test] /* c */ // @After an attribute and a comment, IMPL_R_HEAD_SKIP_CS, impl
+        public void M() {}
+    }
+  truth:
+    - {id: IMPL_R_HEAD_SKIP_CS, outcome: exact, entity_kind: "method", qualified_name: "A.M", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_head_comment_skip_ts:
+  # Another comment between a class decorator and the marker does not take the marker
+  # out of the class's head: it still leads the class.
+  lang: typescript
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    @Injectable() /* c */ // @After a decorator and a comment, IMPL_R_HEAD_SKIP_TS, impl
+    class Service {}
+  truth:
+    - {id: IMPL_R_HEAD_SKIP_TS, outcome: exact, entity_kind: "class", qualified_name: "Service", start: 1, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_head_before_trailing:
+  # A marker inside an attribute list that starts the entity's row trails code on that
+  # row, but it is in the head first: it leads the method.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    class A
+    {
+        [Test, // @Inside an attribute list, IMPL_R_HEAD_ORDER, impl
+         Category("x")]
+        public void M() {}
+    }
+  truth:
+    - {id: IMPL_R_HEAD_ORDER, outcome: exact, entity_kind: "method", qualified_name: "A.M", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}

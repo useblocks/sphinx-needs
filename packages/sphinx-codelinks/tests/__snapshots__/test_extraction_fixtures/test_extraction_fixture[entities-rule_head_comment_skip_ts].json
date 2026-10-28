@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 26
+      },
+      "end": {
+        "row": 0,
+        "column": 84
+      }
+    },
+    "tagged_scope": "@Injectable() /* c */ // @After a decorator and a comment, IMPL_R_HEAD_SKIP_TS, impl\nclass Service {}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 1,
+      "end": 2,
+      "entity_kind": "class",
+      "qualified_name": "Service",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "After a decorator and a comment",
+      "id": "IMPL_R_HEAD_SKIP_TS",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  }
+]

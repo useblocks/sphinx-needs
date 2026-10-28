@@ -323,16 +323,23 @@ def _is_file_header(node: TreeSitterNode) -> bool:
 
 
 # A Doxygen or JSDoc tag saying a documentation comment documents the file, not the
-# item after it.
-_FILE_DOC_TAG = re.compile(r"[@\\](?:file|fileoverview|packageDocumentation|module)\b")
+# item after it: at the start of the text or after ASCII whitespace, ``*``, ``/`` or
+# ``!``, and ending the word, which is ASCII (as Doxygen and JSDoc commands are).
+_FILE_DOC_TAG = re.compile(
+    r"(?:^|(?<=[ \t\n\r\f\v*/!]))[@\\]"
+    r"(?:file|fileoverview|packageDocumentation|module)(?![A-Za-z0-9_])"
+)
 
 
-def _documents_file(node: TreeSitterNode) -> bool:
-    """Whether the documentation comment ``node`` documents the file (``@file``,
-    ``\\file``, ``@fileoverview``, ``@packageDocumentation``, ``@module``)."""
-    return (
-        _FILE_DOC_TAG.search((node.text or b"").decode("utf-8", "replace")) is not None
-    )
+def documents_file(text: str) -> bool:
+    """Whether a documentation comment's ``text`` says it documents the file.
+
+    It does when a file tag (Doxygen's file command, JSDoc's fileoverview, module and
+    packageDocumentation tags, see ``_FILE_DOC_TAG``) appears as a whole word, at the
+    start or after whitespace or one of ``*/!``; an address such as ``a@file.com`` or a
+    longer word such as ``@filename`` does not count.
+    """
+    return _FILE_DOC_TAG.search(text) is not None
 
 
 def _in_head_of(
@@ -556,7 +563,9 @@ def associate(
         if entity is None:
             return enclosing(trailing=True)
         return Association(entity, declared if is_doc else "trailing")
-    if _is_file_header(node) and (not is_doc or _documents_file(node)):
+    if _is_file_header(node) and (
+        not is_doc or documents_file((node.text or b"").decode("utf-8", "replace"))
+    ):
         return None
     entity = find_next_scope(node, comment_type)
     if entity is None:

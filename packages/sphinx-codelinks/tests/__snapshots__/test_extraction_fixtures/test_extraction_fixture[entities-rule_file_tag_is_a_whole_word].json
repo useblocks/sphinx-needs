@@ -1,0 +1,31 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 14
+      },
+      "end": {
+        "row": 1,
+        "column": 28
+      }
+    },
+    "tagged_scope": "void f();",
+    "scope": {
+      "kind": "declaration",
+      "start": 4,
+      "end": 4,
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "mechanism": "doc_comment"
+    },
+    "need_ids": [
+      "REQ_R_TAG_WORD"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "declaration"
+  }
+]

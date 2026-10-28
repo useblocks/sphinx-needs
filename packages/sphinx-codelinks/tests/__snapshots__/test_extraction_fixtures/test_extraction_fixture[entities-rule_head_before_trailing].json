@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 15
+      },
+      "end": {
+        "row": 2,
+        "column": 64
+      }
+    },
+    "tagged_scope": "[Test, // @Inside an attribute list, IMPL_R_HEAD_ORDER, impl\n     Category(\"x\")]\n    public void M() {}",
+    "scope": {
+      "kind": "method_declaration",
+      "start": 3,
+      "end": 5,
+      "entity_kind": "method",
+      "qualified_name": "A.M",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Inside an attribute list",
+      "id": "IMPL_R_HEAD_ORDER",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "method_declaration"
+  }
+]

@@ -620,9 +620,12 @@ def _cpp_defined_by_macro(node: TreeSitterNode) -> bool:
 
 
 def _cpp_conversion_target_end(cast: TreeSitterNode) -> int:
-    """Where a conversion operator's target type ends: at its parameter list
-    (``operator const char*() const``), past any pointer or reference."""
-    stack = [cast]
+    """Where a conversion operator's target type ends: at its own parameter list
+    (``operator const char*() const``), past any pointer or reference. The search
+    starts at the cast's declarator, so a parameter list inside the target type
+    (``operator std::function<void(int)>()``) is not it."""
+    declarator = cast.child_by_field_name("declarator")
+    stack = [declarator] if declarator is not None else []
     while stack:
         node = stack.pop()
         if node.type == "parameter_list":
