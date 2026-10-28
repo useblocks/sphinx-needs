@@ -1,0 +1,2604 @@
+# Conformance corpus for DIRECTIVE PRESETS: a `[parse.directive_presets.<name>]` entry of
+# `ubproject.toml` -- how an entry is read and checked, and what a use of the preset is.
+#
+# Repository of record: useblocks/sphinx-needs (public)
+# Canonical path:       packages/sphinx-ub-directives/tests/fixtures/directive_presets_conformance.toml
+#
+# THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
+# (this path, and the commit it was taken from) prepended and nothing else changed, and to
+# run it against its own engine. The corpus travels public -> private, so vendoring with a
+# recorded source commit is the sync mechanism.
+#
+# Do not reformat this file. `.gitattributes` pins its line endings, and the taplo hook
+# excludes it: every `config`, `source`, `equivalent` and `files` body below is the INPUT
+# of a case, so a formatter touching one silently changes what the case tests. A change
+# here is a change to the contract (`packages/sphinx-ub-directives/design/directives-contract.md`),
+# and owes ubCode a re-vendor.
+#
+# Rules for every runner:
+#   - a case is one project. `config` is its `ubproject.toml`; `source` is the body of its
+#     one document, under a title the runner adds: `index.rst` under "Case\n====\n\n" when
+#     `markup` is "rst" (the default), `index.md` under "# Case\n\n" when it is "md".
+#     `files` (optional) are other files of the project, relative to the case directory. A
+#     case writes only inside its own directory: a `files` key that would land outside it
+#     (`../x.json`) is a broken case, and the runner refuses it. A Markdown case's `config`
+#     carries `[parse.parsers.md] flavour = "myst"` for ubCode; the Sphinx runner loads
+#     myst-parser for every case
+#   - the Sphinx runner's `conf.py` loads `sphinx_needs`, `sphinx_design`, `myst_parser` and
+#     `sphinx_ub_directives`, and reads the needs configuration from the same `ubproject.toml`
+#     (`needs_from_toml`); nothing else. ubCode reads the file as a project
+#   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
+#     the default ones (`req`, `spec`, `impl`, `test`), so a case never carries a need type
+#     spelled with upper-case letters (the contract refuses one as a preset base, and a Sphinx
+#     build cannot use one at all)
+#   - a case never depends on the order of a mapping, never holds YAML, and never names a
+#     third-party directive (a directive of no extension listed above), except where it is
+#     about exactly that
+#   - `equivalent` (optional) is the same page written WITHOUT the preset: the base directive
+#     with the options the preset merges in written out. It is built as a project of its
+#     own, with the same `config` and `files`, and each runner asserts that the two give the
+#     SAME PRODUCTS IN THAT TOOL -- its rendered page and its needs (positions dropped) --
+#     never across tools: the two tools' page forms are not compared with each other
+#   - a case with `python_only = true` is one only the Sphinx runner runs, and ubCode's
+#     runner skips it; `ubcode_only = true` is the converse. Each says in its `why` why the
+#     other tool cannot run it
+#   - needs values are compared as `needs.json` writes them, TYPE INCLUDED: `7.0` is a float
+#     and `7` an integer, and the two differ; a link list is a list of id strings, and
+#     `sections` the list of section titles from the need's own section outwards
+#   - findings are compared as a MULTISET of `code`, and of `path` and `directive` where the
+#     finding names them; a key a finding leaves out is not compared. `code` is the BARE
+#     contract code (`directive_preset_unknown_base`, not `config.directive_preset_unknown_base`
+#     or `ub_directives.directive_preset_unknown_base`). `path` is the dotted `ubproject.toml`
+#     path a configuration finding is reported at, spelled as ub-project's reading contract
+#     (section 7.2) spells one; `directive` is the name of the directive a finding at a use is
+#     reported at, in lower case. Lines, columns, messages and severities are NEVER compared.
+#     Only the codes of the presets contract are compared --
+#         directive_preset_unknown_base, directive_preset_base_is_preset,
+#         directive_preset_name_taken, directive_preset_unknown_option,
+#         directive_preset_invalid_value, directive_preset_option_conflict,
+#         directive_preset_append_not_list, directive_preset_argument_not_accepted,
+#         directive_preset_identity_option, directive_preset_unknown_key,
+#         preset_forced_option
+#     -- every other finding (an image file that cannot be read, a document in no toctree)
+#     is each tool's own
+#   - a `nulls` entry names a need of the case and a field that need carries, pinned as null;
+#     a `missing` entry names a need id the case must NOT create
+#
+# `packages/sphinx-ub-directives/tests/test_presets_conformance.py` runs every case AND
+# asserts the case COUNT, so a truncated copy is a red test rather than reduced coverage.
+#
+# Each `[[case]]` has:
+#   name         - unique, kebab-case
+#   why          - one line saying what the case pins
+#   markup       - optional; "rst" (the default) or "md": the markup of the one page
+#   config       - the `ubproject.toml`
+#   source       - the body of the page
+#   equivalent   - optional; the same page written with the base (see the rules above)
+#   files        - optional; other files, relative to the case directory, and their text
+#   python_only  - optional; see the rules above
+#   ubcode_only  - optional; see the rules above
+#   [case.expect]
+#     findings         - the findings, `[]` for none; or one `[[case.expect.findings]]`
+#                        table per finding: `code`, and `path` or `directive` where named
+#     needs.<ID>       - one table per pinned need: field = value
+#     nulls            - <ID> = [the fields pinned as null]
+#     missing          - [the need ids the case must not create]
+
+[[case]]
+name = "identity-admonition-rst"
+why = "an option-less preset of admonition is admonition: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-admonition]
+base = "admonition"
+'''
+source = '''
+.. pf-admonition:: A *title*
+   :class: x
+   :name: adm-a
+
+   Body.
+
+See :ref:`adm-a`.
+'''
+equivalent = '''
+.. admonition:: A *title*
+   :class: x
+   :name: adm-a
+
+   Body.
+
+See :ref:`adm-a`.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-admonition-md"
+why = "an option-less preset of admonition is admonition: the same page and needs as the base (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.pf-admonition]
+base = "admonition"
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{pf-admonition} A *title*
+:class: x
+:name: adm-a
+
+Body.
+```
+'''
+equivalent = '''
+```{admonition} A *title*
+:class: x
+:name: adm-a
+
+Body.
+```
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-note-rst"
+why = "an option-less preset of note is note: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-note]
+base = "note"
+'''
+source = '''
+.. pf-note::
+
+   Body with **markup**.
+'''
+equivalent = '''
+.. note::
+
+   Body with **markup**.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-note-md"
+why = "an option-less preset of note is note: the same page and needs as the base (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.pf-note]
+base = "note"
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{pf-note}
+Body with **markup**.
+```
+'''
+equivalent = '''
+```{note}
+Body with **markup**.
+```
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-seealso-rst"
+why = "an option-less preset of seealso is seealso: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-seealso]
+base = "seealso"
+'''
+source = '''
+.. pf-seealso::
+
+   Something else.
+'''
+equivalent = '''
+.. seealso::
+
+   Something else.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-topic-rst"
+why = "an option-less preset of topic is topic: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-topic]
+base = "topic"
+'''
+source = '''
+.. pf-topic:: Topic title
+
+   Body.
+'''
+equivalent = '''
+.. topic:: Topic title
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-sidebar-rst"
+why = "an option-less preset of sidebar is sidebar: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-sidebar]
+base = "sidebar"
+'''
+source = '''
+.. pf-sidebar:: Side
+
+   Body.
+'''
+equivalent = '''
+.. sidebar:: Side
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-container-rst"
+why = "an option-less preset of container is container: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-container]
+base = "container"
+'''
+source = '''
+.. pf-container:: box
+
+   Body.
+'''
+equivalent = '''
+.. container:: box
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-rubric-rst"
+why = "an option-less preset of rubric is rubric: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-rubric]
+base = "rubric"
+'''
+source = '''
+.. pf-rubric:: A rubric
+'''
+equivalent = '''
+.. rubric:: A rubric
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-figure-rst"
+why = "an option-less preset of figure is figure: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-figure]
+base = "figure"
+'''
+source = '''
+.. pf-figure:: pic.png
+   :name: fig-a
+   :align: center
+
+   Caption.
+
+See :ref:`fig-a`.
+'''
+equivalent = '''
+.. figure:: pic.png
+   :name: fig-a
+   :align: center
+
+   Caption.
+
+See :ref:`fig-a`.
+'''
+[case.files]
+"pic.png" = '''
+not really an image; only its name is read
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-figure-md"
+why = "an option-less preset of figure is figure: the same page and needs as the base (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.pf-figure]
+base = "figure"
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{pf-figure} pic.png
+:name: fig-a
+:align: center
+
+Caption.
+```
+
+See {ref}`fig-a`.
+'''
+equivalent = '''
+```{figure} pic.png
+:name: fig-a
+:align: center
+
+Caption.
+```
+
+See {ref}`fig-a`.
+'''
+[case.files]
+"pic.png" = '''
+not really an image; only its name is read
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-image-rst"
+why = "an option-less preset of image is image: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-image]
+base = "image"
+'''
+source = '''
+.. pf-image:: pic.png
+   :alt: An image
+'''
+equivalent = '''
+.. image:: pic.png
+   :alt: An image
+'''
+[case.files]
+"pic.png" = '''
+not really an image; only its name is read
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-image-substitution-rst"
+why = "an option-less preset of image is image: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-image]
+base = "image"
+'''
+source = '''
+Text |pic|.
+
+.. |pic| pf-image:: pic.png
+'''
+equivalent = '''
+Text |pic|.
+
+.. |pic| image:: pic.png
+'''
+[case.files]
+"pic.png" = '''
+not really an image; only its name is read
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-code-block-rst"
+why = "an option-less preset of code-block is code-block: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-code-block]
+base = "code-block"
+'''
+source = '''
+.. pf-code-block:: python
+   :linenos:
+   :caption: Code
+
+   print(1)
+'''
+equivalent = '''
+.. code-block:: python
+   :linenos:
+   :caption: Code
+
+   print(1)
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-code-block-md"
+why = "an option-less preset of code-block is code-block: the same page and needs as the base (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.pf-code-block]
+base = "code-block"
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{pf-code-block} python
+:linenos:
+
+print(1)
+```
+'''
+equivalent = '''
+```{code-block} python
+:linenos:
+
+print(1)
+```
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-math-rst"
+why = "an option-less preset of math is math: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-math]
+base = "math"
+'''
+source = '''
+.. pf-math::
+
+   a + b
+'''
+equivalent = '''
+.. math::
+
+   a + b
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-parsed-literal-rst"
+why = "an option-less preset of parsed-literal is parsed-literal: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-parsed-literal]
+base = "parsed-literal"
+'''
+source = '''
+.. pf-parsed-literal::
+
+   **bold** text
+'''
+equivalent = '''
+.. parsed-literal::
+
+   **bold** text
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-list-table-rst"
+why = "an option-less preset of list-table is list-table: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-list-table]
+base = "list-table"
+'''
+source = '''
+.. pf-list-table:: T
+   :header-rows: 1
+
+   * - A
+     - B
+   * - 1
+     - 2
+'''
+equivalent = '''
+.. list-table:: T
+   :header-rows: 1
+
+   * - A
+     - B
+   * - 1
+     - 2
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-csv-table-rst"
+why = "an option-less preset of csv-table is csv-table: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-csv-table]
+base = "csv-table"
+'''
+source = '''
+.. pf-csv-table:: T
+   :header: A, B
+
+   1, 2
+'''
+equivalent = '''
+.. csv-table:: T
+   :header: A, B
+
+   1, 2
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-toctree-rst"
+why = "an option-less preset of toctree is toctree: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-toctree]
+base = "toctree"
+'''
+source = '''
+.. pf-toctree::
+   :maxdepth: 1
+   :caption: Contents
+
+   other
+'''
+equivalent = '''
+.. toctree::
+   :maxdepth: 1
+   :caption: Contents
+
+   other
+'''
+[case.files]
+"other.rst" = '''
+Other
+=====
+
+The other page.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-toctree-md"
+why = "an option-less preset of toctree is toctree: the same page and needs as the base (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.pf-toctree]
+base = "toctree"
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{pf-toctree}
+:maxdepth: 1
+
+other
+```
+'''
+equivalent = '''
+```{toctree}
+:maxdepth: 1
+
+other
+```
+'''
+[case.files]
+"other.rst" = '''
+Other
+=====
+
+The other page.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-contents-rst"
+why = "an option-less preset of contents is contents: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-contents]
+base = "contents"
+'''
+source = '''
+.. pf-contents::
+
+Sub
+---
+
+Text.
+'''
+equivalent = '''
+.. contents::
+
+Sub
+---
+
+Text.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-only-titles-rst"
+why = "an option-less preset of only is only: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-only]
+base = "only"
+'''
+source = '''
+.. pf-only:: html
+
+   Inner
+   -----
+
+   Text.
+'''
+equivalent = '''
+.. only:: html
+
+   Inner
+   -----
+
+   Text.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-glossary-rst"
+why = "an option-less preset of glossary is glossary: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-glossary]
+base = "glossary"
+'''
+source = '''
+.. pf-glossary::
+   :sorted:
+
+   Widget
+      A thing.
+
+   Gadget
+      Another.
+
+See :term:`Widget`.
+'''
+equivalent = '''
+.. glossary::
+   :sorted:
+
+   Widget
+      A thing.
+
+   Gadget
+      Another.
+
+See :term:`Widget`.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-epigraph-rst"
+why = "an option-less preset of epigraph is epigraph: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-epigraph]
+base = "epigraph"
+'''
+source = '''
+.. pf-epigraph::
+
+   A quote.
+
+   -- Someone
+'''
+equivalent = '''
+.. epigraph::
+
+   A quote.
+
+   -- Someone
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-versionadded-rst"
+why = "an option-less preset of versionadded is versionadded: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-versionadded]
+base = "versionadded"
+'''
+source = '''
+.. pf-versionadded:: 1.0 With *inline* text
+'''
+equivalent = '''
+.. versionadded:: 1.0 With *inline* text
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-confval-rst"
+why = "an option-less preset of confval is confval: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-confval]
+base = "confval"
+'''
+source = '''
+.. pf-confval:: my_setting
+
+   A setting.
+'''
+equivalent = '''
+.. confval:: my_setting
+
+   A setting.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-dropdown-rst"
+why = "an option-less preset of dropdown is dropdown: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-dropdown]
+base = "dropdown"
+'''
+source = '''
+.. pf-dropdown:: Title
+   :open:
+   :icon: pencil
+
+   Body.
+'''
+equivalent = '''
+.. dropdown:: Title
+   :open:
+   :icon: pencil
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-dropdown-md"
+why = "an option-less preset of dropdown is dropdown: the same page and needs as the base (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.pf-dropdown]
+base = "dropdown"
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{pf-dropdown} Title
+:open:
+
+Body.
+```
+'''
+equivalent = '''
+```{dropdown} Title
+:open:
+
+Body.
+```
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-tab-set-rst"
+why = "an option-less preset of tab-set is tab-set: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-tab-set]
+base = "tab-set"
+'''
+source = '''
+.. pf-tab-set::
+
+   .. tab-item:: A
+
+      Body A.
+
+   .. tab-item:: B
+
+      Body B.
+'''
+equivalent = '''
+.. tab-set::
+
+   .. tab-item:: A
+
+      Body A.
+
+   .. tab-item:: B
+
+      Body B.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-grid-rst"
+why = "an option-less preset of grid is grid: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-grid]
+base = "grid"
+'''
+source = '''
+.. pf-grid:: 2
+
+   .. grid-item-card:: Card
+
+      Body.
+'''
+equivalent = '''
+.. grid:: 2
+
+   .. grid-item-card:: Card
+
+      Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-card-rst"
+why = "an option-less preset of card is card: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-card]
+base = "card"
+'''
+source = '''
+.. pf-card:: Card title
+
+   Body.
+'''
+equivalent = '''
+.. card:: Card title
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-needtable-rst"
+why = "an option-less preset of needtable is needtable: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-needtable]
+base = "needtable"
+'''
+source = '''
+.. req:: N
+   :id: REQ_005
+
+.. pf-needtable::
+   :types: req
+   :columns: id, title
+'''
+equivalent = '''
+.. req:: N
+   :id: REQ_005
+
+.. needtable::
+   :types: req
+   :columns: id, title
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-needlist-rst"
+why = "an option-less preset of needlist is needlist: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-needlist]
+base = "needlist"
+'''
+source = '''
+.. req:: N
+   :id: REQ_006
+
+.. pf-needlist::
+   :types: req
+'''
+equivalent = '''
+.. req:: N
+   :id: REQ_006
+
+.. needlist::
+   :types: req
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-need-type-rst"
+why = "a preset of a need type mints a need of the base's TYPE, with the fields written"
+config = '''
+[parse.directive_presets.pf-req]
+base = "req"
+'''
+source = '''
+.. pf-req:: A need
+   :id: REQ_001
+   :status: open
+   :tags: a, b
+
+   Body.
+'''
+equivalent = '''
+.. req:: A need
+   :id: REQ_001
+   :status: open
+   :tags: a, b
+
+   Body.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_001]
+type = "req"
+title = "A need"
+status = "open"
+tags = ["a", "b"]
+sections = ["Case"]
+
+[[case]]
+name = "identity-need-type-md"
+why = "a preset of a need type mints a need of the base's TYPE, with the fields written (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.pf-req]
+base = "req"
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{pf-req} A need
+:id: REQ_001
+:status: open
+:tags: a, b
+
+Body.
+```
+'''
+equivalent = '''
+```{req} A need
+:id: REQ_001
+:status: open
+:tags: a, b
+
+Body.
+```
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_001]
+type = "req"
+title = "A need"
+status = "open"
+tags = ["a", "b"]
+sections = ["Case"]
+
+[[case]]
+name = "identity-need-type-below-the-first-line"
+why = "a need-type preset below the first line is the same need as its base there"
+config = '''
+[parse.directive_presets.pf-req]
+base = "req"
+'''
+source = '''
+Intro paragraph.
+
+More.
+
+.. pf-req:: Lower
+   :id: REQ_LOW
+
+   Body.
+'''
+equivalent = '''
+Intro paragraph.
+
+More.
+
+.. req:: Lower
+   :id: REQ_LOW
+
+   Body.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_LOW]
+type = "req"
+title = "Lower"
+
+[[case]]
+name = "identity-needextend"
+why = "a preset of needextend extends the named need as needextend does"
+config = '''
+[parse.directive_presets.pf-needextend]
+base = "needextend"
+'''
+source = '''
+.. req:: N
+   :id: REQ_008
+
+.. pf-needextend:: REQ_008
+   :status: closed
+'''
+equivalent = '''
+.. req:: N
+   :id: REQ_008
+
+.. needextend:: REQ_008
+   :status: closed
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_008]
+status = "closed"
+
+[[case]]
+name = "use-is-case-insensitive"
+why = "a use of a preset is looked up case-insensitively, as every directive name is"
+config = '''
+[parse.directive_presets.pf-note]
+base = "note"
+'''
+source = '''
+.. PF-Note::
+
+   Body.
+'''
+equivalent = '''
+.. note::
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "base-is-case-insensitive"
+why = "a base names its directive case-insensitively: base = \"REQ\" is the need type req"
+config = '''
+[parse.directive_presets.req-any]
+base = "REQ"
+'''
+source = '''
+.. req-any:: Any
+   :id: REQ_ANY
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_ANY]
+type = "req"
+title = "Any"
+
+[[case]]
+name = "options-csv-table-delim-rst"
+why = "a preset of csv-table that supplies delim is csv-table written with them"
+config = '''
+[parse.directive_presets.po-csv-table]
+base = "csv-table"
+options = { "delim" = ";" }
+'''
+source = '''
+.. po-csv-table:: T
+
+   1;2
+   3;4
+'''
+equivalent = '''
+.. csv-table:: T
+   :delim: ;
+
+   1;2
+   3;4
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "options-csv-table-file-rst"
+why = "a preset of csv-table that supplies file is csv-table written with them"
+config = '''
+[parse.directive_presets.po-csv-table]
+base = "csv-table"
+options = { "file" = "data.csv" }
+'''
+source = '''
+.. po-csv-table:: T
+'''
+equivalent = '''
+.. csv-table:: T
+   :file: data.csv
+'''
+[case.files]
+"data.csv" = '''
+1, 2
+3, 4
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "options-literalinclude-rst"
+why = "a preset of literalinclude that supplies language, lines is literalinclude written with them"
+config = '''
+[parse.directive_presets.po-literalinclude]
+base = "literalinclude"
+options = { "language" = "python", "lines" = "2-3" }
+'''
+source = '''
+.. po-literalinclude:: code.py
+'''
+equivalent = '''
+.. literalinclude:: code.py
+   :language: python
+   :lines: 2-3
+'''
+[case.files]
+"code.py" = '''
+one = 1
+two = 2
+three = 3
+four = 4
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "options-include-start-after-rst"
+why = "a preset of include that supplies start-after is include written with them"
+config = '''
+[parse.directive_presets.po-include]
+base = "include"
+options = { "start-after" = "START" }
+'''
+source = '''
+Host
+----
+
+.. po-include:: inc.rst
+
+After.
+'''
+equivalent = '''
+Host
+----
+
+.. include:: inc.rst
+   :start-after: START
+
+After.
+'''
+[case.files]
+"inc.rst" = '''
+Not this.
+
+START
+
+Included paragraph.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "options-code-block-emphasize-rst"
+why = "a preset of code-block that supplies emphasize-lines, linenos is code-block written with them"
+config = '''
+[parse.directive_presets.po-code-block]
+base = "code-block"
+options = { "emphasize-lines" = "2", "linenos" = "" }
+'''
+source = '''
+.. po-code-block:: python
+
+   a = 1
+   b = 2
+   c = 3
+'''
+equivalent = '''
+.. code-block:: python
+   :emphasize-lines: 2
+   :linenos:
+
+   a = 1
+   b = 2
+   c = 3
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "options-code-block-emphasize-md"
+why = "a preset of code-block that supplies emphasize-lines, linenos is code-block written with them (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.po-code-block]
+base = "code-block"
+options = { "emphasize-lines" = "2", "linenos" = "" }
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{po-code-block} python
+
+a = 1
+b = 2
+c = 3
+```
+'''
+equivalent = '''
+```{code-block} python
+:emphasize-lines: 2
+:linenos:
+
+a = 1
+b = 2
+c = 3
+```
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "options-toctree-maxdepth-rst"
+why = "a preset of toctree that supplies caption, maxdepth is toctree written with them"
+config = '''
+[parse.directive_presets.po-toctree]
+base = "toctree"
+options = { "caption" = "Contents", "maxdepth" = "1" }
+'''
+source = '''
+.. po-toctree::
+
+   other
+'''
+equivalent = '''
+.. toctree::
+   :caption: Contents
+   :maxdepth: 1
+
+   other
+'''
+[case.files]
+"other.rst" = '''
+Other
+=====
+
+The other page.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "options-figure-width-rst"
+why = "a preset of figure that supplies align, width is figure written with them"
+config = '''
+[parse.directive_presets.po-figure]
+base = "figure"
+options = { "align" = "center", "width" = "50%" }
+'''
+source = '''
+.. po-figure:: pic.png
+
+   Caption.
+'''
+equivalent = '''
+.. figure:: pic.png
+   :align: center
+   :width: 50%
+
+   Caption.
+'''
+[case.files]
+"pic.png" = '''
+not really an image; only its name is read
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "options-figure-width-md"
+why = "a preset of figure that supplies align, width is figure written with them (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.po-figure]
+base = "figure"
+options = { "align" = "center", "width" = "50%" }
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{po-figure} pic.png
+
+Caption.
+```
+'''
+equivalent = '''
+```{figure} pic.png
+:align: center
+:width: 50%
+
+Caption.
+```
+'''
+[case.files]
+"pic.png" = '''
+not really an image; only its name is read
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "options-needextend-status-rst"
+why = "a preset of needextend that supplies status is needextend written with them"
+config = '''
+[parse.directive_presets.po-needextend]
+base = "needextend"
+options = { "status" = "closed" }
+'''
+source = '''
+.. req:: N
+   :id: REQ_008
+
+.. po-needextend:: REQ_008
+'''
+equivalent = '''
+.. req:: N
+   :id: REQ_008
+
+.. needextend:: REQ_008
+   :status: closed
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "options-need-type-rst"
+why = "a need-type preset's status, tags and links defaults are the need's fields"
+config = '''
+[parse.directive_presets.po-req]
+base = "req"
+options = { status = "open", tags = "a, b", links = "REQ_000" }
+'''
+source = '''
+.. req:: Zero
+   :id: REQ_000
+
+.. po-req:: Titled
+   :id: REQ_010
+'''
+equivalent = '''
+.. req:: Zero
+   :id: REQ_000
+
+.. req:: Titled
+   :id: REQ_010
+   :links: REQ_000
+   :status: open
+   :tags: a, b
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_010]
+type = "req"
+status = "open"
+tags = ["a", "b"]
+links = ["REQ_000"]
+
+[[case]]
+name = "options-need-type-md"
+why = "a need-type preset's status, tags and links defaults are the need's fields (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.po-req]
+base = "req"
+options = { status = "open", tags = "a, b", links = "REQ_000" }
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{req} Zero
+:id: REQ_000
+```
+
+```{po-req} Titled
+:id: REQ_010
+```
+'''
+equivalent = '''
+```{req} Zero
+:id: REQ_000
+```
+
+```{req} Titled
+:id: REQ_010
+:links: REQ_000
+:status: open
+:tags: a, b
+```
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_010]
+type = "req"
+status = "open"
+tags = ["a", "b"]
+links = ["REQ_000"]
+
+[[case]]
+name = "default-argument-fills-an-absent-one-rst"
+why = "a preset's argument is used when a use writes none, even for a base that requires one"
+config = '''
+[parse.directive_presets.titled]
+base = "admonition"
+argument = "Default title"
+'''
+source = '''
+.. titled::
+
+   Body.
+'''
+equivalent = '''
+.. admonition:: Default title
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "default-argument-fills-an-absent-one-md"
+why = "a preset's argument is used when a use writes none, even for a base that requires one (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.titled]
+base = "admonition"
+argument = "Default title"
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{titled}
+Body.
+```
+'''
+equivalent = '''
+```{admonition} Default title
+Body.
+```
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "written-argument-replaces-the-default"
+why = "an argument the use writes replaces the preset's whole"
+config = '''
+[parse.directive_presets.titled]
+base = "admonition"
+argument = "Default title"
+'''
+source = '''
+.. titled:: Mine
+
+   Body.
+'''
+equivalent = '''
+.. admonition:: Mine
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "default-argument-of-a-need-is-its-title"
+why = "a need-type preset's argument is the title of a need written without one"
+config = '''
+[parse.directive_presets.req-untitled]
+base = "req"
+argument = "Untitled requirement"
+'''
+source = '''
+.. req-untitled::
+   :id: REQ_020
+
+.. req-untitled:: Titled
+   :id: REQ_021
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_020]
+title = "Untitled requirement"
+[case.expect.needs.REQ_021]
+title = "Titled"
+
+[[case]]
+name = "appended-class-goes-first-rst"
+why = "an appended class goes in front of the classes the use writes"
+config = '''
+[parse.directive_presets.callout]
+base = "note"
+append_options = { class = "callout" }
+'''
+source = '''
+.. callout::
+   :class: wide
+
+   Body.
+'''
+equivalent = '''
+.. note::
+   :class: callout wide
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "appended-class-goes-first-md"
+why = "an appended class goes in front of the classes the use writes (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.callout]
+base = "note"
+append_options = { class = "callout" }
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{callout}
+:class: wide
+
+Body.
+```
+'''
+equivalent = '''
+```{note}
+:class: callout wide
+
+Body.
+```
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "appended-class-alone"
+why = "with no class written, the appended class is the only one"
+config = '''
+[parse.directive_presets.callout]
+base = "note"
+append_options = { class = "callout" }
+'''
+source = '''
+.. callout::
+
+   Body.
+'''
+equivalent = '''
+.. note::
+   :class: callout
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "appended-class-container"
+why = "append_options takes a class-* option too (sphinx-design's class-container)"
+config = '''
+[parse.directive_presets.sn-dropdown]
+base = "dropdown"
+append_options = { class-container = "sn-dd" }
+'''
+source = '''
+.. sn-dropdown:: T
+   :class-container: mine
+
+   Body.
+'''
+equivalent = '''
+.. dropdown:: T
+   :class-container: sn-dd mine
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "forced-option-wins-and-is-reported-rst"
+why = "a forced option replaces what the use writes, and the use is told"
+config = '''
+[parse.directive_presets.locked-note]
+base = "note"
+force_options = { class = "locked" }
+'''
+source = '''
+.. locked-note::
+   :class: mine
+
+   Body.
+'''
+equivalent = '''
+.. note::
+   :class: locked
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "preset_forced_option"
+directive = "locked-note"
+
+[[case]]
+name = "forced-option-wins-and-is-reported-md"
+why = "a forced option replaces what the use writes, and the use is told (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.locked-note]
+base = "note"
+force_options = { class = "locked" }
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{locked-note}
+:class: mine
+
+Body.
+```
+'''
+equivalent = '''
+```{note}
+:class: locked
+
+Body.
+```
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "preset_forced_option"
+directive = "locked-note"
+
+[[case]]
+name = "forced-option-not-written-is-quiet"
+why = "a forced option the use does not write is applied without a finding"
+config = '''
+[parse.directive_presets.locked-note]
+base = "note"
+force_options = { class = "locked" }
+'''
+source = '''
+.. locked-note::
+
+   Body.
+'''
+equivalent = '''
+.. note::
+   :class: locked
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "forced-option-value-is-never-converted"
+why = "a written value of a forced option is reported as forced, never converted: a bad width is not an error"
+config = '''
+[parse.directive_presets.wide-fig]
+base = "figure"
+force_options = { width = "50%" }
+'''
+source = '''
+.. wide-fig:: pic.png
+   :width: bogus-not-a-length
+
+   Caption.
+'''
+equivalent = '''
+.. figure:: pic.png
+   :width: 50%
+
+   Caption.
+'''
+[case.files]
+"pic.png" = '''
+not really an image; only its name is read
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "preset_forced_option"
+directive = "wide-fig"
+
+[[case]]
+name = "forced-need-option"
+why = "a need-type preset's forced field is the need's, whatever the use writes"
+config = '''
+[parse.directive_presets.req-draft]
+base = "req"
+force_options = { status = "draft" }
+'''
+source = '''
+.. req-draft:: Forced
+   :id: REQ_030
+   :status: done
+
+.. req-draft:: Quiet
+   :id: REQ_031
+'''
+[case.expect]
+[case.expect.needs.REQ_030]
+status = "draft"
+[case.expect.needs.REQ_031]
+status = "draft"
+[[case.expect.findings]]
+code = "preset_forced_option"
+directive = "req-draft"
+
+[[case]]
+name = "default-option-yields-to-the-written-one"
+why = "a default option is used only when the use does not write it, and a written value replaces it whole"
+config = '''
+[parse.directive_presets.req-draft]
+base = "req"
+options = { status = "draft", tags = "triage" }
+'''
+source = '''
+.. req-draft:: Drafted
+   :id: REQ_040
+
+.. req-draft:: Decided
+   :id: REQ_041
+   :status: done
+   :tags: x
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_040]
+status = "draft"
+tags = ["triage"]
+[case.expect.needs.REQ_041]
+status = "done"
+tags = ["x"]
+
+[[case]]
+name = "precedence-over-a-field-default"
+why = "precedence: written > preset default > the field's own default"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+default = "nobody"
+
+[parse.directive_presets.owned]
+base = "req"
+options = { owner = "team" }
+'''
+source = '''
+.. owned:: A
+   :id: REQ_050
+
+.. owned:: B
+   :id: REQ_051
+   :owner: ada
+
+.. req:: C
+   :id: REQ_052
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_050]
+owner = "team"
+[case.expect.needs.REQ_051]
+owner = "ada"
+[case.expect.needs.REQ_052]
+owner = "nobody"
+
+[[case]]
+name = "self-preset-gives-project-defaults"
+why = "a preset named as its base gives that directive project-wide defaults"
+config = '''
+[parse.directive_presets.dropdown]
+base = "dropdown"
+options = { icon = "pencil" }
+'''
+source = '''
+.. dropdown:: Title
+
+   Body.
+'''
+equivalent = '''
+.. dropdown:: Title
+   :icon: pencil
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "self-preset-of-a-need-type"
+why = "a self-preset of a need type sets that type's defaults; a written value still wins"
+config = '''
+[parse.directive_presets.req]
+base = "req"
+options = { status = "open" }
+'''
+source = '''
+.. req:: A
+   :id: REQ_060
+
+.. req:: B
+   :id: REQ_061
+   :status: done
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_060]
+status = "open"
+[case.expect.needs.REQ_061]
+status = "done"
+
+[[case]]
+name = "preset-of-a-self-preset-base-takes-the-original"
+why = "a preset of a directive that also has a self-preset is the ORIGINAL directive, without the self-preset's values"
+config = '''
+[parse.directive_presets.req]
+base = "req"
+options = { status = "open" }
+
+[parse.directive_presets.req-plain]
+base = "req"
+'''
+source = '''
+.. req-plain:: Plain
+   :id: REQ_070
+
+.. req:: Defaulted
+   :id: REQ_071
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_071]
+status = "open"
+[case.expect.nulls]
+REQ_070 = ["status"]
+
+[[case]]
+name = "flag-default"
+why = "a flag option set to true by a preset is written as the bare flag"
+config = '''
+[parse.directive_presets.open-dd]
+base = "dropdown"
+options = { open = true }
+'''
+source = '''
+.. open-dd:: Title
+
+   Body.
+'''
+equivalent = '''
+.. dropdown:: Title
+   :open:
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "number-is-its-decimal-text"
+why = "a number is the option's decimal text"
+config = '''
+[parse.directive_presets.numbered]
+base = "code-block"
+options = { lineno-start = 5 }
+'''
+source = '''
+.. numbered:: python
+
+   a = 1
+'''
+equivalent = '''
+.. code-block:: python
+   :lineno-start: 5
+
+   a = 1
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "true-for-a-non-flag-is-the-text-true"
+why = "true for an option that is not a flag is the text \"true\""
+config = '''
+[parse.directive_presets.collapsed]
+base = "req"
+options = { collapse = true }
+'''
+source = '''
+.. collapsed:: C
+   :id: REQ_080
+'''
+equivalent = '''
+.. req:: C
+   :id: REQ_080
+   :collapse: true
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_080]
+collapse = true
+
+[[case]]
+name = "description-and-empty-argument"
+why = "description is for the editor only, and an empty argument means none"
+config = '''
+[parse.directive_presets.described]
+base = "note"
+description = "A note with a description"
+'''
+source = '''
+.. described::
+
+   Body.
+'''
+equivalent = '''
+.. note::
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "refused-unknown-base"
+why = "refused at load, once, at its entry: base names no directive the project knows; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "no-such"
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_unknown_base"
+path = "parse.directive_presets.x.base"
+
+[[case]]
+name = "refused-missing-base"
+why = "refused at load, once, at its entry: an entry without base; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+options = { class = "a" }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_unknown_base"
+path = "parse.directive_presets.x"
+
+[[case]]
+name = "refused-blank-base"
+why = "refused at load, once, at its entry: a blank base is no base; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "  "
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_unknown_base"
+path = "parse.directive_presets.x"
+
+[[case]]
+name = "refused-base-is-preset"
+why = "refused at load, once, at its entry: presets do not chain; the preset is left out"
+config = '''
+[parse.directive_presets.y]
+base = "note"
+[parse.directive_presets.x]
+base = "y"
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_base_is_preset"
+path = "parse.directive_presets.x.base"
+
+[[case]]
+name = "refused-name-taken"
+why = "refused at load, once, at its entry: a new name that is already a built-in directive; the preset is left out"
+config = '''
+[parse.directive_presets.tip]
+base = "note"
+'''
+source = '''
+Text.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_name_taken"
+path = "parse.directive_presets.tip"
+
+[[case]]
+name = "refused-name-taken-by-a-need-type"
+why = "refused at load, once, at its entry: a new name that is already a need type; the preset is left out"
+config = '''
+[parse.directive_presets.spec]
+base = "note"
+'''
+source = '''
+Text.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_name_taken"
+path = "parse.directive_presets.spec"
+
+[[case]]
+name = "refused-unknown-option"
+why = "refused at load, once, at its entry: an option the base does not take; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "note"
+options = { colour = "red" }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_unknown_option"
+path = "parse.directive_presets.x.options.colour"
+
+[[case]]
+name = "refused-unknown-need-option"
+why = "refused at load, once, at its entry: an option a need of the base type does not take; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "req"
+options = { colour = "red" }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_unknown_option"
+path = "parse.directive_presets.x.options.colour"
+
+[[case]]
+name = "refused-flag-given-a-value"
+why = "refused at load, once, at its entry: a flag given a value; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "dropdown"
+options = { open = "yes" }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x.options.open"
+
+[[case]]
+name = "refused-flag-switched-off"
+why = "refused at load, once, at its entry: a preset cannot set a flag to false; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "dropdown"
+options = { open = false }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x.options.open"
+
+[[case]]
+name = "refused-outside-the-choices"
+why = "refused at load, once, at its entry: a value outside the option's choices; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "figure"
+options = { align = "middle" }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x.options.align"
+
+[[case]]
+name = "refused-bad-measure"
+why = "refused at load, once, at its entry: a width that is not a measure; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "figure"
+options = { width = "abc" }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x.options.width"
+
+[[case]]
+name = "refused-bad-integer"
+why = "refused at load, once, at its entry: an integer option given text; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "code-block"
+options = { lineno-start = "one" }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x.options.lineno-start"
+
+[[case]]
+name = "refused-array-value"
+why = "refused at load, once, at its entry: a value that is not a string, boolean or number; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "note"
+options = { class = ["a", "b"] }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x.options.class"
+
+[[case]]
+name = "refused-table-argument"
+why = "refused at load, once, at its entry: an argument that is not a string or number; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "admonition"
+argument = { a = 1 }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x.argument"
+
+[[case]]
+name = "refused-base-not-a-string"
+why = "refused at load, once, at its entry: base must be a string; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = 3
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x"
+
+[[case]]
+name = "refused-description-not-a-string"
+why = "refused at load, once, at its entry: description must be a string; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "note"
+description = true
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x"
+
+[[case]]
+name = "refused-options-not-a-table"
+why = "refused at load, once, at its entry: an option table that is not a table; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "note"
+options = "class=a"
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x"
+
+[[case]]
+name = "refused-entry-not-a-table"
+why = "refused at load, once, at its entry: an entry that is not a table; the preset is left out"
+config = '''
+[parse.directive_presets]
+x = "note"
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x"
+
+[[case]]
+name = "refused-option-in-two-verbs"
+why = "refused at load, once, at its entry: the same option in two of options, append_options and force_options; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "note"
+options = { class = "a" }
+force_options = { class = "b" }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_option_conflict"
+path = "parse.directive_presets.x.force_options.class"
+
+[[case]]
+name = "refused-append-to-a-scalar"
+why = "refused at load, once, at its entry: append_options only for class and class-* options; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "figure"
+append_options = { width = "10px" }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_append_not_list"
+path = "parse.directive_presets.x.append_options.width"
+
+[[case]]
+name = "refused-argument-for-a-base-without-one"
+why = "refused at load, once, at its entry: argument for a base that takes none; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "note"
+argument = "T"
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_argument_not_accepted"
+path = "parse.directive_presets.x.argument"
+
+[[case]]
+name = "refused-identity-option-name"
+why = "refused at load, once, at its entry: a preset may not set the base's :name:; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "figure"
+options = { name = "lbl" }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_identity_option"
+path = "parse.directive_presets.x.options.name"
+
+[[case]]
+name = "refused-identity-option-id"
+why = "refused at load, once, at its entry: a preset may not set a need's :id:; the preset is left out"
+config = '''
+[parse.directive_presets.x]
+base = "req"
+options = { id = "REQ_001" }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_identity_option"
+path = "parse.directive_presets.x.options.id"
+
+[[case]]
+name = "refused-bad-table-widths"
+why = "refused at load: a table widths value that is not a list of positive whole numbers"
+config = '''
+[parse.directive_presets.x]
+base = "list-table"
+options = { widths = "1 x" }
+'''
+source = '''
+Text.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+
+[[case]]
+name = "refused-bad-highlight-threshold"
+why = "refused at load: a highlight linenothreshold that is not a whole number"
+config = '''
+[parse.directive_presets.x]
+base = "highlight"
+options = { linenothreshold = "x" }
+'''
+source = '''
+Text.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+
+[[case]]
+name = "refused-case-duplicate-names"
+why = "two presets whose names differ only in case are one name: the second spelling is refused, the first is used"
+config = '''
+[parse.directive_presets.Callout]
+base = "note"
+append_options = { class = "first" }
+
+[parse.directive_presets.callout]
+base = "note"
+append_options = { class = "second" }
+'''
+source = '''
+.. callout::
+
+   Body.
+'''
+equivalent = '''
+.. note::
+   :class: first
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_name_taken"
+path = "parse.directive_presets.callout"
+
+[[case]]
+name = "unknown-key-keeps-the-preset"
+why = "an unknown entry key is reported and ignored; the preset is kept"
+config = '''
+[parse.directive_presets.x]
+base = "note"
+force_option = { class = "typo" }
+'''
+source = '''
+.. x::
+
+   Body.
+'''
+equivalent = '''
+.. note::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_unknown_key"
+path = "parse.directive_presets.x.force_option"
+
+[[case]]
+name = "every-problem-of-an-entry-is-reported"
+why = "every problem of one entry is reported, and the entry is left out"
+config = '''
+[parse.directive_presets.x]
+base = "note"
+options = { colour = "red", class = ["a"] }
+argument = "T"
+'''
+source = '''
+Text.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_unknown_option"
+path = "parse.directive_presets.x.options.colour"
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x.options.class"
+[[case.expect.findings]]
+code = "directive_preset_argument_not_accepted"
+path = "parse.directive_presets.x.argument"
+
+[[case]]
+name = "a-refused-preset-costs-only-its-entry"
+why = "a refused entry costs only that entry: the project's other presets are used"
+config = '''
+[parse.directive_presets.bad]
+base = "no-such"
+
+[parse.directive_presets.callout]
+base = "note"
+append_options = { class = "callout" }
+'''
+source = '''
+.. callout::
+
+   Body.
+'''
+equivalent = '''
+.. note::
+   :class: callout
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_unknown_base"
+path = "parse.directive_presets.bad.base"
+
+[[case]]
+name = "refused-wrong-field-type"
+why = "refused at load: a need field value of the wrong type (ubCode checks field schemas at load; a Sphinx build checks them at each need)"
+config = '''
+[needs.fields.priority]
+schema = { type = "integer" }
+
+[parse.directive_presets.x]
+base = "req"
+options = { priority = "high" }
+'''
+source = '''
+Text.
+'''
+ubcode_only = true
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x.options.priority"
+
+[[case]]
+name = "refused-bad-line-spec"
+why = "refused at load: an emphasize-lines ubCode cannot read (Sphinx reads the option only inside the directive)"
+config = '''
+[parse.directive_presets.x]
+base = "code-block"
+options = { emphasize-lines = "x-y" }
+'''
+source = '''
+Text.
+'''
+ubcode_only = true
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_invalid_value"
+path = "parse.directive_presets.x.options.emphasize-lines"
