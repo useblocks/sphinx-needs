@@ -49,6 +49,7 @@ CASE_KEYS = frozenset(
         "name",
         "why",
         "markup",
+        "page",
         "config",
         "source",
         "equivalent",
@@ -71,12 +72,18 @@ def project(
 ) -> list[tuple[Path, str]]:
     """The files of a case's project, with ``page`` as its one document."""
     markup = case.get("markup", "rst")
-    return [
+    docname = case.get("page", "index")
+    files = [
         (Path("conf.py"), conf_py),
         (Path("ubproject.toml"), case["config"]),
-        (Path(f"index.{markup}"), TITLES[markup] + page),
-        *((inside(rel), text) for rel, text in case.get("files", {}).items()),
+        (inside(f"{docname}.{markup}"), TITLES[markup] + page),
     ]
+    if docname != "index":
+        # the header's rule: an index naming the page, so the project has its root
+        files.append(
+            (Path("index.rst"), f"Index\n=====\n\n.. toctree::\n\n   {docname}\n")
+        )
+    return files + [(inside(rel), text) for rel, text in case.get("files", {}).items()]
 
 
 @dataclass
@@ -85,6 +92,7 @@ class Built:
 
     app: SphinxTestApp
     needs: dict[str, dict[str, Any]]
+    docname: str = "index"
     findings: Counter[tuple[str, str | None, str | None]] = field(
         default_factory=Counter
     )
@@ -93,7 +101,7 @@ class Built:
     def products(self) -> tuple[str, dict[str, dict[str, Any]]]:
         """The page (the read doctree, the source directory written out) and the needs
         (positions dropped): what an ``equivalent`` page must give too."""
-        doctree = self.app.env.get_doctree("index").pformat()
+        doctree = self.app.env.get_doctree(self.docname).pformat()
         doctree = doctree.replace(str(self.app.srcdir), "<srcdir>")
         needs = {
             need_id: {k: v for k, v in record.items() if not _POSITION.search(k)}
@@ -107,6 +115,7 @@ def build(
     root: Path,
     files: Iterable[tuple[Path, str]],
     codes: frozenset[str],
+    docname: str = "index",
 ) -> Built:
     """Write ``files`` under ``root`` and build them with the ``needs`` builder."""
     for relative, text in files:
@@ -116,7 +125,7 @@ def build(
     app = make_app("needs", srcdir=root, freshenv=True)
     app.build()
     data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
-    built = Built(app, data["versions"][data["current_version"]]["needs"])
+    built = Built(app, data["versions"][data["current_version"]]["needs"], docname)
     for record in build_warnings(app):
         match = _FINDING.search(record)
         if match is None:
@@ -155,6 +164,9 @@ def complete(
     assert case["why"] and "config" in case and case["source"], name
     assert case.get("markup", "rst") in TITLES, name
     assert not (case.get("python_only") and case.get("ubcode_only")), name
+    assert isinstance(case.get("python_only", False), bool), name
+    assert isinstance(case.get("ubcode_only", False), bool), name
+    assert all(isinstance(text, str) for text in case.get("files", {}).values()), name
     expect = case["expect"]
     assert "findings" in expect, name
     assert set(expect) <= expect_keys, (name, set(expect) - expect_keys)

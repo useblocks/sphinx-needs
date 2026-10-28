@@ -22,8 +22,11 @@
 #
 # Rules for every runner:
 #   - a case is one project. `config` is its `ubproject.toml`; `source` is the body of its
-#     one document, under a title the runner adds: `index.rst` under "Case\n====\n\n" when
-#     `markup` is "rst" (the default), `index.md` under "# Case\n\n" when it is "md".
+#     one document, under a title the runner adds: `<page>.rst` under "Case\n====\n\n" when
+#     `markup` is "rst" (the default), `<page>.md` under "# Case\n\n" when it is "md".
+#     `page` (optional, default "index") is that document's name, `/`-separated; when it is
+#     not "index", the runner also writes `index.rst` holding only "Index\n=====\n\n" and a
+#     `toctree` naming the page, and every comparison below is of the page, not the index.
 #     `files` (optional) are other files of the project, relative to the case directory,
 #     which is also the SOURCE ROOT. A case writes only inside its own directory: a `files`
 #     key that would land outside it (`../x.json`) is a broken case, and the runner refuses
@@ -36,6 +39,8 @@
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
 #     the default ones (`req`, `spec`, `impl`, `test`), never one spelled with upper-case
 #     letters
+#   - a case never holds an integer outside the signed 64-bit range except to pin that it is
+#     refused, and never the JSON number `-0` (unspecified)
 #   - a case never pins a fuel, value-size or recursion edge (which template exceeds one of
 #     those limits is implementation-defined; only "an output over 1 MiB is refused" is
 #     pinned), never depends on the order of a mapping unless the case is about order,
@@ -51,7 +56,11 @@
 #     runner asserts that the two give the SAME PRODUCTS IN THAT TOOL -- its rendered page
 #     and its needs (positions dropped) -- never across tools
 #   - a case with `python_only = true` is one only the Sphinx runner runs, and ubCode's
-#     runner skips it; `ubcode_only = true` is the converse. Each says in its `why` why
+#     runner skips it; `ubcode_only = true` is the converse. Each says in its `why` why.
+#     One divergence is registered this way: ubCode re-bases a Markdown fragment's heading
+#     depth under the host section (`##` renders as a third-level heading under a `#` page),
+#     where myst-parser keeps the written level; the needs and their `sections` are equal,
+#     so only `md-template-in-an-md-page-equivalent`'s page comparison is python_only
 #   - needs values are compared as `needs.json` writes them, TYPE INCLUDED; `sections` is
 #     the list of section titles from the need's own section outwards
 #   - findings are compared as a MULTISET of `code`, and of `path` and `directive` where the
@@ -67,7 +76,8 @@
 #         template_context_invalid, template_context_unavailable, template_missing,
 #         template_outside_root, template_render_error, template_output_limit,
 #         template_disabled, template_nested_expansion, template_output_reads_file,
-#         template_markup_heading
+#         template_markup_heading, template_open_section, template_heading_level,
+#         template_markup_construct, directive_template_unknown_key
 #     -- every other finding (an unknown directive, an image that cannot be read) is each
 #     tool's own
 #   - a `nulls` entry names a need of the case and a field that need carries, pinned as null;
@@ -80,6 +90,7 @@
 #   name         - unique, kebab-case
 #   why          - one line saying what the case pins
 #   markup       - optional; "rst" (the default) or "md": the markup of the one page
+#   page         - optional; the page's document name (default "index"), see the rules
 #   config       - the `ubproject.toml`
 #   source       - the body of the page
 #   equivalent   - optional; the page with the output written out (see the rules above)
@@ -1510,6 +1521,45 @@ source = '''
 ```{md-row}
 ```
 '''
+[case.files]
+"_templates/row.md.j2" = '''
+## Generated in Markdown
+
+```{req} From Markdown
+:id: REQ_MD1
+```
+'''
+[case.expect]
+expansions = [
+'''
+## Generated in Markdown
+
+```{req} From Markdown
+:id: REQ_MD1
+```''',
+]
+findings = []
+[case.expect.needs.REQ_MD1]
+title = "From Markdown"
+sections = ["Generated in Markdown", "Case"]
+
+[[case]]
+name = "md-template-in-an-md-page-equivalent"
+why = "a *.md.j2 template is Markdown, and in a Markdown page its heading joins the page; the page is the page written out (python_only: ubCode re-bases a Markdown fragment's heading depth under the host section, a registered divergence of its include splice; needs and sections are equal)"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.md-row]
+template = "_templates/row.md.j2"
+'''
+source = '''
+```{md-row}
+```
+'''
 equivalent = '''
 ## Generated in Markdown
 
@@ -1517,6 +1567,7 @@ equivalent = '''
 :id: REQ_MD1
 ```
 '''
+python_only = true
 [case.files]
 "_templates/row.md.j2" = '''
 ## Generated in Markdown
@@ -1719,13 +1770,52 @@ sections = ["Generated", "Case"]
 
 [[case]]
 name = "host-content-continues-in-the-last-section"
-why = "host content after the directive continues in the output's last open section, as if written there"
+why = "output that leaves a section open where host content follows the directive is template_open_section, and renders nothing"
 config = '''
 [parse.directive_templates.gen]
 template = "_templates/gen.rst.j2"
 '''
 source = '''
 .. gen::
+
+.. req:: After the template
+   :id: REQ_AFTER
+'''
+[case.files]
+"_templates/gen.rst.j2" = '''
+Generated
+---------
+
+.. req:: In the generated section
+   :id: REQ_GEN
+
+Deeper
+~~~~~~
+
+Text.
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_GEN"]
+[case.expect.needs.REQ_AFTER]
+sections = ["Case"]
+[[case.expect.findings]]
+code = "template_open_section"
+directive = "gen"
+
+[[case]]
+name = "open-section-before-a-host-heading-renders"
+why = "output with headings followed by a host heading is not refused: the heading closes the output's sections"
+config = '''
+[parse.directive_templates.gen]
+template = "_templates/gen.rst.j2"
+'''
+source = '''
+.. gen::
+
+Next
+====
 
 .. req:: After the template
    :id: REQ_AFTER
@@ -1741,6 +1831,9 @@ Deeper
 ~~~~~~
 
 Text.
+
+Next
+====
 
 .. req:: After the template
    :id: REQ_AFTER
@@ -1776,11 +1869,11 @@ findings = []
 [case.expect.needs.REQ_GEN]
 sections = ["Generated", "Case"]
 [case.expect.needs.REQ_AFTER]
-sections = ["Deeper", "Generated", "Case"]
+sections = ["Next"]
 
 [[case]]
 name = "host-content-continues-in-the-last-section-md"
-why = "in a Markdown page too, host content after the directive continues in the output's last open section"
+why = "in a Markdown page too, output that leaves a section open before host content is template_open_section"
 markup = "md"
 config = '''
 [parse.parsers.rst]
@@ -1799,12 +1892,41 @@ source = '''
 :id: REQ_AFTER
 ```
 '''
-equivalent = '''
+[case.files]
+"_templates/gen.md.j2" = '''
 ## Generated
 
 ### Deeper
 
 Text.
+'''
+[case.expect]
+expansions = [
+]
+[case.expect.needs.REQ_AFTER]
+sections = ["Case"]
+[[case.expect.findings]]
+code = "template_open_section"
+directive = "gen"
+
+[[case]]
+name = "open-section-before-a-host-heading-renders-md"
+why = "in a Markdown page, output with headings followed by a host heading is not refused"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.gen]
+template = "_templates/gen.md.j2"
+'''
+source = '''
+```{gen}
+```
+
+# Next
 
 ```{req} After the template
 :id: REQ_AFTER
@@ -1829,7 +1951,202 @@ Text.''',
 ]
 findings = []
 [case.expect.needs.REQ_AFTER]
-sections = ["Deeper", "Generated", "Case"]
+sections = ["Next"]
+
+[[case]]
+name = "heading-level-enclosing-style-is-refused"
+why = "a heading in output must nest strictly below the host section holding the directive: an enclosing style heading is template_heading_level"
+config = '''
+[parse.directive_templates.peer]
+template = "_templates/peer.rst.j2"
+'''
+source = '''
+Host
+----
+
+.. peer::
+'''
+[case.files]
+"_templates/peer.rst.j2" = '''
+Peer
+====
+
+.. req:: In the peer
+   :id: REQ_PEER
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_PEER"]
+[[case.expect.findings]]
+code = "template_heading_level"
+directive = "peer"
+
+[[case]]
+name = "heading-level-same-style-is-refused"
+why = "a heading in output must nest strictly below the host section holding the directive: an same style heading is template_heading_level"
+config = '''
+[parse.directive_templates.peer]
+template = "_templates/peer.rst.j2"
+'''
+source = '''
+Host
+----
+
+.. peer::
+'''
+[case.files]
+"_templates/peer.rst.j2" = '''
+Peer
+----
+
+.. req:: In the peer
+   :id: REQ_PEER
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_PEER"]
+[[case.expect.findings]]
+code = "template_heading_level"
+directive = "peer"
+
+[[case]]
+name = "heading-level-is-refused-md"
+why = "in a Markdown page, a heading in output no deeper than the host section is template_heading_level"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.peer]
+template = "_templates/peer.md.j2"
+'''
+source = '''
+## Host
+
+```{peer}
+```
+'''
+[case.files]
+"_templates/peer.md.j2" = '''
+## Peer
+
+```{req} In the peer
+:id: REQ_PEER
+```
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_PEER"]
+[[case.expect.findings]]
+code = "template_heading_level"
+directive = "peer"
+
+[[case]]
+name = "heading-level-deeper-than-the-host-section-renders"
+why = "a heading in output deeper than the host section holding the directive renders, under it"
+config = '''
+[parse.directive_templates.deep]
+template = "_templates/deep.rst.j2"
+'''
+source = '''
+Host
+----
+
+.. deep::
+'''
+[case.files]
+"_templates/deep.rst.j2" = '''
+Deep
+~~~~
+
+.. req:: In the deep
+   :id: REQ_DEEP
+'''
+[case.expect]
+expansions = [
+'''
+Deep
+~~~~
+
+.. req:: In the deep
+   :id: REQ_DEEP''',
+]
+findings = []
+[case.expect.needs.REQ_DEEP]
+sections = ["Deep", "Host", "Case"]
+
+[[case]]
+name = "heading-in-output-inside-a-body-element-rst"
+why = "a heading in output where the host allows no section (a note's body) is template_heading_level, and the use renders nothing"
+config = '''
+[parse.directive_templates.gen]
+template = "_templates/gen.rst.j2"
+'''
+source = '''
+.. note::
+
+   .. gen::
+'''
+[case.files]
+"_templates/gen.rst.j2" = '''
+Generated
+---------
+
+.. req:: In the generated section
+   :id: REQ_GEN
+
+Deeper
+~~~~~~
+
+Text.
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_GEN"]
+[[case.expect.findings]]
+code = "template_heading_level"
+directive = "gen"
+
+[[case]]
+name = "heading-in-output-inside-a-body-element-md"
+why = "in a Markdown page too, a heading in output inside a note is template_heading_level"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.gen]
+template = "_templates/gen.md.j2"
+'''
+source = '''
+````{note}
+```{gen}
+```
+````
+'''
+[case.files]
+"_templates/gen.md.j2" = '''
+## Generated
+
+```{req} In the generated section
+:id: REQ_GEN
+```
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_GEN"]
+[[case.expect.findings]]
+code = "template_heading_level"
+directive = "gen"
 
 [[case]]
 name = "output-without-a-heading-stays-in-the-host-section"
@@ -4027,6 +4344,160 @@ code = "template_output_reads_file"
 directive = "emit"
 
 [[case]]
+name = "output-reads-file-test-suite"
+why = "output may not hold a sphinx-test-reports test-suite directive, which reads a report"
+config = '''
+[test_reports]
+rootdir = "reports"
+
+[parse.directive_templates.emit]
+body = "{{ body }}\n\n.. req:: Kept after the refused directive\n   :id: REQ_KEPT\n"
+content = true
+'''
+source = '''
+.. emit::
+
+   .. test-suite:: My suite
+      :file: reports/r.xml
+      :suite: s
+      :id: TS_001
+'''
+[case.files]
+"reports/r.xml" = '''
+<testsuite name="s" tests="0"></testsuite>
+'''
+[case.expect]
+expansions = [
+'''
+.. test-suite:: My suite
+   :file: reports/r.xml
+   :suite: s
+   :id: TS_001
+
+.. req:: Kept after the refused directive
+   :id: REQ_KEPT''',
+]
+[case.expect.needs.REQ_KEPT]
+title = "Kept after the refused directive"
+[[case.expect.findings]]
+code = "template_output_reads_file"
+directive = "emit"
+
+[[case]]
+name = "output-reads-file-test-case"
+why = "output may not hold a sphinx-test-reports test-case directive, which reads a report"
+config = '''
+[test_reports]
+rootdir = "reports"
+
+[parse.directive_templates.emit]
+body = "{{ body }}\n\n.. req:: Kept after the refused directive\n   :id: REQ_KEPT\n"
+content = true
+'''
+source = '''
+.. emit::
+
+   .. test-case:: My case
+      :file: reports/r.xml
+      :suite: s
+      :case: c
+      :id: TC_001
+'''
+[case.files]
+"reports/r.xml" = '''
+<testsuite name="s" tests="0"></testsuite>
+'''
+[case.expect]
+expansions = [
+'''
+.. test-case:: My case
+   :file: reports/r.xml
+   :suite: s
+   :case: c
+   :id: TC_001
+
+.. req:: Kept after the refused directive
+   :id: REQ_KEPT''',
+]
+[case.expect.needs.REQ_KEPT]
+title = "Kept after the refused directive"
+[[case.expect.findings]]
+code = "template_output_reads_file"
+directive = "emit"
+
+[[case]]
+name = "output-reads-file-test-report"
+why = "output may not hold a sphinx-test-reports test-report directive, which reads a report"
+config = '''
+[test_reports]
+rootdir = "reports"
+
+[parse.directive_templates.emit]
+body = "{{ body }}\n\n.. req:: Kept after the refused directive\n   :id: REQ_KEPT\n"
+content = true
+'''
+source = '''
+.. emit::
+
+   .. test-report:: My report
+      :file: reports/r.xml
+      :id: TR_001
+'''
+[case.files]
+"reports/r.xml" = '''
+<testsuite name="s" tests="0"></testsuite>
+'''
+[case.expect]
+expansions = [
+'''
+.. test-report:: My report
+   :file: reports/r.xml
+   :id: TR_001
+
+.. req:: Kept after the refused directive
+   :id: REQ_KEPT''',
+]
+[case.expect.needs.REQ_KEPT]
+title = "Kept after the refused directive"
+[[case.expect.findings]]
+code = "template_output_reads_file"
+directive = "emit"
+
+[[case]]
+name = "output-reads-file-test-env"
+why = "output may not hold a sphinx-test-reports test-env directive, which reads a report"
+config = '''
+[test_reports]
+rootdir = "reports"
+
+[parse.directive_templates.emit]
+body = "{{ body }}\n\n.. req:: Kept after the refused directive\n   :id: REQ_KEPT\n"
+content = true
+'''
+source = '''
+.. emit::
+
+   .. test-env:: reports/env.json
+'''
+[case.files]
+"reports/r.xml" = '''
+<testsuite name="s" tests="0"></testsuite>
+'''
+[case.expect]
+expansions = [
+'''
+.. test-env:: reports/env.json
+
+.. req:: Kept after the refused directive
+   :id: REQ_KEPT''',
+]
+[case.expect.needs.REQ_KEPT]
+title = "Kept after the refused directive"
+[[case.expect.findings]]
+code = "template_output_reads_file"
+directive = "emit"
+
+[[case]]
 name = "output-nested-declared-template"
 why = "output may not hold a declared template directive: it is not expanded again (depth 1)"
 config = '''
@@ -4896,7 +5367,7 @@ title = "Debugged"
 
 [[case]]
 name = "ub-template-heading-joins-the-page"
-why = "ub-template's same-markup output may hold headings, which join the page"
+why = "ub-template's output may hold headings, but one that leaves a section open before host content is template_open_section"
 config = '''
 [parse]
 ub_template_enabled = true
@@ -4918,6 +5389,37 @@ source = '''
 .. req:: After the template
    :id: REQ_AFTER
 '''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_GEN"]
+[case.expect.needs.REQ_AFTER]
+sections = ["Case"]
+[[case.expect.findings]]
+code = "template_open_section"
+directive = "ub-template"
+
+[[case]]
+name = "ub-template-heading-at-the-end-joins-the-page"
+why = "ub-template's same-markup output with headings, at the end of the page, joins the page"
+config = '''
+[parse]
+ub_template_enabled = true
+'''
+source = '''
+.. ub-template::
+
+   Generated
+   ---------
+
+   .. req:: In the generated section
+      :id: REQ_GEN
+
+   Deeper
+   ~~~~~~
+
+   Text.
+'''
 equivalent = '''
 Generated
 ---------
@@ -4929,9 +5431,6 @@ Deeper
 ~~~~~~
 
 Text.
-
-.. req:: After the template
-   :id: REQ_AFTER
 '''
 [case.expect]
 expansions = [
@@ -4950,5 +5449,843 @@ Text.''',
 findings = []
 [case.expect.needs.REQ_GEN]
 sections = ["Generated", "Case"]
-[case.expect.needs.REQ_AFTER]
-sections = ["Deeper", "Generated", "Case"]
+
+[[case]]
+name = "output-reads-file-preset-of-include"
+why = "a preset is refused in output exactly when its base, written with the preset's merged options, would be; the rest renders"
+config = '''
+[parse.directive_presets.inc]
+base = "include"
+
+[parse.directive_templates.emit]
+body = "{{ body }}\n\n.. req:: Kept after the refused directive\n   :id: REQ_KEPT\n"
+content = true
+'''
+source = '''
+.. emit::
+
+   .. inc:: other.rst
+'''
+[case.files]
+"other.rst" = '''
+Other
+=====
+'''
+[case.expect]
+expansions = [
+'''
+.. inc:: other.rst
+
+.. req:: Kept after the refused directive
+   :id: REQ_KEPT''',
+]
+[case.expect.needs.REQ_KEPT]
+title = "Kept after the refused directive"
+[[case.expect.findings]]
+code = "template_output_reads_file"
+directive = "emit"
+
+[[case]]
+name = "output-reads-file-preset-with-a-default-file"
+why = "a preset is refused in output exactly when its base, written with the preset's merged options, would be; the rest renders"
+config = '''
+[parse.directive_presets.ctab]
+base = "csv-table"
+options = { file = "data.csv" }
+
+[parse.directive_templates.emit]
+body = "{{ body }}\n\n.. req:: Kept after the refused directive\n   :id: REQ_KEPT\n"
+content = true
+'''
+source = '''
+.. emit::
+
+   .. ctab::
+'''
+[case.files]
+"data.csv" = '''
+1, 2
+'''
+[case.expect]
+expansions = [
+'''
+.. ctab::
+
+.. req:: Kept after the refused directive
+   :id: REQ_KEPT''',
+]
+[case.expect.needs.REQ_KEPT]
+title = "Kept after the refused directive"
+[[case.expect.findings]]
+code = "template_output_reads_file"
+directive = "emit"
+
+[[case]]
+name = "output-reads-file-need-preset-with-a-default-template"
+why = "a preset is refused in output exactly when its base, written with the preset's merged options, would be; the rest renders"
+config = '''
+[parse.directive_presets.req-t]
+base = "req"
+options = { template = "custom" }
+
+[parse.directive_templates.emit]
+body = "{{ body }}\n\n.. req:: Kept after the refused directive\n   :id: REQ_KEPT\n"
+content = true
+'''
+source = '''
+.. emit::
+
+   .. req-t:: Templated
+      :id: REQ_TPL
+'''
+[case.files]
+"other.rst" = '''
+Other
+=====
+'''
+"code.py" = '''
+x = 1
+'''
+"data.csv" = '''
+1, 2
+'''
+"page.html" = '''
+<p>x</p>
+'''
+"d.dot" = '''
+digraph { A -> B }
+'''
+"d.mmd" = '''
+graph TD; A-->B
+'''
+"d.puml" = '''
+@startuml
+A -> B
+@enduml
+'''
+"needs.json" = '''
+{}
+'''
+"report.need" = '''
+report
+'''
+[case.expect]
+expansions = [
+'''
+.. req-t:: Templated
+   :id: REQ_TPL
+
+.. req:: Kept after the refused directive
+   :id: REQ_KEPT''',
+]
+missing = ["REQ_TPL"]
+[case.expect.needs.REQ_KEPT]
+title = "Kept after the refused directive"
+[[case.expect.findings]]
+code = "template_output_reads_file"
+directive = "emit"
+
+[[case]]
+name = "dialect-unicode-identifier"
+why = "the dialect: a non-ASCII identifier is a name (minijinja's unicode feature, on both sides)"
+config = '''
+[parse.directive_templates.d]
+body = "{% set gr\u00f6\u00dfe = 2 %}{{ gr\u00f6\u00dfe }}"
+'''
+source = '''
+.. d::
+'''
+[case.expect]
+expansions = [
+'''
+2''',
+]
+findings = []
+
+[[case]]
+name = "ub-template-non-ascii-context-key-is-engine-data"
+why = "a named context's non-ASCII top-level key reaches the template as engine data: printed as the engine prints it"
+config = '''
+[parse]
+ub_template_enabled = true
+
+[parse.template_contexts.c]
+"größe" = { a = [1, 2] }
+'''
+source = '''
+.. ub-template:: c
+
+   {{ größe }}
+'''
+[case.expect]
+expansions = [
+'''
+{"a": [1, 2]}''',
+]
+findings = []
+
+[[case]]
+name = "declared-options-iterate-in-declaration-order"
+why = "options is a mapping in the order the declaration writes its options, not sorted"
+config = '''
+[parse.directive_templates.o]
+body = "{% for k, v in options|items %}{{ k }}={{ v }};{% endfor %}"
+[parse.directive_templates.o.options]
+zz = { default = "1" }
+aa = { default = "2" }
+'''
+source = '''
+.. o::
+'''
+[case.expect]
+expansions = [
+'''
+zz=1;aa=2;''',
+]
+findings = []
+
+[[case]]
+name = "declared-contexts-iterate-in-file-order"
+why = "contexts is a mapping in the order ubproject.toml writes the contexts, not sorted"
+config = '''
+[parse.template_contexts.zeta]
+v = 1
+
+[parse.template_contexts.alpha]
+v = 2
+
+[parse.directive_templates.o]
+body = "{% for n in contexts %}{{ n }};{% endfor %}"
+'''
+source = '''
+.. o::
+'''
+[case.expect]
+expansions = [
+'''
+zeta;alpha;''',
+]
+findings = []
+
+[[case]]
+name = "ub-template-context-with-a-reserved-key-is-refused-loop"
+why = "a top-level loop key, which shadows the engine's own loop, is template_context_invalid"
+config = '''
+[parse]
+ub_template_enabled = true
+'''
+source = '''
+.. ub-template::
+   :ctx: {"loop": 1}
+
+   Text.
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_context_invalid"
+directive = "ub-template"
+
+[[case]]
+name = "ub-template-context-with-a-reserved-key-is-refused-self"
+why = "a top-level self key, which shadows the engine's own self, is template_context_invalid"
+config = '''
+[parse]
+ub_template_enabled = true
+'''
+source = '''
+.. ub-template::
+   :ctx: {"self": 1}
+
+   Text.
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_context_invalid"
+directive = "ub-template"
+
+[[case]]
+name = "ub-template-literal-named-keys-are-unreachable"
+why = "a top-level key no template can name (true, false, none, in) is skipped, not an error"
+config = '''
+[parse]
+ub_template_enabled = true
+
+[parse.template_contexts.c]
+"true" = 1
+"None" = 2
+"in" = 3
+title = "T"
+'''
+source = '''
+.. ub-template:: c
+
+   {{ title }}
+'''
+[case.expect]
+expansions = [
+'''
+T''',
+]
+findings = []
+
+[[case]]
+name = "context-refused-json-integer-beyond-i64"
+why = "an integer outside the signed 64-bit range is template_context_invalid"
+config = '''
+[parse.template_contexts.c]
+file = "c.json"
+
+[parse.directive_templates.uses-c]
+body = "{{ contexts.c }}"
+'''
+source = '''
+.. uses-c::
+'''
+[case.files]
+"c.json" = '''
+{"n": 18446744073709551616}
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_context_invalid"
+directive = "uses-c"
+
+[[case]]
+name = "context-refused-json-integer-below-i64"
+why = "an integer outside the signed 64-bit range is template_context_invalid"
+config = '''
+[parse.template_contexts.c]
+file = "c.json"
+
+[parse.directive_templates.uses-c]
+body = "{{ contexts.c }}"
+'''
+source = '''
+.. uses-c::
+'''
+[case.files]
+"c.json" = '''
+{"n": -9223372036854775809}
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_context_invalid"
+directive = "uses-c"
+
+[[case]]
+name = "context-integer-at-the-i64-bounds"
+why = "the signed 64-bit bounds themselves are context data"
+config = '''
+[parse.template_contexts.c]
+file = "c.json"
+
+[parse.directive_templates.b]
+body = "{{ contexts.c.hi }} {{ contexts.c.lo }}"
+'''
+source = '''
+.. b::
+'''
+[case.files]
+"c.json" = '''
+{"hi": 9223372036854775807, "lo": -9223372036854775808}
+'''
+[case.expect]
+expansions = [
+'''
+9223372036854775807 -9223372036854775808''',
+]
+findings = []
+
+[[case]]
+name = "declaration-refused-default-not-a-string"
+why = "a declaration whose field has the wrong shape (default not a string) is refused at load and ignored"
+config = '''
+[parse.directive_templates.t]
+body = "x"
+[parse.directive_templates.t.options]
+n = { default = 3 }
+'''
+source = '''
+Text.
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "directive_template_invalid"
+path = "parse.directive_templates.t"
+
+[[case]]
+name = "declaration-refused-choices-not-an-array-of-strings"
+why = "a declaration whose field has the wrong shape (choices not an array of strings) is refused at load and ignored"
+config = '''
+[parse.directive_templates.t]
+body = "x"
+[parse.directive_templates.t.options]
+c = { choices = "open" }
+'''
+source = '''
+Text.
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "directive_template_invalid"
+path = "parse.directive_templates.t"
+
+[[case]]
+name = "declaration-refused-content-not-a-bool"
+why = "a declaration whose field has the wrong shape (content not a bool) is refused at load and ignored"
+config = '''
+[parse.directive_templates.t]
+body = "x"
+content = "no"
+'''
+source = '''
+Text.
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "directive_template_invalid"
+path = "parse.directive_templates.t"
+
+[[case]]
+name = "declaration-refused-flag-not-a-bool"
+why = "a declaration whose field has the wrong shape (flag not a bool) is refused at load and ignored"
+config = '''
+[parse.directive_templates.t]
+body = "x"
+[parse.directive_templates.t.options]
+f = { flag = "yes" }
+'''
+source = '''
+Text.
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "directive_template_invalid"
+path = "parse.directive_templates.t"
+
+[[case]]
+name = "declaration-refused-argument-not-a-table"
+why = "a declaration whose field has the wrong shape (argument not a table) is refused at load and ignored"
+config = '''
+[parse.directive_templates.t]
+body = "x"
+argument = true
+'''
+source = '''
+Text.
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "directive_template_invalid"
+path = "parse.directive_templates.t"
+
+[[case]]
+name = "declaration-unknown-key-is-reported"
+why = "an unknown declaration key is reported and ignored; the declaration is kept"
+config = '''
+[parse.directive_templates.t]
+body = "Kept."
+contnet = true
+'''
+source = '''
+.. t::
+'''
+[case.expect]
+expansions = [
+'''
+Kept.''',
+]
+[[case.expect.findings]]
+code = "directive_template_unknown_key"
+path = "parse.directive_templates.t.contnet"
+
+[[case]]
+name = "declaration-unknown-option-key-is-reported"
+why = "an unknown key of a declared option is reported and ignored; the declaration is kept"
+config = '''
+[parse.directive_templates.t]
+body = "{{ options.n }}"
+[parse.directive_templates.t.options]
+n = { default = "d", requird = true }
+'''
+source = '''
+.. t::
+'''
+[case.expect]
+expansions = [
+'''
+d''',
+]
+[[case.expect.findings]]
+code = "directive_template_unknown_key"
+path = "parse.directive_templates.t.options.n.requird"
+
+[[case]]
+name = "cross-markup-substitution-is-refused"
+why = "a substitution in output of the other markup is template_markup_construct, and the use renders nothing"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.rst-row]
+template = "_templates/row.rst.j2"
+'''
+source = '''
+```{rst-row}
+```
+'''
+[case.files]
+"_templates/row.rst.j2" = '''
+.. |x| replace:: X
+
+Uses |x|.
+
+.. req:: Never made
+   :id: REQ_SUB
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_SUB"]
+[[case.expect.findings]]
+code = "template_markup_construct"
+directive = "rst-row"
+
+[[case]]
+name = "cross-markup-auto-numbered-footnote-is-refused"
+why = "a auto numbered footnote in output of the other markup is template_markup_construct, and the use renders nothing"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.rst-row]
+template = "_templates/row.rst.j2"
+'''
+source = '''
+```{rst-row}
+```
+'''
+[case.files]
+"_templates/row.rst.j2" = '''
+Text [#]_.
+
+.. [#] A note.
+
+.. req:: Never made
+   :id: REQ_SUB
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_SUB"]
+[[case.expect.findings]]
+code = "template_markup_construct"
+directive = "rst-row"
+
+[[case]]
+name = "cross-markup-citation-is-refused"
+why = "a citation in output of the other markup is template_markup_construct, and the use renders nothing"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.rst-row]
+template = "_templates/row.rst.j2"
+'''
+source = '''
+```{rst-row}
+```
+'''
+[case.files]
+"_templates/row.rst.j2" = '''
+Text [CIT2026]_.
+
+.. [CIT2026] A citation.
+
+.. req:: Never made
+   :id: REQ_SUB
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_SUB"]
+[[case.expect.findings]]
+code = "template_markup_construct"
+directive = "rst-row"
+
+[[case]]
+name = "context-refused-toml-inf"
+why = "a float that is not finite is template_context_invalid"
+config = '''
+[parse.template_contexts.c]
+file = "c.toml"
+
+[parse.directive_templates.uses-c]
+body = "{{ contexts.c }}"
+'''
+source = '''
+.. uses-c::
+'''
+[case.files]
+"c.toml" = '''
+x = inf
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_context_invalid"
+directive = "uses-c"
+
+[[case]]
+name = "context-refused-toml-nan"
+why = "a float that is not finite is template_context_invalid"
+config = '''
+[parse.template_contexts.c]
+file = "c.toml"
+
+[parse.directive_templates.uses-c]
+body = "{{ contexts.c }}"
+'''
+source = '''
+.. uses-c::
+'''
+[case.files]
+"c.toml" = '''
+x = nan
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_context_invalid"
+directive = "uses-c"
+
+[[case]]
+name = "declared-markup-from-a-jinja-suffix"
+why = "a template file named *.md.jinja is Markdown (as *.md.j2 is): in an RST page it is parsed as Markdown"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.md-row]
+template = "_templates/row.md.jinja"
+'''
+source = '''
+.. md-row::
+'''
+[case.files]
+"_templates/row.md.jinja" = '''
+```{req} From Markdown
+:id: REQ_MD2
+```
+'''
+[case.expect]
+expansions = [
+'''
+```{req} From Markdown
+:id: REQ_MD2
+```''',
+]
+findings = []
+[case.expect.needs.REQ_MD2]
+title = "From Markdown"
+
+[[case]]
+name = "context-file-extension-is-case-insensitive"
+why = "a context file's extension is read case-insensitively: c.JSON is JSON"
+config = '''
+[parse.template_contexts.c]
+file = "c.JSON"
+
+[parse.directive_templates.u]
+body = "{{ contexts.c.a }}"
+'''
+source = '''
+.. u::
+'''
+[case.files]
+"c.JSON" = '''
+{"a": 1}
+'''
+[case.expect]
+expansions = [
+'''
+1''',
+]
+findings = []
+
+[[case]]
+name = "ub-template-context-may-define-env"
+why = "env is unavailable only when no context defines it: a :ctx: env is ordinary data"
+config = '''
+[parse]
+ub_template_enabled = true
+'''
+source = '''
+.. ub-template::
+   :ctx: {"env": "mine"}
+
+   {{ env }}
+'''
+[case.expect]
+expansions = [
+'''
+mine''',
+]
+findings = []
+
+[[case]]
+name = "ub-template-file-relative-to-a-subdirectory-page"
+why = ":file: without a leading / is relative to the PAGE's directory, not the source root"
+page = "sub/page"
+config = '''
+[parse]
+ub_template_enabled = true
+'''
+source = '''
+.. ub-template::
+   :file: _templates/f.rst.j2
+'''
+[case.files]
+"sub/_templates/f.rst.j2" = '''
+.. req:: From a file
+   :id: REQ_FILE
+'''
+"_templates/f.rst.j2" = '''
+.. req:: From the root
+   :id: REQ_ROOT
+'''
+[case.expect]
+expansions = [
+'''
+.. req:: From a file
+   :id: REQ_FILE''',
+]
+findings = []
+missing = ["REQ_ROOT"]
+[case.expect.needs.REQ_FILE]
+title = "From a file"
+
+[[case]]
+name = "context-refused-deeper-than-64-levels"
+why = "context data nested deeper than 64 levels (the file's top table is level 1) is template_context_invalid"
+config = '''
+[parse.template_contexts.c]
+file = "c.json"
+
+[parse.directive_templates.uses-c]
+body = "{{ contexts.c }}"
+'''
+source = '''
+.. uses-c::
+'''
+[case.files]
+"c.json" = '''
+{"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": 1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_context_invalid"
+directive = "uses-c"
+
+[[case]]
+name = "context-at-64-levels-is-data"
+why = "context data nested exactly 64 levels deep is context data"
+config = '''
+[parse.template_contexts.c]
+file = "c.json"
+
+[parse.directive_templates.deep]
+body = "ok"
+'''
+source = '''
+.. deep::
+'''
+[case.files]
+"c.json" = '''
+{"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": {"a": 1}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}
+'''
+[case.expect]
+expansions = [
+'''
+ok''',
+]
+findings = []
+
+[[case]]
+name = "context-refused-lone-surrogate"
+why = "a string holding a lone surrogate (JSON \\ud800) is template_context_invalid"
+config = '''
+[parse.template_contexts.c]
+file = "c.json"
+
+[parse.directive_templates.uses-c]
+body = "{{ contexts.c }}"
+'''
+source = '''
+.. uses-c::
+'''
+[case.files]
+"c.json" = '''
+{"a": "\ud800"}
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_context_invalid"
+directive = "uses-c"
+
+[[case]]
+name = "declaration-refused-case-duplicate-lower-written-first"
+why = "case-duplicate declarations: the first in sorted (code point) order is kept, whatever the file order"
+config = '''
+[parse.directive_templates.row]
+body = "Second."
+
+[parse.directive_templates.Row]
+body = "First."
+'''
+source = '''
+.. row::
+'''
+[case.expect]
+expansions = [
+'''
+First.''',
+]
+[[case.expect.findings]]
+code = "directive_template_invalid"
+path = "parse.directive_templates.row"

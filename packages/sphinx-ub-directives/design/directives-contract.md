@@ -99,10 +99,13 @@ force_options = { collapse = true }  # a use cannot change these
 
 1. **Scalars.** A value is a TOML string, boolean, integer or float, converted to option
    TEXT: a string as written; `true` → `""` for a flag option, else `"true"`; `false` for a
-   flag is refused, else `"false"`; a number → its decimal text. An array, table or
+   flag is refused, else `"false"`; an integer → its decimal text; a float → the shortest
+   decimal text that reads back as the same float, with no exponent and `.0` appended when
+   it is integral (`1.0` → `"1.0"`, `0.25` → `"0.25"`, `1e-7` → `"0.0000001"`, `1e16` →
+   `"10000000000000000.0"`). An array, table or
    date-time is `directive_preset_invalid_value`. `description` and `argument` equal to
    `""` (after stripping, for `argument`) are unset.
-   Enforced by: corpus `flag-default`, `number-is-its-decimal-text`,
+   Enforced by: corpus `flag-default`, `number-is-its-decimal-text`, `float-is-its-decimal-text`,
    `true-for-a-non-flag-is-the-text-true`, `refused-flag-switched-off`,
    `refused-array-value`, `refused-table-argument`, `description-and-empty-argument`.
 2. **Unknown keys** of an entry are each `directive_preset_unknown_key`, and the preset is
@@ -116,9 +119,11 @@ force_options = { collapse = true }  # a use cannot change these
 ### 3.2 Resolution (once per build; each failure one finding at its path; the preset is left out)
 
 1. **Names compare case-insensitively.** Two entries whose names differ only in case are
-   one name: ONE `directive_preset_name_taken` at the later spelling (in key order), and the
-   first is used. A use is looked up case-insensitively, as every directive is.
-   Enforced by: corpus `refused-case-duplicate-names`, `use-is-case-insensitive`.
+   one name: ONE `directive_preset_name_taken` at the later spelling in sorted (code point)
+   order, whatever order the file writes them in, and the first is used. A use is looked up
+   case-insensitively, as every directive is.
+   Enforced by: corpus `refused-case-duplicate-names`,
+   `refused-case-duplicate-names-lower-written-first`, `use-is-case-insensitive`.
 2. A missing or blank `base` is `directive_preset_unknown_base` at the entry.
    Enforced by: corpus `refused-missing-base`, `refused-blank-base`.
 3. A **self-preset** is an entry whose name equals its base (case-insensitively): it gives
@@ -193,6 +198,9 @@ sorted; the path is `….<name>.<table>.<key>`.
    it does not take the self-preset's values, whatever the order of registration.
    Enforced by: corpus `preset-of-a-self-preset-base-takes-the-original`.
 6. A default flag cannot be switched off by a use (there is no `:no-<option>:`).
+7. The bases are snapshotted when the presets are registered (Sphinx: `builder-inited`).
+   An extension that replaces a self-preset's base AFTER that drops the self-preset; the
+   Sphinx half warns once (`ub_directives.preset_base_replaced`, Sphinx only).
 
 ### 3.5 The Sphinx half (informative: how this package meets §3)
 
@@ -225,17 +233,26 @@ sorted; the path is `….<name>.<table>.<key>`.
    extended to arrays of tables: string keys; values that are strings, booleans, integers
    or floats; arrays that are empty, hold scalars of ONE exact type, or hold only tables;
    and tables of the same shape. A null, a date-time, a float that is not finite (TOML's
-   `inf`, `nan`), an array of mixed scalars (`[1, 1.5]` and `[1, true]` are mixed) and an
-   array of arrays are `template_context_invalid`, as is a file whose top level is not a
-   table. Enforced by: corpus `context-refused-json-null`,
+   `inf`, `nan`), an integer outside the signed 64-bit range, a string holding a lone
+   surrogate, an array of mixed scalars (`[1, 1.5]` and `[1, true]` are mixed), an array
+   of arrays, and data nested deeper than 64 levels (a file's top table is level 1, each
+   nested table or array one more) are `template_context_invalid`, as is a file whose top
+   level is not a table. The JSON number `-0` is unspecified.
+   Enforced by: corpus `context-refused-json-null`, `context-refused-toml-inf`,
+   `context-refused-toml-nan`, `context-refused-json-integer-beyond-i64`,
+   `context-refused-json-integer-below-i64`, `context-integer-at-the-i64-bounds`,
+   `context-refused-lone-surrogate`, `context-refused-deeper-than-64-levels`,
+   `context-at-64-levels-is-data`,
    `context-refused-toml-datetime`, `context-refused-inline-datetime`,
    `context-refused-mixed-array`, `context-refused-int-float-array`,
    `context-refused-array-of-arrays`, `context-refused-not-a-mapping`,
    `context-array-of-tables`, `context-values-keep-their-types`.
 3. **Formats: JSON and TOML only** (by extension, `.json` and `.toml`); there are no YAML
    contexts in v0.1, so a `.yaml` or `.yml` file is `template_context_invalid` saying so,
-   and so is any other extension, a missing file, and a file that does not parse.
-   Enforced by: corpus `context-refused-yaml-file`, `context-refused-yml-file`,
+   and so is any other extension, a missing file, and a file that does not parse. The
+   extension is read case-insensitively (`c.JSON` is JSON).
+   Enforced by: corpus `context-file-extension-is-case-insensitive`,
+   `context-refused-yaml-file`, `context-refused-yml-file`,
    `context-refused-other-extension`, `context-refused-missing-file`,
    `context-refused-invalid-json`.
 4. **Map order is FILE order.** A mapping iterates in the order its data writes it, for a
@@ -269,6 +286,13 @@ sorted; the path is `….<name>.<table>.<key>`.
    are top-level variables, a named context or `:ctx:` with a top-level `var` key is
    `template_context_invalid`. Enforced by: corpus `context-named-var-is-reserved`,
    `ub-template-context-with-a-var-key-is-refused`, `ub-template-ctx-refused-var-key`.
+8. **The engine's own names.** For `ub-template`, a top-level `loop` or `self` key (names
+   the engine gives a template, which a context would shadow) is `template_context_invalid`
+   like `var`; a top-level key no template can name — `true`, `false`, `none`, `True`,
+   `False`, `None`, `in` — is skipped, not an error. Any other key, ASCII or not, is a
+   variable. Enforced by: corpus `ub-template-context-with-a-reserved-key-is-refused-loop`,
+   `…-self`, `ub-template-literal-named-keys-are-unreachable`,
+   `ub-template-non-ascii-context-key-is-engine-data`.
 
 ## 5. Declared template directives
 
@@ -290,17 +314,35 @@ draft = { flag = true }
 
 1. A declaration is refused at load (`directive_template_invalid` at its entry) and ignored
    when its name, in any case, is already a directive (built in, a need type); when it
-   differs only in case from another declaration (the later in key order is refused);
-   when it gives both or neither of `template` and `body`; when `markup` is not `"rst"` or
-   `"md"`; or when `markup` contradicts its template file's name.
+   differs only in case from another declaration (the later in sorted (code point) order
+   is refused, whatever the file order); when it gives both or neither of `template` and
+   `body`; when `markup` is not `"rst"` or `"md"`; when `markup` contradicts its template
+   file's name; or when a field has the wrong shape: `template`, `body`, `markup` and
+   `description` are strings, `argument` is a table (`required` a bool, `description` a
+   string), `content` is a bool, `options` is a table of tables, and in each option
+   `default` is a string, `choices` an array of strings, `required` and `flag` bools and
+   `description` a string. A wrong shape is never a failure of the whole configuration.
+   An unknown key of the declaration, of its `argument` or of an option is
+   `directive_template_unknown_key` at that key, and the declaration is KEPT.
    Enforced by: corpus `declaration-refused-builtin-name`,
    `declaration-refused-builtin-name-in-capitals`, `declaration-refused-need-type-name`,
    `declaration-refused-case-duplicate`, `declaration-refused-template-and-body`,
    `declaration-refused-neither`, `declaration-refused-bad-markup`,
    `declaration-refused-markup-contradicts-the-file`,
-   `declaration-refused-builtin-keeps-the-builtin`.
+   `declaration-refused-builtin-keeps-the-builtin`,
+   `declaration-refused-case-duplicate-lower-written-first`,
+   `declaration-refused-default-not-a-string`,
+   `declaration-refused-choices-not-an-array-of-strings`,
+   `declaration-refused-content-not-a-bool`, `declaration-refused-flag-not-a-bool`,
+   `declaration-refused-argument-not-a-table`, `declaration-unknown-key-is-reported`,
+   `declaration-unknown-option-key-is-reported`.
 2. **Markup** is `markup`, else the template file's name (`*.rst.j2`, `*.md.j2`; also
    `.rst.jinja`, `.md.jinja`), else reStructuredText.
+   Enforced by: corpus `declared-markup-from-a-jinja-suffix`, `md-template-in-an-md-page`.
+3. **Order.** `options` is a mapping in the order the declaration writes its options, and
+   `contexts` in the order `ubproject.toml` writes the contexts.
+   Enforced by: corpus `declared-options-iterate-in-declaration-order`,
+   `declared-contexts-iterate-in-file-order`.
 
 ### 5.2 What the template sees — exactly this
 
@@ -340,6 +382,7 @@ nothing. Enforced by: corpus `signature-undeclared-option`,
    together is `template_option_invalid`, and the file is rendered. A `:file:` named
    `*.rst.j2` / `*.md.j2` is that markup; any other template is the page's.
    Enforced by: corpus `ub-template-file-relative-to-the-page`,
+   `ub-template-file-relative-to-a-subdirectory-page`,
    `ub-template-file-from-the-source-root`, `ub-template-file-missing`,
    `ub-template-file-outside-the-root`, `ub-template-file-and-body`,
    `ub-template-file-of-the-other-markup`.
@@ -360,6 +403,8 @@ nothing. Enforced by: corpus `signature-undeclared-option`,
      `cycler()` (minijinja-contrib's, and minijinja's `urlencode`): present on both sides
      (ubCode enables them; none adds a dependency);
    - `wordwrap` with a positional width (`|wordwrap(7)`) as well as `width=`;
+   - Unicode identifiers (minijinja's `unicode` feature: `{% set größe = 2 %}`), which
+     minijinja-py compiles and ubCode enables;
    - no clock, randomness or I/O: `now`, `random`, `lipsum`, `datetimeformat` are unknown.
    The Python-only string methods ubCode's docs once listed (`center`, `ljust`, `rjust`,
    `zfill`, `expandtabs`) do not exist on either side.
@@ -367,8 +412,10 @@ nothing. Enforced by: corpus `signature-undeclared-option`,
    `render-error-debug-is-removed`, `render-error-undefined-attribute-test`.
 2. **`env` is unavailable.** A template that names `env` as a free variable is
    `template_context_unavailable` (sphinx-jinja2 handed a template the live build
-   environment; neither implementation has one to give).
-   Enforced by: corpus `ub-template-env-is-unavailable`, `declared-env-is-unavailable`.
+   environment; neither implementation has one to give), unless a context defines `env`,
+   which is then ordinary data.
+   Enforced by: corpus `ub-template-env-is-unavailable`, `declared-env-is-unavailable`,
+   `ub-template-context-may-define-env`.
 3. **Includes** (`include`, `import`, `extends`) name files relative to the source root; one
    that would leave it is not read (a render error). Templates are read as UTF-8.
    Enforced by: corpus `include-is-from-the-source-root`,
@@ -395,19 +442,47 @@ nothing. Enforced by: corpus `signature-undeclared-option`,
    the use renders nothing; the rest of the page renders.
    Enforced by: corpus `render-error-undefined`, `render-error-syntax`,
    `var-missing-key-is-undefined`.
-8. **Splice: textual semantics.** Output in the page's own markup is inserted as if it
-   had been written in place of the directive (docutils' `insert_input`): its headings
-   join the page's hierarchy, and host content AFTER the directive continues in the
-   output's last open section. Enforced by: corpus `heading-joins-the-page`,
-   `host-content-continues-in-the-last-section`,
-   `host-content-continues-in-the-last-section-md`,
-   `output-without-a-heading-stays-in-the-host-section`, `ub-template-heading-joins-the-page`.
+8. **Splice.** Output in the page's own markup is inserted as if it had been written in
+   place of the directive (docutils' `insert_input`, MyST's nested render), with two
+   refusals that keep the needs' `sections` equal where the two tools' splices differ:
+   - **No section left open before host content.** Output that holds a heading is
+     `template_open_section`, and the use renders nothing, when the directive is
+     FOLLOWED BY HOST CONTENT: its next sibling in the host exists and is not a heading.
+     (Under textual insertion such content would continue in the output's last section;
+     ubCode's splice cannot restructure the host that way.) A following host heading is
+     not refused: it closes the output's sections either way. Output with headings at the
+     end of its section, and output with no heading, render.
+   - **A heading must nest strictly below the host section holding the directive.** A
+     heading in output at that section's level or above (in reStructuredText, an
+     adornment style the host already uses at that level or an enclosing one; in
+     Markdown, as few or fewer `#` than the host section's heading), or a heading where
+     the host allows no section at all (in a body element: a `note`, a need's body, a
+     list item), is `template_heading_level`, and the use renders nothing.
+   Enforced by: corpus `heading-joins-the-page`, `host-content-continues-in-the-last-section`,
+   `host-content-continues-in-the-last-section-md`, `open-section-before-a-host-heading-renders`,
+   `open-section-before-a-host-heading-renders-md`,
+   `output-without-a-heading-stays-in-the-host-section`, `ub-template-heading-joins-the-page`,
+   `ub-template-heading-at-the-end-joins-the-page`, `heading-level-enclosing-style-is-refused`,
+   `heading-level-same-style-is-refused`, `heading-level-is-refused-md`,
+   `heading-level-deeper-than-the-host-section-renders`,
+   `heading-in-output-inside-a-body-element-rst`, `heading-in-output-inside-a-body-element-md`.
+
+   *Registered divergence:* ubCode re-bases a Markdown fragment's heading depth under the
+   host section (`##` renders as a third-level heading under a `#` page); myst-parser keeps
+   the written level. Needs and `sections` are equal; only each tool's page form differs
+   (corpus `md-template-in-an-md-page-equivalent` is python_only).
 9. **Cross-markup output** (a template of the other markup) is parsed in the TEMPLATE's
    markup and allowed without headings: a section title anywhere in it is
-   `template_markup_heading`, and the use renders nothing.
+   `template_markup_heading`, and the use renders nothing. Cross-markup reStructuredText
+   output is parsed undecorated (no `rst_prolog`/`rst_epilog`), and may not hold a
+   construct that registers in the whole document: a substitution definition, an
+   auto-numbered footnote or a citation is `template_markup_construct`, and the use
+   renders nothing.
    Enforced by: corpus `rst-template-in-an-md-page`,
    `rst-template-with-a-heading-in-an-md-page`, `md-template-in-an-rst-page`,
-   `md-template-with-a-heading-in-an-rst-page`, `md-template-in-an-md-page`.
+   `md-template-with-a-heading-in-an-rst-page`, `md-template-in-an-md-page`,
+   `cross-markup-substitution-is-refused`, `cross-markup-auto-numbered-footnote-is-refused`,
+   `cross-markup-citation-is-refused`.
 10. **Depth 1, and only declared inputs.** Output may not hold a directive that expands a
     template (`template_nested_expansion`) or one that reads content outside the
     template's declared inputs (`template_output_reads_file`). Such a directive renders
@@ -424,6 +499,20 @@ nothing. Enforced by: corpus `signature-undeclared-option`,
     | the sphinx-test-reports directives the project configures | always |
     | a need directive (any need type) | with `:template:`, `:pre_template:`, `:post_template:` or `:jinja_content:` |
     | `ub-template`, every declared template directive | always (`template_nested_expansion`) |
+
+    **A preset is refused exactly when its base, written with the preset's merged options
+    (written ∪ default ∪ forced), would be**: a preset of `include` is refused, and so is a
+    preset of `csv-table` that defaults `:file:`, or of a need type that defaults
+    `:template:`. The test-reports names are the ones the project configures (with
+    sphinx-test-reports loaded, its `tr_file`, `tr_suite` and `tr_case`), else its defaults.
+    The Sphinx half also refuses a LOCALIZED name of a listed directive (docutils'
+    `language`), which ubCode has no notion of (test
+    `test_templates.py::test_a_localized_name_of_a_reading_directive_is_refused`).
+    Enforced by: corpus `output-reads-file-preset-of-include`,
+    `output-reads-file-preset-with-a-default-file`,
+    `output-reads-file-need-preset-with-a-default-template`,
+    `output-reads-file-test-file`, `…-test-suite`, `…-test-case`, `…-test-report`,
+    `…-test-results`, `…-test-env`.
 
     The property behind the list: a directive that reads content the template did not
     declare. An inline diagram, an `image` and a `figure` read nothing into the page (an
@@ -481,13 +570,18 @@ half reports each as the warning type `ub_directives` with the code as its subty
 | `template_nested_expansion` | `template.nested_expansion` | §7.10 |
 | `template_output_reads_file` | `template.output_reads_file` | §7.10 |
 | `template_markup_heading` | `template.markup_heading` | §7.9 |
+| `template_markup_construct` | `template.markup_construct` | §7.9 |
+| `template_open_section` | `template.open_section` | §7.8 |
+| `template_heading_level` | `template.heading_level` | §7.8 |
+| `directive_template_unknown_key` | `config.directive_template_unknown_key` | §5.1 |
 
 The rule behind the template rows: a ubCode code `template.<sub>` is the corpus code
 `<sub>` when `<sub>` already starts with `template_`, else `template_<sub>`. The codes
 never in a corpus: ubCode's `template.value_limit`, `template.compute_limit`,
 `template.cancelled` (§7.5), and the Sphinx half's `extend_unsupported` (§2.1),
-`template_reads_dependency` (§7.10) and `template_markup_unsupported` (a Markdown
-template in a project that does not load myst-parser).
+`template_reads_dependency` (§7.10), `preset_base_replaced` (§3.4.7) and
+`template_markup_unsupported` (a Markdown template in a project that does not load
+myst-parser).
 
 ## 9. The corpora
 

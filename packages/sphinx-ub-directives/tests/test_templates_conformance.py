@@ -30,7 +30,7 @@ CORPUS = "template_directives_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 151
+EXPECTED_CASE_COUNT = 198
 
 #: The codes of the template contract (§8), compared bare.
 CODES = frozenset(
@@ -51,6 +51,10 @@ CODES = frozenset(
         "template_nested_expansion",
         "template_output_reads_file",
         "template_markup_heading",
+        "template_markup_construct",
+        "template_open_section",
+        "template_heading_level",
+        "directive_template_unknown_key",
     }
 )
 
@@ -115,14 +119,24 @@ def test_case(
 ) -> None:
     expansions: list[str] = []
     monkeypatch.setattr(_templates, "observe", expansions.append)
-    built = build(make_app, tmp_path / "source", project(case, case["source"]), CODES)
+    built = build(
+        make_app,
+        tmp_path / "source",
+        project(case, case["source"]),
+        CODES,
+        case.get("page", "index"),
+    )
     expect = case["expect"]
     found = problems(built, expect)
     if "expansions" in expect and expansions != expect["expansions"]:
         found.append(f"expansions {expansions!r}, expected {expect['expansions']!r}")
     if "equivalent" in case:
         twin = build(
-            make_app, tmp_path / "equivalent", project(case, case["equivalent"]), CODES
+            make_app,
+            tmp_path / "equivalent",
+            project(case, case["equivalent"]),
+            CODES,
+            case.get("page", "index"),
         )
         page, needs = built.products()
         twin_page, twin_needs = twin.products()

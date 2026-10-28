@@ -42,7 +42,7 @@ CORPUS = "directive_presets_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 109
+EXPECTED_CASE_COUNT = 111
 
 #: The codes of the presets contract (§8), compared bare.
 CODES = frozenset(
@@ -125,11 +125,21 @@ def test_a_case_cannot_write_outside_its_directory(relative: str) -> None:
 def test_case(
     case: dict[str, Any], make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:
-    built = build(make_app, tmp_path / "source", project(case, case["source"]), CODES)
+    built = build(
+        make_app,
+        tmp_path / "source",
+        project(case, case["source"]),
+        CODES,
+        case.get("page", "index"),
+    )
     found = problems(built, case["expect"])
     if "equivalent" in case:
         twin = build(
-            make_app, tmp_path / "equivalent", project(case, case["equivalent"]), CODES
+            make_app,
+            tmp_path / "equivalent",
+            project(case, case["equivalent"]),
+            CODES,
+            case.get("page", "index"),
         )
         page, needs = built.products()
         twin_page, twin_needs = twin.products()

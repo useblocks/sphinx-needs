@@ -2045,6 +2045,38 @@ equivalent = '''
 findings = []
 
 [[case]]
+name = "float-is-its-decimal-text"
+why = "a float is the shortest decimal text that reads back as it, with no exponent and .0 when it is integral"
+config = '''
+[needs.fields.one]
+schema = { type = "string" }
+
+[needs.fields.quarter]
+schema = { type = "string" }
+
+[needs.fields.tiny]
+schema = { type = "string" }
+
+[needs.fields.huge]
+schema = { type = "string" }
+
+[parse.directive_presets.floats]
+base = "req"
+options = { one = 1.0, quarter = 0.25, tiny = 1e-7, huge = 1e16 }
+'''
+source = '''
+.. floats:: F
+   :id: REQ_090
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_090]
+one = "1.0"
+quarter = "0.25"
+tiny = "0.0000001"
+huge = "10000000000000000.0"
+
+[[case]]
 name = "true-for-a-non-flag-is-the-text-true"
 why = "true for an option that is not a flag is the text \"true\""
 config = '''
@@ -2545,7 +2577,7 @@ code = "directive_preset_invalid_value"
 
 [[case]]
 name = "refused-case-duplicate-names"
-why = "two presets whose names differ only in case are one name: the second spelling is refused, the first is used"
+why = "two presets whose names differ only in case are one name: the later in sorted (code point) order is refused, the first is used"
 config = '''
 [parse.directive_presets.Callout]
 base = "note"
@@ -2554,6 +2586,34 @@ append_options = { class = "first" }
 [parse.directive_presets.callout]
 base = "note"
 append_options = { class = "second" }
+'''
+source = '''
+.. callout::
+
+   Body.
+'''
+equivalent = '''
+.. note::
+   :class: first
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_name_taken"
+path = "parse.directive_presets.callout"
+
+[[case]]
+name = "refused-case-duplicate-names-lower-written-first"
+why = "case-duplicate presets are judged in sorted (code point) order, not file order: Callout is used, callout refused"
+config = '''
+[parse.directive_presets.callout]
+base = "note"
+append_options = { class = "second" }
+
+[parse.directive_presets.Callout]
+base = "note"
+append_options = { class = "first" }
 '''
 source = '''
 .. callout::
