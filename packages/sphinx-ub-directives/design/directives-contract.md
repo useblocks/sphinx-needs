@@ -662,3 +662,12 @@ myst-parser).
    check, and the version check is `tools/check_minijinja_version.py` (and
    `tests/test_minijinja_version.py`): the monorepo's locked minijinja equals the
    version the header records. ubCode's runner records its own `Cargo.lock` version.
+5. **Registered general-parser differences.** These are not part of this contract, and no case
+   depends on them. In each, ubCode's parser differs from docutils or myst-parser for any
+   page, hand-written or generated:
+   - RST option names written with capitals, beyond the cases that pin §5.3's case-insensitive
+     match;
+   - an option written twice;
+   - a TAB in Markdown text, which ubCode expands to spaces and myst-parser keeps.
+
+   So no case writes a tab in a Markdown page, a Markdown template or Markdown output.
