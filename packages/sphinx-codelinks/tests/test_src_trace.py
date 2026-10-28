@@ -21,6 +21,7 @@ from sphinx_codelinks.config import (
 )
 from sphinx_codelinks.sphinx_extension.source_tracing import set_config_to_sphinx
 from sphinx_needs.api import get_need_types
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 #: a one-line parser warning, by its kind: Sphinx 7 shows no ``[codelinks.oneline]``
@@ -259,6 +260,17 @@ def test_build_html(
     # the fixtures warn about other things (no git root, unknown links), never about
     # a one-line marker
     assert [w for w in build_warnings(app) if _ONELINE_KIND.search(w)] == []
+
+    # No need field carries the code entity a marker is attached to: the analysis
+    # records it (``scope``), and no ``code_entity*`` field is registered.
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert needs, "the project traces needs"
+    assert [
+        name
+        for need in needs.values()
+        for name in need
+        if name.startswith("code_entity")
+    ] == []
 
     assert app.env.get_doctree("index") == snapshot_doctree
 
