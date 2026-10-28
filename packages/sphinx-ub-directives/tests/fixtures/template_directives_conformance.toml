@@ -9748,10 +9748,7 @@ source = '''
 .. d::
 '''
 [case.files]
-"_t/d.rst.j2" = '''
-Line one.
-{{ 1 }}
-'''
+"_t/d.rst.j2" = "Line one.\r\n{{ 1 }}\r\n"
 [case.expect]
 expansions = [
 '''
