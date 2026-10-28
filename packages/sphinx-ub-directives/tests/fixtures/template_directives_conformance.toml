@@ -57,10 +57,8 @@
 #     and its needs (positions dropped) -- never across tools
 #   - a case with `python_only = true` is one only the Sphinx runner runs, and ubCode's
 #     runner skips it; `ubcode_only = true` is the converse. Each says in its `why` why.
-#     One divergence is registered this way: ubCode re-bases a Markdown fragment's heading
-#     depth under the host section (`##` renders as a third-level heading under a `#` page),
-#     where myst-parser keeps the written level; the needs and their `sections` are equal,
-#     so only `md-template-in-an-md-page-equivalent`'s page comparison is python_only
+#   - template output never holds a section title, except to pin that it is refused
+#     (`template_heading`): headings in template output are not part of this version
 #   - needs values are compared as `needs.json` writes them, TYPE INCLUDED; `sections` is
 #     the list of section titles from the need's own section outwards
 #   - findings are compared as a MULTISET of `code`, and of `path` and `directive` where the
@@ -76,8 +74,7 @@
 #         template_context_invalid, template_context_unavailable, template_missing,
 #         template_outside_root, template_render_error, template_output_limit,
 #         template_disabled, template_nested_expansion, template_output_reads_file,
-#         template_markup_heading, template_open_section, template_heading_level,
-#         template_markup_construct, directive_template_unknown_key
+#         template_heading, template_markup_construct, directive_template_unknown_key
 #     -- every other finding (an unknown directive, an image that cannot be read) is each
 #     tool's own
 #   - a `nulls` entry names a need of the case and a field that need carries, pinned as null;
@@ -369,7 +366,7 @@ title = "Member Cy"
 
 [[case]]
 name = "needs-from-a-json-file"
-why = "needs generated from a JSON data file are ordinary needs of the page, under the heading the template writes"
+why = "needs generated from a JSON data file are ordinary needs of the page, in the section that holds the directive"
 config = '''
 [parse.template_contexts.reqs]
 file = "data/reqs.json"
@@ -381,8 +378,7 @@ source = '''
 .. reqs-table::
 '''
 equivalent = '''
-Generated requirements
-----------------------
+Generated requirements:
 
 
 .. req:: Boot in under a second
@@ -405,8 +401,7 @@ Generated requirements
 ]}
 '''
 "_templates/reqs.rst.j2" = '''
-{{ contexts.reqs.title }}
-{{ "-" * contexts.reqs.title|length }}
+{{ contexts.reqs.title }}:
 
 {% for r in contexts.reqs.reqs %}
 .. req:: {{ r.title }}
@@ -421,8 +416,7 @@ Generated requirements
 [case.expect]
 expansions = [
 '''
-Generated requirements
-----------------------
+Generated requirements:
 
 
 .. req:: Boot in under a second
@@ -442,11 +436,11 @@ findings = []
 type = "req"
 title = "Boot in under a second"
 status = "open"
-sections = ["Generated requirements", "Case"]
+sections = ["Case"]
 [case.expect.needs.REQ_002]
 status = "closed"
 links = ["REQ_001"]
-sections = ["Generated requirements", "Case"]
+sections = ["Case"]
 
 [[case]]
 name = "map-order-is-file-order-json-file"
@@ -1506,46 +1500,7 @@ path = "parse.directive_templates.row"
 
 [[case]]
 name = "md-template-in-an-md-page"
-why = "a *.md.j2 template is Markdown, and in a Markdown page its heading joins the page"
-markup = "md"
-config = '''
-[parse.parsers.rst]
-
-[parse.parsers.md]
-flavour = "myst"
-
-[parse.directive_templates.md-row]
-template = "_templates/row.md.j2"
-'''
-source = '''
-```{md-row}
-```
-'''
-[case.files]
-"_templates/row.md.j2" = '''
-## Generated in Markdown
-
-```{req} From Markdown
-:id: REQ_MD1
-```
-'''
-[case.expect]
-expansions = [
-'''
-## Generated in Markdown
-
-```{req} From Markdown
-:id: REQ_MD1
-```''',
-]
-findings = []
-[case.expect.needs.REQ_MD1]
-title = "From Markdown"
-sections = ["Generated in Markdown", "Case"]
-
-[[case]]
-name = "md-template-in-an-md-page-equivalent"
-why = "a *.md.j2 template is Markdown, and in a Markdown page its heading joins the page; the page is the page written out (python_only: ubCode re-bases a Markdown fragment's heading depth under the host section, a registered divergence of its include splice; needs and sections are equal)"
+why = "a *.md.j2 template is Markdown, and in a Markdown page its output is Markdown"
 markup = "md"
 config = '''
 [parse.parsers.rst]
@@ -1561,16 +1516,15 @@ source = '''
 ```
 '''
 equivalent = '''
-## Generated in Markdown
+Generated in Markdown:
 
 ```{req} From Markdown
 :id: REQ_MD1
 ```
 '''
-python_only = true
 [case.files]
 "_templates/row.md.j2" = '''
-## Generated in Markdown
+Generated in Markdown:
 
 ```{req} From Markdown
 :id: REQ_MD1
@@ -1579,7 +1533,7 @@ python_only = true
 [case.expect]
 expansions = [
 '''
-## Generated in Markdown
+Generated in Markdown:
 
 ```{req} From Markdown
 :id: REQ_MD1
@@ -1588,7 +1542,7 @@ expansions = [
 findings = []
 [case.expect.needs.REQ_MD1]
 title = "From Markdown"
-sections = ["Generated in Markdown", "Case"]
+sections = ["Case"]
 
 [[case]]
 name = "rst-template-in-an-md-page"
@@ -1625,7 +1579,7 @@ sections = ["Case"]
 
 [[case]]
 name = "rst-template-with-a-heading-in-an-md-page"
-why = "a heading in output of the other markup is template_markup_heading, and the use renders nothing"
+why = "a heading in output of the other markup is template_heading, and the use renders nothing"
 markup = "md"
 config = '''
 [parse.parsers.rst]
@@ -1653,7 +1607,7 @@ expansions = [
 ]
 missing = ["REQ_RS2"]
 [[case.expect.findings]]
-code = "template_markup_heading"
+code = "template_heading"
 directive = "rst-row"
 
 [[case]]
@@ -1686,7 +1640,7 @@ sections = ["Case"]
 
 [[case]]
 name = "md-template-with-a-heading-in-an-rst-page"
-why = "a Markdown heading in an RST page is template_markup_heading, and the use renders nothing"
+why = "a Markdown heading in an RST page is template_heading, and the use renders nothing"
 config = '''
 [parse.parsers.rst]
 
@@ -1712,65 +1666,12 @@ expansions = [
 ]
 missing = ["REQ_MD3"]
 [[case.expect.findings]]
-code = "template_markup_heading"
+code = "template_heading"
 directive = "md-row"
 
 [[case]]
-name = "heading-joins-the-page"
-why = "a heading the output writes is a section of the page, under the page's own"
-config = '''
-[parse.directive_templates.gen]
-template = "_templates/gen.rst.j2"
-'''
-source = '''
-.. gen::
-'''
-equivalent = '''
-Generated
----------
-
-.. req:: In the generated section
-   :id: REQ_GEN
-
-Deeper
-~~~~~~
-
-Text.
-'''
-[case.files]
-"_templates/gen.rst.j2" = '''
-Generated
----------
-
-.. req:: In the generated section
-   :id: REQ_GEN
-
-Deeper
-~~~~~~
-
-Text.
-'''
-[case.expect]
-expansions = [
-'''
-Generated
----------
-
-.. req:: In the generated section
-   :id: REQ_GEN
-
-Deeper
-~~~~~~
-
-Text.''',
-]
-findings = []
-[case.expect.needs.REQ_GEN]
-sections = ["Generated", "Case"]
-
-[[case]]
 name = "host-content-continues-in-the-last-section"
-why = "output that leaves a section open where host content follows the directive is template_open_section, and renders nothing"
+why = "a heading in output is template_heading: host content after it stays in the host section"
 config = '''
 [parse.directive_templates.gen]
 template = "_templates/gen.rst.j2"
@@ -1801,42 +1702,61 @@ missing = ["REQ_GEN"]
 [case.expect.needs.REQ_AFTER]
 sections = ["Case"]
 [[case.expect.findings]]
-code = "template_open_section"
+code = "template_heading"
 directive = "gen"
 
 [[case]]
-name = "open-section-before-a-host-heading-renders"
-why = "output with headings followed by a host heading is not refused: the heading closes the output's sections"
+name = "host-content-continues-in-the-last-section-md"
+why = "in a Markdown page too, a heading in output is template_heading"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.gen]
+template = "_templates/gen.md.j2"
+'''
+source = '''
+```{gen}
+```
+
+```{req} After the template
+:id: REQ_AFTER
+```
+'''
+[case.files]
+"_templates/gen.md.j2" = '''
+## Generated
+
+```{req} In the generated section
+:id: REQ_GEN
+```
+
+### Deeper
+
+Text.
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_GEN"]
+[case.expect.needs.REQ_AFTER]
+sections = ["Case"]
+[[case.expect.findings]]
+code = "template_heading"
+directive = "gen"
+
+[[case]]
+name = "template-heading-is-refused-rst"
+why = "a section title in output, even at the end of the page, is template_heading"
 config = '''
 [parse.directive_templates.gen]
 template = "_templates/gen.rst.j2"
 '''
 source = '''
 .. gen::
-
-Next
-====
-
-.. req:: After the template
-   :id: REQ_AFTER
-'''
-equivalent = '''
-Generated
----------
-
-.. req:: In the generated section
-   :id: REQ_GEN
-
-Deeper
-~~~~~~
-
-Text.
-
-Next
-====
-
-.. req:: After the template
-   :id: REQ_AFTER
 '''
 [case.files]
 "_templates/gen.rst.j2" = '''
@@ -1853,7 +1773,160 @@ Text.
 '''
 [case.expect]
 expansions = [
+]
+missing = ["REQ_GEN"]
+[[case.expect.findings]]
+code = "template_heading"
+directive = "gen"
+
+[[case]]
+name = "template-heading-is-refused-md"
+why = "a Markdown heading in output, even at the end of the page, is template_heading"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.gen]
+template = "_templates/gen.md.j2"
 '''
+source = '''
+```{gen}
+```
+'''
+[case.files]
+"_templates/gen.md.j2" = '''
+## Generated
+
+```{req} In the generated section
+:id: REQ_GEN
+```
+
+### Deeper
+
+Text.
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_GEN"]
+[[case.expect.findings]]
+code = "template_heading"
+directive = "gen"
+
+[[case]]
+name = "template-heading-inside-a-note-in-the-output-rst"
+why = "a section title anywhere in output, inside a note the output writes included, is template_heading"
+config = '''
+[parse.directive_templates.gen]
+template = "_templates/gen.rst.j2"
+'''
+source = '''
+.. gen::
+'''
+[case.files]
+"_templates/gen.rst.j2" = '''
+.. note::
+
+   Inside
+   ------
+
+   .. req:: In the note
+      :id: REQ_GEN
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_GEN"]
+[[case.expect.findings]]
+code = "template_heading"
+directive = "gen"
+
+[[case]]
+name = "template-heading-inside-a-note-in-the-output-md"
+why = "a Markdown heading inside a note the output writes is template_heading"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.gen]
+template = "_templates/gen.md.j2"
+'''
+source = '''
+```{gen}
+```
+'''
+[case.files]
+"_templates/gen.md.j2" = '''
+```{note}
+## Inside
+
+```
+
+```{req} After the note
+:id: REQ_GEN
+```
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_GEN"]
+[[case.expect.findings]]
+code = "template_heading"
+directive = "gen"
+
+[[case]]
+name = "template-heading-in-a-list-item-md"
+why = "a Markdown heading in a list item of the output (which MyST would make a rubric) is template_heading"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.gen]
+template = "_templates/gen.md.j2"
+'''
+source = '''
+```{gen}
+```
+'''
+[case.files]
+"_templates/gen.md.j2" = '''
+- ## In a list item
+
+```{req} After the list
+:id: REQ_GEN
+```
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_GEN"]
+[[case.expect.findings]]
+code = "template_heading"
+directive = "gen"
+
+[[case]]
+name = "template-heading-under-only-around-the-directive"
+why = "a heading in output is template_heading where the directive sits under only"
+config = '''
+[parse.directive_templates.gen]
+template = "_templates/gen.rst.j2"
+'''
+source = '''
+.. only:: html
+
+   .. gen::
+'''
+[case.files]
+"_templates/gen.rst.j2" = '''
 Generated
 ---------
 
@@ -1863,55 +1936,53 @@ Generated
 Deeper
 ~~~~~~
 
-Text.''',
-]
-findings = []
-[case.expect.needs.REQ_GEN]
-sections = ["Generated", "Case"]
-[case.expect.needs.REQ_AFTER]
-sections = ["Next"]
-
-[[case]]
-name = "host-content-continues-in-the-last-section-md"
-why = "in a Markdown page too, output that leaves a section open before host content is template_open_section"
-markup = "md"
-config = '''
-[parse.parsers.rst]
-
-[parse.parsers.md]
-flavour = "myst"
-
-[parse.directive_templates.gen]
-template = "_templates/gen.md.j2"
-'''
-source = '''
-```{gen}
-```
-
-```{req} After the template
-:id: REQ_AFTER
-```
-'''
-[case.files]
-"_templates/gen.md.j2" = '''
-## Generated
-
-### Deeper
-
 Text.
 '''
 [case.expect]
 expansions = [
 ]
-[case.expect.needs.REQ_AFTER]
-sections = ["Case"]
+missing = ["REQ_GEN"]
 [[case.expect.findings]]
-code = "template_open_section"
+code = "template_heading"
 directive = "gen"
 
 [[case]]
-name = "open-section-before-a-host-heading-renders-md"
-why = "in a Markdown page, output with headings followed by a host heading is not refused"
+name = "template-heading-in-a-need-body"
+why = "a heading in output is template_heading where the directive sits in a need's body"
+config = '''
+[parse.directive_templates.gen]
+template = "_templates/gen.rst.j2"
+'''
+source = '''
+.. req:: Host need
+   :id: REQ_HOST
+
+   .. gen::
+'''
+[case.files]
+"_templates/gen.rst.j2" = '''
+Generated
+---------
+
+.. req:: In the generated section
+   :id: REQ_GEN
+
+Deeper
+~~~~~~
+
+Text.
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_GEN"]
+[[case.expect.findings]]
+code = "template_heading"
+directive = "gen"
+
+[[case]]
+name = "template-heading-cross-markup"
+why = "a heading in output of the other markup is template_heading"
 markup = "md"
 config = '''
 [parse.parsers.rst]
@@ -1920,100 +1991,133 @@ config = '''
 flavour = "myst"
 
 [parse.directive_templates.gen]
-template = "_templates/gen.md.j2"
+template = "_templates/gen.rst.j2"
 '''
 source = '''
 ```{gen}
 ```
-
-# Next
-
-```{req} After the template
-:id: REQ_AFTER
-```
 '''
 [case.files]
-"_templates/gen.md.j2" = '''
-## Generated
+"_templates/gen.rst.j2" = '''
+Generated
+---------
 
-### Deeper
+.. req:: In the generated section
+   :id: REQ_GEN
+
+Deeper
+~~~~~~
 
 Text.
 '''
 [case.expect]
 expansions = [
-'''
-## Generated
-
-### Deeper
-
-Text.''',
 ]
-findings = []
-[case.expect.needs.REQ_AFTER]
-sections = ["Next"]
+missing = ["REQ_GEN"]
+[[case.expect.findings]]
+code = "template_heading"
+directive = "gen"
+
+[[case]]
+name = "template-heading-under-if-around-the-directive"
+why = "a heading in output is template_heading where the directive sits under .. if::"
+config = '''
+[variants.data]
+edition = "pro"
+
+[variants.data.build]
+opt = true
+
+[parse.directive_templates.gen]
+template = "_templates/gen.rst.j2"
+'''
+source = '''
+.. if:: var.edition == 'pro'
+
+   .. gen::
+'''
+[case.files]
+"_templates/gen.rst.j2" = '''
+Generated
+---------
+
+.. req:: In the generated section
+   :id: REQ_GEN
+
+Deeper
+~~~~~~
+
+Text.
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_GEN"]
+[[case.expect.findings]]
+code = "template_heading"
+directive = "gen"
 
 [[case]]
 name = "heading-level-enclosing-style-is-refused"
-why = "a heading in output must nest strictly below the host section holding the directive: an enclosing style heading is template_heading_level"
+why = "a heading in output, whatever its level and wherever the directive sits, is template_heading"
 config = '''
-[parse.directive_templates.peer]
-template = "_templates/peer.rst.j2"
+[parse.directive_templates.gen]
+template = "_templates/gen.rst.j2"
 '''
 source = '''
 Host
 ----
 
-.. peer::
+.. gen::
 '''
 [case.files]
-"_templates/peer.rst.j2" = '''
+"_templates/gen.rst.j2" = '''
 Peer
 ====
 
 .. req:: In the peer
-   :id: REQ_PEER
+   :id: REQ_GEN
 '''
 [case.expect]
 expansions = [
 ]
-missing = ["REQ_PEER"]
+missing = ["REQ_GEN"]
 [[case.expect.findings]]
-code = "template_heading_level"
-directive = "peer"
+code = "template_heading"
+directive = "gen"
 
 [[case]]
 name = "heading-level-same-style-is-refused"
-why = "a heading in output must nest strictly below the host section holding the directive: an same style heading is template_heading_level"
+why = "a heading in output, whatever its level and wherever the directive sits, is template_heading"
 config = '''
-[parse.directive_templates.peer]
-template = "_templates/peer.rst.j2"
+[parse.directive_templates.gen]
+template = "_templates/gen.rst.j2"
 '''
 source = '''
 Host
 ----
 
-.. peer::
+.. gen::
 '''
 [case.files]
-"_templates/peer.rst.j2" = '''
+"_templates/gen.rst.j2" = '''
 Peer
 ----
 
 .. req:: In the peer
-   :id: REQ_PEER
+   :id: REQ_GEN
 '''
 [case.expect]
 expansions = [
 ]
-missing = ["REQ_PEER"]
+missing = ["REQ_GEN"]
 [[case.expect.findings]]
-code = "template_heading_level"
-directive = "peer"
+code = "template_heading"
+directive = "gen"
 
 [[case]]
 name = "heading-level-is-refused-md"
-why = "in a Markdown page, a heading in output no deeper than the host section is template_heading_level"
+why = "a heading in output, whatever its level and wherever the directive sits, is template_heading"
 markup = "md"
 config = '''
 [parse.parsers.rst]
@@ -2021,68 +2125,34 @@ config = '''
 [parse.parsers.md]
 flavour = "myst"
 
-[parse.directive_templates.peer]
-template = "_templates/peer.md.j2"
+[parse.directive_templates.gen]
+template = "_templates/gen.md.j2"
 '''
 source = '''
 ## Host
 
-```{peer}
+```{gen}
 ```
 '''
 [case.files]
-"_templates/peer.md.j2" = '''
+"_templates/gen.md.j2" = '''
 ## Peer
 
 ```{req} In the peer
-:id: REQ_PEER
+:id: REQ_GEN
 ```
 '''
 [case.expect]
 expansions = [
 ]
-missing = ["REQ_PEER"]
+missing = ["REQ_GEN"]
 [[case.expect.findings]]
-code = "template_heading_level"
-directive = "peer"
-
-[[case]]
-name = "heading-level-deeper-than-the-host-section-renders"
-why = "a heading in output deeper than the host section holding the directive renders, under it"
-config = '''
-[parse.directive_templates.deep]
-template = "_templates/deep.rst.j2"
-'''
-source = '''
-Host
-----
-
-.. deep::
-'''
-[case.files]
-"_templates/deep.rst.j2" = '''
-Deep
-~~~~
-
-.. req:: In the deep
-   :id: REQ_DEEP
-'''
-[case.expect]
-expansions = [
-'''
-Deep
-~~~~
-
-.. req:: In the deep
-   :id: REQ_DEEP''',
-]
-findings = []
-[case.expect.needs.REQ_DEEP]
-sections = ["Deep", "Host", "Case"]
+code = "template_heading"
+directive = "gen"
 
 [[case]]
 name = "heading-in-output-inside-a-body-element-rst"
-why = "a heading in output where the host allows no section (a note's body) is template_heading_level, and the use renders nothing"
+why = "a heading in output, whatever its level and wherever the directive sits, is template_heading"
 config = '''
 [parse.directive_templates.gen]
 template = "_templates/gen.rst.j2"
@@ -2110,12 +2180,12 @@ expansions = [
 ]
 missing = ["REQ_GEN"]
 [[case.expect.findings]]
-code = "template_heading_level"
+code = "template_heading"
 directive = "gen"
 
 [[case]]
 name = "heading-in-output-inside-a-body-element-md"
-why = "in a Markdown page too, a heading in output inside a note is template_heading_level"
+why = "a heading in output, whatever its level and wherever the directive sits, is template_heading"
 markup = "md"
 config = '''
 [parse.parsers.rst]
@@ -2139,14 +2209,155 @@ source = '''
 ```{req} In the generated section
 :id: REQ_GEN
 ```
+
+### Deeper
+
+Text.
 '''
 [case.expect]
 expansions = [
 ]
 missing = ["REQ_GEN"]
 [[case.expect.findings]]
-code = "template_heading_level"
+code = "template_heading"
 directive = "gen"
+
+[[case]]
+name = "rubric-in-output-is-allowed-rst"
+why = "a rubric is not a section: output may hold one"
+config = '''
+[parse.directive_templates.gen]
+template = "_templates/gen.rst.j2"
+'''
+source = '''
+.. gen::
+'''
+[case.files]
+"_templates/gen.rst.j2" = '''
+.. rubric:: A rubric
+
+.. req:: Under the rubric
+   :id: REQ_RUB
+'''
+[case.expect]
+expansions = [
+'''
+.. rubric:: A rubric
+
+.. req:: Under the rubric
+   :id: REQ_RUB''',
+]
+findings = []
+[case.expect.needs.REQ_RUB]
+sections = ["Case"]
+
+[[case]]
+name = "rubric-in-output-is-allowed-md"
+why = "a MyST rubric is not a section: output may hold one"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.gen]
+template = "_templates/gen.md.j2"
+'''
+source = '''
+```{gen}
+```
+'''
+[case.files]
+"_templates/gen.md.j2" = '''
+```{rubric} A rubric
+```
+
+```{req} Under the rubric
+:id: REQ_RUB
+```
+'''
+[case.expect]
+expansions = [
+'''
+```{rubric} A rubric
+```
+
+```{req} Under the rubric
+:id: REQ_RUB
+```''',
+]
+findings = []
+[case.expect.needs.REQ_RUB]
+sections = ["Case"]
+
+[[case]]
+name = "target-and-paragraph-in-output-are-allowed"
+why = "a target and a paragraph are not a heading: output may hold them"
+config = '''
+[parse.directive_templates.gen]
+template = "_templates/gen.rst.j2"
+'''
+source = '''
+.. gen::
+'''
+[case.files]
+"_templates/gen.rst.j2" = '''
+.. _generated-label:
+
+A paragraph the label names.
+
+.. req:: After the label
+   :id: REQ_TGT
+'''
+[case.expect]
+expansions = [
+'''
+.. _generated-label:
+
+A paragraph the label names.
+
+.. req:: After the label
+   :id: REQ_TGT''',
+]
+findings = []
+[case.expect.needs.REQ_TGT]
+sections = ["Case"]
+
+[[case]]
+name = "title-like-text-in-a-code-block-of-the-output-is-allowed"
+why = "title-like text in a literal body (a code-block) is not a section title"
+config = '''
+[parse.directive_templates.gen]
+template = "_templates/gen.rst.j2"
+'''
+source = '''
+.. gen::
+'''
+[case.files]
+"_templates/gen.rst.j2" = '''
+.. code-block:: rst
+
+   Not a title
+   -----------
+
+.. req:: After the code
+   :id: REQ_CODE
+'''
+[case.expect]
+expansions = [
+'''
+.. code-block:: rst
+
+   Not a title
+   -----------
+
+.. req:: After the code
+   :id: REQ_CODE''',
+]
+findings = []
+[case.expect.needs.REQ_CODE]
+sections = ["Case"]
 
 [[case]]
 name = "output-without-a-heading-stays-in-the-host-section"
@@ -4936,7 +5147,7 @@ flavour = "myst"
 '''
 source = '''
 ````{ub-template} team
-## Led by {{ lead }}
+Led by {{ lead }}.
 
 ```{req} Team charter
 :id: REQ_CHARTER
@@ -4946,7 +5157,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-## Led by Ada
+Led by Ada.
 
 ```{req} Team charter
 :id: REQ_CHARTER
@@ -4954,7 +5165,7 @@ expansions = [
 ]
 findings = []
 [case.expect.needs.REQ_CHARTER]
-sections = ["Led by Ada", "Case"]
+sections = ["Case"]
 
 [[case]]
 name = "ub-template-ctx-overrides-the-named-context"
@@ -5367,7 +5578,7 @@ title = "Debugged"
 
 [[case]]
 name = "ub-template-heading-joins-the-page"
-why = "ub-template's output may hold headings, but one that leaves a section open before host content is template_open_section"
+why = "ub-template's output may not hold a heading either: template_heading, and the use renders nothing"
 config = '''
 [parse]
 ub_template_enabled = true
@@ -5396,59 +5607,41 @@ missing = ["REQ_GEN"]
 [case.expect.needs.REQ_AFTER]
 sections = ["Case"]
 [[case.expect.findings]]
-code = "template_open_section"
+code = "template_heading"
 directive = "ub-template"
 
 [[case]]
-name = "ub-template-heading-at-the-end-joins-the-page"
-why = "ub-template's same-markup output with headings, at the end of the page, joins the page"
+name = "ub-template-file-rst-jinja-suffix-is-rst"
+why = "a :file: named *.rst.jinja is reStructuredText: in a Markdown page it is parsed as reStructuredText"
+markup = "md"
 config = '''
 [parse]
 ub_template_enabled = true
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
 '''
 source = '''
-.. ub-template::
-
-   Generated
-   ---------
-
-   .. req:: In the generated section
-      :id: REQ_GEN
-
-   Deeper
-   ~~~~~~
-
-   Text.
+```{ub-template}
+:file: _templates/f.rst.jinja
+```
 '''
-equivalent = '''
-Generated
----------
-
-.. req:: In the generated section
-   :id: REQ_GEN
-
-Deeper
-~~~~~~
-
-Text.
+[case.files]
+"_templates/f.rst.jinja" = '''
+.. req:: From a file
+   :id: REQ_FILE
 '''
 [case.expect]
 expansions = [
 '''
-Generated
----------
-
-.. req:: In the generated section
-   :id: REQ_GEN
-
-Deeper
-~~~~~~
-
-Text.''',
+.. req:: From a file
+   :id: REQ_FILE''',
 ]
 findings = []
-[case.expect.needs.REQ_GEN]
-sections = ["Generated", "Case"]
+[case.expect.needs.REQ_FILE]
+title = "From a file"
 
 [[case]]
 name = "output-reads-file-preset-of-include"
@@ -6039,6 +6232,73 @@ missing = ["REQ_SUB"]
 [[case.expect.findings]]
 code = "template_markup_construct"
 directive = "rst-row"
+
+[[case]]
+name = "cross-markup-manually-numbered-footnote-is-refused"
+why = "a manually numbered footnote in output of the other markup is template_markup_construct, and the use renders nothing"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.rst-row]
+template = "_templates/row.rst.j2"
+'''
+source = '''
+```{rst-row}
+```
+'''
+[case.files]
+"_templates/row.rst.j2" = '''
+Text [1]_.
+
+.. [1] A note.
+
+.. req:: Never made
+   :id: REQ_SUB
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_SUB"]
+[[case.expect.findings]]
+code = "template_markup_construct"
+directive = "rst-row"
+
+[[case]]
+name = "cross-markup-myst-footnote-is-refused"
+why = "a MyST footnote in Markdown output used from an RST page is template_markup_construct"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.md-row]
+template = "_templates/row.md.j2"
+'''
+source = '''
+.. md-row::
+'''
+[case.files]
+"_templates/row.md.j2" = '''
+Text[^1].
+
+[^1]: A note.
+
+```{req} Never made
+:id: REQ_SUB
+```
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_SUB"]
+[[case.expect.findings]]
+code = "template_markup_construct"
+directive = "md-row"
 
 [[case]]
 name = "context-refused-toml-inf"

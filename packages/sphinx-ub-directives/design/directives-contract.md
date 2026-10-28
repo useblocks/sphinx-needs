@@ -279,6 +279,8 @@ sorted; the path is `….<name>.<table>.<key>`.
    A key it does not define is undefined, and undefined is an error (`is defined` tests
    it). On the Sphinx side it is `app.config.needs_variant_data` when sphinx-needs is
    loaded, else `ub_project.read_variants(...).data`; the data file is a dependency.
+   `var` is validated by ub-project's own shape rule, not by §4.2's bounds: variant data
+   nested deeper than 64 levels is unspecified, and no case holds any.
    Enforced by: corpus `var-is-the-variant-data`, `var-merges-the-data-file`,
    `var-missing-key-is-undefined`, `var-is-defined-test`, `ub-template-sees-var`.
 7. **`var` is reserved.** A context NAMED `var` is `template_context_reserved` at
@@ -338,7 +340,8 @@ draft = { flag = true }
    `declaration-unknown-option-key-is-reported`.
 2. **Markup** is `markup`, else the template file's name (`*.rst.j2`, `*.md.j2`; also
    `.rst.jinja`, `.md.jinja`), else reStructuredText.
-   Enforced by: corpus `declared-markup-from-a-jinja-suffix`, `md-template-in-an-md-page`.
+   Enforced by: corpus `declared-markup-from-a-jinja-suffix`, `md-template-in-an-md-page`,
+   `ub-template-file-rst-jinja-suffix-is-rst` (for `:file:`, §6.3).
 3. **Order.** `options` is a mapping in the order the declaration writes its options, and
    `contexts` in the order `ubproject.toml` writes the contexts.
    Enforced by: corpus `declared-options-iterate-in-declaration-order`,
@@ -442,47 +445,52 @@ nothing. Enforced by: corpus `signature-undeclared-option`,
    the use renders nothing; the rest of the page renders.
    Enforced by: corpus `render-error-undefined`, `render-error-syntax`,
    `var-missing-key-is-undefined`.
-8. **Splice.** Output in the page's own markup is inserted as if it had been written in
-   place of the directive (docutils' `insert_input`, MyST's nested render), with two
-   refusals that keep the needs' `sections` equal where the two tools' splices differ:
-   - **No section left open before host content.** Output that holds a heading is
-     `template_open_section`, and the use renders nothing, when the directive is
-     FOLLOWED BY HOST CONTENT: its next sibling in the host exists and is not a heading.
-     (Under textual insertion such content would continue in the output's last section;
-     ubCode's splice cannot restructure the host that way.) A following host heading is
-     not refused: it closes the output's sections either way. Output with headings at the
-     end of its section, and output with no heading, render.
-   - **A heading must nest strictly below the host section holding the directive.** A
-     heading in output at that section's level or above (in reStructuredText, an
-     adornment style the host already uses at that level or an enclosing one; in
-     Markdown, as few or fewer `#` than the host section's heading), or a heading where
-     the host allows no section at all (in a body element: a `note`, a need's body, a
-     list item), is `template_heading_level`, and the use renders nothing.
-   Enforced by: corpus `heading-joins-the-page`, `host-content-continues-in-the-last-section`,
-   `host-content-continues-in-the-last-section-md`, `open-section-before-a-host-heading-renders`,
-   `open-section-before-a-host-heading-renders-md`,
-   `output-without-a-heading-stays-in-the-host-section`, `ub-template-heading-joins-the-page`,
-   `ub-template-heading-at-the-end-joins-the-page`, `heading-level-enclosing-style-is-refused`,
-   `heading-level-same-style-is-refused`, `heading-level-is-refused-md`,
-   `heading-level-deeper-than-the-host-section-renders`,
-   `heading-in-output-inside-a-body-element-rst`, `heading-in-output-inside-a-body-element-md`.
+8. **No section title in template output** (v0.1). Output may not contain a section
+   title — in either markup, from any template kind (`ub-template`, a declared template, a
+   `:file:` or an inline body, same- or cross-markup), at any depth inside the output (in
+   a `note`, a need's body or a list item the output writes, or any nested construct) —
+   wherever the directive sits (at the top of a section, under `only` or `.. if::`, in a
+   need's body). A use whose output contains one is `template_heading`, reported at the
+   use, and the use renders nothing. A rubric is not a section, and stays allowed; so is
+   title-like text in a literal body (a `code-block`). Each tool detects it structurally,
+   before anything is inserted. The output is otherwise spliced as body content at the
+   directive's position (docutils' `insert_input`, MyST's nested render), so a generated
+   need's `sections` is the host section that contains the directive, on both sides, by
+   construction. Headings in template output are deferred to a later version with a
+   section-model design of their own (three rounds of rules about where output headings
+   may nest each found a new divergence in the needs' `sections`).
+   Enforced by: corpus `host-content-continues-in-the-last-section`,
+   `host-content-continues-in-the-last-section-md`, `template-heading-is-refused-rst`,
+   `template-heading-is-refused-md`, `template-heading-cross-markup`,
+   `template-heading-inside-a-note-in-the-output-rst`, `…-md`,
+   `template-heading-in-a-list-item-md`, `template-heading-under-only-around-the-directive`,
+   `template-heading-under-if-around-the-directive`, `template-heading-in-a-need-body`,
+   `heading-level-enclosing-style-is-refused`, `heading-level-same-style-is-refused`,
+   `heading-level-is-refused-md`, `heading-in-output-inside-a-body-element-rst`, `…-md`,
+   `ub-template-heading-joins-the-page`, `rst-template-with-a-heading-in-an-md-page`,
+   `md-template-with-a-heading-in-an-rst-page`, `rubric-in-output-is-allowed-rst`, `…-md`,
+   `target-and-paragraph-in-output-are-allowed`,
+   `title-like-text-in-a-code-block-of-the-output-is-allowed`,
+   `output-without-a-heading-stays-in-the-host-section`.
 
-   *Registered divergence:* ubCode re-bases a Markdown fragment's heading depth under the
-   host section (`##` renders as a third-level heading under a `#` page); myst-parser keeps
-   the written level. Needs and `sections` are equal; only each tool's page form differs
-   (corpus `md-template-in-an-md-page-equivalent` is python_only).
+   *The Sphinx half (informative):* the inert first parse (§7.9) runs on EVERY output. In
+   reStructuredText, an inert directive parses its body as markup unless the directive is
+   one with a literal body (`code-block`, `math`, `raw`, diagrams, …) or a name no loaded
+   extension registers, and any section — or a docutils complaint about a section title —
+   is a heading. In Markdown, every heading token counts, in a list item or a block quote
+   too, and the bodies of directive fences are scanned the same way.
 9. **Cross-markup output** (a template of the other markup) is parsed in the TEMPLATE's
-   markup and allowed without headings: a section title anywhere in it is
-   `template_markup_heading`, and the use renders nothing. Cross-markup reStructuredText
-   output is parsed undecorated (no `rst_prolog`/`rst_epilog`), and may not hold a
-   construct that registers in the whole document: a substitution definition, an
-   auto-numbered footnote or a citation is `template_markup_construct`, and the use
-   renders nothing.
+   markup, with no heading (§7.8). Cross-markup reStructuredText output is parsed
+   undecorated (no `rst_prolog`/`rst_epilog`). Cross-markup output may not hold a
+   construct that registers in the whole document — a substitution definition, a
+   footnote (numbered by hand, auto-numbered, or a MyST `[^1]` footnote) or a citation —
+   which is `template_markup_construct`, and the use renders nothing.
    Enforced by: corpus `rst-template-in-an-md-page`,
    `rst-template-with-a-heading-in-an-md-page`, `md-template-in-an-rst-page`,
-   `md-template-with-a-heading-in-an-rst-page`, `md-template-in-an-md-page`,
-   `cross-markup-substitution-is-refused`, `cross-markup-auto-numbered-footnote-is-refused`,
-   `cross-markup-citation-is-refused`.
+   `md-template-in-an-md-page`, `cross-markup-substitution-is-refused`,
+   `cross-markup-auto-numbered-footnote-is-refused`,
+   `cross-markup-manually-numbered-footnote-is-refused`,
+   `cross-markup-myst-footnote-is-refused`, `cross-markup-citation-is-refused`.
 10. **Depth 1, and only declared inputs.** Output may not hold a directive that expands a
     template (`template_nested_expansion`) or one that reads content outside the
     template's declared inputs (`template_output_reads_file`). Such a directive renders
@@ -569,10 +577,8 @@ half reports each as the warning type `ub_directives` with the code as its subty
 | `template_disabled` | `template.template_disabled` | §7.6 |
 | `template_nested_expansion` | `template.nested_expansion` | §7.10 |
 | `template_output_reads_file` | `template.output_reads_file` | §7.10 |
-| `template_markup_heading` | `template.markup_heading` | §7.9 |
+| `template_heading` | `template.heading` | §7.8 |
 | `template_markup_construct` | `template.markup_construct` | §7.9 |
-| `template_open_section` | `template.open_section` | §7.8 |
-| `template_heading_level` | `template.heading_level` | §7.8 |
 | `directive_template_unknown_key` | `config.directive_template_unknown_key` | §5.1 |
 
 The rule behind the template rows: a ubCode code `template.<sub>` is the corpus code
