@@ -224,9 +224,10 @@ sorted; the path is `….<name>.<table>.<key>`.
 2. **The data model** is ub-project's variant-data shape rule (reading contract §8.1),
    extended to arrays of tables: string keys; values that are strings, booleans, integers
    or floats; arrays that are empty, hold scalars of ONE exact type, or hold only tables;
-   and tables of the same shape. A null, a date-time, an array of mixed scalars (`[1, 1.5]`
-   and `[1, true]` are mixed) and an array of arrays are `template_context_invalid`, as is
-   a file whose top level is not a table. Enforced by: corpus `context-refused-json-null`,
+   and tables of the same shape. A null, a date-time, a float that is not finite (TOML's
+   `inf`, `nan`), an array of mixed scalars (`[1, 1.5]` and `[1, true]` are mixed) and an
+   array of arrays are `template_context_invalid`, as is a file whose top level is not a
+   table. Enforced by: corpus `context-refused-json-null`,
    `context-refused-toml-datetime`, `context-refused-inline-datetime`,
    `context-refused-mixed-array`, `context-refused-int-float-array`,
    `context-refused-array-of-arrays`, `context-refused-not-a-mapping`,
@@ -242,9 +243,19 @@ sorted; the path is `….<name>.<table>.<key>`.
    `dictsort` sorts. Enforced by: corpus `map-order-is-file-order-json-file`,
    `map-order-is-file-order-toml-file`, `map-order-is-file-order-inline`,
    `map-order-literal-and-dictsort`.
-5. **Context data is read-only.** A method that would change it (`pop`, `append`,
-   `clear`) is a render error, and no render changes the data another sees.
-   Enforced by: corpus `context-is-read-only`.
+5. **Context data is the engine's own data.** It reaches a template as engine-native
+   values: read-only (a method that would change it — `pop`, `append`, `clear` — is a
+   render error, and no render changes the data another sees), iterated in file order,
+   and printed as the engine prints its values (`{{ rows }}` is `[1, "a"]`).
+   Enforced by: corpus `context-is-read-only`, `dialect-values-render-pythonically`.
+
+   *The Sphinx half (informative):* minijinja-py hands a Python `dict` or `list` to a
+   template as a Python object — printed as Python's `repr` (`{'a': [1, 2]}`), with
+   Python's own `items()` and `pop()` — and freezing it into a `MappingProxyType` keeps the
+   `repr` (measured on 2.24). So the context is written into the template as one line of
+   `{% set %}` statements of literals in front of it: JSON is minijinja's literal syntax
+   once null is excluded, which the data model guarantees, and one line moves no
+   template line.
 6. **`var`** is in every template context: the project's merged variant data (the map
    `.. if::` evaluates against — reading contract §8), read-only, by attribute or by key.
    A key it does not define is undefined, and undefined is an error (`is defined` tests
@@ -368,8 +379,10 @@ nothing. Enforced by: corpus `signature-undeclared-option`,
    exceed a limit, how fast that is said, and how much memory is used first are
    implementation-defined. The corpus pins only "an output over 1 MiB is refused"
    (`template_output_limit`), which both sides check after the render. The Sphinx half
-   also caps expression output live (a finalizer counting bytes); it does not bound
-   intermediate values. ubCode keeps its byte budget and value limit
+   bounds a render by fuel and checks the output after it; it does not bound
+   intermediate values, and it has NO live output cap: a minijinja-py `finalizer` changes
+   how every value it sees prints (measured on 2.24: `1.0` prints `1`, a list prints as
+   Python's `repr`), which would break §7.1. ubCode keeps its byte budget and value limit
    (`template_value_limit`, `template_compute_limit`, never pinned).
    Enforced by: corpus `output-over-1-mib-is-refused`, `output-of-1-mib-is-rendered`.
 6. **The per-page breaker.** In one page, once a template has hit a limit with three
@@ -415,8 +428,17 @@ nothing. Enforced by: corpus `signature-undeclared-option`,
     declare. An inline diagram, an `image` and a `figure` read nothing into the page (an
     image is linked, as on any page). A third-party directive neither tool knows is the
     project's responsibility: ubCode never runs one, and the Sphinx half additionally
-    warns when such a directive notes a dependency while output is parsed
+    warns when such a directive notes a dependency while it runs from output
     (`ub_directives.template_reads_dependency`, Sphinx only, never in the corpus).
+    Enforced by (the backstop): test `test_templates.py::test_a_third_party_directive_noting_a_dependency_is_reported`.
+
+    *The Sphinx half (informative):* refusal happens during the real parse of the output,
+    at the directive LOOKUP: every line a template inserts carries the directive's own
+    `(source, line)` (and nested bodies inherit it), so a lookup is on output exactly when
+    the document's current position is one a template inserted; output of the other
+    markup, and a Markdown page's output, are parsed synchronously under a context
+    variable instead. Output of the other markup is first parsed with every directive
+    inert, to look for a heading without side effects (§7.9).
     Enforced by: corpus `output-reads-file-*` (one per row), `output-nested-*`,
     `output-allows-*` (the allowed twins).
 11. **Dependencies.** Every template, context and `:file:` a use reads — including a

@@ -18,11 +18,13 @@ __all__ = ["__version__", "setup"]
 
 def setup(app: Sphinx) -> dict[str, Any]:
     """Register the extension with Sphinx."""
-    from . import _config, _presets
+    from . import _config, _presets, _refusal, _templates
 
     _config.setup(app)
+    _refusal.install()
     # after every extension's `config-inited`, before any document is read (contract §2.2)
     app.connect("builder-inited", _presets.register)
+    app.connect("builder-inited", _templates.register)
     return {
         "version": __version__,
         "parallel_read_safe": True,
