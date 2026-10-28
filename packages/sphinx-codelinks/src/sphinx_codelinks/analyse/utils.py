@@ -1,4 +1,5 @@
 import configparser
+import re
 from pathlib import Path
 from urllib.request import pathname2url
 
@@ -321,6 +322,43 @@ def _is_file_header(node: TreeSitterNode) -> bool:
     return siblings[index].start_point.row - end_row > 1
 
 
+# A Doxygen or JSDoc tag saying a documentation comment documents the file, not the
+# item after it.
+_FILE_DOC_TAG = re.compile(r"[@\\](?:file|fileoverview|packageDocumentation|module)\b")
+
+
+def _documents_file(node: TreeSitterNode) -> bool:
+    """Whether the documentation comment ``node`` documents the file (``@file``,
+    ``\\file``, ``@fileoverview``, ``@packageDocumentation``, ``@module``)."""
+    return (
+        _FILE_DOC_TAG.search((node.text or b"").decode("utf-8", "replace")) is not None
+    )
+
+
+def _in_head_of(
+    node: TreeSitterNode, entity: TreeSitterNode, comment_type: CommentType
+) -> bool:
+    """Whether the comment ``node`` sits in ``entity``'s head: inside, or right after, an
+    attribute, a decorator or a template header that ``entity`` (or its wrapper) owns."""
+    parent = node.parent
+    head = parent if parent is not None and parent.type in ENTITY_HEAD_TYPES else None
+    if head is None:
+        previous = node.prev_sibling
+        while previous is not None and previous.type in COMMENT_TYPES:
+            previous = previous.prev_sibling
+        if previous is not None and previous.type in ENTITY_HEAD_TYPES:
+            head = previous
+    owner = head.parent if head is not None else None
+    if owner is None:
+        return False
+    if owner.id == entity.id:
+        return True
+    if not is_wrapper(owner, comment_type):
+        return False
+    wrapped = unwrap_entity(owner, comment_type)
+    return wrapped is not None and wrapped.id == entity.id
+
+
 def _is_inner_doc(node: TreeSitterNode, comment_type: CommentType) -> bool:
     """A Rust inner doc comment (``//!``, ``/*!``): it documents what it is inside."""
     if comment_type != CommentType.rust:
@@ -472,15 +510,17 @@ def associate(
        before it is no code.
     5. The comments before the file's first item, when a blank line separates the last
        of them from it, belong to the file: no entity. A documentation comment is
-       exempt: it documents the next item, blank lines or not (rustc, Doxygen).
+       exempt: it documents the next item, blank lines or not (rustc, Doxygen) --
+       unless it says it documents the file (``@file``, ``@fileoverview``).
     6. A leading comment belongs to the entity right after it, when only trivia
        stands between (comments, blank lines, attributes, decorators), through its
        wrappers; never across other code.
     7. Otherwise, the enclosing entity, if any.
 
-    A documentation comment attached by rule 4 or 6 is a ``doc_comment``; a trailing
-    comment whose enclosing entity starts on its row (``def f():  # c``) is
-    ``trailing``.
+    A documentation comment attached by rule 4 or 6 is a ``doc_comment``. By rule 7, a
+    comment in the entity's head (after an attribute, a decorator or a template header
+    the entity owns) leads it, and a trailing comment whose entity starts on its row
+    (``def f():  # c``) is ``trailing``; any other is ``enclosing``.
 
     :param node: The comment node, or a Python docstring's ``expression_statement``.
     :param comment_type: The language of the file ``node`` was parsed from.
@@ -495,25 +535,28 @@ def associate(
         # JSONC uses data-aware structure association logic
         return _jsonc_associate(node)
 
-    def enclosing() -> Association | None:
-        scope = find_enclosing_scope(node, comment_type)
-        return Association(scope, "enclosing") if scope is not None else None
-
     declared: Mechanism = "doc_comment"
     if node.type == CommentCategory.docstring or _is_inner_doc(node, comment_type):
         scope = find_enclosing_scope(node, comment_type)
         return Association(scope, declared) if scope is not None else None
     is_doc = is_doc_comment(node, comment_type)
+
+    def enclosing(trailing: bool = False) -> Association | None:
+        scope = find_enclosing_scope(node, comment_type)
+        if scope is None:
+            return None
+        if _in_head_of(node, scope, comment_type):
+            return Association(scope, declared if is_doc else "leading")
+        if trailing and scope.start_point.row == node.start_point.row:
+            return Association(scope, declared if is_doc else "trailing")
+        return Association(scope, "enclosing")
+
     if _code_before_on_row(node):
         entity = _entity_on_row(node, comment_type)
         if entity is None:
-            entity = find_enclosing_scope(node, comment_type)
-            if entity is None:
-                return None
-            if entity.start_point.row != node.start_point.row:
-                return Association(entity, "enclosing")
+            return enclosing(trailing=True)
         return Association(entity, declared if is_doc else "trailing")
-    if not is_doc and _is_file_header(node):
+    if _is_file_header(node) and (not is_doc or _documents_file(node)):
         return None
     entity = find_next_scope(node, comment_type)
     if entity is None:

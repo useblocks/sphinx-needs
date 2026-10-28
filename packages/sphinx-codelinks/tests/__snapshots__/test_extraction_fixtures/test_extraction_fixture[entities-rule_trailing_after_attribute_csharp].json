@@ -19,7 +19,7 @@
       "end": 4,
       "entity_kind": "method",
       "qualified_name": "C.M",
-      "mechanism": "enclosing"
+      "mechanism": "leading"
     },
     "need": {
       "title": "After an attribute",

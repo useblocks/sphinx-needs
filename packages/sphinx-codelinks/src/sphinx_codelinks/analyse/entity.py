@@ -356,7 +356,8 @@ TRIVIA_TYPES: dict[CommentType, frozenset[str]] = {
 
 # The node kinds that open an entity on a row before a comment -- an attribute, a
 # decorator, a template header -- so a comment after one on its row is not trailing
-# code: the item they belong to follows.
+# code: the item they belong to follows. An inner attribute (``#![...]``) applies to
+# what it is inside, so it heads nothing.
 ENTITY_HEAD_TYPES = frozenset(
     {
         "decorator",
@@ -364,7 +365,6 @@ ENTITY_HEAD_TYPES = frozenset(
         "attribute_list",
         "attribute_declaration",
         "attribute_item",
-        "inner_attribute_item",
     }
 )
 
@@ -619,16 +619,33 @@ def _cpp_defined_by_macro(node: TreeSitterNode) -> bool:
     return inner is not None and inner.type == "identifier"
 
 
+def _cpp_conversion_target_end(cast: TreeSitterNode) -> int:
+    """Where a conversion operator's target type ends: at its parameter list
+    (``operator const char*() const``), past any pointer or reference."""
+    stack = [cast]
+    while stack:
+        node = stack.pop()
+        if node.type == "parameter_list":
+            return node.start_byte
+        stack.extend(reversed(node.children))
+    return cast.end_byte
+
+
 def _cpp_conversion_name(node: TreeSitterNode, cast: TreeSitterNode) -> str:
-    """``ns::W::operator bool``: the qualifier written before the ``operator_cast``,
-    then ``operator`` and its target type."""
+    """``ns::W::operator const char*``: the qualifier written before the
+    ``operator_cast``, then ``operator`` and its target type as written, up to the
+    parameter list."""
     declarator = node.child_by_field_name("declarator")
     head = ""
     if declarator is not None and declarator.text:
         written = declarator.text[: cast.start_byte - declarator.start_byte]
         head = written.decode("utf-8", errors="replace")
-    target = _squeeze(_text(cast.child_by_field_name("type")))
-    return _cpp_name(head, _cpp_templated(node)) + "operator " + target
+    keyword = cast.children[0] if cast.children else cast
+    target = (cast.text or b"")[
+        keyword.end_byte - cast.start_byte : _cpp_conversion_target_end(cast)
+        - cast.start_byte
+    ].decode("utf-8", errors="replace")
+    return _cpp_name(head, _cpp_templated(node)) + "operator " + _squeeze(target)
 
 
 def _cpp_describe(node: TreeSitterNode) -> EntityName | None:

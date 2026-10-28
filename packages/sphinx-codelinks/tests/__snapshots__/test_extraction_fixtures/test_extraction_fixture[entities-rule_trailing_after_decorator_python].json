@@ -19,7 +19,7 @@
       "end": 6,
       "entity_kind": "function",
       "qualified_name": "test_f",
-      "mechanism": "enclosing"
+      "mechanism": "leading"
     },
     "need": {
       "title": "After a decorator",
@@ -50,7 +50,7 @@
       "end": 12,
       "entity_kind": "method",
       "qualified_name": "TestA.test_m",
-      "mechanism": "enclosing"
+      "mechanism": "leading"
     },
     "need": {
       "title": "After a decorator in a class",

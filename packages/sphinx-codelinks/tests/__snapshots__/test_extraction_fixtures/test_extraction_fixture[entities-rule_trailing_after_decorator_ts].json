@@ -50,7 +50,7 @@
       "end": 7,
       "entity_kind": "class",
       "qualified_name": "Service",
-      "mechanism": "enclosing"
+      "mechanism": "leading"
     },
     "need": {
       "title": "After a class decorator",

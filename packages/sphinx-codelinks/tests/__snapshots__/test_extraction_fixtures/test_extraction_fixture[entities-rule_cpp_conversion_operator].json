@@ -66,19 +66,81 @@
     "remote_url": null,
     "source_map": {
       "start": {
-        "row": 10,
+        "row": 7,
+        "column": 8
+      },
+      "end": {
+        "row": 7,
+        "column": 52
+      }
+    },
+    "tagged_scope": "operator const char*() const;",
+    "scope": {
+      "kind": "declaration",
+      "start": 9,
+      "end": 9,
+      "entity_kind": "operator",
+      "qualified_name": "ns::W::operator const char*",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Conversion to a pointer",
+      "id": "IMPL_R_CONV_4",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 8
+      },
+      "end": {
+        "row": 9,
+        "column": 54
+      }
+    },
+    "tagged_scope": "operator int&();",
+    "scope": {
+      "kind": "declaration",
+      "start": 11,
+      "end": 11,
+      "entity_kind": "operator",
+      "qualified_name": "ns::W::operator int&",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Conversion to a reference",
+      "id": "IMPL_R_CONV_5",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 14,
         "column": 4
       },
       "end": {
-        "row": 10,
+        "row": 14,
         "column": 47
       }
     },
     "tagged_scope": "ns::W::operator bool() const { return true; }",
     "scope": {
       "kind": "function_definition",
-      "start": 12,
-      "end": 12,
+      "start": 16,
+      "end": 16,
       "entity_kind": "operator",
       "qualified_name": "ns::W::operator bool",
       "mechanism": "leading"

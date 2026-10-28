@@ -1,0 +1,57 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 25
+      },
+      "end": {
+        "row": 0,
+        "column": 76
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "After an inner attribute",
+      "id": "IMPL_R_INNER_ATTR_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 26
+      },
+      "end": {
+        "row": 4,
+        "column": 89
+      }
+    },
+    "tagged_scope": "mod m {\n    #![allow(unused)] // @After an inner attribute in a module, IMPL_R_INNER_ATTR_2, impl\n    fn g() {}\n}",
+    "scope": {
+      "kind": "mod_item",
+      "start": 4,
+      "end": 7,
+      "entity_kind": "module",
+      "qualified_name": "m",
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "After an inner attribute in a module",
+      "id": "IMPL_R_INNER_ATTR_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "mod_item"
+  }
+]

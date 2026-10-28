@@ -21,7 +21,8 @@
 #                   the grammar spans it -- a Rust attribute, a Python decorator, a
 #                   decorator on a TypeScript class member and a C++ template header
 #                   are outside it; a C# attribute list, a C++ attribute and a
-#                   decorator on a TypeScript class are inside it
+#                   decorator on a TypeScript class are inside it (unless the class is
+#                   exported: then the decorator is the export's, outside the class)
 #   mechanism       (rule cases) the expected ``scope.mechanism``
 #   compiler        where the truth comes from, verbatim: the tool and its output, or
 #                   ``syntax-only`` and why no symbol exists
@@ -1145,8 +1146,8 @@ rule_trailing_after_attribute_rust:
     - {id: IMPL_R_TA_RS_3, outcome: exact, entity_kind: "method", qualified_name: "W::f", start: 14, mechanism: leading, compiler: "syntax-only: rule case"}
 
 rule_trailing_after_decorator_python:
-  # A marker after a decorator on its row belongs to the decorated definition: the
-  # grammar puts the comment inside the decorator, so it is that definition's, enclosing.
+  # A marker after a decorator on its row belongs to the decorated definition, and leads
+  # it: the grammar puts the comment inside the decorator, the definition's head.
   lang: python
   config: default
   extract: [oneline, need_refs]
@@ -1164,8 +1165,8 @@ rule_trailing_after_decorator_python:
         def test_m(self):
             pass
   truth:
-    - {id: IMPL_R_TD_PY_1, outcome: exact, entity_kind: "function", qualified_name: "test_f", start: 5, mechanism: enclosing, compiler: "syntax-only: rule case"}
-    - {id: IMPL_R_TD_PY_2, outcome: exact, entity_kind: "method", qualified_name: "TestA.test_m", start: 11, mechanism: enclosing, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_TD_PY_1, outcome: exact, entity_kind: "function", qualified_name: "test_f", start: 5, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_TD_PY_2, outcome: exact, entity_kind: "method", qualified_name: "TestA.test_m", start: 11, mechanism: leading, compiler: "syntax-only: rule case"}
 
 rule_trailing_after_decorator_ts:
   # A marker after a decorator on its row belongs to the decorated member or class.
@@ -1182,7 +1183,7 @@ rule_trailing_after_decorator_ts:
     class Service {}
   truth:
     - {id: IMPL_R_TD_TS_1, outcome: exact, entity_kind: "method", qualified_name: "C.foo", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
-    - {id: IMPL_R_TD_TS_2, outcome: exact, entity_kind: "class", qualified_name: "Service", start: 6, mechanism: enclosing, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_TD_TS_2, outcome: exact, entity_kind: "class", qualified_name: "Service", start: 6, mechanism: leading, compiler: "syntax-only: rule case"}
 
 rule_trailing_after_template_header_cpp:
   # A marker after a template header on its row leads the templated function.
@@ -1196,8 +1197,8 @@ rule_trailing_after_template_header_cpp:
     - {id: IMPL_R_TT_CPP, outcome: exact, entity_kind: "function", qualified_name: "id", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
 
 rule_trailing_after_attribute_csharp:
-  # A marker after an attribute list on its row belongs to the attributed method; the
-  # grammar puts the comment inside the method's declaration, so it is enclosing.
+  # A marker after an attribute list on its row belongs to the attributed method, and
+  # leads it: the grammar puts the comment inside the declaration's head.
   lang: csharp
   config: default
   extract: [oneline, need_refs]
@@ -1208,7 +1209,7 @@ rule_trailing_after_attribute_csharp:
         public void M() {}
     }
   truth:
-    - {id: IMPL_R_TA_CS, outcome: exact, entity_kind: "method", qualified_name: "C.M", start: 3, mechanism: enclosing, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_TA_CS, outcome: exact, entity_kind: "method", qualified_name: "C.M", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
 
 rule_doc_comment_header_blank_line_rust:
   # A declared doc comment is exempt from the file-header rule: rustc makes an outer
@@ -1306,7 +1307,8 @@ rule_cpp_function_defining_macro:
 
 rule_cpp_conversion_operator:
   # A conversion operator is a function: declared in its class, defined in it, and
-  # defined out of line.
+  # defined out of line. Its name keeps the target type as written, up to the
+  # parameter list.
   lang: cpp
   config: default
   extract: [oneline, need_refs]
@@ -1318,6 +1320,10 @@ rule_cpp_conversion_operator:
         explicit operator bool() const;
         // @In-class conversion definition, IMPL_R_CONV_2, impl
         operator int() const { return 0; }
+        // @Conversion to a pointer, IMPL_R_CONV_4, impl
+        operator const char*() const;
+        // @Conversion to a reference, IMPL_R_CONV_5, impl
+        operator int&();
     };
     }
 
@@ -1326,7 +1332,9 @@ rule_cpp_conversion_operator:
   truth:
     - {id: IMPL_R_CONV_1, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator bool", start: 5, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator bool() const"}
     - {id: IMPL_R_CONV_2, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator int", start: 7, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator int() const"}
-    - {id: IMPL_R_CONV_3, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator bool", start: 12, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator bool() const"}
+    - {id: IMPL_R_CONV_4, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator const char*", start: 9, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator char const*() const (the target as written: const char*)"}
+    - {id: IMPL_R_CONV_5, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator int&", start: 11, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator int&()"}
+    - {id: IMPL_R_CONV_3, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator bool", start: 16, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator bool() const"}
 
 rule_cpp_members_under_preprocessor:
   # Class members inside #if / #else are still members: constructor, destructor, method.
@@ -1448,3 +1456,55 @@ rule_rust_unsafe_extern_block:
     }
   truth:
     - {id: IMPL_R_RS24, outcome: exact, entity_kind: "function", qualified_name: "abs", start: 3, mechanism: leading, compiler: "rustc 1.97 (edition 2024): the foreign function abs"}
+
+rule_doc_comment_file_block_is_file_level_cpp:
+  # A documentation comment that documents the file (Doxygen's ``@file``) keeps the
+  # file-header rule: a blank line after it, it is file level.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /**
+     * @file widget.h
+     * @need-ids: REQ_R_FILE_CPP
+     */
+
+    namespace ns {
+    void f();
+    }
+  truth:
+    - {id: REQ_R_FILE_CPP, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "Doxygen: a block with \\file documents the file"}
+
+rule_doc_comment_file_block_is_file_level_ts:
+  # A JSDoc comment that documents the file (``@fileoverview``) keeps the file-header
+  # rule: a blank line after it, it is file level.
+  lang: typescript
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /**
+     * @fileoverview Widgets.
+     * @need-ids: REQ_R_FILE_TS
+     */
+
+    export function f(): void {}
+  truth:
+    - {id: REQ_R_FILE_TS, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "JSDoc: @fileoverview documents the file"}
+
+rule_inner_attribute_is_no_entity_head:
+  # An inner attribute (``#![...]``) applies to what it is inside, so it heads no item:
+  # a marker after one on its row is trailing, and belongs to the module, or the file.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #![allow(dead_code)] // @After an inner attribute, IMPL_R_INNER_ATTR_1, impl
+    fn f() {}
+
+    mod m {
+        #![allow(unused)] // @After an inner attribute in a module, IMPL_R_INNER_ATTR_2, impl
+        fn g() {}
+    }
+  truth:
+    - {id: IMPL_R_INNER_ATTR_1, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "rustc: an inner attribute applies to the enclosing crate"}
+    - {id: IMPL_R_INNER_ATTR_2, outcome: exact, entity_kind: "module", qualified_name: "m", start: 4, mechanism: enclosing, compiler: "rustc: an inner attribute applies to the enclosing module"}
