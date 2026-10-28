@@ -930,16 +930,32 @@ def _rust_impl_segment(impl: TreeSitterNode) -> str:
     return f"<{self_type} as {_rust_type(trait, modules)}>"
 
 
-def _rust_impl_element(impl: TreeSitterNode) -> SemanticElement:
-    """An impl as a component: its self type, and for a trait impl the trait, each as
-    written, so with the module path of a bare name (``<m::G as Shape>`` is
-    ``m::G`` and ``Shape``): no ``module`` component precedes an impl."""
+def _rust_impl_parts(impl: TreeSitterNode) -> list[SemanticElement]:
+    """An impl as components: the in-file modules it is written in, each a ``module``
+    component of its own, then the impl, named after its self type as written and,
+    for a trait impl, carrying the trait as the qualified name spells it.
+
+    The self type is written without the modules (``G`` in ``mod m``): rendering
+    prefixes them again where the qualified name does (:func:`_rust_render`). A path
+    from the crate root keeps its ``crate::`` where dropping it would leave a name the
+    rendering prefixes (``crate::G`` in ``mod k`` is ``Q``, not ``k::Q``)."""
     modules = _rust_modules(impl)
-    element = _element("impl", _rust_type(impl.child_by_field_name("type"), modules))
+    self_node = impl.child_by_field_name("type")
+    written = _collapse(_text(self_node))
+    name = written.removeprefix("crate::")
+    prefixed = (
+        bool(modules)
+        and self_node is not None
+        and self_node.type in ("type_identifier", "generic_type")
+        and "::" not in name
+    )
+    if not prefixed and modules and written != name and _rust_resolves_in_module(name):
+        name = written
+    element = _element("impl", name)
     trait = impl.child_by_field_name("trait")
     if trait is not None:
         element["trait"] = _rust_type(trait, modules)
-    return element
+    return [*(_element("module", module) for module in modules), element]
 
 
 def _rust_functions(functions: list[str], *, in_item: bool) -> list[SemanticElement]:
@@ -953,7 +969,7 @@ def _rust_functions(functions: list[str], *, in_item: bool) -> list[SemanticElem
 
 def _rust_describe(node: TreeSitterNode) -> EntityName | None:
     if node.type == "impl_item":
-        return _named("impl", _rust_impl_segment(node), [_rust_impl_element(node)])
+        return _named("impl", _rust_impl_segment(node), _rust_impl_parts(node))
     kind = _RUST_KINDS.get(node.type)
     name = node.child_by_field_name("name")
     if kind is None or name is None:
@@ -973,7 +989,7 @@ def _rust_describe(node: TreeSitterNode) -> EntityName | None:
                 own_kind,
                 "::".join([_rust_impl_segment(parent), *outer, own]),
                 [
-                    _rust_impl_element(parent),
+                    *_rust_impl_parts(parent),
                     *_rust_functions(outer, in_item=True),
                     _element(own_kind, own),
                 ],
@@ -1386,14 +1402,75 @@ def _rust_is_path(text: str) -> bool:
     return True
 
 
-def _rust_render(element: SemanticElement) -> str:
-    if element["kind"] != "impl":
-        return element["name"]
-    if "trait" in element:
-        return f"<{element['name']} as {element['trait']}>"
-    if _rust_is_path(element["name"]):
-        return element["name"]
-    return f"<{element['name']}>"
+# The types tree-sitter-rust reads as ``primitive_type``: never prefixed with a module.
+_RUST_PRIMITIVES = frozenset(
+    {
+        "bool",
+        "char",
+        "str",
+        "u8",
+        "i8",
+        "u16",
+        "i16",
+        "u32",
+        "i32",
+        "u64",
+        "i64",
+        "u128",
+        "i128",
+        "usize",
+        "isize",
+        "f32",
+        "f64",
+    }
+)
+
+
+def _rust_resolves_in_module(name: str) -> bool:
+    """``name`` is a type written bare, which the qualified name reads as one of the
+    modules it is written in: a name, with any generic arguments (``G``,
+    ``Vec<T>``), not a path, a primitive or a type that is no path."""
+    if not name or not (name[0].isalpha() or name[0] == "_") or "::" in name:
+        return False
+    return _rust_is_path(name) and name.split("<", 1)[0] not in _RUST_PRIMITIVES
+
+
+def _rust_render(semantic: Sequence[SemanticElement]) -> str:
+    """Rust's qualified name: the components joined with ``::``, an impl written as
+    ``<Widget as Shape>`` for a trait impl and ``<dyn Shape>`` for a self type that is
+    no path, and the modules before an impl folded into its self type when it is
+    written bare (``m::G``) -- dropped otherwise, as the qualified name has no place
+    for them (``x::P``, a path from the crate root without its ``crate::``)."""
+    impl_at = next(
+        (index for index, element in enumerate(semantic) if element["kind"] == "impl"),
+        None,
+    )
+    if impl_at is None:
+        return "::".join(element["name"] for element in semantic)
+    modules = [element["name"] for element in semantic[:impl_at]]
+    impl = semantic[impl_at]
+    self_type = impl["name"]
+    if modules and _rust_resolves_in_module(self_type):
+        self_type = "::".join([*modules, self_type])
+    else:
+        self_type = self_type.removeprefix("crate::")
+    if "trait" in impl:
+        segment = f"<{self_type} as {impl['trait']}>"
+    elif _rust_is_path(self_type):
+        segment = self_type
+    else:
+        segment = f"<{self_type}>"
+    return "::".join(
+        [segment, *(element["name"] for element in semantic[impl_at + 1 :])]
+    )
+
+
+def _python_locals_after(semantic: Sequence[SemanticElement], index: int) -> bool:
+    """CPython writes ``<locals>`` after the component at ``index``: a function or a
+    method that another component follows."""
+    return (
+        semantic[index]["kind"] in ("function", "method") and index < len(semantic) - 1
+    )
 
 
 def render_semantic(
@@ -1402,9 +1479,10 @@ def render_semantic(
     """Spell ``semantic`` as its language writes a qualified name: the entity's
     ``qualified_name``.
 
-    C and C++ join the components with ``::``. Rust does too, and writes an ``impl``
-    as ``<Widget as Shape>`` for a trait impl and ``<dyn Shape>`` for a self type that
-    is no path. Python joins them with ``.``, with ``<locals>`` after a function or a
+    C and C++ join the components with ``::``. Rust does too, writes an ``impl`` as
+    ``<Widget as Shape>`` for a trait impl and ``<dyn Shape>`` for a self type that is
+    no path, and folds the modules before an impl into a self type written bare
+    (``m::G``). Python joins them with ``.``, with ``<locals>`` after a function or a
     method another component follows (CPython's ``__qualname__``). C#, Go,
     TypeScript, JavaScript and Bash join them with ``.``.
 
@@ -1418,42 +1496,53 @@ def render_semantic(
     if language in ("c", "cpp"):
         return "::".join(element["name"] for element in semantic)
     if language == "rust":
-        return "::".join(_rust_render(element) for element in semantic)
+        return _rust_render(semantic)
     if language == "python":
         parts: list[str] = []
         for index, element in enumerate(semantic):
             parts.append(element["name"])
-            if element["kind"] in ("function", "method") and index < len(semantic) - 1:
+            if _python_locals_after(semantic, index):
                 parts.append("<locals>")
         return ".".join(parts)
     return ".".join(element["name"] for element in semantic)
 
 
 def name_chain(
-    semantic: Sequence[SemanticElement] | None,
+    semantic: Sequence[SemanticElement] | None, language: str
 ) -> tuple[tuple[tuple[str, str], ...], ...] | None:
-    """What identifies an entity in its file: its components without their kinds.
+    """What identifies an entity in its file: the identity-bearing part of its
+    rendering -- its components' names and other keys (a Rust impl's ``trait``), and
+    in Python the ``<locals>`` boundaries -- without their kinds.
 
     Kinds describe, names identify. A kind is a best-effort classification, for
     filtering and rendering, and one entity's kinds depend on how it is written: a
     method defined in its class is ``namespace ns``, ``class W``, ``method f``, the
     same method defined out of line ``scope ns``, ``class W``, ``method f``. So two
-    entities are the same, or one is inside the other, by their name chains: each
-    component's ``name`` and its other keys (a Rust impl's ``trait``), never its
-    ``kind``.
+    entities are the same, or one is inside the other, by their name chains, never
+    by their kinds. Where a kind does show in the name, so does the chain: CPython's
+    ``<locals>`` after a function or a method (``A.f.<locals>.g`` is not ``A.f.g``) is
+    a link of its own, ``(("name", "<locals>"),)``, which no Python name can be.
 
     :param semantic: An entity's components (``scope.semantic``).
-    :return: One ``(key, value)`` tuple per component, its keys sorted, ``kind``
-        left out; ``None`` for no components.
+    :param language: The entity's file's language (``scope.language``).
+    :return: One tuple of ``(key, value)`` pairs per component, its keys sorted,
+        ``kind`` left out, and a ``<locals>`` link where Python writes one; ``None``
+        for no components.
     """
     if semantic is None:
         return None
-    return tuple(
-        tuple(
-            sorted((key, str(value)) for key, value in element.items() if key != "kind")
+    chain: list[tuple[tuple[str, str], ...]] = []
+    for index, element in enumerate(semantic):
+        chain.append(
+            tuple(
+                sorted(
+                    (key, str(value)) for key, value in element.items() if key != "kind"
+                )
+            )
         )
-        for element in semantic
-    )
+        if language == "python" and _python_locals_after(semantic, index):
+            chain.append((("name", "<locals>"),))
+    return tuple(chain)
 
 
 def scope_language(comment_type: CommentType, path: PurePath) -> str:
@@ -1461,15 +1550,17 @@ def scope_language(comment_type: CommentType, path: PurePath) -> str:
     a symbol ID.
 
     ``c`` for a ``.c`` file, ``cpp`` for every other C and C++ file (a ``.h`` header
-    included: its language is not in its name), otherwise the comment type
-    (``python``, ``rust``, ``cs``, ``ts``, ``go``, ``yaml``, ``jsonc``, ``bash``).
-    A ``.c`` file is parsed with the C++ grammar and its components render as C++'s.
+    included: its language is not in its name; and a ``.C`` file, which compilers read
+    as C++), otherwise the comment type (``python``, ``rust``, ``cs``, ``ts``, ``go``,
+    ``yaml``, ``jsonc``, ``bash``). A ``.c`` file is parsed with the C++ grammar and
+    its components render as C++'s.
 
     :param comment_type: The comment type the file was analysed as.
-    :param path: The file's path; only its suffix is read (in any case).
+    :param path: The file's path; only its suffix is read, case included (discovery
+        reads it in any case, so a ``.C`` file is traced, as C++).
     """
     if comment_type == CommentType.cpp:
-        return "c" if path.suffix.lower() == ".c" else "cpp"
+        return "c" if path.suffix == ".c" else "cpp"
     return comment_type.value
 
 

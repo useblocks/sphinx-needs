@@ -78,7 +78,8 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   C# attribute list, a C++ attribute and a decorator on a TypeScript class are (unless the class is exported: then the
   decorator is the export's);
 - ``language`` -- the language of the file, as a symbol ID's prefix names it: ``c`` for a ``.c`` file, ``cpp`` for every
-  other C and C++ file (a ``.h`` header included, since its name does not say which it is), otherwise ``python``,
+  other C and C++ file (a ``.h`` header included, since its name does not say which it is, and a ``.C`` file, which
+  compilers read as C++), otherwise ``python``,
   ``rust``, ``cs``, ``ts`` (TypeScript and JavaScript), ``go``, ``yaml``, ``jsonc`` or ``bash``. A ``.c`` file is
   read with the C++ grammar, and its names follow C++'s rule;
 - ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
@@ -93,22 +94,31 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
 - ``semantic`` -- that name in its parts, outermost first and the entity itself last, each a ``kind`` and a ``name``
   (``null`` exactly when ``qualified_name`` is). The kinds are those of ``entity_kind`` and two more, for what the
   syntax alone cannot classify: ``scope``, a C++ qualifier such as the ``ns`` of ``void ns::W::f() {}`` (the qualifier
-  right before a method, a constructor, a destructor or a conversion operator is its ``class``), and ``type``, the
+  right before a method, a constructor, a destructor or a conversion operator is its ``class``; so is the ``ns`` of a
+  free function defined with a namespace qualifier, ``void ns::f() {}``, which reads as a method), and ``type``, the
   type a Go method's receiver names. A Rust ``impl`` is a part of kind ``impl`` named after its self type as written
-  (``Widget``, ``dyn Shape``), with a ``trait`` key for a trait impl; nested Python functions are consecutive
-  ``function`` parts (``<locals>`` is no part); a name that is an expression, the left-hand side of a JavaScript
-  assignment (``module.exports.f``), is one part; and a C++ name keeps the arguments of an explicit specialisation
-  (``Box<bool>``) and drops a class template's parameters (``Box::get``), as ``qualified_name`` does. Joined by the
-  rule of the ``language`` -- ``::`` for C, C++ and Rust (with ``<Widget as Shape>`` from a ``trait`` and
-  ``<dyn Shape>`` for a self type that is no path), ``.`` for Python (with ``<locals>`` after a function or a method
-  another part follows) and every other language -- the parts are ``qualified_name``, exactly.
+  (``Widget``, ``dyn Shape``), with a ``trait`` key for a trait impl (the trait as ``qualified_name`` spells it); the
+  in-file modules an impl is written in are parts of their own before it (``mod m { impl G {} }`` is ``module m``,
+  ``impl G``), and a path from the crate root keeps its ``crate::`` where that decides what it names
+  (``crate::Q`` in ``mod k``); nested Python functions are consecutive ``function`` parts (``<locals>`` is no part); a
+  name that is an expression, the left-hand side of a JavaScript assignment (``module.exports.f``), is one part; and a
+  C++ name keeps the arguments of an explicit specialisation (``Box<bool>``) and drops a class template's parameters
+  (``Box::get``), as ``qualified_name`` does. Joined by the rule of the ``language`` -- ``::`` for C, C++ and Rust
+  (with ``<Widget as Shape>`` from a ``trait``, ``<dyn Shape>`` for a self type that is no path, and the modules before
+  an impl folded into a self type written bare, ``m::G``, but not into a path, a primitive or a type that is no path),
+  ``.`` for Python (with ``<locals>`` after a function or a method another part follows) and every other language --
+  the parts are ``qualified_name``, exactly.
 
   **Kinds describe, names identify.** A kind is a best-effort classification, for filtering and rendering, and one
   entity's kinds can depend on how it is written: a method defined in its class is ``namespace ns``, ``class W``,
   ``method f``, and the same method defined out of line is ``scope ns``, ``class W``, ``method f``. Whether two
-  ``semantic`` lists name the same entity, or one is inside the other, is decided by their names and their other keys
-  (a ``trait``), never by their kinds: ``<Widget as Shape>::area`` and ``<Widget as Other>::area`` differ by
-  their ``trait`` alone;
+  ``semantic`` lists name the same entity, or one is inside the other, is decided by their *name chains*, the
+  identity-bearing part of their rendering: the names, a ``trait`` (``<Widget as Shape>::area`` and
+  ``<Widget as Other>::area`` differ by their ``trait`` alone) and Python's ``<locals>`` boundaries (``A.f.g``, the
+  method of a nested class, is not ``A.f.<locals>.g``, a function in a method) -- never by their kinds. So a Rust
+  impl's methods are inside the module the impl is written in, as its free functions are. A name chain cannot tell
+  apart what the qualified name cannot: overloads, a C ``struct stat`` and a function ``stat()``, a C++ partial
+  specialisation and its primary template (``Box``), C# classes that differ in their number of type parameters;
 - ``mechanism`` -- how the marker was attached: ``doc_comment`` (a documentation comment -- ``///``, ``//!``, ``/**``,
   ``/*!``, a C# ``///``, a JSDoc ``/**`` -- or a Python docstring),
   ``leading`` (a comment on the lines before the entity, or directly inside or right after an attribute, a decorator
@@ -125,8 +135,7 @@ since the compiler's function is the macro's expansion
 A class declared with an export macro (``class EXPORT_API Widget``) is misread by the grammar:
 it is bound without a name, or not at all.
 In Rust, an ``impl`` inside a function is named without the function's path,
-and an ``impl W`` for a ``W`` brought in with ``use`` is named in the module the ``impl`` is written in
-(an ``impl``'s part carries the module path of a bare type name, ``m::G``, so no ``module`` part comes before it).
+and an ``impl W`` for a ``W`` brought in with ``use`` is named in the module the ``impl`` is written in.
 The needs ``src-trace`` creates carry no field for the entity: it is recorded here, in the analysis output,
 and will be exposed on the need together with the need's source record.
 

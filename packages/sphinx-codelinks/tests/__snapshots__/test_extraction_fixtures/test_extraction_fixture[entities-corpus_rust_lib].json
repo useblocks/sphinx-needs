@@ -400,8 +400,16 @@
       "qualified_name": "<inner::deeper::Gadget as Shape>::area",
       "semantic": [
         {
+          "kind": "module",
+          "name": "inner"
+        },
+        {
+          "kind": "module",
+          "name": "deeper"
+        },
+        {
           "kind": "impl",
-          "name": "inner::deeper::Gadget",
+          "name": "Gadget",
           "trait": "Shape"
         },
         {

@@ -201,7 +201,7 @@ def _describe(
             EntityName(
                 "method",
                 "<m::G as Shape>::area",
-                _s(("impl", "m::G", "Shape"), ("method", "area")),
+                _s(("module", "m"), ("impl", "G", "Shape"), ("method", "area")),
             ),
             id="rust-trait-impl-in-module",
         ),
@@ -217,6 +217,45 @@ def _describe(
                 _s(("impl", "Widget"), ("method", "new"), ("function", "helper")),
             ),
             id="rust-function-in-inherent-method",
+        ),
+        pytest.param(
+            CommentType.rust,
+            "rs",
+            "mod a { mod b { trait Tr {} impl Tr for u32 {} impl G { fn new() {} } } }",
+            "function_item",
+            0,
+            EntityName(
+                "method",
+                "a::b::G::new",
+                _s(("module", "a"), ("module", "b"), ("impl", "G"), ("method", "new")),
+            ),
+            id="rust-impl-in-nested-modules",
+        ),
+        pytest.param(
+            CommentType.rust,
+            "rs",
+            "mod a { mod b { trait Tr {} impl Tr for u32 {} impl G { fn new() {} } } }",
+            "impl_item",
+            0,
+            EntityName(
+                "impl",
+                "<u32 as a::b::Tr>",
+                _s(("module", "a"), ("module", "b"), ("impl", "u32", "a::b::Tr")),
+            ),
+            id="rust-primitive-self-type-in-a-module-is-not-folded",
+        ),
+        pytest.param(
+            CommentType.rust,
+            "rs",
+            "mod k { impl crate::Q { fn q() {} } }",
+            "function_item",
+            0,
+            EntityName(
+                "method",
+                "Q::q",
+                _s(("module", "k"), ("impl", "crate::Q"), ("method", "q")),
+            ),
+            id="rust-crate-rooted-self-type-keeps-its-root",
         ),
         pytest.param(
             CommentType.rust,
@@ -595,6 +634,42 @@ def test_describe_entity(
             id="rust-only-an-impl-component-is-bracketed",
         ),
         pytest.param(
+            "rust",
+            _s(("module", "a"), ("module", "b"), ("impl", "G"), ("method", "new")),
+            "a::b::G::new",
+            id="rust-modules-fold-into-a-bare-self-type",
+        ),
+        pytest.param(
+            "rust",
+            _s(("module", "m"), ("impl", "Vec<T>", "m::Tr")),
+            "<m::Vec<T> as m::Tr>",
+            id="rust-modules-fold-into-a-generic-self-type",
+        ),
+        pytest.param(
+            "rust",
+            _s(("module", "m"), ("impl", "x::P"), ("method", "new")),
+            "x::P::new",
+            id="rust-a-path-self-type-is-not-folded",
+        ),
+        pytest.param(
+            "rust",
+            _s(("module", "m"), ("impl", "u32", "m::Tr")),
+            "<u32 as m::Tr>",
+            id="rust-a-primitive-self-type-is-not-folded",
+        ),
+        pytest.param(
+            "rust",
+            _s(("module", "m"), ("impl", "dyn Shape"), ("method", "f")),
+            "<dyn Shape>::f",
+            id="rust-a-non-path-self-type-is-not-folded",
+        ),
+        pytest.param(
+            "rust",
+            _s(("module", "k"), ("impl", "crate::Q"), ("method", "q")),
+            "Q::q",
+            id="rust-a-crate-rooted-self-type-drops-its-root",
+        ),
+        pytest.param(
             "python",
             _s(("class", "A"), ("method", "m"), ("class", "B"), ("function", "g")),
             "A.m.<locals>.B.g",
@@ -633,7 +708,7 @@ def test_render_semantic(
     ("comment_type", "filename", "expected"),
     [
         (CommentType.cpp, "a.c", "c"),
-        (CommentType.cpp, "a.C", "c"),
+        (CommentType.cpp, "a.C", "cpp"),
         (CommentType.cpp, "a.h", "cpp"),
         (CommentType.cpp, "a.cpp", "cpp"),
         (CommentType.cpp, "a.hpp", "cpp"),
@@ -652,26 +727,38 @@ def test_render_semantic(
 def test_scope_language(
     comment_type: CommentType, filename: str, expected: str
 ) -> None:
-    """The symbol-ID prefix of a file: ``c`` for a ``.c`` file (the suffix in any case,
-    as discovery reads it), ``cpp`` for every other C and C++ file, a header
-    included, else the comment type."""
+    """The symbol-ID prefix of a file: ``c`` for a ``.c`` file (lowercase: compilers
+    read ``.C`` as C++), ``cpp`` for every other C and C++ file, a header included,
+    else the comment type."""
     assert scope_language(comment_type, Path(filename)) == expected
 
 
 def test_name_chain() -> None:
-    """A name chain drops the kinds and keeps every other key, sorted."""
-    assert name_chain(None) is None
-    assert name_chain(_s(("namespace", "ns"), ("method", "f"))) == (
+    """A name chain drops the kinds and keeps every other key, sorted, and in Python
+    the ``<locals>`` boundary the rendering writes."""
+    assert name_chain(None, "cpp") is None
+    assert name_chain(_s(("namespace", "ns"), ("method", "f")), "cpp") == (
         (("name", "ns"),),
         (("name", "f"),),
     )
-    assert name_chain(_s(("impl", "W", "Shape"), ("method", "area"))) == (
+    assert name_chain(_s(("impl", "W", "Shape"), ("method", "area")), "rust") == (
         (("name", "W"), ("trait", "Shape")),
         (("name", "area"),),
     )
-    assert name_chain(_s(("namespace", "ns"), ("method", "f"))) == name_chain(
-        _s(("scope", "ns"), ("function", "f"))
+    assert name_chain(_s(("namespace", "ns"), ("method", "f")), "cpp") == name_chain(
+        _s(("scope", "ns"), ("function", "f")), "cpp"
     )
+    nested_class = _s(("class", "A"), ("class", "f"), ("method", "g"))
+    in_a_method = _s(("class", "A"), ("method", "f"), ("function", "g"))
+    assert name_chain(in_a_method, "python") == (
+        (("name", "A"),),
+        (("name", "f"),),
+        (("name", "<locals>"),),
+        (("name", "g"),),
+    )
+    assert name_chain(nested_class, "python") != name_chain(in_a_method, "python")
+    # only Python writes the boundary
+    assert name_chain(in_a_method, "rust") == name_chain(nested_class, "rust")
 
 
 def test_describe_entity_refuses_a_node_that_is_no_entity() -> None:

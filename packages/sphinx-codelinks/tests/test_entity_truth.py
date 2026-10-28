@@ -208,7 +208,7 @@ def test_name_chain_ignores_kinds(tmp_path: Path) -> None:
     nested, defined = in_class["IMPL_R_CHAIN_1"], out_of_line["IMPL_R_CHAIN_2"]
     assert _kinds(nested) == ["namespace", "class", "method"]
     assert _kinds(defined) == ["scope", "class", "method"]
-    assert name_chain(nested) == name_chain(defined)
+    assert name_chain(nested, "cpp") == name_chain(defined, "cpp")
 
 
 def test_name_chain_keeps_the_trait(tmp_path: Path) -> None:
@@ -220,4 +220,49 @@ def test_name_chain_keeps_the_trait(tmp_path: Path) -> None:
     assert [element["name"] for element in other] == ["Widget", "area"]
     assert _kinds(shape) == _kinds(other) == ["impl", "method"]
     assert (shape[0]["trait"], other[0]["trait"]) == ("Shape", "Other")
-    assert name_chain(shape) != name_chain(other)
+    assert name_chain(shape, "rust") != name_chain(other, "rust")
+
+
+def test_name_chain_keeps_the_locals_boundary(tmp_path: Path) -> None:
+    """CPython's ``<locals>`` identifies, as a name does: the method ``g`` of a nested
+    class ``f`` and a function ``g`` nested in a method ``f`` have the same names and
+    two name chains."""
+    semantic = _semantic_of("rule_name_chain_python_locals_is_identity", tmp_path)
+    method, function = semantic["IMPL_R_CHAIN_5"], semantic["IMPL_R_CHAIN_6"]
+    assert [element["name"] for element in method] == ["A", "f", "g"]
+    assert [element["name"] for element in function] == ["A", "f", "g"]
+    assert _kinds(method) == ["class", "class", "method"]
+    assert _kinds(function) == ["class", "method", "function"]
+    assert name_chain(method, "python") != name_chain(function, "python")
+
+
+def test_name_chain_contains_by_module(tmp_path: Path) -> None:
+    """An impl written inside an in-file module is inside it by name chain: the module
+    is a part of its own, so the chain of every member of the impl starts with the
+    module's, as a free function's in it does; a nested module's starts with both."""
+    semantic = _semantic_of("rule_name_chain_rust_impl_in_module", tmp_path)
+    chains = {marker: name_chain(parts, "rust") for marker, parts in semantic.items()}
+    module_m = name_chain([{"kind": "module", "name": "m"}], "rust")
+    module_n = name_chain(
+        [{"kind": "module", "name": "m"}, {"kind": "module", "name": "n"}], "rust"
+    )
+    assert module_m is not None and module_n is not None
+    for marker in ("IMPL_R_MOD_1", "IMPL_R_MOD_2", "IMPL_R_MOD_3", "IMPL_R_MOD_4"):
+        chain = chains[marker]
+        assert chain is not None and chain[: len(module_m)] == module_m, marker
+    chain = chains["IMPL_R_MOD_4"]
+    assert chain is not None and chain[: len(module_n)] == module_n
+    assert semantic["IMPL_R_MOD_1"] == [
+        {"kind": "module", "name": "m"},
+        {"kind": "impl", "name": "G"},
+        {"kind": "method", "name": "new"},
+    ]
+    assert semantic["IMPL_R_MOD_2"] == [
+        {"kind": "module", "name": "m"},
+        {"kind": "impl", "name": "G", "trait": "m::Shape"},
+        {"kind": "method", "name": "area"},
+    ]
+    # a path keeps its spelling, a path from the crate root its root
+    assert _kinds(semantic["IMPL_R_MOD_5"]) == ["module", "impl", "method"]
+    assert semantic["IMPL_R_MOD_5"][1]["name"] == "x::P"
+    assert semantic["IMPL_R_MOD_6"][1]["name"] == "crate::Q"

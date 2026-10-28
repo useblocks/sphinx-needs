@@ -148,7 +148,7 @@ The fields of a marked-content entry, as `Metadata.to_dict()` writes them:
   that declaration, named, or `null` exactly when `tagged_scope` is: `kind` (its
   tree-sitter kind), `start` and `end` (its 1-based first and last lines),
   `language` (the symbol-ID prefix: `c` for a `.c` file, `cpp` for any other C or
-  C++ file, a `.h` included, else the comment type — `python`, `rust`, `cs`, `ts`,
+  C++ file, a `.h` and a `.C` included, else the comment type — `python`, `rust`, `cs`, `ts`,
   `go`, `yaml`, `jsonc`, `bash`), `entity_kind` (`function`, `method`, `class`,
   `namespace`, …, `key` or `item` in a data file; `null` if it cannot be named),
   `qualified_name` (the name within the file, qualified by its containers —
@@ -161,9 +161,12 @@ The fields of a marked-content entry, as `Metadata.to_dict()` writes them:
   `language`'s rule, and `tests/test_entity_truth.py` asserts, for every scope of
   every case, that the join is `qualified_name`. Kinds describe, names identify:
   two parts lists name the same entity when their name chains (`name_chain`: every
-  key but `kind`) are equal, whatever their kinds; the `rule_name_chain_*` cases of
-  `entities.yaml` pin a method defined in its class and out of line (equal chains,
-  different kinds) and two trait impls' methods (chains that differ by `trait`).
+  key but `kind`, and in Python a `<locals>` link where the rendering writes one)
+  are equal, whatever their kinds; the `rule_name_chain_*` cases of `entities.yaml`
+  pin a method defined in its class and out of line (equal chains, different
+  kinds), two trait impls' methods (chains that differ by `trait`), a nested class's
+  method and a function in a method (chains that differ by `<locals>`), and impls in
+  in-file modules (whose chains start with the module's, as a free function's do).
 - `type` — `"need"`, `"need-id-refs"` or `"multiline-need"`; a need's own `type` (e.g.
   `"impl"`) is inside `need`.
 - the payload — `need` (the `OneLineNeed.need` dict as is), `need_ids` and

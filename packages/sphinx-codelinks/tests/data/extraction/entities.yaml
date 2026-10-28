@@ -1726,3 +1726,98 @@ rule_name_chain_rust_trait_is_identity:
   truth:
     - {id: IMPL_R_CHAIN_3, outcome: exact, entity_kind: "method", qualified_name: "<Widget as Shape>::area", start: 11, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::Widget as t::Shape>::area"}
     - {id: IMPL_R_CHAIN_4, outcome: exact, entity_kind: "method", qualified_name: "<Widget as Other>::area", start: 16, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::Widget as t::Other>::area"}
+
+rule_name_chain_python_locals_is_identity:
+  # CPython's ``<locals>`` is identity, as a name is: ``A.f.g`` (the method ``g`` of a nested
+  # class ``f``) and ``A.f.<locals>.g`` (a function nested in the method ``f``) have the same
+  # names and two name chains, which differ by the ``<locals>`` boundary alone.
+  lang: python
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    class A:
+        class f:
+            # @Method of a nested class, IMPL_R_CHAIN_5, impl
+            def g(self):
+                pass
+
+        def f(self):
+            # @Function in a method, IMPL_R_CHAIN_6, impl
+            def g():
+                pass
+
+            return g
+  truth:
+    - {id: IMPL_R_CHAIN_5, outcome: exact, entity_kind: "method", qualified_name: "A.f.g", start: 4, mechanism: leading, compiler: "CPython 3.13 co_qualname: A.f.g"}
+    - {id: IMPL_R_CHAIN_6, outcome: exact, entity_kind: "function", qualified_name: "A.f.<locals>.g", start: 9, mechanism: leading, compiler: "CPython 3.13 co_qualname: A.f.<locals>.g"}
+
+rule_name_chain_rust_impl_in_module:
+  # An impl inside an in-file module is inside it by name chain: the module is a part of its
+  # own, before the impl, and the impl is its self type as written -- a bare name is folded back
+  # into the module's path when rendered (``m::G::new``), a path is not (``x::P::new``), and a
+  # path from the crate root keeps its ``crate::`` (``Q::q``, not ``k::Q::q``).
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    pub mod m {
+        pub trait Shape {
+            fn area(&self) -> f64;
+        }
+        pub struct G;
+
+        impl G {
+            // @New in a module, IMPL_R_MOD_1, impl
+            pub fn new() -> G {
+                G
+            }
+        }
+
+        impl Shape for G {
+            // @Area in a module, IMPL_R_MOD_2, impl
+            fn area(&self) -> f64 {
+                0.0
+            }
+        }
+
+        // @Free function in a module, IMPL_R_MOD_3, impl
+        pub fn free() {}
+
+        pub mod n {
+            pub struct H;
+
+            impl H {
+                // @Make in a nested module, IMPL_R_MOD_4, impl
+                pub fn make() -> H {
+                    H
+                }
+            }
+        }
+    }
+
+    pub mod x {
+        pub struct P;
+    }
+
+    pub struct Q;
+
+    pub mod k {
+        impl crate::x::P {
+            // @A type written as a path, IMPL_R_MOD_5, impl
+            pub fn new() -> crate::x::P {
+                crate::x::P
+            }
+        }
+
+        impl crate::Q {
+            // @A type written from the crate root, IMPL_R_MOD_6, impl
+            pub fn q() {}
+        }
+    }
+  truth:
+    - {id: IMPL_R_MOD_1, outcome: exact, entity_kind: "method", qualified_name: "m::G::new", start: 9, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::m::G>::new"}
+    - {id: IMPL_R_MOD_2, outcome: exact, entity_kind: "method", qualified_name: "<m::G as m::Shape>::area", start: 16, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::m::G as t::m::Shape>::area"}
+    - {id: IMPL_R_MOD_3, outcome: exact, entity_kind: "function", qualified_name: "m::free", start: 22, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: t::m::free"}
+    - {id: IMPL_R_MOD_4, outcome: exact, entity_kind: "method", qualified_name: "m::n::H::make", start: 29, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::m::n::H>::make"}
+    - {id: IMPL_R_MOD_5, outcome: exact, entity_kind: "method", qualified_name: "x::P::new", start: 45, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::x::P>::new"}
+    - {id: IMPL_R_MOD_6, outcome: exact, entity_kind: "method", qualified_name: "Q::q", start: 52, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::Q>::q"}
