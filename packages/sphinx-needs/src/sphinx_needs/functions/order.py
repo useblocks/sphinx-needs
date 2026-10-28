@@ -1117,24 +1117,46 @@ class _RuleReads(_CallReads):
         """The reads of a ``copy`` or ``collect`` on a link type, computed with the
         link types: ``field`` and the names of ``where`` on each need ``over`` names.
 
-        ``over`` is a link type no rule computes (refused at load otherwise), so the
-        needs it names are known here, but on a need whose ``over`` a call computes in
-        this stratum, which needs it names is known only once it is computed: the
-        node waits for it, and reads each name through its column, as
-        :meth:`_linked` does. A ``collect`` of its own link type over needs reading it
-        back is a cycle, as an own-field roll-up is.
+        The node waits for the need's own ``over`` when it is computed in this
+        stratum. The needs ``over`` names are known here when no rule or call computes
+        it on the need, or when a ``union`` does, of members the same holds of (read
+        through them, :meth:`_static_targets`). Otherwise (a ``links``,
+        ``content_links`` or path rule, or a call) which needs it names is known only
+        once it is computed: each name is read through its column, as :meth:`_linked`
+        does. A ``collect`` of its own link type over needs reading it back is a
+        cycle, as an own-field roll-up is.
         """
         assert over is not None and field is not None, "a path has both"
         own = (self.need.id, over)
         self._read(*own)
         names = [field, *sorted(where)]
-        if self.project.nodes.get(own) == self.stratum:
+        targets = self._static_targets(over, frozenset())
+        if targets is None:
             for name in names:
                 self._column(name, None, own)
             return
-        for target in self._over(self.need.id, over):
+        for target in targets:
             for name in names:
-                self._read(target["id"], name)
+                self._read(target, name)
+
+    def _static_targets(self, over: str, seen: frozenset[str]) -> list[str] | None:
+        """The ids of the needs the need's ``over`` names, if they are known before the
+        stratum is computed: ``over`` is not computed on the need in it, or a
+        ``union`` computes it whose members' are known (recursively); else ``None``.
+        """
+        node = (self.need.id, over)
+        if self.project.nodes.get(node) != self.stratum:
+            return [target["id"] for target in self._over(self.need.id, over)]
+        call = self.project.rules.get(node)
+        if call is None or not is_union(call.rule) or over in seen:
+            return None
+        ids: dict[str, None] = {}
+        for member in call.rule.fields:
+            found = self._static_targets(member, seen | {over})
+            if found is None:
+                return None
+            ids.update(dict.fromkeys(found))
+        return list(ids)
 
     def _names(self, predicate: str | None) -> frozenset[str]:
         if predicate is None:

@@ -206,3 +206,85 @@ def test_a_needflow_without_link_types_leaves_summary_link_types_out(test_app):
     assert '"IMPL_1"' in rooted_named
     assert '"TEST_1"' in rooted_named
     assert '"SPEC_1"' not in rooted_named
+
+
+CONF_COPY = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {"mitigates": {"summary": True, "copy": True}}
+"""
+
+INDEX_COPY = """\
+Copies
+======
+
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Risk
+   :id: SPEC_1
+   :mitigates: REQ_1
+"""
+
+
+@pytest.mark.parametrize("test_app", [_project(CONF_COPY, INDEX_COPY)], indirect=True)
+def test_a_summary_link_type_copies_nothing_into_links(test_app):
+    """``copy = true`` beside ``summary = true`` would make every summary link an edge
+    of ``links``, which every view reads: it is a ``needs.config`` finding, and
+    ignored (so it is not deprecated either: nothing is copied)."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_links['mitigates'] has 'copy = true' beside 'summary = true': "
+        "a copy in links would make a summary link an edge; copy is ignored "
+        "[needs.config]",
+    ]
+    schema = SphinxNeedsData(app.env).get_schema()
+    mitigates = schema.get_link_field("mitigates")
+    assert mitigates is not None and mitigates.summary and not mitigates.copy
+    needs = _version(app)["needs"]
+    assert needs["SPEC_1"]["mitigates"] == ["REQ_1"]
+    assert needs["SPEC_1"]["links"] == []
+    assert needs["REQ_1"]["links_back"] == []
+
+
+CONF_FLOW_LINKS = """\
+extensions = ["sphinx_needs"]
+needs_flow_engine = "graphviz"
+needs_links = {"links": {"summary": True}, "parent_needs": {"summary": True}}
+"""
+
+INDEX_FLOW_LINKS = """\
+Flows
+=====
+
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :links: REQ_1
+
+.. needflow::
+   :debug:
+
+.. needflow::
+   :link_types: links
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_FLOW_LINKS, INDEX_FLOW_LINKS, "html")], indirect=True
+)
+def test_a_summary_links_is_not_drawn_by_the_fallback(test_app):
+    """With every link type a summary, a needflow without ``:link_types:`` is left
+    with none: the ``needs_flow_link_types`` fallback (``links``) leaves summary link
+    types out too; named, ``links`` is drawn."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    every, named = _debug_sources(Path(app.outdir))
+    assert '"SPEC_1"' in every
+    assert '"SPEC_1" -> "REQ_1"' not in every
+    assert '"SPEC_1" -> "REQ_1"' in named

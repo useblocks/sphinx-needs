@@ -1004,6 +1004,10 @@ Each configured link can define:
   so that a tool reading the file knows to leave it out where it walks every link type.
   A link type a ``copy`` or ``collect`` rule computes is a summary whether or not it says so
   (:ref:`needs_derive_link_chain`), and ``summary = false`` beside such a rule is refused (``needs.derive_invalid``).
+  ``copy = true`` beside ``summary = true`` would copy every summary link into ``links``, which every view reads:
+  it is a ``needs.config`` warning, and nothing is copied.
+  With every link type a summary, a :ref:`needflow` without ``:link_types:`` draws none,
+  its ``needs_flow_link_types`` fallback included.
   It is a link type's on every need type: a need type's entry (:ref:`needs_types_fields`) does not give it,
   and one that does is a ``needs.config`` warning, the key ignored;
   nor does a rule (``derive``, ``derive_by_type``), where it is no role (``needs.derive_invalid``).

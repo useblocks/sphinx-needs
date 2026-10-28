@@ -18,10 +18,12 @@ Improvements
   requirements it traces to as links, and each requirement the needs that reach it as back links. Each link is kept
   once by its target and part, its condition dropped; a dead link is carried, and reported where it is written.
   Such a link type is a summary (``summary = false`` beside the rule is refused), counts toward
-  ``needs.derive_dense``, and is computed with the link types: an ``over`` naming back links or a derived link
-  type, and a ``field`` naming a value field or back links, are refused at load (``needs.derive_invalid``), and
-  needs reading one another's chain around a ring are ``needs.derive_cycle``. On a field, ``copy`` and ``collect``
-  are unchanged.
+  ``needs.derive_dense``, and is computed with the link types: an ``over`` naming back links, and a ``field`` naming
+  a value field or back links, are refused at load (``needs.derive_invalid``), and needs reading one another's chain
+  around a ring are ``needs.derive_cycle``. ``over`` may name a union, read through its members, so a chain climbs
+  several link types at once (``over = "trace_up"``); a ``collect`` of its own link type over a link type another
+  kind of rule computes is refused. A dead link carried is flagged (``has_dead_links``) and drawn forbidden only as
+  the link type it is written in says. On a field, ``copy`` and ``collect`` are unchanged.
 
 - ✨ A link type may be a **summary**, ``summary = true`` on its :ref:`needs_links` entry, whose links materialise
   a path rather than an edge of the trace (:ref:`needs_derive_summary`, :issue:`2370`)
@@ -31,7 +33,8 @@ Improvements
   ``:link_types:`` neither draws it nor walks it from ``:root_id:``, and a ``union`` cannot name it as a member
   (``needs.derive_invalid``). The schema of the ``needs.json`` marks it, and its back links, ``"summary": true``.
   It is the link type's on every need type: a need type's entry giving it is a ``needs.config`` warning, and in a
-  rule it is no role (``needs.derive_invalid``). Without it nothing changes.
+  rule it is no role (``needs.derive_invalid``); ``copy = true`` beside it is a ``needs.config`` warning, and
+  nothing is copied into ``links``. Without it nothing changes.
 
 - ✨ A derive rule of kind ``copy`` takes ``where`` beside ``over`` or ``join`` (:ref:`needs_derive_kind_copy`,
   :issue:`2246`)

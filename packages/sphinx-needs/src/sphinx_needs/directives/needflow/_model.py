@@ -339,8 +339,9 @@ def resolve_link_types(
                 location=location,
             )
 
-    # note the `needs_flow_link_types` fallback is unreachable, since the directive
-    # always defaults the option to every link type; it is kept as is
+    # the `needs_flow_link_types` fallback is reached only when the directive's
+    # default, every link type but the summary ones, is empty (every link type is a
+    # summary): it leaves the summaries out too, as the default does
     config_link_types = [link.upper() for link in config.flow_link_types]
 
     allowed_link_types: list[LinkShape] = []
@@ -352,7 +353,7 @@ def resolve_link_types(
             and link_field.name.upper() not in option_link_types
         ) or (
             not attributes["link_types"]
-            and link_field.name.upper() not in config_link_types
+            and (link_field.name.upper() not in config_link_types or link_field.summary)
         ):
             continue
         # skip creating links from child needs to their own parent need

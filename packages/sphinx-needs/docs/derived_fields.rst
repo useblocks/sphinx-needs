@@ -832,18 +832,28 @@ the links rendered on the card, back links, and in ``needs.json`` a link list wi
 - **collect.** ``field``, a link type (a derived one too, which carries a chain rung by rung), and ``over``:
   the links ``field`` holds on each need ``over`` names, in their order, each once by its target and its part.
   A link's condition is dropped: it qualifies the link it is written on, not the path.
-  A dead link is carried, and reported where it is written, as that link type allows dead links, not again here.
+  A dead link is carried, and reported where it is written, as that link type allows dead links, not again here:
+  it sets ``has_dead_links`` (and ``has_forbidden_dead_links``) on the need writing it only,
+  and a need's layout draws it forbidden on every rung exactly where the link type it is written in does not allow it.
+  ``allow_dead_links`` beside such a rule is refused (``needs.derive_invalid``) and ignored, as beside a union.
 - ``where`` tests each need ``over`` names, as on the other kinds.
 - **When.** With the link fields (:ref:`needs_processing_order`), so each reads what is known then:
-  ``over`` names a link type no rule computes, and not back links (built after the link types);
-  ``field`` names no value field and no back links.
+  ``over`` names no back links (built after the link types), and ``field`` no value field and no back links.
   Each is refused at load (``needs.derive_invalid``), and the link type holds no links.
   A need is computed after the needs it reads; needs reading one another's chain around a ring,
   or a need naming itself, are each reported (``needs.derive_cycle``) and hold no links,
-  as for a roll-up of a field's own value.
-  Where a call computes a need's ``over`` with the link fields (``[[links_from_filter(...)]]``),
+  as for a roll-up of a field's own value, and a need reading one of them reads its empty list, unreported.
+  A ``where`` naming a value field a rule computes, or back links, cannot wait for them:
+  each need whose ``over`` names a need is reported (``needs.derive_scope``) and holds no links.
+- **Over a derived link type.** A ``union`` is read through its members, so a chain may climb several link types
+  at once, ``over = "trace_up"`` with ``trace_up`` the union of ``satisfies``, ``implements`` and ``verifies``,
+  and a ``collect`` of its own link type over it is computed rung by rung, a ring through it reported as above.
+  Over a link type a ``links``, ``content_links``, ``copy`` or ``collect`` rule computes (or a union with such a member),
+  or where a call computes a need's ``over`` with the link fields (``[[links_from_filter(...)]]``),
   which needs it names is known only once it is computed, so the rule reads ``field`` on every need computing it:
-  a ``collect`` of its own link type there reads itself, and is a cycle.
+  a ``copy``, or a ``collect`` of another link type, is computed;
+  a ``collect`` of its own link type would read itself on every need, and is refused at load (``needs.derive_invalid``)
+  over such a rule, or reported as a cycle where a call computes ``over``.
 - **A summary.** The link type is a summary link type (:ref:`needs_derive_summary`), whether its entry says so or not:
   a needflow draws it only when ``:link_types:`` names it, and a ``union`` cannot name it.
   ``summary = false`` beside such a rule is refused (``needs.derive_invalid``) and ignored: the rule applies.
@@ -1138,7 +1148,8 @@ an unknown kind, an unknown role, a role the kind does not take or requires,
 a role holding the wrong type of value,
 a kind computing a link list declared on a field, or one computing a value declared on a link type,
 a ``copy`` or ``collect`` on a link type that reads what the link types cannot wait for
-(an ``over`` naming back links or a link type a rule computes, a ``field`` naming a value field or back links,
+(an ``over`` naming back links, a ``field`` naming a value field or back links,
+a ``collect`` of its own link type over a link type a rule other than a union computes,
 a ``copy`` of a field other than ``id``, ``after``) or a ``select`` other than ``"list"`` on one,
 an ``over`` naming no link type, a ``field`` naming nothing a need has,
 a result the field's ``schema`` cannot hold,

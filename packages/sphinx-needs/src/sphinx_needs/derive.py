@@ -786,25 +786,44 @@ def by_type_message(
 #: Why ``allow_dead_links`` cannot be given beside a link type whose rules are unions.
 _UNION_DEAD_LINKS: Final = " (a union's dead links are its members')"
 
+#: Why ``allow_dead_links`` cannot be given beside a link type whose rules are each a
+#: union or a path, a path among them.
+_PATH_DEAD_LINKS: Final = (
+    " (the dead links a copy or collect carries are those of the link type it collects)"
+)
+
 #: Why ``summary = false`` cannot be given beside a ``copy`` or ``collect`` of a link
 #: type.
 _PATH_SUMMARY: Final = " (a link a copy or collect computes is a path, not an edge)"
 
 
-def _why_beside(keys: Sequence[str]) -> str:
-    """Why the keys refused beside a rule are, for those whose reason is not plain."""
-    return (_UNION_DEAD_LINKS if "allow_dead_links" in keys else "") + (
+def carries_links(rule: Derive | None) -> TypeGuard[DeriveRule]:
+    """Whether a rule's links are other link types' links: a ``union`` (its members',
+    on the need) or a path (``copy`` or ``collect`` on a link type, on other needs).
+    Their dead links and conditions are those link types', where they are written."""
+    return is_union(rule) or (isinstance(rule, DeriveRule) and rule.path)
+
+
+def _why_beside(keys: Sequence[str], *, path: bool = False) -> str:
+    """Why the keys refused beside a rule are, for those whose reason is not plain.
+
+    :param path: Whether a path is among the rules, which ``allow_dead_links`` is
+        refused beside.
+    """
+    dead = _PATH_DEAD_LINKS if path else _UNION_DEAD_LINKS
+    return (dead if "allow_dead_links" in keys else "") + (
         _PATH_SUMMARY if "summary" in keys else ""
     )
 
 
-def beside_clause(keys: Sequence[str]) -> str:
+def beside_clause(keys: Sequence[str], *, path: bool = False) -> str:
     """What a finding of a ``derive`` adds for the keys refused beside it, when the
     finding is another's: a cycle on some need types only, which leaves the rule
     applying on the others, so the keys beside it are still refused."""
     named = " and ".join(repr(key) for key in keys)
     verb = "are" if len(keys) > 1 else "is"
-    return f"; {named} cannot be given beside derive, and {verb} ignored{_why_beside(keys)}"
+    why = _why_beside(keys, path=path)
+    return f"; {named} cannot be given beside derive, and {verb} ignored{why}"
 
 
 def beside_by_type_message(
@@ -814,6 +833,7 @@ def beside_by_type_message(
     keys: list[str],
     spelling: str | None = None,
     entries: Sequence[str] = (),
+    path: bool = False,
 ) -> str:
     """The ``needs.derive_invalid`` warning for a key beside ``derive_by_type`` alone:
     ``predicates``, a ``default`` that is not a literal, or an ``allow_dead_links``
@@ -828,7 +848,7 @@ def beside_by_type_message(
     """
     named = " and ".join(repr(key) for key in keys)
     verb = "are" if len(keys) > 1 else "is"
-    union = _why_beside(keys)
+    union = _why_beside(keys, path=path)
     if spelling is not None:
         return (
             f"Invalid derive of {_what(on_link)} {name!r}: {spelling}: {named} cannot "
@@ -879,7 +899,7 @@ def beside_message(name: str, *, on_link: bool, rule: Derive, keys: list[str]) -
     """The ``needs.derive_invalid`` warning for a default beside a rule."""
     named = " and ".join(repr(key) for key in keys)
     verb = "are" if len(keys) > 1 else "is"
-    union = _why_beside(keys)
+    union = _why_beside(keys, path=isinstance(rule, DeriveRule) and rule.path)
     return (
         f"Invalid derive of {_what(on_link)} {name!r}: {rule.describe()}: {named} "
         f"cannot be given beside derive, and {verb} ignored{union}; the rule applies"
@@ -1102,7 +1122,7 @@ def _rule_problem(
                 f"{prefix}: the role 'field' names {rule.field!r}, "
                 "which is not a field, a link type or the back links of one"
             )
-    if rule.path and (problem := _path_names_problem(rule, schema, links)):
+    if rule.path and (problem := _path_names_problem(rule, target, schema, links)):
         return problem
     if rule.kind == "union":
         return _union_problem(rule, links, schema)
@@ -1142,20 +1162,23 @@ def _rule_problem(
 
 
 def _path_names_problem(
-    rule: DeriveRule, schema: FieldsSchema, links: set[str]
+    rule: DeriveRule,
+    target: FieldSchema | LinkSchema,
+    schema: FieldsSchema,
+    links: set[str],
 ) -> str | None:
     """Why a ``copy`` or ``collect`` on a link type cannot be read against the
     configuration, if it cannot.
 
     It is computed with the link types, before the back links are built and before any
-    value field is computed: its ``over`` must name a link type no rule computes (whose
-    links are known when the link types are ordered), and a ``collect``'s ``field`` a
-    link type, derived or not. Each is known at load, so it is refused there rather
-    than reported on every need.
+    value field is computed: its ``over`` names no back links, and a ``collect``'s
+    ``field`` a link type, derived or not. Its ``over`` may name a derived link type: a
+    ``union`` is read through its members, so the needs it names are known when the
+    link types are ordered; another rule's links are known only once computed, so the
+    rule reads its ``field`` on every need computing it, and a ``collect`` of its own
+    link type there would read itself: refused. Each is known at load, so it is
+    refused there rather than reported on every need.
     """
-    # imported here, as the schema module imports this one
-    from sphinx_needs.needs_schema import LinkSchema
-
     prefix = rule.describe()
     assert rule.over is not None and rule.field is not None, "a path has both"
     if rule.over not in links:
@@ -1163,12 +1186,17 @@ def _path_names_problem(
             f"{prefix}: the role 'over' names the back links {rule.over!r}, which a "
             "link type's rule cannot read: they are built after the link types"
         )
-    over = schema.global_declaration(rule.over)
-    if isinstance(over, LinkSchema) and over.derived:
+    if (
+        rule.kind == "collect"
+        and rule.field == target.name
+        and (computing := _computed_over(schema, rule.over, frozenset())) is not None
+    ):
         return (
-            f"{prefix}: the role 'over' names {rule.over!r}, a link type a rule "
-            "computes; a link type's rule walks a link type written in the needs, as "
-            "the link types are computed together"
+            f"{prefix}: the role 'field' names {rule.field!r}, the link type it "
+            f"computes, and the role 'over' names {rule.over!r}, which a "
+            f"{computing!r} rule computes: which needs it names is known only once "
+            "it is computed, so the collect would read itself on every need (over a "
+            "union, which is read through its members, it is computed need by need)"
         )
     if rule.kind == "collect":
         if rule.field not in links and _is_link_name(rule.field, links):
@@ -1183,6 +1211,28 @@ def _path_names_problem(
                 "link type; a collect on a link type gathers the links of a link type "
                 "(a copy of 'id' links the needs themselves)"
             )
+    return None
+
+
+def _computed_over(schema: FieldsSchema, name: str, seen: frozenset[str]) -> str | None:
+    """The kind of a rule other than a ``union`` computing the link type ``name``, or a
+    member of a union computing it (through unions of unions), if one does: its links
+    are known only once it is computed. ``None`` when every rule is a union of link
+    types no other rule computes, or there is none."""
+    # imported here, as the schema module imports this one
+    from sphinx_needs.needs_schema import LinkSchema
+
+    link = schema.global_declaration(name)
+    if not isinstance(link, LinkSchema) or name in seen:
+        return None
+    for rule in (link.derive, *(link.derive_by_type or {}).values()):
+        if not isinstance(rule, DeriveRule):
+            continue  # a rule that cannot be read holds no links
+        if rule.kind != "union":
+            return rule.kind
+        for member in rule.fields:
+            if (kind := _computed_over(schema, member, seen | {name})) is not None:
+                return kind
     return None
 
 

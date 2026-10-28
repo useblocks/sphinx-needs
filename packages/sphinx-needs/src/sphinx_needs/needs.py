@@ -66,13 +66,13 @@ from sphinx_needs.derive import (
     beside_clause,
     beside_message,
     by_type_message,
+    carries_links,
     check_derive_rules,
     copy_on_derived_message,
     copy_problem,
     core_message,
     invalid_entry_message,
     invalid_message,
-    is_union,
     parse_derive,
     parse_derive_by_type,
 )
@@ -2291,15 +2291,17 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     )
                     derive_problems.extend(by_type_problems)
             authored = derive is None and by_type is None
-            # a union reports no dead link of its own, so where every rule is one its
-            # allow_dead_links would say nothing: reported beside it, below, and
-            # ignored; beside another rule it is that rule's. Decided here from the
-            # rules as read, and again from the rules as checked, where a union that
-            # cannot be read is no union and the key is kept
-            # (_report_derive_problems)
+            # a union, or a copy or collect, reports no dead link of its own (its links
+            # are other link types'), so where every rule is one its allow_dead_links
+            # would say nothing: reported beside it, below, and ignored; beside another
+            # rule it is that rule's. Decided here from the rules as read, and again
+            # from the rules as checked, where a union or a path that cannot be read
+            # carries nothing and the key is kept (_report_derive_problems)
             rules = [r for r in (derive, *(by_type or {}).values()) if r is not None]
             dead_beside = (
-                "allow_dead_links" in link and bool(rules) and all(map(is_union, rules))
+                "allow_dead_links" in link
+                and bool(rules)
+                and all(map(carries_links, rules))
             )
             # a link type a copy or collect computes is a summary: its links are paths
             path = any(getattr(rule, "kind", None) in PATH_KINDS for rule in rules)
@@ -2327,6 +2329,18 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     log_warning(LOGGER, text, "config", None)
                     summary = False
             summary = summary or path
+            copied = link.get("copy", False)
+            if summary and copied is True and authored:
+                # a copy in links would draw a summary link as an edge of links, which
+                # every view reads
+                log_warning(
+                    LOGGER,
+                    f"{where} has 'copy = true' beside 'summary = true': a copy in "
+                    "links would make a summary link an edge; copy is ignored",
+                    "config",
+                    None,
+                )
+                copied = False
             link_field = LinkSchema(
                 name=name,
                 description=link.get("description", "Link field"),
@@ -2341,7 +2355,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 parse_conditions=link.get("parse_conditions", True),
                 directive_option=authored,
                 display=display_config,
-                copy=link.get("copy", False),
+                copy=copied,
                 allow_dead_links=link.get("allow_dead_links", False)
                 and not dead_beside,
                 summary=summary,
@@ -2746,7 +2760,15 @@ def _beside_by_type_problems(
                 name,
                 True,
                 beside_by_type_message(
-                    name, on_link=True, keys=beside, spelling=spelling, entries=entries
+                    name,
+                    on_link=True,
+                    keys=beside,
+                    spelling=spelling,
+                    entries=entries,
+                    path=any(
+                        isinstance(rule, DeriveRule) and rule.path
+                        for rule in (link_field.derive_by_type or {}).values()
+                    ),
                 ),
                 part="beside",
             )
@@ -2833,7 +2855,7 @@ def _report_derive_problems(
             if rule is not None
             and not (isinstance(rule, DeriveInvalid) and rule.fallback)
         ]
-        if rules and all(map(is_union, rules)):
+        if rules and all(map(carries_links, rules)):
             continue
         schema.replace_field(dataclasses.replace(link, allow_dead_links=True))
         withdrawn = {id(problem) for problem in refused}
@@ -2853,8 +2875,14 @@ def _report_derive_problems(
     # keys refused beside it still are: its cycle's finding, replacing theirs, says so
     for key, problem in checked.items():
         if problem.on_types and (beside := read.get(key)) is not None and beside.beside:
+            target = schema.global_declaration(key[1])
+            path = isinstance(target, LinkSchema) and any(
+                isinstance(rule, DeriveRule) and rule.path
+                for rule in (target.derive, *(target.derive_by_type or {}).values())
+            )
             findings[key] = dataclasses.replace(
-                problem, message=problem.message + beside_clause(beside.beside)
+                problem,
+                message=problem.message + beside_clause(beside.beside, path=path),
             )
     if (copied := copy_problem(schema)) is not None and (
         True,

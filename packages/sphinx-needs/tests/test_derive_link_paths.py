@@ -11,6 +11,7 @@ and the order on a need whose ``over`` a call computes with the link types.
 """
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -132,8 +133,13 @@ needs_links = {
     "over_back": {
         "derive": {"kind": "collect", "field": "satisfies", "over": "satisfies_back"}
     },
+    "found": {"derive": {"kind": "links", "where": "type == 'req'"}},
     "over_derived": {
-        "derive": {"kind": "collect", "field": "satisfies", "over": "chain"}
+        "derive": {"kind": "collect", "field": "over_derived", "over": "found"}
+    },
+    "over_path": {
+        "derive": {"kind": "collect", "field": "satisfies", "over": "chain"},
+        "allow_dead_links": True,
     },
     "value_field": {
         "derive": {"kind": "collect", "field": "req_ids", "over": "satisfies"}
@@ -187,10 +193,16 @@ def test_what_a_path_cannot_read_is_refused_at_load(test_app):
         ),
         _invalid_link(
             "over_derived",
-            "kind 'collect': the role 'over' names 'chain', a link type a rule "
-            "computes; a link type's rule walks a link type written in the needs, as "
-            "the link types are computed together",
+            "kind 'collect': the role 'field' names 'over_derived', the link type it "
+            "computes, and the role 'over' names 'found', which a 'links' rule "
+            "computes: which needs it names is known only once it is computed, so the "
+            "collect would read itself on every need (over a union, which is read "
+            "through its members, it is computed need by need)",
         ),
+        "WARNING: Invalid derive of link type 'over_path': kind 'collect': "
+        "'allow_dead_links' cannot be given beside derive, and is ignored (the dead "
+        "links a copy or collect carries are those of the link type it collects); the "
+        "rule applies [needs.derive_invalid]",
         _invalid_link(
             "value_field",
             "kind 'collect': the role 'field' names 'req_ids', which is not a link "
@@ -207,6 +219,10 @@ def test_what_a_path_cannot_read_is_refused_at_load(test_app):
     needs = _version(app)["needs"]
     assert needs["SPEC_1"]["not_summary"] == ["REQ_1"]
     assert needs["REQ_1"]["not_summary"] == []
+    # over a link type a copy computes: a collect of another link type is computed
+    assert needs["SPEC_1"]["over_path"] == []
+    over_path = schema.get_link_field("over_path")
+    assert over_path is not None and not over_path.allow_dead_links
 
 
 CONF_DEAD = """\
@@ -236,7 +252,8 @@ Dead links
 @pytest.mark.parametrize("test_app", [_project(CONF_DEAD, INDEX_DEAD)], indirect=True)
 def test_a_collected_dead_link_is_reported_where_it_is_written(test_app):
     """A dead link a collect carries is the collected link type's: reported once, at
-    the need writing it, and it makes no dead link forbidden on the collecting need."""
+    the need writing it, and it sets neither ``has_dead_links`` nor
+    ``has_forbidden_dead_links`` on the collecting need."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
@@ -245,7 +262,7 @@ def test_a_collected_dead_link_is_reported_where_it_is_written(test_app):
     ]
     needs = _version(app)["needs"]
     assert needs["IMPL_1"]["seen"] == ["DEAD_1"]
-    assert needs["IMPL_1"]["has_dead_links"] is True
+    assert needs["IMPL_1"]["has_dead_links"] is False
     assert needs["IMPL_1"]["has_forbidden_dead_links"] is False
     assert needs["SPEC_1"]["has_forbidden_dead_links"] is True
 
@@ -262,8 +279,12 @@ needs_links = {
             "impl": {"kind": "collect", "field": "chain", "over": "implements"},
         }
     },
-    "specs": {"derive": {"kind": "copy", "field": "id", "over": "implements"}},
-    "seen": {"derive": {"kind": "collect", "field": "satisfies", "over": "implements"}},
+    # named to sort before 'implements': a node with no reads between them is
+    # computed in (need id, field) order, so only the wait for the own over orders it
+    "a_specs": {"derive": {"kind": "copy", "field": "id", "over": "implements"}},
+    "a_seen": {
+        "derive": {"kind": "collect", "field": "satisfies", "over": "implements"}
+    },
 }
 """
 
@@ -303,7 +324,66 @@ def test_a_path_waits_for_an_over_a_call_computes(test_app):
     ]
     needs = _version(app)["needs"]
     assert needs["IMPL_1"]["implements"] == ["SPEC_1"]
-    assert needs["IMPL_1"]["specs"] == ["SPEC_1"]
-    assert needs["IMPL_1"]["seen"] == ["REQ_1"]
+    assert needs["IMPL_1"]["a_specs"] == ["SPEC_1"]
+    assert needs["IMPL_1"]["a_seen"] == ["REQ_1"]
     assert needs["IMPL_1"]["chain"] == []
-    assert needs["SPEC_1"]["specs_back"] == ["IMPL_1"]
+    assert needs["SPEC_1"]["a_specs_back"] == ["IMPL_1"]
+
+
+CONF_FORBIDDEN = """\
+extensions = ["sphinx_needs"]
+needs_links = {
+    "implements": {},
+    "allowed": {"allow_dead_links": True},
+    "refused": {},
+    "seen_allowed": {
+        "derive": {"kind": "collect", "field": "allowed", "over": "implements"}
+    },
+    "seen_refused": {
+        "derive": {"kind": "collect", "field": "refused", "over": "implements"}
+    },
+    "relay_allowed": {
+        "derive": {"kind": "collect", "field": "seen_allowed", "over": "implements"}
+    },
+    "relay_refused": {
+        "derive": {"kind": "collect", "field": "seen_refused", "over": "implements"}
+    },
+}
+"""
+
+INDEX_FORBIDDEN = """\
+Forbidden
+=========
+
+.. spec:: Writes the dead links
+   :id: SPEC_1
+   :allowed: DEAD_OK
+   :refused: DEAD_BAD
+
+.. impl:: Collects them
+   :id: IMPL_1
+   :implements: SPEC_1
+
+.. impl:: Collects them again
+   :id: IMPL_2
+   :implements: IMPL_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{**_project(CONF_FORBIDDEN, INDEX_FORBIDDEN), "buildername": "html"}],
+    indirect=True,
+)
+def test_a_collected_dead_link_is_drawn_as_its_writer_allows_it(test_app):
+    """On every rung, a collected dead link is drawn forbidden exactly where the link
+    type it is written in does not allow dead links, as a union's member decides."""
+    app = test_app
+    app.build()
+    html = Path(app.outdir, "index.html").read_text("utf8")
+    drawn = re.findall(r'<span class="(needs_dead_link[^"]*)">(DEAD_\w+)</span>', html)
+    # the writer, the collector and the collector's collector, for each
+    assert sorted(drawn) == sorted(
+        [("needs_dead_link", "DEAD_OK")] * 3
+        + [("needs_dead_link forbidden", "DEAD_BAD")] * 3
+    )
