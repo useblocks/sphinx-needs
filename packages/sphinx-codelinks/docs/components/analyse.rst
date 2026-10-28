@@ -69,7 +69,8 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
 - ``kind`` -- the syntax node of the entity (tree-sitter's name for it);
 - ``start`` and ``end`` -- its first and last line, 1-based, as the grammar spans the definition: a Rust attribute, a
   Python decorator, a decorator on a TypeScript class member and a C++ template header above it are not part of it; a
-  C# attribute list, a C++ attribute and a decorator on a TypeScript class are;
+  C# attribute list, a C++ attribute and a decorator on a TypeScript class are (unless the class is exported: then the
+  decorator is the export's);
 - ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
   ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,
   ``property``, ``event``, ``indexer`` or ``delegate``; in YAML and JSON ``key`` or ``item``;
@@ -80,14 +81,17 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   entity without a name;
 - ``mechanism`` -- how the marker was attached: ``doc_comment`` (a documentation comment -- ``///``, ``//!``, ``/**``,
   ``/*!``, a C# ``///``, a JSDoc ``/**`` -- or a Python docstring), ``leading`` (a comment on the lines before the
-  entity), ``trailing`` (after code on the entity's own line) or ``enclosing`` (inside its body).
+  entity, or after an attribute, a decorator or a template header in its head), ``trailing`` (after code on the
+  entity's own line) or ``enclosing`` (inside its body).
 
 ``scope`` is ``null`` exactly when ``tagged_scope`` is: the marker is attached to no entity (the file), and always
 under the libclang engine. The names are best effort, from the syntax alone: overloads share a name, a free
 function defined with a namespace qualifier (``void ns::f() {}``) reads as a method, and a function a macro defines
 (``TEST(LoginTest, RateLimited) {...}``) is bound but not named, since the compiler's function is the macro's
-expansion. A class declared with an export macro (``class EXPORT_API Widget``) is misread by the grammar: it is bound
-without a name, or not at all. With :ref:`set_code_entity`, the needs ``src-trace`` creates carry the entity as
+expansion (a macro whose arguments are not names, such as Catch2's ``TEST_CASE("…")``, may not be bound at all). A
+class declared with an export macro (``class EXPORT_API Widget``) is misread by the grammar: it is bound without a
+name, or not at all. In Rust, an ``impl`` inside a function is named without the function's path, and an ``impl W``
+for a ``W`` brought in with ``use`` is named in the module the ``impl`` is written in. With :ref:`set_code_entity`, the needs ``src-trace`` creates carry the entity as
 fields.
 
 The rules
@@ -99,13 +103,15 @@ In this order:
 2. **A Python docstring** documents the function or class it is in.
 3. **A Rust inner doc comment** (``//!``, ``/*!``) documents what it is inside: the module, or the file.
 4. **A trailing marker** -- code before it on its line -- belongs to the entity on that line (a Doxygen ``///<`` after
-   a function declaration is the classic case; after a data member or an enumerator it belongs to the class), else to
-   the entity it is inside: ``trailing`` when that entity starts on the marker's line (``def f():  # @...``),
-   ``enclosing`` otherwise. An attribute, a decorator or a template header before the marker is not code: the marker
-   belongs to the item they precede.
+   a function declaration is the classic case; after a data member or an enumerator it belongs to the enclosing class,
+   struct or enum), else to the entity it is inside: ``trailing`` when that entity starts on the marker's line
+   (``def f():  # @...``), ``enclosing`` otherwise. An attribute, a decorator or a template header before the marker
+   is not code: the marker leads the item they precede (an inner attribute, ``#![...]``, precedes none: it applies to
+   what it is inside).
 5. **The comments before a file's first item**, when a blank line separates the last of them from it, belong to the
    file -- documentation comments (``///``, ``/** */``, ``/*!``) excepted: they document the next item, blank lines
-   or not, as rustc and Doxygen read them.
+   or not, as rustc and Doxygen read them, unless they say they document the file (``@file``, ``\file``,
+   ``@fileoverview``, ``@packageDocumentation``, ``@module``).
 6. **A leading marker** belongs to the entity right after it, when only *trivia* stands between: other comments,
    blank lines, attributes (Rust ``#[...]``, C++ ``[[...]]``) and decorators (TypeScript). The entity is looked for
    through what wraps it: a Python decorator, a C++ ``template <...>`` header or ``extern "C"``, a TypeScript
