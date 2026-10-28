@@ -14903,3 +14903,355 @@ expansions = [
 [[case.expect.findings]]
 code = "template_context_invalid"
 directive = "d"
+
+[[case]]
+name = "v1-md-body-options-and-two-blank-lines"
+why = "a MyST body (options-and-two-blank-lines) is myst-parser's content"
+markup = "md"
+config = '''
+[parse.directive_templates.row]
+body = "[{{ body }}]"
+content = true
+
+[parse.directive_templates.row.options]
+o = {}
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{row}
+:o: v
+
+
+line
+```
+'''
+[case.expect]
+expansions = [
+'''
+[
+line]''',
+]
+findings = []
+
+[[case]]
+name = "v1-md-body-trailing-blank-lines"
+why = "a MyST body (trailing-blank-lines) is myst-parser's content"
+markup = "md"
+config = '''
+[parse.directive_templates.row]
+body = "[{{ body }}]"
+content = true
+
+[parse.directive_templates.row.options]
+o = {}
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{row}
+line
+
+
+```
+'''
+[case.expect]
+expansions = [
+'''
+[line
+
+]''',
+]
+findings = []
+
+[[case]]
+name = "v1-md-body-leading-blank-lines-no-options"
+why = "a MyST body (leading-blank-lines-no-options) is myst-parser's content"
+markup = "md"
+config = '''
+[parse.directive_templates.row]
+body = "[{{ body }}]"
+content = true
+
+[parse.directive_templates.row.options]
+o = {}
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{row}
+
+
+line
+```
+'''
+[case.expect]
+expansions = [
+'''
+[
+line]''',
+]
+findings = []
+
+[[case]]
+name = "v1-md-body-one-trailing-blank-line"
+why = "a MyST body (one-trailing-blank-line) is myst-parser's content"
+markup = "md"
+config = '''
+[parse.directive_templates.row]
+body = "[{{ body }}]"
+content = true
+
+[parse.directive_templates.row.options]
+o = {}
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{row}
+line
+
+```
+'''
+[case.expect]
+expansions = [
+'''
+[line
+]''',
+]
+findings = []
+
+[[case]]
+name = "v1-md-body-inner-trailing-spaces"
+why = "a MyST body (inner-trailing-spaces) is myst-parser's content"
+markup = "md"
+config = '''
+[parse.directive_templates.row]
+body = "[{{ body }}]"
+content = true
+
+[parse.directive_templates.row.options]
+o = {}
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{row}
+line  
+```
+'''
+[case.expect]
+expansions = [
+'''
+[line  ]''',
+]
+findings = []
+
+[[case]]
+name = "v1-path-file-trailing-dotdot-to-a-dir"
+why = "the path rule, a ub-template :file:: 'sub/..'"
+config = '''
+[parse]
+ub_template_enabled = true
+'''
+source = '''
+.. ub-template::
+   :file: sub/..
+'''
+[case.files]
+"sub/keep.txt" = '''
+x
+'''
+"t.j2" = '''
+ok'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_missing"
+directive = "ub-template"
+
+[[case]]
+name = "v1-path-template-trailing-dotdot-to-a-dir"
+why = "the path rule, a declared template path: 'sub/..'"
+config = '''
+[parse.directive_templates.d]
+template = "sub/.."
+'''
+source = '''
+.. d::
+'''
+[case.files]
+"sub/keep.txt" = '''
+x
+'''
+"t.j2" = '''
+ok'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_missing"
+directive = "d"
+
+[[case]]
+name = "v1-path-context-trailing-dotdot-to-a-dir"
+why = "the path rule, a context file path: 'sub/..'"
+config = '''
+[parse.template_contexts.c]
+file = "sub/.."
+
+[parse.directive_templates.d]
+body = "{{ contexts.c.a }}"
+'''
+source = '''
+.. d::
+'''
+[case.files]
+"c.json" = '''
+{"a": 1}
+'''
+"sub/keep.txt" = '''
+x
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_context_invalid"
+directive = "d"
+
+[[case]]
+name = "v1-path-template-colon"
+why = "a name holding ':' (a drive or a URL scheme) or NUL (never a path) is outside the root"
+config = '''
+[parse.directive_templates.d]
+template = "a:b.j2"
+'''
+source = '''
+.. d::
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_outside_root"
+directive = "d"
+
+[[case]]
+name = "v1-path-file-colon"
+why = "a name holding ':' (a drive or a URL scheme) or NUL (never a path) is outside the root"
+config = '''
+[parse]
+ub_template_enabled = true
+'''
+source = '''
+.. ub-template::
+   :file: a:b.j2
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_outside_root"
+directive = "ub-template"
+
+[[case]]
+name = "v1-path-context-colon"
+why = "a name holding ':' (a drive or a URL scheme) or NUL (never a path) is outside the root"
+config = '''
+[parse.template_contexts.c]
+file = "a:b.j2"
+
+[parse.directive_templates.d]
+body = "{{ contexts.c.a }}"
+'''
+source = '''
+.. d::
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_context_invalid"
+directive = "d"
+
+[[case]]
+name = "v1-path-include-colon"
+why = "a name holding ':' (a drive or a URL scheme) or NUL (never a path) is outside the root"
+config = '''
+[parse.directive_templates.d]
+template = "main.rst.j2"
+'''
+source = '''
+.. d::
+'''
+[case.files]
+"main.rst.j2" = '''
+{% include "a:b.j2" %}'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_render_error"
+directive = "d"
+
+[[case]]
+name = "v1-path-nul-in-a-template-path"
+why = "a name holding ':' (a drive or a URL scheme) or NUL (never a path) is outside the root"
+config = '''
+[parse.directive_templates.d]
+template = "t\u0000.j2"
+'''
+source = '''
+.. d::
+'''
+[case.files]
+"t.j2" = '''
+ok'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_outside_root"
+directive = "d"
+
+[[case]]
+name = "ub-template-argument-var-is-not-a-context"
+why = "a context named var is refused as a name, and ub-template's argument var names no context"
+config = '''
+[parse]
+ub_template_enabled = true
+
+[parse.template_contexts.var]
+edition = "shadow"
+'''
+source = '''
+.. ub-template:: var
+
+   Text.
+'''
+[case.expect]
+expansions = [
+]
+[[case.expect.findings]]
+code = "template_context_reserved"
+path = "parse.template_contexts.var"
+[[case.expect.findings]]
+code = "template_context_unknown"
+directive = "ub-template"

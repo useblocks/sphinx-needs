@@ -82,14 +82,21 @@ cases (corpus: `identity-note-rst`, `host-content-continues-in-the-last-section`
    `include` / `import` / `extends` name): a name is `/`-separated, and a `\` anywhere
    refuses it (a missing file); `..` is resolved AS THE FILESYSTEM DOES (the path is
    opened as written, so a missing intermediate directory is a missing file, and a `..`
-   that stays inside the root is fine); then a path whose real path (symlinks resolved)
-   is outside the source root is refused, and never read.
+   that stays inside the root is fine); a name holding `:` (it reads as a drive or a URL
+   scheme) or NUL (never a path) is outside the root — `template_outside_root`, or
+   `template_context_invalid` for a context file, or a render error for an include; a name
+   that resolves to a directory is a missing template (`template_missing`), or an invalid
+   context; then a path whose real path (symlinks resolved) is outside the source root is
+   refused, and never read.
    Enforced by: corpus `include-is-from-the-source-root`, `context-refused-outside-the-root`,
    `declared-template-outside-the-root`, `ub-template-file-outside-the-root`,
    `lx-template-path-with-dot-dot-inside-the-root`, `lx-context-path-with-dot-dot-inside-the-root`,
    `lx-include-path-dot-dot-inside-the-root`, `lx-ub-template-file-with-dot-dot-inside-the-root`,
    `lx-ub-template-file-with-dot-dot-through-an-existing-directory`,
-   `lx-template-path-with-a-backslash`, `lx-context-path-with-a-backslash`, `lx-include-path-backslash`.
+   `lx-template-path-with-a-backslash`, `lx-context-path-with-a-backslash`, `lx-include-path-backslash`,
+   `v1-path-template-colon`, `v1-path-file-colon`, `v1-path-context-colon`, `v1-path-include-colon`,
+   `v1-path-nul-in-a-template-path`, `v1-path-file-trailing-dotdot-to-a-dir`,
+   `v1-path-template-trailing-dotdot-to-a-dir`, `v1-path-context-trailing-dotdot-to-a-dir`.
 
 ## 3. Directive presets
 
