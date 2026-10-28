@@ -193,6 +193,15 @@ def splice(
             location=location,
         )
         return []
+    if markup == "md" and _md_front_matter(directive, text):
+        warn(
+            "template_markup_construct",
+            use,
+            "the output starts with front matter, which belongs to a whole document; it "
+            "renders nothing",
+            location=location,
+        )
+        return []
     if markup != host:
         return _splice_other(directive, use=use, text=text, markup=markup, debug=debug)
     debug_nodes: list[nodes.Node] = [nodes.literal_block(text, text)] if debug else []
@@ -226,9 +235,6 @@ def splice(
 
 # --- no section title in output (§7.8) -------------------------------------------------
 
-#: Words docutils uses when it refuses a section title where none may be.
-_TITLE_COMPLAINTS = ("section title", "title level", "title style")
-
 
 def _silent(document: nodes.document) -> None:
     """Give a throwaway document a reporter that discards (§7.9: the inert parse)."""
@@ -244,17 +250,15 @@ def has_heading(directive: Directive, text: str, markup: str) -> bool:
 
 
 def _rst_has_heading(directive: Directive, text: str) -> bool:
+    """Whether reStructuredText ``text`` holds a section title anywhere: an inert parse in
+    which every nested body may hold titles (so a title in a block quote or a note is a
+    ``section`` node, not an error), judged by structure alone -- a transition is no title."""
     document = directive.state.document
     fragment = new_document(document["source"], document.settings)
     _silent(fragment)
     with _refusal.inert():
         RstParser().parse(text, fragment)
-    if any(True for _ in fragment.findall(nodes.section)):
-        return True
-    return any(
-        any(word in message.astext().lower() for word in _TITLE_COMPLAINTS)
-        for message in fragment.findall(nodes.system_message)
-    )
+    return any(True for _ in fragment.findall(nodes.section))
 
 
 _OPTION_LINE = re.compile(r"^:[\w-]+:")
@@ -280,6 +284,15 @@ def _md_has_heading(directive: Directive, text: str) -> bool:
     if md is None:
         return False  # this project cannot parse Markdown; the real parse says so
     return _md_tokens_have_heading(directive, md, text)
+
+
+def _md_front_matter(directive: Directive, text: str) -> bool:
+    """Whether Markdown ``text`` starts with front matter (§7.9)."""
+    md = _md_parser(directive)
+    if md is None:
+        return False
+    tokens = md.parse(text + "\n", {})
+    return bool(tokens) and str(tokens[0].type) == "front_matter"
 
 
 def _md_tokens_have_heading(directive: Directive, md: Any, text: str) -> bool:

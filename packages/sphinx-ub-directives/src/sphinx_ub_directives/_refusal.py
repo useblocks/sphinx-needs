@@ -20,6 +20,7 @@ from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst.states import RSTState
 from sphinx.environment import BuildEnvironment
 
 from ._log import warn
@@ -390,6 +391,20 @@ def install() -> None:
     original = directives.directive
     if getattr(original, TEMPLATE_MARKER, False):
         return
+
+    nested_parse: Any = RSTState.nested_parse
+
+    def titled_nested_parse(self: Any, *args: Any, **kwargs: Any) -> Any:
+        # the structural pass (§7.8): every nested body may hold titles, so a title in a
+        # block quote or a list item is a section node rather than a complaint
+        if INERT.get():
+            if len(args) >= 4:
+                args = (*args[:3], True, *args[4:])
+            else:
+                kwargs["match_titles"] = True
+        return nested_parse(self, *args, **kwargs)
+
+    RSTState.nested_parse = titled_nested_parse  # type: ignore[method-assign]
 
     def directive(
         name: str, language_module: Any, document: Any
