@@ -102,8 +102,6 @@ def header_minijinja() -> str:
             id=case["name"],
             marks=[pytest.mark.skip(reason="ubcode_only")]
             if case.get("ubcode_only")
-            else [pytest.mark.skip(reason="ub-template is the next slice")]
-            if "ub-template" in case["name"]
             else [],
         )
         for case in CASES

@@ -18,13 +18,14 @@ __all__ = ["__version__", "setup"]
 
 def setup(app: Sphinx) -> dict[str, Any]:
     """Register the extension with Sphinx."""
-    from . import _config, _presets, _refusal, _templates
+    from . import _config, _presets, _refusal, _templates, _ub_template
 
     _config.setup(app)
     _refusal.install()
     # after every extension's `config-inited`, before any document is read (contract §2.2)
     app.connect("builder-inited", _presets.register)
     app.connect("builder-inited", _templates.register)
+    app.add_directive(_ub_template.NAME, _ub_template.UbTemplate)
     return {
         "version": __version__,
         "parallel_read_safe": True,
