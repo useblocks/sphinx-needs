@@ -29,10 +29,14 @@ When something changed, the pages re-written are:
 - the pages of the needs linking to them, which show their titles;
 - the pages whose need roles name any of those needs.
 
-A need that changed in its line numbers alone re-writes the views alone, unless a computed
-value or a needextend filter of the project reads a line number (``_LOCATION_FIELDS``),
-when it is a changed need; an edit that changes no need, prose say, nothing more. A
-back-link field read by a call or a rule is read as the needs linking to that need. Every need-relevant page is re-written when a
+Both narrowings are allow-lists, so that what they do not know costs a page, never leaves
+one stale: a computed value reads only its own need when it is a built-in call or derive
+rule whose every argument is known to name its own fields (not a back-link field, which
+the needs linking to it write), and anything else -- a variant, a function of your own, a
+filter reading ``needs`` -- reads every need. A need that changed in its line numbers alone
+re-writes the views alone only when nothing in the project may read one
+(:func:`_location_read`), else it is a changed need; an edit that changes no need, prose
+say, re-writes nothing more. Every need-relevant page is re-written when a
 changed ``needextend`` has a filter, on every change in a project with links computed to
 needs not named before the needs are resolved (a dynamic function in a link field or in
 an extend's links, a ``links`` rule, a ``content_links`` rule with ``from``) or with an
@@ -50,10 +54,11 @@ from typing import Final
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsExtendType, SphinxNeedsData
-from sphinx_needs.derive import Derive, DeriveRule
+from sphinx_needs.derive import KINDS, Derive, DeriveRule
 from sphinx_needs.functions.functions import DynamicFunctionParsed
-from sphinx_needs.functions.order import builtin_arguments
+from sphinx_needs.functions.order import builtin_arguments, filter_names
 from sphinx_needs.logging import get_logger
 from sphinx_needs.need_item import NeedItem, NeedLink
 from sphinx_needs.needs_schema import (
@@ -62,6 +67,7 @@ from sphinx_needs.needs_schema import (
     LinksFunctionArray,
     LinksLiteralValue,
 )
+from sphinx_needs.variant_data import VariantDataParsed
 
 LOGGER = get_logger(__name__)
 
@@ -176,7 +182,7 @@ def get_updated_docs(app: Sphinx, env: BuildEnvironment) -> list[str]:
     data = SphinxNeedsData(env)
     if data.needs_is_post_processed:
         return []
-    docs = _dependents(data, stash)
+    docs = _dependents(data, stash, NeedsSphinxConfig(app.config))
     if not docs:
         return []
     found = env.all_docs
@@ -185,7 +191,9 @@ def get_updated_docs(app: Sphinx, env: BuildEnvironment) -> list[str]:
     return updated
 
 
-def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
+def _dependents(
+    data: SphinxNeedsData, stash: _Stash, config: NeedsSphinxConfig
+) -> set[str]:
     """The documents showing a need that changed; empty when none changed."""
     needs = data._env_needs
     extends = data.get_or_create_extends()
@@ -245,14 +253,8 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
 
     if moved:
         # a need written at other lines alone: a view may show its line number (a
-        # needtable column), and nothing else does unless a computed value reads it
-        if any(r is not None and r.location for r in reads.values()) or (
-            filter_reads.location
-            or any(
-                not extend["filter_is_id"] and "lineno" in extend["filter"]
-                for extend in extends.values()
-            )
-        ):
+        # needtable column); nothing else may read one for the views to be enough
+        if _location_read(needs, extends, reads, filter_reads, config):
             changed |= moved
         elif not changed and not changed_extends:
             return views
@@ -485,7 +487,8 @@ def _reads(
         reads = replace(of_type, needs=set(of_type.needs), back_of=set(of_type.back_of))
     for name, value in _dynamic_fields(need).items():
         if isinstance(value, LinksFunctionArray) or schema.get_link_field(name):
-            if any(isinstance(item, DynamicFunctionParsed) for item in value.value):
+            if any(not isinstance(item, NeedLink) for item in value.value):
+                # a dynamic function or a variant: links not known before resolution
                 reads.unnamed_links = True
         else:
             _read_calls(value.value, reads)
@@ -504,7 +507,14 @@ def _read_calls(items: Iterable[object], reads: _Reads) -> None:
     own, and a filter, may read any need and any field.
     """
     for call in items:
+        if isinstance(call, str | bool | int | float | VariantDataParsed):
+            # a literal, or a variant data reference: it reads the configuration only,
+            # and a change of that re-reads every document
+            continue
         if not isinstance(call, DynamicFunctionParsed):
+            # a variant (``<<…>>``), or any other item: its conditions may read any
+            # field of any need
+            reads.always = reads.location = True
             continue
         if call.name in _READS_NOTHING:
             continue
@@ -524,9 +534,12 @@ def _read_calls(items: Iterable[object], reads: _Reads) -> None:
         ):
             reads.always = reads.location = True
             continue
-        reads.location |= field_read in _LOCATION_FIELDS or "lineno" in (
+        reads.location |= field_read in _LOCATION_FIELDS or _names_location(
             filter_text or ""
         )
+        if filter_text and filter_names(filter_text).opaque:
+            # a filter reading other needs than the candidates
+            reads.always = True
         back = _is_back(field_read)
         if call.name == "copy":
             need_id = args.get("need_id")
@@ -558,9 +571,15 @@ def _read_rule(rule: Derive | None, schema: FieldsSchema, reads: _Reads) -> None
     if not isinstance(rule, DeriveRule):
         return
     read = (*((rule.field,) if rule.field else ()), *rule.fields)
-    filters = " ".join(text for text in (rule.where, rule.test) if text)
+    filters = [text for text in (rule.where, rule.test) if text]
+    if rule.kind not in KINDS:
+        # a kind this module does not know: it may read anything
+        reads.always = reads.location = True
+        return
     # a fingerprint reads neither: its names are the project's fields and links
-    reads.location |= not _LOCATION_FIELDS.isdisjoint(read) or "lineno" in filters
+    reads.location |= not _LOCATION_FIELDS.isdisjoint(read) or any(
+        _names_location(text) for text in filters
+    )
     back = any(_is_back(name) for name in read)
     if rule.kind in _OWN_KINDS:
         if back and rule.kind == "hash":
@@ -578,8 +597,8 @@ def _read_rule(rule: Derive | None, schema: FieldsSchema, reads: _Reads) -> None
             # the needs its content names, read by the filter: a role's target
             reads.always = True
         return
-    if "_back" in filters:
-        # a filter reading the back links of the candidates
+    if any("_back" in text or filter_names(text).opaque for text in filters):
+        # a filter reading the back links of the candidates, or other needs
         reads.always = True
     if rule.from_need is not None:
         (reads.back_of if back else reads.needs).add(
@@ -603,6 +622,49 @@ def _read_rule(rule: Derive | None, schema: FieldsSchema, reads: _Reads) -> None
     elif back and rule.from_need is None and rule.join is None:
         # its own back links (``copy`` of its own field)
         reads.back = True
+
+
+def _names_location(text: str) -> bool:
+    """Whether a filter or a template may read a line number: it names one, or reads
+    what its text cannot tell (``needs``, ``current_need`` by a computed key)."""
+    if not text:
+        return False
+    return any(name in text for name in _LOCATION_FIELDS) or filter_names(text).opaque
+
+
+def _location_read(
+    needs: Mapping[str, NeedItem],
+    extends: Mapping[str, NeedsExtendType],
+    reads: Mapping[str, _Reads | None],
+    filter_reads: _Reads,
+    config: NeedsSphinxConfig,
+) -> bool:
+    """Whether anything outside the views may read a need's line number, so that a need
+    which only moved is a changed one: a computed value (a call, a variant, a derive
+    rule, on a need or set by a needextend), a needextend's filter, a link's condition,
+    a constraint, the ``:need:`` role's template, a layout. It errs toward ``True``."""
+    if filter_reads.location or any(
+        r is not None and r.location for r in reads.values()
+    ):
+        return True
+    if any(
+        not extend["filter_is_id"] and _names_location(extend["filter"])
+        for extend in extends.values()
+    ):
+        return True
+    if any(
+        link.condition is not None and _names_location(link.condition)
+        for need in needs.values()
+        for _, links in need.iter_links_items(as_str=False)
+        for link in links
+    ):
+        return True
+    texts = [
+        config.role_need_template,
+        repr(config.layouts),
+        *(check for checks in config.constraints.values() for check in checks.values()),
+    ]
+    return any(name in text for text in texts for name in _LOCATION_FIELDS)
 
 
 def _dynamic_fields(

@@ -32,6 +32,8 @@ needs_fields = {
     "hours": {"schema": {"type": "number"}},
     "backs": {"schema": {"type": "array", "items": {"type": "string"}}},
     "lino": {"schema": {"type": "integer"}},
+    "variant": {"schema": {"type": "string"}, "parse_variants": True},
+    "copied": {"schema": {"type": "string"}},
     "total": {
         "schema": {"type": "number"},
         "derive_by_type": {
@@ -363,6 +365,35 @@ _LINE_RULE = {
     '{"test": {"kind": "copy", "field": "lineno", "from": "REQ_001"}}}\n',
 }
 _PROSE_ABOVE = EDITS["prose-above-needs"]
+#: a variant whose condition reads the need's own back links, copied by another need
+_VARIANT_BACK = _with_pages(
+    PAGES,
+    {
+        "variant_back.rst": "Variant back\n============\n\n.. test:: Linked or not\n"
+        "   :id: TEST_030\n   :variant: <<'TEST_001' in links_back: linked, alone>>\n",
+        "variant_copy.rst": "Variant copy\n============\n\n.. test:: Copies the variant\n"
+        '   :id: TEST_031\n   :copied: [[copy("variant", "TEST_030")]]\n',
+    },
+)
+#: a variant whose condition reads ``REQ_001``'s line number, copied by another need
+_VARIANT_LINE = _with_pages(
+    _replace(
+        PAGES,
+        "reqs.rst",
+        "   :id: REQ_001\n",
+        "   :id: REQ_001\n   :variant: <<lineno > 7: low, high>>\n",
+    ),
+    {
+        "variant_line.rst": "Variant line\n============\n\n.. test:: Copies the variant\n"
+        '   :id: TEST_032\n   :copied: [[copy("variant", "REQ_001")]]\n',
+    },
+)
+#: the ``:need:`` role's template shows a line number
+_ROLE_LINE = {
+    **PAGES,
+    "conf.py": CONF
+    + '\nneeds_role_need_template = "{{ title }} (line {{ lineno }})"\n',
+}
 _REQ_002_CLOSED = (
     "reqs.rst",
     "   :status: open\n   :hours: 5\n",
@@ -423,6 +454,17 @@ SCENARIOS: dict[str, tuple[dict[str, str], dict[str, str]]] = {
         ),
     ),
     "line-read-by-call": (_LINE_COPY, _replace(_LINE_COPY, *_PROSE_ABOVE)),
+    "back-links-read-by-variant": (
+        _VARIANT_BACK,
+        _replace(
+            _VARIANT_BACK,
+            "trace.rst",
+            "   :links: REQ_001\n",
+            "   :links: REQ_001, TEST_030\n",
+        ),
+    ),
+    "line-read-by-variant": (_VARIANT_LINE, _replace(_VARIANT_LINE, *_PROSE_ABOVE)),
+    "line-shown-by-role-template": (_ROLE_LINE, _replace(_ROLE_LINE, *_PROSE_ABOVE)),
     "line-read-by-rule": (_LINE_RULE, _replace(_LINE_RULE, *_PROSE_ABOVE)),
     "document-removed": (
         PAGES,
