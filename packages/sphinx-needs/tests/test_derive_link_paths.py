@@ -85,12 +85,16 @@ def _project(conf: str, index: str) -> dict:
         ),
         pytest.param(
             {"kind": "copy", "field": "id", "join": {"field": "a", "equals": "b"}},
-            DeriveInvalid("copy", "kind 'copy' on a link type does not take the role 'join'"),
+            DeriveInvalid(
+                "copy", "kind 'copy' on a link type does not take the role 'join'"
+            ),
             id="join",
         ),
         pytest.param(
             {"kind": "collect", "field": "chain"},
-            DeriveInvalid("collect", "kind 'collect' on a link type requires the role 'over'"),
+            DeriveInvalid(
+                "collect", "kind 'collect' on a link type requires the role 'over'"
+            ),
             id="no-over",
         ),
         pytest.param(
