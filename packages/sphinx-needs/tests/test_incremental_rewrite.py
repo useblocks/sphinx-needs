@@ -34,6 +34,7 @@ needs_fields = {
     "lino": {"schema": {"type": "integer"}},
     "variant": {"schema": {"type": "string"}, "parse_variants": True},
     "copied": {"schema": {"type": "string"}},
+    "dead": {"schema": {"type": "boolean"}},
     "total": {
         "schema": {"type": "number"},
         "derive_by_type": {
@@ -388,6 +389,37 @@ _VARIANT_LINE = _with_pages(
         '   :id: TEST_032\n   :copied: [[copy("variant", "REQ_001")]]\n',
     },
 )
+#: ``TEST_040`` links to a need that does not exist; its dead-link flag is copied by a
+#: dynamic function (``TEST_041``) and by a ``derive`` rule of ``impl`` (``IMPL_040``)
+_DEAD_FLAG = {
+    **_with_pages(
+        PAGES,
+        {
+            "dead_source.rst": "Dead source\n===========\n\n.. test:: Links a dead id\n"
+            "   :id: TEST_040\n   :links: DEAD_001\n",
+            "dead_copy.rst": "Dead copy\n=========\n\n.. test:: Copies the flag\n"
+            '   :id: TEST_041\n   :dead: [[copy("has_dead_links", "TEST_040")]]\n',
+            "dead_rule.rst": "Dead rule\n=========\n\n.. impl:: Derives the flag\n"
+            "   :id: IMPL_040\n",
+        },
+    ),
+    "conf.py": CONF
+    + '\nneeds_fields["dead_rule"] = {"schema": {"type": "boolean"}, "derive_by_type": '
+    '{"impl": {"kind": "copy", "field": "has_dead_links", "from": "TEST_040"}}}\n',
+}
+_DEAD_FLAG_ALIVE = {
+    **_replace(
+        _DEAD_FLAG, "index.rst", "   unrelated\n", "   unrelated\n   dead_target\n"
+    ),
+    "dead_target.rst": "Dead target\n===========\n\n.. req:: Now alive\n   :id: DEAD_001\n",
+}
+#: a role whose own text shows the line number
+_ROLE_TEXT_LINE = _replace(
+    PAGES,
+    "roles.rst",
+    "See :need:`REQ_001`,",
+    "See :need:`[[title]] at line [[lineno]] <REQ_001>`,",
+)
 #: the ``:need:`` role's template shows a line number
 _ROLE_LINE = {
     **PAGES,
@@ -465,6 +497,20 @@ SCENARIOS: dict[str, tuple[dict[str, str], dict[str, str]]] = {
     ),
     "line-read-by-variant": (_VARIANT_LINE, _replace(_VARIANT_LINE, *_PROSE_ABOVE)),
     "line-shown-by-role-template": (_ROLE_LINE, _replace(_ROLE_LINE, *_PROSE_ABOVE)),
+    "line-shown-by-role-text": (
+        _ROLE_TEXT_LINE,
+        _replace(_ROLE_TEXT_LINE, *_PROSE_ABOVE),
+    ),
+    "line-shown-by-role-text-beside-a-change": (
+        _ROLE_TEXT_LINE,
+        _replace(
+            _replace(_ROLE_TEXT_LINE, *_PROSE_ABOVE),
+            "unrelated.rst",
+            "Stands alone",
+            "Stands tall",
+        ),
+    ),
+    "dead-link-flag-read": (_DEAD_FLAG, _DEAD_FLAG_ALIVE),
     "line-read-by-rule": (_LINE_RULE, _replace(_LINE_RULE, *_PROSE_ABOVE)),
     "document-removed": (
         PAGES,
@@ -606,10 +652,12 @@ def test_prose_edit_rewrites_only_its_own_page(
 def test_edit_above_needs_rewrites_only_the_views(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:
-    """Prose added above needs moves them, which a view may show (a ``lineno`` column)
-    and nothing else does: only the views are re-written besides the page itself."""
+    """Prose added above needs moves them, which a view may show (a ``lineno`` column),
+    and a role naming one (its text may show it): only those pages are re-written
+    besides the page itself -- ``roles`` and ``copies`` name ``REQ_001`` and ``REQ_002``.
+    """
     written = _assert_equivalent(make_app, tmp_path, "prose-above-needs")
-    assert sorted(written) == ["charts", "index", "reqs", "views"]
+    assert sorted(written) == ["charts", "copies", "index", "reqs", "roles", "views"]
 
 
 def test_edit_of_a_need_nothing_reads_rewrites_the_views(
@@ -645,3 +693,16 @@ def test_title_edit_rewrites_the_pages_showing_the_need(
         "trace",
         "views",
     ]
+
+
+def test_every_core_field_is_classified() -> None:
+    """Each core field is one its document gives or one other needs decide.
+
+    A read of the second kind may depend on any need; a core field added without
+    being classified would be read as the first, and leave pages stale.
+    """
+    from sphinx_needs.data import NeedsCoreFields
+    from sphinx_needs.incremental import OTHER_WRITTEN_CORE_FIELDS, OWN_CORE_FIELDS
+
+    assert OWN_CORE_FIELDS.isdisjoint(OTHER_WRITTEN_CORE_FIELDS)
+    assert set(NeedsCoreFields) == OWN_CORE_FIELDS | OTHER_WRITTEN_CORE_FIELDS

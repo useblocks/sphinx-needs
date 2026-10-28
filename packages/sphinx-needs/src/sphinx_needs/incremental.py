@@ -33,8 +33,9 @@ Both narrowings are allow-lists, so that what they do not know costs a page, nev
 one stale: a computed value reads only its own need when it is a built-in call or derive
 rule whose every argument is known to name its own fields (not a back-link field, which
 the needs linking to it write), and anything else -- a variant, a function of your own, a
-filter reading ``needs`` -- reads every need. A need that changed in its line numbers alone
-re-writes the views alone only when nothing in the project may read one
+filter reading ``needs``, a read of a field other needs decide (:data:`OTHER_WRITTEN_CORE_FIELDS`)
+-- reads every need. A need that changed in its line numbers alone re-writes the views and
+the pages whose roles name it only when nothing else in the project may read one
 (:func:`_location_read`), else it is a changed need; an edit that changes no need, prose
 say, re-writes nothing more. Every need-relevant page is re-written when a
 changed ``needextend`` has a filter, on every change in a project with links computed to
@@ -98,6 +99,70 @@ _OWN_KINDS: Final = frozenset({"union", "hash", "fingerprint"})
 
 #: The fields an edit above a need changes and nothing else does: where it is written.
 _LOCATION_FIELDS: Final = frozenset({"lineno", "lineno_content"})
+
+#: The core fields of a need (``NeedsCoreFields``) whose value its own document gives,
+#: read time: a read of one on a need depends on that need alone.
+OWN_CORE_FIELDS: Final = frozenset(
+    {
+        "arch",
+        "collapse",
+        "constraints",
+        "content",
+        "docname",
+        "doctype",
+        "external_css",
+        "external_url",
+        "hide",
+        "id",
+        "id_complete",
+        "id_parent",
+        "is_external",
+        "is_import",
+        "is_need",
+        "is_part",
+        "jinja_content",
+        "layout",
+        "lineno",
+        "lineno_content",
+        "parent_need",
+        "post_content",
+        "post_template",
+        "pre_content",
+        "pre_template",
+        "section_name",
+        "sections",
+        "signature",
+        "status",
+        "style",
+        "tags",
+        "template",
+        "title",
+        "type",
+        "type_color",
+        "type_name",
+        "type_prefix",
+        "type_style",
+    }
+)
+
+#: The core fields whose value is computed from other needs, or from the whole set,
+#: when the needs are resolved: whether the needs its links name exist, its
+#: constraints' results (which may read its back links), what the needextends did to
+#: it, its parts (which carry their back links). Every ``<link type>_back`` is one too
+#: (:func:`_is_back`). A read of one may depend on any need. A core field in neither
+#: set fails ``tests/test_incremental_rewrite.py``.
+OTHER_WRITTEN_CORE_FIELDS: Final = frozenset(
+    {
+        "has_dead_links",
+        "has_forbidden_dead_links",
+        "constraints_error",
+        "constraints_passed",
+        "constraints_results",
+        "modifications",
+        "is_modified",
+        "parts",
+    }
+)
 
 #: The built-in functions reading nothing but their arguments.
 _READS_NOTHING: Final = frozenset({"test", "echo"})
@@ -251,17 +316,28 @@ def _dependents(
         elif (target := _target_id(extend)) in needs:
             reads[target] = _merge(reads[target] or _Reads(), extend_reads)
 
+    # the pages whose roles name a moved need: a role's text may show its line number
+    # (``[[lineno]]``, ``needs_role_need_template``)
+    moved_roles = {
+        docname for docname, refs in role_refs.items() if not moved.isdisjoint(refs)
+    }
     if moved:
         # a need written at other lines alone: a view may show its line number (a
         # needtable column); nothing else may read one for the views to be enough
         if _location_read(needs, extends, reads, filter_reads, config):
             changed |= moved
         elif not changed and not changed_extends:
-            return views
+            return views | moved_roles
 
     everything = set(all_docs.get("all", []))
     if any(not extend["filter_is_id"] for extend in changed_extends):
         # a filter selects needs by their resolved values
+        return everything
+    if any(
+        not extend["filter_is_id"] and _names_other_written(extend["filter"])
+        for extend in extends.values()
+    ):
+        # a filter selecting needs by a value other needs decide
         return everything
     every_extend = (*extends.values(), *stash.extends.values())
     if any(_links_unnamed(extend) for extend in every_extend):
@@ -374,7 +450,7 @@ def _dependents(
         return everything
 
     shown = affected | targets | linking
-    docs = set(views)
+    docs = views | moved_roles
     for need_id in shown:
         for need in versions.get(need_id, ()):
             if docname := need["docname"]:
@@ -540,6 +616,11 @@ def _read_calls(items: Iterable[object], reads: _Reads) -> None:
         if filter_text and filter_names(filter_text).opaque:
             # a filter reading other needs than the candidates
             reads.always = True
+        if field_read in OTHER_WRITTEN_CORE_FIELDS or _names_other_written(
+            filter_text or ""
+        ):
+            # a value other needs decide
+            reads.always = True
         back = _is_back(field_read)
         if call.name == "copy":
             need_id = args.get("need_id")
@@ -580,6 +661,11 @@ def _read_rule(rule: Derive | None, schema: FieldsSchema, reads: _Reads) -> None
     reads.location |= not _LOCATION_FIELDS.isdisjoint(read) or any(
         _names_location(text) for text in filters
     )
+    if not OTHER_WRITTEN_CORE_FIELDS.isdisjoint(read) or any(
+        _names_other_written(text) for text in filters
+    ):
+        # a value other needs decide
+        reads.always = True
     back = any(_is_back(name) for name in read)
     if rule.kind in _OWN_KINDS:
         if back and rule.kind == "hash":
@@ -624,6 +710,18 @@ def _read_rule(rule: Derive | None, schema: FieldsSchema, reads: _Reads) -> None
         reads.back = True
 
 
+def _names_other_written(text: str) -> bool:
+    """Whether a filter may read a value other needs decide: it names one (a back
+    link, a dead-link flag, ...), or reads what its text cannot tell."""
+    if not text:
+        return False
+    return (
+        "_back" in text
+        or any(name in text for name in OTHER_WRITTEN_CORE_FIELDS)
+        or filter_names(text).opaque
+    )
+
+
 def _names_location(text: str) -> bool:
     """Whether a filter or a template may read a line number: it names one, or reads
     what its text cannot tell (``needs``, ``current_need`` by a computed key)."""
@@ -642,7 +740,8 @@ def _location_read(
     """Whether anything outside the views may read a need's line number, so that a need
     which only moved is a changed one: a computed value (a call, a variant, a derive
     rule, on a need or set by a needextend), a needextend's filter, a link's condition,
-    a constraint, the ``:need:`` role's template, a layout. It errs toward ``True``."""
+    a constraint, a layout. It errs toward ``True``. A role's text, which may show a
+    line number too, is not read: the pages naming a moved need are re-written."""
     if filter_reads.location or any(
         r is not None and r.location for r in reads.values()
     ):
@@ -660,7 +759,6 @@ def _location_read(
     ):
         return True
     texts = [
-        config.role_need_template,
         repr(config.layouts),
         *(check for checks in config.constraints.values() for check in checks.values()),
     ]
