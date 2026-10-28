@@ -30,6 +30,8 @@ from docutils import nodes
 extensions = ["sphinx_needs", "sphinxcontrib.plantuml", "sphinx.ext.graphviz"]
 needs_fields = {
     "hours": {"schema": {"type": "number"}},
+    "backs": {"schema": {"type": "array", "items": {"type": "string"}}},
+    "lino": {"schema": {"type": "integer"}},
     "total": {
         "schema": {"type": "number"},
         "derive_by_type": {
@@ -321,6 +323,46 @@ _EXTEND_DYNAMIC_LINKS = _replace(
 _FILTER_EXTEND_LINKS = _replace(
     PAGES, "extends.rst", ":+tags: ext\n", ":+tags: ext\n   :+links: REQ_002\n"
 )
+
+
+def _with_pages(pages: dict[str, str], extra: dict[str, str]) -> dict[str, str]:
+    """The project with pages added to it, each named in the toctree."""
+    entries = "".join(f"   {name.removesuffix('.rst')}\n" for name in extra)
+    return {
+        **_replace(pages, "index.rst", "   unrelated\n", "   unrelated\n" + entries),
+        **extra,
+    }
+
+
+#: back links read by ``copy``: ``TEST_010`` its own, ``TEST_011`` those
+#: ``TEST_010`` copied, ``TEST_012`` ``AAA_001``'s; each on a page of its own
+_BACK_COPIES = _with_pages(
+    PAGES,
+    {
+        "own_backs.rst": "Own backs\n=========\n\n.. test:: Copies its back links\n"
+        '   :id: TEST_010\n   :backs: [[copy("links_back")]]\n',
+        "copied_backs.rst": "Copied backs\n============\n\n.. test:: Copies those\n"
+        '   :id: TEST_011\n   :backs: [[copy("backs", "TEST_010")]]\n',
+        "other_backs.rst": "Other backs\n===========\n\n.. test:: Copies another's\n"
+        '   :id: TEST_012\n   :backs: [[copy("links_back", "AAA_001")]]\n',
+    },
+)
+#: a line number read by a dynamic function, on a page of its own
+_LINE_COPY = _with_pages(
+    PAGES,
+    {
+        "lines.rst": "Lines\n=====\n\n.. test:: Copies a line\n   :id: TEST_020\n"
+        '   :lino: [[copy("lineno", "REQ_001")]]\n',
+    },
+)
+#: a line number read by a ``derive`` rule of ``test``, ``TEST_001``'s type
+_LINE_RULE = {
+    **PAGES,
+    "conf.py": CONF
+    + '\nneeds_fields["lino"] = {"schema": {"type": "integer"}, "derive_by_type": '
+    '{"test": {"kind": "copy", "field": "lineno", "from": "REQ_001"}}}\n',
+}
+_PROSE_ABOVE = EDITS["prose-above-needs"]
 _REQ_002_CLOSED = (
     "reqs.rst",
     "   :status: open\n   :hours: 5\n",
@@ -371,6 +413,17 @@ SCENARIOS: dict[str, tuple[dict[str, str], dict[str, str]]] = {
             _FILTER_EXTEND_LINKS, "reqs.rst", ".. req:: Beta\n", ".. req:: Beta prime\n"
         ),
     ),
+    "back-links-read-by-copy": (
+        _BACK_COPIES,
+        _replace(
+            _BACK_COPIES,
+            "trace.rst",
+            "   :links: REQ_001\n",
+            "   :links: REQ_001, TEST_010, AAA_001\n",
+        ),
+    ),
+    "line-read-by-call": (_LINE_COPY, _replace(_LINE_COPY, *_PROSE_ABOVE)),
+    "line-read-by-rule": (_LINE_RULE, _replace(_LINE_RULE, *_PROSE_ABOVE)),
     "document-removed": (
         PAGES,
         {
@@ -386,7 +439,7 @@ def _write(srcdir: Path, pages: dict[str, str]) -> Path:
     """Write the project; a file whose text is the same is left untouched, so that
     Sphinx, which compares modification times, sees only the edited page changed."""
     srcdir.mkdir(parents=True, exist_ok=True)
-    for name, text in {"conf.py": CONF, **pages}.items():
+    for name, text in {"conf.py": CONF, **pages}.items():  # a page may replace conf.py
         path = srcdir / name
         if not path.exists() or path.read_text(encoding="utf-8") != text:
             path.write_text(text, encoding="utf-8")

@@ -88,6 +88,9 @@ _UNNAMED_LINK_KINDS: Final = frozenset({"links"})
 #: The derive kinds reading nothing but the need itself.
 _OWN_KINDS: Final = frozenset({"union", "hash", "fingerprint"})
 
+#: The fields an edit above a need changes and nothing else does: where it is written.
+_LOCATION_FIELDS: Final = frozenset({"lineno", "lineno_content"})
+
 #: The built-in functions reading nothing but their arguments.
 _READS_NOTHING: Final = frozenset({"test", "echo"})
 
@@ -190,13 +193,13 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
     # the needs as read: those of the re-read documents, compared with what they were;
     # a need written at other lines alone (an edit above it) is only ``moved``
     changed: set[str] = set()
-    moved = False
+    moved: set[str] = set()
     for need_id, old in stash.needs.items():
         new = needs.get(need_id)
         if new is not None and new == old:
             continue
         if new is not None and old.moved_only(new):
-            moved = True
+            moved.add(need_id)
         else:
             changed.add(need_id)
     changed.update(
@@ -218,18 +221,8 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
     views: set[str] = set()
     for category in VIEW_CATEGORIES:
         views.update(all_docs.get(category, ()))
-    if not changed and not changed_extends:
-        # a need's line number is shown by a view at most (a needtable column)
-        return views if moved else set()
-
-    everything = set(all_docs.get("all", []))
-    if any(not extend["filter_is_id"] for extend in changed_extends):
-        # a filter selects needs by their resolved values
-        return everything
-    every_extend = (*extends.values(), *stash.extends.values())
-    if any(_links_unnamed(extend) for extend in every_extend):
-        # an extend linking needs to a computed target
-        return everything
+    if not changed and not changed_extends and not moved:
+        return set()
 
     schema = data.get_schema()
     by_type: dict[str, _Reads] = {}
@@ -247,7 +240,35 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
             _merge(filter_reads, extend_reads)
         elif (target := _target_id(extend)) in needs:
             reads[target] = _merge(reads[target] or _Reads(), extend_reads)
-    if filter_reads.always or filter_reads.links or filter_reads.back:
+
+    if moved:
+        # a need written at other lines alone: a view may show its line number (a
+        # needtable column), and nothing else does unless a computed value reads it
+        if any(r is not None and r.location for r in reads.values()) or (
+            filter_reads.location
+            or any(
+                not extend["filter_is_id"] and "lineno" in extend["filter"]
+                for extend in extends.values()
+            )
+        ):
+            changed |= moved
+        elif not changed and not changed_extends:
+            return views
+
+    everything = set(all_docs.get("all", []))
+    if any(not extend["filter_is_id"] for extend in changed_extends):
+        # a filter selects needs by their resolved values
+        return everything
+    every_extend = (*extends.values(), *stash.extends.values())
+    if any(_links_unnamed(extend) for extend in every_extend):
+        # an extend linking needs to a computed target
+        return everything
+    if (
+        filter_reads.always
+        or filter_reads.links
+        or filter_reads.back
+        or filter_reads.links_back
+    ):
         # needs a filter selects compute values from needs they do not name
         return everything
     if any(r is not None and r.unnamed_links for r in reads.values()):
@@ -306,14 +327,27 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
         for need_id, r in list(pending.items()):
             if (
                 (r.links and not affected.isdisjoint(links_of(need_id)))
+                or (
+                    r.links_back
+                    and not (
+                        affected.isdisjoint(links_of(need_id))
+                        and targets.isdisjoint(links_of(need_id))
+                    )
+                )
                 or (r.back and need_id in targets)
                 or not affected.isdisjoint(r.needs)
+                or not (
+                    affected.isdisjoint(r.back_of) and targets.isdisjoint(r.back_of)
+                )
             ):
                 del pending[need_id]
                 affected.add(need_id)
                 targets.update(link_targets(need_id))
                 grown = True
-    if not affected.isdisjoint(filter_reads.needs):
+    if not affected.isdisjoint(filter_reads.needs) or not (
+        affected.isdisjoint(filter_reads.back_of)
+        and targets.isdisjoint(filter_reads.back_of)
+    ):
         # the needs a filter selects compute a value from an affected need
         return everything
 
@@ -400,6 +434,14 @@ class _Reads:
     """The needs linking to it (``over`` a ``<link type>_back``)."""
     needs: set[str] = field(default_factory=set)
     """The needs a ``from``, or a ``copy`` of another need, names."""
+    back_of: set[str] = field(default_factory=set)
+    """The needs whose back links a ``from`` or a ``copy`` of another need reads: they
+    change with the needs linking to them."""
+    links_back: bool = False
+    """The back links of the needs its links name."""
+    location: bool = False
+    """A line number (``lineno``, ``lineno_content``), or maybe one: a function of your
+    own, a filter naming it."""
     content_links: bool = False
     """It links the needs its content names (``content_links``)."""
     unnamed_links: bool = False
@@ -413,6 +455,9 @@ def _merge(into: _Reads, other: _Reads) -> _Reads:
     into.links |= other.links
     into.back |= other.back
     into.needs |= other.needs
+    into.back_of |= other.back_of
+    into.links_back |= other.links_back
+    into.location |= other.location
     into.content_links |= other.content_links
     into.unnamed_links |= other.unnamed_links
     return into
@@ -435,7 +480,7 @@ def _reads(
             for derived in (*schema.iter_extra_fields(), *schema.iter_link_fields()):
                 if derived.derived:
                     _read_rule(derived.rule_for(need_type), schema, of_type)
-        reads = replace(of_type, needs=set(of_type.needs))
+        reads = replace(of_type, needs=set(of_type.needs), back_of=set(of_type.back_of))
     for name, value in _dynamic_fields(need).items():
         if isinstance(value, LinksFunctionArray) or schema.get_link_field(name):
             if any(isinstance(item, DynamicFunctionParsed) for item in value.value):
@@ -452,7 +497,9 @@ def _read_calls(items: Iterable[object], reads: _Reads) -> None:
 
     A built-in function is read by its arguments: ``copy`` of the need's own field reads
     nothing else, ``copy`` with a ``need_id`` that need, ``check_linked_values`` the
-    needs its links name. A function of your own, and a filter, may read any need.
+    needs its links name. A back-link field (``<link type>_back``) is written by the
+    needs linking to the need it is read on, so it is read as theirs. A function of your
+    own, and a filter, may read any need and any field.
     """
     for call in items:
         if not isinstance(call, DynamicFunctionParsed):
@@ -461,26 +508,62 @@ def _read_calls(items: Iterable[object], reads: _Reads) -> None:
             continue
         args = builtin_arguments(call)
         if args is None:
-            reads.always = True
-        elif call.name == "copy":
+            reads.always = reads.location = True
+            continue
+        # the field read on the needs the call reads, a name written out or not
+        field_read = args.get(
+            "search_option" if call.name == "check_linked_values" else "option"
+        )
+        filter_text = args.get(
+            "filter_string" if call.name == "check_linked_values" else "filter"
+        )
+        if not isinstance(field_read, str) or (
+            filter_text not in (None, "") and not isinstance(filter_text, str)
+        ):
+            reads.always = reads.location = True
+            continue
+        reads.location |= field_read in _LOCATION_FIELDS or "lineno" in (
+            filter_text or ""
+        )
+        back = _is_back(field_read)
+        if call.name == "copy":
             need_id = args.get("need_id")
-            if args.get("filter") not in (None, "") or not isinstance(
-                need_id, str | None
-            ):
+            if filter_text not in (None, "") or not isinstance(need_id, str | None):
                 reads.always = True
             elif need_id:
-                reads.needs.add(NeedLink.parse_address(need_id).id)
+                (reads.back_of if back else reads.needs).add(
+                    NeedLink.parse_address(need_id).id
+                )
+            elif back:
+                # its own back links: the needs linking to it
+                reads.back = True
         elif call.name == "check_linked_values" or (
             call.name == "calc_sum" and args.get("links_only") is True
         ):
             reads.links = True
+            reads.links_back |= back or "_back" in (filter_text or "")
         else:
             reads.always = True
 
 
+def _is_back(name: str) -> bool:
+    """Whether a field is a link type's back links, which other needs write."""
+    return name.endswith("_back")
+
+
 def _read_rule(rule: Derive | None, schema: FieldsSchema, reads: _Reads) -> None:
     """Add what a ``derive`` rule reads of other needs to ``reads``."""
-    if not isinstance(rule, DeriveRule) or rule.kind in _OWN_KINDS:
+    if not isinstance(rule, DeriveRule):
+        return
+    read = (*((rule.field,) if rule.field else ()), *rule.fields)
+    filters = " ".join(text for text in (rule.where, rule.test) if text)
+    # a fingerprint reads neither: its names are the project's fields and links
+    reads.location |= not _LOCATION_FIELDS.isdisjoint(read) or "lineno" in filters
+    back = any(_is_back(name) for name in read)
+    if rule.kind in _OWN_KINDS:
+        if back and rule.kind == "hash":
+            # its own back links: the needs linking to it
+            reads.back = True
         return
     if rule.kind in _UNNAMED_LINK_KINDS or (
         rule.kind == "content_links" and rule.from_need is not None
@@ -493,8 +576,13 @@ def _read_rule(rule: Derive | None, schema: FieldsSchema, reads: _Reads) -> None
             # the needs its content names, read by the filter: a role's target
             reads.always = True
         return
+    if "_back" in filters:
+        # a filter reading the back links of the candidates
+        reads.always = True
     if rule.from_need is not None:
-        reads.needs.add(NeedLink.parse_address(rule.from_need).id)
+        (reads.back_of if back else reads.needs).add(
+            NeedLink.parse_address(rule.from_need).id
+        )
     if rule.join is not None or rule.transitive:
         reads.always = True
     if rule.over is not None:
@@ -505,8 +593,14 @@ def _read_rule(rule: Derive | None, schema: FieldsSchema, reads: _Reads) -> None
             reads.always = True
         elif rule.over.endswith("_back"):
             reads.back = True
+            # the back links of the needs linking to it
+            reads.always |= back
         else:
             reads.links = True
+            reads.links_back |= back
+    elif back and rule.from_need is None and rule.join is None:
+        # its own back links (``copy`` of its own field)
+        reads.back = True
 
 
 def _dynamic_fields(
