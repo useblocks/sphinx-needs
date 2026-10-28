@@ -39,8 +39,8 @@ or by a declared template, and write ``is defined`` where a template relied on l
      - A declared template option: ``options = { header_char = { default = "=" } }``, used as ``{{ options.header_char }}``
      - It was only ever a context value.
    * - ``:header_update_levels:`` (sphinx-jinja)
-     - Always on: headings join the page
-     -
+     - Not available: template output may not hold a heading (``template_heading``)
+     - Headings in template output are not supported in this version.
    * - ``:debug:``, ``:raw:``
      - Kept (``jinja2_debug`` is not)
      -
@@ -56,6 +56,9 @@ or by a declared template, and write ``is defined`` where a template relied on l
    * - Jinja2 (sphinx-jinja, sphinx-jinja2 0.0.1)
      - minijinja 2
      - No ``{% do %}`` and no Jinja2 extensions; ``min``/``max`` compare case-sensitively.
+   * - Headings in the output (sphinx-jinja2 inserts them into the page)
+     - Refused (``template_heading``); write a rubric, or put the heading in the page
+     - Where a heading in output may nest is the part the two tools cannot yet agree on; it is deferred.
    * - Printing a container (``{{ rows }}``, ``{{ d }}``)
      - The engine's own form: ``{"a": 1}``, ``[1, "a"]``
      - sphinx-jinja2 hands minijinja Python objects, which print as Python's ``repr`` (``{'a': 1}``).

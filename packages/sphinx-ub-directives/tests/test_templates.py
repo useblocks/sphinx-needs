@@ -7,6 +7,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 
+import pytest
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs_testkit import build_warnings
@@ -250,3 +251,93 @@ def test_a_configuration_finding_is_located_in_ubproject_toml(
     app = _build(make_app, tmp_path, files)
     found = [w for w in build_warnings(app) if "directive_template_invalid" in w]
     assert found and found[0].startswith("<srcdir>/ubproject.toml:3: "), found
+
+
+def test_an_edited_context_file_is_read_again(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """L9 (fix round 2): the parsed-file memo is keyed by CONTENT, so an edit that keeps
+    the file's size and modification time is still seen by the next build of the process."""
+    import os
+
+    files = {
+        "ubproject.toml": '[parse.template_contexts.c]\nfile = "c.json"\n\n[parse.directive_templates.u]\nbody = "Value {{ contexts.c.v }}."\n',
+        "c.json": '{"v": "AAAA"}\n',
+        "index.rst": "Case\n====\n\n.. u::\n",
+    }
+    first = _build(make_app, tmp_path, files)
+    assert "Value AAAA." in (Path(first.outdir) / "index.html").read_text(
+        encoding="utf-8"
+    )
+    data = tmp_path / "c.json"
+    stat = data.stat()
+    data.write_text('{"v": "CCCC"}\n', encoding="utf-8")
+    os.utime(data, ns=(stat.st_atime_ns, stat.st_mtime_ns))
+    second = make_app("html", srcdir=tmp_path, freshenv=True)
+    second.build()
+    assert "Value CCCC." in (Path(second.outdir) / "index.html").read_text(
+        encoding="utf-8"
+    )
+
+
+def test_the_inert_parse_reports_nothing(
+    make_app: Callable[..., SphinxTestApp],
+    tmp_path: Path,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    """N8: the structural pass (§7.8) parses every output with a reporter that discards,
+    so a docutils problem in the output is reported once, by the real parse, and the
+    throwaway parse prints nothing (docutils' own reporter would write to stderr)."""
+    files = {
+        "ubproject.toml": '[parse.directive_templates.u]\nbody = "* An item\\nNot separated by a blank line."\n',
+        "index.rst": "Case\n====\n\n.. u::\n",
+    }
+    app = _build(make_app, tmp_path, files)
+    found = [w for w in build_warnings(app) if "unexpected unindent" in w]
+    assert len(found) == 1, build_warnings(app)
+    assert "unexpected unindent" not in capfd.readouterr().err
+
+
+def test_the_configured_test_report_names_are_refused(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """N10 (§7.10): with sphinx-test-reports loaded, the names it is CONFIGURED to register
+    are the ones refused in output."""
+    conf = (
+        CONF_PY
+        + "extensions = [*extensions, 'sphinx_test_reports']\n"
+        + "tr_file = ['my-file', 'myfile', 'My-File', 'MF_', '#ffffff', 'node']\n"
+    )
+    files = {
+        "ubproject.toml": '[parse.directive_templates.u]\nbody = ".. my-file:: Report\\n   :file: r.xml\\n   :id: MF_001"\n',
+        "r.xml": '<testsuite name="s" tests="0"></testsuite>\n',
+        "index.rst": "Case\n====\n\n.. u::\n",
+    }
+    app = _build(make_app, tmp_path, files, conf=conf)
+    assert [
+        w
+        for w in build_warnings(app)
+        if "ub_directives.template_output_reads_file" in w
+    ], build_warnings(app)
+
+
+def test_a_preset_default_argument_is_a_file_for_a_diagram(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """N11 (§7.10): a preset of graphviz whose default ARGUMENT names a file is refused in
+    output, although the use writes no argument."""
+    conf = CONF_PY + "extensions = [*extensions, 'sphinx.ext.graphviz']\n"
+    files = {
+        "ubproject.toml": (
+            '[parse.directive_presets.gvarg]\nbase = "graphviz"\nargument = "d.dot"\n\n'
+            '[parse.directive_templates.u]\nbody = ".. gvarg::"\n'
+        ),
+        "d.dot": "digraph { A -> B }\n",
+        "index.rst": "Case\n====\n\n.. u::\n",
+    }
+    app = _build(make_app, tmp_path, files, conf=conf)
+    assert [
+        w
+        for w in build_warnings(app)
+        if "ub_directives.template_output_reads_file" in w
+    ], build_warnings(app)

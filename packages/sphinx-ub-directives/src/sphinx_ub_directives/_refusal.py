@@ -152,6 +152,76 @@ class _Inert(Directive):
         return [nodes.inline("", "inert")]
 
 
+#: Directives whose body is not markup: the structural pass never reads their body as a
+#: page would (title-like text in a code-block is no title, §7.8).
+LITERAL_BODIES = frozenset(
+    {
+        "code-block",
+        "code",
+        "sourcecode",
+        "code-cell",
+        "literalinclude",
+        "highlight",
+        "math",
+        "raw",
+        "csv-table",
+        "parsed-literal",
+        "graphviz",
+        "digraph",
+        "graph",
+        "mermaid",
+        "plantuml",
+        "uml",
+        "needuml",
+        "needarch",
+        "doctest",
+        "testcode",
+        "testoutput",
+        "productionlist",
+        "ub-template",
+        "jinja",
+        "eval-rst",
+    }
+)
+
+
+def _known_markup(name: str, cls: type[Directive] | None, language_module: Any) -> bool:
+    """Whether the structural pass reads a directive's body as markup: a directive some
+    loaded extension registers, that is no template directive and has no literal body."""
+    if cls is None or getattr(cls, TEMPLATE_MARKER, False):
+        return False
+    lower, _merged, _argument = canonical(name, cls, language_module)
+    return lower not in LITERAL_BODIES
+
+
+def parses_body(name: str, app: Any) -> bool:
+    """:func:`_known_markup` for a MyST fence name, looked up the way Sphinx would."""
+    from ._presets import lookup
+
+    found = lookup(app, name)
+    return found is not None and _known_markup(name, found[0], None)
+
+
+class _InertParsing(Directive):
+    """An inert directive that reads its body as markup, so the structural pass finds a
+    section title inside a ``note`` (or any container) the output writes (§7.8)."""
+
+    optional_arguments = 99
+    final_argument_whitespace = True
+    has_content = True
+    option_spec = _AnyOptions()
+
+    def run(self) -> list[nodes.Node]:
+        if type(self.state).__name__ == "SubstitutionDef":
+            # a substitution definition takes inline content only (§7.9 must still see it)
+            return [nodes.inline("", "inert")]
+        holder = nodes.container()
+        self.state.nested_parse(
+            self.content, self.content_offset, holder, match_titles=True
+        )
+        return [holder]
+
+
 def _refuser(name: str, use: str, code: str, why: str) -> type[Directive]:
     class Refused(Directive):
         optional_arguments = 99
@@ -325,7 +395,10 @@ def install() -> None:
         name: str, language_module: Any, document: Any
     ) -> tuple[Any, list[Any]]:
         if INERT.get():
-            return _Inert, []
+            cls, _messages = original(name, language_module, document)
+            return (
+                _InertParsing if _known_markup(name, cls, language_module) else _Inert
+            ), []
         cls, messages = original(name, language_module, document)
         use = active_use(document)
         if use is None:

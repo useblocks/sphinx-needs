@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import re
 from collections.abc import Callable, Mapping
 from importlib import import_module
@@ -69,10 +70,11 @@ def note(env: Any, path: Path) -> None:
         env.note_dependency(str(path))
 
 
-#: Parsed context files, keyed by file identity and modification (L9): every declared
-#: use reads every context, and data is plain and never changed once read, so one parse
-#: per file version is shared by the uses of a process.
-_FILE_DATA: dict[tuple[str, int, int], dict[str, Any]] = {}
+#: Parsed context files, keyed by path and CONTENT digest (L9, fix round 2): every
+#: declared use reads every context, and data is plain and never changed once read, so one
+#: parse per file content is shared by the uses of a process. The file is still read each
+#: time (a size- and mtime-keyed memo served stale data after a same-size edit).
+_FILE_DATA: dict[tuple[str, str], dict[str, Any]] = {}
 
 
 def context_value(env: Any, root: Root, name: str, spec: Any) -> Any:
@@ -92,21 +94,16 @@ def context_value(env: Any, root: Root, name: str, spec: Any) -> Any:
             raise ValueError(msg)
         note(env, path)
         try:
-            stat = path.stat()
-            key = (str(path), stat.st_mtime_ns, stat.st_size)
-        except OSError:
-            key = None
-        if key is not None and key in _FILE_DATA:
-            return _FILE_DATA[key]
-        try:
             text = root.read(path)
         except (OSError, UnicodeDecodeError) as error:
             msg = f"its file {relative} cannot be read ({error})"
             raise ValueError(msg) from error
-        data = _engine.read_data(text, "".join(Path(relative).suffixes[-1:]), relative)
-        if key is not None:
-            _FILE_DATA[key] = data
-        return data
+        key = (str(path), hashlib.sha256(text.encode("utf-8")).hexdigest())
+        if key not in _FILE_DATA:
+            _FILE_DATA[key] = _engine.read_data(
+                text, "".join(Path(relative).suffixes[-1:]), relative
+            )
+        return _FILE_DATA[key]
     try:
         _engine.check_data(spec, name)
     except RecursionError as error:
@@ -186,41 +183,18 @@ def splice(
     env = directive.state.document.settings.env
     location = (env.docname, directive.lineno)
     host = host_markup(directive)
+    if has_heading(directive, text, markup):
+        warn(
+            "template_heading",
+            use,
+            "the output holds a section title, which template output may not hold "
+            "(headings in template output are not supported in this version); it renders "
+            "nothing. Write a rubric instead, or put the heading in the page",
+            location=location,
+        )
+        return []
     if markup != host:
         return _splice_other(directive, use=use, text=text, markup=markup, debug=debug)
-    levels = (
-        _rst_heading_styles(directive, text)
-        if host == "rst"
-        else _md_heading_levels(directive, text)
-    )
-    if levels:
-        problem = (
-            _rst_level_problem(directive, levels)
-            if host == "rst"
-            else _md_level_problem(directive, levels)
-        )
-        if problem is not None:
-            warn(
-                "template_heading_level",
-                use,
-                f"the output holds a heading {problem}; a heading in output must nest "
-                "strictly below the section that holds the directive, so it renders nothing",
-                location=location,
-            )
-            return []
-        followed = (
-            _rst_followed(directive) if host == "rst" else _md_followed(directive)
-        )
-        if followed:
-            warn(
-                "template_open_section",
-                use,
-                "the output leaves a section open, and host content follows the directive "
-                "(which would continue in that section); it renders nothing. End the output "
-                "without a heading, or follow the directive with a heading",
-                location=location,
-            )
-            return []
     debug_nodes: list[nodes.Node] = [nodes.literal_block(text, text)] if debug else []
     if host == "rst":
         found_source, found_line = directive.state_machine.get_source_and_line(
@@ -250,9 +224,10 @@ def splice(
     return debug_nodes
 
 
-# --- the structure of same-markup output (§7.8) ---------------------------------------
+# --- no section title in output (§7.8) -------------------------------------------------
 
-_ADORNMENT = re.compile(r"""^([!"#$%&'()*+,\-./:;<=>?@\[\\\]^_`{|}~])\1+\s*$""")
+#: Words docutils uses when it refuses a section title where none may be.
+_TITLE_COMPLAINTS = ("section title", "title level", "title style")
 
 
 def _silent(document: nodes.document) -> None:
@@ -260,118 +235,89 @@ def _silent(document: nodes.document) -> None:
     document.reporter = Reporter(document["source"], 5, 5, stream=False)
 
 
-def _rst_heading_styles(directive: Directive, text: str) -> list[Any]:
-    """The adornment styles of the headings ``text`` holds, in docutils' order of first
-    use; empty when it holds none. An inert parse: no directive runs."""
+def has_heading(directive: Directive, text: str, markup: str) -> bool:
+    """Whether ``text`` (in ``markup``) holds a section title anywhere (§7.8), found by an
+    inert parse: no directive runs, nothing is read, nothing is registered."""
+    if markup == "rst":
+        return _rst_has_heading(directive, text)
+    return _md_has_heading(directive, text)
+
+
+def _rst_has_heading(directive: Directive, text: str) -> bool:
     document = directive.state.document
     fragment = new_document(document["source"], document.settings)
     _silent(fragment)
-    parser = RstParser()
     with _refusal.inert():
-        parser.parse(text, fragment)
-    if not any(True for _ in fragment.findall(nodes.section)):
-        return []
-    # the machine drops its memo after the run; its states keep theirs
-    machine: Any = parser.statemachine
-    return list(machine.states["Body"].memo.title_styles)
-
-
-def _rst_level_problem(directive: Directive, styles: list[Any]) -> str | None:
-    """Why headings of ``styles`` cannot nest below the directive's section, if they
-    cannot: docutils' own level rule (a known style keeps its level, a new one is the next)."""
-    if not getattr(directive.state_machine, "match_titles", True):
-        return "where the page allows no section (inside a body element)"
-    memo: Any = getattr(directive.state, "memo")  # noqa: B009 - RSTState's, untyped
-    known = list(memo.title_styles)
-    current = int(memo.section_level)
-    for style in styles:
-        if style not in known:
-            known.append(style)
-        if known.index(style) + 1 <= current:
-            return "at the level of the section that holds the directive, or above it"
-    return None
-
-
-def _is_title(lines: list[str], index: int) -> bool:
-    """Whether ``lines[index]`` starts a section title (underlined, or over- and underlined)."""
-    line = lines[index]
-    following = lines[index + 1] if index + 1 < len(lines) else ""
-    if (
-        _ADORNMENT.match(line)
-        and index + 2 < len(lines)
-        and _ADORNMENT.match(lines[index + 2])
-    ):
-        return bool(following.strip())
-    return (
-        bool(line.strip())
-        and not line[:1].isspace()
-        and bool(_ADORNMENT.match(following))
+        RstParser().parse(text, fragment)
+    if any(True for _ in fragment.findall(nodes.section)):
+        return True
+    return any(
+        any(word in message.astext().lower() for word in _TITLE_COMPLAINTS)
+        for message in fragment.findall(nodes.system_message)
     )
 
 
-def _rst_followed(directive: Directive) -> bool:
-    """Whether host content (anything but a heading) follows the directive."""
-    machine: Any = directive.state_machine
-    rest = [str(line) for line in machine.input_lines[machine.line_offset + 1 :]]
-    for index, line in enumerate(rest):
-        if line.strip():
-            return not _is_title(rest, index)
-    return False
+_OPTION_LINE = re.compile(r"^:[\w-]+:")
 
 
-def _md_heading_levels(directive: Directive, text: str) -> list[int]:
-    """The levels (`#` counts) of the top-level headings ``text`` holds."""
-    renderer: Any = getattr(directive.state, "_renderer")  # noqa: B009
-    tokens = renderer.md.parse(text + "\n", {})
-    return [int(t.tag[1]) for t in tokens if t.type == "heading_open" and t.level == 0]
+def _fence_body(content: str) -> str:
+    """A MyST directive fence's body, without its leading options (`:key: value` lines,
+    or a `---`-fenced YAML block)."""
+    lines = content.splitlines()
+    if lines and lines[0].strip() == "---":
+        closing = next(
+            (i for i in range(1, len(lines)) if lines[i].strip() == "---"), None
+        )
+        if closing is not None:
+            lines = lines[closing + 1 :]
+    while lines and _OPTION_LINE.match(lines[0]):
+        lines = lines[1:]
+    return "\n".join(lines)
 
 
-def _md_level_problem(directive: Directive, levels: list[int]) -> str | None:
-    renderer: Any = getattr(directive.state, "_renderer")  # noqa: B009
-    node = renderer.current_node
-    temp_root = renderer.md_env.get("temp_root_node", None)
-    if not (isinstance(node, nodes.document | nodes.section) or node is temp_root):
-        return "where the page allows no section (inside a body element)"
-    host = next(
-        (
-            level
-            for level, section in renderer._level_to_section.items()
-            if section is node
-        ),
-        0,
-    )
-    if any(level <= host for level in levels):
-        return "with no more '#' than the section that holds the directive"
-    return None
+def _md_has_heading(directive: Directive, text: str) -> bool:
+    md = _md_parser(directive)
+    if md is None:
+        return False  # this project cannot parse Markdown; the real parse says so
+    return _md_tokens_have_heading(directive, md, text)
 
 
-_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,}|:{3,})")
-
-
-def _md_followed(directive: Directive) -> bool:
-    """Whether host content (anything but a heading) follows the directive's fence."""
-    source, _line = directive.state_machine.get_source_and_line(directive.lineno)
-    try:
-        lines = Path(str(source)).read_text(encoding="utf-8").splitlines()
-    except (OSError, ValueError):
-        return False
-    start = directive.lineno - 1
-    if not 0 <= start < len(lines) or (opening := _FENCE.match(lines[start])) is None:
-        return False
-    fence = opening[1]
-    closing = re.compile(rf"^ {{0,3}}{re.escape(fence[0])}{{{len(fence)},}}\s*$")
-    end = next(
-        (i for i in range(start + 1, len(lines)) if closing.match(lines[i])), len(lines)
-    )
-    for index in range(end + 1, len(lines)):
-        line = lines[index]
-        if not line.strip():
+def _md_tokens_have_heading(directive: Directive, md: Any, text: str) -> bool:
+    for token in md.parse(text + "\n", {}):
+        if token.type == "heading_open":
+            return True
+        info = (
+            (token.info or "").strip() if token.type in ("fence", "colon_fence") else ""
+        )
+        if not info.startswith("{") or "}" not in info:
             continue
-        if re.match(r"^ {0,3}#{1,6}(\s|$)", line):
-            return False
-        following = lines[index + 1] if index + 1 < len(lines) else ""
-        return not re.match(r"^ {0,3}(=+|-+)\s*$", following)
+        name = info[1:].split("}", 1)[0].strip().lower()
+        body = _fence_body(token.content)
+        if name == "eval-rst":
+            if _rst_has_heading(directive, body):
+                return True
+        elif _refusal.parses_body(name, app_of()) and _md_tokens_have_heading(
+            directive, md, body
+        ):
+            return True
     return False
+
+
+def _md_parser(directive: Directive) -> Any:
+    """A markdown-it parser configured as the project's MyST, or ``None`` without
+    myst-parser."""
+    renderer: Any = getattr(directive.state, "_renderer", None)
+    if renderer is not None:
+        return renderer.md
+    app = app_of()
+    if "myst_parser" not in app.extensions:
+        return None
+    mdit = import_module("myst_parser.parsers.mdit")
+    sphinx_renderer = import_module(
+        "myst_parser.mdit_to_docutils.sphinx_"
+    ).SphinxRenderer
+    config = getattr(app.env, "myst_config")  # noqa: B009 - myst-parser sets it
+    return mdit.create_md_parser(config, sphinx_renderer)
 
 
 # --- the other markup (§7.9) ----------------------------------------------------------
@@ -384,8 +330,8 @@ def _construct(fragment: nodes.document) -> str | None:
         return "a substitution definition"
     if any(True for _ in fragment.findall(nodes.citation)):
         return "a citation"
-    if any(node.get("auto") for node in fragment.findall(nodes.footnote)):
-        return "an auto-numbered footnote"
+    if any(True for _ in fragment.findall(nodes.footnote)):
+        return "a footnote"
     return None
 
 
@@ -399,15 +345,6 @@ def _splice_other(
     with _refusal.inert():
         structure = _parse_other(directive, text, markup, use, silent=True)
     if structure is None:
-        return []
-    if any(True for _ in structure.findall(nodes.section)):
-        warn(
-            "template_markup_heading",
-            use,
-            f"the template writes {written}, and this page is the other markup: its "
-            "output may not hold a heading, so it renders nothing here",
-            location=location,
-        )
         return []
     construct = _construct(structure)
     if construct is not None:

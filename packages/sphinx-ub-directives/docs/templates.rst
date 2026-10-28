@@ -4,7 +4,7 @@ Template directives
 A template directive renders a `Jinja <https://jinja.palletsprojects.com>`__ template
 with data you declare, and inserts the result into the page as if you had written it there.
 Its commonest use is generating needs from a data file:
-the generated needs are ordinary needs, and a heading the template writes is a section of the page.
+the generated needs are ordinary needs of the section that holds the directive.
 
 Templates are rendered with `minijinja <https://github.com/mitsuhiko/minijinja>`__,
 the engine ubCode renders the same templates with, configured identically on both sides.
@@ -86,10 +86,8 @@ or that gives both or neither of ``template`` and ``body`` is reported once (``u
 **Markup.** A declared template writes reStructuredText or MyST Markdown:
 ``markup = "rst"`` or ``"md"``, else its file's name (``*.rst.j2``, ``*.md.j2``, ``*.rst.jinja``, ``*.md.jinja``),
 else reStructuredText.
-In a page of the same markup the output may hold headings, which join the page (see below);
-in a page of the other markup it is parsed as its own markup and may not hold a heading
-(``ub_directives.template_markup_heading``), nor a substitution definition, an auto-numbered footnote
-or a citation (``ub_directives.template_markup_construct``).
+In a page of the other markup the output is parsed as its own markup, and may not hold
+a substitution definition, a footnote or a citation (``ub_directives.template_markup_construct``).
 
 A declaration's fields have fixed shapes (``default`` a string, ``choices`` an array of strings,
 ``flag``, ``required`` and ``content`` booleans, ``argument`` a table);
@@ -134,15 +132,14 @@ Its argument names a context, whose keys are the template's variables. Options:
 How output joins the page
 -------------------------
 
-Output is inserted as if it were written in place of the directive, and its headings join the page's sections,
-with two rules that keep the needs' ``sections`` the same in ubCode:
+Output is inserted as body content where the directive is, as if you had written it there,
+so a need it generates belongs to the section that holds the directive.
 
-- a heading in output must nest strictly below the section that holds the directive,
-  and cannot be used where the page allows no section (inside a ``note``, a need's body, a list item):
-  ``ub_directives.template_heading_level``;
-- output that holds a heading may not be followed by host content (anything but a heading),
-  which would continue in the output's last section: ``ub_directives.template_open_section``.
-  End such output at the end of its section, or follow the directive with a heading.
+**Template output may not hold a section title** in this version: in either markup,
+anywhere in the output (inside a ``note`` or a list item it writes too), wherever the directive sits.
+A use whose output holds one is reported (``ub_directives.template_heading``) and renders nothing.
+A rubric (``.. rubric::``, or MyST's ``{rubric}``) is not a section title, and is allowed;
+so is title-like text in a ``code-block``. Put the heading in the page, above the directive.
 
 The output may not hold another template directive (it is never expanded again)
 nor a directive that reads a file the template did not declare (nor a preset of one,
