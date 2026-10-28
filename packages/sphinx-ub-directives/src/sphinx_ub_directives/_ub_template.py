@@ -143,7 +143,9 @@ class UbTemplate(Directive):
                 path = root.resolve(file)
             else:
                 candidate = Path(env.doc2path(env.docname)).parent / file
-                path = candidate if root.contains(candidate) else None
+                # a ':' (a drive or a URL scheme) or NUL is outside the root (§2.4)
+                named = ":" not in file and "\0" not in file
+                path = candidate if named and root.contains(candidate) else None
             if path is None:
                 note(env, root.path / file.lstrip("/"))
                 warn(

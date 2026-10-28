@@ -416,9 +416,9 @@ that pin this rule, nor any option twice.) Enforced by: corpus
    use is `template_switched_off` and renders nothing.
    Enforced by: corpus `ub-template-is-off-by-default`, `ub-template-switched-off-explicitly`.
 2. **The context**: the named context's keys (the optional argument names it;
-   `template_context_unknown` when no context has that name), overridden by `:ctx:` (an
-   inline JSON object under §4.2), plus `var`. Enforced by: corpus
-   `ub-template-named-context`, `ub-template-ctx-overrides-the-named-context`,
+   `template_context_unknown` when no context has that name — the argument `var` names
+   none, §4.7), overridden by `:ctx:` (an inline JSON object under §4.2), plus `var`.
+   Enforced by: corpus `ub-template-named-context`, `ub-template-argument-var-is-not-a-context`, `ub-template-ctx-overrides-the-named-context`,
    `ub-template-unknown-context`, `ub-template-ctx-refused-invalid-json`,
    `ub-template-ctx-refused-not-an-object`, `ub-template-ctx-refused-null-value`.
 3. **The template**: the body, or `:file:` (relative to the page, or to the source root
