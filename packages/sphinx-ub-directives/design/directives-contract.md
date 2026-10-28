@@ -80,9 +80,11 @@ cases (corpus: `identity-note-rst`, `host-content-continues-in-the-last-section`
    directory of the file that declared it. A leading `/` is the source root too.
    **The path rule**, for every name (`:file:`, a declared `template`, a context `file`, an
    `include` / `import` / `extends` name): a name is `/`-separated, and a `\` anywhere
-   refuses it (a missing file); `..` is resolved AS THE FILESYSTEM DOES (the path is
-   opened as written, so a missing intermediate directory is a missing file, and a `..`
-   that stays inside the root is fine); a name holding `:` (it reads as a drive or a URL
+   refuses it (a missing file); a `..` applies only after a component that exists as a
+   directory — one that follows a component that does not exist as a directory (missing,
+   or a file) makes the name a missing file, ON EVERY PLATFORM (Windows would fold
+   `missing/..` away lexically; the rule is decided by walking the components), and a
+   `..` that stays inside the root through existing directories is fine; a name holding `:` (it reads as a drive or a URL
    scheme) or NUL (never a path) is outside the root — `template_outside_root`, or
    `template_context_invalid` for a context file, or a render error for an include; a name
    that resolves to a directory is a missing template (`template_missing`), or an invalid

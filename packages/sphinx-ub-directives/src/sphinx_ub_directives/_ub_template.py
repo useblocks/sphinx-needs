@@ -142,10 +142,8 @@ class UbTemplate(Directive):
             if file.startswith("/"):
                 path = root.resolve(file)
             else:
-                candidate = Path(env.doc2path(env.docname)).parent / file
-                # a ':' (a drive or a URL scheme) or NUL is outside the root (§2.4)
-                named = ":" not in file and "\0" not in file
-                path = candidate if named and root.contains(candidate) else None
+                # relative to the page, under the path rule (§2.4)
+                path = root.locate(Path(env.doc2path(env.docname)).parent, file)
             if path is None:
                 note(env, root.path / file.lstrip("/"))
                 warn(

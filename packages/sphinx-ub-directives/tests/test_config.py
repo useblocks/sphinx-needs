@@ -19,10 +19,10 @@ def _app(
     make_app: Callable[..., SphinxTestApp], root: Path, toml: str, conf: str = CONF_PY
 ) -> SphinxTestApp:
     root.mkdir(parents=True, exist_ok=True)
-    (root / "conf.py").write_text(conf, encoding="utf-8")
-    (root / "ubproject.toml").write_text(toml, encoding="utf-8")
+    (root / "conf.py").write_text(conf, encoding="utf-8", newline="")
+    (root / "ubproject.toml").write_text(toml, encoding="utf-8", newline="")
     (root / "index.rst").write_text(
-        "Case\n====\n\n.. callout::\n\n   Body.\n", encoding="utf-8"
+        "Case\n====\n\n.. callout::\n\n   Body.\n", encoding="utf-8", newline=""
     )
     return make_app("html", srcdir=root, freshenv=True)
 

@@ -38,7 +38,7 @@ def _build(
     for relative, text in {"conf.py": conf, **files}.items():
         path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text, encoding="utf-8")
+        path.write_text(text, encoding="utf-8", newline="")
     app = make_app("html", srcdir=root, freshenv=True)
     app.build()
     return app
@@ -143,8 +143,10 @@ def test_a_symlink_out_of_the_root_is_refused(
     file that is a symlink to outside the source root is refused and never read."""
     outside = tmp_path / "outside"
     outside.mkdir()
-    (outside / "secret.json").write_text('{"s": "SECRET"}\n', encoding="utf-8")
-    (outside / "secret.rst.j2").write_text("SECRET\n", encoding="utf-8")
+    (outside / "secret.json").write_text(
+        '{"s": "SECRET"}\n', encoding="utf-8", newline=""
+    )
+    (outside / "secret.rst.j2").write_text("SECRET\n", encoding="utf-8", newline="")
     for kind, toml, code in (
         # each build declares its own name: the first app's directives stay registered in
         # docutils until the test ends
@@ -271,7 +273,7 @@ def test_an_edited_context_file_is_read_again(
     )
     data = tmp_path / "c.json"
     stat = data.stat()
-    data.write_text('{"v": "CCCC"}\n', encoding="utf-8")
+    data.write_text('{"v": "CCCC"}\n', encoding="utf-8", newline="")
     os.utime(data, ns=(stat.st_atime_ns, stat.st_mtime_ns))
     second = make_app("html", srcdir=tmp_path, freshenv=True)
     second.build()
@@ -341,3 +343,27 @@ def test_a_preset_default_argument_is_a_file_for_a_diagram(
         for w in build_warnings(app)
         if "ub_directives.template_output_reads_file" in w
     ], build_warnings(app)
+
+
+def test_a_dot_dot_after_a_missing_component_is_missing_on_every_platform(
+    tmp_path: Path,
+) -> None:
+    """§2.4: a ``..`` applies only after a component that exists as a directory. Windows
+    folds ``missing/..`` away lexically, so the rule is decided by walking the components,
+    not by the OS: the name is a missing file wherever the build runs."""
+    from sphinx_ub_directives._engine import Root
+
+    (tmp_path / "sub").mkdir()
+    (tmp_path / "t.j2").write_text("ok", encoding="utf-8", newline="")
+    (tmp_path / "f.txt").write_text("x", encoding="utf-8", newline="")
+    root = Root(tmp_path)
+    for name in ("nope/../t.j2", "f.txt/../t.j2", "sub/nope/../../t.j2"):
+        path = root.resolve(name)
+        assert path is not None and path in root.missing, name
+        with pytest.raises(FileNotFoundError):
+            root.read(path)
+    for name in ("sub/../t.j2", "./sub/../t.j2", "/sub/../t.j2"):
+        path = root.resolve(name)
+        assert path is not None and path not in root.missing, name
+        assert root.read(path) == "ok"
+    assert root.resolve("sub/../../outside.j2") is None

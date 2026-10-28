@@ -45,40 +45,49 @@ class Root:
 
     path: Path
     reads: list[Path] = field(default_factory=list)
+    #: paths :meth:`locate` judged missing although the OS might open them (a ``..``
+    #: after a missing component)
+    missing: set[Path] = field(default_factory=set)
 
     def resolve(self, name: str) -> Path | None:
         """``name`` (a template name, or a path relative to the root; a leading ``/`` is
-        the root) as a path inside the root, or ``None`` when it would leave it.
+        the root) as a path inside the root, or ``None`` when it would leave it."""
+        return self.locate(self.path, name.lstrip("/"))
 
-        The path rule (§2.4): a name is ``/``-separated, and a ``\\`` anywhere refuses it;
-        ``..`` is resolved as the filesystem resolves it (the path is opened as written, so a
-        missing intermediate directory is a missing file); then the real path must be
+    def locate(self, base: Path, name: str) -> Path | None:
+        """``name``, relative to the directory ``base``, as a path inside the root, or
+        ``None`` when it would leave it (§2.4's path rule).
+
+        A name is ``/``-separated; a ``\\``, a ``:`` or NUL refuses it. A ``..`` applies
+        only after a component that exists as a directory: one that follows a missing
+        component, or a file, makes the name a missing file, on every platform (Windows
+        would otherwise fold ``missing/..`` away lexically). Then the real path must be
         inside the root."""
         if "\\" in name or ":" in name or "\0" in name:
             return None
-        posix = PurePosixPath(name.lstrip("/"))
-        candidate = self.path.joinpath(*posix.parts)
-        self.reads.append(candidate)
-        real = Path(os.path.realpath(candidate))
+        current = base
+        missing = False
+        for part in PurePosixPath(name).parts:
+            if part == ".." and not missing and not current.is_dir():
+                missing = True
+            current = current / part
+        self.reads.append(current)
+        real = Path(os.path.realpath(current))
         root = Path(os.path.realpath(self.path))
         if real != root and root not in real.parents:
             return None
-        return candidate
-
-    def contains(self, path: Path) -> bool:
-        """Whether ``path`` (absolute) is inside the root, symlinks resolved."""
-        if "\0" in str(path):
-            return False
-        self.reads.append(path)
-        real = Path(os.path.realpath(path))
-        root = Path(os.path.realpath(self.path))
-        return real == root or root in real.parents
+        if missing:
+            self.missing.add(current)
+        return current
 
     def read(self, path: Path) -> str:
         """The UTF-8 text of a regular file of at most :data:`FILE_LIMIT` bytes.
 
         :raises OSError: For a missing, special or too large file.
         """
+        if path in self.missing:
+            msg = f"{path.name} does not exist"
+            raise FileNotFoundError(msg)
         if not path.is_file():
             if path.exists():
                 msg = f"{path.name} is not a regular file"

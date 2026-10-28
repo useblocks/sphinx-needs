@@ -27,9 +27,11 @@ def _build(
     make_app: Callable[..., SphinxTestApp], root: Path, toml: str, page: str
 ) -> SphinxTestApp:
     root.mkdir(parents=True, exist_ok=True)
-    (root / "conf.py").write_text(CONF_PY, encoding="utf-8")
-    (root / "ubproject.toml").write_text(toml, encoding="utf-8")
-    (root / "index.rst").write_text("Case\n====\n\n" + page, encoding="utf-8")
+    (root / "conf.py").write_text(CONF_PY, encoding="utf-8", newline="")
+    (root / "ubproject.toml").write_text(toml, encoding="utf-8", newline="")
+    (root / "index.rst").write_text(
+        "Case\n====\n\n" + page, encoding="utf-8", newline=""
+    )
     app = make_app("needs", srcdir=root, freshenv=True)
     app.build()
     return app
@@ -99,10 +101,10 @@ def test_a_self_preset_whose_base_is_replaced_later_warns(
     )
     toml = '[parse.directive_presets.note]\nbase = "note"\noptions = { class = "d" }\n'
     tmp_path.mkdir(exist_ok=True)
-    (tmp_path / "conf.py").write_text(conf, encoding="utf-8")
-    (tmp_path / "ubproject.toml").write_text(toml, encoding="utf-8")
+    (tmp_path / "conf.py").write_text(conf, encoding="utf-8", newline="")
+    (tmp_path / "ubproject.toml").write_text(toml, encoding="utf-8", newline="")
     (tmp_path / "index.rst").write_text(
-        "Case\n====\n\n.. note::\n\n   Body.\n", encoding="utf-8"
+        "Case\n====\n\n.. note::\n\n   Body.\n", encoding="utf-8", newline=""
     )
     app = make_app("needs", srcdir=tmp_path, freshenv=True)
     app.build()
@@ -130,12 +132,12 @@ def test_a_build_without_presets_does_not_see_a_previous_builds(
         + CONF_PY
         + "extensions = [*extensions, 'late']\n"
     )
-    (first / "conf.py").write_text(conf, encoding="utf-8")
+    (first / "conf.py").write_text(conf, encoding="utf-8", newline="")
     (first / "ubproject.toml").write_text(
         '[parse.directive_presets.note]\nbase = "note"\noptions = { class = "d" }\n',
         encoding="utf-8",
     )
-    (first / "index.rst").write_text("Case\n====\n", encoding="utf-8")
+    (first / "index.rst").write_text("Case\n====\n", encoding="utf-8", newline="")
     app = make_app("needs", srcdir=first, freshenv=True)
     app.build()
     assert [w for w in build_warnings(app) if "preset_base_replaced" in w]
