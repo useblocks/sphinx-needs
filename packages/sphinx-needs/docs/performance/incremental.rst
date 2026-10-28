@@ -24,6 +24,9 @@ so when a need changes, Sphinx-Needs has Sphinx re-write (not re-read) every pag
     and ``check_linked_values`` and a ``calc_sum`` with ``links_only`` read the needs it links to;
     a back-link field (``<link type>_back``) is written by the needs linking to the need it is read on,
     so ``copy("links_back")`` reads the needs linking to its own need, and with a need id, those linking to that need;
+    the other fields the needs decide when they are resolved -- ``has_dead_links``, ``has_forbidden_dead_links``,
+    the constraint results, ``modifications`` and ``is_modified``, ``parts`` -- are taken to read every need
+    wherever they are read, by a call, a rule or a filter;
     any other call (a function of your own, a ``filter`` argument, ``copy`` whose need id is a ``need.<field>``)
     may read any need, so its need counts as changed on every change;
   - a :ref:`derive rule <needs_derive>` reads the needs it links to (``over`` a link type,
@@ -39,11 +42,11 @@ so when a need changes, Sphinx-Needs has Sphinx re-write (not re-read) every pag
 
 A need *changes* when anything the document gives it changes: a field, a link, its content.
 A need that only *moved* -- lines added or removed above it in its document, so that only its line numbers
-(``lineno``, ``lineno_content``) differ -- re-writes the views alone, which may show a line number (a needtable column),
+(``lineno``, ``lineno_content``) differ -- re-writes the views and the pages whose need roles name it,
+either of which may show a line number (a needtable column, a role's text or :ref:`needs_role_need_template`),
 but only when nothing else in the project can read one:
 no computed value (a call, a variant, a derive rule, on a need or set by a needextend) that names a line number
-or may read any field, no needextend filter, link condition or constraint naming one,
-and neither the ``:need:`` role's template (:ref:`needs_role_need_template`) nor a layout naming one.
+or may read any field, no needextend filter, link condition or constraint naming one, and no layout naming one.
 If anything might, a moved need counts as changed and the rules above apply.
 An edit that changes no need, such as a paragraph of prose below the needs, re-writes no other page.
 
