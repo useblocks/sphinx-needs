@@ -29,8 +29,10 @@ When something changed, the pages re-written are:
 - the pages of the needs linking to them, which show their titles;
 - the pages whose need roles name any of those needs.
 
-A need that changed in its line numbers alone re-writes the views alone; an edit that
-changes no need, prose say, nothing more. Every need-relevant page is re-written when a
+A need that changed in its line numbers alone re-writes the views alone, unless a computed
+value or a needextend filter of the project reads a line number (``_LOCATION_FIELDS``),
+when it is a changed need; an edit that changes no need, prose say, nothing more. A
+back-link field read by a call or a rule is read as the needs linking to that need. Every need-relevant page is re-written when a
 changed ``needextend`` has a filter, on every change in a project with links computed to
 needs not named before the needs are resolved (a dynamic function in a link field or in
 an extend's links, a ``links`` rule, a ``content_links`` rule with ``from``) or with an

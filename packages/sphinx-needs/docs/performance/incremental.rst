@@ -18,11 +18,13 @@ so when a need changes, Sphinx-Needs has Sphinx re-write (not re-read) every pag
     is read by its arguments: ``copy`` of the need's own field reads no other need,
     ``copy`` with a need id reads that need,
     and ``check_linked_values`` and a ``calc_sum`` with ``links_only`` read the needs it links to;
-    any other call (a function of your own, a ``filter`` argument) may read any need,
-    so its need counts as changed on every change;
+    a back-link field (``<link type>_back``) is written by the needs linking to the need it is read on,
+    so ``copy("links_back")`` reads the needs linking to its own need, and with a need id, those linking to that need;
+    any other call (a function of your own, a ``filter`` argument, ``copy`` whose need id is a ``need.<field>``)
+    may read any need, so its need counts as changed on every change;
   - a :ref:`derive rule <needs_derive>` reads the needs it links to (``over`` a link type,
     including the links a needextend adds), those linking to it (``over`` a ``<link type>_back``),
-    or the need ``from`` names;
+    or the need ``from`` names, back links read as above;
     a rule reading needs it does not name (a ``join``, a ``transitive`` rule, a ``where`` of ``content_links``)
     counts on every change;
 
@@ -33,7 +35,10 @@ so when a need changes, Sphinx-Needs has Sphinx re-write (not re-read) every pag
 
 A need *changes* when anything the document gives it changes: a field, a link, its content.
 A need that only *moved* -- lines added or removed above it in its document, so that only its line numbers differ --
-re-writes the views alone, as a view is the one place a line number shows.
+re-writes the views alone, which may show a line number (a needtable column),
+unless a dynamic function, a derive rule or a needextend's filter of the project reads one
+(``lineno`` or ``lineno_content``, or may: a function of your own, a filter naming ``lineno``);
+then a moved need counts as changed.
 An edit that changes no need, such as a paragraph of prose below the needs, re-writes no other page.
 
 Some needs are only known once the needs are resolved.
