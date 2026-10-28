@@ -18,9 +18,9 @@ Bug fixes
   The needs of every document re-read are compared, as read, with what that document gave before; on a
   change, the pages showing it are re-written, never re-read. An edit that changes no need, such as prose
   below the needs, re-writes nothing more, and one that only moves needs (lines added above them) re-writes
-  the views alone, unless a computed value reads a line number. A dynamic function is read by its
-  arguments, so ``copy`` of a need's own field does not make its need depend on others (a back-link field
-  does: other needs write it). A changed ``needextend`` with a filter re-writes every need-relevant page,
+  the views alone, unless anything in the project may read a line number. A dynamic function is read by
+  its arguments, so ``copy`` of a need's own field does not make its need depend on others (a back-link
+  field does: other needs write it); a value of any other shape, a variant say, is taken to read every need. A changed ``needextend`` with a filter re-writes every need-relevant page,
   as does every change in a project whose needs or extends link to needs they do not name before the needs
   are resolved, or with a ``needextend`` with a filter whose dynamic function reads needs it does not name,
   and so does every change of a need that a ``needextend`` with a filter links to or copies. A view without

@@ -12,7 +12,11 @@ so when a need changes, Sphinx-Needs has Sphinx re-write (not re-read) every pag
   or a ``:need_count:`` or ``:ndf:`` role,
   since which needs a filter selects is only known once the page is written;
 - the pages of the needs that changed, and of those a changed :ref:`needextend` names by its id;
-- the pages of the needs computing a value from them, and so on along the chain:
+- the pages of the needs computing a value from them, and so on along the chain.
+  What a computed value reads is decided from what is written, and only a shape known here is read narrowly;
+  anything else -- a variant (``<<…>>``), a function of your own, a filter that names ``needs``,
+  a kind of rule or call not listed below -- is taken to read every need,
+  so it errs toward re-writing a page, never toward leaving one stale:
 
   - a :ref:`dynamic function <dynamic_functions>`, written in the need or set on it by a needextend by id,
     is read by its arguments: ``copy`` of the need's own field reads no other need,
@@ -34,11 +38,13 @@ so when a need changes, Sphinx-Needs has Sphinx re-write (not re-read) every pag
 - the pages whose :ref:`need roles <role_need>` (``:need:``, ``:need_incoming:``, ``:need_outgoing:``) name any of these.
 
 A need *changes* when anything the document gives it changes: a field, a link, its content.
-A need that only *moved* -- lines added or removed above it in its document, so that only its line numbers differ --
-re-writes the views alone, which may show a line number (a needtable column),
-unless a dynamic function, a derive rule or a needextend's filter of the project reads one
-(``lineno`` or ``lineno_content``, or may: a function of your own, a filter naming ``lineno``);
-then a moved need counts as changed.
+A need that only *moved* -- lines added or removed above it in its document, so that only its line numbers
+(``lineno``, ``lineno_content``) differ -- re-writes the views alone, which may show a line number (a needtable column),
+but only when nothing else in the project can read one:
+no computed value (a call, a variant, a derive rule, on a need or set by a needextend) that names a line number
+or may read any field, no needextend filter, link condition or constraint naming one,
+and neither the ``:need:`` role's template (:ref:`needs_role_need_template`) nor a layout naming one.
+If anything might, a moved need counts as changed and the rules above apply.
 An edit that changes no need, such as a paragraph of prose below the needs, re-writes no other page.
 
 Some needs are only known once the needs are resolved.
