@@ -268,9 +268,25 @@ _CPP_DECLARATOR_WRAPPERS = {
 }
 
 
+def _cpp_operator_cast(node: TreeSitterNode) -> TreeSitterNode | None:
+    """The ``operator_cast`` a conversion operator's declarator is, or ends in
+    (``operator bool() const``, ``ns::W::operator bool() const``)."""
+    declarator = node.child_by_field_name("declarator")
+    while declarator is not None and declarator.type == "qualified_identifier":
+        declarator = declarator.child_by_field_name("name")
+    return (
+        declarator
+        if declarator is not None and declarator.type == "operator_cast"
+        else None
+    )
+
+
 def _cpp_declares_function(node: TreeSitterNode) -> bool:
     """The declarator chain reaches a function declarator: ``int f(int);``, not the
-    variable ``int x;`` nor the function pointer ``int (*fp)(int);``."""
+    variable ``int x;`` nor the function pointer ``int (*fp)(int);``. A conversion
+    operator (``operator bool() const;``) declares a function too."""
+    if _cpp_operator_cast(node) is not None:
+        return True
     declarator = node.child_by_field_name("declarator")
     for _ in range(8):
         if declarator is None:
@@ -338,6 +354,20 @@ TRIVIA_TYPES: dict[CommentType, frozenset[str]] = {
     CommentType.cpp: frozenset({"attribute_declaration"}),
 }
 
+# The node kinds that open an entity on a row before a comment -- an attribute, a
+# decorator, a template header -- so a comment after one on its row is not trailing
+# code: the item they belong to follows.
+ENTITY_HEAD_TYPES = frozenset(
+    {
+        "decorator",
+        "template_parameter_list",
+        "attribute_list",
+        "attribute_declaration",
+        "attribute_item",
+        "inner_attribute_item",
+    }
+)
+
 # The node kinds an entity can be wrapped in, and where the wrapped node is: a field
 # name, or ``None`` for the last named child that is no comment. The entity is the
 # wrapped node, so a decorated or templated definition's lines exclude its decorators
@@ -366,6 +396,11 @@ def is_entity(node: TreeSitterNode, comment_type: CommentType) -> bool:
 def is_trivia(node: TreeSitterNode, comment_type: CommentType) -> bool:
     """Whether ``node`` may stand between a leading marker and its entity."""
     return node.type in COMMENT_TYPES or node.type in TRIVIA_TYPES.get(comment_type, ())
+
+
+def is_wrapper(node: TreeSitterNode, comment_type: CommentType) -> bool:
+    """Whether ``node`` can wrap an entity (see :data:`WRAPPER_TYPES`)."""
+    return node.type in WRAPPER_TYPES.get(comment_type, {})
 
 
 def unwrap_entity(
@@ -546,17 +581,66 @@ def cpp_function_declarator(node: TreeSitterNode) -> TreeSitterNode | None:
     return None
 
 
+# What may stand between a class member and its class body: a member template's
+# header, a preprocessor conditional.
+_CPP_MEMBER_WRAPPERS = frozenset(
+    {
+        "template_declaration",
+        "preproc_if",
+        "preproc_ifdef",
+        "preproc_elif",
+        "preproc_elifdef",
+        "preproc_else",
+    }
+)
+
+
 def _cpp_in_class(node: TreeSitterNode) -> bool:
-    """A direct member of a class body (a member template counts)."""
+    """A direct member of a class body (a member template, or a member inside
+    ``#if`` / ``#else``, counts)."""
     parent = node.parent
-    while parent is not None and parent.type == "template_declaration":
+    while parent is not None and parent.type in _CPP_MEMBER_WRAPPERS:
         parent = parent.parent
     return parent is not None and parent.type == "field_declaration_list"
+
+
+def _cpp_defined_by_macro(node: TreeSitterNode) -> bool:
+    """A function a macro defines (``TEST(Suite, Name) {...}``): a definition with no
+    return type, outside a class, whose declarator is a plain identifier. The function
+    the compiler sees is the macro's expansion, which the syntax cannot name."""
+    if node.type != "function_definition" or node.child_by_field_name("type"):
+        return False
+    if _cpp_in_class(node):
+        return False
+    declarator = cpp_function_declarator(node)
+    inner = (
+        declarator.child_by_field_name("declarator") if declarator is not None else None
+    )
+    return inner is not None and inner.type == "identifier"
+
+
+def _cpp_conversion_name(node: TreeSitterNode, cast: TreeSitterNode) -> str:
+    """``ns::W::operator bool``: the qualifier written before the ``operator_cast``,
+    then ``operator`` and its target type."""
+    declarator = node.child_by_field_name("declarator")
+    head = ""
+    if declarator is not None and declarator.text:
+        written = declarator.text[: cast.start_byte - declarator.start_byte]
+        head = written.decode("utf-8", errors="replace")
+    target = _squeeze(_text(cast.child_by_field_name("type")))
+    return _cpp_name(head, _cpp_templated(node)) + "operator " + target
 
 
 def _cpp_describe(node: TreeSitterNode) -> EntityName | None:
     prefix = _cpp_containers(node)
     if node.type in ("function_definition", "declaration", "field_declaration"):
+        cast = _cpp_operator_cast(node)
+        if cast is not None:
+            return EntityName(
+                "operator", "::".join([*prefix, _cpp_conversion_name(node, cast)])
+            )
+        if _cpp_defined_by_macro(node):
+            return None
         declarator = cpp_function_declarator(node)
         inner = (
             declarator.child_by_field_name("declarator")
@@ -663,12 +747,23 @@ def _rust_type(node: TreeSitterNode | None, modules: list[str]) -> str:
     return text
 
 
+# The self types rustc prints without brackets in an inherent impl's path: a path
+# (``Widget``, ``a::Widget``, ``Widget<T>``) or a primitive.
+_RUST_PATH_TYPES = frozenset(
+    {"type_identifier", "generic_type", "scoped_type_identifier", "primitive_type"}
+)
+
+
 def _rust_impl_segment(impl: TreeSitterNode) -> str:
-    """``Widget`` for an inherent impl, ``<Widget as Shape>`` for a trait impl."""
+    """``Widget`` for an inherent impl, ``<dyn Shape>`` for an inherent impl of a type
+    that is no path, ``<Widget as Shape>`` for a trait impl."""
     modules = _rust_modules(impl)
-    self_type = _rust_type(impl.child_by_field_name("type"), modules)
+    self_node = impl.child_by_field_name("type")
+    self_type = _rust_type(self_node, modules)
     trait = impl.child_by_field_name("trait")
     if trait is None:
+        if self_node is not None and self_node.type not in _RUST_PATH_TYPES:
+            return f"<{self_type}>"
         return self_type
     return f"<{self_type} as {_rust_type(trait, modules)}>"
 
@@ -685,15 +780,18 @@ def _rust_describe(node: TreeSitterNode) -> EntityName | None:
     functions: list[str] = []
     parent = node.parent
     while parent is not None:
+        # a function directly in an impl or a trait is a method; one nested in a
+        # method is a function
+        method = is_fn and not functions
         if parent.type == "impl_item":
             return EntityName(
-                "method" if is_fn else kind,
+                "method" if method else kind,
                 "::".join([_rust_impl_segment(parent), *reversed(functions), own]),
             )
         if parent.type == "trait_item":
             trait = [*_rust_modules(parent), _text(parent.child_by_field_name("name"))]
             return EntityName(
-                "method" if is_fn else kind,
+                "method" if method else kind,
                 "::".join([*trait, *reversed(functions), own]),
             )
         if parent.type == "function_item":

@@ -1,0 +1,95 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 60
+      }
+    },
+    "tagged_scope": "explicit operator bool() const;",
+    "scope": {
+      "kind": "declaration",
+      "start": 5,
+      "end": 5,
+      "entity_kind": "operator",
+      "qualified_name": "ns::W::operator bool",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "In-class conversion declaration",
+      "id": "IMPL_R_CONV_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 8
+      },
+      "end": {
+        "row": 5,
+        "column": 59
+      }
+    },
+    "tagged_scope": "operator int() const { return 0; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 7,
+      "end": 7,
+      "entity_kind": "operator",
+      "qualified_name": "ns::W::operator int",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "In-class conversion definition",
+      "id": "IMPL_R_CONV_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 10,
+        "column": 4
+      },
+      "end": {
+        "row": 10,
+        "column": 47
+      }
+    },
+    "tagged_scope": "ns::W::operator bool() const { return true; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 12,
+      "end": 12,
+      "entity_kind": "operator",
+      "qualified_name": "ns::W::operator bool",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Out-of-line conversion",
+      "id": "IMPL_R_CONV_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

@@ -1,0 +1,64 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 52
+      }
+    },
+    "tagged_scope": "pub fn m(&self) {}",
+    "scope": {
+      "kind": "function_item",
+      "start": 5,
+      "end": 5,
+      "entity_kind": "method",
+      "qualified_name": "<dyn Tr>::m",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Method on a trait object",
+      "id": "IMPL_R_RSN_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 11,
+        "column": 12
+      },
+      "end": {
+        "row": 11,
+        "column": 50
+      }
+    },
+    "tagged_scope": "fn helper() {}",
+    "scope": {
+      "kind": "function_item",
+      "start": 13,
+      "end": 13,
+      "entity_kind": "function",
+      "qualified_name": "W::m::helper",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Helper in a method",
+      "id": "IMPL_R_RSN_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  }
+]

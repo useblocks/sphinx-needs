@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 62
+      }
+    },
+    "tagged_scope": "fn f()\n// @Between the signature and the block, IMPL_R_RS_BLOCK, impl\n{\n    fn inner() {}\n}",
+    "scope": {
+      "kind": "function_item",
+      "start": 1,
+      "end": 5,
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Between the signature and the block",
+      "id": "IMPL_R_RS_BLOCK",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  }
+]

@@ -1,0 +1,95 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 12
+      },
+      "end": {
+        "row": 0,
+        "column": 52
+      }
+    },
+    "tagged_scope": "fn t() {}",
+    "scope": {
+      "kind": "function_item",
+      "start": 2,
+      "end": 2,
+      "entity_kind": "function",
+      "qualified_name": "t",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "After an attribute",
+      "id": "IMPL_R_TA_RS_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 16
+      },
+      "end": {
+        "row": 5,
+        "column": 68
+      }
+    },
+    "tagged_scope": "fn t2() {}",
+    "scope": {
+      "kind": "function_item",
+      "start": 7,
+      "end": 7,
+      "entity_kind": "function",
+      "qualified_name": "tests::t2",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "After an attribute in a module",
+      "id": "IMPL_R_TA_RS_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 12,
+        "column": 18
+      },
+      "end": {
+        "row": 12,
+        "column": 69
+      }
+    },
+    "tagged_scope": "fn f(&self) {}",
+    "scope": {
+      "kind": "function_item",
+      "start": 14,
+      "end": 14,
+      "entity_kind": "method",
+      "qualified_name": "W::f",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "After an attribute in an impl",
+      "id": "IMPL_R_TA_RS_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  }
+]

@@ -164,7 +164,7 @@ def _describe(
             "impl Widget { fn new() -> Self { fn helper() {} Widget } }",
             "function_item",
             1,
-            EntityName("method", "Widget::new::helper"),
+            EntityName("function", "Widget::new::helper"),
             id="rust-function-in-inherent-method",
         ),
         pytest.param(

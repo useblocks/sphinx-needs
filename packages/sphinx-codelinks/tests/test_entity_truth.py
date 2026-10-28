@@ -48,16 +48,28 @@ def _scope(item: dict[str, Any]) -> dict[str, Any] | None:
     return item["scope"]
 
 
+# The ``scope`` key each truth key is compared with.
+_TRUTH_KEYS = {
+    "node_kind": "kind",
+    "entity_kind": "entity_kind",
+    "qualified_name": "qualified_name",
+    "start": "start",
+    "mechanism": "mechanism",
+}
+
+
 def _difference(scope: dict[str, Any] | None, entry: dict[str, Any]) -> str | None:
-    """How ``scope`` differs from the truth ``entry``, or ``None`` if it matches."""
-    if entry["entity_kind"] is None:
+    """How ``scope`` differs from the truth ``entry``, or ``None`` if it matches.
+
+    An entry with no ``entity_kind`` expects no entity, unless it names the
+    ``node_kind`` bound: an entity the syntax cannot name.
+    """
+    if entry["entity_kind"] is None and "node_kind" not in entry:
         return None if scope is None else f"expected no entity, got {scope}"
     if scope is None:
         return "expected an entity, got none"
     expected = {
-        key: entry[key]
-        for key in ("entity_kind", "qualified_name", "start", "mechanism")
-        if key in entry
+        scope_key: entry[key] for key, scope_key in _TRUTH_KEYS.items() if key in entry
     }
     got = {key: scope[key] for key in expected}
     return None if got == expected else f"expected {expected}, got {got}"

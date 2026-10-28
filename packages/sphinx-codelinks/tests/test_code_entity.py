@@ -141,6 +141,62 @@ def test_a_user_declared_field_of_the_same_name_warns(
 
 
 @pytest.mark.parametrize(
+    ("name", "schema"),
+    [
+        pytest.param("code_entity_lines", '{"type": "string"}', id="lines"),
+        pytest.param(
+            "code_entity_lines",
+            '{"type": "array", "items": {"type": "string"}}',
+            id="lines-items",
+        ),
+        pytest.param("code_entity", '{"type": "integer"}', id="name"),
+    ],
+)
+def test_a_field_declared_with_another_type_gets_no_value(
+    tmp_path: Path, make_app: _MakeApp, name: str, schema: str
+) -> None:
+    """A field the user declares with another type keeps that declaration (and is
+    warned about): the needs are still created, without a value for that field only,
+    rather than refused for a value the field cannot take."""
+    _project(tmp_path)
+    conf = tmp_path / "docs" / "conf.py"
+    conf.write_text(
+        conf.read_text(encoding="utf-8")
+        + f'needs_fields = {{"{name}": {{"schema": {schema}}}}}\n',
+        encoding="utf-8",
+    )
+    app = _build(tmp_path, make_app)
+
+    warnings = build_warnings(app)
+    assert any(f"codelinks registers {name!r}" in w for w in warnings), warnings
+    assert not any("could not be created" in w for w in warnings), warnings
+    entities = _entities(app)
+    expected = {
+        "IMPL_FN": {
+            "code_entity": "handler",
+            "code_entity_kind": "function",
+            "code_entity_lines": [2, 3],
+            "code_entity_mechanism": "leading",
+        },
+        "IMPL_ML": {
+            "code_entity": "decorated",
+            "code_entity_kind": "function",
+            "code_entity_lines": [10, 12],
+            "code_entity_mechanism": "leading",
+        },
+        "IMPL_METHOD": {
+            "code_entity": "Shape.area",
+            "code_entity_kind": "method",
+            "code_entity_lines": [17, 18],
+            "code_entity_mechanism": "leading",
+        },
+    }
+    for need_id, values in expected.items():
+        values.pop(name)
+        assert entities[need_id] == values, need_id
+
+
+@pytest.mark.parametrize(
     ("scope", "expected"),
     [
         pytest.param(None, {}, id="no-entity"),

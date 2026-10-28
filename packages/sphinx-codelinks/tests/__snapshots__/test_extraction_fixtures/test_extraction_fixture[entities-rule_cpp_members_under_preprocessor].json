@@ -1,0 +1,126 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 8
+      },
+      "end": {
+        "row": 4,
+        "column": 44
+      }
+    },
+    "tagged_scope": "W(int level);",
+    "scope": {
+      "kind": "declaration",
+      "start": 6,
+      "end": 6,
+      "entity_kind": "constructor",
+      "qualified_name": "ns::W::W",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Debug constructor",
+      "id": "IMPL_R_PP_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 8
+      },
+      "end": {
+        "row": 6,
+        "column": 43
+      }
+    },
+    "tagged_scope": "~W();",
+    "scope": {
+      "kind": "declaration",
+      "start": 8,
+      "end": 8,
+      "entity_kind": "destructor",
+      "qualified_name": "ns::W::~W",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Debug destructor",
+      "id": "IMPL_R_PP_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 8
+      },
+      "end": {
+        "row": 8,
+        "column": 37
+      }
+    },
+    "tagged_scope": "void dump() const {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 10,
+      "end": 10,
+      "entity_kind": "method",
+      "qualified_name": "ns::W::dump",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Debug dump",
+      "id": "IMPL_R_PP_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 11,
+        "column": 8
+      },
+      "end": {
+        "row": 11,
+        "column": 46
+      }
+    },
+    "tagged_scope": "W();",
+    "scope": {
+      "kind": "declaration",
+      "start": 13,
+      "end": 13,
+      "entity_kind": "constructor",
+      "qualified_name": "ns::W::W",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Release constructor",
+      "id": "IMPL_R_PP_4",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  }
+]

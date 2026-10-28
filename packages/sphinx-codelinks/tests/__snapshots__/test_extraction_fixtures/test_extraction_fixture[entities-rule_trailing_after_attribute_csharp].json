@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 15
+      },
+      "end": {
+        "row": 2,
+        "column": 53
+      }
+    },
+    "tagged_scope": "[Test] // @After an attribute, IMPL_R_TA_CS, impl\n    public void M() {}",
+    "scope": {
+      "kind": "method_declaration",
+      "start": 3,
+      "end": 4,
+      "entity_kind": "method",
+      "qualified_name": "C.M",
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "After an attribute",
+      "id": "IMPL_R_TA_CS",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "method_declaration"
+  }
+]

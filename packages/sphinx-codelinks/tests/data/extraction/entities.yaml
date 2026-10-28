@@ -11,11 +11,17 @@
 #                   function, a data member, a lambda, an out-of-line module file), so
 #                   the expected binding is the honest fallback given, the enclosing
 #                   entity or the file (``null``); ``none``: by rule, no entity at all
-#   entity_kind     the expected ``scope.entity_kind`` (``null``: ``scope`` is ``null``)
+#   entity_kind     the expected ``scope.entity_kind`` (``null``: ``scope`` is ``null``,
+#                   unless ``node_kind`` is given)
+#   node_kind       (optional) the expected ``scope.kind``, for an entity bound but not
+#                   named (``entity_kind`` and ``qualified_name`` both ``null``)
 #   qualified_name  the expected in-file name: the compiler's name without the module,
 #                   crate or package prefix, which the file's path decides
-#   start           the expected ``scope.start``: the first line of the definition
-#                   itself (decorators, attributes and a template header excluded)
+#   start           the expected ``scope.start``: the first line of the definition as
+#                   the grammar spans it -- a Rust attribute, a Python decorator, a
+#                   decorator on a TypeScript class member and a C++ template header
+#                   are outside it; a C# attribute list, a C++ attribute and a
+#                   decorator on a TypeScript class are inside it
 #   mechanism       (rule cases) the expected ``scope.mechanism``
 #   compiler        where the truth comes from, verbatim: the tool and its output, or
 #                   ``syntax-only`` and why no symbol exists
@@ -840,7 +846,7 @@ rule_file_header_no_blank_line:
     - {id: IMPL_R_HEADER_ADJ, outcome: exact, entity_kind: "function", qualified_name: "f", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
 
 rule_file_header_blank_line_rust:
-  # A Rust line comment's node ends on the next row; the blank line is still seen.
+  # Rust, a plain line comment, then a blank line: file level.
   lang: rust
   config: default
   extract: [oneline, need_refs]
@@ -1109,3 +1115,336 @@ rule_need_ids_per_mechanism:
     - {id: REQ_R_LEAD, outcome: exact, entity_kind: "function", qualified_name: "leading", start: 4, mechanism: leading, compiler: "syntax-only: rule case"}
     - {id: REQ_R_TRAIL, outcome: exact, entity_kind: "function", qualified_name: "trailing", start: 5, mechanism: trailing, compiler: "syntax-only: rule case"}
     - {id: REQ_R_ENCL, outcome: exact, entity_kind: "function", qualified_name: "enclosing", start: 6, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_trailing_after_attribute_rust:
+  # A marker after an attribute on its row is not trailing code: the attribute is trivia,
+  # so the marker leads the item the attribute belongs to, at the top level, in a module
+  # and in an impl.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #[test] // @After an attribute, IMPL_R_TA_RS_1, impl
+    fn t() {}
+
+    #[cfg(test)]
+    mod tests {
+        #[test] // @After an attribute in a module, IMPL_R_TA_RS_2, impl
+        fn t2() {}
+    }
+
+    struct W;
+
+    impl W {
+        #[inline] // @After an attribute in an impl, IMPL_R_TA_RS_3, impl
+        fn f(&self) {}
+    }
+  truth:
+    - {id: IMPL_R_TA_RS_1, outcome: exact, entity_kind: "function", qualified_name: "t", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_TA_RS_2, outcome: exact, entity_kind: "function", qualified_name: "tests::t2", start: 7, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_TA_RS_3, outcome: exact, entity_kind: "method", qualified_name: "W::f", start: 14, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_trailing_after_decorator_python:
+  # A marker after a decorator on its row belongs to the decorated definition: the
+  # grammar puts the comment inside the decorator, so it is that definition's, enclosing.
+  lang: python
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    import pytest
+
+
+    @pytest.mark.parametrize("x", [1, 2])  # @After a decorator, IMPL_R_TD_PY_1, impl
+    def test_f(x):
+        pass
+
+
+    class TestA:
+        @pytest.mark.slow  # @After a decorator in a class, IMPL_R_TD_PY_2, impl
+        def test_m(self):
+            pass
+  truth:
+    - {id: IMPL_R_TD_PY_1, outcome: exact, entity_kind: "function", qualified_name: "test_f", start: 5, mechanism: enclosing, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_TD_PY_2, outcome: exact, entity_kind: "method", qualified_name: "TestA.test_m", start: 11, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_trailing_after_decorator_ts:
+  # A marker after a decorator on its row belongs to the decorated member or class.
+  lang: typescript
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    class C {
+      @Input() // @After a decorator in a class, IMPL_R_TD_TS_1, impl
+      foo(): void {}
+    }
+
+    @Injectable() // @After a class decorator, IMPL_R_TD_TS_2, impl
+    class Service {}
+  truth:
+    - {id: IMPL_R_TD_TS_1, outcome: exact, entity_kind: "method", qualified_name: "C.foo", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_TD_TS_2, outcome: exact, entity_kind: "class", qualified_name: "Service", start: 6, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_trailing_after_template_header_cpp:
+  # A marker after a template header on its row leads the templated function.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    template <typename T> // @After a template header, IMPL_R_TT_CPP, impl
+    T id(T x) { return x; }
+  truth:
+    - {id: IMPL_R_TT_CPP, outcome: exact, entity_kind: "function", qualified_name: "id", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_trailing_after_attribute_csharp:
+  # A marker after an attribute list on its row belongs to the attributed method; the
+  # grammar puts the comment inside the method's declaration, so it is enclosing.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    class C
+    {
+        [Test] // @After an attribute, IMPL_R_TA_CS, impl
+        public void M() {}
+    }
+  truth:
+    - {id: IMPL_R_TA_CS, outcome: exact, entity_kind: "method", qualified_name: "C.M", start: 3, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_doc_comment_header_blank_line_rust:
+  # A declared doc comment is exempt from the file-header rule: rustc makes an outer
+  # ``///`` an attribute of the next item, blank lines or not.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /// @Documented across a blank line, IMPL_R_DOC_HDR_RS, impl
+
+    fn f() {}
+  truth:
+    - {id: IMPL_R_DOC_HDR_RS, outcome: exact, entity_kind: "function", qualified_name: "f", start: 3, mechanism: doc_comment, compiler: "rustc: an outer doc comment is a #[doc] attribute of the next item"}
+
+rule_doc_comment_header_blank_line_cpp:
+  # A declared doc comment is exempt from the file-header rule: Doxygen documents the
+  # next declaration with a ``/** */`` block, blank lines or not.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /** @Documented across a blank line, IMPL_R_DOC_HDR_CPP, impl */
+
+    void f();
+  truth:
+    - {id: IMPL_R_DOC_HDR_CPP, outcome: exact, entity_kind: "function", qualified_name: "f", start: 3, mechanism: doc_comment, compiler: "Doxygen: a /** */ block documents the next declaration"}
+
+rule_file_header_ends_in_doc_comment_rust:
+  # A plain marker in a header whose last comment is a ``///`` line, then a blank line,
+  # is file level: the doc line comment's node takes its line break, so it ends at
+  # column 0 of the next row, and the blank line is measured from the row before.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @Plain header marker, IMPL_R_HDR_DOC_LAST, impl
+    /// Documents f.
+
+    fn f() {}
+  truth:
+    - {id: IMPL_R_HDR_DOC_LAST, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+
+rule_rust_block_is_not_entered:
+  # Only Python's grammar puts a comment between a header and its body's first
+  # statement; in Rust a comment before a function's block is inside the function.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    fn f()
+    // @Between the signature and the block, IMPL_R_RS_BLOCK, impl
+    {
+        fn inner() {}
+    }
+  truth:
+    - {id: IMPL_R_RS_BLOCK, outcome: exact, entity_kind: "function", qualified_name: "f", start: 1, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_trailing_on_python_def_row:
+  # A marker after code on a definition's own row is trailing, though Python's grammar
+  # puts it inside the definition.
+  lang: python
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    def f():  # @On the def row, IMPL_R_TRAIL_DEF_PY, impl
+        pass
+  truth:
+    - {id: IMPL_R_TRAIL_DEF_PY, outcome: exact, entity_kind: "function", qualified_name: "f", start: 1, mechanism: trailing, compiler: "syntax-only: rule case"}
+
+rule_cpp_function_defining_macro:
+  # A macro that defines a function (a test framework's TEST) binds the definition, but
+  # the syntax cannot name it: the compiler's function is generated by the macro.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #include <gtest/gtest.h>
+
+    // @Login is rate limited, TEST_R_MACRO_1, test
+    TEST(LoginTest, RateLimited) {
+        EXPECT_TRUE(true);
+    }
+
+    // @Fixture test, TEST_R_MACRO_2, test
+    TEST_F(LoginFixture, Locks) {
+    }
+
+    // @Boost test case, TEST_R_MACRO_3, test
+    BOOST_AUTO_TEST_CASE(rate_limit) {
+    }
+  truth:
+    - {id: TEST_R_MACRO_1, outcome: fallback, node_kind: "function_definition", entity_kind: null, qualified_name: null, start: 4, mechanism: leading, compiler: "clang++ 18 nm -C: LoginTest_RateLimited_Test::TestBody() (macro-generated)"}
+    - {id: TEST_R_MACRO_2, outcome: fallback, node_kind: "function_definition", entity_kind: null, qualified_name: null, start: 9, mechanism: leading, compiler: "syntax-only: a fixture test's body, generated like TEST's"}
+    - {id: TEST_R_MACRO_3, outcome: fallback, node_kind: "function_definition", entity_kind: null, qualified_name: null, start: 13, mechanism: leading, compiler: "syntax-only: Boost.Test generates the test function"}
+
+rule_cpp_conversion_operator:
+  # A conversion operator is a function: declared in its class, defined in it, and
+  # defined out of line.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace ns {
+    class W {
+    public:
+        // @In-class conversion declaration, IMPL_R_CONV_1, impl
+        explicit operator bool() const;
+        // @In-class conversion definition, IMPL_R_CONV_2, impl
+        operator int() const { return 0; }
+    };
+    }
+
+    // @Out-of-line conversion, IMPL_R_CONV_3, impl
+    ns::W::operator bool() const { return true; }
+  truth:
+    - {id: IMPL_R_CONV_1, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator bool", start: 5, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator bool() const"}
+    - {id: IMPL_R_CONV_2, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator int", start: 7, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator int() const"}
+    - {id: IMPL_R_CONV_3, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator bool", start: 12, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator bool() const"}
+
+rule_cpp_members_under_preprocessor:
+  # Class members inside #if / #else are still members: constructor, destructor, method.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace ns {
+    class W {
+    public:
+    #if defined(DEBUG)
+        // @Debug constructor, IMPL_R_PP_1, impl
+        W(int level);
+        // @Debug destructor, IMPL_R_PP_2, impl
+        ~W();
+        // @Debug dump, IMPL_R_PP_3, impl
+        void dump() const {}
+    #else
+        // @Release constructor, IMPL_R_PP_4, impl
+        W();
+    #endif
+    };
+    }
+  truth:
+    - {id: IMPL_R_PP_1, outcome: exact, entity_kind: "constructor", qualified_name: "ns::W::W", start: 6, mechanism: leading, compiler: "clang++ 18 -DDEBUG nm -C: ns::W::W(int)"}
+    - {id: IMPL_R_PP_2, outcome: exact, entity_kind: "destructor", qualified_name: "ns::W::~W", start: 8, mechanism: leading, compiler: "clang++ 18 -DDEBUG nm -C: ns::W::~W()"}
+    - {id: IMPL_R_PP_3, outcome: exact, entity_kind: "method", qualified_name: "ns::W::dump", start: 10, mechanism: leading, compiler: "clang++ 18 -DDEBUG nm -C: ns::W::dump() const"}
+    - {id: IMPL_R_PP_4, outcome: exact, entity_kind: "constructor", qualified_name: "ns::W::W", start: 13, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::W()"}
+
+rule_rust_names_trait_object_impl_and_nested_fn:
+  # A non-path self type keeps its brackets, as rustc prints it; a function nested in a
+  # method is a function, named through the method.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    pub trait Tr {}
+
+    impl dyn Tr {
+        // @Method on a trait object, IMPL_R_RSN_1, impl
+        pub fn m(&self) {}
+    }
+
+    pub struct W;
+
+    impl W {
+        pub fn m(&self) {
+            // @Helper in a method, IMPL_R_RSN_2, impl
+            fn helper() {}
+            helper()
+        }
+    }
+  truth:
+    - {id: IMPL_R_RSN_1, outcome: exact, entity_kind: "method", qualified_name: "<dyn Tr>::m", start: 5, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <dyn t::Tr>::m"}
+    - {id: IMPL_R_RSN_2, outcome: exact, entity_kind: "function", qualified_name: "W::m::helper", start: 13, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::W>::m::helper"}
+
+rule_entity_lines_include_attributes_cpp:
+  # A C++ attribute on its own line is part of the declaration it precedes, so the
+  # entity's first line is the attribute's.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @An attributed function, IMPL_R_ATTR_LINES_CPP, impl
+    [[nodiscard]]
+    int checked();
+  truth:
+    - {id: IMPL_R_ATTR_LINES_CPP, outcome: exact, entity_kind: "function", qualified_name: "checked", start: 2, mechanism: leading, compiler: "syntax-only: the attribute is part of the declaration"}
+
+rule_entity_lines_include_attributes_csharp:
+  # A C# attribute list is part of the declaration it precedes, so the entity's first
+  # line is the attribute's.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    class C
+    {
+        // @An attributed method, IMPL_R_ATTR_LINES_CS, impl
+        [Obsolete]
+        public void M() {}
+    }
+  truth:
+    - {id: IMPL_R_ATTR_LINES_CS, outcome: exact, entity_kind: "method", qualified_name: "C.M", start: 4, mechanism: leading, compiler: "syntax-only: the attribute list is part of the declaration"}
+
+rule_csharp_primary_constructor_and_record_struct:
+  # C# 12 primary constructors and record structs parse as the declarations they are.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace Geo
+    {
+        // @A primary constructor, IMPL_R_CS12_1, impl
+        public class Point(int x, int y)
+        {
+            // @Distance, IMPL_R_CS12_2, impl
+            public double Distance() => System.Math.Sqrt(x * x + y * y);
+        }
+
+        // @A record struct, IMPL_R_CS12_3, impl
+        public record struct Pair(int A, int B);
+    }
+  truth:
+    - {id: IMPL_R_CS12_1, outcome: exact, entity_kind: "class", qualified_name: "Geo.Point", start: 4, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_CS12_2, outcome: exact, entity_kind: "method", qualified_name: "Geo.Point.Distance", start: 7, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_CS12_3, outcome: exact, entity_kind: "record", qualified_name: "Geo.Pair", start: 11, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_rust_unsafe_extern_block:
+  # A Rust 2024 ``unsafe extern`` block's functions are entities, in the enclosing
+  # module's namespace.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    unsafe extern "C" {
+        // @A foreign function, IMPL_R_RS24, impl
+        pub fn abs(x: i32) -> i32;
+    }
+  truth:
+    - {id: IMPL_R_RS24, outcome: exact, entity_kind: "function", qualified_name: "abs", start: 3, mechanism: leading, compiler: "rustc 1.97 (edition 2024): the foreign function abs"}

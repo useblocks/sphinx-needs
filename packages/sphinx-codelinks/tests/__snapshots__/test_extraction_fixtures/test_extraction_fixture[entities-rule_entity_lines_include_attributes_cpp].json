@@ -1,0 +1,33 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 55
+      }
+    },
+    "tagged_scope": "[[nodiscard]]\nint checked();",
+    "scope": {
+      "kind": "declaration",
+      "start": 2,
+      "end": 3,
+      "entity_kind": "function",
+      "qualified_name": "checked",
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "An attributed function",
+      "id": "IMPL_R_ATTR_LINES_CPP",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  }
+]
