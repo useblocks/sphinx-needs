@@ -124,7 +124,8 @@ marker, one-line or multi-line, in four fields:
 The fields are registered typed (a string, a string, an array of integers, a string) and nullable, with no default:
 a need whose marker is attached to no entity carries none of them, and a need without a name or a kind lacks that
 field. A need an ``@need-ids:`` reference names gets none: it may be referenced from many places. Declaring one of the
-four names in ``needs_fields`` as well warns (``codelinks.config``): codelinks registers it.
+four names in ``needs_fields`` as well warns (``codelinks.config``): codelinks registers it. A declaration of another
+type stands, and the needs get no value for that field (they are still created).
 
 The names come from the syntax alone and are best effort -- overloads share a name, and a free function defined
 with a namespace qualifier reads as a method -- which is why the option is off by default.

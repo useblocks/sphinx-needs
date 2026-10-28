@@ -67,14 +67,15 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
    }
 
 - ``kind`` -- the syntax node of the entity (tree-sitter's name for it);
-- ``start`` and ``end`` -- its first and last line, 1-based. The definition itself: a decorator, an attribute or a
-  template header above it is not part of it;
+- ``start`` and ``end`` -- its first and last line, 1-based, as the grammar spans the definition: a Rust attribute, a
+  Python decorator, a decorator on a TypeScript class member and a C++ template header above it are not part of it; a
+  C# attribute list, a C++ attribute and a decorator on a TypeScript class are;
 - ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
   ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,
   ``property``, ``event``, ``indexer`` or ``delegate``; in YAML and JSON ``key`` or ``item``;
 - ``qualified_name`` -- the entity's name within its file, qualified by the containers the file shows: ``ns::Widget::draw``
   in C++, ``Shape.area`` and ``outer.<locals>.inner`` in Python (its ``__qualname__``), ``Widget::new`` and
-  ``<Widget as Shape>::area`` in Rust, ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in
+  ``<Widget as Shape>::area`` (and ``<dyn Shape>::area`` for a type that is no path) in Rust, ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in
   TypeScript. No module, crate or package prefix: the file's path decides that. ``null`` in YAML and JSON, and for an
   entity without a name;
 - ``mechanism`` -- how the marker was attached: ``doc_comment`` (a documentation comment -- ``///``, ``//!``, ``/**``,
@@ -82,9 +83,12 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   entity), ``trailing`` (after code on the entity's own line) or ``enclosing`` (inside its body).
 
 ``scope`` is ``null`` exactly when ``tagged_scope`` is: the marker is attached to no entity (the file), and always
-under the libclang engine. The names are best effort, from the syntax alone: overloads share a name, and a free
-function defined with a namespace qualifier (``void ns::f() {}``) reads as a method. With :ref:`set_code_entity`, the
-needs ``src-trace`` creates carry the entity as fields.
+under the libclang engine. The names are best effort, from the syntax alone: overloads share a name, a free
+function defined with a namespace qualifier (``void ns::f() {}``) reads as a method, and a function a macro defines
+(``TEST(LoginTest, RateLimited) {...}``) is bound but not named, since the compiler's function is the macro's
+expansion. A class declared with an export macro (``class EXPORT_API Widget``) is misread by the grammar: it is bound
+without a name, or not at all. With :ref:`set_code_entity`, the needs ``src-trace`` creates carry the entity as
+fields.
 
 The rules
 ~~~~~~~~~
@@ -95,8 +99,13 @@ In this order:
 2. **A Python docstring** documents the function or class it is in.
 3. **A Rust inner doc comment** (``//!``, ``/*!``) documents what it is inside: the module, or the file.
 4. **A trailing marker** -- code before it on its line -- belongs to the entity on that line (a Doxygen ``///<`` after
-   a declaration is the classic case), else to the entity it is inside.
-5. **The first comment block of a file**, when a blank line separates it from the first item, belongs to the file.
+   a function declaration is the classic case; after a data member or an enumerator it belongs to the class), else to
+   the entity it is inside: ``trailing`` when that entity starts on the marker's line (``def f():  # @...``),
+   ``enclosing`` otherwise. An attribute, a decorator or a template header before the marker is not code: the marker
+   belongs to the item they precede.
+5. **The comments before a file's first item**, when a blank line separates the last of them from it, belong to the
+   file -- documentation comments (``///``, ``/** */``, ``/*!``) excepted: they document the next item, blank lines
+   or not, as rustc and Doxygen read them.
 6. **A leading marker** belongs to the entity right after it, when only *trivia* stands between: other comments,
    blank lines, attributes (Rust ``#[...]``, C++ ``[[...]]``) and decorators (TypeScript). The entity is looked for
    through what wraps it: a Python decorator, a C++ ``template <...>`` header or ``extern "C"``, a TypeScript
@@ -104,15 +113,17 @@ In this order:
    first line's entity, if it is one.
 7. **Otherwise**, the entity the marker is inside, if any.
 
-Anything else between a leading marker and an entity -- a statement, a variable, a macro call -- breaks the
-attachment: the marker belongs to the entity it is inside, or to the file. A marker is never attached across code.
+Anything else between a leading marker and an entity -- a statement, a variable, a macro call, a preprocessor
+directive (``#include``, ``#define``, ``#pragma``, ``#if``) -- breaks the attachment: the marker belongs to the entity it
+is inside, or to the file. A marker is never attached across code.
 
 What counts as an entity
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-- **C and C++**: functions, prototypes and in-class method declarations (not a function pointer, nor a local that
-  merely parses like a prototype), classes, structs, unions and enums with a body (not a forward declaration),
-  namespaces.
+- **C and C++**: functions, prototypes, in-class method declarations and conversion operators (not a function
+  pointer, nor a local that merely parses like a prototype), classes, structs, unions and enums with a body (not a
+  forward declaration), namespaces. A class member inside ``#if`` / ``#else`` is still a member (a constructor, a
+  destructor, a method).
 - **Python**: functions and classes.
 - **Rust**: functions, required trait methods, structs, enums, unions, traits, impl blocks, modules, type aliases,
   ``macro_rules!`` definitions.
@@ -124,8 +135,8 @@ What counts as an entity
   function or a class (one written with ``declare`` always does).
 - **Bash**: functions.
 
-Data members, variables, lambdas bound to a name and macro invocations are not entities: a marker above one is
-attached to the entity it is inside, or to the file.
+Data members, variables, lambdas bound to a name and macro invocations are not entities, nor, yet, a C
+``typedef struct {...} T;``: a marker above one is attached to the entity it is inside, or to the file.
 
 Extraction Examples
 -------------------
