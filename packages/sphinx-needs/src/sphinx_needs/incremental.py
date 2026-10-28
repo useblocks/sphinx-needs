@@ -133,6 +133,8 @@ OWN_CORE_FIELDS: Final = frozenset(
         "sections",
         "signature",
         "status",
+        # a failed constraint writes it, but only after every call and rule has run,
+        # and the pages showing it are re-written as the need is a link target
         "style",
         "tags",
         "template",
