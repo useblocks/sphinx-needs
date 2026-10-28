@@ -74,25 +74,30 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
 - ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
   ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,
   ``property``, ``event``, ``indexer`` or ``delegate``; in YAML and JSON ``key`` or ``item``;
-- ``qualified_name`` -- the entity's name within its file, qualified by the containers the file shows: ``ns::Widget::draw``
-  in C++, ``Shape.area`` and ``outer.<locals>.inner`` in Python (its ``__qualname__``), ``Widget::new`` and
-  ``<Widget as Shape>::area`` (and ``<dyn Shape>::area`` for a type that is no path) in Rust, ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in
-  TypeScript. No module, crate or package prefix: the file's path decides that. ``null`` in YAML and JSON, and for an
-  entity without a name;
+- ``qualified_name`` -- the entity's name within its file, qualified by the containers the file shows:
+  ``ns::Widget::draw`` in C++, ``Shape.area`` and ``outer.<locals>.inner`` in Python (its ``__qualname__``),
+  ``Widget::new`` and ``<Widget as Shape>::area`` (and ``<dyn Shape>::area`` for a type that is no path) in Rust,
+  ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in TypeScript.
+  No module, crate or package prefix: the file's path decides that.
+  ``null`` in YAML and JSON, and for an entity without a name;
 - ``mechanism`` -- how the marker was attached: ``doc_comment`` (a documentation comment -- ``///``, ``//!``, ``/**``,
-  ``/*!``, a C# ``///``, a JSDoc ``/**`` -- or a Python docstring), ``leading`` (a comment on the lines before the
-  entity, or after an attribute, a decorator or a template header in its head), ``trailing`` (after code on the
-  entity's own line) or ``enclosing`` (inside its body).
+  ``/*!``, a C# ``///``, a JSDoc ``/**`` -- or a Python docstring),
+  ``leading`` (a comment on the lines before the entity, or directly inside or right after an attribute, a decorator
+  or a template header in its head), ``trailing`` (after code on the entity's own line) or ``enclosing`` (inside its
+  body).
 
 ``scope`` is ``null`` exactly when ``tagged_scope`` is: the marker is attached to no entity (the file), and always
-under the libclang engine. The names are best effort, from the syntax alone: overloads share a name, a free
-function defined with a namespace qualifier (``void ns::f() {}``) reads as a method, and a function a macro defines
-(``TEST(LoginTest, RateLimited) {...}``) is bound but not named, since the compiler's function is the macro's
-expansion (a macro whose arguments are not names, such as Catch2's ``TEST_CASE("…")``, may not be bound at all). A
-class declared with an export macro (``class EXPORT_API Widget``) is misread by the grammar: it is bound without a
-name, or not at all. In Rust, an ``impl`` inside a function is named without the function's path, and an ``impl W``
-for a ``W`` brought in with ``use`` is named in the module the ``impl`` is written in. With :ref:`set_code_entity`, the needs ``src-trace`` creates carry the entity as
-fields.
+under the libclang engine.
+The names are best effort, from the syntax alone: overloads share a name,
+a free function defined with a namespace qualifier (``void ns::f() {}``) reads as a method,
+and a function a macro defines (``TEST(LoginTest, RateLimited) {...}``) is bound but not named,
+since the compiler's function is the macro's expansion
+(a macro whose arguments are not names, such as Catch2's ``TEST_CASE("…")``, may not be bound at all).
+A class declared with an export macro (``class EXPORT_API Widget``) is misread by the grammar:
+it is bound without a name, or not at all.
+In Rust, an ``impl`` inside a function is named without the function's path,
+and an ``impl W`` for a ``W`` brought in with ``use`` is named in the module the ``impl`` is written in.
+With :ref:`set_code_entity`, the needs ``src-trace`` creates carry the entity as fields.
 
 The rules
 ~~~~~~~~~
@@ -110,18 +115,25 @@ In this order:
    what it is inside).
 5. **The comments before a file's first item**, when a blank line separates the last of them from it, belong to the
    file -- documentation comments (``///``, ``/** */``, ``/*!``) excepted: they document the next item, blank lines
-   or not, as rustc and Doxygen read them, unless they say they document the file (``@file``, ``\file``,
-   ``@fileoverview``, ``@packageDocumentation``, ``@module``).
+   or not, as rustc and Doxygen read them, unless the comment holding the marker says it documents the file
+   (``@file``, ``\file``, ``@fileoverview``, ``@packageDocumentation`` or ``@module``, as a whole word at the start
+   of the comment or after a space, ``*``, ``/`` or ``!``).
+   That exception holds only for the comments before the first item: a ``@file`` block after ``#pragma once`` or
+   inside an include guard documents the next item like any documentation comment, and so does a ``///`` line whose
+   ``\file`` is on another line of the run.
 6. **A leading marker** belongs to the entity right after it, when only *trivia* stands between: other comments,
    blank lines, attributes (Rust ``#[...]``, C++ ``[[...]]``) and decorators (TypeScript). The entity is looked for
    through what wraps it: a Python decorator, a C++ ``template <...>`` header or ``extern "C"``, a TypeScript
    ``export`` or ``declare``. In Python, a comment between ``def f():`` and the first line of its body belongs to that
    first line's entity, if it is one.
-7. **Otherwise**, the entity the marker is inside, if any.
+7. **Otherwise**, the entity the marker is inside, if any: ``leading`` when the marker is directly inside, or right
+   after, an attribute, a decorator or a template header the entity owns (its head; a comment nested deeper, in such a
+   head's argument list, is not), ``trailing`` when it trails code on the entity's first line, ``enclosing``
+   otherwise.
 
-Anything else between a leading marker and an entity -- a statement, a variable, a macro call, a preprocessor
-directive (``#include``, ``#define``, ``#pragma``, ``#if``) -- breaks the attachment: the marker belongs to the entity it
-is inside, or to the file. A marker is never attached across code.
+Anything else between a leading marker and an entity -- a statement, a variable, a macro call,
+a preprocessor directive (``#include``, ``#define``, ``#pragma``, ``#if``) -- breaks the attachment:
+the marker belongs to the entity it is inside, or to the file. A marker is never attached across code.
 
 What counts as an entity
 ~~~~~~~~~~~~~~~~~~~~~~~~

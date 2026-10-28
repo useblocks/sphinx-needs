@@ -38,9 +38,11 @@ Fixes
   entity right after it when only comments, blank lines, attributes and decorators stand between; a trailing marker
   to the entity on its line (an attribute, a decorator or a template header before it is not code); a Rust ``//!``
   comment to what it is inside; the comments before a file's first item, a blank line after the last, to the file,
-  unless it is a documentation comment, which documents the next item (one with ``@file`` or ``@fileoverview`` keeps
-  the file); anything else to the entity it is inside, or the file. More declarations are entities: C++ prototypes, in-class method declarations, conversion operators and
-  namespaces, Rust required trait methods, C# constructors, structs, records and interfaces, Go interface methods.
+  unless it is a documentation comment, which documents the next item
+  (one with ``@file`` or ``@fileoverview`` keeps the file);
+  anything else to the entity it is inside, or the file.
+  More declarations are entities: C++ prototypes, in-class method declarations, conversion operators and namespaces,
+  Rust required trait methods, C# constructors, structs, records and interfaces, Go interface methods.
   See :ref:`attachment`.
 
   **Existing markers re-bind**, which changes ``tagged_scope`` (and the new ``scope``) in ``marked_content.json``;
