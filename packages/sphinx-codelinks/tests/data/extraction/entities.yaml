@@ -1646,3 +1646,18 @@ rule_head_before_trailing:
     }
   truth:
     - {id: IMPL_R_HEAD_ORDER, outcome: exact, entity_kind: "method", qualified_name: "A.M", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_file_tag_non_ascii_letter_ends_the_word:
+  # The word ends at the first character that is not an ASCII letter, digit or ``_``,
+  # even a non-ASCII letter: ``@file`` followed by ``é`` is still ``@file``, and the
+  # block is file level.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /** @fileé widget.h
+     * @need-ids: REQ_R_TAG_NON_ASCII */
+
+    void f();
+  truth:
+    - {id: REQ_R_TAG_NON_ASCII, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case (ASCII command names)"}

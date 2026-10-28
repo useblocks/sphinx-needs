@@ -117,7 +117,7 @@ In this order:
    file -- documentation comments (``///``, ``/** */``, ``/*!``) excepted: they document the next item, blank lines
    or not, as rustc and Doxygen read them, unless the comment holding the marker says it documents the file
    (``@file``, ``\file``, ``@fileoverview``, ``@packageDocumentation`` or ``@module``, as a whole word at the start
-   of the comment or after a space, ``*``, ``/`` or ``!``).
+   of the comment or after whitespace, ``*``, ``/`` or ``!``).
    That exception holds only for the comments before the first item: a ``@file`` block after ``#pragma once`` or
    inside an include guard documents the next item like any documentation comment, and so does a ``///`` line whose
    ``\file`` is on another line of the run.
