@@ -5479,7 +5479,7 @@ field = "up"
 
 [[case]]
 name = "link-kinds-refusals"
-why = "copy and collect on a link type are refused at load where they cannot be computed with the link types or give no link list: a copy of a field other than id, without over, with from, with select other than list; an over naming back links or a link type a rule computes; a field naming a value field, id (for collect) or back links; after; each holds no links. summary = false beside such a rule is refused and ignored: the rule applies. A union cannot name a link type a copy computes: it is a summary"
+why = "copy and collect on a link type are refused at load where they cannot be computed with the link types or give no link list: a copy of a field other than id, without over, with from, with select other than list; an over naming back links; a collect of its own link type over a link type a rule other than a union computes, or over a union one of whose members a rule computes (it would read itself on every need); a field naming a value field, id (for collect) or back links; after; each holds no links. summary = false beside such a rule is refused and ignored: the rule applies. A union cannot name a link type a copy computes: it is a summary"
 config = '''
 [needs.fields.req_ids]
 schema = { type = "array", items = { type = "string" } }
