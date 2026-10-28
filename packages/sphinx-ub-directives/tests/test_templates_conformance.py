@@ -30,7 +30,7 @@ CORPUS = "template_directives_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 208
+EXPECTED_CASE_COUNT = 213
 
 #: The codes of the template contract (§8), compared bare.
 CODES = frozenset(

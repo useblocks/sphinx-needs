@@ -456,7 +456,9 @@ nothing. Enforced by: corpus `signature-undeclared-option`,
    before anything is inserted. The output is otherwise spliced as body content at the
    directive's position (docutils' `insert_input`, MyST's nested render), so a generated
    need's `sections` is the host section that contains the directive, on both sides, by
-   construction. Headings in template output are deferred to a later version with a
+   construction. A directive of another extension inside the output (sphinx-jinja2's
+   `.. jinja::`, say) that writes headings when it runs is outside this contract, like any
+   third-party directive (§7.10). Headings in template output are deferred to a later version with a
    section-model design of their own (three rounds of rules about where output headings
    may nest each found a new divergence in the needs' `sections`).
    Enforced by: corpus `host-content-continues-in-the-last-section`,
@@ -468,7 +470,9 @@ nothing. Enforced by: corpus `signature-undeclared-option`,
    `heading-level-enclosing-style-is-refused`, `heading-level-same-style-is-refused`,
    `heading-level-is-refused-md`, `heading-in-output-inside-a-body-element-rst`, `…-md`,
    `ub-template-heading-joins-the-page`, `rst-template-with-a-heading-in-an-md-page`,
-   `md-template-with-a-heading-in-an-rst-page`, `rubric-in-output-is-allowed-rst`, `…-md`,
+   `md-template-with-a-heading-in-an-rst-page`, `template-heading-inside-a-block-quote-in-the-output`,
+   `template-heading-in-eval-rst-in-md-output` (python_only: ubCode has no `{eval-rst}`),
+   `transition-in-a-block-quote-in-the-output-is-allowed`, `rubric-in-output-is-allowed-rst`, `…-md`,
    `target-and-paragraph-in-output-are-allowed`,
    `title-like-text-in-a-code-block-of-the-output-is-allowed`,
    `output-without-a-heading-stays-in-the-host-section`.
@@ -476,21 +480,25 @@ nothing. Enforced by: corpus `signature-undeclared-option`,
    *The Sphinx half (informative):* the inert first parse (§7.9) runs on EVERY output. In
    reStructuredText, an inert directive parses its body as markup unless the directive is
    one with a literal body (`code-block`, `math`, `raw`, diagrams, …) or a name no loaded
-   extension registers, and any section — or a docutils complaint about a section title —
-   is a heading. In Markdown, every heading token counts, in a list item or a block quote
+   extension registers, every nested body is parsed as if titles were allowed there, and a
+   heading is a `section` node (structure, never a message's text: a transition is none). In Markdown, every heading token counts, in a list item or a block quote
    too, and the bodies of directive fences are scanned the same way.
 9. **Cross-markup output** (a template of the other markup) is parsed in the TEMPLATE's
    markup, with no heading (§7.8). Cross-markup reStructuredText output is parsed
    undecorated (no `rst_prolog`/`rst_epilog`). Cross-markup output may not hold a
    construct that registers in the whole document — a substitution definition, a
    footnote (numbered by hand, auto-numbered, or a MyST `[^1]` footnote) or a citation —
-   which is `template_markup_construct`, and the use renders nothing.
+   which is `template_markup_construct`, and the use renders nothing. Markdown output that
+   starts with front matter (a `---` block) is `template_markup_construct` too, in a page
+   of either markup: front matter belongs to a whole document.
    Enforced by: corpus `rst-template-in-an-md-page`,
    `rst-template-with-a-heading-in-an-md-page`, `md-template-in-an-rst-page`,
    `md-template-in-an-md-page`, `cross-markup-substitution-is-refused`,
    `cross-markup-auto-numbered-footnote-is-refused`,
    `cross-markup-manually-numbered-footnote-is-refused`,
-   `cross-markup-myst-footnote-is-refused`, `cross-markup-citation-is-refused`.
+   `cross-markup-myst-footnote-is-refused`, `cross-markup-citation-is-refused`,
+   `front-matter-in-md-output-is-refused-in-an-md-page`,
+   `front-matter-in-md-output-is-refused-in-an-rst-page`.
 10. **Depth 1, and only declared inputs.** Output may not hold a directive that expands a
     template (`template_nested_expansion`) or one that reads content outside the
     template's declared inputs (`template_output_reads_file`). Such a directive renders

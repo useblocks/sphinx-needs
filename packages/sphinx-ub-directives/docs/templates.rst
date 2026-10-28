@@ -140,6 +140,9 @@ anywhere in the output (inside a ``note`` or a list item it writes too), whereve
 A use whose output holds one is reported (``ub_directives.template_heading``) and renders nothing.
 A rubric (``.. rubric::``, or MyST's ``{rubric}``) is not a section title, and is allowed;
 so is title-like text in a ``code-block``. Put the heading in the page, above the directive.
+A directive of another extension in the output that writes headings itself (sphinx-jinja2's ``jinja``, say)
+is outside what ubCode and this extension promise to agree on.
+Markdown output may not start with front matter (``ub_directives.template_markup_construct``).
 
 The output may not hold another template directive (it is never expanded again)
 nor a directive that reads a file the template did not declare (nor a preset of one,

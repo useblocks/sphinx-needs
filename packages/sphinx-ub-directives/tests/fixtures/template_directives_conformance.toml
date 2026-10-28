@@ -59,6 +59,8 @@
 #     runner skips it; `ubcode_only = true` is the converse. Each says in its `why` why.
 #   - template output never holds a section title, except to pin that it is refused
 #     (`template_heading`): headings in template output are not part of this version
+#   - ubCode has no `{eval-rst}` (a general registered difference), so a case that uses one
+#     is python_only
 #   - needs values are compared as `needs.json` writes them, TYPE INCLUDED; `sections` is
 #     the list of section titles from the need's own section outwards
 #   - findings are compared as a MULTISET of `code`, and of `path` and `directive` where the
@@ -2220,6 +2222,181 @@ expansions = [
 missing = ["REQ_GEN"]
 [[case.expect.findings]]
 code = "template_heading"
+directive = "gen"
+
+[[case]]
+name = "template-heading-inside-a-block-quote-in-the-output"
+why = "a section title inside a block quote the output writes is template_heading"
+config = '''
+[parse.directive_templates.gen]
+template = "_templates/gen.rst.j2"
+'''
+source = '''
+.. gen::
+'''
+[case.files]
+"_templates/gen.rst.j2" = '''
+A paragraph.
+
+   Quoted
+   ------
+
+   More.
+
+.. req:: After the quote
+   :id: REQ_GEN
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_GEN"]
+[[case.expect.findings]]
+code = "template_heading"
+directive = "gen"
+
+[[case]]
+name = "transition-in-a-block-quote-in-the-output-is-allowed"
+why = "a transition line is no section title: output holding one in a block quote is not template_heading"
+config = '''
+[parse.directive_templates.gen]
+template = "_templates/gen.rst.j2"
+'''
+source = '''
+.. gen::
+'''
+[case.files]
+"_templates/gen.rst.j2" = '''
+A paragraph.
+
+   Quoted.
+
+   ----------
+
+   More quoted.
+
+.. req:: After the quote
+   :id: REQ_TRN
+'''
+[case.expect]
+expansions = [
+'''
+A paragraph.
+
+   Quoted.
+
+   ----------
+
+   More quoted.
+
+.. req:: After the quote
+   :id: REQ_TRN''',
+]
+findings = []
+[case.expect.needs.REQ_TRN]
+sections = ["Case"]
+
+[[case]]
+name = "template-heading-in-eval-rst-in-md-output"
+why = "an RST section title inside {eval-rst} in Markdown output is template_heading (python_only: ubCode has no eval-rst)"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.gen]
+template = "_templates/gen.md.j2"
+'''
+source = '''
+```{gen}
+```
+'''
+python_only = true
+[case.files]
+"_templates/gen.md.j2" = '''
+```{eval-rst}
+Inside
+------
+
+.. req:: In eval-rst
+   :id: REQ_GEN
+```
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_GEN"]
+[[case.expect.findings]]
+code = "template_heading"
+directive = "gen"
+
+[[case]]
+name = "front-matter-in-md-output-is-refused-in-an-md-page"
+why = "front matter at the start of Markdown output belongs to a whole document: template_markup_construct"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.gen]
+template = "_templates/gen.md.j2"
+'''
+source = '''
+```{gen}
+```
+'''
+[case.files]
+"_templates/gen.md.j2" = '''
+---
+title: From the template
+---
+
+```{req} After the front matter
+:id: REQ_FM
+```
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_FM"]
+[[case.expect.findings]]
+code = "template_markup_construct"
+directive = "gen"
+
+[[case]]
+name = "front-matter-in-md-output-is-refused-in-an-rst-page"
+why = "front matter at the start of Markdown output belongs to a whole document: template_markup_construct"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.gen]
+template = "_templates/gen.md.j2"
+'''
+source = '''
+.. gen::
+'''
+[case.files]
+"_templates/gen.md.j2" = '''
+---
+title: From the template
+---
+
+```{req} After the front matter
+:id: REQ_FM
+```
+'''
+[case.expect]
+expansions = [
+]
+missing = ["REQ_FM"]
+[[case.expect.findings]]
+code = "template_markup_construct"
 directive = "gen"
 
 [[case]]
