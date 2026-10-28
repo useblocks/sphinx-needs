@@ -66,11 +66,13 @@ def load(name: str) -> list[dict[str, Any]]:
         return tomllib.load(handle)["case"]
 
 
-def project(case: Mapping[str, Any], page: str) -> list[tuple[Path, str]]:
+def project(
+    case: Mapping[str, Any], page: str, conf_py: str = CONF_PY
+) -> list[tuple[Path, str]]:
     """The files of a case's project, with ``page`` as its one document."""
     markup = case.get("markup", "rst")
     return [
-        (Path("conf.py"), CONF_PY),
+        (Path("conf.py"), conf_py),
         (Path("ubproject.toml"), case["config"]),
         (Path(f"index.{markup}"), TITLES[markup] + page),
         *((inside(rel), text) for rel, text in case.get("files", {}).items()),

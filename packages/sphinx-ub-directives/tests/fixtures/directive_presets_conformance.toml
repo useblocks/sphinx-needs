@@ -24,8 +24,8 @@
 #     (`../x.json`) is a broken case, and the runner refuses it. A Markdown case's `config`
 #     carries `[parse.parsers.md] flavour = "myst"` for ubCode; the Sphinx runner loads
 #     myst-parser for every case
-#   - the Sphinx runner's `conf.py` loads `sphinx_needs`, `sphinx_design`, `myst_parser` and
-#     `sphinx_ub_directives`, and reads the needs configuration from the same `ubproject.toml`
+#   - the Sphinx runner's `conf.py` loads `sphinx_needs`, `sphinx_design`, `myst_parser`,
+#     `sphinx.ext.autodoc` and `sphinx_ub_directives`, and reads the needs configuration from the same `ubproject.toml`
 #     (`needs_from_toml`); nothing else. ubCode reads the file as a project
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
 #     the default ones (`req`, `spec`, `impl`, `test`), so a case never carries a need type
@@ -943,6 +943,58 @@ equivalent = '''
 findings = []
 
 [[case]]
+name = "identity-autoclass-placeholder-rst"
+why = "an option-less preset of autoclass is autoclass: the same page and needs as the base"
+config = '''
+[parse.directive_presets.pf-autoclass]
+base = "autoclass"
+'''
+source = '''
+Text.
+
+.. pf-autoclass:: pkg.Thing
+   :members:
+'''
+equivalent = '''
+Text.
+
+.. autoclass:: pkg.Thing
+   :members:
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "identity-autoclass-placeholder-md"
+why = "an option-less preset of autoclass is autoclass: the same page and needs as the base (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.pf-autoclass]
+base = "autoclass"
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+Text.
+
+```{pf-autoclass} pkg.Thing
+:members:
+```
+'''
+equivalent = '''
+Text.
+
+```{autoclass} pkg.Thing
+:members:
+```
+'''
+[case.expect]
+findings = []
+
+[[case]]
 name = "identity-need-type-rst"
 why = "a preset of a need type mints a need of the base's TYPE, with the fields written"
 config = '''
@@ -1393,6 +1445,29 @@ equivalent = '''
 
 .. needextend:: REQ_008
    :status: closed
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "options-autoclass-placeholder-rst"
+why = "a preset of autoclass that supplies members, noindex is autoclass written with them"
+config = '''
+[parse.directive_presets.po-autoclass]
+base = "autoclass"
+options = { "members" = "", "noindex" = "" }
+'''
+source = '''
+.. po-autoclass:: pkg.Thing
+
+   Body.
+'''
+equivalent = '''
+.. autoclass:: pkg.Thing
+   :members:
+   :noindex:
+
+   Body.
 '''
 [case.expect]
 findings = []

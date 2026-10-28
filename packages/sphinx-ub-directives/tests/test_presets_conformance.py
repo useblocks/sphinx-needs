@@ -19,7 +19,22 @@ from typing import Any
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
-from .corpus import FIXTURES, build, complete, load, problems, project
+from .corpus import CONF_PY, FIXTURES, build, complete, load, problems
+from .corpus import project as _project
+
+#: The presets corpus header's `conf.py`: the shared one, plus autodoc, so a preset of a
+#: directive ubCode renders as its generic placeholder (`autoclass`) runs on both sides.
+PRESETS_CONF_PY = CONF_PY.replace(
+    '"myst_parser", ', '"myst_parser", "sphinx.ext.autodoc", '
+)
+
+
+assert "sphinx.ext.autodoc" in PRESETS_CONF_PY
+
+
+def project(case: dict[str, Any], page: str) -> list[tuple[Path, str]]:
+    return _project(case, page, PRESETS_CONF_PY)
+
 
 CORPUS = "directive_presets_conformance.toml"
 
@@ -27,7 +42,7 @@ CORPUS = "directive_presets_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 106
+EXPECTED_CASE_COUNT = 109
 
 #: The codes of the presets contract (§8), compared bare.
 CODES = frozenset(
