@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, is_dataclass, replace
 from itertools import chain
 from operator import attrgetter
 from typing import TYPE_CHECKING, Any, Literal, Protocol, overload, runtime_checkable
@@ -696,13 +696,27 @@ class NeedItem:
         """Check if two NeedItems are equal."""
         if not isinstance(other, NeedItem):
             return False
+        return self._source == other._source and self._equal_but_source(other)
+
+    def moved_only(self, other: NeedItem) -> bool:
+        """Whether ``other`` is this need written at other lines: equal to it but for the
+        line numbers of its source (``lineno``, ``lineno_content``, the parser's).
+
+        That is what an edit above a need in its document changes, and nothing else.
+        """
+        return (
+            self._source != other._source
+            and _without_lines(self._source) == _without_lines(other._source)
+            and self._equal_but_source(other)
+        )
+
+    def _equal_but_source(self, other: NeedItem) -> bool:
         # the derived keys are not compared: they are wiring from the schema, not data
         return (
             self._core == other._core
             and self._extras == other._extras
             and self._links == other._links
             and self._backlinks == other._backlinks
-            and self._source == other._source
             and self._content == other._content
             and self._parts == other._parts
             and self._modifications == other._modifications
@@ -1238,6 +1252,18 @@ class NeedItem:
     def is_in_document(self, docname: str) -> bool:
         """Check if the need is in a given document."""
         return self._source.dict_repr.get("docname") == docname
+
+
+def _without_lines(source: NeedItemSourceProtocol) -> object:
+    """A need's source with its line numbers left out, to compare where it is from."""
+    if not is_dataclass(source) or isinstance(source, type):
+        return source
+    lines = {
+        name: None
+        for name in ("lineno", "lineno_content", "parser_lineno")
+        if name in source.__dataclass_fields__
+    }
+    return replace(source, **lines) if lines else source
 
 
 class NeedPartItem:

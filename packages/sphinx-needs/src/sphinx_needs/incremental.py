@@ -47,6 +47,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx_needs.data import NeedsExtendType, SphinxNeedsData
 from sphinx_needs.derive import Derive, DeriveRule
 from sphinx_needs.functions.functions import DynamicFunctionParsed
+from sphinx_needs.functions.order import builtin_arguments
 from sphinx_needs.logging import get_logger
 from sphinx_needs.need_item import NeedItem, NeedLink
 from sphinx_needs.needs_schema import (
@@ -83,6 +84,9 @@ _UNNAMED_LINK_KINDS: Final = frozenset({"links"})
 #: The derive kinds reading nothing but the need itself.
 _OWN_KINDS: Final = frozenset({"union", "hash", "fingerprint"})
 
+#: The built-in functions reading nothing but their arguments.
+_READS_NOTHING: Final = frozenset({"test", "echo"})
+
 
 @dataclass(slots=True)
 class _Stash:
@@ -92,6 +96,10 @@ class _Stash:
     needs: dict[str, NeedItem] = field(default_factory=dict)
     extends: dict[str, NeedsExtendType] = field(default_factory=dict)
     role_refs: dict[str, set[str]] = field(default_factory=dict)
+    need_ids_by_doc: dict[str, list[str]] | None = None
+    """The ids of each document's needs, as the environment held them before the
+    first purge: indexed once, rather than every need scanned for every document."""
+    extends_by_doc: dict[str, list[str]] | None = None
 
 
 _STASH_ATTR: Final = "_needs_incremental_stash"
@@ -120,11 +128,27 @@ def stash_purged_doc(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
         return
     stash = _stash(app)
     stash.docs.add(docname)
-    for need_id, need in data._env_needs.items():
-        if need.is_in_document(docname):
+    if docname not in env.all_docs:
+        # a document new to the environment (every one, on a fresh build): it gave
+        # nothing yet
+        return
+    needs = data._env_needs
+    extends = data.get_or_create_extends()
+    if stash.need_ids_by_doc is None or stash.extends_by_doc is None:
+        stash.need_ids_by_doc = {}
+        for need_id, need in needs.items():
+            if need_docname := need["docname"]:
+                stash.need_ids_by_doc.setdefault(need_docname, []).append(need_id)
+        stash.extends_by_doc = {}
+        for extend_id, extend in extends.items():
+            stash.extends_by_doc.setdefault(extend["docname"], []).append(extend_id)
+    for need_id in stash.need_ids_by_doc.get(docname, ()):
+        if (need := needs.get(need_id)) is not None and need.is_in_document(docname):
             stash.needs.setdefault(need_id, need)
-    for extend_id, extend in data.get_or_create_extends().items():
-        if extend["docname"] == docname:
+    for extend_id in stash.extends_by_doc.get(docname, ()):
+        if (extend := extends.get(extend_id)) is not None and extend[
+            "docname"
+        ] == docname:
             stash.extends.setdefault(extend_id, extend)
     if (refs := data.get_or_create_role_refs().get(docname)) is not None:
         stash.role_refs.setdefault(docname, refs)
@@ -159,10 +183,18 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
     all_docs = data.get_or_create_docs()
     role_refs = data.get_or_create_role_refs()
 
-    # the needs as read: those of the re-read documents, compared with what they were
-    changed = {
-        need_id for need_id, old in stash.needs.items() if needs.get(need_id) != old
-    }
+    # the needs as read: those of the re-read documents, compared with what they were;
+    # a need written at other lines alone (an edit above it) is only ``moved``
+    changed: set[str] = set()
+    moved = False
+    for need_id, old in stash.needs.items():
+        new = needs.get(need_id)
+        if new is not None and new == old:
+            continue
+        if new is not None and old.moved_only(new):
+            moved = True
+        else:
+            changed.add(need_id)
     changed.update(
         need_id
         for need_id, need in needs.items()
@@ -174,24 +206,46 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
     changed_extends = [
         extend
         for key in stash.extends.keys() | new_extends.keys()
-        if stash.extends.get(key) != new_extends.get(key)
+        if _extend_data(stash.extends.get(key)) != _extend_data(new_extends.get(key))
         for extend in (stash.extends.get(key), new_extends.get(key))
         if extend is not None
     ]
+
+    views: set[str] = set()
+    for category in VIEW_CATEGORIES:
+        views.update(all_docs.get(category, ()))
     if not changed and not changed_extends:
-        return set()
+        # a need's line number is shown by a view at most (a needtable column)
+        return views if moved else set()
 
     everything = set(all_docs.get("all", []))
     if any(not extend["filter_is_id"] for extend in changed_extends):
         # a filter selects needs by their resolved values
         return everything
-    if any(_links_unnamed(extend) for extend in extends.values()):
+    every_extend = (*extends.values(), *stash.extends.values())
+    if any(_links_unnamed(extend) for extend in every_extend):
         # an extend linking needs to a computed target
         return everything
 
     schema = data.get_schema()
     by_type: dict[str, _Reads] = {}
     reads = {need_id: _reads(need, schema, by_type) for need_id, need in needs.items()}
+    # a value an extend sets with a dynamic function is computed on its needs too
+    filter_reads = _Reads()
+    for extend in extends.values():
+        extend_reads = _Reads()
+        for _, _, value in extend["modifications"]:
+            if isinstance(value, FieldFunctionArray):
+                _read_calls(value.value, extend_reads)
+        if extend_reads == _Reads():
+            continue
+        if not extend["filter_is_id"]:
+            _merge(filter_reads, extend_reads)
+        elif (target := _target_id(extend)) in needs:
+            reads[target] = _merge(reads[target] or _Reads(), extend_reads)
+    if filter_reads.always or filter_reads.links or filter_reads.back:
+        # needs a filter selects compute values from needs they do not name
+        return everything
     if any(r is not None and r.unnamed_links for r in reads.values()):
         # links computed to needs that are not known before the needs are resolved
         return everything
@@ -200,10 +254,11 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
     versions: dict[str, list[NeedItem]] = {}
     for need in (*stash.needs.values(), *needs.values()):
         versions.setdefault(need["id"], []).append(need)
-    # the needs an extend by id links its need to, and those every filter links to
+    # the needs an extend by id links its need to (the extends as they were too: a
+    # link one no longer adds leaves its target), and those every filter links to
     extend_links: dict[str, set[str]] = {}
     filter_links: set[str] = set()
-    for extend in extends.values():
+    for extend in every_extend:
         if extend["filter_is_id"]:
             extend_links.setdefault(_target_id(extend), set()).update(
                 _extend_link_ids(extend)
@@ -221,6 +276,10 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
                 found.update(role_refs.get(need["docname"] or "", ()))
                 found.update(stash.role_refs.get(need["docname"] or "", ()))
         return found
+
+    def links_of(need_id: str) -> set[str]:
+        """The needs a need links to: its own links, and those extends add."""
+        return {*_link_ids(needs[need_id]), *extend_links.get(need_id, ())}
 
     # the affected needs: those that changed, those an extend that changed names, and
     # those computing a value from a need affected (until no more is)
@@ -242,7 +301,7 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
         grown = False
         for need_id, r in list(pending.items()):
             if (
-                (r.links and not affected.isdisjoint(_link_ids(needs[need_id])))
+                (r.links and not affected.isdisjoint(links_of(need_id)))
                 or (r.back and need_id in targets)
                 or not affected.isdisjoint(r.needs)
             ):
@@ -250,6 +309,9 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
                 affected.add(need_id)
                 targets.update(link_targets(need_id))
                 grown = True
+    if not affected.isdisjoint(filter_reads.needs):
+        # the needs a filter selects compute a value from an affected need
+        return everything
 
     # the needs showing an affected need's title in their links
     linking = {
@@ -270,9 +332,7 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
         return everything
 
     shown = affected | targets | linking
-    docs: set[str] = set()
-    for category in VIEW_CATEGORIES:
-        docs.update(all_docs.get(category, ()))
+    docs = set(views)
     for need_id in shown:
         for need in versions.get(need_id, ()):
             if docname := need["docname"]:
@@ -281,6 +341,14 @@ def _dependents(data: SphinxNeedsData, stash: _Stash) -> set[str]:
         docname for docname, refs in role_refs.items() if not shown.isdisjoint(refs)
     )
     return docs
+
+
+def _extend_data(extend: NeedsExtendType | None) -> dict[str, object] | None:
+    """An extend's data but for its line, which an edit above it moves: it orders the
+    extends of one document, and an edit above keeps their order."""
+    if extend is None:
+        return None
+    return {key: value for key, value in extend.items() if key != "lineno"}
 
 
 def _target_id(extend: NeedsExtendType) -> str:
@@ -318,19 +386,32 @@ class _Reads:
     """What of other needs a need's computed values read."""
 
     always: bool = False
-    """Needs it does not name: a dynamic function, a ``join``, a ``where`` over
-    candidates it does not link, a ``transitive`` rule, a rule over computed links."""
+    """Needs it does not name: a function of your own, a filter, a ``join``, a
+    ``where`` over candidates it does not link, a ``transitive`` rule, a rule over
+    computed links."""
     links: bool = False
-    """The needs its links name (``over`` a link type)."""
+    """The needs its links name (``over`` a link type, ``check_linked_values``, a
+    ``calc_sum`` over ``links_only``)."""
     back: bool = False
     """The needs linking to it (``over`` a ``<link type>_back``)."""
     needs: set[str] = field(default_factory=set)
-    """The needs a ``from`` names."""
+    """The needs a ``from``, or a ``copy`` of another need, names."""
     content_links: bool = False
     """It links the needs its content names (``content_links``)."""
     unnamed_links: bool = False
     """It links needs it does not name: a dynamic function in a link field, a
     ``links`` rule, a ``content_links`` rule reading another need's content."""
+
+
+def _merge(into: _Reads, other: _Reads) -> _Reads:
+    """Add what ``other`` reads to ``into``, and return it."""
+    into.always |= other.always
+    into.links |= other.links
+    into.back |= other.back
+    into.needs |= other.needs
+    into.content_links |= other.content_links
+    into.unnamed_links |= other.unnamed_links
+    return into
 
 
 def _reads(
@@ -352,15 +433,45 @@ def _reads(
                     _read_rule(derived.rule_for(need_type), schema, of_type)
         reads = replace(of_type, needs=set(of_type.needs))
     for name, value in _dynamic_fields(need).items():
-        if not any(isinstance(item, DynamicFunctionParsed) for item in value.value):
-            continue
         if isinstance(value, LinksFunctionArray) or schema.get_link_field(name):
-            reads.unnamed_links = True
+            if any(isinstance(item, DynamicFunctionParsed) for item in value.value):
+                reads.unnamed_links = True
         else:
-            reads.always = True
+            _read_calls(value.value, reads)
     if reads == _Reads():
         return None
     return reads
+
+
+def _read_calls(items: Iterable[object], reads: _Reads) -> None:
+    """Add what the dynamic functions among a field's items read to ``reads``.
+
+    A built-in function is read by its arguments: ``copy`` of the need's own field reads
+    nothing else, ``copy`` with a ``need_id`` that need, ``check_linked_values`` the
+    needs its links name. A function of your own, and a filter, may read any need.
+    """
+    for call in items:
+        if not isinstance(call, DynamicFunctionParsed):
+            continue
+        if call.name in _READS_NOTHING:
+            continue
+        args = builtin_arguments(call)
+        if args is None:
+            reads.always = True
+        elif call.name == "copy":
+            need_id = args.get("need_id")
+            if args.get("filter") not in (None, "") or not isinstance(
+                need_id, str | None
+            ):
+                reads.always = True
+            elif need_id:
+                reads.needs.add(NeedLink.parse_address(need_id).id)
+        elif call.name == "check_linked_values" or (
+            call.name == "calc_sum" and args.get("links_only") is True
+        ):
+            reads.links = True
+        else:
+            reads.always = True
 
 
 def _read_rule(rule: Derive | None, schema: FieldsSchema, reads: _Reads) -> None:

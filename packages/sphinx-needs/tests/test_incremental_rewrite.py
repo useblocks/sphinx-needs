@@ -65,6 +65,7 @@ Index
 
 .. toctree::
 
+   aaa
    reqs
    specs
    copies
@@ -75,6 +76,14 @@ Index
    trace
    rollup
    unrelated
+""",
+    "aaa.rst": """\
+First
+=====
+
+.. req:: Read first
+   :id: AAA_001
+   :hours: 1
 """,
     "reqs.rst": """\
 Requirements
@@ -193,6 +202,7 @@ Trace
 .. test:: Tests alpha
    :id: TEST_001
    :links: REQ_001
+   :status: [[copy("title")]]
 """,
     "rollup.rst": """\
 Rollup
@@ -248,7 +258,127 @@ EDITS: dict[str, tuple[str, str, str]] = {
         "",
     ),
     "extend-by-filter-changed": ("extends.rst", ":+tags: ext", ":+tags: ext2"),
+    "link-removed": ("specs.rst", "   :links: REQ_003\n", ""),
+    "unrelated-title": ("unrelated.rst", "Stands alone", "Stands tall"),
     "prose": ("specs.rst", "refine the requirements", "detail the requirements"),
+    "prose-above-needs": (
+        "reqs.rst",
+        "Some prose about the requirements.\n",
+        "Some prose about the requirements.\n\nAnd more, above the needs.\n",
+    ),
+}
+
+
+def _replace(pages: dict[str, str], page: str, old: str, new: str) -> dict[str, str]:
+    assert pages[page].count(old) == 1, (page, old)
+    return {**pages, page: pages[page].replace(old, new)}
+
+
+#: ``TEST_001`` (of a type with no rule) linked by an extend, to ``AAA_001``: a need
+#: on a page no other link of ``TEST_001`` leads to
+_EXTEND_LINKS = _replace(
+    PAGES,
+    "extends.rst",
+    ":+tags: ext\n",
+    ":+tags: ext\n\n.. needextend:: TEST_001\n   :+links: AAA_001\n",
+)
+#: ``IMPL_001`` linked by an extend to ``SPEC_002``, whose ``total`` its rule sums,
+#: and an ``impl`` on a page of its own summing ``IMPL_001``'s
+_EXTEND_LINK_READ = {
+    **_replace(
+        _replace(
+            PAGES,
+            "extends.rst",
+            ":status: extended\n",
+            ":status: extended\n   :+links: SPEC_002\n",
+        ),
+        "index.rst",
+        "   unrelated\n",
+        "   unrelated\n   chain\n",
+    ),
+    "chain.rst": "Chain\n=====\n\n.. impl:: Sums the extended\n   :id: IMPL_003\n"
+    "   :links: IMPL_001\n",
+}
+#: ``IMPL_001``'s status set by an extend by id, to a copy of ``REQ_002``'s
+_EXTEND_CALL = _replace(
+    PAGES,
+    "extends.rst",
+    ":status: extended\n",
+    ':status: [[copy("status", "REQ_002")]]\n',
+)
+#: every test's status set by an extend by filter, to a copy of ``REQ_002``'s
+_FILTER_EXTEND_CALL = _replace(
+    PAGES, "extends.rst", ":+tags: ext\n", ':status: [[copy("status", "REQ_002")]]\n'
+)
+#: ``IMPL_001`` linked by an extend with a dynamic function, to ``SPEC_001``'s links
+_EXTEND_DYNAMIC_LINKS = _replace(
+    PAGES,
+    "extends.rst",
+    ":status: extended\n",
+    ':status: extended\n   :+links: [[copy("links", "SPEC_001")]]\n',
+)
+#: every test linked by an extend by filter, to ``REQ_002``
+_FILTER_EXTEND_LINKS = _replace(
+    PAGES, "extends.rst", ":+tags: ext\n", ":+tags: ext\n   :+links: REQ_002\n"
+)
+_REQ_002_CLOSED = (
+    "reqs.rst",
+    "   :status: open\n   :hours: 5\n",
+    "   :status: closed\n   :hours: 5\n",
+)
+
+#: Each scenario: the project before, and after the edit.
+SCENARIOS: dict[str, tuple[dict[str, str], dict[str, str]]] = {
+    **{name: (PAGES, _replace(PAGES, *edit)) for name, edit in EDITS.items()},
+    "extend-links-removed": (
+        _EXTEND_LINKS,
+        _replace(
+            _EXTEND_LINKS,
+            "extends.rst",
+            "\n.. needextend:: TEST_001\n   :+links: AAA_001\n",
+            "",
+        ),
+    ),
+    "extend-links-source-title": (
+        _EXTEND_LINKS,
+        _replace(_EXTEND_LINKS, "trace.rst", "Tests alpha", "Tests beta"),
+    ),
+    "extend-links-target-title": (
+        _EXTEND_LINKS,
+        _replace(_EXTEND_LINKS, "aaa.rst", "Read first\n", "Read first, edited\n"),
+    ),
+    "extend-link-read-by-rule": (
+        _EXTEND_LINK_READ,
+        _replace(_EXTEND_LINK_READ, "reqs.rst", "   :hours: 1\n", "   :hours: 4\n"),
+    ),
+    "extend-call-by-id": (_EXTEND_CALL, _replace(_EXTEND_CALL, *_REQ_002_CLOSED)),
+    "extend-call-by-filter": (
+        _FILTER_EXTEND_CALL,
+        _replace(_FILTER_EXTEND_CALL, *_REQ_002_CLOSED),
+    ),
+    "extend-dynamic-links": (
+        _EXTEND_DYNAMIC_LINKS,
+        _replace(
+            _EXTEND_DYNAMIC_LINKS,
+            "reqs.rst",
+            ".. req:: Alpha\n",
+            ".. req:: Alpha prime\n",
+        ),
+    ),
+    "filter-extend-links": (
+        _FILTER_EXTEND_LINKS,
+        _replace(
+            _FILTER_EXTEND_LINKS, "reqs.rst", ".. req:: Beta\n", ".. req:: Beta prime\n"
+        ),
+    ),
+    "document-removed": (
+        PAGES,
+        {
+            name: text
+            for name, text in _replace(PAGES, "index.rst", "   trace\n", "").items()
+            if name != "trace.rst"
+        },
+    ),
 }
 
 
@@ -264,12 +394,6 @@ def _write(srcdir: Path, pages: dict[str, str]) -> Path:
         if path.name not in pages:
             path.unlink()
     return srcdir
-
-
-def _edited(name: str) -> dict[str, str]:
-    page, old, new = EDITS[name]
-    assert PAGES[page].count(old) == 1, (name, old)
-    return {**PAGES, page: PAGES[page].replace(old, new)}
 
 
 def _written(app: SphinxTestApp) -> list[str]:
@@ -316,15 +440,16 @@ def _pages(outdir: Path) -> dict[str, str]:
 def _assert_equivalent(
     make_app: Callable[..., SphinxTestApp],
     tmp_path: Path,
-    after: dict[str, str],
+    scenario: str,
     *,
     parallel: int = 1,
 ) -> list[str]:
-    """Edit the built project, build incrementally, compare with a fresh build.
+    """Build the project, edit it, build incrementally, compare with a fresh build.
 
     :return: The documents the incremental build wrote.
     """
-    incremental = _write(tmp_path / "incremental", PAGES)
+    before, after = SCENARIOS[scenario]
+    incremental = _write(tmp_path / "incremental", before)
     _build(make_app, incremental, fresh=True, parallel=parallel)
     _write(incremental, after)
     written, warnings = _build(make_app, incremental, fresh=False, parallel=parallel)
@@ -334,8 +459,10 @@ def _assert_equivalent(
 
     got = _pages(incremental / "_build" / "html")
     expected = _pages(fresh / "_build" / "html")
-    assert got.keys() == expected.keys()
-    stale = sorted(name for name in got if got[name] != expected[name])
+    # Sphinx leaves the page of a removed document on disk: only the pages a fresh
+    # build writes are compared
+    assert expected.keys() <= got.keys()
+    stale = sorted(name for name in expected if got[name] != expected[name])
     assert stale == [], f"pages not re-written: {stale} (wrote {written})"
     # the fresh build's warnings name the documents too; the incremental build
     # re-reads only the edited page, so only its own warnings are compared
@@ -352,20 +479,22 @@ def test_fixture_builds_cleanly(
     assert warnings == []
 
 
-@pytest.mark.parametrize("edit", EDITS)
+@pytest.mark.parametrize("scenario", SCENARIOS)
 def test_incremental_build_equals_fresh_build(
-    make_app: Callable[..., SphinxTestApp], tmp_path: Path, edit: str
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path, scenario: str
 ) -> None:
     """After the edit, every page on disk is the page a fresh build writes."""
-    _assert_equivalent(make_app, tmp_path, _edited(edit))
+    _assert_equivalent(make_app, tmp_path, scenario)
 
 
-@pytest.mark.parametrize("edit", ["title", "link-added", "extend-by-id-changed"])
+@pytest.mark.parametrize(
+    "scenario", ["title", "link-added", "extend-by-id-changed", "document-removed"]
+)
 def test_parallel_incremental_build_equals_fresh_build(
-    make_app: Callable[..., SphinxTestApp], tmp_path: Path, edit: str
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path, scenario: str
 ) -> None:
     """The same with ``-j 2``: the role references of a parallel read are merged."""
-    _assert_equivalent(make_app, tmp_path, _edited(edit), parallel=2)
+    _assert_equivalent(make_app, tmp_path, scenario, parallel=2)
 
 
 def test_prose_edit_rewrites_only_its_own_page(
@@ -375,8 +504,27 @@ def test_prose_edit_rewrites_only_its_own_page(
 
     ``index`` is Sphinx's own: it holds the toctree naming the edited page.
     """
-    written = _assert_equivalent(make_app, tmp_path, _edited("prose"))
+    written = _assert_equivalent(make_app, tmp_path, "prose")
     assert sorted(written) == ["index", "specs"]
+
+
+def test_edit_above_needs_rewrites_only_the_views(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """Prose added above needs moves them, which a view may show (a ``lineno`` column)
+    and nothing else does: only the views are re-written besides the page itself."""
+    written = _assert_equivalent(make_app, tmp_path, "prose-above-needs")
+    assert sorted(written) == ["charts", "index", "reqs", "views"]
+
+
+def test_edit_of_a_need_nothing_reads_rewrites_the_views(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """``IMPL_001`` is shown by the views alone: the dynamic functions of the project
+    read their own need (``TEST_001``) or a need named in the call (``SPEC_003``), so
+    neither of their pages is re-written."""
+    written = _assert_equivalent(make_app, tmp_path, "unrelated-title")
+    assert sorted(written) == ["charts", "index", "unrelated", "views"]
 
 
 def test_title_edit_rewrites_the_pages_showing_the_need(
@@ -390,7 +538,7 @@ def test_title_edit_rewrites_the_pages_showing_the_need(
     role naming it; ``unrelated`` holds a need, but shows nothing of ``REQ_001``, and
     ``extends`` only extends other needs, by id or by a filter, neither of which changed.
     """
-    written = _assert_equivalent(make_app, tmp_path, _edited("title"))
+    written = _assert_equivalent(make_app, tmp_path, "title")
     assert sorted(written) == [
         "charts",
         "copies",
