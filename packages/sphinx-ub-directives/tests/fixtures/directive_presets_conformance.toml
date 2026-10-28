@@ -1973,23 +1973,26 @@ findings = []
 name = "true-for-a-non-flag-is-the-text-true"
 why = "true for an option that is not a flag is the text \"true\""
 config = '''
-[parse.directive_presets.collapsed]
+[needs.fields.reviewed]
+schema = { type = "string" }
+
+[parse.directive_presets.reviewed]
 base = "req"
-options = { collapse = true }
+options = { reviewed = true }
 '''
 source = '''
-.. collapsed:: C
+.. reviewed:: C
    :id: REQ_080
 '''
 equivalent = '''
 .. req:: C
    :id: REQ_080
-   :collapse: true
+   :reviewed: true
 '''
 [case.expect]
 findings = []
 [case.expect.needs.REQ_080]
-collapse = true
+reviewed = "true"
 
 [[case]]
 name = "description-and-empty-argument"

@@ -9,13 +9,20 @@ from __future__ import annotations
 
 from typing import Any
 
+from sphinx.application import Sphinx
+
 __version__ = "0.1.0"
 
 __all__ = ["__version__", "setup"]
 
 
-def setup(app: Any) -> dict[str, Any]:
+def setup(app: Sphinx) -> dict[str, Any]:
     """Register the extension with Sphinx."""
+    from . import _config, _presets
+
+    _config.setup(app)
+    # after every extension's `config-inited`, before any document is read (contract §2.2)
+    app.connect("builder-inited", _presets.register)
     return {
         "version": __version__,
         "parallel_read_safe": True,
