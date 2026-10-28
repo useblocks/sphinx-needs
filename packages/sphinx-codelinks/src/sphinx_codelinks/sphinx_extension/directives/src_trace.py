@@ -22,10 +22,6 @@ from sphinx_codelinks.config import (
     locate_src_dir,
     need_id_refs_field,
 )
-from sphinx_codelinks.sphinx_extension.code_entity import (
-    code_entity_values,
-    mistyped_code_entity_fields,
-)
 from sphinx_codelinks.sphinx_extension.debug import measure_time
 from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
 from sphinx_codelinks.sphinx_extension.project_analysis import (
@@ -380,7 +376,6 @@ class SourceTracingDirective(SphinxDirective):
             context.remote_url_field,
             context.dirs,
             context.remote_url_pattern,
-            code_entity=bool(src_trace_sphinx_config.set_code_entity),
         )
         skipped = self._deferred
         src_analyse.log_summary(
@@ -610,15 +605,9 @@ class SourceTracingDirective(SphinxDirective):
         remote_url_field: str | None,
         dirs: dict[str, Path],
         remote_url_pattern: str | None = None,
-        *,
-        code_entity: bool = False,
     ) -> list[nodes.Node]:
         """Render the needs from the virtual docs; a need whose id is defined already
         is skipped (:meth:`defined_elsewhere`).
-
-        With ``code_entity`` (``set_code_entity``), each need carries the code entity
-        its marker is attached to (:mod:`~sphinx_codelinks.sphinx_extension.code_entity`),
-        except in a field the user declares with another type.
 
         One-line and multi-line needs are one list, in the order of their first line
         (a multi-line need's open line) across the analysed files, as the analysis
@@ -631,9 +620,6 @@ class SourceTracingDirective(SphinxDirective):
         """
         rendered_needs: list[nodes.Node] = []
         self._deferred: list[tuple[str, str]] = []
-        mistyped = (
-            mistyped_code_entity_fields(self.env.config) if code_entity else frozenset()
-        )
         anchors: dict[str, tuple[str, list[tuple[int, str, str]]]] = {}
         root = src_analyse.git_root or src_analyse.analyse_config.src_dir
         multiline_needs = src_analyse.multiline_needs
@@ -720,8 +706,6 @@ class SourceTracingDirective(SphinxDirective):
                     record[local_url_field] = local_link_name
                 if remote_url_field and remote_link_name is not None:
                     record[remote_url_field] = remote_link_name
-                if code_entity:
-                    record.update(code_entity_values(marker.scope, mistyped))
                 created = self.ingest_multiline(
                     marker,
                     record,
@@ -747,8 +731,6 @@ class SourceTracingDirective(SphinxDirective):
                     kwargs[local_url_field] = local_link_name
                 if remote_url_field and remote_link_name is not None:
                     kwargs[remote_url_field] = remote_link_name
-                if code_entity:
-                    kwargs.update(code_entity_values(marker.scope, mistyped))
 
                 try:
                     created = add_need(

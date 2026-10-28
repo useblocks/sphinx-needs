@@ -97,7 +97,8 @@ A class declared with an export macro (``class EXPORT_API Widget``) is misread b
 it is bound without a name, or not at all.
 In Rust, an ``impl`` inside a function is named without the function's path,
 and an ``impl W`` for a ``W`` brought in with ``use`` is named in the module the ``impl`` is written in.
-With :ref:`set_code_entity`, the needs ``src-trace`` creates carry the entity as fields.
+The needs ``src-trace`` creates carry no field for the entity: it is recorded here, in the analysis output,
+and will be exposed on the need together with the need's source record.
 
 The rules
 ~~~~~~~~~

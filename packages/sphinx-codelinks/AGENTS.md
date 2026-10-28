@@ -58,7 +58,6 @@ src/sphinx_codelinks/   # Main source code
     ├── html_wrapper.py  # HTML output wrapper for traced source
     ├── string_links.py  # The URL fields' needs_string_links entries
     ├── need_id_refs.py  # Keep @need-ids records in the env; attach them to needs
-    ├── code_entity.py   # `set_code_entity`: the four `code_entity*` fields on created needs
     ├── rediscovery.py   # Scope fingerprints, config-only scan, the env-get-outdated/env-updated handlers
     ├── project_analysis.py # Analysis preparation, URLs and records, shared by directive and scan
     ├── debug.py         # Debug utilities

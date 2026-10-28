@@ -17,14 +17,7 @@ New and Improved
   (``function``, ``method``, ``class``, ``namespace``, ...), ``qualified_name``, the entity's name within its file
   (``ns::Widget::draw``, ``Shape.area``, ``<Widget as Shape>::area``), and ``mechanism``, how the marker was attached
   (``doc_comment``, ``leading``, ``trailing`` or ``enclosing``). ``tagged_scope`` is unchanged, and ``codelinks write
-  rst`` reads the new key. See :ref:`attachment`.
-
-- ✨ :ref:`set_code_entity` puts the attached entity on the need.
-
-  Off by default. When on, every need ``src-trace`` creates from a marker carries ``code_entity``,
-  ``code_entity_kind``, ``code_entity_lines`` (``[start, end]``) and ``code_entity_mechanism``, registered typed and
-  nullable; a need an ``@need-ids:`` reference names gets none. A schema with ``unevaluatedProperties: false`` must
-  declare them once the option is on.
+  rst`` reads the new key. The needs ``src-trace`` creates carry no field for the entity yet. See :ref:`attachment`.
 
 Fixes
 .....
@@ -46,7 +39,7 @@ Fixes
   See :ref:`attachment`.
 
   **Existing markers re-bind**, which changes ``tagged_scope`` (and the new ``scope``) in ``marked_content.json``;
-  nothing changes in the needs ``src-trace`` creates unless :ref:`set_code_entity` is on. In TypeScript and
+  nothing changes in the needs ``src-trace`` creates. In TypeScript and
   JavaScript, a marker above a plain ``const``, ``let`` or ``var``, a class field without a function, an assignment
   of a value or an ``export default`` of a value used to skip it and bind the next function; it now binds the enclosing
   class, or nothing, as in every other language. A marker after code on its line (``int x = 1; // @...``) at file

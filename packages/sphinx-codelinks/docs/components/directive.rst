@@ -138,12 +138,4 @@ feature, the list and the literal:
    :project: multiline
    :file: rate_limit.cpp
 
-The code entity on the need
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-With :ref:`set_code_entity` on, every need the directive creates also carries the code entity its marker is attached
-to (see :ref:`attachment`): ``code_entity`` (its name within its file), ``code_entity_kind``, ``code_entity_lines``
-(``[start, end]``, 1-based) and ``code_entity_mechanism``. A need whose marker is attached to no entity carries none
-of them.
-
 To have a more customized configuration of ``CodeLinks``, please refer to :ref:`configuration <configuration>`.
