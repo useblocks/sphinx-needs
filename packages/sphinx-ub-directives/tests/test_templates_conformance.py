@@ -23,6 +23,7 @@ from sphinx.testing.util import SphinxTestApp
 from sphinx_ub_directives import _templates
 
 from .corpus import FIXTURES, build, complete, load, problems, project
+from .test_presets_conformance import CODES as PRESET_CODES
 
 CORPUS = "template_directives_conformance.toml"
 
@@ -30,7 +31,7 @@ CORPUS = "template_directives_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 213
+EXPECTED_CASE_COUNT = 527
 
 #: The codes of the template contract (§8), compared bare.
 CODES = frozenset(
@@ -55,6 +56,9 @@ CODES = frozenset(
         "directive_template_unknown_key",
     }
 )
+
+#: A case that also declares presets compares the presets contract's codes too.
+CODES = CODES | PRESET_CODES
 
 CASES = load(CORPUS)
 

@@ -42,7 +42,7 @@ CORPUS = "directive_presets_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 111
+EXPECTED_CASE_COUNT = 151
 
 #: The codes of the presets contract (§8), compared bare.
 CODES = frozenset(

@@ -31,6 +31,8 @@
 #     the default ones (`req`, `spec`, `impl`, `test`), so a case never carries a need type
 #     spelled with upper-case letters (the contract refuses one as a preset base, and a Sphinx
 #     build cannot use one at all)
+#   - a case never writes an RST option name with capitals, and never writes an option
+#     twice (ubCode's RST parser differs from docutils in both: a registered difference)
 #   - a case never depends on the order of a mapping, never holds YAML, and never names a
 #     third-party directive (a directive of no extension listed above), except where it is
 #     about exactly that
@@ -2740,3 +2742,946 @@ ubcode_only = true
 [[case.expect.findings]]
 code = "directive_preset_invalid_value"
 path = "parse.directive_presets.x.options.emphasize-lines"
+
+[[case]]
+name = "px-flag-default-code-block-linenos-rst"
+why = "a preset defaulting a flag option (code-block :linenos:) with a default argument is the base written with both"
+config = '''
+[parse.directive_presets.numbered-code]
+base = "code-block"
+argument = "python"
+options = { linenos = true }
+'''
+source = '''
+.. numbered-code::
+
+   x = 1
+'''
+equivalent = '''
+.. code-block:: python
+   :linenos:
+
+   x = 1
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "px-flag-default-code-block-linenos-md"
+why = "a preset defaulting a flag option with a default argument (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.numbered-code]
+base = "code-block"
+argument = "python"
+options = { linenos = true }
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{numbered-code}
+x = 1
+```
+'''
+equivalent = '''
+```{code-block} python
+:linenos:
+
+x = 1
+```
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "px-forced-int-option-replaces-the-written-one"
+why = "a forced integer option (lineno-start) replaces the written value, and the use is told"
+config = '''
+[parse.directive_presets.numbered-code]
+base = "code-block"
+argument = "python"
+force_options = { lineno-start = 5 }
+'''
+source = '''
+.. numbered-code::
+   :lineno-start: 7
+
+   x = 1
+'''
+equivalent = '''
+.. code-block:: python
+   :lineno-start: 5
+
+   x = 1
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "preset_forced_option"
+directive = "numbered-code"
+
+[[case]]
+name = "px-forced-flag-written-is-reported"
+why = "a forced flag the use also writes is reported, even with the same value"
+config = '''
+[parse.directive_presets.open-drop]
+base = "dropdown"
+force_options = { open = true }
+'''
+source = '''
+.. open-drop:: T
+   :open:
+
+   Body.
+'''
+equivalent = '''
+.. dropdown:: T
+   :open:
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "preset_forced_option"
+directive = "open-drop"
+
+[[case]]
+name = "px-forced-flag-md"
+why = "a forced flag, written and not written (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.open-drop]
+base = "dropdown"
+force_options = { open = true }
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{open-drop} A
+Body.
+```
+
+```{open-drop} B
+:open:
+
+Body.
+```
+'''
+equivalent = '''
+```{dropdown} A
+:open:
+
+Body.
+```
+
+```{dropdown} B
+:open:
+
+Body.
+```
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "preset_forced_option"
+directive = "open-drop"
+
+[[case]]
+name = "px-default-choice-yields-to-the-written-one"
+why = "a defaulted choice option (image :align:) yields to a written one"
+config = '''
+[parse.directive_presets.centred]
+base = "image"
+options = { align = "center" }
+'''
+source = '''
+.. centred:: pic.png
+
+.. centred:: pic.png
+   :align: left
+'''
+equivalent = '''
+.. image:: pic.png
+   :align: center
+
+.. image:: pic.png
+   :align: left
+'''
+[case.files]
+"pic.png" = '''
+not really a png
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "px-appended-class-several-tokens"
+why = "appended class tokens go first, before several written tokens"
+config = '''
+[parse.directive_presets.tagged-note]
+base = "note"
+append_options = { class = "x y" }
+'''
+source = '''
+.. tagged-note::
+   :class: a b
+
+   Body.
+'''
+equivalent = '''
+.. note::
+   :class: x y a b
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "px-appended-class-title-of-a-dropdown"
+why = "append_options takes a class-* option (dropdown :class-title:)"
+config = '''
+[parse.directive_presets.pre-drop]
+base = "dropdown"
+append_options = { class-title = "pre" }
+'''
+source = '''
+.. pre-drop:: T
+   :class-title: mine
+
+   Body.
+
+.. pre-drop:: U
+
+   Body.
+'''
+equivalent = '''
+.. dropdown:: T
+   :class-title: pre mine
+
+   Body.
+
+.. dropdown:: U
+   :class-title: pre
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "px-appended-class-card-md"
+why = "append_options takes a class-* option of a card (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.pre-card]
+base = "card"
+append_options = { class-card = "pre" }
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{pre-card} T
+:class-card: mine
+
+Body.
+```
+'''
+equivalent = '''
+```{card} T
+:class-card: pre mine
+
+Body.
+```
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "px-forced-need-status-with-a-default-tag"
+why = "a forced need status wins over the written one (reported); a default tag yields to the written tags"
+config = '''
+[parse.directive_presets.locked-req]
+base = "req"
+options = { tags = "a" }
+force_options = { status = "locked" }
+'''
+source = '''
+.. locked-req:: A
+   :id: REQ_PX01
+   :status: open
+   :tags: b
+
+.. locked-req:: B
+   :id: REQ_PX02
+'''
+[case.expect]
+[case.expect.needs.REQ_PX01]
+status = "locked"
+tags = ["b"]
+[case.expect.needs.REQ_PX02]
+status = "locked"
+tags = ["a"]
+[[case.expect.findings]]
+code = "preset_forced_option"
+directive = "locked-req"
+
+[[case]]
+name = "px-default-links-are-replaced-by-written-links"
+why = "a defaulted links option is replaced, not extended, by written links"
+config = '''
+[parse.directive_presets.linked]
+base = "spec"
+options = { links = "REQ_PX10" }
+'''
+source = '''
+.. req:: Ten
+   :id: REQ_PX10
+
+.. req:: Eleven
+   :id: REQ_PX11
+
+.. linked:: S1
+   :id: SPEC_PX1
+
+.. linked:: S2
+   :id: SPEC_PX2
+   :links: REQ_PX11
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_PX1]
+links = ["REQ_PX10"]
+[case.expect.needs.SPEC_PX2]
+links = ["REQ_PX11"]
+
+[[case]]
+name = "px-float-option-text-negative-zero"
+why = "a float preset value (-0.0) is its shortest round-trip decimal text, no exponent"
+config = '''
+[parse.directive_presets.fl]
+base = "req"
+options = { status = -0.0 }
+'''
+source = '''
+.. fl:: F
+   :id: REQ_PXF1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXF1]
+status = "-0.0"
+
+[[case]]
+name = "px-float-option-text-large"
+why = "a float preset value (1e21) is its shortest round-trip decimal text, no exponent"
+config = '''
+[parse.directive_presets.fl]
+base = "req"
+options = { status = 1e21 }
+'''
+source = '''
+.. fl:: F
+   :id: REQ_PXF1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXF1]
+status = "1000000000000000000000.0"
+
+[[case]]
+name = "px-float-option-text-subnormal"
+why = "a float preset value (5e-324) is its shortest round-trip decimal text, no exponent"
+config = '''
+[parse.directive_presets.fl]
+base = "req"
+options = { status = 5e-324 }
+'''
+source = '''
+.. fl:: F
+   :id: REQ_PXF1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXF1]
+status = "0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005"
+
+[[case]]
+name = "px-float-option-text-binary-noise"
+why = "a float preset value (0.30000000000000004) is its shortest round-trip decimal text, no exponent"
+config = '''
+[parse.directive_presets.fl]
+base = "req"
+options = { status = 0.30000000000000004 }
+'''
+source = '''
+.. fl:: F
+   :id: REQ_PXF1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXF1]
+status = "0.30000000000000004"
+
+[[case]]
+name = "px-float-option-text-negative-exponent-form"
+why = "a float preset value (-1.5e-5) is its shortest round-trip decimal text, no exponent"
+config = '''
+[parse.directive_presets.fl]
+base = "req"
+options = { status = -1.5e-5 }
+'''
+source = '''
+.. fl:: F
+   :id: REQ_PXF1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXF1]
+status = "-0.000015"
+
+[[case]]
+name = "px-float-option-text-max"
+why = "a float preset value (1.7976931348623157e308) is its shortest round-trip decimal text, no exponent"
+config = '''
+[parse.directive_presets.fl]
+base = "req"
+options = { status = 1.7976931348623157e308 }
+'''
+source = '''
+.. fl:: F
+   :id: REQ_PXF1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXF1]
+status = "179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0"
+
+[[case]]
+name = "px-int-option-text-extremes"
+why = "integer preset values at the i64 bounds are their decimal text"
+config = '''
+[parse.directive_presets.hi]
+base = "req"
+options = { status = 9223372036854775807 }
+
+[parse.directive_presets.lo]
+base = "req"
+options = { status = -9223372036854775808 }
+'''
+source = '''
+.. hi:: H
+   :id: REQ_PXI1
+
+.. lo:: L
+   :id: REQ_PXI2
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXI1]
+status = "9223372036854775807"
+[case.expect.needs.REQ_PXI2]
+status = "-9223372036854775808"
+
+[[case]]
+name = "px-false-for-a-non-flag-is-the-text-false"
+why = "false for a non-flag option is the text false"
+config = '''
+[parse.directive_presets.f]
+base = "req"
+options = { status = false }
+'''
+source = '''
+.. f:: F
+   :id: REQ_PXB1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXB1]
+status = "false"
+
+[[case]]
+name = "px-integer-tags-default"
+why = "an integer default for a list field is its decimal text, split as written"
+config = '''
+[parse.directive_presets.t]
+base = "req"
+options = { tags = 5 }
+'''
+source = '''
+.. t:: T
+   :id: REQ_PXT1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXT1]
+tags = ["5"]
+
+[[case]]
+name = "px-default-argument-of-a-need-md"
+why = "a need-type preset's default argument is the title of a MyST use written without one"
+markup = "md"
+config = '''
+[parse.directive_presets.untitled]
+base = "req"
+argument = "Untitled requirement"
+options = { status = "draft" }
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{untitled}
+:id: REQ_PXA1
+```
+
+```{untitled} Named
+:id: REQ_PXA2
+```
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXA1]
+title = "Untitled requirement"
+status = "draft"
+[case.expect.needs.REQ_PXA2]
+title = "Named"
+
+[[case]]
+name = "px-grid-default-argument"
+why = "a preset of grid with a default argument"
+config = '''
+[parse.directive_presets.two-col]
+base = "grid"
+argument = "1 2 2 2"
+'''
+source = '''
+.. two-col::
+
+   .. grid-item::
+
+      A
+'''
+equivalent = '''
+.. grid:: 1 2 2 2
+
+   .. grid-item::
+
+      A
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "px-card-default-option"
+why = "a preset of card with a default option"
+config = '''
+[parse.directive_presets.big-card]
+base = "card"
+options = { shadow = "lg" }
+'''
+source = '''
+.. big-card:: T
+
+   Body.
+'''
+equivalent = '''
+.. card:: T
+   :shadow: lg
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "px-use-is-case-insensitive-md"
+why = "a MyST use of a preset is looked up case-insensitively"
+markup = "md"
+config = '''
+[parse.directive_presets.draft-note]
+base = "note"
+append_options = { class = "draft" }
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{Draft-Note}
+Body.
+```
+'''
+equivalent = '''
+```{note}
+:class: draft
+
+Body.
+```
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "px-name-written-in-capitals"
+why = "a preset name written with capitals in ubproject.toml is used in lower case"
+config = '''
+[parse.directive_presets.Draft-Req]
+base = "req"
+options = { status = "draft" }
+'''
+source = '''
+.. draft-req:: A
+   :id: REQ_PXC1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXC1]
+status = "draft"
+
+[[case]]
+name = "px-option-key-in-capitals"
+why = "a preset option key written in capitals (a docutils option name is lower case)"
+config = '''
+[parse.directive_presets.cap]
+base = "req"
+options = { STATUS = "draft" }
+'''
+source = '''
+.. cap:: A
+   :id: REQ_PXC2
+'''
+[case.expect]
+missing = ["REQ_PXC2"]
+[[case.expect.findings]]
+code = "directive_preset_unknown_option"
+path = "parse.directive_presets.cap.options.STATUS"
+
+[[case]]
+name = "px-preset-named-ub-template-is-taken"
+why = "a preset named ub-template is refused: the name is a directive"
+config = '''
+[parse.directive_presets.ub-template]
+base = "note"
+'''
+source = '''
+.. note::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_name_taken"
+path = "parse.directive_presets.ub-template"
+
+[[case]]
+name = "px-refused-append-and-force-of-one-key"
+why = "the same class key in append_options and force_options is a conflict at the later table"
+config = '''
+[parse.directive_presets.x]
+base = "note"
+append_options = { class = "a" }
+force_options = { class = "b" }
+'''
+source = '''
+.. note::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_option_conflict"
+path = "parse.directive_presets.x.force_options.class"
+
+[[case]]
+name = "px-refused-forced-name"
+why = "force_options may not set the base's :name:"
+config = '''
+[parse.directive_presets.x]
+base = "note"
+force_options = { name = "n" }
+'''
+source = '''
+.. note::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_identity_option"
+path = "parse.directive_presets.x.force_options.name"
+
+[[case]]
+name = "px-self-preset-of-a-need-type-forced-status"
+why = "a self-preset of a need type forcing status reports a written status at the self-preset"
+config = '''
+[parse.directive_presets.req]
+base = "req"
+force_options = { status = "fixed" }
+'''
+source = '''
+.. req:: A
+   :id: REQ_PXS1
+   :status: open
+
+.. req:: B
+   :id: REQ_PXS2
+'''
+[case.expect]
+[case.expect.needs.REQ_PXS1]
+status = "fixed"
+[case.expect.needs.REQ_PXS2]
+status = "fixed"
+[[case.expect.findings]]
+code = "preset_forced_option"
+directive = "req"
+
+[[case]]
+name = "px-preset-of-a-need-type-in-a-host-note"
+why = "a need-type preset used inside a note keeps the host section"
+config = '''
+[parse.directive_presets.req-draft]
+base = "req"
+options = { status = "draft" }
+'''
+source = '''
+Sub
+---
+
+.. note::
+
+   .. req-draft:: Inner
+      :id: REQ_PXN1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXN1]
+status = "draft"
+sections = ["Sub", "Case"]
+
+[[case]]
+name = "px-forced-links-and-written-links"
+why = "forced links replace written links (reported)"
+config = '''
+[parse.directive_presets.to-one]
+base = "spec"
+force_options = { links = "REQ_PXL1" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_PXL1
+
+.. req:: Two
+   :id: REQ_PXL2
+
+.. to-one:: S
+   :id: SPEC_PXL1
+   :links: REQ_PXL2
+'''
+[case.expect]
+[case.expect.needs.SPEC_PXL1]
+links = ["REQ_PXL1"]
+[[case.expect.findings]]
+code = "preset_forced_option"
+directive = "to-one"
+
+[[case]]
+name = "px-preset-of-admonition-default-argument-multiword"
+why = "a preset of admonition with a multi-word default argument; a written argument replaces it whole"
+config = '''
+[parse.directive_presets.caveat]
+base = "admonition"
+argument = "A caveat to note"
+'''
+source = '''
+.. caveat::
+
+   Body.
+
+.. caveat:: Other words here
+
+   Body.
+'''
+equivalent = '''
+.. admonition:: A caveat to note
+
+   Body.
+
+.. admonition:: Other words here
+
+   Body.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "px-preset-of-toctree-int-option"
+why = "a preset of toctree with an integer default"
+config = '''
+[parse.directive_presets.shallow]
+base = "toctree"
+options = { maxdepth = 1, hidden = true }
+'''
+source = '''
+.. shallow::
+
+   other
+'''
+equivalent = '''
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   other
+'''
+[case.files]
+"other.rst" = '''
+Other
+=====
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "px-self-preset-default-argument-of-a-need"
+why = "a self-preset of a need type with a default title"
+config = '''
+[parse.directive_presets.spec]
+base = "spec"
+argument = "Untitled spec"
+'''
+source = '''
+.. spec::
+   :id: SPEC_PXS3
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_PXS3]
+title = "Untitled spec"
+
+[[case]]
+name = "px-preset-of-a-domain-directive"
+why = "a preset whose base is a domain directive (py:function)"
+config = '''
+[parse.directive_presets.pyfn]
+base = "py:function"
+options = { noindex = true }
+'''
+source = '''
+.. pyfn:: f(x)
+
+   Doc.
+'''
+equivalent = '''
+.. py:function:: f(x)
+   :noindex:
+
+   Doc.
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "px-preset-of-only"
+why = "a preset of only with a default argument"
+config = '''
+[parse.directive_presets.html-only]
+base = "only"
+argument = "html"
+'''
+source = '''
+.. html-only::
+
+   .. req:: Only html
+      :id: REQ_PXO1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXO1]
+sections = ["Case"]
+
+[[case]]
+name = "px-need-preset-bool-to-a-flag-like-field"
+why = "a need-type preset setting collapse and hide"
+config = '''
+[parse.directive_presets.hidden]
+base = "req"
+options = { collapse = true, hide = true }
+'''
+source = '''
+.. hidden:: H
+   :id: REQ_PXH1
+'''
+equivalent = '''
+.. req:: H
+   :id: REQ_PXH1
+   :collapse: true
+   :hide: true
+'''
+[case.expect]
+findings = []
+
+[[case]]
+name = "px-self-preset-of-card-append-class"
+why = "a self-preset of a sphinx-design directive appends a class"
+config = '''
+[parse.directive_presets.card]
+base = "card"
+append_options = { class-card = "proj" }
+'''
+source = '''
+.. card:: T
+   :class-card: mine
+
+   Body.
+
+.. req:: R
+   :id: REQ_PXCD
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PXCD]
+type = "req"
+
+[[case]]
+name = "px-preset-of-tab-set-in-md"
+why = "a preset of tab-set with a default class (MyST)"
+markup = "md"
+config = '''
+[parse.directive_presets.tabs]
+base = "tab-set"
+options = { class = "t" }
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+````{tabs}
+```{tab-item} A
+Body.
+```
+````
+'''
+equivalent = '''
+````{tab-set}
+:class: t
+
+```{tab-item} A
+Body.
+```
+````
+'''
+[case.expect]
+findings = []
