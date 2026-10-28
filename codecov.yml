@@ -46,6 +46,12 @@ coverage:
         flags: [ai-index]
         target: auto
         threshold: 0.5%
+      # sphinx-ub-directives, uploaded by the same cell with `flags: ub-directives`.
+      # `target: auto`: a new package, whose number has never been measured here
+      ub-directives:
+        flags: [ub-directives]
+        target: auto
+        threshold: 0.5%
     patch:
       default:
         target: 67%

@@ -19,7 +19,9 @@ repos:
             packages/sphinx-needs/tests/fixtures/derive_conformance\.toml|
             packages/sphinx-needs/tests/fixtures/field_declaration_conformance\.toml|
             packages/sphinx-needs/tests/fixtures/filter_conformance\.toml|
-            packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance\.toml
+            packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance\.toml|
+            packages/sphinx-ub-directives/tests/fixtures/directive_presets_conformance\.toml|
+            packages/sphinx-ub-directives/tests/fixtures/template_directives_conformance\.toml
           )$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -45,7 +47,9 @@ repos:
             packages/sphinx-needs/tests/fixtures/derive_conformance\.toml$|
             packages/sphinx-needs/tests/fixtures/field_declaration_conformance\.toml$|
             packages/sphinx-needs/tests/fixtures/filter_conformance\.toml$|
-            packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance\.toml$
+            packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance\.toml$|
+            packages/sphinx-ub-directives/tests/fixtures/directive_presets_conformance\.toml$|
+            packages/sphinx-ub-directives/tests/fixtures/template_directives_conformance\.toml$
           )
 
   - repo: local
