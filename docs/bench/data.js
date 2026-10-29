@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793307397572,
+  "lastUpdate": 1793309142205,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27144,6 +27144,42 @@ window.BENCHMARK_DATA = {
             "value": 57.144213696,
             "unit": "s",
             "extra": "Commit: f2b08e85b4fae10ba4faa9daaceca55eee68e57e\nBranch: master\nTime: 2026-10-29T21:54:47+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c16f15923fbf3a57992072076562617ce04a07ab",
+          "message": "✨ Per-type declarations: a severity, a count of incoming links, and an id pattern (#2395)\n\n## What\n\n`packages/sphinx-needs`. Three keys a `[needs.types.<t>]` entry gains,\neach folding a family of schema rules into the type's declaration,\nplus the corpus contract they need.\n\n- **`severity`** on a `fields.<f>` / `links.<l>` entry (#2374):\n`violation` (the default, unchanged), `warning` or `info`, the severity\nof every\nconstraint of that type's declaration (schema keywords and `nullable =\nfalse`). Below `violation`, `nullable = false` is reported, not\nenforced:\nthe need is created with no value, one `field_fail` is reported at that\nseverity (silenced with `needs_schema_validation_enabled = False`),\nand needs.json's one `needs_schema` block writes the field nullable. A\nchild type keeps or raises an ancestor's explicit severity and may not\nlower it\n(`needs.type_widening`, naming the type whose entry gave it). `severity`\non a global `needs_fields` / `needs_links` entry is reported and\nignored.\n`info` is logged at WARNING level, as for schema rules, so `-W` fails on\nit unless suppressed (documented).\n- **A count of incoming links** (#2375): a new table,\n`[needs.types.<t>.back_links.<l>]`, named after a link type `l` (any\nlink type of the project),\ntakes `schema = { minItems, maxItems }`, `severity` and `description`\n(anything else is `needs.type_conflict` and the entry ignored; so is an\nentry\nnaming no link type, with a \"did you mean\" to the one it is close to).\nIt counts every link of `l` pointing to a need of the type, its back\nlinks\n`<l>_back` (a link to one of its parts included), is checked once links\nare final (`link_fail`, field `<l>_back`, at the counted need),\nand is inherited and narrowed by subtypes. Needs from\n`needs_external_needs` are exempt (their own project's links are not\nloaded here); imported needs are counted.\nA `links.<l>_back` or `fields.<l>_back` entry stays refused\n(`needs.type_conflict`), now naming the `back_links` entry; a\n`links.foo_back`\nwhere no link type `foo` exists is an ordinary link type. `back_links`\nis a new key of a `needs_types` entry. This supersedes the proposal\n  of #2323; #2341 is not built.\n- **`id_regex`** on the entry (#2373): matched as `needs_id_regex` is\n(`re.match`, authored and generated ids, not imported/external needs),\nANDed with it and with every ancestor's. A need whose id does not match\nis not created (`needs.create_need`, naming pattern and type);\nan uncompilable pattern is a `needs.type_conflict` and ignored. Both\npatterns are matched through one helper against the need's **local id**\n(the whole id while ids carry no namespace), so a future namespaced id\nhas one place to change.\n- **Corpus contract**: a finding pin in\n`field_declaration_conformance.toml` may give `severity`, compared when\ngiven; the header states how each tool's\nlevels map onto it (ubCode grades `create_need` `Warning`, as\nsphinx-needs logs it, and reads it as `violation`).\n90 → 113 cases on master's 90 (23 added here; sha256\n`80b302ee4ebbcd90944c9e425d9879f00a6f7cd4cb3489e9a6ed5aa9d5f832c6`); a\nfinding of a\n`back_links['<l>']` entry names the back links it counts, `<l>_back`.\nThe `id_regex` refusal is a\n`python_only` / `ubcode_only` pair: ubCode keeps such a need and reports\nit (useblocks/ubcode#4325), a deliberate divergence.\n\nDocs: `need_types.rst` (three sections; the docs project's quoted\nwarnings pinned), `configuration.rst` (the `needs_types` keys,\n`back_links`, severity,\nincoming links, `needs_id_regex` and the local id), `schema/index.rst`\n(severity levels, two strengths of \"required\", coverage by count, an id\npattern per type),\n`api.rst` (`BackLinksSchema`).\n\n## Why\n\nCloses #2374, closes #2375, closes #2373.\n\nOn a project migrated to the per-type model, most of the schema rules\nleft were `id-prefix-<type>` patterns, `coverage-<type>-<link>-back`\ncounts,\nand rules kept only to report at `warning`; each now has a declaration.\nubCode mirrors all three in its own PR (useblocks/ubcode#4324, #4322,\n#4321, #4323;\nthe PR link follows) and re-vendors the corpus.\n\nThe count was first spelt `[needs.types.<t>.links.<l>_back]`; telling\nsuch a count from a type-local link type by its name's suffix needed a\nclassifier\nthat review kept finding holes in (`l_back_back`, an `x_back` with no\n`x`). A table of its own makes a count a count by where it is written.\n\nMerged with `master` after #2388: the corpus auto-merged (master's\n`link-default-in-the-schema` kept in place, no case changed on both\nsides).\nInteractions fixed in and after the merge:\n\n- #2388's unknown-key report skips `severity` on a `needs_fields` /\n`needs_links` entry, which this PR reports with its own message, so the\nkey is reported once;\n- #2299's near-name check covers `back_links` keys (`implemnts` → \"did\nyou mean 'implements'?\").\n\nThe exttypes PR extends the corpus next; ubCode re-vendors from master\nafter it.\n\n## Tests\n\n- Red first for each key (4, 6 and 2 failing cases); two independent\nreviews reproduced every proof and added mutations of their own.\nThe three that first survived (a start-unanchored `id_regex`, a child\nnot inheriting an ancestor's severity, `needs_schema` widened at\n`violation`) are now killed by corpus cases, as are the derived-field\nnull case and the part-link counts.\n- The merge's one interaction is pinned by\n`test_a_severity_on_a_global_entry_is_reported_and_ignored`, red after a\nboth-sides resolution\n(the key also reported as unknown) and red again with either `reported=`\nremoved.\n- The `back_links` table:\n`test_the_back_links_of_a_link_type_are_no_link_type` and the corpus\ncases `link-type-named-as-back-links` and\n`links-entry-named-as-back-links-counts-nothing` were red before it (the\n`links.<l>_back` spelling accepted as a count).\nA review re-ran 18 probes in the new spelling (junk keys, bad schema\nkeywords and shapes, names that are no link type, inheritance and\nnarrowing,\nseverity, the `conf.py` list form, `links.x_back` with no `x`,\n`links.l_back_back`, the refusal hint); its mutations each went red.\n- `test_id_patterns.py` pins the local-id helper.\n- `BackLinksSchema` is documented in the API page, so\n`FieldsSchema.add_back_links`' reference resolves under `-nW`\n(removing the entry brings back Read the Docs' warning; locally\n`docs-needs` reports no sphinx_needs reference target, only the\nintersphinx hosts the sandbox blocks).\n- On the head: `uv run poe lint` 0, `uv run poe typecheck` 0, full `uv\nrun poe test-needs -n 4` 3907 passed / 15 skipped,\n  `uv run poe smoke-needs` 0.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-29T22:24:07+01:00",
+          "tree_id": "65328997d7255818182c0623db90e5f3d3a506c2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c16f15923fbf3a57992072076562617ce04a07ab"
+        },
+        "date": 1793309132631,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09280715700000286,
+            "unit": "s",
+            "extra": "Commit: c16f15923fbf3a57992072076562617ce04a07ab\nBranch: master\nTime: 2026-10-29T22:24:07+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.42388785600001,
+            "unit": "s",
+            "extra": "Commit: c16f15923fbf3a57992072076562617ce04a07ab\nBranch: master\nTime: 2026-10-29T22:24:07+01:00"
           }
         ]
       }
