@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793288533793,
+  "lastUpdate": 1793295721758,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27036,6 +27036,42 @@ window.BENCHMARK_DATA = {
             "value": 60.184906116,
             "unit": "s",
             "extra": "Commit: 05d9c5599b36059fce33fd74ad34d107fe41a8bf\nBranch: master\nTime: 2026-10-29T16:40:37+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4259931a38a7d36152fb8d4e6d41f2714d2c65ae",
+          "message": "👌 Field and link type entries: unknown keys and schema keywords reported, near names caught, the link default written, a failed build keeps its error (#2388)\n\n## What\n\n`packages/sphinx-needs`.\n\n- **Unknown keys are reported** (#2206). An unknown key in a\n`needs_fields` / `needs_links` / `needs_extra_options` /\n`needs_extra_links` entry\n(TOML tables included) is one `needs.config` warning per key, naming the\nentry, the key and the known keys; the key is ignored and the entry\nkept.\nAn unknown keyword in such an entry's `schema` (or its `items` /\n`contains`), in a core-field specialisation, or in an `add_field`\nschema,\n  is one `needs.config` warning and dropped, where it aborted the build.\nA `name` in a `needs_fields` entry, or an `option` in a `needs_links`\nentry, left from the list spelling is accepted in silence where it\nrepeats\nthe entry's name, and reported where it gives another (it was always\nignored: the entry is named by its key).\n- **Near names are caught** (#2299). A field or link type declared on\nneed types alone whose name is within a difflib ratio of 0.8 of a core\nfield,\na registered field or a global link type is one `needs.type_near_name`\nwarning (\"did you mean 'asil'?\"). It is still declared,\n  and the warning can be suppressed on its own.\n- **needs.json writes a link type's literal default** (#2208, changed\noutput) in `needs_schema`, in the string form the needs write their\nlinks\n(with each link's condition under `needs_json_include_link_conditions`,\nthe default). With `needs_json_remove_defaults` such values are now left\nout,\n  and ub-needs-exchange restores them.\n- **A failed build keeps its own error.** With `needs_build_json`,\n`needs_build_json_per_id` or `needs_build_needumls` set, the three\nbuild-finished writers return when the build has failed, where they\nraised \"Needs schema has not been initialized yet.\" and Sphinx reported\nthat\n  instead of the real cause.\n\n## Why\n\nCloses #2206, closes #2299, closes #2208.\n\nEach was silent, or worse: an unknown schema keyword aborted the build,\nand its message was then masked by the needs.json writer.\nThe field-declaration corpus gains one case (89 → 90); ubCode mirrors\nall four in useblocks/ubcode#4428 (fixing useblocks/ubcode#4178 and\nuseblocks/ubcode#4079).\n\nThe field-declaration corpus is also extended by the pertype and\nexttypes branches, still to open; they merge after this one, in that\norder.\n\n## Tests\n\n- Red first for every slice; the review's own mutations (configuration\nmutated in place, a keyword not dropped inside `contains` for fields\nand for links, the near-name cutoff on both sides, the link default's\nstring form under both settings) are each pinned and go red.\n- The two schema fixtures that pinned the abort moved to\n`tests/test_config_unknown_keys.py` as warnings.\n- Fixture cleanups the new warnings surfaced: `docs/ubproject.toml` (a\nstray `option`), the `doc_variants_quickstart` test project, and two\n  `name =` lines in the `docs/schema/index.rst` example.\n- After merging `master` (`15b9d972`: only the changelog's Unreleased\nsection conflicted): `uv run poe lint` 0, `uv run poe typecheck` 0,\n  full `uv run poe test-needs` 3843 passed / 14 skipped.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-29T18:40:27+01:00",
+          "tree_id": "00a4e43f7542d1cc05040edb72c9af2bd55b9b08",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4259931a38a7d36152fb8d4e6d41f2714d2c65ae"
+        },
+        "date": 1793295712523,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09127559099999871,
+            "unit": "s",
+            "extra": "Commit: 4259931a38a7d36152fb8d4e6d41f2714d2c65ae\nBranch: master\nTime: 2026-10-29T18:40:27+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.747782654999995,
+            "unit": "s",
+            "extra": "Commit: 4259931a38a7d36152fb8d4e6d41f2714d2c65ae\nBranch: master\nTime: 2026-10-29T18:40:27+01:00"
           }
         ]
       }
