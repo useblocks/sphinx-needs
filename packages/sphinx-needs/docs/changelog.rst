@@ -29,7 +29,7 @@ Improvements
   ``derive_by_type`` as the spelling that attaches a rule to a type the project does not declare -- the
   documentation now says that is what ``derive_by_type`` is for, rather than only that it is older. The GitHub
   services' types are not narrowed: an entry with a ``title`` and a ``prefix`` replaces one, and a bare entry for one
-  is ignored, with a warning naming the service's type. See :ref:`needs_types_extension`.
+  is ignored, with a warning naming the service's type. See :ref:`narrowing an extension's type <needs_types_extension>`.
 
 - ✨ An extension declares a field on its own need types alone: ``add_field(name, description, types=[...])``
   (:issue:`2372`)
@@ -44,7 +44,7 @@ Improvements
   types alone, either way, and the needs.json schema writes such a field nullable where the extension's declaration
   is not, with a ``null`` default where it gives no literal one (so ``needs_json_remove_defaults`` leaves the key
   out). sphinx-test-reports declares its eighteen fields this way from its next release. See
-  :ref:`needs_types_extension_fields`.
+  :ref:`fields an extension declares on need types alone <needs_types_extension_fields>`.
 
 - ✨ A derive rule of kind ``copy`` takes ``where`` beside ``over`` or ``join`` (:ref:`needs_derive_kind_copy`,
   :issue:`2246`)

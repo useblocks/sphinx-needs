@@ -357,7 +357,7 @@ or after a built-in :ref:`GitHub service <github_service>` is configured or remo
 
 .. versionchanged:: 9.2.0
 
-   An entry naming a need type an extension adds narrows that type (:ref:`needs_types_extension`),
+   An entry naming a need type an extension adds narrows that type (:ref:`narrowing an extension's type <needs_types_extension>`),
    rather than being ignored (an entry with neither ``title`` nor ``prefix``)
    or stopping the build when the extension adds its type (one with both).
 

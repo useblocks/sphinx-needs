@@ -1794,7 +1794,7 @@ class FieldsSchema:
         """The need types declaring ``name``, a field or link type declared on need
         types alone -- by their entries (:ref:`needs_types_fields`), or by an
         extension's ``add_field(..., types=...)`` -- or ``None`` for one every need
-        type has (:meth:`_localise`)."""
+        type has (see ``_localise``)."""
         return self._base()._local.get(name)
 
     def add_link_field(self, field: LinkSchema) -> None:

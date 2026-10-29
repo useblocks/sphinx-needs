@@ -66,9 +66,10 @@ def add_need_type(
     or without a ``title`` and a ``prefix``, narrows the type instead, however late it
     is added: the keys the entry gives win, the ``title``, ``prefix``, ``color`` and
     ``style`` it leaves out are the ones given here, and its ``inherits``, ``fields``
-    and ``links`` apply (see :ref:`needs_types_extension`). The configured GitHub
-    services' ``issue``, ``pr`` and ``commit`` do not count: a type added under one of
-    those directives replaces the service's.
+    and ``links`` apply
+    (see :ref:`narrowing an extension's type <needs_types_extension>`).
+    The configured GitHub services' ``issue``, ``pr`` and ``commit`` do not count:
+    a type added under one of those directives replaces the service's.
 
     The type is added to sphinx-needs' own registry, not to the :ref:`needs_types`
     configuration value, which holds only what the project configures (so Sphinx

@@ -191,7 +191,7 @@ and for each type inheriting from it that gives none of its own;
 its ``needs.derive_invalid`` warnings name the entry it came from.
 ``derive_by_type`` alone gives a need type a rule without an entry for the type:
 a type a :ref:`GitHub service <github_service>` adds, which an entry would replace
-(a type an extension adds takes an entry of its own too, which narrows it, :ref:`needs_types_extension`);
+(a type an extension adds takes an entry of its own too, which narrows it, :ref:`narrowing an extension's type <needs_types_extension>`);
 and it alone gives a type a rule that the types inheriting from it do not get.
 
 Rules per need type are checked when the configuration is read, one ``needs.derive_invalid`` per entry:
