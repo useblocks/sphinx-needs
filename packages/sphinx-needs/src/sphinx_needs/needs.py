@@ -1666,11 +1666,10 @@ def reread_on_need_types_change(
     """Re-read every document if the need types changed since the documents were read.
 
     A need type gives its needs their ``type_name`` and ``type_prefix`` (and the ids
-    generated from it) and its diagram color and style; through ``inherits``, their
-    ``type_ancestors``; and through ``inherits``, ``fields`` and ``links``, the fields,
-    link types, defaults and ``derive`` rules they are created with. The needs of an
-    unchanged document are kept from the pickled environment, so they would keep what
-    the previous entries gave them (#2287).
+    generated from it), its diagram color and style, and, through ``inherits``,
+    ``fields`` and ``links``, the fields, link types, defaults and ``derive`` rules they
+    are created with. The needs of an unchanged document are kept from the pickled
+    environment, so they would keep what the previous entries gave them (#2287).
 
     The list compared is the complete one, ``NeedsSphinxConfig.types``: the configured
     need types and those added from code (``add_need_type``, the configured GitHub
@@ -2050,10 +2049,11 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     #: inherits; their findings are reported with the types' declarations, last
     type_entries, entry_findings = _checked_type_entries(needs_config.types)
     order, parent, inherits_findings = _inherits_order(type_entries)
-    #: what each need's ``type_ancestors`` is read from
-    schema.set_type_parents(parent)
     #: each need type with the types inheriting from it, as ``target_types`` reads them
     below = _type_descendants(order, parent)
+    # and as ``c.is_a`` reads them, in every filter of this build: set at its start, as
+    # the ``var`` proxy is (``filter_common.is_a_types``)
+    needs_config.is_a_types = below
     #: one rule for the name of a link type's back links, wherever the field or link
     #: type of that name comes from (every field is registered by now, a service's
     #: too): what it refuses does not exist, and is not read from the configuration
@@ -2134,8 +2134,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 None,
             )
         elif not NeedsCoreFields[name].get("add_to_field_schema", False):
-            # a core field a need computes (``type_name``, ``type_ancestors``, ...):
-            # nothing below reads the entry
+            # a core field a need computes (``type_name``, ``docname``, ...): nothing
+            # below reads the entry
             log_warning(
                 LOGGER,
                 f"needs_fields entry {name!r} names the core field {name!r}, "

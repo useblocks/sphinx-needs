@@ -49,7 +49,6 @@
     'template',
     'title',
     'type',
-    'type_ancestors',
     'type_color',
     'type_name',
     'type_prefix',
@@ -106,7 +105,6 @@
     'template',
     'title',
     'type',
-    'type_ancestors',
     'type_color',
     'type_name',
     'type_prefix',
@@ -177,9 +175,6 @@
     'template': None,
     'title': 'title',
     'type': 'type',
-    'type_ancestors': list([
-      'type',
-    ]),
     'type_color': '#000000',
     'type_name': 'type title',
     'type_prefix': 'type prefix',
@@ -247,9 +242,6 @@
     'template': None,
     'title': 'title',
     'type': 'type',
-    'type_ancestors': list([
-      'type',
-    ]),
     'type_color': '#000000',
     'type_name': 'type title',
     'type_prefix': 'type prefix',
@@ -459,12 +451,6 @@
       'type',
     ),
     tuple(
-      'type_ancestors',
-      list([
-        'type',
-      ]),
-    ),
-    tuple(
       'type_color',
       '#000000',
     ),
@@ -531,7 +517,6 @@
     'template',
     'title',
     'type',
-    'type_ancestors',
     'type_color',
     'type_name',
     'type_prefix',

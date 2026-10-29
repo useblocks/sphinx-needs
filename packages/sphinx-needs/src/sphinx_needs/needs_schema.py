@@ -1358,7 +1358,6 @@ class FieldsSchema:
         "_local",
         "_need_types",
         "_project_fields",
-        "_type_ancestors",
         "_type_overlays",
         "_type_views",
         "_view_of",
@@ -1397,9 +1396,6 @@ class FieldsSchema:
         self._derived_names: frozenset[str] | None = None
         #: the configured need types, if the schema was told (:meth:`set_need_types`)
         self._need_types: frozenset[str] | None = None
-        #: each need type with a parent, with itself and its ancestors nearest first,
-        #: if the schema was told the parents (:meth:`set_type_parents`)
-        self._type_ancestors: dict[str, tuple[str, ...]] | None = None
 
     def __repr__(self) -> str:
         return (
@@ -1560,50 +1556,6 @@ class FieldsSchema:
                     "is not a configured need type."
                 )
         self._need_types = need_types
-
-    def set_type_parents(self, parents: Mapping[str, str]) -> None:
-        """Tell the schema the parent of each need type that has one.
-
-        ``create_schema`` tells it the parents ``inherits`` leaves once it is checked
-        (``needs.type_inherits`` drops an ``inherits`` naming no need type, and every
-        one on a cycle), from which :meth:`type_ancestors` answers. It is told once.
-
-        :param parents: Each need type with a parent, by directive name, with it.
-        :raises ValueError: if it was told already, or the parents hold a cycle
-        :raises TypeError: if the schema is frozen, or the schema of one need type
-        """
-        self._mutating()
-        if self._type_ancestors is not None:
-            raise ValueError(
-                "The need type parents of the fields schema are already set."
-            )
-        ancestors: dict[str, tuple[str, ...]] = {}
-        for need_type in parents:
-            chain = [need_type]
-            node = parents.get(need_type)
-            while node is not None:
-                if node in chain:
-                    ring = " -> ".join([*chain[chain.index(node) :], node])
-                    raise ValueError(f"The need type parents hold a cycle: {ring}.")
-                chain.append(node)
-                node = parents.get(node)
-            ancestors[need_type] = tuple(chain)
-        self._type_ancestors = ancestors
-
-    def type_ancestors(self, need_type: str) -> tuple[str, ...]:
-        """The need type, then each type it inherits from, nearest first.
-
-        A type with no parent (:meth:`set_type_parents`) is its own one ancestor: a root
-        type, one whose ``inherits`` was dropped, a type the schema does not know, and
-        every type of a schema never told the parents. The schema of one need type
-        (:meth:`for_type`) answers the schema's own.
-
-        :param need_type: The need type, by directive name.
-        """
-        ancestors = self._base()._type_ancestors
-        if ancestors is None:
-            return (need_type,)
-        return ancestors.get(need_type, (need_type,))
 
     def add_type_overlay(self, need_type: str, field: FieldSchema | LinkSchema) -> None:
         """Declare a field anew for the needs of one need type.

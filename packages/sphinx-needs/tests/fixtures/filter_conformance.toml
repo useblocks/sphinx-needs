@@ -1848,22 +1848,22 @@ divergent = { ubcode = "the filter fails: a list field is no value to compare wi
 # --- need types and inherits -----------------------------------------------------------
 
 [[case]]
-name = "type-ancestors-follow-inherits"
-why = "type_ancestors is the need's type, then each type it inherits from, nearest first: a literal in it follows inherits where type == compares the name alone, and a type whose inherits names no need type is a root"
+name = "is-a-follows-inherits"
+why = "c.is_a(x) is true for a need whose type is x or inherits from x, transitively, as the project's need type declarations give inherits: no field of the need is read but its type, and a name that is no need type is false on every need; type == compares the name alone, and a type whose inherits names no need type is a root"
 config = '''
 [needs.types.req]
 title = "Requirement"
 prefix = "R_"
 
-[needs.types.safety_req]
-title = "Safety requirement"
+[needs.types.sys_req]
+title = "System requirement"
 prefix = "SR_"
 inherits = "req"
 
-[needs.types.asil_d_req]
-title = "ASIL D requirement"
-prefix = "AD_"
-inherits = "safety_req"
+[needs.types.hw_req]
+title = "Hardware requirement"
+prefix = "HR_"
+inherits = "sys_req"
 
 [needs.types.spec]
 title = "Specification"
@@ -1880,11 +1880,11 @@ source = '''
 
    :np:`(a) a part`
 
-.. safety_req:: A safety requirement
-   :id: SREQ_001
+.. sys_req:: A system requirement
+   :id: SYS_001
 
-.. asil_d_req:: An ASIL D requirement
-   :id: ASIL_001
+.. hw_req:: A hardware requirement
+   :id: HW_001
 
 .. spec:: An unrelated root
    :id: SPEC_001
@@ -1894,66 +1894,32 @@ source = '''
 '''
 
 [[case.filters]]
-filter = '"req" in type_ancestors'
-expected = ["ASIL_001", "REQ_001", "SREQ_001"]
-tier = "fast"
-
-[[case.filters]]
-filter = '"safety_req" in type_ancestors'
-expected = ["ASIL_001", "SREQ_001"]
-
-[[case.filters]]
-filter = '"req" not in type_ancestors'
-expected = ["SPEC_001", "STRAY_001"]
-tier = "fast"
-
-[[case.filters]]
-filter = 'type == "req"'
-expected = ["REQ_001"]
-tier = "index"
-why = "type compares the name literally: it does not follow inherits"
-
-[[case.filters]]
-filter = '"nope" in type_ancestors'
-expected = []
-why = "a name that is no need type selects nothing, and is not reported -- the inherits naming it included"
-
-[[case.filters]]
-filter = 'len(type_ancestors) == 1'
-expected = ["REQ_001", "SPEC_001", "STRAY_001"]
-why = "a root's, and a type's whose inherits names no need type, is the type alone"
-
-[[case.filters]]
-filter = 'len(type_ancestors) == 3'
-expected = ["ASIL_001"]
-
-[[case.filters]]
-filter = '"req" in type_ancestors and type != "req"'
-expected = ["ASIL_001", "SREQ_001"]
-
-[[case.filters]]
-filter = '"req" in type_ancestors'
-expected = ["ASIL_001", "REQ_001", "REQ_001.a", "SREQ_001"]
-include_parts = true
-why = "a part's is its need's"
-
-[[case.filters]]
-filter = 'type_ancestors == ["safety_req", "req"]'
-expected = ["SREQ_001"]
-tier = "eval"
-reason = "compare:list"
-why = "nearest first; a list beside == is outside the language"
-
-[[case.filters]]
 filter = 'c.is_a("req")'
-expected = ["ASIL_001", "REQ_001", "SREQ_001"]
+expected = ["HW_001", "REQ_001", "SYS_001"]
 tier = "fast"
-why = "c.is_a(name) is name in type_ancestors"
+why = "the type itself, a type inheriting from it, and one inheriting from that"
 
 [[case.filters]]
-filter = "c.is_a('safety_req')"
-expected = ["ASIL_001", "SREQ_001"]
+filter = "c.is_a('sys_req')"
+expected = ["HW_001", "SYS_001"]
 tier = "fast"
+why = "one level down: the type and its descendants, never its ancestors"
+
+[[case.filters]]
+filter = 'c.is_a("hw_req")'
+expected = ["HW_001"]
+tier = "fast"
+why = "a type nothing inherits from is the type alone"
+
+[[case.filters]]
+filter = 'c.is_a("spec")'
+expected = ["SPEC_001"]
+why = "a type with no inherits, and none inheriting from it"
+
+[[case.filters]]
+filter = 'c.is_a("stray")'
+expected = ["STRAY_001"]
+why = "a type whose inherits names no need type is a root"
 
 [[case.filters]]
 filter = 'not c.is_a("req")'
@@ -1961,28 +1927,50 @@ expected = ["SPEC_001", "STRAY_001"]
 tier = "fast"
 
 [[case.filters]]
-filter = 'c.is_a("req") and not c.is_a("safety_req")'
+filter = 'c.is_a("req") and not c.is_a("sys_req")'
 expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'c.is_a("sys_req") or type == "spec"'
+expected = ["HW_001", "SPEC_001", "SYS_001"]
+
+[[case.filters]]
+filter = 'type == "req"'
+expected = ["REQ_001"]
+tier = "index"
+why = "the exact type is still type: it compares the name literally, and does not follow inherits"
+
+[[case.filters]]
+filter = 'type in ["req", "sys_req", "hw_req"]'
+expected = ["HW_001", "REQ_001", "SYS_001"]
+why = "what c.is_a('req') selects here, spelled out"
 
 [[case.filters]]
 filter = 'c.is_a("nope")'
 expected = []
-why = "a name that is no need type selects nothing, and is not reported"
+tier = "fast"
+why = "a name that is no need type selects nothing, and is not reported -- the inherits naming it included"
+
+[[case.filters]]
+filter = 'c.is_a("Requirement")'
+expected = []
+why = "a type is named by its directive name, never its title"
 
 [[case.filters]]
 filter = 'c.is_a("req")'
-expected = ["ASIL_001", "REQ_001", "SREQ_001"]
+expected = ["HW_001", "REQ_001", "SYS_001"]
 in_document = false
 why = "unlike c.this_doc(), it reads the need alone, so a filter configured outside every document takes it"
 
 [[case.filters]]
 filter = 'c.is_a("req")'
-expected = ["ASIL_001", "REQ_001", "REQ_001.a", "SREQ_001"]
+expected = ["HW_001", "REQ_001", "REQ_001.a", "SYS_001"]
 include_parts = true
+why = "a part's type is its need's"
 
 [[case.filters]]
 filter = 'c.is_a(type)'
-expected = ["ASIL_001", "REQ_001", "SPEC_001", "SREQ_001", "STRAY_001"]
+expected = ["HW_001", "REQ_001", "SPEC_001", "STRAY_001", "SYS_001"]
 tier = "eval"
 reason = "call:c.is_a"
 why = "the argument is a string literal in the language; any other is eval's"
@@ -1996,6 +1984,6 @@ reason = "call:c.is_a"
 
 [[case.filters]]
 filter = 'c.is_a("req") == True'
-expected = ["ASIL_001", "REQ_001", "SREQ_001"]
+expected = ["HW_001", "REQ_001", "SYS_001"]
 tier = "eval"
 reason = "call:c.is_a"

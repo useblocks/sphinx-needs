@@ -5116,11 +5116,11 @@ field = "cyc_b"
 code = "derive_invalid"
 field = "readable"
 
-# --- type_ancestors in a where ------------------------------------------------------
+# --- c.is_a in a where ----------------------------------------------------------------
 
 [[case]]
 name = "where-follows-inherits"
-why = "a where reads type_ancestors as a filter does: 'req' in type_ancestors counts a req and every type inheriting from it, as c.is_a('spec') a spec and every type inheriting from it, type == 'req' a req alone; a copy reads it nearest first; a bare entry naming a default type keeps the default types"
+why = "a where reads c.is_a as a filter does: c.is_a('req') counts a req and every type inheriting from it, transitively, as the need type declarations give inherits, c.is_a('spec') a spec and every type inheriting from it, c.is_a('nope') no need, type == 'req' a req alone; a bare entry naming a default type keeps the default types"
 config = '''
 [needs.types.spec]
 inherits = "req"
@@ -5130,7 +5130,7 @@ inherits = "spec"
 
 [needs.fields.n_req_like]
 schema = { type = "integer" }
-derive = { kind = "count", over = "links", where = "'req' in type_ancestors" }
+derive = { kind = "count", over = "links", where = "c.is_a('req')" }
 
 [needs.fields.n_req]
 schema = { type = "integer" }
@@ -5140,9 +5140,9 @@ derive = { kind = "count", over = "links", where = "type == 'req'" }
 schema = { type = "integer" }
 derive = { kind = "count", over = "links", where = "c.is_a('spec')" }
 
-[needs.fields.lineage]
-schema = { type = "array", items = { type = "string" } }
-derive = { kind = "copy", field = "type_ancestors" }
+[needs.fields.n_unknown]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.is_a('nope')" }
 '''
 source = '''
 .. req:: A requirement
@@ -5163,16 +5163,13 @@ source = '''
 '''
 [case.expect]
 findings = []
-[case.expect.needs.IMPL_1]
-lineage = ["impl", "spec", "req"]
-[case.expect.needs.REQ_1]
-lineage = ["req"]
 [case.expect.needs.TEST_1]
 n_req_like = 3
 n_req = 1
 n_spec_like = 2
-lineage = ["test"]
+n_unknown = 0
 [case.expect.needs.TEST_2]
 n_req_like = 0
 n_req = 0
 n_spec_like = 0
+n_unknown = 0

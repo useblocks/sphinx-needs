@@ -575,7 +575,7 @@ def _inject_type_and_item_type(
     """Inject type and item type (for arrays) into a field schema, validating any existing values.
 
     A field's array schema takes ``items``, so one that gives ``contains`` alone
-    (``type_ancestors: {contains: {const: req}}``) is given the ``items`` its values
+    (``tags: {contains: {const: a}}``) is given the ``items`` its values
     already satisfy, the item type; a link type's takes neither.
     """
     # Cast to dict for mutation (TypedDict union makes direct assignment complex)

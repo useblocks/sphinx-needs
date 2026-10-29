@@ -320,8 +320,6 @@ def validate_type_schema(
                 # but essential for select matching
                 "id",
                 "type",
-                # the type and those it inherits from, to select by ``inherits``
-                "type_ancestors",
                 # source fields
                 "docname",
                 "is_external",

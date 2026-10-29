@@ -1286,7 +1286,8 @@ def filter_problem(text: str) -> str | None:
     It must parse as a filter, and read the candidate alone: a predicate naming
     ``needs`` (every need), ``current_need`` (the reader) or a ``c.`` check (such as
     ``c.this_doc()``) is not portable, as ubCode cannot evaluate it -- but
-    ``c.is_a("<type>")``, which reads the candidate's ``type_ancestors`` alone.
+    ``c.is_a("<type>")``, which reads the candidate's type alone, against the need
+    types the project declares.
 
     :param text: The predicate.
     """

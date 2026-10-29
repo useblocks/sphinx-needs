@@ -32,7 +32,6 @@ def _make_need(
         "type": "requirement",
         "type_name": "Req",
         "type_prefix": "REQ_",
-        "type_ancestors": ["requirement"],
         "type_color": "#000000",
         "type_style": "node",
         "status": "open",
@@ -782,3 +781,91 @@ def test_the_origin_key_is_no_name_a_filter_can_hold() -> None:
     """The document reaches a predicate under a key no field or filter-data key can be,
     so a field named like it is never read as the document."""
     assert not ORIGIN_KEY.isidentifier()
+
+
+# --- c.is_a: the need's type against the project's need types ---
+
+#: req <- sys_req <- hw_req, and spec: each with itself and every type inheriting from
+#: it, as ``create_schema`` gives them to a build's filters
+_IS_A_TYPES = {
+    "req": frozenset({"req", "sys_req", "hw_req"}),
+    "sys_req": frozenset({"sys_req", "hw_req"}),
+    "hw_req": frozenset({"hw_req"}),
+    "spec": frozenset({"spec"}),
+}
+
+
+def _is_a_config(
+    filter_data: dict[str, object] | None = None, *, types: object = _IS_A_TYPES
+) -> Mock:
+    config = Mock(spec=["filter_data", "variant_data_proxy", "is_a_types"])
+    config.filter_data = filter_data or {}
+    config.variant_data_proxy = None
+    if types is None:
+        del config.is_a_types
+    else:
+        config.is_a_types = types
+    return config
+
+
+def _both_tiers(need: NeedItem, config: Mock, filter_string: str) -> tuple[bool, bool]:
+    """The parsed tier's answer and ``eval``'s, for one need."""
+    assert compile_portable(filter_string).predicate is not None
+    fast = filter_single_need(need, config, filter_string)
+    refused = CompiledFilter(None, "refused", False)
+    with patch.object(filter_common, "compile_portable", lambda _: refused):
+        slow = filter_single_need(need, config, filter_string)
+    return fast, slow
+
+
+@pytest.mark.parametrize(
+    ("need_type", "name", "expected"),
+    [
+        pytest.param("req", "req", True, id="the-type-itself"),
+        pytest.param("sys_req", "req", True, id="a-child"),
+        pytest.param("hw_req", "req", True, id="a-grandchild"),
+        pytest.param("hw_req", "sys_req", True, id="a-child-one-level-down"),
+        pytest.param("req", "sys_req", False, id="never-an-ancestor"),
+        pytest.param("spec", "req", False, id="an-unrelated-type"),
+        pytest.param("req", "nope", False, id="a-name-that-is-no-type"),
+    ],
+)
+def test_is_a_follows_the_declared_types_on_both_tiers(
+    need_type: str, name: str, expected: bool
+) -> None:
+    """``c.is_a`` reads the need's own type against the project's need types, and no
+    field of the need: the needs here carry no list of their types."""
+    need = _make_need(type=need_type)
+    assert _both_tiers(need, _is_a_config(), f'c.is_a("{name}")') == (
+        expected,
+        expected,
+    )
+
+
+def test_is_a_reads_the_type_never_a_field_or_filter_data() -> None:
+    """A ``needs_filter_data`` key ``type``, or a field listing other types, shadows
+    nothing ``c.is_a`` reads, on either tier."""
+    need = _make_need(type="spec", extras={"lineage": ["req"]})
+    config = _is_a_config({"type": "req"})
+    assert _both_tiers(need, config, 'c.is_a("req")') == (False, False)
+    assert _both_tiers(need, config, 'c.is_a("spec")') == (True, True)
+    # where `type` itself is read, the key shadows it, as for every field
+    assert filter_single_need(need, config, 'type == "req"') is True
+
+
+def test_is_a_with_no_declared_types_is_the_type_alone() -> None:
+    """A configuration no build prepared knows no declaration: each type is itself
+    alone, and the two tiers agree."""
+    need = _make_need(type="sys_req")
+    config = _is_a_config(types=None)
+    assert _both_tiers(need, config, 'c.is_a("sys_req")') == (True, True)
+    assert _both_tiers(need, config, 'c.is_a("req")') == (False, False)
+
+
+def test_the_compiled_filter_says_it_reads_the_types() -> None:
+    """So that the caller passes them: the types are not compiled in, as one process
+    may build several projects."""
+    assert compile_portable('c.is_a("req")').reads_types is True
+    assert compile_portable('c.is_a("req") or c.this_doc()').reads_types is True
+    assert compile_portable("c.this_doc()").reads_types is False
+    assert compile_portable('type == "req"').reads_types is False

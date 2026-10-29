@@ -49,7 +49,7 @@ import ast
 import builtins
 import operator
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Collection, Mapping
 from dataclasses import dataclass
 from functools import lru_cache, partial
 from typing import Any
@@ -99,6 +99,12 @@ _FALLBACK_ROOTS: frozenset[str] = frozenset({"var"})
 #: what ``c.this_doc()`` compares a need's document with. No name in a filter can be it,
 #: so it never shadows a field. ``filter_common`` sets it, for a filter that reads it.
 ORIGIN_KEY = "\x00origin"
+
+#: The key, in the per-call context mapping, of the need types ``c.is_a`` reads: each
+#: need type with itself and every type inheriting from it (:func:`is_a`). As
+#: :data:`ORIGIN_KEY`, no name in a filter can be it. ``filter_common`` sets it, for a
+#: filter that reads it.
+IS_A_KEY = "\x00is_a"
 
 #: What the literal readers return for a node that is no literal of theirs
 #: (``None`` is a literal of the grammar, so it cannot be the marker).
@@ -214,6 +220,9 @@ class CompiledFilter:
     reads_origin: bool
     """Whether the predicate reads the document the filter is written in
     (``c.this_doc()``): the caller then passes it under :data:`ORIGIN_KEY`."""
+    reads_types: bool = False
+    """Whether the predicate reads the project's need types (``c.is_a("...")``): the
+    caller then passes them under :data:`IS_A_KEY`."""
 
 
 @lru_cache(maxsize=256)
@@ -222,7 +231,8 @@ def compile_portable(filter_string: str) -> CompiledFilter:
 
     The document a filter is written in is NOT part of the result, which every call
     with the same string shares: a predicate that reads it finds it in the mapping it
-    is called with.
+    is called with. Nor are the project's need types, which ``c.is_a("...")`` reads,
+    for the same reason: one process may build several projects.
     """
     try:
         tree = ast.parse(filter_string, mode="eval")
@@ -232,7 +242,13 @@ def compile_portable(filter_string: str) -> CompiledFilter:
         predicate = _expr(tree.body)
     except _NotPortable as refused:
         return CompiledFilter(None, refused.reason, False)
-    return CompiledFilter(predicate, None, any(map(_is_this_doc, ast.walk(tree))))
+    nodes = list(ast.walk(tree))
+    return CompiledFilter(
+        predicate,
+        None,
+        any(map(_is_this_doc, nodes)),
+        any(_is_c_check(node, "is_a") for node in nodes),
+    )
 
 
 def try_build_simple_predicate(
@@ -330,7 +346,7 @@ def _call(node: ast.Call) -> SimplePredicate | None:
             raise _NotPortable("call:c.this_doc")
         return _this_doc
 
-    # `is_a_check`: c.is_a("<type>"), which is "<type>" in type_ancestors
+    # `is_a_check`: c.is_a("<type>"), the need's type is "<type>" or inherits from it
     if _is_c_check(node, "is_a"):
         name = _string(node.args[0]) if len(node.args) == 1 else None
         if name is None or node.keywords:
@@ -381,15 +397,34 @@ def _this_doc(
     return need.is_in_document(origin)
 
 
+def is_a(
+    need_type: str, name: str, is_a_types: Mapping[str, Collection[str]] | None
+) -> bool:
+    """``c.is_a(name)`` on a need of *need_type*: whether the type is *name*, or a type
+    inheriting from it, transitively.
+
+    Both tiers answer through this: the predicate of :func:`compile_portable` and the
+    ``eval`` tier's ``NeedCheckContext.is_a``.
+
+    :param need_type: The need's own type, never a ``needs_filter_data`` key of the name.
+    :param name: The type named.
+    :param is_a_types: The project's need types, each with itself and every type
+        inheriting from it, from the declarations once ``inherits`` is checked
+        (``needs.create_schema``): a name that is no need type is false on every need.
+        None outside a build, where no declaration is known: each type is then itself
+        alone.
+    """
+    if is_a_types is None:
+        return need_type == name
+    return need_type in is_a_types.get(name, ())
+
+
 def _is_a(
     name: str, need: NeedItem | NeedPartItem, ctx: Mapping[str, Any] | None = None
 ) -> bool:
-    """``c.is_a("<name>")``: whether the need's type is *name* or inherits from it.
-
-    As the ``eval`` tier's ``NeedCheckContext.is_a``, it reads the need's own
-    ``type_ancestors``, never a ``needs_filter_data`` key of that name.
-    """
-    return name in need["type_ancestors"]
+    """``c.is_a("<name>")``: :func:`is_a` of the need's type, with the need types the
+    caller passes under :data:`IS_A_KEY`."""
+    return is_a(need["type"], name, None if ctx is None else ctx.get(IS_A_KEY))
 
 
 # --- comparisons: `comparison_expr`, `literal_cmp_var_field_expr`, `in`, `is None` ---
