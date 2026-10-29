@@ -295,7 +295,7 @@ using it there raises ``this_doc can not be used in this context``.
 It is likewise unavailable in ``needimport`` ``:filter:``, which runs against
 needs imported from another project, and in ``needuml`` content filters.
 
-.. _filter_type_ancestors:
+.. _filter_is_a:
 
 Filtering for a type and the types inheriting from it
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -304,64 +304,48 @@ Filtering for a type and the types inheriting from it
 
 ``type == 'req'`` compares the type's name: it selects the needs of type ``req`` and no other,
 not those of a type that :ref:`inherits <needs_types_fields>` from ``req``.
-Every need carries ``type_ancestors``, its type and then each type it inherits from, nearest first,
-so a filter can follow ``inherits`` with the membership test of the portable filter language:
+``c.is_a('req')`` follows ``inherits``: it is true for a need whose type is ``req``,
+or a type inheriting from ``req``, directly or through other types.
+With these need types
 
 .. code-block:: toml
 
-   [needs.types.safety_req]
-   title = "Safety requirement"
+   [needs.types.sys_req]
+   title = "System requirement"
    prefix = "SR_"
    inherits = "req"
 
+   [needs.types.hw_req]
+   title = "Hardware requirement"
+   prefix = "HR_"
+   inherits = "sys_req"
+
+``c.is_a('req')`` selects the ``req``, ``sys_req`` and ``hw_req`` needs, as ``type in ['req', 'sys_req', 'hw_req']`` does,
+``c.is_a('sys_req')`` the ``sys_req`` and ``hw_req`` ones, and ``c.is_a('hw_req')`` the ``hw_req`` ones alone; and
+
 .. code-block:: rst
 
    .. needtable::
-      :filter: 'req' in type_ancestors
+      :filter: c.is_a('req') and not c.is_a('sys_req')
 
-selects every ``req`` and every ``safety_req``; a ``safety_req`` need has ``type_ancestors`` ``["safety_req", "req"]``.
+selects the ``req`` needs, and those of every other type inheriting from ``req``, but not the ``sys_req`` and ``hw_req`` ones.
 
-- A type that inherits from no other type has itself alone, ``["req"]``,
-  as has a type whose ``inherits`` names no need type or is on a cycle:
+- It reads the need's type and the project's need types, nothing else: no field of a need lists its types.
+  A type whose ``inherits`` names no need type or is on a cycle inherits from none:
   that ``inherits`` is ignored, with a ``needs.type_inherits`` warning.
-- A name that is no need type selects nothing, and is not reported: ``'rq' in type_ancestors`` is false on every need,
-  as ``type == 'rq'`` is.
-- A need part has its need's.
-- It is computed from the project's need types, and cannot be set: it is no directive option,
-  :ref:`needextend` cannot change it, and a :ref:`needs_fields` entry of that name declares no field
-  (it is ignored with a ``needs.config`` warning).
-  A need read from a ``needs.json`` (:ref:`needimport`, :ref:`needs_external_needs`)
-  takes the value the reading project's need types give it, whatever the file says.
-- It is not written to the :ref:`needs.json <needs_builder>`:
-  to write it, set :ref:`needs_json_exclude_fields` to a list without it.
+- A name that is no need type is false on every need, and is not reported: ``c.is_a('rq')`` selects nothing,
+  as ``type == 'rq'`` does. A type is named by its directive name, never its title.
+- A need part has its need's type.
+- Its argument is a string literal in the portable filter language: ``c.is_a(type)`` or ``c.is_a('req') == True``
+  is evaluated by ``eval``, as ``c.this_doc() == True`` is.
+- It reads the need's own type, never a :ref:`needs_filter_data` key named ``type``.
+- ``c.is_a`` tests the need's type; to follow a link type named ``is_a``, as a project modelling an ontology may declare,
+  use the link: ``'REQ_001' in is_a``.
 
-It is a field like any other where a need of the project is read:
-in the filters of the need-listing and diagram directives, of :ref:`needextend`, of a
-:ref:`link condition <need_conditional_links>` and of :ref:`needs_warnings`,
-in a derived field's ``where`` (:ref:`needs_derive`), in a :ref:`needtable` column,
-and in a :ref:`schema rule <schema_validation>`, as ``type_ancestors: {contains: {const: req}}``.
-It is *not* available where a filter reads something else than such a need:
-in :ref:`needimport` ``:filter:``, which runs against the records of the imported file
-(a record holds it only if the file was written with it, and then the filter reads the file's value),
-nor in the ``predicates`` of a :ref:`needs_fields` entry, which read a need before it is created
-(``id``, ``type``, ``title``, ``tags``, ``status``, ``docname``, ``is_import`` and ``is_external``);
-naming it there fails as a name no field defines does.
-A :ref:`needs_filter_data` key named ``type_ancestors`` shadows the field in a filter string, as such a key shadows any field.
-
-``c.is_a('req')`` says the same as ``'req' in type_ancestors``, and reads better in a longer filter:
-
-.. code-block:: rst
-
-   .. needtable::
-      :filter: c.is_a('req') and not c.is_a('safety_req')
-
-selects the ``req`` needs and the needs of every other type inheriting from ``req``, but not the ``safety_req`` ones.
-Its argument is a string literal in the portable filter language: ``c.is_a(type)`` or ``c.is_a('req') == True``
-is evaluated by ``eval``, as ``c.this_doc() == True`` is.
-It reads the need's own ``type_ancestors``, never a :ref:`needs_filter_data` key of that name.
 Unlike :ref:`c.this_doc() <filter_current_page>` it reads the need alone, not the document the filter is written in,
 so it is available in the filters configured in **conf.py**, such as :ref:`needs_warnings` and :ref:`needs_constraints`,
-and in a derived field's ``where``.
+and in a derived field's ``where`` (:ref:`needs_derive`), as well as in the filters of the need-listing and diagram
+directives, of :ref:`needextend` and of a :ref:`link condition <need_conditional_links>`.
 Like ``c.this_doc()``, it is *not* available in :ref:`needimport` ``:filter:``, which runs against
 the records of the imported file, nor in the ``predicates`` of a :ref:`needs_fields` entry;
 using it there fails with ``name 'c' is not defined``.
@@ -441,13 +425,12 @@ so writing filters the first two take is recommended:
      ``status == 'open'``, ``5 <= priority``, ``owner == lead``, ``len(tags) > 0``;
    - **membership**: an operand ``in`` / ``not in`` a list of literals,
      and a literal ``in`` / ``not in`` an operand -- an item of a list, a substring of a string:
-     ``type in ['req', 'spec']``, ``'safety' in tags``, ``'login' not in title.lower()``,
-     ``'req' in type_ancestors`` (see :ref:`filter_type_ancestors`);
+     ``type in ['req', 'spec']``, ``'safety' in tags``, ``'login' not in title.lower()``;
    - ``x is None`` / ``x is not None``;
    - ``x.startswith('...')`` / ``x.endswith('...')`` after an operand: ``id.lower().startswith('req')``;
    - ``search('pattern', x)`` (see :ref:`re_search`), with a plain string literal as the pattern;
    - ``c.this_doc()`` (see :ref:`filter_current_page`), and ``c.is_a('...')`` with a string literal
-     (see :ref:`filter_type_ancestors`);
+     (see :ref:`filter_is_a`);
    - ``and``, ``or``, ``not``, parentheses, and an operand alone, which is read by its truthiness.
 
    Not in it, and so evaluated by ``eval``: a field ``in`` a field (``sphinx_tag in tags``),
