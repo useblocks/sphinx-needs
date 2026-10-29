@@ -87,17 +87,21 @@
 #     alike. The Python runner adds the extensions to `conf.py` and SKIPS a case whose
 #     extension is not installed (a run against sphinx-needs' released dependencies
 #     alone has none); ubCode's runner, which loads no extension, runs every such case
-#   - an entry naming a need type an extension registers, bare or giving a `title` and
-#     a `prefix`, NARROWS that type, however late the extension registers it: the keys
-#     the entry gives win, the `title`, `prefix`, `color` and `style` it leaves out are
-#     the extension's, and its `fields`, `links` and `inherits` apply as on a type the
-#     project declares. A bare one declares no type (the default types are kept beside
-#     it, as beside a bare entry naming a default type); one giving a `title` and a
-#     `prefix` declares the project's types, as any such entry. A bare entry naming no
-#     default type and no type an extension registers is ignored (each tool's
-#     configuration finding, not compared). In the walk order (below), a type an entry
-#     with a `title` and a `prefix` narrows stands where `config` gives the entry; one a
-#     bare entry narrows stands where the extension registers it, after the types
+#   - an entry naming a need type an extension registers, bare or giving a `title` and a
+#     `prefix`, NARROWS that type, however late the extension registers it: the keys the
+#     entry gives win, the `title`, `prefix`, `color` and `style` it leaves out are the
+#     extension's, and its `fields`, `links`, `back_links`, `id_regex` and `inherits`
+#     apply as on a type the project declares -- a `severity` included. A declaration of
+#     an extension's field in it starts from the extension's own and may only narrow it,
+#     as any type's declaration narrows the one before it: one widening it is a
+#     `type_widening` (a different type a `type_conflict`), the entry ignored, the type
+#     keeping the extension's declaration. A bare one declares no type (the default types
+#     are kept beside it, as beside a bare entry naming a default type); one giving a
+#     `title` and a `prefix` declares the project's types, as any such entry. A bare
+#     entry naming no default type and no type an extension registers is ignored (each
+#     tool's configuration finding, not compared). In the walk order (below), a type an
+#     entry with a `title` and a `prefix` narrows stands where `config` gives the entry;
+#     one a bare entry narrows stands where the extension registers it, after the types
 #     `config` declares (sphinx-test-reports registers `testfile`, `testsuite`,
 #     `testcase`, in that order)
 #   - an extension declares each of its fields on the need types that carry it, as a
@@ -6718,3 +6722,87 @@ type = ["string", "null"]
 code = "type_conflict"
 field = "weight"
 type = "testcase"
+
+[[case]]
+name = "a-severity-on-a-narrowed-extensions-type"
+why = "a severity on a bare entry's declaration of a field of a need type an extension registers is the severity of its constraints, as on a project type: a value its narrower schema refuses is field_fail at that severity, on that type's needs alone"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.testcase.fields.suite]
+schema = { minLength = 10 }
+severity = "warning"
+'''
+source = '''
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.needs.TF_0001_F0D]
+suite = "suite_a"
+[case.expect.needs.TF_0001_F0D_61F00]
+suite = "suite_a"
+[[case.expect.findings]]
+code = "field_fail"
+need = "TF_0001_F0D_61F00"
+field = "suite"
+severity = "warning"
+[[case.expect.findings]]
+code = "field_fail"
+need = "TF_0001_F0D_85463"
+field = "suite"
+severity = "warning"
+
+[[case]]
+name = "a-back-links-count-on-a-narrowed-extensions-type"
+why = "a back_links entry of a bare entry naming a need type an extension registers counts the links each of its needs receives, as on a project type: the test case no need links to fails minItems (link_fail, field links_back), the one linked to is clean, the extension's other types are not counted"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.testcase.back_links.links]
+schema = { minItems = 1 }
+'''
+source = '''
+.. test:: A test spec
+   :id: T_0001
+   :links: TF_0001_F0D_61F00
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.needs.TF_0001_F0D_61F00]
+links_back = ["T_0001"]
+[case.expect.needs.TF_0001_F0D_85463]
+links_back = []
+[[case.expect.findings]]
+code = "link_fail"
+need = "TF_0001_F0D_85463"
+field = "links_back"
+severity = "violation"

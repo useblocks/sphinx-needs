@@ -313,8 +313,14 @@ An entry naming a need type an extension adds (with :func:`~sphinx_needs.api.con
 such as sphinx-test-reports' ``testfile``, ``testsuite`` and ``testcase``) narrows that type, as one naming a default type does,
 with or without a ``title`` and a ``prefix``: the keys the entry gives win,
 the ``title``, ``prefix``, ``color`` and ``style`` it leaves out are the extension's,
-and its ``inherits``, ``fields`` and ``links`` apply to the type's needs as on any type the project declares.
+and its ``inherits``, ``fields``, ``links``, ``back_links`` and ``id_regex`` apply to the type's needs
+as on any type the project declares, a ``severity`` included.
 When the extension adds the type does not matter, even when that is after the configuration is read.
+The entry only narrows: its declaration of a field the extension declares starts from the extension's,
+as a type's declaration starts from the field's own (:ref:`needs_types_fields`),
+so one that would widen it -- loosen a ``schema`` keyword, make it ``nullable`` where the extension does not --
+is a ``needs.type_widening`` warning, and one giving it another type a ``needs.type_conflict``;
+that field's entry is ignored, and the type keeps the extension's declaration.
 A bare entry declares no type: beside it the default types are kept, as beside a bare entry naming a default type.
 An entry giving a ``title`` and a ``prefix`` declares the project's types, as any such entry does:
 
