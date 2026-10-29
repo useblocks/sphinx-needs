@@ -560,8 +560,10 @@ def test_dead_links_are_the_first_root_declarations(test_app: Any) -> None:
     app.build()
     # with copy beside it, the dead link copied into ``links`` is reported, in both
     # link types: that is what a needs_links entry of the same keys does (gchecks),
-    # and not this declaration's to change
+    # and not this declaration's to change; ``checks`` is a near name of ``gchecks``
     assert build_warnings(app) == [
+        "WARNING: needs_types['req'].links['checks'] declares a link type of need "
+        "types 'req' alone; did you mean 'gchecks'? [needs.type_near_name]",
         _deprecated_copy("needs_links['gchecks']", "gchecks"),
         _deprecated_copy("needs_types['req'].links['checks']", "checks"),
         "<srcdir>/index.rst:8: WARNING: Need 'R_002' has unknown outgoing link "
@@ -967,9 +969,9 @@ def test_what_a_declaration_of_a_link_type_cannot_give(test_app: Any) -> None:
         "(got str); the key is ignored [needs.config]",
         "WARNING: needs_types['spec'].links['rel'] has unknown keys 'parse_variants', "
         "'parse_dynamic_functions', 'parse_conditions', 'derive_by_type'; known keys "
-        "are description, schema, default, predicates, derive, target_types, "
-        "severity, incoming, outgoing, copy, allow_dead_links, color, style, style_part, "
-        "style_start, style_end; "
+        "are allow_dead_links, color, copy, default, derive, description, incoming, "
+        "outgoing, predicates, schema, severity, style, style_end, style_part, "
+        "style_start, target_types; "
         "the keys are ignored [needs.config]",
     ]
     union = _schema(app).get_link_field("rel")
@@ -1129,20 +1131,24 @@ def test_a_link_type_whose_back_links_are_named_already_is_refused(
 ) -> None:
     """A link type declared on need types alone whose back links would have the name
     of a field, or of a link type, is refused on every entry, and does not exist; the
-    build goes on."""
+    build goes on. (The field ``y_back`` is a near name of ``x_back``, and reported.)"""
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        _conflict(
-            f"needs_types[{need_type!r}].links[{name!r}] declares {name!r}, whose back "
-            f"links would be '{name}_back', which is {what}"
-        )
-        for need_type, name, what in (
-            ("spec", "x", "a field"),
-            ("impl", "x", "a field"),
-            ("spec", "y", "a field"),
-            ("spec", "w", "a link type"),
-        )
+        "WARNING: needs_types['req'].fields['y_back'] declares a field of need types "
+        "'req' alone; did you mean 'x_back'? [needs.type_near_name]",
+        *(
+            _conflict(
+                f"needs_types[{need_type!r}].links[{name!r}] declares {name!r}, whose back "
+                f"links would be '{name}_back', which is {what}"
+            )
+            for need_type, name, what in (
+                ("spec", "x", "a field"),
+                ("impl", "x", "a field"),
+                ("spec", "y", "a field"),
+                ("spec", "w", "a link type"),
+            )
+        ),
     ]
     for name in ("x", "y", "w"):
         assert _schema(app).get_link_field(name) is None, name

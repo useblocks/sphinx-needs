@@ -357,27 +357,6 @@ ref_not_defs_prefix:
           local:
             $ref: "type-impl"
 
-extra_option_unknown_keys:
-  conf: |
-    extensions = ["sphinx_needs"]
-    needs_from_toml = "ubproject.toml"
-  ubproject: |
-    [needs.fields.efforts]
-    schema.type = "string"
-    schema.unknown = "unknown"
-  rst: ""
-
-link_unknown_keys:
-  conf: |
-    extensions = ["sphinx_needs"]
-    needs_from_toml = "ubproject.toml"
-  ubproject: |
-    [needs.links.links]
-    outgoing = "links"
-    incoming = "linked by"
-    schema.unknown = "unknown"
-  rst: ""
-
 extra_option_pattern_unsafe_error:
   conf: |
     extensions = ["sphinx_needs"]

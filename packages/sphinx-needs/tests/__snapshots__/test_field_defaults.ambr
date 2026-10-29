@@ -10,9 +10,6 @@
             'external_css': 'external_link',
             'id': 'SPEC_1',
             'lineno': 4,
-            'link1': list([
-              'SPEC_1',
-            ]),
             'link1_back': list([
               'SPEC_1',
               'SPEC_2',
@@ -48,9 +45,6 @@
             'external_css': 'external_link',
             'id': 'SPEC_2',
             'lineno': 9,
-            'link1': list([
-              'SPEC_1',
-            ]),
             'link2': list([
               'SPEC_3',
             ]),
@@ -83,12 +77,6 @@
             'hide': True,
             'id': 'SPEC_3',
             'lineno': 13,
-            'link1': list([
-              'SPEC_1',
-            ]),
-            'link2': list([
-              'SPEC_1',
-            ]),
             'link2_back': list([
               'SPEC_2',
             ]),
@@ -311,6 +299,7 @@
             }),
             'link1': dict({
               'default': list([
+                'SPEC_1',
               ]),
               'description': 'Link field',
               'field_type': 'links',
@@ -331,6 +320,7 @@
             }),
             'link2': dict({
               'default': list([
+                'SPEC_1',
               ]),
               'description': 'Link field',
               'field_type': 'links',

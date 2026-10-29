@@ -46,8 +46,8 @@ TOML_CONF = CONF + 'needs_from_toml = "ubproject.toml"\n'
 
 #: the known keys, as the unknown-key finding lists them
 KNOWN = (
-    "known keys are directive, title, prefix, color, style, inherits, id_regex, fields, "
-    "links"
+    "known keys are color, directive, fields, id_regex, inherits, links, prefix, "
+    "style, title"
 )
 
 #: three types in an order that is not alphabetical, so that a sort would show
@@ -465,13 +465,13 @@ FINDINGS = [
             "needs_types entry 1 ('req').fields['status'] has a 'derive' that is not "
             "a mapping (got str); the key is ignored",
             "needs_types entry 1 ('req').fields['status'] has an unknown key "
-            "'parse_variants'; known keys are description, schema, nullable, "
-            "default, predicates, derive, severity; the key is ignored",
+            "'parse_variants'; known keys are default, derive, description, "
+            "nullable, predicates, schema, severity; the key is ignored",
             "needs_types entry 1 ('req').links['links'] has an unknown key "
-            "'nullable'; known keys are description, schema, default, predicates, "
-            "derive, target_types, severity, incoming, outgoing, copy, "
-            "allow_dead_links, color, style, style_part, style_start, style_end; the key "
-            "is ignored",
+            "'nullable'; known keys are allow_dead_links, color, copy, default, "
+            "derive, description, incoming, outgoing, predicates, schema, severity, "
+            "style, style_end, style_part, style_start, target_types; the key is "
+            "ignored",
             # a link type's display is a key of every links entry, and refused when
             # the schema is built on a link type declared otherwise
             "needs_types['req'].links['links'] sets 'incoming', which a need type "

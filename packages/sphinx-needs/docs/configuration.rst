@@ -177,7 +177,16 @@ A file from one table is never merged under an inline table from the other.
 **conf.py and -D, key by key.** As for every other option, the toml overrides :file:`conf.py` one key at a time:
 a ``needs_variant_data`` in :file:`conf.py` still applies when the location read sets no inline table,
 and a ``needs_variant_data_file`` when it sets no file; the file is then loaded and the inline table merged over it, as usual.
-``-D needs_variant_data_file=...`` replaces the toml's file, in either location, without opening it, and the toml's inline table still applies.
+
+**-D needs_variant_data_file swaps the file, never the table.**
+``-D needs_variant_data_file=...`` replaces the data file of the location read, ``[variants]`` or ``[needs]``,
+without opening the toml's own file, and that location's inline table is still merged over it,
+so a project on the legacy location keeps its ``[needs.variant_data]``.
+It never decides the location: the location, the refusals and the warnings are those of the toml as written,
+and with neither location declared the override file is the whole of the toml's variant data
+(a :file:`conf.py` ``needs_variant_data`` still merges over it, key by key as above).
+A relative path is resolved against the :file:`conf.py` directory, and an empty value, ``-D needs_variant_data_file=``, means no file:
+the toml's file is replaced by none, also without being opened, and the location's inline table is used without a file.
 
 **With needs_from_toml_table**, the prefix applies to both tables:
 with ``needs_from_toml_table = ["tool"]`` they are ``[tool.needs]`` and ``[tool.variants]``,
@@ -588,6 +597,12 @@ A declaration of another type, or derived where the field is not (or the other w
 and the entry is ignored, and does not declare the field, so a child's entry under it is a declaration of its own
 (refused too if its type or derivation is not the agreed one; an empty one takes the agreed type);
 an entry that cannot be used for another reason -- it widens, or its default cannot be used -- declares its field all the same, as it was.
+A field so declared whose name is close to that of a core field an author sets, a registered field or a link type
+(``difflib.get_close_matches``, cutoff 0.8) is likely misspelt, and is one ``needs.type_near_name`` warning,
+declared all the same (:ref:`need_types_misspelt`)::
+
+   needs_types['req'].fields['asl'] declares a field of need types 'req' alone; did you mean 'asil'?
+
 The field is declared once for all, nullable and without a default, which each declaring type narrows:
 one that declares it not nullable, with no default, requires it on its own needs alone.
 On a need of a type that does not declare it, the field holds ``None``, a derived one too.
@@ -633,6 +648,8 @@ or is derived where the link type is not (or the other way round), is one ``need
 
 and the entry is ignored: one of a type without a declaring ancestor does not declare the link type
 (a child's entry under it is a declaration of its own), a child's still declares it, through its parent.
+A name close to that of a field or link type declared elsewhere is one ``needs.type_near_name`` warning,
+as for a field (``needs_types['req'].links['verifes'] declares a link type of need types 'req' alone; did you mean 'verifies'?``).
 On a need of a type that does not declare it, the link type holds ``[]``, no links -- where a field holds ``None``:
 a list of links is never ``None``, a needs.json carries every link type on every need, and an empty one is no links.
 A link set for it in a need is ignored, as one ``needs.undeclared_for_type`` warning::
@@ -827,6 +844,25 @@ For new fields the following can be defined:
     else ``None``, or the empty value of the field's type when it is not nullable.
     The field is derived on every need type, see :ref:`needs_derive_by_type`.
     *New in version 9.0.0.*
+
+Any other key in an entry, such as a misspelt ``derive``, is ignored and the entry kept,
+one ``needs.config`` warning per key, naming the entry, the key and the keys an entry has
+(a ``name``, left from a :ref:`needs_extra_options` entry, is accepted where it repeats the entry's name,
+and reported where it gives another, ``needs_fields['level'] gives 'name' = 'lvl', which differs from the entry's name 'level'; it is ignored``)::
+
+   needs_fields['total'] has an unknown key 'dervie'; known keys are default, derive, derive_by_type, description, nullable, parse_dynamic_functions, parse_variants, predicates, schema; the key is ignored
+
+A keyword the ``schema`` of the field's type does not have (``enmu``, or ``minimum`` on a ``string``),
+at the top of the schema or in its ``items`` or ``contains``, is dropped and the rest of the schema kept,
+one ``needs.config`` warning per keyword::
+
+   needs_fields['asil'].schema has an unknown keyword 'enmu'; known keywords of a schema of type 'string' are const, enum, format, maxLength, minLength, pattern, type; the keyword is ignored
+
+The same holds for a core field's entry, whose ``type`` it may leave out,
+and for the schema of a field an extension or a service registers (``add_field['x'].schema ...``).
+Such a keyword stopped the build until this release.
+A need type's own entry is checked apart: a declaration there with an unknown key or keyword
+is reported as described in :ref:`needs_types_fields`.
 
 A need type may declare a field anew for its needs, narrowing it, or declare one no ``needs_fields`` entry declares,
 for the needs of the types that declare it alone: see :ref:`needs_types_fields`.
@@ -1123,6 +1159,14 @@ Each configured link can define:
   See :ref:`links_style`.
 - ``style_start`` (optional): See :ref:`needflow_style_start`.
 - ``style_end`` (optional): See :ref:`needflow_style_start`.
+
+Any other key in an entry, such as a misspelt ``target_types``, and a keyword the ``schema`` of a link type
+(or its ``items`` or ``contains``) does not have, such as ``uniqueItems``, is reported and ignored as in a
+:ref:`needs_fields` entry, one ``needs.config`` warning per key
+(an ``option``, left from a :ref:`needs_extra_links` entry, is accepted where it repeats the entry's name, and reported where it gives another)::
+
+   needs_links['verifies'] has an unknown key 'target_type'; known keys are allow_dead_links, color, copy, default, derive, derive_by_type, description, incoming, outgoing, parse_conditions, parse_dynamic_functions, parse_variants, predicates, schema, style, style_end, style_part, style_start, target_types; the key is ignored
+   needs_links['verifies'].schema has an unknown keyword 'uniqueItems'; known keywords of a link type's schema are contains, items, maxContains, maxItems, minContains, minItems, type; the keyword is ignored
 
 A need type may declare a link type anew for its needs, narrowing it: see :ref:`needs_types_fields`.
 A link type the need types that have it declare alone, with its labels, ``copy`` and dead links, needs no entry here (:ref:`needs_types_fields`).
@@ -4012,6 +4056,11 @@ And use it like:
    A dictionary entry can carry a ``derive`` rule, or ``derive_by_type`` rules, which make the option a
    :ref:`derived field <needs_derive>`, as on a :ref:`needs_fields` entry.
 
+A dictionary entry is read for ``name``, ``description``, ``schema``, ``derive`` and ``derive_by_type`` alone.
+Any other key, such as ``nullable`` or ``default``, which only a :ref:`needs_fields` entry reads,
+is reported and ignored as in a :ref:`needs_fields` entry, one ``needs.config`` warning per key
+(``needs_extra_options['efforts'] has an unknown key 'nullable'; ...``), and so is a keyword its ``schema`` does not have.
+
 .. _`needs_global_options`:
 .. _`global_option_filters`:
 
@@ -4280,6 +4329,8 @@ Each configured link should define:
 
 The back links of a link type are named ``<option>_back``, and one whose back links would have the name of a field
 or of another link type is refused, one ``needs.config`` warning, as for :ref:`needs_links`.
+Any other key in an entry, and a keyword its ``schema`` does not have, is reported and ignored as for :ref:`needs_links`
+(``needs_extra_links['blocks'] has an unknown key ...``).
 
 Configuration example:
 

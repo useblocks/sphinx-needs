@@ -599,15 +599,83 @@ SURVEY = {
 @pytest.mark.parametrize("test_app", [SURVEY], indirect=True)
 def test_a_needextend_filter_naming_a_derived_field_is_reported(test_app):
     """A ``needextend`` filter naming a derived field sees the value from before it is
-    computed (the field's empty value): ``needs.derive_scope``, once, naming the field
-    and every need of the project's sources, as for a field a ``[[…]]`` computes."""
+    computed (the field's empty value): ``needs.derive_scope``, once, naming the field,
+    the derive rule that computes it, and every need of the project's sources, as for a
+    field a ``[[…]]`` computes."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
         "<srcdir>/index.rst:41: WARNING: needextend filter 'total == 99' names 'total', "
-        "which a dynamic function or variant computes on 7 needs (C_1, P_1, P_2 and 4 "
+        "which a derive rule computes on 7 needs (C_1, P_1, P_2 and 4 "
         "more): the filter sees the value from before it is computed "
         "[needs.derive_scope]",
+    ]
+
+
+COMPUTED_BY_CONF = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {"tests": {}}
+needs_fields = {
+    "ntests": {
+        "schema": {"type": "integer"},
+        "derive": {"kind": "count", "over": "tests_back"},
+    },
+    "label": {"schema": {"type": "string"}},
+}
+"""
+
+COMPUTED_BY_INDEX = """\
+Computed by
+===========
+
+.. req:: R
+   :id: REQ_1
+   :label: [[copy("title")]]
+
+.. test:: T
+   :id: TEST_1
+   :tests: REQ_1
+
+.. needextend:: ntests == 0
+   :status: by-rule
+
+.. needextend:: label == 'R'
+   :status: by-call
+
+.. needextend:: label == 'R' and ntests == 1
+   :status: by-both
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), COMPUTED_BY_CONF),
+                (Path("index.rst"), COMPUTED_BY_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_needextend_filter_report_names_what_computes_the_field(test_app):
+    """``needs.derive_scope`` at a ``needextend`` says what computes the fields its
+    filter names, with ubCode's wording: a derive rule, a dynamic function or variant,
+    or both when the filter names one field of each."""
+    app = test_app
+    app.build()
+    tail = "the filter sees the value from before it is computed [needs.derive_scope]"
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:12: WARNING: needextend filter 'ntests == 0' names "
+        f"'ntests', which a derive rule computes on 2 needs (REQ_1, TEST_1): {tail}",
+        "<srcdir>/index.rst:15: WARNING: needextend filter \"label == 'R'\" names "
+        f"'label', which a dynamic function or variant computes on 1 need (REQ_1): {tail}",
+        "<srcdir>/index.rst:18: WARNING: needextend filter \"label == 'R' and "
+        "ntests == 1\" names 'label' and 'ntests', which a derive rule, a dynamic "
+        f"function or a variant computes on 2 needs (REQ_1, TEST_1): {tail}",
     ]
 
 

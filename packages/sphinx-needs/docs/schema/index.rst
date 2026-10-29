@@ -490,12 +490,10 @@ Additional schema constraints can also be defined here, which will be validated 
 .. code-block:: toml
 
    [needs.fields.asil]
-   name = "asil"
    schema.type = "string"
    schema.enum = ["QM", "A", "B", "C", "D"]
 
    [needs.fields.efforts]
-   name = "efforts"
    schema.type = "integer"
    schema.minimum = 0
    schema.maximum = 100

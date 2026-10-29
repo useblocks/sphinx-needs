@@ -10,6 +10,24 @@ Unreleased
 Improvements
 ............
 
+- ✨ A derive rule of kind ``copy`` takes ``where`` beside ``over`` or ``join`` (:ref:`needs_derive_kind_copy`,
+  :issue:`2246`)
+
+  ``where`` narrows the targets before ``select`` reads them, as it does for the other kinds and for ``links`` with
+  ``join``: ``select = "first"`` takes the lowest-id target that passes ``where`` and sets the field, ``"unique"``
+  counts only those, and ``"list"`` keeps their values. A target the filter cannot be evaluated on is dropped, without
+  a warning. A ``copy`` of the need's own field, or of the need ``from`` names, still takes no ``where``
+  (``needs.derive_invalid``).
+
+- ✨ A derive rule of kind ``any`` or ``all`` takes ``empty``, the value it gives over no candidate
+  (:ref:`needs_derive_kind_any_all`, :issue:`2377`)
+
+  Over no candidate ``all`` is ``true``, which on a requirement nothing tests reads as "every test passed";
+  ``all_passed = { kind = "all", test = "status == 'passed'", over = "tests_back", empty = false }`` gives ``false``
+  there instead. No candidate is what is left once ``where`` has dropped the needs it does not hold on. Unset,
+  ``empty`` is the kind's own value (``all`` ``true``, ``any`` ``false``), so no existing rule changes; on any other
+  kind, or with a value that is not a boolean, the rule is refused (``needs.derive_invalid``).
+
 - ✨ A need type's declaration of a field or link type carries a ``severity``: a constraint reported, not failed
   (:issue:`2374`)
 
@@ -47,6 +65,90 @@ Improvements
   pattern and the type that gives it). So an ``id-prefix-<type>`` schema rule folds into the type's declaration when a
   wrong id should refuse the need; one that should only be reported stays a rule. A pattern that is not a regular
   expression is a ``needs.type_conflict`` warning, and is ignored. See :ref:`need_types_id_regex`.
+
+- 👌 The ``needs.derive_scope`` warning at a :ref:`needextend` whose filter names a computed field says what
+  computes it: "a derive rule" for a field a :ref:`derive <needs_derive>` rule computes, "a dynamic function or
+  variant" for a ``[[…]]``, ``<<…>>`` or ``<{…}>``, and "a derive rule, a dynamic function or a variant" when the
+  filter names fields of both, as ubCode words it (:issue:`2207`)
+
+  It said "a dynamic function or variant" for a derived field too, where the project wrote neither. The warning's
+  code and severity are unchanged.
+
+- 👌 ``-D needs_variant_data_file`` swaps the data file, never the table it is read from (:issue:`2378`)
+
+  The rule is now ub-project's reading contract (section 6.8), shared by every tool that reads
+  :file:`ubproject.toml`, and sphinx-needs passes the value to it rather than removing keys from the toml itself.
+  For a project that builds without warnings, nothing changes in the output (a project on the legacy location gains
+  one ``-v`` line naming it, as it has without ``-D``): the value replaces the data file of the location
+  read, ``[variants]`` or ``[needs]``, without opening the toml's own file, and that location's inline table still
+  applies; ``-D needs_variant_data_file=`` (no file) replaces it by none, so the location's inline table is used
+  alone. The location, the refusals and the warnings are now always those of the toml as written, so two
+  projects that already warned or failed without ``-D`` now do so with it too: a ``[variants]`` declared by its
+  ``data_file`` alone stays the location read, with the ``needs.variant_data_location`` warning for the
+  ``[needs]`` keys beside it, where ``[needs]`` used to be read silently; and an empty or non-string
+  ``data_file`` is refused. See :ref:`needs_from_toml_variants`.
+
+- 👌 An unknown key in a field's or a link type's entry, and an unknown keyword in its ``schema``, is reported
+  and ignored (:issue:`2206`)
+
+  A key a :ref:`needs_fields`, :ref:`needs_links`, :ref:`needs_extra_options` or :ref:`needs_extra_links` entry
+  does not have, such as a misspelt ``derive`` or ``target_types``, was ignored in silence, so a field meant to be
+  derived stayed authorable and a link type meant to be restricted was not. Each is now one ``needs.config``
+  warning, naming the entry, the key and the keys the entry has; the key is ignored and the entry kept. A
+  ``name`` in a ``needs_fields`` entry, or an ``option`` in a ``needs_links`` entry, left from the list spelling,
+  is accepted in silence where it repeats the entry's name, as a migrated entry does, and reported where it
+  gives another (it was always ignored: the entry is named by its key). A
+  ``needs_extra_options`` entry is read for ``name``, ``description``, ``schema``, ``derive`` and
+  ``derive_by_type`` alone, as before, and its other keys, such as ``nullable``, are now reported. A keyword the
+  ``schema`` of such an entry does not have (``enmu``, ``minimum`` on a ``string``, ``uniqueItems`` on a link
+  type), at its top or in its ``items`` or ``contains``, is one ``needs.config`` warning too, and dropped, the
+  rest of the schema kept, where it stopped the build (``Invalid schema: Additional properties are not
+  allowed``); so is one in the schema of a field an extension registers with ``add_field``. The keys known are
+  those of the configuration's ``NeedFields``, ``NeedField``, ``NeedLinksConfig`` and ``LinkOptionsType``
+  types, whose ``NeedField`` now lists the keys a ``needs_extra_options`` entry is read for, and the keywords
+  those of the schema types the schema is validated against.
+
+- 👌 A field or link type declared on need types alone whose name is close to a declared one is reported, "did
+  you mean" (:issue:`2299`)
+
+  A ``fields`` or ``links`` entry of a :ref:`needs_types` entry naming nothing declared elsewhere declares a field
+  (or link type) of the need types that declare it alone, so a misspelt name, ``asl`` meant to narrow ``asil``,
+  constrained nothing and was not reported. When the name is within ``difflib.get_close_matches(name, known, n=1,
+  cutoff=0.8)`` of a core field an author sets, a registered field (a :ref:`needs_fields` entry, an extension's,
+  a service's) or a global link type, it is now one ``needs.type_near_name`` warning, ``needs_types['req'].fields['asl']
+  declares a field of need types 'req' alone; did you mean 'asil'?``; the field is declared all the same. A deliberate
+  near name, such as a ``tag`` of one type beside ``tags``, is reported too: ``suppress_warnings =
+  ["needs.type_near_name"]`` silences these alone. See :ref:`need_types_misspelt`.
+
+Bug fixes
+.........
+
+- 🐛 The ``needs_schema`` of a :ref:`needs.json <needs_builder_format>` writes a link type's literal default
+  **(changed output)** (:issue:`2208`)
+
+  It wrote ``"default": []`` for every link type but one derived by type alone, also for one with a literal
+  ``default``, such as ``[needs.links.rel] default = ["REQ_1"]``: a reader of the schema took the wrong value for
+  an absent ``rel``. It now writes that default as a need holding it writes its links, sorted and deduplicated,
+  with each link's condition under :ref:`needs_json_include_link_conditions` (the default) and without it
+  otherwise. A default a dynamic function or a variant computes, and a derived link type, still write
+  ``[]``; a need type's own default is not written. Under :ref:`needs_json_remove_defaults` a need holding the
+  link type's default now leaves it out, and a reader restores it from the file's own schema, as
+  ``ub-needs-exchange`` (:ref:`needimport`, :ref:`needs_external_needs`) does; a reader that does not restore
+  defaults from the schema reads such a need as having no links of that type.
+
+- 🐛 A build that fails with :ref:`needs_build_json`, :ref:`needs_build_json_per_id` or :ref:`needs_build_needumls`
+  set stops with its own error. Each of these writers ran after the failure as well and raised in turn, so a
+  configuration error was reported as ``Handler <function build_needs_json ...> for event 'build-finished' threw an
+  exception (exception: Needs schema has not been initialized yet.)``, with the real cause only in the chained
+  traceback
+
+Documentation
+.............
+
+- 📚 :ref:`needs_derive` shows how to start a list roll-up one rung up (:ref:`needs_derive_rollup_rung_up`):
+  a ``copy`` of ``id`` over ``satisfies`` with ``select = "list"`` on the specification, then a ``collect`` on each
+  rung below, and why a plain ``copy`` of the requirement's own ``id`` cannot start it; and the same chain read upwards,
+  which gives each need the tests that reach it (:issue:`2379`)
 
 .. _`release:9.1.0`:
 

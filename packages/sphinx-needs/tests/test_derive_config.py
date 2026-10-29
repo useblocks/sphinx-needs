@@ -953,6 +953,18 @@ def test_a_placeholder_is_not_validated(test_app):
             id="all-test",
         ),
         pytest.param(
+            {"kind": "all", "test": "a", "over": "tests_back", "empty": False},
+            False,
+            DeriveRule(kind="all", test="a", over="tests_back", empty=False),
+            id="all-empty",
+        ),
+        pytest.param(
+            {"kind": "any", "field": "passed", "over": "links", "empty": True},
+            False,
+            DeriveRule(kind="any", field="passed", over="links", empty=True),
+            id="any-empty",
+        ),
+        pytest.param(
             {"kind": "collect", "field": "owner", "over": "links", "after": "derived"},
             False,
             DeriveRule(kind="collect", field="owner", over="links", after_derived=True),
@@ -1018,6 +1030,40 @@ def test_a_placeholder_is_not_validated(test_app):
                 after_derived=True,
             ),
             id="copy-join",
+        ),
+        pytest.param(
+            {
+                "kind": "copy",
+                "field": "owner",
+                "join": {"field": "key", "equals": "ref"},
+                "where": "status == 'open'",
+            },
+            False,
+            DeriveRule(
+                kind="copy",
+                field="owner",
+                join=DeriveJoin("key", "ref"),
+                where="status == 'open'",
+            ),
+            id="copy-join-where",
+        ),
+        pytest.param(
+            {
+                "kind": "copy",
+                "field": "owner",
+                "over": "links",
+                "where": "status == 'open'",
+                "select": "list",
+            },
+            False,
+            DeriveRule(
+                kind="copy",
+                field="owner",
+                over="links",
+                where="status == 'open'",
+                select="list",
+            ),
+            id="copy-over-where",
         ),
         pytest.param(
             # the default of the flag, beside a role it does not go with, says nothing
@@ -1162,6 +1208,27 @@ def test_parse_derive_reads_a_rule(raw, on_link, expected):
             "links",
             "kind 'links' has an empty 'where', which would link every need",
             id="links-empty-where",
+        ),
+        pytest.param(
+            {"kind": "count", "over": "links", "empty": 1},
+            False,
+            "count",
+            "kind 'count' does not take the role 'empty'",
+            id="empty-on-count",
+        ),
+        pytest.param(
+            {"kind": "copy", "field": "x", "over": "links", "empty": False},
+            False,
+            "copy",
+            "kind 'copy' does not take the role 'empty'",
+            id="empty-on-copy",
+        ),
+        pytest.param(
+            {"kind": "all", "test": "a", "over": "links", "empty": "no"},
+            False,
+            "all",
+            "kind 'all': the role 'empty' must be a boolean",
+            id="empty-not-boolean",
         ),
     ],
 )
@@ -1344,11 +1411,18 @@ _JOIN = {"kind": "links", "join": {"field": "name", "equals": "ref"}}
             id="copy-include-self-without-join",
         ),
         pytest.param(
-            {"kind": "copy", "field": "x", "join": _JOIN["join"], "where": "a"},
+            {"kind": "copy", "field": "x", "where": "a"},
             False,
             "copy",
-            "kind 'copy' does not take the role 'where'",
-            id="copy-join-takes-no-where",
+            "kind 'copy' takes the role 'where' only with 'over' or 'join'",
+            id="copy-own-where",
+        ),
+        pytest.param(
+            {"kind": "copy", "field": "x", "from": "REQ_1", "where": "a"},
+            False,
+            "copy",
+            "kind 'copy' takes the role 'where' only with 'over' or 'join'",
+            id="copy-from-where",
         ),
         pytest.param(
             # a role's value is checked before how the roles go together

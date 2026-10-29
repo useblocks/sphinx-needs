@@ -3386,6 +3386,55 @@ REQ_001 = ["asil", "lvl", "weight", "weights"]
 default = "QM"
 
 [[case]]
+name = "link-default-in-the-schema"
+why = "needs.json's needs_schema gives a link type's literal default as the links it holds, link strings sorted and deduplicated as a written link list, not []; a need type's own default is not the schema's: under json_remove_defaults a need holding the link type's default leaves it out, and the schema restores it, and a need holding its type's default writes it"
+config = '''
+[needs]
+json_remove_defaults = true
+
+[needs.links.rel]
+default = ["REQ_1", "REQ_0", "REQ_1"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.rel]
+default = ["REQ_0"]
+'''
+source = '''
+.. req:: Target
+   :id: REQ_0
+
+.. req:: The link type's default
+   :id: REQ_1
+
+.. spec:: Its type's default
+   :id: SPEC_1
+
+.. req:: Its own links
+   :id: REQ_2
+   :rel: REQ_0
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+rel = ["REQ_0", "REQ_1"]
+[case.expect.needs.SPEC_1]
+rel = ["REQ_0"]
+[case.expect.needs.REQ_2]
+rel = ["REQ_0"]
+[case.expect.omitted]
+REQ_0 = ["rel"]
+REQ_1 = ["rel"]
+[case.expect.schema.rel]
+default = ["REQ_0", "REQ_1"]
+
+[[case]]
 name = "defaults-left-out-restored-from-the-file"
 why = "a value a needs.json leaves out is restored from the file's own needs_schema, the field's default in the project that wrote it, and not from the importing project's declarations, a need type's default or the field's; the importing project's defaults fill only a field the file's schema gives no default; a value the file states is kept"
 config = '''

@@ -21,8 +21,14 @@ from sphinx.environment import BuildEnvironment
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedItem, _link_natural_sort_key
-from sphinx_needs.needs_schema import FieldLiteralValue, FieldSchema, FieldsSchema
+from sphinx_needs.need_item import NeedItem, NeedLink, _link_natural_sort_key
+from sphinx_needs.needs_schema import (
+    FieldLiteralValue,
+    FieldSchema,
+    FieldsSchema,
+    LinkSchema,
+    LinksLiteralValue,
+)
 
 log = get_logger(__name__)
 
@@ -65,7 +71,10 @@ class NeedsJsonType(TypedDict):
 
 
 def generate_needs_schema(
-    needs_schema: FieldsSchema, exclude_properties: Iterable[str] = ()
+    needs_schema: FieldsSchema,
+    exclude_properties: Iterable[str] = (),
+    *,
+    include_link_conditions: bool = False,
 ) -> dict[str, Any]:
     """Generate a JSON schema for all fields in each need item.
 
@@ -79,6 +88,10 @@ def generate_needs_schema(
     A derived field or link type (one with a ``derive`` or ``derive_by_type`` rule) is
     marked ``"readOnly": true``; its ``default`` is the value of a need type without a
     rule.
+
+    A link type's ``default`` is written as a need's links are: each link with its
+    condition under ``include_link_conditions`` (``needs_json_include_link_conditions``),
+    else without, so that a need holding the default writes exactly that list.
 
     It is the schema of the fields every need type shares: the global view of the
     schema (:meth:`~sphinx_needs.needs_schema.FieldsSchema.for_type` of no need type),
@@ -123,15 +136,13 @@ def generate_needs_schema(
             "items": {"type": "string"},
             "description": link.description,
             "field_type": "links",
-            # a link type derived by type alone: the links of a need type without a
-            # rule (its literal default); any other link type: none
             "default": [
                 li.to_link_string()
-                # in the order the export writes a link list
-                for li in sorted(set(link.off_type_value()), key=_link_natural_sort_key)
-            ]
-            if link.derive is None and link.derive_by_type is not None
-            else [],
+                if include_link_conditions
+                else li.to_filter_string()
+                # in the order, and the form, the export writes a need's link list
+                for li in sorted(set(_link_default(link)), key=_link_natural_sort_key)
+            ],
         }
         if link.derived:
             properties[link.name]["readOnly"] = True
@@ -151,6 +162,20 @@ def generate_needs_schema(
         "type": "object",
         "properties": properties,
     }
+
+
+def _link_default(link: LinkSchema, /) -> list[NeedLink]:
+    """The links the ``needs_schema`` gives as a link type's ``default``: the links of a
+    need type without a rule, for a link type derived by type alone (its literal
+    default); the literal default, for a link type that is not derived; else none -- a
+    derived link type is computed, and a default computed by a dynamic function or a
+    variant has no value before a need is in hand. A need type's own default is its
+    type's, not the link type's, and is not given."""
+    if link.derive is None and link.derive_by_type is not None:
+        return link.off_type_value()
+    if not link.derived and isinstance(link.default, LinksLiteralValue):
+        return list(link.default.value)
+    return []
 
 
 def _field_property(
@@ -220,7 +245,11 @@ class NeedsList:
 
         schema = SphinxNeedsData(env).get_schema()
         self._schema = (
-            generate_needs_schema(schema, exclude_properties=self._exclude_need_keys)
+            generate_needs_schema(
+                schema,
+                exclude_properties=self._exclude_need_keys,
+                include_link_conditions=self.needs_config.json_include_link_conditions,
+            )
             if add_schema
             else None
         )
