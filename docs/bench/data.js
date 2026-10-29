@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793283300146,
+  "lastUpdate": 1793283625110,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26892,6 +26892,42 @@ window.BENCHMARK_DATA = {
             "value": 49.05224294600001,
             "unit": "s",
             "extra": "Commit: 6aa1813b6b73094f60eb9792061f684d8f9e85cc\nBranch: master\nTime: 2026-10-29T15:13:38+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6e07542f323fd0bb179e7c44eb12afa0f6dbb847",
+          "message": "🐛 ub-test-reports: the documented warning filter works on pytest 9.2 again (#2386)\n\n## What\n\n`packages/ub-test-reports`: the pytest plugin module carries\n`PYTEST_DONT_REWRITE` in its docstring, so pytest no longer\ntries to assertion-rewrite it. The module has no `assert` to rewrite,\nand a test now holds that true. Nothing else in the\npackage changes.\n\n`packages/sphinx-test-reports`: the pytest page and the alias tests\ndescribe what pytest 9.2 changes for the deprecated\n`-p sphinxcontrib.test_reports.pytest_plugin`. Nothing changes in that\npackage's code.\n\n## Why\n\nThe `Toolchain-free` CI job, which installs the newest pytest, has been\nred on every PR since pytest 9.2.0 came out on\n2026-10-27 (e.g. #2382, #2383, #2384, #2385). It is a user-facing break,\nnot just CI: the documented setup\n(`-p ub_test_reports.pytest_plugin` plus\n`ignore::ub_test_reports.pytest_plugin.TestReportsConfigWarning` under\n`filterwarnings = error`) crashes pytest 9.2 at start-up with a\ntraceback. When warnings are not errors, the same line adds\na warning to every run.\n\npytest 9.2 applies the ini `filterwarnings` while it imports the `-p`\nplugins, and resolves them first. Resolving that\nfilter line imports the plugin module, so `-p` finds the module already\nimported. Its assertion-rewrite step then warns\n\"Module already imported so cannot be rewritten\", and under `error` that\nwarning is an exception. pytest skips this\ncheck for a module whose docstring contains `PYTEST_DONT_REWRITE`.\n\nWith the marker, the documented line works on every pytest and users\nchange nothing. The deprecated sphinxcontrib alias\nneeds no marker of its own: it replaces itself in `sys.modules` with the\nreal module before `-p` looks.\n\npytest 9.2 also changes what happens to the alias's `FutureWarning`,\nbecause the ini filters now reach it:\n- it is reported in pytest's warnings summary instead of on stderr;\n- a filter line can silence it;\n- under `filterwarnings = error` it stops pytest, and so does any filter\nline naming the old module, unless a line above\n  that one ignores the warning.\n\nThat is pytest's change acting on a deliberate deprecation, so it is\ndocumented and pinned, not worked around.\n\nThe workspace lock still pins pytest 9.1.1, so in CI only\n`Toolchain-free` runs the 9.2 side until the monthly lock update\nmoves it; the 9.2 expectations below were run locally.\n\n## Tests\n\n- `test_the_notice_can_be_silenced_by_its_class` uses the documented\npath. It is unchanged and now passes on pytest 9.2.0,\non 9.1.1 (the lock), and on the plugin-floor pins 7.0.1 (Python 3.11)\nand 7.3.2 (Python 3.12).\n- `test_a_filter_naming_the_class_leaves_the_p_line_quiet` runs the\nfilter line without `error` and expects no warning and\n  no \"already imported\".\n- `test_the_plugin_opts_out_of_assertion_rewriting` checks that the\nmarker is in the docstring. The behavioural tests only\ncatch a missing marker on pytest 9.2+, so this check guards the lanes\nthat run 9.1.1.\n- `test_the_plugin_has_no_assert_to_rewrite` walks the module's AST: the\nmarker costs nothing only while the plugin has no\n  `assert`.\n- `test_aliases.py::TestPytestPlugin`:\n- Four tests have expectations for each side of 9.2, covering the\nalias's `FutureWarning`; two are renamed because their\nold names said something false on 9.2. One of them also carries the old\nclass filter, so it covers the alias path\n    through the marker.\n- `test_an_ignore_line_above_the_old_filter_line` checks the line order\nthe docs now describe: the ignore line above\n    passes, below gives the usage error, on every pytest.\n  - Nothing is skipped.\n- `_run` explains why the plugin's runs are subprocesses: this test\nmodule has the plugin imported already, and a run has\n  to import it the way a user's run does.\n- Proofs:\n- Removing the marker turns the silencing test, the quiet test, the\nstatic test and that alias test red on 9.2.0; on\n    9.1.1 only the static test goes red.\n  - Adding an `assert` to the plugin turns the AST test red.\n- Reversing the version condition turns every version-dependent alias\ntest red on both pytest versions.\n- The toolchain-free recipe (artefact fences plus the three suites)\npasses on 9.2.0, and `test-reports` passes on both\n    versions.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-29T15:18:50+01:00",
+          "tree_id": "e88f465f71b341e4694aeb43dd356d2a60e03139",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6e07542f323fd0bb179e7c44eb12afa0f6dbb847"
+        },
+        "date": 1793283617214,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07557126400000413,
+            "unit": "s",
+            "extra": "Commit: 6e07542f323fd0bb179e7c44eb12afa0f6dbb847\nBranch: master\nTime: 2026-10-29T15:18:50+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 48.935399071999996,
+            "unit": "s",
+            "extra": "Commit: 6e07542f323fd0bb179e7c44eb12afa0f6dbb847\nBranch: master\nTime: 2026-10-29T15:18:50+01:00"
           }
         ]
       }
