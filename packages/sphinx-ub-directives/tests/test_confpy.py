@@ -8,6 +8,7 @@ must be one TOML could have written, and is then handled exactly as that TOML wo
 from __future__ import annotations
 
 import datetime
+import functools
 import math
 import re
 import subprocess
@@ -405,6 +406,10 @@ def test_a_conf_py_subclass_renders_as_its_toml_twin(
     mixin, a ``str`` Enum, a ``Markup`` or a float with its own ``repr`` is read as its
     exact base value -- the page renders, and warns, exactly as its TOML twin. (Before:
     an int subclass hung the build, the float crashed it, the array was refused.)"""
+    if "IE." in conf or "ME." in conf:
+        # an int subclass hangs an in-process build if the bound ever scans again: fail
+        # by the probe's timeout instead of hanging the suite
+        _bound_probe()
 
     def built(root: Path) -> tuple[str, list[str]]:
         app = _build(make_app, root)
@@ -463,38 +468,47 @@ def test_a_subclass_value_comes_back_as_its_exact_base_type() -> None:
     assert out["d"].tzinfo is zone
 
 
-def test_an_int_subclass_past_the_bound_is_refused_promptly() -> None:
-    """F1: the i64 bound is checked by comparison, so an ``IntEnum`` -- in range or just
-    past it -- returns at once (``in range(...)`` scans an int subclass element by element,
-    a hang). Run in a subprocess with a timeout, so a regression fails instead of hanging."""
-    code = textwrap.dedent(
-        """\
-        import enum, time
-        from sphinx.errors import ConfigError
-        from sphinx_ub_directives import _config
-        class Big(enum.IntEnum):
-            PAST = 2**63
-            LAST = 2**63 - 1
-        start = time.perf_counter()
-        try:
-            _config._toml_value({"c": {"n": Big.PAST}}, "ub_template_contexts")
-            refused = ""
-        except ConfigError as error:
-            refused = str(error)
-        kept = _config._toml_value({"c": {"n": [Big.LAST]}}, "ub_template_contexts")
-        print(time.perf_counter() - start)
-        print(refused)
-        print(type(kept["c"]["n"][0]).__name__, kept["c"]["n"][0])
-        """
-    )
+#: The bound probe, run in a subprocess so a regression to a scan fails by timeout.
+_BOUND_PROBE = textwrap.dedent(
+    """\
+    import enum, time
+    from sphinx.errors import ConfigError
+    from sphinx_ub_directives import _config
+    class Big(enum.IntEnum):
+        PAST = 2**63
+        LAST = 2**63 - 1
+    start = time.perf_counter()
+    try:
+        _config._toml_value({"c": {"n": Big.PAST}}, "ub_template_contexts")
+        refused = ""
+    except ConfigError as error:
+        refused = str(error)
+    kept = _config._toml_value({"c": {"n": [Big.LAST]}}, "ub_template_contexts")
+    print(time.perf_counter() - start)
+    print(refused)
+    print(type(kept["c"]["n"][0]).__name__, kept["c"]["n"][0])
+    """
+)
+
+
+@functools.cache
+def _bound_probe() -> tuple[str, ...]:
+    """The probe's three lines; a ``subprocess.TimeoutExpired`` when the bound scans."""
     run = subprocess.run(
-        [sys.executable, "-c", code],
+        [sys.executable, "-c", _BOUND_PROBE],
         capture_output=True,
         text=True,
         timeout=30,
         check=True,
     )
-    elapsed, refused, kept = run.stdout.splitlines()
+    return tuple(run.stdout.splitlines())
+
+
+def test_an_int_subclass_past_the_bound_is_refused_promptly() -> None:
+    """F1: the i64 bound is checked by comparison, so an ``IntEnum`` -- in range or just
+    past it -- returns at once (``in range(...)`` scans an int subclass element by element,
+    a hang). Run in a subprocess with a timeout, so a regression fails instead of hanging."""
+    elapsed, refused, kept = _bound_probe()
     assert float(elapsed) < 1
     assert refused == (
         "ub_template_contexts['c']['n']: 9223372036854775808 is outside the signed "
