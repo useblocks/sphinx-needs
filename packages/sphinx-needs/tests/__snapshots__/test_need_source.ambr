@@ -1,0 +1,125 @@
+# serializer version: 1
+# name: test_the_hops_of_every_need
+  dict({
+    'EXT_X1': list([
+      'external http://example.org/remote/page.html#X1',
+    ]),
+    'I1': list([
+      'file srcdir:imp.json (.json)',
+      "page [imp] srcdir:imp.rst:7-7 (.rst) :: section 'Imported' > section 'Imp sub'",
+    ]),
+    'REQ_AX': list([
+      'file srcdir:frag/a.rst:4-7 (.rst)',
+      "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
+    ]),
+    'REQ_BX': list([
+      'file srcdir:frag/b.rst:1-2 (.rst)',
+      "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
+    ]),
+    'REQ_CFX': list([
+      "page [domains] srcdir:domains.rst:28-29 (.rst) :: section 'Domains' > c:function 'cfunc' id='c.cfunc'",
+    ]),
+    'REQ_CHILDX': list([
+      "page [domains] srcdir:domains.rst:90-91 (.rst) :: section 'Domains' > section 'Sub section'",
+    ]),
+    'REQ_CMX': list([
+      "page [domains] srcdir:domains.rst:35-36 (.rst) :: section 'Domains' > c:struct 'cstruct' id='c.cstruct' > c:member 'field' id='c.cstruct.field'",
+    ]),
+    'REQ_CPPMX': list([
+      "page [domains] srcdir:domains.rst:44-45 (.rst) :: section 'Domains' > cpp:class 'Widget' id='_CPPv4N2ns6WidgetE' > cpp:function 'run' id='_CPPv4N2ns6Widget3runEi'",
+    ]),
+    'REQ_DOCSTRINGX': list([
+      "code srcdir:source_hops_module.py (.py) :: py:docstring 'source_hops_module.documented'",
+      "page [autodoc_page] srcdir:autodoc_page.rst (.rst) :: section 'Autodoc' > py:function 'documented' id='source_hops_module.documented' signature='documented'",
+    ]),
+    'REQ_ENVX': list([
+      "page [domains] srcdir:domains.rst:72-73 (.rst) :: section 'Domains' > std:envvar 'MYVAR' id='envvar-MYVAR' signature='MYVAR'",
+    ]),
+    'REQ_HOST1X': list([
+      "page [inc_host] srcdir:inc_host.rst:4-7 (.rst) :: section 'Host'",
+    ]),
+    'REQ_HOST2X': list([
+      "page [inc_host] srcdir:inc_host.rst:11-12 (.rst) :: section 'Host' > section 'Frag A section'",
+    ]),
+    'REQ_JSMX': list([
+      "page [domains] srcdir:domains.rst:55-56 (.rst) :: section 'Domains' > js:class 'JsKlass' id='jsmod.JsKlass' > js:method 'go' id='jsmod.JsKlass.go'",
+    ]),
+    'REQ_L1X': list([
+      'file srcdir:frag/b.rst:7-8 (.rst)',
+      "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
+    ]),
+    'REQ_L2X': list([
+      'file srcdir:frag/b.rst:9-9 (.rst)',
+      "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
+    ]),
+    'REQ_L3X': list([
+      'file srcdir:frag/b.rst:10-10 (.rst)',
+      "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
+    ]),
+    'REQ_MDCOLX': list([
+      "page [mdpage] srcdir:mdpage.md:17-None (.md) :: section 'MD page' > section 'MD sub'",
+    ]),
+    'REQ_MDINCX': list([
+      'file srcdir:frag/c.md (.md)',
+      "page [mdpage] srcdir:mdpage.md (.md) :: section 'MD page' > section 'MD sub'",
+    ]),
+    'REQ_MDL1X': list([
+      "page [mdpage] srcdir:mdpage.md:29-29 (.md) :: section 'MD page' > section 'MD sub'",
+    ]),
+    'REQ_MDL2X': list([
+      "page [mdpage] srcdir:mdpage.md:30-30 (.md) :: section 'MD page' > section 'MD sub'",
+    ]),
+    'REQ_MDX': list([
+      "page [mdpage] srcdir:mdpage.md:11-None (.md) :: section 'MD page' > section 'MD sub'",
+    ]),
+    'REQ_MULTIX': list([
+      "page [domains] srcdir:domains.rst:78-79 (.rst) :: section 'Domains' > py:function 'f_a' id='pkg.mod.f_a' signature='f_a'",
+    ]),
+    'REQ_NOIDXX': list([
+      "page [domains] srcdir:domains.rst:96-97 (.rst) :: section 'Domains' > section 'Sub section' > py:function 'noindex_f' signature='noindex_f'",
+    ]),
+    'REQ_P1X': list([
+      "page [p1] srcdir:p1.rst:7-8 (.rst) :: section 'Page 1' > section 'Sec'",
+    ]),
+    'REQ_P2X': list([
+      "page [p2] srcdir:p2.rst:7-8 (.rst) :: section 'Page 2' > section 'Sec'",
+    ]),
+    'REQ_P3X': list([
+      "page [p3] srcdir:p3.rst:7-8 (.rst) :: section 'Page 3' > section 'Sec'",
+    ]),
+    'REQ_PARX': list([
+      "page [domains] srcdir:domains.rst:87-91 (.rst) :: section 'Domains' > section 'Sub section'",
+    ]),
+    'REQ_PYCX': list([
+      "page [domains] srcdir:domains.rst:13-14 (.rst) :: section 'Domains' > py:class 'Klass' id='pkg.mod.Klass' signature='Klass'",
+    ]),
+    'REQ_PYFX': list([
+      "page [domains] srcdir:domains.rst:18-19 (.rst) :: section 'Domains' > py:function 'func' id='pkg.mod.func' signature='func'",
+    ]),
+    'REQ_PYMX': list([
+      "page [domains] srcdir:domains.rst:10-11 (.rst) :: section 'Domains' > py:class 'Klass' id='pkg.mod.Klass' signature='Klass' > py:method 'meth' id='pkg.mod.Klass.meth' signature='meth'",
+    ]),
+    'REQ_PYQX': list([
+      "page [domains] srcdir:domains.rst:23-24 (.rst) :: section 'Domains' > py:function 'func2' id='pkg.mod.other.qual.func2' signature='func2'",
+    ]),
+    'REQ_RSTOX': list([
+      "page [domains] srcdir:domains.rst:62-63 (.rst) :: section 'Domains' > rst:directive 'mydir' id='directive-mydir' signature='.. mydir::' > rst:directive:option 'opt' id='directive-option-mydir-opt' signature=':opt:'",
+    ]),
+    'REQ_STDOX': list([
+      "page [domains] srcdir:domains.rst:67-68 (.rst) :: section 'Domains' > std:option '--verbose' id='cmdoption-verbose' signature='--verbose'",
+    ]),
+    'REQ_SUBX': list([
+      "page [domains] srcdir:domains.rst:84-85 (.rst) :: section 'Domains' > section 'Sub section'",
+    ]),
+    'SVC_A': list([
+      "generated :: service 'probe'",
+      'file srcdir:frag/a.rst:10-10 (.rst)',
+      "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
+    ]),
+    'SVC_B': list([
+      "generated :: service 'probe'",
+      'file srcdir:frag/a.rst:10-10 (.rst)',
+      "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
+    ]),
+  })
+# ---
