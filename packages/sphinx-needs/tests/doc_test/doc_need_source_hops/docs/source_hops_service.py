@@ -46,7 +46,7 @@ def _register(app, env, docnames):
 def _banner(app, docname, source):
     if docname == "srcread":
         source[0] = source[0].replace("BANNER\n", "Line A\n\nLine B\n\nLine C\n")
-    if docname == "srcread2":
+    if docname in ("srcread2", "srcread3"):
         # inside a need's body and a list2need item: their first lines still hold
         source[0] = source[0].replace(
             "EXPAND_HERE\n", "expanded one\n   expanded two\n   expanded three\n"

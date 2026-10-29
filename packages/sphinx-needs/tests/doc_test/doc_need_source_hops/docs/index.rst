@@ -20,3 +20,4 @@ Source hops
    bommd
    tabs
    srcread2
+   srcread3

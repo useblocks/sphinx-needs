@@ -51,7 +51,7 @@
       "page [domains] srcdir:domains.rst:72-73 (.rst) :: section 'Domains' > std:envvar 'MYVAR' id='envvar-MYVAR' signature='MYVAR'",
     ]),
     'REQ_EXPANDITEMX': list([
-      "page [srcread2] srcdir:srcread2.rst (.rst) :: section 'Source read inside'",
+      "page [srcread3] srcdir:srcread3.rst (.rst) :: section 'Source read in an item'",
     ]),
     'REQ_EXPANDX': list([
       "page [srcread2] srcdir:srcread2.rst (.rst) :: section 'Source read inside'",

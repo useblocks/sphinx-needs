@@ -556,7 +556,7 @@ def test_the_hops_of_every_need(
     # a source-read expansion inside a need's body and a list2need item: the first line
     # holds, a later one does not
     assert lines("REQ_EXPANDX") == [("srcread2.rst", None, None)]
-    assert lines("REQ_EXPANDITEMX") == [("srcread2.rst", None, None)]
+    assert lines("REQ_EXPANDITEMX") == [("srcread3.rst", None, None)]
     # MyST: a need whose body opens another need's fence at once is not given the inner
     # fence's line (the title differs) ...
     assert lines(by_title["outer"]) == [("mdnest.md", None, None)]
