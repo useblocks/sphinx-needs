@@ -3,6 +3,21 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Fixed
+.....
+
+- 🐛 The pytest plugin's ``TestReportsConfigWarning`` is defined in a module of its own,
+  ``ub_test_reports.pytest_warnings``, and the filter that silences it is now
+  ``ignore::ub_test_reports.pytest_warnings.TestReportsConfigWarning``. The line documented
+  before, ``ignore::ub_test_reports.pytest_plugin.TestReportsConfigWarning``, names the same
+  class (the plugin module re-exports it), but from pytest 9.2 on pytest resolves a filter
+  before it loads the ``-p`` plugins, so that line imports the plugin first and, under
+  ``filterwarnings = error``, pytest stops at start-up with a ``PytestAssertRewriteWarning``
+  traceback. Move the line to the new module.
+
 .. _`release:1.1.0`:
 
 1.1.0
