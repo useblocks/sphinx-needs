@@ -73,6 +73,52 @@ By default ``tr_case`` is set to::
 
 Please read :ref:`tr_file` for more details.
 
+.. _tr_fields_per_type:
+
+The need types and their fields
+-------------------------------
+
+The three need types are the extension's, and each of its fields is declared on the need types
+that carry it alone
+(`fields per need type <https://sphinx-needs.readthedocs.io/en/latest/configuration.html#needs-types-fields>`__):
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - need type
+     - fields
+   * - test file
+     - the report path (``file``), ``suites``, ``cases``, ``passed``, ``skipped``, ``failed``, ``errors``
+   * - test suite
+     - the report path, ``suite``, ``cases``, ``passed``, ``skipped``, ``failed``, ``errors``
+   * - test case
+     - the report path, ``suite``, ``case``, ``case_name``, ``case_parameter``, ``classname``, ``time``,
+       ``result``, the source location (``case_file``, ``case_line``), and ``result_text`` and
+       ``remote_url``, which only the converter writes
+
+The :ref:`tr_extra_options` are declared on all three (unless ``needs_fields`` or ``needs_extra_options``
+also names one, which is then the project's field, on every need type). On every other need type the fields are absent:
+a need holds null there, and a value set there is reported (``needs.undeclared_for_type``) and ignored.
+A need type of your own that carries one -- a ``test`` need giving the ``case_name`` or ``classname``
+a :doc:`tr_link <functions>` or a derived link type joins on -- names it in its ``needs_types`` entry,
+which declares it there too:
+
+.. code-block:: toml
+
+   [needs.types.test.fields.case_name]
+
+A ``needs_fields`` (or ``needs_extra_options``) entry of the same name is the field instead, on every need
+type. A ``needs_types`` entry naming one of the three types narrows it: the keys it gives win, and its
+``fields`` and ``links`` apply to the type's needs
+(`needs_types <https://sphinx-needs.readthedocs.io/en/latest/configuration.html#needs-types-extension>`__),
+for example a link type the test cases alone carry:
+
+.. code-block:: toml
+
+   [needs.types.testcase.links.evidence_for]
+   derive = { kind = "links", join = { field = "case_name", equals = "case_name" }, where = "type == 'test'" }
+
 .. _tr_report_template:
 
 tr_report_template
@@ -151,8 +197,9 @@ with a configuration error. For the :ref:`build needs command <cli>` to write
 the renamed fields as well, put the renames in ``ubproject.toml``
 (:ref:`tr_config_from_toml`): it cannot see ``conf.py``.
 
-The field is empty when the XML carries no ``file`` attribute. With pytest this
-is the norm: it emits ``file``/``line`` only with ``junit_family = xunit1`` (or
+The field is null (``None`` to a filter) when the XML carries no ``file``
+attribute, and so is the line field without a ``line``. With pytest this is the
+norm: it emits ``file``/``line`` only with ``junit_family = xunit1`` (or
 ``legacy``), while its default ``xunit2`` filters those attributes out.
 
 Default: **case_file**
@@ -207,7 +254,9 @@ tr_extra_options
 .. versionadded:: 1.2.0
 
 Defines extra options you can use in `test-file` `test-case` and `test-suite`.
-These options also have to be registered in either needs_extra_options or needs_extra_links.
+The extension registers each as a field of those three need types alone (:ref:`tr_fields_per_type`);
+a name also registered in ``needs_fields`` or ``needs_extra_options`` (or a link type of ``needs_links``)
+is that field instead, on every need type, so a need of another type may set it too.
 
 **Example**
 
@@ -216,7 +265,7 @@ These options also have to be registered in either needs_extra_options or needs_
    # In conf.py
    tr_extra_options = ['more_info', 'related_to', 'priority']
 
-   # Define as regular options
+   # Optional: make two of them fields of every need type, not only of the test-report needs
    needs_extra_options = ['more_info', 'priority']
 
 Write them on a directive in lower case: docutils lowercases an option's name before it looks it up,

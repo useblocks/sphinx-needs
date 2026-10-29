@@ -132,6 +132,20 @@ class TestNeedShape:
         assert need["case_file"] == "t.py"
         assert need["case_line"] == "3"
 
+    def test_a_case_without_file_line_or_parameter_writes_null(self):
+        """pytest's default ``junit_family`` writes no ``file`` or ``line``, and an
+        unparameterised case has no parameter: each field is ``None`` (null in the
+        ``needs.json``), as a registered field a directive did not set, never ``""``
+        (#2372)."""
+        case = {**_case("test_x"), "file": "unknown", "line": -1}
+        need = build_need("r.xml", "s", case)
+        assert need["case_file"] is None
+        assert need["case_line"] is None
+        assert need["case_parameter"] is None
+        # the others are unchanged
+        assert need["case_name"] == "test_x"
+        assert need["classname"] == "Suite"
+
     def test_field_names_follow_the_section(self):
         # The names the build's file_option / source_*_option select.
         fields = {
