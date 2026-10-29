@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793309142205,
+  "lastUpdate": 1793318336340,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27180,6 +27180,42 @@ window.BENCHMARK_DATA = {
             "value": 60.42388785600001,
             "unit": "s",
             "extra": "Commit: c16f15923fbf3a57992072076562617ce04a07ab\nBranch: master\nTime: 2026-10-29T22:24:07+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "da1b99564e0a3d4a1502a0c40cda7d8ce4758637",
+          "message": "✨ Extension need types and fields per type: a `needs_types` entry narrows an extension's type, `add_field(types=…)`, and sphinx-test-reports' fields on their own types (#2400)\n\n## What\n\n`packages/sphinx-needs`, `packages/sphinx-test-reports`,\n`packages/ub-test-reports`.\n\n1. **The fields-per-type corpus can load an extension.** A case may name\n`extensions = [\"sphinx_test_reports\"]`,\ncarry `[test_reports]` in its `config` and its JUnit reports in `files`.\nThe Python runner loads the extension after sphinx-needs\nand skips the case, by name, where it is not installed (the release\ncompat cell, #2369); ubCode's runner reads the `[test_reports]` table it\nalready models.\n2. **A `needs_types` entry naming a need type an extension adds narrows\nthat type** (#2371), bare or with a title and a prefix.\nThe keys it gives win, and the title/prefix/color/style it leaves out\nare the extension's. Its `fields`, `links` and `inherits` apply through\nthe per-type resolver,\nwhenever the extension adds the type (tested at setup, config-inited 11,\n500, 950 and builder-inited, list and mapping shapes).\nAn entry no extension claims is reported when the schema is built, with\nthe `derive_by_type` hint.\nA full entry no longer crashes the build (`NeedsApiConfigException:\ntestcase already exists as need type`).\n`derive_by_type` is documented as the spelling for a type no entry\ndeclares.\nAn entry for a GitHub service's need type keeps today's rule (a full\nentry replaces it; a bare one is ignored and reported).\n3. **`\"\"` → `null`**: sphinx-test-reports' directives and\nub-test-reports' converter write null for an absent source file, line or\nparameter\n   (changed output; the fields were already nullable).\n4. **`sphinx_needs.api.add_field(..., types=[...])`** (#2372) declares\nan extension's field on those need types alone, with the extension's\ndeclaration.\nA project type entry naming it adds that type; a `needs_fields` entry of\nthe same name wins and is global; an unknown type is a `needs.config`\nwarning;\na project entry refused for a type conflict declares nothing.\nsphinx-test-reports declares its eighteen fields on the types that carry\nthem\n   (ub-test-reports carries the table, with ubCode's names).\nneeds.json's schema writes such a field nullable where the extension's\ndeclaration is not, with a `null` default where it gives no literal one\n(so under `needs_json_remove_defaults` the key is left out rather than\nwritten `null`), as for a field a project's need types declare alone.\n\n5. **A narrowed extension type takes every key of a need type's entry,\nand narrows only.** `back_links`, `id_regex` and a field's\n`severity` (#2395) apply to it as to a project type. A declaration of an\nextension's field in such an entry starts from the extension's\nown and may only narrow it: a loosened `schema` keyword, `nullable =\ntrue` where the extension says not, a raised `maxItems` are\n`needs.type_widening` (a different type `needs.type_conflict`), and that\nfield's entry is ignored -- the check every type's\ndeclaration already goes through, now pinned for extension types and\ndocumented.\n\n**Merged with master after #2388 and #2395.** The interactions resolved,\neach pinned by a test:\n- the needs.json schema writes a field nullable both where a need type\ndeclares it not nullable below `violation` (#2395) and where\nit is declared on some need types alone (`add_field(types=...)`): the\ntwo rules are one set of nullable names;\n- an entry narrowing an extension's type carries `severity`,\n`back_links` and `id_regex`, which behave as on a project type\n(unit tests with a stub extension, bare and full entries, early and late\nregistration; two corpus cases);\n- #2388's unknown-key and near-name checks accept every key such an\nentry gives, and an extension's field named on a project type\nis no near name, while a misspelt one on the narrowed type is reported\n(\"did you mean\").\n\nThe corpus goes 113 (master) + 8 (this branch) + 2 = 123 cases (sha256\n`69193401558ec6180c96ff5737da69d02615dc080b1b82eba744be59c4bfdc57`).\nubCode re-vendors it and mirrors the features in its own PRs\n(useblocks/ubcode#4313, #4320).\nAn `id_regex` on an extension's type is pinned by a unit test only:\nsphinx-test-reports reports a need it could not create under its\nown logger, with no `needs.create_need`, and the corpus cannot name a\ngenerated id as `missing`.\n\n## Why\n\nCloses #2371, closes #2372.\n\nA project could neither narrow an extension's need type (a bare entry\nwas ignored, a full one crashed the build) nor keep an extension's\nfields off the\nneed types that never carry them: sphinx-test-reports' eighteen fields\nwere on every need of every type.\n\n**Breaking / changed output (sphinx-test-reports, ub-test-reports).**\n- A value of one of sphinx-test-reports' fields set on a need of another\ntype is now reported (`needs.undeclared_for_type`) and ignored.\nMigration: name the field in that type's entry, e.g.\n`[needs.types.test.fields.case_name]` (the `tr_link` / `evidence_for`\njoin idiom; the docs example shows it).\n- `case_file` / `case_line` / `case_parameter` are null, not `\"\"`, where\nthe report gives none: a filter `case_line == ''` becomes `case_line is\nNone`.\n- `ub_test_reports.identity.split_case_name` returns `None` for no\nparameter (API change, flagged in its changelog).\n\n**Release order: sphinx-needs first, then ub-test-reports, then\nsphinx-test-reports.** sphinx-test-reports now calls `add_field(...,\ntypes=...)`,\nwhich the published sphinx-needs 9.1.0 does not have; its floor is moved\nby `poe bump sphinx-needs --bump minor` (`propagate_floors.py`), not\nhere.\n`import-check-reports` fails first on `NEED_KINDS` (ub-test-reports);\nthe sphinx-needs edge is caught by the compat cell's suite.\n\n**Not in scope:** `closed` (withdrawn); a link-type API for extensions\n(fields only, as ruled).\n\n## Tests\n\n- Red first for every slice; two independent reviews reproduced every\nproof and added mutations of their own, each now killed by a unit test\nor a corpus case\n(registration order across 20 combinations, the type order of narrowed\ntypes, a refused entry declaring nothing, the extension cases skipping\nwhen\n  sphinx-test-reports is uninstalled).\n- After the merge with master: `uv run poe lint` 0, `uv run poe\ntypecheck` 0, `uv run poe check-workspace` 0, full `uv run poe\ntest-needs`\n3968 passed / 15 skipped, `uv run poe test-reports` 479 passed, `uv run\npoe test-ub-test-reports` 483 passed / 2 skipped,\n`uv run poe smoke-needs` 0. Each merge interaction is pinned by a test\nthat a mutation of the resolution turns red.\n`docs-needs`: no warning from this repository's pages or docstrings (the\nsandbox cannot reach the intersphinx hosts,\nso only those references stay unresolved there); the build found five\nbare references to two paragraph labels, which now name their titles.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`test-needs`, `test-reports`,\n`test-ub-test-reports`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] Each package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-29T23:57:21Z",
+          "tree_id": "7b2e33990ac5bd2ffe9a969463c78ed0c61c6f54",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/da1b99564e0a3d4a1502a0c40cda7d8ce4758637"
+        },
+        "date": 1793318327165,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09900812699999051,
+            "unit": "s",
+            "extra": "Commit: da1b99564e0a3d4a1502a0c40cda7d8ce4758637\nBranch: master\nTime: 2026-10-29T23:57:21Z"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.602451567,
+            "unit": "s",
+            "extra": "Commit: da1b99564e0a3d4a1502a0c40cda7d8ce4758637\nBranch: master\nTime: 2026-10-29T23:57:21Z"
           }
         ]
       }
