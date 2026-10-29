@@ -23,10 +23,6 @@ Improvements
   :ref:`needimport` ``:filter:`` nor in the ``predicates`` of a :ref:`needs_fields` entry. ``c.is_a`` tests the
   need's type: to follow a link type named ``is_a``, use the link. See :ref:`filter_is_a`.
 
-- 👌 A :ref:`needs_fields` entry naming a core field a need computes (``type_name``, ``docname`` and the others that
-  take no declaration) is reported as ignored, with a ``needs.config`` warning, where it was ignored silently
-  (:issue:`2322`)
-
 - ✨ A derive rule of kind ``copy`` takes ``where`` beside ``over`` or ``join`` (:ref:`needs_derive_kind_copy`,
   :issue:`2246`)
 
@@ -143,10 +139,6 @@ Improvements
 
 Bug fixes
 .........
-
-- 🐛 A schema rule's array property may give ``contains`` without ``items``
-  (``"tags": {"contains": {"const": "a"}}``); it stopped the build with a schema error, where the rule now applies
-  (:issue:`2322`)
 
 - 🐛 The ``needs_schema`` of a :ref:`needs.json <needs_builder_format>` writes a link type's literal default
   **(changed output)** (:issue:`2208`)
