@@ -13,6 +13,11 @@ Domain signatures
    .. spec:: In a C++ function
       :id: SIG_CPP
 
+.. cpp:function:: template<typename X> void tmpl(X x)
+
+   .. spec:: In a C++ function template
+      :id: SIG_CPP_TMPL
+
 .. cpp:namespace:: 0
 
 .. js:method:: go()
