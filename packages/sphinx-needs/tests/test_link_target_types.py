@@ -150,7 +150,7 @@ def test_what_the_configuration_reports(test_app: SphinxTestApp) -> None:
         "[needs.config]",
         "WARNING: needs_types['spec'].links['covers'] sets 'target_types', but "
         "'covers' is derived (kind 'links'): a need type declares only its "
-        "description and schema; the entry is ignored [needs.type_conflict]",
+        "description, schema and severity; the entry is ignored [needs.type_conflict]",
         "WARNING: needs_types['test'].links['verifies'] widens the field: Child "
         "'target_types' accept 'spec', which parent 'target_types' ['req'] (or a type "
         "inheriting from it) do not. [needs.type_widening]",

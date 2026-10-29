@@ -45,7 +45,10 @@ needs_build_json = True
 TOML_CONF = CONF + 'needs_from_toml = "ubproject.toml"\n'
 
 #: the known keys, as the unknown-key finding lists them
-KNOWN = "known keys are color, directive, fields, inherits, links, prefix, style, title"
+KNOWN = (
+    "known keys are back_links, color, directive, fields, id_regex, inherits, links, "
+    "prefix, style, title"
+)
 
 #: three types in an order that is not alphabetical, so that a sort would show
 ZETA = {"title": "Zeta", "prefix": "Z_", "color": "#000001", "style": "node"}
@@ -420,7 +423,11 @@ FINDINGS = [
                         "default": "open",
                     }
                 },
-                "links": {"links": {"predicates": [["a", "b", "c"], [5, "x"]]}},
+                "links": {
+                    "links": {"predicates": [["a", "b", "c"], [5, "x"]]},
+                    "tests": {"severity": "error"},
+                    "covers": {"severity": 3},
+                },
             }
         },
         [
@@ -431,12 +438,17 @@ FINDINGS = [
             "needs_types['req'].links['links'] has a 'predicates' that is not a list "
             "of (filter, value) pairs (got a list with an item that is not a (filter, "
             "value) pair); the key is ignored",
+            # the severities of the schema validation, by name
+            "needs_types['req'].links['tests'] has a 'severity' that is not one of "
+            "'violation', 'warning' and 'info' (got 'error'); the key is ignored",
+            "needs_types['req'].links['covers'] has a 'severity' that is not one of "
+            "'violation', 'warning' and 'info' (got int); the key is ignored",
         ],
         [
             {
                 **REQ,
                 "fields": {"status": {"default": "open"}},
-                "links": {"links": {}},
+                "links": {"links": {}, "tests": {}, "covers": {}},
             }
         ],
         id="declaration-keys-not-of-their-shape",
@@ -454,11 +466,12 @@ FINDINGS = [
             "a mapping (got str); the key is ignored",
             "needs_types entry 1 ('req').fields['status'] has an unknown key "
             "'parse_variants'; known keys are default, derive, description, "
-            "nullable, predicates, schema; the key is ignored",
+            "nullable, predicates, schema, severity; the key is ignored",
             "needs_types entry 1 ('req').links['links'] has an unknown key "
             "'nullable'; known keys are allow_dead_links, color, copy, default, "
-            "derive, description, incoming, outgoing, predicates, schema, style, "
-            "style_end, style_part, style_start, target_types; the key is ignored",
+            "derive, description, incoming, outgoing, predicates, schema, severity, "
+            "style, style_end, style_part, style_start, target_types; the key is "
+            "ignored",
             # a link type's display is a key of every links entry, and refused when
             # the schema is built on a link type declared otherwise
             "needs_types['req'].links['links'] sets 'incoming', which a need type "
@@ -1167,3 +1180,30 @@ def test_resolving_the_types_changes_no_configuration_option(
             assert {name for name in names if name.startswith("needs_")} == set()
     finally:
         second.cleanup()
+
+
+@pytest.mark.parametrize(
+    ("id_regex", "kept", "findings"),
+    [
+        pytest.param("^REQ_[0-9]+$", True, [], id="a-string"),
+        pytest.param("", True, [], id="an-empty-string"),
+        pytest.param(
+            3,
+            False,
+            [
+                "needs_types['req'] has an 'id_regex' that is not a string (got int); "
+                "the key is ignored"
+            ],
+            id="not-a-string",
+        ),
+    ],
+)
+def test_an_id_regex_is_a_string(
+    id_regex: Any, kept: bool, findings: list[str]
+) -> None:
+    """#2373: ``id_regex`` is a key of a need type's entry, its shape checked where the
+    configuration is read; whether it compiles is checked where the schema is built."""
+    entry = {"title": "Requirement", "prefix": "R_", "id_regex": id_regex}
+    need_types, found = normalise_need_types({"req": entry})
+    assert found == findings
+    assert ("id_regex" in need_types[0]) is kept

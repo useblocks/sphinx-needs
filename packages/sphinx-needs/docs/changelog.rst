@@ -28,6 +28,46 @@ Improvements
   ``empty`` is the kind's own value (``all`` ``true``, ``any`` ``false``), so no existing rule changes; on any other
   kind, or with a value that is not a boolean, the rule is refused (``needs.derive_invalid``).
 
+- ✨ A need type's declaration of a field or link type carries a ``severity``: a constraint reported, not failed
+  (:issue:`2374`)
+
+  ``severity = "warning"`` (or ``"info"``) on a ``[needs.types.<t>.fields.<f>]`` or ``.links.<l>`` entry is the
+  severity of every constraint of the type's declaration -- its ``schema`` keywords, its links' ``minItems`` and
+  ``maxItems``, and ``nullable = false`` -- where each was a ``violation``. The failures are reported as
+  ``sn_schema_warning.field_fail`` (``sn_schema_info.*``), a warning rather than an error. A field not nullable below
+  ``violation`` is asked for, not enforced: a need without it is created, the field ``None``, and reported at that
+  severity (schema path ``fields > nullable``), so switching the schema validation off
+  (:ref:`needs_schema_validation_enabled`) silences it; the needs.json writes such a field nullable. A type
+  inheriting the declaration keeps its severity and may raise it; one lowering a severity an ancestor gives is a
+  ``needs.type_widening`` warning, and is ignored. A ``severity`` on a :ref:`needs_fields` or :ref:`needs_links`
+  entry, which takes none, is a ``needs.config`` warning. Without a ``severity`` nothing changes. The fields-per-type
+  conformance corpus may now pin a finding's severity. See :ref:`need_types_severity`.
+
+- ✨ A need type declares how many links it must receive: ``[needs.types.<t>.back_links.<l>]`` takes a count
+  (:issue:`2375`)
+
+  ``schema = { minItems = 1 }`` on a ``back_links`` entry named after a link type ``l`` says that every need of the
+  type is the target of at least one ``l`` link, its back links ``<l>_back`` (``maxItems``: of at most so many), so a
+  ``coverage-*-back`` schema rule that only counts folds into the type's declaration.
+  The count is every link of ``l`` to the need, as
+  ``minItems`` counts the outgoing ones (a link to a part of the need included); it is inherited, and narrowed, by
+  the types inheriting from the type; it is
+  checked by the schema validation once every link is final, a ``link_fail`` of the field ``<l>_back`` at the
+  entry's ``severity``; a need from :ref:`needs_external_needs` is not counted, an imported need is. The entry takes a
+  ``description``, ``minItems`` and ``maxItems``, and a ``severity``; any other key is a ``needs.type_conflict``, and
+  so is an entry naming no link type ("did you mean" the link type it is close to). A ``links`` or ``fields`` entry
+  named ``<l>_back`` is still refused, and now names the ``back_links`` entry. ``back_links`` is a key of a
+  :ref:`needs_types` entry. This supersedes the proposal of :issue:`2323`. See :ref:`need_types_incoming`.
+
+- ✨ A need type declares the shape of its ids: ``id_regex`` on a ``[needs.types.<t>]`` entry (:issue:`2373`)
+
+  The id of a need of the type matches the pattern, beside :ref:`needs_id_regex` and the ``id_regex`` of every type
+  it inherits from, checked where and as ``needs_id_regex`` is (``re.match``, an authored or a generated id, never
+  an imported or external need's): a need whose id does not match is not created (``needs.create_need``, naming the
+  pattern and the type that gives it). So an ``id-prefix-<type>`` schema rule folds into the type's declaration when a
+  wrong id should refuse the need; one that should only be reported stays a rule. A pattern that is not a regular
+  expression is a ``needs.type_conflict`` warning, and is ignored. See :ref:`need_types_id_regex`.
+
 - 👌 The ``needs.derive_scope`` warning at a :ref:`needextend` whose filter names a computed field says what
   computes it: "a derive rule" for a field a :ref:`derive <needs_derive>` rule computes, "a dynamic function or
   variant" for a ``[[…]]``, ``<<…>>`` or ``<{…}>``, and "a derive rule, a dynamic function or a variant" when the
@@ -57,7 +97,9 @@ Improvements
   does not have, such as a misspelt ``derive`` or ``target_types``, was ignored in silence, so a field meant to be
   derived stayed authorable and a link type meant to be restricted was not. Each is now one ``needs.config``
   warning, naming the entry, the key and the keys the entry has; the key is ignored and the entry kept. A
-  ``name`` in a ``needs_fields`` entry, or an ``option`` in a ``needs_links`` entry, left from the list spelling,
+  ``severity`` in a ``needs_fields`` or ``needs_links`` entry is the one exception to the wording: its warning names
+  the need type's entry that takes it (see above). A ``name`` in a ``needs_fields`` entry,
+  or an ``option`` in a ``needs_links`` entry, left from the list spelling,
   is accepted in silence where it repeats the entry's name, as a migrated entry does, and reported where it
   gives another (it was always ignored: the entry is named by its key). A
   ``needs_extra_options`` entry is read for ``name``, ``description``, ``schema``, ``derive`` and

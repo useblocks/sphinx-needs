@@ -4,6 +4,7 @@ import contextlib
 import dataclasses
 import difflib
 import json
+import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from copy import deepcopy
 from functools import partial
@@ -165,6 +166,8 @@ from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.needs_schema import (
+    BACK_LINKS_KEYWORDS,
+    BackLinksSchema,
     FieldLiteralValue,
     FieldSchema,
     FieldsSchema,
@@ -175,6 +178,8 @@ from sphinx_needs.needs_schema import (
     _inherit_keywords,
     create_inherited_field,
     narrowing_problems,
+    schema_narrowing_problems,
+    severity_problems,
 )
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles import NeedsXRefRole
@@ -782,6 +787,7 @@ def _load_variants_from_toml(
 
 
 #: The keys a ``needs_types`` entry may carry; any other key is reported and ignored.
+#: ``id_regex``: the pattern the ids of the type's needs match, beside ``needs_id_regex``.
 NEED_TYPE_KEYS = (
     "directive",
     "title",
@@ -789,12 +795,15 @@ NEED_TYPE_KEYS = (
     "color",
     "style",
     "inherits",
+    "id_regex",
     "fields",
     "links",
+    "back_links",
 )
 
 #: The keys of an entry of a need type's ``fields`` table (``derive``: the field's
-#: ``derive_by_type`` entry for the type, and the types inheriting from it).
+#: ``derive_by_type`` entry for the type, and the types inheriting from it;
+#: ``severity``: what a need failing the declaration is reported at).
 NEED_TYPE_FIELD_KEYS = (
     "description",
     "schema",
@@ -802,6 +811,7 @@ NEED_TYPE_FIELD_KEYS = (
     "default",
     "predicates",
     "derive",
+    "severity",
 )
 
 #: The keys of an entry of a need type's ``links`` table: a link type is not nullable.
@@ -813,7 +823,15 @@ NEED_TYPE_LINK_KEYS = (
     "predicates",
     "derive",
     "target_types",
+    "severity",
 )
+
+#: The keys of an entry of a need type's ``back_links`` table, named after a link type
+#: ``l``: how many links of ``l`` point to a need of the type, its back links
+#: ``<l>_back`` (``schema``, of :data:`~sphinx_needs.needs_schema.BACK_LINKS_KEYWORDS`
+#: alone), and the severity of a need failing the count. Any other key refuses the
+#: entry.
+NEED_TYPE_BACK_LINK_KEYS = ("description", "schema", "severity")
 
 #: The keys of a link type that are the same on every need type -- how its links are
 #: drawn, whether they are copied into ``links``, whether a dead link is allowed: an
@@ -831,6 +849,9 @@ NEED_TYPE_LINK_SHAPE_KEYS = (
     "style_start",
     "style_end",
 )
+
+#: The keys of an entry of a need type's ``links`` table, of a link type's declaration.
+_NEED_TYPE_LINK_ENTRY_KEYS = (*NEED_TYPE_LINK_KEYS, *NEED_TYPE_LINK_SHAPE_KEYS)
 
 
 def _type_name(value: object) -> str:
@@ -860,14 +881,20 @@ _SHAPES: Mapping[str, tuple[str, Callable[[object], bool]]] = {
     "color": ("a string", lambda v: isinstance(v, str)),
     "style": ("a string", lambda v: isinstance(v, str)),
     "inherits": ("a non-empty string", lambda v: isinstance(v, str) and bool(v)),
+    "id_regex": ("a string", lambda v: isinstance(v, str)),
     "fields": ("a mapping", lambda v: isinstance(v, Mapping)),
     "links": ("a mapping", lambda v: isinstance(v, Mapping)),
+    "back_links": ("a mapping", lambda v: isinstance(v, Mapping)),
     "description": ("a string", lambda v: isinstance(v, str)),
     "schema": ("a mapping", lambda v: isinstance(v, Mapping)),
     "nullable": ("a boolean", lambda v: isinstance(v, bool)),
     "predicates": ("a list of (filter, value) pairs", _is_pairs),
     "derive": ("a mapping", lambda v: isinstance(v, Mapping)),
     "target_types": ("a non-empty list of need type names", _is_names),
+    "severity": (
+        "one of 'violation', 'warning' and 'info'",
+        lambda v: v in ("violation", "warning", "info"),
+    ),
     "incoming": ("a string", lambda v: isinstance(v, str)),
     "outgoing": ("a string", lambda v: isinstance(v, str)),
     "copy": ("a boolean", lambda v: isinstance(v, bool)),
@@ -910,6 +937,8 @@ def _got(name: str, value: object) -> str:
             if not value
             else "a list with an item that is not a non-empty string"
         )
+    if name == "severity" and isinstance(value, str):
+        return repr(value)
     return repr(value) if value == "" else _type_name(value)
 
 
@@ -948,6 +977,7 @@ def _report_unknown_keys(
     known: tuple[str, ...],
     *,
     own_name: tuple[str, str] | None = None,
+    reported: tuple[str, ...] = (),
 ) -> None:
     """One ``needs.config`` warning per key of a global field or link type entry that
     the entry does not have; the readers of the entry read only the known keys, so the
@@ -960,6 +990,9 @@ def _report_unknown_keys(
         ``needs_links``), which takes its name from its table key: that key, left over
         from the list spelling, is accepted where it repeats the entry's name, and
         reported where it gives another (it was always ignored).
+    :param reported: the keys outside ``known`` that a finding of their own reports
+        (``severity``, a need type's entry's: :func:`_refuse_global_severity`), each
+        reported once.
     """
     if not isinstance(entry, Mapping):
         return
@@ -974,7 +1007,7 @@ def _report_unknown_keys(
                     None,
                 )
             continue
-        if key not in known:
+        if key not in known and key not in reported:
             log_warning(
                 LOGGER,
                 f"{where} has an unknown key {key!r}; known keys are "
@@ -1001,15 +1034,19 @@ def _report_unknown_keywords(where: str, unknown: list[UnknownKeyword]) -> None:
 def _normalise_declarations(
     named: str, table: str, value: Mapping[Any, Any], findings: list[str]
 ) -> dict[Any, dict[str, Any]]:
-    """A need type's ``fields`` or ``links`` table, of its shape: each entry a mapping
-    of the keys of its table, each value of its shape. What is not is reported in
-    ``findings`` and left out: an entry that is not a mapping, a key that is not
-    known or not of its shape. Every entry is a new mapping, its values copies."""
-    known = (
-        (*NEED_TYPE_LINK_KEYS, *NEED_TYPE_LINK_SHAPE_KEYS)
-        if table == "links"
-        else NEED_TYPE_FIELD_KEYS
-    )
+    """A need type's ``fields``, ``links`` or ``back_links`` table, of its shape: each
+    entry a mapping of the keys of its table, each value of its shape. What is not is
+    reported in ``findings`` and left out: an entry that is not a mapping, a key that
+    is not known or not of its shape. Every entry is a new mapping, its values copies.
+
+    A ``back_links`` entry is a count, which refuses the whole entry for a key it does
+    not take (:func:`_declare_back_links`): such a key is kept, and not reported here.
+    """
+    known = {
+        "fields": NEED_TYPE_FIELD_KEYS,
+        "links": _NEED_TYPE_LINK_ENTRY_KEYS,
+        "back_links": NEED_TYPE_BACK_LINK_KEYS,
+    }[table]
     resolved: dict[Any, dict[str, Any]] = {}
     for name, entry in value.items():
         where = f"{named}.{table}[{name!r}]"
@@ -1022,9 +1059,11 @@ def _normalise_declarations(
         wrong, text = _not_of_their_shape(where, entry, known)
         if wrong:
             findings.append(text)
-        unknown, text = _unknown(where, entry, known)
-        if unknown:
-            findings.append(text)
+        unknown: list[str] = []
+        if table != "back_links":
+            unknown, text = _unknown(where, entry, known)
+            if unknown:
+                findings.append(text)
         resolved[name] = {
             key: deepcopy(item)
             for key, item in entry.items()
@@ -1055,9 +1094,9 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
        is that type, narrowed, taking the ``title``, ``prefix``, ``color`` and
        ``style`` it leaves out (or removes below); one naming no default type is
        dropped;
-    5. a ``color`` or ``style`` that is not a string, an ``inherits`` that is not a
-       non-empty string, and a ``fields`` or ``links`` that is not a mapping, are
-       removed from the entry;
+    5. a ``color``, ``style`` or ``id_regex`` that is not a string, an ``inherits``
+       that is not a non-empty string, and a ``fields`` or ``links`` that is not a
+       mapping, are removed from the entry;
     6. a key outside :data:`NEED_TYPE_KEYS` is removed from the entry;
     7. a directive declared by more than one entry (list shape only) resolves to the
        last of them, at its own position, the others removed.
@@ -1075,7 +1114,8 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
     of its shape: a ``description``, an ``incoming``, ``outgoing``, ``color`` or
     ``style*`` that is not a string, a ``schema`` or a ``derive`` that is not a
     mapping, a ``nullable``, ``copy`` or ``allow_dead_links`` that is not a boolean,
-    ``predicates`` that are not a list of (filter, value) pairs. Only the
+    ``predicates`` that are not a list of (filter, value) pairs, a ``severity`` that
+    is not one of ``violation``, ``warning`` and ``info``. Only the
     shape is checked here: what a declaration names, and whether its values apply to
     the field, is for :func:`create_schema`, which knows the fields and every need type.
 
@@ -1176,7 +1216,7 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
             findings.append(text)
         for name in (*wrong, *unknown):
             del resolved[name]
-        for table in ("fields", "links"):
+        for table in ("fields", "links", "back_links"):
             if table in resolved:
                 # a mapping: what is not was removed above
                 resolved[table] = _normalise_declarations(
@@ -1339,11 +1379,13 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 None,
             )
             continue
+        _refuse_global_severity("needs_fields", "fields", option_name, option_params)
         _report_unknown_keys(
             f"needs_fields[{option_name!r}]",
             option_params,
             FIELD_ENTRY_KEYS,
             own_name=("name", option_name),
+            reported=("severity",),
         )
         if option_name in NeedsCoreFields or option_name in _link_type_names(
             needs_config
@@ -1433,8 +1475,33 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     # Process needs_links (new dict-based format)
     if not isinstance(needs_config._links, dict):
         raise NeedsConfigException("Config option 'needs_links' must be a dict.")
+    for link_name, link_params in needs_config._links.items():
+        if isinstance(link_params, Mapping):
+            _refuse_global_severity("needs_links", "links", link_name, link_params)
 
     load_schemas_config_from_json(app, app.config)
+
+
+def _refuse_global_severity(
+    option: str, table: str, name: object, params: Mapping[str, Any]
+) -> None:
+    """Report a ``severity`` on a ``needs_fields`` or ``needs_links`` entry, which
+    takes none: a severity is a need type's declaration's, and the key is ignored.
+
+    :param option: The configuration option, ``needs_fields`` or ``needs_links``.
+    :param table: The table of a need type's entry that takes it, ``fields`` or
+        ``links``.
+    :param name: The entry's name.
+    :param params: The entry.
+    """
+    if "severity" in params:
+        log_warning(
+            LOGGER,
+            f"{option}[{name!r}] sets 'severity', which is declared on a need type's "
+            f"entry ([needs.types.<type>.{table}.{name}]); it is ignored here",
+            "config",
+            None,
+        )
 
 
 def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
@@ -1722,6 +1789,7 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
             link,
             LINK_ENTRY_KEYS,
             own_name=("option", name),
+            reported=("severity",),
         )
     for link in needs_config._extra_links:
         _report_unknown_keys(
@@ -2629,6 +2697,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         {"fields": shape_refused, "links": link_refused},
         type_tree=(below, need_types),
     )
+    _resolve_id_patterns(schema, type_entries, order, parent)
     # the schema is complete: nothing declares a field once it is built
     schema.freeze()
 
@@ -3087,12 +3156,12 @@ def _checked_type_entries(
             continue
         named = f"needs_types[{name!r}]"
         wrong, text = _not_of_their_shape(
-            named, need_type, ("inherits", "fields", "links")
+            named, need_type, ("inherits", "fields", "links", "back_links")
         )
         if wrong:
             findings.append(text)
         entry = {key: value for key, value in need_type.items() if key not in wrong}
-        for table in ("fields", "links"):
+        for table in ("fields", "links", "back_links"):
             if table in entry:
                 entry[table] = _normalise_declarations(
                     named, table, cast(Mapping[Any, Any], entry[table]), findings
@@ -3593,20 +3662,27 @@ def _resolve_type_declarations(
     #: need type -> field name -> its declaration for the type, and the type whose
     #: entry made it
     declared: dict[str, dict[str, tuple[FieldSchema | LinkSchema, str]]] = {}
+    #: need type -> back links name -> the type's declaration of them, and the type
+    #: whose entry made it
+    back_declared: dict[str, dict[str, tuple[BackLinksSchema, str]]] = {}
     #: need type -> the fields and link types it declares: its ancestors' and its own
     #: entries, used or not, each naming one of its table's kind
     names: dict[str, set[str]] = {}
+    #: need type -> name -> the type whose entry gave the severity it has, if one did
+    severity_by: dict[str, dict[str, str]] = {}
     for need_type in order:
         own = dict(declared[p]) if (p := parent.get(need_type)) else {}
+        back_own = dict(back_declared[p]) if p else {}
+        severity_own = dict(severity_by[p]) if p else {}
         names[need_type] = set(names[p]) if p else set()
         for table, kind, what, other in (
             ("fields", "field", "a field", "a link type"),
             ("links", "link", "a link type", "a field"),
         ):
             for name, keys in types[need_type].get(table, {}).items():
+                where = f"needs_types[{need_type!r}].{table}[{name!r}]"
                 if (need_type, name) in refused[table]:
                     continue  # reported with the field's (or link type's) shape
-                where = f"needs_types[{need_type!r}].{table}[{name!r}]"
                 glob = schema.global_declaration(name)
                 if glob is None or glob.kind != kind:
                     owner = (
@@ -3618,7 +3694,11 @@ def _resolve_type_declarations(
                     # declares nothing is refused before it reaches here (no state is
                     # known where ``owner`` is a field), so it would read "not ..."
                     if owner is not None and owner.kind == "link":
-                        is_ = "a link type's back links"
+                        is_ = (
+                            "a link type's back links, whose count a need type "
+                            f"declares under 'back_links' (needs_types[{need_type!r}]"
+                            f".back_links[{owner.name!r}])"
+                        )
                     elif glob is None:
                         is_ = f"not {what}"
                     else:
@@ -3688,12 +3768,46 @@ def _resolve_type_declarations(
                         local=name in local,
                         need_type=need_type,
                         type_tree=type_tree,
+                        severity_by=severity_own.get(name),
                     )
                 ) is not None:
                     own[name] = (field, need_type)
+                    if "severity" in keys:
+                        severity_own[name] = need_type
+        # how many links of each link type point to the type's needs
+        for link_name, keys in types[need_type].get("back_links", {}).items():
+            where = f"needs_types[{need_type!r}].back_links[{link_name!r}]"
+            if (hint := _not_a_link_type(schema, link_name)) is not None:
+                log_warning(
+                    LOGGER,
+                    f"{where} counts the back links of {link_name!r}, which is not a "
+                    f"link type; the entry is ignored{hint}",
+                    "type_conflict",
+                    None,
+                )
+                continue
+            name = f"{link_name}_back"
+            previous, by = back_own.get(name, (None, None))
+            if (
+                back := _declare_back_links(
+                    previous,
+                    link_name,
+                    keys,
+                    where,
+                    by,
+                    severity_by=severity_own.get(name),
+                )
+            ) is not None:
+                back_own[name] = (back, need_type)
+                if "severity" in keys:
+                    severity_own[name] = need_type
         declared[need_type] = own
+        back_declared[need_type] = back_own
+        severity_by[need_type] = severity_own
         for field, _ in own.values():
             schema.add_type_overlay(need_type, field)
+        for back, _ in back_own.values():
+            schema.add_back_links(need_type, back)
     for name in local:
         schema._localise(name, [t for t in order if name in names[t]])
 
@@ -3708,6 +3822,7 @@ def _declare_for_type(
     local: bool = False,
     need_type: str = "",
     type_tree: tuple[Mapping[str, frozenset[str]], Mapping[str, str]] = ({}, {}),
+    severity_by: str | None = None,
 ) -> FieldSchema | LinkSchema | None:
     """The declaration a need type's entry makes of a field, from the one before it
     (the global declaration, or an ancestor's); ``None``, reported, if the entry
@@ -3722,6 +3837,8 @@ def _declare_for_type(
     :param need_type: The need type whose entry it is.
     :param type_tree: What a ``target_types`` is read against
         (:func:`_resolve_type_declarations`).
+    :param severity_by: The need type whose entry gave ``previous`` its severity, if
+        one did: a severity lowered is reported as that type declares it.
     """
     on_link = previous.kind == "link"
     keys = {
@@ -3739,14 +3856,14 @@ def _declare_for_type(
             LOGGER,
             f"{where} sets {' and '.join(map(repr, refused))}, but {previous.name!r} is "
             f"derived ({previous.describe_derived()}): a need type declares only its "
-            f"{'description and schema' if on_link else 'description, schema and nullable'}"
+            f"{'description, schema and severity' if on_link else 'description, schema, nullable and severity'}"
             "; the entry is ignored",
             "type_conflict",
             None,
         )
         return None
     changes: dict[str, Any] = {
-        key: keys[key] for key in ("description", "nullable") if key in keys
+        key: keys[key] for key in ("description", "nullable", "severity") if key in keys
     }
     if "schema" in keys:
         # a declaration names only what it changes: it takes the rest from before
@@ -3816,10 +3933,10 @@ def _declare_for_type(
         # declaration's, and the empty value rule 9 lets pass is the global one's
         previous is not glob and (problems := narrowing_problems(glob, field))
     ):
-        as_declared = (
-            "" if declared_by is None else f" as need type {declared_by!r} declares it"
-        )
         for reason in problems:
+            as_declared = _as_declared(
+                severity_by if _is_severity_reason(reason) else declared_by
+            )
             if reason.startswith("with "):
                 # the field's type or derivation, the same on every need type: a
                 # reason of these reads on from the field's name
@@ -3839,6 +3956,169 @@ def _declare_for_type(
                 )
         return None
     return field
+
+
+def _resolve_id_patterns(
+    schema: FieldsSchema,
+    types: Mapping[str, Mapping[str, Any]],
+    order: list[str],
+    parent: Mapping[str, str],
+) -> None:
+    """Register the ``id_regex`` patterns the ids of each need type's needs match:
+    its own and those of every type it inherits from, the root's first
+    (:meth:`FieldsSchema.set_id_patterns`), each checked where ``needs_id_regex`` is.
+
+    A pattern that does not compile is one ``needs.type_conflict`` warning, and is
+    ignored: the type and the types inheriting from it are not checked against it.
+
+    :param schema: The schema, complete but for freezing.
+    :param types: Each configured need type's entry.
+    :param order: The need types, each after its parent.
+    :param parent: The parent of each type that has one.
+    """
+    patterns: dict[str, tuple[tuple[str, str], ...]] = {}
+    for need_type in order:
+        own = patterns.get(parent.get(need_type, ""), ())
+        pattern = types[need_type].get("id_regex")
+        if isinstance(pattern, str):
+            try:
+                re.compile(pattern)
+            except re.error as exc:
+                log_warning(
+                    LOGGER,
+                    f"needs_types[{need_type!r}] has an id_regex {pattern!r} that is "
+                    f"not a regular expression ({exc}); the key is ignored",
+                    "type_conflict",
+                    None,
+                )
+            else:
+                own = (*own, (need_type, pattern))
+        patterns[need_type] = own
+        if own:
+            schema.set_id_patterns(need_type, own)
+
+
+def _not_a_link_type(schema: FieldsSchema, name: object) -> str | None:
+    """``None`` if a need type's ``back_links`` entry named ``name`` counts the back
+    links of a link type -- of any link type, declared otherwise or by need types
+    alone, whose links may come from a need of any type -- else what its finding ends
+    on: the link type closest to ``name``, if one is close
+    (``difflib.get_close_matches``, cutoff 0.8), as a "did you mean", or nothing.
+
+    :param schema: The schema, with every link type declared.
+    :param name: The entry's name.
+    """
+    links = list(schema.iter_link_field_names())
+    if isinstance(name, str) and name in links:
+        return None
+    if isinstance(name, str) and (
+        close := difflib.get_close_matches(name, links, n=1, cutoff=0.8)
+    ):
+        return f"; did you mean {close[0]!r}?"
+    return ""
+
+
+def _declare_back_links(
+    previous: BackLinksSchema | None,
+    link_type: str,
+    keys: Mapping[str, Any],
+    where: str,
+    declared_by: str | None,
+    *,
+    severity_by: str | None = None,
+) -> BackLinksSchema | None:
+    """The declaration a need type's ``back_links`` entry makes of a link type's back
+    links, ``<l>_back``, from the one before it (an ancestor's, or none); ``None``,
+    reported, if the entry cannot be used.
+
+    The entry takes only :data:`NEED_TYPE_BACK_LINK_KEYS`, and its ``schema`` only
+    ``minItems`` and ``maxItems``, each a non-negative integer: anything else is a
+    ``needs.type_conflict``, the entry ignored. The keys it leaves out are kept from
+    the declaration before it, which it narrows: a ``minItems`` not lower, a
+    ``maxItems`` not higher, a ``severity`` not lower (``needs.type_widening``).
+
+    :param previous: The declaration before the entry, an ancestor's.
+    :param link_type: The link type whose back links the entry names.
+    :param keys: The entry.
+    :param where: The entry, as the configuration names it.
+    :param declared_by: The need type whose entry made ``previous``.
+    :param severity_by: The need type whose entry gave ``previous`` its severity.
+    """
+    name = f"{link_type}_back"
+    if other := [key for key in keys if key not in NEED_TYPE_BACK_LINK_KEYS]:
+        log_warning(
+            LOGGER,
+            f"{where} sets {joined([repr(key) for key in other])}, but a need type "
+            "declares only the description, schema (minItems, maxItems) and severity "
+            f"of a link type's back links ({name!r}); the entry is ignored",
+            "type_conflict",
+            None,
+        )
+        return None
+    given = dict(keys.get("schema", {}))
+    if other := [key for key in given if key not in BACK_LINKS_KEYWORDS]:
+        log_warning(
+            LOGGER,
+            f"{where} gives the schema {joined([repr(key) for key in other])}, but "
+            f"the schema of a link type's back links ({name!r}) takes only "
+            "'minItems' and 'maxItems'; the entry is ignored",
+            "type_conflict",
+            None,
+        )
+        return None
+    before: Mapping[str, Any] = {} if previous is None else previous.schema
+    try:
+        back = BackLinksSchema(
+            name=name,
+            link_type=link_type,
+            description=keys.get(
+                "description", "" if previous is None else previous.description
+            ),
+            schema={**before, **given},
+            severity=keys.get(
+                "severity", None if previous is None else previous.severity
+            ),
+        )
+    except ValueError as exc:
+        log_warning(
+            LOGGER,
+            f"{where} cannot be declared: {_reason(exc)}; the entry is ignored",
+            "type_conflict",
+            None,
+        )
+        return None
+    if previous is not None and (
+        problems := [
+            *schema_narrowing_problems(
+                previous.json_schema(), back.json_schema(), dropped_is_widening=False
+            ),
+            *severity_problems(previous.severity, back.severity),
+        ]
+    ):
+        for reason in problems:
+            as_declared = _as_declared(
+                severity_by if _is_severity_reason(reason) else declared_by
+            )
+            log_warning(
+                LOGGER,
+                f"{where} widens the field{as_declared}: {reason}",
+                "type_widening",
+                None,
+            )
+        return None
+    return back
+
+
+def _as_declared(need_type: str | None) -> str:
+    """Where a widened declaration comes from, as a ``type_widening`` finding says it."""
+    return "" if need_type is None else f" as need type {need_type!r} declares it"
+
+
+def _is_severity_reason(reason: str) -> bool:
+    """Whether a narrowing problem is about the ``severity`` (rule 12 of
+    :func:`~sphinx_needs.needs_schema.narrowing_problems`), whose source is the type
+    that gave it, not the nearest declaring type."""
+    return "parent 'severity'" in reason
 
 
 def _reason(exc: Exception) -> str:

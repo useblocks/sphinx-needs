@@ -60,6 +60,15 @@ class _FieldValidation:
     #: the "no value" of a field an author cannot set, that is not nullable
     placeholders: dict[str, Any]
     with_off_type_default: dict[str, FieldSchema]
+    #: the severity of each field and link type whose declaration gives one (the
+    #: ``severity`` of a need type's entry); every other one fails a ``violation``
+    severities: dict[str, SeverityEnum]
+    #: the fields not nullable whose need may hold ``None`` all the same: a severity
+    #: below ``violation`` reports a need without a value instead of refusing it
+    required: frozenset[str]
+    #: the back links the need type declares a count of (``<l>_back``), validated as
+    #: its link types are, but on a need from ``needs_external_needs``
+    back_links: frozenset[str]
 
 
 def _field_validation(fields_schema: TypeFieldsSchema) -> _FieldValidation | None:
@@ -93,13 +102,28 @@ def _field_validation(fields_schema: TypeFieldsSchema) -> _FieldValidation | Non
         and field.derive is None
         and field.default is not None
     }
-    for field in fields_schema.iter_core_fields():
+    severities: dict[str, SeverityEnum] = {}
+    required: set[str] = set()
+    for field in (
+        *fields_schema.iter_core_fields(),
+        *fields_schema.iter_extra_fields(),
+    ):
         combined_properties[field.name] = field.schema
-    for field in fields_schema.iter_extra_fields():
-        combined_properties[field.name] = field.schema
+        if field.severity is not None:
+            severities[field.name] = SeverityEnum[field.severity]
+        if field.admits_null and not field.nullable:
+            required.add(field.name)
     for link in fields_schema.iter_link_fields():
         combined_properties[link.name] = link.schema
         link_names.add(link.name)
+        if link.severity is not None:
+            severities[link.name] = SeverityEnum[link.severity]
+    back_links = fields_schema.back_links()
+    for back in back_links.values():
+        combined_properties[back.name] = back.json_schema()
+        link_names.add(back.name)
+        if back.severity is not None:
+            severities[back.name] = SeverityEnum[back.severity]
 
     if not combined_properties:
         return None
@@ -113,6 +137,9 @@ def _field_validation(fields_schema: TypeFieldsSchema) -> _FieldValidation | Non
         link_names=frozenset(link_names),
         placeholders=placeholders,
         with_off_type_default=with_off_type_default,
+        severities=severities,
+        required=frozenset(required),
+        back_links=frozenset(back_links),
     )
 
 
@@ -135,6 +162,14 @@ def validate_field_link_schemas(
     Errors on link properties use :attr:`MessageRuleEnum.link_fail` and
     the ``links > schema`` schema path prefix, while errors on other
     properties use :attr:`MessageRuleEnum.field_fail` and ``fields > schema``.
+    Each is reported at the severity of the declaration it fails (the ``severity`` of
+    the need type's entry), else ``violation``. A field its type declares not nullable
+    at a lower severity, which a need without a value holds ``None`` of, is one
+    ``field_fail`` at that severity (``fields > nullable``).
+    The back links a need type declares a count of (``<l>_back``) are validated as a
+    link type is, a ``link_fail`` of that name, but on a need from
+    ``needs_external_needs``: its own project's links to it are not loaded here, so
+    its count would be partial.
 
     :param config: The Sphinx-Needs configuration.
     :param fields_schema: The fields schema containing core, extra, and link field definitions.
@@ -174,6 +209,7 @@ def validate_field_link_schemas(
             for key, value in need.items()
             if key in schema_properties
             and value is not None
+            and not (key in validation.back_links and need["is_external"])
             and not (
                 key in placeholders
                 and value == placeholders[key]
@@ -184,7 +220,22 @@ def validate_field_link_schemas(
             )
         }
 
-        warnings: list[OntologyWarning] = []
+        warnings: list[OntologyWarning] = [
+            {
+                "rule": MessageRuleEnum.field_fail,
+                "severity": validation.severities[name],
+                "validation_message": (
+                    f"Field {name!r} is not nullable, but no value or default was "
+                    "given."
+                ),
+                "need": need,
+                "schema_path": ["fields", "nullable"],
+                "need_path": [need["id"]],
+                "field": name,
+            }
+            for name in sorted(validation.required)
+            if need.get(name) is None
+        ]
         try:
             validation_errors = list(validator.compiled.iter_errors(instance=need_data))
         except ValidationError as exc:
@@ -211,7 +262,11 @@ def validate_field_link_schemas(
             schema_prefix = "links" if is_link else "fields"
             warning: OntologyWarning = {
                 "rule": rule,
-                "severity": get_severity(rule),
+                # the severity the need type's declaration gives, else the default
+                "severity": get_severity(
+                    rule,
+                    None if root_prop is None else validation.severities.get(root_prop),
+                ),
                 "validation_message": err.message,
                 "need": need,
                 "reduced_need": need_data,

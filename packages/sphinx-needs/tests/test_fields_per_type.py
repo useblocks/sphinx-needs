@@ -597,8 +597,8 @@ def test_derived_values_of_one_type(test_app: Any) -> None:
     app.build()
     assert build_warnings(app) == [
         "WARNING: needs_types['spec'].fields['oy'] sets 'default', but 'oy' is derived "
-        "(by need type): a need type declares only its description, schema and "
-        "nullable; the entry is ignored [needs.type_conflict]",
+        "(by need type): a need type declares only its description, schema, "
+        "nullable and severity; the entry is ignored [needs.type_conflict]",
         "<srcdir>/index.rst:7: WARNING: dynamic function 'copy' for option 'c1' is on "
         "a cycle: 'c1' on need 'SPEC_1' and 'c2' on need 'SPEC_1'; the field is left "
         "empty [needs.derive_cycle]",

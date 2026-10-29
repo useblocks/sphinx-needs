@@ -970,8 +970,8 @@ def test_what_a_declaration_of_a_link_type_cannot_give(test_app: Any) -> None:
         "WARNING: needs_types['spec'].links['rel'] has unknown keys 'parse_variants', "
         "'parse_dynamic_functions', 'parse_conditions', 'derive_by_type'; known keys "
         "are allow_dead_links, color, copy, default, derive, description, incoming, "
-        "outgoing, predicates, schema, style, style_end, style_part, style_start, "
-        "target_types; "
+        "outgoing, predicates, schema, severity, style, style_end, style_part, "
+        "style_start, target_types; "
         "the keys are ignored [needs.config]",
     ]
     union = _schema(app).get_link_field("rel")
@@ -1086,17 +1086,20 @@ def test_the_back_links_of_a_link_type_are_no_link_type(test_app: Any) -> None:
     """A ``links`` entry named as the back links of a link type -- of ``links``, of
     ``parent_needs``, of a ``needs_links`` type, of a link type declared on need
     types alone -- declares nothing: it is refused as a link type's back links (as a
-    ``fields`` entry of that name is), and the back links are computed on every need,
-    as without it."""
+    ``fields`` entry of that name is), naming the ``back_links`` entry that counts
+    them, and the back links are computed on every need, as without it."""
     app = test_app
     app.build()
+    names = ("links_back", "parent_needs_back", "blocks_back", "z_back")
     assert build_warnings(app) == [
         _conflict(
             f"needs_types['spec'].links[{name!r}] declares {name!r}, which is a link "
-            "type's back links"
+            "type's back links, whose count a need type declares under 'back_links' "
+            f"(needs_types['spec'].back_links[{name.removesuffix('_back')!r}])"
         )
-        for name in ("links_back", "parent_needs_back", "blocks_back", "z_back")
+        for name in names
     ]
+    assert _schema(app).for_type("spec").back_links() == {}
     assert _values(app, "links_back", "parent_needs_back", "blocks_back", "z_back") == {
         "R_001": (["R_002", "S_001"], [], ["R_002"], ["R_002"]),
         "R_002": ([], [], [], []),

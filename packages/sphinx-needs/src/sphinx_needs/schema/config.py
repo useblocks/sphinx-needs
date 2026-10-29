@@ -599,9 +599,9 @@ Severity levels that can be set in the user provided schemas and for the schema_
 MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
     MessageRuleEnum.cfg_schema_error: SeverityEnum.config_error,
     MessageRuleEnum.field_success: SeverityEnum.none,
-    MessageRuleEnum.field_fail: SeverityEnum.violation,  # cannot be changed by user
+    MessageRuleEnum.field_fail: SeverityEnum.violation,  # a need type's entry may lower it
     MessageRuleEnum.link_success: SeverityEnum.none,
-    MessageRuleEnum.link_fail: SeverityEnum.violation,  # cannot be changed by user
+    MessageRuleEnum.link_fail: SeverityEnum.violation,  # a need type's entry may lower it
     MessageRuleEnum.select_success: SeverityEnum.none,
     MessageRuleEnum.select_fail: SeverityEnum.none,
     MessageRuleEnum.local_success: SeverityEnum.none,
@@ -620,8 +620,10 @@ MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
 Default severity for each rule.
 
 User provided schemas can overwrite the severity of a rule.
-The rules ``field_fail`` and ``link_fail`` cannot be changed by the user,
-but they can be suppressed specifically using suppress_warnings config.
+The rules ``field_fail`` and ``link_fail`` take the ``severity`` of the declaration
+that failed, which a need type's ``fields`` or ``links`` entry may give
+(``violation``, ``warning`` or ``info``); this default holds where none gives one.
+They can also be suppressed specifically using suppress_warnings config.
 """
 
 

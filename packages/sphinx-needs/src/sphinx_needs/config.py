@@ -574,12 +574,18 @@ class NeedType(TypedDict):
     """The default node style to use in diagrams (default: "node")."""
     inherits: NotRequired[str]
     """The need type whose declarations of fields and link types this type starts from."""
+    id_regex: NotRequired[str]
+    """A regular expression the id of a need of this type matches (``re.match``), as it
+    matches ``needs_id_regex``, and the ``id_regex`` of every type it inherits from."""
     fields: NotRequired[dict[str, NeedTypeFieldDeclaration]]
     """The fields this type declares anew: field name to its declaration. A name
     nothing else declares is a field of the types that declare it alone."""
     links: NotRequired[dict[str, NeedTypeLinkDeclaration]]
     """The link types this type declares anew: link type name to its declaration. A
     name nothing else declares is a link type of the types that declare it alone."""
+    back_links: NotRequired[dict[str, NeedTypeBackLinksDeclaration]]
+    """How many links of a link type point to a need of this type: link type name to
+    the count of its back links (``<l>_back``)."""
 
 
 #: The default need types: the value of ``needs_types`` when it is not configured.
@@ -637,6 +643,7 @@ class NeedTypeFieldDeclaration(TypedDict, total=False):
     default: Any
     predicates: list[tuple[str, Any]]
     derive: dict[str, Any]
+    severity: Literal["violation", "warning", "info"]
 
 
 class NeedTypeLinkDeclaration(TypedDict, total=False):
@@ -653,6 +660,7 @@ class NeedTypeLinkDeclaration(TypedDict, total=False):
     predicates: list[tuple[str, Any]]
     derive: dict[str, Any]
     target_types: list[str]
+    severity: Literal["violation", "warning", "info"]
     incoming: str
     outgoing: str
     copy: bool
@@ -662,6 +670,17 @@ class NeedTypeLinkDeclaration(TypedDict, total=False):
     style_part: str
     style_start: str
     style_end: str
+
+
+class NeedTypeBackLinksDeclaration(TypedDict, total=False):
+    """A need type's declaration of how many links of a link type point to each of its
+    needs: a count of the link type's back links, narrowed by the types inheriting
+    from the type. Any other key refuses the declaration."""
+
+    description: str
+    schema: dict[str, int]
+    """``minItems`` and ``maxItems`` alone."""
+    severity: Literal["violation", "warning", "info"]
 
 
 class NeedFields(TypedDict):

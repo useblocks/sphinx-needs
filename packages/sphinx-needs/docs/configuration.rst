@@ -267,6 +267,24 @@ By default it is set to:
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well. Can also be ""
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`__ for more.
 * **inherits**, **fields**, **links** (optional): the fields and link types the type declares anew for its needs, see :ref:`needs_types_fields`.
+* **id_regex** (optional): a regular expression the id of every need of the type matches, beside :ref:`needs_id_regex` (below).
+
+A type's ``id_regex`` is matched as :ref:`needs_id_regex` is, where it is: against the need's local id
+(the whole id while ids carry no namespace), with Python's ``re.match``,
+so it is anchored at the start of the id and open at its end (``"REQ_"`` accepts ``REQ_001`` and refuses ``XREQ_001``;
+end it with ``$`` to anchor the end too), on an id given in the need or generated from the type's ``prefix``,
+and never on a need :ref:`needimport` imports or :ref:`needs_external_needs` loads.
+The id of a need matches :ref:`needs_id_regex`, its type's ``id_regex``, and that of every type its type inherits from
+(through ``inherits``): a type narrows the ids of the type it inherits from, never widens them.
+A need whose id does not match is not created, as for :ref:`needs_id_regex`, one ``needs.create_need`` warning
+naming the pattern and the type that gives it::
+
+   Need could not be created: Given ID 'XYZ_S01' does not match the id_regex 'REQ_' of need type 'req', which need type 'safety_req' inherits
+
+To report such ids and keep the needs instead, use a schema rule with a ``pattern`` on ``id``.
+A pattern that is not a regular expression is one ``needs.type_conflict`` warning, and is ignored::
+
+   needs_types['req'] has an id_regex 'REQ_[' that is not a regular expression (unterminated character set at position 4); the key is ignored
 
 A configured ``needs_types`` replaces the default types once one of its entries gives a ``title`` or a ``prefix``.
 An entry naming a default type (``req``, ``spec``, ``impl``, ``test`` or ``need``) with neither of the two
@@ -405,6 +423,8 @@ A need type may declare fields and link types anew for its needs, in its entry:
   or a name nothing else declares, a field of this type's needs alone (below) -- to the type's declaration of it;
 * ``links``: a dictionary from the name of a link type -- one of :ref:`needs_links`, or ``links``,
   or a name nothing else declares, a link type of this type's needs alone -- to the type's declaration of it;
+* ``back_links``: a dictionary from the name of a link type ``l`` to how many links of ``l`` point to a need of the type,
+  its back links ``<l>_back`` (below);
 * ``inherits``: the directive name of one other need type, whose declarations this type starts from.
 
 A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` takes it:
@@ -428,6 +448,9 @@ A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` ta
    * - ``derive``
      - rule computing the field on the type's needs and on those of the types inheriting from it (below;
        ``derive_by_type`` is the older spelling, :ref:`needs_derive_by_type`)
+   * - ``severity``
+     - severity a need failing the declaration -- its ``schema`` keywords, its ``nullable = false`` -- is reported at:
+       ``"violation"`` (the default), ``"warning"`` or ``"info"`` (below)
 
 and a declaration in ``links`` these, as :ref:`needs_links` takes them:
 
@@ -450,6 +473,8 @@ and a declaration in ``links`` these, as :ref:`needs_links` takes them:
        ``derive_by_type`` is the older spelling, :ref:`needs_derive_by_type`)
    * - ``target_types``
      - need types the links of the type's needs may point to (a listed type or one inheriting from it): within those it inherits (the subtypes of a listed type included), never others (below)
+   * - ``severity``
+     - severity a need whose links fail the ``schema`` is reported at: ``"violation"`` (the default), ``"warning"`` or ``"info"`` (below)
    * - ``incoming``, ``outgoing``
      - the labels of the links, on every need type: set by the root declaration of a link type declared on need types alone (below)
    * - ``copy``
@@ -533,6 +558,10 @@ Then ``hw_test`` may give ``["safety_req"]``, because a ``safety_req`` inherits 
 It may not give ``["spec"]`` or ``["req", "spec"]``: a ``spec`` is not accepted for a ``test``, so that widens.
 A declaration that gives no ``target_types``, or names no need type in it, keeps the target types before it;
 where no declaration before it gives any, the links may point to any type.
+A ``severity`` may be raised, never lowered below one a declaration before it gives
+(``info`` is below ``warning``, below ``violation``);
+where none gives one, a declaration is free to give any
+(``Child 'severity' 'info' is lower than parent 'severity' 'warning'.``).
 A declaration that widens is ignored as a whole, its other keys included, and the type keeps the declaration before it;
 each reason is one ``needs.type_widening`` warning, such as::
 
@@ -664,9 +693,46 @@ changes the field's type, which is the same on every need type
 (``... cannot be declared with type 'integer' (items None): its type is 'string' (items None) on every need type; the entry is ignored``),
 or carries a ``schema``, ``default`` or ``predicates`` that cannot be used (a value of another type, a default of ``title``, which takes none).
 A link type's back links are computed on every need, so an entry naming them, in either table, declares nothing,
-and the back links are computed and validated as without it::
+and the back links are computed as without it; how many there must be is a ``back_links`` entry (below)::
 
-   needs_types['spec'].fields['links_back'] declares 'links_back', which is a link type's back links; the entry is ignored
+   needs_types['spec'].links['links_back'] declares 'links_back', which is a link type's back links, whose count a need type declares under 'back_links' (needs_types['spec'].back_links['links']); the entry is ignored
+
+**Incoming links.**
+A ``back_links`` entry, ``[needs.types.<t>.back_links.<l>]``, declares how many links of the link type ``l``
+point to a need of the type, its back links ``<l>_back``: ``schema = { minItems = 1 }`` says "every ``<t>`` is the target of at least one ``l`` link",
+``maxItems = 1`` "of one at most".
+``l`` is any link type, one ``<t>`` declares or not (the links come from needs of other types);
+an entry naming no link type is one ``needs.type_conflict`` warning, and is ignored,
+naming the link type it is close to, if any (``needs_types['req'].back_links['implemnts'] counts the back links of 'implemnts', which is not a link type; the entry is ignored; did you mean 'implements'?``).
+It takes a ``description``, a ``schema`` of ``minItems`` and ``maxItems`` alone (each a non-negative integer) and a ``severity``;
+any other key, or another schema keyword, is one ``needs.type_conflict`` warning, and the entry is ignored as a whole::
+
+   needs_types['req'].back_links['satisfies'] sets 'default', but a need type declares only the description, schema (minItems, maxItems) and severity of a link type's back links ('satisfies_back'); the entry is ignored
+   needs_types['req'].back_links['satisfies'] gives the schema 'uniqueItems', but the schema of a link type's back links ('satisfies_back') takes only 'minItems' and 'maxItems'; the entry is ignored
+
+The count is the length of the need's ``<l>_back``: every link of ``l`` to it, whatever the type of the need it comes from,
+a link that need's ``target_types`` refuses included -- as ``minItems`` counts the outgoing links.
+"At least one ``test``" among sources of several types takes a schema rule (:ref:`network_back_validation`).
+It holds for the declaring type and every type inheriting from it, which may narrow it as any declaration
+(a ``minItems`` not lower, a ``maxItems`` not higher, a ``severity`` not lower; ``needs.type_widening`` otherwise).
+It is checked by the :ref:`schema validation <schema_validation>` once every link is final,
+and a need failing it is a ``link_fail`` of the field ``<l>_back`` at that need, at the entry's ``severity`` (``violation`` by default):
+
+.. code-block:: text
+
+   ERROR: Need 'REQ_1' has schema violations:
+     Severity:       violation
+     Field:          satisfies_back
+     Need path:      REQ_1
+     Schema path:    links > schema > properties > satisfies_back > minItems
+     Schema message: [] has less than 1 item [sn_schema_violation.link_fail]
+
+So :ref:`needs_schema_validation_enabled` ``= False`` switches it off.
+A need from :ref:`needs_external_needs` is not counted: its own project's links to it are not loaded here,
+so its count would be partial; a need :ref:`needimport` imports is this project's, and is.
+A link to a part of the need (``<id>.<part>``) counts for the need, and so does a link to a part the need lacks:
+that link is a dead link where it is written (``needs.link_outgoing``), and still one of the need's back links.
+The :ref:`needs.json <needs_builder_format>` writes nothing new: the back links are in it as before.
 
 A name belongs to one declaration, and the back links of a link type ``l`` claim ``l_back``.
 Where two declarations claim one name, the back links of ``links`` and ``parent_needs`` win over any other declaration,
@@ -678,10 +744,32 @@ A link type refused for its back links leaves its own name to a need type's fiel
 unless that name is the back links of a link type that remains (as ``x_back`` in the chain above, or ``links_back``).
 A core field may be declared like any other: ``status`` takes a default and an ``enum``.
 A :ref:`derived <needs_derive>` field or link type (one with ``derive`` or ``derive_by_type``) takes only a ``description``,
-a narrower ``schema`` and (a field) ``nullable``: its rules give its value, so a ``default`` or ``predicates`` is refused,
+a narrower ``schema``, (a field) ``nullable``, and a ``severity``: its rules give its value, so a ``default`` or ``predicates`` is refused,
 and so is a link type's ``target_types`` in this release,
 and so is a ``schema`` adding an ``enum`` to a field that has none, as its rules are checked against the field's own declaration
 (a derived field declared on need types alone takes none).
+
+**Severity.**
+A need failing its type's declaration -- a value outside its ``schema``, a link count outside ``minItems`` and ``maxItems`` --
+is reported by the :ref:`schema validation <schema_validation>` as a ``violation`` (``sn_schema_violation.field_fail``, ``.link_fail``),
+and a need without a field its type declares ``nullable = false``, with no default, is not created (``needs.create_need``).
+A declaration's ``severity`` changes that for every constraint of the declaration as the type has it, its ancestors' and the field's own included:
+at ``"warning"`` or ``"info"`` the failure is reported as ``sn_schema_warning.*`` or ``sn_schema_info.*`` (a warning, not an error;
+both are logged at Sphinx's ``WARNING`` level, as a schema rule's are, so a ``-W`` build fails on either unless ``suppress_warnings`` names it),
+and a need without a value of a field not nullable is created, the field ``None``, and reported at that severity
+(``Field 'x' is not nullable, but no value or default was given.``, schema path ``fields > nullable``).
+It is then checked by the schema validation alone, so :ref:`needs_schema_validation_enabled` ``= False`` silences it.
+The :ref:`needs.json <needs_builder_format>` writes such a field nullable, with a ``null`` default, as a need may hold ``null`` of it:
+its ``needs_schema`` is one block for every need type, so the field is nullable there as a whole,
+while one every need type declares not nullable at ``violation`` is written as it is declared.
+A type inheriting a declaration keeps its severity (see **Narrowing**).
+A :ref:`needs_fields` or :ref:`needs_links` entry takes no ``severity``: what it declares fails as a ``violation`` where no need type gives one,
+and a ``severity`` there is one ``needs.config`` warning, and ignored::
+
+   needs_fields['asil'] sets 'severity', which is declared on a need type's entry ([needs.types.<type>.fields.asil]); it is ignored here
+
+A lowered severity is reported as the type whose entry gave it declares it, which may be an ancestor further up
+than the nearest type with an entry of the field (``... widens the field as need type 'req' declares it: Child 'severity' 'info' is lower than parent 'severity' 'warning'.``).
 
 **The value of a need.**
 A field a need of the type does not set takes the first matching predicate of the type's declaration
@@ -694,7 +782,7 @@ A :ref:`needextend` deleting a field (``:-x:``) empties it as the need's type de
 A default a type declares is not the one a :ref:`fingerprint <needs_derive>` compares against:
 a need's value equal to its type's default enters the fingerprint, unless it equals the field's own default too.
 Nor is it in the :ref:`needs.json <needs_builder_format>`, whose ``needs_schema`` is the schema every need type shares:
-no need type's narrowing is in it (its ``enum``, its default, a field it makes not nullable),
+no need type's narrowing is in it (its ``enum``, its default, a field it makes not nullable at the default severity),
 the ``default`` it gives a field, which :ref:`needs_json_remove_defaults` compares against, is never a need type's,
 and a reader that has only the file checks less than the project that wrote it did.
 
@@ -737,7 +825,8 @@ For new fields the following can be defined:
     The other constraints are checked by the schema validation, see :ref:`schema_validation` for more details.
     By default the field schema will be ``{"type": "string"}``.
 - ``nullable``: If set to ``True``, the field can be set to ``None`` (optional), e.g. if no value is specifically given and no default applies,
-    If ``False``, the field must have a value (either explicitly set or via default/predicates), otherwise the need is invalid and will not be created.
+    If ``False``, the field must have a value (either explicitly set or via default/predicates), otherwise the need is invalid and will not be created
+    (unless a need type's entry gives the field a ``severity`` below ``violation``, which reports it instead: :ref:`needs_types_fields`).
 - ``predicates``: A list of ``(match expression, value)`` tuples (optional).
     If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
 - ``default``: A default value for the field (optional).
@@ -2470,10 +2559,15 @@ Default value: ``^[A-Z0-9_]{5,}``
 By default, an ID is allowed to contain upper characters, numbers and underscore only.
 The ID length must be at least 3 characters.
 
-The regular expression applies to the needs defined in this project's sources. It is not
+The regular expression is matched against the need's local id
+(the whole id while ids carry no namespace), as is a need type's ``id_regex``.
+It applies to the needs defined in this project's sources. It is not
 applied to imported needs (:ref:`needimport`) or to external needs
 (:ref:`needs_external_needs`): their ids are the data of the project that wrote them, and an
 ``id_prefix`` may not match any pattern of this project.
+
+A need type may add a pattern of its own, the ``id_regex`` of its :ref:`needs_types` entry:
+the id of a need of that type matches both, and the ``id_regex`` of every type it inherits from.
 
 .. warning::
 
