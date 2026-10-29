@@ -27,6 +27,14 @@ python:
     # need none of this.
     - method: pip
       path: packages/ub-needs-exchange
+    # ub-project before sphinx-needs, from this checkout too: sphinx-needs reads
+    # `ubproject.toml` through it, and depends on it at runtime, so on its own pip would
+    # resolve `ub-project` from PyPI -- the released version, not the one beside it. That
+    # breaks the build as soon as the tree uses a name the release lacks (an ImportError at
+    # `conf.py` time), and otherwise documents code the workspace no longer has. With it
+    # already installed the requirement is satisfied and pip fetches nothing.
+    - method: pip
+      path: packages/ub-project
     - method: pip
       path: packages/sphinx-needs
       extra_requirements:
@@ -59,14 +67,14 @@ build:
       # and touched this package, the build runs although the pull request did not touch it.
       # That is the safe direction; it never skips a build that was needed.
       #
-      # SIX paths. `packages/sphinx-needs/` and this file are the package's own inputs:
+      # SEVEN paths. `packages/sphinx-needs/` and this file are the package's own inputs:
       # `python.install` below pip-installs the package directory with its own extras (the
       # root manifest and `uv.lock` take no part), and every `literalinclude` in the docs
-      # but one stays inside the package (`../../tests/doc_test/…`). Four more are recent.
+      # but one stays inside the package (`../../tests/doc_test/…`). Five more are recent.
       # `packages/sphinx-ai-index/`: `python.install` installs it from the checkout ahead of
       # this package, so a pull request that changes only the extension writing this site's
-      # `ai_docs_index.json` has to rebuild it. `packages/ub-needs-exchange/`, for the same
-      # reason: the reader sphinx-needs is installed with. `vendor/`: `docs/conf.py` no longer reads
+      # `ai_docs_index.json` has to rebuild it. `packages/ub-needs-exchange/` and
+      # `packages/ub-project/`, for the same reason: the readers sphinx-needs is installed with. `vendor/`: `docs/conf.py` no longer reads
       # only files under `docs/` -- it reads `vendor/plantuml/pin.toml` to find the renderer,
       # and renders with the jar committed beside it. Without `vendor/` here, a pull request
       # that bumps the pin would skip THIS build -- the only one that renders these docs under
@@ -85,8 +93,8 @@ build:
           echo "origin/master is not available in this clone; building to be safe"
           exit 0
         fi
-        if git diff --quiet origin/master -- packages/sphinx-needs/ packages/sphinx-ai-index/ packages/ub-needs-exchange/ .readthedocs.yml vendor/ docs-theme/; then
-          echo "nothing under packages/sphinx-needs/, packages/sphinx-ai-index/, packages/ub-needs-exchange/, vendor/ or docs-theme/, and nothing in .readthedocs.yml, changed; skipping this build (exit 183)"
+        if git diff --quiet origin/master -- packages/sphinx-needs/ packages/sphinx-ai-index/ packages/ub-needs-exchange/ packages/ub-project/ .readthedocs.yml vendor/ docs-theme/; then
+          echo "nothing under packages/sphinx-needs/, packages/sphinx-ai-index/, packages/ub-needs-exchange/, packages/ub-project/, vendor/ or docs-theme/, and nothing in .readthedocs.yml, changed; skipping this build (exit 183)"
           exit 183
         fi
     pre_create_environment:

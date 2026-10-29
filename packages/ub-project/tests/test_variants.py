@@ -14,10 +14,12 @@ from pathlib import Path
 import pytest
 
 from ub_project import (
+    NO_DATA_FILE,
     VARIANT_DATA_LEGACY_LOCATION,
     VARIANT_DATA_LOCATION,
     VARIANTS_UNKNOWN_KEY,
     Diagnostic,
+    NoDataFile,
     ProjectConfigError,
     load_toml,
     read_variants,
@@ -30,6 +32,7 @@ def _read(
     files: dict[str, object] | None = None,
     needs_table: str = "needs",
     variants_table: str = "variants",
+    data_file_override: Path | NoDataFile | None = None,
 ):
     for name, payload in (files or {}).items():
         (tmp_path / name).write_text(json.dumps(payload), encoding="utf-8")
@@ -40,6 +43,7 @@ def _read(
         toml_path,
         needs_table=needs_table,
         variants_table=variants_table,
+        data_file_override=data_file_override,
     )
 
 
@@ -407,6 +411,206 @@ class TestAnchoring:
         result = read_variants(load_toml(toml_path), toml_path)
         assert result.data_file == link / "vd.json"
         assert result.data == {"cpu": "arm"}
+
+
+class TestOverride:
+    """A data-file override swaps the file, never the table (contract section 6.8).
+
+    The corpus compares the map, the file and the findings; these pin ``location``, the
+    default, that the override is used as given, and the wording of its refusals.
+    """
+
+    def test_no_override_is_the_default(self, tmp_path: Path) -> None:
+        toml = '[variants]\ndata_file = "nmc.json"\n'
+        files = {"nmc.json": {"chem": "nmc"}}
+        assert _read(tmp_path, toml, files) == _read(
+            tmp_path, toml, files, data_file_override=None
+        )
+
+    @pytest.mark.parametrize(
+        ("toml", "location"),
+        [
+            ('[variants]\ndata_file = "nmc.json"\n', "variants"),
+            ('[needs]\nvariant_data_file = "nmc.json"\n', "needs"),
+            ('[project]\nname = "demo"\n', "variants"),
+            (
+                '[variants]\ndata_file = "nmc.json"\n'
+                '[needs]\nvariant_data_file = "nmc.json"\n',
+                "variants",
+            ),
+        ],
+        ids=["variants", "needs", "neither", "both"],
+    )
+    def test_the_location_is_the_documents(
+        self, tmp_path: Path, toml: str, location: str
+    ) -> None:
+        override = tmp_path / "lfp.json"
+        result = _read(
+            tmp_path,
+            toml,
+            {"lfp.json": {"chem": "lfp"}},
+            data_file_override=override,
+        )
+        assert result.location == location
+        assert result.data_file == override
+        assert result.data == {"chem": "lfp"}
+
+    def test_the_findings_are_the_documents(self, tmp_path: Path) -> None:
+        """The replaced [needs] file is still a key the document declares in the
+        location it reads, so it is reported as it would be without the override."""
+        toml = '[needs]\nvariant_data_file = "nmc.json"\n[needs.variant_data]\nx = 1\n'
+        files = {"nmc.json": {"chem": "nmc"}, "lfp.json": {"chem": "lfp"}}
+        plain = _read(tmp_path, toml, files)
+        overridden = _read(
+            tmp_path, toml, files, data_file_override=tmp_path / "lfp.json"
+        )
+        assert overridden.diagnostics == plain.diagnostics
+        assert overridden.data == {"chem": "lfp", "x": 1}
+
+    def test_a_relative_override_is_used_as_given(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Not anchored at the TOML's directory: the override did not come from it."""
+        docs = tmp_path / "docs"
+        docs.mkdir()
+        (docs / "lfp.json").write_text('{"chem": "docs"}', encoding="utf-8")
+        (tmp_path / "lfp.json").write_text('{"chem": "cwd"}', encoding="utf-8")
+        toml_path = docs / "ubproject.toml"
+        toml_path.write_text("[variants.data]\nx = 1\n", encoding="utf-8")
+        monkeypatch.chdir(tmp_path)
+        result = read_variants(
+            load_toml(toml_path), toml_path, data_file_override=Path("lfp.json")
+        )
+        assert result.data_file == Path("lfp.json")
+        assert result.data == {"chem": "cwd", "x": 1}
+
+    def test_the_replaced_legacy_file_is_not_opened(self, tmp_path: Path) -> None:
+        result = _read(
+            tmp_path,
+            '[needs]\nvariant_data_file = "absent.json"\n',
+            {"lfp.json": {"chem": "lfp"}},
+            data_file_override=tmp_path / "lfp.json",
+        )
+        assert result.data == {"chem": "lfp"}
+
+    def test_a_prefixed_location_is_overridden_alike(self, tmp_path: Path) -> None:
+        result = _read(
+            tmp_path,
+            '[tool.needs]\nvariant_data_file = "absent.json"\n'
+            '[tool.needs.variant_data]\nedition = "pro"\n',
+            {"lfp.json": {"chem": "lfp"}},
+            needs_table="tool.needs",
+            variants_table="tool.variants",
+            data_file_override=tmp_path / "lfp.json",
+        )
+        assert result.location == "needs"
+        assert result.data == {"chem": "lfp", "edition": "pro"}
+
+    def test_a_missing_override_names_the_override_alone(self, tmp_path: Path) -> None:
+        """The TOML and its table did not name the file, so the message does not
+        blame them."""
+        override = tmp_path / "absent.json"
+        with pytest.raises(ProjectConfigError) as info:
+            _read(
+                tmp_path,
+                '[variants]\ndata_file = "nmc.json"\n',
+                {"nmc.json": {"chem": "nmc"}},
+                data_file_override=override,
+            )
+        assert str(info.value) == f"variant data file not found: {override}"
+
+    def test_an_inline_error_still_names_the_toml_and_the_table(
+        self, tmp_path: Path
+    ) -> None:
+        with pytest.raises(
+            ProjectConfigError, match=r"\[variants\]: var\.mixed\[1\]"
+        ) as info:
+            _read(
+                tmp_path,
+                "[variants.data]\nmixed = [1, 'a']\n",
+                {"lfp.json": {"chem": "lfp"}},
+                data_file_override=tmp_path / "lfp.json",
+            )
+        assert str(info.value).startswith(str(tmp_path / "ubproject.toml"))
+
+    @pytest.mark.parametrize(
+        "toml",
+        ['[variants]\ndata_file = ["a.json"]\n', "[needs]\nvariant_data_file = 3\n"],
+        ids=["variants-list", "needs-int"],
+    )
+    def test_the_replaced_value_is_still_held_to_its_type(
+        self, tmp_path: Path, toml: str
+    ) -> None:
+        with pytest.raises(ProjectConfigError, match="must be one non-empty path"):
+            _read(
+                tmp_path,
+                toml,
+                {"lfp.json": {"chem": "lfp"}},
+                data_file_override=tmp_path / "lfp.json",
+            )
+
+
+class TestNoDataFile:
+    """An override may name NO file (``NO_DATA_FILE``): the location's file is replaced
+    by none -- not opened, not validated -- and everything else is the document's."""
+
+    @pytest.mark.parametrize(
+        ("toml", "location", "data"),
+        [
+            (
+                '[variants]\ndata_file = "absent.json"\n[variants.data]\nx = 1\n',
+                "variants",
+                {"x": 1},
+            ),
+            (
+                '[needs]\nvariant_data_file = "absent.json"\n'
+                "[needs.variant_data]\nx = 1\n",
+                "needs",
+                {"x": 1},
+            ),
+            ('[variants]\ndata_file = "absent.json"\n', "variants", {}),
+            ('[project]\nname = "demo"\n', "variants", {}),
+        ],
+        ids=["variants", "needs", "file-only", "neither"],
+    )
+    def test_the_file_is_replaced_by_none(
+        self, tmp_path: Path, toml: str, location: str, data: dict[str, object]
+    ) -> None:
+        result = _read(tmp_path, toml, data_file_override=NO_DATA_FILE)
+        assert result.location == location
+        assert result.data_file is None
+        assert result.data == data
+
+    def test_a_malformed_replaced_file_is_not_validated(self, tmp_path: Path) -> None:
+        (tmp_path / "bad.json").write_text("{not json", encoding="utf-8")
+        result = _read(
+            tmp_path,
+            '[variants]\ndata_file = "bad.json"\n',
+            data_file_override=NO_DATA_FILE,
+        )
+        assert result.data == {}
+
+    def test_the_findings_are_the_documents(self, tmp_path: Path) -> None:
+        toml = (
+            '[variants]\ndata_file = "absent.json"\n'
+            '[needs]\nvariant_data_file = "absent.json"\n'
+        )
+        result = _read(tmp_path, toml, data_file_override=NO_DATA_FILE)
+        assert _codes(result.diagnostics) == [
+            (VARIANT_DATA_LOCATION, "needs.variant_data_file")
+        ]
+
+    def test_the_replaced_value_is_still_held_to_its_type(self, tmp_path: Path) -> None:
+        with pytest.raises(ProjectConfigError, match="must be one non-empty path"):
+            _read(
+                tmp_path,
+                '[variants]\ndata_file = ""\n',
+                data_file_override=NO_DATA_FILE,
+            )
+
+    def test_the_sentinel_is_one_value(self) -> None:
+        assert NO_DATA_FILE is NoDataFile.NO_DATA_FILE
+        assert repr(NO_DATA_FILE) == "ub_project.NO_DATA_FILE"
 
 
 class TestRefusals:

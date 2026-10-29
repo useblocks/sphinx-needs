@@ -24,9 +24,12 @@ corpus and the tests change in the same commit. Every rule names the test that e
 
 1. This package provides **mechanisms and no policy.** Discovery (walk up, or read a Sphinx
    `confdir`), whether a finding is worth a warning, and how a command line (`-D` in Sphinx,
-   `-c` in ubCode) interacts with the file are each consumer's decision.
-   Enforced by: the API itself — no function takes a logger, a Sphinx object or an
-   override; §6 findings are returned (`tests/test_variants.py::TestDiagnostics`).
+   `-c` in ubCode) interacts with the file are each consumer's decision — with one
+   exception, the variant data file, whose override every reader applies alike (§6.8):
+   which values of a command line are such an override stays the consumer's.
+   Enforced by: the API itself — no function takes a logger, a Sphinx object or a
+   command line, and the one override `read_variants` takes is a file, or `NO_DATA_FILE`; §6 findings are
+   returned (`tests/test_variants.py::TestDiagnostics`).
 2. The variant-**condition** grammar (`var.edition == 'pro'`) is not here. It has its own
    corpus, `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml`.
 3. The package imports **the standard library and nothing else**: no Sphinx, no docutils,
@@ -197,8 +200,44 @@ edition = "pro"
    Enforced by: `tests/test_variants.py::TestDiagnostics::test_an_unknown_key_in_variants_is_reported_not_raised`;
    corpus: `unknown-key-beside-data`, `legacy-spelling-inside-variants-is-unknown`.
 7. The result carries `data` (the merged map, §8.4), `data_file` (the anchored file of the
-   location read, or `None`), `location` (`"variants"`, `"needs"` or `None`) and
-   `diagnostics`.
+   location read, the override file when there is one (`None` for `NO_DATA_FILE`, §6.8),
+   or `None`), `location`
+   (`"variants"`, `"needs"` or `None`) and `diagnostics`.
+8. **Overrides: a data-file override swaps the file, never the table.** A consumer may take
+   one data file from outside the document — sphinx-needs: `-D needs_variant_data_file`,
+   its one confval for both locations; ubCode: a `-c` of `variants.data_file` or of
+   `needs.variant_data_file` — and pass it as `data_file_override`. Then:
+
+   - it **replaces the data file of the location read**, and the file it replaces is
+     never opened;
+   - **that location's inline table still applies**, deep-merged over it (§8.4);
+   - it **never decides the location**: the location is the one §6.4 chooses from the
+     document as written, its replaced `data_file` included — `[variants]` when it
+     declares, else `[needs]`; with neither declared it is read as `[variants]` with no
+     inline table (`location` `"variants"`);
+   - **the refusals and the findings are the document's**: a replaced value is still
+     held to its type (§6.1, §6.2), every finding of §7 is reported as it would be
+     without the override, and the override itself is never one — it is not a key of
+     the document, so it is never reported as ignored (`variant_data_location`);
+   - **an override may name no file** (`NO_DATA_FILE`; sphinx-needs: `-D
+     needs_variant_data_file=`; ubCode: a `-c` of either key set to `""`): the location's
+     data file is then replaced by none — not opened, not validated — and its inline
+     table is the whole map, the location, refusals and findings staying the document's;
+   - **its own file is opened** and held to §8.2. It is used as given: this package does
+     not anchor it, and a relative override is anchored by the consumer by its own
+     route's rule (sphinx-needs: the `confdir`; ubCode: where it anchors every `-c`
+     path). Its refusal is its own file's, not attributed to the TOML or its table.
+
+   A consumer with two spellings of the override that is given both with different
+   values reports a configuration error of its own: this package receives at most one
+   override. Every other key of a command line is the consumer's ordinary configuration
+   layer. For ubCode this makes the
+   two `-c` spellings one value, lifted out of the `-c` layer before the location is
+   chosen; a key in a file the project `extend`s stays a declaration of the document.
+   Enforced by: `tests/test_variants.py::TestOverride` (the location, the findings, the
+   override used as given, the refusals' wording), `tests/test_variants.py::TestNoDataFile`;
+   corpus: the twelve `override-*` cases (the two `override-with-no-file*` for
+   `NO_DATA_FILE`).
 
 ## 7. Diagnostics
 
@@ -297,7 +336,10 @@ edition = "pro"
    `…::test_the_corpus_header_records_where_it_is_canonical`.
 4. **Rules for every runner** (stated in the header too): a case writes only inside its
    own directory; a case carrying `needs_table` or `variants_table` is Python-only and
-   ubCode's runner skips it; codes compare as the bare subcode; integers beyond the signed 64-bit range are
+   ubCode's runner skips it; a case carrying `data_file_override` is read with that file,
+   joined onto the case directory, as the override of §6.8 (`""` is the override that
+   names no file, `NO_DATA_FILE`); codes compare as the bare
+   subcode; integers beyond the signed 64-bit range are
    unspecified. A refusal is compared as a refusal, not by its reason — two rows
    (`data-file-empty-string`, `invalid-file-not-an-object`) would refuse for another
    reason too, and the unit tests pin their actual rule.
@@ -311,6 +353,8 @@ What a consumer has to do that this package deliberately does not:
    (`needs_variant_data_file = ""`) and sphinx-mounts read an empty data-file value as "no
    file". This package takes `Path | None` and refuses an empty `data_file` in the TOML
    (§6.1), so a consumer keeps its own route's meaning by mapping `""` to `None` itself.
+   For `data_file_override` (§6.8) the consumer maps it to `NO_DATA_FILE`, the override
+   that names no file: `None` there is "no override".
 2. **Decide what each finding is worth** (§7): warn, log at a verbose level, or drop.
 3. **Re-raise `ProjectConfigError` in its own vocabulary** (§1.4): a Sphinx configuration
    error, a non-zero exit.

@@ -80,6 +80,19 @@ _deprecated_kwargs = {
 }
 
 
+def _id_matched_by_patterns(need_id: str, /) -> str:
+    """The id :ref:`needs_id_regex` and a need type's ``id_regex`` are matched against:
+    the need's local id, as it is written in the need or generated, before any
+    namespace. While a need's id carries no namespace, that is the whole id.
+
+    The one place both patterns read the id from, so that they keep matching the local
+    id should an id ever carry more.
+
+    :param need_id: The id of the need being created.
+    """
+    return need_id
+
+
 def generate_need(
     needs_config: NeedsSphinxConfig,
     needs_schema: FieldsSchema,
@@ -226,15 +239,32 @@ def generate_need(
     from_outside = bool(
         source.dict_repr["is_import"] or source.dict_repr["is_external"]
     )
+    #: what the patterns test: the need's local id
+    matched_id = _id_matched_by_patterns(need_id)
     if (
         needs_config.id_regex
         and not from_outside
-        and not re.match(needs_config.id_regex, need_id)
+        and not re.match(needs_config.id_regex, matched_id)
     ):
         raise InvalidNeedException(
             "invalid_id",
             f"Given ID {need_id!r} does not match configured regex {needs_config.id_regex!r}",
         )
+    # and the id_regex of its need type, and of each type that one inherits from
+    for declared_by, pattern in (
+        () if from_outside else needs_schema.id_patterns(need_type)
+    ):
+        if not re.match(pattern, matched_id):
+            inherited = (
+                ""
+                if declared_by == need_type
+                else f", which need type {need_type!r} inherits"
+            )
+            raise InvalidNeedException(
+                "invalid_id",
+                f"Given ID {need_id!r} does not match the id_regex {pattern!r} of need "
+                f"type {declared_by!r}{inherited}",
+            )
 
     # Convert all schema-enabled core fields
     _raw_core: dict[str, Any] = {
@@ -661,13 +691,18 @@ def _unwrap_field_value(
 ) -> tuple[Any, FieldFunctionArray | None]:
     """Unwrap a converted field value into a concrete value and optional dynamic function.
 
+    A field without a value holds ``None`` where its declaration admits it
+    (:attr:`~sphinx_needs.needs_schema.FieldSchema.admits_null`): it is nullable, or
+    not nullable at a ``severity`` below ``violation``, which the schema validation
+    reports rather than the need being refused.
+
     :param field_schema: The schema for the field.
     :param converted: The converted value from ``convert_or_type_check``.
     :return: A tuple of (concrete_value, dynamic_func_or_none).
     :raises InvalidNeedException: If the value is invalid for the field.
     """
     if converted is None:
-        if not field_schema.nullable:
+        if not field_schema.admits_null:
             raise InvalidNeedException(
                 "invalid_value",
                 f"Field {field_schema.name!r} is not nullable, but no value or default was given.",

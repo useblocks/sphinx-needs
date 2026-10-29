@@ -20,7 +20,16 @@ from collections.abc import Callable, Mapping
 from enum import IntEnum, StrEnum
 from functools import cache
 from pathlib import Path
-from typing import Any, Final, Literal, NotRequired, TypedDict, cast
+from typing import (
+    Any,
+    Final,
+    Literal,
+    NamedTuple,
+    NotRequired,
+    TypedDict,
+    TypeVar,
+    cast,
+)
 
 import jsonschema_rs
 
@@ -354,6 +363,116 @@ def validate_link_schema_type(data: Any) -> LinkSchemaType:
     return cast(LinkSchemaType, data)
 
 
+def _typed_dict_keys(klass: Any) -> tuple[str, ...]:
+    """The keys of a TypedDict, sorted."""
+    return tuple(sorted(klass.__required_keys__ | klass.__optional_keys__))
+
+
+#: The keywords of a field's schema, per ``type``: those of its TypedDict above, which
+#: the JSON schema the schema is validated against is generated from.
+FIELD_SCHEMA_KEYWORDS: Final[Mapping[str, tuple[str, ...]]] = {
+    "string": _typed_dict_keys(FieldStringSchemaType),
+    "boolean": _typed_dict_keys(FieldBooleanSchemaType),
+    "integer": _typed_dict_keys(FieldIntegerSchemaType),
+    "number": _typed_dict_keys(FieldNumberSchemaType),
+    "array": _typed_dict_keys(FieldMultiValueSchemaType),
+}
+#: The keywords of a link type's schema, and of its ``items`` and ``contains``.
+LINK_SCHEMA_KEYWORDS: Final[tuple[str, ...]] = _typed_dict_keys(LinkSchemaType)
+LINK_ITEM_SCHEMA_KEYWORDS: Final[tuple[str, ...]] = _typed_dict_keys(LinkItemSchemaType)
+
+
+class UnknownKeyword(NamedTuple):
+    """A keyword of a schema that the schema of its kind does not have."""
+
+    path: str
+    """Where in the schema: ``""`` at its top, else ``".items"`` or ``".contains"``."""
+    keyword: str
+    """The keyword."""
+    what: str
+    """The kind of schema, as a message names it (``a schema of type 'string'``)."""
+    known: tuple[str, ...]
+    """The keywords that kind of schema has."""
+
+
+_SchemaT = TypeVar("_SchemaT")
+
+
+def drop_unknown_keywords(
+    schema: _SchemaT, *, link: bool, inherited: Mapping[str, Any] | None = None
+) -> tuple[_SchemaT, list[UnknownKeyword]]:
+    """The schema of a field (or, with ``link``, of a link type) without the keywords
+    the schema of its type does not have, at its top and in its ``items`` and
+    ``contains``, and those keywords.
+
+    The schema is returned as it is when it has none; otherwise a copy is, the schema
+    itself is not changed. A schema whose type is not known (not a mapping, no ``type``
+    of a field schema) is returned as it is, for its validation to refuse.
+
+    :param inherited: the schema a core field's specialisation narrows, whose ``type``
+        (and the ``type`` of whose ``items``) the specialisation may leave out.
+    """
+    if not isinstance(schema, dict):
+        return schema, []
+    found: list[UnknownKeyword] = []
+    if link:
+        cleaned = _drop_keywords(
+            schema, LINK_SCHEMA_KEYWORDS, "a link type's schema", "", found
+        )
+        for key in ("items", "contains"):
+            if isinstance(cleaned.get(key), dict):
+                cleaned[key] = _drop_keywords(
+                    cleaned[key],
+                    LINK_ITEM_SCHEMA_KEYWORDS,
+                    f"a link type's {key}",
+                    f".{key}",
+                    found,
+                )
+    else:
+        cleaned = _drop_field_keywords(schema, inherited or {}, "", found)
+    return (cast(_SchemaT, cleaned) if found else schema), found
+
+
+def _drop_field_keywords(
+    schema: dict[str, Any],
+    inherited: Mapping[str, Any],
+    path: str,
+    found: list[UnknownKeyword],
+) -> dict[str, Any]:
+    type_ = schema.get("type", inherited.get("type"))
+    known = FIELD_SCHEMA_KEYWORDS.get(type_) if isinstance(type_, str) else None
+    if known is None or (path and type_ == "array"):
+        return schema
+    cleaned = _drop_keywords(schema, known, f"a schema of type {type_!r}", path, found)
+    if type_ == "array":
+        for key in ("items", "contains"):
+            if isinstance(cleaned.get(key), dict):
+                parent = inherited.get(key)
+                cleaned[key] = _drop_field_keywords(
+                    cleaned[key],
+                    parent if isinstance(parent, Mapping) else {},
+                    f".{key}",
+                    found,
+                )
+    return cleaned
+
+
+def _drop_keywords(
+    schema: dict[str, Any],
+    known: tuple[str, ...],
+    what: str,
+    path: str,
+    found: list[UnknownKeyword],
+) -> dict[str, Any]:
+    cleaned: dict[str, Any] = {}
+    for key, value in schema.items():
+        if key in known:
+            cleaned[key] = value
+        else:
+            found.append(UnknownKeyword(path, str(key), what, known))
+    return cleaned
+
+
 FieldAndLinkSchemaTypes = FieldSchemaTypes | LinkSchemaType
 """Union type for all field and link schemas."""
 
@@ -480,9 +599,9 @@ Severity levels that can be set in the user provided schemas and for the schema_
 MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
     MessageRuleEnum.cfg_schema_error: SeverityEnum.config_error,
     MessageRuleEnum.field_success: SeverityEnum.none,
-    MessageRuleEnum.field_fail: SeverityEnum.violation,  # cannot be changed by user
+    MessageRuleEnum.field_fail: SeverityEnum.violation,  # a need type's entry may lower it
     MessageRuleEnum.link_success: SeverityEnum.none,
-    MessageRuleEnum.link_fail: SeverityEnum.violation,  # cannot be changed by user
+    MessageRuleEnum.link_fail: SeverityEnum.violation,  # a need type's entry may lower it
     MessageRuleEnum.select_success: SeverityEnum.none,
     MessageRuleEnum.select_fail: SeverityEnum.none,
     MessageRuleEnum.local_success: SeverityEnum.none,
@@ -501,8 +620,10 @@ MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
 Default severity for each rule.
 
 User provided schemas can overwrite the severity of a rule.
-The rules ``field_fail`` and ``link_fail`` cannot be changed by the user,
-but they can be suppressed specifically using suppress_warnings config.
+The rules ``field_fail`` and ``link_fail`` take the ``severity`` of the declaration
+that failed, which a need type's ``fields`` or ``links`` entry may give
+(``violation``, ``warning`` or ``info``); this default holds where none gives one.
+They can also be suppressed specifically using suppress_warnings config.
 """
 
 

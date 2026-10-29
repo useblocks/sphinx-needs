@@ -41,6 +41,15 @@ project, not of this tool.
 
 This module imports pytest and nothing else from the package's Sphinx side; it
 is only ever loaded by pytest.
+
+PYTEST_DONT_REWRITE: pytest reads this marker in a module's docstring. From
+pytest 9.2 on, pytest applies the ini ``filterwarnings`` while it imports the
+``-p`` plugins, and resolves them first: the documented
+``ignore::ub_test_reports.pytest_plugin.TestReportsConfigWarning`` imports this
+module before ``-p`` does, and ``-p``'s assertion-rewrite step would then warn
+that the module is "already imported" -- an error, and a start-up traceback,
+under ``filterwarnings = error``. The marker skips that step. This module has no
+``assert`` to rewrite.
 """
 
 from __future__ import annotations

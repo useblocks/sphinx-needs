@@ -239,7 +239,7 @@ def test_api_add_field_schema_wrong(
                     description='My extra field',
                     schema={
                         'type': 'integer',
-                        'not_exist': 10,
+                        'minimum': 'ten',
                     }
                 )
                 return {'version': '0.1'}
@@ -262,6 +262,55 @@ def test_api_add_field_schema_wrong(
         app.build()
 
     assert str(excinfo.value) == snapshot
+
+
+def test_api_add_field_schema_unknown_keyword(
+    tmpdir: Path,
+    make_app: Callable[[], SphinxTestApp],
+    write_fixture_files: Callable[[Path, dict[str, Any]], None],
+):
+    content = {
+        "conf": textwrap.dedent(
+            """
+            extensions = ['sphinx_needs']
+            
+            def setup(app):
+                from sphinx_needs.api import add_field
+                add_field(
+                    'my_extra_option',
+                    description='My extra field',
+                    schema={
+                        'type': 'integer',
+                        'not_exist': 10,
+                    }
+                )
+                return {'version': '0.1'}
+            """
+        ),
+        "rst": textwrap.dedent(
+            """
+            Title
+            =====
+
+            .. req:: a req
+                :id: REQ_1
+                :my_extra_option: 8
+            """
+        ),
+    }
+    """A keyword the schema of its type does not have, in the schema of a field an
+    extension registers, is reported and dropped, as in a ``needs_fields`` entry: the
+    build goes on, with the rest of the schema."""
+    write_fixture_files(tmpdir, content)
+    app = make_app(srcdir=Path(tmpdir), freshenv=True)
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: add_field['my_extra_option'].schema has an unknown keyword "
+        "'not_exist'; known keywords of a schema of type 'integer' are const, enum, "
+        "exclusiveMaximum, exclusiveMinimum, maximum, minimum, multipleOf, type; the "
+        "keyword is ignored [needs.config]"
+    ]
+    assert app.statuscode == 0
 
 
 def test_api_add_field_default(

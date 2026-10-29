@@ -70,3 +70,17 @@ default = true
 title = "Specification"
 prefix = "S_"
 # [/spec]
+
+# [severity]
+[needs.types.spec.fields.owner]
+description = "Who answers for the specification"
+schema = { type = "string" }
+nullable = false
+severity = "warning"
+# [/severity]
+
+# [incoming]
+[needs.types.spec.back_links.verifies]
+description = "The tests verifying the specification"
+schema = { minItems = 1 }
+# [/incoming]

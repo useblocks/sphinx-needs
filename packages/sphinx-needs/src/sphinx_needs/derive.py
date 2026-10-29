@@ -89,6 +89,7 @@ ROLES: Final = (
     "join",
     "where",
     "test",
+    "empty",
     "select",
     "transitive",
     "include_self",
@@ -107,7 +108,7 @@ CORE_LINK_TYPES: Final = frozenset({"parent_needs"})
 _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
     "copy": (
         frozenset({"field"}),
-        frozenset({"from", "over", "join", "select", "include_self", "after"}),
+        frozenset({"from", "over", "join", "where", "select", "include_self", "after"}),
     ),
     "sum": (frozenset({"field", "over"}), frozenset({"where", "after"})),
     "count": (frozenset({"over"}), frozenset({"field", "where", "after"})),
@@ -119,8 +120,14 @@ _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
         frozenset({"field", "over"}),
         frozenset({"where", "transitive", "include_self", "after"}),
     ),
-    "any": (frozenset({"over"}), frozenset({"field", "test", "where", "after"})),
-    "all": (frozenset({"over"}), frozenset({"field", "test", "where", "after"})),
+    "any": (
+        frozenset({"over"}),
+        frozenset({"field", "test", "where", "empty", "after"}),
+    ),
+    "all": (
+        frozenset({"over"}),
+        frozenset({"field", "test", "where", "empty", "after"}),
+    ),
     "collect": (frozenset({"field", "over"}), frozenset({"where", "after"})),
     "hash": (frozenset({"fields"}), frozenset({"after"})),
     "fingerprint": (frozenset(), frozenset({"exclude"})),
@@ -134,7 +141,9 @@ _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
 }
 
 _STRING_ROLES: Final = frozenset({"field", "over", "from", "where", "test"})
-_BOOLEAN_ROLES: Final = frozenset({"transitive", "include_self", "include_parts"})
+_BOOLEAN_ROLES: Final = frozenset(
+    {"empty", "transitive", "include_self", "include_parts"}
+)
 _SELECT: Final = ("first", "unique", "list")
 #: The keys of the ``join`` role.
 _JOIN_KEYS: Final = ("field", "equals")
@@ -168,8 +177,12 @@ class DeriveRule:
     :ivar from_need: The ``from`` role: the id of the one need read.
     :ivar join: The ``join`` role (``links``, ``copy``): the needs whose field equals
         one of this need's values.
-    :ivar where: The ``where`` role: the predicate narrowing the candidates.
+    :ivar where: The ``where`` role: the predicate narrowing the candidates (on
+        ``copy``, with ``over`` or ``join`` only).
     :ivar test: The ``test`` role: the predicate asserted of each candidate.
+    :ivar empty: The ``empty`` role (``any``, ``all``): the value over no candidate,
+        once ``where`` has dropped the candidates it does not hold on; ``None``, unset,
+        is the kind's own value there, ``False`` for ``any`` and ``True`` for ``all``.
     :ivar select: The ``select`` role of a ``copy`` over several targets.
     :ivar transitive: The ``transitive`` role of ``min`` / ``max``.
     :ivar include_self: The ``include_self`` role.
@@ -186,6 +199,7 @@ class DeriveRule:
     join: DeriveJoin | None = None
     where: str | None = None
     test: str | None = None
+    empty: bool | None = None
     select: Literal["first", "unique", "list"] = "first"
     transitive: bool = False
     include_self: bool = False
@@ -334,6 +348,7 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
         else None,
         where=raw.get("where"),
         test=raw.get("test"),
+        empty=raw.get("empty"),
         select=raw.get("select", "first"),
         transitive=raw.get("transitive", False),
         include_self=raw.get("include_self", False),
@@ -448,6 +463,9 @@ def _combination_problem(kind: str, raw: Mapping[str, Any]) -> str | None:
             return "takes one of the roles 'from', 'over' and 'join', not more"
         if "select" in raw and "over" not in raw and "join" not in raw:
             return "takes the role 'select' only with 'over' or 'join'"
+        # a where narrows the candidates, and a copy of one need has none
+        if "where" in raw and "over" not in raw and "join" not in raw:
+            return "takes the role 'where' only with 'over' or 'join'"
         # ``false``, the default, says nothing, as on min and max without transitive
         if raw.get("include_self") and "join" not in raw:
             return "takes the role 'include_self' only with 'join'"
