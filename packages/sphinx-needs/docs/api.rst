@@ -127,9 +127,9 @@ Data
 .. note::
 
    **Provisional**: the source of every need sphinx-needs creates also has ``hops``, where the need's text came from,
-   innermost first. The first hop is the file the need is written in, with its line range where that is a true line
-   of the file (an included file's own, in an include; before it, the imported file or the service that made the
-   need); the last hop with a ``document`` is the page the need is placed on, and carries its sections and the
+   innermost first. The first hop is the file the need is written in (an included file's own, in an include; before
+   it, the imported file or the service that made the need), with its line range only where the file, read from disk,
+   holds the need's text there; the last hop with a ``document`` is the page the need is placed on, and carries its sections and the
    domain objects it is written in, outermost first. Every path is relative to the source directory. The shape may
    change in a minor release, without a deprecation, until it reaches ``needs.json``; ``NeedItemSourceProtocol`` does
    not include it, so read it with ``getattr(need.source, "hops", ())``. Nothing a filter, a table or ``needs.json``

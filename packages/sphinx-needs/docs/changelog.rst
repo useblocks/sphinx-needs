@@ -13,11 +13,14 @@ Improvements
 - ✨ Each need now records where its text came from, as a list of hops on ``need.source`` (provisional; see
   :ref:`api`)
 
-  ``need.source.hops`` names the file the need is written in, with its true line range (an included file's own, in
-  an include; an imported file, a service), then the page the need is placed on, with its sections and the domain
-  objects it is written in. It is provisional: the shape may change in a minor release until it reaches
-  ``needs.json``. Nothing a filter, a table or ``needs.json`` shows changes; the first build after upgrading reads
-  every document again.
+  ``need.source.hops`` names the file the need is written in (an included file's own, in an include; before it, an
+  imported file or a service), with its line range where the file read from disk holds the need's text there, then
+  the page the need is placed on, with its sections and the domain objects it is written in. It is provisional: the
+  shape may change in a minor release until it reaches ``needs.json``. Nothing a filter, a table or ``needs.json``
+  shows changes; the first build after upgrading reads every document again. The dataclass fields of the concrete
+  ``NeedItemSource*`` classes changed: construct them with their keywords (``dataclasses.replace`` and ``asdict`` on
+  them no longer give the old fields, and an explicit ``None`` for a required keyword is refused); they are not
+  documented API (``NeedItemSourceProtocol`` is, and is unchanged).
 
 - ✨ A derive rule of kind ``copy`` takes ``where`` beside ``over`` or ``join`` (:ref:`needs_derive_kind_copy`,
   :issue:`2246`)
