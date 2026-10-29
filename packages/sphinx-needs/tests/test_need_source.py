@@ -475,8 +475,8 @@ def test_the_hops_of_every_need(
     line; ``REQ_BX`` is in ``frag/b.rst``, which ``frag/a.rst`` includes -- docutils keeps
     no chain of includes, so only the innermost file is a hop. The service and the import
     have their directive's true line, not the parser's (``rst_prolog`` shifts it by 4).
-    ``REQ_CFX`` is in a C function: the legacy ``signature`` is ``None`` there, the
-    semantic location names it. ``REQ_DOCSTRINGX`` is in a docstring: a ``code`` hop of
+    ``REQ_CFX`` is in a C function, whose ``desc_name`` wraps a ``desc_sig_name``: the
+    semantic location names it, and its ``signature`` extra is what the legacy walk reads. ``REQ_DOCSTRINGX`` is in a docstring: a ``code`` hop of
     the module, with no line. ``REQ_MDINCX`` is in a MyST include, whose lines
     myst-parser reports one late: no line.
     """

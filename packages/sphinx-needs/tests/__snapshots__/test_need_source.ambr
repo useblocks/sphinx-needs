@@ -17,16 +17,16 @@
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
     ]),
     'REQ_CFX': list([
-      "page [domains] srcdir:domains.rst:28-29 (.rst) :: section 'Domains' > c:function 'cfunc' id='c.cfunc'",
+      "page [domains] srcdir:domains.rst:28-29 (.rst) :: section 'Domains' > c:function 'cfunc' id='c.cfunc' signature='cfunc'",
     ]),
     'REQ_CHILDX': list([
       "page [domains] srcdir:domains.rst:90-91 (.rst) :: section 'Domains' > section 'Sub section'",
     ]),
     'REQ_CMX': list([
-      "page [domains] srcdir:domains.rst:35-36 (.rst) :: section 'Domains' > c:struct 'cstruct' id='c.cstruct' > c:member 'field' id='c.cstruct.field'",
+      "page [domains] srcdir:domains.rst:35-36 (.rst) :: section 'Domains' > c:struct 'cstruct' id='c.cstruct' signature='cstruct' > c:member 'field' id='c.cstruct.field' signature='field'",
     ]),
     'REQ_CPPMX': list([
-      "page [domains] srcdir:domains.rst:44-45 (.rst) :: section 'Domains' > cpp:class 'Widget' id='_CPPv4N2ns6WidgetE' > cpp:function 'run' id='_CPPv4N2ns6Widget3runEi'",
+      "page [domains] srcdir:domains.rst:44-45 (.rst) :: section 'Domains' > cpp:class 'Widget' id='_CPPv4N2ns6WidgetE' signature='Widget' > cpp:function 'run' id='_CPPv4N2ns6Widget3runEi' signature='run'",
     ]),
     'REQ_DOCSTRINGX': list([
       "code srcdir:source_hops_module.py (.py) :: py:docstring 'source_hops_module.documented'",
@@ -42,7 +42,7 @@
       "page [inc_host] srcdir:inc_host.rst:11-12 (.rst) :: section 'Host' > section 'Frag A section'",
     ]),
     'REQ_JSMX': list([
-      "page [domains] srcdir:domains.rst:55-56 (.rst) :: section 'Domains' > js:class 'JsKlass' id='jsmod.JsKlass' > js:method 'go' id='jsmod.JsKlass.go'",
+      "page [domains] srcdir:domains.rst:55-56 (.rst) :: section 'Domains' > js:class 'JsKlass' id='jsmod.JsKlass' signature='JsKlass' > js:method 'go' id='jsmod.JsKlass.go' signature='go'",
     ]),
     'REQ_L1X': list([
       'file srcdir:frag/b.rst:7-8 (.rst)',

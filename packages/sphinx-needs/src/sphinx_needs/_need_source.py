@@ -27,7 +27,7 @@ import copy
 import dataclasses
 import os
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from pathlib import PurePath
 from typing import TYPE_CHECKING, Final
@@ -324,9 +324,12 @@ def placement_semantic(need_node: nodes.Node) -> tuple[NeedSourceSemantic, ...]:
     nesting order. A domain object is ``"<domain>:<objtype>"`` named by the last of its
     first signature's ``_toc_parts`` (else its ``desc_name`` text), with that
     signature's first id as an ``("id", …)`` extra where it has one. Where the legacy
-    ``signature`` rule reads a name at that object -- a ``desc_name`` whose first child
-    is text, so never for c, cpp or js -- the entry carries it as a
+    ``signature`` rule reads a name at that object (:func:`legacy_signature_text`, the
+    last ``desc_name`` of the first signature that has one), the entry carries it as a
     ``("signature", …)`` extra, which is what :func:`project_legacy` reads.
+
+    Signatures are read only under an ``addnodes.desc``: a ``desc_signature`` an
+    extension places outside one is read by the legacy walk and not by this one.
 
     Computed from the doctree alone, independently of the legacy walk
     (``get_sections_and_signature_and_needs``), so that the fence comparing the two
@@ -370,7 +373,7 @@ def _domain_entry(node: addnodes.desc, below: nodes.Node) -> NeedSourceSemantic:
             extras.append(("id", str(ids[0])))
     legacy: str | None = None
     for signature in signatures:
-        for part in signature.children:
+        for part in _signature_parts(signature):
             if (
                 isinstance(part, addnodes.desc_name)
                 and (text := legacy_signature_text(part)) is not None
@@ -390,14 +393,31 @@ def _domain_entry(node: addnodes.desc, below: nodes.Node) -> NeedSourceSemantic:
 def legacy_signature_text(desc_name: addnodes.desc_name) -> str | None:
     """The name the legacy ``signature`` reads from a ``desc_name``, if it reads one.
 
-    The one place the walk holds that rule: today the ``desc_name``'s first child, when
-    it is text -- so never for the c, cpp and js domains, whose first child is a
-    ``desc_sig_name``. Where the legacy rule (``get_sections_and_signature_and_needs``)
-    changes, this function changes with it, and the fence holds the two together.
+    The legacy rule (``get_sections_and_signature_and_needs``), held here for the walk:
+    the ``desc_name``'s first child when it is text (even an empty one, which
+    overwrites, as the legacy walk's does); otherwise its text, as the c, cpp and js
+    domains write it (a ``desc_sig_name`` inside); an empty name is no name. Which
+    ``desc_name`` it is asked about is :func:`_signature_parts`' part of the rule: a
+    change to the legacy rule changes both, and the fence holds them together.
     """
     if desc_name.children and isinstance(desc_name.children[0], nodes.Text):
         return str(desc_name.children[0])
+    if text := desc_name.astext():
+        return text
     return None
+
+
+def _signature_parts(signature: addnodes.desc_signature) -> Iterator[nodes.Node]:
+    """The children of a signature, a ``desc_signature_line``'s in its place.
+
+    The c and cpp domains put the ``desc_name`` in a ``desc_signature_line``, which the
+    legacy walk descends into.
+    """
+    for child in signature.children:
+        if isinstance(child, addnodes.desc_signature_line):
+            yield from child.children
+        else:
+            yield child
 
 
 def project_legacy(
