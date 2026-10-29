@@ -15,6 +15,12 @@
       'file srcdir:frag/a.rst:4-7 (.rst)',
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
     ]),
+    'REQ_BOMMDX': list([
+      'page [bommd] srcdir:bommd.md:1-None (.md) :: ',
+    ]),
+    'REQ_BOMX': list([
+      'page [bom] srcdir:bom.rst:1-2 (.rst) :: ',
+    ]),
     'REQ_BX': list([
       'file srcdir:frag/b.rst:1-2 (.rst)',
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
@@ -44,6 +50,15 @@
     'REQ_ENVX': list([
       "page [domains] srcdir:domains.rst:72-73 (.rst) :: section 'Domains' > std:envvar 'MYVAR' id='envvar-MYVAR' signature='MYVAR'",
     ]),
+    'REQ_EXPANDITEMX': list([
+      "page [srcread2] srcdir:srcread2.rst (.rst) :: section 'Source read inside'",
+    ]),
+    'REQ_EXPANDX': list([
+      "page [srcread2] srcdir:srcread2.rst (.rst) :: section 'Source read inside'",
+    ]),
+    'REQ_FORMFEEDX': list([
+      "page [formfeed] srcdir:formfeed.rst:8-11 (.rst) :: section 'Form feed'",
+    ]),
     'REQ_GRIDX': list([
       "page [lines] srcdir:lines.rst:13-14 (.rst) :: section 'Lines' > section 'Outside'",
     ]),
@@ -53,11 +68,21 @@
     'REQ_HIDONLYX': list([
       "page [hidden] srcdir:hidden.rst:6-8 (.rst) :: section 'Hidden'",
     ]),
+    'REQ_HIT_AX': list([
+      'file srcdir:frag/hit.rst (.rst)',
+      "page [lines] srcdir:lines.rst (.rst) :: section 'Lines' > section 'Outside'",
+    ]),
     'REQ_HOST1X': list([
       "page [inc_host] srcdir:inc_host.rst:4-7 (.rst) :: section 'Host'",
     ]),
     'REQ_HOST2X': list([
       "page [inc_host] srcdir:inc_host.rst:11-12 (.rst) :: section 'Host' > section 'Frag A section'",
+    ]),
+    'REQ_INNER2X': list([
+      "page [mdnest] srcdir:mdnest.md (.md) :: section 'MD nest'",
+    ]),
+    'REQ_INNER3X': list([
+      "page [mdnest] srcdir:mdnest.md (.md) :: section 'MD nest'",
     ]),
     'REQ_JSMX': list([
       "page [domains] srcdir:domains.rst:55-56 (.rst) :: section 'Domains' > js:class 'JsKlass' id='jsmod.JsKlass' signature='JsKlass' > js:method 'go' id='jsmod.JsKlass.go' signature='go'",
@@ -73,6 +98,12 @@
     'REQ_L3X': list([
       'file srcdir:frag/b.rst:10-10 (.rst)',
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
+    ]),
+    'REQ_LISTITEMX': list([
+      "page [lines] srcdir:lines.rst:20-21 (.rst) :: section 'Lines' > section 'Outside'",
+    ]),
+    'REQ_LISTTABLEX': list([
+      "page [lines] srcdir:lines.rst:25-26 (.rst) :: section 'Lines' > section 'Outside'",
     ]),
     'REQ_MDCOLX': list([
       "page [mdpage] srcdir:mdpage.md:17-None (.md) :: section 'MD page' > section 'MD sub'",
@@ -146,6 +177,21 @@
     ]),
     'REQ_SUBX': list([
       "page [domains] srcdir:domains.rst:84-85 (.rst) :: section 'Domains' > section 'Sub section'",
+    ]),
+    'REQ_TABX': list([
+      "page [tabs] srcdir:tabs.rst:4-7 (.rst) :: section 'Tabs'",
+    ]),
+    'REQ_TWIN_INNERX': list([
+      "page [mdnest] srcdir:mdnest.md (.md) :: section 'MD nest'",
+    ]),
+    'R_8A5CD': list([
+      "page [mdnest] srcdir:mdnest.md (.md) :: section 'MD nest'",
+    ]),
+    'R_B1417': list([
+      "page [mdnest] srcdir:mdnest.md (.md) :: section 'MD nest'",
+    ]),
+    'R_BE605': list([
+      "page [mdnest] srcdir:mdnest.md:39-None (.md) :: section 'MD nest'",
     ]),
     'SVC_A': list([
       "generated :: service 'probe'",

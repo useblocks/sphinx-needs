@@ -15,3 +15,8 @@ Source hops
    srcread
    mdnest
    hidden
+   formfeed
+   bom
+   bommd
+   tabs
+   srcread2

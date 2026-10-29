@@ -34,6 +34,7 @@ from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
     NeedSourceSemantic,
+    fence_check,
     project_legacy,
 )
 from sphinx_needs.api import get_needs_view
@@ -406,17 +407,38 @@ def test_the_placement_is_the_last_hop_with_a_document():
     assert source.dict_repr["docname"] == "b"
 
 
+def test_a_myst_fence_must_be_the_directives_with_its_title():
+    """``fence_check`` takes the opening fence of this directive with this title only."""
+    check = fence_check("req", "a title")
+    assert check(["```{req} a title"], 1, None)
+    assert check(["> ::::{req}   a   title  "], 1, None)
+    assert not check([":::{note}"], 1, None)
+    assert not check([":::{note} a title"], 1, None)
+    assert not check(["```{req} a title too"], 1, None)
+    assert not check(["```{req}"], 1, None)
+    assert not check([":id: X"], 1, None)
+    assert fence_check("req", "")(["```{req}"], 1, None)
+
+
 # --- the project ---------------------------------------------------------------------
 
 
 def _build(
-    make_app: Callable[..., SphinxTestApp], srcdir: Path, **kwargs: Any
+    make_app: Callable[..., SphinxTestApp],
+    srcdir: Path,
+    titles: dict[str, str] | None = None,
+    **kwargs: Any,
 ) -> dict[str, tuple[NeedSourceHop, ...]]:
-    """Build the project, and return every need's hops."""
+    """Build the project, and return every need's hops (and fill ``titles``, if given)."""
     app = make_app("html", srcdir=srcdir, **kwargs)
     try:
         app.build()
         assert_no_warnings(app)
+        if titles is not None:
+            titles.update(
+                (need_id, need["title"])
+                for need_id, need in SphinxNeedsData(app.env).get_needs_view().items()
+            )
         return {
             need_id: need.source.hops
             for need_id, need in SphinxNeedsData(app.env).get_needs_view().items()
@@ -478,7 +500,9 @@ def test_the_hops_of_every_need(
     the module, with no line. ``REQ_MDINCX`` is in a MyST include, whose lines
     myst-parser reports one late: no line.
     """
-    hops = _build(make_app, _copy(tmp_path), freshenv=True)
+    titles: dict[str, str] = {}
+    hops = _build(make_app, _copy(tmp_path), titles, freshenv=True)
+    by_title = {title: need_id for need_id, title in titles.items()}
     assert {
         key: [_compact(h) for h in value] for key, value in hops.items()
     } == snapshot
@@ -523,6 +547,33 @@ def test_the_hops_of_every_need(
     # ... and where the file holds the text, its line
     assert lines("REQ_GRIDX") == [("lines.rst", 13, 14)]
     assert lines("REQ_QUOTEX") == [("mdnest.md", 17, None)]
+    # whole lines: ``.. req:: Alpha`` and ``:id: REQ_HIT_AX`` are in the lines the parser
+    # claims (``.. req:: Alpha beta``, ``:id: REQ_HIT_ABX``), but are not those lines
+    assert lines("REQ_HIT_AX") == [
+        ("frag/hit.rst", None, None),
+        ("lines.rst", None, None),
+    ]
+    # a source-read expansion inside a need's body and a list2need item: the first line
+    # holds, a later one does not
+    assert lines("REQ_EXPANDX") == [("srcread2.rst", None, None)]
+    assert lines("REQ_EXPANDITEMX") == [("srcread2.rst", None, None)]
+    # MyST: a need whose body opens another need's fence at once is not given the inner
+    # fence's line (the title differs) ...
+    assert lines(by_title["outer"]) == [("mdnest.md", None, None)]
+    assert lines(by_title["outer three"]) == [("mdnest.md", None, None)]
+    # ... except inside an identical twin (same name and title): a KNOWN GAP, the outer
+    # takes the inner's fence line, 39, where it is written on 38
+    (twin,) = (i for i, t in titles.items() if t == "twin" and i != "REQ_TWIN_INNERX")
+    assert lines(twin) == [("mdnest.md", 39, None)]
+    # lines as docutils numbers them: a form feed, tabs at the documents' tab_width 4
+    # (an internal tab in the title, an indenting one), a BOM
+    assert lines("REQ_FORMFEEDX") == [("formfeed.rst", 8, 11)]
+    assert lines("REQ_TABX") == [("tabs.rst", 4, 7)]
+    assert lines("REQ_BOMX") == [("bom.rst", 1, 2)]
+    assert lines("REQ_BOMMDX") == [("bommd.md", 1, None)]
+    # a bullet, and a list table's bullets, before the directive
+    assert lines("REQ_LISTITEMX") == [("lines.rst", 20, 21)]
+    assert lines("REQ_LISTTABLEX") == [("lines.rst", 25, 26)]
     # outside the source directory, a ``..`` path
     assert lines("REQ_OUTSIDEX") == [
         ("../outside/readme.rst", 4, 5),

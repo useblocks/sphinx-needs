@@ -25,6 +25,7 @@ import pytest
 import yaml
 from _pytest.mark import ParameterSet
 from docutils.nodes import document
+from docutils.statemachine import string2lines
 from sphinx.application import Sphinx
 from sphinx.testing.util import SphinxTestApp
 
@@ -94,9 +95,11 @@ def test_app_events() -> Sequence[tuple[str, Callable[..., object], int]]:
 
 #: what the first line of a need's text is: a directive's marker, reStructuredText or
 #: MyST (backticks, tildes or colons), or the item of a ``list2need`` (whose ``*`` needs
-#: no space after it); after a MyST block quote's ``>`` or an rst grid cell's ``|``
+#: no space after it); after a MyST block quote's ``>``, an rst grid cell's ``|``, or
+#: the bullets of the list item the directive opens
 _TEXT_START = re.compile(
-    r"\s*([>|]\s*)*(\.\. [\w:.-]+::|(`{3,}|~{3,}|:{3,})\s*\{[\w:.-]+\}|\*)"
+    r"\s*([>|]\s*|(?:[-+]|#\.|\d+[.)])\s+)*"
+    r"(\.\. [\w:.-]+::|(`{3,}|~{3,}|:{3,})\s*\{[\w:.-]+\}|\*)"
 )
 
 
@@ -222,7 +225,13 @@ def _check_need_source(
             assert physical.end_line is None, where
             continue
         if file not in files:
-            files[file] = file.read_text(encoding="utf8").splitlines()
+            # read as the product reads it: the project's encoding (a BOM stripped),
+            # split as docutils numbers lines
+            files[file] = string2lines(
+                file.read_text(encoding=app.config.source_encoding),
+                tab_width=app.env.settings.get("tab_width", 8),
+                convert_whitespace=True,
+            )
         lines = files[file]
         assert 1 <= physical.start_line <= len(lines), where
         assert _TEXT_START.match(lines[physical.start_line - 1]), (
