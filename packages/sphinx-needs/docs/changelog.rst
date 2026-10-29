@@ -104,12 +104,15 @@ Bug fixes
   exception (exception: Needs schema has not been initialized yet.)``, with the real cause only in the chained
   traceback
 
-- 🐛 A need inside a C, C++ or JavaScript domain object takes that object's name as its ``signature``
-  **(changed output)** (:issue:`2394`)
+- 🐛 A need takes the name of its nearest enclosing domain object as its ``signature`` for C, C++ and JavaScript
+  objects too **(changed output)** (:issue:`2394`)
 
-  ``signature`` was empty there, while a need inside a Python or reST object took its object's name: those domains
-  write the name differently. A need inside a ``c:function`` named ``cfunc`` now has ``signature`` ``cfunc``, which
-  filters and needs.json show. The ``signature`` of a need inside any other domain object is unchanged.
+  Those domains write the object's name differently from the Python, reST and standard ones, and it was not read. A
+  need inside a ``c:function`` named ``cfunc`` had no ``signature``, and one inside a C, C++ or JavaScript object
+  nested in another domain's object, such as a ``cpp:function`` inside a ``py:class``, took the outer object's
+  name. Both now take the C, C++ or JavaScript object's name, which filters and needs.json show. A need whose
+  nearest enclosing object is in any other domain keeps its value. An object whose name is empty, which only a
+  directive of your own can write, is passed over as one without a name, where it failed the build.
 
 Documentation
 .............
