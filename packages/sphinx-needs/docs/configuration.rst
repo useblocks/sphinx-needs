@@ -269,7 +269,8 @@ By default it is set to:
 * **inherits**, **fields**, **links** (optional): the fields and link types the type declares anew for its needs, see :ref:`needs_types_fields`.
 * **id_regex** (optional): a regular expression the id of every need of the type matches, beside :ref:`needs_id_regex` (below).
 
-A type's ``id_regex`` is matched as :ref:`needs_id_regex` is, where it is: with Python's ``re.match``,
+A type's ``id_regex`` is matched as :ref:`needs_id_regex` is, where it is: against the need's local id
+(the whole id while ids carry no namespace), with Python's ``re.match``,
 so it is anchored at the start of the id and open at its end (``"REQ_"`` accepts ``REQ_001`` and refuses ``XREQ_001``;
 end it with ``$`` to anchor the end too), on an id given in the need or generated from the type's ``prefix``,
 and never on a need :ref:`needimport` imports or :ref:`needs_external_needs` loads.
@@ -2556,7 +2557,9 @@ Default value: ``^[A-Z0-9_]{5,}``
 By default, an ID is allowed to contain upper characters, numbers and underscore only.
 The ID length must be at least 3 characters.
 
-The regular expression applies to the needs defined in this project's sources. It is not
+The regular expression is matched against the need's local id
+(the whole id while ids carry no namespace), as is a need type's ``id_regex``.
+It applies to the needs defined in this project's sources. It is not
 applied to imported needs (:ref:`needimport`) or to external needs
 (:ref:`needs_external_needs`): their ids are the data of the project that wrote them, and an
 ``id_prefix`` may not match any pattern of this project.

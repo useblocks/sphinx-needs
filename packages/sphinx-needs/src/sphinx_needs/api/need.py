@@ -80,6 +80,19 @@ _deprecated_kwargs = {
 }
 
 
+def _id_matched_by_patterns(need_id: str, /) -> str:
+    """The id :ref:`needs_id_regex` and a need type's ``id_regex`` are matched against:
+    the need's local id, as it is written in the need or generated, before any
+    namespace. While a need's id carries no namespace, that is the whole id.
+
+    The one place both patterns read the id from, so that they keep matching the local
+    id should an id ever carry more.
+
+    :param need_id: The id of the need being created.
+    """
+    return need_id
+
+
 def generate_need(
     needs_config: NeedsSphinxConfig,
     needs_schema: FieldsSchema,
@@ -226,10 +239,12 @@ def generate_need(
     from_outside = bool(
         source.dict_repr["is_import"] or source.dict_repr["is_external"]
     )
+    #: what the patterns test: the need's local id
+    matched_id = _id_matched_by_patterns(need_id)
     if (
         needs_config.id_regex
         and not from_outside
-        and not re.match(needs_config.id_regex, need_id)
+        and not re.match(needs_config.id_regex, matched_id)
     ):
         raise InvalidNeedException(
             "invalid_id",
@@ -239,7 +254,7 @@ def generate_need(
     for declared_by, pattern in (
         () if from_outside else needs_schema.id_patterns(need_type)
     ):
-        if not re.match(pattern, need_id):
+        if not re.match(pattern, matched_id):
             inherited = (
                 ""
                 if declared_by == need_type
