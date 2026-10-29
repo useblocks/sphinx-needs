@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793287589707,
+  "lastUpdate": 1793288533793,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27000,6 +27000,42 @@ window.BENCHMARK_DATA = {
             "value": 60.942693585,
             "unit": "s",
             "extra": "Commit: a8da5bb65ea109a6df4485093dacb44dee457290\nBranch: master\nTime: 2026-10-29T16:24:46+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "05d9c5599b36059fce33fd74ad34d107fe41a8bf",
+          "message": "✨ Derive: `empty` on `any`/`all`, `where` beside a copy, and the derive corpus follow-ups (#2384)\n\n## What\n\n`packages/sphinx-needs` (and the shared test layer\n`packages/sphinx-needs-testkit`): derived-field follow-ups in one corpus\nrevision.\n\n- **`empty` on `any` / `all`** (#2377). `all` over no candidate is\n`true`, which on a requirement nothing tests reads as \"every test\npassed\".\n`any` and `all` now take `empty = true|false`: the value over no\ncandidate, i.e. once `where` has dropped the candidates it does not hold\non.\nUnset, it is the kind's own vacuous value (`all` true, `any` false), so\nno existing rule changes value;\non another kind, or non-boolean, the rule is refused\n(`needs.derive_invalid`).\n- **`where` beside a copy** (#2246). `copy` with `over` or `join` takes\na `where`, tested per candidate\n(an unevaluable candidate dropped silently, as everywhere) before\n`select`,\nso `first` is the lowest-id candidate that passes and sets the field,\nand `unique` counts only those.\nAn own-field or `from` copy still refuses it (\"kind 'copy' takes the\nrole 'where' only with 'over' or 'join'\").\n- **needextend's `needs.derive_scope` warning names what computes the\nfield** (#2207): \"a derive rule\", \"a dynamic function or variant\",\nor \"a derive rule, a dynamic function or a variant\", as ubCode words it.\nCode and severity unchanged.\n- **Docs** (#2379): \"Starting a list roll-up one rung up\" under `copy`,\nwith the reverse (\"the tests that reach me\") chain,\n  both measured identical in sphinx-needs and ubCode.\n- **Corpus housekeeping**: the conformance runners compare floats by\ntheir bits, so `-0.0` is not `0.0` and every NaN is one value (#2216);\n`links-include-parts` is no longer `python_only` (#2214); the cases\nphase 2 measured but never wrote (#2215).\nDerive corpus 84 → 91 cases (sha256\n`821bb2d62023f59ca7ced324034e84e56cf59b211eb64f2213be20655a3b8c51`), 2\n`python_only`, 1 `ubcode_only`.\n\n## Why\n\nCloses #2377, closes #2246, closes #2207, closes #2379, closes #2216,\ncloses #2214, closes #2215.\n\nEvery new corpus pin was measured in both tools before it was written.\nOne difference found on the way is left unpinned for a ruling:\nan imported record carrying its own `parts` with no `:np:` in its\ncontent gets no parts in sphinx-needs (the content's parts replace the\nrecord's),\nwhile ubCode keeps the record's.\n\nThe ubCode side, useblocks/ubcode#4424 (fixing useblocks/ubcode#4326 and\nuseblocks/ubcode#4126), re-vendors this corpus and implements both\nfeatures.\n\n## Tests\n\n- Red first: #2216 (7 failing on the old comparison), #2207 (the three\nwordings), `any-all-empty`, `copy-join-where`, `copy-over-where` and the\nunit params.\n- Mutations: reading `empty` before `where`, dropping the `where` reads\nfrom the order module (join and over), letting an unevaluable candidate\npass,\n  a join copy ignoring `where`, flipping the `-0.0` pin — each goes red.\n- `uv run poe lint` 0, `uv run poe typecheck` 0, full `uv run poe\ntest-needs` 3814 passed / 14 skipped.\nThe docs build was not run end to end (intersphinx is unreachable from\nthe build sandbox); `derived_fields.rst` and the changelog build without\nwarnings.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-29T16:40:37+01:00",
+          "tree_id": "80dfbd4e8122e90722770e39374a87a6644fed01",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/05d9c5599b36059fce33fd74ad34d107fe41a8bf"
+        },
+        "date": 1793288524722,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09262874099999863,
+            "unit": "s",
+            "extra": "Commit: 05d9c5599b36059fce33fd74ad34d107fe41a8bf\nBranch: master\nTime: 2026-10-29T16:40:37+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.184906116,
+            "unit": "s",
+            "extra": "Commit: 05d9c5599b36059fce33fd74ad34d107fe41a8bf\nBranch: master\nTime: 2026-10-29T16:40:37+01:00"
           }
         ]
       }
