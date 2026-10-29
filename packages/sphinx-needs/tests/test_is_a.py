@@ -11,6 +11,7 @@ conformance corpus (``tests/fixtures/filter_conformance.toml``, case
 
 from __future__ import annotations
 
+import io
 import json
 from pathlib import Path
 from typing import Any
@@ -249,7 +250,98 @@ def test_a_derive_where_takes_is_a_with_a_literal_alone(
         ("c.is_a('req')", {"type"}),
         ("c.this_doc()", {"docname"}),
         ("c.is_a('req') and c.this_doc() and status", {"type", "docname", "status"}),
+        # a `c` read otherwise reads the document, as before `c.is_a`
+        ("getattr(c, 'this_doc')()", {"getattr", "docname"}),
+        ("[c for c in tags if c]", {"tags"}),
     ],
 )
 def test_what_a_check_reads(filter_string: str, reads: set[str]) -> None:
     assert filter_names(filter_string).names == frozenset(reads)
+
+
+#: two projects with the same document and filters, and different ``inherits``
+TWO_PROJECTS = {
+    "sys": 'sys_req = { title = "System requirement", prefix = "SR_", inherits = "req" }',
+    "spec": 'spec = { title = "Specification", prefix = "S_", inherits = "req" }',
+}
+
+TWO_PROJECTS_INDEX = """\
+Case
+====
+
+.. req:: A requirement
+   :id: REQ_001
+
+.. sys_req:: A system requirement
+   :id: SYS_001
+
+.. sys_req:: Another system requirement
+   :id: SYS_002
+
+.. spec:: A specification
+   :id: SPEC_001
+
+.. impl:: Links them all
+   :id: IMPL_001
+   :links: REQ_001, SYS_001, SYS_002, SPEC_001
+
+.. needextend:: "c.is_a('req')"
+   :+tags: req_like
+"""
+
+#: what ``c.is_a('req')`` selects in each project
+TWO_PROJECTS_SELECT = {
+    "sys": ["REQ_001", "SYS_001", "SYS_002"],
+    "spec": ["REQ_001", "SPEC_001"],
+}
+
+
+def _two_projects_toml(inherits: str) -> str:
+    """The default types, ``req``, ``sys_req`` and ``spec``, one of the last two
+    inheriting from ``req``, and a derived count through the same filter."""
+    other = "sys" if inherits == "spec" else "spec"
+    other_entry = TWO_PROJECTS[other].split(", inherits")[0] + " }"
+    return f"""\
+[needs.types]
+req = {{ title = "Requirement", prefix = "R_" }}
+{TWO_PROJECTS[inherits]}
+{other_entry}
+impl = {{ title = "Implementation", prefix = "I_" }}
+
+[needs.fields.n_req_like]
+schema = {{ type = "integer" }}
+derive = {{ kind = "count", over = "links", where = "c.is_a('req')" }}
+"""
+
+
+@pytest.mark.parametrize(
+    "order", [("sys", "spec", "sys"), ("spec", "sys", "spec")], ids="-".join
+)
+def test_each_project_reads_its_own_types_in_one_process(
+    order: tuple[str, ...], make_app: Any, tmp_path: Path
+) -> None:
+    """The compiled filter is cached per string and shared by every project a process
+    builds, so the need types are passed per call, never compiled in: two projects with
+    different ``inherits`` and the same ``c.is_a('req')`` (a needextend filter, on the
+    fast tier, and a derived field's ``where``, need by need) each select by their own,
+    whichever builds first, and the first again after the second."""
+    for step, inherits in enumerate(order):
+        srcdir = tmp_path / f"{step}-{inherits}"
+        srcdir.mkdir()
+        (srcdir / "conf.py").write_text(CONF.replace("needs_build_json = True\n", ""))
+        (srcdir / "ubproject.toml").write_text(_two_projects_toml(inherits))
+        (srcdir / "index.rst").write_text(TWO_PROJECTS_INDEX)
+        app = make_app(
+            srcdir=srcdir, buildername="needs", freshenv=True, warning=io.StringIO()
+        )
+        app.build()
+        # a second application in one process re-registers Sphinx's own nodes, which
+        # Sphinx warns about: the project's own findings are the needs ones
+        assert [w for w in build_warnings(app) if "[needs." in w] == [], inherits
+        view = SphinxNeedsData(app.env).get_needs_view()
+        tagged = sorted(i for i, need in view.items() if "req_like" in need["tags"])
+        assert tagged == TWO_PROJECTS_SELECT[inherits], (step, inherits)
+        assert view["IMPL_001"]["n_req_like"] == len(TWO_PROJECTS_SELECT[inherits]), (
+            step,
+            inherits,
+        )

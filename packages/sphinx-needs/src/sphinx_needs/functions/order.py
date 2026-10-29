@@ -312,6 +312,12 @@ def filter_names(
         ):
             current.add(node.slice.value)
             constant_current.add(id(node.value))
+    #: the `c` of each `c.is_a`
+    is_a_checks = {
+        id(node.value)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Attribute) and node.attr == "is_a"
+    }
     names: set[str] = set()
     opaque = False
     for node in ast.walk(tree):
@@ -325,15 +331,10 @@ def filter_names(
             opaque = opaque or id(node) not in constant_current
         elif node.id not in _FILTER_GLOBALS and node.id not in not_fields:
             names.add(node.id)
-    for node in ast.walk(tree):
-        # what each check of `c` reads (`c` itself is no field)
-        if (
-            isinstance(node, ast.Attribute)
-            and isinstance(node.value, ast.Name)
-            and node.value.id == "c"
-            and "c" not in bound
-        ):
-            names.add("type" if node.attr == "is_a" else "docname")
+        elif node.id == "c":
+            # `c` itself is no field: `c.is_a(...)` reads the type, any other use of it
+            # (`c.this_doc()`, a bare `c`) the document
+            names.add("type" if id(node) in is_a_checks else "docname")
     return FilterNames(frozenset(names), frozenset(current), opaque)
 
 

@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 13
+ENV_DATA_VERSION: Final = 14
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -89,6 +89,13 @@ Version 13 adds the names of the derived fields to every stored need (a slot of
 one). An unbumped rebuild over an existing ``_build`` unpickles needs without it, and
 the first write into one ends with an ``AttributeError`` rather than re-reading the
 documents.
+
+Version 14 changes what the stored values mean again: ``c.is_a('req')``, which 9.1.0
+did not know (an invalid filter, and a ``where`` refused as ``needs.derive_invalid``),
+now selects the needs of a type and of the types inheriting from it, and a derived
+field reading it computes. The configuration does not change, so without the bump an
+upgraded build would keep the empty selections and values on the pages whose sources
+did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
