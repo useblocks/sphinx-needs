@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1792674118316,
+  "lastUpdate": 1793283300146,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26856,6 +26856,42 @@ window.BENCHMARK_DATA = {
             "value": 62.29456894500001,
             "unit": "s",
             "extra": "Commit: 189783aa3f8d40f36005eeca3693763b6eb2128b\nBranch: master\nTime: 2026-10-22T15:00:22+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6aa1813b6b73094f60eb9792061f684d8f9e85cc",
+          "message": "🧪 Smoke-test sphinx-needs against its workspace siblings from the tree; the published check becomes informational (#2385)\n\n## What\n\n`scripts/smoke_needs.py` (the `smoke-needs` CI job, required through\n`check`) gains a sibling mode. By default (`--siblings tree`)\nit now builds a wheel for every workspace member sphinx-needs depends on\nat runtime — read off the manifests, followed\ntransitively, today ub-project and ub-needs-exchange — with the same `uv\nbuild --package <m> --no-sources` recipe, and installs\nthose wheels in the same `uv pip install` as the sphinx-needs wheel, in\nboth throwaway environments (the wheel's and the\nsdist-built one). uv then takes the siblings from the tree and\neverything else from PyPI. Every existing packaging assertion is\nunchanged. New ones: each sibling's modules import from the throwaway\nenvironment, and EVERY workspace member found installed\n(not only the derived ones) has a `direct_url.json` (PEP 610) naming the\nwheel this run built for it — the import location\nalone cannot tell the tree's `ub-project 1.1.0` from PyPI's, and\nchecking what is installed rather than what was derived means\na member reached some other way (an extra on a workspace requirement,\nsay) fails by name instead of quietly coming from PyPI.\nThe run prints each member with its version and source.\n\n`--siblings published` keeps the previous behaviour (no sibling is\nbuilt), plus one check: every workspace member installed came\nfrom the index. It runs as `uv run poe smoke-needs-published` and as a\nnew CI job of the same name, which is informational: not\nin `check`'s `needs`, and `continue-on-error`, so a red there shows on\nthe job without failing the run. AGENTS.md (commands,\nruntimes, the release recipe) and `poe bump`'s printed hand steps for\nsphinx-needs name it as the pre-release check.\n`.github/workflows/release.yaml` is unchanged: its compat cell still\nasks the as-published question fail-closed at release time\n(the built wheel resolved against PyPI alone, every module imported, the\nmember's suite run).\n\n## Why\n\n`smoke-needs` resolved the siblings from PyPI, so any pull request in\nwhich sphinx-needs uses a not-yet-released sibling change\nwas red until that sibling was released — e.g. #2383, which imports the\nnew `ub_project.NO_DATA_FILE` and fails with\n`ImportError: cannot import name 'NO_DATA_FILE'` against ub-project\n1.1.0 on PyPI. Siblings are released in bulk ahead of\nsphinx-needs, not one per pull request, so the required check now tests\nthe tree as one change, and the as-published question\nmoves to an informational job (red there means \"release a sibling\nfirst\", not \"this pull request is broken\") and to the release\nworkflow, which already enforces it.\n\n## Tests\n\n- `tools/tests/test_smoke_needs.py` (new): the sibling set (runtime\ndependencies only, transitive, any name spelling, cycles,\nnon-members, extras excluded, the marker refusal in tree mode only, the\nreal repository's set); the wheel's top-level modules;\nthe per-environment checks — in tree mode a sibling installed from the\nindex with the same version fails, a workspace member\ninstalled with no tree wheel (the lookup missed it) fails by name, a\ntree wheel that is not installed fails, a module imported\nfrom the checkout fails; in published mode every member must be the\nindex's; no workspace, no probe; and the CI shape —\n`check` waits for every job except an explicit informational list, and\n`smoke-needs-published` mirrors `smoke-needs`' setup\n  with `continue-on-error`.\n- `tools/tests/test_bump.py`: the sphinx-needs hand steps name\n`smoke-needs-published`.\n- By hand: both modes pass on master; on #2383's content tree mode\npasses and published mode fails with the `NO_DATA_FILE`\nImportError; dropping the sibling wheels from the install (a silent\nfallback to PyPI) turns tree mode red on the provenance\ncheck while the import-location checks stay green; with `ub-project[ai]`\nin sphinx-needs and an `ai = [\"sphinx-ai-index\"]`\nextra in ub-project, tree mode went from exit 0 (sphinx-ai-index\nsilently from PyPI) to exit 1 naming it.\n- `uv run poe lint`, `uv run poe typecheck`, `pytest tools/tests` (375\npassed) and both smoke tasks pass.\n\nThe `Toolchain-free` job is red on every pull request since pytest 9.2.0\n(unrelated to this change); its fix is a separate pull request.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass. (`pytest tools/tests`, both smoke tasks)\n- [x] Documentation is updated where behaviour or options change.\n- [ ] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. (n/a: CI and tooling only, nothing shipped changes)\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-29T15:13:38+01:00",
+          "tree_id": "5d39f09f4074643ba443a3cb77512835e1ac10c2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6aa1813b6b73094f60eb9792061f684d8f9e85cc"
+        },
+        "date": 1793283292125,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.06846956300000073,
+            "unit": "s",
+            "extra": "Commit: 6aa1813b6b73094f60eb9792061f684d8f9e85cc\nBranch: master\nTime: 2026-10-29T15:13:38+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 49.05224294600001,
+            "unit": "s",
+            "extra": "Commit: 6aa1813b6b73094f60eb9792061f684d8f9e85cc\nBranch: master\nTime: 2026-10-29T15:13:38+01:00"
           }
         ]
       }
