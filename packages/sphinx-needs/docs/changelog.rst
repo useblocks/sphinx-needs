@@ -104,6 +104,13 @@ Bug fixes
   exception (exception: Needs schema has not been initialized yet.)``, with the real cause only in the chained
   traceback
 
+- 🐛 A need inside a C, C++ or JavaScript domain object takes that object's name as its ``signature``
+  **(changed output)** (:issue:`2394`)
+
+  ``signature`` was empty there, while a need inside a Python or reST object took its object's name: those domains
+  write the name differently. A need inside a ``c:function`` named ``cfunc`` now has ``signature`` ``cfunc``, which
+  filters and needs.json show. The ``signature`` of a need inside any other domain object is unchanged.
+
 Documentation
 .............
 

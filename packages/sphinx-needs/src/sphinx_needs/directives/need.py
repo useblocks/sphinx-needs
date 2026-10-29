@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterable, Sequence
 from typing import Any, Final
 
 from docutils import nodes
-from sphinx.addnodes import desc_name, desc_signature
+from sphinx.addnodes import desc_name, desc_signature, desc_signature_line
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
@@ -282,11 +282,25 @@ def get_sections_and_signature_and_needs(
                     break
                 if isinstance(sibling, desc_signature):
                     # Check the child of the found signature for the text content/node.
-                    for desc_child in sibling.children:
-                        if isinstance(desc_child, desc_name) and isinstance(
+                    # The C and C++ domains put the name in a desc_signature_line,
+                    # and they and the JavaScript domain wrap it in a desc_sig_name.
+                    for desc_child in (
+                        line_child
+                        for child in sibling.children
+                        for line_child in (
+                            child.children
+                            if isinstance(child, desc_signature_line)
+                            else [child]
+                        )
+                    ):
+                        if not isinstance(desc_child, desc_name):
+                            continue
+                        if desc_child.children and isinstance(
                             desc_child.children[0], nodes.Text
                         ):
                             signature = desc_child.children[0]
+                        else:
+                            signature = nodes.Text(desc_child.astext())
                 if signature:
                     break
 
