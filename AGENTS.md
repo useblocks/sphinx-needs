@@ -254,8 +254,9 @@ checkout, which the Extensions cell's last step fails on.
 
 Rough runtimes on a CI-class machine, so you can decide what to background: `lint` 15 s ·
 `typecheck` seconds once `.venvs/typing` exists (the first run creates it) ·
-`smoke-needs` 6 s (`smoke-needs-published` a second or two less: it builds no sibling) ·
-`test-needs-js` 3 s once the browser is installed (9 s cold) · `docs-needs` under 2 min · `test-needs` 7–8 min serial · `test-mounts` 1–3 min · `docs-mounts` seconds ·
+`smoke-needs-published` 6–7 s, `smoke-needs` a second or two more (it builds the siblings'
+wheels) · `test-needs-js` 3 s once the browser is installed (9 s cold) · `docs-needs` under
+2 min · `test-needs` 7–8 min serial · `test-mounts` 1–3 min · `docs-mounts` seconds ·
 `benchmark-needs` 4 min. `docs-needs` runs with `--keep-going`, so it prints every warning
 and then exits 1 — do not read a full log as success. `benchmark-needs` is currently red
 (12 failures in `tests/benchmarks/test_querying.py`: the test mocks `NeedsSphinxConfig`
@@ -420,7 +421,7 @@ workflow holds no API token, and every one of its checks fails closed.
    depends on from the tree, so for a sphinx-needs release the pre-release check is
    `uv run poe smoke-needs-published` (CI's informational job of the same name runs it on
    every pull request): the wheel with every sibling as PyPI has it, where red means a
-   sibling release is owed first -- and the release workflow would stop the tag anyway.
+   sibling release is owed first -- and the release workflow would refuse to publish anyway.
 4. **Merge**, then push the tag from `master`:
    ```bash
    git tag <dist>-v<version> && git push origin <dist>-v<version>

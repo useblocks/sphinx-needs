@@ -30,11 +30,15 @@ invisible to all of them (issue #1829).  This script closes that gap:
    the index;
 6. assert ``sphinx_needs.__file__`` is inside that environment -- without this the whole
    run can pass while testing the checkout again. In tree mode, assert the same of every
-   sibling's modules, AND that each sibling's installed ``direct_url.json`` (PEP 610)
-   names the wheel step 2 built: a location check alone cannot tell the tree's
-   ``ub-project 1.1.0`` from PyPI's ``ub-project 1.1.0``, so without the second half a
-   run that quietly fell back to the index would still pass. The run prints each sibling
-   with its version and where it came from;
+   sibling's modules, AND that EVERY workspace member installed in the environment has a
+   ``direct_url.json`` (PEP 610) naming the wheel step 2 built for it. A location check
+   alone cannot tell the tree's ``ub-project 1.1.0`` from PyPI's ``ub-project 1.1.0``, so
+   without the second half a run that quietly fell back to the index would still pass;
+   and checking every installed member rather than only the derived ones means a member
+   step 2 did not reach (through an extra on a sibling requirement, say) fails by name
+   instead of arriving from the index. In published mode, assert every installed member
+   came from the index. The run prints each member with its version and where it came
+   from;
 7. assert the wheel carries every file git tracks under the module directory -- the
    non-Python payload (vendored JS/CSS, images, templates, JSON schemas) is 88% of it by
    file count, and it is the part a packaging mistake drops;
@@ -58,9 +62,11 @@ siblings from PyPI on every pull request would therefore keep such a change red 
 release it is not meant to trigger, so ``tree`` -- the default, and what CI requires --
 tests the package with the siblings this tree builds. ``--siblings published`` is the
 pre-release question instead: the wheel against the siblings as PyPI has them, exactly as
-this script ran before it had modes (no sibling is built, and nothing is asserted of
-them; their versions are printed). CI runs it as an informational job, and the release
-workflow's compat cell enforces the same thing fail-closed whatever that job said.
+this script ran before it had modes, plus the check that no workspace member came from
+anywhere but the index. CI runs it as an informational job; at release time the
+workflow's compat cell asks the same published-dependency question fail-closed (the built
+wheel resolved against PyPI alone, every module imported, the member's suite run),
+whatever that job said.
 
 It is parameterised on the package directory and the distribution name so that a sibling
 package in this workspace can reuse it unchanged::
@@ -138,22 +144,24 @@ TREE, PUBLISHED = "tree", "published"
 # built for it) rather than importing `packaging` for one regular expression
 REQUIREMENT_NAME = re.compile(r"\s*([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)")
 
-# Run INSIDE a throwaway environment, one sibling distribution per key of the JSON
-# argument: what is installed (version), where it was installed from (PEP 610's
-# `direct_url.json`, which uv writes for a wheel given by path and not for one resolved
-# from an index), and where each of its top-level modules imports from. JSON out, because
-# a temporary directory may contain a space
+# Run INSIDE a throwaway environment. It reports EVERY installed distribution -- its
+# version, and where it was installed from (PEP 610's `direct_url.json`, which uv writes
+# for a wheel given by path and not for one resolved from an index) -- and where each module
+# named in the JSON argument imports from. Every distribution, not only the expected
+# siblings: the caller checks each workspace member it finds, so a member the sibling
+# lookup did not reach is still seen. JSON out, because a temporary directory may contain
+# a space
 SIBLING_PROBE = """\
 import importlib, importlib.metadata as md, json, sys
-out = {}
-for dist, modules in json.loads(sys.argv[1]).items():
-    found = md.distribution(dist)
-    out[dist] = {
+installed = {
+    found.metadata["Name"]: {
         "version": found.version,
         "direct_url": found.read_text("direct_url.json"),
-        "files": {m: importlib.import_module(m).__file__ for m in modules},
     }
-print(json.dumps(out))
+    for found in md.distributions()
+}
+files = {m: importlib.import_module(m).__file__ for m in json.loads(sys.argv[1])}
+print(json.dumps({"installed": installed, "files": files}))
 """
 
 
@@ -161,9 +169,12 @@ class SmokeError(RuntimeError):
     """A step that cannot be recovered from (the build, the install, the doc build)."""
 
 
-def run(cmd: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
-    """Run a command, echoing it first, and raise SmokeError if it fails."""
-    print("$", " ".join(str(part) for part in cmd), flush=True)
+def run(
+    cmd: list[str], *, cwd: Path, label: str | None = None
+) -> subprocess.CompletedProcess[str]:
+    """Run a command, echoing it (or `label`, for one too long to read) first, and raise
+    SmokeError if it fails."""
+    print("$", label or " ".join(str(part) for part in cmd), flush=True)
     proc = subprocess.run(
         [str(part) for part in cmd],
         text=True,
@@ -315,49 +326,87 @@ def wheel_modules(wheel: Path) -> list[str]:
     return sorted(tops)
 
 
-def check_siblings(
-    python: Path,
-    venv: Path,
-    siblings: dict[str, list[str]],
-    tree_wheels: dict[str, Path],
-    where: str,
-    checks: Checks,
-) -> None:
-    """Report, and in tree mode assert, where each sibling in one environment came from.
+class Siblings(NamedTuple):
+    """What `check_siblings` checks each environment against; built once, in `main`."""
 
-    `siblings` maps each sibling distribution to its top-level modules; `tree_wheels` maps
-    it to the wheel this run built, and is empty in published mode -- where the versions
-    are printed and nothing is asserted, so that mode stays what this script did before it
-    had modes.
+    package: str
+    workspace: set[str]  # the canonical name of every workspace member
+    tree: bool  # --siblings tree
+    tree_wheels: dict[
+        str, Path
+    ]  # canonical name -> the wheel built from it (tree mode)
+    modules: list[str]  # the top-level modules of those wheels
+
+
+def check_siblings(
+    python: Path, venv: Path, plan: Siblings, where: str, checks: Checks
+) -> None:
+    """Assert where every workspace member installed in one environment came from.
+
+    Every member the probe finds installed, other than `package` itself -- not only the
+    ones `runtime_siblings` derived. In tree mode each must be the wheel this run built for
+    it (`plan.tree_wheels`), so a member the derivation did not reach (through an extra on a
+    sibling requirement, say) is a failure naming it rather than a distribution quietly
+    taken from the index; and each of `plan.modules` must import from `venv`. In published mode each must have come from the index, so the
+    pre-release check cannot go green on a tree sibling either. An empty `plan.workspace`
+    (a single-package repository) has nothing to check.
     """
-    if not siblings:
+    if not plan.workspace:
         return
+    tree_wheels, modules = plan.tree_wheels, plan.modules
     proc = run(
-        [str(python), "-c", SIBLING_PROBE, json.dumps(siblings)], cwd=venv.parent
+        [str(python), "-c", SIBLING_PROBE, json.dumps(modules)],
+        cwd=venv.parent,
+        label=f"{python} -c <the workspace-member probe> {json.dumps(modules)}",
     )
     report = json.loads(proc.stdout.splitlines()[-1])
-    for dist in sorted(siblings):
-        found = report[dist]
+    installed = {canonical(name): data for name, data in report["installed"].items()}
+    own = canonical(plan.package)
+    for name in sorted(tree_wheels):
+        checks.check(
+            name in installed,
+            f"{name} is installed in the {where}",
+            "" if name in installed else "its wheel was passed to uv but is not there",
+        )
+    for name in sorted((set(installed) & plan.workspace) - {own}):
+        found = installed[name]
         direct = json.loads(found["direct_url"]) if found["direct_url"] else {}
         source = unquote(direct.get("url", "")) or "the index"
-        print(f"sibling in the {where}: {dist} {found['version']} from {source}")
-        if dist not in tree_wheels:
+        print(
+            f"workspace member in the {where}: {name} {found['version']} from {source}"
+        )
+        if not plan.tree:
+            checks.check(
+                source == "the index",
+                f"{name} in the {where} is the index's, as published",
+                "" if source == "the index" else f"installed from {source}",
+            )
             continue
-        expected = unquote(tree_wheels[dist].resolve().as_uri())
+        if name not in tree_wheels:
+            checks.check(
+                False,
+                f"{name} in the {where} is the wheel this tree built, not the index's",
+                f"installed from {source}, and no wheel was built for it: it is a "
+                "workspace member the runtime `dependencies` of "
+                f"{plan.package} do not reach (an extra on a workspace requirement?), "
+                "so the sibling lookup missed it",
+            )
+            continue
+        expected = unquote(tree_wheels[name].resolve().as_uri())
         checks.check(
             source == expected,
-            f"{dist} in the {where} is the wheel this tree built, not the index's",
+            f"{name} in the {where} is the wheel this tree built, not the index's",
             ""
             if source == expected
             else f"installed from {source}, expected {expected}",
         )
-        for module, location in sorted(found["files"].items()):
-            checks.check(
-                location is not None
-                and Path(location).resolve().is_relative_to(venv.resolve()),
-                f"{module} imports from the {where}, not the checkout",
-                str(location),
-            )
+    for module, location in sorted(report["files"].items()):
+        checks.check(
+            location is not None
+            and Path(location).resolve().is_relative_to(venv.resolve()),
+            f"{module} imports from the {where}, not the checkout",
+            str(location),
+        )
 
 
 def check_sdist_contents(
@@ -497,8 +546,7 @@ def check_sdist_builds(
     expected: str,
     tmp: Path,
     python: str | None,
-    siblings: dict[str, list[str]],
-    tree_wheels: dict[str, Path],
+    siblings: Siblings,
     checks: Checks,
 ) -> float:
     """Build a wheel FROM the sdist, in an environment of its own, and import it.
@@ -536,7 +584,7 @@ def check_sdist_builds(
                 str(interpreter),
                 "--no-sources",
                 str(sdist),
-                *(str(wheel) for wheel in tree_wheels.values()),
+                *(str(wheel) for wheel in siblings.tree_wheels.values()),
             ],
             cwd=tmp,
         )
@@ -566,9 +614,7 @@ def check_sdist_builds(
         "the sdist-built import comes from ITS OWN environment, not the checkout",
         location,
     )
-    check_siblings(
-        interpreter, venv, siblings, tree_wheels, "sdist's environment", checks
-    )
+    check_siblings(interpreter, venv, siblings, "sdist's environment", checks)
     return elapsed
 
 
@@ -655,29 +701,26 @@ def main() -> int:
     members = workspace_members(REPO_ROOT)
     wheel, sdist = build(args.dist_name)
     print(f"built {wheel.name} and {sdist.name}")
-    # canonical name -> the wheel built from the tree, filled in tree mode only; the keys
-    # of `siblings` are what both environments are probed for, in either mode
+    # canonical name -> the wheel built from the tree, filled in tree mode only
     tree_wheels: dict[str, Path] = {}
-    siblings: dict[str, list[str]] = {}
+    modules: list[str] = []
     tree = args.siblings == TREE
-    for name in runtime_siblings(args.dist_name, members, refuse_markers=tree):
+    names = runtime_siblings(args.dist_name, members, refuse_markers=tree)
+    for name in names if tree else []:
         member = members[name]
-        if tree:
-            if member.virtual:
-                raise SmokeError(
-                    f"{args.dist_name} depends on {member.name}, a virtual member that "
-                    "`uv build --package` refuses to build"
-                )
-            tree_wheels[name], _ = build(member.name)
-            siblings[name] = wheel_modules(tree_wheels[name])
-            print(f"built {tree_wheels[name].name} from the tree")
-        else:
-            # versions only: published mode imports and asserts nothing of a sibling
-            siblings[name] = []
+        if member.virtual:
+            raise SmokeError(
+                f"{args.dist_name} depends on {member.name}, a virtual member that "
+                "`uv build --package` refuses to build"
+            )
+        tree_wheels[name], _ = build(member.name)
+        modules += wheel_modules(tree_wheels[name])
+        print(f"built {tree_wheels[name].name} from the tree")
     print(
         f"siblings ({args.siblings}): "
-        + (", ".join(members[name].name for name in siblings) or "none")
+        + (", ".join(members[name].name for name in names) or "none")
     )
+    siblings = Siblings(args.dist_name, set(members), tree, tree_wheels, modules)
     check_wheel_contents(wheel, module, package_dir, checks)
     check_sdist_contents(sdist, args.sdist_dirs, args.sdist_absent_dirs, checks)
 
@@ -732,9 +775,7 @@ def main() -> int:
             "the import comes from the throwaway environment, not the checkout",
             location,
         )
-        check_siblings(
-            python, venv, siblings, tree_wheels, "wheel's environment", checks
-        )
+        check_siblings(python, venv, siblings, "wheel's environment", checks)
         interpreter = run(
             [str(python), "-c", "import sys; print(sys.version.split()[0])"], cwd=tmp
         )
@@ -747,7 +788,6 @@ def main() -> int:
             tmp,
             args.python,
             siblings,
-            tree_wheels,
             checks,
         )
         print(f"built and installed {sdist.name} from source in {seconds:.1f}s")

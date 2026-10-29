@@ -962,7 +962,9 @@ help = "The sphinx-needs smoke test with its workspace siblings as PUBLISHED: th
 # the variant after the package's short name, like `test-needs-sphinx8`. The wheel resolves
 # every sibling from PyPI, which is what a sphinx-needs release will be installed with: red
 # here means "release a sibling first", not "this change is broken". CI runs it as an
-# informational job outside `check`; release.yaml's compat cell enforces it fail-closed
+# informational job outside `check`. release.yaml's compat cell asks the same question
+# fail-closed at release time (the wheel resolved against PyPI alone, every module imported,
+# the suite run) -- not this task's sdist and doc builds
 cmd = "python scripts/smoke_needs.py packages/sphinx-needs --siblings published"
 
 [tool.poe.tasks.import-check-needs]

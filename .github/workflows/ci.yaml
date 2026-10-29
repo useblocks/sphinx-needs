@@ -824,10 +824,12 @@ jobs:
   # be installed. Siblings are released in bulk ahead of sphinx-needs, so on a pull request
   # that uses an unreleased sibling change this is red until that release, and the red
   # means "release a sibling first", not "this pull request is broken". It must be green
-  # before sphinx-needs is tagged -- and release.yaml's compat cell enforces exactly that,
-  # fail-closed, whatever this job said. `continue-on-error` keeps such a red out of the
-  # run's own conclusion (the master push's status, the failed-run notification) while the
-  # job itself still shows it.
+  # before sphinx-needs is tagged; release.yaml asks the same published-dependency question
+  # fail-closed whatever this job said -- its compat cell resolves the built wheel against
+  # PyPI alone, imports every module and runs the suite (it does not repeat this job's
+  # sdist build or doc build). `continue-on-error` keeps such a red out of the run's own
+  # conclusion (the master push's status, the failed-run notification) while the job
+  # itself still shows it.
   smoke-needs-published:
     name: Needs smoke test against the published siblings (informational)
     runs-on: ubuntu-latest

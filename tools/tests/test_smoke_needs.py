@@ -143,11 +143,13 @@ def test_a_virtual_member_is_recorded(workspace) -> None:
 
 
 def test_sphinx_needs_siblings_in_this_repository() -> None:
-    """The real manifests: ub-project is reached (the motivating case, #2383), the docs
-    extra's sphinx-ai-index is not, and every sibling is a member CI can build."""
+    """The real manifests: both runtime siblings are reached (ub-project is the motivating
+    case, #2383), the docs extra's sphinx-ai-index is not, and each is a member CI can
+    build."""
     members = smoke.workspace_members(REPO)
     siblings = smoke.runtime_siblings("sphinx-needs", members)
     assert "ub-project" in siblings
+    assert "ub-needs-exchange" in siblings
     assert "sphinx-ai-index" not in siblings
     assert "sphinx-needs" not in siblings
     assert all(not members[name].virtual for name in siblings)
@@ -171,13 +173,18 @@ def test_wheel_modules(tmp_path: Path) -> None:
 
 # --- what is asserted of a sibling -------------------------------------------------------
 
+WORKSPACE = {"sphinx-needs", "ub-project", "ub-needs-exchange", "sphinx-ai-index"}
+
 
 @pytest.fixture
-def probe(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+def probe(monkeypatch: pytest.MonkeyPatch):
     """Stand in for the in-environment probe: answer with the given report."""
 
-    def answer(report: dict[str, Any]) -> None:
-        def fake(cmd: list[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
+    def answer(report: dict[str, Any] | None) -> None:
+        def fake(
+            cmd: list[str], *, cwd: Path, label: str | None = None
+        ) -> subprocess.CompletedProcess[str]:
+            assert report is not None, "the probe ran where nothing was to be checked"
             return subprocess.CompletedProcess(cmd, 0, json.dumps(report) + "\n", "")
 
         monkeypatch.setattr(smoke, "run", fake)
@@ -185,93 +192,132 @@ def probe(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     return answer
 
 
-def _report(
-    venv: Path, direct: Path | None, location: Path | None = None
-) -> dict[str, Any]:
+def _dist(source: Path | None, version: str = "1.1.0") -> dict[str, Any]:
+    """One installed distribution as the probe reports it; `None` is "from the index"."""
     return {
-        "ub-project": {
-            "version": "1.1.0",
-            "direct_url": json.dumps({"url": direct.as_uri(), "archive_info": {}})
-            if direct
-            else None,
-            "files": {
-                "ub_project": str(
-                    location or venv / "lib" / "site-packages" / "ub_project" / "x.py"
-                )
-            },
-        }
+        "version": version,
+        "direct_url": json.dumps({"url": source.as_uri(), "archive_info": {}})
+        if source
+        else None,
     }
+
+
+def _report(
+    venv: Path, installed: dict[str, dict[str, Any]], location: Path | None = None
+) -> dict[str, Any]:
+    """The probe's answer. Always carries the package itself (from a path: it is never
+    checked) and a non-member from the index (never checked either), as a real one does."""
+    return {
+        "installed": {
+            "sphinx_needs": _dist(venv.parent / "sphinx_needs-9.1.0-py3-none-any.whl"),
+            "Sphinx": _dist(None, "8.2.3"),
+            **installed,
+        },
+        "files": {
+            "ub_project": str(
+                location or venv / "lib" / "site-packages" / "ub_project" / "x.py"
+            )
+        },
+    }
+
+
+def _plan(tree_wheels: dict[str, Path], *, tree: bool = True) -> Any:
+    return smoke.Siblings(
+        "sphinx-needs", WORKSPACE, tree, tree_wheels, ["ub_project"] if tree else []
+    )
+
+
+def _check(venv: Path, plan: Any, where: str = "wheel's environment") -> list[str]:
+    checks = smoke.Checks()
+    smoke.check_siblings(venv / "bin" / "python", venv, plan, where, checks)
+    return checks.failures
 
 
 def test_the_tree_wheel_in_the_environment_passes(tmp_path: Path, probe) -> None:
     venv = tmp_path / "venv"
     wheel = tmp_path / "dist with space" / "ub_project-1.1.0-py3-none-any.whl"
-    probe(_report(venv, wheel))
-    checks = smoke.Checks()
-    smoke.check_siblings(
-        venv / "bin" / "python",
-        venv,
-        {"ub-project": ["ub_project"]},
-        {"ub-project": wheel},
-        "wheel's environment",
-        checks,
-    )
-    assert checks.failures == []
+    probe(_report(venv, {"ub-project": _dist(wheel)}))
+    assert _check(venv, _plan({"ub-project": wheel})) == []
 
 
 def test_a_sibling_from_the_index_fails_in_tree_mode(tmp_path: Path, probe) -> None:
     """THE silent fallback: same version, imported from the environment -- and still red,
     because there is no `direct_url.json` naming the wheel this tree built."""
     venv = tmp_path / "venv"
-    probe(_report(venv, None))
-    checks = smoke.Checks()
-    smoke.check_siblings(
-        venv / "bin" / "python",
-        venv,
-        {"ub-project": ["ub_project"]},
-        {"ub-project": tmp_path / "ub_project-1.1.0-py3-none-any.whl"},
-        "wheel's environment",
-        checks,
-    )
-    assert checks.failures == [
+    probe(_report(venv, {"ub_project": _dist(None)}))
+    wheel = tmp_path / "ub_project-1.1.0-py3-none-any.whl"
+    assert _check(venv, _plan({"ub-project": wheel})) == [
         "ub-project in the wheel's environment is the wheel this tree built, not the index's"
+    ]
+
+
+def test_a_member_the_lookup_missed_fails_in_tree_mode(
+    tmp_path: Path, probe, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A workspace member installed WITHOUT a tree wheel -- reached, say, through
+    `ub-project[ai]` and an `ai` extra naming sphinx-ai-index, which `runtime_siblings`
+    does not follow -- came from the index, and is named rather than passed over: the
+    check is against what is installed, not against the derivation."""
+    venv = tmp_path / "venv"
+    wheel = tmp_path / "ub_project-1.1.0-py3-none-any.whl"
+    probe(
+        _report(
+            venv,
+            {"ub-project": _dist(wheel), "sphinx_ai_index": _dist(None, "1.0.0")},
+        )
+    )
+    assert _check(venv, _plan({"ub-project": wheel})) == [
+        "sphinx-ai-index in the wheel's environment is the wheel this tree built, "
+        "not the index's"
+    ]
+    assert "the sibling lookup missed it" in capsys.readouterr().out
+
+
+def test_a_tree_wheel_that_is_not_installed_fails(tmp_path: Path, probe) -> None:
+    venv = tmp_path / "venv"
+    probe(_report(venv, {}))
+    wheel = tmp_path / "ub_project-1.1.0-py3-none-any.whl"
+    assert _check(venv, _plan({"ub-project": wheel})) == [
+        "ub-project is installed in the wheel's environment"
     ]
 
 
 def test_a_sibling_imported_from_the_checkout_fails(tmp_path: Path, probe) -> None:
     venv = tmp_path / "venv"
     wheel = tmp_path / "ub_project-1.1.0-py3-none-any.whl"
-    probe(_report(venv, wheel, REPO / "packages" / "ub-project" / "src" / "x.py"))
-    checks = smoke.Checks()
-    smoke.check_siblings(
-        venv / "bin" / "python",
-        venv,
-        {"ub-project": ["ub_project"]},
-        {"ub-project": wheel},
-        "sdist's environment",
-        checks,
-    )
-    assert checks.failures == [
+    checkout = REPO / "packages" / "ub-project" / "src" / "x.py"
+    probe(_report(venv, {"ub-project": _dist(wheel)}, checkout))
+    assert _check(venv, _plan({"ub-project": wheel}), "sdist's environment") == [
         "ub_project imports from the sdist's environment, not the checkout"
     ]
 
 
-def test_published_mode_reports_and_asserts_nothing(
+def test_published_mode_wants_every_member_from_the_index(
     tmp_path: Path, probe, capsys: pytest.CaptureFixture[str]
 ) -> None:
     venv = tmp_path / "venv"
-    probe(_report(venv, None))
-    checks = smoke.Checks()
-    smoke.check_siblings(
-        venv / "bin" / "python",
-        venv,
-        {"ub-project": []},
-        {},
-        "wheel's environment",
-        checks,
-    )
-    assert checks.failures == []
-    assert "ub-project 1.1.0 from the index" in capsys.readouterr().out
+    probe(_report(venv, {"ub-project": _dist(None), "ub-needs-exchange": _dist(None)}))
+    assert _check(venv, _plan({}, tree=False)) == []
+    out = capsys.readouterr().out
+    assert "ub-project 1.1.0 from the index" in out
+    assert "ub-needs-exchange 1.1.0 from the index" in out
+
+
+def test_published_mode_fails_on_a_member_from_a_file(tmp_path: Path, probe) -> None:
+    """The pre-release check cannot go green on a sibling that did not come from PyPI."""
+    venv = tmp_path / "venv"
+    wheel = tmp_path / "ub_project-1.1.0-py3-none-any.whl"
+    probe(_report(venv, {"ub-project": _dist(wheel)}))
+    assert _check(venv, _plan({}, tree=False)) == [
+        "ub-project in the wheel's environment is the index's, as published"
+    ]
+
+
+def test_no_workspace_runs_no_probe(tmp_path: Path, probe) -> None:
+    """A single-package repository: nothing is a workspace member, nothing is probed."""
+    probe(None)
+    plan = smoke.Siblings("solo", set(), True, {}, [])
+    assert _check(tmp_path / "venv", plan) == []
 
 
 # --- the CI shape ------------------------------------------------------------------------
