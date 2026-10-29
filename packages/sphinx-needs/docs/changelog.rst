@@ -20,7 +20,10 @@ Improvements
   a type the project declares, whenever the extension adds the type. So
   ``[needs.types.testcase.links.evidence_for] derive = {...}`` gives test cases a derived link type of their own
   (joining on the ``case_name`` of ``test`` needs takes ``[needs.types.test.fields.case_name]`` too, once
-  sphinx-test-reports declares its fields on its own types, below). A
+  sphinx-test-reports declares its fields on its own types, below). The entry takes every key of a need type's,
+  ``back_links``, ``id_regex`` and a field's ``severity`` (below) included, and only narrows: its declaration of a
+  field the extension declares starts from the extension's, so one widening it is a ``needs.type_widening`` warning
+  (one re-typing it a ``needs.type_conflict``), and is ignored. A
   bare entry still declares no type (the default types are kept beside it). A bare entry naming no default type and
   no type an extension adds is ignored as before, but reported once the schema is built, naming
   ``derive_by_type`` as the spelling that attaches a rule to a type the project does not declare -- the
