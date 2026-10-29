@@ -317,10 +317,19 @@ def test_decorated():
             result.stderr.fnmatch_lines(["ERROR: *junit_family is 'xunit2'*xunit1*"])
 
     def test_an_ini_filter_on_the_alias_warning(self, pytester) -> None:
+        # With the old filter line beside it: resolving that line imports the alias,
+        # which hands `-p` the real plugin as already imported -- quiet only because
+        # the real module carries PYTEST_DONT_REWRITE (the alias needs none: it
+        # replaces itself in `sys.modules` before `-p` looks).
         result, _ = self._run(
             pytester,
             self.OLD_PLUGIN,
-            ini=f"filterwarnings =\n    error\n    ignore:{self.OLD_PLUGIN} has moved:FutureWarning\n",
+            family="xunit2",
+            ini=(
+                "filterwarnings =\n    error\n"
+                f"    ignore:{self.OLD_PLUGIN} has moved:FutureWarning\n"
+                f"    ignore::{self.OLD_PLUGIN}.TestReportsConfigWarning\n"
+            ),
         )
         result.assert_outcomes(passed=1, warnings=0)
         if self.FILTERS_BEFORE_PLUGINS:

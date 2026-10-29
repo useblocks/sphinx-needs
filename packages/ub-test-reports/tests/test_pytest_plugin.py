@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from ub_test_reports import pytest_plugin, pytest_warnings
+from ub_test_reports import pytest_plugin
 from ub_test_reports.pytest_plugin import (
     Property,
     apply_test_metadata,
@@ -22,12 +22,6 @@ from ub_test_reports.pytest_plugin import (
 )
 
 PLUGIN = "ub_test_reports.pytest_plugin"
-#: Where the plugin's warning class is defined: a module that imports pytest and nothing
-#: of the plugin, so that a ``filterwarnings`` line naming the class does not import it.
-WARNINGS = "ub_test_reports.pytest_warnings"
-#: From pytest 9.2 on, the ini ``filterwarnings`` apply while pytest imports the ``-p``
-#: plugins, so resolving a filter's category happens BEFORE ``-p`` loads the plugin.
-FILTERS_BEFORE_PLUGINS = pytest.version_tuple >= (9, 2)
 
 #: S-CORE's model, as the docs show it: the profile most of these tests run with.
 SCORE_PROFILE = """\
@@ -709,44 +703,28 @@ class TestStartUp:
             pytester,
             PLAIN,
             family="xunit2",
-            ini=f"filterwarnings =\n    error\n    ignore::{WARNINGS}.TestReportsConfigWarning\n",
+            ini=f"filterwarnings =\n    error\n    ignore::{PLUGIN}.TestReportsConfigWarning\n",
         )
         result.assert_outcomes(passed=1, warnings=0)
 
-    def test_the_plugin_module_names_the_same_class(self):
-        # The filter line documented before the class moved names it through the
-        # plugin module; it must still name the class the plugin issues, not a copy.
-        assert (
-            pytest_plugin.TestReportsConfigWarning
-            is pytest_warnings.TestReportsConfigWarning
-        )
-
-    def test_a_filter_naming_the_class_in_the_plugin_module(self, pytester):
-        # The line the docs gave before the class moved. Resolving its category imports
-        # the plugin module. Before pytest 9.2 that happens after `-p` has loaded the
-        # plugin, and the line silences the notice. From 9.2 on it happens first, so
-        # `-p` finds the plugin imported already and warns that it cannot rewrite its
-        # asserts -- under `filterwarnings = error` a traceback that stops pytest.
-        result, root = _run(
+    def test_a_filter_naming_the_class_leaves_the_p_line_quiet(self, pytester):
+        # From pytest 9.2 on, resolving the filter imports the plugin before `-p`
+        # does; without PYTEST_DONT_REWRITE in its docstring `-p` then warns that it
+        # cannot rewrite the plugin's asserts -- the traceback of the test above under
+        # `filterwarnings = error`, and one more warning in every run without it.
+        result, _ = _run(
             pytester,
             PLAIN,
             family="xunit2",
-            ini=f"filterwarnings =\n    error\n    ignore::{PLUGIN}.TestReportsConfigWarning\n",
+            ini=f"filterwarnings =\n    ignore::{PLUGIN}.TestReportsConfigWarning\n",
         )
-        if FILTERS_BEFORE_PLUGINS:
-            # an uncaught exception: no session, no report, Python's own exit status
-            assert result.ret != pytest.ExitCode.OK
-            assert result.outlines == []
-            assert root is None
-            result.stderr.fnmatch_lines(
-                [
-                    "Traceback (most recent call last):",
-                    "*PytestAssertRewriteWarning: Module already imported so cannot be"
-                    f" rewritten; {PLUGIN}",
-                ]
-            )
-        else:
-            result.assert_outcomes(passed=1, warnings=0)
+        result.assert_outcomes(passed=1, warnings=0)
+        assert "already imported" not in result.stdout.str() + result.stderr.str()
+
+    def test_the_plugin_opts_out_of_assertion_rewriting(self):
+        # The marker the two tests above depend on, held on every pytest: on the
+        # ones before 9.2 those tests pass without it.
+        assert "PYTEST_DONT_REWRITE" in (pytest_plugin.__doc__ or "")
 
     def test_xunit2_gives_no_per_test_fixture_warnings(self, pytester):
         # pytest drops the attributes under xunit2 anyway and would warn per test
@@ -826,15 +804,6 @@ class TestSourcePath:
 
 
 class TestHelpers:
-    def test_the_warning_module_does_not_import_the_plugin(self):
-        # What a filter naming the class relies on: resolving it must leave the plugin
-        # for `-p` to import, or pytest 9.2 stops at start-up (see TestStartUp).
-        script = f"import sys;import {WARNINGS};print({PLUGIN!r} in sys.modules)"
-        result = subprocess.run(
-            [sys.executable, "-c", script], capture_output=True, text=True, check=True
-        )
-        assert result.stdout.strip() == "False"
-
     def test_the_plugin_does_not_import_sphinx(self):
         script = (
             "import sys;"

@@ -7,10 +7,7 @@ Unreleased
 Changed
 .......
 
-- 📚 The pytest plugin page gives the filter that silences the plugin's start-up notice as
-  ``ignore::ub_test_reports.pytest_warnings.TestReportsConfigWarning`` (ub-test-reports moved
-  the class there): from pytest 9.2 on, the line it gave before stops pytest at start-up under
-  ``filterwarnings = error``. It also says what pytest 9.2 changes for the deprecated
+- 📚 The pytest plugin page says what pytest 9.2 changes for the deprecated
   ``-p sphinxcontrib.test_reports.pytest_plugin``: pytest applies its ``filterwarnings``
   while it loads the plugin, so the ``FutureWarning`` is reported in its warnings summary, a
   filter reaches it, and under ``filterwarnings = error`` it stops pytest -- as does a

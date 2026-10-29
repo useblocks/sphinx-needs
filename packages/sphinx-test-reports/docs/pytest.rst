@@ -68,16 +68,8 @@ Nothing else changes for tests that do not use the decorator below.
 The start-up notice is a ``TestReportsConfigWarning``. A project that turns
 warnings into errors (``filterwarnings = error``, ``-W error``) gets it as a
 clean usage error instead;
-``ignore::ub_test_reports.pytest_warnings.TestReportsConfigWarning``
+``ignore::ub_test_reports.pytest_plugin.TestReportsConfigWarning``
 silences it.
-
-Name the class in ``ub_test_reports.pytest_warnings``, where it is defined, not in
-the plugin module. ``ignore::ub_test_reports.pytest_plugin.TestReportsConfigWarning``,
-the line these docs gave before, names the same class, but from pytest 9.2 on pytest
-resolves a filter before it loads the ``-p`` plugins: that line imports the plugin first,
-and under ``filterwarnings = error`` pytest stops at start-up with a
-``PytestAssertRewriteWarning`` traceback ("Module already imported so cannot be
-rewritten").
 
 Declaring the properties
 ------------------------

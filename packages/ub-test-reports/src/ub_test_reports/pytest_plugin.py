@@ -40,12 +40,16 @@ and a test does not have to carry a docstring -- both are process rules of that
 project, not of this tool.
 
 This module imports pytest and nothing else from the package's Sphinx side; it
-is only ever loaded by pytest. Its start-up notice, ``TestReportsConfigWarning``,
-is defined in :mod:`ub_test_reports.pytest_warnings` and re-exported here; a
-``filterwarnings`` line names it there,
-``ignore::ub_test_reports.pytest_warnings.TestReportsConfigWarning``, because
-from pytest 9.2 on a line naming it here imports this module before ``-p`` does,
-and under ``filterwarnings = error`` pytest stops at start-up.
+is only ever loaded by pytest.
+
+PYTEST_DONT_REWRITE: pytest reads this marker in a module's docstring. From
+pytest 9.2 on, pytest applies the ini ``filterwarnings`` while it imports the
+``-p`` plugins, and resolves them first: the documented
+``ignore::ub_test_reports.pytest_plugin.TestReportsConfigWarning`` imports this
+module before ``-p`` does, and ``-p``'s assertion-rewrite step would then warn
+that the module is "already imported" -- an error, and a start-up traceback,
+under ``filterwarnings = error``. The marker skips that step. This module has no
+``assert`` to rewrite.
 """
 
 from __future__ import annotations
@@ -57,11 +61,6 @@ from typing import TYPE_CHECKING
 
 import pluggy
 import pytest
-
-# Re-exported: defined in a module of its own so that a `filterwarnings` line naming it
-# does not import this one before `-p` does (see `pytest_warnings`). The same object, so
-# a filter written against this module's path still names the class issued.
-from ub_test_reports.pytest_warnings import TestReportsConfigWarning
 
 if TYPE_CHECKING:
     from _pytest.junitxml import LogXML
@@ -359,6 +358,17 @@ def clean_source_path(path: str) -> str:
     ``_main/`` component is cut.
     """
     return _RUNFILES_PREFIX.sub("", path, count=1)
+
+
+class TestReportsConfigWarning(pytest.PytestWarning):
+    """A run configured such that the plugin cannot write the full XML shape.
+
+    Issued once at start-up. Where the project turns warnings into errors
+    (``filterwarnings = error``, ``-W error``) it becomes a clean usage error
+    rather than a traceback;
+    ``ignore::ub_test_reports.pytest_plugin.TestReportsConfigWarning``
+    silences it.
+    """
 
 
 def _report_family(config: pytest.Config) -> str | None:
