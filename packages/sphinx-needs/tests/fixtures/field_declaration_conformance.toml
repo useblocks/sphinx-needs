@@ -88,8 +88,9 @@
 #     no other code. sphinx-needs' runner reads it from the type the schema validation
 #     logs the finding under: `sn_schema_violation` is `violation`, `sn_schema_warning`
 #     `warning`, `sn_schema_info` `info`. ubCode's runner reads the grade of its own
-#     diagnostic: `Error` is `violation`, `Warning` `warning`, `Information` `info`, and
-#     its `create_need` is graded `Error`. Only the codes of the per-type declaration
+#     diagnostic: `Error` is `violation`, `Warning` `warning`, `Information` `info`; its
+#     `create_need`, graded `Warning` as sphinx-needs logs it, is read as `violation`.
+#     Only the codes of the per-type declaration
 #     contract are compared --
 #         type_inherits, type_conflict, type_widening, undeclared_for_type, needextend,
 #         derive_authored, derive_invalid, dynamic_function, create_need, field_fail,
