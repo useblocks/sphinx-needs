@@ -106,13 +106,13 @@ def _toml_value(value: Any, where: str) -> Any:
     if isinstance(value, datetime.datetime):
         return datetime.datetime(
             value.year, value.month, value.day, value.hour, value.minute, value.second,
-            value.microsecond, value.tzinfo, fold=value.fold,
+            value.microsecond, _offset(value), fold=value.fold,
         )  # fmt: skip
     if isinstance(value, datetime.date):
         return datetime.date(value.year, value.month, value.day)
     if isinstance(value, datetime.time):
         return datetime.time(
-            value.hour, value.minute, value.second, value.microsecond, value.tzinfo,
+            value.hour, value.minute, value.second, value.microsecond, _offset(value),
             fold=value.fold,
         )  # fmt: skip
     if callable(value) or not isinstance(
@@ -126,6 +126,13 @@ def _toml_value(value: Any, where: str) -> Any:
         raise ConfigError(msg)
     msg = f"{where}: {value!r} is not a value ubproject.toml can hold"
     raise ConfigError(msg)
+
+
+def _offset(value: datetime.datetime | datetime.time) -> datetime.timezone | None:
+    """The fixed UTC offset of ``value``, all TOML can express (``None`` for none): a
+    tzinfo class defined in ``conf.py`` would not survive the pickled environment."""
+    offset = value.utcoffset() if value.tzinfo is not None else None
+    return None if offset is None else datetime.timezone(offset)
 
 
 def _from_confpy(config: Config) -> dict[str, Any]:
@@ -143,7 +150,11 @@ def _from_confpy(config: Config) -> dict[str, Any]:
         if not isinstance(value, dict):
             msg = f"{confval}: {value!r} must be a dict of entries, as [parse] {key} is a table"
             raise ConfigError(msg)
-        values[key] = _toml_value(value, confval)
+        try:
+            values[key] = _toml_value(value, confval)
+        except RecursionError:
+            msg = f"{confval}: nested too deeply to be a value ubproject.toml can hold"
+            raise ConfigError(msg) from None
         # the confval itself holds the converted data, so the pickled environment never
         # holds a conf.py class (an IntEnum member cannot be pickled) and a rebuild
         # compares data with data

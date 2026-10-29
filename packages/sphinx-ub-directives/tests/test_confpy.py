@@ -429,7 +429,7 @@ def test_a_conf_py_subclass_renders_as_its_toml_twin(
 def test_a_subclass_value_comes_back_as_its_exact_base_type() -> None:
     """F1-F3: the conversion's result holds base types only, read through the base type's
     own method -- an Enum's ``__str__``, ``__float__`` or ``repr`` cannot change it; a
-    dict or list subclass is a plain dict or list; a date subclass keeps its tzinfo."""
+    dict or list subclass is a plain dict or list; a date subclass keeps its offset."""
     _bound_probe()  # an IntEnum below would hang this process if the bound scanned
     import collections
     import enum
@@ -466,7 +466,7 @@ def test_a_subclass_value_comes_back_as_its_exact_base_type() -> None:
                    "d": datetime.datetime(2024, 1, 2, 10, 0, tzinfo=zone)}  # fmt: skip
     assert type(out) is dict and type(out["l"]) is list
     assert [type(out[k]) for k in "ismfd"] == [int, str, str, float, datetime.datetime]
-    assert out["d"].tzinfo is zone
+    assert out["d"].tzinfo == zone and type(out["d"].tzinfo) is datetime.timezone
 
 
 #: The bound probe, run in a subprocess so a regression to a scan fails by timeout.
@@ -516,6 +516,64 @@ def test_an_int_subclass_past_the_bound_is_refused_promptly() -> None:
         "64-bit range ubproject.toml integers have"
     )
     assert kept == f"int {2**63 - 1}"
+
+
+def test_a_conf_py_tzinfo_subclass_is_a_fixed_offset(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """V4-1: a tzinfo class defined in conf.py is read as its fixed UTC offset (all TOML
+    can express), so the environment pickles: a second build of the unchanged project
+    starts from it and re-reads nothing."""
+    conf = (
+        "import datetime\n"
+        "class TZ(datetime.tzinfo):\n"
+        "    def utcoffset(self, dt):\n        return datetime.timedelta(hours=2)\n"
+        "    def dst(self, dt):\n        return None\n"
+        "    def tzname(self, dt):\n        return 'TZ'\n"
+        "ub_template_contexts = {'c': {'when': datetime.datetime(2024, 1, 2, 10, tzinfo=TZ()),"
+        " 'at': datetime.time(10, tzinfo=TZ())}}\n"
+    )
+    root = _project(tmp_path, conf=conf, page="Text.\n")
+    first = make_app("html", srcdir=root, freshenv=True)
+    first.build()
+    when = first.config.ub_directives_resolved["template_contexts"]["c"]["when"]
+    assert when.tzinfo == datetime.timezone(datetime.timedelta(hours=2))
+    assert type(when.tzinfo) is datetime.timezone
+    first.cleanup()
+    second = make_app("html", srcdir=root, freshenv=False)
+    second.build()
+    status = second._status.getvalue()
+    assert "0 added, 0 changed, 0 removed" in status, status
+
+
+def test_a_naive_offset_is_a_naive_value() -> None:
+    """V4-1: a tzinfo whose ``utcoffset()`` is ``None`` leaves the value naive."""
+
+    class Unknown(datetime.tzinfo):
+        def utcoffset(self, dt: datetime.datetime | None) -> None:
+            return None
+
+    out = _config._toml_value(
+        {"d": datetime.datetime(2024, 1, 2, tzinfo=Unknown())}, "x"
+    )
+    assert out["d"].tzinfo is None
+
+
+def test_a_value_nested_too_deeply_is_a_config_error(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """V4-2: lists nested deeper than the interpreter can recurse are a ConfigError naming
+    the confval, never a RecursionError traceback."""
+    conf = (
+        "deep = []\nfor _ in range(5000):\n    deep = [deep]\n"
+        "ub_template_contexts = {'c': {'deep': deep}}\n"
+    )
+    root = _project(tmp_path, conf=conf)
+    with pytest.raises(ConfigError) as raised:
+        make_app("html", srcdir=root, freshenv=True)
+    assert str(raised.value) == (
+        "ub_template_contexts: nested too deeply to be a value ubproject.toml can hold"
+    )
 
 
 # --- the command line (F4) -------------------------------------------------------------
