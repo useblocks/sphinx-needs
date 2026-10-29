@@ -811,6 +811,9 @@ how they are defined, processed, and validated.
 ``needs_fields`` must be a dictionary, where each key is the name of the field, and the value is another dictionary defining the field.
 
 Fields can either "specialize" existing core fields or define completely new ones.
+A core field a need computes, such as ``type_name`` or ``docname``, takes no entry:
+one naming it is ignored, with a ``needs.config`` warning,
+``needs_fields entry 'type_name' names the core field 'type_name', which a project cannot declare; the entry is ignored``.
 
 For new fields the following can be defined:
 

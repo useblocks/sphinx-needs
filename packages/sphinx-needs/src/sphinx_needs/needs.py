@@ -2130,6 +2130,16 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 "config",
                 None,
             )
+        elif not NeedsCoreFields[name].get("add_to_field_schema", False):
+            # a core field a need computes (``type_name``, ``docname``, ...): nothing
+            # reads the entry
+            log_warning(
+                LOGGER,
+                f"needs_fields entry {name!r} names the core field {name!r}, "
+                "which a project cannot declare; the entry is ignored",
+                "config",
+                None,
+            )
     for name, rules in field_rules.items():
         # a core field is not derived: a type's rule is reported and ignored
         if name in NeedsCoreFields:
