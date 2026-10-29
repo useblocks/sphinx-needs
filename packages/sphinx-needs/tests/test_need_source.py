@@ -571,6 +571,8 @@ def test_the_hops_of_every_need(
     assert lines("REQ_TABX") == [("tabs.rst", 4, 7)]
     assert lines("REQ_BOMX") == [("bom.rst", 1, 2)]
     assert lines("REQ_BOMMDX") == [("bommd.md", 1, None)]
+    # a line block in the body: its ``|`` is the text's, not a table cell's border
+    assert lines("REQ_LINEBLOCKX") == [("p1.rst", 10, 14)]
     # a bullet, and a list table's bullets, before the directive
     assert lines("REQ_LISTITEMX") == [("lines.rst", 20, 21)]
     assert lines("REQ_LISTTABLEX") == [("lines.rst", 25, 26)]

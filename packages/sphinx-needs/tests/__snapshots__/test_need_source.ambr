@@ -99,6 +99,9 @@
       'file srcdir:frag/b.rst:10-10 (.rst)',
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
     ]),
+    'REQ_LINEBLOCKX': list([
+      "page [p1] srcdir:p1.rst:10-14 (.rst) :: section 'Page 1' > section 'Sec'",
+    ]),
     'REQ_LISTITEMX': list([
       "page [lines] srcdir:lines.rst:20-21 (.rst) :: section 'Lines' > section 'Outside'",
     ]),

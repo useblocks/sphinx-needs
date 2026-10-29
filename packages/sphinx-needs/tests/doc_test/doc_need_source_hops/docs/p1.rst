@@ -6,3 +6,9 @@ Sec
 
 .. req:: p1
    :id: REQ_P1X
+
+.. req:: a body with a line block
+   :id: REQ_LINEBLOCKX
+
+   | a line of a line block
+   | and another
