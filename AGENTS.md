@@ -130,7 +130,8 @@ uv run poe docs-needs                 # the furo docs build
 uv run poe docs-mounts                # the sphinx-mounts docs build
 uv run poe docs-codelinks             # the sphinx-codelinks docs build
 uv run poe docs-reports               # the sphinx-test-reports docs build (renders; needs java + dot)
-uv run poe smoke-needs                # build the wheel and test the built package
+uv run poe smoke-needs                # build the wheel and test the built package (siblings from the tree)
+uv run poe smoke-needs-published      # the same with ub-project & co. as PUBLISHED: the pre-release check
 uv run poe verify-plantuml            # the committed PlantUML jar is the one its pin names
 uv run poe fetch-plantuml             # download it -- a bump step; otherwise a hash check
 uv run poe check-workspace            # the manifests agree with each other (Lint runs it)
@@ -178,8 +179,9 @@ own hand-written copies of the same three-route chain in `packages/sphinx-needs/
 and `packages/sphinx-needs/performance/performance_test.py`, and have to: a docs build and a
 benchmark must not import a test-only member. `test-mounts-bazel` is the one task that still
 needs `uses = { PLANTUML_JAR = "fetch-plantuml" }`, because its build runs in a Bazel sandbox
-that cannot see `vendor/` — and `lint` declares `verify-plantuml`. `smoke-needs`, `test-needs-js` and the
-sphinx-mounts docs render nothing and declare neither.
+that cannot see `vendor/` — and `lint` declares `verify-plantuml`. `smoke-needs`,
+`smoke-needs-published`, `test-needs-js` and the sphinx-mounts docs render nothing and declare
+neither.
 
 Both suites resolve a renderer through ONE function in the shared test layer, and **both
 assert rather than skip** when it finds none: `PLANTUML_JAR` (an explicit choice, and an error when it names no file) →
@@ -252,8 +254,8 @@ checkout, which the Extensions cell's last step fails on.
 
 Rough runtimes on a CI-class machine, so you can decide what to background: `lint` 15 s ·
 `typecheck` seconds once `.venvs/typing` exists (the first run creates it) ·
-`smoke-needs` 6 s · `test-needs-js` 3 s once the browser is installed (9 s cold) · `docs-needs` under
-2 min · `test-needs` 7–8 min serial · `test-mounts` 1–3 min · `docs-mounts` seconds ·
+`smoke-needs` 6 s (`smoke-needs-published` a second or two less: it builds no sibling) ·
+`test-needs-js` 3 s once the browser is installed (9 s cold) · `docs-needs` under 2 min · `test-needs` 7–8 min serial · `test-mounts` 1–3 min · `docs-mounts` seconds ·
 `benchmark-needs` 4 min. `docs-needs` runs with `--keep-going`, so it prints every warning
 and then exits 1 — do not read a full log as success. `benchmark-needs` is currently red
 (12 failures in `tests/benchmarks/test_querying.py`: the test mocks `NeedsSphinxConfig`
@@ -414,7 +416,11 @@ workflow holds no API token, and every one of its checks fails closed.
    compare link 404s in Docs-Linkcheck until the tag exists; that is expected and not a
    required check.
 3. **Check it locally**: `uv run poe lint` (which now runs `check-workspace`) and
-   `uv run poe smoke-needs`.
+   `uv run poe smoke-needs`. `smoke-needs` builds the workspace siblings sphinx-needs
+   depends on from the tree, so for a sphinx-needs release the pre-release check is
+   `uv run poe smoke-needs-published` (CI's informational job of the same name runs it on
+   every pull request): the wheel with every sibling as PyPI has it, where red means a
+   sibling release is owed first -- and the release workflow would stop the tag anyway.
 4. **Merge**, then push the tag from `master`:
    ```bash
    git tag <dist>-v<version> && git push origin <dist>-v<version>

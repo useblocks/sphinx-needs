@@ -7,7 +7,12 @@ invisible to all of them (issue #1829).  This script closes that gap:
 
 1. build the sdist + wheel with the *same* ``uv build`` invocation the release workflow
    runs (``--package <dist> --no-sources -o dist/<dist>``);
-2. assert the sdist carries the trees it is meant to ship, does *not* carry the ones it is
+2. in the default ``--siblings tree`` mode, build a wheel the same way for every workspace
+   member the package depends on at runtime -- its ``[project] dependencies``, followed
+   through the workspace transitively, read off the manifests rather than listed here
+   (for sphinx-needs: ub-project and ub-needs-exchange; sphinx-ai-index is a ``docs``
+   *extra*, which this install does not ask for);
+3. assert the sdist carries the trees it is meant to ship, does *not* carry the ones it is
    meant to have stopped shipping, and holds none of the rubbish a used checkout leaves
    behind. Both directions are silent failures. flit 4 does not infer sdist contents from
    git, so ``docs/`` is in the tarball only because ``[tool.flit.sdist] include`` says so;
@@ -15,34 +20,54 @@ invisible to all of them (issue #1829).  This script closes that gap:
    loads its fixtures from ``sphinx-needs-testkit``, a private workspace member that is on
    no index -- a shipped suite nobody can run is worse than none, and re-adding one to
    ``include`` is a two-word edit that no other gate would notice;
-3. create a throwaway virtual environment *outside* the project;
-4. install the wheel into it with ``uv pip install``, which reads the wheel's own
+4. create a throwaway virtual environment *outside* the project;
+5. install the wheel into it with ``uv pip install``, which reads the wheel's own
    ``Requires-Dist`` and resolves it from the index (measured on uv 0.12.9: ``uv pip
    install <wheel>`` does that with or without ``--no-sources`` -- the flag governs
    requirements uv reads from a *pyproject*, so it is passed here for the recipe and the
-   intent, not as the mechanism);
-5. assert ``sphinx_needs.__file__`` is inside that environment -- without this the whole
-   run can pass while testing the checkout again;
-6. assert the wheel carries every file git tracks under the module directory -- the
+   intent, not as the mechanism). In tree mode the siblings' wheels from step 2 go into
+   the SAME call, so uv takes those distributions from the tree and everything else from
+   the index;
+6. assert ``sphinx_needs.__file__`` is inside that environment -- without this the whole
+   run can pass while testing the checkout again. In tree mode, assert the same of every
+   sibling's modules, AND that each sibling's installed ``direct_url.json`` (PEP 610)
+   names the wheel step 2 built: a location check alone cannot tell the tree's
+   ``ub-project 1.1.0`` from PyPI's ``ub-project 1.1.0``, so without the second half a
+   run that quietly fell back to the index would still pass. The run prints each sibling
+   with its version and where it came from;
+7. assert the wheel carries every file git tracks under the module directory -- the
    non-Python payload (vendored JS/CSS, images, templates, JSON schemas) is 88% of it by
    file count, and it is the part a packaging mistake drops;
-7. build a wheel *from the sdist* -- a second throwaway environment and ``uv pip install
+8. build a wheel *from the sdist* -- a second throwaway environment and ``uv pip install
    <sdist>``, which runs the PEP 517 hook (``flit_core.buildapi``) on the tarball -- and
-   import it. Step 2 asserts what the tarball *contains*; only this asserts that the
+   import it, with the siblings installed and asserted exactly as in steps 5 and 6.
+   Step 3 asserts what the tarball *contains*; only this asserts that the
    tarball still builds. They are different failures: a sdist can ship every declared tree
    and still be unbuildable (a ``[build-system]`` requirement that no longer resolves, a
    ``[tool.flit]`` key the backend rejects, a module the ``include`` list quietly stopped
    naming), and a user who installs from source -- as every ``pip install`` on a platform
    with no wheel does, and as conda-forge and the distributions do -- is the only person
    who would find out;
-8. build a tiny documentation project with ``-W`` and assert the rendered need, the link,
+9. build a tiny documentation project with ``-W`` and assert the rendered need, the link,
    the table, the flow image and the copied static assets.
+
+**Why two sibling modes.** A pull request that changes a sibling and uses the change in
+sphinx-needs in one go is coherent in the tree, and the siblings are released in bulk
+*before* the package that depends on them, not one per pull request. Resolving the
+siblings from PyPI on every pull request would therefore keep such a change red until a
+release it is not meant to trigger, so ``tree`` -- the default, and what CI requires --
+tests the package with the siblings this tree builds. ``--siblings published`` is the
+pre-release question instead: the wheel against the siblings as PyPI has them, exactly as
+this script ran before it had modes (no sibling is built, and nothing is asserted of
+them; their versions are printed). CI runs it as an informational job, and the release
+workflow's compat cell enforces the same thing fail-closed whatever that job said.
 
 It is parameterised on the package directory and the distribution name so that a sibling
 package in this workspace can reuse it unchanged::
 
     python scripts/smoke_needs.py .                       # a single-package repository
     python scripts/smoke_needs.py packages/sphinx-needs   # a workspace member
+    python scripts/smoke_needs.py packages/sphinx-needs --siblings published
 
 ``uv venv`` picks the interpreter from ``UV_PYTHON`` (or ``--python``), so CI runs this at
 the declared ``requires-python`` floor -- which is what makes that floor honest.
@@ -51,6 +76,8 @@ the declared ``requires-python`` floor -- which is what makes that floor honest.
 from __future__ import annotations
 
 import argparse
+import json
+import re
 import shutil
 import subprocess
 import sys
@@ -60,6 +87,8 @@ import time
 import tomllib
 import zipfile
 from pathlib import Path
+from typing import NamedTuple
+from urllib.parse import unquote
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -98,6 +127,33 @@ Smoke test
    :columns: id;title
 
 .. needflow::
+"""
+
+
+# The two sibling modes; see "Why two sibling modes" in the module docstring
+TREE, PUBLISHED = "tree", "published"
+
+# The name at the head of a PEP 508 requirement -- everything a sibling lookup needs, so
+# this script stays standard-library only (it runs before, and outside, any environment
+# built for it) rather than importing `packaging` for one regular expression
+REQUIREMENT_NAME = re.compile(r"\s*([A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?)")
+
+# Run INSIDE a throwaway environment, one sibling distribution per key of the JSON
+# argument: what is installed (version), where it was installed from (PEP 610's
+# `direct_url.json`, which uv writes for a wheel given by path and not for one resolved
+# from an index), and where each of its top-level modules imports from. JSON out, because
+# a temporary directory may contain a space
+SIBLING_PROBE = """\
+import importlib, importlib.metadata as md, json, sys
+out = {}
+for dist, modules in json.loads(sys.argv[1]).items():
+    found = md.distribution(dist)
+    out[dist] = {
+        "version": found.version,
+        "direct_url": found.read_text("direct_url.json"),
+        "files": {m: importlib.import_module(m).__file__ for m in modules},
+    }
+print(json.dumps(out))
 """
 
 
@@ -160,6 +216,148 @@ def build(dist_name: str) -> tuple[Path, Path]:
     if len(sdists) != 1:
         raise SmokeError(f"expected exactly one sdist in {out_dir}, found {sdists}")
     return wheels[0], sdists[0]
+
+
+def canonical(name: str) -> str:
+    """PEP 503 normalisation, so `ub_project` and `UB-Project` name one distribution."""
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def requirement_name(spec: str) -> str:
+    """The canonical distribution name a PEP 508 requirement string asks for."""
+    match = REQUIREMENT_NAME.match(spec)
+    if match is None:
+        raise SmokeError(f"cannot read a distribution name from requirement {spec!r}")
+    return canonical(match.group(1))
+
+
+class Member(NamedTuple):
+    """One workspace member, as far as the sibling lookup needs it."""
+
+    name: str  # as the manifest spells it, which is what `uv build --package` is given
+    directory: Path
+    # canonical name -> the requirement string, runtime `dependencies` only: the smoke
+    # test installs the wheel with no extras, so a sibling reached only through an extra
+    # (sphinx-ai-index, through sphinx-needs' `docs`) is not installed by it either
+    requires: dict[str, str]
+    virtual: bool
+
+
+def workspace_members(root: Path) -> dict[str, Member]:
+    """Every member the root's `[tool.uv.workspace] members` globs name, by canonical name."""
+    manifest = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    globs = (
+        manifest.get("tool", {}).get("uv", {}).get("workspace", {}).get("members", [])
+    )
+    found: dict[str, Member] = {}
+    for pattern in globs:
+        for path in sorted(root.glob(f"{pattern}/pyproject.toml")):
+            raw = tomllib.loads(path.read_text(encoding="utf-8"))
+            project = raw.get("project", {})
+            if "name" not in project:
+                continue
+            requires = {
+                requirement_name(spec): spec for spec in project.get("dependencies", [])
+            }
+            found[canonical(project["name"])] = Member(
+                name=project["name"],
+                directory=path.parent,
+                requires=requires,
+                virtual=raw.get("tool", {}).get("uv", {}).get("package") is False,
+            )
+    return found
+
+
+def runtime_siblings(
+    dist: str, members: dict[str, Member], *, refuse_markers: bool = True
+) -> list[str]:
+    """The members `dist` needs at runtime, transitively within the workspace, sorted.
+
+    Transitive because uv resolves the whole tree: a sibling of a sibling that came from
+    PyPI would put a published distribution under a tree one, which is neither of the two
+    questions this script answers. `dist` itself is never in the result, even through a
+    cycle; a `dist` that is not a member (a single-package repository) has no siblings.
+    """
+    start = canonical(dist)
+    if start not in members:
+        return []
+    seen: set[str] = set()
+    pending = [start]
+    while pending:
+        current = pending.pop()
+        for name, spec in members[current].requires.items():
+            if name not in members or name == start or name in seen:
+                continue
+            # a marker would make the wheel's own resolution conditional, and a wheel given
+            # by path is installed unconditionally: refuse rather than test a different
+            # environment from the one the published wheel would get
+            if refuse_markers and ";" in spec:
+                raise SmokeError(
+                    f"{members[current].name} requires the workspace member {spec!r} under "
+                    "an environment marker, which --siblings tree cannot honour"
+                )
+            seen.add(name)
+            pending.append(name)
+    return sorted(seen)
+
+
+def wheel_modules(wheel: Path) -> list[str]:
+    """The top-level importable names a wheel installs (packages and single modules)."""
+    tops: set[str] = set()
+    for entry in zipfile.ZipFile(wheel).namelist():
+        head, _, rest = entry.partition("/")
+        if head.endswith((".dist-info", ".data")):
+            continue
+        if rest:
+            tops.add(head)
+        elif head.endswith(".py"):
+            tops.add(head[: -len(".py")])
+    return sorted(tops)
+
+
+def check_siblings(
+    python: Path,
+    venv: Path,
+    siblings: dict[str, list[str]],
+    tree_wheels: dict[str, Path],
+    where: str,
+    checks: Checks,
+) -> None:
+    """Report, and in tree mode assert, where each sibling in one environment came from.
+
+    `siblings` maps each sibling distribution to its top-level modules; `tree_wheels` maps
+    it to the wheel this run built, and is empty in published mode -- where the versions
+    are printed and nothing is asserted, so that mode stays what this script did before it
+    had modes.
+    """
+    if not siblings:
+        return
+    proc = run(
+        [str(python), "-c", SIBLING_PROBE, json.dumps(siblings)], cwd=venv.parent
+    )
+    report = json.loads(proc.stdout.splitlines()[-1])
+    for dist in sorted(siblings):
+        found = report[dist]
+        direct = json.loads(found["direct_url"]) if found["direct_url"] else {}
+        source = unquote(direct.get("url", "")) or "the index"
+        print(f"sibling in the {where}: {dist} {found['version']} from {source}")
+        if dist not in tree_wheels:
+            continue
+        expected = unquote(tree_wheels[dist].resolve().as_uri())
+        checks.check(
+            source == expected,
+            f"{dist} in the {where} is the wheel this tree built, not the index's",
+            ""
+            if source == expected
+            else f"installed from {source}, expected {expected}",
+        )
+        for module, location in sorted(found["files"].items()):
+            checks.check(
+                location is not None
+                and Path(location).resolve().is_relative_to(venv.resolve()),
+                f"{module} imports from the {where}, not the checkout",
+                str(location),
+            )
 
 
 def check_sdist_contents(
@@ -299,6 +497,8 @@ def check_sdist_builds(
     expected: str,
     tmp: Path,
     python: str | None,
+    siblings: dict[str, list[str]],
+    tree_wheels: dict[str, Path],
     checks: Checks,
 ) -> float:
     """Build a wheel FROM the sdist, in an environment of its own, and import it.
@@ -313,6 +513,9 @@ def check_sdist_builds(
     A SECOND environment, not the wheel's: installing the sdist over an already-installed
     wheel of the same version is a no-op for uv, so the check would pass without ever
     running the build backend.
+
+    The tree's sibling wheels, if any, go into the same `uv pip install` call as the
+    tarball, and are checked here exactly as in the wheel's environment.
 
     Returns the seconds the build-and-install took, which is what this step costs the smoke
     run; the caller prints it.
@@ -333,6 +536,7 @@ def check_sdist_builds(
                 str(interpreter),
                 "--no-sources",
                 str(sdist),
+                *(str(wheel) for wheel in tree_wheels.values()),
             ],
             cwd=tmp,
         )
@@ -361,6 +565,9 @@ def check_sdist_builds(
         Path(location).resolve().is_relative_to(venv.resolve()),
         "the sdist-built import comes from ITS OWN environment, not the checkout",
         location,
+    )
+    check_siblings(
+        interpreter, venv, siblings, tree_wheels, "sdist's environment", checks
     )
     return elapsed
 
@@ -419,6 +626,14 @@ def main() -> int:
         help="directories the sdist must NOT ship (default: tests performance); pass none to skip",
     )
     parser.add_argument(
+        "--siblings",
+        choices=[TREE, PUBLISHED],
+        default=TREE,
+        help="where the workspace members the package depends on come from: wheels built "
+        "from this tree (default; what CI requires), or the index as published (the "
+        "pre-release check)",
+    )
+    parser.add_argument(
         "--python",
         default=None,
         help="interpreter for the throwaway environment (default: uv's)",
@@ -437,8 +652,32 @@ def main() -> int:
 
     started = time.monotonic()
     checks = Checks()
+    members = workspace_members(REPO_ROOT)
     wheel, sdist = build(args.dist_name)
     print(f"built {wheel.name} and {sdist.name}")
+    # canonical name -> the wheel built from the tree, filled in tree mode only; the keys
+    # of `siblings` are what both environments are probed for, in either mode
+    tree_wheels: dict[str, Path] = {}
+    siblings: dict[str, list[str]] = {}
+    tree = args.siblings == TREE
+    for name in runtime_siblings(args.dist_name, members, refuse_markers=tree):
+        member = members[name]
+        if tree:
+            if member.virtual:
+                raise SmokeError(
+                    f"{args.dist_name} depends on {member.name}, a virtual member that "
+                    "`uv build --package` refuses to build"
+                )
+            tree_wheels[name], _ = build(member.name)
+            siblings[name] = wheel_modules(tree_wheels[name])
+            print(f"built {tree_wheels[name].name} from the tree")
+        else:
+            # versions only: published mode imports and asserts nothing of a sibling
+            siblings[name] = []
+    print(
+        f"siblings ({args.siblings}): "
+        + (", ".join(members[name].name for name in siblings) or "none")
+    )
     check_wheel_contents(wheel, module, package_dir, checks)
     check_sdist_contents(sdist, args.sdist_dirs, args.sdist_absent_dirs, checks)
 
@@ -472,6 +711,9 @@ def main() -> int:
                 str(python),
                 "--no-sources",
                 str(wheel),
+                # the tree's siblings, in the SAME call: uv then takes these distributions
+                # from the given wheels and everything else from the index
+                *(str(sibling) for sibling in tree_wheels.values()),
             ],
             cwd=tmp,
         )
@@ -490,13 +732,23 @@ def main() -> int:
             "the import comes from the throwaway environment, not the checkout",
             location,
         )
+        check_siblings(
+            python, venv, siblings, tree_wheels, "wheel's environment", checks
+        )
         interpreter = run(
             [str(python), "-c", "import sys; print(sys.version.split()[0])"], cwd=tmp
         )
         print(f"interpreter: {interpreter.stdout.strip()}")
 
         seconds = check_sdist_builds(
-            sdist, module, manifest_version(package_dir), tmp, args.python, checks
+            sdist,
+            module,
+            manifest_version(package_dir),
+            tmp,
+            args.python,
+            siblings,
+            tree_wheels,
+            checks,
         )
         print(f"built and installed {sdist.name} from source in {seconds:.1f}s")
 
