@@ -56,3 +56,10 @@ Domain signatures
 
    .. spec:: In an object whose name is empty
       :id: SIG_EMPTY
+
+.. py:class:: Outer
+
+   .. nameless:: anything
+
+      .. spec:: In an object whose name is empty, inside a Python class
+         :id: SIG_EMPTY_IN_PY

@@ -31,6 +31,7 @@ def test_signature_of_domain_objects(test_app: SphinxTestApp):
         "SIG_CPP_TWO": "first",
         "SIG_CPP_IN_PY": "inner",
         "SIG_EMPTY": None,
+        "SIG_EMPTY_IN_PY": "Outer",
         "SIG_JS": "go",
         "SIG_PY": "meth",
         "SIG_RST": ":opt:",
