@@ -283,23 +283,29 @@ _LIST_MARKERS: Final = re.compile(r"((?:[-*+]|#\.|\d+[.)]|\(\d+\))\s+)+")
 a list table's ``* - .. req::``)."""
 
 
-def _normalised(line: str) -> str:
-    """A file line as the parser hands its text on: stripped, and without a MyST block
-    quote's leading ``>`` or a grid-table cell's ``|`` borders, where the line has them."""
+def _normalised(line: str) -> set[str]:
+    """A file line as the parser may hand its text on, each a whole line: stripped; then
+    without a MyST block quote's leading ``>``; then without a grid-table cell's ``|``
+    borders, where the line has them (a line block's own ``|`` is text, so the line
+    without the stripping is kept too)."""
     text = line.strip()
+    forms = {text}
     while text.startswith(">"):
         text = text[1:].strip()
+    forms.add(text)
     if text.startswith("|"):
         text = text[1:].strip()
         if text.endswith("|"):
             text = text[:-1].strip()
-    return text
+        forms.add(text)
+    return forms
 
 
 def block_check(block_text: str) -> LineCheck:
     """The check of a docutils directive: each non-blank line of its block, stripped,
-    EQUALS the file's line it is numbered at, normalised (:func:`_normalised`); its first
-    line may also follow the bullets or enumerators of the list item it opens.
+    EQUALS the file's line it is numbered at in one of its normalised forms
+    (:func:`_normalised`); its first line may also follow the bullets or enumerators of
+    the list item it opens.
 
     Whole lines, never a part of one: a line that only contains the text (``:id: A``
     in ``:id: AB``) does not hold it.
@@ -312,12 +318,14 @@ def block_check(block_text: str) -> LineCheck:
         for index, text in enumerate(block):
             if not text:
                 continue
-            line = _normalised(lines[start - 1 + index])
-            if line != text and not (
-                index == 0
-                and _LIST_MARKERS.sub("", line, count=1) == text
-                and _LIST_MARKERS.match(line)
-            ):
+            forms = _normalised(lines[start - 1 + index])
+            if index == 0:
+                forms |= {
+                    _LIST_MARKERS.sub("", form, count=1)
+                    for form in forms
+                    if _LIST_MARKERS.match(form)
+                }
+            if text not in forms:
                 return False
         return True
 
@@ -326,7 +334,8 @@ def block_check(block_text: str) -> LineCheck:
 
 def fence_check(name: str, argument: str) -> LineCheck:
     """The check of a myst-parser directive (myst-parser hands a directive its content
-    only, not its fence): the start line, normalised (:func:`_normalised`), opens a
+    only, not its fence): the start line, in one of its normalised forms
+    (:func:`_normalised`), opens a
     fence of the directive -- backticks, tildes or colons, then ``{name}`` -- followed
     by exactly its argument (the title, as the directive received it), whitespace
     collapsed.
@@ -340,22 +349,26 @@ def fence_check(name: str, argument: str) -> LineCheck:
     def check(lines: Sequence[str], start: int, end: int | None) -> bool:
         if start > len(lines):
             return False
-        match = pattern.fullmatch(_normalised(lines[start - 1]))
-        return match is not None and " ".join(match.group(2).split()) == expected
+        return any(
+            (match := pattern.fullmatch(form)) is not None
+            and " ".join(match.group(2).split()) == expected
+            for form in _normalised(lines[start - 1])
+        )
 
     return check
 
 
 def item_check(first: str, last: str) -> LineCheck:
     """The check of a ``list2need`` item: its first and its last line, stripped, EQUAL
-    the file's lines they are numbered at, normalised (:func:`_normalised`)."""
+    the file's lines they are numbered at in one of their normalised forms
+    (:func:`_normalised`)."""
     first, last = first.strip(), last.strip()
 
     def check(lines: Sequence[str], start: int, end: int | None) -> bool:
-        if start > len(lines) or _normalised(lines[start - 1]) != first:
+        if start > len(lines) or first not in _normalised(lines[start - 1]):
             return False
         return end is None or (
-            end <= len(lines) and _normalised(lines[end - 1]) == last
+            end <= len(lines) and last in _normalised(lines[end - 1])
         )
 
     return check
