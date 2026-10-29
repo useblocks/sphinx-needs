@@ -128,9 +128,12 @@ Data
 
    **Provisional**: the source of every need sphinx-needs creates also has ``hops``, where the need's text came from,
    innermost first. The first hop is the file the need is written in (an included file's own, in an include; before
-   it, the imported file or the service that made the need), with its line range only where the file, read from disk,
-   holds the need's text there; the last hop with a ``document`` is the page the need is placed on, and carries its sections and the
-   domain objects it is written in, outermost first. Every path is relative to the source directory. The shape may
+   it, the imported file or the service that made the need); the last hop with a ``document`` is the page the need is
+   placed on, and carries its sections and the domain objects it is written in, outermost first. A hop has a line
+   range only where the file, read from disk, holds the need's text there: in reStructuredText every line of the
+   directive equals the file's line (whole lines, after a block quote's or a table cell's border); in MyST the line
+   opens the directive's fence with its name and title, so a need written at once inside an identical twin (same
+   name, same title) can take its twin's line. Elsewhere the hop has no line. Every path is relative to the source directory. The shape may
    change in a minor release, without a deprecation, until it reaches ``needs.json``; ``NeedItemSourceProtocol`` does
    not include it, so read it with ``getattr(need.source, "hops", ())``. Nothing a filter, a table or ``needs.json``
    shows depends on it.
