@@ -131,9 +131,12 @@ Data
    it, the imported file or the service that made the need); the last hop with a ``document`` is the page the need is
    placed on, and carries its sections and the domain objects it is written in, outermost first. A hop has a line
    range only where the file, read from disk, holds the need's text there: in reStructuredText every line of the
-   directive equals the file's line (whole lines, after a block quote's or a table cell's border); in MyST the line
-   opens the directive's fence with its name and title, so a need written at once inside an identical twin (same
-   name, same title) can take its twin's line. Elsewhere the hop has no line. Every path is relative to the source directory. The shape may
+   directive equals the file's line (whole lines, after a block quote's or a table cell's border, and the bullets of
+   the list item the directive opens); in MyST the line opens the directive's fence with its name and title.
+   Elsewhere the hop has no line. A recorded line can still be wrong only where the file holds an identical copy of
+   the need's text at the line the parser claims: through an included slice (``:start-after:``, ``:start-line:``)
+   after an example of the directive, or a MyST need nested at once inside an identical twin (same name, same
+   title). Every path is relative to the source directory. The shape may
    change in a minor release, without a deprecation, until it reaches ``needs.json``; ``NeedItemSourceProtocol`` does
    not include it, so read it with ``getattr(need.source, "hops", ())``. Nothing a filter, a table or ``needs.json``
    shows depends on it.

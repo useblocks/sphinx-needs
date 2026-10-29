@@ -17,7 +17,8 @@ Improvements
   imported file or a service), then the page the need is placed on, with its sections and the domain objects it is
   written in. A hop records a line range only where the file, read from disk, holds the need's text there: under
   reStructuredText every line of the directive equals the file's line (whole lines), under MyST the line opens the
-  directive's fence with its name and title; elsewhere it records no line. It is provisional: the
+  directive's fence with its name and title; elsewhere it records no line (it can still be wrong only where the
+  file holds an identical copy of the need's text at the line the parser claims). It is provisional: the
   shape may change in a minor release until it reaches ``needs.json``. Nothing a filter, a table or ``needs.json``
   shows changes; the first build after upgrading reads every document again. The dataclass fields of the concrete
   ``NeedItemSource*`` classes changed: construct them with their keywords (``dataclasses.replace`` and ``asdict`` on
