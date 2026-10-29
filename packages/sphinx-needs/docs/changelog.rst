@@ -11,7 +11,7 @@ Improvements
 ............
 
 - ✨ Each need now records where its text came from, as a list of hops on ``need.source`` (provisional; see
-  :ref:`api`)
+  :ref:`api`, :pr:`2399`)
 
   ``need.source.hops`` names the file the need is written in (an included file's own, in an include; before it, an
   imported file or a service), then the page the need is placed on, with its sections and the domain objects it is
