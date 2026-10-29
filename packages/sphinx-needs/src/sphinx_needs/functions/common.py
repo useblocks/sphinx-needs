@@ -955,12 +955,10 @@ def execute_rule(
             include_self=rule.include_self,
             reads=reads,
         )
+        # a ``where`` is tested on each match, before a copy's ``select``
+        matched = [m for m in matched if _passes(m, rule.where, config, reads)]
         if rule.kind == "links":
-            return [
-                NeedLink(id=match["id"])
-                for match in matched
-                if _passes(match, rule.where, config, reads)
-            ]
+            return [NeedLink(id=match["id"]) for match in matched]
         return _rule_copy_over(need, matched, rule, field_schema, reads)
     if rule.kind == "links":
         return _rule_links(need, needs, rule, config, cache)
@@ -1016,6 +1014,10 @@ def execute_rule(
                 return len(candidates)
             return sum(1 for c in candidates if _read(c, rule.field, reads) is not None)
         case "any" | "all":
+            if not candidates and rule.empty is not None:
+                # ``empty`` names the value over no candidate; unset, it is the
+                # kind's own: ``any`` false, ``all`` true, as below
+                return rule.empty
             if rule.test is not None:
                 hits = [_passes(c, rule.test, config, reads) for c in candidates]
             else:

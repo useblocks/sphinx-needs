@@ -766,7 +766,8 @@ def test_the_docker_workflow_is_rewritten_only_for_sphinx_needs(
     out = capsys.readouterr().out
     assert "NEEDS_VERSION fallback `sphinx-needs-v8.6.0`" in out
     # and the smoke test is in the hand steps for this member, as AGENTS.md says
-    assert "uv run poe smoke-needs" in out
+    assert "uv run poe smoke-needs\n" in out
+    assert "uv run poe smoke-needs-published\n" in out
 
 
 def snapshot(root: Path) -> dict[Path, bytes]:

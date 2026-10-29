@@ -522,6 +522,15 @@ def _hold_placeholder(need: NeedItem, option_name: str, schema: FieldsSchema) ->
     need[option_name] = placeholder(need, option_name, schema)
 
 
+#: What computes the fields a needextend filter names, keyed by (a declared rule
+#: computes one of them on some need, a call or variant does).
+_COMPUTED_BY = {
+    (True, False): "a derive rule",
+    (True, True): "a derive rule, a dynamic function or a variant",
+    (False, True): "a dynamic function or variant",
+}
+
+
 def _report_filters_on_computed_fields(
     all_needs: NeedsMutable,
     targets: Sequence[tuple[NeedsExtendType, Sequence[str]]],
@@ -547,15 +556,19 @@ def _report_filters_on_computed_fields(
         for field in (*schema.iter_extra_fields(), *schema.iter_link_fields())
         if field.derived
     ]
-    computed: dict[str, dict[str, None]] = {}
+    # each field computed on some need, with the needs computing it: by a declared
+    # rule (True) or by a call or variant (False)
+    computed: dict[str, dict[str, bool]] = {}
     for need in all_needs.values():
         for field_name in need._dynamic_fields:
-            computed.setdefault(field_name, {})[need.id] = None
+            computed.setdefault(field_name, {}).setdefault(need.id, False)
         if derived and not (need["is_import"] or need["is_external"]):
             for field in derived:
                 # a need of a type without a rule holds a value that is final
                 if isinstance(field.rule_for(need["type"]), DeriveRule):
-                    computed.setdefault(field.name, {})[need.id] = None
+                    # a rule wins over a call on its (closed) field; defensive, as
+                    # no build has been found where the order is observable
+                    computed.setdefault(field.name, {})[need.id] = True
     if not computed:
         return
     not_fields = frozenset(needs_config.filter_data)
@@ -569,13 +582,13 @@ def _report_filters_on_computed_fields(
         )
         if not read:
             continue
-        ids = {
-            need_id
+        by_need = [
+            computed.get("parent_needs" if name == "parent_need" else name, {})
             for name in read
-            for need_id in computed.get(
-                "parent_needs" if name == "parent_need" else name, {}
-            )
-        }
+        ]
+        ids = {need_id for needs in by_need for need_id in needs}
+        by_rule = any(rule for needs in by_need for rule in needs.values())
+        by_call = any(not rule for needs in by_need for rule in needs.values())
         quoted = [f"'{name}'" for name in read]
         named = (
             quoted[0]
@@ -584,8 +597,8 @@ def _report_filters_on_computed_fields(
         )
         log_warning(
             logger,
-            f"needextend filter {needextend['filter']!r} names {named}, which a "
-            "dynamic function or variant computes on "
+            f"needextend filter {needextend['filter']!r} names {named}, which "
+            f"{_COMPUTED_BY[by_rule, by_call]} computes on "
             f"{counted_ids(ids, ' need' if len(ids) == 1 else ' needs')}: "
             "the filter sees the value from before it is computed",
             "derive_scope",

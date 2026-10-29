@@ -478,7 +478,7 @@ CONFLICTS = [
         [
             "type_conflict needs_types['spec'].fields['dy'] sets 'default', but 'dy' "
             "is derived (by need type): a need type declares only its description, "
-            "schema and nullable; the entry is ignored"
+            "schema, nullable and severity; the entry is ignored"
         ],
         fields={"dy": DERIVED},
     ),
@@ -488,7 +488,7 @@ CONFLICTS = [
         [
             "type_conflict needs_types['spec'].fields['dy'] sets 'default' and "
             "'predicates', but 'dy' is derived (by need type): a need type declares "
-            "only its description, schema and nullable; the entry is ignored"
+            "only its description, schema, nullable and severity; the entry is ignored"
         ],
         fields={"dy": DERIVED},
     ),
@@ -507,8 +507,8 @@ CONFLICTS = [
         {"links": {"dl": {"default": ["R_001"]}}},
         [
             "type_conflict needs_types['spec'].links['dl'] sets 'default', but 'dl' "
-            "is derived (by need type): a need type declares only its description "
-            "and schema; the entry is ignored"
+            "is derived (by need type): a need type declares only its description, "
+            "schema and severity; the entry is ignored"
         ],
         links={
             "dl": {
