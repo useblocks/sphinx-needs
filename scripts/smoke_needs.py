@@ -332,9 +332,8 @@ class Siblings(NamedTuple):
     package: str
     workspace: set[str]  # the canonical name of every workspace member
     tree: bool  # --siblings tree
-    tree_wheels: dict[
-        str, Path
-    ]  # canonical name -> the wheel built from it (tree mode)
+    # canonical name -> the wheel built from it (tree mode)
+    tree_wheels: dict[str, Path]
     modules: list[str]  # the top-level modules of those wheels
 
 
@@ -347,8 +346,9 @@ def check_siblings(
     ones `runtime_siblings` derived. In tree mode each must be the wheel this run built for
     it (`plan.tree_wheels`), so a member the derivation did not reach (through an extra on a
     sibling requirement, say) is a failure naming it rather than a distribution quietly
-    taken from the index; and each of `plan.modules` must import from `venv`. In published mode each must have come from the index, so the
-    pre-release check cannot go green on a tree sibling either. An empty `plan.workspace`
+    taken from the index; and each of `plan.modules` must import from `venv`. In published
+    mode each must have come from the index, so the pre-release check cannot go green on a
+    tree sibling either. An empty `plan.workspace`
     (a single-package repository) has nothing to check.
     """
     if not plan.workspace:

@@ -12,13 +12,14 @@ name: Test a package
 # reads them.
 #
 # Only this one shape is shared. `tests-js`, `tests-no-mpl`, `bazel`, `smoke-needs` and
-# `smoke-needs-published` share the five-line prologue and nothing else, and `release.yaml`'s compat cell builds
-# its environment from a wheel rather than from the workspace, so none of them belongs
-# here: folding them in would need an input that switches the body, which is how a
-# reusable workflow turns into a scripting language. `test-extensions.yaml` is the one
-# exception and it is a SECOND unit rather than an input on this one, for the same
-# reason: it runs several suites in one job. What the two units genuinely share -- everything
-# from the renderer installs to the sphinx-series fence -- is
+# `smoke-needs-published` share the five-line prologue and nothing else, and
+# `release.yaml`'s compat cell builds its environment from a wheel rather than from the
+# workspace, so none of them belongs here: folding them in would need an input that
+# switches the body, which is how a reusable workflow turns into a scripting language.
+# `test-extensions.yaml` is the one exception and it is a SECOND unit rather than an
+# input on this one, for the same reason: it runs several suites in one job. What the two
+# units genuinely share -- everything from the renderer installs to the sphinx-series
+# fence -- is
 # `.github/actions/prepare-cell`, so neither holds a copy of it.
 #
 # `./`-referenced workflows come from the caller's own commit, so a pull request that
