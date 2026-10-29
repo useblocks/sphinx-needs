@@ -68,7 +68,7 @@
     'REQ_HIDONLYX': list([
       "page [hidden] srcdir:hidden.rst:6-8 (.rst) :: section 'Hidden'",
     ]),
-    'REQ_HIT_AX': list([
+    'REQ_HIT_A': list([
       'file srcdir:frag/hit.rst (.rst)',
       "page [lines] srcdir:lines.rst (.rst) :: section 'Lines' > section 'Outside'",
     ]),

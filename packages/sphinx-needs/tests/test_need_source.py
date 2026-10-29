@@ -547,9 +547,9 @@ def test_the_hops_of_every_need(
     # ... and where the file holds the text, its line
     assert lines("REQ_GRIDX") == [("lines.rst", 13, 14)]
     assert lines("REQ_QUOTEX") == [("mdnest.md", 17, None)]
-    # whole lines: ``.. req:: Alpha`` and ``:id: REQ_HIT_AX`` are in the lines the parser
-    # claims (``.. req:: Alpha beta``, ``:id: REQ_HIT_ABX``), but are not those lines
-    assert lines("REQ_HIT_AX") == [
+    # whole lines: ``.. req:: Alpha`` and ``:id: REQ_HIT_A`` are in the lines the parser
+    # claims (``.. req:: Alpha beta``, ``:id: REQ_HIT_AB``), but are not those lines
+    assert lines("REQ_HIT_A") == [
         ("frag/hit.rst", None, None),
         ("lines.rst", None, None),
     ]
