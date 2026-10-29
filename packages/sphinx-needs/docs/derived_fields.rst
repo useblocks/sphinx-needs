@@ -223,7 +223,7 @@ The kinds at a glance
    * - ``copy``
      - a field
      - ``field``
-     - one of ``from``, ``over`` and ``join``; ``select`` (with ``over`` or ``join``);
+     - one of ``from``, ``over`` and ``join``; ``select`` and ``where`` (with ``over`` or ``join``);
        ``include_self`` (with ``join``)
      - the type of the field read; with ``select = "list"``, an array of it
    * - ``sum``
@@ -244,7 +244,7 @@ The kinds at a glance
    * - ``any``, ``all``
      - a field
      - ``over``, and exactly one of ``field`` (a boolean field) and ``test``
-     - ``where``
+     - ``where``, ``empty``
      - a ``boolean``
    * - ``collect``
      - a field
@@ -324,6 +324,77 @@ A test whose ``links`` names a specification with ``owner`` ``alice`` holds ``sp
 (``select = "first"``), the same and a ``needs.derive_unique`` warning when several set it (``"unique"``),
 or every value in the order written (in :ref:`need-id order <needs_id_order>` over a ``join``), a list's items each (``"list"``).
 
+With ``over`` or ``join``, a ``where`` narrows the targets first, as it narrows the candidates of the other kinds,
+such as the owner of the linked specifications that are not retired:
+
+.. code-block:: toml
+
+   [needs.fields.active_owner]
+   schema = { type = "string" }
+   derive = { kind = "copy", field = "owner", over = "links", where = "status != 'retired'" }
+
+``select`` reads only the targets ``where`` holds on, so ``"first"`` is the lowest-id target that passes it and sets the field.
+A target it cannot be evaluated on is dropped, without a warning.
+A ``copy`` of this need's own field, or of the need ``from`` names, reads one need and takes no ``where``
+(``needs.derive_invalid``).
+
+.. versionadded:: 9.2.0
+
+   ``where`` on ``copy``, with ``over`` or ``join``.
+
+.. _`needs_derive_rollup_rung_up`:
+
+Starting a list roll-up one rung up
++++++++++++++++++++++++++++++++++++
+
+To show on every need of a chain the requirements it traces to,
+start the list on the rung above the requirements with ``copy`` of ``id`` and ``select = "list"``,
+then ``collect`` it on each rung below:
+
+.. code-block:: toml
+
+   [needs.links.satisfies]
+   [needs.links.implements]
+   [needs.links.tests]
+
+   [needs.fields.req_ids]
+   schema = { type = "array", items = { type = "string" } }
+
+   [needs.types.spec.fields.req_ids]
+   derive = { kind = "copy", field = "id", over = "satisfies", select = "list" }
+
+   [needs.types.impl.fields.req_ids]
+   derive = { kind = "collect", field = "req_ids", over = "implements" }
+
+   [needs.types.test.fields.req_ids]
+   derive = { kind = "collect", field = "req_ids", over = "tests" }
+
+A specification satisfying ``REQ_1`` and ``REQ_2`` holds ``req_ids`` ``["REQ_1", "REQ_2"]``,
+and so do the implementations of it and their tests.
+The list starts on the specification, not on the requirement:
+there a plain ``copy`` of ``id`` reads one string, which an array field does not hold,
+and ``select`` takes a list only with ``over`` or ``join``; both are refused (``needs.derive_invalid``).
+
+The same chain read upwards gives each need the tests that reach it,
+the back links of each rung (``<link type>_back``) as ``over``:
+
+.. code-block:: toml
+
+   [needs.fields.reached_by]
+   schema = { type = "array", items = { type = "string" } }
+
+   [needs.types.impl.fields.reached_by]
+   derive = { kind = "collect", field = "id", over = "tests_back" }
+
+   [needs.types.spec.fields.reached_by]
+   derive = { kind = "collect", field = "reached_by", over = "implements_back" }
+
+   [needs.types.req.fields.reached_by]
+   derive = { kind = "collect", field = "reached_by", over = "satisfies_back" }
+
+With ``TEST_1`` and ``TEST_2`` testing the implementation,
+the implementation, the specification and both requirements hold ``reached_by`` ``["TEST_1", "TEST_2"]``.
+
 .. _`needs_derive_join`:
 
 Matching a field: the join role
@@ -385,17 +456,19 @@ and its ``owners`` are ``["alice", "bob"]``; a spec, which has no ``test_case``,
   This need is left out unless ``include_self = true``.
   Needs only: a need part is never a candidate (a need with parts matches as itself),
   and ``include_parts`` cannot be given beside ``join``.
-- **links and copy.** ``links`` links the candidates that pass its ``where``, if it has one:
-  it requires ``where`` or ``join``, and takes both.
-  ``copy`` reads the candidates as it reads the needs a link type names: ``select`` takes the lowest-id candidate
+- **links and copy.** A ``where`` beside ``join`` narrows the candidates: it is tested on each,
+  and a candidate it does not hold on, or cannot be evaluated on, is dropped without a warning.
+  ``links`` links the candidates left: it requires ``where`` or ``join``, and takes both.
+  ``copy`` reads the candidates left as it reads the needs a link type names: ``select`` takes the lowest-id candidate
   that sets the field (``"first"``, the default), the same and a ``needs.derive_unique`` warning when several set it
   (``"unique"``), or every value (``"list"``); with no candidate it finds no value (``[]`` with ``"list"``).
-  ``copy`` takes one of ``from``, ``over`` and ``join``, and no ``where``.
+  ``copy`` takes one of ``from``, ``over`` and ``join``.
 - **The fields.** ``field`` and ``equals`` each name a field holding a string (an ``enum`` included)
   or an array of strings: one of :ref:`needs_fields`, or a core field such as ``id``, ``title``, ``type``,
   ``status`` or ``tags``. A link type, a ``<link type>_back``, and a number or a boolean field
   are reported as ``needs.derive_invalid``.
-- **The order.** A join reads ``equals`` on this need, and ``field`` (and ``copy``'s ``field``) on every need.
+- **The order.** A join reads ``equals`` on this need, and ``field`` (with ``copy``'s ``field``, and the names of a ``where``)
+  on every need.
   A ``copy`` with ``join`` is computed after every need computing those fields in its step;
   a ``links`` with ``join`` is computed with the link fields, before any other field,
   so one whose fields a rule, a ``[[…]]`` or a variant computes is not run (``needs.derive_scope``, see :ref:`needs_derive_scope`).
@@ -505,6 +578,24 @@ Use them for a verdict over linked needs, such as whether every test of a requir
 A requirement whose tests all passed holds ``verified`` ``true``, one with a ``failed`` test ``false``,
 and one no test names ``true``, as ``all`` over no candidate is.
 
+On a requirement nothing tests, that ``true`` reads as "every test passed".
+``empty`` names the value over no candidate instead, such as ``empty = false``:
+
+.. code-block:: toml
+
+   [needs.fields.verified]
+   schema = { type = "boolean" }
+   derive = { kind = "all", test = "status == 'passed'", over = "tests_back", where = "type == 'test'", empty = false }
+
+Now the requirement no test names holds ``verified`` ``false``, and so does one that only a specification names,
+which ``where`` drops: no candidate is what is left once ``where`` has dropped the needs it does not hold on.
+Over candidates ``empty`` is not read, and a candidate that leaves a boolean ``field`` unset still reads as false.
+Without ``empty``, each kind keeps its own value over no candidate.
+
+.. versionadded:: 9.2.0
+
+   The ``empty`` role.
+
 .. _`needs_derive_kind_collect`:
 
 collect
@@ -522,6 +613,8 @@ Use it to show on one need what its linked needs hold, such as the tags of a req
 A need linking implementations tagged ``io, parser`` and ``io, cache`` holds ``linked_tags`` ``["io", "parser", "cache"]``.
 
 ``collect`` keeps each value once, in the order of the candidates, a list's items each.
+Collecting a derived list field over the next rung of a chain carries the list down it
+(:ref:`needs_derive_rollup_rung_up`).
 
 .. _`needs_derive_link_lists`:
 
@@ -826,15 +919,21 @@ The roles
        compared value by value (see :ref:`needs_derive_join`).
    * - ``where``
      - a filter string
-     - Narrows the candidates: each is kept when the :ref:`filter string <filter_string>` holds on it.
-       On ``links``, the filter every need is tested with.
+     - Narrows the candidates: each is kept when the :ref:`filter string <filter_string>` holds on it,
+       before ``copy``'s ``select`` reads them.
+       On ``links``, the filter every need is tested with; on ``copy``, only with ``over`` or ``join``.
    * - ``test``
      - a filter string
      - ``any`` / ``all``: what is asserted of each remaining candidate.
-       Over no candidates, ``all`` is ``true`` and ``any`` is ``false``.
+       Over no candidates, ``all`` is ``true`` and ``any`` is ``false`` (see ``empty``).
+   * - ``empty``
+     - ``true`` / ``false``
+     - ``any`` / ``all``: the value over no candidate, once ``where`` has dropped the candidates it does not hold on.
+       Unset, ``all`` is ``true`` and ``any`` is ``false``.
    * - ``select``
      - ``"first"`` (default), ``"unique"``, ``"list"``
-     - ``copy`` over several targets (with ``over`` or ``join``): the target with the lowest need id among those that set the field;
+     - ``copy`` over several targets (with ``over`` or ``join``): the target with the lowest need id among those that pass ``where``
+       and set the field;
        the same, reported when several set it; or every value, as a list (the field must be an array).
    * - ``transitive``
      - ``true`` / ``false`` (default)
@@ -872,7 +971,8 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
   a link to a :ref:`need part <need_part>` is its need, and a link to no need is skipped.
   ``over = "<t>_back"``: the needs that link to this need (or to one of its parts), in :ref:`need-id order <needs_id_order>`, each once,
   as a back link list is read.
-  ``where`` drops the candidates it does not hold on, then ``test`` is tested on the others.
+  ``where`` drops the candidates it does not hold on, then ``test`` is tested on the others
+  (and ``copy``'s ``select`` reads them).
   A ``where`` or ``test`` that cannot be evaluated on a candidate (a field the candidate lacks,
   as ``hours > 1`` on a need without ``hours``) does not hold on it, without a warning.
 - **Unset values.** A field is unset when it is null: an empty value (``""``, ``[]``, a link type with no links)
@@ -881,7 +981,8 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
   and ``count`` with a ``field`` (which so counts the candidates that set it);
   ``any`` and ``all`` read it as false.
   ``sum`` skips a value that is not a number.
-- **No candidate.** ``sum`` and ``count`` are ``0`` (``0.0`` in a ``number`` field), ``any`` ``false``, ``all`` ``true``,
+- **No candidate.** When none is left once ``where`` has dropped those it does not hold on,
+  ``sum`` and ``count`` are ``0`` (``0.0`` in a ``number`` field), ``any`` ``false`` and ``all`` ``true`` (or their ``empty``),
   ``collect`` and ``copy`` with ``select = "list"`` ``[]`` (a list, also when no candidate sets the field);
   ``min``, ``max`` and ``copy`` with ``select = "first"`` or ``"unique"`` find no value,
   over no candidate or over candidates none of which sets the field, and leave the field at its empty value.
@@ -951,6 +1052,7 @@ a ``fingerprint`` whose ``exclude`` is not a list of names, names one twice,
 or names what a fingerprint does not include (nothing a need has, or a name it never includes, such as ``docname``),
 a ``where`` or ``test`` that does not parse or reads more than the candidate,
 an empty ``where`` on ``links`` (it would link every need),
+a ``where`` or ``select`` on a ``copy`` with neither ``over`` nor ``join``,
 a ``join`` that is not a table of a ``field`` and an ``equals`` naming text fields, or is given beside ``include_parts``,
 a ``union`` naming what is not a link type (a field, a ``<link type>_back``, a name declared nowhere), ``parent_needs``,
 no link type, or one twice,

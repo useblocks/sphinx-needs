@@ -10,6 +10,32 @@ Unreleased
 Improvements
 ............
 
+- ✨ A derive rule of kind ``copy`` takes ``where`` beside ``over`` or ``join`` (:ref:`needs_derive_kind_copy`,
+  :issue:`2246`)
+
+  ``where`` narrows the targets before ``select`` reads them, as it does for the other kinds and for ``links`` with
+  ``join``: ``select = "first"`` takes the lowest-id target that passes ``where`` and sets the field, ``"unique"``
+  counts only those, and ``"list"`` keeps their values. A target the filter cannot be evaluated on is dropped, without
+  a warning. A ``copy`` of the need's own field, or of the need ``from`` names, still takes no ``where``
+  (``needs.derive_invalid``).
+
+- ✨ A derive rule of kind ``any`` or ``all`` takes ``empty``, the value it gives over no candidate
+  (:ref:`needs_derive_kind_any_all`, :issue:`2377`)
+
+  Over no candidate ``all`` is ``true``, which on a requirement nothing tests reads as "every test passed";
+  ``all_passed = { kind = "all", test = "status == 'passed'", over = "tests_back", empty = false }`` gives ``false``
+  there instead. No candidate is what is left once ``where`` has dropped the needs it does not hold on. Unset,
+  ``empty`` is the kind's own value (``all`` ``true``, ``any`` ``false``), so no existing rule changes; on any other
+  kind, or with a value that is not a boolean, the rule is refused (``needs.derive_invalid``).
+
+- 👌 The ``needs.derive_scope`` warning at a :ref:`needextend` whose filter names a computed field says what
+  computes it: "a derive rule" for a field a :ref:`derive <needs_derive>` rule computes, "a dynamic function or
+  variant" for a ``[[…]]``, ``<<…>>`` or ``<{…}>``, and "a derive rule, a dynamic function or a variant" when the
+  filter names fields of both, as ubCode words it (:issue:`2207`)
+
+  It said "a dynamic function or variant" for a derived field too, where the project wrote neither. The warning's
+  code and severity are unchanged.
+
 - 👌 ``-D needs_variant_data_file`` swaps the data file, never the table it is read from (:issue:`2378`)
 
   The rule is now ub-project's reading contract (section 6.8), shared by every tool that reads
@@ -23,6 +49,14 @@ Improvements
   ``data_file`` alone stays the location read, with the ``needs.variant_data_location`` warning for the
   ``[needs]`` keys beside it, where ``[needs]`` used to be read silently; and an empty or non-string
   ``data_file`` is refused. See :ref:`needs_from_toml_variants`.
+
+Documentation
+.............
+
+- 📚 :ref:`needs_derive` shows how to start a list roll-up one rung up (:ref:`needs_derive_rollup_rung_up`):
+  a ``copy`` of ``id`` over ``satisfies`` with ``select = "list"`` on the specification, then a ``collect`` on each
+  rung below, and why a plain ``copy`` of the requirement's own ``id`` cannot start it; and the same chain read upwards,
+  which gives each need the tests that reach it (:issue:`2379`)
 
 .. _`release:9.1.0`:
 
