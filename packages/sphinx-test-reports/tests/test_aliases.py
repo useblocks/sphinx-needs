@@ -338,6 +338,30 @@ def test_decorated():
             # raised before pytest installs any filter: printed all the same
             result.stderr.fnmatch_lines([self.FUTURE])
 
+    @pytest.mark.parametrize("ignore_first", [True, False], ids=["above", "below"])
+    def test_an_ignore_line_above_the_old_filter_line(
+        self, pytester, ignore_first: bool
+    ) -> None:
+        # The old filter line imports the alias while pytest parses the filters, one
+        # line after another: only an ignore line already parsed reaches its warning.
+        lines = [
+            f"    ignore:{self.OLD_PLUGIN} has moved:FutureWarning\n",
+            f"    ignore::{self.OLD_PLUGIN}.TestReportsConfigWarning\n",
+        ]
+        if not ignore_first:
+            lines.reverse()
+        result, _ = self._run(
+            pytester,
+            f"{CORE}.pytest_plugin",
+            family="xunit2",
+            ini="filterwarnings =\n    error\n" + "".join(lines),
+        )
+        if ignore_first:
+            result.assert_outcomes(passed=1, warnings=0)
+        else:
+            assert result.ret == pytest.ExitCode.USAGE_ERROR
+            result.stderr.fnmatch_lines([self.FUTURE])
+
     def test_both_names_fail_loudly_naming_both(self, pytester) -> None:
         result, report = self._run(pytester, f"{CORE}.pytest_plugin", self.OLD_PLUGIN)
         assert result.ret != 0

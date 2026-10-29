@@ -49,7 +49,9 @@ documentation toolchain (see :doc:`/install`). Enable it in the pytest configura
    pytest resolves it; change it together with the ``-p`` line, to the line given
    below. Where that import happens inside pytest's filter parsing -- with ``-p``
    already on the new name, or on any ``-p`` line from pytest 9.2 on -- the
-   ``FutureWarning`` stops pytest with a usage error under ``filterwarnings = error``.
+   ``FutureWarning`` stops pytest with a usage error under ``filterwarnings = error``,
+   unless a line above it ignores that warning
+   (``ignore:sphinxcontrib.test_reports.pytest_plugin has moved:FutureWarning``).
 
 then run with ``--junitxml=report.xml`` as usual. ``junit_family = xunit1`` is
 required: pytest writes ``<testcase>`` attributes only under that family (its

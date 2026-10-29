@@ -5,10 +5,12 @@ and the resulting JUnit XML inspected. The property model comes from the
 ``test_reports_properties`` ini option; S-CORE's is the profile most tests use.
 """
 
+import ast
 import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import pytest
 
@@ -210,9 +212,9 @@ def _run(pytester, source, *extra, family="xunit1", profile=SCORE_PROFILE, ini="
 
     *profile* is the ``test_reports_properties`` block of the ini file, *ini*
     any further ini lines. A subprocess, not in-process: this module has the
-    plugin imported already, and pytest warns about a ``-p`` module it cannot
-    assert-rewrite any more -- noise in the warning counts, an error under a
-    strict warning policy.
+    plugin imported already, and a run has to import it the way a user's does --
+    through ``-p``, or first through a ``filterwarnings`` line naming its class,
+    which is the order pytest 9.2 changed.
     """
     pytester.makeini("[pytest]\n" + profile + ini)
     pytester.makepyfile(source)
@@ -725,6 +727,16 @@ class TestStartUp:
         # The marker the two tests above depend on, held on every pytest: on the
         # ones before 9.2 those tests pass without it.
         assert "PYTEST_DONT_REWRITE" in (pytest_plugin.__doc__ or "")
+
+    def test_the_plugin_has_no_assert_to_rewrite(self):
+        # What makes the marker free: an assert in the plugin would lose pytest's
+        # rewritten message, silently.
+        source = Path(pytest_plugin.__file__).read_text(encoding="utf-8")
+        assert not [
+            node.lineno
+            for node in ast.walk(ast.parse(source))
+            if isinstance(node, ast.Assert)
+        ]
 
     def test_xunit2_gives_no_per_test_fixture_warnings(self, pytester):
         # pytest drops the attributes under xunit2 anyway and would warn per test
