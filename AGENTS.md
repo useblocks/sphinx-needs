@@ -254,10 +254,10 @@ checkout, which the Extensions cell's last step fails on.
 
 Rough runtimes on a CI-class machine, so you can decide what to background: `lint` 15 s ·
 `typecheck` seconds once `.venvs/typing` exists (the first run creates it) ·
-`smoke-needs-published` 6–7 s, `smoke-needs` a second or two more (it builds the siblings'
-wheels) · `test-needs-js` 3 s once the browser is installed (9 s cold) · `docs-needs` under
-2 min · `test-needs` 7–8 min serial · `test-mounts` 1–3 min · `docs-mounts` seconds ·
-`benchmark-needs` 4 min. `docs-needs` runs with `--keep-going`, so it prints every warning
+`smoke-needs` and `smoke-needs-published` 7–8 s each (the first builds the siblings'
+wheels, the second resolves them from the index) · `test-needs-js` 3 s once the browser is
+installed (9 s cold) · `docs-needs` under 2 min · `test-needs` 7–8 min serial ·
+`test-mounts` 1–3 min · `docs-mounts` seconds · `benchmark-needs` 4 min. `docs-needs` runs with `--keep-going`, so it prints every warning
 and then exits 1 — do not read a full log as success. `benchmark-needs` is currently red
 (12 failures in `tests/benchmarks/test_querying.py`: the test mocks `NeedsSphinxConfig`
 with a spec, which lacks the dynamically assigned `variant_data_proxy` — #1840, unrelated
