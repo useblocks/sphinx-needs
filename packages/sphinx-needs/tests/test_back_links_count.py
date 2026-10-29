@@ -176,12 +176,118 @@ def test_an_unknown_key_refuses_a_count(test_app: Any) -> None:
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        "WARNING: needs_types['req'].links['satisfies_back'] sets 'severty', but "
-        "'satisfies_back' is a link type's back links: a need type declares only "
-        "their description, schema (minItems, maxItems) and severity; the entry is "
-        "ignored [needs.type_conflict]",
         "WARNING: needs_types['req'].links['other_back'] has an unknown key 'bar'; "
         "known keys are allow_dead_links, color, copy, default, derive, description, "
         "incoming, outgoing, predicates, schema, severity, style, style_end, "
         "style_part, style_start, target_types; the key is ignored [needs.config]",
+        "WARNING: needs_types['req'].links['satisfies_back'] sets 'severty', but "
+        "'satisfies_back' is a link type's back links: a need type declares only "
+        "their description, schema (minItems, maxItems) and severity; the entry is "
+        "ignored [needs.type_conflict]",
+    ]
+
+
+NOT_A_COUNT = """\
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.req.links.zzz_back]
+color = 3
+copy = "yes"
+outgoing = 5
+allow_dead_links = "x"
+foo = 1
+"""
+
+NOT_A_COUNT_STYLE = """\
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.req.links.zzz_back]
+style = 3
+
+[needs.types.spec.links.zzz_back]
+style = "dashed"
+"""
+
+
+def _toml_project(toml: str, index: str, buildername: str) -> dict[str, Any]:
+    return {
+        "buildername": buildername,
+        "files": [
+            (
+                Path("conf.py"),
+                'extensions = ["sphinx_needs"]\nneeds_from_toml = "ubproject.toml"\n',
+            ),
+            (Path("ubproject.toml"), toml),
+            (Path("index.rst"), index),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _toml_project(
+            NOT_A_COUNT,
+            "Case\n====\n\n.. req:: A\n   :id: REQ_1\n\n"
+            ".. needtable::\n   :columns: id;zzz_back\n",
+            "html",
+        )
+    ],
+    indirect=True,
+)
+def test_a_back_links_name_of_no_link_type_is_checked_as_a_link_type(
+    test_app: Any,
+) -> None:
+    """``zzz_back``, where no link type ``zzz`` exists, is no count: it declares a link
+    type of ``req`` alone, so its keys are checked as a link type's entry's are -- the
+    keys not of their shape and the unknown ones reported and ignored -- before the
+    link type is declared from them: a ``color`` of ``3`` is not its color (the html
+    build drawing it does not fail)."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types['req'].links['zzz_back'] has an 'outgoing' that is not a "
+        "string (got int) and a 'copy' that is not a boolean (got str) and an "
+        "'allow_dead_links' that is not a boolean (got str) and a 'color' that is not "
+        "a string (got int); the keys are ignored [needs.config]",
+        "WARNING: needs_types['req'].links['zzz_back'] has an unknown key 'foo'; "
+        "known keys are allow_dead_links, color, copy, default, derive, description, "
+        "incoming, outgoing, predicates, schema, severity, style, style_end, "
+        "style_part, style_start, target_types; the key is ignored [needs.config]",
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _toml_project(
+            NOT_A_COUNT_STYLE, "Case\n====\n\n.. req:: A\n   :id: REQ_1\n", "needs"
+        )
+    ],
+    indirect=True,
+)
+def test_a_key_ignored_is_not_a_link_types_shape(test_app: Any) -> None:
+    """A ``style`` of ``3`` on the first declaration of ``zzz_back``, a link type of
+    need types alone, is reported and ignored, so the link type's style is the default
+    one, which a second declaration giving another is refused against."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types['req'].links['zzz_back'] has a 'style' that is not a "
+        "string (got int); the key is ignored [needs.config]",
+        "WARNING: needs_types['spec'].links['zzz_back'] cannot be declared with style "
+        "'dashed': its style is '' on every need type, as need type 'req' declares "
+        "it; the entry is ignored [needs.type_conflict]",
     ]

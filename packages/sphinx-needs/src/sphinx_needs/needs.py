@@ -6,6 +6,7 @@ import difflib
 import json
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Set as AbstractSet
 from copy import deepcopy
 from functools import partial
 from itertools import chain
@@ -2076,6 +2077,16 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         parent,
         {*NeedsCoreFields, *registered, *link_types, *back_links},
     )
+    #: a ``links`` entry named ``<x>_back`` that is no count of a link type's back links
+    #: declares a link type: its keys the normaliser left to be known are checked now,
+    #: as any links entry's are, before a link type is declared from them
+    entry_findings.extend(
+        _check_back_named_entries(
+            type_entries,
+            {*NeedsCoreFields, *registered, *type_local, *link_types},
+            link_types,
+        )
+    )
     #: the link types need types declare alone: declared below as a needs_links entry
     #: is (after the needs_links and needs_extra_links entries), with the display,
     #: copy and dead links their first root declaration gives; a name declared under
@@ -3692,10 +3703,16 @@ def _resolve_type_declarations(
                     if glob is None and name.endswith("_back")
                     else None
                 )
-                if table == "links" and name.endswith("_back"):
-                    keys = _deferred_keys(
-                        where, keys, count=owner is not None and owner.kind == "link"
-                    )
+                if (
+                    table == "links"
+                    and name.endswith("_back")
+                    and not (owner is not None and owner.kind == "link")
+                ):
+                    # not a count after all (its link type was refused): its keys
+                    # are a link type's entry's
+                    keys, stray = _deferred_keys(where, keys)
+                    for text in stray:
+                        log_warning(LOGGER, text, "config", None)
                 if (need_type, name) in refused[table]:
                     continue  # reported with the field's (or link type's) shape
                 if glob is None or glob.kind != kind:
@@ -3998,25 +4015,64 @@ def _resolve_id_patterns(
 
 
 def _deferred_keys(
-    where: str, keys: Mapping[str, Any], *, count: bool
-) -> Mapping[str, Any]:
-    """A ``links`` entry named ``<x>_back``, whose keys outside
-    :data:`NEED_TYPE_BACK_LINK_KEYS` :func:`_normalise_declarations` left unchecked: as
-    they are for the count of a link type's back links (``count``), which refuses the
-    entry for any of them; else reported and removed as on any other ``links`` entry,
-    one ``needs.config`` warning per reason.
+    where: str, keys: Mapping[str, Any]
+) -> tuple[Mapping[str, Any], list[str]]:
+    """A ``links`` entry named ``<x>_back`` that is no count of a link type's back
+    links, whose keys outside :data:`NEED_TYPE_BACK_LINK_KEYS`
+    :func:`_normalise_declarations` left unchecked: the entry without its keys that are
+    not known or not of their shape, and the ``needs.config`` findings of them, as on
+    any other ``links`` entry. (A count refuses the entry for any of them instead.)
     """
-    if count:
-        return keys
-    wrong, text = _not_of_their_shape(where, keys, _NEED_TYPE_LINK_ENTRY_KEYS)
-    if wrong:
-        log_warning(LOGGER, text, "config", None)
-    unknown, text = _unknown(where, keys, _NEED_TYPE_LINK_ENTRY_KEYS)
-    if unknown:
-        log_warning(LOGGER, text, "config", None)
+    wrong, wrong_text = _not_of_their_shape(where, keys, _NEED_TYPE_LINK_ENTRY_KEYS)
+    unknown, unknown_text = _unknown(where, keys, _NEED_TYPE_LINK_ENTRY_KEYS)
     if not wrong and not unknown:
-        return keys
-    return {k: v for k, v in keys.items() if k not in wrong and k not in unknown}
+        return keys, []
+    return (
+        {k: v for k, v in keys.items() if k not in wrong and k not in unknown},
+        [text for text in (wrong_text, unknown_text) if text],
+    )
+
+
+def _check_back_named_entries(
+    types: dict[str, dict[str, Any]],
+    known: AbstractSet[str],
+    link_types: AbstractSet[str],
+) -> list[str]:
+    """Check the keys of each need type's ``links`` entry named ``<x>_back`` that is no
+    count of a link type's back links, in place (:func:`_deferred_keys`), and return
+    the findings, in the order of the types.
+
+    Such an entry is a count where ``x`` is a link type, and ``<x>_back`` is not a name
+    declared otherwise: ``x`` one of ``link_types``, or one a ``links`` entry of a need
+    type declares alone, as :func:`_type_local_links` reads them. Any other is a link
+    type's declaration, which :func:`_type_local_links` reads the shape of (or a name
+    the resolver refuses).
+
+    :param types: Each need type's entry, of its shape; changed in place.
+    :param known: The names declared otherwise: the fields, those declared on need
+        types alone included, and the link types.
+    :param link_types: The link types declared otherwise.
+    """
+    entries = {
+        name
+        for entry in types.values()
+        for name in entry.get("links", {})
+        if isinstance(name, str) and name not in known
+    }
+    findings: list[str] = []
+    for need_type, entry in types.items():
+        links = entry.get("links", {})
+        for name, keys in links.items():
+            if not isinstance(name, str) or not name.endswith("_back"):
+                continue
+            stem = name.removesuffix("_back")
+            if name not in known and (stem in entries or stem in link_types):
+                continue  # a count: the resolver refuses it for such a key
+            links[name], stray = _deferred_keys(
+                f"needs_types[{need_type!r}].links[{name!r}]", keys
+            )
+            findings.extend(stray)
+    return findings
 
 
 def _declare_back_links(

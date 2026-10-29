@@ -96,7 +96,8 @@ Improvements
   derived stayed authorable and a link type meant to be restricted was not. Each is now one ``needs.config``
   warning, naming the entry, the key and the keys the entry has; the key is ignored and the entry kept. A
   ``severity`` in a ``needs_fields`` or ``needs_links`` entry is the one exception to the wording: its warning names
-  the need type's entry that takes it (see above). A ``name`` in a ``needs_fields`` entry, or an ``option`` in a ``needs_links`` entry, left from the list spelling,
+  the need type's entry that takes it (see above). A ``name`` in a ``needs_fields`` entry,
+  or an ``option`` in a ``needs_links`` entry, left from the list spelling,
   is accepted in silence where it repeats the entry's name, as a migrated entry does, and reported where it
   gives another (it was always ignored: the entry is named by its key). A
   ``needs_extra_options`` entry is read for ``name``, ``description``, ``schema``, ``derive`` and
