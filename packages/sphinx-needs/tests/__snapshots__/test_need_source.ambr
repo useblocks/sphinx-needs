@@ -8,6 +8,9 @@
       'file srcdir:imp.json (.json)',
       "page [imp] srcdir:imp.rst:7-7 (.rst) :: section 'Imported' > section 'Imp sub'",
     ]),
+    'REQ_APIX': list([
+      "page [p2] :: section 'Page 2' > section 'Sec'",
+    ]),
     'REQ_AX': list([
       'file srcdir:frag/a.rst:4-7 (.rst)',
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
@@ -25,15 +28,30 @@
     'REQ_CMX': list([
       "page [domains] srcdir:domains.rst:35-36 (.rst) :: section 'Domains' > c:struct 'cstruct' id='c.cstruct' signature='cstruct' > c:member 'field' id='c.cstruct.field' signature='field'",
     ]),
+    'REQ_COLON2X': list([
+      "page [mdnest] srcdir:mdnest.md (.md) :: section 'MD nest'",
+    ]),
+    'REQ_COLON3X': list([
+      "page [mdnest] srcdir:mdnest.md (.md) :: section 'MD nest'",
+    ]),
     'REQ_CPPMX': list([
       "page [domains] srcdir:domains.rst:44-45 (.rst) :: section 'Domains' > cpp:class 'Widget' id='_CPPv4N2ns6WidgetE' signature='Widget' > cpp:function 'run' id='_CPPv4N2ns6Widget3runEi' signature='run'",
     ]),
     'REQ_DOCSTRINGX': list([
-      "code srcdir:source_hops_module.py (.py) :: py:docstring 'source_hops_module.documented'",
+      "code srcdir:../outside/source_hops_module.py (.py) :: py:docstring 'source_hops_module.documented'",
       "page [autodoc_page] srcdir:autodoc_page.rst (.rst) :: section 'Autodoc' > py:function 'documented' id='source_hops_module.documented' signature='documented'",
     ]),
     'REQ_ENVX': list([
       "page [domains] srcdir:domains.rst:72-73 (.rst) :: section 'Domains' > std:envvar 'MYVAR' id='envvar-MYVAR' signature='MYVAR'",
+    ]),
+    'REQ_GRIDX': list([
+      "page [lines] srcdir:lines.rst:13-14 (.rst) :: section 'Lines' > section 'Outside'",
+    ]),
+    'REQ_HIDFUNCX': list([
+      "page [hidden] srcdir:hidden.rst:12-14 (.rst) :: section 'Hidden' > py:function 'hidden_f' id='hidden_f' signature='hidden_f'",
+    ]),
+    'REQ_HIDONLYX': list([
+      "page [hidden] srcdir:hidden.rst:6-8 (.rst) :: section 'Hidden'",
     ]),
     'REQ_HOST1X': list([
       "page [inc_host] srcdir:inc_host.rst:4-7 (.rst) :: section 'Host'",
@@ -78,6 +96,10 @@
     'REQ_NOIDXX': list([
       "page [domains] srcdir:domains.rst:96-97 (.rst) :: section 'Domains' > section 'Sub section' > py:function 'noindex_f' signature='noindex_f'",
     ]),
+    'REQ_OUTSIDEX': list([
+      'file srcdir:../outside/readme.rst:4-5 (.rst)',
+      "page [lines] srcdir:lines.rst (.rst) :: section 'Lines' > section 'Outside'",
+    ]),
     'REQ_P1X': list([
       "page [p1] srcdir:p1.rst:7-8 (.rst) :: section 'Page 1' > section 'Sec'",
     ]),
@@ -102,8 +124,22 @@
     'REQ_PYQX': list([
       "page [domains] srcdir:domains.rst:23-24 (.rst) :: section 'Domains' > py:function 'func2' id='pkg.mod.other.qual.func2' signature='func2'",
     ]),
+    'REQ_QUOTEX': list([
+      "page [mdnest] srcdir:mdnest.md:17-None (.md) :: section 'MD nest'",
+    ]),
     'REQ_RSTOX': list([
       "page [domains] srcdir:domains.rst:62-63 (.rst) :: section 'Domains' > rst:directive 'mydir' id='directive-mydir' signature='.. mydir::' > rst:directive:option 'opt' id='directive-option-mydir-opt' signature=':opt:'",
+    ]),
+    'REQ_SRCREADX': list([
+      "page [srcread] srcdir:srcread.rst (.rst) :: section 'Source read'",
+    ]),
+    'REQ_STARTAFTERX': list([
+      'file srcdir:frag/after.rst (.rst)',
+      "page [lines] srcdir:lines.rst (.rst) :: section 'Lines'",
+    ]),
+    'REQ_STARTLINEX': list([
+      'file srcdir:frag/from_line.rst (.rst)',
+      "page [lines] srcdir:lines.rst (.rst) :: section 'Lines'",
     ]),
     'REQ_STDOX': list([
       "page [domains] srcdir:domains.rst:67-68 (.rst) :: section 'Domains' > std:option '--verbose' id='cmdoption-verbose' signature='--verbose'",

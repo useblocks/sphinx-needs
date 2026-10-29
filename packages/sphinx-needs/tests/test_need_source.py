@@ -37,7 +37,7 @@ from sphinx_needs._need_source import (
     project_legacy,
 )
 from sphinx_needs.api import get_needs_view
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.need_item import (
     NeedItem,
     NeedItemSourceDirective,
@@ -49,8 +49,10 @@ from sphinx_needs.need_item import (
     NeedsContent,
 )
 from sphinx_needs_testkit import assert_no_warnings
+from tests.test_need_item_api import core
 
 PROJECT = Path(__file__).parent / "doc_test" / "doc_need_source_hops"
+"""The project; its source directory is ``docs``, and ``outside`` holds files outside it."""
 
 PAGE_A = NeedSourceHop(
     kind="page",
@@ -258,33 +260,12 @@ def test_a_missing_keyword_is_refused_without_hops():
 
 
 def _need(source: NeedItemSourceProtocol) -> NeedItem:
-    """A need of ``source``, its other data the same for every call."""
-    core: NeedsInfoType = {
-        "id": "A",
-        "type": "req",
-        "type_name": "Req",
-        "type_prefix": "R_",
-        "type_color": "#fff",
-        "type_style": "node",
-        "status": None,
-        "tags": [],
-        "constraints": (),
-        "title": "A",
-        "collapse": False,
-        "arch": {},
-        "style": None,
-        "layout": None,
-        "hide": False,
-        "external_css": "",
-        "has_dead_links": False,
-        "has_forbidden_dead_links": False,
-        "sections": (),
-        "signature": None,
-    }
+    """A need of ``source``, its core the need item API tests' (one core to update when
+    a core field is added)."""
     return NeedItem(
         source=source,
         content=NeedsContent(doctype=".rst", content=""),
-        core=core,
+        core=core(),
         extras={},
         links={},
     )
@@ -408,6 +389,23 @@ def test_the_source_of_a_need_is_assigned_in_two_places():
     assert sorted(assigning) == ["__init__", "_set_placement_semantic"]
 
 
+def test_an_api_need_is_placed_on_its_page():
+    """The API's default source (``add_need`` without one: sphinx-codelinks',
+    sphinx-test-reports') has one page hop, which the walk gives its semantic location."""
+    assert NeedItemSourceUnknown(docname="a").hops == (
+        NeedSourceHop(kind="page", document="a"),
+    )
+    assert NeedItemSourceUnknown().hops == ()
+
+
+def test_the_placement_is_the_last_hop_with_a_document():
+    """Placement is a role: of two hops with a document, the outer one (the last)."""
+    page_b = dataclasses.replace(PAGE_A, document="b")
+    source = NeedItemSourceUnknown(hops=(PAGE_A, page_b))
+    assert source.placement == page_b
+    assert source.dict_repr["docname"] == "b"
+
+
 # --- the project ---------------------------------------------------------------------
 
 
@@ -460,9 +458,9 @@ def _compact(hop: NeedSourceHop) -> str:
 
 
 def _copy(tmp_path: Path) -> Path:
-    srcdir = tmp_path / "src"
-    shutil.copytree(PROJECT, srcdir)
-    return srcdir
+    """A copy of the project; return its source directory."""
+    shutil.copytree(PROJECT, tmp_path / "project")
+    return tmp_path / "project" / "docs"
 
 
 def test_the_hops_of_every_need(
@@ -507,9 +505,45 @@ def test_the_hops_of_every_need(
     assert lines("REQ_MDL1X") == [("mdpage.md", 29, 29)]
     assert lines("REQ_MDINCX") == [("frag/c.md", None, None), ("mdpage.md", None, None)]
     assert lines("REQ_DOCSTRINGX") == [
-        ("source_hops_module.py", None, None),
+        ("../outside/source_hops_module.py", None, None),
         ("autodoc_page.rst", None, None),
     ]
+    # the text the parser numbered is not the file's: no line, never a guessed one
+    assert lines("REQ_STARTAFTERX") == [
+        ("frag/after.rst", None, None),
+        ("lines.rst", None, None),
+    ]
+    assert lines("REQ_STARTLINEX") == [
+        ("frag/from_line.rst", None, None),
+        ("lines.rst", None, None),
+    ]
+    assert lines("REQ_SRCREADX") == [("srcread.rst", None, None)]
+    assert lines("REQ_COLON2X") == [("mdnest.md", None, None)]
+    assert lines("REQ_COLON3X") == [("mdnest.md", None, None)]
+    # ... and where the file holds the text, its line
+    assert lines("REQ_GRIDX") == [("lines.rst", 13, 14)]
+    assert lines("REQ_QUOTEX") == [("mdnest.md", 17, None)]
+    # outside the source directory, a ``..`` path
+    assert lines("REQ_OUTSIDEX") == [
+        ("../outside/readme.rst", 4, 5),
+        ("lines.rst", None, None),
+    ]
+    assert lines("REQ_DOCSTRINGX")[0] == (
+        "../outside/source_hops_module.py",
+        None,
+        None,
+    )
+    # through the API: a page hop with no path, walked
+    assert hops["REQ_APIX"] == (
+        NeedSourceHop(
+            kind="page",
+            document="p2",
+            semantic=(
+                NeedSourceSemantic(kind="section", name="Page 2"),
+                NeedSourceSemantic(kind="section", name="Sec"),
+            ),
+        ),
+    )
     assert hops["EXT_X1"] == (
         NeedSourceHop(
             kind="external",
@@ -534,6 +568,13 @@ def test_the_hops_of_every_need(
         ("py:method", "meth"),
     ]
     assert semantic("REQ_AX") == [("section", "Host"), ("section", "Frag A section")]
+    # a hidden need first in its container: the legacy walk finds nothing (#2398), the
+    # semantic location holds where it is
+    assert semantic("REQ_HIDONLYX") == [("section", "Hidden")]
+    assert semantic("REQ_HIDFUNCX") == [
+        ("section", "Hidden"),
+        ("py:function", "hidden_f"),
+    ]
 
 
 @pytest.mark.skipif(not parallel_available, reason="Parallel execution not supported")

@@ -38,4 +38,7 @@ def test_the_version_is_the_highest_its_docstring_names():
     """The constant is the version of the docstring's last paragraph."""
     versions = _docstring_versions()
     assert versions == sorted(versions), "the paragraphs are in version order"
+    # two branches that each bump to the same number collapse into one version when
+    # both paragraphs are kept: the second to land renumbers
+    assert len(set(versions)) == len(versions), "each version has one paragraph"
     assert max(versions) == data.ENV_DATA_VERSION

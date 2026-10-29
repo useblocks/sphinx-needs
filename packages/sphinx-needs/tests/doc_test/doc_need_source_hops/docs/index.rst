@@ -11,3 +11,7 @@ Source hops
    p1
    p2
    p3
+   lines
+   srcread
+   mdnest
+   hidden

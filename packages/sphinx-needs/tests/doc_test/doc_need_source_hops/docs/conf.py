@@ -1,9 +1,12 @@
 import os
 import sys
 
-# the service and the autodoc'd module live beside this file; each build imports them
-# from its own copy of the project, so that the docstring's file is this project's
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# the local extension lives beside this file, the autodoc'd module outside the source
+# directory (its hop's path starts with ``..``); each build imports them from its own copy
+# of the project, so that the docstring's file is this project's
+_HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(os.path.dirname(_HERE), "outside"))
+sys.path.insert(0, _HERE)
 sys.modules.pop("source_hops_module", None)
 sys.modules.pop("source_hops_service", None)
 

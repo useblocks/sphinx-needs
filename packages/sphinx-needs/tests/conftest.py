@@ -19,7 +19,7 @@ import dataclasses
 import json
 import re
 from collections.abc import Callable, Iterator, Sequence
-from pathlib import Path
+from pathlib import Path, PurePath
 
 import pytest
 import yaml
@@ -38,6 +38,7 @@ from sphinx_needs._need_source import (
     project_legacy,
 )
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.directives.need import previous_sibling
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.nodes import Need
 from sphinx_needs_testkit import make_plantuml_inert
@@ -93,8 +94,10 @@ def test_app_events() -> Sequence[tuple[str, Callable[..., object], int]]:
 
 #: what the first line of a need's text is: a directive's marker, reStructuredText or
 #: MyST (backticks, tildes or colons), or the item of a ``list2need`` (whose ``*`` needs
-#: no space after it)
-_TEXT_START = re.compile(r"\s*(\.\. [\w:.-]+::|(`{3,}|~{3,}|:{3,})\s*\{[\w:.-]+\}|\*)")
+#: no space after it); after a MyST block quote's ``>`` or an rst grid cell's ``|``
+_TEXT_START = re.compile(
+    r"\s*([>|]\s*)*(\.\. [\w:.-]+::|(`{3,}|~{3,}|:{3,})\s*\{[\w:.-]+\}|\*)"
+)
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -108,7 +111,10 @@ def _need_source_fence() -> Iterator[None]:
     - a source of one of sphinx-needs' own classes carries hops;
     - the legacy ``sections`` and ``signature`` the walk writes equal the projection of
       the placement hop's semantic location, which the walk computes from the doctree on
-      its own (:func:`~sphinx_needs._need_source.placement_semantic`);
+      its own (:func:`~sphinx_needs._need_source.placement_semantic`) -- for every need
+      except a hidden need that is the first child of its container, where the legacy
+      walk finds nothing (:func:`_legacy_walk_starts_nowhere`, #2398);
+    - every hop with a path has the one root, ``srcdir``, and a relative path;
     - the walk changes the placement hop alone, and only its ``semantic`` (unset before);
     - lines point at text: every hop under the ``srcdir`` root names a file that exists,
       and where it has a ``start_line``, that line holds the directive's marker or the
@@ -122,6 +128,11 @@ def _need_source_fence() -> Iterator[None]:
             node["refid"]: needs[node["refid"]]
             for node in doctree.findall(Need)
             if node["refid"] in needs
+        }
+        # decided before the walk, which takes the hidden needs out of the doctree
+        legacy_sees_nothing = {
+            node["refid"]: _legacy_walk_starts_nowhere(node)
+            for node in doctree.findall(Need)
         }
         before = {
             need_id: need.source.hops
@@ -139,11 +150,30 @@ def _need_source_fence() -> Iterator[None]:
         original(app, doctree)
         files: dict[Path, list[str]] = {}
         for need_id, hops in before.items():
-            _check_need_source(app, walked[need_id], hops, files)
+            _check_need_source(
+                app,
+                walked[need_id],
+                hops,
+                files,
+                legacy_sees_nothing=legacy_sees_nothing[need_id],
+            )
 
     with pytest.MonkeyPatch.context() as patch:
         patch.setattr(sphinx_needs.needs, "analyse_need_locations", fenced)
         yield
+
+
+def _legacy_walk_starts_nowhere(node: Need) -> bool:
+    """Whether the legacy walk finds nothing above this need node, by its own rule.
+
+    The legacy walk (``get_sections_and_signature_and_needs``) starts at the node's
+    previous sibling, a visible need's own target. A hidden need has no target, so as
+    the first child of its container (an ``only``, a ``note``, a function's body) it has
+    no previous sibling, and its legacy ``sections`` and ``signature`` are empty while
+    the placement's semantic location holds the real ones: the one documented
+    divergence between the two, a legacy bug (sphinx-needs #2398).
+    """
+    return bool(node.get("hidden")) and previous_sibling(node) is None
 
 
 def _check_need_source(
@@ -151,6 +181,8 @@ def _check_need_source(
     need: NeedItem,
     before: tuple[NeedSourceHop, ...],
     files: dict[Path, list[str]],
+    *,
+    legacy_sees_nothing: bool = False,
 ) -> None:
     """The checks of :func:`_need_source_fence` on one walked need."""
     source = need.source
@@ -163,10 +195,13 @@ def _check_need_source(
         return
     semantic = after[index].semantic
     assert semantic is not None, where
-    assert project_legacy(semantic) == (
-        tuple(need["sections"]),
-        need["signature"],
-    ), where
+    if legacy_sees_nothing:
+        assert (tuple(need["sections"]), need["signature"]) == ((), None), where
+    else:
+        assert project_legacy(semantic) == (
+            tuple(need["sections"]),
+            need["signature"],
+        ), where
     assert len(after) == len(before), where
     for position, (old, new) in enumerate(zip(before, after, strict=True)):
         if position == index:
@@ -176,8 +211,11 @@ def _check_need_source(
             assert new == old, where
     for hop in after:
         physical = hop.physical
-        if physical is None or physical.root != SRCDIR_ROOT or physical.path is None:
+        if physical is None or physical.path is None:
             continue
+        # R6: one root, and a path relative to it
+        assert physical.root == SRCDIR_ROOT, where
+        assert not PurePath(physical.path).is_absolute(), where
         file = Path(app.srcdir, physical.path)
         assert file.is_file(), f"{where}: no file {file}"
         if physical.start_line is None:
