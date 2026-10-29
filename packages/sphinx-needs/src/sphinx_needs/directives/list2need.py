@@ -14,7 +14,7 @@ from docutils.statemachine import StringList
 from sphinx.errors import SphinxError, SphinxWarning
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs._need_source import NeedSourceHop, located_hops
+from sphinx_needs._need_source import NeedSourceHop, item_check, located_hops
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
@@ -443,7 +443,8 @@ class List2NeedDirective(SphinxDirective):
         """The hops of one item: its first line, and its last non-blank one.
 
         Under docutils the content is mapped to the file it is written in, an
-        included file's own lines too. Under myst-parser the lines are rebuilt from the
+        included file's own lines too; either way the lines are recorded only where the
+        file holds the item's first and last lines there (:func:`item_check`). Under myst-parser the lines are rebuilt from the
         position of the directive (:meth:`_source_info`), which is true on the page but
         not in an included file, so an item there takes the directive's file and no
         line. Content that was itself generated has no true line at all.
@@ -456,6 +457,7 @@ class List2NeedDirective(SphinxDirective):
             ),
             default=list_need["line"],
         )
+        check = item_check(self.content[list_need["line"]], self.content[end])
         if self._content_is_source_mapped():
             source, _ = self._source_info(list_need["line"])
             return located_hops(
@@ -464,11 +466,17 @@ class List2NeedDirective(SphinxDirective):
                 source,
                 self._source_line(list_need["line"]),
                 self._source_line(end),
+                check=check,
                 fragment_lines=True,
             )
         if isinstance(self.state, RSTState):
             return located_hops(
-                self.env, self.env.docname, None, None, fragment_lines=False
+                self.env,
+                self.env.docname,
+                None,
+                None,
+                check=check,
+                fragment_lines=False,
             )
         source, _ = self.get_source_info()
         return located_hops(
@@ -477,6 +485,7 @@ class List2NeedDirective(SphinxDirective):
             source,
             self._source_line(list_need["line"]),
             self._source_line(end),
+            check=check,
             fragment_lines=False,
         )
 

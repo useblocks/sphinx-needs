@@ -27,7 +27,7 @@ import copy
 import dataclasses
 import os
 import re
-from collections.abc import Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import PurePath
 from typing import TYPE_CHECKING, Final
@@ -220,6 +220,96 @@ def _suffix(path: str | os.PathLike[str]) -> str | None:
     return os.path.splitext(path)[1] or None
 
 
+LineCheck = Callable[[Sequence[str], int, int | None], bool]
+"""Whether a file's lines (``lines[0]`` is line 1) hold the text at ``start..end``."""
+
+_LINES_KEY: Final = "sphinx_needs_source_hop_lines"
+"""The key of the file lines read for the document being read, in ``env.temp_data``
+(which Sphinx clears after each document, so nothing outlives the read)."""
+
+
+def _file_lines(env: BuildEnvironment, path: str) -> list[str] | None:
+    """The lines of a file, read once per document (``None`` if it cannot be read)."""
+    cache: dict[str, list[str] | None] = env.temp_data.setdefault(_LINES_KEY, {})
+    path = os.path.abspath(path)
+    if path not in cache:
+        try:
+            with open(path, encoding=env.config.source_encoding) as stream:
+                cache[path] = stream.read().splitlines()
+        except (OSError, UnicodeDecodeError, LookupError):
+            cache[path] = None
+    return cache[path]
+
+
+def _checked_lines(
+    env: BuildEnvironment,
+    path: str,
+    start_line: int | None,
+    end_line: int | None,
+    check: LineCheck,
+) -> tuple[int | None, int | None]:
+    """``(start_line, end_line)`` if the file holds the text there, else ``(None, None)``.
+
+    The line a parser reports is the line of what it was handed, which is not the
+    file's wherever the text was changed on the way: an include's ``:start-after:`` or
+    ``:start-line:``, a ``source-read`` handler, myst-parser's nested colon fences. So a
+    line is recorded only where the file, read from disk, holds the text there.
+    """
+    if not start_line:
+        return None, None
+    lines = _file_lines(env, path)
+    if lines is None or not check(lines, start_line, end_line):
+        return None, None
+    return start_line, end_line
+
+
+def block_check(block_text: str) -> LineCheck:
+    """The check of a docutils directive: every non-blank line of its block, stripped,
+    is in the file's line it is numbered at (so an indentation, a bullet, a block
+    quote's ``>`` or a grid cell's ``|`` around it does not matter)."""
+    block = [line.strip() for line in block_text.rstrip().splitlines()]
+
+    def check(lines: Sequence[str], start: int, end: int | None) -> bool:
+        if start + len(block) - 1 > len(lines):
+            return False
+        return all(
+            text in lines[start - 1 + index].expandtabs(8)
+            for index, text in enumerate(block)
+            if text
+        )
+
+    return check
+
+
+def fence_check(name: str) -> LineCheck:
+    """The check of a myst-parser directive: its start line opens a fence of the
+    directive (backticks, tildes or colons, then ``{name}``), after any indentation and
+    block quote ``>`` (myst-parser hands a directive its content only, not the fence)."""
+    pattern = re.compile(rf"(`{{3,}}|~{{3,}}|:{{3,}})\s*\{{{re.escape(name)}\}}")
+
+    def check(lines: Sequence[str], start: int, end: int | None) -> bool:
+        return start <= len(lines) and bool(
+            pattern.match(lines[start - 1].lstrip(" \t>"))
+        )
+
+    return check
+
+
+def item_check(first: str, last: str) -> LineCheck:
+    """The check of a ``list2need`` item: its first and last lines, stripped, are in
+    the file's lines it is numbered at."""
+    first, last = first.strip(), last.strip()
+
+    def check(lines: Sequence[str], start: int, end: int | None) -> bool:
+        if start > len(lines) or first not in lines[start - 1].expandtabs(8):
+            return False
+        return end is None or (
+            end <= len(lines) and last in lines[end - 1].expandtabs(8)
+        )
+
+    return check
+
+
 def located_hops(
     env: BuildEnvironment,
     docname: str,
@@ -227,6 +317,7 @@ def located_hops(
     start_line: int | None,
     end_line: int | None = None,
     *,
+    check: LineCheck,
     fragment_lines: bool,
     first: NeedSourceHop | None = None,
 ) -> tuple[NeedSourceHop, ...]:
@@ -234,8 +325,10 @@ def located_hops(
 
     :param source: The file the text is written in, as ``get_source_info()`` gives it
         (relative to the working directory, for an included file), or ``None``.
-    :param start_line: Its 1-based line there, if it is a true line of that file.
-    :param end_line: The last line of the text, if it is a true line of that file.
+    :param start_line: Its 1-based line there, as the parser reports it.
+    :param end_line: The last line of the text, as the parser reports it.
+    :param check: Whether the file's lines hold the text at ``start_line..end_line``:
+        the lines are recorded only if they do (:func:`_checked_lines`).
     :param fragment_lines: Whether the lines are true in an included file too. They are
         under docutils; myst-parser reports an included file's lines one late, so a
         hop of an included file takes no line there.
@@ -275,9 +368,13 @@ def located_hops(
         )
         hops.append(page())
     elif os.path.abspath(source) == host:
-        hops.append(page(start_line, end_line))
+        hops.append(page(*_checked_lines(env, host, start_line, end_line, check)))
     elif os.path.isfile(source):
-        lines = (start_line, end_line) if fragment_lines else (None, None)
+        lines = (
+            _checked_lines(env, source, start_line, end_line, check)
+            if fragment_lines
+            else (None, None)
+        )
         hops.append(
             NeedSourceHop(
                 kind="file",
@@ -297,8 +394,11 @@ def directive_hops(
 ) -> tuple[NeedSourceHop, ...]:
     """The hops of the text of ``directive``, placed on the document being read.
 
-    The end line is the last non-blank line of the directive's block, under docutils;
-    myst-parser hands a directive only its content, so there it is ``None``.
+    Under docutils the end line is the last non-blank line of the directive's block,
+    and the lines are recorded where the file holds the block there
+    (:func:`block_check`). myst-parser hands a directive its content only, so there the
+    end line is ``None``, and the start line is recorded where the file opens the
+    directive's fence there (:func:`fence_check`).
     """
     source, start_line = directive.get_source_info()
     rst = isinstance(directive.state, RSTState)
@@ -312,6 +412,7 @@ def directive_hops(
         source,
         start_line,
         end_line,
+        check=block_check(directive.block_text) if rst else fence_check(directive.name),
         fragment_lines=rst,
         first=first,
     )
