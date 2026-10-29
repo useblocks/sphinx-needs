@@ -3,7 +3,8 @@ Directive presets
 
 A directive preset is a new directive name that is an existing directive with preset options,
 or project-wide option defaults for an existing directive.
-Declare one in ``ubproject.toml``, keyed by the name you will write in your documents:
+Declare one in ``ubproject.toml``, keyed by the name you will write in your documents
+(or in ``conf.py``, as ``ub_directive_presets``: :doc:`configuration`):
 
 .. code-block:: toml
 

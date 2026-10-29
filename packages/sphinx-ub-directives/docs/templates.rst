@@ -14,7 +14,8 @@ the engine ubCode renders the same templates with, configured identically on bot
 Data: contexts and ``var``
 --------------------------
 
-A context is named data, declared in ``ubproject.toml``,
+A context is named data, declared in ``ubproject.toml``
+(or in ``conf.py``, as ``ub_template_contexts``, with templates as ``ub_directive_templates``: :doc:`configuration`),
 either inline or as a JSON or TOML file under the source directory:
 
 .. code-block:: toml

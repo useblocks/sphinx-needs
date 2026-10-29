@@ -55,16 +55,19 @@ cases (corpus: `identity-note-rst`, `host-content-continues-in-the-last-section`
 
 ## 2. Reading the configuration
 
-1. **One file.** The tables are read from the project's `ubproject.toml` only: the file
+1. **One file.** The tables are read from the project's `ubproject.toml`: the file
    sphinx-needs reads (`needs_from_toml`) when it is set, else the one
-   `ub_project.find_project_config` finds from the Sphinx `confdir`. No `extend` chain is
+   `ub_project.find_project_config` finds from the Sphinx `confdir`. (A Sphinx build also
+   reads the same settings from `conf.py`, outside the parity promise: §2.5.) No `extend` chain is
    resolved: ub-project does not resolve one, and neither does sphinx-needs, so the whole
    Sphinx family reads one file today. ubCode resolves `extend` for itself; a project
    that relies on it for these tables builds differently with Sphinx.
    When the file has an `extend` key and any `[parse.directive_presets]`,
    `[parse.directive_templates]` or `[parse.template_contexts]` table, the Sphinx half
-   warns once (`ub_directives.extend_unsupported`). The corpora have no `extend` case.
-   Enforced by: test `test_config.py::test_an_extend_key_warns_once`.
+   warns once (`ub_directives.extend_unsupported`) — judged by the FILE's own tables, never
+   by tables `conf.py` adds. The corpora have no `extend` case.
+   Enforced by: test `test_config.py::test_an_extend_key_warns_once`,
+   `test_confpy.py::test_no_extend_warning_from_conf_py_tables`.
 2. **When.** The tables are read at `config-inited` into the confval
    `ub_directives_resolved` (registered `rebuild="env"`), so a change to them re-reads
    every document; presets are registered at `builder-inited`, after every extension's
@@ -99,6 +102,48 @@ cases (corpus: `identity-note-rst`, `host-content-continues-in-the-last-section`
    `v1-path-template-colon`, `v1-path-file-colon`, `v1-path-context-colon`, `v1-path-include-colon`,
    `v1-path-nul-in-a-template-path`, `v1-path-file-trailing-dotdot-to-a-dir`,
    `v1-path-template-trailing-dotdot-to-a-dir`, `v1-path-context-trailing-dotdot-to-a-dir`.
+
+5. **Sphinx only: `conf.py`.** This section is OUTSIDE the parity promise (§1): ubCode
+   reads `ubproject.toml` only, so a project that wants the guarantee keeps these settings
+   in the file. A Sphinx build also reads four confvals, each `rebuild="env"`, each exactly
+   the table or key of the same meaning, with the same entry shape
+   (`[parse.directive_presets.x]` is `ub_directive_presets = {"x": {...}}`):
+
+   | `ubproject.toml` | `conf.py` |
+   |---|---|
+   | `[parse.directive_presets.<name>]` | `ub_directive_presets` (dict) |
+   | `[parse.directive_templates.<name>]` | `ub_directive_templates` (dict) |
+   | `[parse.template_contexts.<name>]` | `ub_template_contexts` (dict) |
+   | `[parse] ub_template_enabled` | `ub_template_enabled` (bool) |
+
+   - **Precedence, per key.** A key the file's `[parse]` table SETS — an empty table
+     included — replaces the `conf.py` value of that key WHOLE: no entry merge (sphinx-needs'
+     per-key rule). A key the file does not set stays with `conf.py`, so a project may keep
+     presets in the file and contexts in `conf.py`. A confval given with `-D` keeps its
+     value. Setting a key in both is not reported.
+     Enforced by: test `test_confpy.py::test_a_toml_key_wins_whole_over_conf_py`,
+     `…::test_a_key_the_toml_does_not_set_stays_with_conf_py`,
+     `…::test_an_empty_toml_table_still_wins`, `…::test_a_dash_d_override_beats_the_toml`,
+     and the three `…_in_conf_py_alone` tests.
+   - **Values.** A `conf.py` value must be one TOML could have written: a dict with `str`
+     keys (its insertion order is the file order), a list or a tuple (read as a list), a
+     `str`, a `bool`, an `int` in the signed 64-bit range, a `float`, a `datetime.date`,
+     `time` or `datetime`. Anything else — `None`, a set, bytes, a path, a function, any
+     other object, a non-`str` key, an integer outside that range, a top-level value that
+     is not a dict, a `ub_template_enabled` that is not a bool — is a `ConfigError` naming
+     the confval and the key path (`ub_template_contexts['site']['data']['owner']`). The
+     converted value is then handled EXACTLY as the same TOML: every finding (a non-finite
+     float or a date in a context, a bad entry) is the same.
+     Enforced by: test `test_confpy.py::test_a_value_toml_could_not_have_written_is_refused`,
+     `…::test_a_tuple_is_a_list`, `…::test_the_i64_bounds_themselves_are_accepted`,
+     `…::test_a_conf_py_context_is_checked_as_the_toml_one`.
+   - **Locations.** A load-time finding is located at its table's source: the file, or
+     `conf.py` (the line that sets the confval). Template and context paths stay anchored at
+     the SOURCE ROOT (§2.4), whatever the source.
+     Enforced by: test `test_confpy.py::test_a_bad_preset_is_located_at_its_source`.
+   - **Rebuild.** A change to a confval re-reads every document.
+     Enforced by: test `test_confpy.py::test_the_confvals_re_read_every_document`,
+     `…::test_editing_a_confval_re_reads_the_page`.
 
 ## 3. Directive presets
 

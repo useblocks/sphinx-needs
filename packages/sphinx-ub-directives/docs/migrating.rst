@@ -9,7 +9,31 @@ and so that the same project renders the same in ubCode.
 It has its own name, so it coexists with sphinx-jinja2 in one project
 (sphinx-jinja and sphinx-jinja2 cannot be loaded together: both are ``jinja``).
 
-In short: rename the directive, move contexts to ``ubproject.toml`` (or a data file),
+In ``conf.py``, the smallest move is to keep your configuration there:
+
+.. code-block:: python
+
+   # was: extensions = ["sphinx_jinja2"]; jinja2_contexts = {"team": {"lead": "Ada"}}
+   extensions = ["sphinx_ub_directives"]
+   ub_template_enabled = True
+   ub_template_contexts = {"team": {"lead": "Ada"}}
+
+and rename ``.. jinja::`` to ``.. ub-template::``.
+Contexts must be data (what ``ubproject.toml`` could hold); a function or a Python object
+stops the build with an error naming it.
+
+**Moving to** ``ubproject.toml`` is what makes the same project render in ubCode,
+which reads only that file:
+
+.. code-block:: toml
+
+   [parse]
+   ub_template_enabled = true
+
+   [parse.template_contexts.team]
+   lead = "Ada"
+
+In short: rename the directive, move contexts to ``ub_template_contexts`` or ``ubproject.toml`` (or a data file),
 add ``/`` to sphinx-jinja ``:file:`` names, replace filters, tests and globals by data
 or by a declared template, and write ``is defined`` where a template relied on lenient undefined values.
 
@@ -21,8 +45,8 @@ or by a declared template, and write ``is defined`` where a template relied on l
      - sphinx-ub-directives
      - Why
    * - ``jinja2_contexts`` / ``jinja_contexts``
-     - ``[parse.template_contexts.<name>]``: an inline table, or ``file = …`` (JSON or TOML)
-     - Data only: a context cannot hold Python objects or functions.
+     - ``ub_template_contexts`` in ``conf.py``, or ``[parse.template_contexts.<name>]``: an inline table, or ``file = …`` (JSON or TOML)
+     - Data only: a context cannot hold Python objects or functions. The old names are not read.
    * - ``env`` in the context
      - Not available (``template_context_unavailable``)
      - The build environment is unbounded authority; a template must not read other documents.
@@ -45,10 +69,10 @@ or by a declared template, and write ``is defined`` where a template relied on l
      - Kept (``jinja2_debug`` is not)
      -
    * - ``jinja2_env_kwargs`` / ``jinja_env_kwargs``
-     - Not available
+     - Not available (not read)
      - One fixed language on both sides: strict undefined, no escaping, standard delimiters.
    * - ``jinja2_filters``, ``jinja2_tests``, ``jinja_filters``, ``jinja_tests``, ``jinja_globals``, ``jinja_policies``
-     - Not available; plain-data globals become a context
+     - Not available (not read); plain-data globals become a context
      - Filters, tests and globals are code; data has a home.
    * - Lenient undefined (sphinx-jinja)
      - Strict: ``{% if x.y %}`` on a missing ``y`` is an error
