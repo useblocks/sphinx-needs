@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793283625110,
+  "lastUpdate": 1793284114743,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26928,6 +26928,42 @@ window.BENCHMARK_DATA = {
             "value": 48.935399071999996,
             "unit": "s",
             "extra": "Commit: 6e07542f323fd0bb179e7c44eb12afa0f6dbb847\nBranch: master\nTime: 2026-10-29T15:18:50+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e57b23b8e2e494297bb4a1868762f07707b574c3",
+          "message": "👌 A variant data-file override swaps the file, never the table (ub-project contract §6.8) (#2383)\n\n## What\n\n`packages/ub-project` and `packages/sphinx-needs`.\n\nub-project's reading contract gains §6.8, \"Overrides\": a consumer's\ndata-file override\n(sphinx-needs: `-D needs_variant_data_file`; ubCode: a `-c` of\n`variants.data_file` or `needs.variant_data_file`)\nreplaces the data file of the location read — `[variants]` when it\ndeclares, else `[needs]`, else it is read as `[variants]` with no inline\ntable —\nwithout opening the file it replaces. That location's inline table still\napplies; the override never decides the location\nand is never reported as `variant_data_location`. An override may name\nno file (`ub_project.NO_DATA_FILE`; sphinx-needs' empty\n`-D needs_variant_data_file=`): the toml's file is replaced by none,\nunopened. A consumer with two override spellings given different values\nreports its own configuration error; ub-project receives at most one\noverride.\n\n`read_variants` takes it as `data_file_override: Path | NoDataFile |\nNone = None`. sphinx-needs stops removing overridden keys\nfrom the toml itself and passes the `-D` value, anchored at the confdir,\nthrough.\n\n## Why\n\nCloses #2378.\n\nsphinx-needs and ubCode ranked a legacy-spelled override differently on\na `[variants]` project, so one CI line built different variants\nunder the two tools (#2378, useblocks/ubcode#4327); and in ubCode the\nrecommended spelling dropped a legacy-only project's `[needs]` inline\ntable.\nOne rule, in the contract, for both.\n\n**Behaviour.** A project that builds without warnings behaves the same\nunder `-D` (verified by review over 20 project shapes, `-j 2`, `-W`,\na conf.py in another directory, a toml in a parent directory, an\nabsolute `-D`). Because the location, refusals and warnings are now\nalways the toml's\nas written, two project shapes that already warned or failed without\n`-D` now do so with it too; both are pinned in\n`tests/test_variants_table.py`\nand named in the changelog.\n\n**Release order.** ub-project first (1.2.0, new exports), whose bump\nmoves sphinx-needs' `ub-project` floor (`propagate_floors.py`); then\nsphinx-needs.\n`sphinx_needs.needs` imports `ub_project.NO_DATA_FILE` / `NoDataFile`,\nso `import_check.py sphinx-needs` fails against PyPI's ub-project 1.1.0\nuntil 1.2.0 is published: the order is enforced, not advisory.\n\n**Corpus.** `ubproject_reading_conformance.toml` gains an optional\n`data_file_override` case key (relative to the case directory, `\"\"` = no\nfile,\ndocumented in the header) and twelve `override-*` cases: 60 → 72 cases,\nstill 7 Python-only,\nsha256\n`487c97e9b4e81a29008018a62f4c5e745b5d6ff80bee5c567e034dd36718a9e7`.\nubCode re-vendors it and implements the override in its own PR,\nuseblocks/ubcode#4423 (fixing useblocks/ubcode#4327).\n\n## Tests\n\n- ub-project: the new keyword, the sentinel and every corpus case, red\nbefore the change; mutations (opening the replaced file,\nthe old \"the replaced key does not declare\", dropping the inline table,\nthe sentinel opening the file) each go red.\n- sphinx-needs: `tests/test_variants_table.py` pins both spellings, the\nlegacy-only project keeping its `[needs]` inline table under `-D`,\nthe empty `-D` not opening the toml's file, and a relative `-D` anchored\nat the confdir (red when anchored at the toml's directory).\n- `uv run poe lint` 0, `uv run poe typecheck` 0, `uv run poe\ncheck-workspace` 0, `uv run poe test-ub-project` 255 passed,\n  full `uv run poe test-needs` 3788 passed / 14 skipped.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-ub-project`, `uv run\npoe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under *Unreleased*\n(ub-project and sphinx-needs).\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-29T15:27:07+01:00",
+          "tree_id": "3ed65d8785ed4604b06b037db3fa4520ebda6cb0",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e57b23b8e2e494297bb4a1868762f07707b574c3"
+        },
+        "date": 1793284106276,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09320168300000375,
+            "unit": "s",
+            "extra": "Commit: e57b23b8e2e494297bb4a1868762f07707b574c3\nBranch: master\nTime: 2026-10-29T15:27:07+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.22772916899999,
+            "unit": "s",
+            "extra": "Commit: e57b23b8e2e494297bb4a1868762f07707b574c3\nBranch: master\nTime: 2026-10-29T15:27:07+01:00"
           }
         ]
       }
