@@ -127,6 +127,10 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 A schema rule's property on an array field may give ``contains`` without ``items``
+  (``"tags": {"contains": {"const": "a"}}``): the build stopped with a schema error, where the rule now applies,
+  the field's item type standing for ``items``. A link type's property is unchanged.
+
 - 🐛 The ``needs_schema`` of a :ref:`needs.json <needs_builder_format>` writes a link type's literal default
   **(changed output)** (:issue:`2208`)
 
