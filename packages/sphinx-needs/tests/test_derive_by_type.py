@@ -1211,7 +1211,7 @@ def test_imported_needs_and_needextend_filters(test_app: Any) -> None:
     app.build()
     assert _warnings(app) == [
         "<srcdir>/index.rst:10: WARNING: needextend filter \"flag == 'off'\" names "
-        "'flag', which a dynamic function or variant computes on 1 need (REQ_1): the "
+        "'flag', which a derive rule computes on 1 need (REQ_1): the "
         "filter sees the value from before it is computed [needs.derive_scope]",
     ]
     needs = _needs(app)

@@ -785,6 +785,8 @@ def bump(args: argparse.Namespace, runner: Runner) -> int:
     print("  - uv run poe lint")
     if dist == DOCKER_DIST:
         print("  - uv run poe smoke-needs")
+        # the siblings as PUBLISHED: `smoke-needs` takes them from the tree
+        print("  - uv run poe smoke-needs-published")
     print("  - merge the release pull request, then from master:")
     print(f"  - git tag {tag} && git push origin {tag}")
     return 0

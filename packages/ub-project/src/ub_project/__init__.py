@@ -8,7 +8,9 @@ distribution.
 
 It decides no policy. Discovery (walk up or read the ``confdir``), whether a finding is
 worth a warning, and how ``-D`` / ``-c`` on a command line interact with the file are each
-consumer's to decide; this package returns what it found and raises
+consumer's to decide -- except a variant data file taken from a command line, which
+``read_variants`` applies for every consumer alike (``data_file_override``: it swaps
+the file, never the table). This package returns what it found and raises
 :class:`ProjectConfigError` for what it cannot accept.
 """
 
@@ -28,10 +30,12 @@ from ub_project.variant_data import (
     validate_variant_data,
 )
 from ub_project.variants import (
+    NO_DATA_FILE,
     VARIANT_DATA_LEGACY_LOCATION,
     VARIANT_DATA_LOCATION,
     VARIANTS_UNKNOWN_KEY,
     Diagnostic,
+    NoDataFile,
     VariantsResult,
     read_variants,
 )
@@ -40,10 +44,12 @@ __version__ = "1.1.0"
 
 __all__ = [
     "DEFAULT_FILENAME",
+    "NO_DATA_FILE",
     "VARIANTS_UNKNOWN_KEY",
     "VARIANT_DATA_LEGACY_LOCATION",
     "VARIANT_DATA_LOCATION",
     "Diagnostic",
+    "NoDataFile",
     "ProjectConfigError",
     "VariantsResult",
     "__version__",

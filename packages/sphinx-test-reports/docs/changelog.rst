@@ -1,6 +1,19 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Changed
+.......
+
+- 📚 The pytest plugin page says what pytest 9.2 changes for the deprecated
+  ``-p sphinxcontrib.test_reports.pytest_plugin``: pytest applies its ``filterwarnings``
+  while it loads the plugin, so the ``FutureWarning`` is reported in its warnings summary, a
+  filter reaches it, and under ``filterwarnings = error`` it stops pytest -- as does a
+  ``filterwarnings`` line naming the old module, whatever the ``-p`` line says. Nothing
+  changes in the package.
+
 .. _`release:3.0.1`:
 
 3.0.1
