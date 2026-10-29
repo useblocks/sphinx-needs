@@ -15,6 +15,11 @@ from typing import Any
 
 import pytest
 
+from sphinx_needs.needs import (
+    BACK_LINKS_WHAT,
+    _check_back_named_entries,
+    _type_local_links,
+)
 from sphinx_needs.needs_schema import (
     BackLinksSchema,
     FieldsSchema,
@@ -291,3 +296,94 @@ def test_a_key_ignored_is_not_a_link_types_shape(test_app: Any) -> None:
         "'dashed': its style is '' on every need type, as need type 'req' declares "
         "it; the entry is ignored [needs.type_conflict]",
     ]
+
+
+BACK_OF_A_COUNT = """\
+[needs.links.implements]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.req.links.implements_back]
+schema = { maxItems = 5 }
+
+[needs.types.spec.links.implements_back_back]
+color = 3
+outgoing = 5
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _toml_project(
+            BACK_OF_A_COUNT,
+            "Case\n====\n\n.. req:: A\n   :id: REQ_1\n\n"
+            ".. spec:: B\n   :id: SPEC_1\n   :implements: REQ_1\n\n"
+            ".. needtable::\n   :columns: id;implements_back_back\n",
+            "html",
+        )
+    ],
+    indirect=True,
+)
+def test_the_back_links_name_of_a_count_is_no_count(test_app: Any) -> None:
+    """``implements_back`` is the count of a global link type's back links, so it
+    declares no link type, and ``implements_back_back`` beside it is no count of
+    anything: it declares a link type of ``spec`` alone, whose keys are checked
+    before it is declared from them (the html build drawing it does not fail). Its
+    name is close to the back links ``implements_back``, which is reported too."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types['spec'].links['implements_back_back'] declares a link "
+        "type of need types 'spec' alone; did you mean 'implements_back'? "
+        "[needs.type_near_name]",
+        "WARNING: needs_types['spec'].links['implements_back_back'] has an 'outgoing' "
+        "that is not a string (got int) and a 'color' that is not a string (got int); "
+        "the keys are ignored [needs.config]",
+    ]
+
+
+#: name -> (declares a link type of need types alone, its keys checked first)
+AGREEMENT = {
+    # the count of the global link type l's back links
+    "l_back": (False, False),
+    # the count of the core link type links' back links
+    "links_back": (False, False),
+    # beside the count l_back: the back links of no link type, so a link type
+    "l_back_back": (True, True),
+    # no link type x: a link type
+    "x_back": (True, True),
+    # a link type need types declare alone (not named <x>_back: checked as read)
+    "foo": (True, False),
+    # the count of foo's back links
+    "foo_back": (False, False),
+}
+
+
+def test_the_count_and_the_link_type_are_told_apart_in_one_place() -> None:
+    """``_check_back_named_entries`` checks the keys of a ``links`` entry named
+    ``<x>_back`` that is no count before ``_type_local_links`` declares a link type
+    from it; the two tell the entries apart through one helper, so every ``<x>_back``
+    entry declaring a link type has had its keys checked, and none whose keys are left
+    to the resolver declares one (a ``color`` of ``3`` once became a link type's)."""
+    link_types = ("l", "links", "parent_needs")
+    known = {
+        **dict.fromkeys(link_types, "a link type"),
+        **{f"{name}_back": BACK_LINKS_WHAT for name in link_types},
+    }
+    types: dict[str, dict[str, Any]] = {
+        "req": {"links": {name: {"color": 3, "bar": 1} for name in AGREEMENT}}
+    }
+    _check_back_named_entries(types, known)
+    local, _, _, _ = _type_local_links(types, ["req"], {}, known)
+    observed = {
+        name: (name in local, keys == {})
+        for name, keys in types["req"]["links"].items()
+    }
+    assert observed == AGREEMENT

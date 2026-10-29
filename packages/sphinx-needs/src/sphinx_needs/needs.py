@@ -6,7 +6,6 @@ import difflib
 import json
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from collections.abc import Set as AbstractSet
 from copy import deepcopy
 from functools import partial
 from itertools import chain
@@ -848,6 +847,9 @@ NEED_TYPE_LINK_SHAPE_KEYS = (
     "style_start",
     "style_end",
 )
+
+#: What a name declared as a link type's back links is, as the findings name it.
+BACK_LINKS_WHAT: Final = "a link type's back links"
 
 #: The keys of an entry of a need type's ``links`` table, of a link type's declaration.
 _NEED_TYPE_LINK_ENTRY_KEYS = (*NEED_TYPE_LINK_KEYS, *NEED_TYPE_LINK_SHAPE_KEYS)
@@ -2077,29 +2079,24 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         parent,
         {*NeedsCoreFields, *registered, *link_types, *back_links},
     )
+    #: the names a need type's ``links`` entry does not declare a link type of alone,
+    #: each with what it is
+    declared_otherwise = {
+        **dict.fromkeys((*NeedsCoreFields, *registered, *type_local), "a field"),
+        **dict.fromkeys(link_types, "a link type"),
+        **dict.fromkeys(back_links, BACK_LINKS_WHAT),
+    }
     #: a ``links`` entry named ``<x>_back`` that is no count of a link type's back links
-    #: declares a link type: its keys the normaliser left to be known are checked now,
-    #: as any links entry's are, before a link type is declared from them
-    entry_findings.extend(
-        _check_back_named_entries(
-            type_entries,
-            {*NeedsCoreFields, *registered, *type_local, *link_types},
-            link_types,
-        )
-    )
+    #: declares a link type (or narrows one): its keys the normaliser left to be known
+    #: are checked now, as any links entry's are, before a link type is declared from
+    #: them; the entries are told apart as :func:`_type_local_links` tells them apart
+    entry_findings.extend(_check_back_named_entries(type_entries, declared_otherwise))
     #: the link types need types declare alone: declared below as a needs_links entry
     #: is (after the needs_links and needs_extra_links entries), with the display,
     #: copy and dead links their first root declaration gives; a name declared under
     #: fields too is a field, and the back links of a link type are none
     local_links, link_refused, link_findings, link_declarers = _type_local_links(
-        type_entries,
-        order,
-        parent,
-        {
-            **dict.fromkeys((*NeedsCoreFields, *registered, *type_local), "a field"),
-            **dict.fromkeys(link_types, "a link type"),
-            **dict.fromkeys(back_links, "a link type's back links"),
-        },
+        type_entries, order, parent, declared_otherwise
     )
     #: a name of either close to a declared field's or link type's is likely misspelt;
     #: a link type's is compared with the back links too, whose count a need type's
@@ -3435,13 +3432,11 @@ def _type_local_links(
     """
     #: link type -> its declarations, in order
     entries: dict[str, list[tuple[str, Mapping[str, Any]]]] = {}
+    declaring, _ = _link_entry_names(types, known)
     for need_type in order:
         for name, keys in types[need_type].get("links", {}).items():
-            if isinstance(name, str) and name and name not in known:
+            if name in declaring:
                 entries.setdefault(name, []).append((need_type, keys))
-    # the back links of another: computed on every need, so no link type
-    for name in [n for n in entries if n.endswith("_back") and n[:-5] in entries]:
-        del entries[name]
     local: dict[str, NeedLinksConfig] = {}
     declarers: dict[str, list[str]] = {}
     refused: set[tuple[str, str]] = set()
@@ -4033,41 +4028,64 @@ def _deferred_keys(
     )
 
 
+def _link_entry_names(
+    types: Mapping[str, Mapping[str, Any]], known: Mapping[str, str]
+) -> tuple[set[str], set[str]]:
+    """The names of the need types' ``links`` entries that name nothing declared
+    otherwise, told apart: those declaring a link type of the need types that declare
+    it alone, and those naming the back links of such a link type, ``<x>_back`` beside
+    an entry ``x``, which are counts and declare nothing.
+
+    The one place the two are told apart, for :func:`_type_local_links`, which declares
+    the first, and :func:`_check_back_named_entries`, which checks their keys first.
+
+    :param types: Each need type's entry, of its shape.
+    :param known: The names declared otherwise, each with what it is.
+    """
+    names = {
+        name
+        for entry in types.values()
+        for name in entry.get("links", {})
+        if isinstance(name, str) and name and name not in known
+    }
+    # the back links of another: computed on every need, so no link type
+    back = {name for name in names if name.endswith("_back") and name[:-5] in names}
+    return names - back, back
+
+
+def _is_back_links_count(
+    name: str, known: Mapping[str, str], local_back: set[str]
+) -> bool:
+    """Whether a need type's ``links`` entry ``name`` is the count of a link type's back
+    links: of a link type declared otherwise (``known`` says so), or of one need types
+    declare alone (``local_back``, of :func:`_link_entry_names`)."""
+    return known.get(name) == BACK_LINKS_WHAT or name in local_back
+
+
 def _check_back_named_entries(
-    types: dict[str, dict[str, Any]],
-    known: AbstractSet[str],
-    link_types: AbstractSet[str],
+    types: dict[str, dict[str, Any]], known: Mapping[str, str]
 ) -> list[str]:
     """Check the keys of each need type's ``links`` entry named ``<x>_back`` that is no
     count of a link type's back links, in place (:func:`_deferred_keys`), and return
     the findings, in the order of the types.
 
-    Such an entry is a count where ``x`` is a link type, and ``<x>_back`` is not a name
-    declared otherwise: ``x`` one of ``link_types``, or one a ``links`` entry of a need
-    type declares alone, as :func:`_type_local_links` reads them. Any other is a link
-    type's declaration, which :func:`_type_local_links` reads the shape of (or a name
-    the resolver refuses).
+    A count (:func:`_is_back_links_count`) keeps its keys, and the resolver refuses it
+    for one it does not take; any other such entry declares a link type of need types
+    alone (:func:`_type_local_links` reads its shape) or narrows one declared otherwise.
 
     :param types: Each need type's entry, of its shape; changed in place.
-    :param known: The names declared otherwise: the fields, those declared on need
-        types alone included, and the link types.
-    :param link_types: The link types declared otherwise.
+    :param known: The names declared otherwise, each with what it is, as
+        :func:`_type_local_links` takes them.
     """
-    entries = {
-        name
-        for entry in types.values()
-        for name in entry.get("links", {})
-        if isinstance(name, str) and name not in known
-    }
+    _, local_back = _link_entry_names(types, known)
     findings: list[str] = []
     for need_type, entry in types.items():
         links = entry.get("links", {})
         for name, keys in links.items():
             if not isinstance(name, str) or not name.endswith("_back"):
                 continue
-            stem = name.removesuffix("_back")
-            if name not in known and (stem in entries or stem in link_types):
-                continue  # a count: the resolver refuses it for such a key
+            if _is_back_links_count(name, known, local_back):
+                continue  # the resolver refuses it for a key it does not take
             links[name], stray = _deferred_keys(
                 f"needs_types[{need_type!r}].links[{name!r}]", keys
             )
