@@ -48,7 +48,8 @@ Improvements
 
   ``schema = { minItems = 1 }`` on a ``back_links`` entry named after a link type ``l`` says that every need of the
   type is the target of at least one ``l`` link, its back links ``<l>_back`` (``maxItems``: of at most so many), so a
-  ``coverage-*-back`` schema rule that only counts folds into the type's declaration. The count is every link of ``l`` to the need, as
+  ``coverage-*-back`` schema rule that only counts folds into the type's declaration.
+  The count is every link of ``l`` to the need, as
   ``minItems`` counts the outgoing ones (a link to a part of the need included); it is inherited, and narrowed, by
   the types inheriting from the type; it is
   checked by the schema validation once every link is final, a ``link_fail`` of the field ``<l>_back`` at the
