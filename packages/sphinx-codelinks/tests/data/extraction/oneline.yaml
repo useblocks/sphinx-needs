@@ -58,6 +58,68 @@ shebang_oneliner_bash:
     # @Bash Title, IMPL_BASH_SHEBANG, impl, [REQ_BASH]
     function greet { echo hi; }
 
+default_oneliner_powershell:
+  lang: powershell
+  config: default
+  source: |
+    # @PowerShell Title, IMPL_PS, impl, [REQ_PS]
+    function Start-Demo { }
+
+# a pwsh shebang is a comment node but must not yield a marker or warning
+shebang_oneliner_powershell:
+  lang: powershell
+  config: default
+  source: |
+    #!/usr/bin/env pwsh
+    # @PowerShell Title, IMPL_PS_SHEBANG, impl, [REQ_PS]
+    function Start-Demo { }
+
+# a here-string is string content, not a comment: only the real marker counts
+here_string_no_marker_powershell:
+  lang: powershell
+  config: default
+  source: |
+    $text = @"
+    # @Not a marker, IMPL_PS_NO, impl
+    "@
+    # @Real, IMPL_PS_REAL, impl
+    function Start-Demo { }
+
+# a here-string's # line after its first line is string content too, interpolation
+# or not: the grammar makes it a comment node inside the string, which is skipped
+here_string_content_line_powershell:
+  lang: powershell
+  config: default
+  source: |
+    $name = 'px'
+    $stub = @"
+    function Test-$name {
+    # @Generated, IMPL_PS_GEN, impl
+    }
+    "@
+    # @Real, IMPL_PS_REAL_AFTER, impl
+    function Start-Demo { }
+
+# a one-line <# #> comment: its closing #> is not part of the last field
+block_oneliner_powershell:
+  lang: powershell
+  config: default
+  source: |
+    <# @Block Title, IMPL_PS_BLOCK, impl, [REQ_PS] #>
+    function Start-Demo { }
+
+# comment-based help is a <# #> comment like any other: a marker in it counts
+help_block_marker_powershell:
+  lang: powershell
+  config: default
+  source: |
+    <#
+    .SYNOPSIS
+        Starts the demo.
+    @Help Title, IMPL_PS_HELP, impl, [REQ_PS]
+    #>
+    function Start-Demo { }
+
 default_oneliner_typescript:
   lang: typescript
   config: default

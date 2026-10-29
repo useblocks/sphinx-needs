@@ -68,6 +68,16 @@ SCOPE_NODE_TYPES = {
     },
     # @Bash Scope Node Types, IMPL_BASH_2, impl, [FE_BASH]
     CommentType.bash: {"function_definition"},
+    # @PowerShell Scope Node Types, IMPL_PS_2, impl, [FE_POWERSHELL]
+    # A command is a scope only when it is a Pester block: see SCOPE_PREDICATES.
+    CommentType.powershell: {
+        "function_statement",
+        "class_statement",
+        "class_method_definition",
+        "class_property_definition",
+        "enum_statement",
+        "command",
+    },
 }
 
 logger = get_logger(__name__)
@@ -98,6 +108,13 @@ TYPE_SCRIPT_QUERY = """
 RUST_QUERY = """
     (line_comment) @comment
     (block_comment) @comment
+"""
+# PowerShell's grammar reads a ``#`` line inside an expandable (double-quoted)
+# here-string as a comment node within the string, unless it is the string's first
+# line. It is string content: captured as such, it is left out of the comments.
+POWERSHELL_QUERY = """
+    (comment) @comment
+    (expandable_here_string_literal (comment) @string_content)
 """
 
 # JSON value node types that can be associated with a comment.
@@ -149,7 +166,7 @@ def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
         return False
 
 
-# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS]
+# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS, FE_POWERSHELL]
 def init_tree_sitter(
     comment_type: CommentType, src_path: Path | None = None
 ) -> tuple[Parser, Query]:
@@ -221,6 +238,13 @@ def init_tree_sitter(
 
         parsed_language = Language(tree_sitter_bash.language())
         query = Query(parsed_language, SIMPLE_COMMENT_QUERY)
+    elif comment_type == CommentType.powershell:
+        # @PowerShell comment query for tree-sitter, IMPL_PS_3, impl, [FE_POWERSHELL]
+        # ``#`` and ``<# #>`` comments are both ``comment`` nodes in this grammar.
+        import tree_sitter_powershell
+
+        parsed_language = Language(tree_sitter_powershell.language())
+        query = Query(parsed_language, POWERSHELL_QUERY)
     else:
         raise ValueError(f"Unsupported comment style: {comment_type}")
     parser = Parser(parsed_language)
@@ -240,12 +264,19 @@ def extract_comments(
     callback: a chunk boundary inside a character breaks the parse the same way (a
     from-offset chunk of four bytes or more happens to work; a block-aligned one
     does not).
+
+    A query may also capture ``string_content``: comment nodes a grammar places
+    inside a string (PowerShell's here-strings), which are left out.
     """
     tree = parser.parse(src_string)
     query_cursor = QueryCursor(query)
     captures: dict[str, list[TreeSitterNode]] = query_cursor.captures(tree.root_node)
 
-    return captures.get("comment")
+    comments = captures.get("comment")
+    string_content = captures.get("string_content")
+    if comments and string_content:
+        comments = [comment for comment in comments if comment not in string_content]
+    return comments
 
 
 # What a TypeScript declaration's value can be wrapped in without changing what it
@@ -312,6 +343,24 @@ SCOPE_CONTAINER_TYPES: dict[CommentType, frozenset[str]] = {
     | {"export_statement", "ambient_declaration", "expression_statement"},
 }
 
+# Pester's blocks, lower-cased: PowerShell resolves command names in any case.
+PESTER_BLOCKS = frozenset({"describe", "context", "it"})
+PESTER_MODULE = "pester"
+
+
+def _is_pester_block(node: TreeSitterNode) -> bool:
+    """A command that is a Pester block (``Describe``, ``Context``, ``It``), called
+    bare or through Pester's module qualifier (``Pester\\It``): a test, or a group of
+    tests, rather than a command a script merely runs."""
+    name = next(
+        (child for child in node.named_children if child.type == "command_name"), None
+    )
+    if name is None or name.text is None:
+        return False
+    module, _, command = name.text.decode("utf-8").lower().rpartition("\\")
+    return command in PESTER_BLOCKS and module in ("", PESTER_MODULE)
+
+
 # Scope node types that are a scope only when their predicate holds, per language, so
 # that a comment does not bind to a declaration that merely precedes the one it
 # documents (``const flag = true;`` before a function).
@@ -323,7 +372,44 @@ SCOPE_PREDICATES: dict[CommentType, dict[str, Callable[[TreeSitterNode], bool]]]
         "assignment_expression": _assigns_function,
         "export_statement": _value_is_function,
     },
+    # @Pester blocks are PowerShell scopes, IMPL_PS_5, impl, [FE_POWERSHELL]
+    CommentType.powershell: {"command": _is_pester_block},
 }
+
+# The nodes a PowerShell script or script block holds its statements in. A comment
+# before the first statement of a body is their sibling, not the statements'.
+POWERSHELL_BODY_TYPES = frozenset(
+    {"statement_list", "script_block", "script_block_body"}
+)
+# The nodes every PowerShell command sits in: a command is tested as a scope inside them.
+POWERSHELL_PIPELINE_TYPES = frozenset({"pipeline", "pipeline_chain"})
+
+
+def _first_named_inside(
+    node: TreeSitterNode, wrappers: frozenset[str]
+) -> TreeSitterNode:
+    """``node``'s first named child, followed while the node is one of ``wrappers``, or
+    ``node`` itself when it is none of them or wraps nothing."""
+    while node.type in wrappers and node.named_children:
+        node = node.named_children[0]
+    return node
+
+
+# @PowerShell next scope across statement bodies, IMPL_PS_6, impl, [FE_POWERSHELL]
+def _find_next_powershell_scope(node: TreeSitterNode) -> TreeSitterNode | None:
+    """The scope after a PowerShell comment: the statements that follow it are walked,
+    as every other language walks the comment's siblings. A body that follows the
+    comment is entered, so that a comment before its first statement walks the same
+    statements as one after it; each statement is tested as a scope through the
+    pipeline it sits in."""
+    current = node.next_named_sibling
+    while current is not None:
+        current = _first_named_inside(current, POWERSHELL_BODY_TYPES)
+        candidate = _first_named_inside(current, POWERSHELL_PIPELINE_TYPES)
+        if _matches_scope(candidate, CommentType.powershell):
+            return candidate
+        current = current.next_named_sibling
+    return None
 
 
 def _matches_scope(node: TreeSitterNode, comment_type: CommentType) -> bool:
@@ -349,6 +435,8 @@ def find_next_scope(
     node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
 ) -> TreeSitterNode | None:
     """Find the next scope of a comment."""
+    if comment_type == CommentType.powershell:
+        return _find_next_powershell_scope(node)
     containers = SCOPE_CONTAINER_TYPES.get(comment_type, DEFAULT_SCOPE_CONTAINER_TYPES)
     current: TreeSitterNode = node
     while current:

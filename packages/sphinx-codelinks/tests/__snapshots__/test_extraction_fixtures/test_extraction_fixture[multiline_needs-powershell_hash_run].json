@@ -1,0 +1,53 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 2
+      },
+      "end": {
+        "row": 4,
+        "column": 10
+      }
+    },
+    "tagged_scope": "function Start-Deploy { }",
+    "need": {
+      "type": "impl",
+      "title": "Deploy script",
+      "id": "IMPL_PS_RUN",
+      "content": "Runs the deployment.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.ps1",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 2
+      },
+      "end": {
+        "line": 5,
+        "col": 10
+      },
+      "content_start": {
+        "line": 4,
+        "col": 2
+      },
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "function_statement",
+        "start": 6,
+        "end": 6
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "function_statement"
+  }
+]

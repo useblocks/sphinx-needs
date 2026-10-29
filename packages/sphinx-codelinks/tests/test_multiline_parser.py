@@ -107,6 +107,12 @@ def test_a_block_comment_is_a_run_of_its_own() -> None:
     assert [_texts(run) for run in runs] == [["a"], [" b "], ["c"]]
 
 
+def test_a_powershell_block_comment_is_a_run_of_its_own() -> None:
+    runs = form_runs([_node("# a", 0), _node("<# b #>", 1), _node("# c", 2)])
+
+    assert [_texts(run) for run in runs] == [["a"], [" b "], ["c"]]
+
+
 def test_libclang_comments_form_runs_from_their_rows() -> None:
     """A libclang comment has no column: what precedes it is read from its row."""
     source = ["// a", "// b", "int x; // c", "// d"]
@@ -136,6 +142,15 @@ def test_a_line_comment_loses_its_delimiter_and_one_space() -> None:
     (run,) = form_runs([_node("//   indented", 3, 4)], ["    //   indented"])
 
     assert run.lines == [LogicalLine(3, 7, "  indented")]
+
+
+def test_a_powershell_block_comment_loses_its_delimiter_rows() -> None:
+    text = "<#\n@need impl: T\n:id: IMPL_B\n@endneed\n#>"
+
+    (run,) = form_runs([_node(text, 0)])
+
+    assert _texts(run) == ["@need impl: T", ":id: IMPL_B", "@endneed"]
+    assert [line.row for line in run.lines] == [1, 2, 3]
 
 
 def test_a_rust_doc_comment_loses_its_trailing_newline() -> None:

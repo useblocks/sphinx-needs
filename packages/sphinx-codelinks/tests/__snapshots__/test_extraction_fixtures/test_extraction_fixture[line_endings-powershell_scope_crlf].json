@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 0,
+        "column": 48
+      }
+    },
+    "tagged_scope": "function Start-Px {\n    param([string] $Config)\n    Write-Host $Config\n}",
+    "need": {
+      "title": "Multi-line title",
+      "id": "IMPL_PS_CRLF",
+      "type": "impl",
+      "links": [
+        "REQ_1"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  }
+]

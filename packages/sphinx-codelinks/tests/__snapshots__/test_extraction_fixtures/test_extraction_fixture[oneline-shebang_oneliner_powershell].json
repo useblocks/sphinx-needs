@@ -1,0 +1,27 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 3
+      },
+      "end": {
+        "row": 1,
+        "column": 52
+      }
+    },
+    "tagged_scope": "function Start-Demo { }",
+    "need": {
+      "title": "PowerShell Title",
+      "id": "IMPL_PS_SHEBANG",
+      "type": "impl",
+      "links": [
+        "REQ_PS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  }
+]

@@ -241,6 +241,79 @@ bash_non_ascii_identifier_scope:
     # @T, ID_BASH_UTF8, impl
     fé() { :; }
 
+powershell_above_function:
+  # Marker directly above a top-level function -> binds to that function, which
+  # sits inside a statement_list wrapper rather than beside the comment.
+  lang: powershell
+  config: default
+  source: |
+    # @Above Function, IMPL_PS_ABOVE, impl, [REQ_PS_ABOVE]
+    function Start-Px { }
+
+powershell_inside_function_body:
+  # Marker is the last statement in a function body -> falls back to the
+  # enclosing function.
+  lang: powershell
+  config: default
+  source: |
+    function Start-Px {
+        Write-Host 'start'
+        # @Inside Function, IMPL_PS_INSIDE, impl, [REQ_PS_INSIDE]
+    }
+
+powershell_no_scope:
+  # Marker followed by a plain command, with nothing else around it -> no
+  # associated scope: only Pester's blocks are scopes among commands.
+  lang: powershell
+  config: default
+  source: |
+    # @No Scope, IMPL_PS_NONE, impl, [REQ_PS_NONE]
+    Write-Host 'hi'
+
+powershell_scope_after_a_plain_command:
+  # A plain command between the marker and the function, at the top of a file -> the
+  # marker still binds to the function, as in Bash and Python.
+  lang: powershell
+  config: default
+  source: |
+    # @After Command, IMPL_PS_AFTER_CMD, impl, [REQ_PS]
+    Set-StrictMode -Version Latest
+    function Start-Px { }
+
+powershell_pester_first_in_describe:
+  # A marker first in a Describe, followed by BeforeAll -> binds to the next It, the
+  # same as a marker placed after an earlier It.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'px' {
+        # @First Test, TEST_PS_FIRST, test, [REQ_PS]
+        BeforeAll { $x = 1 }
+        It 'a' { }
+    }
+
+powershell_pester_it:
+  # Marker above a Pester It nested in a Describe -> binds to the It, five
+  # wrapper nodes below the comment's next sibling.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'px' {
+        # @Starts px, TEST_PS_IT, test, [REQ_PS]
+        It 'starts' {
+            1 | Should -Be 1
+        }
+    }
+
+powershell_non_ascii_scope:
+  # Non-ASCII text before the marked function does not lose the scope.
+  lang: powershell
+  config: default
+  source: |
+    $greeting = 'Grüße'
+    # @T, ID_PS_UTF8, impl
+    function Get-Grüße { $greeting }
+
 typescript_above_function:
   # Marker directly above a function declaration -> binds to it.
   lang: typescript

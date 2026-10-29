@@ -127,16 +127,18 @@ def _scanned_texts(
 
     Each text comes with the 0-based row and the column, in characters, at which it
     starts. A docstring is scanned as its content, without the quotes; a block
-    comment without its closing ``*/``, and a legacy ``<!-- … -->`` comment without
-    its ``-->``, which are not marker text. The rows a multi-line need claims are
-    blanked.
+    comment without its closing ``*/``, a PowerShell ``<# … #>`` comment without its
+    ``#>``, and a legacy ``<!-- … -->`` comment without its ``-->``, which are not
+    marker text. The rows a multi-line need claims are blanked.
     """
     node = src_comment.node
     if getattr(node, "type", None) == CommentCategory.docstring:
         texts = _docstring_contents(node, src_comment.column)
     else:
         text = node.text.decode("utf-8") if node.text else ""
-        if text.startswith("/*") and text.endswith("*/"):
+        if (text.startswith("/*") and text.endswith("*/")) or (
+            text.startswith("<#") and text.endswith("#>")
+        ):
             text = text[:-2]
         elif text.startswith("<!--") and text.endswith("-->"):
             text = text[:-3]
