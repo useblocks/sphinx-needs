@@ -381,7 +381,10 @@ type's directive once whichever of the two runs first.
 **Variant data in the TOML comes through `ub-project`** (`read_variants`, a runtime
 dependency): it decides which location is read — `[<prefix>.variants]`, or the legacy
 `[<prefix>.needs] variant_data*` — and validates it. What stays in `load_config_from_toml` is
-sphinx-needs' policy: `-D`-overridden keys are removed from both locations before the read,
+sphinx-needs' policy: `-D needs_variant_data_file` is passed as ub-project's data-file override
+(`data_file_override`, its contract §6.8: it swaps the file, never the table, so the location,
+refusals and findings stay the document's; an empty one is `NO_DATA_FILE`),
+a `-D`-set confval is never overwritten,
 each finding is mapped to a `needs.*` warning subtype (the legacy location to a `-v` line),
 a `ProjectConfigError` is re-raised as `NeedsConfigException`, and the declared keys are
 written to the two confvals one by one (the file through `_abs_path`), so that
