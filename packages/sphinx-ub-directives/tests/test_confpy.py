@@ -430,6 +430,7 @@ def test_a_subclass_value_comes_back_as_its_exact_base_type() -> None:
     """F1-F3: the conversion's result holds base types only, read through the base type's
     own method -- an Enum's ``__str__``, ``__float__`` or ``repr`` cannot change it; a
     dict or list subclass is a plain dict or list; a date subclass keeps its tzinfo."""
+    _bound_probe()  # an IntEnum below would hang this process if the bound scanned
     import collections
     import enum
 
@@ -580,12 +581,13 @@ def test_a_conf_py_finding_is_at_the_assigning_line(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:
     """F5: a conf.py finding is at the LAST line that assigns its confval -- here the
-    ``.update`` -- never a longer name it prefixes (``..._shared``) nor an earlier, empty
-    assignment."""
+    ``.update`` -- never a longer name it prefixes (``..._shared`` before it,
+    ``..._shared_copy`` after it) nor an earlier, empty assignment."""
     conf = (
         "ub_directive_presets_shared = {'box': {'base': 'note'}}\n"
         "ub_directive_presets = {}\n"
         "ub_directive_presets.update({'bad': {'base': 'no-such'}})\n"
+        "ub_directive_presets_shared_copy = dict(ub_directive_presets)\n"
     )
     root = _project(tmp_path, conf=conf)
     found = [
