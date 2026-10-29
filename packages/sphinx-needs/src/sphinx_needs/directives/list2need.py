@@ -14,7 +14,12 @@ from docutils.statemachine import StringList
 from sphinx.errors import SphinxError, SphinxWarning
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs._need_source import NeedSourceHop, item_check, located_hops
+from sphinx_needs._need_source import (
+    NeedSourceHop,
+    document_tab_width,
+    item_check,
+    located_hops,
+)
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
@@ -458,6 +463,7 @@ class List2NeedDirective(SphinxDirective):
             default=list_need["line"],
         )
         check = item_check(self.content[list_need["line"]], self.content[end])
+        tab_width = document_tab_width(self.state)
         if self._content_is_source_mapped():
             source, _ = self._source_info(list_need["line"])
             return located_hops(
@@ -467,6 +473,7 @@ class List2NeedDirective(SphinxDirective):
                 self._source_line(list_need["line"]),
                 self._source_line(end),
                 check=check,
+                tab_width=tab_width,
                 fragment_lines=True,
             )
         if isinstance(self.state, RSTState):
@@ -476,6 +483,7 @@ class List2NeedDirective(SphinxDirective):
                 None,
                 None,
                 check=check,
+                tab_width=tab_width,
                 fragment_lines=False,
             )
         source, _ = self.get_source_info()
@@ -486,6 +494,7 @@ class List2NeedDirective(SphinxDirective):
             self._source_line(list_need["line"]),
             self._source_line(end),
             check=check,
+            tab_width=tab_width,
             fragment_lines=False,
         )
 

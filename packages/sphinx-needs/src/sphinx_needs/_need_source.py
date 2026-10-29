@@ -34,6 +34,7 @@ from typing import TYPE_CHECKING, Final
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
+from docutils.statemachine import string2lines
 from sphinx import addnodes
 
 if TYPE_CHECKING:
@@ -228,17 +229,29 @@ _LINES_KEY: Final = "sphinx_needs_source_hop_lines"
 (which Sphinx clears after each document, so nothing outlives the read)."""
 
 
-def _file_lines(env: BuildEnvironment, path: str) -> list[str] | None:
-    """The lines of a file, read once per document (``None`` if it cannot be read)."""
-    cache: dict[str, list[str] | None] = env.temp_data.setdefault(_LINES_KEY, {})
-    path = os.path.abspath(path)
-    if path not in cache:
+def _file_lines(env: BuildEnvironment, path: str, tab_width: int) -> list[str] | None:
+    """The lines of a file as docutils numbers them, read once per document.
+
+    Read with the project's ``source_encoding`` and split by docutils' own
+    ``string2lines`` (form feeds and vertical tabs become spaces, tabs are expanded
+    at the document's ``tab_width``), so that line *n* here is the line *n* the parser
+    numbers. ``None`` if the file cannot be read.
+    """
+    cache: dict[tuple[str, int], list[str] | None] = env.temp_data.setdefault(
+        _LINES_KEY, {}
+    )
+    key = (os.path.abspath(path), tab_width)
+    if key not in cache:
         try:
-            with open(path, encoding=env.config.source_encoding) as stream:
-                cache[path] = stream.read().splitlines()
+            with open(key[0], encoding=env.config.source_encoding) as stream:
+                text = stream.read()
         except (OSError, UnicodeDecodeError, LookupError):
-            cache[path] = None
-    return cache[path]
+            cache[key] = None
+        else:
+            cache[key] = string2lines(
+                text, tab_width=tab_width, convert_whitespace=True
+            )
+    return cache[key]
 
 
 def _checked_lines(
@@ -247,64 +260,102 @@ def _checked_lines(
     start_line: int | None,
     end_line: int | None,
     check: LineCheck,
+    tab_width: int,
 ) -> tuple[int | None, int | None]:
     """``(start_line, end_line)`` if the file holds the text there, else ``(None, None)``.
 
     The line a parser reports is the line of what it was handed, which is not the
     file's wherever the text was changed on the way: an include's ``:start-after:`` or
     ``:start-line:``, a ``source-read`` handler, myst-parser's nested colon fences. So a
-    line is recorded only where the file, read from disk, holds the text there.
+    line is recorded only where the file, read from disk, holds the text there, by the
+    producer's ``check``.
     """
     if not start_line:
         return None, None
-    lines = _file_lines(env, path)
+    lines = _file_lines(env, path, tab_width)
     if lines is None or not check(lines, start_line, end_line):
         return None, None
     return start_line, end_line
 
 
+_LIST_MARKERS: Final = re.compile(r"((?:[-*+]|#\.|\d+[.)]|\(\d+\))\s+)+")
+"""Bullets and enumerators before a directive that opens a list item (``- .. req::``,
+a list table's ``* - .. req::``)."""
+
+
+def _normalised(line: str) -> str:
+    """A file line as the parser hands its text on: stripped, and without a MyST block
+    quote's leading ``>`` or a grid-table cell's ``|`` borders, where the line has them."""
+    text = line.strip()
+    while text.startswith(">"):
+        text = text[1:].strip()
+    if text.startswith("|"):
+        text = text[1:].strip()
+        if text.endswith("|"):
+            text = text[:-1].strip()
+    return text
+
+
 def block_check(block_text: str) -> LineCheck:
-    """The check of a docutils directive: every non-blank line of its block, stripped,
-    is in the file's line it is numbered at (so an indentation, a bullet, a block
-    quote's ``>`` or a grid cell's ``|`` around it does not matter)."""
+    """The check of a docutils directive: each non-blank line of its block, stripped,
+    EQUALS the file's line it is numbered at, normalised (:func:`_normalised`); its first
+    line may also follow the bullets or enumerators of the list item it opens.
+
+    Whole lines, never a part of one: a line that only contains the text (``:id: A``
+    in ``:id: AB``) does not hold it.
+    """
     block = [line.strip() for line in block_text.rstrip().splitlines()]
 
     def check(lines: Sequence[str], start: int, end: int | None) -> bool:
         if start + len(block) - 1 > len(lines):
             return False
-        return all(
-            text in lines[start - 1 + index].expandtabs(8)
-            for index, text in enumerate(block)
-            if text
-        )
+        for index, text in enumerate(block):
+            if not text:
+                continue
+            line = _normalised(lines[start - 1 + index])
+            if line != text and not (
+                index == 0
+                and _LIST_MARKERS.sub("", line, count=1) == text
+                and _LIST_MARKERS.match(line)
+            ):
+                return False
+        return True
 
     return check
 
 
-def fence_check(name: str) -> LineCheck:
-    """The check of a myst-parser directive: its start line opens a fence of the
-    directive (backticks, tildes or colons, then ``{name}``), after any indentation and
-    block quote ``>`` (myst-parser hands a directive its content only, not the fence)."""
-    pattern = re.compile(rf"(`{{3,}}|~{{3,}}|:{{3,}})\s*\{{{re.escape(name)}\}}")
+def fence_check(name: str, argument: str) -> LineCheck:
+    """The check of a myst-parser directive (myst-parser hands a directive its content
+    only, not its fence): the start line, normalised (:func:`_normalised`), opens a
+    fence of the directive -- backticks, tildes or colons, then ``{name}`` -- followed
+    by exactly its argument (the title, as the directive received it), whitespace
+    collapsed.
+
+    A need nested at once inside a need of the same name and the same title cannot be
+    told from it: that is a known gap.
+    """
+    pattern = re.compile(rf"(`{{3,}}|~{{3,}}|:{{3,}})\s*\{{{re.escape(name)}\}}(.*)")
+    expected = " ".join(argument.split())
 
     def check(lines: Sequence[str], start: int, end: int | None) -> bool:
-        return start <= len(lines) and bool(
-            pattern.match(lines[start - 1].lstrip(" \t>"))
-        )
+        if start > len(lines):
+            return False
+        match = pattern.fullmatch(_normalised(lines[start - 1]))
+        return match is not None and " ".join(match.group(2).split()) == expected
 
     return check
 
 
 def item_check(first: str, last: str) -> LineCheck:
-    """The check of a ``list2need`` item: its first and last lines, stripped, are in
-    the file's lines it is numbered at."""
+    """The check of a ``list2need`` item: its first and its last line, stripped, EQUAL
+    the file's lines they are numbered at, normalised (:func:`_normalised`)."""
     first, last = first.strip(), last.strip()
 
     def check(lines: Sequence[str], start: int, end: int | None) -> bool:
-        if start > len(lines) or first not in lines[start - 1].expandtabs(8):
+        if start > len(lines) or _normalised(lines[start - 1]) != first:
             return False
         return end is None or (
-            end <= len(lines) and last in lines[end - 1].expandtabs(8)
+            end <= len(lines) and _normalised(lines[end - 1]) == last
         )
 
     return check
@@ -318,6 +369,7 @@ def located_hops(
     end_line: int | None = None,
     *,
     check: LineCheck,
+    tab_width: int,
     fragment_lines: bool,
     first: NeedSourceHop | None = None,
 ) -> tuple[NeedSourceHop, ...]:
@@ -329,6 +381,7 @@ def located_hops(
     :param end_line: The last line of the text, as the parser reports it.
     :param check: Whether the file's lines hold the text at ``start_line..end_line``:
         the lines are recorded only if they do (:func:`_checked_lines`).
+    :param tab_width: The document's ``tab_width``, which the file is read with.
     :param fragment_lines: Whether the lines are true in an included file too. They are
         under docutils; myst-parser reports an included file's lines one late, so a
         hop of an included file takes no line there.
@@ -368,10 +421,12 @@ def located_hops(
         )
         hops.append(page())
     elif os.path.abspath(source) == host:
-        hops.append(page(*_checked_lines(env, host, start_line, end_line, check)))
+        hops.append(
+            page(*_checked_lines(env, host, start_line, end_line, check, tab_width))
+        )
     elif os.path.isfile(source):
         lines = (
-            _checked_lines(env, source, start_line, end_line, check)
+            _checked_lines(env, source, start_line, end_line, check, tab_width)
             if fragment_lines
             else (None, None)
         )
@@ -389,6 +444,13 @@ def located_hops(
     return tuple(hops)
 
 
+def document_tab_width(state: object) -> int:
+    """The ``tab_width`` of the document a parser state is reading (docutils' 8 by
+    default)."""
+    document = getattr(state, "document", None)
+    return getattr(getattr(document, "settings", None), "tab_width", 8)
+
+
 def directive_hops(
     directive: SphinxDirective, *, first: NeedSourceHop | None = None
 ) -> tuple[NeedSourceHop, ...]:
@@ -396,9 +458,10 @@ def directive_hops(
 
     Under docutils the end line is the last non-blank line of the directive's block,
     and the lines are recorded where the file holds the block there
-    (:func:`block_check`). myst-parser hands a directive its content only, so there the
-    end line is ``None``, and the start line is recorded where the file opens the
-    directive's fence there (:func:`fence_check`).
+    (:func:`block_check`, whole lines). myst-parser hands a directive its content only,
+    so there the end line is ``None``, and the start line is recorded where the file
+    opens the directive's fence there, with its name and its title
+    (:func:`fence_check`).
     """
     source, start_line = directive.get_source_info()
     rst = isinstance(directive.state, RSTState)
@@ -412,7 +475,10 @@ def directive_hops(
         source,
         start_line,
         end_line,
-        check=block_check(directive.block_text) if rst else fence_check(directive.name),
+        check=block_check(directive.block_text)
+        if rst
+        else fence_check(directive.name, " ".join(directive.arguments)),
+        tab_width=document_tab_width(directive.state),
         fragment_lines=rst,
         first=first,
     )
