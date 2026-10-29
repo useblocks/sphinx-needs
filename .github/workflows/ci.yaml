@@ -838,7 +838,37 @@ jobs:
           # `.python-version` -- drop the input and this job would silently test 3.13.
           python-version: "3.11"
       - name: Build the wheel, install it out of the project and build a doc with it
+        # tree mode: the workspace members sphinx-needs depends on at runtime are built
+        # from this checkout and installed beside the wheel, so a change that uses an
+        # unreleased sibling change is tested as one change
         run: uv run --frozen poe smoke-needs
+
+  # INFORMATIONAL, and deliberately absent from `check`'s `needs` below: the same smoke
+  # test with every workspace sibling resolved from PyPI, as a sphinx-needs release would
+  # be installed. Siblings are released in bulk ahead of sphinx-needs, so on a pull request
+  # that uses an unreleased sibling change this is red until that release, and the red
+  # means "release a sibling first", not "this pull request is broken". It must be green
+  # before sphinx-needs is tagged; release.yaml asks the same published-dependency question
+  # fail-closed whatever this job said -- its compat cell resolves the built wheel against
+  # PyPI alone, imports every module and runs the suite (it does not repeat this job's
+  # sdist build or doc build). `continue-on-error` keeps such a red out of the run's own
+  # conclusion (the master push's status, the failed-run notification) while the job
+  # itself still shows it.
+  smoke-needs-published:
+    name: Needs smoke test against the published siblings (informational)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install graphviz
+        run: sudo apt-get install graphviz
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          enable-cache: true
+          # the `requires-python` floor, as in `smoke-needs` above
+          python-version: "3.11"
+      - name: Build the wheel, install it with the siblings as published and build a doc with it
+        run: uv run --frozen poe smoke-needs-published
 
   check:
 
@@ -861,6 +891,7 @@ jobs:
       - plugin-floor
       - bazel
       - smoke-needs
+      # NOT `smoke-needs-published`: it is informational, see the comment above that job
 
     runs-on: ubuntu-latest
 
