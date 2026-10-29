@@ -187,6 +187,10 @@
     'REQ_TWIN_INNERX': list([
       "page [mdnest] srcdir:mdnest.md (.md) :: section 'MD nest'",
     ]),
+    'REQ_X_TWIN': list([
+      'file srcdir:frag/twin.rst:3-4 (.rst)',
+      "page [lines] srcdir:lines.rst (.rst) :: section 'Lines' > section 'Outside'",
+    ]),
     'R_8A5CD': list([
       "page [mdnest] srcdir:mdnest.md (.md) :: section 'MD nest'",
     ]),

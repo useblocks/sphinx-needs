@@ -24,3 +24,6 @@ Lines
 
    * - .. req:: in a list-table cell
           :id: REQ_LISTTABLEX
+
+.. include:: frag/twin.rst
+   :start-after: MARK

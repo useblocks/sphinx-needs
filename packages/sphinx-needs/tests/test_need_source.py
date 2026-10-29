@@ -34,6 +34,7 @@ from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
     NeedSourceSemantic,
+    block_check,
     fence_check,
     project_legacy,
 )
@@ -407,6 +408,16 @@ def test_the_placement_is_the_last_hop_with_a_document():
     assert source.dict_repr["docname"] == "b"
 
 
+def test_a_block_check_strips_a_bullet_from_its_first_line_only():
+    """A bullet before the directive opens a list item; before any later line of the
+    block it is text the block does not have."""
+    check = block_check(".. req:: a\n   :id: X\n")
+    assert check(["- .. req:: a", "     :id: X"], 1, 2)
+    assert check([".. req:: a", "   :id: X"], 1, 2)
+    assert not check([".. req:: a", "- :id: X"], 1, 2)
+    assert not check([".. req:: a", ":id: XY"], 1, 2)
+
+
 def test_a_myst_fence_must_be_the_directives_with_its_title():
     """``fence_check`` takes the opening fence of this directive with this title only."""
     check = fence_check("req", "a title")
@@ -565,6 +576,10 @@ def test_the_hops_of_every_need(
     # takes the inner's fence line, 39, where it is written on 38
     (twin,) = (i for i, t in titles.items() if t == "twin" and i != "REQ_TWIN_INNERX")
     assert lines(twin) == [("mdnest.md", 39, None)]
+    # ... and in rst, an identical copy of the block at the line the parser claims (the
+    # directive shown in a literal block, then the slice after ``MARK``): a KNOWN GAP, the
+    # need takes the example's lines, 3-4, where it is written on 8-9
+    assert lines("REQ_X_TWIN") == [("frag/twin.rst", 3, 4), ("lines.rst", None, None)]
     # lines as docutils numbers them: a form feed, tabs at the documents' tab_width 4
     # (an internal tab in the title, an indenting one), a BOM
     assert lines("REQ_FORMFEEDX") == [("formfeed.rst", 8, 11)]
