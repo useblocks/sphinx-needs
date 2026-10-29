@@ -698,15 +698,16 @@ def register(app: Sphinx) -> None:
     and register every usable declaration."""
     APP[:] = [app]
     reading = resolved(app)
-    location = reading["file"]
+    sources = reading["sources"]
     if "var" in reading["template_contexts"]:
         warn(
             "template_context_reserved",
             "parse.template_contexts.var",
             "a context cannot be named var: var is the project's variant data in every "
             "template; this context is not read",
-            location=location,
+            location=sources.get("template_contexts") or reading["file"],
         )
+    location = sources.get("directive_templates") or reading["file"]
     declarations = reading["directive_templates"]
     names = sorted(declarations)
     accepted = []

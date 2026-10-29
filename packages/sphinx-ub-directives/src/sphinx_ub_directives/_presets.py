@@ -554,7 +554,8 @@ def register(app: Sphinx) -> None:
     _SELF_PRESETS[:] = []
     if not table:
         return
-    presets = Resolver(app, table, reading["file"]).resolve()
+    source = reading["sources"].get("directive_presets") or reading["file"]
+    presets = Resolver(app, table, source).resolve()
     # [A4] the classes are built from the snapshotted bases before registering any
     classes = [(preset, preset_class(preset)) for preset in presets]
     _SELF_PRESETS[:] = []
@@ -566,7 +567,7 @@ def register(app: Sphinx) -> None:
         else:
             app.add_directive(preset.name.lower(), cls, override=preset.self_preset)
             if preset.self_preset:
-                _SELF_PRESETS.append((preset.name.lower(), cls, reading["file"]))
+                _SELF_PRESETS.append((preset.name.lower(), cls, source))
 
 
 #: The self-presets registered in the docutils registry this build (§3.4.7).

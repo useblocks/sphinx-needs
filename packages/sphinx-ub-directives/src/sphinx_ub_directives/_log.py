@@ -30,6 +30,17 @@ def file_location(file: str, attribution: str) -> str:
     except (OSError, UnicodeDecodeError):
         return f"{file}:1"
     segments = attribution.split(".")
+    if Path(file).name == "conf.py":
+        # a table from conf.py: the line that sets its confval (§2.5)
+        confval = {
+            "directive_presets": "ub_directive_presets",
+            "directive_templates": "ub_directive_templates",
+            "template_contexts": "ub_template_contexts",
+        }.get(segments[1] if len(segments) > 1 else "", "")
+        for number, line in enumerate(lines, start=1):
+            if confval and line.lstrip().startswith(confval):
+                return f"{file}:{number}"
+        return f"{file}:1"
     for length in range(len(segments), 0, -1):
         header = "[" + ".".join(segments[:length]) + "]"
         for number, line in enumerate(lines, start=1):
