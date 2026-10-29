@@ -373,10 +373,9 @@ def _domain_entry(node: addnodes.desc, below: nodes.Node) -> NeedSourceSemantic:
         for part in signature.children:
             if (
                 isinstance(part, addnodes.desc_name)
-                and part.children
-                and isinstance(part.children[0], nodes.Text)
+                and (text := legacy_signature_text(part)) is not None
             ):
-                legacy = str(part.children[0])
+                legacy = text
         if legacy:
             break
     if legacy:
@@ -386,6 +385,19 @@ def _domain_entry(node: addnodes.desc, below: nodes.Node) -> NeedSourceSemantic:
         name=name,
         extras=tuple(extras),
     )
+
+
+def legacy_signature_text(desc_name: addnodes.desc_name) -> str | None:
+    """The name the legacy ``signature`` reads from a ``desc_name``, if it reads one.
+
+    The one place the walk holds that rule: today the ``desc_name``'s first child, when
+    it is text -- so never for the c, cpp and js domains, whose first child is a
+    ``desc_sig_name``. Where the legacy rule (``get_sections_and_signature_and_needs``)
+    changes, this function changes with it, and the fence holds the two together.
+    """
+    if desc_name.children and isinstance(desc_name.children[0], nodes.Text):
+        return str(desc_name.children[0])
+    return None
 
 
 def project_legacy(
