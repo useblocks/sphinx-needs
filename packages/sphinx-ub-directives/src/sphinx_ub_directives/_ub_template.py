@@ -64,8 +64,9 @@ class UbTemplate(Directive):
             warn(
                 "template_switched_off",
                 NAME,
-                "ub-template renders only when [parse] ub_template_enabled is true in "
-                "ubproject.toml; it renders nothing here",
+                "ub-template renders only when [parse] ub_template_enabled in "
+                "ubproject.toml, or ub_template_enabled in conf.py, is true; it renders "
+                "nothing here",
                 location=location,
             )
             return []

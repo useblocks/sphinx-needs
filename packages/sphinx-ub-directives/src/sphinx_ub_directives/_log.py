@@ -10,6 +10,7 @@ finding at a use is attributed to -- which is what the conformance runners compa
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -37,10 +38,17 @@ def file_location(file: str, attribution: str) -> str:
             "directive_templates": "ub_directive_templates",
             "template_contexts": "ub_template_contexts",
         }.get(segments[1] if len(segments) > 1 else "", "")
-        for number, line in enumerate(lines, start=1):
-            if confval and line.lstrip().startswith(confval):
-                return f"{file}:{number}"
-        return f"{file}:1"
+        # the LAST line that assigns it -- plain, annotated, augmented, a method call or an
+        # item -- with the name ending there (never a longer name it is a prefix of)
+        assigns = (
+            re.compile(rf"{re.escape(confval)}\s*(=|:|\+=|\.|\[)") if confval else None
+        )
+        found = [
+            number
+            for number, line in enumerate(lines, start=1)
+            if assigns is not None and assigns.match(line.lstrip())
+        ]
+        return f"{file}:{found[-1] if found else 1}"
     for length in range(len(segments), 0, -1):
         header = "[" + ".".join(segments[:length]) + "]"
         for number, line in enumerate(lines, start=1):

@@ -39,8 +39,9 @@ CONFVALS = {
     "ub_template_enabled": "ub_template_enabled",
 }
 
-#: The signed 64-bit range: what a TOML integer can be.
-_I64 = range(-(2**63), 2**63)
+#: The signed 64-bit range, ``[_I64_MIN, _I64_END)``: what a TOML integer can be.
+_I64_MIN = -(2**63)
+_I64_END = 2**63
 
 
 def empty() -> dict[str, Any]:
@@ -73,26 +74,47 @@ def _toml_value(value: Any, where: str) -> Any:
     """A ``conf.py`` value as the TOML that could have written it (§2.5), or a
     :class:`~sphinx.errors.ConfigError` naming the confval and the key path.
 
-    Insertion order is file order; a tuple is a list."""
+    Every value comes back as its EXACT base type, read through the base type's own
+    method, so a subclass (an ``IntEnum``, a ``Markup``, a float with its own ``repr``)
+    cannot change it: TOML has only the base types. Insertion order is file order; a tuple
+    is a list."""
     if isinstance(value, dict):
         converted = {}
         for key, item in value.items():
             if not isinstance(key, str):
                 msg = f"{where}: the key {key!r} is not a string, which every ubproject.toml key is"
                 raise ConfigError(msg)
-            converted[key] = _toml_value(item, f"{where}[{key!r}]")
+            converted[str.__str__(key)] = _toml_value(item, f"{where}[{key!r}]")
         return converted
     if isinstance(value, list | tuple):
         return [
             _toml_value(item, f"{where}[{index}]") for index, item in enumerate(value)
         ]
-    if isinstance(value, bool | str | float | datetime.date | datetime.time):
-        return value
+    if isinstance(value, bool):
+        return bool(value)
     if isinstance(value, int):
-        if value not in _I64:
-            msg = f"{where}: {value} is outside the signed 64-bit range ubproject.toml integers have"
+        number = int.__int__(value)
+        # by comparison: `in range(...)` scans an int subclass element by element
+        if not _I64_MIN <= number < _I64_END:
+            msg = f"{where}: {number} is outside the signed 64-bit range ubproject.toml integers have"
             raise ConfigError(msg)
-        return value
+        return number
+    if isinstance(value, float):
+        return float.__float__(value)
+    if isinstance(value, str):
+        return str.__str__(value)
+    if isinstance(value, datetime.datetime):
+        return datetime.datetime(
+            value.year, value.month, value.day, value.hour, value.minute, value.second,
+            value.microsecond, value.tzinfo, fold=value.fold,
+        )  # fmt: skip
+    if isinstance(value, datetime.date):
+        return datetime.date(value.year, value.month, value.day)
+    if isinstance(value, datetime.time):
+        return datetime.time(
+            value.hour, value.minute, value.second, value.microsecond, value.tzinfo,
+            fold=value.fold,
+        )  # fmt: skip
     if callable(value) or not isinstance(
         value, type(None) | set | frozenset | bytes | Path
     ):
@@ -107,7 +129,8 @@ def _toml_value(value: Any, where: str) -> Any:
 
 
 def _from_confpy(config: Config) -> dict[str, Any]:
-    """The four confvals, each checked and converted (§2.5)."""
+    """The four confvals, each checked and converted (§2.5), and each set to its
+    converted value."""
     values: dict[str, Any] = {}
     for key, confval in CONFVALS.items():
         value = getattr(config, confval)
@@ -121,6 +144,10 @@ def _from_confpy(config: Config) -> dict[str, Any]:
             msg = f"{confval}: {value!r} must be a dict of entries, as [parse] {key} is a table"
             raise ConfigError(msg)
         values[key] = _toml_value(value, confval)
+        # the confval itself holds the converted data, so the pickled environment never
+        # holds a conf.py class (an IntEnum member cannot be pickled) and a rebuild
+        # compares data with data
+        setattr(config, confval, values[key])
     return values
 
 
