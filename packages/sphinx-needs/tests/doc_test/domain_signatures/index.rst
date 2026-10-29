@@ -38,3 +38,21 @@ Domain signatures
 
       .. spec:: In a directive option
          :id: SIG_RST
+
+.. cpp:function:: void first(int)
+                  void second(double)
+
+   .. spec:: In a C++ function with two signatures
+      :id: SIG_CPP_TWO
+
+.. py:class:: Host
+
+   .. cpp:function:: void inner()
+
+      .. spec:: In a C++ function inside a Python class
+         :id: SIG_CPP_IN_PY
+
+.. nameless:: anything
+
+   .. spec:: In an object whose name is empty
+      :id: SIG_EMPTY

@@ -14,7 +14,9 @@ def test_signature_of_domain_objects(test_app: SphinxTestApp):
     """A need inside a domain object takes that object's name as its signature,
     whether the domain writes the name as text (py, rst) or wraps it in a
     ``desc_sig_name`` (c, cpp, js) (#2394). A C++ template's parameter is a
-    ``desc_name`` too, on the line before the declaration's own."""
+    ``desc_name`` too, on the line before the declaration's own. The first
+    signature of an object wins, the nearest enclosing object wins, and an
+    empty name is no name."""
     app = test_app
     app.build()
     assert not app._warning.getvalue()
@@ -26,6 +28,9 @@ def test_signature_of_domain_objects(test_app: SphinxTestApp):
         "SIG_C": "cfunc",
         "SIG_CPP": "run",
         "SIG_CPP_TMPL": "tmpl",
+        "SIG_CPP_TWO": "first",
+        "SIG_CPP_IN_PY": "inner",
+        "SIG_EMPTY": None,
         "SIG_JS": "go",
         "SIG_PY": "meth",
         "SIG_RST": ":opt:",
