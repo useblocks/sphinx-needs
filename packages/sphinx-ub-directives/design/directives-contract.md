@@ -119,11 +119,16 @@ cases (corpus: `identity-note-rst`, `host-content-continues-in-the-last-section`
    - **Precedence, per key.** A key the file's `[parse]` table SETS — an empty table
      included — replaces the `conf.py` value of that key WHOLE: no entry merge (sphinx-needs'
      per-key rule). A key the file does not set stays with `conf.py`, so a project may keep
-     presets in the file and contexts in `conf.py`. A confval given with `-D` keeps its
-     value. Setting a key in both is not reported.
+     presets in the file and contexts in `conf.py`. On the command line, `-D` can switch
+     `ub_template_enabled` (it keeps its value over the file's); the three tables cannot be
+     given on the command line (Sphinx ignores a whole-dict `-D`, and writes a dotted
+     `-D ub_directive_presets.x=…` into the `conf.py` dict as a string: lost when the file
+     sets the key, else an entry that is not a table -- sphinx-needs' shape). Setting a key
+     in both is not reported.
      Enforced by: test `test_confpy.py::test_a_toml_key_wins_whole_over_conf_py`,
      `…::test_a_key_the_toml_does_not_set_stays_with_conf_py`,
      `…::test_an_empty_toml_table_still_wins`, `…::test_a_dash_d_override_beats_the_toml`,
+     `…::test_a_dotted_dash_d_cannot_give_a_table_entry`,
      and the three `…_in_conf_py_alone` tests.
    - **Values.** A `conf.py` value must be one TOML could have written: a dict with `str`
      keys (its insertion order is the file order), a list or a tuple (read as a list), a
@@ -132,15 +137,27 @@ cases (corpus: `identity-note-rst`, `host-content-continues-in-the-last-section`
      other object, a non-`str` key, an integer outside that range, a top-level value that
      is not a dict, a `ub_template_enabled` that is not a bool — is a `ConfigError` naming
      the confval and the key path (`ub_template_contexts['site']['data']['owner']`). The
-     converted value is then handled EXACTLY as the same TOML: every finding (a non-finite
+     converted value is EXACTLY its base type, read through the base type's own method:
+     a subclass (an `IntEnum` or `(int, Enum)` member, a `(str, Enum)` member, a `Markup`,
+     a `float` with its own `repr`, a `dict`, `list` or `datetime` subclass) is its plain
+     value, so neither its `__str__`, `__float__` nor `repr` can change it; the 64-bit
+     bound is checked by comparison. The confval is set to the converted value. It is then
+     handled EXACTLY as the same TOML: every rendering and every finding (a non-finite
      float or a date in a context, a bad entry) is the same.
      Enforced by: test `test_confpy.py::test_a_value_toml_could_not_have_written_is_refused`,
      `…::test_a_tuple_is_a_list`, `…::test_the_i64_bounds_themselves_are_accepted`,
-     `…::test_a_conf_py_context_is_checked_as_the_toml_one`.
+     `…::test_a_conf_py_context_is_checked_as_the_toml_one`,
+     `…::test_a_conf_py_subclass_renders_as_its_toml_twin`,
+     `…::test_a_subclass_value_comes_back_as_its_exact_base_type`,
+     `…::test_an_int_subclass_past_the_bound_is_refused_promptly`.
    - **Locations.** A load-time finding is located at its table's source: the file, or
-     `conf.py` (the line that sets the confval). Template and context paths stay anchored at
-     the SOURCE ROOT (§2.4), whatever the source.
-     Enforced by: test `test_confpy.py::test_a_bad_preset_is_located_at_its_source`.
+     `conf.py`, at the LAST line that assigns the confval (plain, annotated, augmented, a
+     method call or an item; never a longer name it prefixes). Template and context paths
+     stay anchored at the SOURCE ROOT (§2.4), whatever the source.
+     Enforced by: test `test_confpy.py::test_a_bad_preset_is_located_at_its_source`,
+     `…::test_a_conf_py_finding_is_at_the_assigning_line`,
+     `…::test_a_reserved_var_context_in_conf_py_is_located_there`,
+     `…::test_a_replaced_self_preset_from_conf_py_is_located_there`.
    - **Rebuild.** A change to a confval re-reads every document.
      Enforced by: test `test_confpy.py::test_the_confvals_re_read_every_document`,
      `…::test_editing_a_confval_re_reads_the_page`.

@@ -20,7 +20,8 @@ In ``conf.py``, the smallest move is to keep your configuration there:
 
 and rename ``.. jinja::`` to ``.. ub-template::``.
 Contexts must be data (what ``ubproject.toml`` could hold); a function or a Python object
-stops the build with an error naming it.
+stops the build with an error naming it, and a subclass of a plain value
+(an ``IntEnum``, a ``Markup`` string) is read as that value.
 
 **Moving to** ``ubproject.toml`` is what makes the same project render in ubCode,
 which reads only that file:

@@ -53,11 +53,13 @@ Each ``conf.py`` value has the same shape as its table, keyed by entry name:
 replaces the ``conf.py`` value of that key whole: the entries are not merged.
 A key the file does not set is taken from ``conf.py``,
 so one project can keep its presets in the file and its contexts in ``conf.py``.
-A value given on the command line with ``-D`` wins over both.
+On the command line, ``-D ub_template_enabled=0`` (or ``=1``) wins over both;
+the three tables cannot be given on the command line.
 
 **What a value may be.** Exactly what ``ubproject.toml`` could hold:
 dicts with string keys, lists (a tuple is read as a list), strings, booleans,
 integers in the signed 64-bit range, floats, and dates and times.
+A subclass of one of these (an ``IntEnum``, a ``Markup`` string) is read as its plain value.
 Anything else (``None``, a set, a path, a function or any other Python object)
 stops the build with a configuration error naming the setting and the key,
 such as ``ub_template_contexts['site']['data']['owner']``.
@@ -66,7 +68,7 @@ Contexts are data only, as in ``ubproject.toml``.
 Paths in these tables (a template, a context file) are relative to the **source directory**,
 like an ``include``, and may not leave it.
 
-Only this one file is read. An ``extend`` chain is not followed
+Only this one ``ubproject.toml`` is read (beside ``conf.py``). An ``extend`` chain is not followed
 (``ub_directives.extend_unsupported`` says so once, when the file has an ``extend`` key and any of these tables);
 ubCode follows it, so put these tables in the file Sphinx reads.
 
