@@ -50,6 +50,60 @@ Improvements
   ``[needs]`` keys beside it, where ``[needs]`` used to be read silently; and an empty or non-string
   ``data_file`` is refused. See :ref:`needs_from_toml_variants`.
 
+- 👌 An unknown key in a field's or a link type's entry, and an unknown keyword in its ``schema``, is reported
+  and ignored (:issue:`2206`)
+
+  A key a :ref:`needs_fields`, :ref:`needs_links`, :ref:`needs_extra_options` or :ref:`needs_extra_links` entry
+  does not have, such as a misspelt ``derive`` or ``target_types``, was ignored in silence, so a field meant to be
+  derived stayed authorable and a link type meant to be restricted was not. Each is now one ``needs.config``
+  warning, naming the entry, the key and the keys the entry has; the key is ignored and the entry kept. A
+  ``name`` in a ``needs_fields`` entry, or an ``option`` in a ``needs_links`` entry, left from the list spelling,
+  is accepted in silence where it repeats the entry's name, as a migrated entry does, and reported where it
+  gives another (it was always ignored: the entry is named by its key). A
+  ``needs_extra_options`` entry is read for ``name``, ``description``, ``schema``, ``derive`` and
+  ``derive_by_type`` alone, as before, and its other keys, such as ``nullable``, are now reported. A keyword the
+  ``schema`` of such an entry does not have (``enmu``, ``minimum`` on a ``string``, ``uniqueItems`` on a link
+  type), at its top or in its ``items`` or ``contains``, is one ``needs.config`` warning too, and dropped, the
+  rest of the schema kept, where it stopped the build (``Invalid schema: Additional properties are not
+  allowed``); so is one in the schema of a field an extension registers with ``add_field``. The keys known are
+  those of the configuration's ``NeedFields``, ``NeedField``, ``NeedLinksConfig`` and ``LinkOptionsType``
+  types, whose ``NeedField`` now lists the keys a ``needs_extra_options`` entry is read for, and the keywords
+  those of the schema types the schema is validated against.
+
+- 👌 A field or link type declared on need types alone whose name is close to a declared one is reported, "did
+  you mean" (:issue:`2299`)
+
+  A ``fields`` or ``links`` entry of a :ref:`needs_types` entry naming nothing declared elsewhere declares a field
+  (or link type) of the need types that declare it alone, so a misspelt name, ``asl`` meant to narrow ``asil``,
+  constrained nothing and was not reported. When the name is within ``difflib.get_close_matches(name, known, n=1,
+  cutoff=0.8)`` of a core field an author sets, a registered field (a :ref:`needs_fields` entry, an extension's,
+  a service's) or a global link type, it is now one ``needs.type_near_name`` warning, ``needs_types['req'].fields['asl']
+  declares a field of need types 'req' alone; did you mean 'asil'?``; the field is declared all the same. A deliberate
+  near name, such as a ``tag`` of one type beside ``tags``, is reported too: ``suppress_warnings =
+  ["needs.type_near_name"]`` silences these alone. See :ref:`need_types_misspelt`.
+
+Bug fixes
+.........
+
+- 🐛 The ``needs_schema`` of a :ref:`needs.json <needs_builder_format>` writes a link type's literal default
+  **(changed output)** (:issue:`2208`)
+
+  It wrote ``"default": []`` for every link type but one derived by type alone, also for one with a literal
+  ``default``, such as ``[needs.links.rel] default = ["REQ_1"]``: a reader of the schema took the wrong value for
+  an absent ``rel``. It now writes that default as a need holding it writes its links, sorted and deduplicated,
+  with each link's condition under :ref:`needs_json_include_link_conditions` (the default) and without it
+  otherwise. A default a dynamic function or a variant computes, and a derived link type, still write
+  ``[]``; a need type's own default is not written. Under :ref:`needs_json_remove_defaults` a need holding the
+  link type's default now leaves it out, and a reader restores it from the file's own schema, as
+  ``ub-needs-exchange`` (:ref:`needimport`, :ref:`needs_external_needs`) does; a reader that does not restore
+  defaults from the schema reads such a need as having no links of that type.
+
+- 🐛 A build that fails with :ref:`needs_build_json`, :ref:`needs_build_json_per_id` or :ref:`needs_build_needumls`
+  set stops with its own error. Each of these writers ran after the failure as well and raised in turn, so a
+  configuration error was reported as ``Handler <function build_needs_json ...> for event 'build-finished' threw an
+  exception (exception: Needs schema has not been initialized yet.)``, with the real cause only in the chained
+  traceback
+
 Documentation
 .............
 

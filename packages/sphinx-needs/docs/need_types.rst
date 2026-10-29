@@ -383,10 +383,25 @@ A misspelt field name
 .. warning::
 
    A ``fields`` entry naming no field declared elsewhere declares a new one.
-   So a misspelt name with a ``schema`` ``type``, such as ``[needs.types.safety_req.fields.hazrd]``,
-   gives no warning: it declares a field ``hazrd`` of the ``safety_req`` needs,
+   So a misspelt name with a ``schema`` ``type``, such as ``[needs.types.req.fields.asl]`` meant to narrow
+   a :ref:`needs_fields` entry ``asil``, declares a field ``asl`` of the ``req`` needs,
    and the misspelt declaration constrains nothing.
-   The :ref:`needs.json <needs_builder>` lists it, with the description ``Declared by need types 'safety_req'``.
+   The :ref:`needs.json <needs_builder>` lists it, with the description ``Declared by need types 'req'``.
+
+   When the name is close to that of a field or link type declared elsewhere -- a core field an author sets
+   (``status``, ``tags``, ...), a :ref:`needs_fields` entry, a field an extension or a service registers,
+   or a :ref:`needs_links` entry -- the build says so, one ``needs.type_near_name`` warning per field
+   (or link type, ``links['...']``, "a link type of need types ... alone"), naming the first entry declaring it::
+
+      needs_types['req'].fields['asl'] declares a field of need types 'req' alone; did you mean 'asil'? [needs.type_near_name]
+
+   Close means ``difflib.get_close_matches(name, known, n=1, cutoff=0.8)``.
+   The field is declared all the same, so a deliberate near name keeps working:
+   a field ``tag`` of one type beside the core field ``tags`` is reported too,
+   and ``suppress_warnings = ["needs.type_near_name"]`` silences these warnings alone.
+   A name is not compared with the other fields declared on need types alone,
+   so a misspelt ``[needs.types.safety_req.fields.hazrd]`` beside a ``hazard`` that need types declare alone
+   still gives no warning.
    A misspelt name without a ``schema`` ``type`` is refused, as a ``needs.type_conflict`` warning::
 
       needs_types['safety_req'].fields['hazzard'] declares 'hazzard', which no needs_fields entry declares, and no need type without an ancestor declaring it gives it a 'schema' 'type'; the entry is ignored

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import dataclasses
+import difflib
 import json
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from copy import deepcopy
@@ -9,7 +10,7 @@ from functools import partial
 from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Literal, TypedDict, TypeVar, cast
+from typing import Any, Final, Literal, TypedDict, TypeVar, cast
 
 from docutils import nodes
 from docutils.parsers.rst import directives as rst_directives
@@ -38,6 +39,8 @@ from sphinx_needs.config import (
     _NEEDS_CONFIG,
     DEFAULT_NEED_TYPES,
     LinkOptionsType,
+    NeedField,
+    NeedFields,
     NeedLinksConfig,
     NeedsSphinxConfig,
     NeedType,
@@ -185,6 +188,8 @@ from sphinx_needs.roles.variant import VariantRole
 from sphinx_needs.schema.config import (
     FieldIntegerSchemaType,
     SchemasFileRootType,
+    UnknownKeyword,
+    drop_unknown_keywords,
     validate_field_schema,
 )
 from sphinx_needs.schema.config_utils import (
@@ -917,9 +922,80 @@ def _unknown(
         return [], ""
     return unknown, (
         f"{where} has {'an unknown key' if len(unknown) == 1 else 'unknown keys'} "
-        f"{', '.join(repr(k) for k in unknown)}; known keys are {', '.join(known)}; the "
+        f"{', '.join(repr(k) for k in unknown)}; known keys are "
+        f"{', '.join(sorted(known))}; the "
         f"{'key is' if len(unknown) == 1 else 'keys are'} ignored"
     )
+
+
+def _entry_keys(klass: Any) -> tuple[str, ...]:
+    """The keys of a configuration entry: those of its TypedDict, sorted."""
+    return tuple(sorted(klass.__required_keys__ | klass.__optional_keys__))
+
+
+#: the keys of an entry of ``needs_fields``, of ``needs_extra_options``, of
+#: ``needs_links`` and of ``needs_extra_links``: their TypedDicts', so that a key added
+#: to one is known at once
+FIELD_ENTRY_KEYS: Final[tuple[str, ...]] = _entry_keys(NeedFields)
+EXTRA_OPTION_ENTRY_KEYS: Final[tuple[str, ...]] = _entry_keys(NeedField)
+LINK_ENTRY_KEYS: Final[tuple[str, ...]] = _entry_keys(NeedLinksConfig)
+EXTRA_LINK_ENTRY_KEYS: Final[tuple[str, ...]] = _entry_keys(LinkOptionsType)
+
+
+def _report_unknown_keys(
+    where: str,
+    entry: Any,
+    known: tuple[str, ...],
+    *,
+    own_name: tuple[str, str] | None = None,
+) -> None:
+    """One ``needs.config`` warning per key of a global field or link type entry that
+    the entry does not have; the readers of the entry read only the known keys, so the
+    key is ignored and the entry kept. An entry that is not a mapping is left to its
+    reader, which reports it.
+
+    :param own_name: the key the entry's list spelling names it by (``name`` of a
+        ``needs_extra_options`` entry, ``option`` of a ``needs_extra_links`` one) and the
+        entry's name, for an entry of the table spelling (``needs_fields``,
+        ``needs_links``), which takes its name from its table key: that key, left over
+        from the list spelling, is accepted where it repeats the entry's name, and
+        reported where it gives another (it was always ignored).
+    """
+    if not isinstance(entry, Mapping):
+        return
+    for key in entry:
+        if own_name is not None and key == own_name[0]:
+            if entry[key] != own_name[1]:
+                log_warning(
+                    LOGGER,
+                    f"{where} gives {key!r} = {entry[key]!r}, which differs from the "
+                    f"entry's name {own_name[1]!r}; it is ignored",
+                    "config",
+                    None,
+                )
+            continue
+        if key not in known:
+            log_warning(
+                LOGGER,
+                f"{where} has an unknown key {key!r}; known keys are "
+                f"{', '.join(known)}; the key is ignored",
+                "config",
+                None,
+            )
+
+
+def _report_unknown_keywords(where: str, unknown: list[UnknownKeyword]) -> None:
+    """One ``needs.config`` warning per keyword :func:`drop_unknown_keywords` dropped
+    from the ``schema`` of a global field or link type entry."""
+    for item in unknown:
+        log_warning(
+            LOGGER,
+            f"{where}{item.path} has an unknown keyword {item.keyword!r}; known "
+            f"keywords of {item.what} are {', '.join(item.known)}; the keyword is "
+            "ignored",
+            "config",
+            None,
+        )
 
 
 def _normalise_declarations(
@@ -1217,6 +1293,9 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                     None,
                 )
                 continue
+            _report_unknown_keys(
+                f"needs_extra_options[{name!r}]", option, EXTRA_OPTION_ENTRY_KEYS
+            )
             description = option.get("description", description)
             schema = option.get("schema")
             derive = option.get("derive")
@@ -1260,6 +1339,12 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 None,
             )
             continue
+        _report_unknown_keys(
+            f"needs_fields[{option_name!r}]",
+            option_params,
+            FIELD_ENTRY_KEYS,
+            own_name=("name", option_name),
+        )
         if option_name in NeedsCoreFields or option_name in _link_type_names(
             needs_config
         ):
@@ -1631,6 +1716,17 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
         }
 
     # Ensure all links have outgoing and incoming defined, so that we can rely on it later on.
+    for name, link in needs_config._links.items():
+        _report_unknown_keys(
+            f"needs_links[{name!r}]",
+            link,
+            LINK_ENTRY_KEYS,
+            own_name=("option", name),
+        )
+    for link in needs_config._extra_links:
+        _report_unknown_keys(
+            f"needs_extra_links[{link['option']!r}]", link, EXTRA_LINK_ENTRY_KEYS
+        )
     for name, link in chain(
         needs_config._links.items(),
         ((v["option"], v) for v in needs_config._extra_links),
@@ -1908,7 +2004,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     back_links = {f"{name}_back" for name in link_types}
     #: the fields need types declare alone: declared below as a needs_fields entry is
     #: (before the rules are checked), each then declared by its need types
-    type_local, shape_refused, shape_findings = _type_local_fields(
+    type_local, shape_refused, shape_findings, field_declarers = _type_local_fields(
         type_entries,
         order,
         parent,
@@ -1918,7 +2014,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     #: is (after the needs_links and needs_extra_links entries), with the display,
     #: copy and dead links their first root declaration gives; a name declared under
     #: fields too is a field, and the back links of a link type are none
-    local_links, link_refused, link_findings = _type_local_links(
+    local_links, link_refused, link_findings, link_declarers = _type_local_links(
         type_entries,
         order,
         parent,
@@ -1928,6 +2024,13 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             **dict.fromkeys(back_links, "a link type's back links"),
         },
     )
+    #: a name of either close to a declared field's or link type's is likely misspelt
+    for text in _near_name_findings(
+        field_declarers,
+        link_declarers,
+        sorted({*_AUTHORED_CORE_FIELDS, *registered, *link_types}),
+    ):
+        log_warning(LOGGER, text, "type_near_name", None)
     #: each field's and link type's rules from the types' entries: folded below into
     #: its ``derive_by_type``, where it is read, so they are checked with the others
     field_rules, link_rules = (
@@ -2016,6 +2119,17 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         )
 
         if (core_override := needs_config._fields.get(name)) is not None:
+            if isinstance(core_override, dict) and "schema" in core_override:
+                # a keyword its type does not have is reported and dropped (from a
+                # copy: the configuration is not changed)
+                cleaned, unknown = drop_unknown_keywords(
+                    core_override["schema"], link=False, inherited=field.schema
+                )
+                _report_unknown_keywords(f"needs_fields[{name!r}].schema", unknown)
+                if unknown:
+                    core_override = cast(
+                        NeedFields, {**core_override, "schema": cleaned}
+                    )
             try:
                 field = create_inherited_field(
                     field,
@@ -2071,9 +2185,14 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     None,
                 )
 
+            # a keyword the schema of its type does not have is reported and dropped
+            declared_schema, unknown = drop_unknown_keywords(
+                field_data.schema, link=False
+            )
+            _report_unknown_keywords(f"{field_data.source}[{name!r}].schema", unknown)
             _schema = (
-                deepcopy(field_data.schema)
-                if field_data.schema is not None
+                deepcopy(declared_schema)
+                if declared_schema is not None
                 else {"type": "string"}
             )
             nullable = True
@@ -2230,6 +2349,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 if "schema" in link
                 else {"type": "array", "items": {"type": "string"}}
             )
+            # a keyword the schema of a link type does not have is reported and dropped
+            _schema, unknown = drop_unknown_keywords(_schema, link=True)
+            _report_unknown_keywords(f"{config_source}[{name!r}].schema", unknown)
             if "type" not in _schema:
                 _schema["type"] = "array"
             if "items" not in _schema:
@@ -2995,7 +3117,9 @@ def _type_local_fields(
     order: list[str],
     parent: Mapping[str, str],
     known: set[str],
-) -> tuple[dict[str, NewFieldParams], set[tuple[str, str]], list[str]]:
+) -> tuple[
+    dict[str, NewFieldParams], set[tuple[str, str]], list[str], dict[str, list[str]]
+]:
     """The fields need types declare that nothing else declares (no core field, no
     registered field, no link type, nor a link type's back links -- the resolver
     refuses such an entry): each the field of the types that declare it, of
@@ -3022,7 +3146,8 @@ def _type_local_fields(
     :param parent: The parent of each type that has one.
     :param known: The names declared otherwise.
     :return: The fields, by name; the (need type, field) entries that do not declare
-        their field; and the findings, by field, in ``order``.
+        their field; the findings, by field, in ``order``; and the need types whose
+        root declarations declare each field, in ``order``.
     """
 
     #: field -> its declarations, in order
@@ -3032,6 +3157,7 @@ def _type_local_fields(
             if isinstance(name, str) and name and name not in known:
                 entries.setdefault(name, []).append((need_type, keys))
     local: dict[str, NewFieldParams] = {}
+    declarers: dict[str, list[str]] = {}
     refused: set[tuple[str, str]] = set()
     inherited = partial(_declared_by_ancestor, types, parent, "fields", refused)
     findings: list[str] = []
@@ -3105,14 +3231,58 @@ def _type_local_fields(
                         f"{_derivation_text(derived, agreed[2])}; the entry is ignored"
                     )
                     refused.add((need_type, name))
-        declaring = ", ".join(repr(t) for t in roots if (t, name) not in refused)
+        declarers[name] = [t for t in roots if (t, name) not in refused]
+        declaring = ", ".join(repr(t) for t in declarers[name])
         local[name] = NewFieldParams(
             source="needs_types",
             description=f"Declared by need types {declaring}",
             schema=cast(Any, _field_schema_of(agreed[0], agreed[1])),
             nullable=True,
         )
-    return local, refused, findings
+    return local, refused, findings, declarers
+
+
+#: the core fields an author sets, which a field declared on need types alone may be
+#: a misspelling of: the id and the core fields of the fields schema
+_AUTHORED_CORE_FIELDS: Final[tuple[str, ...]] = (
+    "id",
+    *(
+        name
+        for name, data in NeedsCoreFields.items()
+        if data.get("add_to_field_schema")
+    ),
+)
+
+
+def _near_name_findings(
+    field_declarers: Mapping[str, list[str]],
+    link_declarers: Mapping[str, list[str]],
+    known: list[str],
+) -> list[str]:
+    """For each field and link type declared on need types alone (each with the need
+    types declaring it) whose name is close to a name in ``known`` (a core field an
+    author sets, a registered field, a global link type), a finding naming the first
+    declaring entry and the close name.
+
+    Close is ``difflib.get_close_matches(name, known, n=1, cutoff=0.8)``: a misspelt
+    name, or a deliberate near name (a plural), which is why it is a finding of its
+    own subtype; the field or link type is declared all the same.
+    """
+    findings: list[str] = []
+    for table, what, declarers in (
+        ("fields", "a field", field_declarers),
+        ("links", "a link type", link_declarers),
+    ):
+        for name, need_types in declarers.items():
+            close = difflib.get_close_matches(name, known, n=1, cutoff=0.8)
+            if not close or not need_types:
+                continue
+            findings.append(
+                f"needs_types[{need_types[0]!r}].{table}[{name!r}] declares {what} of "
+                f"need types {', '.join(repr(t) for t in need_types)} alone; did you "
+                f"mean {close[0]!r}?"
+            )
+    return findings
 
 
 def _declared_by_ancestor(
@@ -3139,7 +3309,9 @@ def _type_local_links(
     order: list[str],
     parent: Mapping[str, str],
     known: Mapping[str, str],
-) -> tuple[dict[str, NeedLinksConfig], set[tuple[str, str]], list[str]]:
+) -> tuple[
+    dict[str, NeedLinksConfig], set[tuple[str, str]], list[str], dict[str, list[str]]
+]:
     """The link types need types declare that nothing else declares (no link type, no
     field, no core field): each the link type of the types that declare it, of the one
     shape they agree on -- whether it is derived, and its display, ``copy`` and
@@ -3172,8 +3344,9 @@ def _type_local_links(
         alone are among them (a name one type declares under ``fields`` and another
         under ``links`` is a field).
     :return: The link types, by name, in the order of their first root declarations;
-        the (need type, link type) entries ignored; and the findings, by link type, in
-        ``order``.
+        the (need type, link type) entries ignored; the findings, by link type, in
+        ``order``; and the need types whose root declarations declare each link type,
+        in ``order``.
     """
     #: link type -> its declarations, in order
     entries: dict[str, list[tuple[str, Mapping[str, Any]]]] = {}
@@ -3185,6 +3358,7 @@ def _type_local_links(
     for name in [n for n in entries if n.endswith("_back") and n[:-5] in entries]:
         del entries[name]
     local: dict[str, NeedLinksConfig] = {}
+    declarers: dict[str, list[str]] = {}
     refused: set[tuple[str, str]] = set()
     inherited = partial(_declared_by_ancestor, types, parent, "links", refused)
     findings: list[str] = []
@@ -3229,11 +3403,12 @@ def _type_local_links(
                 f"needs_types[{need_type!r}].links[{name!r}] {text}; the entry is ignored"
             )
             refused.add((need_type, name))
+        declarers[name] = roots
         declaring = ", ".join(repr(t) for t in roots)
         local[name] = NeedLinksConfig(
             description=f"Declared by need types {declaring}", **given
         )
-    return local, refused, findings
+    return local, refused, findings, declarers
 
 
 def _link_shape_defaults(name: str) -> dict[str, Any]:

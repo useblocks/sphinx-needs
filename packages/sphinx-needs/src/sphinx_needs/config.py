@@ -709,11 +709,23 @@ class NeedFields(TypedDict):
     """
 
 
-class NeedField(NeedFields):
-    """Defines an extra option for needs"""
+class NeedField(TypedDict):
+    """Defines an extra option for needs (an entry of ``needs_extra_options``, deprecated:
+    use ``needs_fields`` instead).
+
+    These are the keys such an entry is read for; any other key is reported, and ignored.
+    """
 
     name: str
     """The name of the option."""
+    description: NotRequired[str]
+    """A description of the field."""
+    schema: NotRequired[FieldSchemaTypes]
+    """A JSON schema definition for the field, as a ``needs_fields`` entry takes one."""
+    derive: NotRequired[dict[str, Any]]
+    """A rule computing the field for every need, as a ``needs_fields`` entry takes one."""
+    derive_by_type: NotRequired[dict[str, Any]]
+    """Rules per need type, as a ``needs_fields`` entry takes them."""
 
 
 class StringLinkConf(TypedDict):
