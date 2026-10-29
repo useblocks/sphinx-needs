@@ -649,7 +649,8 @@ or is derived where the link type is not (or the other way round), is one ``need
 and the entry is ignored: one of a type without a declaring ancestor does not declare the link type
 (a child's entry under it is a declaration of its own), a child's still declares it, through its parent.
 A name close to that of a field or link type declared elsewhere is one ``needs.type_near_name`` warning,
-as for a field (``needs_types['req'].links['verifes'] declares a link type of need types 'req' alone; did you mean 'verifies'?``).
+as for a field (``needs_types['req'].links['verifes'] declares a link type of need types 'req' alone; did you mean 'verifies'?``),
+and so is one close to a link type's back links, ``<l>_back``, whose count an entry declares (``implemnts_back``).
 On a need of a type that does not declare it, the link type holds ``[]``, no links -- where a field holds ``None``:
 a list of links is never ``None``, a needs.json carries every link type on every need, and an empty one is no links.
 A link set for it in a need is ignored, as one ``needs.undeclared_for_type`` warning::

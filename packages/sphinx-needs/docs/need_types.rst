@@ -506,7 +506,10 @@ A misspelt field name
    When the name is close to that of a field or link type declared elsewhere -- a core field an author sets
    (``status``, ``tags``, ...), a :ref:`needs_fields` entry, a field an extension or a service registers,
    or a :ref:`needs_links` entry -- the build says so, one ``needs.type_near_name`` warning per field
-   (or link type, ``links['...']``, "a link type of need types ... alone"), naming the first entry declaring it::
+   (or link type, ``links['...']``, "a link type of need types ... alone"), naming the first entry declaring it.
+   A link type's name is compared with the back links of a :ref:`needs_links` entry too,
+   so a misspelt count of incoming links (``implements_bak``, ``implemnts_back``) is pointed at ``implements_back``
+   (:ref:`need_types_incoming`)::
 
       needs_types['req'].fields['asl'] declares a field of need types 'req' alone; did you mean 'asil'? [needs.type_near_name]
 

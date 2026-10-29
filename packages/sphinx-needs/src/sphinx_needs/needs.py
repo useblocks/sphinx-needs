@@ -2080,11 +2080,14 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             **dict.fromkeys(back_links, "a link type's back links"),
         },
     )
-    #: a name of either close to a declared field's or link type's is likely misspelt
+    #: a name of either close to a declared field's or link type's is likely misspelt;
+    #: a link type's is compared with the back links too, whose count a need type's
+    #: ``links`` entry declares (``implements_bak``, ``implemnts_back``)
     for text in _near_name_findings(
         field_declarers,
         link_declarers,
         sorted({*_AUTHORED_CORE_FIELDS, *registered, *link_types}),
+        back_links=sorted(back_links),
     ):
         log_warning(LOGGER, text, "type_near_name", None)
     #: each field's and link type's rules from the types' entries: folded below into
@@ -3315,23 +3318,27 @@ def _near_name_findings(
     field_declarers: Mapping[str, list[str]],
     link_declarers: Mapping[str, list[str]],
     known: list[str],
+    *,
+    back_links: Sequence[str] = (),
 ) -> list[str]:
     """For each field and link type declared on need types alone (each with the need
     types declaring it) whose name is close to a name in ``known`` (a core field an
     author sets, a registered field, a global link type), a finding naming the first
-    declaring entry and the close name.
+    declaring entry and the close name. A link type's name is compared with
+    ``back_links`` too, the back links of the global link types, which a need type's
+    ``links`` entry names to declare their count.
 
     Close is ``difflib.get_close_matches(name, known, n=1, cutoff=0.8)``: a misspelt
     name, or a deliberate near name (a plural), which is why it is a finding of its
     own subtype; the field or link type is declared all the same.
     """
     findings: list[str] = []
-    for table, what, declarers in (
-        ("fields", "a field", field_declarers),
-        ("links", "a link type", link_declarers),
+    for table, what, declarers, names in (
+        ("fields", "a field", field_declarers, known),
+        ("links", "a link type", link_declarers, [*known, *back_links]),
     ):
         for name, need_types in declarers.items():
-            close = difflib.get_close_matches(name, known, n=1, cutoff=0.8)
+            close = difflib.get_close_matches(name, names, n=1, cutoff=0.8)
             if not close or not need_types:
                 continue
             findings.append(
