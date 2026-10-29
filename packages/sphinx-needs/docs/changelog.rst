@@ -10,6 +10,15 @@ Unreleased
 Improvements
 ............
 
+- ✨ Each need now records where its text came from, as a list of hops on ``need.source`` (provisional; see
+  :ref:`api`)
+
+  ``need.source.hops`` names the file the need is written in, with its true line range (an included file's own, in
+  an include; an imported file, a service), then the page the need is placed on, with its sections and the domain
+  objects it is written in. It is provisional: the shape may change in a minor release until it reaches
+  ``needs.json``. Nothing a filter, a table or ``needs.json`` shows changes; the first build after upgrading reads
+  every document again.
+
 - ✨ A derive rule of kind ``copy`` takes ``where`` beside ``over`` or ``join`` (:ref:`needs_derive_kind_copy`,
   :issue:`2246`)
 
