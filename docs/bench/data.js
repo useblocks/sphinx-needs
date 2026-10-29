@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793307221841,
+  "lastUpdate": 1793307397572,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27108,6 +27108,42 @@ window.BENCHMARK_DATA = {
             "value": 59.02140488399999,
             "unit": "s",
             "extra": "Commit: fff6ce5410bf648ff8ed0b7a9f2e4da23104ba77\nBranch: master\nTime: 2026-10-29T21:52:14+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f2b08e85b4fae10ba4faa9daaceca55eee68e57e",
+          "message": "🧹 CI: keep release dist and Docker build records for 7 days, not 90 (#2396)\n\n## Problem\n\n`sphinx-needs` holds **292 MB of Actions artifacts**, and 95% of it is\none upload:\n\n| Artifact | Count | Size | Source |\n| --- | --- | --- | --- |\n| `dist` | 29 | **277.4 MB** | `release.yaml`, once per `*-v*` tag, at\nthe repo's 90-day default |\n| `github-pages` | 12 | 9.4 MB | GitHub's own Pages deployment (not\nconfigurable here) |\n| `*~sphinx-needs~*.dockerbuild` | 48 | 6.9 MB |\n`docker/build-push-action` build record, also at 90 days |\n\nThe `publish` job downloads `dist` **within the same run**\n(`download-artifact` in the publish job, line 223). After the run\nfinishes, the artifact only serves a re-run of that release — yet it is\nkept for 90 days, and 29 of them is what fills the org's\nartifact-storage quota.\n\n## Change\n\n- **`release.yaml`**: `retention-days: 7` on the `dist` artifact.\n- **`docker.yaml`**: `DOCKER_BUILD_RECORD_RETENTION_DAYS: 7` — the build\nrecord exists so the run summary can link it; a week is plenty.\n\nSeven days matches the re-run window (a failed release is re-run long\nbefore that) and the retention SPLed now uses.\n\nThe `github-pages` artifacts are created by GitHub's Pages deployment,\nnot by a workflow here — nothing to configure.\n\n## Effect\n\n| | before | steady state |\n| --- | --- | --- |\n| `dist` | 277 MB | ~14 MB (19 artifacts, all < 30 days; earlier\nreleases expire) |\n| docker build records | 6.9 MB | ~1 MB |\n| **total** | **292 MB** | **well under 30 MB** |\n\n## Note on existing artifacts\n\nThe **10 `dist` artifacts older than 30 days (264 MB)** were deleted\nfrom this repository today, to relieve the org-wide Actions\nartifact-storage quota that has been failing uploads in\n`useblocks/permissions` (and would eventually fail here too). This PR is\nwhat stops them accumulating again; no other repository's artifacts were\ntouched.\n\n## Verification\n\n- `yamlfmt -lint` (v0.21.0, this repository's `.yamlfmt` config): both\nfiles clean\n- both workflow YAMLs parse; `retention-days: 7` present on the only\n`upload-artifact` in `release.yaml`\n- workflow-only change: no package behaviour, tests, docs, or changelog\nentry touched\n\n*Prepared with an AI assistant and reviewed before opening; the change\nis two workflow keys.*",
+          "timestamp": "2026-10-29T21:54:47+01:00",
+          "tree_id": "c4ebdaf276c1284d68616962e2887127efaff3e6",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f2b08e85b4fae10ba4faa9daaceca55eee68e57e"
+        },
+        "date": 1793307388137,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.08783892399999615,
+            "unit": "s",
+            "extra": "Commit: f2b08e85b4fae10ba4faa9daaceca55eee68e57e\nBranch: master\nTime: 2026-10-29T21:54:47+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.144213696,
+            "unit": "s",
+            "extra": "Commit: f2b08e85b4fae10ba4faa9daaceca55eee68e57e\nBranch: master\nTime: 2026-10-29T21:54:47+01:00"
           }
         ]
       }
