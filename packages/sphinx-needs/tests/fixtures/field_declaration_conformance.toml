@@ -94,10 +94,10 @@
 #     apply as on a type the project declares -- a `severity` included. A declaration of
 #     an extension's field in it starts from the extension's own and may only narrow it,
 #     as any type's declaration narrows the one before it: one widening it is a
-#     `type_widening` (a different type a `type_conflict`), the entry ignored, the type
-#     keeping the extension's declaration. A bare one declares no type (the default types
-#     are kept beside it, as beside a bare entry naming a default type); one giving a
-#     `title` and a `prefix` declares the project's types, as any such entry. A bare
+#     `type_widening` (a different type a `type_conflict`), that field's entry ignored,
+#     the type keeping the extension's declaration. A bare one declares no type (the
+#     default types are kept beside it, as beside a bare entry naming a default type);
+#     one giving a `title` and a `prefix` declares the project's types, as any such entry. A bare
 #     entry naming no default type and no type an extension registers is ignored (each
 #     tool's configuration finding, not compared). In the walk order (below), a type an
 #     entry with a `title` and a `prefix` narrows stands where `config` gives the entry;

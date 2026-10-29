@@ -42,7 +42,8 @@ Improvements
   before. A type named that nothing declares when the schema is built is one ``needs.config`` warning, the field
   declared on the others. ``FieldsSchema.declaring_types(name)`` names the types declaring a field declared on need
   types alone, either way, and the needs.json schema writes such a field nullable where the extension's declaration
-  is not. sphinx-test-reports declares its eighteen fields this way from its next release. See
+  is not, with a ``null`` default where it gives no literal one (so ``needs_json_remove_defaults`` leaves the key
+  out). sphinx-test-reports declares its eighteen fields this way from its next release. See
   :ref:`needs_types_extension_fields`.
 
 - ✨ A derive rule of kind ``copy`` takes ``where`` beside ``over`` or ``join`` (:ref:`needs_derive_kind_copy`,
