@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793295721758,
+  "lastUpdate": 1793307221841,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27072,6 +27072,42 @@ window.BENCHMARK_DATA = {
             "value": 61.747782654999995,
             "unit": "s",
             "extra": "Commit: 4259931a38a7d36152fb8d4e6d41f2714d2c65ae\nBranch: master\nTime: 2026-10-29T18:40:27+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fff6ce5410bf648ff8ed0b7a9f2e4da23104ba77",
+          "message": "🐛 A need takes the name of its nearest enclosing domain object as its signature, however the domain writes it (#2397)\n\nA need written inside a Sphinx domain object takes the name of its\nnearest enclosing object as its `signature`,\nwhich filters and needs.json show. Only a name written as plain text was\nread, as the Python, reST and standard\ndomains write it. The C, C++ and JavaScript domains usually wrap the\nname in further nodes. So a need directly\ninside one of their objects had no `signature`, and one inside such an\nobject nested in another domain's object,\nsay a `cpp:function` inside a `py:class`, took the outer object's name.\n\nJavaScript wraps the name in a `desc_sig_name` inside the `desc_name`. C\nand C++ do the same one level further\ndown, inside a `desc_signature_line`.\n`get_sections_and_signature_and_needs` read only a plain-text first\nchild of\na `desc_name` directly under the `desc_signature`, so for these domains\nit found nothing and climbed on.\n\nIt now also looks inside a `desc_signature_line`. Where the\n`desc_name`'s first child is text, the value is\nexactly what it was. Otherwise it is the `desc_name`'s text, and an\nempty name counts as no name: the walk climbs\non, where before an empty `desc_name` with no content (only a project's\nor another extension's own directive\nwrites one) failed the build with an `IndexError`. As before, the first\nsignature of a multi-signature directive\nwins, and within a signature the last `desc_name` wins, which matters\nfor a C++ template: its template parameter\nis a `desc_name` too, on the line before the declaration's own. A need\nwhose nearest enclosing object writes its\nname as plain text keeps its value. A need inside a `cpp:alias` still\nhas none, because the alias is expanded\nafter the needs are located.\n\nFenced by `tests/test_domain_signatures.py`, with a need inside each of:\na `c:function`; a `cpp:function` in a\n`cpp:namespace`; a C++ function template; a two-signature\n`cpp:function`; a `cpp:function` inside a `py:class`; a\n`js:method`; a `py:method`; an `rst:directive:option`; and an object\nwith an empty name, at the top level and\ninside a `py:class`. The C, C++ and JavaScript rows fail on master (the\nnested one gives the class's name there),\nand the py and rst rows are unchanged. No existing snapshot changes, and\nthe documentation's needs.json is\nidentical before and after.\n\nCloses #2394",
+          "timestamp": "2026-10-29T21:52:14+01:00",
+          "tree_id": "be8ce156fb30429de4e11c7daa17da33925f7789",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/fff6ce5410bf648ff8ed0b7a9f2e4da23104ba77"
+        },
+        "date": 1793307213794,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09170497799999566,
+            "unit": "s",
+            "extra": "Commit: fff6ce5410bf648ff8ed0b7a9f2e4da23104ba77\nBranch: master\nTime: 2026-10-29T21:52:14+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.02140488399999,
+            "unit": "s",
+            "extra": "Commit: fff6ce5410bf648ff8ed0b7a9f2e4da23104ba77\nBranch: master\nTime: 2026-10-29T21:52:14+01:00"
           }
         ]
       }
