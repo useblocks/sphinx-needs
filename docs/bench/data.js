@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793284114743,
+  "lastUpdate": 1793287589707,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -26964,6 +26964,42 @@ window.BENCHMARK_DATA = {
             "value": 57.22772916899999,
             "unit": "s",
             "extra": "Commit: e57b23b8e2e494297bb4a1868762f07707b574c3\nBranch: master\nTime: 2026-10-29T15:27:07+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a8da5bb65ea109a6df4485093dacb44dee457290",
+          "message": "📚 Read the Docs: install ub-project from the checkout, ahead of the packages that need it (#2387)\n\n## What\n\nRepository-level (the four Read the Docs configurations, plus one\nparagraph of `AGENTS.md`).\n`.readthedocs.yml` (sphinx-needs),\n`packages/sphinx-codelinks/.readthedocs.yaml`,\n`packages/sphinx-test-reports/.readthedocs.yaml`\nand `packages/sphinx-mounts/.readthedocs.yaml` now pip-install\n`packages/ub-project` from the checkout, ahead of the packages that\ndepend on it at runtime (sphinx-needs, sphinx-codelinks,\nub-test-reports, sphinx-mounts), exactly as they already install\n`packages/ub-needs-exchange` and `packages/sphinx-ai-index`. Each also\nadds `packages/ub-project/` to its `post_checkout` skip\nfilter, so a pull request touching only ub-project rebuilds the sites\nthat run it. The `AGENTS.md` row on Read the Docs states\nthe rule for runtime libraries.\n\n## Why\n\nSince #2383, `sphinx_needs.needs` imports `ub_project.NO_DATA_FILE`,\nwhich only the checkout's ub-project has. Every Read the\nDocs build that installs sphinx-needs from the checkout — sphinx-needs'\nown (`latest` included), sphinx-codelinks' and\nsphinx-test-reports' — let pip resolve `ub-project` from PyPI (1.1.0)\nand failed in `conf.py`:\n`ImportError: cannot import name 'NO_DATA_FILE' from 'ub_project'` (seen\non #2384's preview). sphinx-mounts does not import\nthe new name, but reads `[variants]` through ub-project, so it gets the\nsame treatment rather than documenting released code.\n\nCI's docs jobs build from the workspace lock and were never affected;\nthe release workflow still checks every wheel against\nPyPI alone before publishing.\n\n## Tests\n\n- Simulated each yaml's install sequence in a fresh Python 3.11\nenvironment with `uv pip install --no-sources`, in the yaml's\norder: today's sphinx-needs order reproduces the `NO_DATA_FILE`\nImportError; the new orders for all four sites import their\n  packages, with `ub_project` from the checkout.\n- `prek` (yamlfmt) passes on the five files. The real proof is this pull\nrequest's own Read the Docs previews.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [ ] I ran the package's tests (`uv run poe test-<package>`) and they\npass. (n/a: Read the Docs configuration only)\n- [x] Documentation is updated where behaviour or options change.\n- [ ] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. (n/a: nothing shipped changes)\n- [x] `uv run poe lint` and `uv run poe typecheck` pass. (prek on the\nchanged files)",
+          "timestamp": "2026-10-29T16:24:46+01:00",
+          "tree_id": "4b797cd9688dc65a74eb2092dbd645e2e54c4043",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a8da5bb65ea109a6df4485093dacb44dee457290"
+        },
+        "date": 1793287572165,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09564177099999682,
+            "unit": "s",
+            "extra": "Commit: a8da5bb65ea109a6df4485093dacb44dee457290\nBranch: master\nTime: 2026-10-29T16:24:46+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.942693585,
+            "unit": "s",
+            "extra": "Commit: a8da5bb65ea109a6df4485093dacb44dee457290\nBranch: master\nTime: 2026-10-29T16:24:46+01:00"
           }
         ]
       }
