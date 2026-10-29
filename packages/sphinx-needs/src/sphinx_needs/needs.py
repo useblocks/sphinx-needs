@@ -848,6 +848,9 @@ NEED_TYPE_LINK_SHAPE_KEYS = (
     "style_end",
 )
 
+#: The keys of an entry of a need type's ``links`` table, of a link type's declaration.
+_NEED_TYPE_LINK_ENTRY_KEYS = (*NEED_TYPE_LINK_KEYS, *NEED_TYPE_LINK_SHAPE_KEYS)
+
 
 def _type_name(value: object) -> str:
     return type(value).__name__
@@ -1031,12 +1034,15 @@ def _normalise_declarations(
     """A need type's ``fields`` or ``links`` table, of its shape: each entry a mapping
     of the keys of its table, each value of its shape. What is not is reported in
     ``findings`` and left out: an entry that is not a mapping, a key that is not
-    known or not of its shape. Every entry is a new mapping, its values copies."""
-    known = (
-        (*NEED_TYPE_LINK_KEYS, *NEED_TYPE_LINK_SHAPE_KEYS)
-        if table == "links"
-        else NEED_TYPE_FIELD_KEYS
-    )
+    known or not of its shape. Every entry is a new mapping, its values copies.
+
+    A ``links`` entry named ``<x>_back`` may declare the count of a link type's back
+    links, which takes only :data:`NEED_TYPE_BACK_LINK_KEYS` and refuses the entry for
+    any other (:func:`_declare_back_links`); whether it does is known once the link
+    types are (:func:`_resolve_type_declarations`). So its other keys, not known or not
+    of their shape, are kept and not reported here: the resolver reports them as here
+    where the entry declares a link type, and refuses the entry where it is a count."""
+    known = _NEED_TYPE_LINK_ENTRY_KEYS if table == "links" else NEED_TYPE_FIELD_KEYS
     resolved: dict[Any, dict[str, Any]] = {}
     for name, entry in value.items():
         where = f"{named}.{table}[{name!r}]"
@@ -1046,10 +1052,14 @@ def _normalise_declarations(
                 "the entry is ignored"
             )
             continue
-        wrong, text = _not_of_their_shape(where, entry, known)
+        checked = entry
+        if table == "links" and isinstance(name, str) and name.endswith("_back"):
+            # those of a count's keys alone; the others are the resolver's
+            checked = {k: v for k, v in entry.items() if k in NEED_TYPE_BACK_LINK_KEYS}
+        wrong, text = _not_of_their_shape(where, checked, known)
         if wrong:
             findings.append(text)
-        unknown, text = _unknown(where, entry, known)
+        unknown, text = _unknown(where, checked, known)
         if unknown:
             findings.append(text)
         resolved[name] = {
@@ -3675,16 +3685,20 @@ def _resolve_type_declarations(
             ("links", "link", "a link type", "a field"),
         ):
             for name, keys in types[need_type].get(table, {}).items():
-                if (need_type, name) in refused[table]:
-                    continue  # reported with the field's (or link type's) shape
                 where = f"needs_types[{need_type!r}].{table}[{name!r}]"
                 glob = schema.global_declaration(name)
-                if glob is None or glob.kind != kind:
-                    owner = (
-                        schema.global_declaration(name.removesuffix("_back"))
-                        if glob is None and name.endswith("_back")
-                        else None
+                owner = (
+                    schema.global_declaration(name.removesuffix("_back"))
+                    if glob is None and name.endswith("_back")
+                    else None
+                )
+                if table == "links" and name.endswith("_back"):
+                    keys = _deferred_keys(
+                        where, keys, count=owner is not None and owner.kind == "link"
                     )
+                if (need_type, name) in refused[table]:
+                    continue  # reported with the field's (or link type's) shape
+                if glob is None or glob.kind != kind:
                     # defensive: an entry named after a field's name and ``_back`` that
                     # declares nothing is refused before it reaches here (no state is
                     # known where ``owner`` is a field), so it would read "not ..."
@@ -3981,6 +3995,28 @@ def _resolve_id_patterns(
         patterns[need_type] = own
         if own:
             schema.set_id_patterns(need_type, own)
+
+
+def _deferred_keys(
+    where: str, keys: Mapping[str, Any], *, count: bool
+) -> Mapping[str, Any]:
+    """A ``links`` entry named ``<x>_back``, whose keys outside
+    :data:`NEED_TYPE_BACK_LINK_KEYS` :func:`_normalise_declarations` left unchecked: as
+    they are for the count of a link type's back links (``count``), which refuses the
+    entry for any of them; else reported and removed as on any other ``links`` entry,
+    one ``needs.config`` warning per reason.
+    """
+    if count:
+        return keys
+    wrong, text = _not_of_their_shape(where, keys, _NEED_TYPE_LINK_ENTRY_KEYS)
+    if wrong:
+        log_warning(LOGGER, text, "config", None)
+    unknown, text = _unknown(where, keys, _NEED_TYPE_LINK_ENTRY_KEYS)
+    if unknown:
+        log_warning(LOGGER, text, "config", None)
+    if not wrong and not unknown:
+        return keys
+    return {k: v for k, v in keys.items() if k not in wrong and k not in unknown}
 
 
 def _declare_back_links(

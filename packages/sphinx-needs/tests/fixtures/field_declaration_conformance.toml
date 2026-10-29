@@ -6206,3 +6206,29 @@ type_name = "Requirement"
 [[case.expect.findings]]
 code = "type_inherits"
 type = "req"
+
+[[case]]
+name = "back-links-entry-with-an-unknown-key-is-ignored"
+why = "a key no links entry has (a misspelt severity) on an entry of a link type's back links is a key the count does not take: one type_conflict, the entry ignored whole, so its count does not apply, as for a default or another schema keyword"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.satisfies_back]
+schema = { minItems = 1 }
+severty = "warning"
+'''
+source = '''
+.. req:: Not satisfied
+   :id: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+satisfies_back = []
+[[case.expect.findings]]
+code = "type_conflict"
+type = "req"
+field = "satisfies_back"

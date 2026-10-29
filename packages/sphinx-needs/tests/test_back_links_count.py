@@ -10,6 +10,7 @@ of one need type reads it.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -20,6 +21,7 @@ from sphinx_needs.needs_schema import (
     LinkDisplayConfig,
     LinkSchema,
 )
+from sphinx_needs_testkit import build_warnings
 
 
 def _schema(*need_types: str) -> FieldsSchema:
@@ -128,3 +130,58 @@ def test_a_schema_told_its_types_after_a_declaration_checks_it() -> None:
     schema.add_back_links("req", _back())
     with pytest.raises(ValueError, match="'req' is not a configured need type"):
         schema.set_need_types(["spec"])
+
+
+UNKNOWN_KEY = """\
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.satisfies_back]
+schema = { minItems = 1 }
+severty = "warning"
+
+[needs.types.req.links.other_back]
+bar = 1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (
+                    Path("conf.py"),
+                    'extensions = ["sphinx_needs"]\nneeds_from_toml = "ubproject.toml"\n',
+                ),
+                (Path("ubproject.toml"), UNKNOWN_KEY),
+                (Path("index.rst"), "Case\n====\n\n.. req:: A\n   :id: REQ_1\n"),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_an_unknown_key_refuses_a_count(test_app: Any) -> None:
+    """A key no ``links`` entry has (a misspelt ``severity``) on the entry of a link
+    type's back links is one ``needs.type_conflict``, as any key the count does not
+    take is, and the entry is ignored whole: its ``minItems`` does not apply, and the
+    key is not also reported as an unknown key of a link type's entry (whose keys the
+    count does not take either). An entry named ``<x>_back`` where no link type ``x``
+    exists declares a link type of its need types alone, and an unknown key of it is
+    reported and ignored as on any other ``links`` entry."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types['req'].links['satisfies_back'] sets 'severty', but "
+        "'satisfies_back' is a link type's back links: a need type declares only "
+        "their description, schema (minItems, maxItems) and severity; the entry is "
+        "ignored [needs.type_conflict]",
+        "WARNING: needs_types['req'].links['other_back'] has an unknown key 'bar'; "
+        "known keys are allow_dead_links, color, copy, default, derive, description, "
+        "incoming, outgoing, predicates, schema, severity, style, style_end, "
+        "style_part, style_start, target_types; the key is ignored [needs.config]",
+    ]
