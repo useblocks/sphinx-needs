@@ -648,7 +648,7 @@ def test_confoverride_file_over_variants_whose_own_file_is_missing(build):
 
 @pytest.mark.parametrize("table", ["variants", "needs"])
 def test_confoverride_file_replaces_the_file_of_either_location(build, table):
-    """``-D needs_variant_data_file`` names a file, not a location (ub-project's
+    """``-D needs_variant_data_file`` swaps the file, never the table (ub-project's
     reading contract, section 6.8): it replaces the data file of whichever location is
     read, without opening it, and that location's inline table still applies -- so a
     project on the legacy location alone keeps its ``[needs]`` inline table."""

@@ -10,7 +10,7 @@ Unreleased
 Improvements
 ............
 
-- 👌 ``-D needs_variant_data_file`` names a file, not a location (:issue:`2378`)
+- 👌 ``-D needs_variant_data_file`` swaps the data file, never the table it is read from (:issue:`2378`)
 
   The rule is now ub-project's reading contract (section 6.8), shared by every tool that reads
   :file:`ubproject.toml`, and sphinx-needs passes the value to it rather than removing keys from the toml itself.

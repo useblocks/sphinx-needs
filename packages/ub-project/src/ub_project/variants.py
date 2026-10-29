@@ -37,7 +37,7 @@ every diagnostic path and message names the table as the consumer placed it.
 
 A consumer that takes a data file from outside the document -- a command-line override --
 passes it as ``data_file_override`` (``NO_DATA_FILE`` for one that names no file). It
-names a FILE, not a location: the location, the refusals and the findings are those of
+swaps the FILE, never the table: the location, the refusals and the findings are those of
 the document as written, and the override only replaces the data file of the location
 read, which is then never opened.
 """

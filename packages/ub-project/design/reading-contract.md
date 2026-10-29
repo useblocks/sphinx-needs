@@ -203,7 +203,7 @@ edition = "pro"
    location read, the override file when there is one (`None` for `NO_DATA_FILE`, §6.8),
    or `None`), `location`
    (`"variants"`, `"needs"` or `None`) and `diagnostics`.
-8. **Overrides: a data-file override names a file, not a location.** A consumer may take
+8. **Overrides: a data-file override swaps the file, never the table.** A consumer may take
    one data file from outside the document — sphinx-needs: `-D needs_variant_data_file`,
    its one confval for both locations; ubCode: a `-c` of `variants.data_file` or of
    `needs.variant_data_file` — and pass it as `data_file_override`. Then:

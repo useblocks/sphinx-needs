@@ -178,7 +178,7 @@ A file from one table is never merged under an inline table from the other.
 a ``needs_variant_data`` in :file:`conf.py` still applies when the location read sets no inline table,
 and a ``needs_variant_data_file`` when it sets no file; the file is then loaded and the inline table merged over it, as usual.
 
-**-D needs_variant_data_file names a file, not a location.**
+**-D needs_variant_data_file swaps the file, never the table.**
 ``-D needs_variant_data_file=...`` replaces the data file of the location read, ``[variants]`` or ``[needs]``,
 without opening the toml's own file, and that location's inline table is still merged over it,
 so a project on the legacy location keeps its ``[needs.variant_data]``.

@@ -705,7 +705,7 @@ def _load_variants_from_toml(
     reports the other's keys. What stays here is sphinx-needs' policy:
 
     - ``-D needs_variant_data_file`` is ub-project's data-file override (its reading
-      contract, section 6.8): it names a file, not a location, so it replaces the data
+      contract, section 6.8): it swaps the file, never the table, so it replaces the data
       file of the location read without opening it, and the location, the refusals and
       the findings stay the document's. A relative one is anchored at the ``confdir``,
       as :func:`resolve_variant_data_config` anchors it, and ``-D

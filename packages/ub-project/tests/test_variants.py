@@ -414,7 +414,7 @@ class TestAnchoring:
 
 
 class TestOverride:
-    """A data-file override names a file, not a location (contract section 6.8).
+    """A data-file override swaps the file, never the table (contract section 6.8).
 
     The corpus compares the map, the file and the findings; these pin ``location``, the
     default, that the override is used as given, and the wording of its refusals.

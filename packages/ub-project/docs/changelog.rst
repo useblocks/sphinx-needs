@@ -6,7 +6,7 @@ Changelog
 Unreleased
 ----------
 
-- **A data-file override names a file, not a location.** ``read_variants`` takes
+- **A data-file override swaps the file, never the table.** ``read_variants`` takes
   ``data_file_override``, a variant data file from outside the document (a consumer's
   command line). It replaces the data file of the location read, which is then never
   opened, and that location's inline table is still merged over it; the location, the
