@@ -299,7 +299,8 @@ def get_sections_and_signature_and_needs(
                             desc_child.children[0], nodes.Text
                         ):
                             signature = desc_child.children[0]
-                        else:
+                        elif desc_child.astext():
+                            # an empty name is no name
                             signature = nodes.Text(desc_child.astext())
                 if signature:
                     break
