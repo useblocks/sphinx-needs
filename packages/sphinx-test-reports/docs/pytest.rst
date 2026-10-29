@@ -36,16 +36,20 @@ documentation toolchain (see :doc:`/install`). Enable it in the pytest configura
    ``pip install "sphinx-test-reports[pytest]"`` still installs it, until 4.0. The pre-3.0
    name, ``sphinxcontrib.test_reports.pytest_plugin``, still loads the same plugin until
    4.0 wherever sphinx-test-reports is installed, with a ``FutureWarning`` at start-up
-   asking for the new one. That
+   asking for the new one. Before pytest 9.2 that
    warning comes before pytest installs its own filters, so only Python's own
    options silence it: ``PYTHONWARNINGS=ignore::FutureWarning``, which
    pytest-xdist's workers inherit, or
    ``python -W ignore::FutureWarning -m pytest``, which reaches the main process
-   only. A ``filterwarnings`` line written against the old name keeps matching, because
-   resolving it imports the old name; change it together with the ``-p`` line.
-   With ``-p`` already on the new name, that import happens inside pytest's
-   filter parsing, and under ``filterwarnings = error`` its ``FutureWarning``
-   stops pytest with a usage error.
+   only. From pytest 9.2 on, pytest applies its ``filterwarnings`` while it loads the
+   ``-p`` plugins: the warning is reported in pytest's warnings summary, a
+   ``filterwarnings`` line reaches it, and under ``filterwarnings = error`` it stops
+   pytest with "Error while loading plugin" -- change the ``-p`` line. A
+   ``filterwarnings`` line written against the old name imports the old name when
+   pytest resolves it; change it together with the ``-p`` line, to the line given
+   below. Where that import happens inside pytest's filter parsing -- with ``-p``
+   already on the new name, or on any ``-p`` line from pytest 9.2 on -- the
+   ``FutureWarning`` stops pytest with a usage error under ``filterwarnings = error``.
 
 then run with ``--junitxml=report.xml`` as usual. ``junit_family = xunit1`` is
 required: pytest writes ``<testcase>`` attributes only under that family (its

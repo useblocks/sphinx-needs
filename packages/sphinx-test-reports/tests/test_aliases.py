@@ -227,9 +227,19 @@ def test_the_extension_alias_has_only_setup() -> None:
 
 
 class TestPytestPlugin:
-    """``-p sphinxcontrib.test_reports.pytest_plugin`` loads the real plugin."""
+    """``-p sphinxcontrib.test_reports.pytest_plugin`` loads the real plugin.
+
+    Where the alias's ``FutureWarning`` lands depends on pytest: from 9.2 on, pytest
+    applies the ini ``filterwarnings`` while it imports the ``-p`` plugins (and resolves
+    the filters first), so the warning is reported like any other, a filter reaches it,
+    and ``filterwarnings = error`` makes it an error. Before 9.2 it is raised before any
+    filter is installed and Python prints it to stderr. Each test below pins both.
+    """
 
     OLD_PLUGIN = f"{OLD}.pytest_plugin"
+    FUTURE = f"*FutureWarning: {OLD_PLUGIN} has moved to {CORE}.pytest_plugin*"
+    #: pytest applies the ini filters while it imports the `-p` plugins
+    FILTERS_BEFORE_PLUGINS = pytest.version_tuple >= (9, 2)
 
     SOURCE = """
 from ub_test_reports.pytest_plugin import add_test_properties
@@ -253,31 +263,71 @@ def test_decorated():
 
     def test_the_old_name_loads_the_plugin_and_warns(self, pytester) -> None:
         result, report = self._run(pytester, self.OLD_PLUGIN)
-        result.assert_outcomes(passed=1)
-        result.stderr.fnmatch_lines(
-            [f"*FutureWarning: {self.OLD_PLUGIN} has moved to {CORE}.pytest_plugin*"]
-        )
+        if self.FILTERS_BEFORE_PLUGINS:
+            # caught by pytest, and reported in its warnings summary
+            result.assert_outcomes(passed=1, warnings=1)
+            result.stdout.fnmatch_lines([self.FUTURE])
+        else:
+            result.assert_outcomes(passed=1)
+            result.stderr.fnmatch_lines([self.FUTURE])
         xml = report.read_text(encoding="utf-8")
         # the plugin's hooks ran: the property is written, and written once
         assert xml.count('<property name="TestType" value="unit"') == 1
 
-    def test_the_old_filter_line_still_silences_the_config_warning(
-        self, pytester
-    ) -> None:
-        result, _ = self._run(
+    def test_the_old_filter_line_beside_the_old_p_line(self, pytester) -> None:
+        result, report = self._run(
             pytester,
             self.OLD_PLUGIN,
             family="xunit2",
             ini=f"filterwarnings =\n    error\n    ignore::{self.OLD_PLUGIN}.TestReportsConfigWarning\n",
         )
-        result.assert_outcomes(passed=1, warnings=0)
+        if self.FILTERS_BEFORE_PLUGINS:
+            # Resolving the filter imports the alias first, under `error`: the same
+            # usage error as the old filter line beside the NEW `-p` line, below.
+            assert result.ret == pytest.ExitCode.USAGE_ERROR
+            assert not report.exists()
+            result.stderr.fnmatch_lines(
+                [
+                    f"*ignore::{self.OLD_PLUGIN}.TestReportsConfigWarning*",
+                    self.FUTURE,
+                ]
+            )
+        else:
+            # `-p` imported the alias before any filter; the line silences the notice
+            result.assert_outcomes(passed=1, warnings=0)
 
-    def test_the_old_filter_line_matches_the_real_class(self, pytester) -> None:
-        # without the filter the same run is a usage error, so the pass above is the filter
-        result, _ = self._run(
+    def test_the_old_p_line_under_filterwarnings_error(self, pytester) -> None:
+        result, report = self._run(
             pytester, self.OLD_PLUGIN, family="xunit2", ini="filterwarnings = error\n"
         )
-        assert result.ret == pytest.ExitCode.USAGE_ERROR
+        if self.FILTERS_BEFORE_PLUGINS:
+            # the alias's own FutureWarning is an error while pytest loads it
+            assert result.ret == pytest.ExitCode.INTERNAL_ERROR
+            assert not report.exists()
+            result.stderr.fnmatch_lines(
+                [
+                    f'Error while loading plugin "{self.OLD_PLUGIN}".',
+                    f"E  {self.FUTURE}",
+                ]
+            )
+        else:
+            # the notice is the usage error, so the pass of the old filter line above
+            # is the filter's doing
+            assert result.ret == pytest.ExitCode.USAGE_ERROR
+            result.stderr.fnmatch_lines(["ERROR: *junit_family is 'xunit2'*xunit1*"])
+
+    def test_an_ini_filter_on_the_alias_warning(self, pytester) -> None:
+        result, _ = self._run(
+            pytester,
+            self.OLD_PLUGIN,
+            ini=f"filterwarnings =\n    error\n    ignore:{self.OLD_PLUGIN} has moved:FutureWarning\n",
+        )
+        result.assert_outcomes(passed=1, warnings=0)
+        if self.FILTERS_BEFORE_PLUGINS:
+            assert "FutureWarning" not in result.stdout.str() + result.stderr.str()
+        else:
+            # raised before pytest installs any filter: printed all the same
+            result.stderr.fnmatch_lines([self.FUTURE])
 
     def test_both_names_fail_loudly_naming_both(self, pytester) -> None:
         result, report = self._run(pytester, f"{CORE}.pytest_plugin", self.OLD_PLUGIN)
@@ -305,10 +355,7 @@ def test_decorated():
         assert result.ret == pytest.ExitCode.USAGE_ERROR
         assert not report.exists()
         result.stderr.fnmatch_lines(
-            [
-                f"*ignore::{self.OLD_PLUGIN}.TestReportsConfigWarning*",
-                f"*FutureWarning: {self.OLD_PLUGIN} has moved to {CORE}.pytest_plugin*",
-            ]
+            [f"*ignore::{self.OLD_PLUGIN}.TestReportsConfigWarning*", self.FUTURE]
         )
 
 
