@@ -798,6 +798,7 @@ NEED_TYPE_KEYS = (
     "id_regex",
     "fields",
     "links",
+    "back_links",
 )
 
 #: The keys of an entry of a need type's ``fields`` table (``derive``: the field's
@@ -825,10 +826,11 @@ NEED_TYPE_LINK_KEYS = (
     "severity",
 )
 
-#: The keys of an entry of a need type's ``links`` table naming a link type's back
-#: links, ``<l>_back``: how many links of ``l`` point to a need of the type
-#: (``schema``, of :data:`~sphinx_needs.needs_schema.BACK_LINKS_KEYWORDS` alone), and
-#: the severity of a need failing the count. Any other key refuses the entry.
+#: The keys of an entry of a need type's ``back_links`` table, named after a link type
+#: ``l``: how many links of ``l`` point to a need of the type, its back links
+#: ``<l>_back`` (``schema``, of :data:`~sphinx_needs.needs_schema.BACK_LINKS_KEYWORDS`
+#: alone), and the severity of a need failing the count. Any other key refuses the
+#: entry.
 NEED_TYPE_BACK_LINK_KEYS = ("description", "schema", "severity")
 
 #: The keys of a link type that are the same on every need type -- how its links are
@@ -847,9 +849,6 @@ NEED_TYPE_LINK_SHAPE_KEYS = (
     "style_start",
     "style_end",
 )
-
-#: What a name declared as a link type's back links is, as the findings name it.
-BACK_LINKS_WHAT: Final = "a link type's back links"
 
 #: The keys of an entry of a need type's ``links`` table, of a link type's declaration.
 _NEED_TYPE_LINK_ENTRY_KEYS = (*NEED_TYPE_LINK_KEYS, *NEED_TYPE_LINK_SHAPE_KEYS)
@@ -885,6 +884,7 @@ _SHAPES: Mapping[str, tuple[str, Callable[[object], bool]]] = {
     "id_regex": ("a string", lambda v: isinstance(v, str)),
     "fields": ("a mapping", lambda v: isinstance(v, Mapping)),
     "links": ("a mapping", lambda v: isinstance(v, Mapping)),
+    "back_links": ("a mapping", lambda v: isinstance(v, Mapping)),
     "description": ("a string", lambda v: isinstance(v, str)),
     "schema": ("a mapping", lambda v: isinstance(v, Mapping)),
     "nullable": ("a boolean", lambda v: isinstance(v, bool)),
@@ -1034,18 +1034,19 @@ def _report_unknown_keywords(where: str, unknown: list[UnknownKeyword]) -> None:
 def _normalise_declarations(
     named: str, table: str, value: Mapping[Any, Any], findings: list[str]
 ) -> dict[Any, dict[str, Any]]:
-    """A need type's ``fields`` or ``links`` table, of its shape: each entry a mapping
-    of the keys of its table, each value of its shape. What is not is reported in
-    ``findings`` and left out: an entry that is not a mapping, a key that is not
-    known or not of its shape. Every entry is a new mapping, its values copies.
+    """A need type's ``fields``, ``links`` or ``back_links`` table, of its shape: each
+    entry a mapping of the keys of its table, each value of its shape. What is not is
+    reported in ``findings`` and left out: an entry that is not a mapping, a key that
+    is not known or not of its shape. Every entry is a new mapping, its values copies.
 
-    A ``links`` entry named ``<x>_back`` may declare the count of a link type's back
-    links, which takes only :data:`NEED_TYPE_BACK_LINK_KEYS` and refuses the entry for
-    any other (:func:`_declare_back_links`); whether it does is known once the link
-    types are (:func:`_resolve_type_declarations`). So its other keys, not known or not
-    of their shape, are kept and not reported here: the resolver reports them as here
-    where the entry declares a link type, and refuses the entry where it is a count."""
-    known = _NEED_TYPE_LINK_ENTRY_KEYS if table == "links" else NEED_TYPE_FIELD_KEYS
+    A ``back_links`` entry is a count, which refuses the whole entry for a key it does
+    not take (:func:`_declare_back_links`): such a key is kept, and not reported here.
+    """
+    known = {
+        "fields": NEED_TYPE_FIELD_KEYS,
+        "links": _NEED_TYPE_LINK_ENTRY_KEYS,
+        "back_links": NEED_TYPE_BACK_LINK_KEYS,
+    }[table]
     resolved: dict[Any, dict[str, Any]] = {}
     for name, entry in value.items():
         where = f"{named}.{table}[{name!r}]"
@@ -1055,16 +1056,14 @@ def _normalise_declarations(
                 "the entry is ignored"
             )
             continue
-        checked = entry
-        if table == "links" and isinstance(name, str) and name.endswith("_back"):
-            # those of a count's keys alone; the others are the resolver's
-            checked = {k: v for k, v in entry.items() if k in NEED_TYPE_BACK_LINK_KEYS}
-        wrong, text = _not_of_their_shape(where, checked, known)
+        wrong, text = _not_of_their_shape(where, entry, known)
         if wrong:
             findings.append(text)
-        unknown, text = _unknown(where, checked, known)
-        if unknown:
-            findings.append(text)
+        unknown: list[str] = []
+        if table != "back_links":
+            unknown, text = _unknown(where, entry, known)
+            if unknown:
+                findings.append(text)
         resolved[name] = {
             key: deepcopy(item)
             for key, item in entry.items()
@@ -1217,7 +1216,7 @@ def normalise_need_types(value: object) -> tuple[list[NeedType], list[str]]:
             findings.append(text)
         for name in (*wrong, *unknown):
             del resolved[name]
-        for table in ("fields", "links"):
+        for table in ("fields", "links", "back_links"):
             if table in resolved:
                 # a mapping: what is not was removed above
                 resolved[table] = _normalise_declarations(
@@ -2079,33 +2078,25 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         parent,
         {*NeedsCoreFields, *registered, *link_types, *back_links},
     )
-    #: the names a need type's ``links`` entry does not declare a link type of alone,
-    #: each with what it is
-    declared_otherwise = {
-        **dict.fromkeys((*NeedsCoreFields, *registered, *type_local), "a field"),
-        **dict.fromkeys(link_types, "a link type"),
-        **dict.fromkeys(back_links, BACK_LINKS_WHAT),
-    }
-    #: a ``links`` entry named ``<x>_back`` that is no count of a link type's back links
-    #: declares a link type (or narrows one): its keys the normaliser left to be known
-    #: are checked now, as any links entry's are, before a link type is declared from
-    #: them; the entries are told apart as :func:`_type_local_links` tells them apart
-    entry_findings.extend(_check_back_named_entries(type_entries, declared_otherwise))
     #: the link types need types declare alone: declared below as a needs_links entry
     #: is (after the needs_links and needs_extra_links entries), with the display,
     #: copy and dead links their first root declaration gives; a name declared under
     #: fields too is a field, and the back links of a link type are none
     local_links, link_refused, link_findings, link_declarers = _type_local_links(
-        type_entries, order, parent, declared_otherwise
+        type_entries,
+        order,
+        parent,
+        {
+            **dict.fromkeys((*NeedsCoreFields, *registered, *type_local), "a field"),
+            **dict.fromkeys(link_types, "a link type"),
+            **dict.fromkeys(back_links, "a link type's back links"),
+        },
     )
-    #: a name of either close to a declared field's or link type's is likely misspelt;
-    #: a link type's is compared with the back links too, whose count a need type's
-    #: ``links`` entry declares (``implements_bak``, ``implemnts_back``)
+    #: a name of either close to a declared field's or link type's is likely misspelt
     for text in _near_name_findings(
         field_declarers,
         link_declarers,
         sorted({*_AUTHORED_CORE_FIELDS, *registered, *link_types}),
-        back_links=sorted(back_links),
     ):
         log_warning(LOGGER, text, "type_near_name", None)
     #: each field's and link type's rules from the types' entries: folded below into
@@ -3165,12 +3156,12 @@ def _checked_type_entries(
             continue
         named = f"needs_types[{name!r}]"
         wrong, text = _not_of_their_shape(
-            named, need_type, ("inherits", "fields", "links")
+            named, need_type, ("inherits", "fields", "links", "back_links")
         )
         if wrong:
             findings.append(text)
         entry = {key: value for key, value in need_type.items() if key not in wrong}
-        for table in ("fields", "links"):
+        for table in ("fields", "links", "back_links"):
             if table in entry:
                 entry[table] = _normalise_declarations(
                     named, table, cast(Mapping[Any, Any], entry[table]), findings
@@ -3336,27 +3327,23 @@ def _near_name_findings(
     field_declarers: Mapping[str, list[str]],
     link_declarers: Mapping[str, list[str]],
     known: list[str],
-    *,
-    back_links: Sequence[str] = (),
 ) -> list[str]:
     """For each field and link type declared on need types alone (each with the need
     types declaring it) whose name is close to a name in ``known`` (a core field an
     author sets, a registered field, a global link type), a finding naming the first
-    declaring entry and the close name. A link type's name is compared with
-    ``back_links`` too, the back links of the global link types, which a need type's
-    ``links`` entry names to declare their count.
+    declaring entry and the close name.
 
     Close is ``difflib.get_close_matches(name, known, n=1, cutoff=0.8)``: a misspelt
     name, or a deliberate near name (a plural), which is why it is a finding of its
     own subtype; the field or link type is declared all the same.
     """
     findings: list[str] = []
-    for table, what, declarers, names in (
-        ("fields", "a field", field_declarers, known),
-        ("links", "a link type", link_declarers, [*known, *back_links]),
+    for table, what, declarers in (
+        ("fields", "a field", field_declarers),
+        ("links", "a link type", link_declarers),
     ):
         for name, need_types in declarers.items():
-            close = difflib.get_close_matches(name, names, n=1, cutoff=0.8)
+            close = difflib.get_close_matches(name, known, n=1, cutoff=0.8)
             if not close or not need_types:
                 continue
             findings.append(
@@ -3432,11 +3419,13 @@ def _type_local_links(
     """
     #: link type -> its declarations, in order
     entries: dict[str, list[tuple[str, Mapping[str, Any]]]] = {}
-    declaring, _ = _link_entry_names(types, known)
     for need_type in order:
         for name, keys in types[need_type].get("links", {}).items():
-            if name in declaring:
+            if isinstance(name, str) and name and name not in known:
                 entries.setdefault(name, []).append((need_type, keys))
+    # the back links of another: computed on every need, so no link type
+    for name in [n for n in entries if n.endswith("_back") and n[:-5] in entries]:
+        del entries[name]
     local: dict[str, NeedLinksConfig] = {}
     declarers: dict[str, list[str]] = {}
     refused: set[tuple[str, str]] = set()
@@ -3692,50 +3681,23 @@ def _resolve_type_declarations(
         ):
             for name, keys in types[need_type].get(table, {}).items():
                 where = f"needs_types[{need_type!r}].{table}[{name!r}]"
-                glob = schema.global_declaration(name)
-                owner = (
-                    schema.global_declaration(name.removesuffix("_back"))
-                    if glob is None and name.endswith("_back")
-                    else None
-                )
-                if (
-                    table == "links"
-                    and name.endswith("_back")
-                    and not (owner is not None and owner.kind == "link")
-                ):
-                    # not a count after all (its link type was refused): its keys
-                    # are a link type's entry's
-                    keys, stray = _deferred_keys(where, keys)
-                    for text in stray:
-                        log_warning(LOGGER, text, "config", None)
                 if (need_type, name) in refused[table]:
                     continue  # reported with the field's (or link type's) shape
+                glob = schema.global_declaration(name)
                 if glob is None or glob.kind != kind:
+                    owner = (
+                        schema.global_declaration(name.removesuffix("_back"))
+                        if glob is None and name.endswith("_back")
+                        else None
+                    )
                     # defensive: an entry named after a field's name and ``_back`` that
                     # declares nothing is refused before it reaches here (no state is
                     # known where ``owner`` is a field), so it would read "not ..."
                     if owner is not None and owner.kind == "link":
-                        if table == "links":
-                            # how many links point to the type's needs
-                            previous, by = back_own.get(name, (None, None))
-                            if (
-                                back := _declare_back_links(
-                                    previous,
-                                    owner.name,
-                                    keys,
-                                    where,
-                                    by,
-                                    severity_by=severity_own.get(name),
-                                )
-                            ) is not None:
-                                back_own[name] = (back, need_type)
-                                if "severity" in keys:
-                                    severity_own[name] = need_type
-                            continue
                         is_ = (
                             "a link type's back links, whose count a need type "
-                            f"declares under 'links' (needs_types[{need_type!r}]"
-                            f".links[{name!r}])"
+                            f"declares under 'back_links' (needs_types[{need_type!r}]"
+                            f".back_links[{owner.name!r}])"
                         )
                     elif glob is None:
                         is_ = f"not {what}"
@@ -3812,6 +3774,33 @@ def _resolve_type_declarations(
                     own[name] = (field, need_type)
                     if "severity" in keys:
                         severity_own[name] = need_type
+        # how many links of each link type point to the type's needs
+        for link_name, keys in types[need_type].get("back_links", {}).items():
+            where = f"needs_types[{need_type!r}].back_links[{link_name!r}]"
+            if (hint := _not_a_link_type(schema, link_name)) is not None:
+                log_warning(
+                    LOGGER,
+                    f"{where} counts the back links of {link_name!r}, which is not a "
+                    f"link type; the entry is ignored{hint}",
+                    "type_conflict",
+                    None,
+                )
+                continue
+            name = f"{link_name}_back"
+            previous, by = back_own.get(name, (None, None))
+            if (
+                back := _declare_back_links(
+                    previous,
+                    link_name,
+                    keys,
+                    where,
+                    by,
+                    severity_by=severity_own.get(name),
+                )
+            ) is not None:
+                back_own[name] = (back, need_type)
+                if "severity" in keys:
+                    severity_own[name] = need_type
         declared[need_type] = own
         back_declared[need_type] = back_own
         severity_by[need_type] = severity_own
@@ -4009,88 +3998,24 @@ def _resolve_id_patterns(
             schema.set_id_patterns(need_type, own)
 
 
-def _deferred_keys(
-    where: str, keys: Mapping[str, Any]
-) -> tuple[Mapping[str, Any], list[str]]:
-    """A ``links`` entry named ``<x>_back`` that is no count of a link type's back
-    links, whose keys outside :data:`NEED_TYPE_BACK_LINK_KEYS`
-    :func:`_normalise_declarations` left unchecked: the entry without its keys that are
-    not known or not of their shape, and the ``needs.config`` findings of them, as on
-    any other ``links`` entry. (A count refuses the entry for any of them instead.)
+def _not_a_link_type(schema: FieldsSchema, name: object) -> str | None:
+    """``None`` if a need type's ``back_links`` entry named ``name`` counts the back
+    links of a link type -- of any link type, declared otherwise or by need types
+    alone, whose links may come from a need of any type -- else what its finding ends
+    on: the link type closest to ``name``, if one is close
+    (``difflib.get_close_matches``, cutoff 0.8), as a "did you mean", or nothing.
+
+    :param schema: The schema, with every link type declared.
+    :param name: The entry's name.
     """
-    wrong, wrong_text = _not_of_their_shape(where, keys, _NEED_TYPE_LINK_ENTRY_KEYS)
-    unknown, unknown_text = _unknown(where, keys, _NEED_TYPE_LINK_ENTRY_KEYS)
-    if not wrong and not unknown:
-        return keys, []
-    return (
-        {k: v for k, v in keys.items() if k not in wrong and k not in unknown},
-        [text for text in (wrong_text, unknown_text) if text],
-    )
-
-
-def _link_entry_names(
-    types: Mapping[str, Mapping[str, Any]], known: Mapping[str, str]
-) -> tuple[set[str], set[str]]:
-    """The names of the need types' ``links`` entries that name nothing declared
-    otherwise, told apart: those declaring a link type of the need types that declare
-    it alone, and those naming the back links of such a link type, ``<x>_back`` beside
-    an entry ``x``, which are counts and declare nothing.
-
-    The one place the two are told apart, for :func:`_type_local_links`, which declares
-    the first, and :func:`_check_back_named_entries`, which checks their keys first.
-
-    :param types: Each need type's entry, of its shape.
-    :param known: The names declared otherwise, each with what it is.
-    """
-    names = {
-        name
-        for entry in types.values()
-        for name in entry.get("links", {})
-        if isinstance(name, str) and name and name not in known
-    }
-    # the back links of another: computed on every need, so no link type
-    back = {name for name in names if name.endswith("_back") and name[:-5] in names}
-    return names - back, back
-
-
-def _is_back_links_count(
-    name: str, known: Mapping[str, str], local_back: set[str]
-) -> bool:
-    """Whether a need type's ``links`` entry ``name`` is the count of a link type's back
-    links: of a link type declared otherwise (``known`` says so), or of one need types
-    declare alone (``local_back``, of :func:`_link_entry_names`)."""
-    return known.get(name) == BACK_LINKS_WHAT or name in local_back
-
-
-def _check_back_named_entries(
-    types: dict[str, dict[str, Any]], known: Mapping[str, str]
-) -> list[str]:
-    """Check the keys of each need type's ``links`` entry named ``<x>_back`` that is no
-    count of a link type's back links, in place (:func:`_deferred_keys`), and return
-    the findings, in the order of the types.
-
-    A count (:func:`_is_back_links_count`) keeps its keys, and the resolver refuses it
-    for one it does not take; any other such entry declares a link type of need types
-    alone (:func:`_type_local_links` reads its shape) or narrows one declared otherwise.
-
-    :param types: Each need type's entry, of its shape; changed in place.
-    :param known: The names declared otherwise, each with what it is, as
-        :func:`_type_local_links` takes them.
-    """
-    _, local_back = _link_entry_names(types, known)
-    findings: list[str] = []
-    for need_type, entry in types.items():
-        links = entry.get("links", {})
-        for name, keys in links.items():
-            if not isinstance(name, str) or not name.endswith("_back"):
-                continue
-            if _is_back_links_count(name, known, local_back):
-                continue  # the resolver refuses it for a key it does not take
-            links[name], stray = _deferred_keys(
-                f"needs_types[{need_type!r}].links[{name!r}]", keys
-            )
-            findings.extend(stray)
-    return findings
+    links = list(schema.iter_link_field_names())
+    if isinstance(name, str) and name in links:
+        return None
+    if isinstance(name, str) and (
+        close := difflib.get_close_matches(name, links, n=1, cutoff=0.8)
+    ):
+        return f"; did you mean {close[0]!r}?"
+    return ""
 
 
 def _declare_back_links(
@@ -4102,9 +4027,9 @@ def _declare_back_links(
     *,
     severity_by: str | None = None,
 ) -> BackLinksSchema | None:
-    """The declaration a need type's ``links`` entry makes of a link type's back links,
-    ``<l>_back``, from the one before it (an ancestor's, or none); ``None``, reported,
-    if the entry cannot be used.
+    """The declaration a need type's ``back_links`` entry makes of a link type's back
+    links, ``<l>_back``, from the one before it (an ancestor's, or none); ``None``,
+    reported, if the entry cannot be used.
 
     The entry takes only :data:`NEED_TYPE_BACK_LINK_KEYS`, and its ``schema`` only
     ``minItems`` and ``maxItems``, each a non-negative integer: anything else is a
@@ -4123,9 +4048,9 @@ def _declare_back_links(
     if other := [key for key in keys if key not in NEED_TYPE_BACK_LINK_KEYS]:
         log_warning(
             LOGGER,
-            f"{where} sets {joined([repr(key) for key in other])}, but {name!r} is "
-            "a link type's back links: a need type declares only their description, "
-            "schema (minItems, maxItems) and severity; the entry is ignored",
+            f"{where} sets {joined([repr(key) for key in other])}, but a need type "
+            "declares only the description, schema (minItems, maxItems) and severity "
+            f"of a link type's back links ({name!r}); the entry is ignored",
             "type_conflict",
             None,
         )
@@ -4135,7 +4060,7 @@ def _declare_back_links(
         log_warning(
             LOGGER,
             f"{where} gives the schema {joined([repr(key) for key in other])}, but "
-            f"{name!r} is a link type's back links: their schema takes only "
+            f"the schema of a link type's back links ({name!r}) takes only "
             "'minItems' and 'maxItems'; the entry is ignored",
             "type_conflict",
             None,

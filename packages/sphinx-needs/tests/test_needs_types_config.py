@@ -46,8 +46,8 @@ TOML_CONF = CONF + 'needs_from_toml = "ubproject.toml"\n'
 
 #: the known keys, as the unknown-key finding lists them
 KNOWN = (
-    "known keys are color, directive, fields, id_regex, inherits, links, prefix, "
-    "style, title"
+    "known keys are back_links, color, directive, fields, id_regex, inherits, links, "
+    "prefix, style, title"
 )
 
 #: three types in an order that is not alphabetical, so that a sort would show

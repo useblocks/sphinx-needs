@@ -1525,7 +1525,8 @@ def test_a_field_named_as_back_links_is_refused(test_app: Any) -> None:
             _conflict(
                 f"needs_types['spec'].fields[{name!r}] declares {name!r}, which is a "
                 "link type's back links, whose count a need type declares under "
-                f"'links' (needs_types['spec'].links[{name!r}])"
+                "'back_links' (needs_types['spec']"
+                f".back_links[{name.removesuffix('_back')!r}])"
             )
             for name in ("links_back", "parent_needs_back", "blocks_back")
         ),
@@ -1570,8 +1571,8 @@ def test_a_field_named_as_extra_links_back_links_is_refused(test_app: Any) -> No
         '"needs_links" instead. [needs.deprecated]',
         _conflict(
             "needs_types['spec'].fields['blocks_back'] declares 'blocks_back', which is "
-            "a link type's back links, whose count a need type declares under 'links' "
-            "(needs_types['spec'].links['blocks_back'])"
+            "a link type's back links, whose count a need type declares under "
+            "'back_links' (needs_types['spec'].back_links['blocks'])"
         ),
     ]
     assert _needs(app)["R_001"]["blocks_back"] == ["S_001"]

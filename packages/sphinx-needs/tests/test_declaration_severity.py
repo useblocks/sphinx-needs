@@ -42,7 +42,7 @@ prefix = "R_"
 [needs.types.req.fields.category]
 severity = "warning"
 
-[needs.types.req.links.satisfies_back]
+[needs.types.req.back_links.satisfies]
 schema = { minItems = 1 }
 severity = "warning"
 
@@ -54,7 +54,7 @@ inherits = "req"
 [needs.types.mid.fields.category]
 description = "Narrowed, its severity kept"
 
-[needs.types.mid.links.satisfies_back]
+[needs.types.mid.back_links.satisfies]
 description = "Narrowed, its severity kept"
 
 [needs.types.leaf]
@@ -65,7 +65,7 @@ inherits = "mid"
 [needs.types.leaf.fields.category]
 severity = "info"
 
-[needs.types.leaf.links.satisfies_back]
+[needs.types.leaf.back_links.satisfies]
 severity = "info"
 """
 
@@ -80,7 +80,7 @@ def test_a_lowered_severity_names_the_type_that_gave_it(test_app: Any) -> None:
         f"WARNING: needs_types['leaf'].{table}[{name!r}] widens the field as need "
         "type 'req' declares it: Child 'severity' 'info' is lower than parent "
         "'severity' 'warning'. [needs.type_widening]"
-        for table, name in (("fields", "category"), ("links", "satisfies_back"))
+        for table, name in (("fields", "category"), ("back_links", "satisfies"))
     ]
 
 

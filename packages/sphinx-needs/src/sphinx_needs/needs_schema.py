@@ -1215,7 +1215,8 @@ BACK_LINKS_KEYWORDS: Final[tuple[str, ...]] = ("minItems", "maxItems")
 @dataclass(frozen=True, kw_only=True, slots=True)
 class BackLinksSchema:
     """A need type's declaration of the back links of a link type, ``<l>_back``: how
-    many links of that link type point to a need of the type.
+    many links of that link type point to a need of the type (a
+    ``[needs.types.<t>.back_links.<l>]`` entry).
 
     The count is the length of the need's ``<l>_back``: every link of the link type
     to it, whatever the type of the need it comes from. It is checked by the schema

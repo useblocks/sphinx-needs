@@ -377,9 +377,8 @@ To report an id and keep the need, use a schema rule with a ``pattern`` on ``id`
 Links a type must receive
 -------------------------
 
-A type can declare how many links of a link type point *to* its needs:
-a ``links`` entry named after the link type's back links, ``<link type>_back``,
-with a ``schema`` of ``minItems`` and ``maxItems``.
+A type can declare how many links of a link type point *to* its needs, its back links ``<link type>_back``:
+a ``back_links`` entry named after the link type, with a ``schema`` of ``minItems`` and ``maxItems``.
 Every ``spec`` must be verified by a test:
 
 .. literalinclude:: ../tests/doc_test/doc_need_types/ubproject.toml
@@ -402,6 +401,10 @@ The count is every ``verifies`` link to the need, whatever its source:
 ``S_001`` is verified by ``T_003``, whose link ``target_types`` refuses (above), and that link counts.
 Like ``minItems`` on the outgoing side, it is checked by the schema validation, once every link is final;
 a ``severity`` on the entry reports it at that severity, and a type inheriting it may narrow it.
+The entry names any link type, one the counted type declares or not: ``verifies`` here is the ``test`` type's.
+One naming no link type is a ``needs.type_conflict`` warning, and is ignored,
+with the link type it is close to, if any (``back_links['implemnts'] ... did you mean 'implements'?``);
+so is a ``links`` (or ``fields``) entry named ``verifies_back``, which declares nothing.
 A need from :ref:`needs_external_needs` is not counted: its own project's links to it are not loaded here,
 so its count would be partial; an imported need is.
 A link to a part of a need (``S_001.p1``) counts for the need,
@@ -507,10 +510,7 @@ A misspelt field name
    When the name is close to that of a field or link type declared elsewhere -- a core field an author sets
    (``status``, ``tags``, ...), a :ref:`needs_fields` entry, a field an extension or a service registers,
    or a :ref:`needs_links` entry -- the build says so, one ``needs.type_near_name`` warning per field
-   (or link type, ``links['...']``, "a link type of need types ... alone"), naming the first entry declaring it.
-   A link type's name is compared with the back links of a :ref:`needs_links` entry too,
-   so a misspelt count of incoming links (``implements_bak``, ``implemnts_back``) is pointed at ``implements_back``
-   (:ref:`need_types_incoming`)::
+   (or link type, ``links['...']``, "a link type of need types ... alone"), naming the first entry declaring it::
 
       needs_types['req'].fields['asl'] declares a field of need types 'req' alone; did you mean 'asil'? [needs.type_near_name]
 

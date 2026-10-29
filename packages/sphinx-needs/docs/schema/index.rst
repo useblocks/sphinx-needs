@@ -303,7 +303,7 @@ When and how violations are reported
      - not switched off by :ref:`needs_schema_validation_enabled`; silenced by ``suppress_warnings``
    * - external needs
      - checked too: a need from :ref:`needs_external_needs` is validated as its type declares;
-       a type's entry cannot leave such needs out, but for a ``links.<l>_back`` count,
+       a type's entry cannot leave such needs out, but for a ``back_links`` count,
        which is not checked on them (:ref:`need_types_incoming`)
      - applied too, with warnings that give no place in a document
        (``needs.load_external_need`` for a need that is not created), see :ref:`needs_types_fields`;
@@ -331,7 +331,7 @@ These need schema rules:
   a link type's ``minItems`` and ``maxItems`` count every link, whatever its target's type, a dead link too;
 - **incoming links from needs of a given type, or with given fields**, such as "every requirement is verified by a test"
   (:ref:`network_back_validation`); how many links point to a need, whatever their source, is a type's
-  ``links.<l>_back`` entry (:ref:`need_types_incoming`);
+  ``back_links`` entry (:ref:`need_types_incoming`);
 - **conditions between fields**, such as "``approval`` is required when ``efforts`` is greater than 15";
 - **multi-hop chains** (:ref:`nested network validation <network_validation>`);
 - a **pattern for the IDs** of one type that reports a need and keeps it:
@@ -876,7 +876,7 @@ for example *"every requirement must be covered by at least one test"*.
 
    Where the constraint is a count alone -- "every requirement is the target of at least one ``verifies`` link",
    whatever the source's type -- the need type's own entry says it more simply:
-   ``[needs.types.req.links.verifies_back]`` with ``schema = { minItems = 1 }``
+   ``[needs.types.req.back_links.verifies]`` with ``schema = { minItems = 1 }``
    (see :ref:`need_types_incoming` and :ref:`needs_types_fields`).
    It is inherited by the types inheriting from ``req``, and not checked on needs from :ref:`needs_external_needs`.
    A rule on ``network_back`` is still the way to say which types the sources must have, or anything about their fields.

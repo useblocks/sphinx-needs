@@ -54,7 +54,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 111
+EXPECTED_CASE_COUNT = 113
 
 #: The cases of the section "an entry naming a default type", the only ones whose
 #: ``needs_types`` may hold an entry with neither a ``title`` nor a ``prefix``.
@@ -117,7 +117,10 @@ SEVERITY_OF_LOG_TYPE = {
 }
 
 #: the entry a finding of the schema's build names, and the field or link type in it
-_ENTRY = re.compile(r"needs_types\['([^']+)'\](?:\.(?:fields|links)\['([^']+)'\])?")
+#: (a ``back_links['<l>']`` entry names the back links it counts, ``<l>_back``)
+_ENTRY = re.compile(
+    r"needs_types\['([^']+)'\](?:\.(fields|links|back_links)\['([^']+)'\])?"
+)
 #: the first field, option or link type a message names (a needextend's ``+``/``-``
 #: of an option stripped)
 _FIELD = re.compile(r"(?:[Ff]ield|[Oo]ption|[Ll]ink type) '[+-]?([^']+)'")
@@ -293,7 +296,8 @@ def _describe(code: str, message: str) -> tuple[str | None, str | None, str | No
     """The field and the need type a finding names, and its severity.
 
     A finding of the schema's build names its entry, ``needs_types['<t>']``, and the
-    field or link type in it, ``.fields['<f>']`` or ``.links['<f>']``; any other names
+    field or link type in it, ``.fields['<f>']`` or ``.links['<f>']``, or the back links
+    it counts, ``.back_links['<l>']``, which are ``<l>_back``; any other names
     its field as ``Field``/``Option``/``Link type '<f>'`` (or a link's ``field '<l>'``),
     and its type as its code says (``Need type '<t>'`` for ``type_inherits``;
     ``on need type '<t>'`` for ``undeclared_for_type`` and ``needextend``; the TARGET's
@@ -306,7 +310,9 @@ def _describe(code: str, message: str) -> tuple[str | None, str | None, str | No
     severity = "violation" if code == "create_need" else None
     entry = _ENTRY.search(message)
     if entry is not None:
-        return entry[2] or field_name, entry[1], severity
+        if entry[2] == "back_links":
+            return f"{entry[3]}_back", entry[1], severity
+        return entry[3] or field_name, entry[1], severity
     need_type = _TYPE[code].search(message) if code in _TYPE else None
     return field_name, need_type[1] if need_type else None, severity
 

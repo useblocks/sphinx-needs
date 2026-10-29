@@ -80,7 +80,7 @@ severity = "warning"
 # [/severity]
 
 # [incoming]
-[needs.types.spec.links.verifies_back]
+[needs.types.spec.back_links.verifies]
 description = "The tests verifying the specification"
 schema = { minItems = 1 }
 # [/incoming]

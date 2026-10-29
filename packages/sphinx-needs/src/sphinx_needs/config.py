@@ -583,6 +583,9 @@ class NeedType(TypedDict):
     links: NotRequired[dict[str, NeedTypeLinkDeclaration]]
     """The link types this type declares anew: link type name to its declaration. A
     name nothing else declares is a link type of the types that declare it alone."""
+    back_links: NotRequired[dict[str, NeedTypeBackLinksDeclaration]]
+    """How many links of a link type point to a need of this type: link type name to
+    the count of its back links (``<l>_back``)."""
 
 
 #: The default need types: the value of ``needs_types`` when it is not configured.
@@ -667,6 +670,17 @@ class NeedTypeLinkDeclaration(TypedDict, total=False):
     style_part: str
     style_start: str
     style_end: str
+
+
+class NeedTypeBackLinksDeclaration(TypedDict, total=False):
+    """A need type's declaration of how many links of a link type point to each of its
+    needs: a count of the link type's back links, narrowed by the types inheriting
+    from the type. Any other key refuses the declaration."""
+
+    description: str
+    schema: dict[str, int]
+    """``minItems`` and ``maxItems`` alone."""
+    severity: Literal["violation", "warning", "info"]
 
 
 class NeedFields(TypedDict):

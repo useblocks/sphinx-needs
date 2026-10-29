@@ -43,19 +43,20 @@ Improvements
   entry, which takes none, is a ``needs.config`` warning. Without a ``severity`` nothing changes. The fields-per-type
   conformance corpus may now pin a finding's severity. See :ref:`need_types_severity`.
 
-- ✨ A need type declares how many links it must receive: ``[needs.types.<t>.links.<l>_back]`` takes a count
+- ✨ A need type declares how many links it must receive: ``[needs.types.<t>.back_links.<l>]`` takes a count
   (:issue:`2375`)
 
-  ``schema = { minItems = 1 }`` on a ``links`` entry named after a link type's back links says that every need of the
-  type is the target of at least one ``l`` link (``maxItems``: of at most so many), so a ``coverage-*-back`` schema
-  rule that only counts folds into the type's declaration. The count is every link of ``l`` to the need, as
+  ``schema = { minItems = 1 }`` on a ``back_links`` entry named after a link type ``l`` says that every need of the
+  type is the target of at least one ``l`` link, its back links ``<l>_back`` (``maxItems``: of at most so many), so a
+  ``coverage-*-back`` schema rule that only counts folds into the type's declaration. The count is every link of ``l`` to the need, as
   ``minItems`` counts the outgoing ones (a link to a part of the need included); it is inherited, and narrowed, by
   the types inheriting from the type; it is
   checked by the schema validation once every link is final, a ``link_fail`` of the field ``<l>_back`` at the
   entry's ``severity``; a need from :ref:`needs_external_needs` is not counted, an imported need is. The entry takes a
-  ``description``, ``minItems`` and ``maxItems``, and a ``severity``; any other key is a ``needs.type_conflict``.
-  Such an entry used to be refused; a ``fields`` entry of that name still is, and now names the ``links`` entry.
-  This supersedes the proposal of :issue:`2323`. See :ref:`need_types_incoming`.
+  ``description``, ``minItems`` and ``maxItems``, and a ``severity``; any other key is a ``needs.type_conflict``, and
+  so is an entry naming no link type ("did you mean" the link type it is close to). A ``links`` or ``fields`` entry
+  named ``<l>_back`` is still refused, and now names the ``back_links`` entry. ``back_links`` is a key of a
+  :ref:`needs_types` entry. This supersedes the proposal of :issue:`2323`. See :ref:`need_types_incoming`.
 
 - ✨ A need type declares the shape of its ids: ``id_regex`` on a ``[needs.types.<t>]`` entry (:issue:`2373`)
 
@@ -117,10 +118,8 @@ Improvements
   (or link type) of the need types that declare it alone, so a misspelt name, ``asl`` meant to narrow ``asil``,
   constrained nothing and was not reported. When the name is within ``difflib.get_close_matches(name, known, n=1,
   cutoff=0.8)`` of a core field an author sets, a registered field (a :ref:`needs_fields` entry, an extension's,
-  a service's) or a global link type -- for a link type's name, also of a global link type's back links, ``<l>_back``,
-  whose count a need type's ``links`` entry declares -- it is now one ``needs.type_near_name`` warning,
-  ``needs_types['req'].fields['asl'] declares a field of need types 'req' alone; did you mean 'asil'?``; the field is
-  declared all the same. A deliberate
+  a service's) or a global link type, it is now one ``needs.type_near_name`` warning, ``needs_types['req'].fields['asl']
+  declares a field of need types 'req' alone; did you mean 'asil'?``; the field is declared all the same. A deliberate
   near name, such as a ``tag`` of one type beside ``tags``, is reported too: ``suppress_warnings =
   ["needs.type_near_name"]`` silences these alone. See :ref:`need_types_misspelt`.
 

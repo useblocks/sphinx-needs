@@ -1,7 +1,7 @@
 """A need type's declaration of a link type's back links: ``BackLinksSchema``.
 
-A ``[needs.types.<t>.links.<l>_back]`` entry declares how many links of ``l`` point to
-a need of the type (``minItems``, ``maxItems``) and the severity of a need failing the
+A ``[needs.types.<t>.back_links.<l>]`` entry declares how many links of ``l`` point to
+a need of the type, its back links ``<l>_back`` (``minItems``, ``maxItems``) and the severity of a need failing the
 count. The configuration's behaviour is pinned by the fields-per-type conformance
 corpus (section "the count of a link type's back links"); these tests pin the schema
 object itself: what a declaration may hold, where it is registered, and which schema
@@ -15,11 +15,6 @@ from typing import Any
 
 import pytest
 
-from sphinx_needs.needs import (
-    BACK_LINKS_WHAT,
-    _check_back_named_entries,
-    _type_local_links,
-)
 from sphinx_needs.needs_schema import (
     BackLinksSchema,
     FieldsSchema,
@@ -144,7 +139,7 @@ UNKNOWN_KEY = """\
 title = "Requirement"
 prefix = "R_"
 
-[needs.types.req.links.satisfies_back]
+[needs.types.req.back_links.satisfies]
 schema = { minItems = 1 }
 severty = "warning"
 
@@ -153,31 +148,31 @@ bar = 1
 """
 
 
+def _toml_project(toml: str, index: str, buildername: str) -> dict[str, Any]:
+    return {
+        "buildername": buildername,
+        "files": [
+            (
+                Path("conf.py"),
+                'extensions = ["sphinx_needs"]\nneeds_from_toml = "ubproject.toml"\n',
+            ),
+            (Path("ubproject.toml"), toml),
+            (Path("index.rst"), index),
+        ],
+    }
+
+
 @pytest.mark.parametrize(
     "test_app",
-    [
-        {
-            "buildername": "needs",
-            "files": [
-                (
-                    Path("conf.py"),
-                    'extensions = ["sphinx_needs"]\nneeds_from_toml = "ubproject.toml"\n',
-                ),
-                (Path("ubproject.toml"), UNKNOWN_KEY),
-                (Path("index.rst"), "Case\n====\n\n.. req:: A\n   :id: REQ_1\n"),
-            ],
-        }
-    ],
+    [_toml_project(UNKNOWN_KEY, "Case\n====\n\n.. req:: A\n   :id: REQ_1\n", "needs")],
     indirect=True,
 )
 def test_an_unknown_key_refuses_a_count(test_app: Any) -> None:
-    """A key no ``links`` entry has (a misspelt ``severity``) on the entry of a link
-    type's back links is one ``needs.type_conflict``, as any key the count does not
-    take is, and the entry is ignored whole: its ``minItems`` does not apply, and the
-    key is not also reported as an unknown key of a link type's entry (whose keys the
-    count does not take either). An entry named ``<x>_back`` where no link type ``x``
-    exists declares a link type of its need types alone, and an unknown key of it is
-    reported and ignored as on any other ``links`` entry."""
+    """A key the count does not take, one no entry has included (a misspelt
+    ``severity``), is one ``needs.type_conflict``, and the entry is ignored whole: its
+    ``minItems`` does not apply. A ``links`` entry named ``<x>_back`` where no link
+    type ``x`` exists is an ordinary link type of its need types alone, and an unknown
+    key of it is reported and ignored as on any other ``links`` entry."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
@@ -185,10 +180,45 @@ def test_an_unknown_key_refuses_a_count(test_app: Any) -> None:
         "known keys are allow_dead_links, color, copy, default, derive, description, "
         "incoming, outgoing, predicates, schema, severity, style, style_end, "
         "style_part, style_start, target_types; the key is ignored [needs.config]",
-        "WARNING: needs_types['req'].links['satisfies_back'] sets 'severty', but "
-        "'satisfies_back' is a link type's back links: a need type declares only "
-        "their description, schema (minItems, maxItems) and severity; the entry is "
+        "WARNING: needs_types['req'].back_links['satisfies'] sets 'severty', but a "
+        "need type declares only the description, schema (minItems, maxItems) and "
+        "severity of a link type's back links ('satisfies_back'); the entry is "
         "ignored [needs.type_conflict]",
+    ]
+
+
+MISSPELT = """\
+[needs.links.implements]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.back_links.implemnts]
+schema = { minItems = 1 }
+
+[needs.types.req.back_links.zzz]
+schema = { minItems = 1 }
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_toml_project(MISSPELT, "Case\n====\n\n.. req:: A\n   :id: REQ_1\n", "needs")],
+    indirect=True,
+)
+def test_a_count_of_no_link_type_is_refused(test_app: Any) -> None:
+    """A ``back_links`` entry is named after the link type whose back links it counts:
+    one naming no link type is a ``needs.type_conflict`` and ignored, and a misspelt
+    one (``implemnts``) names the link type it is close to, "did you mean"."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types['req'].back_links['implemnts'] counts the back links of "
+        "'implemnts', which is not a link type; the entry is ignored; did you mean "
+        "'implements'? [needs.type_conflict]",
+        "WARNING: needs_types['req'].back_links['zzz'] counts the back links of 'zzz', "
+        "which is not a link type; the entry is ignored [needs.type_conflict]",
     ]
 
 
@@ -226,20 +256,6 @@ style = "dashed"
 """
 
 
-def _toml_project(toml: str, index: str, buildername: str) -> dict[str, Any]:
-    return {
-        "buildername": buildername,
-        "files": [
-            (
-                Path("conf.py"),
-                'extensions = ["sphinx_needs"]\nneeds_from_toml = "ubproject.toml"\n',
-            ),
-            (Path("ubproject.toml"), toml),
-            (Path("index.rst"), index),
-        ],
-    }
-
-
 @pytest.mark.parametrize(
     "test_app",
     [
@@ -255,11 +271,11 @@ def _toml_project(toml: str, index: str, buildername: str) -> dict[str, Any]:
 def test_a_back_links_name_of_no_link_type_is_checked_as_a_link_type(
     test_app: Any,
 ) -> None:
-    """``zzz_back``, where no link type ``zzz`` exists, is no count: it declares a link
-    type of ``req`` alone, so its keys are checked as a link type's entry's are -- the
-    keys not of their shape and the unknown ones reported and ignored -- before the
-    link type is declared from them: a ``color`` of ``3`` is not its color (the html
-    build drawing it does not fail)."""
+    """``zzz_back``, where no link type ``zzz`` exists, declares a link type of ``req``
+    alone, so its keys are checked as a link type's entry's are -- the keys not of
+    their shape and the unknown ones reported and ignored -- before the link type is
+    declared from them: a ``color`` of ``3`` is not its color (the html build drawing
+    it does not fail)."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
@@ -309,7 +325,7 @@ prefix = "R_"
 title = "Specification"
 prefix = "S_"
 
-[needs.types.req.links.implements_back]
+[needs.types.req.back_links.implements]
 schema = { maxItems = 5 }
 
 [needs.types.spec.links.implements_back_back]
@@ -331,59 +347,15 @@ outgoing = 5
     ],
     indirect=True,
 )
-def test_the_back_links_name_of_a_count_is_no_count(test_app: Any) -> None:
-    """``implements_back`` is the count of a global link type's back links, so it
-    declares no link type, and ``implements_back_back`` beside it is no count of
-    anything: it declares a link type of ``spec`` alone, whose keys are checked
-    before it is declared from them (the html build drawing it does not fail). Its
-    name is close to the back links ``implements_back``, which is reported too."""
+def test_the_back_links_name_of_back_links_is_a_link_type(test_app: Any) -> None:
+    """Beside a count of ``implements``' back links, ``implements_back_back`` names the
+    back links of no link type: it declares a link type of ``spec`` alone, whose keys
+    are checked before it is declared from them (the html build drawing it does not
+    fail)."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        "WARNING: needs_types['spec'].links['implements_back_back'] declares a link "
-        "type of need types 'spec' alone; did you mean 'implements_back'? "
-        "[needs.type_near_name]",
         "WARNING: needs_types['spec'].links['implements_back_back'] has an 'outgoing' "
         "that is not a string (got int) and a 'color' that is not a string (got int); "
         "the keys are ignored [needs.config]",
     ]
-
-
-#: name -> (declares a link type of need types alone, its keys checked first)
-AGREEMENT = {
-    # the count of the global link type l's back links
-    "l_back": (False, False),
-    # the count of the core link type links' back links
-    "links_back": (False, False),
-    # beside the count l_back: the back links of no link type, so a link type
-    "l_back_back": (True, True),
-    # no link type x: a link type
-    "x_back": (True, True),
-    # a link type need types declare alone (not named <x>_back: checked as read)
-    "foo": (True, False),
-    # the count of foo's back links
-    "foo_back": (False, False),
-}
-
-
-def test_the_count_and_the_link_type_are_told_apart_in_one_place() -> None:
-    """``_check_back_named_entries`` checks the keys of a ``links`` entry named
-    ``<x>_back`` that is no count before ``_type_local_links`` declares a link type
-    from it; the two tell the entries apart through one helper, so every ``<x>_back``
-    entry declaring a link type has had its keys checked, and none whose keys are left
-    to the resolver declares one (a ``color`` of ``3`` once became a link type's)."""
-    link_types = ("l", "links", "parent_needs")
-    known = {
-        **dict.fromkeys(link_types, "a link type"),
-        **{f"{name}_back": BACK_LINKS_WHAT for name in link_types},
-    }
-    types: dict[str, dict[str, Any]] = {
-        "req": {"links": {name: {"color": 3, "bar": 1} for name in AGREEMENT}}
-    }
-    _check_back_named_entries(types, known)
-    local, _, _, _ = _type_local_links(types, ["req"], {}, known)
-    observed = {
-        name: (name in local, keys == {})
-        for name, keys in types["req"]["links"].items()
-    }
-    assert observed == AGREEMENT

@@ -422,8 +422,9 @@ A need type may declare fields and link types anew for its needs, in its entry:
   or a core field such as ``status``,
   or a name nothing else declares, a field of this type's needs alone (below) -- to the type's declaration of it;
 * ``links``: a dictionary from the name of a link type -- one of :ref:`needs_links`, or ``links``,
-  or a name nothing else declares, a link type of this type's needs alone -- to the type's declaration of it,
-  or from the name of a link type's back links, ``<l>_back``, to how many links of ``l`` point to a need of the type (below);
+  or a name nothing else declares, a link type of this type's needs alone -- to the type's declaration of it;
+* ``back_links``: a dictionary from the name of a link type ``l`` to how many links of ``l`` point to a need of the type,
+  its back links ``<l>_back`` (below);
 * ``inherits``: the directive name of one other need type, whose declarations this type starts from.
 
 A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` takes it:
@@ -650,8 +651,7 @@ or is derived where the link type is not (or the other way round), is one ``need
 and the entry is ignored: one of a type without a declaring ancestor does not declare the link type
 (a child's entry under it is a declaration of its own), a child's still declares it, through its parent.
 A name close to that of a field or link type declared elsewhere is one ``needs.type_near_name`` warning,
-as for a field (``needs_types['req'].links['verifes'] declares a link type of need types 'req' alone; did you mean 'verifies'?``),
-and so is one close to a link type's back links, ``<l>_back``, whose count an entry declares (``implemnts_back``).
+as for a field (``needs_types['req'].links['verifes'] declares a link type of need types 'req' alone; did you mean 'verifies'?``).
 On a need of a type that does not declare it, the link type holds ``[]``, no links -- where a field holds ``None``:
 a list of links is never ``None``, a needs.json carries every link type on every need, and an empty one is no links.
 A link set for it in a need is ignored, as one ``needs.undeclared_for_type`` warning::
@@ -687,26 +687,28 @@ A declaration that cannot be applied is ignored as a whole, as one ``needs.type_
    needs_types['spec'].links['x'] declares 'x', which is a field, not a link type; the entry is ignored
 
 when it names no field of its table (a link type or a link type's back links (``links_back``) under ``fields``,
-a field under ``links``, an empty name,
+a field or a link type's back links under ``links``, an empty name,
 or under ``fields`` a name no need type gives a ``schema`` ``type``, above),
 changes the field's type, which is the same on every need type
 (``... cannot be declared with type 'integer' (items None): its type is 'string' (items None) on every need type; the entry is ignored``),
 or carries a ``schema``, ``default`` or ``predicates`` that cannot be used (a value of another type, a default of ``title``, which takes none).
-A link type's back links are computed on every need: a ``fields`` entry naming them declares nothing,
-and the back links are computed as without it::
+A link type's back links are computed on every need, so an entry naming them, in either table, declares nothing,
+and the back links are computed as without it; how many there must be is a ``back_links`` entry (below)::
 
-   needs_types['spec'].fields['links_back'] declares 'links_back', which is a link type's back links, whose count a need type declares under 'links' (needs_types['spec'].links['links_back']); the entry is ignored
+   needs_types['spec'].links['links_back'] declares 'links_back', which is a link type's back links, whose count a need type declares under 'back_links' (needs_types['spec'].back_links['links']); the entry is ignored
 
 **Incoming links.**
-A ``links`` entry naming a link type's back links, ``[needs.types.<t>.links.<l>_back]``, declares how many links of ``l``
-point to a need of the type: ``schema = { minItems = 1 }`` says "every ``<t>`` is the target of at least one ``l`` link",
+A ``back_links`` entry, ``[needs.types.<t>.back_links.<l>]``, declares how many links of the link type ``l``
+point to a need of the type, its back links ``<l>_back``: ``schema = { minItems = 1 }`` says "every ``<t>`` is the target of at least one ``l`` link",
 ``maxItems = 1`` "of one at most".
-It declares no link type, and the back links are computed on every need as without it.
+``l`` is any link type, one ``<t>`` declares or not (the links come from needs of other types);
+an entry naming no link type is one ``needs.type_conflict`` warning, and is ignored,
+naming the link type it is close to, if any (``needs_types['req'].back_links['implemnts'] counts the back links of 'implemnts', which is not a link type; the entry is ignored; did you mean 'implements'?``).
 It takes a ``description``, a ``schema`` of ``minItems`` and ``maxItems`` alone (each a non-negative integer) and a ``severity``;
 any other key, or another schema keyword, is one ``needs.type_conflict`` warning, and the entry is ignored as a whole::
 
-   needs_types['req'].links['satisfies_back'] sets 'default', but 'satisfies_back' is a link type's back links: a need type declares only their description, schema (minItems, maxItems) and severity; the entry is ignored
-   needs_types['req'].links['satisfies_back'] gives the schema 'uniqueItems', but 'satisfies_back' is a link type's back links: their schema takes only 'minItems' and 'maxItems'; the entry is ignored
+   needs_types['req'].back_links['satisfies'] sets 'default', but a need type declares only the description, schema (minItems, maxItems) and severity of a link type's back links ('satisfies_back'); the entry is ignored
+   needs_types['req'].back_links['satisfies'] gives the schema 'uniqueItems', but the schema of a link type's back links ('satisfies_back') takes only 'minItems' and 'maxItems'; the entry is ignored
 
 The count is the length of the need's ``<l>_back``: every link of ``l`` to it, whatever the type of the need it comes from,
 a link that need's ``target_types`` refuses included -- as ``minItems`` counts the outgoing links.
