@@ -9,10 +9,12 @@ from typing import Any, TypedDict
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
 from sphinx.errors import SphinxError, SphinxWarning
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs._need_source import NeedSourceHop, located_hops
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
@@ -401,6 +403,7 @@ class List2NeedDirective(SphinxDirective):
                     # ``.. include::``).
                     lineno_content=self.content_offset + 1 + content_index,
                     parser_lineno=self.content_offset + 1 + list_need["line"],
+                    hops=self._item_hops(list_need),
                 ),
                 need_type=list_need["type"],
                 title=title,
@@ -435,6 +438,47 @@ class List2NeedDirective(SphinxDirective):
             lines, source=str(self.env.doc2path(self.env.docname)), items=items
         )
         return content, indexes[0] if indexes else list_need["line"]
+
+    def _item_hops(self, list_need: _ListNeed) -> tuple[NeedSourceHop, ...]:
+        """The hops of one item: its first line, and its last non-blank one.
+
+        Under docutils the content is mapped to the file it is written in, an
+        included file's own lines too. Under myst-parser the lines are rebuilt from the
+        position of the directive (:meth:`_source_info`), which is true on the page but
+        not in an included file, so an item there takes the directive's file and no
+        line. Content that was itself generated has no true line at all.
+        """
+        end = max(
+            (
+                index
+                for index in list_need["content_lines"]
+                if self.content[index].strip()
+            ),
+            default=list_need["line"],
+        )
+        if self._content_is_source_mapped():
+            source, _ = self._source_info(list_need["line"])
+            return located_hops(
+                self.env,
+                self.env.docname,
+                source,
+                self._source_line(list_need["line"]),
+                self._source_line(end),
+                fragment_lines=True,
+            )
+        if isinstance(self.state, RSTState):
+            return located_hops(
+                self.env, self.env.docname, None, None, fragment_lines=False
+            )
+        source, _ = self.get_source_info()
+        return located_hops(
+            self.env,
+            self.env.docname,
+            source,
+            self._source_line(list_need["line"]),
+            self._source_line(end),
+            fragment_lines=False,
+        )
 
     def _content_is_source_mapped(self) -> bool:
         """Whether the content lines carry their true position in the source.
