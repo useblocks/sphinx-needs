@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 13
+ENV_DATA_VERSION: Final = 14
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -88,6 +88,15 @@ Version 13 adds the names of the derived fields to every stored need (a slot of
 :class:`~sphinx_needs.need_item.NeedItem`, which ``need[name] = value`` reads to refuse
 one). An unbumped rebuild over an existing ``_build`` unpickles needs without it, and
 the first write into one ends with an ``AttributeError`` rather than re-reading the
+documents.
+
+Version 14 adds the hops to every ``NeedItemSource*`` class (where a need's text came
+from, :mod:`sphinx_needs._need_source`) and changes the fields those slotted dataclasses
+store. They pickle their fields by position, so an unbumped rebuild over an existing
+``_build`` unpickles every source of an unchanged document with its values in the wrong
+fields: a directive's old ``docname`` is read as its hops, and an API need's
+``dict_repr`` as its hops, leaving the need without its location keys, so the first
+``need["docname"]`` of it ends with an ``AttributeError`` rather than re-reading the
 documents.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
