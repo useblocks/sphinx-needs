@@ -20,7 +20,7 @@ SITE = "https://site.example/docs/"
 # prefix says which); the test reads every link by its prefixed id
 _TEMPLATES = {
     # absolute renders: used as they are
-    "ABS": "{{need['remote_url']}}",
+    "ABS": "{{need.remote_url}}",  # the route the converter's docs give
     "UPPER": "HTTPS://GitHub.com/o/r/{{need['id']}}",
     "SCHEMEREL": "//cdn.example/x/{{need['id']}}",
     "FILE": "file:///tmp/ext/{{need['id']}}.html",
