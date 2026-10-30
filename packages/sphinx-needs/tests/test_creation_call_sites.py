@@ -161,7 +161,6 @@ def deprecated_source_names(source: str) -> list[tuple[int, str]]:
     return sorted(found)
 
 
-@pytest.mark.xfail(strict=True, reason="slice 3a: every producer on NeedItemSource")
 def test_no_module_uses_a_deprecated_source_name():
     """Every producer of this repository builds ``NeedItemSource``, and nothing tests
     for the base class the five shared."""
