@@ -97,7 +97,8 @@ def generate_needs_schema(
     schema (:meth:`~sphinx_needs.needs_schema.FieldsSchema.for_type` of no need type),
     whatever a need type declares anew -- but that a field a need type declares not
     nullable at a ``severity`` below ``violation`` is written nullable, as one a need
-    of that type may hold ``null`` of.
+    of that type may hold ``null`` of, and so is a field declared on some need types
+    alone, which the needs of the other types hold ``null`` of.
     """
     # the fields a need may hold null of, where the global declaration does not
     nulls = {
@@ -108,6 +109,13 @@ def generate_needs_schema(
             for declaration in needs_schema.type_declarations(field.name).values()
         )
     }
+    # declared on some need types alone, where it may be not nullable (an extension's
+    # ``add_field(types=...)``): the needs of the others hold null
+    nulls.update(
+        field.name
+        for field in needs_schema.iter_extra_fields()
+        if needs_schema.declaring_types(field.name) is not None
+    )
     # the union by design: one projection for the needs of every type
     needs_schema = needs_schema.for_type(None)
     properties: dict[str, Any] = {}
