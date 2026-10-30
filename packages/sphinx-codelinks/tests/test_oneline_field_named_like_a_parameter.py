@@ -9,8 +9,6 @@ add_need() got multiple values for keyword argument 'state'``. They now go to
 import hashlib
 from pathlib import Path
 
-import pytest
-
 from sphinx_codelinks.sphinx_extension.directives.src_trace import would_be_id
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import build_warnings
@@ -138,7 +136,6 @@ def _full_title_style(declared: bool) -> dict[str, str]:
     }
 
 
-@pytest.mark.xfail(strict=True, reason="FR7: a generated id does not move")
 def test_a_declared_full_title_is_the_field_and_the_id_s_full_title(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:
@@ -188,7 +185,6 @@ def test_a_one_line_field_named_doctype_sets_it(
     assert SphinxNeedsData(app.env).get_needs_view()["IMPL_1"]["doctype"] == ".md"
 
 
-@pytest.mark.xfail(strict=True, reason="FR8: allow_type_coercion is an argument")
 def test_a_one_line_field_named_allow_type_coercion_is_the_argument(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:

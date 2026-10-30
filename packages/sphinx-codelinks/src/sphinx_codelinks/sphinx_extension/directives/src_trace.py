@@ -131,7 +131,13 @@ def generate_remote_url(
 
 #: the marker field names ``add_need`` took as its own keywords and ``create_need``
 #: takes as arguments, rather than as fields
-_CREATION_ARGUMENTS = ("content", "doctype", "jinja_content", "full_title")
+_CREATION_ARGUMENTS = (
+    "content",
+    "doctype",
+    "jinja_content",
+    "full_title",
+    "allow_type_coercion",
+)
 
 
 def would_be_id(app: Sphinx, need: Mapping[str, Any]) -> str | None:
@@ -751,6 +757,11 @@ class SourceTracingDirective(SphinxDirective):
                     for name in _CREATION_ARGUMENTS
                     if name in values and name not in declared
                 }
+                # a declared full_title is the field, and still the full title the
+                # generated id is derived from, as add_need took it: the id is the
+                # one would_be_id predicts
+                if "full_title" in values:
+                    arguments["full_title"] = values["full_title"]
 
                 try:
                     _, created = create_need(
@@ -766,6 +777,7 @@ class SourceTracingDirective(SphinxDirective):
                         doctype=arguments.get("doctype"),
                         jinja_content=arguments.get("jinja_content"),
                         full_title=arguments.get("full_title"),
+                        allow_type_coercion=arguments.get("allow_type_coercion", True),
                         fields={k: v for k, v in values.items() if k not in link_names},
                         links={k: v for k, v in values.items() if k in link_names},
                     )
