@@ -23,9 +23,11 @@ back into the new class, whatever their names now resolve to.
 
 from __future__ import annotations
 
+import ast
 import copyreg
 import io
 import pickle
+import re
 import shutil
 from collections.abc import Callable
 from pathlib import Path
@@ -35,7 +37,7 @@ import pytest
 from sphinx.testing.util import SphinxTestApp
 from syrupy.assertion import SnapshotAssertion
 
-from sphinx_needs import need_item
+from sphinx_needs import data, need_item
 from sphinx_needs._need_source import first_line
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.need_item import NeedItem
@@ -187,6 +189,30 @@ FIVE_CLASSES_FIELDS = {
 }
 """The fields each of the five classes pickles, in its order: a slotted, frozen
 dataclass pickles the list of its fields' values (``ENV_DATA_VERSION`` 14 and 15)."""
+
+
+def test_the_last_version_of_the_five_classes_is_the_one_before_the_one_class():
+    """The version the upgrade fence writes is the one before the version whose
+    paragraph introduces ``NeedItemSource``: when another bump lands first and that
+    paragraph is renumbered, this fails until the constant follows it (one step stale,
+    the fence would stay green with the bump reverted)."""
+    body = ast.parse(Path(data.__file__).read_text(encoding="utf-8")).body
+    index = next(
+        i
+        for i, node in enumerate(body)
+        if isinstance(node, ast.AnnAssign)
+        and isinstance(node.target, ast.Name)
+        and node.target.id == "ENV_DATA_VERSION"
+    )
+    docstring = body[index + 1]
+    assert isinstance(docstring, ast.Expr)
+    assert isinstance(docstring.value, ast.Constant)
+    (version,) = re.findall(
+        r"^Version (\d+) stores every need's source as one class",
+        docstring.value.value,
+        re.M,
+    )
+    assert int(version) - 1 == LAST_VERSION_OF_THE_FIVE_CLASSES
 
 
 def _as_the_five_classes_stored_it(source: Any) -> tuple[str, list[Any]]:

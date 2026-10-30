@@ -96,6 +96,13 @@ FACTORY_CASES = [
         (EXTERNAL, PAGE_A),
     ),
     (
+        # given hops whose first is no external hop: the external hop goes first
+        "NeedItemSourceUnknown",
+        {"hops": (PAGE_A,), "docname": "a", "is_external": True, "external_url": URL},
+        _keys("a", external_url=URL, is_external=True),
+        (EXTERNAL, PAGE_A),
+    ),
+    (
         "NeedItemSourceUnknown",
         {"hops": (LINED_A,), "lineno": 3},
         _keys("a", 3),
@@ -249,6 +256,59 @@ def test_the_one_class():
         links={},
     )
     assert need.source == NeedItemSource()
+
+
+def test_the_directive_name_keeps_the_parser_line():
+    """``NeedItemSourceDirective(parser_lineno=...)`` keeps it, though it is in no
+    legacy key: a rendered ``pre_template`` / ``post_template`` is parsed at it."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        source = need_item.NeedItemSourceDirective(
+            docname="a", lineno=3, lineno_content=4, parser_lineno=9
+        )
+    assert source.parser_lineno == 9
+
+
+class _UnmappedStateMachine:
+    """A state machine that cannot map a line: docutils' ``get_source_and_line`` gives
+    ``(None, None)`` where its input has no entry for the offset (an ``IndexError``)."""
+
+    def get_source_and_line(self, lineno: int | None = None) -> tuple[None, None]:
+        return None, None
+
+
+def test_from_directive_keeps_the_parser_line_where_the_state_machine_has_none(
+    tmp_path: Path,
+):
+    """Where the line cannot be resolved, ``lineno`` is the directive's own (parser)
+    line, as a need directive has recorded it since #1349, and the page hop has none."""
+    from types import SimpleNamespace
+
+    from sphinx_needs.need_item import NeedItemSource
+
+    env = SimpleNamespace(
+        srcdir=str(tmp_path),
+        docname="a",
+        doc2path=lambda docname: str(tmp_path / f"{docname}.rst"),
+    )
+    directive = SimpleNamespace(
+        name="req",
+        arguments=["title"],
+        lineno=7,
+        content_offset=8,
+        block_text=".. req:: title\n",
+        state=SimpleNamespace(
+            document=SimpleNamespace(settings=SimpleNamespace(env=env))
+        ),
+        state_machine=_UnmappedStateMachine(),
+    )
+    source = NeedItemSource.from_directive(directive)  # ty: ignore[invalid-argument-type]
+    assert source.dict_repr["lineno"] == 7
+    assert source.parser_lineno == 7
+    assert source.lineno_content == 9
+    assert [(hop.kind, hop.document) for hop in source.hops] == [("page", "a")]
+    assert source.hops[0].physical is not None
+    assert source.hops[0].physical.start_line is None
 
 
 def test_a_name_given_both_keywords_and_hops_keeps_the_hops():
