@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793393901305,
+  "lastUpdate": 1793396190482,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27648,6 +27648,42 @@ window.BENCHMARK_DATA = {
             "value": 60.316149612000004,
             "unit": "s",
             "extra": "Commit: c8b4b114044f0d5ac1cfd0b94927d065ddb9e5d3\nBranch: master\nTime: 2026-10-30T21:56:52+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "93da1d1d3b5b5710a999c46ef5d70a6889b9aff1",
+          "message": "🐛 Google Test's value_param / type_param reach case_parameter, in the build and the converter (#2430)\n\nA parameterised Google Test case now carries its parameter.\n`case_parameter` holds a `TEST_P` instance's\n`value_param` (`1`, `(1, 2)`, `\"a \\\"b\\\" <c>\"`), a typed test's\n`type_param` (`int`), or, for a test registered\nwith both through `testing::RegisterTest`, the type first (`int, 42`),\neach verbatim. Before, every Google\nTest case had no `case_parameter`, because Google Test writes the\nparameter beside the name, never in it, and\nonly pytest's `name[param]` was read. This applies to the `test-case`\ndirective (and every `:auto_cases:`\ncase), to the `test-reports build needs` converter, and to the record of\nwhere a test need comes from, whose\n`case` entry gains the same `parameter`.\n\n- **ub-test-reports:** a new public\n`ub_test_reports.identity.case_name_and_parameter(case)`. The name's\n`[…]` wins, else `value_param`, else `type_param`, and both are joined\ntype first (gtest's own order). The\n  converter uses it. `split_case_name` is unchanged.\n- **sphinx-test-reports:** `test-case` and the report hop use the same\nfunction, so the field and the hop\n  agree.\n- `case_name` keeps the name as given (`Value/0`), and no id moves: the\nten ids of a googletest 1.17.0 report\n  and `testcase__ParamTest_0__Works_0_ugfea` are pinned.\n- Changed values: `gtest_data.xml`'s `Works/0` (`int, 42`) and the typed\ncases of `many_testsuites.xml`. One\ntest that asserted every case null now asserts `Works/0`'s value\ninstead. The `case_parameter` field\n  description names Google Test too.\n\nCloses #2390",
+          "timestamp": "2026-10-30T22:35:06+01:00",
+          "tree_id": "c72805e80465e590ad382c65f395f267ad995f17",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/93da1d1d3b5b5710a999c46ef5d70a6889b9aff1"
+        },
+        "date": 1793396181683,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.0725255099999984,
+            "unit": "s",
+            "extra": "Commit: 93da1d1d3b5b5710a999c46ef5d70a6889b9aff1\nBranch: master\nTime: 2026-10-30T22:35:06+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 50.987766094,
+            "unit": "s",
+            "extra": "Commit: 93da1d1d3b5b5710a999c46ef5d70a6889b9aff1\nBranch: master\nTime: 2026-10-30T22:35:06+01:00"
           }
         ]
       }
