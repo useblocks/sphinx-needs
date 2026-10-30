@@ -568,3 +568,88 @@ class TestExtraOptionFlag:
 def test_every_conversion_key_has_a_builtin_default():
     # The import-time guard says the same; this keeps saying it under -O.
     assert set(_DEFAULTS) == set(CONVERSION_KEYS)
+
+
+class TestLineBase:
+    """The converter reads lines by the parser's rule (#2381): a plain pytest report's
+    ``case_line`` and ``#L`` anchor are the test's own line. ``line_base`` in
+    ``[test_reports]``, or ``--line-base``, is the base of every unmarked report."""
+
+    PLAIN = str(UTILS / "line_base_plain.xml")
+    MARKED = str(UTILS / "line_base_marked.xml")
+
+    #: The converter's id of each case of the pytest probe, and its true line.
+    TRUE_LINES = {
+        "testcase__test_lines__test_plain_whqwm": 13,
+        "testcase__test_lines__test_marked_jallc": 17,
+        "testcase__test_lines__test_param_1__jaqht": 22,
+        "testcase__test_lines__test_param_2__ydjbl": 22,
+        "testcase__TestKlass__test_method_lbxxb": 28,
+        "testcase__TestKlass__test_method_param_a__rbssr": 31,
+        "testcase__test_lines__test_stacked_3__duycp": 36,
+        "testcase__test_lines__test_wrapped_gbron": 45,
+        "testcase__test_lines__test_fails_tclhs": 50,
+    }
+
+    REMOTE = ["--remote-url", "https://github.com/o/r", "--commit", "c"]
+
+    def _lines(self, tmp_path, arguments, toml=None, xml=PLAIN):
+        code, payload = run_convert(tmp_path, [*self.REMOTE, *arguments], toml, xml=xml)
+        assert code == 0
+        needs = payload["versions"][payload["current_version"]]["needs"]
+        lines = {}
+        for need_id, need in needs.items():
+            anchor = f"https://github.com/o/r/blob/c/tests/test_lines.py#L{need['case_line']}"
+            assert need["remote_url"] == need["external_url"] == anchor
+            lines[need_id] = int(need["case_line"])
+        return lines
+
+    def test_no_id_moves(self, tmp_path):
+        assert set(self._lines(tmp_path, [])) == set(self.TRUE_LINES)
+
+    @pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
+    def test_a_plain_pytest_report_gives_the_test_s_own_line(self, tmp_path):
+        assert self._lines(tmp_path, []) == self.TRUE_LINES
+
+    def test_a_marked_report_gives_its_lines_as_they_are(self, tmp_path):
+        assert self._lines(tmp_path, [], xml=self.MARKED) == self.TRUE_LINES
+
+    @pytest.mark.xfail(strict=True, reason="#2381: line_base is not a key yet")
+    def test_line_base_from_the_section(self, tmp_path, capsys):
+        # the migration for a report that already counts from 1 but carries no mark
+        lines = self._lines(tmp_path, [], toml="[test_reports]\nline_base = 1\n")
+        assert lines == {key: line - 1 for key, line in self.TRUE_LINES.items()}
+        assert "unknown key" not in capsys.readouterr().err
+
+    @pytest.mark.xfail(strict=True, reason="#2381: --line-base is not a flag yet")
+    def test_the_flag_beats_the_section(self, tmp_path):
+        lines = self._lines(
+            tmp_path, ["--line-base", "1"], toml="[test_reports]\nline_base = 0\n"
+        )
+        assert lines == {key: line - 1 for key, line in self.TRUE_LINES.items()}
+
+    @pytest.mark.xfail(strict=True, reason="#2381: --line-base is not a flag yet")
+    def test_the_flag_auto_beats_the_section(self, tmp_path):
+        lines = self._lines(
+            tmp_path, ["--line-base", "auto"], toml="[test_reports]\nline_base = 1\n"
+        )
+        assert lines == self.TRUE_LINES
+
+    @pytest.mark.xfail(strict=True, reason="#2381: line_base is not a key yet")
+    def test_a_mark_wins_over_line_base(self, tmp_path):
+        lines = self._lines(tmp_path, ["--line-base", "0"], xml=self.MARKED)
+        assert lines == self.TRUE_LINES
+
+    @pytest.mark.xfail(strict=True, reason="#2381: --line-base is not a flag yet")
+    def test_another_flag_value_is_refused(self, tmp_path, capsys):
+        with pytest.raises(SystemExit):
+            main(["build", "needs", self.PLAIN, "-o", "n.json", "--line-base", "2"])
+        error = capsys.readouterr().err
+        assert "--line-base" in error
+        assert "invalid choice: '2'" in error
+
+    @pytest.mark.xfail(strict=True, reason="#2381: line_base is not a key yet")
+    def test_another_section_value_is_refused(self, tmp_path, capsys):
+        code, _ = run_convert(tmp_path, [], toml="[test_reports]\nline_base = 2\n")
+        assert code == 2
+        assert "line_base" in capsys.readouterr().err

@@ -737,3 +737,34 @@ class TestSphinxFree:
             [sys.executable, "-c", code], capture_output=True, text=True
         )
         assert result.returncode == 0, result.stderr
+
+
+class TestLineBase:
+    """``line_base = "auto" | 0 | 1``: the base the line of an unmarked report counts from
+    (#2381). Bridged as ``tr_line_base``, read by the converter."""
+
+    @pytest.mark.xfail(strict=True, reason="#2381: line_base is not a key yet")
+    @pytest.mark.parametrize(
+        ("source", "value"), [('"auto"', "auto"), ("0", 0), ("1", 1)]
+    )
+    def test_the_three_values_are_kept(self, tmp_path, source, value):
+        _write(tmp_path, f"[test_reports]\nline_base = {source}\n")
+        warnings: list[str] = []
+        config = load_project_config(tmp_path / DEFAULT_TOML_FILENAME, warnings.append)
+        assert config == {"line_base": value}
+        assert type(config["line_base"]) is type(value)
+        assert warnings == []
+
+    @pytest.mark.xfail(strict=True, reason="#2381: line_base is not a key yet")
+    @pytest.mark.parametrize(
+        "source",
+        ["2", "-1", '"1"', '"0"', "true", "false", "1.0", '"AUTO"', '""', "[1]"],
+    )
+    def test_any_other_value_is_refused(self, tmp_path, source):
+        _write(tmp_path, f"[test_reports]\nline_base = {source}\n")
+        with pytest.raises(TomlConfigError, match=r"line_base must be .auto., 0 or 1"):
+            load_project_config(tmp_path / DEFAULT_TOML_FILENAME)
+
+    @pytest.mark.xfail(strict=True, reason="#2381: line_base is not a key yet")
+    def test_it_is_bridged(self):
+        assert "line_base" in BRIDGE_KEYS

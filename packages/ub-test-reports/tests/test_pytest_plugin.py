@@ -829,3 +829,89 @@ class TestHelpers:
             [sys.executable, "-c", script], capture_output=True, text=True, check=True
         )
         assert result.stdout.strip() == ""
+
+
+#: The suite-level property the plugin declares its 1-based lines with (#2381).
+LINE_BASE = "ub_test_reports:line_base"
+
+#: Two tests on known lines, for a run without the plugin.
+UNMARKED = """
+import pytest
+
+
+def test_plain():
+    pass
+
+
+@pytest.mark.parametrize("x", [1])
+def test_decorated(x):
+    pass
+"""
+
+
+def _marks(root):
+    """Each ``<testsuite>``'s line-base properties, in document order."""
+    return [
+        [
+            prop.get("value")
+            for prop in suite.findall("properties/property")
+            if prop.get("name") == LINE_BASE
+        ]
+        for suite in root.iter("testsuite")
+    ]
+
+
+def _read_lines(report):
+    """``{case name: (line, line_base_known)}`` as the reader gives them."""
+    from ub_test_reports.junitparser import JUnitParser
+
+    return {
+        case["name"]: (case["line"], case.get("line_base_known"))
+        for suite in JUnitParser(str(report)).parse()
+        for case in suite["testcases"]
+    }
+
+
+class TestLineBaseMark:
+    """Where the plugin rewrites lines (``xunit1``, with an XML writer), it says so: every
+    ``<testsuite>`` it writes carries ``ub_test_reports:line_base = 1``, so the reader takes
+    its lines as they are while it reads a plain pytest report's as counted from 0."""
+
+    @pytest.mark.xfail(strict=True, reason="#2381: the plugin writes no mark yet")
+    def test_an_xunit1_report_is_marked(self, pytester):
+        result, root = _run(pytester, DECORATED)
+        result.assert_outcomes(passed=2)
+        assert _marks(root) == [["1"]]
+
+    @pytest.mark.xfail(strict=True, reason="#2381: the plugin writes no mark yet")
+    def test_under_xdist_the_controller_writes_one_mark(self, pytester):
+        pytest.importorskip("xdist")
+        result, root = _run(pytester, DECORATED, "-n", "2")
+        result.assert_outcomes(passed=2)
+        assert _marks(root) == [["1"]]
+
+    def test_an_xunit2_report_is_not_marked(self, pytester):
+        # pytest writes no line under xunit2, and the plugin rewrites none
+        _, root = _run(pytester, DECORATED, family="xunit2")
+        assert _marks(root) == [[]]
+
+    def test_the_reader_takes_the_plugin_s_lines_as_they_are(self, pytester):
+        _run(pytester, DECORATED)
+        lines = _read_lines(pytester.path / "report.xml")
+        assert lines["test_addition"][0] == ADDITION_LINE
+        assert lines["test_plain"][0] == PLAIN_LINE
+
+    @pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
+    def test_the_reader_takes_a_plain_pytest_report_s_lines_from_0(self, pytester):
+        pytester.makepyfile(UNMARKED)
+        report = pytester.path / "report.xml"
+        result = pytester.runpytest_subprocess(
+            "--junitxml", str(report), "-o", "junit_family=xunit1"
+        )
+        result.assert_outcomes(passed=2)
+        root = ET.parse(report).getroot()
+        assert _marks(root) == [[]]
+        assert _read_lines(report) == {
+            "test_plain": (_line_of(UNMARKED, "def test_plain"), True),
+            "test_decorated[1]": (_line_of(UNMARKED, "@pytest.mark.parametrize"), True),
+        }

@@ -81,14 +81,17 @@ def _case_id(suite_id: str, classname: str, name: str) -> str:
 
 def _compact(hop: NeedSourceHop) -> str:
     """One hop on one line: ``kind [document] root:path:start-end (language) ::
-    semantic``, as sphinx-needs' own hop snapshots print them."""
+    semantic``, as sphinx-needs' own hop snapshots print them (``:start`` alone where
+    the hop has no end line)."""
     parts = [hop.kind]
     if hop.document is not None:
         parts.append(f"[{hop.document}]")
     if (physical := hop.physical) is not None:
         where = f"{physical.root}:{physical.path}"
         if physical.start_line is not None:
-            where += f":{physical.start_line}-{physical.end_line}"
+            where += f":{physical.start_line}"
+            if physical.end_line is not None:
+                where += f"-{physical.end_line}"
         parts.append(where)
     if hop.language is not None:
         parts.append(f"({hop.language})")
@@ -609,3 +612,208 @@ def test_a_google_test_parameter_is_the_case_parameter_and_the_hop_s(build):
         need_id: (name, parameter, name, (("parameter", parameter),))
         for need_id, (name, parameter) in GTEST_PARAMS.items()
     }
+
+
+# --- the test's own line: the code hop and ``case_line`` (#2381) -------------------
+
+#: ``REPORT`` as the ub-test-reports plugin writes it: the same cases, counted from 1,
+#: and the suite marked so.
+MARKED_REPORT = (
+    REPORT.replace(
+        b'<testsuite name="pytest" tests="4">',
+        b'<testsuite name="pytest" tests="4"><properties>'
+        b'<property name="ub_test_reports:line_base" value="1"/></properties>',
+    )
+    .replace(b'line="12"', b'line="13"')
+    .replace(b'line="27"', b'line="28"')
+    .replace(b'line="35"', b'line="36"')
+)
+
+#: A Google Test case (googletest 1.17.0's shape: ``status`` and ``result``), counted
+#: from 1, and a case of a producer the reader does not recognise.
+OTHER_REPORTS = (
+    b'<testsuites name="AllTests"><testsuite name="Suite" tests="1">'
+    b'<testcase name="Plain" file="tests/gt_probe.cpp" line="3" status="run" '
+    b'result="completed" time="0." classname="Suite"/></testsuite>'
+    b'<testsuite name="other" tests="1"><testcase classname="Other" name="t" '
+    b'file="src/other.x" line="7"/></testsuite></testsuites>'
+)
+
+OTHER_PAGE = """\
+Probe
+=====
+
+.. test-case:: Google Test
+   :id: TC_GTEST
+   :file: other.xml
+   :suite: Suite
+   :case: Plain
+
+.. test-case:: Unknown
+   :id: TC_OTHER
+   :file: other.xml
+   :suite: other
+   :case: t
+"""
+
+
+def _code(needs, need_id: str) -> tuple[str | None, str]:
+    """A test case's ``case_line`` and its code hop."""
+    return needs[need_id]["case_line"], _hops(needs, need_id)[0]
+
+
+_PLAIN_CASE = _case_id(SUITE, "tests.test_lines", "test_plain")
+
+
+@pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
+def test_a_plain_pytest_report_gives_the_test_s_own_line(build):
+    """pytest counts ``line`` from 0: ``27`` is the line above the method, its class's."""
+    needs, warnings = build({"index.rst": PAGE}, {"reports/plain.xml": REPORT})
+    assert warnings == ""
+    assert _code(needs, "TC_HAND") == ("28", "code None:tests/test_lines.py:28")
+    assert _code(needs, _PLAIN_CASE) == ("13", "code None:tests/test_lines.py:13")
+
+
+@pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
+def test_a_marked_report_gives_its_lines_as_they_are(build):
+    needs, warnings = build({"index.rst": PAGE}, {"reports/plain.xml": MARKED_REPORT})
+    assert warnings == ""
+    assert _code(needs, "TC_HAND") == ("28", "code None:tests/test_lines.py:28")
+    assert _code(needs, _PLAIN_CASE) == ("13", "code None:tests/test_lines.py:13")
+
+
+@pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
+def test_a_google_test_line_is_the_code_hop_s(build):
+    needs, warnings = build({"index.rst": OTHER_PAGE}, {"other.xml": OTHER_REPORTS})
+    assert warnings == ""
+    assert _code(needs, "TC_GTEST") == ("3", "code None:tests/gt_probe.cpp:3")
+
+
+def test_the_line_of_an_unrecognised_producer_is_no_hop_s(build):
+    """Its base is not known: ``case_line`` is the report's, and the code hop has no
+    line, as before."""
+    needs, warnings = build({"index.rst": OTHER_PAGE}, {"other.xml": OTHER_REPORTS})
+    assert warnings == ""
+    assert _code(needs, "TC_OTHER") == ("7", "code None:src/other.x")
+
+
+def test_line_0_of_a_report_counted_from_1_is_no_hop_s(build):
+    report = MARKED_REPORT.replace(b'line="28"', b'line="0"')
+    needs, _ = build({"index.rst": PAGE}, {"reports/plain.xml": report})
+    assert _code(needs, "TC_HAND") == ("0", "code None:tests/test_lines.py")
+
+
+@pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
+def test_tr_line_base_1_reads_an_unmarked_report_from_1(build):
+    """The migration for a report that already counts from 1 but carries no mark: one
+    written by an earlier version of the plugin, or by S-CORE's ``score_pytest``."""
+    needs, warnings = build(
+        {"index.rst": PAGE}, {"reports/plain.xml": REPORT}, conf="tr_line_base = 1\n"
+    )
+    assert warnings == ""
+    assert _code(needs, "TC_HAND") == ("27", "code None:tests/test_lines.py:27")
+
+
+@pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
+def test_tr_line_base_0_reads_an_unrecognised_producer_from_0(build):
+    needs, warnings = build(
+        {"index.rst": OTHER_PAGE},
+        {"other.xml": OTHER_REPORTS},
+        conf="tr_line_base = 0\n",
+    )
+    assert warnings == ""
+    assert _code(needs, "TC_OTHER") == ("8", "code None:src/other.x:8")
+
+
+@pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
+def test_a_mark_wins_over_tr_line_base(build):
+    needs, warnings = build(
+        {"index.rst": PAGE},
+        {"reports/plain.xml": MARKED_REPORT},
+        conf="tr_line_base = 0\n",
+    )
+    assert warnings == ""
+    assert _code(needs, "TC_HAND") == ("28", "code None:tests/test_lines.py:28")
+
+
+@pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
+@pytest.mark.parametrize("value", ["2", "-1", "'one'", "True", "1.0", "None"])
+def test_another_tr_line_base_is_refused(
+    make_app, tmp_path, clean_docutils_registry, value
+):
+    from sphinx_test_reports.exceptions import InvalidConfigurationError
+
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "conf.py").write_text(
+        'extensions = ["sphinx_needs", "sphinx_test_reports"]\n'
+        f"tr_line_base = {value}\n",
+        encoding="utf-8",
+    )
+    (src / "index.rst").write_text("Probe\n=====\n", encoding="utf-8")
+    with pytest.raises(InvalidConfigurationError, match="tr_line_base"):
+        make_app("html", srcdir=src, freshenv=True)
+
+
+def test_a_json_report_s_line_is_passed_through_and_no_hop_s(build):
+    """The rule is the JUnit reader's: a JSON report's line is what its mapping reads,
+    passed through, whatever ``tr_line_base`` says, and the code hop has none."""
+    report = (
+        b'[{"name": "pytest", "tests": 1, "errors": 0, "failures": 0, "skips": 0,'
+        b' "passed": 1, "time": 1, "testcase": [{"name": "t1", "classname": "c1",'
+        b' "file": "tests/own.py", "line": 12, "result": "passed"}]}]'
+    )
+    page = (
+        "Probe\n=====\n\n"
+        ".. test-case:: C\n   :id: TC_JSON\n   :file: r.json\n   :suite: pytest\n"
+        "   :case: t1\n"
+    )
+    for conf in ("", "tr_line_base = 0\n", "tr_line_base = 1\n"):
+        needs, _ = build(
+            {"index.rst": page},
+            {"r.json": report},
+            conf=JSON_MAPPING.format(extra="") + conf,
+        )
+        assert _code(needs, "TC_JSON") == ("12", "code None:tests/own.py"), conf
+
+
+#: Every id the page and the plain report give, by each id scheme: no id reads a line.
+#: (With deterministic ids, the cases the ``test-report`` generates are the ``test-file``'s
+#: ids again, and refused as such: the generated suite keeps its own.)
+PLAIN_IDS = {
+    "legacy": [
+        "TC_HAND",
+        "TF_PLAIN",
+        "TF_PLAIN_0EA",
+        "TF_PLAIN_0EA_2E306",
+        "TF_PLAIN_0EA_39A69",
+        "TF_PLAIN_0EA_49F19",
+        "TF_PLAIN_0EA_64266",
+        "TR_GEN",
+        "TR_GEN_0EA",
+        "TR_GEN_0EA_2E306",
+        "TR_GEN_0EA_39A69",
+        "TR_GEN_0EA_49F19",
+        "TR_GEN_0EA_64266",
+        "TS_HAND",
+    ],
+    "deterministic": [
+        "TC_HAND",
+        "TF_PLAIN",
+        "TF_PLAIN_0EA",
+        "TR_GEN",
+        "TR_GEN_0EA",
+        "TS_HAND",
+        "testcase__TestKlass__test_method_lbxxb",
+        "testcase__test_lines__test_nofile_vhvno",
+        "testcase__test_lines__test_plain_whqwm",
+        "testcase__test_lines__test_stacked_3__duycp",
+    ],
+}
+
+
+@pytest.mark.parametrize("scheme", list(PLAIN_IDS))
+def test_no_id_moves_with_the_line_base(build, scheme):
+    conf = "tr_deterministic_case_ids = True\n" if scheme == "deterministic" else ""
+    needs, _ = build({"index.rst": PAGE}, {"reports/plain.xml": REPORT}, conf=conf)
+    assert sorted(needs) == PLAIN_IDS[scheme]
