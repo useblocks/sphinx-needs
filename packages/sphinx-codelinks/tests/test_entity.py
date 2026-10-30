@@ -1,7 +1,7 @@
 """The naming of a definition node, ``describe_entity``, its components and how
 they render, and the doc-comment test.
 
-The shared extraction fixtures pin the names of the entities a marker is attached to;
+The extraction fixtures pin the names of the entities a marker is attached to;
 these cases call the naming directly, for node kinds and spellings no marker in them
 reaches (an operator, an indexer, a file-scoped namespace, a generic receiver).
 """

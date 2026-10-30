@@ -2007,6 +2007,6 @@ def test_yaml_inline_comments_comprehensive(
 )
 def test_documents_file(text: str, expected: bool) -> None:
     """A file tag counts at the start of the text or after whitespace, ``*``, ``/`` or
-    ``!``, and only as a whole ASCII word; the same rule as the other implementation's,
-    so the two cannot split on an address, a longer word or a non-ASCII mark."""
+    ``!``, and only as a whole ASCII word: an address or a longer word never counts,
+    and a non-ASCII mark ends the word rather than extending it."""
     assert utils.documents_file(text) is expected

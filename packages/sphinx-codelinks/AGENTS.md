@@ -464,8 +464,8 @@ and no registry object to subclass.
    branch in the `comment_type ==` chain that builds `Language(tree_sitter_<lang>.language())`,
    and — if attachment to code entities is wanted — entries in `analyse/entity.py`:
    `ENTITY_NODE_TYPES` (and `TRIVIA_TYPES` / `WRAPPER_TYPES` where they apply) and a namer in
-   `describe_entity`'s table; the shared `tests/data/extraction/entities.yaml` and its truth
-   test pin both
+   `describe_entity`'s table; `tests/data/extraction/entities.yaml` and its truth test pin
+   both
 4. Add test files under `tests/data/`
 5. Add tests in `tests/test_analyse.py`, and a fixture row in
    `tests/test_extraction_fixtures.py` if the language should be covered declaratively

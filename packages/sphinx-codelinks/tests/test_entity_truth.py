@@ -11,7 +11,7 @@ the entries and where the truth comes from.
 is asserted to STILL be wrong, so the list cannot go stale: a fix that rights one fails
 here until the fix also delists it.
 
-The fence of ``semantic``: in every case of every shared fixture, each ``scope``'s
+The fence of ``semantic``: in every case of every extraction fixture, each ``scope``'s
 components, rendered by the rule of its ``language``, spell its ``qualified_name``
 exactly. And kinds describe, names identify: the name chain of one entity does not
 depend on how it is written.

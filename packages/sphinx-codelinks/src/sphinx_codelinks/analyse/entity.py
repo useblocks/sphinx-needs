@@ -494,7 +494,7 @@ def is_doc_comment(node: TreeSitterNode, comment_type: CommentType) -> bool:
 #
 # Every namer builds the qualified name and its components (``semantic``) side by
 # side, from the same walk; ``render_semantic`` spells the components back, and the
-# shared fixtures' truth test holds the two together.
+# truth test over the extraction fixtures holds the two together.
 
 
 def _text(node: TreeSitterNode | None) -> str:
