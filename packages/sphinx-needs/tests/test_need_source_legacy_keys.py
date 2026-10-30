@@ -316,7 +316,9 @@ def test_an_environment_the_five_classes_stored_is_not_read_into_the_new_class(
     stand_ins = {name: _stand_in(name) for name in FIVE_CLASSES_FIELDS}
     with monkeypatch.context() as patch:
         for name, stand_in in stand_ins.items():
-            patch.setattr(need_item, name, stand_in, raising=False)
+            # in the module's namespace itself: an attribute lookup of a deprecated
+            # name would warn, and restore the factory it returns there
+            patch.setitem(vars(need_item), name, stand_in)
         for need_id, (name, state, as_pickled) in stored.items():
             old = object.__new__(stand_ins[name])
             old.state = state
