@@ -10,6 +10,42 @@ Unreleased
 Improvements
 ............
 
+- ✨ A :ref:`needs_types` entry naming a need type an extension adds narrows that type, where it was ignored
+  (:issue:`2371`)
+
+  An entry for sphinx-test-reports' ``testcase``, or any type an extension adds with ``add_need_type``, is a
+  narrowing of it, as an entry naming a default type is: the keys it gives win, the ``title``, ``prefix``,
+  ``color`` and ``style`` it leaves out are the extension's, and its ``inherits``, ``fields`` and ``links`` (with
+  ``derive``, ``target_types``, ``minItems`` / ``maxItems``, a narrower ``schema``) apply to the type's needs, as on
+  a type the project declares, whenever the extension adds the type. So
+  ``[needs.types.testcase.links.evidence_for] derive = {...}`` gives test cases a derived link type of their own
+  (joining on the ``case_name`` of ``test`` needs takes ``[needs.types.test.fields.case_name]`` too, once
+  sphinx-test-reports declares its fields on its own types, below). The entry takes every key of a need type's,
+  ``back_links``, ``id_regex`` and a field's ``severity`` (below) included, and only narrows: its declaration of a
+  field the extension declares starts from the extension's, so one widening it is a ``needs.type_widening`` warning
+  (one re-typing it a ``needs.type_conflict``), and is ignored. A
+  bare entry still declares no type (the default types are kept beside it). A bare entry naming no default type and
+  no type an extension adds is ignored as before, but reported once the schema is built, naming
+  ``derive_by_type`` as the spelling that attaches a rule to a type the project does not declare -- the
+  documentation now says that is what ``derive_by_type`` is for, rather than only that it is older. The GitHub
+  services' types are not narrowed: an entry with a ``title`` and a ``prefix`` replaces one, and a bare entry for one
+  is ignored, with a warning naming the service's type. See :ref:`narrowing an extension's type <needs_types_extension>`.
+
+- ✨ An extension declares a field on its own need types alone: ``add_field(name, description, types=[...])``
+  (:issue:`2372`)
+
+  The field is the extension's declaration -- its schema, ``nullable`` and default -- on the need types named (and
+  the types inheriting from them), and absent on every other type, exactly as a field a project's need type entries
+  declare alone: ``None`` there, and a value set there is one ``needs.undeclared_for_type`` warning. A project need
+  type that carries the field names it in its entry (``[needs.types.test.fields.case_name]``, an empty entry
+  included), which declares it there too; a ``needs_fields`` entry of the same name is the field, on every type, as
+  before. A type named that nothing declares when the schema is built is one ``needs.config`` warning, the field
+  declared on the others. ``FieldsSchema.declaring_types(name)`` names the types declaring a field declared on need
+  types alone, either way, and the needs.json schema writes such a field nullable where the extension's declaration
+  is not, with a ``null`` default where it gives no literal one (so ``needs_json_remove_defaults`` leaves the key
+  out). sphinx-test-reports declares its eighteen fields this way from its next release. See
+  :ref:`fields an extension declares on need types alone <needs_types_extension_fields>`.
+
 - ✨ Each need now records where its text came from, as a list of hops on ``need.source`` (provisional; see
   :ref:`api`, :pr:`2399`)
 
@@ -141,6 +177,11 @@ Improvements
 
 Bug fixes
 .........
+
+- 🐛 A :ref:`needs_types` entry with a ``title`` and a ``prefix`` naming a need type an extension adds no longer
+  stops the build with ``NeedsApiConfigException: testcase already exists as need type`` from the extension's
+  ``add_need_type``: the entry narrows the type (:issue:`2371`). ``add_need_type`` still refuses a directive
+  another extension added, and a default type no entry of the project names.
 
 - 🐛 The ``needs_schema`` of a :ref:`needs.json <needs_builder_format>` writes a link type's literal default
   **(changed output)** (:issue:`2208`)
