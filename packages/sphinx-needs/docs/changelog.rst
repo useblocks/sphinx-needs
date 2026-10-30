@@ -133,6 +133,11 @@ Improvements
   wrong id should refuse the need; one that should only be reported stays a rule. A pattern that is not a regular
   expression is a ``needs.type_conflict`` warning, and is ignored. See :ref:`need_types_id_regex`.
 
+- 👌 A :ref:`needs_fields` entry naming a core field a need computes (``type_name``, ``docname`` and the other core
+  fields that take no declaration) is reported as ignored, with a ``needs.config`` warning, where it was ignored
+  silently. Nothing read such an entry, so no output changes, but a build run with ``-W`` (warnings as errors) that
+  has one now fails until the entry is removed
+
 - 👌 The ``needs.derive_scope`` warning at a :ref:`needextend` whose filter names a computed field says what
   computes it: "a derive rule" for a field a :ref:`derive <needs_derive>` rule computes, "a dynamic function or
   variant" for a ``[[…]]``, ``<<…>>`` or ``<{…}>``, and "a derive rule, a dynamic function or a variant" when the
@@ -191,6 +196,10 @@ Improvements
 
 Bug fixes
 .........
+
+- 🐛 A schema rule's property on an array field may give ``contains`` without ``items``
+  (``"tags": {"contains": {"const": "a"}}``): the build stopped with a schema error, where the rule now applies,
+  the field's item type standing for ``items``. A link type's property is unchanged.
 
 - 🐛 A :ref:`needs_types` entry with a ``title`` and a ``prefix`` naming a need type an extension adds no longer
   stops the build with ``NeedsApiConfigException: testcase already exists as need type`` from the extension's

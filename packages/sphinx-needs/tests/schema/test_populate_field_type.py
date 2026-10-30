@@ -165,6 +165,46 @@ class TestPopulateFieldTypeSuccess:
         assert props["type"] == "array"
         assert props["contains"]["type"] == "string"
 
+    def test_field_array_contains_alone_gets_items(self) -> None:
+        """A field's array schema takes ``items``: one giving ``contains`` alone is
+        given the item type as ``items``, which every value satisfies."""
+        schema: dict[str, Any] = {
+            "idx": 0,
+            "validate": {
+                "local": {"properties": {"tags": {"contains": {"const": "a"}}}}
+            },
+        }
+        fields_schema = create_mock_fields_schema(
+            extra_fields={"tags": ("array", "string")}
+        )
+
+        populate_field_type(schema, "[0]", fields_schema)
+
+        assert schema["validate"]["local"]["properties"]["tags"] == {
+            "type": "array",
+            "items": {"type": "string"},
+            "contains": {"const": "a", "type": "string"},
+        }
+
+    def test_link_contains_alone_gets_no_items(self) -> None:
+        """A link type's schema takes no ``items`` it was not given."""
+        schema: dict[str, Any] = {
+            "idx": 0,
+            "validate": {
+                "local": {"properties": {"links": {"contains": {"pattern": "^R"}}}}
+            },
+        }
+        fields_schema = create_mock_fields_schema(
+            link_fields={"links": ("array", "string")}
+        )
+
+        populate_field_type(schema, "[0]", fields_schema)
+
+        assert schema["validate"]["local"]["properties"]["links"] == {
+            "type": "array",
+            "contains": {"pattern": "^R", "type": "string"},
+        }
+
     def test_link_field_type_injection(self) -> None:
         """Test type injection for link fields."""
         schema: dict[str, Any] = {

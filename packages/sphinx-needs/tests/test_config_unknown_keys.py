@@ -379,3 +379,41 @@ def test_an_entry_that_is_not_a_table_gets_no_unknown_key_per_character(
     with pytest.raises(Exception):  # noqa: B017  -- the reader's own failure
         make_app(srcdir=tmp_path, freshenv=True, warning=warning)
     assert "unknown key" not in warning.getvalue()
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            """
+            extensions = ["sphinx_needs"]
+            needs_fields = {
+                "type_name": {"schema": {"type": "string"}},
+                "docname": {"schema": {"type": "string"}},
+                "status": {"schema": {"enum": ["open", "closed"]}},
+            }
+            """,
+            """
+            .. req:: A requirement
+               :id: REQ_001
+               :status: open
+            """,
+        )
+    ],
+    indirect=True,
+)
+def test_an_entry_naming_a_core_field_a_need_computes_is_reported(
+    test_app: Any,
+) -> None:
+    """A ``needs_fields`` entry naming a core field that takes no declaration (one the
+    need computes, such as ``type_name`` or ``docname``) declares nothing: it is one
+    ``needs.config`` warning, where it was ignored silently. A core field that takes a
+    declaration, such as ``status``, is specialised as before."""
+    app = test_app
+    app.build()
+    assert _config_warnings(app) == [
+        f"WARNING: needs_fields entry {name!r} names the core field {name!r}, which a "
+        "project cannot declare; the entry is ignored [needs.config]"
+        for name in ("type_name", "docname")
+    ]
+    assert _needs(app)["REQ_001"]["type_name"] == "Requirement"
