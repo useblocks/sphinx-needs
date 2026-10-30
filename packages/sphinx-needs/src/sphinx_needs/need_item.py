@@ -1597,6 +1597,14 @@ def _without_lines(source: NeedItemSourceProtocol) -> object:
     The line fields of the source class, and the start and end line of each hop's
     file (its hops record the lines too); ``dict_repr`` is computed from the rest.
     """
+    # This reads the source classes' private ``_lineno`` and rebuilds the hop dataclasses
+    # of :mod:`sphinx_needs._need_source` (provisional) from outside them. A field added
+    # to a source or a hop fails safe: it is compared, so a moved need counts as changed
+    # and is re-written. A custom ``__init__`` on ``NeedSourceHop`` or
+    # ``NeedSourcePhysical`` would not: ``replace`` would raise, as it did on the source
+    # classes once they took hops (tests/test_incremental_rewrite.py goes red). The clean
+    # seam is a method on ``HopsSource`` / ``NeedSourceHop`` giving this key, beside the
+    # fields it knows.
     if not is_dataclass(source) or isinstance(source, type):
         return source
     kept: list[tuple[str, object]] = []
