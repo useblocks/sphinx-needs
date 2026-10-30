@@ -252,8 +252,8 @@ Deprecations
   ``dataclasses.replace`` raises ``TypeError`` (build a new source) and ``dataclasses.asdict`` gives the one class's
   fields; the attributes ``url`` (``NeedItemSourceExternal``), ``path`` (``NeedItemSourceImport``),
   ``external_url`` and ``is_external`` (``NeedItemSourceUnknown``) are gone (read ``source.dict_repr``);
-  ``dir(sphinx_needs.need_item)`` and ``from sphinx_needs.need_item import *`` no longer include them, and a type
-  checker no longer resolves them (they exist at run time only); and no combination of keywords is refused: given
+  ``dir(sphinx_needs.need_item)`` and ``from sphinx_needs.need_item import *`` no longer include them (a type
+  checker sees each as a deprecated function of its keywords); and no combination of keywords is refused: given
   ``hops``, the hops decide ``docname``, ``is_external``, ``external_url`` and, without a ``lineno``, the line,
   while a ``lineno`` given is the need's, and an ``external_url`` without ``is_external`` is dropped.
 
