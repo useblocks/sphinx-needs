@@ -327,7 +327,6 @@ def test_a_name_given_both_keywords_and_hops_keeps_the_hops():
     assert directive.dict_repr["lineno"] == 9
 
 
-@pytest.mark.xfail(strict=True, reason="fix round 1: NeedItemSource.on_page")
 @pytest.mark.parametrize(
     ("docname", "lineno"), [("a", 3), ("a", None), (None, 3), (None, None)]
 )
@@ -354,7 +353,6 @@ def test_on_page_is_the_source_add_need_builds(docname: str | None, lineno: int 
     ]
 
 
-@pytest.mark.xfail(strict=True, reason="fix round 1: the getattr is runtime-only")
 def test_the_module_getattr_is_hidden_from_type_checkers():
     """The five names are served at run time only: a module ``__getattr__`` that a type
     checker sees would type every name of the module as ``Any``, so a misspelt import

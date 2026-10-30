@@ -241,9 +241,7 @@ def _legacy_source(
     has one) before it."""
     if need_source is not None:
         return need_source
-    hops: tuple[NeedSourceHop, ...] = (
-        () if docname is None else (NeedSourceHop(kind="page", document=docname),)
-    )
+    hops = NeedItemSource.on_page(docname).hops
     if is_external:
         hops = (
             NeedSourceHop(
@@ -1036,8 +1034,7 @@ def create_need(
         need its ``docname``, ``lineno`` and the other location fields, and says whether
         it is imported or external. In a directive it is
         ``NeedItemSource.from_directive(self)``, as above; outside one,
-        ``NeedItemSource([NeedSourceHop(kind="page", document=docname)],
-        lineno=lineno)``.
+        ``NeedItemSource.on_page(docname, lineno=lineno)``.
     :param need_type: The need type, by the name of its directive.
     :param title: The need's title.
     :param id: The need's id. If not given, one is generated (see

@@ -39,7 +39,7 @@ from sphinx_needs.data import (
 )
 
 if TYPE_CHECKING:
-    from docutils.parsers.rst import Directive
+    import docutils.parsers.rst
 
     from sphinx_needs.needs_schema import (
         AllowedTypes,
@@ -72,10 +72,10 @@ class NeedItemSource:
     Every need sphinx-needs creates has one, and so does a need an extension creates
     through :func:`~sphinx_needs.api.need.create_need`: in a directive,
     ``NeedItemSource.from_directive(self)``; elsewhere,
-    ``NeedItemSource([NeedSourceHop(kind="page", document=docname)], lineno=lineno)``.
-    Its name, its constructor's keywords and :meth:`from_directive` are stable;
-    ``hops`` and the hop types are **provisional** (see :ref:`api`): they may change in a
-    minor release, without a deprecation, until they reach ``needs.json``.
+    ``NeedItemSource.on_page(docname, lineno=lineno)``. Its name, its constructor's
+    keywords, :meth:`from_directive` and :meth:`on_page` are stable; ``hops`` and the hop
+    types are **provisional** (see :ref:`api`): they may change in a minor release,
+    without a deprecation, until they reach ``needs.json``.
 
     The legacy location keys of the need (``dict_repr``, which
     :class:`NeedItemSourceProtocol` requires), one rule each:
@@ -88,6 +88,8 @@ class NeedItemSource:
       and its URL;
     - ``is_import``: as given (no hop says that a ``needimport`` read the file: an
       included file is a ``file`` hop too).
+
+    .. versionadded:: 9.2.0
     """
 
     hops: tuple[NeedSourceHop, ...]
@@ -149,7 +151,10 @@ class NeedItemSource:
 
     @classmethod
     def from_directive(
-        cls, directive: Directive, *, first: Iterable[NeedSourceHop] = ()
+        cls,
+        directive: docutils.parsers.rst.Directive,
+        *,
+        first: Iterable[NeedSourceHop] = (),
     ) -> NeedItemSource:
         """The source of a need a directive creates, as a need directive records its
         own.
@@ -174,6 +179,23 @@ class NeedItemSource:
             lineno_content=directive.content_offset + 1,
             parser_lineno=directive.lineno,
         )
+
+    @classmethod
+    def on_page(
+        cls, docname: str | None, *, lineno: int | None = None
+    ) -> NeedItemSource:
+        """The source of a need placed on the page ``docname``, at ``lineno``: one
+        ``page`` hop of that document, with no file and no line of its own (nothing is
+        read from the file, nothing checked against it); no hop without a document.
+
+        It is the source ``add_need(app, state, docname, lineno, ...)`` built, and the
+        spelling outside a directive: an event handler, a role, a need made from data.
+        In a directive, :meth:`from_directive` records more, and is the one to use.
+
+        :param docname: The document the need is placed on, or ``None``.
+        :param lineno: The need's line, as the caller counts it, or ``None``.
+        """
+        return cls(_page(docname), lineno=lineno)
 
     @property
     def docname(self) -> str | None:
@@ -337,18 +359,22 @@ _DEPRECATED_SOURCES: Mapping[str, Callable[..., NeedItemSource]] = {
 """The five names of 9.1.0, and the factory each now is (removed in 10.0)."""
 
 
-def __getattr__(name: str) -> Any:
-    """The five deprecated names, each warning where it is read."""
-    if (factory := _DEPRECATED_SOURCES.get(name)) is not None:
-        warnings.warn(
-            f"sphinx_needs.need_item.{name} is deprecated and will be removed in "
-            "sphinx-needs 10.0: use sphinx_needs.api.NeedItemSource "
-            "(NeedItemSource.from_directive(self) in a directive)",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return factory
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+if not TYPE_CHECKING:
+    # at run time only: a type checker that saw a module ``__getattr__`` would type
+    # every name of this module as ``Any``, so a misspelt import from it would pass
+
+    def __getattr__(name: str) -> Any:
+        """The five deprecated names, each warning where it is read."""
+        if (factory := _DEPRECATED_SOURCES.get(name)) is not None:
+            warnings.warn(
+                f"sphinx_needs.need_item.{name} is deprecated and will be removed in "
+                "sphinx-needs 10.0: use sphinx_needs.api.NeedItemSource "
+                "(NeedItemSource.from_directive(self) in a directive)",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return factory
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)
