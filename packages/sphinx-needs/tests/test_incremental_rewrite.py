@@ -426,8 +426,9 @@ _ROLE_LINE = {
     "conf.py": CONF
     + '\nneeds_role_need_template = "{{ title }} (line {{ lineno }})"\n',
 }
-#: master's readers: per-type declarations in ``ubproject.toml`` -- fields of ``impl``
-#: alone, derived with a ``where`` beside a ``copy`` and an ``all`` with ``empty``, and a
+#: master's readers: per-type declarations in ``ubproject.toml`` -- a field of ``req``
+#: with a default, which a type inheriting ``req`` takes when its needs are read (so an
+#: ``inherits`` edit needs them read again), fields of ``impl`` alone, derived with a ``where`` beside a ``copy`` and an ``all`` with ``empty``, and a
 #: count over the links that ``c.is_a('req')`` selects -- a needtable and a needextend
 #: whose filters use ``c.is_a``, and a need on a page of its own copying the derived
 #: values of ``IMPL_002`` (whose ``links`` name ``SPEC_001``)
@@ -443,13 +444,17 @@ derive = { kind = "all", over = "links", where = "total > 5", test = "total > 5"
 [needs.types.impl.fields.reqs]
 schema = { type = "integer" }
 derive = { kind = "count", over = "links", where = "c.is_a('req')" }
+
+[needs.types.req.fields.label]
+schema = { type = "string" }
+default = "from-req"
 """
 _TYPES = {
     **_with_pages(
         PAGES,
         {
             "isa.rst": "Is a\n====\n\n.. needtable::\n   :filter: c.is_a('req')\n"
-            "   :columns: id, title, tags\n\n.. needextend:: \"c.is_a('req')\"\n"
+            "   :columns: id, title, tags, label\n\n.. needextend:: \"c.is_a('req')\"\n"
             "   :+tags: isreq\n",
             "rolled.rst": "Rolled\n======\n\n.. test:: Copies the rolled-up values\n"
             "   :id: TEST_050\n"
