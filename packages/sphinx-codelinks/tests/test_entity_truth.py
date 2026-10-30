@@ -120,8 +120,8 @@ def test_known_wrong_today_names_real_markers() -> None:
 _COMPONENT_KINDS = frozenset(get_args(EntityKind)) | {"scope"}
 
 
-# The ``scope.language`` of each fixture ``lang``: the symbol-ID prefix, ``c`` for a
-# ``.c`` file and ``cpp`` for a ``.h`` one.
+# The ``scope.language`` of each fixture ``lang``: the language the file is analysed
+# as, by its name, ``c`` for a ``.c`` file and ``cpp`` for a ``.h`` one.
 _LANGUAGES = {
     "cpp": "cpp",
     "c": "c",

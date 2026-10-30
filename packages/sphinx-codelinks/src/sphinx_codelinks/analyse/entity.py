@@ -1546,8 +1546,7 @@ def name_chain(
 
 
 def scope_language(comment_type: CommentType, path: PurePath) -> str:
-    """The language of a source file, as ``scope.language`` records it: the prefix of
-    a symbol ID.
+    """The language a source file was analysed as, by its name (``scope.language``).
 
     ``c`` for a ``.c`` file, ``cpp`` for every other C and C++ file (a ``.h`` header
     included: its language is not in its name; and a ``.C`` file, which compilers read

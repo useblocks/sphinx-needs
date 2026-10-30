@@ -727,9 +727,9 @@ def test_render_semantic(
 def test_scope_language(
     comment_type: CommentType, filename: str, expected: str
 ) -> None:
-    """The symbol-ID prefix of a file: ``c`` for a ``.c`` file (lowercase: compilers
-    read ``.C`` as C++), ``cpp`` for every other C and C++ file, a header included,
-    else the comment type."""
+    """The language a file is analysed as, by its name: ``c`` for a ``.c`` file
+    (lowercase: compilers read ``.C`` as C++), ``cpp`` for every other C and C++ file,
+    a header included, else the comment type."""
     assert scope_language(comment_type, Path(filename)) == expected
 
 

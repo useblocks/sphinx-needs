@@ -77,11 +77,11 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   Python decorator, a decorator on a TypeScript class member and a C++ template header above it are not part of it; a
   C# attribute list, a C++ attribute and a decorator on a TypeScript class are (unless the class is exported: then the
   decorator is the export's);
-- ``language`` -- the language of the file, as a symbol ID's prefix names it: ``c`` for a ``.c`` file, ``cpp`` for every
-  other C and C++ file (a ``.h`` header included, since its name does not say which it is, and a ``.C`` file, which
-  compilers read as C++), otherwise ``python``,
-  ``rust``, ``cs``, ``ts`` (TypeScript and JavaScript), ``go``, ``yaml``, ``jsonc`` or ``bash``. A ``.c`` file is
-  read with the C++ grammar, and its names follow C++'s rule;
+- ``language`` -- the language the file was analysed as, by its name:
+  ``c`` for a ``.c`` file, ``cpp`` for every other C and C++ file
+  (a ``.h`` header included, since its name does not say which it is, and a ``.C`` file, which compilers read as C++),
+  otherwise ``python``, ``rust``, ``cs``, ``ts`` (TypeScript and JavaScript), ``go``, ``yaml``, ``jsonc`` or ``bash``.
+  A ``.c`` file is read with the C++ grammar, and its names follow C++'s rule;
 - ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
   ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,
   ``property``, ``event``, ``indexer`` or ``delegate``; in YAML and JSON ``key`` or ``item``;
