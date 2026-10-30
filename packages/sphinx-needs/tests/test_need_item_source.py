@@ -712,7 +712,6 @@ def _moved_pairs() -> dict[str, tuple[Any, Any]]:
     }
 
 
-@pytest.mark.xfail(strict=True, reason="fix round 2: the comparison-key seam")
 @pytest.mark.parametrize("kind", ["directive", "included", "service", "import", "api"])
 def test_a_need_that_only_moved_compares_equal_through_the_seam(kind: str):
     """``NeedItemSource._without_lines()`` is the key an incremental build compares a

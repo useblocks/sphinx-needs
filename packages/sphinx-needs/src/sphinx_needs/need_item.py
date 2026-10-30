@@ -14,7 +14,7 @@ import dataclasses
 import re
 import warnings
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from dataclasses import dataclass, field, fields, is_dataclass, replace
+from dataclasses import dataclass, field, fields, is_dataclass
 from itertools import chain
 from operator import attrgetter
 from types import FunctionType
@@ -249,6 +249,23 @@ class NeedItemSource:
         new = copy.copy(self)
         object.__setattr__(new, "hops", hops)
         return new
+
+    def _without_lines(
+        self,
+    ) -> tuple[type[NeedItemSource], tuple[tuple[str, object], ...]]:
+        """This source with its line numbers left out, to compare where it is from: the
+        key :meth:`NeedItem.moved_only` compares, for an incremental build.
+
+        Every field but the line fields (``_lineno``, ``lineno_content``,
+        ``parser_lineno``) and ``dict_repr`` (computed from the rest), with the hops'
+        start and end lines left out too. A field added to the class is compared until
+        it is named here, so a need that only moved counts as changed and is re-written:
+        safe, if slower.
+        """
+        return type(self), (
+            ("hops", tuple(hop._without_lines() for hop in self.hops)),
+            ("is_import", self.is_import),
+        )
 
     def __repr__(self) -> str:
         # the legacy keys and the parser line; not the hops, which are provisional
@@ -1582,14 +1599,14 @@ def _without_lines(source: NeedItemSourceProtocol) -> object:
     The line fields of the source class, and the start and end line of each hop's
     file (its hops record the lines too); ``dict_repr`` is computed from the rest.
     """
-    # This reads the source classes' private ``_lineno`` and rebuilds the hop dataclasses
-    # of :mod:`sphinx_needs._need_source` (provisional) from outside them. A field added
-    # to a source or a hop fails safe: it is compared, so a moved need counts as changed
-    # and is re-written. A custom ``__init__`` on ``NeedSourceHop`` or
-    # ``NeedSourcePhysical`` would not: ``replace`` would raise, as it did on the source
-    # classes once they took hops (tests/test_incremental_rewrite.py goes red). The clean
-    # seam is a method on ``HopsSource`` / ``NeedSourceHop`` giving this key, beside the
-    # fields it knows.
+    # sphinx-needs' own source gives the key itself, beside the fields it knows
+    # (``NeedItemSource._without_lines``, and ``NeedSourceHop._without_lines`` for its
+    # hops). A third party's source obeys only ``NeedItemSourceProtocol``: a dataclass is
+    # compared by its fields but the line fields (a field added to it fails safe: it is
+    # compared, so a moved need counts as changed and is re-written), anything else as it
+    # is.
+    if isinstance(source, NeedItemSource):
+        return source._without_lines()
     if not is_dataclass(source) or isinstance(source, type):
         return source
     kept: list[tuple[str, object]] = []
@@ -1605,9 +1622,7 @@ def _without_lines(source: NeedItemSourceProtocol) -> object:
 
 def _hop_without_lines(hop: NeedSourceHop) -> NeedSourceHop:
     """A hop with its file's start and end line left out."""
-    if hop.physical is None:
-        return hop
-    return replace(hop, physical=replace(hop.physical, start_line=None, end_line=None))
+    return hop._without_lines()
 
 
 class NeedPartItem:

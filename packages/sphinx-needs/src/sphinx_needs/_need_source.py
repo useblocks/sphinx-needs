@@ -25,6 +25,7 @@ a file outside it.
 
 from __future__ import annotations
 
+import dataclasses
 import os
 import re
 from collections.abc import Callable, Iterable, Iterator, Sequence
@@ -116,6 +117,16 @@ class NeedSourceHop:
     (``"python"``, ``"cpp"``, ...). The ``code`` hop of a docstring autodoc reads still
     records its file's suffix (``".py"``), until sphinx-codelinks' code hops land and
     move it."""
+
+    def _without_lines(self) -> NeedSourceHop:
+        """This hop with its file's start and end line left out: what a need that only
+        moved keeps (an incremental build's comparison key)."""
+        if self.physical is None:
+            return self
+        return dataclasses.replace(
+            self,
+            physical=dataclasses.replace(self.physical, start_line=None, end_line=None),
+        )
 
 
 def placement_index(hops: tuple[NeedSourceHop, ...]) -> int | None:
