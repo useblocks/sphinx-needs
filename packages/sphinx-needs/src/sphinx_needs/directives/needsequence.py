@@ -97,7 +97,7 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
         node = Needsequence("", **attributes)
         self.set_source_info(node)
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needsequence")
 
         return [targetnode, node]
 

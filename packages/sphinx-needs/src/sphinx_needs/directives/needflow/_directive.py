@@ -199,7 +199,7 @@ class NeedflowDirective(FilterBase):
             else graphviz_config_direction(graphviz_style)
         )
 
-        add_doc(self.env, self.env.docname)
+        add_doc(self.env, self.env.docname, "needflow")
 
         attributes: NeedsFlowType = {
             "docname": self.env.docname,

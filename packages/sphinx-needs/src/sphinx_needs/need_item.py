@@ -11,10 +11,18 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields, is_dataclass, replace
 from itertools import chain
 from operator import attrgetter
-from typing import TYPE_CHECKING, Any, Literal, Protocol, overload, runtime_checkable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Final,
+    Literal,
+    Protocol,
+    overload,
+    runtime_checkable,
+)
 
 from sphinx_needs._need_source import (
     HopsSource,
@@ -1018,13 +1026,28 @@ class NeedItem:
         """Check if two NeedItems are equal."""
         if not isinstance(other, NeedItem):
             return False
+        return self._source == other._source and self._equal_but_source(other)
+
+    def moved_only(self, other: NeedItem) -> bool:
+        """Whether ``other`` is this need written at other lines: equal to it but for the
+        line numbers of its source (``lineno``, ``lineno_content``, the parser's, and
+        the lines its hops record).
+
+        That is what an edit above a need in its document changes, and nothing else.
+        """
+        return (
+            self._source != other._source
+            and _without_lines(self._source) == _without_lines(other._source)
+            and self._equal_but_source(other)
+        )
+
+    def _equal_but_source(self, other: NeedItem) -> bool:
         # the derived keys are not compared: they are wiring from the schema, not data
         return (
             self._core == other._core
             and self._extras == other._extras
             and self._links == other._links
             and self._backlinks == other._backlinks
-            and self._source == other._source
             and self._content == other._content
             and self._parts == other._parts
             and self._modifications == other._modifications
@@ -1560,6 +1583,46 @@ class NeedItem:
     def is_in_document(self, docname: str) -> bool:
         """Check if the need is in a given document."""
         return self._source.dict_repr.get("docname") == docname
+
+
+#: The fields of a source class holding a line number, and nothing else.
+_SOURCE_LINE_FIELDS: Final = frozenset(
+    {"lineno", "_lineno", "lineno_content", "parser_lineno"}
+)
+
+
+def _without_lines(source: NeedItemSourceProtocol) -> object:
+    """A need's source with its line numbers left out, to compare where it is from.
+
+    The line fields of the source class, and the start and end line of each hop's
+    file (its hops record the lines too); ``dict_repr`` is computed from the rest.
+    """
+    # This reads the source classes' private ``_lineno`` and rebuilds the hop dataclasses
+    # of :mod:`sphinx_needs._need_source` (provisional) from outside them. A field added
+    # to a source or a hop fails safe: it is compared, so a moved need counts as changed
+    # and is re-written. A custom ``__init__`` on ``NeedSourceHop`` or
+    # ``NeedSourcePhysical`` would not: ``replace`` would raise, as it did on the source
+    # classes once they took hops (tests/test_incremental_rewrite.py goes red). The clean
+    # seam is a method on ``HopsSource`` / ``NeedSourceHop`` giving this key, beside the
+    # fields it knows.
+    if not is_dataclass(source) or isinstance(source, type):
+        return source
+    kept: list[tuple[str, object]] = []
+    for item in fields(source):
+        if item.name in _SOURCE_LINE_FIELDS or item.name == "dict_repr":
+            continue
+        value = getattr(source, item.name)
+        if item.name == "hops":
+            value = tuple(_hop_without_lines(hop) for hop in value)
+        kept.append((item.name, value))
+    return type(source), tuple(kept)
+
+
+def _hop_without_lines(hop: NeedSourceHop) -> NeedSourceHop:
+    """A hop with its file's start and end line left out."""
+    if hop.physical is None:
+        return hop
+    return replace(hop, physical=replace(hop.physical, start_line=None, end_line=None))
 
 
 class NeedPartItem:

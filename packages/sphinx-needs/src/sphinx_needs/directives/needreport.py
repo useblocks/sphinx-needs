@@ -278,6 +278,6 @@ class NeedReportDirective(SphinxDirective):
 
         report_node = nodes.raw()
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needreport")
 
         return [report_node]

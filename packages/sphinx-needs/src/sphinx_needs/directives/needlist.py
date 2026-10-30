@@ -76,7 +76,7 @@ class NeedlistDirective(FilterBase):
         list_node = Needlist("", **attributes)
         self.set_source_info(list_node)
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needlist")
 
         return [targetnode, list_node]
 
