@@ -74,10 +74,13 @@ its lines count from 1:
 
 .. code-block:: xml
 
-   <testsuite name="pytest" ...>
+   <testsuite name="pytest" tests="2">
      <properties>
        <property name="ub_test_reports:line_base" value="1"/>
      </properties>
+     <testcase classname="tests.test_a" name="test_one" file="tests/test_a.py" line="4"/>
+     <testcase classname="tests.test_a" name="test_two" file="tests/test_a.py" line="8"/>
+   </testsuite>
 
 It is what tells the readers -- the directives and the :ref:`build needs
 command <cli>` -- a report of this plugin from a plain pytest report, which is
