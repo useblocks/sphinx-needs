@@ -428,7 +428,8 @@ _ROLE_LINE = {
 }
 #: master's readers: per-type declarations in ``ubproject.toml`` -- a field of ``req``
 #: with a default, which a type inheriting ``req`` takes when its needs are read (so an
-#: ``inherits`` edit needs them read again), fields of ``impl`` alone, derived with a ``where`` beside a ``copy`` and an ``all`` with ``empty``, and a
+#: ``inherits`` edit needs them read again), fields of ``impl`` alone,
+#: derived with a ``where`` beside a ``copy`` and an ``all`` with ``empty``, and a
 #: count over the links that ``c.is_a('req')`` selects -- a needtable and a needextend
 #: whose filters use ``c.is_a``, and a need on a page of its own copying the derived
 #: values of ``IMPL_002`` (whose ``links`` name ``SPEC_001``)
