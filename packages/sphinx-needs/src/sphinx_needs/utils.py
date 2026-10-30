@@ -37,6 +37,9 @@ if TYPE_CHECKING:
 
 logger = get_logger(__name__)
 
+# scheme://… or //…, not urlparse(...).scheme: an opaque "req:REQ_1" render stays joined
+_ABSOLUTE_URL = re.compile(r"^([A-Za-z][A-Za-z0-9+.-]*:)?//")
+
 
 class DummyOptionSpec(dict[str, Callable[[str], str]]):
     """An option_spec allows any options."""

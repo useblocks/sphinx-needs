@@ -16,7 +16,7 @@ from sphinx_needs.config import ExternalSource, NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItemSource
-from sphinx_needs.utils import clean_log, import_prefix_link_edit
+from sphinx_needs.utils import _ABSOLUTE_URL, clean_log, import_prefix_link_edit
 
 log = get_logger(__name__)
 
@@ -110,7 +110,10 @@ def load_external_needs(
             if target_tpl:
                 # render jinja content
                 cal_target_url = target_tpl.render({"need": need})
-                external_url = f"{source['base_url']}/{cal_target_url}"
+                if _ABSOLUTE_URL.match(cal_target_url):
+                    external_url = cal_target_url
+                else:
+                    external_url = f"{source['base_url']}/{cal_target_url}"
             else:
                 external_url = f"{source['base_url']}/{need.get('docname', '__error__')}.html#{key}"
 

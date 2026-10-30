@@ -252,9 +252,7 @@ def build_need(
         "time": time,
         "result": str(case.get("result", "")),
         "result_text": _first_message(case),
-        # The same URL twice on purpose: external_url drives the external-needs
-        # rendering, while a plain field stays usable for needs imported as
-        # local needs (via a needs_string_links entry).
+        # kept, but sphinx-needs never reads external_url from a file: link via remote_url
         "external_url": url,
         "remote_url": url,
     }
