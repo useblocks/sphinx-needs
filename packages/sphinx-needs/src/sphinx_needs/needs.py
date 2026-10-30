@@ -24,6 +24,7 @@ from sphinx.environment import BuildEnvironment
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
 import sphinx_needs.logging as needs_logging
 from sphinx_needs import __version__
+from sphinx_needs._incremental import get_updated_docs, stash_purged_doc
 from sphinx_needs._wording import joined, title_hint
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.builder import (
@@ -449,11 +450,17 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
     app.connect("env-before-read-docs", load_external_needs)
 
+    # before purge_needs drops them: what the purged documents gave, to compare with
+    # what they give when re-read (an incremental build re-writes the pages showing a
+    # need that changed)
+    app.connect("env-purge-doc", stash_purged_doc, priority=400)
     app.connect("env-purge-doc", purge_needs)
 
     app.connect("doctree-read", analyse_need_locations)
 
     app.connect("env-merge-info", merge_data)
+
+    app.connect("env-get-updated", get_updated_docs)
 
     # the needtable client assets go only on the pages that have a needtable (#462)
     app.connect("html-page-context", install_needtable_assets)

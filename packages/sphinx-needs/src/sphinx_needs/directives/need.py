@@ -392,6 +392,7 @@ def post_process_needs_data(app: Sphinx) -> None:
         needs_config = NeedsSphinxConfig(app.config)
         needs_schema = needs_data.get_schema()
         needs = needs_data.get_needs_mutable()
+        order_needs_by_document(needs)
         app.emit("needs-before-post-processing", needs)
         extend_needs_data(
             needs,
@@ -417,6 +418,24 @@ def post_process_needs_data(app: Sphinx) -> None:
                     "If you are adding needs manually, consider using the create_need API."
                 )
         needs_data.needs_is_post_processed = True
+
+
+def order_needs_by_document(needs: NeedsMutable) -> None:
+    """Order the needs as a serial fresh build reads them, in place.
+
+    The needs with no document (external ones, ``add_need`` without one) first, then
+    by document name, each document's in the order it gave them. The order is what a
+    view without a sort shows (a needlist, a needflow): without it, the needs of the
+    documents an incremental build re-reads come last, and those of a parallel build in
+    the order its readers finish.
+    """
+    ordered = sorted(
+        needs.items(),
+        key=lambda item: (item[1]["docname"] is not None, item[1]["docname"] or ""),
+    )
+    if list(needs) != [need_id for need_id, _ in ordered]:
+        needs.clear()
+        needs.update(ordered)
 
 
 def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:

@@ -161,7 +161,7 @@ SHAPE_IDS_GENERATED = (
 
 # --- the upgrade path ----------------------------------------------------------------
 
-LAST_VERSION_OF_THE_FIVE_CLASSES = 15
+LAST_VERSION_OF_THE_FIVE_CLASSES = 16
 """The last ``ENV_DATA_VERSION`` whose environment stores the five ``NeedItemSource*``
 classes: what an environment written before they became one says it is."""
 
@@ -188,7 +188,7 @@ FIVE_CLASSES_FIELDS = {
     "NeedItemSourceImport": ("hops", "_lineno", "path", "dict_repr"),
 }
 """The fields each of the five classes pickles, in its order: a slotted, frozen
-dataclass pickles the list of its fields' values (``ENV_DATA_VERSION`` 14 and 15)."""
+dataclass pickles the list of its fields' values (``ENV_DATA_VERSION`` 14 to 16)."""
 
 
 def test_the_last_version_of_the_five_classes_is_the_one_before_the_one_class():
@@ -304,7 +304,7 @@ def test_an_environment_the_five_classes_stored_is_not_read_into_the_new_class(
     fresh build gives.
 
     The project is built, and its pickled environment rewritten as the five classes and
-    ``ENV_DATA_VERSION`` 15 wrote it: each need's source pickled under its old class's
+    their last ``ENV_DATA_VERSION`` wrote it: each need's source pickled under its old class's
     name with its old fields, in their order. Rebuilt over it, the needs equal the fresh
     build's: the environment is read again (its version is not this one's, and the old
     names are no classes to unpickle), never loaded with the old fields in the new

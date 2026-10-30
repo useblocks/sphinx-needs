@@ -320,6 +320,29 @@ Bug fixes
   text keeps its value, and a need inside a ``cpp:alias`` still has none. An empty name counts as no name, where an
   empty ``desc_name`` with no content failed the build.
 
+- 🐛 An incremental build re-writes every page showing a need that changed: a page whose needtable,
+  needflow or other view lists it, whose ``:need:`` role names it, whose needs link to it or are linked
+  from it, or whose need computes a value from it, kept its old values until a full build, and so did
+  the needs a ``needextend`` changed or no longer changes (:issue:`2376`, :issue:`346`)
+
+  The needs of every document re-read are compared, as read, with what that document gave before; on a
+  change, the pages showing it are re-written, never re-read. An edit that changes no need, such as prose
+  below the needs, re-writes nothing more, and one that only moves needs (lines added above them) re-writes
+  the views and the pages whose roles name them, unless anything else in the project may read a line number. A dynamic function is read by
+  its arguments, so ``copy`` of a need's own field does not make its need depend on others (a back-link
+  field does: other needs write it, as they decide ``has_dead_links`` and the other values computed when the
+  needs are resolved); a value of any other shape, a variant say, is taken to read every need. A changed ``needextend`` with a filter re-writes every need-relevant page,
+  as does every change in a project whose needs or extends link to needs they do not name before the needs
+  are resolved, or with a ``needextend`` with a filter whose dynamic function reads needs it does not name,
+  and so does every change of a need that a ``needextend`` with a filter links to or copies. A view without
+  a sort, such as a ``needlist`` or a ``needflow``, now lists the needs in document order on every build,
+  where an incremental build listed those of the re-read documents last and a parallel one in the order
+  its readers finished. Needs from
+  ``needs_external_needs`` are not compared (:issue:`353`). See :ref:`incremental_builds`.
+
+- 🔧 ``ENV_DATA_VERSION`` is 16: the first build after upgrading re-reads every document, which records
+  the views and need roles each document holds
+
 Documentation
 .............
 
