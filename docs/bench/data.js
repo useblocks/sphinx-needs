@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793320793771,
+  "lastUpdate": 1793323369706,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27252,6 +27252,42 @@ window.BENCHMARK_DATA = {
             "value": 46.022627733,
             "unit": "s",
             "extra": "Commit: 2b1e00d5b240115ae8018cd4a44452f38fb78731\nBranch: master\nTime: 2026-10-30T01:38:36+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f1ec25e53d522b8b7b10c712682b5ebce48e51b8",
+          "message": "✨ Filters follow `inherits`: `c.is_a('req')` selects a type and the types inheriting from it (#2401)\n\n## What\n\n`packages/sphinx-needs`.\n\n- **`c.is_a('req')`** is true for a need whose type is `req`, or a type\ninheriting from `req`, directly or through other types,\nas the project's need type declarations give `inherits` (once checked:\nan `inherits` naming no need type, or on a cycle, is\nignored with `needs.type_inherits`, and its type is a root). With\n`sys_req` inheriting `req` and `hw_req` inheriting `sys_req`,\n`c.is_a('req')` selects all three, as `type in ['req', 'sys_req',\n'hw_req']` does; `type == 'req'` still compares the name alone.\nAn unknown name is false on every need, unreported; a type is named by\nits directive name, never its title.\n- It is a check beside `c.this_doc()`, in the portable filter language\nwith a string literal as its argument (the fast tier\nanswers it), and in the `eval` tier for any other shape (`call:c.is_a`).\nIt reads the need alone, so a filter configured in\n`conf.py` and a derived field's `where` take it; like `c.this_doc()`, a\nneedimport `:filter:` and a `needs_fields` entry's\n  `predicates` do not (documented).\n- **No field holds a need's types.** `c.is_a` reads the need's own type\nand the declarations: `create_schema` computes, once\nper build, each type with itself and every type inheriting from it (the\nmap `target_types` already reads), and sets it on the\nconfiguration as `prepare_env` sets the `var` proxy.\n`c.is_a('<literal>')` compiles, at parse time, to the membership of the\nneed's type in that set. The compiled filter is cached per string and\nshared by every project a process builds, so the set is\npassed per call (as `c.this_doc()`'s document is) rather than compiled\nin; both tiers answer through one function.\n- The docs say, for projects that model an ontology: `c.is_a` tests the\nneed's type; to follow a link type named `is_a`, use the link.\n- `ENV_DATA_VERSION` 14 -> 15 (above #2399's 14), on the semantics axis\nas version 12 was: `c.is_a('req')` was an invalid filter and a refused\nderive `where` in 9.1.0, so an upgraded build over an existing `_build`\nwould keep the empty selections and values on the\n  pages whose sources did not change.\n\n## Why\n\nCloses #2322.\n\n`target_types` follows `inherits`; until now no filter could: a filter\nor a derived field's `where` had to list every subtype by hand.\n\nAn earlier revision of this pull request also added a core field\n`type_ancestors` (the type, then each type it inherits from).\n**The maintainer has ruled that the field goes**: a core field name is\npermanent public API on four surfaces (the need, needs.json,\nfilters, schema rules) and a name a user's own field can collide with.\n`c.is_a` stays, re-defined by the declarations. The listed\nform of the lineage is deferred to the facets work, which will settle\nits name, whether it includes the type itself, and whether it\nis a field or a `type.` facet. Two general fixes found on the way (the\n`contains`-without-`items` schema fix and a warning for a\n`needs_fields` entry naming a computed core field) moved to a pull\nrequest of their own.\n\n**Merge note.** `ENV_DATA_VERSION` is 15 here, above the 14 that #2399\ntook on master. The incremental-build pull request also\nclaims 14 and renumbers when it lands (to 16 if it lands after this\none). #2399 needed nothing beyond the textual merge: it adds no\nfield or filter name `c.is_a` reads. An extension's type given\n`inherits` in `needs_types` (#2400) is selected by `c.is_a` like any\nother.\n\n**Contract.** Filter corpus: case `is-a-follows-inherits` (17 entries: a\ntwo-level chain `hw_req` -> `sys_req` -> `req`, each level,\na type with no `inherits`, an ignored `inherits`, an unknown name, a\ntitle, the exact type, parts, no document, the `eval` shapes;\ntiers pinned), and a header line saying an `inherits` naming no need\ntype is each tool's own, uncompared finding (the runner's\ntolerance is narrowed to that message). Derive corpus: case\n`where-follows-inherits` (`c.is_a` in a `where`, an unknown name, the\nexact type), plus one header line on bare type entries. ubCode mirrors\n`c.is_a` in its own pull request and re-vendors both corpora.\n\n## Tests\n\n- Red first: the new tests failed against the field-based implementation\n(a need built with no type list, the absence of the core\nfield and of the needs.json key, a field listing types that `c.is_a`\nmust not read, what a check reads for ordering).\nMutations each turn a corpus case or test red: no transitivity, an\nunknown name selecting everything, the fast tier ignoring\nthe declarations, a per-need call passing none, and one process reusing\nthe first project's types (a test builds two projects\nwith different `inherits` and the same `c.is_a('req')` in one process,\nin both orders).\n- An independent review rebuilt a `_build` made at master with this\nbranch: with the version bump the pages re-read and show the\n`c.is_a` selections and derived values; without it they kept the empty\nones.\n- After merging master (#2399, #2400): `uv run poe lint` 0, `uv run poe\ntypecheck` 0, full `uv run poe test-needs` 0\n(4036 passed, 15 skipped), `uv run poe smoke-needs` 0. `docs-needs`: no\nwarning from this repository's pages or docstrings\n(the sandbox cannot reach the intersphinx hosts, so only those\nreferences stay unresolved there).\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-30T02:21:44+01:00",
+          "tree_id": "ce95e7ca77642de694f9493c868075a19126f72e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f1ec25e53d522b8b7b10c712682b5ebce48e51b8"
+        },
+        "date": 1793323361078,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.05313389999999174,
+            "unit": "s",
+            "extra": "Commit: f1ec25e53d522b8b7b10c712682b5ebce48e51b8\nBranch: master\nTime: 2026-10-30T02:21:44+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 35.70452735400001,
+            "unit": "s",
+            "extra": "Commit: f1ec25e53d522b8b7b10c712682b5ebce48e51b8\nBranch: master\nTime: 2026-10-30T02:21:44+01:00"
           }
         ]
       }
