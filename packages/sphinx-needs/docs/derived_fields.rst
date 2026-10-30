@@ -189,8 +189,8 @@ Bear in mind:
   its type (``number`` here) and whether it is derived belong to the field, not to a need type,
   and so, for a link type, do how its links are drawn, whether a dead link is allowed,
   whether its links are copied into ``links`` and whether it is a summary
-  (for a link type declared on need types alone, the first need type's entry declaring it sets them,
-  and the others may only repeat them).
+  (for a link type declared on need types alone, the first need type declaring it, in the order the types are given,
+  sets them; an entry giving another value is reported (``needs.type_conflict``) and ignored).
   A need type's own declaration of a derived field narrows its description, schema and ``nullable``,
   but gives it no default.
   ``summary`` in a need type's ``links`` entry is reported (``needs.config``) and ignored:
@@ -486,7 +486,7 @@ the implementation, the specification and both requirements hold ``reached_by`` 
 A list of ids suits a table column or a filter (``"REQ_1" in req_ids``).
 To have the far ends as links instead, drawn on the need and with back links on the requirements,
 declare the downward rules on a link type, each ``collect`` reading that link type (:ref:`needs_derive_link_chain`):
-its back links then give each requirement the needs reaching it,
+its back links then give each requirement every need reaching it,
 which a link type's own rule could not, as it reads no back links.
 
 .. _`needs_derive_join`:
@@ -548,7 +548,7 @@ Bear in mind:
 - **Values, not ids.** A join compares values exactly, so a test naming ``Login`` matches no ``login``;
   where the test can name the specification's id, a written link is simpler.
 - **Incremental builds.** The pages of the needs holding a ``copy`` with ``join`` are re-written on every change
-  of a need (:ref:`incremental_builds`); a ``links`` rule, with ``join`` too, re-writes far more
+  of a need (:ref:`incremental_builds`); a ``links`` rule, with ``join`` too, makes it re-write far more pages
   (:ref:`needs_derive_cost`).
 
 The rules:
