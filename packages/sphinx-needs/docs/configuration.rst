@@ -1184,20 +1184,19 @@ Each configured link can define:
      (``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation).
 - ``allow_dead_links`` (optional): True/False. If True, dead links are allowed and do not throw a warning.
   See :ref:`allow_dead_links` for details. Default: False.
-- ``summary`` (optional): True/False. If True, the link type is a **summary**:
-  its links materialise a path through other links (such as the requirements a test reaches three rungs up),
-  not an edge of the trace, so a view that reads every link type leaves it out.
-  Default: False.
-
-  A summary link type is read where it is named, as any link type:
-  a :ref:`filter <filter_string>` (``"REQ_1" in chain``), a :ref:`needtable` column, a rule's ``over`` or ``field``,
+- ``summary`` (optional): True/False. Default: False.
+  Set it for a link type whose links are shortcuts across the trace rather than steps in it,
+  such as a test result linked straight to the requirements it covers, three links up
+  (:ref:`needs_derive_summary` explains when to use it).
+  Such a link type works as any other wherever it is named:
+  a :ref:`filter <filter_string>` (``"REQ_1" in covers``), a :ref:`needtable` column, a rule's ``over`` or ``field``,
   a :ref:`needflow`'s ``:link_types:``, a :ref:`schema rule <network_validation>`;
-  and a need holds its links and back links (``<name>_back``) and shows them, as any link type's.
-  It is left out of every view that reads all link types:
+  and a need holds its links and back links (``<name>_back``) and shows them, as usual.
+  The views that take every link type leave it out:
   a :ref:`needflow` without ``:link_types:`` neither draws it nor walks it from ``:root_id:``.
-  A :ref:`union <needs_derive_union>` cannot name it as a member (``needs.derive_invalid``),
-  and the schema of the :ref:`needs.json <needs_builder_format>` marks it, and its back links, ``"summary": true``,
-  so that a tool reading the file knows to leave it out where it walks every link type.
+  The schema of the :ref:`needs.json <needs_builder_format>` marks it, and its back links, ``"summary": true``,
+  so that a tool reading the file can leave it out too.
+  A :ref:`union <needs_derive_union>` cannot name it as a member (``needs.derive_invalid``).
   A link type a ``copy`` or ``collect`` rule computes is a summary whether or not it says so
   (:ref:`needs_derive_link_chain`), and ``summary = false`` beside such a rule is refused (``needs.derive_invalid``).
   ``copy = true`` beside ``summary = true`` would copy every summary link into ``links``, which every view reads:

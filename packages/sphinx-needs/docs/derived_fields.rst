@@ -644,18 +644,34 @@ Summary link types
 
 .. versionadded:: 9.2.0
 
-A link type whose :ref:`needs_links` entry says ``summary = true`` is a **summary**:
-its links materialise a path through other links, not an edge of the trace.
-It is read where it is named -- a filter, a needtable column, a rule's ``over`` or ``field``,
-a needflow's ``:link_types:``, a need type's count of the links it receives (:ref:`need_types_incoming`),
-which counts every link of it, computed ones included -- and a need holds its links and back links as any link type's,
-while a view that reads every link type leaves it out (a :ref:`needflow` without ``:link_types:``),
-and a ``union`` cannot name it as a member.
-The stance is the link type's, on every need type, so it is given on its :ref:`needs_links` entry, beside ``derive``:
-in a rule ``summary`` is no role (``needs.derive_invalid``).
-Any link type may be one, a derived one or one written in the needs, such as a ``mitigates`` that says
-what a risk is about rather than what it traces to;
-a link type a ``copy`` or ``collect`` computes is one whether or not it says so (:ref:`needs_derive_link_chain`).
+Some links are shortcuts across the trace rather than steps in it:
+a test result linked straight to the requirements it is evidence for, three links up
+(test result, test, specification, requirement), or a risk linked to what it is about.
+They are what you want in a table column or a filter ("the requirements this result covers"),
+but drawn beside the links they shortcut, they would show every path twice.
+
+Mark such a link type as a **summary** in its :ref:`needs_links` entry:
+
+.. code-block:: toml
+
+   [needs.links.covers]
+   summary = true
+
+Wherever you name it, a summary link type works as any link type:
+a filter (``"REQ_1" in covers``), a needtable column, a rule's ``over`` or ``field``,
+a needflow's ``:link_types:``, a need type's count of the links it receives (:ref:`need_types_incoming`,
+which counts every link, computed ones included); and a need holds its links and back links as usual.
+What changes is the views that take every link type without being told which:
+a :ref:`needflow` without ``:link_types:`` leaves it out,
+and the ``needs.json`` schema marks it ``"summary": true`` so that other tools can do the same.
+
+You rarely write such links by hand: a ``copy`` or ``collect`` on the link type computes them from the chain
+(:ref:`needs_derive_link_chain`), and a link type computed that way is a summary whether or not its entry says so.
+A link type written in the needs may be one too, such as a ``mitigates`` that says what a risk is about.
+
+``summary`` belongs to the link type, so it is set on its :ref:`needs_links` entry and holds on every need type;
+a ``union`` cannot name a summary link type as a member, and ``summary`` is no key of a rule
+(each ``needs.derive_invalid``).
 
 .. _`needs_derive_kind_links`:
 

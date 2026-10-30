@@ -220,8 +220,8 @@ object identity). A rule marked **(not pinned)** has neither.
    nothing here. A `needs_schema` or `properties` that is not an object, and a property
    that is not an object, give no defaults and no finding.
    A link type's property, and its back links' (`<l>_back`), may carry `"summary": true`:
-   the writer's mark of a summary link type, whose links materialise a path rather than
-   an edge (sphinx-needs' `summary` on a link type). A reader passes it through with the
+   the writer's mark of a summary link type, whose links are shortcuts across the trace
+   rather than steps in it (sphinx-needs' `summary` on a link type). A reader passes it through with the
    rest of the version (`Version.data`) and decides nothing by it; a consumer that walks
    every link type as edges leaves such a link type out.
    Enforced by: corpus: `only-default-is-read-from-a-property`,

@@ -324,7 +324,8 @@ Must contain a comma separated list of link type names.
 
 
 By default, we show every link type but the summary ones (``summary = true`` in :ref:`needs_links`):
-a summary link materialises a path through other links rather than an edge, so it is drawn only where it is named here.
+a summary link is a shortcut across the trace (:ref:`needs_derive_summary`), so drawing it beside the links it shortcuts
+would show every path twice; it is drawn only where it is named here.
 
 .. versionchanged:: 9.2.0
 

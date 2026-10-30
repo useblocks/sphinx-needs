@@ -27,16 +27,17 @@ Improvements
   its need does not name, so in a project with one every change of a need re-writes every need-relevant page on an incremental build (:ref:`incremental_builds`).
   On a field, ``copy`` and ``collect`` are unchanged.
 
-- ✨ A link type may be a **summary**, ``summary = true`` on its :ref:`needs_links` entry, whose links materialise
-  a path rather than an edge of the trace (:ref:`needs_derive_summary`, :issue:`2370`)
+- ✨ **Summary link types**: ``summary = true`` on a :ref:`needs_links` entry marks a link type whose links are
+  shortcuts across the trace rather than steps in it, such as a test result linked straight to the requirements it
+  covers (:ref:`needs_derive_summary`, :issue:`2370`)
 
-  It is read where it is named (a filter, a needtable column, a rule's ``over``, a needflow's ``:link_types:``, a
-  schema rule) and a need holds its links and back links as any link type's, while a :ref:`needflow` without
-  ``:link_types:`` neither draws it nor walks it from ``:root_id:``, and a ``union`` cannot name it as a member
-  (``needs.derive_invalid``). The schema of the ``needs.json`` marks it, and its back links, ``"summary": true``.
-  It is the link type's on every need type: a need type's entry giving it is a ``needs.config`` warning, and in a
-  rule it is no role (``needs.derive_invalid``); ``copy = true`` beside it is a ``needs.config`` warning, and
-  nothing is copied into ``links``. Without it nothing changes.
+  It works as any link type wherever it is named (a filter, a needtable column, a rule's ``over``, a needflow's
+  ``:link_types:``, a schema rule), and a need holds its links and back links as usual; but a :ref:`needflow`
+  without ``:link_types:`` neither draws it nor walks it from ``:root_id:``, so a diagram does not show every path twice.
+  The schema of the ``needs.json`` marks it, and its back links, ``"summary": true``, and a ``union`` cannot name it as
+  a member (``needs.derive_invalid``). It is set on the link type for every need type: a need type's entry giving it
+  is a ``needs.config`` warning, and in a rule it is no key (``needs.derive_invalid``); ``copy = true`` beside it is a
+  ``needs.config`` warning, and nothing is copied into ``links``. Without it nothing changes.
 
 - ✨ ``c.is_a('req')`` is true for a need whose type is ``req`` or inherits from it (:issue:`2322`)
 
