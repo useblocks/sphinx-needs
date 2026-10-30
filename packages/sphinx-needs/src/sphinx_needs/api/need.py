@@ -2049,7 +2049,8 @@ def _make_hashed_id(
 ) -> str:
     """Create an ID based on the type and title of the need.
 
-    Private, and kept because sibling extensions still import it; new code calls
+    Private. Kept for the published sibling packages (sphinx-codelinks 2.0.x,
+    sphinx-test-reports 3.0.x), which import it; removed in 10.0. New code calls
     :func:`generate_need_id`.
     """
     hashable_content = full_title or content
