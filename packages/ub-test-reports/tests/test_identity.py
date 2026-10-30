@@ -88,6 +88,74 @@ class TestSplitCaseName:
         assert split_case_name(name) == expected
 
 
+class TestCaseNameAndParameter:
+    """A case's ``case_name`` and ``case_parameter``, from its name and, where the
+    name carries no ``[…]``, from Google Test's ``value_param`` / ``type_param``
+    (#2390).
+
+    The one rule the converter, the ``test-case`` directive and the report hop's
+    ``parameter`` extra share. The cases are the shapes gtest writes (measured on
+    googletest 1.17.0) and the parser's ``""`` for an absent attribute.
+    """
+
+    @pytest.mark.xfail(strict=True, reason="#2390: no case_name_and_parameter yet")
+    @pytest.mark.parametrize(
+        ("case", "expected"),
+        [
+            # TEST_P: the value, verbatim; the name keeps gtest's /N.
+            (
+                {"name": "Value/0", "value_param": "1", "type_param": ""},
+                ("Value/0", "1"),
+            ),
+            (
+                {"name": "Pair/0", "value_param": "(1, 2)", "type_param": ""},
+                ("Pair/0", "(1, 2)"),
+            ),
+            # Quotes and angle brackets are kept as gtest prints them.
+            (
+                {"name": "Str/0", "value_param": '"a \\"b\\" <c>"', "type_param": ""},
+                ("Str/0", '"a \\"b\\" <c>"'),
+            ),
+            # An empty std::string is printed as its two quote characters.
+            (
+                {"name": "Str/1", "value_param": '""', "type_param": ""},
+                ("Str/1", '""'),
+            ),
+            # TYPED_TEST / TYPED_TEST_P: the type, verbatim.
+            ({"name": "T1", "value_param": "", "type_param": "int"}, ("T1", "int")),
+            (
+                {"name": "Each", "type_param": "std::basic_string<char>"},
+                ("Each", "std::basic_string<char>"),
+            ),
+            # Both (testing::RegisterTest): the type, then the value, gtest's order.
+            (
+                {"name": "Works/0", "value_param": "42", "type_param": "int"},
+                ("Works/0", "int, 42"),
+            ),
+            # A pytest bracket wins over the attributes, an empty one too.
+            (
+                {"name": "test_x[3]", "value_param": "1", "type_param": "int"},
+                ("test_x", "3"),
+            ),
+            (
+                {"name": "test_x[]", "value_param": "1", "type_param": ""},
+                ("test_x", ""),
+            ),
+            # Empty or missing attributes: no parameter, a null field.
+            (
+                {"name": "Addition", "value_param": "", "type_param": ""},
+                ("Addition", None),
+            ),
+            ({"name": "test_x"}, ("test_x", None)),
+            ({"name": "test_x", "value_param": None}, ("test_x", None)),
+        ],
+    )
+    def test_the_name_s_bracket_then_the_value_then_the_type(self, case, expected):
+        from ub_test_reports import identity
+
+        assert identity.case_name_and_parameter(case) == expected
+
+
 class TestDeterministicCaseId:
     def test_is_score_compatible(self):
         assert (

@@ -201,3 +201,23 @@ def test_an_absent_location_or_parameter_is_null(test_app):
     assert {(n["case_file"], n["case_line"]) for n in gtest_cases} >= {
         ("src/math_test.cc", "12")
     }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/source_location"}],
+    indirect=True,
+)
+@pytest.mark.xfail(strict=True, reason="#2390: gtest's parameters are dropped")
+def test_a_google_test_parameter_is_the_case_parameter(test_app):
+    """``Works/0`` carries ``type_param="int"`` and ``value_param="42"``: its
+    ``case_parameter`` is both, type first, and its ``case_name`` keeps the ``/0``
+    (#2390)."""
+    import json
+
+    app = test_app
+    app.build()
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    needs = data["versions"][data["current_version"]]["needs"].values()
+    (works,) = [n for n in needs if n["type"] == "testcase" and n["case"] == "Works/0"]
+    assert (works["case_name"], works["case_parameter"]) == ("Works/0", "int, 42")
