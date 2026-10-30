@@ -30,15 +30,16 @@ In the :ref:`TOML file <needs_from_toml>`:
 
    [needs.fields.verified]
    schema = { type = "boolean" }
-   derive = { kind = "all", test = "status == 'passed'", over = "tests_back", where = "type == 'test'" }
+   derive = { kind = "all", test = "status == 'passed'", over = "tests_back", where = "type == 'test'", empty = false }
 
    [needs.links.mentions]
    derive = { kind = "content_links" }
 
 ``total_hours`` adds up the ``hours`` of the needs a need links to,
-``verified`` says whether every test naming the need in its ``tests`` has passed,
+``verified`` says whether the need has a test naming it in its ``tests`` and every such test has passed
+(``empty = false`` makes a need no test names ``false``, not "verified"),
 and ``mentions`` links the needs that a need's text references.
-The same rule in :file:`conf.py`, as every other key of the entry:
+The ``total_hours`` rule in :file:`conf.py`, as every other key of the entry:
 
 .. code-block:: python
 
@@ -85,15 +86,16 @@ Before declaring a rule, bear in mind:
 - **Nobody can write the value.** A value written for a derived field in a need, or set by a :ref:`needextend`,
   is ignored and reported (``needs.derive_authored``).
   A value that someone must be able to write, or to correct by hand, needs a field of its own.
-- **Mistakes are found when the configuration is read.** A rule that cannot be read is reported as
-  ``needs.derive_invalid``, and the field holds its empty value (:ref:`needs_derive_holds`).
+- **Most mistakes are found when the configuration is read.** A rule that cannot be read is reported as
+  ``needs.derive_invalid``, and the needs it would compute hold the field's empty value;
+  one that cannot be computed on a need is reported there (:ref:`needs_derive_holds`).
 - **Storing costs, computing does not.** A value per need costs little; a rule that links many needs to many
   stores a list on each need and a back link on each target (``needs.derive_dense``, :ref:`needs_derive_cost`).
 - **Incremental builds re-write more pages.** When a need changes, the pages of the needs whose rules read it are
   re-written too;
-  in a project with a ``links`` rule, a ``content_links`` rule with ``from``, a ``collect`` on a link type,
-  or a ``copy`` on a link type over a link type a rule computes,
-  every change of a need re-writes every page holding a need (:ref:`incremental_builds`).
+  once a need of the project holds a ``links`` rule, a ``content_links`` rule with ``from``,
+  a ``collect`` on a link type, or a ``copy`` on a link type over a link type a rule computes,
+  every change of a need re-writes every page holding a need, a view or a need role (:ref:`incremental_builds`).
 - **A simpler tool may do.** To show a set of needs in one place, a :ref:`needtable` or :ref:`needlist` with a filter
   shows it once; a value for one need alone is a ``[[…]]`` call written in it (:ref:`dynamic_functions_derived`).
 
@@ -185,7 +187,10 @@ Bear in mind:
 
 - **One name, one shape.** A field or link type means the same thing on every need type that declares it:
   its type (``number`` here) and whether it is derived belong to the field, not to a need type,
-  and so, for a link type, do how its links are drawn, whether a dead link is allowed and whether it is a summary.
+  and so, for a link type, do how its links are drawn, whether a dead link is allowed,
+  whether its links are copied into ``links`` and whether it is a summary
+  (for a link type declared on need types alone, the first need type's entry declaring it sets them,
+  and the others may only repeat them).
   A need type's own declaration of a derived field narrows its description, schema and ``nullable``,
   but gives it no default.
   ``summary`` in a need type's ``links`` entry is reported (``needs.config``) and ignored:
@@ -480,7 +485,9 @@ the implementation, the specification and both requirements hold ``reached_by`` 
 
 A list of ids suits a table column or a filter (``"REQ_1" in req_ids``).
 To have the far ends as links instead, drawn on the need and with back links on the requirements,
-declare the same rules on a link type (:ref:`needs_derive_link_chain`).
+declare the downward rules on a link type, each ``collect`` reading that link type (:ref:`needs_derive_link_chain`):
+its back links then give each requirement the needs reaching it,
+which a link type's own rule could not, as it reads no back links.
 
 .. _`needs_derive_join`:
 
@@ -540,10 +547,9 @@ Bear in mind:
 
 - **Values, not ids.** A join compares values exactly, so a test naming ``Login`` matches no ``login``;
   where the test can name the specification's id, a written link is simpler.
-- **Incremental builds.** A ``links`` rule, with ``join`` too,
-  makes every change of a need re-write every page holding a need;
-  the pages of the needs holding a ``copy`` with ``join`` are re-written on every change of a need
-  (:ref:`incremental_builds`).
+- **Incremental builds.** The pages of the needs holding a ``copy`` with ``join`` are re-written on every change
+  of a need (:ref:`incremental_builds`); a ``links`` rule, with ``join`` too, re-writes far more
+  (:ref:`needs_derive_cost`).
 
 The rules:
 
@@ -634,8 +640,7 @@ Use it to know on one need how many needs point at it, such as the open tests of
 A requirement that one ``open`` and one ``passed`` test name in ``tests`` holds ``open_tests`` ``1``.
 
 The tests name the requirement, so the requirement reads them through the back links, ``tests_back``.
-A count stores one number per need: it is the light way to know how many needs point at a need,
-where a ``links`` rule would store the needs themselves on every need (:ref:`needs_derive_cost`).
+A count stores one number per need (:ref:`needs_derive_cost`): the needs themselves are in ``tests_back`` already.
 
 .. _`needs_derive_kind_min_max`:
 
@@ -658,7 +663,7 @@ A need linking implementations of risk ``medium`` and ``low`` holds ``max_risk``
 
 ``min`` and ``max`` order numbers by value, and a string by the order of its ``enum``:
 list the ``enum`` from least to greatest, as ``low``, ``medium``, ``high`` above.
-A string field without an ``enum`` has no order, and is refused (``needs.derive_invalid``).
+A rule reading a field with no order, such as a string without an ``enum``, is refused (``needs.derive_invalid``).
 
 With ``transitive = true``, ``min`` and ``max`` read every need reachable through ``over``, each once:
 a need on a cycle reaches itself, so every member of a cycle has the same value;
@@ -735,7 +740,8 @@ Link lists
 ----------
 
 These kinds compute a link type's links, and are declared on a link type, in its :ref:`needs_links` entry.
-Their links are links like written ones: shown on the need, read by filters, tables and diagrams,
+Their links are links like written ones: shown on the need, read by filters, tables and diagrams
+(a summary link type only where named),
 and answered by back links on the needs they point to.
 Each computes with the link fields, so its links are in the back links (``<link type>_back``) as written ones are.
 
@@ -744,11 +750,10 @@ Bear in mind:
 - **Field form or link form.** A list of ids in a field suits a table column or a filter;
   links add what links have, the back links above all. Where nobody reads the back links, a field is lighter.
 - **Cost.** A link type whose rule links many needs to many stores a list on each need, and a back link on each target;
-  ``needs.derive_dense`` reports a link type that grows past :ref:`needs_derive_max_links_per_need` links per need
-  (:ref:`needs_derive_cost`).
-- **Incremental builds.** In a project with a ``links`` rule, a ``content_links`` rule with ``from``,
-  a ``collect`` on a link type, or a ``copy`` on a link type over a link type a rule computes,
-  every change of a need re-writes every page holding a need (:ref:`incremental_builds`).
+  ``needs.derive_dense`` reports a link type that grows past :ref:`needs_derive_max_links_per_need` links
+  per need of the project (:ref:`needs_derive_cost`).
+- **Incremental builds.** Some of these rules make an incremental build re-write far more pages
+  on each change of a need; :ref:`needs_derive_cost` says which.
 
 .. _`needs_derive_summary`:
 
@@ -808,12 +813,12 @@ With one open requirement, ``REQ_1``, every other need holds ``REQ_1`` in ``open
 Bear in mind:
 
 - **It is stored on every need holding the rule.**
-  Every such need links to every need the ``where`` passes (but itself);
+  With a ``where`` and no ``join``, every such need links to every need the ``where`` passes
+  (but itself, unless ``include_self``);
   to show that set in one place, a :ref:`needtable` or :ref:`needlist` with the same filter shows it once.
   Declare the rule only for the need types that use it (:ref:`needs_derive_by_type`).
-- **Incremental builds.** With a ``links`` rule in the project,
-  every change of a need re-writes every page holding a need
-  (:ref:`incremental_builds`).
+- **Incremental builds.** A ``links`` rule makes an incremental build re-write far more pages
+  (:ref:`needs_derive_cost`).
 
 Its candidates are every need, and with ``include_parts`` every need's parts (after it, in part-id order),
 in :ref:`need-id order <needs_id_order>`;
@@ -842,8 +847,7 @@ Its links are the ``:need:`` references of this need's content (or of the conten
 in document order, each once: a reference to a part is a part link, a reference to this need is kept,
 a reference to no need is kept (and reported as any dead link), a disabled one (``!ID``) and those inside a
 nested need are not. With ``where``, only the references to needs it holds on are kept (a part through its need).
-A ``content_links`` rule with ``from`` makes every change of a need re-write every page holding a need
-on an incremental build (:ref:`incremental_builds`).
+A ``content_links`` rule with ``from`` makes an incremental build re-write far more pages (:ref:`needs_derive_cost`).
 
 .. _`needs_derive_union`:
 
@@ -878,7 +882,7 @@ Bear in mind:
 - **The members keep their own links.** A union adds a link type; ``links`` and each member are unchanged,
   so a view that names a member still draws it with its own style.
 - **It is not counted twice.** The links it holds again are not counted as dense (below),
-  and its dead links are reported once, at the member.
+  and where its rule computed it, its dead links are reported once, at the member.
 - **Members only.** A union reads link types: not a field, not back links, not ``parent_needs``,
   and not a summary link type.
 
@@ -996,8 +1000,6 @@ Bear in mind:
 - **Cost.** Each need stores a link per far end its chain reaches,
   and each far end a back link from every need reaching it;
   on a deep, wide trace, the field form stores the same ids without the back links.
-- **Incremental builds.** A ``collect``, or a ``copy`` over a link type another rule computes,
-  makes every change of a need re-write every page holding a need (below).
 
 The rules:
 
@@ -1036,8 +1038,8 @@ The rules:
   ``needs.derive_dense`` counts them (:ref:`needs_derive_cost`).
   It is left out of every ``fingerprint``, as every derived link type is.
   A ``collect``, or a ``copy`` over a link type another rule computes, links needs its need does not name,
-  so in a project with one an incremental build re-writes every page holding a need on each change of a need
-  (:ref:`incremental_builds`).
+  so once a need of the project holds one, an incremental build re-writes every page holding a need,
+  a view or a need role on each change of a need (:ref:`incremental_builds`).
 
 .. _`needs_derive_digests`:
 
@@ -1046,7 +1048,8 @@ Digests
 
 A review holds only while what was reviewed stays the same:
 a specification checked against a requirement should be checked again once the requirement changes.
-A digest is a value that changes when the need does, so a :ref:`link condition <need_conditional_links>`
+A digest is a value that changes when the need does, or, for a ``hash``, when one of the fields it lists does,
+so a :ref:`link condition <need_conditional_links>`
 naming the value seen at the review reports the need once it changes (:ref:`needs_derive_changed`).
 These kinds compute a ``string`` from the need's own values, after every other rule of the need.
 
@@ -1054,7 +1057,7 @@ Bear in mind:
 
 - **Which values count.** A ``hash`` reads only the fields it lists; a ``fingerprint`` reads the whole need,
   so a change of any value it includes moves it, a typo fixed in the content too.
-- **Derived values are left out.** A ``fingerprint`` never includes a derived field or link type,
+- **A fingerprint leaves derived values out.** A ``fingerprint`` never includes a derived field or link type,
   so a rule's result changing on a linked need does not move it.
 - **Cost.** Each stores one string per need, computed from that need's own values.
 
@@ -1316,9 +1319,10 @@ A rule that ten needs pass stores about ten links per need.
   ``{ kind = "count", over = "tests_back", where = "status == 'open'" }`` stores one number.
 - :ref:`links_from_filter` written in every need stores what the ``links`` rule stores, and also tests its filter
   on every need once per call, so on many needs prefer the declared rule.
-- On an incremental build, a ``links`` rule, a ``content_links`` rule with ``from``, a ``collect`` on a link type,
-  or a ``copy`` on a link type over a link type a rule computes makes every change of a need
-  re-write every page holding a need (:ref:`incremental_builds`).
+- On an incremental build, once a need of the project holds a ``links`` rule (with or without ``join``),
+  a ``content_links`` rule with ``from``, a ``collect`` on a link type,
+  or a ``copy`` on a link type over a link type a rule computes,
+  every change of a need re-writes every page holding a need, a view or a need role (:ref:`incremental_builds`).
 
 A link type whose computed links number more than :ref:`needs_derive_max_links_per_need` (``100``) per need of the project
 is reported once, as the warning ``needs.derive_dense``,
