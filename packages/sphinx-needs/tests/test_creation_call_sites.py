@@ -122,3 +122,86 @@ def test_the_fence_finds_a_legacy_call(source: str):
 )
 def test_the_fence_ignores_what_is_no_legacy_call(source: str):
     assert legacy_calls(source) == []
+
+
+# --- the source classes ------------------------------------------------------------
+
+#: the names a module of this repository does not use: the five source classes of
+#: 9.1.0, deprecated factories until 10.0, and the base class they shared
+DEPRECATED_SOURCES = frozenset(
+    {
+        "NeedItemSourceUnknown",
+        "NeedItemSourceDirective",
+        "NeedItemSourceService",
+        "NeedItemSourceExternal",
+        "NeedItemSourceImport",
+        "HopsSource",
+    }
+)
+
+
+def deprecated_source_names(source: str) -> list[tuple[int, str]]:
+    """The uses of a :data:`DEPRECATED_SOURCES` name in ``source``, by line: a name, an
+    attribute, an import, a definition. A string or a docstring naming one is not a use
+    (``sphinx_needs/need_item.py`` maps the names to their factories by string)."""
+    found = []
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.Name):
+            name = node.id
+        elif isinstance(node, ast.Attribute):
+            name = node.attr
+        elif isinstance(node, ast.alias):
+            name = node.name.rsplit(".", 1)[-1]
+        elif isinstance(node, ast.ClassDef | ast.FunctionDef):
+            name = node.name
+        else:
+            continue
+        if name in DEPRECATED_SOURCES:
+            found.append((getattr(node, "lineno", 0), name))
+    return sorted(found)
+
+
+@pytest.mark.xfail(strict=True, reason="slice 3a: every producer on NeedItemSource")
+def test_no_module_uses_a_deprecated_source_name():
+    """Every producer of this repository builds ``NeedItemSource``, and nothing tests
+    for the base class the five shared."""
+    found = {
+        f"{path.relative_to(PACKAGES).as_posix()}:{line}": name
+        for path in sorted(PACKAGES.glob("*/src/**/*.py"))
+        for line, name in deprecated_source_names(path.read_text(encoding="utf-8"))
+    }
+    assert found == {}
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        # the uses at 8bd37988a, as they were written
+        "from sphinx_needs.need_item import NeedItemSourceUnknown\n",
+        "from sphinx_needs._need_source import (\n    HopsSource,\n    NeedSourceHop,\n)\n",
+        "class NeedItemSourceUnknown(HopsSource):\n    pass\n",
+        "source = NeedItemSourceDirective(\n    lineno=resolved_lineno or self.lineno,\n)\n",
+        "need_source = NeedItemSourceImport(lineno=self.lineno, path=p, hops=hops)\n",
+        "x = source.parser_lineno if isinstance(source, NeedItemSourceDirective) else None\n",
+        "if not isinstance(source, HopsSource) or source.placement is None:\n    pass\n",
+        # and as an attribute of the module
+        "from sphinx_needs import need_item\nneed_item.NeedItemSourceService(lineno=1)\n",
+        "import sphinx_needs.need_item\nsphinx_needs.need_item.NeedItemSourceExternal()\n",
+    ],
+)
+def test_the_fence_finds_a_deprecated_source_name(source: str):
+    """The positive control: each use of a name found at the base is found."""
+    assert len(deprecated_source_names(source)) >= 1
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        '"""``NeedItemSourceUnknown(docname=, lineno=)`` is a factory now."""\n',
+        "# NeedItemSourceDirective\n",
+        "_LEGACY = {'NeedItemSourceUnknown': _unknown}\n",
+        "from sphinx_needs.need_item import NeedItemSource, NeedItemSourceProtocol\n",
+    ],
+)
+def test_the_fence_ignores_what_is_no_use_of_a_deprecated_source(source: str):
+    assert deprecated_source_names(source) == []
