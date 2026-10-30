@@ -14,6 +14,12 @@ from requests_file import FileAdapter
 from sphinx.util.docutils import SphinxDirective
 
 import ub_needs_exchange as exchange
+from sphinx_needs._need_source import (
+    NeedSourceHop,
+    NeedSourcePhysical,
+    directive_hops,
+    physical_for,
+)
 from sphinx_needs.api import InvalidNeedException, ingest_need_record
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
@@ -83,6 +89,11 @@ class NeedimportDirective(SphinxDirective):
             # download needs.json
             logger.info(f"Downloading needs.json from url {need_import_path}")
             source_name = need_import_path
+            imported = NeedSourceHop(
+                kind="file",
+                physical=NeedSourcePhysical(url=need_import_path),
+                language=os.path.splitext(url.path)[1] or None,
+            )
             s = requests.Session()
             s.mount("file://", FileAdapter())
             try:
@@ -101,6 +112,11 @@ class NeedimportDirective(SphinxDirective):
                 need_import_path, self.env.docname
             )[1]
             source_name = correct_need_import_path
+            imported = NeedSourceHop(
+                kind="file",
+                physical=physical_for(self.env.srcdir, correct_need_import_path),
+                language=os.path.splitext(correct_need_import_path)[1] or None,
+            )
 
             # noted before the file is looked for, so that a file that is missing or
             # cannot be read now is read again once it exists or changes (Sphinx takes
@@ -226,6 +242,9 @@ class NeedimportDirective(SphinxDirective):
         # the unparseable doctypes of the needs with content, and why, in import order
         fallbacks: dict[str, str] = {}
 
+        # every need of the directive shares its hops: the imported file (resolved),
+        # then the file and page the directive is written on
+        hops = directive_hops(self, first=imported)
         need_nodes = []
         for need_params in needs_list.values():
             record = dict(need_params)
@@ -257,6 +276,7 @@ class NeedimportDirective(SphinxDirective):
                 docname=self.env.docname,
                 lineno=self.lineno,
                 path=need_import_path,
+                hops=hops,
             )
 
             # a template is a file of the importing project, written in the page's

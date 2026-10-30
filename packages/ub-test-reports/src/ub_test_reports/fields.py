@@ -21,8 +21,8 @@ from collections.abc import Iterable, Mapping
 from ub_test_reports.results import CANONICAL_RESULTS
 
 #: ``name -> (JSON type, description)`` for every field declared under a fixed
-#: name. The build registers all of them, on test-file, test-suite and
-#: test-case needs alike; the converter writes test-case needs and therefore
+#: name. The build registers each on the need types that carry it
+#: (:func:`need_kinds`); the converter writes test-case needs and therefore
 #: declares :data:`CASE_FIELDS`.
 FIELDS: dict[str, tuple[str, str]] = {
     "suite": ("string", "Test suite name"),
@@ -79,6 +79,56 @@ CASE_FIELDS: tuple[str, ...] = (
     "result_text",
     "remote_url",
 )
+
+#: The kinds of need a test report gives, in the order a report nests them: the
+#: build's ``test-file``, ``test-suite`` and ``test-case`` directives (whose need types
+#: ``tr_file``, ``tr_suite`` and ``tr_case`` name), and the converter's test cases.
+NEED_KINDS: tuple[str, ...] = ("file", "suite", "case")
+
+#: The fixed-name fields a test-file need sets (besides the report path and the
+#: extra options). ubCode's ``FILE_NEED_FIELDS`` is the same table.
+FILE_NEED_FIELDS: tuple[str, ...] = (
+    "suites",
+    "cases",
+    "passed",
+    "skipped",
+    "failed",
+    "errors",
+)
+
+#: The fixed-name fields a test-suite need sets (besides the report path and the
+#: extra options). ubCode's ``SUITE_NEED_FIELDS`` is the same table.
+SUITE_NEED_FIELDS: tuple[str, ...] = (
+    "suite",
+    "cases",
+    "passed",
+    "skipped",
+    "failed",
+    "errors",
+)
+
+
+def need_kinds(name: str, role: str | None = None) -> tuple[str, ...]:
+    """The kinds of need (:data:`NEED_KINDS`) carrying a field, which the build
+    declares it on alone (sphinx-needs' ``add_field(..., types=...)``).
+
+    A renameable field by its *role*: the report path is on every kind, the source
+    location on test cases. A fixed-name field on the kinds whose table lists it:
+    :data:`FILE_NEED_FIELDS`, :data:`SUITE_NEED_FIELDS`, :data:`CASE_FIELDS` (which
+    holds the two fields the converter alone writes, ``result_text`` and
+    ``remote_url``). Any other name -- an extra option -- is on every kind.
+    """
+    if role is not None:
+        return NEED_KINDS if role == "file_option" else ("case",)
+    kinds = tuple(
+        kind
+        for kind, table in zip(
+            NEED_KINDS, (FILE_NEED_FIELDS, SUITE_NEED_FIELDS, CASE_FIELDS), strict=True
+        )
+        if name in table
+    )
+    return kinds or NEED_KINDS
+
 
 #: Declaration of the core need fields the converter writes, as sphinx-needs
 #: declares them itself (``NeedsCoreFields``). Copied rather than imported:

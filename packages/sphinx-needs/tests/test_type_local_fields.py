@@ -981,19 +981,23 @@ def test_required_on_the_types_that_declare_it(test_app: Any) -> None:
     ],
     indirect=True,
 )
-def test_an_extensions_field_is_never_declared_on_need_types_alone(
+def test_an_extensions_field_is_declared_on_its_types_and_the_types_naming_it(
     test_app: Any,
 ) -> None:
-    """A need type's entry of a field an extension registers is a narrowing of it,
-    however late the extension registers it: the field stays the extension's, on
-    every need type."""
+    """A field an extension declares on its own need types alone (sphinx-test-reports'
+    ``suite``, on its test suites and test cases, #2372) stays the extension's, however
+    late the extension registers it: a need type's entry of it is a narrowing, and
+    declares it on that type too; a type with no entry does not declare it."""
     app = test_app
     app.build()
     schema = _schema(app)
     assert not schema.is_project_field("suite")
-    for need_type in ("tr_case", "tr_suite", "req"):
+    assert schema.declaring_types("suite") == {"testsuite", "testcase", "spec"}
+    for need_type in ("testsuite", "testcase", "spec"):
         field = _field(app, need_type, "suite")
         assert (field.directive_option, field.allow_extend) == (True, True), need_type
+    field = _field(app, "req", "suite")
+    assert (field.directive_option, field.allow_extend) == (False, False)
     assert _field(app, "spec", "suite").schema["minLength"] == 1
 
 
