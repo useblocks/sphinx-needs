@@ -1,4 +1,6 @@
-extensions = ["sphinx_needs"]
+extensions = ["sphinx_needs", "sphinx.ext.graphviz"]
+
+needs_flow_engine = "graphviz"
 
 needs_table_style = "TABLE"
 

@@ -5,3 +5,6 @@ TEST DOCUMENT EXTERNAL NEEDS WITH AN ABSOLUTE TARGET URL
    :filter: is_external
    :columns: id
    :style: table
+
+.. needflow::
+   :filter: is_external

@@ -501,3 +501,28 @@ def test_external_needs_other_target_url_joined(test_app):
         for label, base_url in (("SITE", "https://site.example/docs"), ("EMPTY", ""))
     }
     assert {need_id: links[need_id] for need_id in expected} == expected
+
+
+@pytest.mark.xfail(
+    strict=True, reason="#2389: a graphviz needflow links no scheme-relative URL"
+)
+@pytest.mark.parametrize("test_app", [_ABSOLUTE_TARGET_URL_PROJECT], indirect=True)
+def test_external_needs_absolute_target_url_needflow(test_app):
+    """A graphviz needflow links an external need to its absolute render as the
+    needtable does, a scheme-relative ``//host`` render included (#2389)."""
+    from lxml import html as html_parser
+
+    app = test_app
+    app.build()
+    assert not build_warnings(app)
+
+    tree = html_parser.parse(str(Path(app.outdir, "index.html")))
+    areas = {a.attrib["title"]: a.attrib["href"] for a in tree.xpath("//map/area")}
+    links = _external_links(app)
+    expected = {
+        need_id: links[need_id][0]
+        for need_id in links
+        if need_id.split("_", 1)[0] in ("ABS", "UPPER", "SCHEMEREL", "FILE")
+    }
+    assert len(expected) == 8
+    assert {need_id: areas.get(need_id) for need_id in expected} == expected
