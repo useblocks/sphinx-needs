@@ -376,7 +376,6 @@ def test_the_module_getattr_is_hidden_from_type_checkers():
     )
 
 
-@pytest.mark.xfail(strict=True, reason="fix round 1 FR7: declared for type checkers")
 def test_the_five_names_are_declared_for_type_checkers_as_they_are_at_run_time():
     """Type checkers do not see the run-time ``__getattr__``, so each of the five names
     is declared for them under ``TYPE_CHECKING``: a function with the keywords of its

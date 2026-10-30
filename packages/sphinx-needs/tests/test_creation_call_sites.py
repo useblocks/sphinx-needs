@@ -143,7 +143,8 @@ DEPRECATED_SOURCES = frozenset(
 def deprecated_source_names(source: str) -> list[tuple[int, str]]:
     """The uses of a :data:`DEPRECATED_SOURCES` name in ``source``, by line: a name, an
     attribute, an import, a definition. A string or a docstring naming one is not a use
-    (``sphinx_needs/need_item.py`` maps the names to their factories by string)."""
+    (``sphinx_needs/need_item.py`` maps the names to their factories by string), nor is
+    a ``@deprecated`` declaration (its declarations of the names for type checkers)."""
     found = []
     for node in ast.walk(ast.parse(source)):
         if isinstance(node, ast.Name):
@@ -153,6 +154,13 @@ def deprecated_source_names(source: str) -> list[tuple[int, str]]:
         elif isinstance(node, ast.alias):
             name = node.name.rsplit(".", 1)[-1]
         elif isinstance(node, ast.ClassDef | ast.FunctionDef):
+            if any(
+                isinstance(decorator, ast.Call)
+                and ast.unparse(decorator.func) == "deprecated"
+                for decorator in node.decorator_list
+            ):
+                # a deprecated name's declaration (for type checkers) is no use of it
+                continue
             name = node.name
         else:
             continue
@@ -206,7 +214,6 @@ def test_the_fence_ignores_what_is_no_use_of_a_deprecated_source(source: str):
     assert deprecated_source_names(source) == []
 
 
-@pytest.mark.xfail(strict=True, reason="fix round 1 FR7: declared for type checkers")
 def test_the_fence_ignores_a_deprecated_declaration_and_finds_any_other():
     """The five names are declared for type checkers in ``sphinx_needs/need_item.py``,
     each ``@deprecated``: a declaration of a deprecated name is not a use of it. The

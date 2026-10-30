@@ -359,6 +359,84 @@ _DEPRECATED_SOURCES: Mapping[str, Callable[..., NeedItemSource]] = {
 """The five names of 9.1.0, and the factory each now is (removed in 10.0)."""
 
 
+def _deprecation_message(name: str) -> str:
+    """The warning of reading one of the five deprecated names."""
+    return (
+        f"sphinx_needs.need_item.{name} is deprecated and will be removed in "
+        "sphinx-needs 10.0: use sphinx_needs.api.NeedItemSource "
+        "(NeedItemSource.from_directive(self) in a directive)"
+    )
+
+
+if TYPE_CHECKING:
+    # what type checkers see of the five names, which they cannot read from the
+    # run-time ``__getattr__`` below: the factories' signatures, deprecated, so code
+    # written against 9.1.0 type-checks until 10.0 rather than failing to resolve
+    # (``test_need_item_source.py`` compares these with the run-time table)
+    from typing_extensions import deprecated
+
+    @deprecated(
+        "sphinx_needs.need_item.NeedItemSourceUnknown is deprecated and will be removed in "
+        "sphinx-needs 10.0: use sphinx_needs.api.NeedItemSource (NeedItemSource.from_directive(self) in a directive)"
+    )
+    def NeedItemSourceUnknown(  # noqa: N802
+        *,
+        docname: str | None = None,
+        lineno: int | None = None,
+        lineno_content: int | None = None,
+        external_url: str | None = None,
+        is_import: bool = False,
+        is_external: bool = False,
+        hops: Iterable[NeedSourceHop] | None = None,
+    ) -> NeedItemSource: ...
+
+    @deprecated(
+        "sphinx_needs.need_item.NeedItemSourceDirective is deprecated and will be removed in "
+        "sphinx-needs 10.0: use sphinx_needs.api.NeedItemSource (NeedItemSource.from_directive(self) in a directive)"
+    )
+    def NeedItemSourceDirective(  # noqa: N802
+        *,
+        docname: str | None = None,
+        lineno: int | None = None,
+        lineno_content: int,
+        parser_lineno: int | None = None,
+        hops: Iterable[NeedSourceHop] | None = None,
+    ) -> NeedItemSource: ...
+
+    @deprecated(
+        "sphinx_needs.need_item.NeedItemSourceService is deprecated and will be removed in "
+        "sphinx-needs 10.0: use sphinx_needs.api.NeedItemSource (NeedItemSource.from_directive(self) in a directive)"
+    )
+    def NeedItemSourceService(  # noqa: N802
+        *,
+        docname: str | None = None,
+        lineno: int,
+        hops: Iterable[NeedSourceHop] | None = None,
+    ) -> NeedItemSource: ...
+
+    @deprecated(
+        "sphinx_needs.need_item.NeedItemSourceExternal is deprecated and will be removed in "
+        "sphinx-needs 10.0: use sphinx_needs.api.NeedItemSource (NeedItemSource.from_directive(self) in a directive)"
+    )
+    def NeedItemSourceExternal(  # noqa: N802
+        *,
+        url: str | None = None,
+        hops: Iterable[NeedSourceHop] | None = None,
+    ) -> NeedItemSource: ...
+
+    @deprecated(
+        "sphinx_needs.need_item.NeedItemSourceImport is deprecated and will be removed in "
+        "sphinx-needs 10.0: use sphinx_needs.api.NeedItemSource (NeedItemSource.from_directive(self) in a directive)"
+    )
+    def NeedItemSourceImport(  # noqa: N802
+        *,
+        docname: str | None = None,
+        lineno: int,
+        path: str,
+        hops: Iterable[NeedSourceHop] | None = None,
+    ) -> NeedItemSource: ...
+
+
 if not TYPE_CHECKING:
     # at run time only: a type checker that saw a module ``__getattr__`` would type
     # every name of this module as ``Any``, so a misspelt import from it would pass
@@ -367,9 +445,7 @@ if not TYPE_CHECKING:
         """The five deprecated names, each warning where it is read."""
         if (factory := _DEPRECATED_SOURCES.get(name)) is not None:
             warnings.warn(
-                f"sphinx_needs.need_item.{name} is deprecated and will be removed in "
-                "sphinx-needs 10.0: use sphinx_needs.api.NeedItemSource "
-                "(NeedItemSource.from_directive(self) in a directive)",
+                _deprecation_message(name),
                 DeprecationWarning,
                 stacklevel=2,
             )
