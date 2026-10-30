@@ -342,10 +342,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
         need_info = needs[need_id]
 
         # Fetch values from need
-        # Start from the target node, which is a sibling of the current need node
-        sections, signature, parent_needs = get_sections_and_signature_and_needs(
-            previous_sibling(need_node)
-        )
+        sections, signature, parent_needs = _location_before(need_node)
 
         # append / set values from need
         need_info["sections"] = tuple(sections)
@@ -363,6 +360,26 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
     for need_node in hidden_needs:
         if need_node.parent is not None:
             need_node.parent.remove(need_node)
+
+
+def _location_before(
+    need_node: Need,
+) -> tuple[list[str], nodes.Text | None, list[str]]:
+    """The walk from the position immediately before the need node.
+
+    A visible need's own target sits there, so the walk starts from it. A hidden need
+    has no target, and its previous sibling, if it has one, is some other node: a need
+    there would be read as its parent, and as the first child of its container it would
+    have nothing to start from (#2398). The walk from that position is the walk from the
+    need node itself, except that the need is not its own parent: so ``sections`` and
+    ``signature`` are read from the need node, and ``parent_needs`` from its parent.
+    The doctree is not changed.
+    """
+    if not need_node.get("hidden"):
+        return get_sections_and_signature_and_needs(previous_sibling(need_node))
+    sections, signature, _ = get_sections_and_signature_and_needs(need_node)
+    _, _, parent_needs = get_sections_and_signature_and_needs(need_node.parent)
+    return sections, signature, parent_needs
 
 
 def previous_sibling(node: nodes.Node) -> nodes.Node | None:

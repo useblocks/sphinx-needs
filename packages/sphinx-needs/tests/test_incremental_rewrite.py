@@ -509,6 +509,20 @@ _REQ_002_CLOSED = (
 )
 
 #: Each scenario: the project before, and after the edit.
+#: hidden needs (#2398): a parent need holding text and a visible child, a hidden need
+#: after it on the page, and a table on another page showing where they are
+_HIDDEN = _with_pages(
+    PAGES,
+    {
+        "hidden.rst": "Hidden\n======\n\n.. spec:: Holds needs\n   :id: HID_PARENT\n\n"
+        "   Some text.\n\n   .. spec:: A visible child\n      :id: HID_SIB\n\n"
+        ".. spec:: Hidden, after a need\n   :id: HID_KID\n   :hide:\n",
+        "hidden_table.rst": "Hidden table\n============\n\n.. needtable::\n"
+        "   :filter: 'HID_' in id\n"
+        "   :columns: id, parent_need, parent_needs_back, sections\n",
+    },
+)
+
 SCENARIOS: dict[str, tuple[dict[str, str], dict[str, str]]] = {
     **{name: (PAGES, _replace(PAGES, *edit)) for name, edit in EDITS.items()},
     "extend-links-removed": (
@@ -608,6 +622,33 @@ SCENARIOS: dict[str, tuple[dict[str, str], dict[str, str]]] = {
     "prose-above-imported-need": (
         _IMPORTED,
         _replace(_IMPORTED, "imported.rst", "========\n\n", "========\n\nProse.\n\n"),
+    ),
+    # the hidden need moved into the parent need, as its first child
+    "hidden-need-moved-to-first-child": (
+        _HIDDEN,
+        _replace(
+            _replace(
+                _HIDDEN,
+                "hidden.rst",
+                ".. spec:: Hidden, after a need\n   :id: HID_KID\n   :hide:\n",
+                "",
+            ),
+            "hidden.rst",
+            "   :id: HID_PARENT\n\n",
+            "   :id: HID_PARENT\n\n   .. spec:: Hidden, after a need\n      :id: HID_KID\n"
+            "      :hide:\n\n",
+        ),
+    ),
+    # a hidden need added after another need inside the parent need
+    "hidden-need-added-after-a-need": (
+        _HIDDEN,
+        _replace(
+            _HIDDEN,
+            "hidden.rst",
+            "      :id: HID_SIB\n",
+            "      :id: HID_SIB\n\n   .. spec:: Hidden, after a sibling\n      :id: HID_NEW\n"
+            "      :hide:\n",
+        ),
     ),
     "document-removed": (
         PAGES,

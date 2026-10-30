@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 17
+ENV_DATA_VERSION: Final = 18
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -113,9 +113,17 @@ roles reference (``_needs_role_refs``). An environment pickled before it has nei
 so its incremental builds would find no page to re-write; the bump re-reads every
 document once instead.
 
-Version 17 stores every need's source as one class,
+Version 17 changes what the stored values mean again: a hidden need is located as a
+visible need in the same place is. As the first child of its container (an ``only``, a
+``note``, a parent need's content, a function's body) its ``sections``, ``signature``
+and ``parent_needs``, empty in 9.1.0, are now its place's, and after another need its
+``parent_needs`` names the need enclosing it, if any, and no longer the need before it.
+The sources do not change, so without the bump an upgraded build would keep the old
+values, and the back links built from them, on the pages whose sources did not change.
+
+Version 18 stores every need's source as one class,
 :class:`~sphinx_needs.need_item.NeedItemSource` (its hops, the given ``lineno``,
-``lineno_content``, ``parser_lineno`` and ``is_import``), where versions 14 to 16
+``lineno_content``, ``parser_lineno`` and ``is_import``), where versions 14 to 17
 stored one of five ``NeedItemSource*`` classes, each with its own fields. The five names
 now resolve to factory functions, so an old environment happens to fail to unpickle
 (``NEWOBJ class argument must be a type``) and is read again; the bump makes that the

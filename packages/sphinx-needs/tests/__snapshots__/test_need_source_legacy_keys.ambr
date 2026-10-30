@@ -4710,10 +4710,11 @@
         'post_template': None,
         'pre_content': None,
         'pre_template': None,
-        'section_name': None,
+        'section_name': 'Hidden',
         'sections': tuple(
+          'Hidden',
         ),
-        'signature': None,
+        'signature': 'hidden_f',
         'status': None,
         'style': None,
         'tags': list([
@@ -4784,8 +4785,9 @@
         'post_template': None,
         'pre_content': None,
         'pre_template': None,
-        'section_name': None,
+        'section_name': 'Hidden',
         'sections': tuple(
+          'Hidden',
         ),
         'signature': None,
         'status': None,

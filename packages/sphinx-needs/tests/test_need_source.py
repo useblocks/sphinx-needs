@@ -581,8 +581,8 @@ def test_the_hops_of_every_need(
         ("py:method", "meth"),
     ]
     assert semantic("REQ_AX") == [("section", "Host"), ("section", "Frag A section")]
-    # a hidden need first in its container: the legacy walk finds nothing (#2398), the
-    # semantic location holds where it is
+    # a hidden need first in its container: the semantic location holds where it is,
+    # and the fence holds the legacy values to it (#2398)
     assert semantic("REQ_HIDONLYX") == [("section", "Hidden")]
     assert semantic("REQ_HIDFUNCX") == [
         ("section", "Hidden"),

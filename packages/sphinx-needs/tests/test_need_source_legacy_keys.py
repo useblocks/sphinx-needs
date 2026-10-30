@@ -161,7 +161,7 @@ SHAPE_IDS_GENERATED = (
 
 # --- the upgrade path ----------------------------------------------------------------
 
-LAST_VERSION_OF_THE_FIVE_CLASSES = 16
+LAST_VERSION_OF_THE_FIVE_CLASSES = 17
 """The last ``ENV_DATA_VERSION`` whose environment stores the five ``NeedItemSource*``
 classes: what an environment written before they became one says it is."""
 
@@ -188,7 +188,7 @@ FIVE_CLASSES_FIELDS = {
     "NeedItemSourceImport": ("hops", "_lineno", "path", "dict_repr"),
 }
 """The fields each of the five classes pickles, in its order: a slotted, frozen
-dataclass pickles the list of its fields' values (``ENV_DATA_VERSION`` 14 to 16)."""
+dataclass pickles the list of its fields' values (``ENV_DATA_VERSION`` 14 to 17)."""
 
 
 def test_the_last_version_of_the_five_classes_is_the_one_before_the_one_class():
