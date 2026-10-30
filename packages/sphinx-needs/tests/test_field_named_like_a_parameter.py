@@ -253,7 +253,6 @@ def _state_project(declared: bool) -> dict:
 
 
 @pytest.mark.parametrize("test_app", [_state_project(declared=True)], indirect=True)
-@pytest.mark.xfail(strict=True, reason="#2403: fixed with add_external_need's move")
 def test_an_external_need_keeps_a_declared_field_named_state(test_app: SphinxTestApp):
     """#2403: the record's ``state`` was dropped by ``add_external_need``, as if it were
     ``add_need``'s parser state; an extension's ``state=`` the same way."""
