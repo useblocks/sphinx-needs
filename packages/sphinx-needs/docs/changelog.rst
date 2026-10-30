@@ -10,6 +10,35 @@ Unreleased
 Improvements
 ............
 
+- ✨ A link type derives a chain's far ends as links: ``copy`` of ``id`` and ``collect`` of a link type, over a
+  link type, declared on a link type (:ref:`needs_derive_link_chain`, :issue:`2370`)
+
+  ``{ kind = "copy", field = "id", over = "satisfies" }`` on a specification and
+  ``{ kind = "collect", field = "chain", over = "implements" }`` on the rungs below give every need of the chain the
+  requirements it traces to as links, and each requirement the needs that reach it as back links. Each link is kept
+  once by its target and part, its condition dropped; a dead link is carried, and reported where it is written.
+  Such a link type is a summary (``summary = false`` beside the rule is refused), counts toward
+  ``needs.derive_dense``, and is computed with the link types: an ``over`` naming back links, and a ``field`` naming
+  a value field or back links, are refused at load (``needs.derive_invalid``), and needs reading one another's chain
+  around a ring are ``needs.derive_cycle``. ``over`` may name a union, read through its members, so a chain climbs
+  several link types at once (``over = "trace_up"``); a ``collect`` of its own link type over a link type another
+  kind of rule computes is refused. A dead link carried is flagged (``has_dead_links``) and drawn forbidden only as
+  the link type it is written in says. A ``collect``, or a ``copy`` over a link type another rule computes, links needs
+  its need does not name, so in a project with one every change of a need re-writes every need-relevant page on an incremental build (:ref:`incremental_builds`).
+  On a field, ``copy`` and ``collect`` are unchanged.
+
+- ✨ **Summary link types**: ``summary = true`` on a :ref:`needs_links` entry marks a link type whose links are
+  shortcuts across the trace rather than steps in it, such as a test result linked straight to the requirements it
+  covers (:ref:`needs_derive_summary`, :issue:`2370`)
+
+  It works as any link type wherever it is named (a filter, a needtable column, a rule's ``over``, a needflow's
+  ``:link_types:``, a schema rule), and a need holds its links and back links as usual; but a :ref:`needflow`
+  without ``:link_types:`` neither draws it nor walks it from ``:root_id:``, so a diagram does not show every path twice.
+  The schema of the ``needs.json`` marks it, and its back links, ``"summary": true``, and a ``union`` cannot name it as
+  a member (``needs.derive_invalid``). It is set on the link type for every need type: a need type's entry giving it
+  is a ``needs.config`` warning, and in a rule it is no key (``needs.derive_invalid``); ``copy = true`` beside it is a
+  ``needs.config`` warning, and nothing is copied into ``links``. Without it nothing changes.
+
 - ✨ ``c.is_a('req')`` is true for a need whose type is ``req`` or inherits from it (:issue:`2322`)
 
   ``type == 'req'`` compares the type's name alone; ``c.is_a('req')`` follows :ref:`inherits <needs_types_fields>`,
@@ -344,8 +373,10 @@ Bug fixes
   its readers finished. Needs from
   ``needs_external_needs`` are not compared (:issue:`353`). See :ref:`incremental_builds`.
 
-- 🔧 ``ENV_DATA_VERSION`` is 17: the first build after upgrading re-reads every document, which records
-  the views and need roles each document holds, and where each hidden need is (:issue:`2398`)
+- 🔧 ``ENV_DATA_VERSION`` is 19: the first build after upgrading re-reads every document, which records
+  the views and need roles each document holds and where each hidden need is (:issue:`2398`), stores each need's
+  source as one class, and computes the
+  links a ``copy`` or ``collect`` on a link type, refused until now, computes
 
 - 🐛 A need with ``:hide:`` is located as a visible need in the same place is **(changed output)** (:issue:`2398`)
 

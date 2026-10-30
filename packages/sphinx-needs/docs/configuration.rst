@@ -1126,7 +1126,8 @@ Each configured link can define:
 - ``parse_conditions``: If set to ``False``, the ``[condition]`` bracket syntax will not be parsed for this link type.
     Default: ``True``. *New in version 8.0.0.*
 - ``derive`` (optional): A rule computing the links of every need, which makes the link type :ref:`derived <needs_derive>`:
-    a table naming the kind ``links``, ``content_links`` or ``union`` (:ref:`needs_derive_union`), and its roles;
+    a table naming the kind ``links``, ``content_links`` or ``union`` (:ref:`needs_derive_union`),
+    or ``copy`` or ``collect``, a path through other links (:ref:`needs_derive_link_chain`), and its roles;
     with ``derive_by_type`` beside it, of every need of a type ``derive_by_type`` does not list.
     A derived link type cannot be set in a need or by a ``needextend``, and takes no ``default`` or ``predicates``.
     *New in version 9.0.0.*
@@ -1183,6 +1184,30 @@ Each configured link can define:
      (``suppress_warnings = ["needs.deprecated"]`` silences it, and every other deprecation).
 - ``allow_dead_links`` (optional): True/False. If True, dead links are allowed and do not throw a warning.
   See :ref:`allow_dead_links` for details. Default: False.
+- ``summary`` (optional): True/False. Default: False.
+  Set it for a link type whose links are shortcuts across the trace rather than steps in it,
+  such as a test result linked straight to the requirements it covers, three links up
+  (:ref:`needs_derive_summary` explains when to use it).
+  Such a link type works as any other wherever it is named:
+  a :ref:`filter <filter_string>` (``"REQ_1" in covers``), a :ref:`needtable` column, a rule's ``over`` or ``field``,
+  a :ref:`needflow`'s ``:link_types:``, a :ref:`schema rule <network_validation>`;
+  and a need holds its links and back links (``<name>_back``) and shows them, as usual.
+  The views that take every link type leave it out:
+  a :ref:`needflow` without ``:link_types:`` neither draws it nor walks it from ``:root_id:``.
+  The schema of the :ref:`needs.json <needs_builder_format>` marks it, and its back links, ``"summary": true``,
+  so that a tool reading the file can leave it out too.
+  A :ref:`union <needs_derive_union>` cannot name it as a member (``needs.derive_invalid``).
+  A link type a ``copy`` or ``collect`` rule computes is a summary whether or not it says so
+  (:ref:`needs_derive_link_chain`), and ``summary = false`` beside such a rule is refused (``needs.derive_invalid``).
+  ``copy = true`` beside ``summary = true`` would copy every summary link into ``links``, which every view reads:
+  it is a ``needs.config`` warning, and nothing is copied.
+  With every link type a summary, a :ref:`needflow` without ``:link_types:`` draws none,
+  its ``needs_flow_link_types`` fallback included.
+  It is a link type's on every need type: a need type's entry (:ref:`needs_types_fields`) does not give it,
+  and one that does is a ``needs.config`` warning, the key ignored;
+  nor does a rule (``derive``, ``derive_by_type``), where it is no role (``needs.derive_invalid``).
+  A value that is not a boolean is a ``needs.config`` warning, and ignored.
+  *New in version 9.2.0.*
 - ``target_types`` (optional): The need types the links may point to, a list of directive names, such as ``["req"]``.
   A link to a need of a listed type, or of a type inheriting from one (``inherits``, transitively), is accepted;
   each other link is reported, and kept, one ``needs.link_target_type`` warning at the need it is set in::

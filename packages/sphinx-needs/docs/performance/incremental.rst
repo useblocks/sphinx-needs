@@ -58,7 +58,9 @@ a view or a need role:
 
 - a needextend adding links with a dynamic function;
 - a need whose links are computed to needs it does not name
-  (a dynamic function in a link field, a ``links`` derive rule, or a ``content_links`` rule with ``from``);
+  (a dynamic function in a link field, a ``links`` derive rule, a ``content_links`` rule with ``from``,
+  a ``collect`` on a link type, which links a chain's far ends, or a ``copy`` on a link type over a link type
+  a rule computes, see :ref:`needs_derive_link_chain`);
 - a needextend with a filter that sets a value with a dynamic function reading needs it does not name.
 
 The same happens after a change of a needextend with a filter rather than an id,

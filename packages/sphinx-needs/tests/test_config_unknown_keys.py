@@ -30,13 +30,14 @@ EXTRA_OPTION_KEYS = "derive, derive_by_type, description, name, schema"
 LINK_KEYS = (
     "allow_dead_links, color, copy, default, derive, derive_by_type, description, "
     "incoming, outgoing, parse_conditions, parse_dynamic_functions, parse_variants, "
-    "predicates, schema, style, style_end, style_part, style_start, target_types"
+    "predicates, schema, style, style_end, style_part, style_start, summary, "
+    "target_types"
 )
 EXTRA_LINK_KEYS = (
     "allow_dead_links, color, copy, default, derive, derive_by_type, description, "
     "incoming, option, outgoing, parse_conditions, parse_dynamic_functions, "
     "parse_variants, predicates, schema, style, style_end, style_part, style_start, "
-    "target_types"
+    "summary, target_types"
 )
 STRING_KEYWORDS = "const, enum, format, maxLength, minLength, pattern, type"
 LINK_KEYWORDS = "contains, items, maxContains, maxItems, minContains, minItems, type"

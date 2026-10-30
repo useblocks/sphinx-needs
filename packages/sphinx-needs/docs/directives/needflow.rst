@@ -104,7 +104,8 @@ To select a root need for the flowchart and its connected needs, you can use the
 This takes the id of the need you want to use as the root,
 and then traverses the tree of connected needs, to create an initial selection of needs to show in the flowchart.
 
-Connections are limited by the link types you have defined in the ``:link_types:`` option, or all link types if not defined.
+Connections are limited by the link types you have defined in the ``:link_types:`` option,
+or, if not defined, every link type but the summary ones (:ref:`needflow_link_types`).
 The direction of connections can be set with the ``:root_direction:`` option:
 ``both`` (default), ``incoming`` or ``outgoing``.
 
@@ -322,7 +323,13 @@ Must contain a comma separated list of link type names.
        :link_types: links,blocks
 
 
-By default, we show all link_types.
+By default, we show every link type but the summary ones (``summary = true`` in :ref:`needs_links`):
+a summary link is a shortcut across the trace (:ref:`needs_derive_summary`), so drawing it beside the links it shortcuts
+would show every path twice; it is drawn only where it is named here.
+
+.. versionchanged:: 9.2.0
+
+   A summary link type is left out of the default.
 
 An identical link can show up twice in the generated needflow, if the ``copy``
 option of a specific link type was set to ``True``.

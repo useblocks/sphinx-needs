@@ -11,7 +11,13 @@ is computed after every node it reads, as the call text says what it reads: a
 need, a variant the fields of its own need that any of its conditions names. When the
 need's own ``links`` are computed in the same stratum as such a ``check_linked_values``
 (or ``links_only`` sum), which needs they name is known only once they are computed:
-the call reads each field through its column instead, on every need.
+the call reads each field through its column instead, on every need. A ``copy`` or
+``collect`` declared on a link type (a path) is a link field's node too: it reads its
+``field`` on each need its ``over`` names, so needs reading one another's around a ring
+are a cycle, as for a roll-up of a field's own value; its ``over`` names a link type no
+rule computes and its ``field`` a link type (each refused at load otherwise), and where
+a call computes the need's own ``over`` in the stratum, it waits for it and reads the
+field through its column.
 
 A strongly connected group of nodes is a cycle: its members are not computed, and
 hold their placeholder (:func:`placeholder`: a list keeps its written items, any other
@@ -1106,6 +1112,8 @@ class _RuleReads(_CallReads):
                     self._read(self.need.id, name)
         elif rule.kind == "copy" and rule.over is None:
             self._read(rule.from_need or self.need.id, rule.field)
+        elif rule.path:
+            self._path(rule.over, rule.field, where)
         else:
             assert rule.over is not None, "every other kind has an over"
             targets = (
@@ -1121,6 +1129,51 @@ class _RuleReads(_CallReads):
             self.reads.scope = _appended(
                 self.reads.scope, OutOfScope(self.what, tuple(self.scope))
             )
+
+    def _path(self, over: str | None, field: str | None, where: frozenset[str]) -> None:
+        """The reads of a ``copy`` or ``collect`` on a link type, computed with the
+        link types: ``field`` and the names of ``where`` on each need ``over`` names.
+
+        The node waits for the need's own ``over`` when it is computed in this
+        stratum. The needs ``over`` names are known here when no rule or call computes
+        it on the need, or when a ``union`` does, of members the same holds of (read
+        through them, :meth:`_static_targets`). Otherwise (a ``links``,
+        ``content_links`` or path rule, or a call) which needs it names is known only
+        once it is computed: each name is read through its column, as :meth:`_linked`
+        does. A ``collect`` of its own link type over needs reading it back is a
+        cycle, as an own-field roll-up is.
+        """
+        assert over is not None and field is not None, "a path has both"
+        own = (self.need.id, over)
+        self._read(*own)
+        names = [field, *sorted(where)]
+        targets = self._static_targets(over, frozenset())
+        if targets is None:
+            for name in names:
+                self._column(name, None, own)
+            return
+        for target in targets:
+            for name in names:
+                self._read(target, name)
+
+    def _static_targets(self, over: str, seen: frozenset[str]) -> list[str] | None:
+        """The ids of the needs the need's ``over`` names, if they are known before the
+        stratum is computed: ``over`` is not computed on the need in it, or a
+        ``union`` computes it whose members' are known (recursively); else ``None``.
+        """
+        node = (self.need.id, over)
+        if self.project.nodes.get(node) != self.stratum:
+            return [target["id"] for target in self._over(self.need.id, over)]
+        call = self.project.rules.get(node)
+        if call is None or not is_union(call.rule) or over in seen:
+            return None
+        ids: dict[str, None] = {}
+        for member in call.rule.fields:
+            found = self._static_targets(member, seen | {over})
+            if found is None:
+                return None
+            ids.update(dict.fromkeys(found))
+        return list(ids)
 
     def _names(self, predicate: str | None) -> frozenset[str]:
         if predicate is None:

@@ -838,6 +838,11 @@ class LinkSchema:
     a ``union`` link type replaces it)."""
     allow_dead_links: bool = False
     """If True, add a 'forbidden' class to dead links instead of warning."""
+    summary: bool = False
+    """Whether the link type is a summary (``summary = true``, or a ``copy`` or
+    ``collect`` rule computes it): its links materialise a path, not an edge, so it is
+    read where it is named, and left out of every view reading all link types (a
+    needflow without ``link_types``). Like ``display``, the same on every need type."""
     target_types: LinkTargetTypes | None = None
     """The need types the links may point to (``target_types``); ``None``: any.
 
@@ -902,6 +907,8 @@ class LinkSchema:
             raise ValueError("allow_extend must be a boolean.")
         if not isinstance(self.directive_option, bool):
             raise ValueError("directive_option must be a boolean.")
+        if not isinstance(self.summary, bool):
+            raise ValueError("summary must be a boolean.")
         if not isinstance(self.predicate_defaults, tuple) or not all(
             isinstance(pair, tuple) and len(pair) == 2
             for pair in self.predicate_defaults
@@ -966,6 +973,21 @@ class LinkSchema:
             return None
         rule = self.rule_for(need["type"])
         return rule if is_union(rule) else None
+
+    def path_on(self, need: NeedItem) -> DeriveRule | None:
+        """The ``copy`` or ``collect`` rule that computed this link type on ``need``,
+        if one did (:attr:`~sphinx_needs.derive.DeriveRule.path`).
+
+        Its links are read from other needs' links, so, as for a union, it reports no
+        dead link of its own, nor does a dead link of it make one forbidden: the link
+        type it collects does, where the link is written. A need from ``needimport`` or
+        ``needs_external_needs`` keeps the links its file gives: there the link type is
+        checked as any other.
+        """
+        if need["is_import"] or need["is_external"]:
+            return None
+        rule = self.rule_for(need["type"])
+        return rule if isinstance(rule, DeriveRule) and rule.path else None
 
     def off_type_value(self) -> list[NeedLink]:
         """The links a need holds when its type has no rule (see :meth:`rule_for`).
@@ -1307,8 +1329,9 @@ class LinkShape(FieldShape, Protocol):
     """The shape of a link type: what is the same on every need type.
 
     Besides a field's shape, how its links are drawn (``display``), whether they are
-    copied into ``links`` (``copy``) and whether a dead link is allowed
-    (``allow_dead_links``): every need type declares a link type with the same ones.
+    copied into ``links`` (``copy``), whether a dead link is allowed
+    (``allow_dead_links``) and whether it is a summary (``summary``): every need type
+    declares a link type with the same ones.
     """
 
     @property
@@ -1326,7 +1349,12 @@ class LinkShape(FieldShape, Protocol):
     @property
     def allow_dead_links(self) -> bool: ...
 
+    @property
+    def summary(self) -> bool: ...
+
     def union_on(self, need: NeedItem) -> DeriveRule | None: ...
+
+    def path_on(self, need: NeedItem) -> DeriveRule | None: ...
 
 
 class FieldsSchema:
@@ -2469,9 +2497,9 @@ def narrowing_problems(
        against the schema of ``base`` (that defect is the field's, which validation
        reports on each need); a literal the declaration introduces must be valid
        against its schema; a dynamic function or a variant is not checked;
-    10. for a link type, the same ``display``, ``copy``, ``allow_dead_links`` and
-        ``parse_conditions``: a link type is drawn and resolved the same on every need
-        type;
+    10. for a link type, the same ``display``, ``copy``, ``allow_dead_links``,
+        ``summary`` and ``parse_conditions``: a link type is drawn and resolved the
+        same on every need type;
     11. for a link type whose ``base`` has ``target_types``, ``target_types`` whose
         accepted types (a listed type and the types inheriting from it, the EXPANDED
         sets compared) are among those of ``base``: a link a need of the type may
@@ -2539,6 +2567,7 @@ def narrowing_problems(
             ("display", overlay.display == base.display),
             ("copy", overlay.copy == base.copy),
             ("allow_dead_links", overlay.allow_dead_links == base.allow_dead_links),
+            ("summary", overlay.summary == base.summary),
             ("parse_conditions", overlay.parse_conditions == base.parse_conditions),
         ):
             if not same:
