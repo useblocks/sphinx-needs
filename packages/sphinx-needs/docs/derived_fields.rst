@@ -256,6 +256,18 @@ and only the needs whose rule comes later are reported (``needs.derive_scope``).
 The kinds at a glance
 ---------------------
 
+Pick a kind by what the need should show:
+
+- a value written on another need, such as the owner of the specification a test links to: ``copy``;
+- a total, such as the effort of a story's tasks: ``sum``; how many, such as the open tests of a requirement: ``count``;
+- the worst or best value, such as the highest risk of a requirement's implementations: ``min`` or ``max``;
+- a verdict, such as whether every test of a requirement passed: ``any`` or ``all``;
+- the values of several needs as one list, such as the requirements a test traces to: ``collect``;
+- links that follow from the needs' fields, or from the references in their text: ``links``, ``content_links``;
+- the links of several link types as one: ``union``;
+- the far ends of a chain, such as the requirements a test result is evidence for, as links: ``copy`` or ``collect`` on a link type;
+- a value that changes when a need does, to notice a change since a review: ``hash`` or ``fingerprint``.
+
 .. list-table::
    :header-rows: 1
    :widths: 14 10 16 26 34
@@ -355,15 +367,19 @@ Values from linked needs
 These kinds compute a field's value from the needs a rule reads, its candidates:
 the needs ``over`` names (see :ref:`needs_derive_computed`), and for ``copy`` also the need ``from`` names,
 this need itself, or the needs a ``join`` matches.
+Each stores one value per need (:ref:`needs_derive_cost`).
+``over`` follows a link type either way:
+``over = "links"`` reads the needs this need links to,
+and ``over = "tests_back"`` the needs that link to this need in their ``tests``,
+such as the tests of a requirement when the tests name the requirement.
 
 .. _`needs_derive_kind_copy`:
 
 copy
 ~~~~
 
-``copy`` reads one field: this need's own (with neither ``over`` nor ``from``), that of the need ``from`` names,
-or that of the needs ``over`` names or a ``join`` matches.
-Use it when a need shows a value written on another need, such as the owner of the specification a test links to:
+``copy`` shows on a need a value written on another need,
+such as the owner of the specification a test links to, so that a table of tests shows whom to ask:
 
 .. code-block:: toml
 
@@ -375,6 +391,12 @@ Use it when a need shows a value written on another need, such as the owner of t
    derive = { kind = "copy", field = "owner", over = "links" }
 
 A test whose ``links`` names a specification with ``owner`` ``alice`` holds ``spec_owner`` ``"alice"``.
+
+``copy`` reads one field: this need's own (with neither ``over`` nor ``from``), that of the need ``from`` names,
+or that of the needs ``over`` names or a ``join`` matches.
+A copy of the need's own field is where a roll-up starts, as on the tasks of :ref:`needs_derive_by_type`.
+On a link type, ``copy`` of ``id`` links the needs ``over`` names instead of listing their ids
+(:ref:`needs_derive_link_chain`).
 
 ``copy`` over several targets takes the one with the lowest need id among those that set the field
 (``select = "first"``), the same and a ``needs.derive_unique`` warning when several set it (``"unique"``),
@@ -451,6 +473,10 @@ the back links of each rung (``<link type>_back``) as ``over``:
 With ``TEST_1`` and ``TEST_2`` testing the implementation,
 the implementation, the specification and both requirements hold ``reached_by`` ``["TEST_1", "TEST_2"]``.
 
+A list of ids suits a table column or a filter (``"REQ_1" in req_ids``).
+To have the far ends as links instead, drawn on the need and with back links on the requirements,
+declare the same rules on a link type (:ref:`needs_derive_link_chain`).
+
 .. _`needs_derive_join`:
 
 Matching a field: the join role
@@ -458,6 +484,8 @@ Matching a field: the join role
 
 .. versionadded:: 9.1.0
 
+Some needs refer to others by a value rather than by a link:
+a test names the test cases it runs, and the specification describing each case holds the same name.
 ``join = { field = "<field>", equals = "<own field>" }`` makes the candidates of a ``links`` or ``copy`` rule
 the needs whose ``field`` equals one of this need's ``equals`` values,
 such as the specifications a test names in its ``test_case`` field by their ``case_name``:
@@ -502,6 +530,15 @@ such as the specifications a test names in its ``test_case`` field by their ``ca
 
 ``TEST_SESSION`` covers ``SPEC_LOGIN``, ``SPEC_LOGOUT`` and ``SPEC_REMEMBER`` (whose ``case_name`` holds ``login`` too),
 and its ``owners`` are ``["alice", "bob"]``; a spec, which has no ``test_case``, covers nothing.
+
+Bear in mind:
+
+- **Values, not ids.** A join compares values exactly, so a test naming ``Login`` matches no ``login``;
+  where the test can name the specification's id, a written link is simpler.
+- **Incremental builds.** A ``links`` rule, with ``join`` too, makes every change of a need re-write every page holding a need;
+  the pages of the needs holding a ``copy`` with ``join`` are re-written on every change of a need (:ref:`incremental_builds`).
+
+The rules:
 
 - **The match.** Both fields are read the same way:
   a string is split on ``,`` and each value stripped of whitespace, an array of strings is taken item by item
@@ -565,6 +602,10 @@ Use it for a total over linked needs, such as the hours of a requirement's open 
 
 A need linking implementations of 3 hours (``done``), 5 hours and 2 hours (both ``open``) holds ``open_hours`` ``7.0``.
 
+A candidate that does not set ``hours``, or holds no number there, adds nothing,
+and a need with no candidate holds ``0.0`` (:ref:`needs_derive_computed`).
+To roll a total up through several rungs, sum the derived field itself on each rung (:ref:`needs_derive_by_type`).
+
 ``sum`` adds in the order of the candidates.
 
 .. _`needs_derive_kind_count`:
@@ -585,6 +626,10 @@ Use it to know on one need how many needs point at it, such as the open tests of
 
 A requirement that one ``open`` and one ``passed`` test name in ``tests`` holds ``open_tests`` ``1``.
 
+The tests name the requirement, so the requirement reads them through the back links, ``tests_back``.
+A count stores one number per need: it is the light way to know how many needs point at a need,
+where a ``links`` rule would store the needs themselves on every need (:ref:`needs_derive_cost`).
+
 .. _`needs_derive_kind_min_max`:
 
 min and max
@@ -604,7 +649,9 @@ Use them for the worst or best value among linked needs, such as the highest ris
 
 A need linking implementations of risk ``medium`` and ``low`` holds ``max_risk`` ``"medium"``.
 
-``min`` and ``max`` order numbers by value, and a string by the order of its ``enum``.
+``min`` and ``max`` order numbers by value, and a string by the order of its ``enum``:
+list the ``enum`` from least to greatest, as ``low``, ``medium``, ``high`` above.
+A string field without an ``enum`` has no order, and is refused (``needs.derive_invalid``).
 
 With ``transitive = true``, ``min`` and ``max`` read every need reachable through ``over``, each once:
 a need on a cycle reaches itself, so every member of a cycle has the same value;
@@ -614,6 +661,8 @@ reads the value each reached need computes, so needs linking one another in a cy
 (``needs.derive_cycle``) rather than closed over.
 With ``include_self = true`` such a rule reads its own value on every need, which is a ``needs.derive_cycle``
 on each: an own-field roll-up leaves ``include_self`` off.
+A ``transitive`` rule reads needs it does not name, so an incremental build re-writes the pages of the needs holding it
+on every change of a need (:ref:`incremental_builds`).
 
 .. _`needs_derive_kind_any_all`:
 
@@ -671,6 +720,7 @@ A need linking implementations tagged ``io, parser`` and ``io, cache`` holds ``l
 ``collect`` keeps each value once, in the order of the candidates, a list's items each.
 Collecting a derived list field over the next rung of a chain carries the list down it
 (:ref:`needs_derive_rollup_rung_up`).
+On a link type, ``collect`` of a link type carries links down the chain instead (:ref:`needs_derive_link_chain`).
 
 .. _`needs_derive_link_lists`:
 
