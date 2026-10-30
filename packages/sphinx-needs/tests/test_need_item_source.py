@@ -754,3 +754,76 @@ def _need(source: Any) -> need_item.NeedItem:
         extras={},
         links={},
     )
+
+
+@pytest.mark.xfail(strict=True, reason="fix round 3: the seam walks the fields")
+def test_a_field_added_to_the_source_is_compared_by_the_seam():
+    """The seam fails safe, as #2414's key did: it compares every field but the named
+    line fields and ``dict_repr``, so a field added to the class later is compared,
+    and a need differing in it counts as changed (re-written), never as "only moved"."""
+    from sphinx_needs.need_item import NeedItemSource
+
+    @dataclasses.dataclass(slots=True, frozen=True, init=False, repr=False)
+    class Faceted(NeedItemSource):
+        facet: str
+
+        def __init__(self, hops: Any = (), *, facet: str, **keywords: Any) -> None:
+            NeedItemSource.__init__(self, hops, **keywords)
+            object.__setattr__(self, "facet", facet)
+
+    one = Faceted((PAGE_A,), lineno=3, facet="one")
+    other = Faceted((PAGE_A,), lineno=3, facet="other")
+    moved = Faceted((PAGE_A,), lineno=13, facet="one")
+    assert one != other
+    assert one._without_lines() != other._without_lines()
+    assert not _need(one).moved_only(_need(other))
+    assert _need(one).moved_only(_need(moved))
+
+
+class _ProtocolSource:
+    """A third party's source, which obeys ``NeedItemSourceProtocol`` only."""
+
+    def __init__(self, lineno: int) -> None:
+        self.lineno = lineno
+
+    @property
+    def dict_repr(self) -> dict[str, Any]:
+        return _keys("a", self.lineno)
+
+
+@dataclasses.dataclass(frozen=True)
+class _DataclassSource:
+    """A third party's source that is a dataclass with hops and a line."""
+
+    hops: tuple[NeedSourceHop, ...]
+    lineno: int
+
+    @property
+    def dict_repr(self) -> dict[str, Any]:
+        return _keys("a", self.lineno)
+
+
+def test_a_third_party_source_takes_the_fallback_not_the_seam():
+    """``_without_lines`` keeps #2414's fallback for a source that is no
+    ``NeedItemSource``: one that is no dataclass is compared as it is (so a change of
+    its line is a change, never a move); a dataclass is compared by its fields but the
+    line fields, its hops without their lines."""
+    from sphinx_needs.need_item import _without_lines
+
+    plain = _ProtocolSource(3)
+    assert _without_lines(plain) is plain
+    assert not _need(plain).moved_only(_need(_ProtocolSource(13)))
+
+    def lined(start: int, path: str = "a.rst") -> NeedSourceHop:
+        return dataclasses.replace(
+            LINED_A,
+            physical=NeedSourcePhysical(
+                root="srcdir", path=path, start_line=start, end_line=start + 1
+            ),
+        )
+
+    before = _DataclassSource((lined(5),), 5)
+    assert _need(before).moved_only(_need(_DataclassSource((lined(15),), 15)))
+    assert not _need(before).moved_only(
+        _need(_DataclassSource((lined(15, "b.rst"),), 15))
+    )
