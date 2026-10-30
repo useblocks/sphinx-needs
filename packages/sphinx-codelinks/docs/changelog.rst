@@ -33,6 +33,10 @@ New and Improved
   derived through Sphinx-Needs' public ``generate_need_id``, where it imported the private
   ``_make_hashed_id``; every id is the one it was
   (`#2407 <https://github.com/useblocks/sphinx-needs/issues/2407>`__).
+- 🔧 The guard that let a Sphinx-Needs without ``ingest_need_record`` (before 9.0.0) import
+  this package, and the warning a directive with multi-line needs gave there, are gone:
+  the floor has been Sphinx-Needs 9.0.0 or later since 2.0.0
+  (`#2408 <https://github.com/useblocks/sphinx-needs/issues/2408>`__).
 
 .. _`release:2.0.1`:
 

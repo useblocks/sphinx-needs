@@ -47,12 +47,8 @@ from sphinx_needs.api import (
     NeedItemSource,
     create_need,
     generate_need_id,
+    ingest_need_record,
 )
-
-try:  # remove at the 9.0.0 floor bump: the record path is new in Sphinx-Needs 9.0.0
-    from sphinx_needs.api import ingest_need_record
-except ImportError:  # pragma: no cover - the tests stub the name instead
-    ingest_need_record = None
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.utils import add_doc, coerce_to_boolean
@@ -539,8 +535,6 @@ class SourceTracingDirective(SphinxDirective):
         unknown: set[str] = set()
 
         def ingest(markup: str | None) -> list[nodes.Node]:
-            # render_needs passes no block on without it (the guard for a Sphinx-Needs before the 9.0.0 floor)
-            assert ingest_need_record is not None
             created, _ = ingest_need_record(
                 self.env.app,
                 self.state,
@@ -638,17 +632,6 @@ class SourceTracingDirective(SphinxDirective):
         anchors: dict[str, tuple[str, list[tuple[int, str, str]]]] = {}
         root = src_analyse.git_root or src_analyse.analyse_config.src_dir
         multiline_needs = src_analyse.multiline_needs
-        if multiline_needs and ingest_need_record is None:
-            # remove at the 9.0.0 floor bump, with the guarded import
-            logger.warning(
-                "this sphinx-needs has no ingest_need_record; multi-line needs are "
-                f"rendered from sphinx-needs 9.0.0 on: {len(multiline_needs)} not "
-                "rendered, the one-line needs were created",
-                type="codelinks",
-                subtype="multiline_need",
-                location=self.get_location(),
-            )
-            multiline_needs = []
         markers: list[Marker] = sorted(
             [*src_analyse.oneline_needs, *multiline_needs],
             key=lambda marker: (
