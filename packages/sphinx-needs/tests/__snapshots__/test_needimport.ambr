@@ -288,9 +288,6 @@
             'id': 'T_5CCAA',
             'is_import': True,
             'lineno': 4,
-            'parent_needs_back': list([
-              'T_C3893',
-            ]),
             'section_name': 'TEST DOCUMENT IMPORT',
             'sections': list([
               'TEST DOCUMENT IMPORT',
@@ -316,10 +313,6 @@
             'links': list([
               'IMPL_01',
               'OWN_ID_123',
-            ]),
-            'parent_need': 'T_5CCAA',
-            'parent_needs': list([
-              'T_5CCAA',
             ]),
             'section_name': 'TEST DOCUMENT IMPORT',
             'sections': list([
@@ -648,9 +641,6 @@
             'id': 'collapsed_T_5CCAA',
             'is_import': True,
             'lineno': 16,
-            'parent_needs_back': list([
-              'collapsed_T_C3893',
-            ]),
             'section_name': 'COLLAPSED',
             'sections': list([
               'COLLAPSED',
@@ -680,10 +670,6 @@
             'links': list([
               'collapsed_IMPL_01',
               'collapsed_OWN_ID_123',
-            ]),
-            'parent_need': 'collapsed_T_5CCAA',
-            'parent_needs': list([
-              'collapsed_T_5CCAA',
             ]),
             'section_name': 'COLLAPSED',
             'sections': list([
@@ -740,13 +726,6 @@
             'links_back': list([
               'hidden_T_C3893',
             ]),
-            'parent_need': 'hidden_TEST_01',
-            'parent_needs': list([
-              'hidden_TEST_01',
-            ]),
-            'parent_needs_back': list([
-              'hidden_OWN_ID_123',
-            ]),
             'section_name': 'HIDDEN',
             'sections': list([
               'HIDDEN',
@@ -773,13 +752,6 @@
               'hidden_IMPL_01',
               'hidden_T_C3893',
             ]),
-            'parent_need': 'hidden_IMPL_01',
-            'parent_needs': list([
-              'hidden_IMPL_01',
-            ]),
-            'parent_needs_back': list([
-              'hidden_REQ_001',
-            ]),
             'section_name': 'HIDDEN',
             'sections': list([
               'HIDDEN',
@@ -805,13 +777,6 @@
             'links_back': list([
               'hidden_S_503A1',
             ]),
-            'parent_need': 'hidden_OWN_ID_123',
-            'parent_needs': list([
-              'hidden_OWN_ID_123',
-            ]),
-            'parent_needs_back': list([
-              'hidden_ROLES_REQ_1',
-            ]),
             'section_name': 'HIDDEN',
             'sections': list([
               'HIDDEN',
@@ -832,13 +797,6 @@
             'is_import': True,
             'lineno': 9,
             'links_back': list([
-              'hidden_ROLES_REQ_2',
-            ]),
-            'parent_need': 'hidden_REQ_001',
-            'parent_needs': list([
-              'hidden_REQ_001',
-            ]),
-            'parent_needs_back': list([
               'hidden_ROLES_REQ_2',
             ]),
             'section_name': 'HIDDEN',
@@ -862,13 +820,6 @@
             'links': list([
               'hidden_ROLES_REQ_1',
             ]),
-            'parent_need': 'hidden_ROLES_REQ_1',
-            'parent_needs': list([
-              'hidden_ROLES_REQ_1',
-            ]),
-            'parent_needs_back': list([
-              'hidden_R_22EB2',
-            ]),
             'section_name': 'HIDDEN',
             'sections': list([
               'HIDDEN',
@@ -887,13 +838,6 @@
             'id': 'hidden_R_22EB2',
             'is_import': True,
             'lineno': 9,
-            'parent_need': 'hidden_ROLES_REQ_2',
-            'parent_needs': list([
-              'hidden_ROLES_REQ_2',
-            ]),
-            'parent_needs_back': list([
-              'hidden_R_2A9D0',
-            ]),
             'section_name': 'HIDDEN',
             'sections': list([
               'HIDDEN',
@@ -915,13 +859,6 @@
             'id': 'hidden_R_2A9D0',
             'is_import': True,
             'lineno': 9,
-            'parent_need': 'hidden_R_22EB2',
-            'parent_needs': list([
-              'hidden_R_22EB2',
-            ]),
-            'parent_needs_back': list([
-              'hidden_R_F4722',
-            ]),
             'section_name': 'HIDDEN',
             'sections': list([
               'HIDDEN',
@@ -951,13 +888,6 @@
             'links_back': list([
               'hidden_OWN_ID_123',
             ]),
-            'parent_need': 'hidden_R_2A9D0',
-            'parent_needs': list([
-              'hidden_R_2A9D0',
-            ]),
-            'parent_needs_back': list([
-              'hidden_S_01A67',
-            ]),
             'section_name': 'HIDDEN',
             'sections': list([
               'HIDDEN',
@@ -980,13 +910,6 @@
             'id': 'hidden_S_01A67',
             'is_import': True,
             'lineno': 9,
-            'parent_need': 'hidden_R_F4722',
-            'parent_needs': list([
-              'hidden_R_F4722',
-            ]),
-            'parent_needs_back': list([
-              'hidden_S_503A1',
-            ]),
             'section_name': 'HIDDEN',
             'sections': list([
               'HIDDEN',
@@ -1018,13 +941,6 @@
             'links': list([
               'hidden_REQ_001',
             ]),
-            'parent_need': 'hidden_S_01A67',
-            'parent_needs': list([
-              'hidden_S_01A67',
-            ]),
-            'parent_needs_back': list([
-              'hidden_S_D70B0',
-            ]),
             'section_name': 'HIDDEN',
             'sections': list([
               'HIDDEN',
@@ -1046,13 +962,6 @@
             'id': 'hidden_S_D70B0',
             'is_import': True,
             'lineno': 9,
-            'parent_need': 'hidden_S_503A1',
-            'parent_needs': list([
-              'hidden_S_503A1',
-            ]),
-            'parent_needs_back': list([
-              'hidden_T_5CCAA',
-            ]),
             'section_name': 'HIDDEN',
             'sections': list([
               'HIDDEN',
@@ -1075,9 +984,6 @@
             'id': 'hidden_TEST_01',
             'is_import': True,
             'lineno': 9,
-            'parent_needs_back': list([
-              'hidden_IMPL_01',
-            ]),
             'section_name': 'HIDDEN',
             'sections': list([
               'HIDDEN',
@@ -1096,13 +1002,6 @@
             'id': 'hidden_T_5CCAA',
             'is_import': True,
             'lineno': 9,
-            'parent_need': 'hidden_S_D70B0',
-            'parent_needs': list([
-              'hidden_S_D70B0',
-            ]),
-            'parent_needs_back': list([
-              'hidden_T_C3893',
-            ]),
             'section_name': 'HIDDEN',
             'sections': list([
               'HIDDEN',
@@ -1130,10 +1029,6 @@
             'links': list([
               'hidden_IMPL_01',
               'hidden_OWN_ID_123',
-            ]),
-            'parent_need': 'hidden_T_5CCAA',
-            'parent_needs': list([
-              'hidden_T_5CCAA',
             ]),
             'section_name': 'HIDDEN',
             'sections': list([
@@ -1565,9 +1460,6 @@
             'id': 'test_T_5CCAA',
             'is_import': True,
             'lineno': 23,
-            'parent_needs_back': list([
-              'test_T_C3893',
-            ]),
             'section_name': 'TEST',
             'sections': list([
               'TEST',
@@ -1596,10 +1488,6 @@
             'links': list([
               'test_IMPL_01',
               'test_OWN_ID_123',
-            ]),
-            'parent_need': 'test_T_5CCAA',
-            'parent_needs': list([
-              'test_T_5CCAA',
             ]),
             'section_name': 'TEST',
             'sections': list([

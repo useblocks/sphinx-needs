@@ -54,9 +54,6 @@
             'option_2': 'SPEC_2',
             'option_4': 'STATUS_CLOSED',
             'option_5': 'STATUS_CLOSED',
-            'parent_needs_back': list([
-              'SPEC_3',
-            ]),
             'section_name': 'GLOBAL OPTIONS',
             'sections': list([
               'GLOBAL OPTIONS',
@@ -81,10 +78,6 @@
               'SPEC_2',
             ]),
             'option_2': 'SPEC_3',
-            'parent_need': 'SPEC_2',
-            'parent_needs': list([
-              'SPEC_2',
-            ]),
             'section_name': 'GLOBAL OPTIONS',
             'sections': list([
               'GLOBAL OPTIONS',
