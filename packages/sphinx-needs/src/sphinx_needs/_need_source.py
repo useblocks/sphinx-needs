@@ -1,9 +1,11 @@
 """Where a need's text came from: its source, as a list of hops.
 
 **Provisional.** Every ``NeedItemSource*`` class of :mod:`sphinx_needs.need_item` carries
-``hops``, innermost first: ``hops[0]`` is where the text is written, and the last hop
+``hops``, innermost first: ``hops[0]`` is the innermost place this build knows the need
+came through -- the file a directive is written in, the needs.json an imported need was
+read from, the service that made a need, an external need's page -- and the last hop
 with a ``document`` is the page the need is placed on (its *placement*, a role rather
-than a hop kind). The legacy location keys of a need -- ``docname``, ``lineno``,
+than a hop kind; an external need has none). The legacy location keys of a need -- ``docname``, ``lineno``,
 ``lineno_content``, ``is_import``, ``is_external``, ``external_url`` -- are computed from
 the hops plus a few stored legacy facts, and are unchanged. Nothing here is re-exported
 from a public module, and the shape may change in a minor release until it reaches

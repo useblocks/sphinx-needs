@@ -49,9 +49,10 @@ Improvements
 - ✨ Each need now records where its text came from, as a list of hops on ``need.source`` (provisional; see
   :ref:`api`, :pr:`2399`)
 
-  ``need.source.hops`` names the file the need is written in (an included file's own, in an include; before it, an
-  imported file or a service), then the page the need is placed on, with its sections and the domain objects it is
-  written in. A hop records a line range only where the file, read from disk, holds the need's text there: under
+  ``need.source.hops`` starts at the innermost place sphinx-needs knows the need came through -- the file a
+  directive is written in (an included file's own, in an include), the ``needs.json`` an imported need was read
+  from, the service that made a need, an external need's page -- and ends at the page the need is placed on, with
+  its sections and the domain objects it is written in (an external need has no such page). A hop records a line range only where the file, read from disk, holds the need's text there: under
   reStructuredText every line of the directive equals the file's line (whole lines), under MyST the line opens the
   directive's fence with its name and title; elsewhere it records no line (it can still be wrong only where the
   file holds an identical copy of the need's text at the line the parser claims). It is provisional: the

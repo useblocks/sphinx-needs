@@ -126,10 +126,15 @@ Data
 
 .. note::
 
-   **Provisional**: the source of every need sphinx-needs creates also has ``hops``, where the need's text came from,
-   innermost first. The first hop is the file the need is written in (an included file's own, in an include; before
-   it, the imported file or the service that made the need); the last hop with a ``document`` is the page the need is
-   placed on, and carries its sections and the domain objects it is written in, outermost first. A hop has a line
+   **Provisional**: the source of a need sphinx-needs creates also has ``hops``, where the need's text came from,
+   innermost first. The first hop is the innermost place sphinx-needs knows the need came through: for a need
+   directive or ``list2need``, the file the need is written in (an included file's own, in an include; the module,
+   for an autodoc docstring); for an imported need, the ``needs.json`` it was read from (where the exporting project
+   wrote the need is not a hop yet); for a service, the service that made it, then the file of the ``needservice``
+   directive; for an external need, its page on the other site, its only hop. A need created
+   through the API has its page with no path, and no hops without a document. The last hop with a ``document`` is
+   the page the need is placed on (an external need has none), and carries its sections and the domain objects it
+   is written in, outermost first. A hop has a line
    range only where the file, read from disk, holds the need's text there: in reStructuredText every line of the
    directive equals the file's line (whole lines, after a block quote's or a table cell's border, and the bullets of
    the list item the directive opens); in MyST the line opens the directive's fence with its name and title.
