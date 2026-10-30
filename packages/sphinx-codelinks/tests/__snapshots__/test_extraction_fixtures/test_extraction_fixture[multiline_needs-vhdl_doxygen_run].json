@@ -1,0 +1,50 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 12
+      }
+    },
+    "tagged_scope": "entity counter is\nend entity counter;",
+    "need": {
+      "type": "impl",
+      "title": "Documented counter",
+      "id": "IMPL_VHDL_BANG",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.vhd",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 4
+      },
+      "end": {
+        "line": 3,
+        "col": 12
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "entity_declaration",
+        "start": 4,
+        "end": 5
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "entity_declaration"
+  }
+]

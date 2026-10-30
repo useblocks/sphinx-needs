@@ -1,0 +1,48 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 6
+      },
+      "end": {
+        "row": 1,
+        "column": 44
+      }
+    },
+    "tagged_scope": "signal cnt : integer := 0;",
+    "need": {
+      "title": "Counter signal",
+      "id": "IMPL_VHDL_SIGNAL",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "signal_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 36
+      },
+      "end": {
+        "row": 3,
+        "column": 69
+      }
+    },
+    "tagged_scope": "constant MAX : integer := 10;",
+    "need": {
+      "title": "Maximum",
+      "id": "IMPL_VHDL_CONSTANT",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "constant_declaration"
+  }
+]

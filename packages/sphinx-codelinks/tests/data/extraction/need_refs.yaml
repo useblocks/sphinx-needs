@@ -91,3 +91,14 @@ line_comment_ending_in_closer:
   source: |
     // @need-ids: REQ_1 */
     void f() {}
+
+vhdl_marker:
+  # A reference in a VHDL ``--`` comment, and one in a VHDL-2008 block comment.
+  lang: vhdl
+  config: default
+  extract: [need_refs]
+  source: |
+    -- @need-ids: REQ_1, REQ_2
+    entity top is
+    end entity top;
+    /* @need-ids: REQ_3 */

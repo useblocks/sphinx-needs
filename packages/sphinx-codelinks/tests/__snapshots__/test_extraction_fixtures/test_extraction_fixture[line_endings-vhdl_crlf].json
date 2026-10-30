@@ -1,0 +1,90 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 35
+      }
+    },
+    "tagged_scope": "entity top is\nend entity top;",
+    "need": {
+      "title": "Crlf need",
+      "id": "IMPL_VHDL_CRLF",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "entity_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 30
+      },
+      "end": {
+        "row": 2,
+        "column": 35
+      }
+    },
+    "tagged_scope": "entity top is\nend entity top;",
+    "need_ids": [
+      "REQ_1"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "entity_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 3
+      },
+      "end": {
+        "row": 5,
+        "column": 11
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "type": "impl",
+      "title": "Crlf block",
+      "id": "IMPL_VHDL_CRLF_BLOCK",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.vhd",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 4,
+        "col": 3
+      },
+      "end": {
+        "line": 6,
+        "col": 11
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 5
+      },
+      "scope": null
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": null
+  }
+]

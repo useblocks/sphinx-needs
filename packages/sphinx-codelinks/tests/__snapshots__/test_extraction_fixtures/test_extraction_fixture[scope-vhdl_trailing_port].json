@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 28
+      },
+      "end": {
+        "row": 2,
+        "column": 55
+      }
+    },
+    "tagged_scope": "clk : in std_logic",
+    "need": {
+      "title": "Clock",
+      "id": "IMPL_VHDL_PORT",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "interface_declaration"
+  }
+]

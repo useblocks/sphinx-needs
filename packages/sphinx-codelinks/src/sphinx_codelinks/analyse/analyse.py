@@ -22,6 +22,7 @@ from sphinx_codelinks.analyse.models import (
 from sphinx_codelinks.analyse.oneline_parser import (
     OnelineParserInvalidWarning,
     docstring_tag,
+    doxygen_tag,
     jsdoc_tag,
     oneline_parser,
 )
@@ -71,6 +72,7 @@ def _row_count(src_comment: SourceComment) -> int:
 _TAG_NAMES = {
     WarningSubTypeEnum.docstring_tag: "docstring tag",
     WarningSubTypeEnum.jsdoc_tag: "JSDoc tag",
+    WarningSubTypeEnum.doxygen_tag: "Doxygen tag",
 }
 
 
@@ -514,6 +516,10 @@ class SourceAnalyse:
         in_jsdoc = self.analyse_config.comment_type == CommentType.ts and _is_jsdoc(
             src_comment.node
         )
+        # Only a VHDL ``--!`` comment, Doxygen's VHDL comment, can hold Doxygen commands.
+        in_doxygen = self.analyse_config.comment_type == CommentType.vhdl and (
+            src_comment.node.text or b""
+        ).startswith(b"--!")
         for line in lines:
             if self._is_need_id_refs_line(line):
                 row_offset += 1
@@ -529,6 +535,13 @@ class SourceAnalyse:
                 kind, holders = WarningSubTypeEnum.jsdoc_tag, "JSDoc comments"
                 if tag is not None and not oneline_parser(line, oneline_comment_style):
                     # a tag line the one-line parser would ignore stays silent
+                    row_offset += 1
+                    continue
+            elif in_doxygen and start_sequence == "@":
+                # as for JSDoc: ``@`` is Doxygen's sigil, and a silent line stays silent
+                tag = doxygen_tag(line, start_sequence)
+                kind, holders = WarningSubTypeEnum.doxygen_tag, "Doxygen comments"
+                if tag is not None and not oneline_parser(line, oneline_comment_style):
                     row_offset += 1
                     continue
             if tag is not None:

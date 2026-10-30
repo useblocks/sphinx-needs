@@ -42,3 +42,18 @@ multi_line_scope_cr:
     void g() {}
     // @extra, IMPL_2, impl, [REQ_1], oops
     void h() {}
+
+vhdl_crlf:
+  # A VHDL ``--`` comment's node ends with its line break: under CRLF the grammar would
+  # hold the CR and leave the LF outside, under LF it holds the LF. Read either way, the
+  # markers, their columns and the multi-line need are the same.
+  lang: vhdl
+  config: default
+  line_endings: crlf
+  source: |
+    -- @Crlf need, IMPL_VHDL_CRLF, impl
+    entity top is
+    end entity top; -- @need-ids: REQ_1
+    -- @need impl: Crlf block
+    -- :id: IMPL_VHDL_CRLF_BLOCK
+    -- @endneed

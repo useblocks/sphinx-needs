@@ -68,6 +68,54 @@ SCOPE_NODE_TYPES = {
     },
     # @Bash Scope Node Types, IMPL_BASH_2, impl, [FE_BASH]
     CommentType.bash: {"function_definition"},
+    # @VHDL Scope Node Types, IMPL_VHDL_2, impl, [FE_VHDL]
+    # VHDL's design elements, which find_vhdl_associated_scope binds a marker to.
+    # Sequential statements are not among them: a marker among those documents its
+    # process or subprogram.
+    CommentType.vhdl: {
+        # design units
+        "entity_declaration",
+        "architecture_definition",
+        "package_declaration",
+        "package_definition",
+        "package_instantiation_declaration",
+        "configuration_declaration",
+        "context_declaration",
+        # subprograms
+        "subprogram_declaration",
+        "subprogram_definition",
+        "subprogram_instantiation_declaration",
+        # declarations
+        "type_declaration",
+        "subtype_declaration",
+        "component_declaration",
+        "constant_declaration",
+        "signal_declaration",
+        "variable_declaration",
+        "file_declaration",
+        "alias_declaration",
+        # generics, ports and parameters
+        "interface_declaration",
+        "interface_constant_declaration",
+        "interface_signal_declaration",
+        "interface_variable_declaration",
+        "interface_file_declaration",
+        "interface_type_declaration",
+        "interface_subprogram_declaration",
+        "interface_package_declaration",
+        # concurrent statements
+        "process_statement",
+        "block_statement",
+        "for_generate_statement",
+        "if_generate_statement",
+        "case_generate_statement",
+        "component_instantiation_statement",
+        "concurrent_simple_signal_assignment",
+        "concurrent_conditional_signal_assignment",
+        "concurrent_selected_signal_assignment",
+        "concurrent_assertion_statement",
+        "concurrent_procedure_call_statement",
+    },
 }
 
 logger = get_logger(__name__)
@@ -149,7 +197,7 @@ def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
         return False
 
 
-# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS]
+# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS, FE_VHDL]
 def init_tree_sitter(
     comment_type: CommentType, src_path: Path | None = None
 ) -> tuple[Parser, Query]:
@@ -221,6 +269,13 @@ def init_tree_sitter(
 
         parsed_language = Language(tree_sitter_bash.language())
         query = Query(parsed_language, SIMPLE_COMMENT_QUERY)
+    elif comment_type == CommentType.vhdl:
+        # @VHDL comment query for tree-sitter, IMPL_VHDL_3, impl, [FE_VHDL]
+        import tree_sitter_vhdl
+
+        parsed_language = Language(tree_sitter_vhdl.language())
+        # VHDL names its ``--`` and ``/* */`` comments as Rust does
+        query = Query(parsed_language, RUST_QUERY)
     else:
         raise ValueError(f"Unsupported comment style: {comment_type}")
     parser = Parser(parsed_language)
@@ -486,10 +541,94 @@ def find_jsonc_associated_structure(node: TreeSitterNode) -> TreeSitterNode | No
     return None
 
 
+# The VHDL nodes that wrap the design elements a leading comment documents: a marker
+# above one binds the wrapper's first item. A design unit's first item is the one after
+# its context clauses.
+VHDL_SCOPE_WRAPPER_TYPES = frozenset(
+    {
+        "design_unit",
+        "process_head",
+        "block_head",
+        "generate_head",
+        "generate_block",
+        "interface_list",
+    }
+)
+VHDL_CONTEXT_CLAUSE_TYPES = frozenset(
+    {"library_clause", "use_clause", "context_reference"}
+)
+VHDL_COMMENT_TYPES = frozenset({"line_comment", "block_comment"})
+
+
+def _vhdl_innermost_on_row(node: TreeSitterNode, row: int) -> TreeSitterNode | None:
+    """The innermost design element of ``node``'s subtree, ``node`` included, that
+    ends on ``row``, following the last non-comment child that ends there."""
+    found = None
+    current: TreeSitterNode | None = node
+    while current is not None:
+        if _matches_scope(current, CommentType.vhdl):
+            found = current
+        current = next(
+            (
+                child
+                for child in reversed(current.named_children)
+                if child.type not in VHDL_COMMENT_TYPES and child.end_point.row == row
+            ),
+            None,
+        )
+    return found
+
+
+# @VHDL comment-to-design-element association, IMPL_VHDL_4, impl, [FE_VHDL]
+def find_vhdl_associated_scope(node: TreeSitterNode) -> TreeSitterNode | None:
+    """Find the VHDL design element a comment documents.
+
+    A trailing comment -- the previous non-comment sibling ends on the comment's row --
+    documents the innermost design element ending on that row, a port inside its
+    ``interface_list`` included. A leading comment documents the next non-comment
+    sibling, if that is a design element, or the first item of a wrapper; the walk
+    never passes a sibling. Otherwise the comment documents the nearest enclosing
+    design element, or nothing at file level. Comment siblings are skipped: a VHDL
+    ``line_comment`` holds its newline, so the comment on the row above ends on this one.
+    """
+    row = node.start_point.row
+    previous = node.prev_named_sibling
+    while previous is not None and previous.type in VHDL_COMMENT_TYPES:
+        previous = previous.prev_named_sibling
+    if previous is not None and previous.end_point.row == row:
+        return _vhdl_innermost_on_row(previous, row) or find_enclosing_scope(
+            node, CommentType.vhdl
+        )
+    following = node.next_named_sibling
+    while following is not None and following.type in VHDL_COMMENT_TYPES:
+        following = following.next_named_sibling
+    if following is not None and following.type in VHDL_SCOPE_WRAPPER_TYPES:
+        skipped = (
+            VHDL_CONTEXT_CLAUSE_TYPES
+            if following.type == "design_unit"
+            else frozenset()
+        )
+        following = next(
+            (
+                child
+                for child in following.named_children
+                if child.type not in VHDL_COMMENT_TYPES and child.type not in skipped
+            ),
+            None,
+        )
+    if following is not None and _matches_scope(following, CommentType.vhdl):
+        return following
+    return find_enclosing_scope(node, CommentType.vhdl)
+
+
 def find_associated_scope(
     node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
 ) -> TreeSitterNode | None:
     """Find the associated scope of a comment."""
+    if comment_type == CommentType.vhdl:
+        # VHDL binds to the design element next to the comment, never past it
+        return find_vhdl_associated_scope(node)
+
     if comment_type == CommentType.yaml:
         # YAML uses different structure association logic
         return find_yaml_associated_structure(node)

@@ -1,0 +1,25 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 8
+      },
+      "end": {
+        "row": 4,
+        "column": 37
+      }
+    },
+    "tagged_scope": "proc : process (clk)\n  begin\n    -- @Count up, IMPL_VHDL_SEQ, impl\n    cnt <= cnt + 1;\n  end process proc;",
+    "need": {
+      "title": "Count up",
+      "id": "IMPL_VHDL_SEQ",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "process_statement"
+  }
+]

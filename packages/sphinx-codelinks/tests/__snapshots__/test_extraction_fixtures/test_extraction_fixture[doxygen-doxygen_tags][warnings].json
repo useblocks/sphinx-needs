@@ -1,0 +1,23 @@
+[
+  {
+    "file_path": "case.vhd",
+    "lineno": 1,
+    "msg": "'@brief' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen comments do not contain",
+    "type": "need",
+    "sub_type": "doxygen_tag"
+  },
+  {
+    "file_path": "case.vhd",
+    "lineno": 2,
+    "msg": "'@param' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen comments do not contain",
+    "type": "need",
+    "sub_type": "doxygen_tag"
+  },
+  {
+    "file_path": "case.vhd",
+    "lineno": 3,
+    "msg": "'@param' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen comments do not contain",
+    "type": "need",
+    "sub_type": "doxygen_tag"
+  }
+]
