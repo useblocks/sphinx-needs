@@ -458,9 +458,6 @@ def _external_links(app) -> dict[str, tuple[str, str]]:
     }
 
 
-@pytest.mark.xfail(
-    strict=True, reason="#2389: base_url is prefixed to an absolute target_url"
-)
 @pytest.mark.parametrize("test_app", [_ABSOLUTE_TARGET_URL_PROJECT], indirect=True)
 def test_external_needs_absolute_target_url_used_as_it_is(test_app):
     """A ``target_url`` rendering a scheme-authority URL gets no ``base_url`` prefix,

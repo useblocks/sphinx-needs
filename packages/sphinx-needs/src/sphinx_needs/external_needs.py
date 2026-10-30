@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 
 import requests
 from requests_file import FileAdapter
@@ -19,6 +20,9 @@ from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
 
 log = get_logger(__name__)
+
+# scheme://… or //…, not urlparse(...).scheme: an opaque "req:REQ_1" render stays joined
+_ABSOLUTE_TARGET_URL = re.compile(r"^([A-Za-z][A-Za-z0-9+.-]*:)?//")
 
 
 def load_external_needs(
@@ -110,7 +114,10 @@ def load_external_needs(
             if target_tpl:
                 # render jinja content
                 cal_target_url = target_tpl.render({"need": need})
-                external_url = f"{source['base_url']}/{cal_target_url}"
+                if _ABSOLUTE_TARGET_URL.match(cal_target_url):
+                    external_url = cal_target_url
+                else:
+                    external_url = f"{source['base_url']}/{cal_target_url}"
             else:
                 external_url = f"{source['base_url']}/{need.get('docname', '__error__')}.html#{key}"
 

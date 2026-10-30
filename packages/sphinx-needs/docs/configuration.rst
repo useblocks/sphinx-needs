@@ -3122,7 +3122,10 @@ keys:
 :base_url: Base url which is used to calculate the final, specific need url. Normally the path under which the ``index.html`` is provided.
   Base url supports also relative path, which starts from project build html folder (normally where ``index.html`` is located).
 :target_url: Allows to config the final calculated need url. (*optional*)
-  |br| If provided, ``target_url`` will be appended to ``base_url`` as the final calculate need url, e.g. ``base_url/target_url``.
+  |br| If provided, ``target_url`` will be appended to ``base_url`` as the final calculate need url, e.g. ``base_url/target_url``,
+  unless it renders an absolute URL (``scheme://…`` or ``//…``, such as ``"{{need['remote_url']}}"`` rendering
+  ``https://github.com/…``), which is used as it is; ``base_url`` may then be ``""``. A render with a scheme but no
+  ``//``, such as ``req:REQ_1``, is appended as before.
   If not, the external need url uses the default calculated ``base_url``.
   |br| The ``target_url`` supports Jinja context ``{{need[]}}``, ``need option`` used as key, e.g ``{{need['id']}}`` or ``{{need['type']}}``.
 :json_url: An url, which can be used to download the ``needs.json`` (or similar) file.
