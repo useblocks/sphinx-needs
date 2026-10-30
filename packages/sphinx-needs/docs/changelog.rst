@@ -318,8 +318,9 @@ Bug fixes
   its readers finished. Needs from
   ``needs_external_needs`` are not compared (:issue:`353`). See :ref:`incremental_builds`.
 
-- 🔧 ``ENV_DATA_VERSION`` is 16: the first build after upgrading re-reads every document, which records
-  the views and need roles each document holds
+- 🔧 ``ENV_DATA_VERSION`` is 17: the first build after upgrading re-reads every document, which records
+  the views and need roles each document holds, and computes the link types a ``copy`` or ``collect`` on a link
+  type, refused until now, computes
 
 Documentation
 .............

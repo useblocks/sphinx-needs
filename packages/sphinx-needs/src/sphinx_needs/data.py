@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 16
+ENV_DATA_VERSION: Final = 17
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -112,6 +112,14 @@ that show a need which changed: the category of every view (``needtable``,
 roles reference (``_needs_role_refs``). An environment pickled before it has neither,
 so its incremental builds would find no page to re-write; the bump re-reads every
 document once instead.
+
+Version 17 changes what the stored values mean again: a ``copy`` or ``collect``
+declared on a link type, which 9.1.0 refused (``needs.derive_invalid``, the link type
+empty), now computes a chain's far ends as links, with back links, and ``summary`` on
+a link type's entry, a key 9.1.0 did not read, now leaves the link type out of a
+needflow without ``:link_types:``. The configuration does not change, so without the
+bump an upgraded build would keep the empty link lists and the old diagrams on the
+pages whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
