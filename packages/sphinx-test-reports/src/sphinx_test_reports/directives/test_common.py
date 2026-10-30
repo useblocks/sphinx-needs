@@ -18,7 +18,7 @@ from sphinx.util import logging
 # `sphinx-needs>=8.5.0,<9` at the workspace import, so the `make_hashed_id` fallback this
 # used to carry could no longer run -- and no longer resolves, since the name is gone from
 # `sphinx_needs.api` entirely (measured against 8.5.0).
-from sphinx_needs.api import NeedItemSource, NeedSourceHop, create_need
+from sphinx_needs.api import NeedItemSource, create_need
 from sphinx_needs.api.need import _make_hashed_id
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
@@ -391,10 +391,7 @@ class TestCommonDirective(Directive):
         _, created = create_need(
             self.app,
             self.state,
-            NeedItemSource(
-                (NeedSourceHop(kind="page", document=self.env.docname),),
-                lineno=self.lineno,
-            ),
+            NeedItemSource.on_page(self.env.docname, lineno=self.lineno),
             need_type,
             title,
             id=need_id,
