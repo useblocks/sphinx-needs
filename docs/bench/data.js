@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793387625250,
+  "lastUpdate": 1793393901305,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27612,6 +27612,42 @@ window.BENCHMARK_DATA = {
             "value": 37.68948384500001,
             "unit": "s",
             "extra": "Commit: b088d64080fead25a692135489a6ff097b984a9a\nBranch: master\nTime: 2026-10-30T20:12:38+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c8b4b114044f0d5ac1cfd0b94927d065ddb9e5d3",
+          "message": "🐛 needs_external_needs: an absolute target_url is used as it is (#2429)\n\nA `needs_external_needs` source can now link each need to a URL its\nrecord carries. A `target_url` that renders an\nabsolute URL (`scheme://…` or `//…`) is that need's link and its\n`external_url`. Until now `base_url/` was always put\nin front of it. With `target_url: \"{{need.remote_url}}\"`, a `base_url:\n\"\"` linked every need to\n`/https://github.com/…`, and a `base_url` such as `https://site` to\n`https://site/https://github.com/…`. Every view\nlinks the URL as given, including a graphviz needflow, which until now\ndropped the link of a scheme-relative `//host`\nURL.\n\n| rendered `target_url` | before | after |\n|---|---|---|\n| `https://…`, `HTTPS://…`, `//host/…`, `file:///…` |\n`<base_url>/https://…` (broken) | used as it is |\n| `issue/REQ_1`, `req:REQ_1` (a scheme but no `//`), ` https://…`\n(leading space) | `<base_url>/…` | unchanged |\n| no `target_url` | `<base_url>/<docname>.html#<id>` | unchanged |\n\nThe test is a scheme-authority regex, `^([A-Za-z][A-Za-z0-9+.-]*:)?//`,\nheld in one constant. It is not\n`urlparse(...).scheme`, which would also catch an opaque `req:REQ_1`\nrender that works today, and which strips a\nleading space.\n\n**Two configurations change**, and the changelog names both:\n\n- A `base_url` that is itself a URL-prefix service, such as\n`https://proxy` in front of an absolute `target_url`, is no\nlonger put in front. The migration is one line: put the prefix in the\ntemplate,\n  `target_url: \"https://proxy/{{need['remote_url']}}\"`.\n- A template whose render starts with `//` because a leading field is\nempty (`\"/{{need['x']}}/{{need['id']}}\"` rendering\n`//REQ_1`) is now a scheme-relative URL, where it was `base_url//REQ_1`.\n\n**The converter's docs.** `packages/sphinx-test-reports/docs/cli.rst`\nsaid Sphinx-Needs renders an external need's link\nfrom the record's `external_url`. It never reads that key from a file.\nThe page now gives the two routes:\n\n- `needimport`: a `needs_string_links` entry on `remote_url`;\n- `needs_external_needs`: `target_url: \"{{need.remote_url}}\"`, with\n`base_url` allowed to be `\"\"`, from the next\n  Sphinx-Needs release.\n\nThe comment in `ub_test_reports/needs_export.py` is corrected to match.\nThese are docs and a comment only, so neither\npackage gets a changelog line.\n\n### Tests\n\nThe test is held once, as `_ABSOLUTE_URL` in `utils.py`, and both\n`external_needs.py` and the graphviz needflow use it.\n\n`doc_needs_external_needs_absolute_target_url` mounts one record under\nfourteen sources: seven templates, each with\n`base_url` set and with it `\"\"`. The tests assert both the need's\n`external_url` and the needtable `href`:\n\n- `test_external_needs_absolute_target_url_used_as_it_is`: absolute\nrenders. It was committed first as a strict xfail\n  and was red on master.\n- `test_external_needs_other_target_url_joined`: `impl:TEST_01`, a\nleading-space render and a relative path stay joined.\n  It passes on master and at the tip.\n- `test_external_needs_absolute_target_url_needflow`: a graphviz\nneedflow's `<area>` links each absolute render as the\nneedtable does. It was committed as a strict xfail; before the needflow\nchange the two `//cdn.example` renders had no\n  area.\n\nMutation proofs, each red:\n\n- a `urlparse(...).scheme` test fails the opaque and leading-space pins,\nand the `//host` pin;\n- removing the absolute branch fails the absolute pins;\n- stripping the render before matching fails the leading-space pin;\n- dropping the scheme-authority test from `_get_link_to_need`\n(`directives/needflow/_graphviz.py`) fails the needflow\n  pin.\n\nThe existing `doc_needs_external_needs_with_target_url` relative renders\nare unchanged.\n\nCloses #2389",
+          "timestamp": "2026-10-30T21:56:52+01:00",
+          "tree_id": "b056e79570df0cc043c1e5941283797399649fd6",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c8b4b114044f0d5ac1cfd0b94927d065ddb9e5d3"
+        },
+        "date": 1793393893187,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09359128199999844,
+            "unit": "s",
+            "extra": "Commit: c8b4b114044f0d5ac1cfd0b94927d065ddb9e5d3\nBranch: master\nTime: 2026-10-30T21:56:52+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.316149612000004,
+            "unit": "s",
+            "extra": "Commit: c8b4b114044f0d5ac1cfd0b94927d065ddb9e5d3\nBranch: master\nTime: 2026-10-30T21:56:52+01:00"
           }
         ]
       }
