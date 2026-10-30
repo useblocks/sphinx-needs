@@ -19,8 +19,10 @@ imports it.
 
 A hop's ``start_line`` / ``end_line`` is recorded only where it is a true 1-based line of
 that hop's file, the end inclusive; everywhere else it is ``None``. Every path is POSIX
-and relative to the Sphinx source directory (the one root, ``"srcdir"``), with ``..`` for
-a file outside it.
+and relative to its hop's root: the Sphinx source directory (``"srcdir"``), with ``..``
+for a file outside it, or, where ``root`` is ``None``, the producer's own root, which this
+build does not know (a test report's test file is relative to the test run's root), the
+path as the producer gives it.
 """
 
 from __future__ import annotations
@@ -62,9 +64,11 @@ class NeedSourcePhysical:
 
     root: str | None = None
     """The key of the root ``path`` is relative to: ``"srcdir"``, the Sphinx source
-    directory."""
+    directory; ``None``, the producer's own root, which this build does not know (the
+    test run's, for a test report's test file)."""
     path: str | None = None
-    """POSIX, relative to ``root``, with ``..`` for a file outside it."""
+    """POSIX, relative to ``root``, with ``..`` for a file outside it; under a ``None``
+    root, as the producer gives it."""
     url: str | None = None
     """For a file that is not on this machine: a downloaded ``needs.json``, the page of
     an external need."""
@@ -105,8 +109,9 @@ class NeedSourceHop:
     """A key into a registry of origins (a repository, a test run); ``None`` for now."""
     physical: NeedSourcePhysical | None = None
     semantic: tuple[NeedSourceSemantic, ...] | None = None
-    """Outermost to innermost; ``None`` until it is determined (the placement's, until
-    the doctree has been read)."""
+    """Outermost to innermost; ``None`` where it is not determined (the placement's,
+    until the doctree has been read), or where nothing finer than the file is known (a
+    ``file`` hop, a whole report)."""
     document: str | None = None
     """The docname, on the hop of a page the need is placed on."""
     language: str | None = None
