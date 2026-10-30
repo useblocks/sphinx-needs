@@ -1271,10 +1271,11 @@ def _need_record_params(
     *,
     reader: RecordReader = "import",
 ) -> tuple[dict[str, Any], set[str]]:
-    """The ``add_need`` keyword arguments for a needs.json-style record.
+    """The creation parameters of a needs.json-style record: its keys that the project
+    reads, ``type`` defaulting to ``""`` (see :func:`_create_from_record`).
 
     :param reader: Which reader the record is read by: the core fields it omits.
-    :return: The arguments, and the record's keys the project does not know (dropped).
+    :return: The parameters, and the record's keys the project does not know (dropped).
     """
     params = dict(record)
     map_legacy_keys(params)
@@ -1302,7 +1303,7 @@ def _need_record_params(
 
 
 def _check_record_params(params: Mapping[str, Any]) -> None:
-    """Refuse a record whose values ``add_need`` reads before it validates any field.
+    """Refuse a record whose values the creation reads before it validates any field.
 
     :raises InvalidNeedException: If its ``id`` is given but empty or not a string, its ``title``
         is missing or not a string, its ``content`` or ``type`` not a string, or its
@@ -1351,14 +1352,14 @@ def _record_params(
     reader: RecordReader,
     unknown_keys: set[str] | None = None,
 ) -> tuple[dict[str, Any], set[str]]:
-    """The one record path of both needs.json readers: a record's ``add_need``
-    keyword arguments, checked.
+    """The one record path of both needs.json readers: a record's creation
+    parameters, checked.
 
     :param reader: Which reader the record is read by.
     :param unknown_keys: If given, the record's keys unknown to the project are added
         to it before the record is checked, so a caller collecting them over several
         records has them also for a record that is refused.
-    :return: The arguments, and the record's keys the project does not know (dropped).
+    :return: The parameters, and the record's keys the project does not know (dropped).
     :raises InvalidNeedException: What :func:`_check_record_params` raises.
     """
     params, unknown = _need_record_params(record, needs_schema, reader=reader)
