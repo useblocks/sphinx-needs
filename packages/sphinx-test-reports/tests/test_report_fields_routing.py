@@ -166,6 +166,8 @@ def test_an_extra_option_jinja_content_renders_the_content(
     )
     assert warnings == ""
     assert needs["TF_001"]["content"] == "body F"
+    # the option's string, as add_need recorded it
+    assert needs["TF_001"]["jinja_content"] == "yes"
 
 
 def test_an_extra_option_doctype_sets_it(make_app, tmp_path, clean_docutils_registry):

@@ -394,10 +394,8 @@ class TestCommonDirective(Directive):
             id=need_id,
             content=content,
             doctype=arguments.get("doctype"),
-            # true when not empty, as add_need read it
-            jinja_content=bool(arguments["jinja_content"])
-            if "jinja_content" in arguments
-            else None,
+            # the option's string, as add_need took and recorded it
+            jinja_content=arguments.get("jinja_content"),
             full_title=arguments.get("full_title"),
             fields={k: v for k, v in values.items() if k not in link_names},
             links={k: v for k, v in values.items() if k in link_names},
