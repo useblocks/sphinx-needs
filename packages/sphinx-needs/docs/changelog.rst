@@ -272,16 +272,20 @@ Bug fixes
   text keeps its value, and a need inside a ``cpp:alias`` still has none. An empty name counts as no name, where an
   empty ``desc_name`` with no content failed the build.
 
-- 🐛 A need with ``:hide:`` is located as the same need without it **(changed output)** (:issue:`2398`)
+- 🐛 A need with ``:hide:`` is located as a visible need in the same place is **(changed output)** (:issue:`2398`)
 
   A hidden need that was the first child of its container -- a ``.. only::``, a ``.. note::``, a parent need's
   content, a ``py:function`` body -- had empty ``sections``, no ``signature`` and no parent need, and a hidden need
   following another need, hidden or not, took that need as its ``parent_need`` (so the other need listed it in
   ``parent_needs_back``): the needs a :ref:`needimport` with ``:hide:`` imports were each the child of the one before.
   Both now get the ``sections``, ``signature`` and ``parent_needs`` a visible need in the same place gets, which
-  filters, tables and needs.json show. A visible need keeps its own location, and its ``parent_needs_back`` gains the
-  hidden needs first inside it and loses those that only followed it; a hidden need after a title or a paragraph keeps
-  its values. An existing build directory is read again in full once.
+  filters, tables, :ref:`needflow` diagrams and needs.json show. A visible need keeps its own location; its
+  ``parent_needs_back`` now lists every hidden need inside it -- it lacked a hidden first child, and any hidden need
+  that followed another need inside it -- and no longer lists the hidden needs that merely followed it. A hidden need
+  after a title or a paragraph keeps its values. :ref:`list2need` places the children of a hidden item outside it, as
+  before, so such a child is located there: its parent is the hidden item's own parent need, or none at the top level,
+  which can differ from the same list written without ``:hide:``. An existing build directory is read again in full
+  once.
 
 Documentation
 .............

@@ -106,13 +106,13 @@ field reading it computes. The configuration does not change, so without the bum
 upgraded build would keep the empty selections and values on the pages whose sources
 did not change.
 
-Version 16 changes what the stored values mean again: a hidden need is located as the
-same need without ``:hide:`` is. As the first child of its container (an ``only``, a
-``note``, a parent need's content, a function's body) its ``sections`` and
-``signature``, empty in 9.1.0, are now its place's, and after another need its
-``parent_needs`` no longer names that need. The sources do not change, so without the
-bump an upgraded build would keep the old values, and the back links built from them,
-on the pages whose sources did not change.
+Version 16 changes what the stored values mean again: a hidden need is located as a
+visible need in the same place is. As the first child of its container (an ``only``, a
+``note``, a parent need's content, a function's body) its ``sections``, ``signature``
+and ``parent_needs``, empty in 9.1.0, are now its place's, and after another need its
+``parent_needs`` names the need enclosing it, if any, and no longer the need before it.
+The sources do not change, so without the bump an upgraded build would keep the old
+values, and the back links built from them, on the pages whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
