@@ -204,3 +204,19 @@ def test_the_fence_finds_a_deprecated_source_name(source: str):
 )
 def test_the_fence_ignores_what_is_no_use_of_a_deprecated_source(source: str):
     assert deprecated_source_names(source) == []
+
+
+@pytest.mark.xfail(strict=True, reason="fix round 1 FR7: declared for type checkers")
+def test_the_fence_ignores_a_deprecated_declaration_and_finds_any_other():
+    """The five names are declared for type checkers in ``sphinx_needs/need_item.py``,
+    each ``@deprecated``: a declaration of a deprecated name is not a use of it. The
+    same function without the decorator is one."""
+    declared = (
+        "if TYPE_CHECKING:\n"
+        "    @deprecated('...')\n"
+        "    def NeedItemSourceUnknown(*, docname=None): ...\n"
+    )
+    assert deprecated_source_names(declared) == []
+    assert deprecated_source_names(
+        declared.replace("    @deprecated('...')\n", "")
+    ) == [(2, "NeedItemSourceUnknown")]

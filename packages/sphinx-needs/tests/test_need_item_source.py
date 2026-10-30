@@ -376,6 +376,61 @@ def test_the_module_getattr_is_hidden_from_type_checkers():
     )
 
 
+@pytest.mark.xfail(strict=True, reason="fix round 1 FR7: declared for type checkers")
+def test_the_five_names_are_declared_for_type_checkers_as_they_are_at_run_time():
+    """Type checkers do not see the run-time ``__getattr__``, so each of the five names
+    is declared for them under ``TYPE_CHECKING``: a function with the keywords of its
+    factory, returning ``NeedItemSource``, marked ``@deprecated`` with the run-time
+    warning's text. A name imported from 9.1.0's code type-checks, deprecated, rather
+    than failing to resolve before 10.0."""
+    import ast
+
+    tree = ast.parse(Path(need_item.__file__).read_text(encoding="utf-8"))
+    declared = {
+        inner.name: inner
+        for node in tree.body
+        if isinstance(node, ast.If) and ast.unparse(node.test) == "TYPE_CHECKING"
+        for inner in node.body
+        if isinstance(inner, ast.FunctionDef)
+    }
+    assert set(FIVE) <= set(declared)
+    assert set(need_item._DEPRECATED_SOURCES) == set(FIVE)
+    for name in FIVE:
+        node = declared[name]
+        (decorator,) = node.decorator_list
+        assert isinstance(decorator, ast.Call)
+        assert ast.unparse(decorator.func) == "deprecated"
+        (message,) = decorator.args
+        assert isinstance(message, ast.Constant)
+        assert message.value == need_item._deprecation_message(name)
+        assert ast.unparse(node.returns) == "NeedItemSource"
+        arguments = node.args
+        assert not (arguments.posonlyargs or arguments.args or arguments.vararg)
+        assert arguments.kwarg is None
+        declared_parameters = [
+            (
+                argument.arg,
+                ast.unparse(argument.annotation),
+                inspect.Parameter.empty
+                if default is None
+                else ast.literal_eval(default),
+            )
+            for argument, default in zip(
+                arguments.kwonlyargs, arguments.kw_defaults, strict=True
+            )
+        ]
+        runtime = inspect.signature(need_item._DEPRECATED_SOURCES[name])
+        assert declared_parameters == [
+            (parameter.name, parameter.annotation, parameter.default)
+            for parameter in runtime.parameters.values()
+        ], name
+        assert all(
+            parameter.kind is inspect.Parameter.KEYWORD_ONLY
+            for parameter in runtime.parameters.values()
+        )
+        assert runtime.return_annotation == "NeedItemSource"
+
+
 @pytest.mark.parametrize(
     ("hops", "given", "lineno"),
     [
