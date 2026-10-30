@@ -60,6 +60,30 @@ or a catch-all**: every other old name is meant to fail as a plain `ImportError`
 -- so a module added to either is covered without anyone remembering the file. **There is no `src/sphinxcontrib/__init__.py`, and there must never be
 one**: `sphinxcontrib` is a PEP 420 namespace other distributions install into.
 
+### A test need's source: its hops, from the directive
+
+Every need the directives create is sourced through Sphinx-Needs'
+`NeedItemSource.from_directive(self, first=self.report_hops(...))` (`test_common.py`), so its
+`lineno` is the line the directive is written on — for a need a `test-report` generates, the
+`test-report`'s, whose page hop then has no line — and its hops are, innermost first: a test
+case's `code` hop, the `report` hop (the report under `"srcdir"`, its suffix, and the
+element's place: one `suite` per level from the top-level suite down, read from the parsed
+tree, then `scope` (classname) and `case` (+ `parameter`, where the name carries one or the
+report gives one: Google Test's `value_param` / `type_param`, through the same
+`case_name_and_parameter` as `case_parameter`); the parsers' `"unknown"` suite or
+classname is no entry; a `test-file`'s hop has none), then the page. The code hop is the
+report's `file` with `/` for `\`, read from the case itself and never from the merged fields
+a report key can override (#2411); it has **no root**
+(the path is relative to the test run's root, which the build does not know), a **start line
+only where the base is known** (ub-test-reports' reader says so per case, `line_base_known`: a
+line-base mark, a plain pytest report, a Google Test case or an explicit `tr_line_base`, #2381;
+a pytest test's first decorator, or its `def`; never an end line), and **no language** (the
+report names none; codelinks' code hops are where a language name comes from). The report path is Sphinx-Needs' `physical_for` rule, computed in `_report_physical`
+because a sibling imports no private Sphinx-Needs name; `tests/test_source_hops.py` holds the
+two equal. The hops are provisional and reach no `needs.json`. What the pickled environment
+holds of a test need changes with `env_version` in `setup()`: bump it when that changes, or an
+upgraded build keeps the earlier release's records.
+
 ### hatchling, and the fence on the built artefacts
 
 This is the one member that builds with hatchling: its wheel ships two top-level packages,

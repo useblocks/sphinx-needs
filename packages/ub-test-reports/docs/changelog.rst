@@ -3,6 +3,122 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+New and Improved
+................
+
+- ✨ ``line_base = "auto" | 0 | 1`` in ``[test_reports]``, and the converter's
+  ``--line-base`` flag, which overrides it: what the ``line`` of a report without a
+  line-base mark counts from (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__).
+  ``"auto"``, the default, is the reader's rule below; ``0`` or ``1`` is the base of every
+  such report whose base the reader is not sure of: a mark and Google Test's shape always
+  win. Any other value is refused, as a key
+  of the wrong type is. sphinx-test-reports bridges it as ``tr_line_base``. A change to the
+  ``[test_reports]`` model: ubCode reads the same table.
+
+- ✨ ``ub_test_reports.identity.case_name_and_parameter(case)`` gives a parsed test case's
+  ``case_name`` and ``case_parameter`` by one rule: the parameter in the name's ``[…]``
+  (pytest's ``test_x[3]``), else Google Test's ``value_param``, else its ``type_param``,
+  and both as ``"<type_param>, <value_param>"``
+  (`#2390 <https://github.com/useblocks/sphinx-needs/issues/2390>`__). The converter and
+  sphinx-test-reports' directives share it. ``split_case_name`` is unchanged.
+
+Changed
+.......
+
+- 👌 ``ub_test_reports.fields`` says which kinds of need carry each field: ``need_kinds(name,
+  role)`` over ``NEED_KINDS`` (``file``, ``suite``, ``case``), with the new ``FILE_NEED_FIELDS``
+  and ``SUITE_NEED_FIELDS`` beside ``CASE_FIELDS`` -- the tables ubCode's ``ubc_test_reports``
+  has -- so sphinx-test-reports declares each field on the need types that carry it
+  (`#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__). The converter's output is
+  unchanged by it: it writes test cases, and its ``needs_schema`` declares the test-case fields.
+
+- 👌 The ``test-reports build needs`` converter writes ``null`` in ``case_file``, ``case_line``
+  (or the fields ``source_file_option`` and ``source_line_option`` name) and ``case_parameter``
+  where the report gives no source file, no line or no parameter, where it wrote ``""``
+  (changed output; `#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__), as its
+  ``needs_schema`` already declared them nullable. **API change:** ``split_case_name`` now
+  returns ``tuple[str, str | None]``: ``None`` for the parameter of a name pytest did not
+  parameterise (``""`` stays the parameter of an empty ``[]``), so a caller that concatenated
+  or compared the parameter as a string handles ``None``. A filter written ``case_line == ''`` no longer matches such a case: write
+  ``case_line is None`` (or ``not case_line``) instead. sphinx-test-reports' directives write
+  the same.
+
+Fixed
+.....
+
+- ‼️ A test case read from a plain ``pytest --junitxml`` report is on the test's own line:
+  pytest counts the ``line`` attribute from 0, and every reader took it as counting from 1,
+  so ``case_line`` and the converter's ``#L`` anchor (``remote_url``, ``external_url``)
+  were one line early -- usually a blank line, or ``class TestX:`` for a method
+  (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__). They are now one
+  more than before. The reader decides the base per ``<testsuite>``, and a nested suite
+  inherits it: a suite's ``ub_test_reports:line_base`` property (``1``, or ``0``) gives it;
+  else a case carrying Google Test's ``status`` and ``result`` counts from 1; else an
+  explicit ``line_base`` gives it; else a suite named ``pytest`` or the root
+  ``<testsuites name="pytest tests">`` (pytest 8.4 and later) counts from 0; else the
+  line is passed through, and its base is not known. A ``line`` below 0 is "no line" and
+  stays so. The pytest plugin now marks every ``<testsuite>`` it writes with
+  ``<property name="ub_test_reports:line_base" value="1"/>`` (under ``xunit1``, once under
+  pytest-xdist), so its reports keep their lines. No id moves: no id scheme reads a line.
+  **API change:** ``JUnitParser.parse()`` returns these lines, ``JUnitParser`` takes
+  ``line_base=`` (``"auto"``, ``0`` or ``1``), and ``parse(line_base_known=True)`` gives
+  each test case ``line_base_known``. A plain ``parse()`` gives the keys it always gave, so
+  sphinx-test-reports 3.0.1 and earlier, which turn every case key they do not know into a
+  need field, keep working with this release. ``LINE_BASE_PROPERTY``,
+  ``LineBase``, ``LINE_BASES`` and ``is_line_base`` are new in ``ub_test_reports.junitparser``.
+  A test's line is that of its first decorator, or of its ``def``, as pytest counts it.
+  See "Upgrading" below.
+
+- 🐛 The ``test-reports build needs`` converter writes a Google Test case's parameter in
+  ``case_parameter``, where it wrote no value for any Google Test case
+  (`#2390 <https://github.com/useblocks/sphinx-needs/issues/2390>`__): a value-parameterised
+  case's ``value_param`` (``1``, ``(1, 2)``), a typed case's ``type_param`` (``int``), and
+  for a test registered with both through ``testing::RegisterTest``, the type first
+  (``int, 42``), each verbatim. Google Test writes the parameter beside the name, never in
+  it. ``case_name`` keeps the name as given (``Value/0``), and no id moves.
+
+- 🐛 The documented ``filterwarnings`` line that silences the pytest plugin's start-up notice,
+  ``ignore::ub_test_reports.pytest_plugin.TestReportsConfigWarning``, crashed pytest 9.2 and
+  later at start-up with a ``PytestAssertRewriteWarning`` traceback ("Module already imported
+  so cannot be rewritten") when the plugin is loaded with ``-p`` and warnings are errors, and
+  added that warning to every run's summary when they are not.
+  pytest 9.2 resolves the filter -- importing the plugin -- before it loads the ``-p``
+  plugins. The plugin module now opts out of pytest's assertion rewriting (it has no
+  ``assert`` to rewrite), so the line works on every pytest again; nothing changes in your
+  configuration.
+
+Upgrading: test-case lines from pytest reports
+..............................................
+
+1. The lines of a plain ``pytest --junitxml`` report (``junit_family = xunit1``) are now the
+   test's own line, one more than before: its ``case_line``, the converter's ``#L`` anchor,
+   and what a direct user of ``JUnitParser`` gets. A filter or a link written against the
+   old value (``case_line == "12"`` for a test on line 13) no longer finds that test:
+   write the test's own line (``"13"``). This holds for every plain report with pytest 8.4
+   or later, and with any pytest for the default suite name ``pytest``; with an older
+   pytest, a report whose suite ``junit_suite_name`` renamed is read as before (pytest
+   names the root ``pytest tests`` only from 8.4.0).
+2. The pytest plugin now marks its reports, with the suite property
+   ``ub_test_reports:line_base`` = ``1``; its lines are read as they are.
+3. A report that already counts from 1 but carries no mark is read one line late: one
+   written by an earlier version of the plugin (ub-test-reports 1.1.0 or earlier,
+   sphinx-test-reports 2.0.0 to 3.0.1), or by another tool such as S-CORE's
+   ``score_pytest``. Regenerate it with this version's plugin, or set ``line_base = 1`` in
+   ``[test_reports]`` (``--line-base 1`` for the converter, ``tr_line_base = 1`` in
+   ``conf.py``).
+   A merged file that holds both plain pytest suites and suites of an earlier plugin cannot
+   be read right by any one setting: regenerate it.
+   With sphinx-test-reports 3.0.1 or earlier, this ub-test-reports changes the lines as
+   well, but ``line_base`` has no effect there (it is logged as applied all the same), and
+   an incremental build keeps each page's old ``case_line`` until a full build (``-E``):
+   upgrade sphinx-test-reports too.
+4. ``JUnitParser`` returns lines counted from 1 where it knows the report's base, and says
+   so per test case when asked (``parse(line_base_known=True)``); a plain ``parse()`` gives
+   the keys it always gave.
+
 .. _`release:1.1.0`:
 
 1.1.0

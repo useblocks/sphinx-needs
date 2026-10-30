@@ -193,9 +193,10 @@ def test_parse_derive_by_type(raw: Any, rules: dict, problems: list) -> None:
 
 
 def test_parse_derive_by_type_on_a_link_type() -> None:
-    """On a link type an entry must compute a link list, as ``derive`` must."""
+    """On a link type an entry must compute a link list, as ``derive`` must (a
+    ``copy`` or ``collect`` there computes a path, ``tests/test_derive_link_paths.py``)."""
     rules, problems = parse_derive_by_type(
-        {"req": {"kind": "copy", "field": "hours"}},
+        {"req": {"kind": "sum", "field": "hours", "over": "links"}},
         on_link=True,
         need_types=NEED_TYPES,
     )
@@ -203,7 +204,7 @@ def test_parse_derive_by_type_on_a_link_type() -> None:
     assert problems == [
         (
             "derive_by_type.req",
-            "kind 'copy' computes a value, so it is declared on a field (needs_fields), "
+            "kind 'sum' computes a value, so it is declared on a field (needs_fields), "
             "not on a link type",
         )
     ]
@@ -632,12 +633,13 @@ def test_what_the_load_checks_leave(test_app: Any) -> None:
     assert (req["rel_beside"], spec["rel_beside"]) == (["SPEC_1"], [])
     assert (req["rel_default"], spec["rel_default"]) == (["REQ_1"], ["REQ_1"])
     # the export's schema default of a link type derived by type alone is its
-    # off-type links; every other link type's is unchanged
+    # off-type links; a link type not derived gives its literal default (#2208);
+    # a dynamic one, and none, give no links
     exported = _export_schema(app)
     assert [
         exported[name]["default"]
         for name in ("rel_default", "rel", "rel_beside", "plain_default", "links")
-    ] == [["REQ_1"], ["SPEC_1"], [], [], []]
+    ] == [["REQ_1"], ["SPEC_1"], [], ["REQ_1"], []]
     # in the order the export writes a link list, as the off-type needs hold it
     assert (
         exported["rel_unsorted"]["default"]
@@ -1210,7 +1212,7 @@ def test_imported_needs_and_needextend_filters(test_app: Any) -> None:
     app.build()
     assert _warnings(app) == [
         "<srcdir>/index.rst:10: WARNING: needextend filter \"flag == 'off'\" names "
-        "'flag', which a dynamic function or variant computes on 1 need (REQ_1): the "
+        "'flag', which a derive rule computes on 1 need (REQ_1): the "
         "filter sees the value from before it is computed [needs.derive_scope]",
     ]
     needs = _needs(app)

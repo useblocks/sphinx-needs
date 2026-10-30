@@ -90,6 +90,18 @@ CLOSED = FieldSchema(name="asil", schema={"type": "string"})
             id="a-longer-minimum-and-a-new-maximum",
         ),
         pytest.param(CLOSED, CLOSED, id="nothing-open"),
+        # a base giving no severity is a violation by default, which leaves it free
+        pytest.param(CLOSED, replace(CLOSED, severity="info"), id="a-severity-set"),
+        pytest.param(
+            replace(CLOSED, severity="info"),
+            replace(CLOSED, severity="violation"),
+            id="a-severity-raised",
+        ),
+        pytest.param(
+            replace(CLOSED, severity="warning"),
+            replace(CLOSED, severity="warning"),
+            id="a-severity-repeated",
+        ),
         pytest.param(_link(), _link(description="spec"), id="a-link-type"),
         pytest.param(
             _link(allow_extend=True, directive_option=True),
@@ -340,6 +352,31 @@ def test_a_narrowing(
             _link(parse_conditions=False),
             ["Link type 'blocks' declares 'parse_conditions' for every need type."],
             id="10-parse-conditions",
+        ),
+        # rule 12: a severity is raised, never lowered below one the base gives
+        pytest.param(
+            replace(CLOSED, severity="warning"),
+            replace(CLOSED, severity="info"),
+            ["Child 'severity' 'info' is lower than parent 'severity' 'warning'."],
+            id="12-a-lower-severity",
+        ),
+        pytest.param(
+            replace(CLOSED, severity="violation"),
+            replace(CLOSED, severity="warning"),
+            ["Child 'severity' 'warning' is lower than parent 'severity' 'violation'."],
+            id="12-an-explicit-violation-lowered",
+        ),
+        pytest.param(
+            _link(severity="warning"),
+            _link(severity="info"),
+            ["Child 'severity' 'info' is lower than parent 'severity' 'warning'."],
+            id="12-a-lower-severity-of-a-link-type",
+        ),
+        pytest.param(
+            replace(CLOSED, severity="warning"),
+            CLOSED,
+            ["Child drops parent 'severity' 'warning'."],
+            id="12-a-severity-dropped",
         ),
     ],
 )
@@ -705,3 +742,33 @@ def test_an_inherited_empty_default_is_no_default(
     assert narrowing_problems(base, replace(base, schema=narrowed)) == []
     own = replace(base, schema=narrowed, default=literal(deepcopy(empty)))
     assert len(narrowing_problems(base, own)) == 1
+
+
+@pytest.mark.parametrize("severity", ["error", "", 3])
+def test_a_severity_is_one_of_three(severity: Any) -> None:
+    """A declaration's severity is one of the severities a need type's entry may give."""
+    with pytest.raises(ValueError, match="severity must be one of"):
+        replace(CLOSED, severity=severity)
+    with pytest.raises(ValueError, match="severity must be one of"):
+        _link(severity=severity)
+
+
+@pytest.mark.parametrize(
+    ("field", "admits_null"),
+    [
+        pytest.param(CLOSED, False, id="not-nullable"),
+        pytest.param(replace(CLOSED, nullable=True), True, id="nullable"),
+        pytest.param(replace(CLOSED, severity="violation"), False, id="violation"),
+        pytest.param(replace(CLOSED, severity="warning"), True, id="warning"),
+        pytest.param(replace(CLOSED, severity="info"), True, id="info"),
+        pytest.param(
+            replace(CLOSED, severity="warning", derive=DeriveRule(kind="count")),
+            False,
+            id="derived-holds-its-empty-value",
+        ),
+    ],
+)
+def test_a_lower_severity_admits_null(field: FieldSchema, admits_null: bool) -> None:
+    """Below violation a field not nullable is reported, not enforced: its need may
+    hold null; a derived field holds its empty value instead."""
+    assert field.admits_null is admits_null

@@ -576,7 +576,9 @@ def test_a_test_report_s_expansion_warns_on_the_test_report(build_page):
 
 def test_a_second_test_report_of_one_id_warns_on_its_own_line(build_page):
     """V1-F11b: the second ``test-report`` (line 8) holding the first's ``:id:`` -- the
-    generated ``test-file``'s ``need`` warning is located on line 8."""
+    generated ``test-file``'s ``need`` warning is located on line 8, and names the kept
+    need at the first ``test-report``'s line, 4 (#2209: before, ``index:44``, its line in
+    the expanded input, which the page does not have)."""
     _, stream = build_page(
         ".. test-report:: R\n   :id: TR_ONE\n   :file: g.xml\n\n"
         ".. test-report:: R2\n   :id: TR_ONE\n   :file: g.xml\n",
@@ -586,7 +588,7 @@ def test_a_second_test_report_of_one_id_warns_on_its_own_line(build_page):
     assert stream.count("WARNING:") == 1
     assert (
         "index.rst:8: WARNING: Need could not be created: A need with ID 'TR_ONE' "
-        "already exists (defined at index:44)." in stream
+        "already exists (defined at index:4)." in stream
     )
 
 

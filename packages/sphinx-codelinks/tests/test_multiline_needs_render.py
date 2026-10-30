@@ -18,7 +18,6 @@ import pytest
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.parallel import parallel_available
 
-from sphinx_codelinks.sphinx_extension.directives import src_trace
 from sphinx_needs_testkit import build_warnings
 
 from .test_need_id_refs import _SHOWS_WARNING_TYPES, _build, _json, _MakeApp, _project
@@ -1041,36 +1040,6 @@ def test_a_templated_block_is_parsed_as_the_page(
     assert _need(app, "REQ_TPL")["doctype"] == ".md"  # type: ignore[index]
 
 
-def test_without_ingest_need_record_one_warning_per_directive(
-    tmp_path: Path, make_app: _MakeApp, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Below Sphinx-Needs 9.0.0 there is no ``ingest_need_record``: the extension still
-    imports, each directive with multi-line needs warns once, and its one-line needs are
-    created as before. (Remove at the 9.0.0 floor bump, with the guard.)"""
-    monkeypatch.setattr(src_trace, "ingest_need_record", None)
-    _blocks(tmp_path, FOUR_CELLS)
-    app = _build(tmp_path, make_app)
-
-    def floor(location: str) -> str:
-        return _multiline(
-            location,
-            "this sphinx-needs has no ingest_need_record; multi-line needs are rendered "
-            "from sphinx-needs 9.0.0 on: 1 not rendered, the one-line needs were created",
-        )
-
-    assert build_warnings(app) == [
-        floor("<srcdir>/page_md.md:3"),
-        floor("<srcdir>/page_md.md:8"),
-        floor("<srcdir>/page_rst.rst:4"),
-        floor("<srcdir>/page_rst.rst:8"),
-    ]
-    needs = _json(app)["needs"]
-    for need_id in CELLS:
-        upper = need_id.removeprefix("REQ_")
-        assert need_id not in needs
-        assert needs[f"IMPL_{upper}_ONE"]["docname"] == CELLS[need_id][1]
-
-
 def test_an_upper_case_id_is_the_id(tmp_path: Path, make_app: _MakeApp) -> None:
     """docutils lowercases a directive's option names, so ``:ID:`` is the id."""
     _blocks(
@@ -1139,6 +1108,37 @@ def test_full_title_does_not_move_the_predicted_id(
     assert f'href="../page_f.html#{need_id}">[docs]</a>' in page
 
 
+def test_a_declared_full_title_keeps_the_ids_it_has(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A block without ``:id:`` whose ``:full_title:`` the project declares as a field:
+    the need's id is hashed from the title, while the id predicted for the duplicate
+    check and the ``[docs]`` link is hashed from the full title. That mismatch is #2410's,
+    pinned here as it is so that moving the prediction to ``generate_need_id`` (#2407)
+    is seen not to change either id."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/conf.py": CONF.replace(
+                "needs_fields = {",
+                'needs_fields = {"full_title": {"nullable": True}, ',
+            ),
+            "docs/page_f.rst": "F\n=\n\n.. src-trace::\n   :project: src\n   :file: f.c\n",
+            "src/f.c": "// @need req: Short title\n// :full_title: A much longer title\n"
+            "// @endneed\nvoid f() {}\n",
+        },
+    )
+    app = _build(tmp_path, make_app)
+    need_id = "R_" + hashlib.sha1(b"Short title").hexdigest().upper()[:5]
+    predicted = "R_" + hashlib.sha1(b"A much longer title").hexdigest().upper()[:5]
+    needs = _json(app)["needs"]
+    assert need_id in needs
+    assert needs[need_id]["full_title"] == "A much longer title"
+    assert predicted not in needs
+    page = Path(app.outdir, "src", "f.html").read_text(encoding="utf-8")
+    assert f'href="../page_f.html#{predicted}">[docs]</a>' in page
+
+
 def test_one_line_needs_keep_the_analysis_order(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:
@@ -1156,24 +1156,6 @@ def test_one_line_needs_keep_the_analysis_order(
     )
     app = _build(tmp_path, make_app)
     assert _card_order(app, "page_o2.html") == ["IMPL_AC_ONE", "IMPL_AB_ONE"]
-
-
-def test_without_ingest_need_record_no_blocks_no_warning(
-    tmp_path: Path, make_app: _MakeApp, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Below Sphinx-Needs 9.0.0, a directive whose files hold no block warns nothing.
-    (Remove at the 9.0.0 floor bump, with the guard.)"""
-    monkeypatch.setattr(src_trace, "ingest_need_record", None)
-    _blocks(
-        tmp_path,
-        {
-            "src/g.c": "// @one-line only, IMPL_G_ONE, impl\n",
-            "docs/page_g.rst": "G\n=\n\n.. src-trace::\n   :project: src\n   :file: g.c\n",
-        },
-    )
-    app = _build(tmp_path, make_app)
-    assert _warnings(app) == []
-    assert "IMPL_G_ONE" in _json(app)["needs"]
 
 
 XPARSER = """\

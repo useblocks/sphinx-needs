@@ -10,7 +10,8 @@ Enable it with ``-p ub_test_reports.pytest_plugin`` (or in
   writes the two under ``xunit1`` on its own, but counts the line from 0, keeps
   Bazel's runfiles prefix and has no way to point a case at the file that drove
   it; the plugin corrects the first two and adds the third
-  (:func:`apply_test_metadata`). Under the default ``xunit2`` pytest drops both
+  (:func:`apply_test_metadata`), and marks every ``<testsuite>`` as counting its
+  lines from 1. Under the default ``xunit2`` pytest drops both
   attributes, which is why ``xunit1`` is required;
 * the properties given with :func:`add_test_properties` (or, for parameterised
   tests, :func:`apply_test_metadata`) are written as ``<properties>``, which the
@@ -29,18 +30,29 @@ under pytest-xdist the location is written on the controller, where pytest
 keeps the XML writer.
 
 Ported from the ``score_pytest`` attribute plugin of S-CORE's docs-as-code.
-With that example configured the XML comes out the same, with four exceptions:
+With that example configured the XML comes out the same, with five exceptions:
 a case skipped or erroring at setup carries its location and properties here
 and pytest's stock values there; the properties keep the order of the keywords
 rather than a fixed one; the Bazel prefix is cut at a whole ``_main`` component
-only; and a file handed to :func:`apply_test_metadata` is cut the same way
-rather than passed through. Two of that plugin's rules are not ported: the
+only; a file handed to :func:`apply_test_metadata` is cut the same way
+rather than passed through; and every ``<testsuite>`` carries the property
+``ub_test_reports:line_base`` = ``1``, which tells a reader that its lines count
+from 1 where a plain pytest report's count from 0 (#2381). Two of that plugin's rules are not ported: the
 ``TestType``/``DerivationTechnique`` vocabularies are documented, not enforced,
 and a test does not have to carry a docstring -- both are process rules of that
 project, not of this tool.
 
 This module imports pytest and nothing else from the package's Sphinx side; it
 is only ever loaded by pytest.
+
+PYTEST_DONT_REWRITE: pytest reads this marker in a module's docstring. From
+pytest 9.2 on, pytest applies the ini ``filterwarnings`` while it imports the
+``-p`` plugins, and resolves them first: the documented
+``ignore::ub_test_reports.pytest_plugin.TestReportsConfigWarning`` imports this
+module before ``-p`` does, and ``-p``'s assertion-rewrite step would then warn
+that the module is "already imported" -- an error, and a start-up traceback,
+under ``filterwarnings = error``. The marker skips that step. This module has no
+``assert`` to rewrite.
 """
 
 from __future__ import annotations
@@ -52,6 +64,8 @@ from typing import TYPE_CHECKING
 
 import pluggy
 import pytest
+
+from ub_test_reports.junitparser import LINE_BASE_PROPERTY
 
 if TYPE_CHECKING:
     from _pytest.junitxml import LogXML
@@ -471,6 +485,22 @@ class _XmlShape:
 
     def __init__(self, config: pytest.Config) -> None:
         self.config = config
+
+    def pytest_sessionstart(self, session: pytest.Session) -> None:
+        """Mark the report's lines as counted from 1, where this plugin writes them.
+
+        A suite-level ``<property>`` (:data:`~ub_test_reports.junitparser.LINE_BASE_PROPERTY`
+        = ``1``), through pytest's own writer: it is what tells the reader this report
+        from a plain pytest report, whose lines count from 0 and which is otherwise the
+        same. Written once, by the process that holds the writer (under pytest-xdist the
+        controller), and only under ``xunit1``, where the plugin writes the lines.
+        """
+        if hasattr(self.config, "workerinput"):
+            return
+        xml = _xml_writer(self.config)
+        if xml is None or _report_family(self.config) != "xunit1":
+            return
+        xml.add_global_property(LINE_BASE_PROPERTY, "1")
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_runtest_logreport(self, report: pytest.TestReport) -> None:

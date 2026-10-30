@@ -34,6 +34,12 @@
 #     The `path` values below are TOML literal strings ('...'), so each is compared
 #     character for character, its inner double quotes included
 #   - integers are within the signed 64-bit range; beyond it the behaviour is unspecified
+#   - a case carrying `data_file_override` is read WITH a data-file override (contract
+#     section 6.8): the runner passes that file, joined onto the case directory, as the
+#     reader's override -- ubCode's runner as the file a `-c` of `variants.data_file`
+#     would name, lifted out of the document before the location is chosen. The empty
+#     string is the override that names NO file (Python: `ub_project.NO_DATA_FILE`;
+#     ubCode: a `-c` of `variants.data_file = ""`), never a path
 #
 # `packages/ub-project/tests/test_conformance.py` runs every `[[case]]` against the Python
 # reader AND asserts the case COUNT, so a truncated copy is a red test rather than reduced
@@ -61,6 +67,10 @@
 #   variants_table
 #                - optional; the dotted path of the `[variants]` table. Default
 #                  "variants". Python-only (see the rules above)
+#   data_file_override
+#                - optional; a data file that replaces the data file of the location
+#                  read, relative to the case directory (see the rules above). "" : the
+#                  override that names no file. Absent: no override
 #   [case.expect]
 #     error             - true when the reader must REFUSE the input: every other
 #                         expectation is then absent. A refusal's message is not compared
@@ -70,7 +80,8 @@
 #                         `..` away fails the comparison
 #                         (`relative-file-with-parent-segment-is-joined`); symlink
 #                         resolution is fenced by the unit tests, since a case directory
-#                         holds no symlink. Absent when no data file is read
+#                         holds no symlink. Absent when no data file is read; the
+#                         override itself when the case carries one
 #     diagnostics       - the findings, as `code` + `path` pairs, compared as a multiset.
 #                         Messages and severities are NOT compared: each reader words its
 #                         own, and each consumer decides what a finding is worth
@@ -908,3 +919,181 @@ variant_data = "edition=pro"
 '''
 [case.expect]
 error = true
+
+# --- a data-file override (section 6.8) ----------------------------------------------
+
+[[case]]
+name = "override-replaces-the-variants-file"
+why = "a data-file override replaces the [variants] data file"
+toml = '''
+[variants]
+data_file = "nmc.json"
+'''
+data_file_override = "lfp.json"
+files = { "nmc.json" = '{"chem": "nmc"}', "lfp.json" = '{"chem": "lfp"}' }
+[case.expect]
+variant_data = { chem = "lfp" }
+variant_data_file = "lfp.json"
+diagnostics = []
+
+[[case]]
+name = "override-replaces-the-legacy-file"
+why = "a data-file override replaces the [needs] data file too: it names a file, not a location"
+toml = '''
+[needs]
+variant_data_file = "nmc.json"
+'''
+data_file_override = "lfp.json"
+files = { "nmc.json" = '{"chem": "nmc"}', "lfp.json" = '{"chem": "lfp"}' }
+[case.expect]
+variant_data = { chem = "lfp" }
+variant_data_file = "lfp.json"
+diagnostics = [{ code = "variant_data_legacy_location", path = "needs.variant_data_file" }]
+
+[[case]]
+name = "override-keeps-the-variants-inline-table"
+why = "the [variants] inline table is still deep-merged over the override"
+toml = '''
+[variants]
+data_file = "nmc.json"
+[variants.data]
+edition = "pro"
+'''
+data_file_override = "lfp.json"
+files = { "nmc.json" = '{"chem": "nmc", "cells": 96}', "lfp.json" = '{"chem": "lfp", "edition": "base"}' }
+[case.expect]
+variant_data = { chem = "lfp", edition = "pro" }
+variant_data_file = "lfp.json"
+diagnostics = []
+
+[[case]]
+name = "override-keeps-the-legacy-inline-table"
+why = "a legacy-only project keeps its [needs] inline table under an override"
+toml = '''
+[needs]
+variant_data_file = "nmc.json"
+[needs.variant_data]
+edition = "pro"
+'''
+data_file_override = "lfp.json"
+files = { "nmc.json" = '{"chem": "nmc"}', "lfp.json" = '{"chem": "lfp"}' }
+[case.expect]
+variant_data = { chem = "lfp", edition = "pro" }
+variant_data_file = "lfp.json"
+diagnostics = [
+  { code = "variant_data_legacy_location", path = "needs.variant_data" },
+  { code = "variant_data_legacy_location", path = "needs.variant_data_file" },
+]
+
+[[case]]
+name = "override-supplies-the-file-of-an-inline-only-location"
+why = "a location with an inline table and no file is read with the override as its file"
+toml = '''
+[variants.data]
+edition = "pro"
+'''
+data_file_override = "lfp.json"
+files = { "lfp.json" = '{"chem": "lfp", "edition": "base"}' }
+[case.expect]
+variant_data = { chem = "lfp", edition = "pro" }
+variant_data_file = "lfp.json"
+diagnostics = []
+
+[[case]]
+name = "override-with-neither-location"
+why = "with neither location declared the override is read as [variants] with no inline table"
+toml = '''
+[project]
+name = "demo"
+'''
+data_file_override = "lfp.json"
+files = { "lfp.json" = '{"chem": "lfp"}' }
+[case.expect]
+variant_data = { chem = "lfp" }
+variant_data_file = "lfp.json"
+diagnostics = []
+
+[[case]]
+name = "override-does-not-open-the-replaced-file"
+why = "the file an override replaces is never opened, so its absence is no error"
+toml = '''
+[variants]
+data_file = "does-not-exist.json"
+'''
+data_file_override = "lfp.json"
+files = { "lfp.json" = '{"chem": "lfp"}' }
+[case.expect]
+variant_data = { chem = "lfp" }
+variant_data_file = "lfp.json"
+diagnostics = []
+
+[[case]]
+name = "override-does-not-decide-the-location"
+why = "the location is the document's: [variants] declares by its file alone, so the [needs] inline table stays ignored"
+toml = '''
+[variants]
+data_file = "does-not-exist.json"
+[needs.variant_data]
+edition = "pro"
+'''
+data_file_override = "lfp.json"
+files = { "lfp.json" = '{"chem": "lfp"}' }
+[case.expect]
+variant_data = { chem = "lfp" }
+variant_data_file = "lfp.json"
+diagnostics = [{ code = "variant_data_location", path = "needs.variant_data" }]
+
+[[case]]
+name = "override-does-not-excuse-a-malformed-file-key"
+why = "the value an override replaces is still held to its type: an empty data_file is refused"
+toml = '''
+[variants]
+data_file = ""
+'''
+data_file_override = "lfp.json"
+files = { "lfp.json" = '{"chem": "lfp"}' }
+[case.expect]
+error = true
+
+[[case]]
+name = "override-file-is-opened"
+why = "the override's own file is opened: a missing one is refused"
+toml = '''
+[variants]
+data_file = "nmc.json"
+'''
+data_file_override = "does-not-exist.json"
+files = { "nmc.json" = '{"chem": "nmc"}' }
+[case.expect]
+error = true
+
+[[case]]
+name = "override-with-no-file"
+why = "an override naming no file replaces the location's file by none: it is not opened, and the inline table applies"
+toml = '''
+[variants]
+data_file = "does-not-exist.json"
+[variants.data]
+edition = "pro"
+'''
+data_file_override = ""
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = []
+
+[[case]]
+name = "override-with-no-file-keeps-the-legacy-inline-table"
+why = "an override naming no file replaces a [needs] data file by none: it is not opened, and the [needs] inline table applies"
+toml = '''
+[needs]
+variant_data_file = "does-not-exist.json"
+[needs.variant_data]
+edition = "pro"
+'''
+data_file_override = ""
+[case.expect]
+variant_data = { edition = "pro" }
+diagnostics = [
+  { code = "variant_data_legacy_location", path = "needs.variant_data" },
+  { code = "variant_data_legacy_location", path = "needs.variant_data_file" },
+]

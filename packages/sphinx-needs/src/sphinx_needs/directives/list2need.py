@@ -9,16 +9,24 @@ from typing import Any, TypedDict
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
 from sphinx.errors import SphinxError, SphinxWarning
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs.api import InvalidNeedException, add_need
+from sphinx_needs._need_source import (
+    NeedSourceHop,
+    document_tab_width,
+    item_check,
+    located_hops,
+)
+from sphinx_needs.api import InvalidNeedException, create_need
+from sphinx_needs.api.need import _split_values
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.need import _get_title
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
-from sphinx_needs.need_item import NeedItemSourceDirective
+from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import add_doc, coerce_to_boolean
 
@@ -383,12 +391,14 @@ class List2NeedDirective(SphinxDirective):
             warn=warn,
         )
 
+        jinja_content = kwargs.pop("jinja_content", None)
+        fields, links = _split_values(SphinxNeedsData(self.env).get_schema(), kwargs)
         try:
-            return add_need(
-                app=self.env.app,
-                state=self.state,
-                need_source=NeedItemSourceDirective(
-                    docname=self.env.docname,
+            _, need_nodes = create_need(
+                self.env.app,
+                self.state,
+                NeedItemSource(
+                    self._item_hops(list_need),
                     lineno=lineno,
                     # ``lineno_content`` and ``parser_lineno`` are parser coordinates
                     # rather than source lines, exactly as a need directive gives them:
@@ -402,16 +412,19 @@ class List2NeedDirective(SphinxDirective):
                     lineno_content=self.content_offset + 1 + content_index,
                     parser_lineno=self.content_offset + 1 + list_need["line"],
                 ),
-                need_type=list_need["type"],
-                title=title,
+                list_need["type"],
+                title,
                 full_title=full_title,
                 id=list_need["need_id"],
                 content=content,
-                **kwargs,
+                jinja_content=jinja_content,
+                fields=fields,
+                links=links,
             )
         except InvalidNeedException as err:
             warn(f"Need could not be created: {err.message}", "create_need")
             return []
+        return need_nodes
 
     def _content(self, list_need: _ListNeed) -> tuple[StringList, int]:
         """Build the source mapped content of one parsed list item.
@@ -435,6 +448,60 @@ class List2NeedDirective(SphinxDirective):
             lines, source=str(self.env.doc2path(self.env.docname)), items=items
         )
         return content, indexes[0] if indexes else list_need["line"]
+
+    def _item_hops(self, list_need: _ListNeed) -> tuple[NeedSourceHop, ...]:
+        """The hops of one item: its first line, and its last non-blank one.
+
+        Under docutils the content is mapped to the file it is written in, an
+        included file's own lines too; either way the lines are recorded only where the
+        file holds the item's first and last lines there (:func:`item_check`). Under myst-parser the lines are rebuilt from the
+        position of the directive (:meth:`_source_info`), which is true on the page but
+        not in an included file, so an item there takes the directive's file and no
+        line. Content that was itself generated has no true line at all.
+        """
+        end = max(
+            (
+                index
+                for index in list_need["content_lines"]
+                if self.content[index].strip()
+            ),
+            default=list_need["line"],
+        )
+        check = item_check(self.content[list_need["line"]], self.content[end])
+        tab_width = document_tab_width(self.state)
+        if self._content_is_source_mapped():
+            source, _ = self._source_info(list_need["line"])
+            return located_hops(
+                self.env,
+                self.env.docname,
+                source,
+                self._source_line(list_need["line"]),
+                self._source_line(end),
+                check=check,
+                tab_width=tab_width,
+                fragment_lines=True,
+            )
+        if isinstance(self.state, RSTState):
+            return located_hops(
+                self.env,
+                self.env.docname,
+                None,
+                None,
+                check=check,
+                tab_width=tab_width,
+                fragment_lines=False,
+            )
+        source, _ = self.get_source_info()
+        return located_hops(
+            self.env,
+            self.env.docname,
+            source,
+            self._source_line(list_need["line"]),
+            self._source_line(end),
+            check=check,
+            tab_width=tab_width,
+            fragment_lines=False,
+        )
 
     def _content_is_source_mapped(self) -> bool:
         """Whether the content lines carry their true position in the source.

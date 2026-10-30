@@ -6,8 +6,8 @@ every case is a statement both tools are held to. Each case is one project, buil
 the ``needs`` builder, and three things are asserted:
 
 * every case's outcome -- the pinned values, as ``needs.json`` writes them (type
-  included), the fields pinned as unset, and the findings of the derived-field contract,
-  as a multiset;
+  included), the fields pinned as unset, the pinned keys of a link type's schema (its
+  ``summary``), and the findings of the derived-field contract, as a multiset;
 * the number of cases, so that a trimmed corpus is a red test rather than quietly reduced
   coverage;
 * the shape of every case, so that a case without a complete expectation cannot pass by
@@ -27,6 +27,7 @@ import pytest
 
 from sphinx_needs_testkit.conformance import (
     case_files,
+    check_schema,
     check_values,
     match_findings,
     params,
@@ -39,7 +40,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "derive_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 84
+EXPECTED_CASE_COUNT = 104
 
 #: The codes of the derived-field contract, compared as bare subcodes; every other
 #: finding (a dead link, a deprecated option) is each tool's own.
@@ -114,7 +115,7 @@ def test_every_case_has_a_complete_expectation() -> None:
         assert not (case.get("python_only") and case.get("ubcode_only")), name
         expect = case["expect"]
         assert "findings" in expect, name
-        assert set(expect) <= {"needs", "nulls", "findings"}, name
+        assert set(expect) <= {"needs", "nulls", "schema", "findings"}, name
         assert expect.get("needs") or expect.get("nulls"), name
         for finding in expect["findings"]:
             assert set(finding) <= {"code", "need", "field"}, name
@@ -152,9 +153,11 @@ def test_case(test_app: Any, case: dict[str, Any]) -> None:
     app = test_app
     app.build()
     data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
-    needs = data["versions"][data["current_version"]]["needs"]
+    version = data["versions"][data["current_version"]]
+    needs = version["needs"]
     expect = case["expect"]
     problems = check_values(needs, expect)
+    problems += check_schema(version["needs_schema"]["properties"], expect)
     found, unread = read_findings(
         app, needs, shared=SHARED_CODES, ubcode_only=UBCODE_ONLY_CODES
     )

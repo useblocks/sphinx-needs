@@ -27,8 +27,8 @@ from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from ub_test_reports.fields import case_needs_schema
 from ub_test_reports.identity import (
     UNKNOWN,
+    case_name_and_parameter,
     deterministic_case_id,
-    split_case_name,
 )
 from ub_test_reports.projectconfig import DEFAULT_FIELD_NAMES
 from ub_test_reports.remote import DEFAULT_URL_PATTERN, source_url
@@ -138,7 +138,12 @@ def _first_message(case: Mapping[str, object]) -> str:
 
 
 def optional(value: object, absent: object) -> str:
-    """String form of an attribute, empty when the parser reported it absent."""
+    """String form of an attribute, empty when the parser reported it absent.
+
+    A field the report gives no value for is written ``None`` (null) instead, by
+    :func:`build_need`: the source location here, the parameter in
+    :func:`~ub_test_reports.identity.case_name_and_parameter`.
+    """
     return "" if value is None or value == absent else str(value)
 
 
@@ -215,12 +220,19 @@ def build_need(
 
     classname = optional(case.get("classname"), UNKNOWN)
     name = optional(case.get("name"), UNKNOWN)
-    case_name, case_parameter = split_case_name(name)
+    case_name, case_parameter = case_name_and_parameter(case, name=name)
     source_file = optional(case.get("file"), UNKNOWN)
     source_line = optional(case.get("line"), -1)
     time = optional(case.get("time"), -1)
 
-    url = source_url(base_url, commit, source_file, source_line, url_pattern)
+    # A line the reader knows the base of and that is below 1 is no line of the file:
+    # line 0 of a report counted from 1. The URL gets no anchor there, as the build's
+    # code hop gets no line; `case_line` keeps the report's value.
+    line = case.get("line")
+    anchor = source_line
+    if case.get("line_base_known") is True and isinstance(line, int) and line < 1:
+        anchor = ""
+    url = source_url(base_url, commit, source_file, anchor, url_pattern)
     content = build_content(case)
 
     need: NeedItem = {
@@ -240,14 +252,14 @@ def build_need(
         "case_parameter": case_parameter,
         "classname": classname,
         names["file_option"]: report_path,
-        names["source_file_option"]: source_file,
-        names["source_line_option"]: source_line,
+        # null, not "", where the report gives no location (pytest's default
+        # junit_family writes none), as the build's directives write it
+        names["source_file_option"]: source_file or None,
+        names["source_line_option"]: source_line or None,
         "time": time,
         "result": str(case.get("result", "")),
         "result_text": _first_message(case),
-        # The same URL twice on purpose: external_url drives the external-needs
-        # rendering, while a plain field stays usable for needs imported as
-        # local needs (via a needs_string_links entry).
+        # kept, but sphinx-needs never reads external_url from a file: link via remote_url
         "external_url": url,
         "remote_url": url,
     }

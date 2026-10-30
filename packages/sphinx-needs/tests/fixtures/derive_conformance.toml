@@ -22,7 +22,9 @@
 #     to the case directory. A case writes only inside its own directory: a `files` key
 #     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
-#     the default ones (`req`, `spec`, `impl`, `test`)
+#     the default ones (`req`, `spec`, `impl`, `test`). A case may give one of them an
+#     `inherits` through a bare `[needs.types.<t>]` entry (no `title`, no `prefix`), which
+#     keeps the four: the bare-entry rule of `field_declaration_conformance.toml`
 #   - a hidden need's content is unpinned until the hidden-needs follow-up (ubCode reads its
 #     references; sphinx-needs 9.0.0 does not)
 #   - a `[needs.fields.<name>]` entry without `nullable` is nullable in both tools
@@ -35,6 +37,7 @@
 #   - values are compared as `needs.json` writes them, TYPE INCLUDED: `7.0` is a float and
 #     `7` an integer, and the two differ; a link list is a list of id strings
 #     (`<need>.<part>` for a part), as `needs.json` writes it
+#   - a float is compared by its bits: `-0.0` and `0.0` differ, and every NaN is one value
 #   - findings are compared as a MULTISET of `code`, and of `need` and `field` where the
 #     finding names them; a key a finding leaves out is not compared. `code` is the BARE
 #     subcode (`derive_invalid`, not `needs.derive_invalid` or `config.derive_invalid`).
@@ -54,6 +57,41 @@
 #     writes every declared field (and link type) on every need, null included, so a
 #     runner asserts the need and the field are PRESENT, then that the value is null; a
 #     missing need or field fails the case
+#   - a `schema.<name>` table (optional) pins keys of the entry of a link type, or of its
+#     back links (`<l>_back`), in the `needs_schema` properties `needs.json` writes
+#     (`versions.<current_version>.needs_schema.properties.<name>`), each compared
+#     type-strict; a key it leaves out is not compared, and a name with no entry, or a
+#     pinned key the entry lacks, fails the case. A SUMMARY link type -- `summary = true` on its `[needs.links.*]`
+#     entry -- carries `"summary": true` there, and so do its back links; no other link
+#     type carries a `summary` key. `summary` is no key of a need type's entry, nor a role
+#     of a rule: a need type's `summary` is each tool's configuration finding (not
+#     compared) and ignored, as is one that is not a boolean, while one in a `derive` or a
+#     `derive_by_type` entry is `derive_invalid`, and the rule holds no links. A summary
+#     link type holds and reads as any other (its links, its back links, a rule naming it
+#     in `over` or `field`); a `union` cannot name one as a member (`derive_invalid`, the
+#     union holds no links)
+#   - a `copy` or a `collect` declared on a link type computes a link list, and the link
+#     type is a summary whether or not it says so (`summary = false` beside such a rule
+#     is `derive_invalid`, ignored: the rule applies). `copy` takes `field = "id"` and
+#     `over`, and links each need `over` names (`select`, if given, is `"list"`);
+#     `collect` takes `field`, a link type (a derived one included), and `over`, and
+#     gives the links `field` holds on each need `over` names; both take `where`, tested
+#     on each need `over` names. Each link is kept once, by its target and its part, its
+#     condition dropped, a dead one carried: it is reported where it is written, not
+#     again here, and it sets neither `has_dead_links` nor `has_forbidden_dead_links` on
+#     the need carrying it. Both are computed with the link types, so `over` names no
+#     back links and `field` no value field and no back links: each is `derive_invalid`
+#     at load. `over` may name a derived link type: a `union` is read through its
+#     members, so a `collect` of its own link type over a union is computed need by need;
+#     over a link type a `links`, `content_links`, `copy` or `collect` rule computes (or a
+#     union with such a member), whose links are known only once computed, a `copy`, or
+#     a `collect` of another link type, is computed, while a `collect` of its own link
+#     type is `derive_invalid` at load. A need whose rule reads its own link type back
+#     through `over`, itself or around a ring of needs (through a union too), is
+#     `derive_cycle` and holds no links; a need reading such a need is not reported. A
+#     `where` naming a field computed after the link types (a value field a rule
+#     computes) or back links is `derive_scope` at each need `over` names a need on,
+#     which holds no links. Their links count toward `derive_dense`
 #   - a `union` link type holds the links of its members (`fields`, in that order), each
 #     link once by its target, part and condition, carried as written; where its rule
 #     computed it, it reports no dead link and no link condition of its own, which are its
@@ -84,6 +122,7 @@
 #                        table per finding: `code`, and `need` and `field` where named
 #     needs.<ID>       - one table per pinned need: field = value
 #     nulls            - <ID> = [the fields pinned as unset] (TOML has no null)
+#     schema.<name>    - optional; one table per pinned schema property: key = value
 
 # --- copy ---------------------------------------------------------------------------
 
@@ -408,6 +447,116 @@ all_passed = true
 any_passed = false
 all_field = true
 any_field = false
+
+[[case]]
+name = "any-all-empty"
+why = "empty names what any / all give over no candidate, the candidates left once where has dropped those it does not hold on (REQ_SPEC: a spec its where drops; REQ_NONE: no link); without it, all is true and any false; over candidates it is not read (REQ_PASS, REQ_FAIL), and a candidate leaving the field unset still reads false (REQ_FAIL)"
+config = '''
+[needs.links.tests]
+
+[needs.fields.passed]
+schema = { type = "boolean" }
+
+[needs.fields.all_default]
+schema = { type = "boolean" }
+derive = { kind = "all", test = "status == 'passed'", over = "tests_back", where = "type == 'test'" }
+
+[needs.fields.all_true]
+schema = { type = "boolean" }
+derive = { kind = "all", test = "status == 'passed'", over = "tests_back", where = "type == 'test'", empty = true }
+
+[needs.fields.all_false]
+schema = { type = "boolean" }
+derive = { kind = "all", test = "status == 'passed'", over = "tests_back", where = "type == 'test'", empty = false }
+
+[needs.fields.any_default]
+schema = { type = "boolean" }
+derive = { kind = "any", test = "status == 'passed'", over = "tests_back", where = "type == 'test'" }
+
+[needs.fields.any_true]
+schema = { type = "boolean" }
+derive = { kind = "any", test = "status == 'passed'", over = "tests_back", where = "type == 'test'", empty = true }
+
+[needs.fields.any_false]
+schema = { type = "boolean" }
+derive = { kind = "any", test = "status == 'passed'", over = "tests_back", where = "type == 'test'", empty = false }
+
+[needs.fields.all_field_false]
+schema = { type = "boolean" }
+derive = { kind = "all", field = "passed", over = "tests_back", where = "type == 'test'", empty = false }
+
+[needs.fields.any_field_true]
+schema = { type = "boolean" }
+derive = { kind = "any", field = "passed", over = "tests_back", where = "type == 'test'", empty = true }
+'''
+source = '''
+.. req:: Passed
+   :id: REQ_PASS
+
+.. req:: Failed
+   :id: REQ_FAIL
+
+.. req:: Only a spec links here
+   :id: REQ_SPEC
+
+.. req:: Nothing links here
+   :id: REQ_NONE
+
+.. test:: Passes
+   :id: TEST_P
+   :tests: REQ_PASS
+   :status: passed
+   :passed: true
+
+.. test:: Fails, passed unset
+   :id: TEST_F
+   :tests: REQ_FAIL
+   :status: failed
+
+.. spec:: Not a test, though passed
+   :id: SPEC_1
+   :tests: REQ_SPEC
+   :status: passed
+   :passed: true
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PASS]
+all_default = true
+all_true = true
+all_false = true
+any_default = true
+any_true = true
+any_false = true
+all_field_false = true
+any_field_true = true
+[case.expect.needs.REQ_FAIL]
+all_default = false
+all_true = false
+all_false = false
+any_default = false
+any_true = false
+any_false = false
+all_field_false = false
+any_field_true = false
+[case.expect.needs.REQ_SPEC]
+all_default = true
+all_true = true
+all_false = false
+any_default = false
+any_true = true
+any_false = false
+all_field_false = false
+any_field_true = true
+[case.expect.needs.REQ_NONE]
+all_default = true
+all_true = true
+all_false = false
+any_default = false
+any_true = true
+any_false = false
+all_field_false = false
+any_field_true = true
 
 [[case]]
 name = "min-max-over-links"
@@ -762,7 +911,6 @@ field = "inline_empty"
 [[case]]
 name = "links-include-parts"
 why = "links with include_parts tests every need's parts too, linked as <need>.<part>, a part after its need in part-id order, the ids in code-point order: REQ_1 writes p2, p10, p1, and the list a copy into an array field reads is p1, p10, p2, while needs.json writes it in natural order, p1, p2, p10 (A-24); the need's own parts are left out unless include_self"
-python_only = true
 config = '''
 [needs.links.l_parts]
 derive = { kind = "links", where = "is_part and id_parent == 'REQ_1'", include_parts = true }
@@ -796,6 +944,45 @@ parts_in_order = ["REQ_1.p1", "REQ_1.p10", "REQ_1.p2"]
 l_parts = []
 l_parts_self = ["REQ_1.p1", "REQ_1.p2", "REQ_1.p10"]
 l_family = []
+
+[[case]]
+name = "links-include-parts-of-imported-and-external-needs"
+why = "the parts of a need from needimport and from needs_external_needs are candidates of a links rule with include_parts too, each after its need in part-id order: an imported need's parts are those its content gives (its content is parsed), an external need's those its record's parts give (its content is not parsed, so EXT_2's :np: makes no part); without include_parts only the needs; no rule runs on the imported need (IMP_1 keeps its empty l_imp). The external needs are not in sphinx-needs' needs.json, so only the links to them are pinned"
+# not pinned: an imported record's own `parts` key where its content gives none -- sphinx-needs
+# takes the parts its content gives (none), ubCode the record's; the tools differ there, and
+# this contract does not yet say which is right
+config = '''
+[needs]
+external_needs = [{ base_url = "http://example.org/", json_path = "external.json" }]
+
+[needs.links.l_imp]
+derive = { kind = "links", where = "is_part and id_parent == 'IMP_1'", include_parts = true }
+
+[needs.links.l_ext]
+derive = { kind = "links", where = "is_part and id_parent in ['EXT_1', 'EXT_2']", include_parts = true }
+
+[needs.links.l_whole]
+derive = { kind = "links", where = "id_parent in ['IMP_1', 'EXT_1', 'EXT_2']" }
+
+[needs.links.l_family]
+derive = { kind = "links", where = "id_parent in ['IMP_1', 'EXT_1', 'EXT_2']", include_parts = true }
+'''
+source = '''
+.. spec:: Links them
+   :id: SPEC_1
+
+.. needimport:: imported.json
+'''
+files = { "imported.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_1": {"id": "IMP_1", "type": "req", "title": "Imported", "content": "Three parts: :np:`(p2) second`, :np:`(p10) tenth` and :np:`(p1) first`."}}}}}''', "external.json" = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"EXT_1": {"id": "EXT_1", "type": "req", "title": "External", "parts": {"b": {"id": "b", "content": "bee"}, "a": {"id": "a", "content": "ay"}}}, "EXT_2": {"id": "EXT_2", "type": "req", "title": "External, a part in its content", "content": "One part: :np:`(c) see`."}}}}}''' }
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+l_imp = ["IMP_1.p1", "IMP_1.p2", "IMP_1.p10"]
+l_ext = ["EXT_1.a", "EXT_1.b"]
+l_whole = ["EXT_1", "EXT_2", "IMP_1"]
+l_family = ["EXT_1", "EXT_1.a", "EXT_1.b", "EXT_2", "IMP_1", "IMP_1.p1", "IMP_1.p2", "IMP_1.p10"]
+[case.expect.needs.IMP_1]
+l_imp = []
 
 [[case]]
 name = "content-links-from-where"
@@ -1113,6 +1300,20 @@ derive = { kind = "count", over = "links", where = "  " }
 schema = { type = "boolean" }
 derive = { kind = "any", over = "links", test = "" }
 
+[needs.fields.bad_empty_on_sum]
+schema = { type = "number" }
+derive = { kind = "sum", field = "hours", over = "links", empty = false }
+
+[needs.fields.bad_empty_not_boolean]
+schema = { type = "boolean" }
+derive = { kind = "all", over = "links", test = "status == 'open'", empty = "no" }
+
+[needs.fields.bad_where_own_copy]
+derive = { kind = "copy", field = "owner", where = "status == 'open'" }
+
+[needs.fields.bad_where_from_copy]
+derive = { kind = "copy", field = "owner", from = "REQ_1", where = "status == 'open'" }
+
 [needs.fields.bad_result]
 schema = { type = "string" }
 derive = { kind = "count", over = "links" }
@@ -1142,7 +1343,7 @@ status = "open"
 bad_default = "alice"
 bad_value_kind = []
 [case.expect.nulls]
-REQ_1 = ["bad_kind", "bad_no_kind", "bad_not_table", "bad_unknown_role", "bad_role_not_taken", "bad_missing", "bad_role_type", "bad_copy_both", "bad_select_no_over", "bad_any_both", "bad_include_self", "bad_link_kind", "bad_over", "bad_field", "bad_where_needs", "bad_where_current", "bad_where_c", "bad_where_syntax", "bad_result", "bad_select_list", "bad_blank_where", "bad_blank_test"]
+REQ_1 = ["bad_kind", "bad_no_kind", "bad_not_table", "bad_unknown_role", "bad_role_not_taken", "bad_missing", "bad_role_type", "bad_copy_both", "bad_select_no_over", "bad_any_both", "bad_include_self", "bad_link_kind", "bad_over", "bad_field", "bad_where_needs", "bad_where_current", "bad_where_c", "bad_where_syntax", "bad_result", "bad_select_list", "bad_blank_where", "bad_blank_test", "bad_empty_on_sum", "bad_empty_not_boolean", "bad_where_own_copy", "bad_where_from_copy"]
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "bad_kind"
@@ -1206,6 +1407,18 @@ field = "bad_blank_where"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "bad_blank_test"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_empty_on_sum"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_empty_not_boolean"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_where_own_copy"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad_where_from_copy"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "bad_result"
@@ -1487,7 +1700,7 @@ field = "total"
 
 [[case]]
 name = "filter-inline-spellings"
-why = "calc_sum with a filter sums every need passing it; copy with a filter takes the lowest id passing it (REQ_1, written after REQ_2: the lowest id, not the first in the document), and with no match the need need_id names, else its own need; links_from_filter links every need passing it"
+why = "calc_sum with a filter sums every need passing it; copy with a filter takes the lowest id passing it (REQ_1, written after REQ_2: the lowest id, not the first in the document), and with no match the need need_id names, else its own need; its candidates are needs, never a part (who_part: no need is a part, so its own need); links_from_filter links every need passing it, and with include_parts=True every part passing it too, after its need (IMPL_1.p1)"
 config = '''
 [needs.fields.hours]
 schema = { type = "number" }
@@ -1507,7 +1720,14 @@ schema = { type = "string" }
 [needs.fields.who_first]
 schema = { type = "string" }
 
+[needs.fields.who_part]
+schema = { type = "string" }
+
 [needs.links.inline_links]
+
+[needs.links.inline_parts]
+
+[needs.links.inline_no_parts]
 '''
 source = '''
 .. req:: Three hours
@@ -1527,7 +1747,16 @@ source = '''
    :who: [[copy("owner", filter="type == 'nothing'")]]
    :who_named: [[copy("owner", "REQ_2", filter="type == 'nothing'")]]
    :who_first: [[copy("owner", filter="type == 'req'")]]
+   :who_part: [[copy("owner", filter="is_part")]]
    :inline_links: [[links_from_filter("type == 'req'")]]
+   :inline_parts: [[links_from_filter("id_parent == 'IMPL_1'", include_parts=True)]]
+   :inline_no_parts: [[links_from_filter("id_parent == 'IMPL_1'")]]
+
+.. impl:: With a part
+   :id: IMPL_1
+   :owner: dave
+
+   One part: :np:`(p1) the part`.
 '''
 [case.expect]
 findings = []
@@ -1536,7 +1765,10 @@ sum_req = 5.0
 who = "carol"
 who_named = "bob"
 who_first = "alice"
+who_part = "carol"
 inline_links = ["REQ_1", "REQ_2"]
+inline_parts = ["IMPL_1", "IMPL_1.p1"]
+inline_no_parts = ["IMPL_1"]
 
 [[case]]
 name = "inline-copy-case-of-a-list"
@@ -2599,6 +2831,126 @@ fp = "da55a16ec834fc426ce4f6641040139d1ea8235ad8c9e947b94406f1d01cf959"
 legacy = ""
 fp = "d51d1facf79607c5da7e39c0a85c22150cd9f847e742f479f14ff5f69cd7bdc3"
 
+[[case]]
+name = "fingerprint-nested-need"
+why = "a need nested in another's content is a need of its own: the parent's content holds the nested directive as written and the child's only its own body, and neither fingerprint reads where a need sits (REQ_C's parent_needs, which the nesting sets, does not enter)"
+# the JSON texts hashed:
+#   REQ_P {"content":"Parent text before.\n\n.. req:: Child\n   :id: REQ_C\n\n   Child text.\n\nParent text after.","id":"REQ_P","title":"Parent","type":"req"}
+#   REQ_C {"content":"Child text.","id":"REQ_C","title":"Child","type":"req"}
+config = '''
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+'''
+source = '''
+.. req:: Parent
+   :id: REQ_P
+
+   Parent text before.
+
+   .. req:: Child
+      :id: REQ_C
+
+      Child text.
+
+   Parent text after.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_P]
+content = "Parent text before.\n\n.. req:: Child\n   :id: REQ_C\n\n   Child text.\n\nParent text after."
+fp = "814250414244821c05a729e914c757a977906ec067e0ce9c18f74d3bfefaad65"
+[case.expect.needs.REQ_C]
+content = "Child text."
+parent_needs = ["REQ_P"]
+fp = "10b5c2a7324bdaad3f8278eaea755531b638a8593435152cd5d36d443892b650"
+
+[[case]]
+name = "fingerprint-computed-tags-default"
+why = "a [[...]] default of tags is computed on each need (REQ_3 copies its labels), a value the need sets wins (REQ_4); a computed default is no literal default, so a fingerprint compares tags with [] and an empty computed value adds no key (REQ_1)"
+# the JSON texts hashed:
+#   REQ_1 {"id":"REQ_1","title":"One","type":"req"}
+#   REQ_3 {"id":"REQ_3","labels":["x","y"],"tags":["x","y"],"title":"Three","type":"req"}
+#   REQ_4 {"id":"REQ_4","labels":["x","y"],"tags":["z"],"title":"Own tags","type":"req"}
+config = '''
+[needs.fields.labels]
+schema = { type = "array", items = { type = "string" } }
+default = []
+
+[needs.fields.tags]
+default = "[[copy('labels')]]"
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Three
+   :id: REQ_3
+   :labels: x, y
+
+.. req:: Own tags
+   :id: REQ_4
+   :labels: x, y
+   :tags: z
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+tags = []
+fp = "7f4bdaf3aabd58f1856a45668842cef81d7ad22a35b2cf3b4450fc4710f9b832"
+[case.expect.needs.REQ_3]
+tags = ["x", "y"]
+fp = "3d6c305e6557abbdc630dc56581f7995012d9299102d4046dbc795e1dd033e20"
+[case.expect.needs.REQ_4]
+tags = ["z"]
+fp = "8e4c9da58fe097070c4b790471b627313c8b92a86c397be42070c46df1c529c8"
+
+[[case]]
+name = "fingerprint-computed-link-default-from-global-options"
+why = "a link type's [[...]] default given through [needs.global_options] is computed on each need as one in the link type's own entry is (SPEC_A copies its links into covers), a value the need sets wins (SPEC_B); a fingerprint compares it with [], so an empty computed value adds no key (REQ_1). global_options' deprecation warning is each tool's own"
+# the JSON texts hashed:
+#   REQ_1  {"id":"REQ_1","title":"One","type":"req"}
+#   SPEC_A {"covers":["REQ_1"],"id":"SPEC_A","links":["REQ_1"],"title":"Linked","type":"spec"}
+#   SPEC_B {"covers":["SPEC_A"],"id":"SPEC_B","links":["REQ_1"],"title":"Covers its own","type":"spec"}
+config = '''
+[needs.links.covers]
+
+[needs.global_options.covers]
+default = "[[copy('links')]]"
+
+[needs.fields.fp]
+schema = { type = "string" }
+derive = { kind = "fingerprint" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. spec:: Linked
+   :id: SPEC_A
+   :links: REQ_1
+
+.. spec:: Covers its own
+   :id: SPEC_B
+   :links: REQ_1
+   :covers: SPEC_A
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+covers = []
+fp = "7f4bdaf3aabd58f1856a45668842cef81d7ad22a35b2cf3b4450fc4710f9b832"
+[case.expect.needs.SPEC_A]
+covers = ["REQ_1"]
+fp = "a49c1d518fd1b023935c64afa1c552ed25f50b63dbee38473416286fa436040d"
+[case.expect.needs.SPEC_B]
+covers = ["SPEC_A"]
+fp = "569f70bfed02f3f94ba4208bcd750a0ce380303a09fb653071afa03b3d7228d7"
+
 # --- rules per need type: derive_by_type ----------------------------------------------
 
 [[case]]
@@ -2701,7 +3053,7 @@ SPEC_1 = ["total_n"]
 
 [[case]]
 name = "by-type-invalid-shapes"
-why = "derive_by_type is checked at load, one derive_invalid per rule entry or key: a type key naming no need type (a title included) is ignored; an empty or non-table derive_by_type, a non-table entry and an invalid entry are reported and the field stays closed (a derive beside an empty one computes on every type), needs of that type holding their empty value while the other types are unaffected; 'types' inside a rule is not a role; a default beside derive is refused as before; predicates, and a non-literal default, beside derive_by_type alone are refused"
+why = "derive_by_type is checked at load, one derive_invalid per rule entry or key: a type key naming no need type (a title included) is ignored; an empty or non-table derive_by_type, a non-table entry and an invalid entry are reported and the field stays closed (a derive beside an empty one computes on every type), needs of that type holding their empty value, not the field's default (REQ_1: null, where the default is 7), while the other types are unaffected (SPEC_1 computes, IMPL_1 holds the default); 'types' inside a rule is not a role; a default beside derive is refused as before; predicates, and a non-literal default, beside derive_by_type alone are refused"
 config = '''
 [needs.fields.hours]
 schema = { type = "number" }
@@ -2725,11 +3077,13 @@ derive_by_type = [1, 2]
 
 [needs.fields.entry_not_table]
 schema = { type = "number" }
+default = 7
 derive_by_type.req = 3
 derive_by_type.spec = { kind = "sum", field = "hours", over = "links" }
 
 [needs.fields.entry_invalid]
 schema = { type = "number" }
+default = 7
 derive_by_type.req = { kind = "sum", field = "nope", over = "links" }
 derive_by_type.spec = { kind = "sum", field = "hours", over = "links" }
 
@@ -2771,6 +3125,9 @@ source = '''
    :id: SPEC_1
    :hours: 4
    :links: REQ_1
+
+.. impl:: C
+   :id: IMPL_1
 '''
 [case.expect]
 [case.expect.needs.REQ_1]
@@ -2784,6 +3141,9 @@ beside_default = 4.0
 beside_predicates = 4.0
 dynamic_default = "B"
 table_beside_derive = 4.0
+[case.expect.needs.IMPL_1]
+entry_not_table = 7.0
+entry_invalid = 7.0
 [case.expect.nulls]
 REQ_1 = ["title_key", "empty_table", "not_a_table", "entry_not_table", "entry_invalid", "types_role", "beside_predicates", "dynamic_default"]
 SPEC_1 = ["unknown_type", "title_key", "empty_table", "not_a_table", "types_role"]
@@ -3458,6 +3818,159 @@ TEST_2 = ["o_first", "o_unique"]
 code = "derive_unique"
 need = "TEST_1"
 field = "o_unique"
+
+[[case]]
+name = "copy-join-where"
+why = "where beside a copy join is tested on each match, before select: first and unique take the lowest id among the matches it holds on that set the field (REQ_A, the lowest-id setter, is dropped), list every value of those; a match it cannot be evaluated on (REQ_A has no hours) is dropped silently; the where reads phase_d, computed in the same step on every need and declared last, so the copy waits for it on READER_1, whose id sorts before its matches"
+config = '''
+[needs.fields.key]
+schema = { type = "string" }
+[needs.fields.ref]
+schema = { type = "string" }
+[needs.fields.owner]
+schema = { type = "string" }
+[needs.fields.hours]
+schema = { type = "number" }
+[needs.fields.phase]
+schema = { type = "string" }
+[needs.fields.o_first]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", join = { field = "key", equals = "ref" }, where = "phase_d == 'active'" }
+[needs.fields.o_unique]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", join = { field = "key", equals = "ref" }, where = "phase_d == 'active'", select = "unique" }
+[needs.fields.o_list]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "owner", join = { field = "key", equals = "ref" }, where = "phase_d == 'active'", select = "list" }
+[needs.fields.o_big]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", join = { field = "key", equals = "ref" }, where = "hours > 1" }
+[needs.fields.o_none]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "owner", join = { field = "key", equals = "ref" }, where = "phase_d == 'gone'", select = "list" }
+[needs.fields.phase_d]
+schema = { type = "string" }
+derive = { kind = "copy", field = "phase" }
+'''
+source = '''
+.. req:: Alice's, retired, no hours
+   :id: REQ_A
+   :key: K
+   :owner: alice
+   :phase: retired
+
+.. req:: Bob's
+   :id: REQ_B
+   :key: K
+   :owner: bob
+   :phase: active
+   :hours: 3
+
+.. req:: Carol's
+   :id: REQ_C
+   :key: K
+   :owner: carol
+   :phase: active
+   :hours: 0.5
+
+.. req:: Active, no owner
+   :id: REQ_D
+   :key: K
+   :phase: active
+   :hours: 5
+
+.. test:: Reader
+   :id: READER_1
+   :ref: K
+
+.. test:: No match
+   :id: READER_2
+   :ref: nothing
+'''
+[case.expect]
+[case.expect.needs.READER_1]
+o_first = "bob"
+o_unique = "bob"
+o_list = ["bob", "carol"]
+o_big = "bob"
+o_none = []
+[case.expect.needs.READER_2]
+o_list = []
+o_none = []
+[case.expect.nulls]
+READER_2 = ["o_first", "o_unique", "o_big"]
+[[case.expect.findings]]
+code = "derive_unique"
+need = "READER_1"
+field = "o_unique"
+
+[[case]]
+name = "copy-over-where"
+why = "where beside a copy over a link type is tested on each target, before select: first and unique take the lowest id among the targets it holds on that set the field (REQ_A, the lowest-id setter, is dropped), list every value of those in written order, a target named twice read twice; a target it cannot be evaluated on (REQ_A has no hours) is dropped silently; the where reads phase_d, computed in the same step and declared last, so the copy waits for it on CHILD_1, whose id sorts before its targets; with every target dropped (CHILD_2) first is unset and list []"
+config = '''
+[needs.links.parent]
+[needs.fields.owner]
+schema = { type = "string" }
+[needs.fields.hours]
+schema = { type = "number" }
+[needs.fields.phase]
+schema = { type = "string" }
+[needs.fields.c_first]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", over = "parent", where = "phase_d == 'active'" }
+[needs.fields.c_unique]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", over = "parent", where = "phase_d == 'active'", select = "unique" }
+[needs.fields.c_list]
+schema = { type = "array", items = { type = "string" } }
+derive = { kind = "copy", field = "owner", over = "parent", where = "phase_d == 'active'", select = "list" }
+[needs.fields.c_big]
+schema = { type = "string" }
+derive = { kind = "copy", field = "owner", over = "parent", where = "hours > 1" }
+[needs.fields.phase_d]
+schema = { type = "string" }
+derive = { kind = "copy", field = "phase" }
+'''
+source = '''
+.. req:: Alice's, retired, no hours
+   :id: REQ_A
+   :owner: alice
+   :phase: retired
+
+.. req:: Bob's
+   :id: REQ_B
+   :owner: bob
+   :phase: active
+   :hours: 3
+
+.. req:: Carol's
+   :id: REQ_C
+   :owner: carol
+   :phase: active
+   :hours: 0.5
+
+.. spec:: Child
+   :id: CHILD_1
+   :parent: REQ_C, REQ_A, REQ_B, REQ_C
+
+.. spec:: Only a retired parent
+   :id: CHILD_2
+   :parent: REQ_A
+'''
+[case.expect]
+[case.expect.needs.CHILD_1]
+c_first = "bob"
+c_unique = "bob"
+c_list = ["carol", "bob", "carol"]
+c_big = "bob"
+[case.expect.needs.CHILD_2]
+c_list = []
+[case.expect.nulls]
+CHILD_2 = ["c_first", "c_unique", "c_big"]
+[[case.expect.findings]]
+code = "derive_unique"
+need = "CHILD_1"
+field = "c_unique"
 
 [[case]]
 name = "join-strata"
@@ -4638,3 +5151,819 @@ field = "cyc_b"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "readable"
+
+# --- c.is_a in a where ----------------------------------------------------------------
+
+[[case]]
+name = "where-follows-inherits"
+why = "a where reads c.is_a as a filter does: c.is_a('req') counts a req and every type inheriting from it, transitively, as the need type declarations give inherits, c.is_a('spec') a spec and every type inheriting from it, c.is_a('nope') no need, type == 'req' a req alone; a bare entry naming a default type keeps the default types"
+config = '''
+[needs.types.spec]
+inherits = "req"
+
+[needs.types.impl]
+inherits = "spec"
+
+[needs.fields.n_req_like]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.is_a('req')" }
+
+[needs.fields.n_req]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "type == 'req'" }
+
+[needs.fields.n_spec_like]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.is_a('spec')" }
+
+[needs.fields.n_unknown]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.is_a('nope')" }
+'''
+source = '''
+.. req:: A requirement
+   :id: REQ_1
+
+.. spec:: Inherits req
+   :id: SPEC_1
+
+.. impl:: Inherits spec
+   :id: IMPL_1
+
+.. test:: Links all of them
+   :id: TEST_1
+   :links: REQ_1, SPEC_1, IMPL_1, TEST_2
+
+.. test:: Links none
+   :id: TEST_2
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+n_req_like = 3
+n_req = 1
+n_spec_like = 2
+n_unknown = 0
+[case.expect.needs.TEST_2]
+n_req_like = 0
+n_req = 0
+n_spec_like = 0
+n_unknown = 0
+
+# --- summary link types -------------------------------------------------------------
+
+[[case]]
+name = "summary-key-shapes"
+why = "summary = true on a link type's entry marks it, and its back links, as a summary in needs.json's schema, an authored and a derived one alike, and changes no value: its links and back links are held as any link type's; summary in a rule is no role (derive_invalid, the rule holds no links); a summary that is not a boolean, or one a need type's entry gives, is ignored, so a union may name those link types"
+config = '''
+[needs.links.satisfies]
+
+[needs.links.mitigates]
+summary = true
+
+[needs.links.tagged]
+summary = "yes"
+
+[needs.links.mentions]
+summary = true
+derive = { kind = "content_links" }
+
+[needs.links.bad]
+derive = { kind = "links", where = "type == 'req'", summary = true }
+
+[needs.links.trace]
+derive = { kind = "union", fields = ["satisfies", "tagged"] }
+
+[needs.types.spec.links.satisfies]
+summary = true
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_1
+   :tagged: REQ_1
+   :mitigates: REQ_1
+
+   It mentions :need:`REQ_1`.
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+satisfies = ["REQ_1"]
+mitigates = ["REQ_1"]
+tagged = ["REQ_1"]
+mentions = ["REQ_1"]
+trace = ["REQ_1"]
+bad = []
+[case.expect.needs.REQ_1]
+mitigates_back = ["SPEC_1"]
+mentions_back = ["SPEC_1"]
+trace_back = ["SPEC_1"]
+bad = []
+[case.expect.schema.mitigates]
+summary = true
+[case.expect.schema.mitigates_back]
+summary = true
+[case.expect.schema.mentions]
+summary = true
+[case.expect.schema.mentions_back]
+summary = true
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "bad"
+
+[[case]]
+name = "union-refuses-summary-member"
+why = "a union cannot name a summary link type as a member, an authored or a derived one: it is derive_invalid and the union holds no links; a union of link types that are no summaries is read"
+config = '''
+[needs.links.satisfies]
+
+[needs.links.mitigates]
+summary = true
+
+[needs.links.mentions]
+summary = true
+derive = { kind = "content_links" }
+
+[needs.links.trace]
+derive = { kind = "union", fields = ["satisfies", "mitigates"] }
+
+[needs.links.seen]
+derive = { kind = "union", fields = ["links", "mentions"] }
+
+[needs.links.kept]
+derive = { kind = "union", fields = ["links", "satisfies"] }
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. req:: Another
+   :id: REQ_2
+
+.. spec:: Specification
+   :id: SPEC_1
+   :links: REQ_2
+   :satisfies: REQ_1
+   :mitigates: REQ_1
+
+   It mentions :need:`REQ_1`.
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+mitigates = ["REQ_1"]
+mentions = ["REQ_1"]
+trace = []
+seen = []
+kept = ["REQ_1", "REQ_2"]
+[case.expect.needs.REQ_1]
+trace_back = []
+kept_back = ["SPEC_1"]
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "trace"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "seen"
+
+# --- copy and collect on a link type ------------------------------------------------
+
+[[case]]
+name = "link-copy-id-over"
+why = "copy of id over a link type links each need it names, once, a part link reading its need, a dead link skipped, a condition dropped; where narrows the targets and select = list is the default; the link type is a summary and its back links are built"
+config = '''
+[needs.links.satisfies]
+allow_dead_links = true
+
+[needs.links.reqs]
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.links.open_reqs]
+derive = { kind = "copy", field = "id", over = "satisfies", where = "status == 'open'", select = "list" }
+'''
+source = '''
+.. req:: Open
+   :id: REQ_1
+   :status: open
+
+   A :np:`(p1) part`.
+
+.. req:: Closed
+   :id: REQ_2
+   :status: closed
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_2[status == 'closed'], REQ_1.p1, REQ_1, DEAD_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+reqs = ["REQ_1", "REQ_2"]
+open_reqs = ["REQ_1"]
+[case.expect.needs.REQ_1]
+reqs = []
+reqs_back = ["SPEC_1"]
+open_reqs_back = ["SPEC_1"]
+[case.expect.needs.REQ_2]
+reqs_back = ["SPEC_1"]
+open_reqs_back = []
+[case.expect.schema.reqs]
+summary = true
+[case.expect.schema.reqs_back]
+summary = true
+[case.expect.schema.open_reqs]
+summary = true
+
+[[case]]
+name = "link-collect-chain"
+why = "a chain as links, per need type: copy of id over satisfies on a spec, collect of the same link type over implements on an impl and over tests on a test, each rung read after the one it reads; every rung holds the requirements it traces to, and each requirement's back links name every need that reaches it; a collect of an authored link type keeps a link's part and drops its condition, and its where tests each need over names"
+config = '''
+[needs.links.satisfies]
+[needs.links.implements]
+[needs.links.tests]
+[needs.links.chain]
+
+[needs.types.spec.links.chain]
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.types.impl.links.chain]
+derive = { kind = "collect", field = "chain", over = "implements" }
+
+[needs.types.test.links.chain]
+derive = { kind = "collect", field = "chain", over = "tests" }
+
+[needs.links.seen]
+derive = { kind = "collect", field = "satisfies", over = "implements" }
+
+[needs.links.approved_seen]
+derive = { kind = "collect", field = "satisfies", over = "implements", where = "status == 'approved'" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+   A :np:`(p1) part`.
+
+.. req:: Two
+   :id: REQ_2
+   :status: open
+
+.. spec:: First
+   :id: SPEC_1
+   :status: approved
+   :satisfies: REQ_1.p1, REQ_2[status == 'open']
+
+.. spec:: Second
+   :id: SPEC_2
+   :satisfies: REQ_2
+
+.. impl:: First
+   :id: IMPL_1
+   :implements: SPEC_1, SPEC_2
+
+.. impl:: Second
+   :id: IMPL_2
+   :implements: SPEC_2
+
+.. test:: First
+   :id: TEST_1
+   :tests: IMPL_1
+
+.. test:: Second
+   :id: TEST_2
+   :tests: IMPL_2, IMPL_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+chain = ["REQ_1", "REQ_2"]
+[case.expect.needs.SPEC_2]
+chain = ["REQ_2"]
+[case.expect.needs.IMPL_1]
+chain = ["REQ_1", "REQ_2"]
+seen = ["REQ_1.p1", "REQ_2"]
+approved_seen = ["REQ_1.p1", "REQ_2"]
+[case.expect.needs.IMPL_2]
+chain = ["REQ_2"]
+seen = ["REQ_2"]
+approved_seen = []
+[case.expect.needs.TEST_1]
+chain = ["REQ_1", "REQ_2"]
+seen = []
+[case.expect.needs.TEST_2]
+chain = ["REQ_1", "REQ_2"]
+[case.expect.needs.REQ_1]
+chain = []
+chain_back = ["IMPL_1", "SPEC_1", "TEST_1", "TEST_2"]
+seen_back = ["IMPL_1"]
+[case.expect.needs.REQ_2]
+chain = []
+chain_back = ["IMPL_1", "IMPL_2", "SPEC_1", "SPEC_2", "TEST_1", "TEST_2"]
+seen_back = ["IMPL_1", "IMPL_2"]
+[case.expect.schema.chain]
+summary = true
+[case.expect.schema.chain_back]
+summary = true
+[case.expect.schema.seen]
+summary = true
+
+[[case]]
+name = "link-collect-cycle"
+why = "a collect of its own link type over needs that read one another back, around a ring or by a need naming itself, is a cycle: each member is derive_cycle and holds no links; a need reading a member reads its empty list; a need off the ring reads the rung above it"
+config = '''
+[needs.links.refines]
+[needs.links.up]
+
+[needs.types.spec.links.up]
+derive = { kind = "copy", field = "id", over = "refines" }
+
+[needs.types.impl.links.up]
+derive = { kind = "collect", field = "up", over = "refines" }
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :refines: REQ_1
+
+.. impl:: Ring one
+   :id: IMPL_1
+   :refines: IMPL_2
+
+.. impl:: Ring two
+   :id: IMPL_2
+   :refines: IMPL_1, SPEC_1
+
+.. impl:: Off the ring
+   :id: IMPL_3
+   :refines: SPEC_1
+
+.. impl:: Reads the ring
+   :id: IMPL_4
+   :refines: IMPL_1
+
+.. impl:: Names itself
+   :id: IMPL_5
+   :refines: IMPL_5
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+up = ["REQ_1"]
+[case.expect.needs.IMPL_1]
+up = []
+[case.expect.needs.IMPL_2]
+up = []
+[case.expect.needs.IMPL_3]
+up = ["REQ_1"]
+[case.expect.needs.IMPL_4]
+up = []
+[case.expect.needs.IMPL_5]
+up = []
+[[case.expect.findings]]
+code = "derive_cycle"
+need = "IMPL_1"
+field = "up"
+[[case.expect.findings]]
+code = "derive_cycle"
+need = "IMPL_2"
+field = "up"
+[[case.expect.findings]]
+code = "derive_cycle"
+need = "IMPL_5"
+field = "up"
+
+[[case]]
+name = "link-kinds-refusals"
+why = "copy and collect on a link type are refused at load where they cannot be computed with the link types or give no link list: a copy of a field other than id, without over, with from, with select other than list; an over naming back links; a collect of its own link type over a link type a rule other than a union computes, or over a union one of whose members a rule computes (it would read itself on every need); a field naming a value field, id (for collect) or back links; after; each holds no links. summary = false beside such a rule is refused and ignored: the rule applies. A union cannot name a link type a copy computes: it is a summary"
+config = '''
+[needs.fields.req_ids]
+schema = { type = "array", items = { type = "string" } }
+
+[needs.links.satisfies]
+
+[needs.links.chain]
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.links.copy_title]
+derive = { kind = "copy", field = "title", over = "satisfies" }
+
+[needs.links.copy_no_over]
+derive = { kind = "copy", field = "id" }
+
+[needs.links.copy_from]
+derive = { kind = "copy", field = "id", from = "REQ_1", over = "satisfies" }
+
+[needs.links.copy_first]
+derive = { kind = "copy", field = "id", over = "satisfies", select = "first" }
+
+[needs.links.over_back]
+derive = { kind = "collect", field = "satisfies", over = "satisfies_back" }
+
+[needs.links.found]
+derive = { kind = "links", where = "type == 'req'" }
+
+[needs.links.over_derived]
+derive = { kind = "collect", field = "over_derived", over = "found" }
+
+[needs.links.value_field]
+derive = { kind = "collect", field = "req_ids", over = "satisfies" }
+
+[needs.links.collect_id]
+derive = { kind = "collect", field = "id", over = "satisfies" }
+
+[needs.links.field_back]
+derive = { kind = "collect", field = "satisfies_back", over = "satisfies" }
+
+[needs.links.after]
+derive = { kind = "collect", field = "satisfies", over = "satisfies", after = "derived" }
+
+[needs.links.not_summary]
+summary = false
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.links.trace]
+derive = { kind = "union", fields = ["satisfies", "chain"] }
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+chain = ["REQ_1"]
+not_summary = ["REQ_1"]
+copy_title = []
+copy_no_over = []
+copy_from = []
+copy_first = []
+over_back = []
+over_derived = []
+value_field = []
+collect_id = []
+field_back = []
+after = []
+trace = []
+[case.expect.schema.not_summary]
+summary = true
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "copy_title"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "copy_no_over"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "copy_from"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "copy_first"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "over_back"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "over_derived"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "value_field"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "collect_id"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "field_back"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "after"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "not_summary"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "trace"
+
+[[case]]
+name = "link-collect-dense"
+why = "the links a copy or collect on a link type stores count toward derive_dense, as a links rule's do: a chain whose lists hold more than derive_max_links_per_need times the needs of the project is reported once, naming the link type"
+config = '''
+[needs]
+derive_max_links_per_need = 1
+
+# N = 5 needs, K = 1: reported when a link type stores more than 5 links
+[needs.links.satisfies]
+[needs.links.implements]
+
+# SPEC_1 2, IMPL_1 2, IMPL_2 2: 6 links, 6 > 5: reported
+[needs.links.chain]
+derive_by_type.spec = { kind = "copy", field = "id", over = "satisfies" }
+derive_by_type.impl = { kind = "collect", field = "chain", over = "implements" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_1, REQ_2
+
+.. impl:: First
+   :id: IMPL_1
+   :implements: SPEC_1
+
+.. impl:: Second
+   :id: IMPL_2
+   :implements: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.IMPL_2]
+chain = ["REQ_1", "REQ_2"]
+[[case.expect.findings]]
+code = "derive_dense"
+field = "chain"
+
+# --- copy and collect over a derived link type, dead links, a later where -----------
+
+[[case]]
+name = "link-collect-over-union"
+why = "a chain over a union of the upward link types: a collect of its own link type over the union is computed need by need, each rung after the needs its union's members name; a copy of id over a union, and over a link type a links rule computes, links the needs it names"
+config = '''
+[needs.links.satisfies]
+[needs.links.implements]
+[needs.links.verifies]
+
+[needs.links.trace_up]
+derive = { kind = "union", fields = ["satisfies", "implements", "verifies"] }
+
+[needs.links.direct_up]
+derive = { kind = "copy", field = "id", over = "trace_up" }
+
+[needs.links.found]
+derive = { kind = "links", where = "id == 'REQ_2'" }
+
+[needs.links.found_ids]
+derive = { kind = "copy", field = "id", over = "found" }
+
+[needs.links.chain_reqs]
+derive_by_type.spec = { kind = "copy", field = "id", over = "trace_up", where = "type == 'req'" }
+derive_by_type.impl = { kind = "collect", field = "chain_reqs", over = "trace_up" }
+derive_by_type.test = { kind = "collect", field = "chain_reqs", over = "trace_up" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_1
+
+.. impl:: Implementation
+   :id: IMPL_1
+   :implements: SPEC_1
+   :satisfies: REQ_2
+
+.. test:: Test
+   :id: TEST_1
+   :verifies: IMPL_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+chain_reqs = ["REQ_1"]
+direct_up = ["REQ_1"]
+[case.expect.needs.IMPL_1]
+trace_up = ["REQ_2", "SPEC_1"]
+chain_reqs = ["REQ_1"]
+direct_up = ["REQ_2", "SPEC_1"]
+found_ids = ["REQ_2"]
+[case.expect.needs.TEST_1]
+chain_reqs = ["REQ_1"]
+direct_up = ["IMPL_1"]
+[case.expect.needs.REQ_1]
+chain_reqs = []
+chain_reqs_back = ["IMPL_1", "SPEC_1", "TEST_1"]
+[case.expect.needs.REQ_2]
+found_ids = []
+found_ids_back = ["IMPL_1", "REQ_1", "SPEC_1", "TEST_1"]
+[case.expect.schema.chain_reqs]
+summary = true
+
+[[case]]
+name = "link-collect-ring-through-union"
+why = "needs whose union reads one another around a ring are each derive_cycle and hold no links, exactly the needs on the ring: a need reading one of them reads its empty list and is not reported, and a need off the ring is computed"
+config = '''
+[needs.links.satisfies]
+[needs.links.implements]
+[needs.links.verifies]
+
+[needs.links.trace_up]
+derive = { kind = "union", fields = ["satisfies", "implements", "verifies"] }
+
+[needs.links.chain_reqs]
+derive_by_type.spec = { kind = "copy", field = "id", over = "trace_up" }
+derive_by_type.impl = { kind = "collect", field = "chain_reqs", over = "trace_up" }
+derive_by_type.test = { kind = "collect", field = "chain_reqs", over = "trace_up" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_1
+
+.. impl:: Ring one
+   :id: IMPL_2
+   :implements: IMPL_3
+
+.. impl:: Ring two
+   :id: IMPL_3
+   :implements: IMPL_2, SPEC_1
+
+.. impl:: Off the ring
+   :id: IMPL_4
+   :implements: SPEC_1
+
+.. test:: Reads the ring
+   :id: TEST_2
+   :verifies: IMPL_2, IMPL_4
+'''
+[case.expect]
+[case.expect.needs.IMPL_2]
+chain_reqs = []
+[case.expect.needs.IMPL_3]
+chain_reqs = []
+[case.expect.needs.IMPL_4]
+chain_reqs = ["REQ_1"]
+[case.expect.needs.TEST_2]
+chain_reqs = ["REQ_1"]
+[[case.expect.findings]]
+code = "derive_cycle"
+need = "IMPL_2"
+field = "chain_reqs"
+[[case.expect.findings]]
+code = "derive_cycle"
+need = "IMPL_3"
+field = "chain_reqs"
+
+[[case]]
+name = "link-collect-dead-links"
+why = "a dead link a collect carries, rung by rung, is the link type's it is written in: it sets has_dead_links (and, where that link type does not allow dead links, has_forbidden_dead_links) on the need writing it only, not on the needs carrying it"
+config = '''
+[needs.links.implements]
+
+[needs.links.allowed]
+allow_dead_links = true
+
+[needs.links.refused]
+
+[needs.links.seen]
+derive = { kind = "collect", field = "allowed", over = "implements" }
+
+[needs.links.relay]
+derive = { kind = "collect", field = "seen", over = "implements" }
+
+[needs.links.seen_refused]
+derive = { kind = "collect", field = "refused", over = "implements" }
+'''
+source = '''
+.. spec:: Writes the dead links
+   :id: SPEC_1
+   :allowed: DEAD_1
+   :refused: DEAD_2
+
+.. impl:: Collects them
+   :id: IMPL_1
+   :implements: SPEC_1
+
+.. impl:: Collects them again
+   :id: IMPL_2
+   :implements: IMPL_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+has_dead_links = true
+has_forbidden_dead_links = true
+[case.expect.needs.IMPL_1]
+seen = ["DEAD_1"]
+seen_refused = ["DEAD_2"]
+has_dead_links = false
+has_forbidden_dead_links = false
+[case.expect.needs.IMPL_2]
+relay = ["DEAD_1"]
+has_dead_links = false
+has_forbidden_dead_links = false
+
+[[case]]
+name = "link-path-where-reads-later"
+why = "a path's where naming a field a rule computes after the link types, or back links, cannot wait for it: derive_scope at each need whose over names a need, which holds no links; a need whose over names none reads nothing and is not reported"
+config = '''
+[needs.fields.hours]
+schema = { type = "number" }
+
+[needs.fields.total]
+schema = { type = "number" }
+derive = { kind = "sum", field = "hours", over = "links" }
+
+[needs.links.satisfies]
+
+[needs.links.big]
+derive = { kind = "copy", field = "id", over = "satisfies", where = "total > 1" }
+
+[needs.links.backed]
+derive = { kind = "copy", field = "id", over = "satisfies", where = "len(satisfies_back) > 0" }
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+big = []
+backed = []
+[case.expect.needs.REQ_1]
+big = []
+backed = []
+[[case.expect.findings]]
+code = "derive_scope"
+need = "SPEC_1"
+field = "big"
+[[case.expect.findings]]
+code = "derive_scope"
+need = "SPEC_1"
+field = "backed"
+
+[[case]]
+name = "link-path-where-is-a"
+why = "a where on a copy or a collect on a link type reads c.is_a as a filter does, as the need type declarations give inherits: with spec inheriting req, a copy over links on an impl keeps the req and the spec it links and drops the test, and a collect over links on a test keeps the chain of the impl it links and not the spec's, which is a req"
+config = '''
+[needs.types.spec]
+inherits = "req"
+
+[needs.links.chain]
+
+[needs.types.spec.links.chain]
+derive = { kind = "copy", field = "id", over = "links" }
+
+[needs.types.impl.links.chain]
+derive = { kind = "copy", field = "id", over = "links", where = "c.is_a('req')" }
+
+[needs.types.test.links.chain]
+derive = { kind = "collect", field = "chain", over = "links", where = "not c.is_a('req')" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Inherits req
+   :id: SPEC_1
+   :links: REQ_2
+
+.. test:: A test linked
+   :id: TEST_9
+
+.. impl:: Links a req, a spec and a test
+   :id: IMPL_1
+   :links: REQ_1, SPEC_1, TEST_9
+
+.. test:: Links an impl, a spec and a req
+   :id: TEST_1
+   :links: IMPL_1, SPEC_1, REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+chain = ["REQ_2"]
+chain_back = ["IMPL_1", "TEST_1"]
+[case.expect.needs.IMPL_1]
+chain = ["REQ_1", "SPEC_1"]
+[case.expect.needs.TEST_1]
+chain = ["REQ_1", "SPEC_1"]
+[case.expect.needs.TEST_9]
+chain = []
+[case.expect.needs.REQ_1]
+chain_back = ["IMPL_1", "TEST_1"]
+[case.expect.needs.REQ_2]
+chain_back = ["SPEC_1"]

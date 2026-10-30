@@ -76,8 +76,13 @@ KINDS: Final[tuple[DeriveKind, ...]] = (
 )
 
 #: The kinds that compute a link list, declared on a link type; every other kind
-#: computes a value, declared on a field.
+#: computes a value, declared on a field, but :data:`PATH_KINDS`.
 LINK_KINDS: Final = frozenset({"links", "content_links", "union"})
+
+#: The kinds declared on a field or on a link type. On a link type they compute a path
+#: through other links (``copy`` of ``id``, ``collect`` of a link type, over a link
+#: type), and the link type is a summary.
+PATH_KINDS: Final = frozenset({"copy", "collect"})
 
 #: The roles, in the order a rule's problems are looked for.
 ROLES: Final = (
@@ -89,6 +94,7 @@ ROLES: Final = (
     "join",
     "where",
     "test",
+    "empty",
     "select",
     "transitive",
     "include_self",
@@ -107,7 +113,7 @@ CORE_LINK_TYPES: Final = frozenset({"parent_needs"})
 _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
     "copy": (
         frozenset({"field"}),
-        frozenset({"from", "over", "join", "select", "include_self", "after"}),
+        frozenset({"from", "over", "join", "where", "select", "include_self", "after"}),
     ),
     "sum": (frozenset({"field", "over"}), frozenset({"where", "after"})),
     "count": (frozenset({"over"}), frozenset({"field", "where", "after"})),
@@ -119,8 +125,14 @@ _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
         frozenset({"field", "over"}),
         frozenset({"where", "transitive", "include_self", "after"}),
     ),
-    "any": (frozenset({"over"}), frozenset({"field", "test", "where", "after"})),
-    "all": (frozenset({"over"}), frozenset({"field", "test", "where", "after"})),
+    "any": (
+        frozenset({"over"}),
+        frozenset({"field", "test", "where", "empty", "after"}),
+    ),
+    "all": (
+        frozenset({"over"}),
+        frozenset({"field", "test", "where", "empty", "after"}),
+    ),
     "collect": (frozenset({"field", "over"}), frozenset({"where", "after"})),
     "hash": (frozenset({"fields"}), frozenset({"after"})),
     "fingerprint": (frozenset(), frozenset({"exclude"})),
@@ -133,8 +145,17 @@ _ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
     "union": (frozenset({"fields"}), frozenset()),
 }
 
+#: Per kind of :data:`PATH_KINDS`, the roles it requires and may take besides on a
+#: link type: it is computed with the link types, from the links written in them.
+_PATH_ROLES_OF: Final[Mapping[str, tuple[frozenset[str], frozenset[str]]]] = {
+    "copy": (frozenset({"field", "over"}), frozenset({"where", "select"})),
+    "collect": (frozenset({"field", "over"}), frozenset({"where"})),
+}
+
 _STRING_ROLES: Final = frozenset({"field", "over", "from", "where", "test"})
-_BOOLEAN_ROLES: Final = frozenset({"transitive", "include_self", "include_parts"})
+_BOOLEAN_ROLES: Final = frozenset(
+    {"empty", "transitive", "include_self", "include_parts"}
+)
 _SELECT: Final = ("first", "unique", "list")
 #: The keys of the ``join`` role.
 _JOIN_KEYS: Final = ("field", "equals")
@@ -168,13 +189,19 @@ class DeriveRule:
     :ivar from_need: The ``from`` role: the id of the one need read.
     :ivar join: The ``join`` role (``links``, ``copy``): the needs whose field equals
         one of this need's values.
-    :ivar where: The ``where`` role: the predicate narrowing the candidates.
+    :ivar where: The ``where`` role: the predicate narrowing the candidates (on
+        ``copy``, with ``over`` or ``join`` only).
     :ivar test: The ``test`` role: the predicate asserted of each candidate.
+    :ivar empty: The ``empty`` role (``any``, ``all``): the value over no candidate,
+        once ``where`` has dropped the candidates it does not hold on; ``None``, unset,
+        is the kind's own value there, ``False`` for ``any`` and ``True`` for ``all``.
     :ivar select: The ``select`` role of a ``copy`` over several targets.
     :ivar transitive: The ``transitive`` role of ``min`` / ``max``.
     :ivar include_self: The ``include_self`` role.
     :ivar include_parts: The ``include_parts`` role (``links``).
     :ivar after_derived: The ``after = "derived"`` role.
+    :ivar on_link: Whether a ``copy`` or ``collect`` is declared on a link type: it
+        computes a path (:attr:`path`), a link list.
     """
 
     kind: DeriveKind
@@ -186,11 +213,13 @@ class DeriveRule:
     join: DeriveJoin | None = None
     where: str | None = None
     test: str | None = None
+    empty: bool | None = None
     select: Literal["first", "unique", "list"] = "first"
     transitive: bool = False
     include_self: bool = False
     include_parts: bool = False
     after_derived: bool = False
+    on_link: bool = False
 
     @property
     def late(self) -> bool:
@@ -200,7 +229,13 @@ class DeriveRule:
     @property
     def link_valued(self) -> bool:
         """Whether the rule computes a link list."""
-        return self.kind in LINK_KINDS
+        return self.kind in LINK_KINDS or self.on_link
+
+    @property
+    def path(self) -> bool:
+        """Whether the rule computes a path through other links: a ``copy`` or a
+        ``collect`` on a link type, which makes the link type a summary."""
+        return self.on_link and self.kind in PATH_KINDS
 
     def describe(self) -> str:
         """The rule as messages name it: ``kind 'sum'``."""
@@ -289,8 +324,15 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
                 "fields or links), or under derive_by_type for a type an extension "
                 "adds",
             )
+        if unknown[0] == "summary":
+            # the stance is the link type's, the same under every rule of it
+            return DeriveInvalid(
+                kind,
+                f"{prefix}: 'summary' is not a role; whether a link type is a summary "
+                "is given on its needs_links entry, beside derive",
+            )
         return DeriveInvalid(kind, f"{prefix}: {unknown[0]!r} is not a role")
-    if on_link and kind not in LINK_KINDS:
+    if on_link and kind not in LINK_KINDS | PATH_KINDS:
         return DeriveInvalid(
             kind,
             f"{prefix} computes a value, so it is declared on a field (needs_fields), "
@@ -302,13 +344,16 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
             f"{prefix} computes a link list, so it is declared on a link type "
             "(needs_links), not on a field",
         )
-    required, optional = _ROLES_OF[kind]
+    path = on_link and kind in PATH_KINDS
+    required, optional = (_PATH_ROLES_OF if path else _ROLES_OF)[kind]
+    # a path's refusals name where the kind is declared: on a field it takes more
+    where = f"{prefix} on a link type" if path else prefix
     for role in ROLES:
         if role in raw and role not in required and role not in optional:
-            return DeriveInvalid(kind, f"{prefix} does not take the role {role!r}")
+            return DeriveInvalid(kind, f"{where} does not take the role {role!r}")
     for role in ROLES:
         if role in required and role not in raw:
-            return DeriveInvalid(kind, f"{prefix} requires the role {role!r}")
+            return DeriveInvalid(kind, f"{where} requires the role {role!r}")
     if kind == "links" and "where" not in raw and "join" not in raw:
         return DeriveInvalid(kind, f"{prefix} requires the role 'where' or 'join'")
     for role in ROLES:
@@ -320,7 +365,9 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
         )
     if kind == "union" and (twice := _named_twice(raw["fields"])) is not None:
         return DeriveInvalid(kind, f"{prefix}: the role 'fields' names {twice!r} twice")
-    if (problem := _combination_problem(kind, raw)) is not None:
+    if path and (problem := _path_problem(kind, raw)) is not None:
+        return DeriveInvalid(kind, f"{where}: {problem}")
+    if not path and (problem := _combination_problem(kind, raw)) is not None:
         return DeriveInvalid(kind, f"{prefix} {problem}")
     return DeriveRule(
         kind=kind,
@@ -334,11 +381,14 @@ def parse_derive(raw: Any, *, on_link: bool) -> Derive:
         else None,
         where=raw.get("where"),
         test=raw.get("test"),
-        select=raw.get("select", "first"),
+        empty=raw.get("empty"),
+        # a path is a list of links: every target
+        select=raw.get("select", "list" if path else "first"),
         transitive=raw.get("transitive", False),
         include_self=raw.get("include_self", False),
         include_parts=raw.get("include_parts", False),
         after_derived="after" in raw,
+        on_link=path,
     )
 
 
@@ -441,6 +491,21 @@ def _named_twice(names: Iterable[str]) -> str | None:
     return None
 
 
+def _path_problem(kind: str, raw: Mapping[str, Any]) -> str | None:
+    """What is wrong with a ``copy`` or ``collect`` on a link type, of its shape."""
+    if kind == "copy" and raw["field"] != "id":
+        return (
+            f"the role 'field' names {raw['field']!r}; a copy on a link type copies "
+            "'id', linking each need 'over' names"
+        )
+    if "select" in raw and raw["select"] != "list":
+        return (
+            f"the role 'select' is {raw['select']!r}; a link list holds every target, "
+            'so it is "list"'
+        )
+    return None
+
+
 def _combination_problem(kind: str, raw: Mapping[str, Any]) -> str | None:
     """What is wrong with how the roles of a rule go together, if anything."""
     if kind == "copy":
@@ -448,6 +513,9 @@ def _combination_problem(kind: str, raw: Mapping[str, Any]) -> str | None:
             return "takes one of the roles 'from', 'over' and 'join', not more"
         if "select" in raw and "over" not in raw and "join" not in raw:
             return "takes the role 'select' only with 'over' or 'join'"
+        # a where narrows the candidates, and a copy of one need has none
+        if "where" in raw and "over" not in raw and "join" not in raw:
+            return "takes the role 'where' only with 'over' or 'join'"
         # ``false``, the default, says nothing, as on min and max without transitive
         if raw.get("include_self") and "join" not in raw:
             return "takes the role 'include_self' only with 'join'"
@@ -718,15 +786,44 @@ def by_type_message(
 #: Why ``allow_dead_links`` cannot be given beside a link type whose rules are unions.
 _UNION_DEAD_LINKS: Final = " (a union's dead links are its members')"
 
+#: Why ``allow_dead_links`` cannot be given beside a link type whose rules are each a
+#: union or a path, a path among them.
+_PATH_DEAD_LINKS: Final = (
+    " (the dead links a copy or collect carries are those of the link type it collects)"
+)
 
-def beside_clause(keys: Sequence[str]) -> str:
+#: Why ``summary = false`` cannot be given beside a ``copy`` or ``collect`` of a link
+#: type.
+_PATH_SUMMARY: Final = " (a link a copy or collect computes is a path, not an edge)"
+
+
+def carries_links(rule: Derive | None) -> TypeGuard[DeriveRule]:
+    """Whether a rule's links are other link types' links: a ``union`` (its members',
+    on the need) or a path (``copy`` or ``collect`` on a link type, on other needs).
+    Their dead links and conditions are those link types', where they are written."""
+    return is_union(rule) or (isinstance(rule, DeriveRule) and rule.path)
+
+
+def _why_beside(keys: Sequence[str], *, path: bool = False) -> str:
+    """Why the keys refused beside a rule are, for those whose reason is not plain.
+
+    :param path: Whether a path is among the rules, which ``allow_dead_links`` is
+        refused beside.
+    """
+    dead = _PATH_DEAD_LINKS if path else _UNION_DEAD_LINKS
+    return (dead if "allow_dead_links" in keys else "") + (
+        _PATH_SUMMARY if "summary" in keys else ""
+    )
+
+
+def beside_clause(keys: Sequence[str], *, path: bool = False) -> str:
     """What a finding of a ``derive`` adds for the keys refused beside it, when the
     finding is another's: a cycle on some need types only, which leaves the rule
     applying on the others, so the keys beside it are still refused."""
     named = " and ".join(repr(key) for key in keys)
     verb = "are" if len(keys) > 1 else "is"
-    union = _UNION_DEAD_LINKS if "allow_dead_links" in keys else ""
-    return f"; {named} cannot be given beside derive, and {verb} ignored{union}"
+    why = _why_beside(keys, path=path)
+    return f"; {named} cannot be given beside derive, and {verb} ignored{why}"
 
 
 def beside_by_type_message(
@@ -736,6 +833,7 @@ def beside_by_type_message(
     keys: list[str],
     spelling: str | None = None,
     entries: Sequence[str] = (),
+    path: bool = False,
 ) -> str:
     """The ``needs.derive_invalid`` warning for a key beside ``derive_by_type`` alone:
     ``predicates``, a ``default`` that is not a literal, or an ``allow_dead_links``
@@ -750,7 +848,7 @@ def beside_by_type_message(
     """
     named = " and ".join(repr(key) for key in keys)
     verb = "are" if len(keys) > 1 else "is"
-    union = _UNION_DEAD_LINKS if "allow_dead_links" in keys else ""
+    union = _why_beside(keys, path=path)
     if spelling is not None:
         return (
             f"Invalid derive of {_what(on_link)} {name!r}: {spelling}: {named} cannot "
@@ -801,7 +899,7 @@ def beside_message(name: str, *, on_link: bool, rule: Derive, keys: list[str]) -
     """The ``needs.derive_invalid`` warning for a default beside a rule."""
     named = " and ".join(repr(key) for key in keys)
     verb = "are" if len(keys) > 1 else "is"
-    union = _UNION_DEAD_LINKS if "allow_dead_links" in keys else ""
+    union = _why_beside(keys, path=isinstance(rule, DeriveRule) and rule.path)
     return (
         f"Invalid derive of {_what(on_link)} {name!r}: {rule.describe()}: {named} "
         f"cannot be given beside derive, and {verb} ignored{union}; the rule applies"
@@ -1024,8 +1122,10 @@ def _rule_problem(
                 f"{prefix}: the role 'field' names {rule.field!r}, "
                 "which is not a field, a link type or the back links of one"
             )
+    if rule.path and (problem := _path_names_problem(rule, target, schema, links)):
+        return problem
     if rule.kind == "union":
-        return _union_problem(rule, links)
+        return _union_problem(rule, links, schema)
     for name in rule.fields:
         if name.endswith("_back") and name[:-5] in links:
             return (
@@ -1061,9 +1161,87 @@ def _rule_problem(
     return _result_problem(rule, source, target)
 
 
-def _union_problem(rule: DeriveRule, links: set[str]) -> str | None:
+def _path_names_problem(
+    rule: DeriveRule,
+    target: FieldSchema | LinkSchema,
+    schema: FieldsSchema,
+    links: set[str],
+) -> str | None:
+    """Why a ``copy`` or ``collect`` on a link type cannot be read against the
+    configuration, if it cannot.
+
+    It is computed with the link types, before the back links are built and before any
+    value field is computed: its ``over`` names no back links, and a ``collect``'s
+    ``field`` a link type, derived or not. Its ``over`` may name a derived link type: a
+    ``union`` is read through its members, so the needs it names are known when the
+    link types are ordered; another rule's links are known only once computed, so the
+    rule reads its ``field`` on every need computing it, and a ``collect`` of its own
+    link type there would read itself: refused. Each is known at load, so it is
+    refused there rather than reported on every need.
+    """
+    prefix = rule.describe()
+    assert rule.over is not None and rule.field is not None, "a path has both"
+    if rule.over not in links:
+        return (
+            f"{prefix}: the role 'over' names the back links {rule.over!r}, which a "
+            "link type's rule cannot read: they are built after the link types"
+        )
+    if (
+        rule.kind == "collect"
+        and rule.field == target.name
+        and (computing := _computed_over(schema, rule.over, frozenset())) is not None
+    ):
+        return (
+            f"{prefix}: the role 'field' names {rule.field!r}, the link type it "
+            f"computes, and the role 'over' names {rule.over!r}, which a "
+            f"{computing!r} rule computes: which needs it names is known only once "
+            "it is computed, so the collect would read itself on every need (over a "
+            "union, which is read through its members, it is computed need by need)"
+        )
+    if rule.kind == "collect":
+        if rule.field not in links and _is_link_name(rule.field, links):
+            return (
+                f"{prefix}: the role 'field' names the back links {rule.field!r}, "
+                "which a link type's rule cannot read: they are built after the link "
+                "types"
+            )
+        if rule.field not in links:
+            return (
+                f"{prefix}: the role 'field' names {rule.field!r}, which is not a "
+                "link type; a collect on a link type gathers the links of a link type "
+                "(a copy of 'id' links the needs themselves)"
+            )
+    return None
+
+
+def _computed_over(schema: FieldsSchema, name: str, seen: frozenset[str]) -> str | None:
+    """The kind of a rule other than a ``union`` computing the link type ``name``, or a
+    member of a union computing it (through unions of unions), if one does: its links
+    are known only once it is computed. ``None`` when every rule is a union of link
+    types no other rule computes, or there is none."""
+    # imported here, as the schema module imports this one
+    from sphinx_needs.needs_schema import LinkSchema
+
+    link = schema.global_declaration(name)
+    if not isinstance(link, LinkSchema) or name in seen:
+        return None
+    for rule in (link.derive, *(link.derive_by_type or {}).values()):
+        if not isinstance(rule, DeriveRule):
+            continue  # a rule that cannot be read holds no links
+        if rule.kind != "union":
+            return rule.kind
+        for member in rule.fields:
+            if (kind := _computed_over(schema, member, seen | {name})) is not None:
+                return kind
+    return None
+
+
+def _union_problem(
+    rule: DeriveRule, links: set[str], schema: FieldsSchema
+) -> str | None:
     """Why a ``union`` cannot be read against the configuration, if it cannot: each
-    member must be a link type, other than ``parent_needs``.
+    member must be a link type, other than ``parent_needs``, and no summary link type
+    (a union is read as one set of edges, and a summary link materialises a path).
 
     The union itself, or a union naming it back, is the cycle check's to refuse.
     """
@@ -1083,7 +1261,22 @@ def _union_problem(rule: DeriveRule, links: set[str]) -> str | None:
             return (
                 f"{prefix}: the role 'fields' names {name!r}, which is not a link type"
             )
+        if is_summary(schema, name):
+            return (
+                f"{prefix}: the role 'fields' names {name!r}, a summary link type, "
+                "which a union cannot read: a union is read as one set of edges, and a "
+                "summary link is a shortcut, not an edge"
+            )
     return None
+
+
+def is_summary(schema: FieldsSchema, name: str) -> bool:
+    """Whether the link type ``name`` is a summary, as its global declaration says."""
+    # imported here, as the schema module imports this one
+    from sphinx_needs.needs_schema import LinkSchema
+
+    link = schema.global_declaration(name)
+    return isinstance(link, LinkSchema) and link.summary
 
 
 def is_union(rule: Derive | None) -> TypeGuard[DeriveRule]:
@@ -1267,7 +1460,9 @@ def filter_problem(text: str) -> str | None:
 
     It must parse as a filter, and read the candidate alone: a predicate naming
     ``needs`` (every need), ``current_need`` (the reader) or a ``c.`` check (such as
-    ``c.this_doc()``) is not portable, as ubCode cannot evaluate it.
+    ``c.this_doc()``) is not portable, as ubCode cannot evaluate it -- but
+    ``c.is_a("<type>")``, which reads the candidate's type alone, against the need
+    types the project declares.
 
     :param text: The predicate.
     """
@@ -1277,6 +1472,20 @@ def filter_problem(text: str) -> str | None:
     except (SyntaxError, ValueError) as exc:
         detail = exc.msg if isinstance(exc, SyntaxError) else str(exc)
         return f"does not parse as a filter ({detail})"
+    #: the ``c.is_a("<type>")`` checks, which read the candidate alone
+    is_a = {
+        id(node.func)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "is_a"
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == "c"
+        and len(node.args) == 1
+        and not node.keywords
+        and isinstance(node.args[0], ast.Constant)
+        and isinstance(node.args[0].value, str)
+    }
     for node in ast.walk(tree):
         if isinstance(node, ast.Name) and node.id in {"needs", "current_need"}:
             return f"names {node.id!r}, which a declared rule cannot read"
@@ -1284,6 +1493,7 @@ def filter_problem(text: str) -> str | None:
             isinstance(node, ast.Attribute)
             and isinstance(node.value, ast.Name)
             and node.value.id == "c"
+            and id(node) not in is_a
         ):
             return f"calls 'c.{node.attr}', which a declared rule cannot read"
     return None

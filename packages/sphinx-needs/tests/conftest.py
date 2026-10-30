@@ -9,23 +9,37 @@ fixtures under it are what that plugin deliberately does not know: where this su
 projects live, and what a build of one of them must assert.
 
 Everything else in this file is sphinx-needs' own -- the parent-child doctree invariant,
-the ``fixture_file`` marker's parametrisation, and the two project builders.
+the fence on every need's source hops, the ``fixture_file`` marker's parametrisation, and
+the two project builders.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import json
-from collections.abc import Callable, Sequence
-from pathlib import Path
+import re
+from collections.abc import Callable, Iterator, Sequence
+from pathlib import Path, PurePath
 
 import pytest
 import yaml
 from _pytest.mark import ParameterSet
 from docutils.nodes import document
+from docutils.statemachine import string2lines
 from sphinx.application import Sphinx
 from sphinx.testing.util import SphinxTestApp
 
+import sphinx_needs.needs
 from sphinx_needs._jinja import render_template_string
+from sphinx_needs._need_source import (
+    SRCDIR_ROOT,
+    NeedSourceHop,
+    placement_index,
+    project_legacy,
+)
+from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.need_item import NeedItem, NeedItemSource
+from sphinx_needs.nodes import Need
 from sphinx_needs_testkit import make_plantuml_inert
 
 # The order is load-bearing, not alphabetical: `sphinx.testing.fixtures` defines a
@@ -75,6 +89,151 @@ def test_app_events() -> Sequence[tuple[str, Callable[..., object], int]]:
     is added to it next.
     """
     return (("doctree-resolved", _check_parent_child, 999),)
+
+
+#: what the first line of a need's text is: a directive's marker, reStructuredText or
+#: MyST (backticks, tildes or colons), or the item of a ``list2need`` (whose ``*`` needs
+#: no space after it); after a MyST block quote's ``>``, an rst grid cell's ``|``, or
+#: the bullets of the list item the directive opens
+_TEXT_START = re.compile(
+    r"\s*([>|]\s*|(?:[-+]|#\.|\d+[.)])\s+)*"
+    r"(\.\. [\w:.-]+::|(`{3,}|~{3,}|:{3,})\s*\{[\w:.-]+\}|\*)"
+)
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _need_source_fence() -> Iterator[None]:
+    """The fence on every need's source hops, in every build of this suite.
+
+    It wraps the doctree-read walk that ``setup()`` connects (``analyse_need_locations``,
+    looked up by name when each application is set up, so every application of the
+    session is covered, in every xdist worker) and checks each need the walk visits:
+
+    - a source of sphinx-needs' own class carries hops;
+    - the legacy ``sections`` and ``signature`` the walk writes equal the projection of
+      the placement hop's semantic location, which the walk computes from the doctree on
+      its own (:func:`~sphinx_needs._need_source.placement_semantic`), for every need;
+    - the ``parent_needs`` the walk writes name the nearest need node enclosing the need's
+      node, read from the doctree before the walk (:func:`_enclosing_need`), or nothing;
+    - every hop with a path has the one root, ``srcdir``, and a relative path;
+    - the walk changes the placement hop alone, and only its ``semantic`` (unset before);
+    - lines point at text: every hop under the ``srcdir`` root names a file that exists,
+      and where it has a ``start_line``, that line holds the directive's marker or the
+      list item, and its ``end_line`` a non-blank line at or after it.
+    """
+    original = sphinx_needs.needs.analyse_need_locations
+
+    def fenced(app: Sphinx, doctree: document) -> None:
+        needs = SphinxNeedsData(app.env).get_needs_mutable()
+        walked = {
+            node["refid"]: needs[node["refid"]]
+            for node in doctree.findall(Need)
+            if node["refid"] in needs
+        }
+        before = {
+            need_id: need.source.hops
+            for need_id, need in walked.items()
+            if isinstance(need.source, NeedItemSource)
+        }
+        # sphinx-needs' own source class carries hops; a third party's need not
+        lacking = [
+            need_id
+            for need_id, need in walked.items()
+            if need_id not in before
+            and type(need.source).__module__ == NeedItem.__module__
+        ]
+        assert not lacking, f"sources without hops: {lacking}"
+        # read before the walk, which takes the hidden needs out of the doctree
+        enclosing = {
+            node["refid"]: _enclosing_need(node) for node in doctree.findall(Need)
+        }
+        original(app, doctree)
+        wrong_parents = {
+            need_id: (need["parent_needs"], enclosing[need_id])
+            for need_id, need in walked.items()
+            if list(need["parent_needs"]) != enclosing[need_id]
+        }
+        assert not wrong_parents, f"parent_needs (walked, enclosing): {wrong_parents}"
+        files: dict[Path, list[str]] = {}
+        for need_id, hops in before.items():
+            _check_need_source(app, walked[need_id], hops, files)
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(sphinx_needs.needs, "analyse_need_locations", fenced)
+        yield
+
+
+def _enclosing_need(node: Need) -> list[str]:
+    """The id of the nearest need node above this one, as a one-item list, or ``[]``.
+
+    The whole of what ``parent_needs`` means, read from the doctree alone and
+    independently of the walk: a need is the child of the need whose content holds it,
+    wherever it sits in that content, hidden or not (#2398).
+    """
+    parent = node.parent
+    while parent is not None:
+        if isinstance(parent, Need):
+            return [parent["refid"]]
+        parent = parent.parent
+    return []
+
+
+def _check_need_source(
+    app: Sphinx,
+    need: NeedItem,
+    before: tuple[NeedSourceHop, ...],
+    files: dict[Path, list[str]],
+) -> None:
+    """The checks of :func:`_need_source_fence` on one walked need."""
+    source = need.source
+    assert isinstance(source, NeedItemSource)
+    after = source.hops
+    where = f"{need.id}: {after!r}"
+    index = placement_index(after)
+    if index is None:
+        assert after == before, where
+        return
+    semantic = after[index].semantic
+    assert semantic is not None, where
+    assert project_legacy(semantic) == (
+        tuple(need["sections"]),
+        need["signature"],
+    ), where
+    assert len(after) == len(before), where
+    for position, (old, new) in enumerate(zip(before, after, strict=True)):
+        if position == index:
+            assert old.semantic is None, where
+            assert new == dataclasses.replace(old, semantic=new.semantic), where
+        else:
+            assert new == old, where
+    for hop in after:
+        physical = hop.physical
+        if physical is None or physical.path is None:
+            continue
+        # R6: one root, and a path relative to it
+        assert physical.root == SRCDIR_ROOT, where
+        assert not PurePath(physical.path).is_absolute(), where
+        file = Path(app.srcdir, physical.path)
+        assert file.is_file(), f"{where}: no file {file}"
+        if physical.start_line is None:
+            assert physical.end_line is None, where
+            continue
+        if file not in files:
+            # read as the product reads it: the project's encoding (a BOM stripped),
+            # split as docutils numbers lines
+            files[file] = string2lines(
+                file.read_text(encoding=app.config.source_encoding),
+                tab_width=app.env.settings.get("tab_width", 8),
+                convert_whitespace=True,
+            )
+        lines = files[file]
+        assert 1 <= physical.start_line <= len(lines), where
+        assert _TEXT_START.match(lines[physical.start_line - 1]), (
+            f"{where}: line {physical.start_line} is {lines[physical.start_line - 1]!r}"
+        )
+        if physical.end_line is not None:
+            assert physical.start_line <= physical.end_line <= len(lines), where
+            assert lines[physical.end_line - 1].strip(), where
 
 
 @pytest.fixture

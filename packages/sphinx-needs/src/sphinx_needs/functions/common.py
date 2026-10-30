@@ -955,12 +955,10 @@ def execute_rule(
             include_self=rule.include_self,
             reads=reads,
         )
+        # a ``where`` is tested on each match, before a copy's ``select``
+        matched = [m for m in matched if _passes(m, rule.where, config, reads)]
         if rule.kind == "links":
-            return [
-                NeedLink(id=match["id"])
-                for match in matched
-                if _passes(match, rule.where, config, reads)
-            ]
+            return [NeedLink(id=match["id"]) for match in matched]
         return _rule_copy_over(need, matched, rule, field_schema, reads)
     if rule.kind == "links":
         return _rule_links(need, needs, rule, config, cache)
@@ -1008,6 +1006,8 @@ def execute_rule(
         for candidate in over_candidates(need, rule.over, needs, link_fields)
         if _passes(candidate, rule.where, config, reads)
     ]
+    if rule.path:
+        return _rule_path(candidates, rule, reads)
     match rule.kind:
         case "copy":
             return _rule_copy_over(need, candidates, rule, field_schema, reads)
@@ -1016,6 +1016,10 @@ def execute_rule(
                 return len(candidates)
             return sum(1 for c in candidates if _read(c, rule.field, reads) is not None)
         case "any" | "all":
+            if not candidates and rule.empty is not None:
+                # ``empty`` names the value over no candidate; unset, it is the
+                # kind's own: ``any`` false, ``all`` true, as below
+                return rule.empty
             if rule.test is not None:
                 hits = [_passes(c, rule.test, config, reads) for c in candidates]
             else:
@@ -1268,6 +1272,36 @@ def _rule_copy_over(
             location=(need["docname"], need["lineno"]) if need["docname"] else None,
         )
     return setting[0][1][rule.field]
+
+
+def _rule_path(
+    candidates: list[NeedItem], rule: DeriveRule, reads: UnresolvedReads | None
+) -> list[NeedLink]:
+    """A ``copy`` or ``collect`` on a link type: a path through other links.
+
+    ``copy`` of ``id`` links each candidate; ``collect`` gives the links ``field``
+    holds on each candidate, each with its target and part, its condition dropped (a
+    condition qualifies the edge it is written on, not the path). In the order of the
+    candidates, each in its own order, each link once; a dead link is carried.
+    """
+    assert rule.field is not None, "a path has a field"
+    links: list[NeedLink] = []
+    seen: set[NeedLink] = set()
+    for candidate in candidates:
+        if rule.kind == "copy":
+            found = [NeedLink(id=_read(candidate, "id", reads))]
+        else:
+            if reads is not None:
+                reads.note_read(candidate, rule.field)
+            found = [
+                NeedLink(id=link.id, part=link.part)
+                for link in candidate.get_links(rule.field, as_str=False)
+            ]
+        for link in found:
+            if link not in seen:
+                seen.add(link)
+                links.append(link)
+    return links
 
 
 def _rule_union(

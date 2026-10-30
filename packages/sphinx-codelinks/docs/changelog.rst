@@ -9,6 +9,34 @@ Unreleased
 New and Improved
 ................
 
+- 🔧 A one-line need is created through Sphinx-Needs' ``create_need``, its fields and
+  links as two mappings, so a marker field named like a parameter of Sphinx-Needs'
+  creation call (``state``, ``app``, ...) is an ordinary field where it ended the build
+  (`#2392 <https://github.com/useblocks/sphinx-needs/issues/2392>`__). Requires the
+  Sphinx-Needs release that adds ``create_need``.
+- 👌 A marker field named ``content``, ``doctype``, ``jinja_content``, ``full_title`` or
+  ``allow_type_coercion`` is still the need's argument of that name, as Sphinx-Needs'
+  ``add_need`` took it: ``content`` the need's content, ``jinja_content`` its Jinja switch,
+  and so on. A ``full_title`` the project declares as a field is that field too, and still
+  the full title a need without an id has its id hashed from, so the id is the one it had
+  and the one the duplicate check and the ``[docs]`` link name.
+- 👌 A marker field named like another Sphinx-Needs core field that the project cannot
+  declare as a field (``external_url``, ``external_css``, ``is_external``, ``sections``,
+  ...) refuses its need, with the ``codelinks.oneline`` warning naming it. ``add_need``
+  took such a field as its own keyword: ``external_css`` set the need's css class,
+  ``is_external`` made the need external, and the others were ignored.
+- 🔧 The needs of a ``src-trace`` directive take their location as Sphinx-Needs' one
+  ``NeedItemSource`` (their page, at the directive's line), where they used its deprecated
+  ``NeedItemSourceUnknown``; nothing they record changes. Requires the Sphinx-Needs
+  release that adds ``NeedItemSource``.
+- 🔧 The id the duplicate check and the ``[docs]`` link name for a need without an id is
+  derived through Sphinx-Needs' public ``generate_need_id``, where it imported the private
+  ``_make_hashed_id``; every id is the one it was
+  (`#2407 <https://github.com/useblocks/sphinx-needs/issues/2407>`__).
+- 🔧 The guard that let a Sphinx-Needs without ``ingest_need_record`` (before 9.0.0) import
+  this package, and the warning a directive with multi-line needs gave there, are gone:
+  the floor has been Sphinx-Needs 9.0.0 or later since 2.0.0
+  (`#2408 <https://github.com/useblocks/sphinx-needs/issues/2408>`__).
 - ✨ The analysis names the code entity each marker is attached to.
 
   Every record of ``codelinks analyse`` -- a one-line need, a reference, a multi-line need -- says which entity its

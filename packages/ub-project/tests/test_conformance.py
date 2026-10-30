@@ -20,7 +20,13 @@ from typing import Any
 
 import pytest
 
-from ub_project import ProjectConfigError, load_toml, read_variants
+from ub_project import (
+    NO_DATA_FILE,
+    NoDataFile,
+    ProjectConfigError,
+    load_toml,
+    read_variants,
+)
 
 CORPUS_PATH = Path(__file__).parent / "fixtures" / "ubproject_reading_conformance.toml"
 
@@ -28,7 +34,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "ubproject_reading_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 60
+EXPECTED_CASE_COUNT = 72
 
 #: The placeholder a case's ``toml`` uses for the absolute path of its own directory.
 CASE_DIR = "{case_dir}"
@@ -108,6 +114,16 @@ def _write_case(case: dict[str, Any], case_dir: Path) -> Path:
     return toml_path
 
 
+def _override(case_dir: Path, override: str | None) -> Path | NoDataFile | None:
+    """The reader's ``data_file_override`` for a case's key: absent is no override,
+    ``""`` the override that names no file, anything else a file in the case directory."""
+    if override is None:
+        return None
+    if override == "":
+        return NO_DATA_FILE
+    return _inside(case_dir, override)
+
+
 @pytest.mark.parametrize(
     "escape",
     [{"files": {"../x.json": "{}"}}, {"toml_path": "../ubproject.toml"}],
@@ -128,17 +144,19 @@ def test_case(case: dict[str, Any], tmp_path: Path) -> None:
     case_dir = tmp_path
     toml_path = _write_case(case, case_dir)
     expect = case["expect"]
-    tables = {
+    override = case.get("data_file_override")
+    options = {
         "needs_table": case.get("needs_table", "needs"),
         "variants_table": case.get("variants_table", "variants"),
+        "data_file_override": _override(case_dir, override),
     }
 
     if expect.get("error", False):
         with pytest.raises(ProjectConfigError):
-            read_variants(load_toml(toml_path), toml_path, **tables)
+            read_variants(load_toml(toml_path), toml_path, **options)
         return
 
-    result = read_variants(load_toml(toml_path), toml_path, **tables)
+    result = read_variants(load_toml(toml_path), toml_path, **options)
     assert result.data == expect["variant_data"]
     if "variant_data_file" in expect:
         expected_file = case_dir.joinpath(*expect["variant_data_file"].split("/"))

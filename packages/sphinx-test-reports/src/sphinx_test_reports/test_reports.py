@@ -1,4 +1,5 @@
 # fmt: off
+import inspect
 import os
 from pathlib import Path
 
@@ -10,13 +11,17 @@ from sphinx.util import logging
 # from docutils import nodes
 from sphinx_needs.api import (
     add_dynamic_function,
+    add_field,
     add_need_type,
+    create_need,
 )
+from sphinx_needs.data import NeedsCoreFields
 from sphinx_needs.exceptions import (
     NeedsApiConfigWarning,
 )
 from sphinx_test_reports import __version__
 from sphinx_test_reports.directives.test_case import TestCase, TestCaseDirective
+from sphinx_test_reports.directives.test_common import DIRECTIVE_FIELDS
 from sphinx_test_reports.directives.test_env import EnvReport, EnvReportDirective
 from sphinx_test_reports.directives.test_file import TestFile, TestFileDirective
 from sphinx_test_reports.directives.test_report import (
@@ -36,10 +41,13 @@ from sphinx_test_reports.exceptions import InvalidConfigurationError
 from sphinx_test_reports.functions import tr_link
 from ub_test_reports.fields import (
     FIELDS,
+    NEED_KINDS,
     RENAMEABLE_FIELDS,
     RESERVED_NAMES,
     declaration,
+    need_kinds,
 )
+from ub_test_reports.junitparser import LINE_BASES, is_line_base
 from ub_test_reports.projectconfig import (
     BRIDGE_KEYS,
     DEFAULT_FIELD_NAMES,
@@ -54,44 +62,41 @@ from ub_test_reports.projectconfig import (
 
 VERSION = __version__
 
-try:
-    # sphinx-needs >= 7.0: fields are registered through add_field.
-    from sphinx_needs.api import add_field as _add_field
 
-    def _register_field(app: Sphinx, name: str, role: str | None = None) -> None:
-        type_, description = declaration(name, role)
-        try:
-            # sphinx-needs types `schema=` as a union of TypedDicts; this passes the
-            # equivalent plain mapping, which is what it has always passed. Narrowing it
-            # properly means importing `FieldSchemaTypes` from `sphinx_needs.schema.config`
-            # -- an internal path the ImportError fallback below cannot depend on.
-            _add_field(name, description, schema={"type": type_})  # ty: ignore[invalid-argument-type]
-        except NeedsApiConfigWarning:
-            # Already registered, e.g. via needs_fields or needs_extra_options
-            # in conf.py. Anything else is a real error and must surface.
-            logging.getLogger(__name__).debug(
-                f"Field '{name}' already registered, skipping"
-            )
+def _register_field(app: Sphinx, name: str, role: str | None = None) -> None:
+    """Register one field with sphinx-needs, on the need types that carry it.
 
-except ImportError:
-    from sphinx_needs.api import add_extra_option as _add_extra_option
-
-    def _register_field(app: Sphinx, name: str, role: str | None = None) -> None:
-        # add_extra_option takes description and schema from sphinx-needs
-        # 6.0.1 on, which is the package's floor.
-        type_, description = declaration(name, role)
-        try:
-            _add_extra_option(
-                # the same plain mapping, and the same reason, as the `_add_field` call above
-                app,
-                name,
-                description=description,
-                schema={"type": type_},  # ty: ignore[invalid-argument-type]
-            )
-        except NeedsApiConfigWarning:
-            logging.getLogger(__name__).debug(
-                f"Field '{name}' already registered, skipping"
-            )
+    The kinds of need setting the field (:func:`~ub_test_reports.fields.need_kinds`)
+    are mapped to the need types ``tr_file``, ``tr_suite`` and ``tr_case`` name, and
+    the field is declared on those alone (#2372): a project's own need type carrying
+    it names it in its ``needs_types`` entry, which declares it there too.
+    """
+    type_, description = declaration(name, role)
+    need_types = dict(
+        zip(
+            NEED_KINDS,
+            (app.config.tr_file[1], app.config.tr_suite[1], app.config.tr_case[1]),
+            strict=True,
+        )
+    )
+    try:
+        # sphinx-needs types `schema=` as a union of TypedDicts; this passes the
+        # equivalent plain mapping, which is what it has always passed. Narrowing it
+        # properly means importing `FieldSchemaTypes` from `sphinx_needs.schema.config`,
+        # an internal path.
+        add_field(
+            name,
+            description,
+            schema={"type": type_},  # ty: ignore[invalid-argument-type]
+            types=[need_types[kind] for kind in need_kinds(name, role)],
+        )
+    except NeedsApiConfigWarning:
+        # Already registered, e.g. via needs_fields or needs_extra_options
+        # in conf.py, which is then the field, on every need type. Anything
+        # else is a real error and must surface.
+        logging.getLogger(__name__).debug(
+            f"Field '{name}' already registered, skipping"
+        )
 
 
 def setup(app: Sphinx) -> dict[str, object]:
@@ -121,6 +126,12 @@ def setup(app: Sphinx) -> dict[str, object]:
     # Required (not just recommended) when the build consumes a needs.json
     # produced by `test-reports build needs`, which always writes them.
     app.add_config_value("tr_deterministic_case_ids", False, "html")
+    # What the `line` of a report without a line-base mark counts from (#2381). A Google
+    # Test case always counts from 1. "auto": the reader's rule -- a pytest-shaped report
+    # from 0 (an earlier plugin's too, which carries no mark), any other report as
+    # written. 0 or 1: that base for every other report without a mark. "env": a test
+    # need records its line.
+    app.add_config_value("tr_line_base", "auto", "env", types=(str, int))
     # Declarative configuration: the [test_reports] section of this file
     # overrides the tr_* config values above at config-inited. The default is
     # searched for upwards from the confdir to the repository root; an explicit
@@ -223,6 +234,7 @@ def setup(app: Sphinx) -> dict[str, object]:
     # silently break it. (Sphinx's own check_confval_types sits at 800, so it
     # still validates what the bridge wrote.)
     app.connect("config-inited", load_toml_config, priority=100)
+    app.connect("config-inited", check_line_base)
     app.connect("config-inited", tr_preparation)
     app.connect("config-inited", sphinx_needs_update)
 
@@ -230,6 +242,13 @@ def setup(app: Sphinx) -> dict[str, object]:
 
     return {
         "version": VERSION,  # identifies the version of our extension
+        # What the pickled environment holds of a test need -- its line and its source
+        # -- changes with this number: an upgraded build reads every page again rather
+        # than keep what an earlier release recorded. 1: the hops, and the line the
+        # directive is written on (#2209). 2: a test case's line read by its report's
+        # base, so a plain pytest report's `case_line` is one more, and the code hop's
+        # line where the base is known (#2381).
+        "env_version": 2,
         "parallel_read_safe": True,  # support parallel modes
         "parallel_write_safe": True,
     }
@@ -244,6 +263,43 @@ _BUILT_IN_OPTIONS = {
 }
 
 
+def _fields_the_directives_set(config: Config) -> dict[str, str]:
+    """The names no extra option may have, each with why, for the message that refuses
+    one (#2181):
+
+    - a field of :data:`~sphinx_test_reports.directives.test_common.DIRECTIVE_FIELDS`
+      a directive sets itself, but a core field of the field schema that some directive
+      leaves unset (``style``): it is that field there, as an extra option always was;
+    - the report-path and source-location fields under their configured names;
+    - a Sphinx-Needs core field that is neither a field of the field schema nor an
+      argument of ``create_need`` (``external_url``, ``sections``, ...): ``add_need``
+      took one as its own keyword, and it sets nothing a test report means.
+    """
+    directive_names = {
+        "file": config.tr_file[0],
+        "suite": config.tr_suite[0],
+        "case": config.tr_case[0],
+    }
+    schema_core = {
+        name
+        for name, spec in NeedsCoreFields.items()
+        if spec.get("add_to_field_schema")
+    }
+    every_directive = frozenset.intersection(*DIRECTIVE_FIELDS.values())
+    taken: dict[str, str] = {}
+    for kind, names in DIRECTIVE_FIELDS.items():
+        for name in sorted(names):
+            if name in schema_core and name not in every_directive:
+                continue
+            taken.setdefault(name, f"a field {directive_names[kind]} sets itself")
+    for option in ("tr_file_option", "tr_source_file_option", "tr_source_line_option"):
+        taken.setdefault(getattr(config, option), f"a field {option} names")
+    arguments = set(inspect.signature(create_need).parameters)
+    for name in sorted(set(NeedsCoreFields) - schema_core - arguments):
+        taken.setdefault(name, "a core field of Sphinx-Needs that no option can set")
+    return taken
+
+
 def register_tr_extra_options(app: Sphinx) -> None:
     """Register extra options with directives."""
 
@@ -256,6 +312,7 @@ def register_tr_extra_options(app: Sphinx) -> None:
     # keeps the configured spelling (#2115). Two names that differ only in case would be
     # one option.
     written: dict[str, str] = {}
+    fields_set = _fields_the_directives_set(app.config)
     for option_name in tr_extra_options or []:
         lowered = option_name.lower()
         if written.get(lowered, option_name) != option_name:
@@ -273,6 +330,14 @@ def register_tr_extra_options(app: Sphinx) -> None:
                     f"tr_extra_options holds '{option_name}', which {directive_name} "
                     f"reads as its own :{lowered}: option; choose another name."
                 )
+        # A field the directives set themselves, or one configuration names, would be
+        # given twice in the one mapping a need is created from: the extra option
+        # overriding the directive's value without a word (#2181).
+        if (taken_by := fields_set.get(option_name)) is not None:
+            raise InvalidConfigurationError(
+                f"tr_extra_options holds '{option_name}', which is {taken_by}; "
+                f"choose another name."
+            )
         if lowered != option_name:
             log.info(
                 f"tr_extra_options: write '{option_name}' on a directive as "
@@ -380,6 +445,26 @@ def load_toml_config(app: Sphinx, config: Config) -> None:
         log.info(
             f"Kept the -D value of {', '.join(sorted(skipped))} over "
             f"[{SECTION}] in {path}"
+        )
+
+
+def check_line_base(app: Sphinx, config: Config) -> None:
+    """Refuse a ``tr_line_base`` other than ``"auto"``, ``0`` or ``1``, when the build
+    starts.
+
+    After the bridge, so a value from ``[test_reports]`` (which the loader has checked)
+    and one from ``conf.py`` or ``-D`` are held to the same set. ``-D`` can only give
+    text, so ``"0"`` and ``"1"`` are the numbers.
+    """
+    value = config.tr_line_base
+    if value in ("0", "1"):
+        value = int(value)
+        config.tr_line_base = value
+    if not is_line_base(value):
+        allowed = ", ".join(repr(base) for base in LINE_BASES)
+        raise InvalidConfigurationError(
+            f"tr_line_base is {value!r}; it must be one of {allowed}: what the line of "
+            f"a report without a line-base mark counts from."
         )
 
 

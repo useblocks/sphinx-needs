@@ -5,10 +5,12 @@ and the resulting JUnit XML inspected. The property model comes from the
 ``test_reports_properties`` ini option; S-CORE's is the profile most tests use.
 """
 
+import ast
 import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import pytest
 
@@ -210,9 +212,9 @@ def _run(pytester, source, *extra, family="xunit1", profile=SCORE_PROFILE, ini="
 
     *profile* is the ``test_reports_properties`` block of the ini file, *ini*
     any further ini lines. A subprocess, not in-process: this module has the
-    plugin imported already, and pytest warns about a ``-p`` module it cannot
-    assert-rewrite any more -- noise in the warning counts, an error under a
-    strict warning policy.
+    plugin imported already, and a run has to import it the way a user's does --
+    through ``-p``, or first through a ``filterwarnings`` line naming its class,
+    which is the order pytest 9.2 changed.
     """
     pytester.makeini("[pytest]\n" + profile + ini)
     pytester.makepyfile(source)
@@ -707,6 +709,35 @@ class TestStartUp:
         )
         result.assert_outcomes(passed=1, warnings=0)
 
+    def test_a_filter_naming_the_class_leaves_the_p_line_quiet(self, pytester):
+        # From pytest 9.2 on, resolving the filter imports the plugin before `-p`
+        # does; without PYTEST_DONT_REWRITE in its docstring `-p` then warns that it
+        # cannot rewrite the plugin's asserts -- the traceback of the test above under
+        # `filterwarnings = error`, and one more warning in every run without it.
+        result, _ = _run(
+            pytester,
+            PLAIN,
+            family="xunit2",
+            ini=f"filterwarnings =\n    ignore::{PLUGIN}.TestReportsConfigWarning\n",
+        )
+        result.assert_outcomes(passed=1, warnings=0)
+        assert "already imported" not in result.stdout.str() + result.stderr.str()
+
+    def test_the_plugin_opts_out_of_assertion_rewriting(self):
+        # The marker the two tests above depend on, held on every pytest: on the
+        # ones before 9.2 those tests pass without it.
+        assert "PYTEST_DONT_REWRITE" in (pytest_plugin.__doc__ or "")
+
+    def test_the_plugin_has_no_assert_to_rewrite(self):
+        # What makes the marker free: an assert in the plugin would lose pytest's
+        # rewritten message, silently.
+        source = Path(pytest_plugin.__file__).read_text(encoding="utf-8")
+        assert not [
+            node.lineno
+            for node in ast.walk(ast.parse(source))
+            if isinstance(node, ast.Assert)
+        ]
+
     def test_xunit2_gives_no_per_test_fixture_warnings(self, pytester):
         # pytest drops the attributes under xunit2 anyway and would warn per test
         # that record_xml_attribute is incompatible; the plugin says it once.
@@ -798,3 +829,86 @@ class TestHelpers:
             [sys.executable, "-c", script], capture_output=True, text=True, check=True
         )
         assert result.stdout.strip() == ""
+
+
+#: The suite-level property the plugin declares its 1-based lines with (#2381).
+LINE_BASE = "ub_test_reports:line_base"
+
+#: Two tests on known lines, for a run without the plugin.
+UNMARKED = """
+import pytest
+
+
+def test_plain():
+    pass
+
+
+@pytest.mark.parametrize("x", [1])
+def test_decorated(x):
+    pass
+"""
+
+
+def _marks(root):
+    """Each ``<testsuite>``'s line-base properties, in document order."""
+    return [
+        [
+            prop.get("value")
+            for prop in suite.findall("properties/property")
+            if prop.get("name") == LINE_BASE
+        ]
+        for suite in root.iter("testsuite")
+    ]
+
+
+def _read_lines(report):
+    """``{case name: (line, line_base_known)}`` as the reader gives them."""
+    from ub_test_reports.junitparser import JUnitParser
+
+    return {
+        case["name"]: (case["line"], case.get("line_base_known"))
+        for suite in JUnitParser(str(report)).parse(line_base_known=True)
+        for case in suite["testcases"]
+    }
+
+
+class TestLineBaseMark:
+    """Where the plugin rewrites lines (``xunit1``, with an XML writer), it says so: every
+    ``<testsuite>`` it writes carries ``ub_test_reports:line_base = 1``, so the reader takes
+    its lines as they are while it reads a plain pytest report's as counted from 0."""
+
+    def test_an_xunit1_report_is_marked(self, pytester):
+        result, root = _run(pytester, DECORATED)
+        result.assert_outcomes(passed=2)
+        assert _marks(root) == [["1"]]
+
+    def test_under_xdist_the_controller_writes_one_mark(self, pytester):
+        pytest.importorskip("xdist")
+        result, root = _run(pytester, DECORATED, "-n", "2")
+        result.assert_outcomes(passed=2)
+        assert _marks(root) == [["1"]]
+
+    def test_an_xunit2_report_is_not_marked(self, pytester):
+        # pytest writes no line under xunit2, and the plugin rewrites none
+        _, root = _run(pytester, DECORATED, family="xunit2")
+        assert _marks(root) == [[]]
+
+    def test_the_reader_takes_the_plugin_s_lines_as_they_are(self, pytester):
+        _run(pytester, DECORATED)
+        lines = _read_lines(pytester.path / "report.xml")
+        assert lines["test_addition"][0] == ADDITION_LINE
+        assert lines["test_plain"][0] == PLAIN_LINE
+
+    def test_the_reader_takes_a_plain_pytest_report_s_lines_from_0(self, pytester):
+        pytester.makepyfile(UNMARKED)
+        report = pytester.path / "report.xml"
+        result = pytester.runpytest_subprocess(
+            "--junitxml", str(report), "-o", "junit_family=xunit1"
+        )
+        result.assert_outcomes(passed=2)
+        root = ET.parse(report).getroot()
+        assert _marks(root) == [[]]
+        assert _read_lines(report) == {
+            "test_plain": (_line_of(UNMARKED, "def test_plain"), True),
+            "test_decorated[1]": (_line_of(UNMARKED, "@pytest.mark.parametrize"), True),
+        }

@@ -52,6 +52,8 @@ class TestResultsDirective(Directive):
         root_path = env.app.config.tr_rootdir
         if not os.path.isabs(xml_path):
             xml_path = os.path.join(root_path, xml_path)
+        # the page depends on the report, read or not (as the need directives' does)
+        env.note_dependency(os.path.abspath(xml_path))
 
         # Every refusal is a located `test_reports.*` warning and an error box in place of
         # the sections; the build goes on.
@@ -65,7 +67,7 @@ class TestResultsDirective(Directive):
                 f"test-results reads JUnit XML reports; {xml_path} is a JSON file",
             )
         try:
-            results = JUnitParser(xml_path).parse()
+            results = JUnitParser(xml_path, line_base=env.config.tr_line_base).parse()
         except ReportReadError as error:
             return self._refuse("report_unreadable", str(error))
 

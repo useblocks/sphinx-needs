@@ -4,29 +4,26 @@ import re
 
 import pytest
 
-import sphinx_test_reports.directives.test_case
-import sphinx_test_reports.directives.test_suite
+import sphinx_test_reports.directives.test_common
 from sphinx_needs.data import SphinxNeedsData
 
 
 def _record_links(monkeypatch) -> dict[str, str]:
-    """Record the ``links`` STRING each suite and case hands to ``add_need``, by need id.
+    """Record the ``links`` STRING each need is handed to ``create_need`` with, by need
+    id (every directive creates its need through ``create_report_need``).
 
     sphinx-needs splits, sorts and de-duplicates that string when it reads it, so a
     duplicated id never reaches the built needs; only the string shows it.
     """
     handed: dict[str, str] = {}
-    for module in (
-        sphinx_test_reports.directives.test_suite,
-        sphinx_test_reports.directives.test_case,
-    ):
-        real = module.add_need
+    module = sphinx_test_reports.directives.test_common
+    real = module.create_need
 
-        def recording(*args, _real=real, **kwargs):
-            handed[kwargs["id"]] = kwargs["links"]
-            return _real(*args, **kwargs)
+    def recording(*args, **kwargs):
+        handed[kwargs["id"]] = kwargs["links"]["links"]
+        return real(*args, **kwargs)
 
-        monkeypatch.setattr(module, "add_need", recording)
+    monkeypatch.setattr(module, "create_need", recording)
     return handed
 
 
@@ -96,6 +93,6 @@ def test_a_link_containing_the_file_id_keeps_the_parent_links(test_app, monkeypa
             assert links == sorted(["REQ_1", file_id, suite_id]), case_id
             assert handed[case_id] == f"{authored};{suite_id}"
 
-    # no string handed to add_need names an id twice
+    # no string handed to create_need names an id twice
     for id_, links in handed.items():
         assert len(_elements(links)) == len(set(_elements(links))), (id_, links)

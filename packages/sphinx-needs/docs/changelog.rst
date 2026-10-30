@@ -4,6 +4,416 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Improvements
+............
+
+- ✨ A link type derives a chain's far ends as links: ``copy`` of ``id`` and ``collect`` of a link type, over a
+  link type, declared on a link type (:ref:`needs_derive_link_chain`, :issue:`2370`)
+
+  ``{ kind = "copy", field = "id", over = "satisfies" }`` on a specification and
+  ``{ kind = "collect", field = "chain", over = "implements" }`` on the rungs below give every need of the chain the
+  requirements it traces to as links, and each requirement the needs that reach it as back links. Each link is kept
+  once by its target and part, its condition dropped; a dead link is carried, and reported where it is written.
+  Such a link type is a summary (``summary = false`` beside the rule is refused), counts toward
+  ``needs.derive_dense``, and is computed with the link types: an ``over`` naming back links, and a ``field`` naming
+  a value field or back links, are refused at load (``needs.derive_invalid``), and needs reading one another's chain
+  around a ring are ``needs.derive_cycle``. ``over`` may name a union, read through its members, so a chain climbs
+  several link types at once (``over = "trace_up"``); a ``collect`` of its own link type over a link type another
+  kind of rule computes is refused. A dead link carried is flagged (``has_dead_links``) and drawn forbidden only as
+  the link type it is written in says. A ``collect``, or a ``copy`` over a link type another rule computes, links needs
+  its need does not name, so in a project with one every change of a need re-writes every need-relevant page on an incremental build (:ref:`incremental_builds`).
+  On a field, ``copy`` and ``collect`` are unchanged.
+
+- ✨ **Summary link types**: ``summary = true`` on a :ref:`needs_links` entry marks a link type whose links are
+  shortcuts across the trace rather than steps in it, such as a test result linked straight to the requirements it
+  covers (:ref:`needs_derive_summary`, :issue:`2370`)
+
+  It works as any link type wherever it is named (a filter, a needtable column, a rule's ``over``, a needflow's
+  ``:link_types:``, a schema rule), and a need holds its links and back links as usual; but a :ref:`needflow`
+  without ``:link_types:`` neither draws it nor walks it from ``:root_id:``, so a diagram does not show every path twice.
+  The schema of the ``needs.json`` marks it, and its back links, ``"summary": true``, and a ``union`` cannot name it as
+  a member (``needs.derive_invalid``). It is set on the link type for every need type: a need type's entry giving it
+  is a ``needs.config`` warning, and in a rule it is no key (``needs.derive_invalid``); ``copy = true`` beside it is a
+  ``needs.config`` warning, and nothing is copied into ``links``. Without it nothing changes.
+
+- ✨ ``c.is_a('req')`` is true for a need whose type is ``req`` or inherits from it (:issue:`2322`)
+
+  ``type == 'req'`` compares the type's name alone; ``c.is_a('req')`` follows :ref:`inherits <needs_types_fields>`,
+  directly or through other types, as the project's need types declare it: with ``sys_req`` inheriting ``req`` and
+  ``hw_req`` inheriting ``sys_req``, it selects the needs of all three, as ``type in ['req', 'sys_req', 'hw_req']``
+  does. It reads the need's type and the need type declarations, and no field: a need carries no list of its types.
+  A name that is no need type selects nothing, unreported. It is a check beside ``c.this_doc()``, in the portable
+  filter language with a string literal as its argument, answered without ``eval``, and in the ``eval`` tier for
+  any other argument. It reads the need alone, so it is available in a filter configured in ``conf.py`` and in a
+  derived field's ``where``, where ``c.this_doc()`` is not; like ``c.this_doc()``, it is not available in a
+  :ref:`needimport` ``:filter:`` nor in the ``predicates`` of a :ref:`needs_fields` entry. ``c.is_a`` tests the
+  need's type: to follow a link type named ``is_a``, use the link. See :ref:`filter_is_a`.
+
+- ✨ A :ref:`needs_types` entry naming a need type an extension adds narrows that type, where it was ignored
+  (:issue:`2371`)
+
+  An entry for sphinx-test-reports' ``testcase``, or any type an extension adds with ``add_need_type``, is a
+  narrowing of it, as an entry naming a default type is: the keys it gives win, the ``title``, ``prefix``,
+  ``color`` and ``style`` it leaves out are the extension's, and its ``inherits``, ``fields`` and ``links`` (with
+  ``derive``, ``target_types``, ``minItems`` / ``maxItems``, a narrower ``schema``) apply to the type's needs, as on
+  a type the project declares, whenever the extension adds the type. So
+  ``[needs.types.testcase.links.evidence_for] derive = {...}`` gives test cases a derived link type of their own
+  (joining on the ``case_name`` of ``test`` needs takes ``[needs.types.test.fields.case_name]`` too, once
+  sphinx-test-reports declares its fields on its own types, below). The entry takes every key of a need type's,
+  ``back_links``, ``id_regex`` and a field's ``severity`` (below) included, and only narrows: its declaration of a
+  field the extension declares starts from the extension's, so one widening it is a ``needs.type_widening`` warning
+  (one re-typing it a ``needs.type_conflict``), and is ignored. A
+  bare entry still declares no type (the default types are kept beside it). A bare entry naming no default type and
+  no type an extension adds is ignored as before, but reported once the schema is built, naming
+  ``derive_by_type`` as the spelling that attaches a rule to a type the project does not declare -- the
+  documentation now says that is what ``derive_by_type`` is for, rather than only that it is older. The GitHub
+  services' types are not narrowed: an entry with a ``title`` and a ``prefix`` replaces one, and a bare entry for one
+  is ignored, with a warning naming the service's type. See :ref:`narrowing an extension's type <needs_types_extension>`.
+
+- ✨ An extension declares a field on its own need types alone: ``add_field(name, description, types=[...])``
+  (:issue:`2372`)
+
+  The field is the extension's declaration -- its schema, ``nullable`` and default -- on the need types named (and
+  the types inheriting from them), and absent on every other type, exactly as a field a project's need type entries
+  declare alone: ``None`` there, and a value set there is one ``needs.undeclared_for_type`` warning. A project need
+  type that carries the field names it in its entry (``[needs.types.test.fields.case_name]``, an empty entry
+  included), which declares it there too; a ``needs_fields`` entry of the same name is the field, on every type, as
+  before. A type named that nothing declares when the schema is built is one ``needs.config`` warning, the field
+  declared on the others. ``FieldsSchema.declaring_types(name)`` names the types declaring a field declared on need
+  types alone, either way, and the needs.json schema writes such a field nullable where the extension's declaration
+  is not, with a ``null`` default where it gives no literal one (so ``needs_json_remove_defaults`` leaves the key
+  out). sphinx-test-reports declares its eighteen fields this way from its next release. See
+  :ref:`fields an extension declares on need types alone <needs_types_extension_fields>`.
+
+- ✨ Each need now records where its text came from, as a list of hops on ``need.source`` (provisional; see
+  :ref:`api`, :pr:`2399`)
+
+  ``need.source.hops`` starts at the innermost place sphinx-needs knows the need came through -- the file a
+  directive is written in (an included file's own, in an include), the ``needs.json`` an imported need was read
+  from, the service that made a need, an external need's page -- and ends at the page the need is placed on, with
+  its sections and the domain objects it is written in (an external need has no such page). A hop records a line range only where the file, read from disk, holds the need's text there: under
+  reStructuredText every line of the directive equals the file's line (whole lines), under MyST the line opens the
+  directive's fence with its name and title; elsewhere it records no line (it can still be wrong only where the
+  file holds an identical copy of the need's text at the line the parser claims). It is provisional: the
+  shape may change in a minor release until it reaches ``needs.json``. Nothing a filter, a table or ``needs.json``
+  shows changes; the first build after upgrading reads every document again. The five concrete ``NeedItemSource*``
+  classes this release started with are one class now, ``NeedItemSource`` (below); ``NeedItemSourceProtocol`` is
+  unchanged.
+
+- ✨ A derive rule of kind ``copy`` takes ``where`` beside ``over`` or ``join`` (:ref:`needs_derive_kind_copy`,
+  :issue:`2246`)
+
+  ``where`` narrows the targets before ``select`` reads them, as it does for the other kinds and for ``links`` with
+  ``join``: ``select = "first"`` takes the lowest-id target that passes ``where`` and sets the field, ``"unique"``
+  counts only those, and ``"list"`` keeps their values. A target the filter cannot be evaluated on is dropped, without
+  a warning. A ``copy`` of the need's own field, or of the need ``from`` names, still takes no ``where``
+  (``needs.derive_invalid``).
+
+- ✨ A derive rule of kind ``any`` or ``all`` takes ``empty``, the value it gives over no candidate
+  (:ref:`needs_derive_kind_any_all`, :issue:`2377`)
+
+  Over no candidate ``all`` is ``true``, which on a requirement nothing tests reads as "every test passed";
+  ``all_passed = { kind = "all", test = "status == 'passed'", over = "tests_back", empty = false }`` gives ``false``
+  there instead. No candidate is what is left once ``where`` has dropped the needs it does not hold on. Unset,
+  ``empty`` is the kind's own value (``all`` ``true``, ``any`` ``false``), so no existing rule changes; on any other
+  kind, or with a value that is not a boolean, the rule is refused (``needs.derive_invalid``).
+
+- ✨ A need type's declaration of a field or link type carries a ``severity``: a constraint reported, not failed
+  (:issue:`2374`)
+
+  ``severity = "warning"`` (or ``"info"``) on a ``[needs.types.<t>.fields.<f>]`` or ``.links.<l>`` entry is the
+  severity of every constraint of the type's declaration -- its ``schema`` keywords, its links' ``minItems`` and
+  ``maxItems``, and ``nullable = false`` -- where each was a ``violation``. The failures are reported as
+  ``sn_schema_warning.field_fail`` (``sn_schema_info.*``), a warning rather than an error. A field not nullable below
+  ``violation`` is asked for, not enforced: a need without it is created, the field ``None``, and reported at that
+  severity (schema path ``fields > nullable``), so switching the schema validation off
+  (:ref:`needs_schema_validation_enabled`) silences it; the needs.json writes such a field nullable. A type
+  inheriting the declaration keeps its severity and may raise it; one lowering a severity an ancestor gives is a
+  ``needs.type_widening`` warning, and is ignored. A ``severity`` on a :ref:`needs_fields` or :ref:`needs_links`
+  entry, which takes none, is a ``needs.config`` warning. Without a ``severity`` nothing changes. The fields-per-type
+  conformance corpus may now pin a finding's severity. See :ref:`need_types_severity`.
+
+- ✨ A need type declares how many links it must receive: ``[needs.types.<t>.back_links.<l>]`` takes a count
+  (:issue:`2375`)
+
+  ``schema = { minItems = 1 }`` on a ``back_links`` entry named after a link type ``l`` says that every need of the
+  type is the target of at least one ``l`` link, its back links ``<l>_back`` (``maxItems``: of at most so many), so a
+  ``coverage-*-back`` schema rule that only counts folds into the type's declaration.
+  The count is every link of ``l`` to the need, as
+  ``minItems`` counts the outgoing ones (a link to a part of the need included); it is inherited, and narrowed, by
+  the types inheriting from the type; it is
+  checked by the schema validation once every link is final, a ``link_fail`` of the field ``<l>_back`` at the
+  entry's ``severity``; a need from :ref:`needs_external_needs` is not counted, an imported need is. The entry takes a
+  ``description``, ``minItems`` and ``maxItems``, and a ``severity``; any other key is a ``needs.type_conflict``, and
+  so is an entry naming no link type ("did you mean" the link type it is close to). A ``links`` or ``fields`` entry
+  named ``<l>_back`` is still refused, and now names the ``back_links`` entry. ``back_links`` is a key of a
+  :ref:`needs_types` entry. This supersedes the proposal of :issue:`2323`. See :ref:`need_types_incoming`.
+
+- ✨ A need type declares the shape of its ids: ``id_regex`` on a ``[needs.types.<t>]`` entry (:issue:`2373`)
+
+  The id of a need of the type matches the pattern, beside :ref:`needs_id_regex` and the ``id_regex`` of every type
+  it inherits from, checked where and as ``needs_id_regex`` is (``re.match``, an authored or a generated id, never
+  an imported or external need's): a need whose id does not match is not created (``needs.create_need``, naming the
+  pattern and the type that gives it). So an ``id-prefix-<type>`` schema rule folds into the type's declaration when a
+  wrong id should refuse the need; one that should only be reported stays a rule. A pattern that is not a regular
+  expression is a ``needs.type_conflict`` warning, and is ignored. See :ref:`need_types_id_regex`.
+
+- ✨ ``create_need``: an extension creates a need with its fields and links as two mappings, and gets the need back
+  with its nodes (:issue:`2137`)
+
+  ``sphinx_needs.api.create_need(app, state, source, need_type, title, *, id, fields, links, content, ...)`` takes
+  the need's field values as ``fields`` (the core fields such as ``status`` and ``tags``, and the project's fields)
+  and its links as ``links``, kept apart from its own parameters, so any name a project gives a field can be used.
+  It returns ``(need, nodes)``: the need as recorded, which an extension no longer has to look up or re-derive the
+  id of, and the nodes to insert. Its location is a ``NeedItemSource`` (below). A name
+  in the wrong mapping, or one of its own arguments given in a mapping (``title``, ``content``, ...), is refused,
+  naming where it belongs. This package's need directives, ``list2need`` and ``needservice``, sphinx-codelinks'
+  one-line needs and sphinx-test-reports' needs are created through it; ``needimport``, ``needs_external_needs``
+  and sphinx-codelinks' multi-line needs through the same path, as records. ``add_need`` is deprecated in its
+  favour (see Deprecations). See :func:`~sphinx_needs.api.need.create_need`.
+
+- ✨ ``NeedItemSource``: one class for where a need comes from, public from ``sphinx_needs.api``, with
+  ``NeedItemSource.from_directive(self)`` as the source of a need an extension's directive creates and
+  ``NeedItemSource.on_page(docname, lineno=lineno)`` for a need at a line the caller gives (:issue:`2137`)
+
+  The source :func:`~sphinx_needs.api.need.create_need` takes is one frozen class,
+  :class:`~sphinx_needs.need_item.NeedItemSource`: the hops the need's text came through, and the location facts
+  the hops cannot give yet (``lineno``, ``lineno_content``, ``parser_lineno``, ``is_import``). Every need
+  sphinx-needs creates has one, and so does every need sphinx-codelinks and sphinx-test-reports create. In a
+  directive, ``NeedItemSource.from_directive(self)`` records what a need directive records: the line the directive
+  is written on (resolved through ``rst_prolog`` and includes), its parser line and content offset, and the file and
+  page it is written in, after any hops given as ``first``; it takes any docutils ``Directive``, not only a
+  ``SphinxDirective``. ``NeedItemSource.on_page(docname, lineno=lineno)`` gives a need its page and the line the
+  caller passes, the source ``add_need`` built: for a need at its directive's parser line, as ``add_need`` took it
+  (sphinx-codelinks' needs sit there), or at a line the directive's data names. The class's name, ``from_directive`` and ``on_page`` are
+  stable, and so is reading a source through ``NeedItemSourceProtocol``; the general constructor and its keywords
+  (``hops``, ``lineno``, ``lineno_content``, ``parser_lineno``, ``is_import``) are provisional, for sphinx-needs' own
+  producers and advanced use, as ``hops`` and the hop types, ``NeedSourceHop``, ``NeedSourcePhysical`` and
+  ``NeedSourceSemantic``, now also importable from ``sphinx_needs.api``, are: they may change without a deprecation,
+  until ``needs.json`` carries them. A need's ``docname``, ``lineno`` and the other location keys are unchanged, and so is
+  ``NeedItemSourceProtocol``; the first build after upgrading reads every document again. See
+  :ref:`api_migrating_add_need`.
+
+- 👌 A :ref:`needs_fields` entry naming a core field a need computes (``type_name``, ``docname`` and the other core
+  fields that take no declaration) is reported as ignored, with a ``needs.config`` warning, where it was ignored
+  silently. Nothing read such an entry, so no output changes, but a build run with ``-W`` (warnings as errors) that
+  has one now fails until the entry is removed
+
+- 👌 The ``needs.derive_scope`` warning at a :ref:`needextend` whose filter names a computed field says what
+  computes it: "a derive rule" for a field a :ref:`derive <needs_derive>` rule computes, "a dynamic function or
+  variant" for a ``[[…]]``, ``<<…>>`` or ``<{…}>``, and "a derive rule, a dynamic function or a variant" when the
+  filter names fields of both, as ubCode words it (:issue:`2207`)
+
+  It said "a dynamic function or variant" for a derived field too, where the project wrote neither. The warning's
+  code and severity are unchanged.
+
+- 👌 ``-D needs_variant_data_file`` swaps the data file, never the table it is read from (:issue:`2378`)
+
+  The rule is now ub-project's reading contract (section 6.8), shared by every tool that reads
+  :file:`ubproject.toml`, and sphinx-needs passes the value to it rather than removing keys from the toml itself.
+  For a project that builds without warnings, nothing changes in the output (a project on the legacy location gains
+  one ``-v`` line naming it, as it has without ``-D``): the value replaces the data file of the location
+  read, ``[variants]`` or ``[needs]``, without opening the toml's own file, and that location's inline table still
+  applies; ``-D needs_variant_data_file=`` (no file) replaces it by none, so the location's inline table is used
+  alone. The location, the refusals and the warnings are now always those of the toml as written, so two
+  projects that already warned or failed without ``-D`` now do so with it too: a ``[variants]`` declared by its
+  ``data_file`` alone stays the location read, with the ``needs.variant_data_location`` warning for the
+  ``[needs]`` keys beside it, where ``[needs]`` used to be read silently; and an empty or non-string
+  ``data_file`` is refused. See :ref:`needs_from_toml_variants`.
+
+- 👌 An unknown key in a field's or a link type's entry, and an unknown keyword in its ``schema``, is reported
+  and ignored (:issue:`2206`)
+
+  A key a :ref:`needs_fields`, :ref:`needs_links`, :ref:`needs_extra_options` or :ref:`needs_extra_links` entry
+  does not have, such as a misspelt ``derive`` or ``target_types``, was ignored in silence, so a field meant to be
+  derived stayed authorable and a link type meant to be restricted was not. Each is now one ``needs.config``
+  warning, naming the entry, the key and the keys the entry has; the key is ignored and the entry kept. A
+  ``severity`` in a ``needs_fields`` or ``needs_links`` entry is the one exception to the wording: its warning names
+  the need type's entry that takes it (see above). A ``name`` in a ``needs_fields`` entry,
+  or an ``option`` in a ``needs_links`` entry, left from the list spelling,
+  is accepted in silence where it repeats the entry's name, as a migrated entry does, and reported where it
+  gives another (it was always ignored: the entry is named by its key). A
+  ``needs_extra_options`` entry is read for ``name``, ``description``, ``schema``, ``derive`` and
+  ``derive_by_type`` alone, as before, and its other keys, such as ``nullable``, are now reported. A keyword the
+  ``schema`` of such an entry does not have (``enmu``, ``minimum`` on a ``string``, ``uniqueItems`` on a link
+  type), at its top or in its ``items`` or ``contains``, is one ``needs.config`` warning too, and dropped, the
+  rest of the schema kept, where it stopped the build (``Invalid schema: Additional properties are not
+  allowed``); so is one in the schema of a field an extension registers with ``add_field``. The keys known are
+  those of the configuration's ``NeedFields``, ``NeedField``, ``NeedLinksConfig`` and ``LinkOptionsType``
+  types, whose ``NeedField`` now lists the keys a ``needs_extra_options`` entry is read for, and the keywords
+  those of the schema types the schema is validated against.
+
+- 👌 A field or link type declared on need types alone whose name is close to a declared one is reported, "did
+  you mean" (:issue:`2299`)
+
+  A ``fields`` or ``links`` entry of a :ref:`needs_types` entry naming nothing declared elsewhere declares a field
+  (or link type) of the need types that declare it alone, so a misspelt name, ``asl`` meant to narrow ``asil``,
+  constrained nothing and was not reported. When the name is within ``difflib.get_close_matches(name, known, n=1,
+  cutoff=0.8)`` of a core field an author sets, a registered field (a :ref:`needs_fields` entry, an extension's,
+  a service's) or a global link type, it is now one ``needs.type_near_name`` warning, ``needs_types['req'].fields['asl']
+  declares a field of need types 'req' alone; did you mean 'asil'?``; the field is declared all the same. A deliberate
+  near name, such as a ``tag`` of one type beside ``tags``, is reported too: ``suppress_warnings =
+  ["needs.type_near_name"]`` silences these alone. See :ref:`need_types_misspelt`.
+
+Deprecations
+............
+
+- ⚠️ ``add_need`` is deprecated, and is removed in 10.0: ``create_need`` replaces it (:issue:`2137`)
+
+  Each call of :func:`~sphinx_needs.api.need.add_need` is one Python ``DeprecationWarning``, at the line that
+  calls it, naming ``create_need`` and :ref:`api_migrating_add_need`; it creates the need as before. It is not a
+  Sphinx warning, so a build run with ``-W`` (warnings as errors) is not failed by an extension that still calls
+  it, such as sphinx-codelinks 2.0 and sphinx-test-reports 3.0. ``create_need`` takes the need's location as one
+  ``NeedItemSource`` (``NeedItemSource.from_directive(self)`` in a directive), its fields and links as two
+  mappings, and returns the need with its nodes; the migration section maps each of ``add_need``'s arguments.
+  ``generate_need``, ``add_external_need`` and ``ingest_need_record`` are not deprecated.
+
+- ⚠️ The five source classes ``NeedItemSourceUnknown``, ``NeedItemSourceDirective``, ``NeedItemSourceService``,
+  ``NeedItemSourceExternal`` and ``NeedItemSourceImport`` are deprecated names of ``sphinx_needs.need_item``, and
+  are removed in 10.0: ``NeedItemSource`` replaces them
+
+  Each is a function now, taking its class's keywords and returning the ``NeedItemSource`` with the location keys
+  that class gave, and reading the name (``from sphinx_needs.need_item import NeedItemSourceUnknown``) is a
+  ``DeprecationWarning`` at that line. They were not documented API, and what they did beyond their keywords is
+  gone: a source is a ``NeedItemSource``, so ``isinstance``, a ``match`` class pattern or a subclass naming an old
+  name raises ``TypeError`` (a function is no class: test ``isinstance(source, NeedItemSource)``), ``type(source)``
+  is never one of them, and an annotation ``NeedItemSourceUnknown | None`` evaluated at run time raises too;
+  ``dataclasses.replace`` raises ``TypeError`` (build a new source) and ``dataclasses.asdict`` gives the one class's
+  fields; the attributes ``url`` (``NeedItemSourceExternal``), ``path`` (``NeedItemSourceImport``),
+  ``external_url`` and ``is_external`` (``NeedItemSourceUnknown``) are gone (read ``source.dict_repr``);
+  ``dir(sphinx_needs.need_item)`` and, at run time, ``from sphinx_needs.need_item import *`` no longer include
+  them (a type checker sees each as a deprecated function of its keywords); and no combination of keywords is
+  refused: given ``hops``, the hops decide ``docname``, ``external_url``, ``is_external`` (but
+  ``NeedItemSourceUnknown(is_external=True)`` still puts an external hop first) and, without a ``lineno``, the
+  line, while a ``lineno`` given is the need's, and an ``external_url`` without ``is_external`` is dropped.
+
+Bug fixes
+.........
+
+- 🐛 A :ref:`needs_external_needs` source whose ``target_url`` renders an absolute URL (``scheme://…`` or ``//…``)
+  links to that URL, where ``base_url/`` was put in front of it (:issue:`2389`)
+
+  With ``target_url: "{{need['remote_url']}}"``, a ``base_url: ""`` linked every need to ``/https://github.com/…``,
+  and a ``base_url`` such as ``https://site`` to ``https://site/https://github.com/…``; both now link to
+  ``https://github.com/…``, and the need's ``external_url`` is that URL. Every other render, ``req:REQ_1`` included,
+  is still appended to ``base_url``. Two configurations change. A ``base_url`` that is itself a URL-prefix service,
+  such as ``https://proxy`` in front of an absolute ``target_url``, is no longer put in front: put the prefix in the
+  template instead, ``target_url: "https://proxy/{{need['remote_url']}}"``. And a template whose render starts with
+  ``//`` because a leading field is empty (``"/{{need['x']}}/{{need['id']}}"`` rendering ``//REQ_1``) is now a
+  scheme-relative URL, where it was ``base_url//REQ_1``: fill the field, or write the template without the leading
+  ``/``.
+
+- 🐛 A field named like a parameter of ``add_need`` -- ``state``, ``app``, ``need_type``, ``full_title``,
+  ``need_source`` or ``allow_type_coercion`` -- is an ordinary field in a need directive, ``list2need``,
+  ``needservice``, ``needimport`` and ``needs_external_needs`` (:issue:`2392`)
+
+  The first need setting one ended the build with ``TypeError: add_need() got multiple values for keyword argument
+  'state'``, and a need setting ``allow_type_coercion`` lost the value without a word; an external needs.json record
+  carrying ``app``, ``need_source`` or ``allow_type_coercion`` ended the build the same way. A needimport or
+  external record's field named ``need_type`` was overwritten by the record's type, and one named ``full_title``
+  dropped as the legacy key; both are read now. Every producer now creates its needs with the fields as a mapping.
+  ``add_need`` itself still takes them as keyword arguments, so an extension calling it keeps the collision of its
+  own parameters' names; ``create_need`` has none. Two more names of the same kind: a field named like one of
+  ``generate_need``'s own keywords (``needs_config``, ``needs_schema``, ``template_root``) no longer stops
+  ``add_need`` with the same ``TypeError``, and a field the project declares under one of ``add_need``'s deprecated
+  keys (``delete``, ``hide_status``, ``hide_tags``, ``links_string``) is a field through the producers, where
+  ``add_need`` dropped it with a ``DeprecationWarning``.
+
+- 🐛 An external need keeps a field named ``state`` the project declares (:issue:`2403`)
+
+  ``add_external_need`` dropped a record's ``state`` as if it were ``add_need``'s parser state, so the field was
+  ``None`` on every external need. A ``state`` that names no field of the project is reported as an unknown key of
+  the source and dropped, as before.
+
+- 🐛 A schema rule's property on an array field may give ``contains`` without ``items``
+  (``"tags": {"contains": {"const": "a"}}``): the build stopped with a schema error, where the rule now applies,
+  the field's item type standing for ``items``. A link type's property is unchanged.
+
+- 🐛 A :ref:`needs_types` entry with a ``title`` and a ``prefix`` naming a need type an extension adds no longer
+  stops the build with ``NeedsApiConfigException: testcase already exists as need type`` from the extension's
+  ``add_need_type``: the entry narrows the type (:issue:`2371`). ``add_need_type`` still refuses a directive
+  another extension added, and a default type no entry of the project names.
+
+- 🐛 The ``needs_schema`` of a :ref:`needs.json <needs_builder_format>` writes a link type's literal default
+  **(changed output)** (:issue:`2208`)
+
+  It wrote ``"default": []`` for every link type but one derived by type alone, also for one with a literal
+  ``default``, such as ``[needs.links.rel] default = ["REQ_1"]``: a reader of the schema took the wrong value for
+  an absent ``rel``. It now writes that default as a need holding it writes its links, sorted and deduplicated,
+  with each link's condition under :ref:`needs_json_include_link_conditions` (the default) and without it
+  otherwise. A default a dynamic function or a variant computes, and a derived link type, still write
+  ``[]``; a need type's own default is not written. Under :ref:`needs_json_remove_defaults` a need holding the
+  link type's default now leaves it out, and a reader restores it from the file's own schema, as
+  ``ub-needs-exchange`` (:ref:`needimport`, :ref:`needs_external_needs`) does; a reader that does not restore
+  defaults from the schema reads such a need as having no links of that type.
+
+- 🐛 A build that fails with :ref:`needs_build_json`, :ref:`needs_build_json_per_id` or :ref:`needs_build_needumls`
+  set stops with its own error. Each of these writers ran after the failure as well and raised in turn, so a
+  configuration error was reported as ``Handler <function build_needs_json ...> for event 'build-finished' threw an
+  exception (exception: Needs schema has not been initialized yet.)``, with the real cause only in the chained
+  traceback
+
+- 🐛 A need takes the name of its nearest enclosing domain object as its ``signature`` however the domain writes
+  that name **(changed output)** (:issue:`2394`)
+
+  Only a name written as plain text was read, as the Python, reST and standard domains write it. The C, C++ and
+  JavaScript domains usually wrap it in further nodes, so a need inside a ``c:function`` named ``cfunc`` had no
+  ``signature``, and one inside a ``cpp:function`` inside a ``py:class`` took the class's name; both now take the
+  function's name, which filters and needs.json show. A need whose nearest enclosing object writes its name as plain
+  text keeps its value, and a need inside a ``cpp:alias`` still has none. An empty name counts as no name, where an
+  empty ``desc_name`` with no content failed the build.
+
+- 🐛 An incremental build re-writes every page showing a need that changed: a page whose needtable,
+  needflow or other view lists it, whose ``:need:`` role names it, whose needs link to it or are linked
+  from it, or whose need computes a value from it, kept its old values until a full build, and so did
+  the needs a ``needextend`` changed or no longer changes (:issue:`2376`, :issue:`346`)
+
+  The needs of every document re-read are compared, as read, with what that document gave before; on a
+  change, the pages showing it are re-written, never re-read. An edit that changes no need, such as prose
+  below the needs, re-writes nothing more, and one that only moves needs (lines added above them) re-writes
+  the views and the pages whose roles name them, unless anything else in the project may read a line number. A dynamic function is read by
+  its arguments, so ``copy`` of a need's own field does not make its need depend on others (a back-link
+  field does: other needs write it, as they decide ``has_dead_links`` and the other values computed when the
+  needs are resolved); a value of any other shape, a variant say, is taken to read every need. A changed ``needextend`` with a filter re-writes every need-relevant page,
+  as does every change in a project whose needs or extends link to needs they do not name before the needs
+  are resolved, or with a ``needextend`` with a filter whose dynamic function reads needs it does not name,
+  and so does every change of a need that a ``needextend`` with a filter links to or copies. A view without
+  a sort, such as a ``needlist`` or a ``needflow``, now lists the needs in document order on every build,
+  where an incremental build listed those of the re-read documents last and a parallel one in the order
+  its readers finished. Needs from
+  ``needs_external_needs`` are not compared (:issue:`353`). See :ref:`incremental_builds`.
+
+- 🔧 ``ENV_DATA_VERSION`` is 19: the first build after upgrading re-reads every document, which records
+  the views and need roles each document holds and where each hidden need is (:issue:`2398`), stores each need's
+  source as one class, and computes the
+  links a ``copy`` or ``collect`` on a link type, refused until now, computes
+
+- 🐛 A need with ``:hide:`` is located as a visible need in the same place is **(changed output)** (:issue:`2398`)
+
+  A hidden need that was the first child of its container -- a ``.. only::``, a ``.. note::``, a parent need's
+  content, a ``py:function`` body -- had empty ``sections``, no ``signature`` and no parent need, and a hidden need
+  following another need, hidden or not, took that need as its ``parent_need`` (so the other need listed it in
+  ``parent_needs_back``): the needs a :ref:`needimport` with ``:hide:`` imports were each the child of the one before.
+  Both now get the ``sections``, ``signature`` and ``parent_needs`` a visible need in the same place gets, which
+  filters, tables, :ref:`needflow` diagrams and needs.json show. A visible need keeps its own location; its
+  ``parent_needs_back`` now lists every hidden need inside it -- it lacked a hidden first child, and any hidden need
+  that followed another need inside it -- and no longer lists the hidden needs that merely followed it. A hidden need
+  after a title or a paragraph keeps its values. :ref:`list2need` places the children of a hidden item outside it, as
+  before, so such a child is located there: its parent is the hidden item's own parent need, or none at the top level,
+  which can differ from the same list written without ``:hide:``. An existing build directory is read again in full
+  once.
+
+Documentation
+.............
+
+- 📚 :ref:`needs_derive` shows how to start a list roll-up one rung up (:ref:`needs_derive_rollup_rung_up`):
+  a ``copy`` of ``id`` over ``satisfies`` with ``select = "list"`` on the specification, then a ``collect`` on each
+  rung below, and why a plain ``copy`` of the requirement's own ``id`` cannot start it; and the same chain read upwards,
+  which gives each need the tests that reach it (:issue:`2379`)
+
 .. _`release:9.1.0`:
 
 9.1.0

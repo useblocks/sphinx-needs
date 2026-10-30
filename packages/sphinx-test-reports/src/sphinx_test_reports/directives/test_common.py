@@ -3,10 +3,12 @@ A Common directive, from which all other test directives inherit the shared func
 """
 
 # fmt: off
+import hashlib
 import os
 import pathlib
 import re
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
+from pathlib import PurePath
 from typing import Any
 
 from docutils import nodes
@@ -14,21 +16,152 @@ from docutils.parsers.rst import Directive
 from docutils.parsers.rst.states import RSTState
 from sphinx.util import logging
 
-# `_make_hashed_id` has been sphinx-needs' spelling since its 4.0; the import narrowed to
-# `sphinx-needs>=8.5.0,<9` at the workspace import, so the `make_hashed_id` fallback this
-# used to carry could no longer run -- and no longer resolves, since the name is gone from
-# `sphinx_needs.api` entirely (measured against 8.5.0).
-from sphinx_needs.api.need import _make_hashed_id
+from sphinx_needs.api import (
+    NeedItemSource,
+    NeedSourceHop,
+    NeedSourcePhysical,
+    NeedSourceSemantic,
+    create_need,
+)
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import InvalidNeedException
 from sphinx_test_reports.exceptions import SphinxError
-from ub_test_reports.identity import deterministic_case_id
+from ub_test_reports.fields import FILE_NEED_FIELDS, SUITE_NEED_FIELDS
+from ub_test_reports.identity import (
+    UNKNOWN,
+    case_name_and_parameter,
+    deterministic_case_id,
+)
 from ub_test_reports.jsonparser import JsonParser
 from ub_test_reports.junitparser import JUnitParser, ReportReadError
 
 # fmt: on
 
 logger = logging.getLogger(__name__)
+
+
+def _fallback_id(
+    need_type: str, title: str, content: str, config: NeedsSphinxConfig
+) -> str:
+    """The id of a ``test-file``, ``test-suite`` or ``test-case`` given no ``:id:``.
+
+    The need type's NAME (``testfile``, not its prefix ``TF_``), then the upper-case sha1
+    of the title (or of the content, for an empty title); with ``needs_id_from_title``,
+    the title in upper case with underscores for spaces and an underscore come first.
+    The part after the type name is cut to ``needs_id_length``.
+
+    This package's own scheme, not the id Sphinx-Needs generates, so not
+    ``generate_need_id``, which starts with the type's prefix: ``tests/test_hashed_ids_table.py``
+    pins it byte for byte. Whether to move to the type's prefix is open: #2422.
+    """
+    hashed = hashlib.sha1((title or content).encode("UTF-8")).hexdigest().upper()
+    if config.id_from_title:
+        hashed = title.upper().replace(" ", "_") + "_" + hashed
+    return f"{need_type}{hashed[: config.id_length]}"
+
+
+#: The fields the creation call of every directive is given beside the counts or the
+#: case's own: the core fields it sets (``id``, ``type``, ``title`` and ``content`` as
+#: its own arguments, ``links`` as a link type).
+_EVERY_NEED = ("id", "type", "title", "content", "links", "tags", "status", "collapse")
+
+#: The names an extra option or a report value may have that ``add_need`` took as its
+#: own keywords, and that ``create_need`` takes as arguments rather than as fields
+#: (``content`` and ``title`` every directive sets itself).
+_CREATION_ARGUMENTS = ("doctype", "jinja_content", "full_title", "allow_type_coercion")
+
+#: The need fields each directive sets itself, by the kind of need it creates: what
+#: :meth:`TestCommonDirective.create_report_need` is handed, exactly, beside the
+#: report-path and source-location fields (named by configuration) and the configured
+#: extra options. ``tr_extra_options`` may name none of them (#2181), but a core field
+#: of the field schema a directive leaves unset (``style``, which test-case alone sets):
+#: there it is the field, and on a test case it refuses the need.
+DIRECTIVE_FIELDS: dict[str, frozenset[str]] = {
+    "file": frozenset({*_EVERY_NEED, *FILE_NEED_FIELDS}),
+    "suite": frozenset({*_EVERY_NEED, *SUITE_NEED_FIELDS}),
+    "case": frozenset(
+        {
+            *_EVERY_NEED,
+            "style",
+            "suite",
+            "case",
+            "case_name",
+            "case_parameter",
+            "classname",
+            "result",
+            "time",
+        }
+    ),
+}
+
+
+def _report_physical(
+    srcdir: str | os.PathLike[str], path: str | os.PathLike[str]
+) -> NeedSourcePhysical | None:
+    """Where a report file is, for its ``report`` hop: under the ``"srcdir"`` root.
+
+    The path is POSIX and relative to the Sphinx source directory, with ``..`` for a file
+    outside it; ``None`` where no relative path exists (another drive, on Windows). No
+    line: the parsers keep no position for an element of the report.
+
+    Sphinx-Needs' own rule for a file's location (its private ``physical_for``),
+    computed here because this package imports no private Sphinx-Needs name;
+    ``tests/test_source_hops.py`` holds the two equal.
+    """
+    try:
+        relative = os.path.relpath(os.path.abspath(path), os.path.abspath(srcdir))
+    except ValueError:
+        return None
+    return NeedSourcePhysical(root="srcdir", path=PurePath(relative).as_posix())
+
+
+def _given(value: Any) -> str | None:
+    """A report value as a string, or ``None`` for the parsers' placeholder of an
+    absent one (``"unknown"``) and for no value at all."""
+    return None if value in (UNKNOWN, None, "") else str(value)
+
+
+def _case_source_file(case: Mapping[str, Any]) -> str | None:
+    """The test's source file as the report gives it, or ``None`` when it gives none.
+
+    The parsers report ``"unknown"`` for an absent ``file`` attribute (the norm for
+    pytest, whose default ``junit_family = xunit2`` leaves it out).
+    """
+    return _given(case.get("file", UNKNOWN))
+
+
+def _case_source_line(case: Mapping[str, Any]) -> int | None:
+    """The test's line in its source file, counted from 1, or ``None`` where it is not
+    known to be one.
+
+    The JUnit reader says whether it knew the base of the report's ``line``
+    (``line_base_known``, #2381); a line it passed through without knowing, a line
+    below 1 (``-1`` is "no line") and a JSON report's line (its mapping says nothing of
+    a base) are none. Read from the case itself, as its file is.
+    """
+    line = case.get("line")
+    if case.get("line_base_known") is True and type(line) is int and line >= 1:
+        return line
+    return None
+
+
+def _suite_chain(
+    suites: list[dict[str, Any]], suite: Mapping[str, Any]
+) -> list[Mapping[str, Any]] | None:
+    """The suites from a top-level one of ``suites`` down to ``suite``, outermost first,
+    or ``None`` if ``suite`` is not in them.
+
+    A parsed suite names its nested suites (``testsuite_nested``), not its parent: the
+    chain is read from the parsed report, by identity.
+    """
+    for candidate in suites:
+        if candidate is suite:
+            return [candidate]
+        below = _suite_chain(candidate.get("testsuite_nested", []), suite)
+        if below is not None:
+            return [candidate, *below]
+    return None
 
 
 def warn(directive: Directive, subtype: str, message: str) -> None:
@@ -208,7 +341,7 @@ class TestCommonDirective(Directive):
         # `load_test_file`) before any directive reads it. Declared here with the type each
         # one actually holds, because the bare `None` they used to start as is what the
         # subclasses' `self.results[0]`, `for x in self.results`, `self.extra_options[k]`
-        # and `add_need(title=self.test_name, ...)` were all being type-checked against.
+        # and the need's `title=self.test_name` were all being type-checked against.
         # `test_file` and `test_id` start EMPTY rather than `None`: both are required, and
         # the two guards that enforced that are now falsiness checks. For `test_id` that is
         # exactly identical behaviour. For `test_file` it is NOT, and the difference is a
@@ -237,9 +370,7 @@ class TestCommonDirective(Directive):
         self.test_status: str | None = None
         self.collapse: bool | str = False
         self.need_type: str = ""
-        #: Values read off the Sphinx config and the report, so `Any` rather than `str`:
-        #: this mapping is splatted into `add_need`, whose keyword parameters are typed
-        #: individually, and a `dict[str, str]` would be checked against every one of them.
+        #: Values read off the Sphinx config and the report, so `Any` rather than `str`.
         self.extra_options: dict[str, Any] = {}
 
         self.log = logging.getLogger(__name__)
@@ -258,18 +389,18 @@ class TestCommonDirective(Directive):
 
         The parser reports ``"unknown"``/``-1`` when the attributes are absent,
         which is the norm for pytest: its default ``junit_family = xunit2``
-        filters them out. Those sentinels become empty strings, so the fields
-        are always present and never carry a fake location.
+        filters them out. Those sentinels become ``None``, so the fields are
+        null -- never a fake location, and never ``""`` -- as the converter
+        writes them.
         """
         file_field = getattr(self.app.config, "tr_source_file_option", "case_file")
         line_field = getattr(self.app.config, "tr_source_line_option", "case_line")
 
-        source_file = case.get("file", "unknown")
         source_line = case.get("line", -1)
 
         return {
-            file_field: "" if source_file in ("unknown", None) else str(source_file),
-            line_field: "" if source_line in (-1, None) else str(source_line),
+            file_field: _case_source_file(case),
+            line_field: None if source_line in (-1, None, "") else str(source_line),
         }
 
     def deterministic_case_id_for(self, case: dict[str, Any]) -> str | None:
@@ -293,6 +424,192 @@ class TestCommonDirective(Directive):
         """Record an option refusal; the first one recorded is the one reported."""
         if self.refusal is None:
             self.refusal = (subtype, message)
+
+    def report_hops(
+        self,
+        kind: str,
+        suite: Mapping[str, Any] | None,
+        case: Mapping[str, Any] | None,
+    ) -> tuple[NeedSourceHop, ...]:
+        """Where this directive's need came from before the page, innermost first.
+
+        These are the ``first`` hops of ``NeedItemSource.from_directive``, which adds the
+        page (and an included file) the directive is written on. **Provisional**, as
+        Sphinx-Needs' hops are: they reach no ``needs.json``.
+
+        - A test case's ``code`` hop: the test's source file, as the report's ``file``
+          gives it (:func:`_case_source_file`, the case's own value, never a report key
+          or extra option of the same field name, #2411), with ``/`` for a ``\\`` (a
+          report written on Windows; the need's field keeps the value as given), and no
+          hop where the report gives none. ``root`` is ``None``: the path is relative to
+          the test run's root (pytest's rootdir), which this build does not know. Its
+          ``start_line`` is the case's ``line`` where the reader knows what the report
+          counts it from (``line_base_known``: a line-base mark, a plain pytest report,
+          a Google Test case, or an explicit ``tr_line_base``; #2381) and it is a line of
+          the file, counted from 1; for a pytest test, the line of its first decorator,
+          or of its ``def``. No ``end_line``: no report gives one. A line of a producer
+          the reader does not recognise is no hop's, as the need's ``case_line`` keeps
+          it as the report wrote it. ``language`` is ``None``: the report does not say
+          what language the test is written in.
+        - The ``report`` hop: the report file, under the source directory
+          (:func:`_report_physical`), its own suffix as ``language`` (``".xml"``,
+          ``".json"``). Its semantic location is the element in the report, outermost
+          first, one entry per kind (the vocabulary is open):
+
+          - ``"suite"``: a test suite's name, one entry per level from the top-level
+            suite down to the suite itself, or to the suite the case is directly in (a
+            ``test-suite`` and a ``test-case``);
+          - ``"scope"``: the test case's ``classname``;
+          - ``"case"``: the test case's name, without its parameter, which is the
+            ``("parameter", ...)`` extra where the name carries one (``test_x[3]``)
+            or the report gives one (Google Test's ``value_param`` / ``type_param``):
+            the need's ``case_parameter``, one rule for both
+            (:func:`~ub_test_reports.identity.case_name_and_parameter`).
+
+          A suite or a classname the report does not give (the parsers' ``"unknown"``)
+          has no entry; a case always has one (JUnit requires its ``name``), its name as
+          the parser gives it, a placeholder too. A ``test-file``'s report hop is the
+          whole file: its semantic location is ``None``, as a ``file`` hop's is.
+
+        :param kind: ``file``, ``suite`` or ``case``: the key of :data:`DIRECTIVE_FIELDS`.
+        :param suite: The suite as the report gives it, for ``suite`` and ``case``: the
+            suite itself, or the one the case is directly in.
+        :param case: The test case as the report gives it, for ``case``.
+        """
+        hops: list[NeedSourceHop] = []
+        semantic: list[NeedSourceSemantic] = []
+        if suite is not None:
+            chain = _suite_chain(self.results or [], suite) or [suite]
+            semantic.extend(
+                NeedSourceSemantic(kind="suite", name=name)
+                for level in chain
+                if (name := _given(level.get("name"))) is not None
+            )
+        if case is not None:
+            if (source_file := _case_source_file(case)) is not None:
+                hops.append(
+                    NeedSourceHop(
+                        kind="code",
+                        physical=NeedSourcePhysical(
+                            path=source_file.replace("\\", "/"),
+                            start_line=_case_source_line(case),
+                        ),
+                    )
+                )
+            if (classname := _given(case.get("classname"))) is not None:
+                semantic.append(NeedSourceSemantic(kind="scope", name=classname))
+            name, parameter = case_name_and_parameter(case)
+            semantic.append(
+                NeedSourceSemantic(
+                    kind="case",
+                    name=name,
+                    extras=() if parameter is None else (("parameter", parameter),),
+                )
+            )
+        hops.append(
+            NeedSourceHop(
+                kind="report",
+                physical=_report_physical(self.env.srcdir, self.test_file),
+                semantic=tuple(semantic) or None,
+                language=os.path.splitext(self.test_file)[1] or None,
+            )
+        )
+        return tuple(hops)
+
+    def create_report_need(
+        self,
+        kind: str,
+        own: Mapping[str, Any],
+        report_fields: Mapping[str, Any],
+        suite: Mapping[str, Any] | None = None,
+        case: Mapping[str, Any] | None = None,
+    ) -> list[nodes.Node]:
+        """Create this directive's need through Sphinx-Needs' ``create_need``.
+
+        :param kind: ``file``, ``suite`` or ``case``: the key of
+            :data:`DIRECTIVE_FIELDS`.
+        :param own: The values of the fields the directive sets itself, exactly the
+            names :data:`DIRECTIVE_FIELDS` lists for ``kind``.
+        :param report_fields: The fields whose names configuration chooses (the
+            report path, the source location, the extra options) and the report's own
+            further values. A name also in ``own`` is refused, never an override: the
+            configuration check keeps ``tr_extra_options`` from naming one, and a report
+            value of such a name refuses the need.
+        :param suite: The suite as the report gives it, for ``suite`` and ``case``
+            (the suite itself, or the one the case is directly in), and
+        :param case: the test case as the report gives it, for ``case``: what the
+            ``code`` and ``report`` hops are built from (:meth:`report_hops`).
+        :return: The need's nodes.
+        :raises InvalidNeedException: What ``create_need`` raises, and for a name in
+            both mappings.
+        """
+        if (kind == "case") != (case is not None) or (kind == "file") != (
+            suite is None
+        ):
+            raise AssertionError(
+                f"a {kind} need is given suite={suite!r}, case={case!r}"
+            )
+        if own.keys() != DIRECTIVE_FIELDS[kind]:
+            raise AssertionError(
+                f"the {kind} directive sets {sorted(own)}, "
+                f"DIRECTIVE_FIELDS lists {sorted(DIRECTIVE_FIELDS[kind])}"
+            )
+        if clashing := sorted(own.keys() & report_fields.keys()):
+            raise InvalidNeedException(
+                "invalid_kwargs",
+                f"{clashing!r} given by the report or the configuration, and set by "
+                f"the directive itself",
+            )
+        values = {**own, **report_fields}
+        need_id, title, content = (
+            values.pop("id"),
+            values.pop("title"),
+            values.pop("content"),
+        )
+        need_type = values.pop("type")
+        # each name where the project's schema puts it: a link type to the links, any
+        # other name to the fields (a report value or a property target may be either)
+        schema = SphinxNeedsData(self.env).get_schema()
+        link_names = set(schema.iter_link_field_names())
+        # the names add_need took as its own keywords and create_need takes as
+        # arguments, unless the project declares a field of the name
+        declared = {
+            *link_names,
+            *schema.iter_core_field_names(),
+            *schema.iter_extra_field_names(),
+        }
+        arguments = {
+            name: values.pop(name)
+            for name in _CREATION_ARGUMENTS
+            if name in values and name not in declared
+        }
+        # a declared full_title (an extra option always is) is the field, and still the
+        # full title a generated id is derived from, as add_need took it
+        if "full_title" in values:
+            arguments["full_title"] = values["full_title"]
+        # the line the directive is written on, resolved through the state machine (a
+        # need a test-report generates: the test-report's own line), and where the need
+        # came from: the report (and the test's file), then the page
+        source = NeedItemSource.from_directive(
+            self, first=self.report_hops(kind, suite, case)
+        )
+        _, created = create_need(
+            self.app,
+            self.state,
+            source,
+            need_type,
+            title,
+            id=need_id,
+            content=content,
+            doctype=arguments.get("doctype"),
+            # the option's string, as add_need took and recorded it
+            jinja_content=arguments.get("jinja_content"),
+            full_title=arguments.get("full_title"),
+            allow_type_coercion=arguments.get("allow_type_coercion", True),
+            fields={k: v for k, v in values.items() if k not in link_names},
+            links={k: v for k, v in values.items() if k in link_names},
+        )
+        return created
 
     def need_refused(self, error: InvalidNeedException) -> list[nodes.Node]:
         """Report sphinx-needs' refusal of this directive's need, and return the box.
@@ -346,6 +663,12 @@ class TestCommonDirective(Directive):
             root_path = pathlib.Path(self.app.config.tr_rootdir)
             test_path = root_path / test_path
         self.test_file = str(test_path)
+        # The page depends on the report, read or not: an edited report re-reads the
+        # page, and so does one that is created or fixed (Sphinx re-reads a page whose
+        # dependency is missing on every build). The path that is opened, made absolute:
+        # Sphinx reads a relative one against the source directory, which `tr_rootdir`
+        # need not be.
+        self.env.note_dependency(os.path.abspath(self.test_file))
         if not test_path.exists():
             self.report_error = f"Test file not found: {self.test_file}"
             warn(self, "report_missing", self.report_error)
@@ -355,10 +678,13 @@ class TestCommonDirective(Directive):
             try:
                 if os.path.splitext(self.test_file)[1] == ".json":
                     mapping = next(iter(self.app.config.tr_json_mapping.values()))
-                    parser = JsonParser(self.test_file, json_mapping=mapping)
+                    parsed = JsonParser(self.test_file, json_mapping=mapping).parse()
                 else:
-                    parser = JUnitParser(self.test_file)
-                self.app.testreport_data[self.test_file] = parser.parse()
+                    # `line_base_known` for the code hop's line (`_case_source_line`)
+                    parsed = JUnitParser(
+                        self.test_file, line_base=self.app.config.tr_line_base
+                    ).parse(line_base_known=True)
+                self.app.testreport_data[self.test_file] = parsed
             except ReportReadError as error:
                 # Nothing is cached: every directive reading this report says so itself.
                 self.report_error = str(error)
@@ -383,7 +709,7 @@ class TestCommonDirective(Directive):
         self.test_content = "\n".join(self.content)
         if self.name != "test-report":
             self.need_type = self.app.tr_types[self.name][0]
-            hashed_id = _make_hashed_id(
+            hashed_id = _fallback_id(
                 self.need_type,
                 self.test_name,
                 self.test_content,

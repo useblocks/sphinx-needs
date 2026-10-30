@@ -20,6 +20,7 @@ import pytest
 from ub_test_reports.identity import (
     PLACEHOLDER_FILE,
     case_display_name,
+    case_name_and_parameter,
     deterministic_case_id,
     short_hash,
     split_case_name,
@@ -66,7 +67,8 @@ class TestSplitCaseName:
     @pytest.mark.parametrize(
         ("name", "expected"),
         [
-            ("test_x", ("test_x", "")),
+            # No parameter: None, so the field is null, not "" (#2372).
+            ("test_x", ("test_x", None)),
             ("test_x[a-b]", ("test_x", "a-b")),
             ("tests.test_cli.test_help[1-2]", ("tests.test_cli.test_help", "1-2")),
             # An empty parameter list is a parameter of "".
@@ -74,17 +76,99 @@ class TestSplitCaseName:
             # The parameter is greedy: brackets inside it survive.
             ("test_x[a[0]-b]", ("test_x", "a[0]-b")),
             # googletest's parameterised spelling carries no brackets at all.
-            ("Works/0", ("Works/0", "")),
+            ("Works/0", ("Works/0", None)),
             # Not the pytest shape: the name is kept whole, never cut at a
             # bracket -- an unclosed one, text after the closing one, or a
             # name that starts with one.
-            ("test_x[abc", ("test_x[abc", "")),
-            ("test_x[a]b", ("test_x[a]b", "")),
-            ("[only]", ("[only]", "")),
+            ("test_x[abc", ("test_x[abc", None)),
+            ("test_x[a]b", ("test_x[a]b", None)),
+            ("[only]", ("[only]", None)),
         ],
     )
     def test_splits_pytest_s_shape_and_only_that(self, name, expected):
         assert split_case_name(name) == expected
+
+
+class TestCaseNameAndParameter:
+    """A case's ``case_name`` and ``case_parameter``, from its name and, where the
+    name carries no ``[…]``, from Google Test's ``value_param`` / ``type_param``
+    (#2390).
+
+    The one rule the converter, the ``test-case`` directive and the report hop's
+    ``parameter`` extra share. The cases are the shapes gtest writes (measured on
+    googletest 1.17.0) and the parser's ``""`` for an absent attribute.
+    """
+
+    @pytest.mark.parametrize(
+        ("case", "expected"),
+        [
+            # TEST_P: the value, verbatim; the name keeps gtest's /N.
+            (
+                {"name": "Value/0", "value_param": "1", "type_param": ""},
+                ("Value/0", "1"),
+            ),
+            (
+                {"name": "Pair/0", "value_param": "(1, 2)", "type_param": ""},
+                ("Pair/0", "(1, 2)"),
+            ),
+            # Quotes and angle brackets are kept as gtest prints them.
+            (
+                {"name": "Str/0", "value_param": '"a \\"b\\" <c>"', "type_param": ""},
+                ("Str/0", '"a \\"b\\" <c>"'),
+            ),
+            # An empty std::string is printed as its two quote characters.
+            (
+                {"name": "Str/1", "value_param": '""', "type_param": ""},
+                ("Str/1", '""'),
+            ),
+            # TYPED_TEST / TYPED_TEST_P: the type, verbatim.
+            ({"name": "T1", "value_param": "", "type_param": "int"}, ("T1", "int")),
+            (
+                {"name": "Each", "type_param": "std::basic_string<char>"},
+                ("Each", "std::basic_string<char>"),
+            ),
+            # Both (testing::RegisterTest): the type, then the value, gtest's order.
+            (
+                {"name": "Works/0", "value_param": "42", "type_param": "int"},
+                ("Works/0", "int, 42"),
+            ),
+            # A pytest bracket wins over the attributes, an empty one too.
+            (
+                {"name": "test_x[3]", "value_param": "1", "type_param": "int"},
+                ("test_x", "3"),
+            ),
+            (
+                {"name": "test_x[]", "value_param": "1", "type_param": ""},
+                ("test_x", ""),
+            ),
+            # Empty or missing attributes: no parameter, a null field.
+            (
+                {"name": "Addition", "value_param": "", "type_param": ""},
+                ("Addition", None),
+            ),
+            ({"name": "test_x"}, ("test_x", None)),
+            ({"name": "test_x", "value_param": None}, ("test_x", None)),
+            # The parsers' "unknown" placeholder is absent too: a tr_json_mapping
+            # that defaults the two keys to it, as the docs' example does every key.
+            (
+                {"name": "test_x", "value_param": "unknown", "type_param": "unknown"},
+                ("test_x", None),
+            ),
+            (
+                {"name": "T1", "value_param": "unknown", "type_param": "int"},
+                ("T1", "int"),
+            ),
+        ],
+    )
+    def test_the_name_s_bracket_then_the_value_then_the_type(self, case, expected):
+        assert case_name_and_parameter(case) == expected
+
+    def test_a_name_the_caller_spells_otherwise_is_the_one_split(self):
+        """The converter writes ``""`` for the parser's ``"unknown"`` name; the
+        report's parameter still comes from the case."""
+        case = {"name": "unknown", "value_param": "1", "type_param": ""}
+        assert case_name_and_parameter(case, name="") == ("", "1")
+        assert case_name_and_parameter(case, name="t[2]") == ("t", "2")
 
 
 class TestDeterministicCaseId:

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A producer the reader does not recognise, which writes file and line: no line-base mark,
+  no suite named "pytest", no root named "pytest tests", and no case carrying both of
+  Google Test's status and result (a runner writes status alone). Its lines are passed
+  through, and their base is not known.
+-->
+<testsuites name="other tests">
+  <testsuite name="tests\Unit\CalculatorTest" file="tests/Unit/CalculatorTest.php" tests="2" assertions="2" errors="0" failures="0" skipped="0" time="0.002">
+    <testcase name="testAdd" file="tests/Unit/CalculatorTest.php" line="12" class="Tests\Unit\CalculatorTest" classname="Tests.Unit.CalculatorTest" assertions="1" time="0.001"/>
+    <testcase name="testSubtract" file="tests/Unit/CalculatorTest.php" line="18" class="Tests\Unit\CalculatorTest" classname="Tests.Unit.CalculatorTest" assertions="1" time="0.001"/>
+  </testsuite>
+  <testsuite name="crash_suite" tests="1" errors="1" time="30.0">
+    <testcase name="Killed" classname="CrashSuite" status="run" file="src/crash_test.cc" line="7" time="30.0">
+      <error message="exited with error code 143">Received SIGTERM</error>
+    </testcase>
+  </testsuite>
+</testsuites>
