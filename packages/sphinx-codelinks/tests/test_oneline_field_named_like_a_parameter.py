@@ -83,3 +83,24 @@ def test_a_one_line_field_named_like_a_core_field_no_marker_sets_refuses_the_nee
         in warning
         for warning in build_warnings(app)
     )
+
+
+def test_a_one_line_field_named_jinja_content_renders_the_content(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """``jinja_content`` is an argument of the creation too: the marker's value as
+    written, as ``add_need`` recorded it, rendering the content."""
+    _project(
+        tmp_path,
+        toml_extra=(
+            "\n[codelinks.projects.src.analyse.oneline_comment_style]\n"
+            'needs_fields = [{ name = "title" }, { name = "id" }, { name = "content" }, '
+            '{ name = "jinja_content" }, { name = "type", default = "impl" }]\n'
+        ),
+        files={
+            "src/impl.cpp": "// @first impl, IMPL_1, of {{ title }}, true\nvoid impl() {}\n"
+        },
+    )
+    app = _build(tmp_path, make_app)
+    need = SphinxNeedsData(app.env).get_needs_view()["IMPL_1"]
+    assert (need["content"], need["jinja_content"]) == ("of first impl", "true")

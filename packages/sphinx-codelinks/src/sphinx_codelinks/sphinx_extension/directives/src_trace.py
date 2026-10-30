@@ -134,11 +134,6 @@ def generate_remote_url(
 _CREATION_ARGUMENTS = ("content", "doctype", "jinja_content", "full_title")
 
 
-def _marker_text(value: str | list[str]) -> str:
-    """A marker field's value as one string: a list joined as it was written."""
-    return value if isinstance(value, str) else ", ".join(value)
-
-
 def would_be_id(app: Sphinx, need: Mapping[str, Any]) -> str | None:
     """The id a one-line need is created with: its ``id`` field, else the one
     Sphinx-Needs generates for a need without one -- ``generate_need`` calls
@@ -750,8 +745,9 @@ class SourceTracingDirective(SphinxDirective):
                     *schema.iter_core_field_names(),
                     *schema.iter_extra_field_names(),
                 }
-                arguments = {
-                    name: _marker_text(values.pop(name))
+                # the marker's value as written, as add_need took and recorded it
+                arguments: dict[str, Any] = {
+                    name: values.pop(name)
                     for name in _CREATION_ARGUMENTS
                     if name in values and name not in declared
                 }
@@ -768,10 +764,7 @@ class SourceTracingDirective(SphinxDirective):
                         id=None if marker_id is None else str(marker_id),
                         content=arguments.get("content", ""),
                         doctype=arguments.get("doctype"),
-                        # a string, true when not empty, as add_need read it
-                        jinja_content=bool(arguments["jinja_content"])
-                        if "jinja_content" in arguments
-                        else None,
+                        jinja_content=arguments.get("jinja_content"),
                         full_title=arguments.get("full_title"),
                         fields={k: v for k, v in values.items() if k not in link_names},
                         links={k: v for k, v in values.items() if k in link_names},
