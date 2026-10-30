@@ -1,4 +1,4 @@
-"""A hidden need is located exactly as the same need without ``:hide:`` is (#2398).
+"""A hidden need is located exactly as a visible need in the same place is (#2398).
 
 ``sections``, ``signature`` and ``parent_needs`` come from the need's place in the
 doctree, and ``:hide:`` does not move it there: one project is built twice, once with
@@ -16,9 +16,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from docutils import nodes
+from sphinx.application import Sphinx
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.directives.need import _location_before
+from sphinx_needs.nodes import Need
 from sphinx_needs_testkit import assert_no_warnings
 
 _PROJECT = """\
@@ -162,17 +166,21 @@ Function after sibling
 _FIELDS = ("sections", "signature", "parent_needs")
 
 
-def _locations(
-    make_app: Callable[..., SphinxTestApp], srcdir: Path, *, hide: bool
-) -> dict[str, dict[str, Any]]:
-    """Build the project, ``%HIDE%`` read as ``:hide:`` or as nothing; every need's
-    location fields and its ``parent_needs_back``."""
+def _write(srcdir: Path, *, hide: bool) -> None:
+    """Write the project, ``%HIDE%`` read as ``:hide:`` or as nothing."""
     srcdir.mkdir(parents=True)
     srcdir.joinpath("conf.py").write_text('extensions = ["sphinx_needs"]\n')
     text = _PROJECT.replace("%HIDE%", ":hide:") if hide else _PROJECT
     srcdir.joinpath("index.rst").write_text(
         "".join(line for line in text.splitlines(True) if "%HIDE%" not in line)
     )
+
+
+def _locations(
+    make_app: Callable[..., SphinxTestApp], srcdir: Path, *, hide: bool
+) -> dict[str, dict[str, Any]]:
+    """Build the project; every need's location fields and its ``parent_needs_back``."""
+    _write(srcdir, hide=hide)
     app = make_app("html", srcdir=srcdir, freshenv=True)
     try:
         app.build()
@@ -306,3 +314,38 @@ def test_the_visible_build_is_where_the_needs_are(
         "PARENT_AFTER_HIDDEN": (("Parent after sibling", "Top"), None, ["PARENT_B"]),
         "FUNC_AFTER_HIDDEN": (("Function after sibling", "Top"), "sib_f", []),
     }
+
+
+def test_locating_a_hidden_need_leaves_the_doctree_unchanged(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+):
+    """The walk for a hidden need starts at the position before its node without
+    placing anything there: the doctree reads the same before and after it, for every
+    hidden need of the project -- among them a first child, a need after a need, and a
+    need in a parent need. It is called before sphinx-needs' own walk, which takes the
+    hidden needs out.
+    """
+    unchanged: dict[str, bool] = {}
+
+    def probe(app: Sphinx, doctree: nodes.document) -> None:
+        for node in list(doctree.findall(Need)):
+            if node.get("hidden"):
+                before = doctree.pformat()
+                _location_before(node)
+                unchanged[node["refid"]] = doctree.pformat() == before
+
+    _write(tmp_path / "src", hide=True)
+    app = make_app("html", srcdir=tmp_path / "src", freshenv=True)
+    try:
+        app.connect("doctree-read", probe, priority=100)
+        app.build()
+        assert_no_warnings(app)
+    finally:
+        app.cleanup()
+    assert {
+        "ONLY_FIRST",
+        "AFTER_VISIBLE",
+        "PARENT_FIRST",
+        "PARENT_AFTER_HIDDEN",
+    } <= set(unchanged)
+    assert [need_id for need_id, same in unchanged.items() if not same] == []
