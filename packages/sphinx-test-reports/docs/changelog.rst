@@ -12,12 +12,26 @@ Fixed
   :ref:`tr_file_option`, :ref:`tr_source_file_option` or :ref:`tr_source_line_option`
   names, is refused when the build starts, with an ``InvalidConfigurationError`` naming the
   option, as a name the directives read as an option of their own already is
-  (`#2181 <https://github.com/useblocks/sphinx-needs/issues/2181>`__). It ended the build
-  with a bare ``TypeError`` from inside a directive (``add_need() got multiple values for
-  keyword argument 'result'``), or, for ``case_file`` and ``case_line``, silently overrode
-  the test's source location. The same holds for ``extra_options`` in ``[test_reports]``. A
-  report value of such a name (a ``tr_json_mapping`` key, say) refuses its need with the
-  directive's warning, where it crashed the build too.
+  (`#2181 <https://github.com/useblocks/sphinx-needs/issues/2181>`__). On the directive that
+  sets the field, the option ended the build with a bare ``TypeError`` (``add_need() got
+  multiple values for keyword argument 'result'``), or, for ``case_file`` and ``case_line``,
+  silently overrode the test's source location; on the others it set nothing (the field is
+  not declared on their need type) or crashed the same way. ``style``, which only
+  ``test-case`` sets, is not refused: it keeps setting the style of a ``test-file`` and a
+  ``test-suite``, and a test case it would override refuses its need with the directive's
+  warning, where it crashed. The same holds for ``extra_options`` in ``[test_reports]``. A
+  report value of a name the directive sets (a ``tr_json_mapping`` key, say) refuses its
+  need the same way, where it crashed the build too.
+
+- ‼️ A :ref:`tr_extra_options` name that is a Sphinx-Needs core field no option can set --
+  ``external_url``, ``external_css``, ``sections``, ``signature``, ``is_external``,
+  ``docname``, ``lineno`` and the other core fields that are neither fields of the field
+  schema nor arguments of the need's creation -- is refused when the build starts, with the
+  same ``InvalidConfigurationError``. ``add_need`` took such an option as its own keyword:
+  some were ignored, ``external_css`` set the css class of an external link the need never
+  has, and ``lineno_content`` crashed. As a report value (a ``tr_json_mapping`` key) such a
+  name refuses its need with the directive's warning. ``doctype``, ``jinja_content`` and
+  ``full_title`` keep reaching Sphinx-Needs as the need's own arguments.
 
 - 🐛 A :ref:`tr_extra_options` name that is no field the directives set but one of
   Sphinx-Needs' own parameter names, such as ``state``, is an ordinary field: it ended the

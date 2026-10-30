@@ -274,9 +274,14 @@ and the need field keeps the configured spelling, ``Owner``.
 The build says so at its start, once per such name.
 Two names that differ only in case cannot both be written on a directive, and are a configuration error;
 so is a name the directives already have as an option of their own (``Status`` or ``status``, ``Tags``, ``File``, ...),
-and one they set as a field of their own (``result``, ``time``, ``case_name``, ``cases``, ``passed``, ``title``, ...),
+one they set as a field of their own (``result``, ``time``, ``case_name``, ``cases``, ``passed``, ``title``, ...),
 or that :ref:`tr_file_option`, :ref:`tr_source_file_option` or :ref:`tr_source_line_option` names:
-the extra option would otherwise override that field's value.
+the extra option would otherwise override that field's value;
+and a Sphinx-Needs core field that is no field an option can set (``external_url``, ``external_css``, ``sections``, ...).
+``style`` is the exception among the directives' own fields: only ``test-case`` sets it, so it is the field's value on a
+``test-file`` or ``test-suite``, and refuses a test case's need (with a warning) rather than override its style.
+``doctype``, ``jinja_content`` and ``full_title`` are passed to Sphinx-Needs as the need's own arguments, as before:
+``:jinja_content:`` renders the content as a Jinja template.
 
 You can then use these options in your directives:
 

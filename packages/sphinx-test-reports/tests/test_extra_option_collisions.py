@@ -63,7 +63,6 @@ def _built_values(app, name):
         "time",
         "case_name",
         "case_parameter",
-        "style",
         "suites",
         "cases",
         "passed",

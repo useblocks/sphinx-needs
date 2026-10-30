@@ -101,7 +101,6 @@ def _build(make_app, tmp_path, conf, rst, files):
 # --- the links: by the project's link types -------------------------------------------
 
 
-@pytest.mark.xfail(strict=True, reason="FR1: split by the schema's link types")
 def test_a_report_value_named_like_a_link_type_is_a_link(
     make_app, tmp_path, clean_docutils_registry
 ):
@@ -118,7 +117,6 @@ def test_a_report_value_named_like_a_link_type_is_a_link(
     assert needs["TC_001"]["blocks"] == ["REQ_1"]
 
 
-@pytest.mark.xfail(strict=True, reason="FR1: split by the schema's link types")
 def test_a_property_mapped_to_a_field_sets_the_field(
     make_app, tmp_path, clean_docutils_registry
 ):
@@ -156,7 +154,6 @@ def test_a_property_mapped_to_a_link_type_links_the_need(
 FILE = ".. test-file:: F\n   :id: TF_001\n   :file: r.xml\n{options}\n\n   body {{{{ title }}}}\n"
 
 
-@pytest.mark.xfail(strict=True, reason="FR2: add_need's arguments stay arguments")
 def test_an_extra_option_jinja_content_renders_the_content(
     make_app, tmp_path, clean_docutils_registry
 ):
@@ -171,7 +168,6 @@ def test_an_extra_option_jinja_content_renders_the_content(
     assert needs["TF_001"]["content"] == "body F"
 
 
-@pytest.mark.xfail(strict=True, reason="FR2: add_need's arguments stay arguments")
 def test_an_extra_option_doctype_sets_it(make_app, tmp_path, clean_docutils_registry):
     needs, warnings = _build(
         make_app,
@@ -184,7 +180,6 @@ def test_an_extra_option_doctype_sets_it(make_app, tmp_path, clean_docutils_regi
     assert needs["TF_001"]["doctype"] == ".md"
 
 
-@pytest.mark.xfail(strict=True, reason="FR2(i): a core field no option sets")
 @pytest.mark.parametrize("name", ["external_url", "external_css", "sections"])
 def test_an_extra_option_named_like_a_core_field_no_option_sets_is_refused(
     make_app, tmp_path, clean_docutils_registry, name
@@ -229,7 +224,6 @@ def test_a_report_value_named_like_a_core_field_no_option_sets_refuses_its_need(
 # --- style: a field-schema core field the test-case directive sets ---------------------
 
 
-@pytest.mark.xfail(strict=True, reason="FR3: style works where no directive sets it")
 @pytest.mark.parametrize("declarative", [False, True])
 def test_an_extra_option_style_sets_a_test_file_s_style(
     make_app, tmp_path, clean_docutils_registry, declarative
@@ -249,7 +243,6 @@ def test_an_extra_option_style_sets_a_test_file_s_style(
     assert needs["TF_001"]["style"] == "highlight"
 
 
-@pytest.mark.xfail(strict=True, reason="FR3: style works where no directive sets it")
 def test_an_extra_option_style_refuses_only_the_case_needs(
     make_app, tmp_path, clean_docutils_registry
 ):

@@ -21,6 +21,7 @@ from sphinx.util import logging
 from sphinx_needs.api import create_need
 from sphinx_needs.api.need import _make_hashed_id
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import InvalidNeedException
 from sphinx_needs.need_item import NeedItemSourceUnknown
 from sphinx_test_reports.exceptions import SphinxError
@@ -38,10 +39,17 @@ logger = logging.getLogger(__name__)
 #: its own arguments, ``links`` as a link type).
 _EVERY_NEED = ("id", "type", "title", "content", "links", "tags", "status", "collapse")
 
+#: The names an extra option or a report value may have that ``add_need`` took as its
+#: own keywords, and that ``create_need`` takes as arguments rather than as fields
+#: (``content`` and ``title`` every directive sets itself).
+_CREATION_ARGUMENTS = ("doctype", "jinja_content", "full_title")
+
 #: The need fields each directive sets itself, by the kind of need it creates: what
 #: :meth:`TestCommonDirective.create_report_need` is handed, exactly, beside the
 #: report-path and source-location fields (named by configuration) and the configured
-#: extra options. ``tr_extra_options`` may name none of them (#2181).
+#: extra options. ``tr_extra_options`` may name none of them (#2181), but a core field
+#: of the field schema a directive leaves unset (``style``, which test-case alone sets):
+#: there it is the field, and on a test case it refuses the need.
 DIRECTIVE_FIELDS: dict[str, frozenset[str]] = {
     "file": frozenset({*_EVERY_NEED, *FILE_NEED_FIELDS}),
     "suite": frozenset({*_EVERY_NEED, *SUITE_NEED_FIELDS}),
@@ -361,11 +369,21 @@ class TestCommonDirective(Directive):
             values.pop("content"),
         )
         need_type = values.pop("type")
-        # the link types this package sets: the built-in one, and those the JUnit
-        # properties are mapped to
-        link_names = {
-            "links",
-            *getattr(self.app.config, "tr_property_link_types", {}).values(),
+        # each name where the project's schema puts it: a link type to the links, any
+        # other name to the fields (a report value or a property target may be either)
+        schema = SphinxNeedsData(self.env).get_schema()
+        link_names = set(schema.iter_link_field_names())
+        # the names add_need took as its own keywords and create_need takes as
+        # arguments, unless the project declares a field of the name
+        declared = {
+            *link_names,
+            *schema.iter_core_field_names(),
+            *schema.iter_extra_field_names(),
+        }
+        arguments = {
+            name: values.pop(name)
+            for name in _CREATION_ARGUMENTS
+            if name in values and name not in declared
         }
         _, created = create_need(
             self.app,
@@ -375,6 +393,12 @@ class TestCommonDirective(Directive):
             title,
             id=need_id,
             content=content,
+            doctype=arguments.get("doctype"),
+            # true when not empty, as add_need read it
+            jinja_content=bool(arguments["jinja_content"])
+            if "jinja_content" in arguments
+            else None,
+            full_title=arguments.get("full_title"),
             fields={k: v for k, v in values.items() if k not in link_names},
             links={k: v for k, v in values.items() if k in link_names},
         )
