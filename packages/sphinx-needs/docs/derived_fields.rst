@@ -728,7 +728,20 @@ Link lists
 ----------
 
 These kinds compute a link type's links, and are declared on a link type, in its :ref:`needs_links` entry.
+Their links are links like written ones: shown on the need, read by filters, tables and diagrams,
+and answered by back links on the needs they point to.
 Each computes with the link fields, so its links are in the back links (``<link type>_back``) as written ones are.
+
+Bear in mind:
+
+- **Field form or link form.** A list of ids in a field suits a table column or a filter;
+  links add what links have, the back links above all. Where nobody reads the back links, a field is lighter.
+- **Cost.** A link type whose rule links many needs to many stores a list on each need, and a back link on each target;
+  ``needs.derive_dense`` reports a link type that grows past :ref:`needs_derive_max_links_per_need` links per need
+  (:ref:`needs_derive_cost`).
+- **Incremental builds.** In a project with a ``links`` rule, a ``content_links`` rule with ``from``,
+  a ``collect`` on a link type, or a ``copy`` on a link type over a link type a rule computes,
+  every change of a need re-writes every page holding a need (:ref:`incremental_builds`).
 
 .. _`needs_derive_summary`:
 
@@ -762,8 +775,10 @@ You rarely write such links by hand: a ``copy`` or ``collect`` on the link type 
 (:ref:`needs_derive_link_chain`), and a link type computed that way is a summary whether or not its entry says so.
 A link type written in the needs may be one too, such as a ``mitigates`` that says what a risk is about.
 
-``summary`` belongs to the link type, so it is set on its :ref:`needs_links` entry and holds on every need type;
-a ``union`` cannot name a summary link type as a member, and ``summary`` is no key of a rule
+``summary`` belongs to the link type, so it is set on its :ref:`needs_links` entry and holds on every need type.
+``summary`` in a need type's own ``links`` entry is reported (``needs.config``) and ignored,
+so a link type declared on need types alone is a summary only when a ``copy`` or ``collect`` computes it.
+A ``union`` cannot name a summary link type as a member, and ``summary`` is no key of a rule
 (each ``needs.derive_invalid``).
 
 .. _`needs_derive_kind_links`:
@@ -783,6 +798,14 @@ keep its ``where`` selective (:ref:`needs_derive_cost`):
 With one open requirement, ``REQ_1``, every other need holds ``REQ_1`` in ``open_reqs``,
 ``REQ_1`` holds no link there (a need is left out of its own), and its ``open_reqs_back`` lists every other need.
 
+Bear in mind:
+
+- **It is stored on every need holding the rule.** Every such need links to every need the ``where`` passes (but itself);
+  to show that set in one place, a :ref:`needtable` or :ref:`needlist` with the same filter shows it once.
+  Declare the rule only for the need types that use it (:ref:`needs_derive_by_type`).
+- **Incremental builds.** With a ``links`` rule in the project, every change of a need re-writes every page holding a need
+  (:ref:`incremental_builds`).
+
 Its candidates are every need, and with ``include_parts`` every need's parts (after it, in part-id order),
 in :ref:`need-id order <needs_id_order>`;
 this need and its parts are left out unless ``include_self``.
@@ -796,6 +819,8 @@ content_links
 
 ``content_links`` links the needs a need's content references with :ref:`need <role_need>`.
 Use it so that the references written in a need's text are links too, with back links:
+a specification whose text cites the requirement it refines then shows on that requirement,
+without a second, written link to keep in step with the text.
 
 .. code-block:: toml
 
@@ -808,6 +833,8 @@ Its links are the ``:need:`` references of this need's content (or of the conten
 in document order, each once: a reference to a part is a part link, a reference to this need is kept,
 a reference to no need is kept (and reported as any dead link), a disabled one (``!ID``) and those inside a
 nested need are not. With ``where``, only the references to needs it holds on are kept (a part through its need).
+A ``content_links`` rule with ``from`` makes every change of a need re-write every page holding a need
+on an incremental build (:ref:`incremental_builds`).
 
 .. _`needs_derive_union`:
 
@@ -816,6 +843,9 @@ A union of link types
 
 .. versionadded:: 9.1.0
 
+A trace is often spread over several link types: a requirement is satisfied by specifications,
+implemented by code and tested by tests, and one view should read them all at once:
+a :ref:`needflow`, a filter or a :ref:`needtable` column (see **Reading it**, below).
 A link type deriving ``union`` holds the links of other link types, its members, which ``fields`` names:
 
 .. code-block:: toml
@@ -834,8 +864,16 @@ then holds ``REQ_1, REQ_2`` in ``all_links``, and ``REQ_1`` and ``REQ_2`` hold i
 It is the declared spelling of "every outgoing link of these types", which ``copy = true`` gave by copying
 into ``links`` (deprecated, see :ref:`needs_links`).
 
-Use it when one view should read the links of several link types at once:
-a :ref:`needflow`, a filter or a :ref:`needtable` column (see **Reading it**, below).
+Bear in mind:
+
+- **The members keep their own links.** A union adds a link type; ``links`` and each member are unchanged,
+  so a view that names a member still draws it with its own style.
+- **It is not counted twice.** The links it holds again are not counted as dense (below),
+  and its dead links are reported once, at the member.
+- **Members only.** A union reads link types: not a field, not back links, not ``parent_needs``,
+  and not a summary link type.
+
+The rules:
 
 - **Members.** Any link type the need has: ``links``, one of :ref:`needs_links` or :ref:`needs_extra_links`,
   one need types declare alone, a derived link type, another union -- each computed before the union,
@@ -855,7 +893,8 @@ a :ref:`needflow`, a filter or a :ref:`needtable` column (see **Reading it**, be
   it is not run, and is reported (for a ``links`` rule, on every need computing it).
   ``parent_needs`` and the back links (``<link type>_back``, built after the link types) are not members,
   nor is a field, nor a summary link type (``summary`` in :ref:`needs_links`, :ref:`needs_derive_summary`),
-  whose links are a path, not edges, and a member is named once; the union itself, or two unions naming each other, can be computed
+  whose links are shortcuts across the trace, not steps in it, and a member is named once;
+  the union itself, or two unions naming each other, can be computed
   on no need. Each is one ``needs.derive_invalid`` at load, and the union holds no links.
   On a need of a type that does not have a member, the member holds no links, and adds none.
 - **The links.** Each member's links, in the order ``fields`` names the members, each member's in its own order;
@@ -909,6 +948,10 @@ A chain as links: copy and collect on a link type
 
 .. versionadded:: 9.2.0
 
+A test result is evidence for the requirements its test traces to, several links up:
+test, implementation, specification, requirement.
+A shortcut across the trace gives each need the far ends of its chain as ordinary links,
+shown on the need, and on each requirement as back links: "the needs that reach me".
 ``copy`` and ``collect`` declared on a link type carry a chain's far ends down it as links, rung by rung,
 where on a field they carry them as an array of ids (:ref:`needs_derive_rollup_rung_up`):
 
@@ -937,12 +980,23 @@ which the field form gives only as a second roll-up up the chain's back links.
 The field form stays the one for a table column or a filter of ids; the link form adds what links have:
 the links rendered on the card, back links, and in ``needs.json`` a link list with its ``_back``.
 
+Bear in mind:
+
+- **It is a summary.** Its links skip the steps between, so a needflow draws them only when ``:link_types:`` names
+  the link type, and a ``union`` cannot read it (below).
+- **Cost.** Each need stores a link per far end its chain reaches, and each far end a back link from every need reaching it;
+  on a deep, wide trace, the field form stores the same ids without the back links.
+- **Incremental builds.** A ``collect``, or a ``copy`` over a link type another rule computes, makes every change of a need
+  re-write every page holding a need (below).
+
+The rules:
+
 - **copy.** ``field = "id"`` and ``over``: a link to each need ``over`` names, in the order written, each once;
   a link to a part links the part's need, and a link to no need is skipped.
   ``select`` is ``"list"`` (a link list holds every target), which it need not say.
 - **collect.** ``field``, a link type (a derived one too, which carries a chain rung by rung), and ``over``:
   the links ``field`` holds on each need ``over`` names, in their order, each once by its target and its part.
-  A link's condition is dropped: it qualifies the link it is written on, not the path.
+  A link's condition is dropped: it qualifies the link it is written on, not the chain.
   A dead link is carried, and reported where it is written, as that link type allows dead links, not again here:
   it sets ``has_dead_links`` (and ``has_forbidden_dead_links``) on the need writing it only,
   and a need's layout draws it forbidden on every rung exactly where the link type it is written in does not allow it.
