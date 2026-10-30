@@ -369,7 +369,6 @@ def test_a_report_change_re_reads_only_the_pages_reading_it(
     assert _assert_equivalent(make_app, tmp_path, scenario) == [page]
 
 
-@pytest.mark.xfail(strict=True, reason="sphinx-test-reports declares no env_version")
 def test_an_environment_pickled_by_an_earlier_release_is_read_again(make_app, tmp_path):
     """An environment an earlier release pickled holds its test needs as it recorded
     them -- the line in the expanded input, no hops -- and nothing in the sources
