@@ -148,6 +148,16 @@ class TestCaseNameAndParameter:
             ),
             ({"name": "test_x"}, ("test_x", None)),
             ({"name": "test_x", "value_param": None}, ("test_x", None)),
+            # The parsers' "unknown" placeholder is absent too: a tr_json_mapping
+            # that defaults the two keys to it, as the docs' example does every key.
+            (
+                {"name": "test_x", "value_param": "unknown", "type_param": "unknown"},
+                ("test_x", None),
+            ),
+            (
+                {"name": "T1", "value_param": "unknown", "type_param": "int"},
+                ("T1", "int"),
+            ),
         ],
     )
     def test_the_name_s_bracket_then_the_value_then_the_type(self, case, expected):

@@ -77,8 +77,10 @@ def case_name_and_parameter(
        ``testing::RegisterTest``), ``"<type_param>, <value_param>"`` (``int, 42``),
        gtest's own order;
 
-    and ``None`` -- a null field -- where none of them gives one. An empty or missing
-    attribute gives none: the parser writes ``""`` for an absent one. ``case_name`` is
+    and ``None`` -- a null field -- where none of them gives one. An empty, missing or
+    ``"unknown"`` attribute gives none: the JUnit parser writes ``""`` for an absent
+    one, and a ``tr_json_mapping`` may default it to the parsers' ``"unknown"``
+    placeholder. ``case_name`` is
     the name as :func:`split_case_name` leaves it, so a gtest instance keeps its
     ``/N`` (``Value/0``).
 
@@ -103,9 +105,10 @@ def case_name_and_parameter(
 
 
 def _attribute(case: Mapping[str, Any], key: str) -> str:
-    """The case's ``key`` as text, ``""`` where it is missing or ``None``."""
+    """The case's ``key`` as text, ``""`` where it is missing, ``None`` or the parsers'
+    :data:`UNKNOWN` placeholder."""
     value = case.get(key)
-    return "" if value is None else str(value)
+    return "" if value is None or value == UNKNOWN else str(value)
 
 
 def case_display_name(classname: str, name: str) -> str:
