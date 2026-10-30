@@ -5911,3 +5911,59 @@ field = "big"
 code = "derive_scope"
 need = "SPEC_1"
 field = "backed"
+
+[[case]]
+name = "link-path-where-is-a"
+why = "a where on a copy or a collect on a link type reads c.is_a as a filter does, as the need type declarations give inherits: with spec inheriting req, a copy over links on an impl keeps the req and the spec it links and drops the test, and a collect over links on a test keeps the chain of the impl it links and not the spec's, which is a req"
+config = '''
+[needs.types.spec]
+inherits = "req"
+
+[needs.links.chain]
+
+[needs.types.spec.links.chain]
+derive = { kind = "copy", field = "id", over = "links" }
+
+[needs.types.impl.links.chain]
+derive = { kind = "copy", field = "id", over = "links", where = "c.is_a('req')" }
+
+[needs.types.test.links.chain]
+derive = { kind = "collect", field = "chain", over = "links", where = "not c.is_a('req')" }
+'''
+source = '''
+.. req:: One
+   :id: REQ_1
+
+.. req:: Two
+   :id: REQ_2
+
+.. spec:: Inherits req
+   :id: SPEC_1
+   :links: REQ_2
+
+.. test:: A test linked
+   :id: TEST_9
+
+.. impl:: Links a req, a spec and a test
+   :id: IMPL_1
+   :links: REQ_1, SPEC_1, TEST_9
+
+.. test:: Links an impl, a spec and a req
+   :id: TEST_1
+   :links: IMPL_1, SPEC_1, REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+chain = ["REQ_2"]
+chain_back = ["IMPL_1", "TEST_1"]
+[case.expect.needs.IMPL_1]
+chain = ["REQ_1", "SPEC_1"]
+[case.expect.needs.TEST_1]
+chain = ["REQ_1", "SPEC_1"]
+[case.expect.needs.TEST_9]
+chain = []
+[case.expect.needs.REQ_1]
+chain_back = ["IMPL_1", "TEST_1"]
+[case.expect.needs.REQ_2]
+chain_back = ["SPEC_1"]
