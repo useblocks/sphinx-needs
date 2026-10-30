@@ -470,7 +470,8 @@ _INCLUDED = {
     **_with_pages(
         PAGES, {"included.rst": "Included\n========\n\n.. include:: frag.txt\n"}
     ),
-    "frag.txt": ".. req:: Written in an included file\n   :id: REQ_060\n",
+    "frag.txt": ".. req:: Written in an included file\n   :id: REQ_060\n"
+    "   :links: REQ_002\n",
 }
 #: every requirement counts the links pointing to it: one at least
 _COUNTED = {
@@ -780,7 +781,8 @@ def test_edit_above_an_included_need_rewrites_only_the_views(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:
     """A need written in an included file records that file's lines on its hops: prose
-    added above it there moves it, as prose above a need in its page does, and no more.
+    added above it there moves it, as prose above a need in its page does, and no more:
+    ``reqs``, where the need it links to shows it as a back link, is not re-written.
     """
     written = _assert_equivalent(make_app, tmp_path, "prose-above-included-need")
     assert sorted(written) == ["charts", "included", "index", "views"]
