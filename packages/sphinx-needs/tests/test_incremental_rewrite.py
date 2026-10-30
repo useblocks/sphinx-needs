@@ -426,6 +426,58 @@ _ROLE_LINE = {
     "conf.py": CONF
     + '\nneeds_role_need_template = "{{ title }} (line {{ lineno }})"\n',
 }
+#: master's readers: per-type declarations in ``ubproject.toml`` -- fields of ``impl``
+#: alone, derived with a ``where`` beside a ``copy`` and an ``all`` with ``empty``, and a
+#: count over the links that ``c.is_a('req')`` selects -- a needtable and a needextend
+#: whose filters use ``c.is_a``, and a need on a page of its own copying the derived
+#: values of ``IMPL_002`` (whose ``links`` name ``SPEC_001``)
+_TYPES_TOML = """\
+[needs.types.impl.fields.bigtotal]
+schema = { type = "number" }
+derive = { kind = "copy", field = "total", over = "links", where = "total > 5" }
+
+[needs.types.impl.fields.allbig]
+schema = { type = "boolean" }
+derive = { kind = "all", over = "links", where = "total > 5", test = "total > 5", empty = false }
+
+[needs.types.impl.fields.reqs]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.is_a('req')" }
+"""
+_TYPES = {
+    **_with_pages(
+        PAGES,
+        {
+            "isa.rst": "Is a\n====\n\n.. needtable::\n   :filter: c.is_a('req')\n"
+            "   :columns: id, title, tags\n\n.. needextend:: \"c.is_a('req')\"\n"
+            "   :+tags: isreq\n",
+            "rolled.rst": "Rolled\n======\n\n.. test:: Copies the rolled-up values\n"
+            "   :id: TEST_050\n"
+            '   :copiednum: [[copy("bigtotal", "IMPL_002")]]\n'
+            '   :copiedflag: [[copy("allbig", "IMPL_002")]]\n'
+            '   :copiedcount: [[copy("reqs", "IMPL_002")]]\n',
+        },
+    ),
+    "conf.py": CONF
+    + '\nneeds_from_toml = "ubproject.toml"\n'
+    + 'needs_fields["copiednum"] = {"schema": {"type": "number"}}\n'
+    + 'needs_fields["copiedflag"] = {"schema": {"type": "boolean"}}\n'
+    + 'needs_fields["copiedcount"] = {"schema": {"type": "integer"}}\n',
+    "ubproject.toml": _TYPES_TOML,
+}
+#: a need in an included file, which its hops record with the included file's lines
+_INCLUDED = {
+    **_with_pages(
+        PAGES, {"included.rst": "Included\n========\n\n.. include:: frag.txt\n"}
+    ),
+    "frag.txt": ".. req:: Written in an included file\n   :id: REQ_060\n",
+}
+#: every requirement counts the links pointing to it: one at least
+_COUNTED = {
+    **PAGES,
+    "conf.py": CONF + '\nneeds_types = {"req": {"back_links": {"links": '
+    '{"schema": {"minItems": 1}, "severity": "warning"}}}}\n',
+}
 _REQ_002_CLOSED = (
     "reqs.rst",
     "   :status: open\n   :hours: 5\n",
@@ -512,6 +564,22 @@ SCENARIOS: dict[str, tuple[dict[str, str], dict[str, str]]] = {
     ),
     "dead-link-flag-read": (_DEAD_FLAG, _DEAD_FLAG_ALIVE),
     "line-read-by-rule": (_LINE_RULE, _replace(_LINE_RULE, *_PROSE_ABOVE)),
+    "rule-with-where-and-empty-read": (
+        _TYPES,
+        _replace(_TYPES, *EDITS["status-read-by-function-and-derive"]),
+    ),
+    "inherits-changed": (
+        _TYPES,
+        {
+            **_TYPES,
+            "ubproject.toml": _TYPES_TOML + '\n[needs.types.spec]\ninherits = "req"\n',
+        },
+    ),
+    "prose-above-included-need": (
+        _INCLUDED,
+        {**_INCLUDED, "frag.txt": "Prose first.\n\n" + _INCLUDED["frag.txt"]},
+    ),
+    "back-links-counted": (_COUNTED, _replace(_COUNTED, *EDITS["link-removed"])),
     "document-removed": (
         PAGES,
         {
@@ -706,3 +774,33 @@ def test_every_core_field_is_classified() -> None:
 
     assert OWN_CORE_FIELDS.isdisjoint(OTHER_WRITTEN_CORE_FIELDS)
     assert set(NeedsCoreFields) == OWN_CORE_FIELDS | OTHER_WRITTEN_CORE_FIELDS
+
+
+def test_edit_above_an_included_need_rewrites_only_the_views(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A need written in an included file records that file's lines on its hops: prose
+    added above it there moves it, as prose above a need in its page does, and no more.
+    """
+    written = _assert_equivalent(make_app, tmp_path, "prose-above-included-need")
+    assert sorted(written) == ["charts", "included", "index", "views"]
+
+
+def test_back_links_counts_are_checked_again_on_an_incremental_build(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A need type's count of its back links is validated over every need on every
+    build, not per page: removing the one link to ``REQ_003`` on another page reports
+    it on the incremental build, exactly as a fresh build does."""
+    before, after = SCENARIOS["back-links-counted"]
+    incremental = _write(tmp_path / "incremental", before)
+    _build(make_app, incremental, fresh=True)
+    _write(incremental, after)
+    _, warnings = _build(make_app, incremental, fresh=False)
+    _, fresh_warnings = _build(make_app, _write(tmp_path / "fresh", after), fresh=True)
+
+    def counted(found: list[str]) -> list[str]:
+        return sorted(warning for warning in found if "links_back" in warning)
+
+    assert counted(warnings) == counted(fresh_warnings)
+    assert any("'REQ_003'" in warning for warning in counted(warnings))
