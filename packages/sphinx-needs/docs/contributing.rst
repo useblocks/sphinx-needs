@@ -221,8 +221,15 @@ the tests that need them assert rather than skip:
 Benchmarks
 ----------
 
-**Sphinx-Needs** own documentation is used for creating a benchmark for each PR.
-If the runtime takes 10% longer as the previous ones, the benchmark test will fail.
+Every push to ``master`` runs the ``Benchmark`` workflow, which records three numbers: the build time of a
+small project and of **Sphinx-Needs** own documentation, and the peak memory of the latter's build.
+
+A build time is the fastest of several builds, each with a fresh environment, with no PlantUML diagram rendered:
+a diagram is a Java process of about two seconds, which used to be three quarters of the documentation's build
+time and most of its variation between runners. The diagrams are still parsed and their sources generated.
+
+The workflow fails when a number is more than 30% worse (10% for memory) than the median of its last ten results.
+CI runners come in several speeds, so a build time is only compared with results measured on the same CPU model.
 
 Benchmark test cases are available under ``tests/benchmarks``.
 

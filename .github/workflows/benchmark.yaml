@@ -39,49 +39,57 @@ jobs:
         # workspace root, so this stays a root-level sync. `--no-default-groups` drops `dev`
         run: uv sync --frozen --no-default-groups --group benchmark --extra docs
       - name: Run Benchmark for time
-        run: uv run --no-sync pytest --benchmark-json output.json -k _time packages/sphinx-needs/tests/benchmarks
+        # each duration is the fastest of several fresh builds with no diagram rendered:
+        # packages/sphinx-needs/tests/benchmarks/_builds.py says why
+        run: uv run --no-sync pytest --benchmark-json output_time.json -k _time packages/sphinx-needs/tests/benchmarks
+      - name: Run Benchmark for memory
+        run: uv run --no-sync pytest --benchmark-json output_memory.json -k _memory packages/sphinx-needs/tests/benchmarks
+      - name: Create memory flamegraph
+        # the benchmark writes the trace relative to its own file
+        # (tests/benchmarks/test_official.py:108, `Path(__file__).parent / ".." / ".."`),
+        # so after the move it lands next to the package, not at the repository root
+        run: uv run --no-sync memray flamegraph -o mem_out.html packages/sphinx-needs/mem_out.bin
 
-      - name: Download previous benchmark data
-        uses: actions/cache@v6
-        with:
-          path: ./cache
-          key: ${{ runner.os }}-benchmark
       - name: Extract benchmark data
-        run: uv run --no-sync python .github/scripts/extract_benchmark_data.py output.json output_action.json
+        run: uv run --no-sync python .github/scripts/extract_benchmark_data.py output_action.json output_time.json output_memory.json
+      - name: Read the results so far
+        # before the store step adds this run's: the baseline the regression check judges by
+        run: |
+          git fetch --depth=1 origin benchmarks
+          git show FETCH_HEAD:docs/bench/data.js > history.js
       - name: Store benchmark result
+        id: store
         uses: benchmark-action/github-action-benchmark@v1
         with:
           # What benchmark tool the output.txt came from
           tool: 'customSmallerIsBetter'
           # Where the output from the benchmark tool is stored
           output-file-path: output_action.json
-          # Where the previous data file is stored
-          # external-data-json-path: ./cache/benchmark-data.json
-          # Workflow will fail when an alert happens
-          fail-on-alert: true
+          # the action's alert compares a result with the one before it, which on runners
+          # of different speeds fails one push in ten for nothing; `Check for regressions`
+          # below judges instead
+          fail-on-alert: false
+          comment-on-alert: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          alert-threshold: '150%'
-          comment-on-alert: true
-          comment-always: false
           auto-push: true
           gh-pages-branch: "benchmarks"
           # a path on the orphan `benchmarks` branch, not in this tree -- it does not
           # move with the package (nor does `docs/memory.html` below)
           benchmark-data-dir-path: "docs/bench"
-          alert-comment-cc-users: '@danwos'
+      - name: Check for regressions
+        # the median of the last results on the same CPU model, not the one result before
+        # (.github/scripts/check_benchmark_regression.py says why); run before the steps
+        # below check out the `benchmarks` branch, which does not carry the script
+        run: uv run --no-sync python .github/scripts/check_benchmark_regression.py history.js output_action.json ${{ github.sha }}
 
-      - name: Run Benchmark for memory
-        run: uv run --no-sync pytest --benchmark-json output.json -k _memory packages/sphinx-needs/tests/benchmarks
-      - name: Create memory flamegraph
-        # the benchmark writes the trace relative to its own file
-        # (tests/benchmarks/test_official.py:101, `Path(__file__).parent / ".." / ".."`),
-        # so after the move it lands next to the package, not at the repository root
-        run: uv run --no-sync memray flamegraph -o mem_out.html packages/sphinx-needs/mem_out.bin
+      # the flamegraph is published whatever the check said; the results already are
       - name: Publish memory flamegraph
+        if: ${{ !cancelled() && steps.store.outcome == 'success' }}
         run: |
           git checkout benchmarks
           cp mem_out.html docs/memory.html
           git add docs/memory.html
           git -c "user.name=Sphinx-Needs CI" -c "user.email=ci@sphinx-needs.com" commit -m "memory.html update"
       - name: Push changes
+        if: ${{ !cancelled() && steps.store.outcome == 'success' }}
         run: git push origin benchmarks

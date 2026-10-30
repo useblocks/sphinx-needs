@@ -414,6 +414,15 @@ Documentation
   rung below, and why a plain ``copy`` of the requirement's own ``id`` cannot start it; and the same chain read upwards,
   which gives each need the tests that reach it (:issue:`2379`)
 
+Internal changes
+................
+
+- 🔧 The benchmark workflow measures sphinx-needs rather than the runner: a build time is the fastest of several
+  fresh builds with no PlantUML diagram rendered (about three quarters of the old documentation figure was Java),
+  the peak memory of the documentation build is tracked, and a regression is judged against the median of recent
+  results on the same CPU model instead of the single result before it, which failed about one push in ten in
+  2026-10 on runners of different speeds
+
 .. _`release:9.1.0`:
 
 9.1.0
