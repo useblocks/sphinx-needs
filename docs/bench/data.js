@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793361818465,
+  "lastUpdate": 1793366947096,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27396,6 +27396,42 @@ window.BENCHMARK_DATA = {
             "value": 59.42463281299999,
             "unit": "s",
             "extra": "Commit: e4d64d580f0dd1df8473bd957cba91c74f5cfb3f\nBranch: master\nTime: 2026-10-30T13:02:10+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "13ee63b1c0e3054b842a42c03dec301bdb18bea3",
+          "message": "🐛 A need with :hide: is located as a visible need in the same place is (#2415)\n\n## What\n\nA need with `:hide:` now gets the `sections`, `signature` and\n`parent_needs` that a visible need in the same place\ngets. Closes #2398.\n\nTwo kinds of hidden need were located wrongly:\n\n- **First in its container** (a `.. only::`, a `.. note::`, a parent\nneed's content, a `py:function` body): it had\n  empty `sections`, no `signature` and no parent need.\n- **After another need**, hidden or visible: it took that need as its\n`parent_need`, and so appeared in that need's\n`parent_needs_back`. The needs a `needimport` with `:hide:` brings in\nwere each the child of the one before.\n\nVisible needs keep their own location. A visible need's\n`parent_needs_back` now lists every hidden need inside it,\nwhere it lacked a hidden first child and any hidden need that followed\nanother need inside it. It no longer lists\nthe hidden needs that merely followed it.\n\n`list2need` still places the children of a hidden item outside it, so\nsuch a child is located there: its parent is\nthe hidden item's own parent need. That is list2need's placement, not\nthe walk, and is left for a follow-up.\n\n## Why\n\nThe walk that locates a need starts from the position just before the\nneed node, which for a visible need is the\nneed's own target. A hidden need has no target, so the walk started from\nwhatever came before it:\n\n- as a first child, nothing, so no sections, signature or parent;\n- after another need, that need, which was then read as the parent.\n\nA hidden need's walk now starts from the same position. `sections` and\n`signature` are read from the need node, and\n`parent_needs` from the node's parent. The doctree is not changed, and\nthe walk itself is untouched.\n\nThe stored values change meaning, so `ENV_DATA_VERSION` goes to 17.\nWithout the bump, an upgraded build over an\nexisting `_build` keeps the old values on every page whose source did\nnot change, as measured.\n\n## Tests\n\n- **`tests/test_hidden_need_location.py`** builds one project with and\nwithout `:hide:`, and pins equal `sections`,\n  `signature` and `parent_needs` for each position:\n  - first in an `only`, a `note`, a parent need and a function;\n  - after a title, a paragraph, a hidden need and a visible need;\n  - in a row of five hidden needs;\n  - after a sibling, inside a parent need and inside a function.\n\nIt also pins the needs hidden in both builds, every need's\n`parent_needs_back`, and that locating a hidden need\nleaves the doctree unchanged. These tests landed first, as strict xfails\nthat were red on master.\n- **The suite's need-source fence** no longer exempts a hidden first\nchild, and it now checks `parent_needs` too:\nfor every need of every build it must name the nearest enclosing need\nnode, read from the doctree before the walk.\n- **Two snapshots update:** `SPEC_3` in the field-defaults project and\nthe needs that `needimport` hides lose the\n  parent they took from the need before them.\n- **`tests/test_incremental_rewrite.py`** gains two scenarios: a hidden\nneed moved into a parent need as its first\nchild, and one added after a need. The pages an incremental build\nre-writes equal a fresh build's, including a\nneedtable on another page showing each hidden need's parent and back\nlinks.\n- **The docs' needs.json** differs only in `filter.rst`'s row of five\nhidden needs (their `parent_need` and back\n  links), plus the `avatar` paths, which follow the checkout.",
+          "timestamp": "2026-10-30T14:27:19+01:00",
+          "tree_id": "58e844a38e5aa4f99551efc432490432b9d59f0f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/13ee63b1c0e3054b842a42c03dec301bdb18bea3"
+        },
+        "date": 1793366938535,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09307747500000119,
+            "unit": "s",
+            "extra": "Commit: 13ee63b1c0e3054b842a42c03dec301bdb18bea3\nBranch: master\nTime: 2026-10-30T14:27:19+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.992348631999995,
+            "unit": "s",
+            "extra": "Commit: 13ee63b1c0e3054b842a42c03dec301bdb18bea3\nBranch: master\nTime: 2026-10-30T14:27:19+01:00"
           }
         ]
       }
