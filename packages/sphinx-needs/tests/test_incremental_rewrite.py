@@ -502,6 +502,25 @@ _COUNTED = {
     "conf.py": CONF + '\nneeds_types = {"req": {"back_links": {"links": '
     '{"schema": {"minItems": 1}, "severity": "warning"}}}}\n',
 }
+#: a link type copying the requirements a specification links to (``copy`` of ``id``
+#: over ``links``, the open ones): its links name only needs the specification's own
+#: links name
+_COPY_LINKS = {
+    **PAGES,
+    "conf.py": CONF
+    + '\nneeds_links["chain"] = {"derive_by_type": {"spec": {"kind": "copy", '
+    '"field": "id", "over": "links", "where": "status == \'open\'"}}}\n',
+}
+#: the same chain carried one rung down: an ``impl`` collects the ``chain`` of the
+#: specifications it links to (``IMPL_002``, on ``rollup``, gets ``SPEC_001``'s
+#: ``REQ_001``), so its links name needs its own links do not
+_COLLECT_LINKS = {
+    **PAGES,
+    "conf.py": CONF
+    + '\nneeds_links["chain"] = {"derive_by_type": {'
+    '"spec": {"kind": "copy", "field": "id", "over": "links"}, '
+    '"impl": {"kind": "collect", "field": "chain", "over": "links"}}}\n',
+}
 _REQ_002_CLOSED = (
     "reqs.rst",
     "   :status: open\n   :hours: 5\n",
@@ -608,6 +627,31 @@ SCENARIOS: dict[str, tuple[dict[str, str], dict[str, str]]] = {
     "prose-above-imported-need": (
         _IMPORTED,
         _replace(_IMPORTED, "imported.rst", "========\n\n", "========\n\nProse.\n\n"),
+    ),
+    "copy-link-target-edited": (
+        _COPY_LINKS,
+        _replace(_COPY_LINKS, *EDITS["status-read-by-function-and-derive"]),
+    ),
+    "copy-link-added": (_COPY_LINKS, _replace(_COPY_LINKS, *EDITS["link-added"])),
+    "collect-link-over-edited": (
+        _COLLECT_LINKS,
+        _replace(_COLLECT_LINKS, "rollup.rst", ":links: SPEC_001", ":links: SPEC_002"),
+    ),
+    "collect-link-far-end-edited": (
+        _COLLECT_LINKS,
+        _replace(_COLLECT_LINKS, "specs.rst", ":links: REQ_001", ":links: REQ_002"),
+    ),
+    "collect-link-far-end-title": (
+        _COLLECT_LINKS,
+        _replace(_COLLECT_LINKS, *EDITS["title"]),
+    ),
+    "copy-link-unrelated-title": (
+        _COPY_LINKS,
+        _replace(_COPY_LINKS, *EDITS["unrelated-title"]),
+    ),
+    "collect-link-unrelated-title": (
+        _COLLECT_LINKS,
+        _replace(_COLLECT_LINKS, *EDITS["unrelated-title"]),
     ),
     "document-removed": (
         PAGES,
@@ -865,3 +909,45 @@ def test_back_links_counts_are_checked_again_on_an_incremental_build(
 
     assert counted(warnings) == counted(fresh_warnings)
     assert any("'REQ_003'" in warning for warning in counted(warnings))
+
+
+@pytest.mark.parametrize("pages", [_COPY_LINKS, _COLLECT_LINKS], ids=["copy", "collect"])
+def test_a_chain_fixture_builds_cleanly(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path, pages: dict[str, str]
+) -> None:
+    """The chain fixtures build without a warning, so their cases compare pages."""
+    _, warnings = _build(make_app, _write(tmp_path / "src", pages), fresh=True)
+    assert warnings == []
+
+
+def test_a_copy_on_a_link_type_reads_the_needs_its_links_name(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A ``copy`` of ``id`` over ``links`` links the needs the specification's own
+    links name, so an edit of a need it does not read re-writes the views alone, as
+    without the rule."""
+    written = _assert_equivalent(make_app, tmp_path, "copy-link-unrelated-title")
+    assert sorted(written) == ["charts", "index", "unrelated", "views"]
+
+
+def test_a_collect_on_a_link_type_rewrites_every_need_relevant_page(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A ``collect`` links a chain's far ends, needs its need does not name, so they
+    are not known before the needs are resolved: any change of a need re-writes every
+    page holding a need, a view or a need role."""
+    written = _assert_equivalent(make_app, tmp_path, "collect-link-unrelated-title")
+    assert sorted(written) == [
+        "aaa",
+        "charts",
+        "copies",
+        "extends",
+        "index",
+        "reqs",
+        "roles",
+        "rollup",
+        "specs",
+        "trace",
+        "unrelated",
+        "views",
+    ]
