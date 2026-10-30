@@ -470,8 +470,8 @@ FINDINGS = [
             "needs_types entry 1 ('req').links['links'] has an unknown key "
             "'nullable'; known keys are allow_dead_links, color, copy, default, "
             "derive, description, incoming, outgoing, predicates, schema, severity, "
-            "style, style_end, style_part, style_start, target_types; the key is "
-            "ignored",
+            "style, style_end, style_part, style_start, summary, target_types; the key "
+            "is ignored",
             # a link type's display is a key of every links entry, and refused when
             # the schema is built on a link type declared otherwise
             "needs_types['req'].links['links'] sets 'incoming', which a need type "
@@ -480,6 +480,10 @@ FINDINGS = [
         ],
         [{**REQ, "fields": {"status": {}}, "links": {"links": {"incoming": "in"}}}],
         id="declaration-unknown-keys",
+        marks=pytest.mark.xfail(
+            strict=True,
+            reason="pinned ahead of the change: a link type need types alone declare can be a summary",
+        ),
     ),
     _conf_case(
         {

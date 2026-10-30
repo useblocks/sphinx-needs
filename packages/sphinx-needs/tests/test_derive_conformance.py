@@ -40,7 +40,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "derive_conformance.toml"
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 104
+EXPECTED_CASE_COUNT = 105
 
 #: The codes of the derived-field contract, compared as bare subcodes; every other
 #: finding (a dead link, a deprecated option) is each tool's own.
@@ -80,6 +80,29 @@ def _corpus() -> list[dict[str, Any]]:
 
 
 CASES = _corpus()
+
+
+#: The cases pinned ahead of the change that makes them hold: strict xfails until it lands.
+PENDING = frozenset(["link-path-summary-false-on-need-types"])
+
+
+def _pending(built: list[Any]) -> list[Any]:
+    return [
+        pytest.param(
+            *p.values,
+            id=p.id,
+            marks=[
+                *p.marks,
+                pytest.mark.xfail(
+                    strict=True,
+                    reason="pinned ahead of the change: a link type need types alone declare can be a summary",
+                ),
+            ],
+        )
+        if p.id in PENDING
+        else p
+        for p in built
+    ]
 
 
 def test_the_corpus_still_has_every_case() -> None:
@@ -147,7 +170,7 @@ def test_a_case_cannot_write_outside_its_directory(relative: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "test_app,case", params(CASES, files=_files), indirect=["test_app"]
+    "test_app,case", _pending(params(CASES, files=_files)), indirect=["test_app"]
 )
 def test_case(test_app: Any, case: dict[str, Any]) -> None:
     app = test_app

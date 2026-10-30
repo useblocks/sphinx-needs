@@ -55,7 +55,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 123
+EXPECTED_CASE_COUNT = 127
 
 #: The cases of the section "an entry naming a default type", the only ones whose
 #: ``needs_types`` may hold an entry with neither a ``title`` nor a ``prefix``.
@@ -152,6 +152,35 @@ def _corpus() -> list[dict[str, Any]]:
 
 
 CASES = _corpus()
+
+
+#: The cases pinned ahead of the change that makes them hold: strict xfails until it lands.
+PENDING = frozenset(
+    [
+        "type-local-link-summary-agreed",
+        "type-local-link-summary-disagrees",
+        "type-local-link-summary-implied-by-a-path",
+    ]
+)
+
+
+def _pending(built: list[Any]) -> list[Any]:
+    return [
+        pytest.param(
+            *p.values,
+            id=p.id,
+            marks=[
+                *p.marks,
+                pytest.mark.xfail(
+                    strict=True,
+                    reason="pinned ahead of the change: a link type need types alone declare can be a summary",
+                ),
+            ],
+        )
+        if p.id in PENDING
+        else p
+        for p in built
+    ]
 
 
 def test_the_corpus_still_has_every_case() -> None:
@@ -405,7 +434,9 @@ def _violations(subtype: str) -> Reader:
 
 
 @pytest.mark.parametrize(
-    "test_app,case", params(CASES, files=_files, skip=_skip), indirect=["test_app"]
+    "test_app,case",
+    _pending(params(CASES, files=_files, skip=_skip)),
+    indirect=["test_app"],
 )
 def test_case(test_app: Any, case: dict[str, Any]) -> None:
     app = test_app
