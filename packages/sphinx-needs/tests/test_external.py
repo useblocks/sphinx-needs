@@ -306,3 +306,63 @@ def test_external_empty_versions(test_app):
     needs = json.loads(needs_json)
     # the empty external needs are reported, and the build goes on
     assert "TEST_01" not in needs["versions"][""]["needs"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                ("index.rst", "Test\n====\n"),
+                (
+                    "conf.py",
+                    """
+extensions = ["sphinx_needs"]
+needs_fields = {"state": {"nullable": True}}
+needs_external_needs = [{
+    'json_path': 'needs.json',
+    'base_url': 'http://example.com/docs/',
+}]
+needs_build_json = True
+""",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_external_need_field_state(test_app):
+    """External need retains the value of a declared field named 'state' (#2403)."""
+    json_path = Path(test_app.srcdir) / "needs.json"
+    json_path.write_text(
+        json.dumps(
+            {
+                "current_version": "1.0",
+                "project": "foo",
+                "versions": {
+                    "1.0": {
+                        "needs": {
+                            "EXT_1": {
+                                "id": "EXT_1",
+                                "type": "req",
+                                "title": "External Requirement",
+                                "state": "draft",
+                                "docname": "index",
+                            }
+                        }
+                    }
+                },
+            }
+        )
+    )
+
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    from sphinx_needs.data import SphinxNeedsData
+
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert "EXT_1" in needs
+    assert needs["EXT_1"]["state"] == "draft"
+

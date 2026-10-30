@@ -832,6 +832,10 @@ def add_need(
         )
         kwargs = {k: v for k, v in kwargs.items() if k not in _deprecated_kwargs}
 
+    if not isinstance(state, RSTState) and state is not None:
+        kwargs["state"] = state
+        state = None
+
     content_parser: type[Parser] | None = None
     content_source: tuple[str, int] | None = None
     if isinstance(content, MarkupContent):
@@ -1472,7 +1476,7 @@ def add_external_need(
     :raises InvalidNeedException: If the need could not be added due to a validation issue.
 
     """
-    for fixed_key in ("state", "docname", "lineno", "is_external"):
+    for fixed_key in ("docname", "lineno", "is_external"):
         if fixed_key in kwargs:
             kwargs.pop(fixed_key)
             # TODO Although it seems prudent to not silently ignore user input here,
