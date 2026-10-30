@@ -11,10 +11,18 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from dataclasses import dataclass, field, is_dataclass, replace
+from dataclasses import dataclass, field, fields, is_dataclass, replace
 from itertools import chain
 from operator import attrgetter
-from typing import TYPE_CHECKING, Any, Literal, Protocol, overload, runtime_checkable
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Final,
+    Literal,
+    Protocol,
+    overload,
+    runtime_checkable,
+)
 
 from sphinx_needs._need_source import (
     HopsSource,
@@ -1022,7 +1030,8 @@ class NeedItem:
 
     def moved_only(self, other: NeedItem) -> bool:
         """Whether ``other`` is this need written at other lines: equal to it but for the
-        line numbers of its source (``lineno``, ``lineno_content``, the parser's).
+        line numbers of its source (``lineno``, ``lineno_content``, the parser's, and
+        the lines its hops record).
 
         That is what an edit above a need in its document changes, and nothing else.
         """
@@ -1576,16 +1585,36 @@ class NeedItem:
         return self._source.dict_repr.get("docname") == docname
 
 
+#: The fields of a source class holding a line number, and nothing else.
+_SOURCE_LINE_FIELDS: Final = frozenset(
+    {"lineno", "_lineno", "lineno_content", "parser_lineno"}
+)
+
+
 def _without_lines(source: NeedItemSourceProtocol) -> object:
-    """A need's source with its line numbers left out, to compare where it is from."""
+    """A need's source with its line numbers left out, to compare where it is from.
+
+    The line fields of the source class, and the start and end line of each hop's
+    file (its hops record the lines too); ``dict_repr`` is computed from the rest.
+    """
     if not is_dataclass(source) or isinstance(source, type):
         return source
-    lines = {
-        name: None
-        for name in ("lineno", "lineno_content", "parser_lineno")
-        if name in source.__dataclass_fields__
-    }
-    return replace(source, **lines) if lines else source
+    kept: list[tuple[str, object]] = []
+    for item in fields(source):
+        if item.name in _SOURCE_LINE_FIELDS or item.name == "dict_repr":
+            continue
+        value = getattr(source, item.name)
+        if item.name == "hops":
+            value = tuple(_hop_without_lines(hop) for hop in value)
+        kept.append((item.name, value))
+    return type(source), tuple(kept)
+
+
+def _hop_without_lines(hop: NeedSourceHop) -> NeedSourceHop:
+    """A hop with its file's start and end line left out."""
+    if hop.physical is None:
+        return hop
+    return replace(hop, physical=replace(hop.physical, start_line=None, end_line=None))
 
 
 class NeedPartItem:
