@@ -530,10 +530,13 @@ class ExternalSource(TypedDict, total=False):
     """Override `current_version` from loaded JSON (optional)"""
 
     base_url: str
-    """Used to create the `external_url` field for each need item (required)"""
+    """Used to create the `external_url` field for each need item (required, may be ``""``);
+    not put in front of a `target_url` that renders an absolute URL"""
 
     target_url: str
-    """Used to create the `external_url` field for each need item (optional)"""
+    """Used to create the `external_url` field for each need item (optional):
+    appended to `base_url`, unless it renders an absolute URL (`scheme://…` or `//…`),
+    which is used as it is"""
 
     id_prefix: str
     """Prefix all IDs from the external source with this string (optional, uppercased)"""

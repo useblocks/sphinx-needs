@@ -433,3 +433,93 @@ def test_external_needs_target_url(test_app):
     assert "target_url" not in external_needs[3]
     assert "EXT_DEFAULT_TEST_01" in html
     assert "http://my_company.com/docs/v1/index.html#TEST_01" in html
+
+
+_ABSOLUTE_TARGET_URL_PROJECT = {
+    "buildername": "html",
+    "srcdir": "doc_test/doc_needs_external_needs_absolute_target_url",
+}
+_REMOTE_URL = "https://github.com/o/r/blob/c/tests/test_x.py#L13"
+
+
+def _external_links(app) -> dict[str, tuple[str, str]]:
+    """Each external need's ``external_url`` and the ``href`` its needtable row links to."""
+    from lxml import html as html_parser
+
+    from sphinx_needs.data import SphinxNeedsData
+
+    tree = html_parser.parse(str(Path(app.outdir, "index.html")))
+    hrefs = {a.text: a.attrib["href"] for a in tree.xpath("//table/tbody/tr/td/p/a")}
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    return {
+        need_id: (need["external_url"], hrefs[need_id])
+        for need_id, need in needs.items()
+        if need["is_external"]
+    }
+
+
+@pytest.mark.parametrize("test_app", [_ABSOLUTE_TARGET_URL_PROJECT], indirect=True)
+def test_external_needs_absolute_target_url_used_as_it_is(test_app):
+    """A ``target_url`` rendering a scheme-authority URL gets no ``base_url`` prefix,
+    whether ``base_url`` is a site or empty (#2389)."""
+    app = test_app
+    app.build()
+    assert not build_warnings(app)
+
+    links = _external_links(app)
+    urls = {
+        "ABS": _REMOTE_URL,
+        "UPPER": "HTTPS://GitHub.com/o/r/TEST_01",
+        "SCHEMEREL": "//cdn.example/x/TEST_01",
+        "FILE": "file:///tmp/ext/TEST_01.html",
+    }
+    expected = {
+        f"{name}_{label}_TEST_01": (url, url)
+        for name, url in urls.items()
+        for label in ("SITE", "EMPTY")
+    }
+    assert {need_id: links[need_id] for need_id in expected} == expected
+
+
+@pytest.mark.parametrize("test_app", [_ABSOLUTE_TARGET_URL_PROJECT], indirect=True)
+def test_external_needs_other_target_url_joined(test_app):
+    """Every other render is joined to ``base_url`` as before: an opaque ``type:id``
+    (a scheme but no ``//``), one with a leading space, and a relative path."""
+    app = test_app
+    app.build()
+    assert not build_warnings(app)
+
+    links = _external_links(app)
+    renders = {
+        "OPAQUE": "impl:TEST_01",
+        "SPACE": f" {_REMOTE_URL}",
+        "REL": "issue/TEST_01",
+    }
+    expected = {
+        f"{name}_{label}_TEST_01": (f"{base_url}/{rendered}",) * 2
+        for name, rendered in renders.items()
+        for label, base_url in (("SITE", "https://site.example/docs"), ("EMPTY", ""))
+    }
+    assert {need_id: links[need_id] for need_id in expected} == expected
+
+
+@pytest.mark.parametrize("test_app", [_ABSOLUTE_TARGET_URL_PROJECT], indirect=True)
+def test_external_needs_absolute_target_url_needflow(test_app):
+    """A graphviz needflow links an external need to its absolute render as the
+    needtable does, a scheme-relative ``//host`` render included (#2389)."""
+    from lxml import html as html_parser
+
+    app = test_app
+    app.build()
+    assert not build_warnings(app)
+
+    tree = html_parser.parse(str(Path(app.outdir, "index.html")))
+    areas = {a.attrib["title"]: a.attrib["href"] for a in tree.xpath("//map/area")}
+    links = _external_links(app)
+    expected = {
+        need_id: links[need_id][0]
+        for need_id in links
+        if need_id.split("_", 1)[0] in ("ABS", "UPPER", "SCHEMEREL", "FILE")
+    }
+    assert len(expected) == 8
+    assert {need_id: areas.get(need_id) for need_id in expected} == expected
