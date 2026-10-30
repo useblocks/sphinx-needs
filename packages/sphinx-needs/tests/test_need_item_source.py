@@ -327,6 +327,57 @@ def test_a_name_given_both_keywords_and_hops_keeps_the_hops():
     assert directive.dict_repr["lineno"] == 9
 
 
+@pytest.mark.xfail(strict=True, reason="fix round 1: NeedItemSource.on_page")
+@pytest.mark.parametrize(
+    ("docname", "lineno"), [("a", 3), ("a", None), (None, 3), (None, None)]
+)
+def test_on_page_is_the_source_add_need_builds(docname: str | None, lineno: int | None):
+    """``NeedItemSource.on_page(docname, lineno=...)``, the stable spelling outside a
+    directive, is the source ``add_need(app, state, docname, lineno, ...)`` and
+    ``NeedItemSourceUnknown(docname=, lineno=)`` build: one ``page`` hop, no file, no
+    line check; no hop without a document."""
+    from sphinx_needs.api.need import _legacy_source
+    from sphinx_needs.need_item import NeedItemSource
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        factory = need_item.NeedItemSourceUnknown
+    source = NeedItemSource.on_page(docname, lineno=lineno)
+    assert source == factory(docname=docname, lineno=lineno)
+    assert source == _legacy_source(None, docname=docname, lineno=lineno)
+    assert source.dict_repr == _keys(docname, lineno)
+    assert source.hops == (() if docname is None else (PAGE_A,))
+    parameters = inspect.signature(NeedItemSource.on_page).parameters
+    assert [(p.name, p.kind, p.default) for p in parameters.values()] == [
+        ("docname", inspect.Parameter.POSITIONAL_OR_KEYWORD, inspect.Parameter.empty),
+        ("lineno", inspect.Parameter.KEYWORD_ONLY, None),
+    ]
+
+
+@pytest.mark.xfail(strict=True, reason="fix round 1: the getattr is runtime-only")
+def test_the_module_getattr_is_hidden_from_type_checkers():
+    """The five names are served at run time only: a module ``__getattr__`` that a type
+    checker sees would type every name of the module as ``Any``, so a misspelt import
+    from it would not be reported."""
+    import ast
+
+    tree = ast.parse(Path(need_item.__file__).read_text(encoding="utf-8"))
+    (guard,) = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.If)
+        and any(
+            isinstance(inner, ast.FunctionDef) and inner.name == "__getattr__"
+            for inner in node.body
+        )
+    ]
+    assert ast.unparse(guard.test) == "not TYPE_CHECKING"
+    assert not any(
+        isinstance(node, ast.FunctionDef) and node.name == "__getattr__"
+        for node in tree.body
+    )
+
+
 @pytest.mark.parametrize(
     ("hops", "given", "lineno"),
     [
