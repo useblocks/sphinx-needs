@@ -756,7 +756,6 @@ def _need(source: Any) -> need_item.NeedItem:
     )
 
 
-@pytest.mark.xfail(strict=True, reason="fix round 3: the seam walks the fields")
 def test_a_field_added_to_the_source_is_compared_by_the_seam():
     """The seam fails safe, as #2414's key did: it compares every field but the named
     line fields and ``dict_repr``, so a field added to the class later is compared,

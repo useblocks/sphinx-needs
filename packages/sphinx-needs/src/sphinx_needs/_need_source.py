@@ -120,7 +120,8 @@ class NeedSourceHop:
 
     def _without_lines(self) -> NeedSourceHop:
         """This hop with its file's start and end line left out: what a need that only
-        moved keeps (an incremental build's comparison key)."""
+        moved keeps (an incremental build's comparison key). Every other field is kept,
+        a field added later too (``dataclasses.replace``), so it fails safe."""
         if self.physical is None:
             return self
         return dataclasses.replace(

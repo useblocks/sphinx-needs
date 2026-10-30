@@ -267,15 +267,22 @@ class NeedItemSource:
         """This source with its line numbers left out, to compare where it is from: the
         key :meth:`NeedItem.moved_only` compares, for an incremental build.
 
-        Every field but the line fields (``_lineno``, ``lineno_content``,
-        ``parser_lineno``) and ``dict_repr`` (computed from the rest), with the hops'
-        start and end lines left out too. A field added to the class is compared until
-        it is named here, so a need that only moved counts as changed and is re-written:
-        safe, if slower.
+        The class, and every field of it but the line fields
+        (``_SOURCE_LINE_FIELDS``: ``_lineno``, ``lineno_content``, ``parser_lineno``)
+        and ``dict_repr`` (computed from the rest), the hops with their start and end
+        lines left out. It walks the fields, so it fails safe: a field added to the class
+        later is compared, and a need differing in it counts as changed and is
+        re-written, never as one that only moved.
         """
-        return type(self), (
-            ("hops", tuple(hop._without_lines() for hop in self.hops)),
-            ("is_import", self.is_import),
+        return type(self), tuple(
+            (
+                item.name,
+                tuple(hop._without_lines() for hop in self.hops)
+                if item.name == "hops"
+                else getattr(self, item.name),
+            )
+            for item in dataclasses.fields(self)
+            if item.name not in _SOURCE_LINE_FIELDS and item.name != "dict_repr"
         )
 
     def __repr__(self) -> str:
