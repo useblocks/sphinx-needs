@@ -8,6 +8,7 @@ import os
 import pathlib
 import re
 from collections.abc import Iterator, Mapping
+from pathlib import PurePath
 from typing import Any
 
 from docutils import nodes
@@ -15,13 +16,19 @@ from docutils.parsers.rst import Directive
 from docutils.parsers.rst.states import RSTState
 from sphinx.util import logging
 
-from sphinx_needs.api import NeedItemSource, create_need
+from sphinx_needs.api import (
+    NeedItemSource,
+    NeedSourceHop,
+    NeedSourcePhysical,
+    NeedSourceSemantic,
+    create_need,
+)
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import InvalidNeedException
 from sphinx_test_reports.exceptions import SphinxError
 from ub_test_reports.fields import FILE_NEED_FIELDS, SUITE_NEED_FIELDS
-from ub_test_reports.identity import deterministic_case_id
+from ub_test_reports.identity import UNKNOWN, deterministic_case_id, split_case_name
 from ub_test_reports.jsonparser import JsonParser
 from ub_test_reports.junitparser import JUnitParser, ReportReadError
 
@@ -83,6 +90,36 @@ DIRECTIVE_FIELDS: dict[str, frozenset[str]] = {
         }
     ),
 }
+
+
+def _report_physical(
+    srcdir: str | os.PathLike[str], path: str | os.PathLike[str]
+) -> NeedSourcePhysical | None:
+    """Where a report file is, for its ``report`` hop: under the ``"srcdir"`` root.
+
+    The path is POSIX and relative to the Sphinx source directory, with ``..`` for a file
+    outside it; ``None`` where no relative path exists (another drive, on Windows). No
+    line: the parsers keep no position for an element of the report.
+
+    Sphinx-Needs' own rule for a file's location (its private ``physical_for``),
+    computed here because this package imports no private Sphinx-Needs name;
+    ``tests/test_source_hops.py`` holds the two equal.
+    """
+    try:
+        relative = os.path.relpath(os.path.abspath(path), os.path.abspath(srcdir))
+    except ValueError:
+        return None
+    return NeedSourcePhysical(root="srcdir", path=PurePath(relative).as_posix())
+
+
+def _case_source_file(case: Mapping[str, Any]) -> str | None:
+    """The test's source file as the report gives it, or ``None`` when it gives none.
+
+    The parsers report ``"unknown"`` for an absent ``file`` attribute (the norm for
+    pytest, whose default ``junit_family = xunit2`` leaves it out).
+    """
+    source_file = case.get("file", UNKNOWN)
+    return None if source_file in (UNKNOWN, None, "") else str(source_file)
 
 
 def warn(directive: Directive, subtype: str, message: str) -> None:
@@ -317,13 +354,10 @@ class TestCommonDirective(Directive):
         file_field = getattr(self.app.config, "tr_source_file_option", "case_file")
         line_field = getattr(self.app.config, "tr_source_line_option", "case_line")
 
-        source_file = case.get("file", "unknown")
         source_line = case.get("line", -1)
 
         return {
-            file_field: None
-            if source_file in ("unknown", None, "")
-            else str(source_file),
+            file_field: _case_source_file(case),
             line_field: None if source_line in (-1, None, "") else str(source_line),
         }
 
@@ -349,8 +383,78 @@ class TestCommonDirective(Directive):
         if self.refusal is None:
             self.refusal = (subtype, message)
 
+    def report_hops(
+        self, kind: str, suite: str | None, case: Mapping[str, Any] | None
+    ) -> tuple[NeedSourceHop, ...]:
+        """Where this directive's need came from before the page, innermost first.
+
+        These are the ``first`` hops of ``NeedItemSource.from_directive``, which adds the
+        page (and an included file) the directive is written on. **Provisional**, as
+        Sphinx-Needs' hops are: they reach no ``needs.json``.
+
+        - A test case's ``code`` hop: the test's source file, as the report's ``file``
+          gives it (:func:`_case_source_file`, the case's own value, never a report key
+          or extra option of the same field name, #2411), and no hop where the report
+          gives none. ``root`` is ``None``: the path is relative to the test run's root
+          (pytest's rootdir), which this build does not know. No line: the reader cannot
+          tell a plain pytest report's 0-based ``line`` from the plugin's 1-based one
+          (#2381). ``language`` is ``None``: the report does not say what language the
+          test is written in.
+        - The ``report`` hop: the report file, under the source directory
+          (:func:`_report_physical`), its own suffix as ``language`` (``".xml"``,
+          ``".json"``). Its semantic location is the element in the report, outermost
+          first, one entry per kind (the vocabulary is open):
+
+          - ``"suite"``: the test suite's name (a ``test-suite`` and a ``test-case``);
+          - ``"scope"``: the test case's ``classname``, where the report gives one;
+          - ``"case"``: the test case's name, without its parameter, which is the
+            ``("parameter", ...)`` extra where the name carries one (``test_x[3]``).
+
+          A ``test-file``'s report hop is the whole file: its semantic location is
+          ``None``, as a ``file`` hop's is.
+
+        :param kind: ``file``, ``suite`` or ``case``: the key of :data:`DIRECTIVE_FIELDS`.
+        :param suite: The name of the suite in the report, for ``suite`` and ``case``.
+        :param case: The test case as the report gives it, for ``case``.
+        """
+        hops: list[NeedSourceHop] = []
+        semantic: list[NeedSourceSemantic] = []
+        if suite is not None:
+            semantic.append(NeedSourceSemantic(kind="suite", name=suite))
+        if case is not None:
+            if (source_file := _case_source_file(case)) is not None:
+                hops.append(
+                    NeedSourceHop(
+                        kind="code", physical=NeedSourcePhysical(path=source_file)
+                    )
+                )
+            classname = case.get("classname")
+            if classname not in (UNKNOWN, None, ""):
+                semantic.append(NeedSourceSemantic(kind="scope", name=str(classname)))
+            name, parameter = split_case_name(str(case["name"]))
+            semantic.append(
+                NeedSourceSemantic(
+                    kind="case",
+                    name=name,
+                    extras=() if parameter is None else (("parameter", parameter),),
+                )
+            )
+        hops.append(
+            NeedSourceHop(
+                kind="report",
+                physical=_report_physical(self.env.srcdir, self.test_file),
+                semantic=tuple(semantic) or None,
+                language=os.path.splitext(self.test_file)[1] or None,
+            )
+        )
+        return tuple(hops)
+
     def create_report_need(
-        self, kind: str, own: Mapping[str, Any], report_fields: Mapping[str, Any]
+        self,
+        kind: str,
+        own: Mapping[str, Any],
+        report_fields: Mapping[str, Any],
+        case: Mapping[str, Any] | None = None,
     ) -> list[nodes.Node]:
         """Create this directive's need through Sphinx-Needs' ``create_need``.
 
@@ -363,10 +467,14 @@ class TestCommonDirective(Directive):
             further values. A name also in ``own`` is refused, never an override: the
             configuration check keeps ``tr_extra_options`` from naming one, and a report
             value of such a name refuses the need.
+        :param case: The test case as the report gives it, for ``case``: what its
+            ``code`` and ``report`` hops are built from (:meth:`report_hops`).
         :return: The need's nodes.
         :raises InvalidNeedException: What ``create_need`` raises, and for a name in
             both mappings.
         """
+        if (kind == "case") != (case is not None):
+            raise AssertionError(f"a {kind} need is given case={case!r}")
         if own.keys() != DIRECTIVE_FIELDS[kind]:
             raise AssertionError(
                 f"the {kind} directive sets {sorted(own)}, "
@@ -405,10 +513,16 @@ class TestCommonDirective(Directive):
         # full title a generated id is derived from, as add_need took it
         if "full_title" in values:
             arguments["full_title"] = values["full_title"]
+        # the line the directive is written on, resolved through the state machine (a
+        # need a test-report generates: the test-report's own line), and where the need
+        # came from: the report (and the test's file), then the page
+        source = NeedItemSource.from_directive(
+            self, first=self.report_hops(kind, own.get("suite"), case)
+        )
         _, created = create_need(
             self.app,
             self.state,
-            NeedItemSource.on_page(self.env.docname, lineno=self.lineno),
+            source,
             need_type,
             title,
             id=need_id,

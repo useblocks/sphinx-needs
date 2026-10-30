@@ -21,12 +21,6 @@ import pytest
 from sphinx_needs.api import NeedSourceHop
 from sphinx_needs.data import SphinxNeedsData
 
-#: Pending until test needs record their hops and the line they are written on (srchop3b).
-PENDING = pytest.mark.xfail(
-    strict=True, reason="srchop3b: test needs record their hops; #2209"
-)
-
-
 #: Four cases, as plain pytest writes them (xunit1): a function, a method, a
 #: parameterised one, and one without ``file`` / ``line``.
 REPORT = (
@@ -201,14 +195,12 @@ EXPECTED_HOPS = {
 
 
 @pytest.mark.parametrize("need_id", list(EXPECTED_HOPS))
-@PENDING
 def test_every_kind_of_test_need_records_its_hops(build, need_id):
     needs, warnings = build({"index.rst": PAGE}, {"reports/plain.xml": REPORT})
     assert warnings == ""
     assert _hops(needs, need_id) == EXPECTED_HOPS[need_id]
 
 
-@PENDING
 def test_a_code_hop_has_no_root_no_line_and_no_language(build):
     """The test's file is relative to the test run's root, which the build does not
     know; the report's ``line`` may be 0-based (#2381); the report names no language."""
@@ -239,7 +231,6 @@ EXPECTED_LINES = {
 
 
 @pytest.mark.parametrize("prolog", [False, True], ids=["plain", "rst_prolog"])
-@PENDING
 def test_a_test_need_s_lineno_is_the_line_it_is_written_on(build, prolog):
     """#2209: a need a ``test-report`` generates was at its line in the expanded input
     (``index:44`` and the like); every need was at the parser's line, ``rst_prolog``'s
@@ -254,7 +245,6 @@ def test_a_test_need_s_lineno_is_the_line_it_is_written_on(build, prolog):
     )
 
 
-@PENDING
 def test_a_test_need_in_an_included_file_is_at_its_line_there(build):
     """The line in the included file, and the file between the report and the page,
     as a need directive's own."""
@@ -275,7 +265,6 @@ def test_a_test_need_in_an_included_file_is_at_its_line_there(build):
     ]
 
 
-@PENDING
 def test_a_report_outside_the_source_directory_is_a_dotted_path(build, tmp_path):
     (tmp_path / "outside").mkdir()
     (tmp_path / "outside" / "plain.xml").write_bytes(REPORT)
@@ -290,7 +279,6 @@ def test_a_report_outside_the_source_directory_is_a_dotted_path(build, tmp_path)
     assert _hops(needs, "TF_OUT")[0] == "report srcdir:../outside/plain.xml (.xml)"
 
 
-@PENDING
 def test_a_need_from_a_json_report_has_a_json_report_hop(build):
     report = (
         b'[{"name": "s1", "tests": 1, "errors": 0, "failures": 0, "skips": 0,'
@@ -336,7 +324,6 @@ tr_json_mapping = {{
 """
 
 
-@PENDING
 def test_a_report_value_named_like_the_source_file_field_does_not_reach_the_hop(
     build,
 ):
@@ -396,7 +383,6 @@ if sys.platform == "win32":
 
 
 @pytest.mark.parametrize("shape", list(PATH_SHAPES))
-@PENDING
 def test_the_report_path_is_sphinx_needs_rule(shape):
     from sphinx_needs._need_source import physical_for
     from sphinx_test_reports.directives.test_common import _report_physical
@@ -405,7 +391,6 @@ def test_the_report_path_is_sphinx_needs_rule(shape):
     assert _report_physical(srcdir, path) == physical_for(srcdir, path)
 
 
-@PENDING
 def test_the_report_path_under_a_symlinked_directory_is_sphinx_needs_rule(tmp_path):
     from sphinx_needs._need_source import physical_for
     from sphinx_test_reports.directives.test_common import _report_physical
