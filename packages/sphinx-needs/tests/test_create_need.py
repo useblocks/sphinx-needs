@@ -409,3 +409,46 @@ def test_a_link_type_in_fields_or_a_field_in_links_is_refused(make_app, tmp_path
     # a need placed on a page is rendered: it needs the page's parser state
     with pytest.raises(ValueError, match="a parser state is required"):
         create_need(app, None, NeedItemSourceUnknown(docname="index"), "req", "T")
+
+
+@pytest.mark.xfail(strict=True, reason="FR6: the message names the argument")
+def test_an_argument_of_create_need_in_fields_or_links_is_refused_naming_it(
+    make_app, tmp_path
+):
+    """A name that is one of ``create_need``'s own arguments, given in a mapping, is
+    refused naming the argument it belongs in; a field the project declares under such
+    a name is a field, and other names keep the unknown-name message."""
+    (tmp_path / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\n'
+        'needs_fields = {"full_title": {"nullable": True}}\n',
+        encoding="utf-8",
+    )
+    (tmp_path / "index.rst").write_text("Arguments\n=========\n", encoding="utf-8")
+    app = make_app("html", srcdir=tmp_path, freshenv=True)
+    app.build()
+    source = NeedItemSourceExternal(url="http://example.org/x.html")
+    refusals = []
+    for mappings in (
+        {"fields": {"title": "T"}},
+        {"links": {"content": "C"}},
+        {"fields": {"type": "req"}},
+    ):
+        with pytest.raises(InvalidNeedException) as err:
+            create_need(app, None, source, "req", "T", id="R_X", **mappings)
+        refusals.append((err.value.type, err.value.message))
+    assert refusals == [
+        (
+            "invalid_kwargs",
+            "'title' is an argument of create_need: give it as title=, not in 'fields'.",
+        ),
+        (
+            "invalid_kwargs",
+            "'content' is an argument of create_need: give it as content=, not in "
+            "'links'.",
+        ),
+        ("invalid_kwargs", "{'type'} not in 'needs_fields' or 'needs_links'."),
+    ]
+    need, _ = create_need(
+        app, None, source, "req", "T", id="R_Y", fields={"full_title": "a field"}
+    )
+    assert need["full_title"] == "a field"
