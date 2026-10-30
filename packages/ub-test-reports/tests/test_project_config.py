@@ -743,7 +743,6 @@ class TestLineBase:
     """``line_base = "auto" | 0 | 1``: the base the line of an unmarked report counts from
     (#2381). Bridged as ``tr_line_base``, read by the converter."""
 
-    @pytest.mark.xfail(strict=True, reason="#2381: line_base is not a key yet")
     @pytest.mark.parametrize(
         ("source", "value"), [('"auto"', "auto"), ("0", 0), ("1", 1)]
     )
@@ -755,7 +754,6 @@ class TestLineBase:
         assert type(config["line_base"]) is type(value)
         assert warnings == []
 
-    @pytest.mark.xfail(strict=True, reason="#2381: line_base is not a key yet")
     @pytest.mark.parametrize(
         "source",
         ["2", "-1", '"1"', '"0"', "true", "false", "1.0", '"AUTO"', '""', "[1]"],
@@ -765,6 +763,5 @@ class TestLineBase:
         with pytest.raises(TomlConfigError, match=r"line_base must be .auto., 0 or 1"):
             load_project_config(tmp_path / DEFAULT_TOML_FILENAME)
 
-    @pytest.mark.xfail(strict=True, reason="#2381: line_base is not a key yet")
     def test_it_is_bridged(self):
         assert "line_base" in BRIDGE_KEYS

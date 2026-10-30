@@ -320,12 +320,10 @@ class TestLineBaseBridge:
     > ``"auto"``, and a value other than ``"auto"``, ``0`` or ``1`` is refused when the
     build starts."""
 
-    @pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
     def test_the_default_is_auto(self, tmp_path):
         app, _ = _build(_basic_doc(tmp_path))
         assert app.config.tr_line_base == "auto"
 
-    @pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
     @pytest.mark.parametrize(
         ("source", "value"), [("0", 0), ("1", 1), ('"auto"', "auto")]
     )
@@ -335,7 +333,6 @@ class TestLineBaseBridge:
         assert app.config.tr_line_base == value
         assert "tr_line_base" not in warnings
 
-    @pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
     def test_toml_beats_conf_py(self, tmp_path):
         docs = _basic_doc(
             tmp_path, "[test_reports]\nline_base = 1\n", conf_extra="tr_line_base = 0"
@@ -343,7 +340,6 @@ class TestLineBaseBridge:
         app, _ = _build(docs)
         assert app.config.tr_line_base == 1
 
-    @pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
     @pytest.mark.parametrize(("given", "value"), [("0", 0), ("1", 1), ("auto", "auto")])
     def test_the_command_line_beats_toml(self, tmp_path, given, value):
         # -D can only give text: "0" and "1" are the numbers
@@ -352,7 +348,6 @@ class TestLineBaseBridge:
         assert app.config.tr_line_base == value
         assert "tr_line_base" not in warnings
 
-    @pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
     def test_an_invalid_toml_value_aborts_the_build(self, tmp_path):
         from sphinx_test_reports.exceptions import InvalidConfigurationError
 
@@ -360,7 +355,6 @@ class TestLineBaseBridge:
         with pytest.raises(InvalidConfigurationError, match="line_base"):
             _build(docs)
 
-    @pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
     def test_an_invalid_command_line_value_aborts_the_build(self, tmp_path):
         from sphinx_test_reports.exceptions import InvalidConfigurationError
 

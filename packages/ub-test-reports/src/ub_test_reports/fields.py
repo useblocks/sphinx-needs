@@ -64,7 +64,11 @@ FIELDS: dict[str, tuple[str, str]] = {
 RENAMEABLE_FIELDS: dict[str, tuple[str, str]] = {
     "file_option": ("string", "Test file name"),
     "source_file_option": ("string", "Path of the test's source file"),
-    "source_line_option": ("string", "Line of the test in its source file"),
+    "source_line_option": (
+        "string",
+        "Line of the test in its source file, counted from 1 where the report's base "
+        "is known; for a pytest test, its first decorator's line, or its def's",
+    ),
 }
 
 #: The fixed-name fields of a test-case need, in the order they are declared.

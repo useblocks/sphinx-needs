@@ -65,6 +65,58 @@ works through hooks on the test reports, not fixtures, which is also why it
 holds under pytest-xdist: the location is written on the controller, where
 pytest keeps the XML writer, and the properties travel with the reports.
 
+The line is pytest's own: for a decorated test, the line of its first
+decorator, not of its ``def`` -- where the test's source starts, as Python
+counts it (``co_firstlineno``). An undecorated test's line is its ``def``'s.
+
+Every ``<testsuite>`` of the report also carries one property, which says that
+its lines count from 1:
+
+.. code-block:: xml
+
+   <testsuite name="pytest" ...>
+     <properties>
+       <property name="ub_test_reports:line_base" value="1"/>
+     </properties>
+
+It is what tells the readers -- the directives and the :ref:`build needs
+command <cli>` -- a report of this plugin from a plain pytest report, which is
+otherwise the same and counts from 0. Merged with ``junitparser merge``, each
+suite keeps its own property. Under pytest-xdist the controller writes it, once.
+
+.. _pytest_line_base:
+
+Lines of reports without the plugin
+-----------------------------------
+
+A test case's ``line`` becomes its need's ``case_line``
+(:ref:`tr_source_line_option`), the ``#L`` anchor of the converter's source URL, and
+the line of the test file in the record of where the need comes from. The readers
+decide what each ``<testsuite>`` counts its lines from, and a nested suite inherits
+its parent's:
+
+#. a suite carrying the property above (``1``, or ``0`` for a producer that
+   declares it) is read by it;
+#. else a suite named ``pytest``, or a report whose root is
+   ``<testsuites name="pytest tests">`` -- what ``pytest --junitxml`` writes, the root
+   also when ``junit_suite_name`` renames the suite -- counts from 0, and each line
+   is read one more;
+#. else a test case carrying Google Test's ``status`` and ``result`` attributes
+   counts from 1, as it is;
+#. else the line is read as written, and what it counts from is not known: the
+   need's ``case_line`` is the report's, and the record of where the need comes from
+   gives the test file without a line.
+
+A ``line`` of ``-1`` means "no line" and stays so. A report a merge tool rewrote
+with a renamed suite and without pytest's root falls under the last rule.
+
+:ref:`tr_line_base` (``line_base`` in ``[test_reports]``) sets what every report
+**without the property** counts from, in place of rules 2 to 4: ``1`` for a report
+that already counts from 1 but says nothing -- one written by an earlier version of
+this plugin, or by S-CORE's ``score_pytest`` -- and ``0`` for a producer the readers
+do not recognise that counts from 0. A report with the property is always read by
+it.
+
 Nothing else changes for tests that do not use the decorator below.
 
 The start-up notice is a ``TestReportsConfigWarning``. A project that turns
@@ -283,12 +335,16 @@ The plugin is a port of the ``score_pytest`` attribute plugin of S-CORE's
 `docs-as-code <https://github.com/eclipse-score/docs-as-code>`_. What that
 plugin hard-codes -- the four properties and their spelling -- is the
 ``test_reports_properties`` example above here, and other metamodels declare
-their own. With that example the XML comes out the same, with four exceptions:
+their own. With that example the XML comes out the same, with five exceptions:
 a case skipped or erroring at setup carries its location and properties here
 and pytest's stock values there; the properties keep the order of the keywords
 rather than a fixed one; the Bazel prefix is cut at a whole ``_main`` component
-only, not wherever the text ``_main/`` occurs; and a ``file`` handed to
-``apply_test_metadata`` is cut the same way rather than passed through. Two of
+only, not wherever the text ``_main/`` occurs; a ``file`` handed to
+``apply_test_metadata`` is cut the same way rather than passed through; and every
+``<testsuite>`` carries the ``ub_test_reports:line_base`` property. A
+``score_pytest`` report counts its lines from 1 too, but without the property it
+reads as a plain pytest report, one line late: set :ref:`tr_line_base` to ``1``
+for it. Two of
 that plugin's rules are not ported, because they are process rules of that
 project rather than properties of the data: the ``test_type`` and
 ``derivation_technique`` vocabularies are documented but not enforced, and a

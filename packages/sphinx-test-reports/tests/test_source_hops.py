@@ -153,13 +153,13 @@ EXPECTED_HOPS = {
         "page [index] srcdir:index.rst:4-8 (.rst) :: section 'Probe'",
     ],
     _case_id(SUITE, "tests.test_lines", "test_plain"): [
-        "code None:tests/test_lines.py",
+        "code None:tests/test_lines.py:13",
         "report srcdir:reports/plain.xml (.xml) :: suite 'pytest' > "
         "scope 'tests.test_lines' > case 'test_plain'",
         "page [index] srcdir:index.rst:4-8 (.rst) :: section 'Probe'",
     ],
     _case_id(SUITE, "tests.test_lines", "test_stacked[3]"): [
-        "code None:tests/test_lines.py",
+        "code None:tests/test_lines.py:36",
         "report srcdir:reports/plain.xml (.xml) :: suite 'pytest' > "
         "scope 'tests.test_lines' > case 'test_stacked' parameter='3'",
         "page [index] srcdir:index.rst:4-8 (.rst) :: section 'Probe'",
@@ -171,7 +171,7 @@ EXPECTED_HOPS = {
         "page [index] srcdir:index.rst:4-8 (.rst) :: section 'Probe'",
     ],
     "TC_HAND": [
-        "code None:tests/test_lines.py",
+        "code None:tests/test_lines.py:28",
         "report srcdir:reports/plain.xml (.xml) :: suite 'pytest' > "
         "scope 'tests.test_lines.TestKlass' > case 'test_method'",
         "page [index] srcdir:index.rst:13-18 (.rst) :: section 'Probe' > section 'Section'",
@@ -190,7 +190,7 @@ EXPECTED_HOPS = {
         "page [index] srcdir:index.rst (.rst) :: section 'Probe' > section 'Section'",
     ],
     _case_id(GEN_SUITE, "tests.test_lines.TestKlass", "test_method"): [
-        "code None:tests/test_lines.py",
+        "code None:tests/test_lines.py:28",
         "report srcdir:reports/plain.xml (.xml) :: suite 'pytest' > "
         "scope 'tests.test_lines.TestKlass' > case 'test_method'",
         "page [index] srcdir:index.rst (.rst) :: section 'Probe' > section 'Section'",
@@ -205,17 +205,19 @@ def test_every_kind_of_test_need_records_its_hops(build, need_id):
     assert _hops(needs, need_id) == EXPECTED_HOPS[need_id]
 
 
-def test_a_code_hop_has_no_root_no_line_and_no_language(build):
+def test_a_code_hop_has_no_root_no_end_line_and_no_language(build):
     """The test's file is relative to the test run's root, which the build does not
-    know; the report's ``line`` may be 0-based (#2381); the report names no language."""
+    know; the report gives the test's first line, read by its base (#2381: plain
+    pytest's ``27`` is the line above the method), and no last line; it names no
+    language."""
     needs, _ = build({"index.rst": PAGE}, {"reports/plain.xml": REPORT})
     code = needs["TC_HAND"].source.hops[0]
     assert code.kind == "code"
-    assert needs["TC_HAND"]["case_line"] == "27"
+    assert needs["TC_HAND"]["case_line"] == "28"
     assert code.physical is not None
     assert (code.physical.root, code.physical.start_line, code.physical.end_line) == (
         None,
-        None,
+        28,
         None,
     )
     assert (code.language, code.origin) == (None, None)
@@ -665,16 +667,6 @@ def _code(needs, need_id: str) -> tuple[str | None, str]:
 _PLAIN_CASE = _case_id(SUITE, "tests.test_lines", "test_plain")
 
 
-@pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
-def test_a_plain_pytest_report_gives_the_test_s_own_line(build):
-    """pytest counts ``line`` from 0: ``27`` is the line above the method, its class's."""
-    needs, warnings = build({"index.rst": PAGE}, {"reports/plain.xml": REPORT})
-    assert warnings == ""
-    assert _code(needs, "TC_HAND") == ("28", "code None:tests/test_lines.py:28")
-    assert _code(needs, _PLAIN_CASE) == ("13", "code None:tests/test_lines.py:13")
-
-
-@pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
 def test_a_marked_report_gives_its_lines_as_they_are(build):
     needs, warnings = build({"index.rst": PAGE}, {"reports/plain.xml": MARKED_REPORT})
     assert warnings == ""
@@ -682,7 +674,6 @@ def test_a_marked_report_gives_its_lines_as_they_are(build):
     assert _code(needs, _PLAIN_CASE) == ("13", "code None:tests/test_lines.py:13")
 
 
-@pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
 def test_a_google_test_line_is_the_code_hop_s(build):
     needs, warnings = build({"index.rst": OTHER_PAGE}, {"other.xml": OTHER_REPORTS})
     assert warnings == ""
@@ -703,7 +694,6 @@ def test_line_0_of_a_report_counted_from_1_is_no_hop_s(build):
     assert _code(needs, "TC_HAND") == ("0", "code None:tests/test_lines.py")
 
 
-@pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
 def test_tr_line_base_1_reads_an_unmarked_report_from_1(build):
     """The migration for a report that already counts from 1 but carries no mark: one
     written by an earlier version of the plugin, or by S-CORE's ``score_pytest``."""
@@ -714,7 +704,6 @@ def test_tr_line_base_1_reads_an_unmarked_report_from_1(build):
     assert _code(needs, "TC_HAND") == ("27", "code None:tests/test_lines.py:27")
 
 
-@pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
 def test_tr_line_base_0_reads_an_unrecognised_producer_from_0(build):
     needs, warnings = build(
         {"index.rst": OTHER_PAGE},
@@ -725,7 +714,6 @@ def test_tr_line_base_0_reads_an_unrecognised_producer_from_0(build):
     assert _code(needs, "TC_OTHER") == ("8", "code None:src/other.x:8")
 
 
-@pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
 def test_a_mark_wins_over_tr_line_base(build):
     needs, warnings = build(
         {"index.rst": PAGE},
@@ -736,7 +724,6 @@ def test_a_mark_wins_over_tr_line_base(build):
     assert _code(needs, "TC_HAND") == ("28", "code None:tests/test_lines.py:28")
 
 
-@pytest.mark.xfail(strict=True, reason="#2381: tr_line_base does not exist yet")
 @pytest.mark.parametrize("value", ["2", "-1", "'one'", "True", "1.0", "None"])
 def test_another_tr_line_base_is_refused(
     make_app, tmp_path, clean_docutils_registry, value

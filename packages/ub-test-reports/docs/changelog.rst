@@ -9,6 +9,14 @@ Unreleased
 New and Improved
 ................
 
+- ✨ ``line_base = "auto" | 0 | 1`` in ``[test_reports]``, and the converter's
+  ``--line-base`` flag, which overrides it: what the ``line`` of a report without a
+  line-base mark counts from (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__).
+  ``"auto"``, the default, is the reader's rule below; ``0`` or ``1`` is the base of every
+  such report, Google Test's too; a mark always wins. Any other value is refused, as a key
+  of the wrong type is. sphinx-test-reports bridges it as ``tr_line_base``. A change to the
+  ``[test_reports]`` model: ubCode reads the same table.
+
 - ✨ ``ub_test_reports.identity.case_name_and_parameter(case)`` gives a parsed test case's
   ``case_name`` and ``case_parameter`` by one rule: the parameter in the name's ``[…]``
   (pytest's ``test_x[3]``), else Google Test's ``value_param``, else its ``type_param``,
@@ -40,6 +48,25 @@ Changed
 Fixed
 .....
 
+- ‼️ A test case read from a plain ``pytest --junitxml`` report is on the test's own line:
+  pytest counts the ``line`` attribute from 0, and every reader took it as counting from 1,
+  so ``case_line`` and the converter's ``#L`` anchor (``remote_url``, ``external_url``)
+  were one line early -- usually a blank line, or ``class TestX:`` for a method
+  (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__). They are now one
+  more than before. The reader decides the base per ``<testsuite>``, and a nested suite
+  inherits it: a suite's ``ub_test_reports:line_base`` property (``1``, or ``0``) gives it;
+  else a suite named ``pytest`` or the root ``<testsuites name="pytest tests">`` counts from
+  0; else a case carrying Google Test's ``status`` and ``result`` counts from 1; else the
+  line is passed through, and its base is not known. A ``line`` below 0 is "no line" and
+  stays so. The pytest plugin now marks every ``<testsuite>`` it writes with
+  ``<property name="ub_test_reports:line_base" value="1"/>`` (under ``xunit1``, once under
+  pytest-xdist), so its reports keep their lines. No id moves: no id scheme reads a line.
+  **API change:** ``JUnitParser.parse()`` returns these lines, takes ``line_base=`` (``"auto"``,
+  ``0`` or ``1``), and gives each test case ``line_base_known``; ``LINE_BASE_PROPERTY``,
+  ``LineBase``, ``LINE_BASES`` and ``is_line_base`` are new in ``ub_test_reports.junitparser``.
+  A test's line is that of its first decorator, or of its ``def``, as pytest counts it.
+  See "Upgrading" below.
+
 - 🐛 The ``test-reports build needs`` converter writes a Google Test case's parameter in
   ``case_parameter``, where it wrote no value for any Google Test case
   (`#2390 <https://github.com/useblocks/sphinx-needs/issues/2390>`__): a value-parameterised
@@ -57,6 +84,24 @@ Fixed
   plugins. The plugin module now opts out of pytest's assertion rewriting (it has no
   ``assert`` to rewrite), so the line works on every pytest again; nothing changes in your
   configuration.
+
+Upgrading: test-case lines from pytest reports
+..............................................
+
+1. The lines of a plain ``pytest --junitxml`` report (``junit_family = xunit1``) are now the
+   test's own line, one more than before: its ``case_line``, the converter's ``#L`` anchor,
+   and what a direct user of ``JUnitParser`` gets. A filter or a link that names a line
+   (``case_line == "12"``) names the line after it now.
+2. The pytest plugin now marks its reports, with the suite property
+   ``ub_test_reports:line_base`` = ``1``; its lines are read as they are.
+3. A report that already counts from 1 but carries no mark is read one line late: one
+   written by an earlier version of the plugin (ub-test-reports 1.1.0 or earlier,
+   sphinx-test-reports 2.0.0 to 3.0.1), or by another tool such as S-CORE's
+   ``score_pytest``. Regenerate it with this version's plugin, or set ``line_base = 1`` in
+   ``[test_reports]`` (``--line-base 1`` for the converter, ``tr_line_base = 1`` in
+   ``conf.py``).
+4. ``JUnitParser`` returns lines counted from 1 where it knows the report's base, and says
+   so per test case (``line_base_known``).
 
 .. _`release:1.1.0`:
 

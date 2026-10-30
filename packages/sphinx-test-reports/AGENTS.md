@@ -74,10 +74,11 @@ report gives one: Google Test's `value_param` / `type_param`, through the same
 classname is no entry; a `test-file`'s hop has none), then the page. The code hop is the
 report's `file` with `/` for `\`, read from the case itself and never from the merged fields
 a report key can override (#2411); it has **no root**
-(the path is relative to the test run's root, which the build does not know), **no line** (a
-plain pytest report's 0-based `line` cannot be told from the plugin's 1-based one, #2381) and
-**no language** (the report names none; codelinks' code hops are where a language name comes
-from). The report path is Sphinx-Needs' `physical_for` rule, computed in `_report_physical`
+(the path is relative to the test run's root, which the build does not know), a **start line
+only where the base is known** (ub-test-reports' reader says so per case, `line_base_known`: a
+line-base mark, a plain pytest report, a Google Test case or an explicit `tr_line_base`, #2381;
+a pytest test's first decorator, or its `def`; never an end line), and **no language** (the
+report names none; codelinks' code hops are where a language name comes from). The report path is Sphinx-Needs' `physical_for` rule, computed in `_report_physical`
 because a sibling imports no private Sphinx-Needs name; `tests/test_source_hops.py` holds the
 two equal. The hops are provisional and reach no `needs.json`. What the pickled environment
 holds of a test need changes with `env_version` in `setup()`: bump it when that changes, or an

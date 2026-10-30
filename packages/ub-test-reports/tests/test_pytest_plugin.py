@@ -877,13 +877,11 @@ class TestLineBaseMark:
     ``<testsuite>`` it writes carries ``ub_test_reports:line_base = 1``, so the reader takes
     its lines as they are while it reads a plain pytest report's as counted from 0."""
 
-    @pytest.mark.xfail(strict=True, reason="#2381: the plugin writes no mark yet")
     def test_an_xunit1_report_is_marked(self, pytester):
         result, root = _run(pytester, DECORATED)
         result.assert_outcomes(passed=2)
         assert _marks(root) == [["1"]]
 
-    @pytest.mark.xfail(strict=True, reason="#2381: the plugin writes no mark yet")
     def test_under_xdist_the_controller_writes_one_mark(self, pytester):
         pytest.importorskip("xdist")
         result, root = _run(pytester, DECORATED, "-n", "2")
@@ -901,7 +899,6 @@ class TestLineBaseMark:
         assert lines["test_addition"][0] == ADDITION_LINE
         assert lines["test_plain"][0] == PLAIN_LINE
 
-    @pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
     def test_the_reader_takes_a_plain_pytest_report_s_lines_from_0(self, pytester):
         pytester.makepyfile(UNMARKED)
         report = pytester.path / "report.xml"

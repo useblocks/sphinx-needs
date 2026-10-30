@@ -424,7 +424,6 @@ def test_an_environment_pickled_by_an_earlier_release_is_read_again(make_app, tm
     assert "report" in read
 
 
-@pytest.mark.xfail(strict=True, reason="#2381: env_version is still 1")
 def test_an_environment_pickled_at_env_version_1_is_read_again(make_app, tmp_path):
     """Version 1 recorded a plain pytest report's ``line`` as it is, one before the
     test's own (#2381), and a code hop with no line. Nothing in the sources changed:

@@ -14,12 +14,29 @@ New and Improved
   the case, a parameter beside it), the test's source file as the report gives it, for a
   test case, and the page the directive is written on. The record is provisional and
   reaches no ``needs.json``; it adds no field.
-  The test's file carries no line yet: a plain ``pytest --junitxml`` report counts it from
-  0 and the plugin's from 1, and the two cannot be told apart
-  (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__).
+  The test's file carries the test's line where the report's base is known (see the ‼️
+  entry below), and no line where it is not.
+
+- ✨ :ref:`tr_line_base` (``line_base`` in ``[test_reports]``): what the ``line`` of a report
+  without a line-base mark counts from, ``"auto"`` (the default, the rule below), ``0`` or
+  ``1`` (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__). ``-D`` wins
+  over the file, as for every bridged value; any other value stops the build with a
+  configuration error.
 
 Fixed
 .....
+
+- ‼️ A test case read from a plain ``pytest --junitxml`` report is on the test's own line:
+  pytest counts the ``line`` attribute from 0, and its ``case_line`` was one line early --
+  usually a blank line, or ``class TestX:`` for a method
+  (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__). It is now one more
+  than before, in every ``test-file``, ``test-suite`` (``:auto_cases:``), ``test-case`` and
+  ``test-report``. Reports of the ub-test-reports pytest plugin, which now marks them as
+  counting from 1, and Google Test's keep their lines; any other report's line is read as
+  written. The record of where a test need comes from gives the test file's line where the
+  report's base is known (:ref:`pytest_line_base` has the rule), and no line where it is
+  not. No id moves. The first build after the upgrade reads every page again, once. See
+  "Upgrading" below.
 
 - 🐛 A Google Test case's parameter reaches its need: ``case_parameter`` holds a
   value-parameterised case's ``value_param`` (``1``, ``(1, 2)``), a typed case's
@@ -132,6 +149,24 @@ Changed
   filter reaches it, and under ``filterwarnings = error`` it stops pytest -- as does a
   ``filterwarnings`` line naming the old module, whatever the ``-p`` line says. Nothing
   changes in the package.
+
+Upgrading: test-case lines from pytest reports
+..............................................
+
+1. The lines of a plain ``pytest --junitxml`` report (``junit_family = xunit1``) are now the
+   test's own line, one more than before: its need's ``case_line`` (or the field
+   :ref:`tr_source_line_option` names). A filter that names a line (``case_line == "12"``)
+   names the line after it now.
+2. The ub-test-reports pytest plugin now marks its reports, with the suite property
+   ``ub_test_reports:line_base`` = ``1``; their lines are read as they are.
+3. A report that already counts from 1 but carries no mark is read one line late: one
+   written by an earlier version of the plugin (sphinx-test-reports 2.0.0 to 3.0.1,
+   ub-test-reports 1.1.0 or earlier), or by another tool such as S-CORE's
+   ``score_pytest``. Regenerate it with this version's plugin, or set
+   ``tr_line_base = 1`` (``line_base = 1`` in ``[test_reports]``).
+4. ub-test-reports' ``JUnitParser``, which ``sphinxcontrib.test_reports.junitparser``
+   still names until 4.0, returns lines counted from 1 where it knows the report's base,
+   and says so per test case (``line_base_known``).
 
 .. _`release:3.0.1`:
 

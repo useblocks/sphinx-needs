@@ -67,7 +67,7 @@ class TestResultsDirective(Directive):
                 f"test-results reads JUnit XML reports; {xml_path} is a JSON file",
             )
         try:
-            results = JUnitParser(xml_path).parse()
+            results = JUnitParser(xml_path, line_base=env.config.tr_line_base).parse()
         except ReportReadError as error:
             return self._refuse("report_unreadable", str(error))
 

@@ -124,7 +124,6 @@ RULE = {
 }
 
 
-@pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
 @pytest.mark.parametrize("name", list(RULE))
 def test_the_reader_s_rule_over_every_fixture(name):
     assert _read(name) == RULE[name]
@@ -168,18 +167,15 @@ OVERRIDE = {
 }
 
 
-@pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
 @pytest.mark.parametrize(("name", "line_base"), list(OVERRIDE))
 def test_an_explicit_line_base_is_the_base_of_every_unmarked_suite(name, line_base):
     assert _read(name, line_base=line_base) == OVERRIDE[(name, line_base)]
 
 
-@pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
 def test_auto_is_the_default():
     assert _read("plain", line_base="auto") == RULE["plain"]
 
 
-@pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
 @pytest.mark.parametrize("value", [2, -1, "1", "0", True, False, 1.0, "AUTO", None])
 def test_another_line_base_is_refused(value):
     with pytest.raises(ValueError, match="line_base"):

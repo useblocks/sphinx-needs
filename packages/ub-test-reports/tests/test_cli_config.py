@@ -607,40 +607,34 @@ class TestLineBase:
     def test_no_id_moves(self, tmp_path):
         assert set(self._lines(tmp_path, [])) == set(self.TRUE_LINES)
 
-    @pytest.mark.xfail(strict=True, reason="#2381: the line base is not read yet")
     def test_a_plain_pytest_report_gives_the_test_s_own_line(self, tmp_path):
         assert self._lines(tmp_path, []) == self.TRUE_LINES
 
     def test_a_marked_report_gives_its_lines_as_they_are(self, tmp_path):
         assert self._lines(tmp_path, [], xml=self.MARKED) == self.TRUE_LINES
 
-    @pytest.mark.xfail(strict=True, reason="#2381: line_base is not a key yet")
     def test_line_base_from_the_section(self, tmp_path, capsys):
         # the migration for a report that already counts from 1 but carries no mark
         lines = self._lines(tmp_path, [], toml="[test_reports]\nline_base = 1\n")
         assert lines == {key: line - 1 for key, line in self.TRUE_LINES.items()}
         assert "unknown key" not in capsys.readouterr().err
 
-    @pytest.mark.xfail(strict=True, reason="#2381: --line-base is not a flag yet")
     def test_the_flag_beats_the_section(self, tmp_path):
         lines = self._lines(
             tmp_path, ["--line-base", "1"], toml="[test_reports]\nline_base = 0\n"
         )
         assert lines == {key: line - 1 for key, line in self.TRUE_LINES.items()}
 
-    @pytest.mark.xfail(strict=True, reason="#2381: --line-base is not a flag yet")
     def test_the_flag_auto_beats_the_section(self, tmp_path):
         lines = self._lines(
             tmp_path, ["--line-base", "auto"], toml="[test_reports]\nline_base = 1\n"
         )
         assert lines == self.TRUE_LINES
 
-    @pytest.mark.xfail(strict=True, reason="#2381: line_base is not a key yet")
     def test_a_mark_wins_over_line_base(self, tmp_path):
         lines = self._lines(tmp_path, ["--line-base", "0"], xml=self.MARKED)
         assert lines == self.TRUE_LINES
 
-    @pytest.mark.xfail(strict=True, reason="#2381: --line-base is not a flag yet")
     def test_another_flag_value_is_refused(self, tmp_path, capsys):
         with pytest.raises(SystemExit):
             main(["build", "needs", self.PLAIN, "-o", "n.json", "--line-base", "2"])
@@ -648,7 +642,6 @@ class TestLineBase:
         assert "--line-base" in error
         assert "invalid choice: '2'" in error
 
-    @pytest.mark.xfail(strict=True, reason="#2381: line_base is not a key yet")
     def test_another_section_value_is_refused(self, tmp_path, capsys):
         code, _ = run_convert(tmp_path, [], toml="[test_reports]\nline_base = 2\n")
         assert code == 2
