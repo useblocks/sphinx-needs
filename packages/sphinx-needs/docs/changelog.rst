@@ -148,7 +148,7 @@ Improvements
 
 - ✨ ``NeedItemSource``: one class for where a need comes from, public from ``sphinx_needs.api``, with
   ``NeedItemSource.from_directive(self)`` as the source of a need an extension's directive creates and
-  ``NeedItemSource.on_page(docname, lineno=lineno)`` elsewhere (:issue:`2137`)
+  ``NeedItemSource.on_page(docname, lineno=lineno)`` for a need at another line (:issue:`2137`)
 
   The source :func:`~sphinx_needs.api.need.create_need` takes is one frozen class,
   :class:`~sphinx_needs.need_item.NeedItemSource`: the hops the need's text came through, and the location facts
@@ -157,8 +157,9 @@ Improvements
   directive, ``NeedItemSource.from_directive(self)`` records what a need directive records: the line the directive
   is written on (resolved through ``rst_prolog`` and includes), its parser line and content offset, and the file and
   page it is written in, after any hops given as ``first``; it takes any docutils ``Directive``, not only a
-  ``SphinxDirective``. Outside one, ``NeedItemSource.on_page(docname, lineno=lineno)`` is the source ``add_need``
-  built: its page, at that line. ``NeedItemSource``, its constructor's keywords, ``from_directive`` and ``on_page``
+  ``SphinxDirective``. For a need at a line other than the directive's own (needs made from data, as
+  sphinx-codelinks' are), ``NeedItemSource.on_page(docname, lineno=lineno)`` is the source ``add_need`` built: its
+  page, at that line. ``NeedItemSource``, its constructor's keywords, ``from_directive`` and ``on_page``
   are stable; ``hops`` and the hop types, ``NeedSourceHop``, ``NeedSourcePhysical`` and
   ``NeedSourceSemantic``, now also importable from ``sphinx_needs.api``, stay provisional until they reach
   ``needs.json``. A need's ``docname``, ``lineno`` and the other location keys are unchanged, and so is
@@ -252,10 +253,11 @@ Deprecations
   ``dataclasses.replace`` raises ``TypeError`` (build a new source) and ``dataclasses.asdict`` gives the one class's
   fields; the attributes ``url`` (``NeedItemSourceExternal``), ``path`` (``NeedItemSourceImport``),
   ``external_url`` and ``is_external`` (``NeedItemSourceUnknown``) are gone (read ``source.dict_repr``);
-  ``dir(sphinx_needs.need_item)`` and ``from sphinx_needs.need_item import *`` no longer include them (a type
-  checker sees each as a deprecated function of its keywords); and no combination of keywords is refused: given
-  ``hops``, the hops decide ``docname``, ``is_external``, ``external_url`` and, without a ``lineno``, the line,
-  while a ``lineno`` given is the need's, and an ``external_url`` without ``is_external`` is dropped.
+  ``dir(sphinx_needs.need_item)`` and, at run time, ``from sphinx_needs.need_item import *`` no longer include
+  them (a type checker sees each as a deprecated function of its keywords); and no combination of keywords is
+  refused: given ``hops``, the hops decide ``docname``, ``external_url``, ``is_external`` (but
+  ``NeedItemSourceUnknown(is_external=True)`` still puts an external hop first) and, without a ``lineno``, the
+  line, while a ``lineno`` given is the need's, and an ``external_url`` without ``is_external`` is dropped.
 
 Bug fixes
 .........

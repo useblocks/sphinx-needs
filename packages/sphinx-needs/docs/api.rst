@@ -89,10 +89,17 @@ With it, ``need["lineno"]`` is the line the directive is written on, which diffe
 ``self.lineno`` where ``rst_prolog``, an include or generated input shifts the parser's
 count; to keep the old number exactly, use
 ``NeedItemSource.on_page(self.env.docname, lineno=self.lineno)``, which is the source
-``add_need`` built. Outside a directive -- an event handler, a role, a need made from data
--- ``NeedItemSource.on_page(docname, lineno=lineno)`` is the source. ``from_directive`` and
-``on_page`` are stable, as the class's name and keywords are; the hops they build are
-provisional (see the provisional note under "Data", below).
+``add_need`` built. For needs at lines other than the directive's own -- a directive creating
+needs from data, at the lines the data names, as sphinx-codelinks' ``src-trace`` does --
+``NeedItemSource.on_page(docname, lineno=lineno)`` is the source, in a docutils ``Directive``
+and in a nested parse alike; it is also the ``need_source`` to give ``generate_need``.
+``from_directive`` and ``on_page`` are stable, as the class's name and keywords are; the
+hops they build are provisional (see the provisional note under "Data", below).
+
+A need placed on a page is created with a parser state, through ``create_need`` as through
+``add_need``: an event handler or a role, which has none, cannot create one, and without a
+state only an external need can be created (``add_external_need``). Where ``add_need``
+refused that with an ``AssertionError``, ``create_need`` raises ``ValueError``.
 
 ``add_need``'s other arguments:
 
@@ -103,8 +110,8 @@ provisional (see the provisional note under "Data", below).
    * - ``add_need``
      - ``create_need``
    * - ``docname``, ``lineno``
-     - ``source=NeedItemSource.from_directive(self)``; outside a directive,
-       ``NeedItemSource.on_page(docname, lineno=lineno)``
+     - ``source=NeedItemSource.from_directive(self)``; for a line other than the
+       directive's own, ``NeedItemSource.on_page(docname, lineno=lineno)``
    * - ``lineno_content``
      - ``NeedItemSource(..., lineno_content=...)`` (``from_directive`` sets it)
    * - ``need_source``
