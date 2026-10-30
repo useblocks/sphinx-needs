@@ -205,29 +205,23 @@ def builds(
     return _BUILDS
 
 
-_RED_ON_MASTER = pytest.mark.xfail(
-    strict=True, reason="#2398: the walk starts at the hidden need's previous sibling"
-)
-"""The positions where the walk starting at the need node's previous sibling went wrong:
-a first child has none, and after a need it is that need, read as the parent."""
-
 _HIDDEN = [
-    pytest.param("ONLY_FIRST", marks=_RED_ON_MASTER),
-    pytest.param("NOTE_FIRST", marks=_RED_ON_MASTER),
-    pytest.param("PARENT_FIRST", marks=_RED_ON_MASTER),
-    pytest.param("FUNC_FIRST", marks=_RED_ON_MASTER),
+    "ONLY_FIRST",
+    "NOTE_FIRST",
+    "PARENT_FIRST",
+    "FUNC_FIRST",
     "AFTER_TITLE",
     "AFTER_PARA",
-    pytest.param("AFTER_HIDDEN", marks=_RED_ON_MASTER),
-    pytest.param("AFTER_VISIBLE", marks=_RED_ON_MASTER),
-    pytest.param("ROW_1", marks=_RED_ON_MASTER),
-    pytest.param("ROW_2", marks=_RED_ON_MASTER),
-    pytest.param("ROW_3", marks=_RED_ON_MASTER),
-    pytest.param("ROW_4", marks=_RED_ON_MASTER),
-    pytest.param("ROW_5", marks=_RED_ON_MASTER),
-    pytest.param("PARENT_AFTER_VISIBLE", marks=_RED_ON_MASTER),
-    pytest.param("PARENT_AFTER_HIDDEN", marks=_RED_ON_MASTER),
-    pytest.param("FUNC_AFTER_HIDDEN", marks=_RED_ON_MASTER),
+    "AFTER_HIDDEN",
+    "AFTER_VISIBLE",
+    "ROW_1",
+    "ROW_2",
+    "ROW_3",
+    "ROW_4",
+    "ROW_5",
+    "PARENT_AFTER_VISIBLE",
+    "PARENT_AFTER_HIDDEN",
+    "FUNC_AFTER_HIDDEN",
 ]
 
 
@@ -247,16 +241,8 @@ def test_a_hidden_need_is_located_as_a_visible_one(
     ("need_id", "location"),
     [
         ("PRE_HIDDEN", (("After hidden", "Top"), None, [])),
-        pytest.param(
-            "SIB_HIDDEN",
-            (("Parent after sibling", "Top"), None, ["PARENT_B"]),
-            marks=_RED_ON_MASTER,
-        ),
-        pytest.param(
-            "FUNC_SIB",
-            (("Function after sibling", "Top"), "sib_f", []),
-            marks=_RED_ON_MASTER,
-        ),
+        ("SIB_HIDDEN", (("Parent after sibling", "Top"), None, ["PARENT_B"])),
+        ("FUNC_SIB", (("Function after sibling", "Top"), "sib_f", [])),
     ],
 )
 def test_a_need_hidden_in_both_builds_is_where_it_is(
@@ -274,9 +260,6 @@ def test_a_need_hidden_in_both_builds_is_where_it_is(
         )
 
 
-@pytest.mark.xfail(
-    strict=True, reason="#2398: a hidden need claims the need before it as its parent"
-)
 def test_hiding_a_need_changes_no_back_link(
     builds: dict[bool, dict[str, dict[str, Any]]],
 ):
@@ -285,10 +268,10 @@ def test_hiding_a_need_changes_no_back_link(
     for build in builds.values():
         assert build["PARENT_A"]["parent_needs_back"] == ["PARENT_FIRST"]
         assert build["PARENT_B"]["parent_needs_back"] == [
-            "SIB_VISIBLE",
+            "PARENT_AFTER_HIDDEN",
             "PARENT_AFTER_VISIBLE",
             "SIB_HIDDEN",
-            "PARENT_AFTER_HIDDEN",
+            "SIB_VISIBLE",
         ]
     assert {
         need_id: need["parent_needs_back"] for need_id, need in builds[True].items()

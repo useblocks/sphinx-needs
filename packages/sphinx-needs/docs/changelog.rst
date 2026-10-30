@@ -272,6 +272,15 @@ Bug fixes
   text keeps its value, and a need inside a ``cpp:alias`` still has none. An empty name counts as no name, where an
   empty ``desc_name`` with no content failed the build.
 
+- 🐛 A need with ``:hide:`` is located as the same need without it **(changed output)** (:issue:`2398`)
+
+  A hidden need that was the first child of its container -- a ``.. only::``, a ``.. note::``, a parent need's
+  content, a ``py:function`` body -- had empty ``sections``, no ``signature`` and no parent need, and a hidden need
+  following another need, hidden or not, took that need as its ``parent_need`` (so the other need listed it in
+  ``parent_needs_back``). Both now get the ``sections``, ``signature`` and ``parent_needs`` a visible need in the same
+  place gets, which filters, tables and needs.json show. A visible need, and a hidden need after a title or a
+  paragraph, keep their values. An existing build directory is read again in full once.
+
 Documentation
 .............
 
