@@ -74,6 +74,9 @@ nitpick_ignore = [
     ("py:class", "docutils.nodes.Node"),
     ("py:class", "docutils.parsers.rst.states.RSTState"),
     ("py:class", "docutils.statemachine.StringList"),
+    # ``NeedItemSource.from_directive``'s argument, docutils' ``Directive``, imported for
+    # type checking only (docutils publishes no inventory)
+    ("py:class", "Directive"),
     ("py:class", "sphinx_needs.debug.T"),
     # the type variable of ``sphinx_needs.api.reads``, the decorated function's type
     ("py:class", "sphinx_needs.api.configuration._FunctionT"),
