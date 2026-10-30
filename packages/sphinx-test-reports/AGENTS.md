@@ -60,6 +60,25 @@ or a catch-all**: every other old name is meant to fail as a plain `ImportError`
 -- so a module added to either is covered without anyone remembering the file. **There is no `src/sphinxcontrib/__init__.py`, and there must never be
 one**: `sphinxcontrib` is a PEP 420 namespace other distributions install into.
 
+### A test need's source: its hops, from the directive
+
+Every need the directives create is sourced through Sphinx-Needs'
+`NeedItemSource.from_directive(self, first=self.report_hops(...))` (`test_common.py`), so its
+`lineno` is the line the directive is written on — for a need a `test-report` generates, the
+`test-report`'s, whose page hop then has no line — and its hops are, innermost first: a test
+case's `code` hop, the `report` hop (the report under `"srcdir"`, its suffix, and the
+`suite` / `scope` (classname) / `case` (+ `parameter`) of the element; a `test-file`'s has
+none), then the page. The code hop is the report's `file` as given, read from the case itself
+and never from the merged fields a report key can override (#2411); it has **no root**
+(the path is relative to the test run's root, which the build does not know), **no line** (a
+plain pytest report's 0-based `line` cannot be told from the plugin's 1-based one, #2381) and
+**no language** (the report names none; codelinks' code hops are where a language name comes
+from). The report path is Sphinx-Needs' `physical_for` rule, computed in `_report_physical`
+because a sibling imports no private Sphinx-Needs name; `tests/test_source_hops.py` holds the
+two equal. The hops are provisional and reach no `needs.json`. What the pickled environment
+holds of a test need changes with `env_version` in `setup()`: bump it when that changes, or an
+upgraded build keeps the earlier release's records.
+
 ### hatchling, and the fence on the built artefacts
 
 This is the one member that builds with hatchling: its wheel ships two top-level packages,
