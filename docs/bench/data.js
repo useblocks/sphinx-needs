@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793379980444,
+  "lastUpdate": 1793385799636,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27540,6 +27540,42 @@ window.BENCHMARK_DATA = {
             "value": 61.089995273,
             "unit": "s",
             "extra": "Commit: 30e2617857cf0a9de4254ec233b050e5f13cbd42\nBranch: master\nTime: 2026-10-30T18:04:46+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c5561d11e24d9d6bec1a03eef08380db9ee7f3ef",
+          "message": "📚 Derived fields: lead every section with what it is for (#2425)\n\n## What\n\nA reader-first pass over `packages/sphinx-needs/docs/derived_fields.rst`\n(sphinx-needs only, docs only).\nThe page grew PR by PR and often led with mechanics and rule lists.\nEach section now reads the way the \"Summary link types\" section already\ndid:\nwhat the rule is for, with a requirements example; a minimal example;\nwhat to bear in mind; then the exact rules.\n\n- **Intro**: why a value is derived at all (a story's effort, a\nrequirement verified by its tests,\na test result as evidence for requirements), and a \"Bear in mind\" list:\nnobody can write the value (`needs.derive_authored`), what is reported\nwhen the configuration is read,\nstoring costs and computing does not (`needs.derive_dense`), which rules\nmake an incremental build re-write\nevery page holding a need, a view or a need role, and when a `needtable`\nor an inline call is the simpler tool.\nThe intro's `verified` example gains `empty = false`, so a requirement\nno test names is not \"verified\",\nand its `tests` link type is now declared, so the example builds without\na warning.\n- **Rules per need type**: the effort roll-up leads; \"one name, one\nshape\" is stated\n(a field or link type means the same on every need type declaring it,\nwhich keys belong to it,\n  and what a disagreeing need type's entry gets: `needs.type_conflict`);\n`summary` in a need type's own `links` entry is said plainly to be\nreported (`needs.config`) and ignored.\n- **The kinds at a glance**: a \"pick a kind by what the need should\nshow\" list ahead of the table.\n- **Each kind, join, union, chain as links, digests**: a use case and\nthe trade-offs\n(field form or link form, cost, incremental builds, what is refused)\nahead of the rules.\n- **Roles, how rules are computed, cost, what a derived field holds,\nrules and inline calls**: one lead sentence each\nsaying when to read the section. The cost section is now the one full\nreference for incremental-build effects;\n  the kind sections point to it.\n\nNothing is dropped: every removed line was moved or reworded.\nEvery label and section title is unchanged, so the links from other\npages and the changelog still resolve.\nNo code, no `ENV_DATA_VERSION` change, and no changelog entry (a\ndocs-only rewrite).\n\n## Why\n\nThe page was hard to follow for someone deciding whether, and how, to\ndeclare a rule:\nthe rules came before the reason.\nubCode's matching page (`docs/source/configuration/needs_derive.rst`)\ngets the same pass in a companion pull request.\n\n## Tests\n\nDocs only. Every new or reworded sentence that states behaviour was\nchecked against `derive.py`,\n`_incremental.py`, `needs.py` and the `test_derive_*` suites, and then\nreviewed adversarially in two rounds.\nThe first round found 0 MUST, 5 SHOULD and 10 NIT issues. Among them:\nthe incremental note understated the pages\nre-written, the intro example was true for an untested requirement, a\nroll-up sentence pointed at a form a link type\nrefuses, and a digest bullet was too broad. All are fixed.\nThe second round found no MUST or SHOULD issues, and its 3 NITs are\napplied.\nThe intro example was built in a probe project: the requirement no test\nnames comes out `false`.\n\n- `uv run poe docs-needs`: exit 0, no warnings.\n- `uv run poe lint`: exit 0.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [ ] I ran the package's tests (`uv run poe test-<package>`) and they\npass. (Docs only: no code changed.)\n- [x] Documentation is updated where behaviour or options change.\n- [ ] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. (None: a docs-only rewrite.)\n- [x] `uv run poe lint` and `uv run poe typecheck` pass. (lint run;\ntypecheck not affected by an `.rst` change.)",
+          "timestamp": "2026-10-30T19:41:43+01:00",
+          "tree_id": "23aff1ee1eb690877360f7f9e6fb493c7956d1eb",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c5561d11e24d9d6bec1a03eef08380db9ee7f3ef"
+        },
+        "date": 1793385788554,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09657565000000545,
+            "unit": "s",
+            "extra": "Commit: c5561d11e24d9d6bec1a03eef08380db9ee7f3ef\nBranch: master\nTime: 2026-10-30T19:41:43+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.784562376,
+            "unit": "s",
+            "extra": "Commit: c5561d11e24d9d6bec1a03eef08380db9ee7f3ef\nBranch: master\nTime: 2026-10-30T19:41:43+01:00"
           }
         ]
       }
