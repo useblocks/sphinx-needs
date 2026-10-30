@@ -92,11 +92,13 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   No module, crate or package prefix: the file's path decides that.
   ``null`` in YAML and JSON, and for an entity without a name;
 - ``semantic`` -- that name in its parts, outermost first and the entity itself last, each a ``kind`` and a ``name``
-  (``null`` exactly when ``qualified_name`` is). The kinds are those of ``entity_kind`` and two more, for what the
-  syntax alone cannot classify: ``scope``, a C++ qualifier such as the ``ns`` of ``void ns::W::f() {}`` (the qualifier
-  right before a method, a constructor, a destructor or a conversion operator is its ``class``; so is the ``ns`` of a
-  free function defined with a namespace qualifier, ``void ns::f() {}``, which reads as a method), and ``type``, the
-  type a Go method's receiver names. A Rust ``impl`` is a part of kind ``impl`` named after its self type as written
+  (``null`` exactly when ``qualified_name`` is). The kinds are those of ``entity_kind`` but ``key`` and ``item``
+  (a YAML or JSON entry has no name, so no parts), and one more, for what the syntax alone cannot classify:
+  ``scope``, a C++ qualifier such as the ``ns`` of ``void ns::W::f() {}`` (the qualifier right before a method,
+  a constructor, a destructor or a conversion operator is its ``class``; so is the ``ns`` of a free function defined
+  with a namespace qualifier, ``void ns::f() {}``, which reads as a method).
+  The type a Go method's receiver names is a part of kind ``type``.
+  A Rust ``impl`` is a part of kind ``impl`` named after its self type as written
   (``Widget``, ``dyn Shape``), with a ``trait`` key for a trait impl (the trait as ``qualified_name`` spells it); the
   in-file modules an impl is written in are parts of their own before it (``mod m { impl G {} }`` is ``module m``,
   ``impl G``), and a path from the crate root keeps its ``crate::`` where that decides what it names

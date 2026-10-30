@@ -115,9 +115,10 @@ def test_known_wrong_today_names_real_markers() -> None:
     assert KNOWN_WRONG_TODAY <= ids, sorted(KNOWN_WRONG_TODAY - ids)
 
 
-# The kinds a component may have: the entity kinds, and ``scope`` for a C++ qualifier
-# the syntax cannot classify.
-_COMPONENT_KINDS = frozenset(get_args(EntityKind)) | {"scope"}
+# The kinds a component may have: the entity kinds but the data kinds ``key`` and
+# ``item`` (a data entry has no name, so no components), and ``scope`` for a C++
+# qualifier the syntax cannot classify.
+_COMPONENT_KINDS = (frozenset(get_args(EntityKind)) - {"key", "item"}) | {"scope"}
 
 
 # The ``scope.language`` of each fixture ``lang``: the language the file is analysed
