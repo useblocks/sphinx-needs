@@ -24,6 +24,7 @@ from sphinx.environment import BuildEnvironment
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
 import sphinx_needs.logging as needs_logging
 from sphinx_needs import __version__
+from sphinx_needs._incremental import get_updated_docs, stash_purged_doc
 from sphinx_needs._wording import joined, title_hint
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.builder import (
@@ -165,7 +166,6 @@ from sphinx_needs.environment import (
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
-from sphinx_needs.incremental import get_updated_docs, stash_purged_doc
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.needs_schema import (
     BACK_LINKS_KEYWORDS,

@@ -798,8 +798,8 @@ def test_every_core_field_is_classified() -> None:
     A read of the second kind may depend on any need; a core field added without
     being classified would be read as the first, and leave pages stale.
     """
+    from sphinx_needs._incremental import OTHER_WRITTEN_CORE_FIELDS, OWN_CORE_FIELDS
     from sphinx_needs.data import NeedsCoreFields
-    from sphinx_needs.incremental import OTHER_WRITTEN_CORE_FIELDS, OWN_CORE_FIELDS
 
     assert OWN_CORE_FIELDS.isdisjoint(OTHER_WRITTEN_CORE_FIELDS)
     assert set(NeedsCoreFields) == OWN_CORE_FIELDS | OTHER_WRITTEN_CORE_FIELDS
