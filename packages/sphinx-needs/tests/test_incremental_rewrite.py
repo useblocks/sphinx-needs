@@ -516,8 +516,7 @@ _COPY_LINKS = {
 #: ``REQ_001``), so its links name needs its own links do not
 _COLLECT_LINKS = {
     **PAGES,
-    "conf.py": CONF
-    + '\nneeds_links["chain"] = {"derive_by_type": {'
+    "conf.py": CONF + '\nneeds_links["chain"] = {"derive_by_type": {'
     '"spec": {"kind": "copy", "field": "id", "over": "links"}, '
     '"impl": {"kind": "collect", "field": "chain", "over": "links"}}}\n',
 }
@@ -911,7 +910,9 @@ def test_back_links_counts_are_checked_again_on_an_incremental_build(
     assert any("'REQ_003'" in warning for warning in counted(warnings))
 
 
-@pytest.mark.parametrize("pages", [_COPY_LINKS, _COLLECT_LINKS], ids=["copy", "collect"])
+@pytest.mark.parametrize(
+    "pages", [_COPY_LINKS, _COLLECT_LINKS], ids=["copy", "collect"]
+)
 def test_a_chain_fixture_builds_cleanly(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path, pages: dict[str, str]
 ) -> None:
