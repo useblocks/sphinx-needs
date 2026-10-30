@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 15
+ENV_DATA_VERSION: Final = 16
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -105,6 +105,13 @@ now selects the needs of a type and of the types inheriting from it, and a deriv
 field reading it computes. The configuration does not change, so without the bump an
 upgraded build would keep the empty selections and values on the pages whose sources
 did not change.
+
+Version 16 records, at read time, what an incremental build needs to re-write the pages
+that show a need which changed: the category of every view (``needtable``,
+``needflow``, ...) in the documents' categories, and the needs each document's need
+roles reference (``_needs_role_refs``). An environment pickled before it has neither,
+so its incremental builds would find no page to re-write; the bump re-reads every
+document once instead.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
@@ -1014,6 +1021,7 @@ class SphinxNeedsData:
         for uml_id in list(umls):
             if umls[uml_id]["docname"] == docname:
                 del umls[uml_id]
+        self.get_or_create_role_refs().pop(docname, None)
 
     def get_needs_mutable(self) -> NeedsMutable:
         """Get all needs, mapped by ID.
@@ -1116,6 +1124,21 @@ class SphinxNeedsData:
         except AttributeError:
             self.env.app._needs_services = ServiceManager(self.env.app)
         return self.env.app._needs_services
+
+    def get_or_create_role_refs(self) -> dict[str, set[str]]:
+        """Get the ids of the needs each document's need roles reference.
+
+        ``:need:``, ``:need_incoming:`` and ``:need_outgoing:`` record the id of their
+        target need (a part's need for a part), read time, per document; an incremental
+        build re-writes the documents referencing a need that changed.
+
+        This is lazily created and cached in the environment.
+        """
+        try:
+            return self.env._needs_role_refs
+        except AttributeError:
+            self.env._needs_role_refs = {}
+        return self.env._needs_role_refs
 
     def get_or_create_extends(self) -> dict[str, NeedsExtendType]:
         """Get all need modifications, mapped by ID.
@@ -1253,3 +1276,11 @@ def merge_data(
     _merge("_needs_all_nodes")
     _merge("_need_all_needextend")
     _merge("_needs_all_needumls")
+
+    # the need roles of the documents the worker read: the worker's copy of every other
+    # document's entry is the one this environment holds, inherited at the fork
+    role_refs = this_data.get_or_create_role_refs()
+    other_role_refs = other_data.get_or_create_role_refs()
+    for docname in docnames:
+        if docname in other_role_refs:
+            role_refs[docname] = other_role_refs[docname]

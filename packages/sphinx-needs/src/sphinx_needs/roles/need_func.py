@@ -18,7 +18,7 @@ class NeedFuncRole(SphinxRole):
     """Role for creating ``NeedFunc`` node."""
 
     def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
-        add_doc(self.env, self.env.docname)
+        add_doc(self.env, self.env.docname, "need_func")
         node = NeedFunc(
             self.rawtext,
             nodes.literal(self.rawtext, self.text),

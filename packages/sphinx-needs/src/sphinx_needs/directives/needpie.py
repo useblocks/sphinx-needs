@@ -134,7 +134,7 @@ class NeedpieDirective(FilterBase):
         pie_node = Needpie("", **attributes)
         self.set_source_info(pie_node)
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needpie")
 
         return [targetnode, pie_node]
 

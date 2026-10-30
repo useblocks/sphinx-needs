@@ -171,6 +171,14 @@ def _arguments(call: DynamicFunctionParsed) -> dict[str, Any] | None:
     return args
 
 
+def builtin_arguments(call: DynamicFunctionParsed) -> dict[str, Any] | None:
+    """A call's arguments by parameter, when it is a call of a built-in function that
+    they fit; else ``None``."""
+    if call.name not in _PARAMETERS:
+        return None
+    return _arguments(call)
+
+
 def unset_selector(
     call: DynamicFunctionParsed, need: NeedItem | NeedPartItem
 ) -> str | None:
