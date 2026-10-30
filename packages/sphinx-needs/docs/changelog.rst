@@ -141,10 +141,12 @@ Improvements
   and its links as ``links``, kept apart from its own parameters, so any name a project gives a field can be used.
   It returns ``(need, nodes)``: the need as recorded, which an extension no longer has to look up or re-derive the
   id of, and the nodes to insert. Its location is a ``source`` object, which is provisional for extensions. A name
-  in the wrong mapping is refused, naming the right one. It is what this package's directives, ``needservice``,
-  ``needimport`` and ``needs_external_needs``, and sphinx-codelinks and sphinx-test-reports, create their needs
-  through. ``add_need`` is unchanged and not deprecated yet: that waits for the final shape of the source, so that
-  an extension moves once. See :func:`~sphinx_needs.api.need.create_need`.
+  in the wrong mapping, or one of its own arguments given in a mapping (``title``, ``content``, ...), is refused,
+  naming where it belongs. This package's need directives, ``list2need`` and ``needservice``, sphinx-codelinks'
+  one-line needs and sphinx-test-reports' needs are created through it; ``needimport``, ``needs_external_needs``
+  and sphinx-codelinks' multi-line needs through the same path, as records. ``add_need`` is unchanged and not
+  deprecated yet: that waits for the final shape of the source, so that an extension moves once. See
+  :func:`~sphinx_needs.api.need.create_need`.
 
 - 👌 A :ref:`needs_fields` entry naming a core field a need computes (``type_name``, ``docname`` and the other core
   fields that take no declaration) is reported as ignored, with a ``needs.config`` warning, where it was ignored
@@ -219,8 +221,12 @@ Bug fixes
   carrying ``app``, ``need_source`` or ``allow_type_coercion`` ended the build the same way. A needimport or
   external record's field named ``need_type`` was overwritten by the record's type, and one named ``full_title``
   dropped as the legacy key; both are read now. Every producer now creates its needs with the fields as a mapping.
-  ``add_need`` itself still takes them as keyword arguments, so an extension calling it keeps the collision;
-  ``create_need`` has none.
+  ``add_need`` itself still takes them as keyword arguments, so an extension calling it keeps the collision of its
+  own parameters' names; ``create_need`` has none. Two more names of the same kind: a field named like one of
+  ``generate_need``'s own keywords (``needs_config``, ``needs_schema``, ``template_root``) no longer stops
+  ``add_need`` with the same ``TypeError``, and a field the project declares under one of ``add_need``'s deprecated
+  keys (``delete``, ``hide_status``, ``hide_tags``, ``links_string``) is a field through the producers, where
+  ``add_need`` dropped it with a ``DeprecationWarning``.
 
 - 🐛 An external need keeps a field named ``state`` the project declares (:issue:`2403`)
 

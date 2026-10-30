@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import inspect
 import os
 import re
 import warnings
@@ -979,9 +980,10 @@ def create_need(
     The need's field values and its links are two mappings, kept apart from the
     function's own parameters, so any name the project declares for a field or a link
     type can be used: nothing a project names a field meets an argument of this
-    function. This is how sphinx-needs' own directives, ``needservice``, ``needimport``
-    and ``needs_external_needs``, and the sibling packages sphinx-codelinks and
-    sphinx-test-reports, create their needs.
+    function. It is how sphinx-needs' need directives, ``list2need`` and
+    ``needservice``, sphinx-codelinks' one-line needs and sphinx-test-reports' needs are
+    created; ``needimport``, ``needs_external_needs`` and sphinx-codelinks' multi-line
+    needs are created from records, through the same path.
 
     .. code-block:: python
 
@@ -1043,9 +1045,13 @@ def create_need(
     :raises InvalidNeedException: If the need is refused, before anything is recorded:
         for a value its field or link type refuses, an id that is missing, invalid or
         taken, a ``MarkupContent`` whose ``markup`` names no reStructuredText or MyST
-        parser of the project; (type ``invalid_kwargs``) for a name in ``fields`` or
-        ``links`` the project does not declare, or one given in the wrong mapping: a
-        link type in ``fields``, or a field in ``links``.
+        parser of the project, and any other validation the need fails, such as an
+        unknown need type, a constraint not in :ref:`needs_constraints`, a template that
+        does not exist, or Jinja content that does not render; (type
+        ``invalid_kwargs``) for a name in ``fields`` or ``links`` the project does not
+        declare, or one given in the wrong place: a link type in ``fields``, a field in
+        ``links``, or one of this function's own arguments (``title``, ``content``, ...)
+        in either.
     :raises ValueError: If ``state`` is ``None`` for a source that is not external.
 
     .. versionadded:: 9.2.0
@@ -1061,12 +1067,30 @@ def create_need(
             "invalid_kwargs",
             f"{misplaced!r} are link types: give them in 'links', not in 'fields'.",
         )
-    field_names = {*schema.iter_core_field_names(), *schema.iter_extra_field_names()}
-    if misplaced := sorted(links.keys() & (field_names - {"title"})):
+    #: what ``fields`` takes: the field schema's core fields (``title`` excepted, an
+    #: argument of its own) and the extra fields
+    field_names = {
+        *schema.iter_core_field_names(),
+        *schema.iter_extra_field_names(),
+    } - {"title"}
+    if misplaced := sorted(links.keys() & field_names):
         raise InvalidNeedException(
             "invalid_kwargs",
             f"{misplaced!r} are fields: give them in 'fields', not in 'links'.",
         )
+    # a name of one of this function's own arguments, unless the project declares a
+    # field or a link type of that name
+    arguments = _CREATE_NEED_ARGUMENTS - field_names - link_names
+    for given, mapping in ((fields, "fields"), (links, "links")):
+        if misplaced := sorted(given.keys() & arguments):
+            raise InvalidNeedException(
+                "invalid_kwargs",
+                f"{misplaced[0]!r} is an argument of create_need: give it as "
+                f"{misplaced[0]}=, not in {mapping!r}."
+                if len(misplaced) == 1
+                else f"{misplaced!r} are arguments of create_need: give them as "
+                f"{', '.join(name + '=' for name in misplaced)} not in {mapping!r}.",
+            )
     return _create_need(
         app,
         state,
@@ -1097,6 +1121,14 @@ def _split_values(
     fields = {k: v for k, v in values.items() if k not in link_names}
     links = {k: v for k, v in values.items() if k in link_names}
     return fields, links
+
+
+_CREATE_NEED_ARGUMENTS = frozenset(inspect.signature(create_need).parameters) - {
+    "fields",
+    "links",
+}
+"""The names of :func:`create_need`'s own arguments, which a name in its ``fields`` or
+``links`` is refused as, naming the argument, unless the project declares it."""
 
 
 def _create_need(
@@ -1477,7 +1509,8 @@ def _create_from_record(
         arch=params.pop("arch", None),
         signature=params.pop("signature", None),
         sections=params.pop("sections", None),
-        external_css=params.pop("external_css", "external_link"),
+        # ``None``: the default css class (``_generate_need`` holds it)
+        external_css=params.pop("external_css", None),
         allow_type_coercion=allow_type_coercion,
         values=params,
     )

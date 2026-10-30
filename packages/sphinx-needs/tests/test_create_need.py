@@ -411,7 +411,6 @@ def test_a_link_type_in_fields_or_a_field_in_links_is_refused(make_app, tmp_path
         create_need(app, None, NeedItemSourceUnknown(docname="index"), "req", "T")
 
 
-@pytest.mark.xfail(strict=True, reason="FR6: the message names the argument")
 def test_an_argument_of_create_need_in_fields_or_links_is_refused_naming_it(
     make_app, tmp_path
 ):
