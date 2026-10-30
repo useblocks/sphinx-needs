@@ -109,11 +109,13 @@ class NeedSourceHop:
     document: str | None = None
     """The docname, on the hop of a page the need is placed on."""
     language: str | None = None
-    """What the hop's text is written in, by the kind of hop: for a ``page`` or a
-    ``file`` hop, the file's suffix its parser keys on (``".rst"``, ``".md"``,
-    ``".json"``); for a ``code`` hop, the language's name (``"python"``, ``"cpp"``,
-    ...). The ``code`` hop of a docstring autodoc reads still records its file's suffix
-    (``".py"``), until sphinx-codelinks' code hops land and move it."""
+    """What the hop's text is written in, by the kind of hop: for a ``page`` hop, the
+    page's suffix its parser keys on (``".rst"``, ``".md"``); for a ``file`` hop, the
+    file's own suffix (``".rst"``, ``".json"``; an included ``inc.rst.txt`` records
+    ``".txt"``, whichever parser reads it); for a ``code`` hop, the language's name
+    (``"python"``, ``"cpp"``, ...). The ``code`` hop of a docstring autodoc reads still
+    records its file's suffix (``".py"``), until sphinx-codelinks' code hops land and
+    move it."""
 
 
 def placement_index(hops: tuple[NeedSourceHop, ...]) -> int | None:

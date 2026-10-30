@@ -147,8 +147,8 @@ Improvements
   favour (see Deprecations). See :func:`~sphinx_needs.api.need.create_need`.
 
 - ✨ ``NeedItemSource``: one class for where a need comes from, public from ``sphinx_needs.api``, with
-  ``NeedItemSource.from_directive(self)`` as the source of a need an extension's directive creates
-  (:issue:`2137`)
+  ``NeedItemSource.from_directive(self)`` as the source of a need an extension's directive creates and
+  ``NeedItemSource.on_page(docname, lineno=lineno)`` elsewhere (:issue:`2137`)
 
   The source :func:`~sphinx_needs.api.need.create_need` takes is one frozen class,
   :class:`~sphinx_needs.need_item.NeedItemSource`: the hops the need's text came through, and the location facts
@@ -157,9 +157,9 @@ Improvements
   directive, ``NeedItemSource.from_directive(self)`` records what a need directive records: the line the directive
   is written on (resolved through ``rst_prolog`` and includes), its parser line and content offset, and the file and
   page it is written in, after any hops given as ``first``; it takes any docutils ``Directive``, not only a
-  ``SphinxDirective``. Outside one, ``NeedItemSource([NeedSourceHop(kind="page", document=docname)],
-  lineno=lineno)`` is the source ``add_need`` built. ``NeedItemSource``, its constructor's keywords and
-  ``from_directive`` are stable; ``hops`` and the hop types, ``NeedSourceHop``, ``NeedSourcePhysical`` and
+  ``SphinxDirective``. Outside one, ``NeedItemSource.on_page(docname, lineno=lineno)`` is the source ``add_need``
+  built: its page, at that line. ``NeedItemSource``, its constructor's keywords, ``from_directive`` and ``on_page``
+  are stable; ``hops`` and the hop types, ``NeedSourceHop``, ``NeedSourcePhysical`` and
   ``NeedSourceSemantic``, now also importable from ``sphinx_needs.api``, stay provisional until they reach
   ``needs.json``. A need's ``docname``, ``lineno`` and the other location keys are unchanged, and so is
   ``NeedItemSourceProtocol``; the first build after upgrading reads every document again. See
@@ -245,15 +245,17 @@ Deprecations
 
   Each is a function now, taking its class's keywords and returning the ``NeedItemSource`` with the location keys
   that class gave, and reading the name (``from sphinx_needs.need_item import NeedItemSourceUnknown``) is a
-  ``DeprecationWarning`` at that line. ``dir(sphinx_needs.need_item)`` no longer lists them. They were not
-  documented API, and what they did beyond their keywords is gone: ``isinstance`` with one of the names raises
-  ``TypeError`` (a function is no class; test ``isinstance(source, NeedItemSource)``); the attributes ``url``
-  (``NeedItemSourceExternal``), ``path`` (``NeedItemSourceImport``), ``external_url`` and ``is_external``
-  (``NeedItemSourceUnknown``) are gone (read ``source.dict_repr``); and no combination of keywords is refused any
-  more: where the hops given disagree with a ``docname``, a ``url`` or a ``lineno``, the hops give the location
-  and a ``lineno`` given is the need's, an ``external_url`` without ``is_external`` is dropped, a missing ``docname``
-  or ``url`` leaves the source without a page or a URL, and a ``lineno`` left out beside hops whose first has a
-  line is that line.
+  ``DeprecationWarning`` at that line. They were not documented API, and what they did beyond their keywords is
+  gone: a source is a ``NeedItemSource``, so ``isinstance``, a ``match`` class pattern or a subclass naming an old
+  name raises ``TypeError`` (a function is no class: test ``isinstance(source, NeedItemSource)``), ``type(source)``
+  is never one of them, and an annotation ``NeedItemSourceUnknown | None`` evaluated at run time raises too;
+  ``dataclasses.replace`` raises ``TypeError`` (build a new source) and ``dataclasses.asdict`` gives the one class's
+  fields; the attributes ``url`` (``NeedItemSourceExternal``), ``path`` (``NeedItemSourceImport``),
+  ``external_url`` and ``is_external`` (``NeedItemSourceUnknown``) are gone (read ``source.dict_repr``);
+  ``dir(sphinx_needs.need_item)`` and ``from sphinx_needs.need_item import *`` no longer include them, and a type
+  checker no longer resolves them (they exist at run time only); and no combination of keywords is refused: given
+  ``hops``, the hops decide ``docname``, ``is_external``, ``external_url`` and, without a ``lineno``, the line,
+  while a ``lineno`` given is the need's, and an ``external_url`` without ``is_external`` is dropped.
 
 Bug fixes
 .........

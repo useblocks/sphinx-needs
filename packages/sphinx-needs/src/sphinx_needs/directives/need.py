@@ -414,7 +414,7 @@ def post_process_needs_data(app: Sphinx) -> None:
             if not isinstance(need, NeedItem):
                 raise AssertionError(
                     f"Found at least one need item that is not a NeedItem instance: {type(need)}\n"
-                    "If you are adding needs manually, consider using the add_need API."
+                    "If you are adding needs manually, consider using the create_need API."
                 )
         needs_data.needs_is_post_processed = True
 

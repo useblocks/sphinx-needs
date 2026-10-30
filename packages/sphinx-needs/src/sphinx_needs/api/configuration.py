@@ -193,7 +193,7 @@ def add_extra_option(
     parse_dynamic_functions: bool | None = None,
 ) -> None:
     """
-    Adds an extra option to the configuration. This option can then later be used inside needs or ``add_need``.
+    Adds an extra option to the configuration. This option can then later be used inside needs or ``create_need``.
 
     Same impact as using :ref:`needs_extra_options` manually.
 
