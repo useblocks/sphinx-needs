@@ -42,14 +42,13 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     scope_store,
     source_pages_store,
 )
-from sphinx_needs.api import InvalidNeedException, NeedItemSource, create_need
-
-try:  # remove at the 9.0.0 floor bump: the record path is new in Sphinx-Needs 9.0.0
-    from sphinx_needs.api import ingest_need_record
-except ImportError:  # pragma: no cover - the tests stub the name instead
-    ingest_need_record = None
-# remove at the 9.0.0 floor bump: 9.0.0's public generate_need_id replaces it
-from sphinx_needs.api.need import _make_hashed_id
+from sphinx_needs.api import (
+    InvalidNeedException,
+    NeedItemSource,
+    create_need,
+    generate_need_id,
+    ingest_need_record,
+)
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.utils import add_doc, coerce_to_boolean
@@ -141,29 +140,27 @@ _CREATION_ARGUMENTS = (
 
 def would_be_id(app: Sphinx, need: Mapping[str, Any]) -> str | None:
     """The id a one-line need is created with: its ``id`` field, else the one
-    Sphinx-Needs generates for a need without one -- ``generate_need`` calls
-    ``_make_hashed_id(<the type's prefix>, <full_title, else title>, <content>, config)``
-    (``sphinx_needs/api/need.py``, at the 9.0.0 floor), with the type, title and
-    fields :meth:`SourceTracingDirective.render_needs` passes. ``None`` when Sphinx-Needs
-    refuses the need before any id exists (an unknown type, ``needs_id_required``).
+    Sphinx-Needs generates for a need without one (``generate_need_id``), from the
+    type, title, content and ``full_title`` :meth:`SourceTracingDirective.render_needs`
+    passes. ``None`` when Sphinx-Needs refuses the need before any id exists (an unknown
+    type, ``needs_id_required``).
     """
     given = need.get("id")
     if given is not None:
         return given if isinstance(given, str) and given else None
-    config = NeedsSphinxConfig(app.config)
-    if config.id_required:
-        return None
-    types = {need_type["directive"]: need_type for need_type in config.types}
-    need_type = types.get(str(need.get("type")))
-    if need_type is None:
+    if NeedsSphinxConfig(app.config).id_required:
         return None
     full_title = need.get("full_title")
-    return _make_hashed_id(
-        need_type["prefix"],
-        str(need.get("title")) if full_title is None else str(full_title),
-        str(need.get("content", "")),
-        config,
-    )
+    try:
+        return generate_need_id(
+            app,
+            str(need.get("type")),
+            str(need.get("title")),
+            str(need.get("content", "")),
+            full_title=None if full_title is None else str(full_title),
+        )
+    except InvalidNeedException:  # an unknown type, which create_need refuses too
+        return None
 
 
 def multiline_record(
@@ -538,8 +535,6 @@ class SourceTracingDirective(SphinxDirective):
         unknown: set[str] = set()
 
         def ingest(markup: str | None) -> list[nodes.Node]:
-            # render_needs passes no block on without it (the guard for a Sphinx-Needs before the 9.0.0 floor)
-            assert ingest_need_record is not None
             created, _ = ingest_need_record(
                 self.env.app,
                 self.state,
@@ -637,17 +632,6 @@ class SourceTracingDirective(SphinxDirective):
         anchors: dict[str, tuple[str, list[tuple[int, str, str]]]] = {}
         root = src_analyse.git_root or src_analyse.analyse_config.src_dir
         multiline_needs = src_analyse.multiline_needs
-        if multiline_needs and ingest_need_record is None:
-            # remove at the 9.0.0 floor bump, with the guarded import
-            logger.warning(
-                "this sphinx-needs has no ingest_need_record; multi-line needs are "
-                f"rendered from sphinx-needs 9.0.0 on: {len(multiline_needs)} not "
-                "rendered, the one-line needs were created",
-                type="codelinks",
-                subtype="multiline_need",
-                location=self.get_location(),
-            )
-            multiline_needs = []
         markers: list[Marker] = sorted(
             [*src_analyse.oneline_needs, *multiline_needs],
             key=lambda marker: (

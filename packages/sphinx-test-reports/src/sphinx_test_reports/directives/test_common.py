@@ -3,6 +3,7 @@ A Common directive, from which all other test directives inherit the shared func
 """
 
 # fmt: off
+import hashlib
 import os
 import pathlib
 import re
@@ -14,12 +15,7 @@ from docutils.parsers.rst import Directive
 from docutils.parsers.rst.states import RSTState
 from sphinx.util import logging
 
-# `_make_hashed_id` has been sphinx-needs' spelling since its 4.0; the import narrowed to
-# `sphinx-needs>=8.5.0,<9` at the workspace import, so the `make_hashed_id` fallback this
-# used to carry could no longer run -- and no longer resolves, since the name is gone from
-# `sphinx_needs.api` entirely (measured against 8.5.0).
 from sphinx_needs.api import NeedItemSource, create_need
-from sphinx_needs.api.need import _make_hashed_id
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import InvalidNeedException
@@ -32,6 +28,27 @@ from ub_test_reports.junitparser import JUnitParser, ReportReadError
 # fmt: on
 
 logger = logging.getLogger(__name__)
+
+
+def _fallback_id(
+    need_type: str, title: str, content: str, config: NeedsSphinxConfig
+) -> str:
+    """The id of a ``test-file``, ``test-suite`` or ``test-case`` given no ``:id:``.
+
+    The need type's NAME (``testfile``, not its prefix ``TF_``), then the upper-case sha1
+    of the title (or of the content, for an empty title); with ``needs_id_from_title``,
+    the title in upper case with underscores for spaces and an underscore come first.
+    The part after the type name is cut to ``needs_id_length``.
+
+    This package's own scheme, not the id Sphinx-Needs generates, so not
+    ``generate_need_id``, which starts with the type's prefix: ``tests/test_hashed_ids_table.py``
+    pins it byte for byte. Whether to move to the type's prefix is open: #2422.
+    """
+    hashed = hashlib.sha1((title or content).encode("UTF-8")).hexdigest().upper()
+    if config.id_from_title:
+        hashed = title.upper().replace(" ", "_") + "_" + hashed
+    return f"{need_type}{hashed[: config.id_length]}"
+
 
 #: The fields the creation call of every directive is given beside the counts or the
 #: case's own: the core fields it sets (``id``, ``type``, ``title`` and ``content`` as
@@ -495,7 +512,7 @@ class TestCommonDirective(Directive):
         self.test_content = "\n".join(self.content)
         if self.name != "test-report":
             self.need_type = self.app.tr_types[self.name][0]
-            hashed_id = _make_hashed_id(
+            hashed_id = _fallback_id(
                 self.need_type,
                 self.test_name,
                 self.test_content,

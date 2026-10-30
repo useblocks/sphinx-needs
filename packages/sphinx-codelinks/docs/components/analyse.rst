@@ -368,14 +368,13 @@ the type and title.
 - **Warnings.** Every warning about a block's own content or options is
   ``codelinks.multiline_need`` -- the malformed blocks above included -- at the source file and line,
   relative to the git root; a skipped duplicate shares ``codelinks.duplicate_need`` with one-line
-  needs; the unclaimed-markup warning (and, below Sphinx-Needs 9.0.0, the one saying blocks are not
-  rendered) is at the directive. A warning about the body itself, from docutils or Sphinx (an
-  unknown role, an unresolved reference), names the source file by its absolute path, at the body's
-  line -- except for a body rendered through a template or with ``jinja_content``, whose rendered
-  text Sphinx-Needs anchors at the need (the page, at the directive's line), for a fallback body
-  on a page of neither parser (above), and for myst-parser's own warnings about a Markdown body,
-  which name the page with the body's line (myst-parser 4: the source file with ``.rst``
-  appended).
+  needs; the unclaimed-markup warning is at the directive. A warning about the body itself, from
+  docutils or Sphinx (an unknown role, an unresolved reference), names the source file by its
+  absolute path, at the body's line -- except for a body rendered through a template or with
+  ``jinja_content``, whose rendered text Sphinx-Needs anchors at the need (the page, at the
+  directive's line), for a fallback body on a page of neither parser (above), and for myst-parser's
+  own warnings about a Markdown body, which name the page with the body's line (myst-parser 4: the
+  source file with ``.rst`` appended).
 
 What a body should not contain
 ..............................
