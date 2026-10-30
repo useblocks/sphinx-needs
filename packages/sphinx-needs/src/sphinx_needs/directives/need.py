@@ -555,14 +555,17 @@ def _unions(
     schema: FieldsSchema, need: NeedItem, cache: dict[str, frozenset[str]]
 ) -> frozenset[str]:
     """The link types a ``union`` computed on ``need``
-    (:meth:`~sphinx_needs.needs_schema.LinkSchema.union_on`), read once per need type:
-    their links are their members', which alone report dead links and conditions.
-    None on a need from a needs.json, whose links no rule computed."""
+    (:meth:`~sphinx_needs.needs_schema.LinkSchema.union_on`), or a ``copy`` or
+    ``collect`` (:meth:`~sphinx_needs.needs_schema.LinkSchema.path_on`), read once per
+    need type: their links are other link types', which alone report dead links and
+    conditions. None on a need from a needs.json, whose links no rule computed."""
     if need["is_import"] or need["is_external"]:
         return frozenset()
     if (unions := cache.get(need["type"])) is None:
         unions = cache[need["type"]] = frozenset(
-            link.name for link in schema.iter_link_fields() if link.union_on(need)
+            link.name
+            for link in schema.iter_link_fields()
+            if link.union_on(need) or link.path_on(need)
         )
     return unions
 
@@ -621,11 +624,16 @@ def build_backlinks(
     unions_by_type: dict[str, frozenset[str]] = {}
     for need in needs.values():
         need.sort_backlinks()
-        # every dead link, a union's too; a union's computed links do not decide
-        # which are forbidden: its members do
+        # every dead link, a union's too (its members' on the same need); a union's
+        # computed links do not decide which are forbidden: its members do. A copy's
+        # or collect's are written on other needs, which they flag: counting them here
+        # would flag every need below a dead link
         dead_links = _dead_links(need, needs)
         unions = _unions(schema, need, unions_by_type)
-        need["has_dead_links"] = bool(dead_links)
+        paths = frozenset(
+            link.name for link in schema.iter_link_fields() if link.path_on(need)
+        )
+        need["has_dead_links"] = any(lt not in paths for lt, _ in dead_links)
         need["has_forbidden_dead_links"] = bool(
             any(
                 not allow_dead_links.get(lt, False)

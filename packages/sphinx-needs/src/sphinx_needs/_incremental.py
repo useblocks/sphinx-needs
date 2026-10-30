@@ -40,7 +40,8 @@ the pages whose roles name it only when nothing else in the project may read one
 say, re-writes nothing more. Every need-relevant page is re-written when a
 changed ``needextend`` has a filter, on every change in a project with links computed to
 needs not named before the needs are resolved (a dynamic function in a link field or in
-an extend's links, a ``links`` rule, a ``content_links`` rule with ``from``) or with an
+an extend's links, a ``links`` rule, a ``content_links`` rule with ``from``, a
+``collect`` on a link type, a ``copy`` on a link type over a computed one) or with an
 extend by filter whose call reads needs it does not name, and when a need affected is one
 an extend by filter links to or names in its call. Needs from ``needs_external_needs`` are
 not compared (#353).
@@ -91,7 +92,9 @@ VIEW_CATEGORIES: Final = (
 )
 
 #: The derive kinds computing a link list whose targets are not named by the need's
-#: own links: every need a ``where`` or a ``join`` selects.
+#: own links: every need a ``where`` or a ``join`` selects. A ``collect`` on a link
+#: type is one too, and a ``copy`` on a link type over a computed one
+#: (:func:`_path_unnamed`).
 _UNNAMED_LINK_KINDS: Final = frozenset({"links"})
 
 #: The derive kinds reading nothing but the need itself.
@@ -674,8 +677,10 @@ def _read_rule(rule: Derive | None, schema: FieldsSchema, reads: _Reads) -> None
             # its own back links: the needs linking to it
             reads.back = True
         return
-    if rule.kind in _UNNAMED_LINK_KINDS or (
-        rule.kind == "content_links" and rule.from_need is not None
+    if (
+        rule.kind in _UNNAMED_LINK_KINDS
+        or (rule.kind == "content_links" and rule.from_need is not None)
+        or _path_unnamed(rule, schema)
     ):
         reads.unnamed_links = True
         return
@@ -710,6 +715,20 @@ def _read_rule(rule: Derive | None, schema: FieldsSchema, reads: _Reads) -> None
     elif back and rule.from_need is None and rule.join is None:
         # its own back links (``copy`` of its own field)
         reads.back = True
+
+
+def _path_unnamed(rule: DeriveRule, schema: FieldsSchema) -> bool:
+    """Whether a ``copy`` or ``collect`` on a link type (a path) links needs the need's
+    own links do not name: a ``collect`` (the links ``field`` holds on the needs
+    ``over`` names, a chain's far ends), and a ``copy`` over a link type a rule computes.
+    A ``copy`` over a link type written in the needs links exactly the needs its own
+    links of ``over`` name (a link to a part, its need), which are read as links."""
+    if not rule.path:
+        return False
+    if rule.kind != "copy" or rule.over is None:
+        return True
+    link = schema.get_link_field(rule.over)
+    return link is None or link.derived
 
 
 def _names_other_written(text: str) -> bool:

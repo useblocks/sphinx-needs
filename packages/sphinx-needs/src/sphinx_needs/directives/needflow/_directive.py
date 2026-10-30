@@ -95,7 +95,11 @@ class NeedflowDirective(FilterBase):
         targetid = f"needflow-{self.env.docname}-{id}"
 
         needs_schema = SphinxNeedsData(self.env).get_schema()
-        all_link_types = ",".join(link.name for link in needs_schema.iter_link_fields())
+        # without the option, every link type but the summaries, which materialise a
+        # path rather than an edge: drawn, and walked from :root_id:, only when named
+        all_link_types = ",".join(
+            link.name for link in needs_schema.iter_link_fields() if not link.summary
+        )
         link_types = split_link_types(
             self.options.get("link_types", all_link_types), location
         )

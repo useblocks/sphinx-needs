@@ -64,6 +64,7 @@ from sphinx_needs.defaults import (
 )
 from sphinx_needs.derive import (
     CORE_LINK_TYPES,
+    PATH_KINDS,
     DeriveInvalid,
     DeriveProblem,
     DeriveRule,
@@ -71,13 +72,13 @@ from sphinx_needs.derive import (
     beside_clause,
     beside_message,
     by_type_message,
+    carries_links,
     check_derive_rules,
     copy_on_derived_message,
     copy_problem,
     core_message,
     invalid_entry_message,
     invalid_message,
-    is_union,
     parse_derive,
     parse_derive_by_type,
 )
@@ -907,6 +908,7 @@ _SHAPES: Mapping[str, tuple[str, Callable[[object], bool]]] = {
     "outgoing": ("a string", lambda v: isinstance(v, str)),
     "copy": ("a boolean", lambda v: isinstance(v, bool)),
     "allow_dead_links": ("a boolean", lambda v: isinstance(v, bool)),
+    "summary": ("a boolean", lambda v: isinstance(v, bool)),
     "style_part": ("a string", lambda v: isinstance(v, str)),
     "style_start": ("a string", lambda v: isinstance(v, str)),
     "style_end": ("a string", lambda v: isinstance(v, str)),
@@ -1064,6 +1066,15 @@ def _normalise_declarations(
                 "the entry is ignored"
             )
             continue
+        if table == "links" and "summary" in entry:
+            # a walker reads a link type by its name, so its stance is one per name
+            findings.append(
+                f"{where} has 'summary', which a need type's entry cannot give: "
+                "whether a link type is a summary is the same on every need type, and "
+                "is given on its needs_links entry (a link type declared on need types "
+                "alone cannot be a summary yet); the key is ignored"
+            )
+            entry = {key: item for key, item in entry.items() if key != "summary"}
         wrong, text = _not_of_their_shape(where, entry, known)
         if wrong:
             findings.append(text)
@@ -2585,16 +2596,21 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     )
                     derive_problems.extend(by_type_problems)
             authored = derive is None and by_type is None
-            # a union reports no dead link of its own, so where every rule is one its
-            # allow_dead_links would say nothing: reported beside it, below, and
-            # ignored; beside another rule it is that rule's. Decided here from the
-            # rules as read, and again from the rules as checked, where a union that
-            # cannot be read is no union and the key is kept
-            # (_report_derive_problems)
+            # a union, or a copy or collect, reports no dead link of its own (its links
+            # are other link types'), so where every rule is one its allow_dead_links
+            # would say nothing: reported beside it, below, and ignored; beside another
+            # rule it is that rule's. Decided here from the rules as read, and again
+            # from the rules as checked, where a union or a path that cannot be read
+            # carries nothing and the key is kept (_report_derive_problems)
             rules = [r for r in (derive, *(by_type or {}).values()) if r is not None]
             dead_beside = (
-                "allow_dead_links" in link and bool(rules) and all(map(is_union, rules))
+                "allow_dead_links" in link
+                and bool(rules)
+                and all(map(carries_links, rules))
             )
+            # a link type a copy or collect computes is a summary: its links are paths
+            path = any(getattr(rule, "kind", None) in PATH_KINDS for rule in rules)
+            summary_beside = path and link.get("summary") is False
             where = f"{config_source}[{name!r}]"
             # a target_types not of its shape is ignored, as a need type's entry's is
             given_targets = "target_types" in link
@@ -2611,6 +2627,25 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 if given_targets and authored
                 else None
             )
+            summary = link.get("summary", False)
+            if "summary" in link:
+                wrong, text = _not_of_their_shape(where, link, ("summary",))
+                if wrong:
+                    log_warning(LOGGER, text, "config", None)
+                    summary = False
+            summary = summary or path
+            copied = link.get("copy", False)
+            if summary and copied is True and authored:
+                # a copy in links would draw a summary link as an edge of links, which
+                # every view reads
+                log_warning(
+                    LOGGER,
+                    f"{where} has 'copy = true' beside 'summary = true': a copy in "
+                    "links would make a summary link an edge; copy is ignored",
+                    "config",
+                    None,
+                )
+                copied = False
             link_field = LinkSchema(
                 name=name,
                 description=link.get("description", "Link field"),
@@ -2625,9 +2660,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 parse_conditions=link.get("parse_conditions", True),
                 directive_option=authored,
                 display=display_config,
-                copy=link.get("copy", False),
+                copy=copied,
                 allow_dead_links=link.get("allow_dead_links", False)
                 and not dead_beside,
+                summary=summary,
                 target_types=target_types,
                 derive=derive,
                 derive_by_type=by_type,
@@ -2639,6 +2675,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         ("default", "default" in link),
                         ("predicates", "predicates" in link),
                         ("target_types", given_targets),
+                        ("summary", summary_beside),
                         ("allow_dead_links", dead_beside),
                     )
                     if beside_key
@@ -2669,6 +2706,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         ("default", refused),
                         ("predicates", "predicates" in link),
                         ("target_types", given_targets),
+                        ("summary", summary_beside),
                         ("allow_dead_links", dead_beside),
                     )
                     if refused_key
@@ -3029,7 +3067,15 @@ def _beside_by_type_problems(
                 name,
                 True,
                 beside_by_type_message(
-                    name, on_link=True, keys=beside, spelling=spelling, entries=entries
+                    name,
+                    on_link=True,
+                    keys=beside,
+                    spelling=spelling,
+                    entries=entries,
+                    path=any(
+                        isinstance(rule, DeriveRule) and rule.path
+                        for rule in (link_field.derive_by_type or {}).values()
+                    ),
                 ),
                 part="beside",
             )
@@ -3116,7 +3162,7 @@ def _report_derive_problems(
             if rule is not None
             and not (isinstance(rule, DeriveInvalid) and rule.fallback)
         ]
-        if rules and all(map(is_union, rules)):
+        if rules and all(map(carries_links, rules)):
             continue
         schema.replace_field(dataclasses.replace(link, allow_dead_links=True))
         withdrawn = {id(problem) for problem in refused}
@@ -3136,8 +3182,14 @@ def _report_derive_problems(
     # keys refused beside it still are: its cycle's finding, replacing theirs, says so
     for key, problem in checked.items():
         if problem.on_types and (beside := read.get(key)) is not None and beside.beside:
+            target = schema.global_declaration(key[1])
+            path = isinstance(target, LinkSchema) and any(
+                isinstance(rule, DeriveRule) and rule.path
+                for rule in (target.derive, *(target.derive_by_type or {}).values())
+            )
             findings[key] = dataclasses.replace(
-                problem, message=problem.message + beside_clause(beside.beside)
+                problem,
+                message=problem.message + beside_clause(beside.beside, path=path),
             )
     if (copied := copy_problem(schema)) is not None and (
         True,

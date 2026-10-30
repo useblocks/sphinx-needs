@@ -87,7 +87,8 @@ def generate_needs_schema(
 
     A derived field or link type (one with a ``derive`` or ``derive_by_type`` rule) is
     marked ``"readOnly": true``; its ``default`` is the value of a need type without a
-    rule.
+    rule. A summary link type (``summary``) is marked ``"summary": true``, and so are
+    its back links: a reader walking every link type as edges leaves them out.
 
     A link type's ``default`` is written as a need's links are: each link with its
     condition under ``include_link_conditions`` (``needs_json_include_link_conditions``),
@@ -161,6 +162,10 @@ def generate_needs_schema(
             "field_type": "backlinks",
             "default": [],
         }
+        if link.summary:
+            # a path, not an edge: a reader walking every link type leaves both out
+            properties[link.name]["summary"] = True
+            properties[link.name + "_back"]["summary"] = True
 
     for name in exclude_properties:
         properties.pop(name, None)
