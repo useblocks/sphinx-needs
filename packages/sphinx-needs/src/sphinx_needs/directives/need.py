@@ -5,11 +5,12 @@ from collections.abc import Callable, Iterable, Sequence
 from typing import Any, Final
 
 from docutils import nodes
-from sphinx.addnodes import desc_name, desc_signature
+from sphinx.addnodes import desc_name, desc_signature, desc_signature_line
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs._need_source import directive_hops, placement_semantic
 from sphinx_needs._wording import joined
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
@@ -175,12 +176,15 @@ class NeedDirective(SphinxDirective):
         # stays on the parser's counter as well: both are handed to ``nested_parse`` in
         # ``_create_need_node`` as offsets into that counter's space, not read as source
         # lines.
+        # The hops record the file the directive is written in (an included file's own,
+        # in an include) with its true lines only; ``lineno`` is checked against them.
         _, resolved_lineno = self.get_source_info()
         source = NeedItemSourceDirective(
             docname=self.env.docname,
             lineno=resolved_lineno or self.lineno,
             lineno_content=self.content_offset + 1,
             parser_lineno=self.lineno,
+            hops=directive_hops(self),
         )
 
         try:
@@ -282,11 +286,26 @@ def get_sections_and_signature_and_needs(
                     break
                 if isinstance(sibling, desc_signature):
                     # Check the child of the found signature for the text content/node.
-                    for desc_child in sibling.children:
-                        if isinstance(desc_child, desc_name) and isinstance(
+                    # The C and C++ domains put the name in a desc_signature_line,
+                    # and they and the JavaScript domain wrap it in a desc_sig_name.
+                    for desc_child in (
+                        line_child
+                        for child in sibling.children
+                        for line_child in (
+                            child.children
+                            if isinstance(child, desc_signature_line)
+                            else [child]
+                        )
+                    ):
+                        if not isinstance(desc_child, desc_name):
+                            continue
+                        if desc_child.children and isinstance(
                             desc_child.children[0], nodes.Text
                         ):
                             signature = desc_child.children[0]
+                        elif desc_child.astext():
+                            # an empty name is no name
+                            signature = nodes.Text(desc_child.astext())
                 if signature:
                     break
 
@@ -338,6 +357,9 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
         need_info["sections"] = tuple(sections)
         need_info["signature"] = str(signature) if signature is not None else None
         need_info["parent_needs"] = parent_needs
+        # the second phase of the need's source: the semantic location of its placement
+        # hop, found from the doctree on its own (not from the legacy values above)
+        need_info._set_placement_semantic(placement_semantic(need_node))
 
         if need_node.get("hidden"):
             hidden_needs.append(need_node)

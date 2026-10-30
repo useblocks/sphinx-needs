@@ -46,7 +46,7 @@ build:
       # Those paths are ALMOST the complete set of inputs -- ub-test-reports is one
       # because this site documents it and installs it from the checkout below,
       # sphinx-ai-index because it writes this site's `ai_docs_index.json` and is installed
-      # from the checkout too, as is ub-needs-exchange, ahead of sphinx-needs, and
+      # from the checkout too, as are ub-needs-exchange and ub-project, ahead of sphinx-needs, and
       # `docs-theme/` because `docs/conf.py` loads the useblocks look for furo from it -- and the one exception is deliberate: `docs/conf.py` also
       # reads `vendor/plantuml/pin.toml` and
       # the jar beside it. A bump there changes only which renderer version draws the
@@ -60,8 +60,8 @@ build:
           echo "origin/master is not available in this clone; building to be safe"
           exit 0
         fi
-        if git diff --quiet origin/master -- packages/sphinx-test-reports/ packages/ub-test-reports/ packages/sphinx-ai-index/ packages/ub-needs-exchange/ docs-theme/; then
-          echo "nothing under packages/sphinx-test-reports/, packages/ub-test-reports/, packages/sphinx-ai-index/, packages/ub-needs-exchange/ or docs-theme/ changed; skipping this build (exit 183)"
+        if git diff --quiet origin/master -- packages/sphinx-test-reports/ packages/ub-test-reports/ packages/sphinx-ai-index/ packages/ub-needs-exchange/ packages/ub-project/ docs-theme/; then
+          echo "nothing under packages/sphinx-test-reports/, packages/ub-test-reports/, packages/sphinx-ai-index/, packages/ub-needs-exchange/, packages/ub-project/ or docs-theme/ changed; skipping this build (exit 183)"
           exit 183
         fi
 
@@ -94,6 +94,14 @@ python:
     # need none of this.
     - method: pip
       path: packages/ub-needs-exchange
+    # ub-project before sphinx-needs and ub-test-reports, from this checkout too: both read
+    # `ubproject.toml` through it, and both depend on it at runtime, so on their own pip
+    # would resolve `ub-project` from PyPI -- the released version, not the one beside it.
+    # That breaks the build as soon as the tree uses a name the release lacks (an
+    # ImportError at `conf.py` time), and otherwise documents code the workspace no longer
+    # has. With it already installed the requirement is satisfied and pip fetches nothing.
+    - method: pip
+      path: packages/ub-project
     - method: pip
       path: packages/sphinx-needs
     # sphinx-ai-index next, from this checkout too -- it writes the `ai_docs_index.json` this

@@ -42,10 +42,11 @@ def short_hash(value: str, length: int = 5) -> str:
 _PARAMETERISED = re.compile(r"^(?P<name>[^\[]+)(?:\[(?P<param>.*)\])?$")
 
 
-def split_case_name(name: str) -> tuple[str, str]:
-    """``("test_x", "a-b")`` for ``"test_x[a-b]"``, ``("test_x", "")`` for
+def split_case_name(name: str) -> tuple[str, str | None]:
+    """``("test_x", "a-b")`` for ``"test_x[a-b]"``, ``("test_x", None)`` for
     ``"test_x"``: the name is always there, the parameter only when pytest
-    spelled one.
+    spelled one (``""`` for an empty ``[]``), and ``None`` -- a null field, never
+    ``""`` -- when it did not.
 
     One definition for the build's directives and the converter, so an
     imported need and a locally created one for the same case agree on
@@ -53,8 +54,8 @@ def split_case_name(name: str) -> tuple[str, str]:
     """
     match = _PARAMETERISED.match(name)
     if match is None:
-        return name, ""
-    return match.group("name"), match.group("param") or ""
+        return name, None
+    return match.group("name"), match.group("param")
 
 
 def case_display_name(classname: str, name: str) -> str:

@@ -10,7 +10,8 @@ project, built with the ``needs`` builder, and three things are asserted:
   it left them out (``needs_defaults_removed``), as a reader reads them,
   the fields pinned as unset, the fields pinned as absent, the needs pinned as not
   created, the fields a written record pinned as leaving out, the pinned keys of a
-  field's schema, and the findings of the per-type declaration contract, as a multiset;
+  field's schema, and the findings of the per-type declaration contract, as a multiset
+  (with the severity of a need failing its type's declaration where a pin gives one);
 * the number of cases, so that a trimmed corpus is a red test rather than quietly reduced
   coverage;
 * the shape of every case, so that a case without a complete expectation cannot pass by
@@ -25,6 +26,7 @@ their field in a form the warning stream can be read for, and which are read fro
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import tomllib
@@ -53,7 +55,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformanc
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 89
+EXPECTED_CASE_COUNT = 123
 
 #: The cases of the section "an entry naming a default type", the only ones whose
 #: ``needs_types`` may hold an entry with neither a ``title`` nor a ``prefix``.
@@ -83,27 +85,50 @@ SHARED_CODES = frozenset(
         "link_fail",
         "link_target_type",
         "external_link_target_type",
+        "id_regex",
     }
 )
 
-#: The codes only ubCode reports: none in this corpus.
-UBCODE_ONLY_CODES: frozenset[str] = frozenset()
+#: The codes only ubCode reports: ``id_regex``, a need whose id fails an id_regex,
+#: which ubCode keeps where sphinx-needs does not create it (``create_need``).
+UBCODE_ONLY_CODES: frozenset[str] = frozenset({"id_regex"})
 
-#: The configuration the runner gives every case besides its ``ubproject.toml``.
+#: The configuration the runner gives every case besides its ``ubproject.toml``: its
+#: ``extensions`` are sphinx-needs, then the case's own.
 CONF_PY = """\
-extensions = ["sphinx_needs"]
+extensions = {extensions!r}
 needs_from_toml = "ubproject.toml"
 needs_build_json = True
 """
+
+#: The extensions a case may load besides sphinx-needs (its ``extensions`` key): those
+#: whose need types and fields ubCode models from the same ``ubproject.toml`` table, so
+#: both tools can run the case; each with the need types it registers, which a bare
+#: entry of such a case may name.
+EXTENSIONS = {"sphinx_test_reports": frozenset({"testfile", "testsuite", "testcase"})}
 
 #: The title the runner puts above every case's ``source``.
 TITLE = "Case\n====\n\n"
 
 #: The positions of a found finding.
-KEYS = ("code", "need", "field", "type")
+KEYS = ("code", "need", "field", "type", "severity")
+
+#: The codes whose findings have a severity: a need failing its type's declaration.
+SEVERITY_CODES = frozenset({"field_fail", "link_fail", "create_need"})
+
+#: The severities of the contract, from the type the schema validation logs a finding
+#: under (``schema_violations.json`` writes it as each finding's ``type``).
+SEVERITY_OF_LOG_TYPE = {
+    "sn_schema_violation": "violation",
+    "sn_schema_warning": "warning",
+    "sn_schema_info": "info",
+}
 
 #: the entry a finding of the schema's build names, and the field or link type in it
-_ENTRY = re.compile(r"needs_types\['([^']+)'\](?:\.(?:fields|links)\['([^']+)'\])?")
+#: (a ``back_links['<l>']`` entry names the back links it counts, ``<l>_back``)
+_ENTRY = re.compile(
+    r"needs_types\['([^']+)'\](?:\.(fields|links|back_links)\['([^']+)'\])?"
+)
 #: the first field, option or link type a message names (a needextend's ``+``/``-``
 #: of an option stripped)
 _FIELD = re.compile(r"(?:[Ff]ield|[Oo]ption|[Ll]ink type) '[+-]?([^']+)'")
@@ -156,8 +181,10 @@ def test_every_case_has_a_complete_expectation() -> None:
             "files",
             "python_only",
             "ubcode_only",
+            "extensions",
             "expect",
         }, name
+        assert set(case.get("extensions", [])) <= set(EXTENSIONS), name
         assert case["why"] and case["config"] and case["source"], name
         assert not (case.get("python_only") and case.get("ubcode_only")), name
         # the default need types are replaced by a `needs_types` declaring a type: a
@@ -172,10 +199,17 @@ def test_every_case_has_a_complete_expectation() -> None:
             else [(entry.get("directive"), entry) for entry in types]
         )
         assert entries, name
+        extension_types = {
+            need_type
+            for extension in case.get("extensions", [])
+            for need_type in EXTENSIONS[extension]
+        }
         for directive, entry in entries:
             assert ("title" in entry) == ("prefix" in entry), (name, directive)
-            assert "title" in entry or (
-                name in BARE_ENTRY_CASES and directive != "need"
+            assert (
+                "title" in entry
+                or (name in BARE_ENTRY_CASES and directive != "need")
+                or directive in extension_types
             ), (name, directive)
         expect = case["expect"]
         assert "findings" in expect, name
@@ -200,6 +234,13 @@ def test_every_case_has_a_complete_expectation() -> None:
         for finding in expect["findings"]:
             assert set(finding) <= set(KEYS), name
             assert finding["code"] in SHARED_CODES, name
+            # a code only ubCode reports is pinned by a case only ubCode runs
+            if finding["code"] in UBCODE_ONLY_CODES:
+                assert case.get("ubcode_only"), name
+            # only a need failing its type's declaration has a severity
+            if "severity" in finding:
+                assert finding["code"] in SEVERITY_CODES, name
+                assert finding["severity"] in SEVERITY_OF_LOG_TYPE.values(), name
 
 
 def test_the_corpus_header_records_where_it_is_canonical() -> None:
@@ -212,9 +253,49 @@ def test_the_corpus_header_records_where_it_is_canonical() -> None:
     assert "THIS copy is CANONICAL" in header
 
 
+def test_a_case_loading_an_extension_loads_it_beside_sphinx_needs() -> None:
+    """A case's ``extensions`` are added to its ``conf.py`` after sphinx-needs; a case
+    naming none loads sphinx-needs alone."""
+    conf = {str(path): text for path, text in _files(EXTENSION_CASE)}["conf.py"]
+    assert conf.startswith("extensions = ['sphinx_needs', 'sphinx_test_reports']\n"), (
+        conf
+    )
+    plain = {"config": "", "source": ""}
+    conf = {str(path): text for path, text in _files(plain)}["conf.py"]
+    assert conf.startswith("extensions = ['sphinx_needs']\n"), conf
+
+
+def test_a_case_loading_an_extension_that_is_not_installed_is_skipped(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The release's compat cell installs sphinx-needs' own dependencies alone, where
+    the extension is absent: its cases are skipped, by name, not failed (#2369).
+    Whether it is installed here is decided by ``find_spec``, patched both ways, so
+    this test holds in that cell too."""
+    assert _skip({"config": "", "source": ""}) is None
+    monkeypatch.setattr(importlib.util, "find_spec", lambda _name: object())
+    assert _skip(EXTENSION_CASE) is None
+    monkeypatch.setattr(importlib.util, "find_spec", lambda _name: None)
+    assert _skip(EXTENSION_CASE) == "sphinx_test_reports is not installed"
+    assert _skip({"config": "", "source": ""}) is None
+
+
+#: a case loading sphinx-test-reports
+EXTENSION_CASE = {"config": "", "source": "", "extensions": ["sphinx_test_reports"]}
+
+
 def _files(case: Mapping[str, Any]) -> list[tuple[Path, str]]:
     """The case's project: its configuration, its document, and its other files."""
-    return case_files(case, conf_py=CONF_PY, title=TITLE)
+    extensions = ["sphinx_needs", *case.get("extensions", [])]
+    return case_files(case, conf_py=CONF_PY.format(extensions=extensions), title=TITLE)
+
+
+def _skip(case: Mapping[str, Any]) -> str | None:
+    """Why the case cannot run here: an extension it loads is not installed."""
+    for extension in case.get("extensions", []):
+        if importlib.util.find_spec(extension) is None:
+            return f"{extension} is not installed"
+    return None
 
 
 @pytest.mark.parametrize(
@@ -268,24 +349,29 @@ def test_an_omitted_pin_needs_a_version_that_says_it_left_defaults_out() -> None
     ]
 
 
-def _describe(code: str, message: str) -> tuple[str | None, str | None]:
-    """The field and the need type a finding names.
+def _describe(code: str, message: str) -> tuple[str | None, str | None, str | None]:
+    """The field and the need type a finding names, and its severity.
 
     A finding of the schema's build names its entry, ``needs_types['<t>']``, and the
-    field or link type in it, ``.fields['<f>']`` or ``.links['<f>']``; any other names
+    field or link type in it, ``.fields['<f>']`` or ``.links['<f>']``, or the back links
+    it counts, ``.back_links['<l>']``, which are ``<l>_back``; any other names
     its field as ``Field``/``Option``/``Link type '<f>'`` (or a link's ``field '<l>'``),
     and its type as its code says (``Need type '<t>'`` for ``type_inherits``;
     ``on need type '<t>'`` for ``undeclared_for_type`` and ``needextend``; the TARGET's
     ``target need type '<t>'`` for ``link_target_type`` and
-    ``external_link_target_type``).
+    ``external_link_target_type``). Of the codes read from the warning stream, only
+    ``create_need`` has a severity: a need not created is a ``violation``.
     """
     field = _FIELD.search(message)
     field_name = field[1] if field else None
+    severity = "violation" if code == "create_need" else None
     entry = _ENTRY.search(message)
     if entry is not None:
-        return entry[2] or field_name, entry[1]
+        if entry[2] == "back_links":
+            return f"{entry[3]}_back", entry[1], severity
+        return entry[3] or field_name, entry[1], severity
     need_type = _TYPE[code].search(message) if code in _TYPE else None
-    return field_name, need_type[1] if need_type else None
+    return field_name, need_type[1] if need_type else None, severity
 
 
 def _violations(subtype: str) -> Reader:
@@ -293,7 +379,8 @@ def _violations(subtype: str) -> Reader:
     ``link_fail``), from the ``schema_violations.json`` the validation writes beside
     ``needs.json`` (``sphinx_needs.schema.process``): its ``validation_warnings`` maps a
     need id to that need's violations, each with its ``subtype`` and the field or link
-    type in its ``details``. The file is written on every build that validates, so its
+    type in its ``details``, and the type it is logged under, which is its severity
+    (:data:`SEVERITY_OF_LOG_TYPE`). The file is written on every build that validates, so its
     absence fails the case; a build whose configuration switches the validation off
     (``schema_validation_enabled = false``) has neither the file nor these findings."""
 
@@ -306,13 +393,19 @@ def _violations(subtype: str) -> Reader:
         for need_id, violations in report["validation_warnings"].items():
             for violation in violations:
                 if violation["subtype"] == subtype:
-                    yield (subtype, need_id, violation["details"].get("field"), None)
+                    yield (
+                        subtype,
+                        need_id,
+                        violation["details"].get("field"),
+                        None,
+                        SEVERITY_OF_LOG_TYPE[violation["type"]],
+                    )
 
     return read
 
 
 @pytest.mark.parametrize(
-    "test_app,case", params(CASES, files=_files), indirect=["test_app"]
+    "test_app,case", params(CASES, files=_files, skip=_skip), indirect=["test_app"]
 )
 def test_case(test_app: Any, case: dict[str, Any]) -> None:
     app = test_app

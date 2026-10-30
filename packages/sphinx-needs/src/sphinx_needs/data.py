@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 14
+ENV_DATA_VERSION: Final = 16
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -90,7 +90,23 @@ one). An unbumped rebuild over an existing ``_build`` unpickles needs without it
 the first write into one ends with an ``AttributeError`` rather than re-reading the
 documents.
 
-Version 14 records, at read time, what an incremental build needs to re-write the pages
+Version 14 adds the hops to every ``NeedItemSource*`` class (where a need's text came
+from, :mod:`sphinx_needs._need_source`) and changes the fields those slotted dataclasses
+store. They pickle their fields by position, so an unbumped rebuild over an existing
+``_build`` unpickles every source of an unchanged document with its values in the wrong
+fields: a directive's old ``docname`` is read as its hops, and an API need's
+``dict_repr`` as its hops, leaving the need without its location keys, so the first
+``need["docname"]`` of it ends with an ``AttributeError`` rather than re-reading the
+documents.
+
+Version 15 changes what the stored values mean again: ``c.is_a('req')``, which 9.1.0
+did not know (an invalid filter, and a ``where`` refused as ``needs.derive_invalid``),
+now selects the needs of a type and of the types inheriting from it, and a derived
+field reading it computes. The configuration does not change, so without the bump an
+upgraded build would keep the empty selections and values on the pages whose sources
+did not change.
+
+Version 16 records, at read time, what an incremental build needs to re-write the pages
 that show a need which changed: the category of every view (``needtable``,
 ``needflow``, ...) in the documents' categories, and the needs each document's need
 roles reference (``_needs_role_refs``). An environment pickled before it has neither,

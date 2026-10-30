@@ -200,6 +200,10 @@ jobs:
           name: dist
           path: dist/
           if-no-files-found: error
+          # the publish job below downloads it within this run; after that it only serves a
+          # re-run. At the 90-day default, every member's dist (up to 29 MB per release)
+          # accumulates and fills the org's Actions storage, so keep it for a week.
+          retention-days: 7
 
   # GitHub CREATES an environment a workflow names and that does not exist, with no
   # protection rules at all -- so this `environment:` is a fence only for the four names

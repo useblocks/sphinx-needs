@@ -10,6 +10,7 @@ from sphinx.util import logging
 # from docutils import nodes
 from sphinx_needs.api import (
     add_dynamic_function,
+    add_field,
     add_need_type,
 )
 from sphinx_needs.exceptions import (
@@ -36,9 +37,11 @@ from sphinx_test_reports.exceptions import InvalidConfigurationError
 from sphinx_test_reports.functions import tr_link
 from ub_test_reports.fields import (
     FIELDS,
+    NEED_KINDS,
     RENAMEABLE_FIELDS,
     RESERVED_NAMES,
     declaration,
+    need_kinds,
 )
 from ub_test_reports.projectconfig import (
     BRIDGE_KEYS,
@@ -54,44 +57,41 @@ from ub_test_reports.projectconfig import (
 
 VERSION = __version__
 
-try:
-    # sphinx-needs >= 7.0: fields are registered through add_field.
-    from sphinx_needs.api import add_field as _add_field
 
-    def _register_field(app: Sphinx, name: str, role: str | None = None) -> None:
-        type_, description = declaration(name, role)
-        try:
-            # sphinx-needs types `schema=` as a union of TypedDicts; this passes the
-            # equivalent plain mapping, which is what it has always passed. Narrowing it
-            # properly means importing `FieldSchemaTypes` from `sphinx_needs.schema.config`
-            # -- an internal path the ImportError fallback below cannot depend on.
-            _add_field(name, description, schema={"type": type_})  # ty: ignore[invalid-argument-type]
-        except NeedsApiConfigWarning:
-            # Already registered, e.g. via needs_fields or needs_extra_options
-            # in conf.py. Anything else is a real error and must surface.
-            logging.getLogger(__name__).debug(
-                f"Field '{name}' already registered, skipping"
-            )
+def _register_field(app: Sphinx, name: str, role: str | None = None) -> None:
+    """Register one field with sphinx-needs, on the need types that carry it.
 
-except ImportError:
-    from sphinx_needs.api import add_extra_option as _add_extra_option
-
-    def _register_field(app: Sphinx, name: str, role: str | None = None) -> None:
-        # add_extra_option takes description and schema from sphinx-needs
-        # 6.0.1 on, which is the package's floor.
-        type_, description = declaration(name, role)
-        try:
-            _add_extra_option(
-                # the same plain mapping, and the same reason, as the `_add_field` call above
-                app,
-                name,
-                description=description,
-                schema={"type": type_},  # ty: ignore[invalid-argument-type]
-            )
-        except NeedsApiConfigWarning:
-            logging.getLogger(__name__).debug(
-                f"Field '{name}' already registered, skipping"
-            )
+    The kinds of need setting the field (:func:`~ub_test_reports.fields.need_kinds`)
+    are mapped to the need types ``tr_file``, ``tr_suite`` and ``tr_case`` name, and
+    the field is declared on those alone (#2372): a project's own need type carrying
+    it names it in its ``needs_types`` entry, which declares it there too.
+    """
+    type_, description = declaration(name, role)
+    need_types = dict(
+        zip(
+            NEED_KINDS,
+            (app.config.tr_file[1], app.config.tr_suite[1], app.config.tr_case[1]),
+            strict=True,
+        )
+    )
+    try:
+        # sphinx-needs types `schema=` as a union of TypedDicts; this passes the
+        # equivalent plain mapping, which is what it has always passed. Narrowing it
+        # properly means importing `FieldSchemaTypes` from `sphinx_needs.schema.config`,
+        # an internal path.
+        add_field(
+            name,
+            description,
+            schema={"type": type_},  # ty: ignore[invalid-argument-type]
+            types=[need_types[kind] for kind in need_kinds(name, role)],
+        )
+    except NeedsApiConfigWarning:
+        # Already registered, e.g. via needs_fields or needs_extra_options
+        # in conf.py, which is then the field, on every need type. Anything
+        # else is a real error and must surface.
+        logging.getLogger(__name__).debug(
+            f"Field '{name}' already registered, skipping"
+        )
 
 
 def setup(app: Sphinx) -> dict[str, object]:

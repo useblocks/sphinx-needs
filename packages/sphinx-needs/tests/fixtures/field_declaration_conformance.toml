@@ -17,10 +17,11 @@
 #
 # Rules for every runner:
 #   - a case is one project. `config` is its `ubproject.toml` (the `[needs]` configuration
-#     only); `source` is the body of its one reStructuredText document, `index.rst`, under
-#     a title the runner adds; `files` (optional) are other files of the project, relative
-#     to the case directory. A case writes only inside its own directory: a `files` key
-#     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
+#     only, but for a case loading an extension, below); `source` is the body of its one
+#     reStructuredText document, `index.rst`, under a title the runner adds; `files`
+#     (optional) are other files of the project, relative to the case directory. A case
+#     writes only inside its own directory: a `files` key that would land outside it
+#     (`../x.json`) is a broken case, and the runner refuses it
 #   - a case declares ITS OWN need types, each with a `title` and a `prefix`: a
 #     `needs_types` that is given replaces the default list, so no case relies on `req` or
 #     `spec` existing unless it declares them. The cases use the mapping shape,
@@ -35,7 +36,8 @@
 #     default, filled, at its own position. A bare entry naming no default type is
 #     ignored (each tool's configuration finding, not compared) and declares nothing; an
 #     entry giving one of `title` and `prefix` but not the other is refused, as before.
-#     Those cases name no `need` type: it is a default type of sphinx-needs only
+#     Those cases name no `need` type: it is a default type of sphinx-needs only. A bare
+#     entry naming a need type an extension registers is the other exception, below
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`)
 #   - the agreement rule: a type's declaration of a field starts from the field's own
 #     declaration and takes its ancestors' from the root down, then its own; each must
@@ -75,17 +77,66 @@
 #     value instead
 #   - a case with `python_only = true` is one only sphinx-needs runs, and ubCode's runner
 #     skips it; `ubcode_only = true` is the converse
+#   - a case with `extensions` loads those Sphinx extensions besides sphinx-needs. The one
+#     a case may name is `sphinx_test_reports`, whose need types (`testfile`, `testsuite`,
+#     `testcase`) and fields ubCode models from the `[test_reports]` table of the same
+#     file: such a case's `config` may carry `[test_reports]` beside `[needs]`, its JUnit
+#     reports are `files`, and its source may use the extension's directives and the need
+#     types the extension registers, which the case does not declare. A need such a
+#     directive creates has the id the extension gives it, which both tools compute
+#     alike. The Python runner adds the extensions to `conf.py` and SKIPS a case whose
+#     extension is not installed (a run against sphinx-needs' released dependencies
+#     alone has none); ubCode's runner, which loads no extension, runs every such case
+#   - an entry naming a need type an extension registers, bare or giving a `title` and a
+#     `prefix`, NARROWS that type, however late the extension registers it: the keys the
+#     entry gives win, the `title`, `prefix`, `color` and `style` it leaves out are the
+#     extension's, and its `fields`, `links`, `back_links`, `id_regex` and `inherits`
+#     apply as on a type the project declares -- a `severity` included. A declaration of
+#     an extension's field in it starts from the extension's own and may only narrow it,
+#     as any type's declaration narrows the one before it: one widening it is a
+#     `type_widening` (a different type a `type_conflict`), that field's entry ignored,
+#     the type keeping the extension's declaration. A bare one declares no type (the
+#     default types are kept beside it, as beside a bare entry naming a default type);
+#     one giving a `title` and a `prefix` declares the project's types, as any such entry. A bare
+#     entry naming no default type and no type an extension registers is ignored (each
+#     tool's configuration finding, not compared). In the walk order (below), a type an
+#     entry with a `title` and a `prefix` narrows stands where `config` gives the entry;
+#     one a bare entry narrows stands where the extension registers it, after the types
+#     `config` declares (sphinx-test-reports registers `testfile`, `testsuite`,
+#     `testcase`, in that order)
+#   - an extension declares each of its fields on the need types that carry it, as a
+#     field declared on need types alone is -- but with the extension's own declaration
+#     (its type, description, `nullable` and default): sphinx-test-reports' `suites` on
+#     `testfile`; `cases`, `passed`, `skipped`, `failed` and `errors` on `testfile` and
+#     `testsuite`; `suite` on `testsuite` and `testcase`; `case`, `case_name`,
+#     `case_parameter`, `classname`, `time`, `result`, `result_text`, `remote_url` and
+#     the source location (`case_file`, `case_line`) on `testcase`; the report path
+#     (`file`) and every `tr_extra_options` name on all three. On every other type the
+#     field is absent: null, a value set there `undeclared_for_type`. A project's entry
+#     naming such a field on a type of its own declares it there too -- an entry that
+#     can be used: one refused (`type_conflict`, `type_widening`) declares nothing, and
+#     the type stays without the field; a `[needs.fields.<name>]` entry is the field, on
+#     every type
 #   - values are compared as `needs.json` writes them, TYPE INCLUDED: `7.0` is a float and
 #     `7` an integer, and the two differ; a link list is a list of id strings, as
 #     `needs.json` writes it
-#   - findings are compared as a MULTISET of `code`, and of `need`, `field` and `type`
-#     where the finding names them; a key a finding leaves out is not compared. `code` is
-#     the BARE subcode (`type_conflict`, not `needs.type_conflict`). Messages and
-#     severities are NOT compared. Only the codes of the per-type declaration contract are
-#     compared --
+#   - findings are compared as a MULTISET of `code`, and of `need`, `field`, `type` and
+#     `severity` where the finding names them; a key a finding leaves out is not compared.
+#     `code` is the BARE subcode (`type_conflict`, not `needs.type_conflict`). Messages are
+#     NOT compared. A `severity` is compared only where a pin gives one, and only a finding
+#     of a need failing its type's declaration has one: `field_fail` and `link_fail` at the
+#     severity of the declaration that failed (`violation`, `warning` or `info`; below),
+#     and `create_need`, a need not created, always `violation`. A pin gives `severity` on
+#     no other code. sphinx-needs' runner reads it from the type the schema validation
+#     logs the finding under: `sn_schema_violation` is `violation`, `sn_schema_warning`
+#     `warning`, `sn_schema_info` `info`. ubCode's runner reads the grade of its own
+#     diagnostic: `Error` is `violation`, `Warning` `warning`, `Information` `info`; its
+#     `create_need`, graded `Warning` as sphinx-needs logs it, is read as `violation`.
+#     Only the codes of the per-type declaration
+#     contract are compared --
 #         type_inherits, type_conflict, type_widening, undeclared_for_type, needextend,
 #         derive_authored, derive_invalid, dynamic_function, create_need, field_fail,
-#         link_fail, link_target_type, external_link_target_type
+#         link_fail, link_target_type, external_link_target_type, id_regex
 #     -- every other finding is each tool's own. `config` is not among them: it is every
 #     configuration finding, so a bare `config` would match any; a case that would pin a
 #     `needs.config` warning pins its consequence for a value instead, and says so
@@ -96,7 +147,8 @@
 #     directive. A finding about a need a `needimport` imports is reported at the
 #     `needimport`, so a case imports ONE need per `needimport`, and the finding's `need`
 #     is that need's own id. Its `field` is the field or link type it is about (a link
-#     type's, as a field's, is its name: `.links['<l>']` in an entry). Its
+#     type's, as a field's, is its name: `.links['<l>']` in an entry; a count's is the
+#     back links it counts, `<l>_back`: `.back_links['<l>']` in an entry). Its
 #     `type` is the need type it is about -- but for `link_target_type` and
 #     `external_link_target_type`, whose `type` is the TARGET need's type (below). As
 #     sphinx-needs spells them (ubCode's runner
@@ -108,16 +160,41 @@
 #     (`target need type '<t>'`, its link type `field '<l>'`); a
 #     finding of another code (`field_fail`, `derive_authored`) has none
 #   - `create_need` is the finding of a need that is not created: here, one without a value
-#     of a field its type makes not nullable, with no default (`Field '<f>'` is its field)
+#     of a field its type makes not nullable, with no default (`Field '<f>'` is its field),
+#     or one whose id fails `needs_id_regex` or the `id_regex` of its type or of a type it
+#     inherits from (a `[needs.types.<t>] id_regex`, matched as Python's `re.match`
+#     matches: anchored at the start, open at the end; a pattern that does not compile is
+#     a `type_conflict`, ignored; a need `needimport` imports or `needs_external_needs`
+#     loads is not checked). ubCode keeps such a need and reports it instead, `id_regex`
+#     at the need: the cases that refuse an id are a `python_only` and `ubcode_only` pair,
+#     and `id_regex` is a code only ubCode's runner reads
 #   - `field_fail` and `link_fail` are the schema validation's findings of a need whose
 #     value of a field (`field_fail`: an enum, a `minItems`) or whose links of a link type
 #     (`link_fail`: a `maxItems`) fail the schema as its need type declares it; a value
-#     failing two keywords is two findings, one per keyword, in both tools.
-#     sphinx-needs reports them as `[sn_schema_violation.field_fail]` and
-#     `[sn_schema_violation.link_fail]` with no source location, and its runner reads the
-#     need and the field or link type from the `schema_violations.json` the validation
-#     writes beside `needs.json` (`validation_warnings.<need id>[]`, `subtype` and
-#     `details.field`), not from the warning stream, so each is counted once
+#     failing two keywords is two findings, one per keyword, in both tools. A
+#     `[needs.types.<t>.back_links.<l>]` entry is a count of the links of `l` pointing to
+#     a need of the type, its back links `<l>_back` (its `minItems` and `maxItems`, a
+#     `description`, a `severity`; any other key or schema keyword is a `type_conflict`,
+#     the entry ignored, and so is an entry whose `l` is no link type: any link type,
+#     declared otherwise or by need types alone, whatever the type of the needs its links
+#     come from; a `links` or `fields` entry named `<l>_back` declares nothing, a
+#     `type_conflict`, as above): it is
+#     `len(<l>_back)`, every such link whatever its source, checked once every link is
+#     final on the needs of the type and of the types inheriting from it, a `link_fail`
+#     whose `field` is `<l>_back` and whose `need` is the need counted. A link to a part
+#     of the need counts for the need, and so does a link to a part the need lacks: that
+#     link is a dead link where it is written (the dead-link finding, each tool's own),
+#     and is still one of the need's back links. A need from `needs_external_needs` is
+#     not counted, since its own project's links to it are not loaded here and its count
+#     would be partial; an imported one is. Each finding is at the
+#     severity its declaration gives (`severity`, below `violation` reported, not
+#     enforced: a need without a field not nullable is then created, null, and is a
+#     `field_fail`), else a `violation`, in both tools. sphinx-needs reports them as
+#     `[sn_schema_violation.field_fail]` and `[sn_schema_violation.link_fail]` with no
+#     source location, and its runner reads the need, the field or link type and the
+#     severity from the `schema_violations.json` the validation writes beside
+#     `needs.json` (`validation_warnings.<need id>[]`, `subtype`, `details.field` and
+#     `type`), not from the warning stream, so each is counted once
 #   - `link_target_type` is the finding of a resolved link to a need whose type is not one
 #     of the `target_types` of its link type, as the source need's type declares it -- a
 #     listed type, or a type inheriting from one, transitively, is one of them -- found
@@ -185,10 +262,12 @@
 #   files        - optional; other files, relative to the case directory, and their text
 #   python_only  - optional; see the rules above
 #   ubcode_only  - optional; see the rules above
+#   extensions   - optional; the extensions the case loads besides sphinx-needs (see the
+#                  rules above)
 #   [case.expect]
 #     findings         - the findings, `[]` for none; or one `[[case.expect.findings]]`
-#                        table per finding: `code`, and `need`, `field` and `type` where
-#                        named
+#                        table per finding: `code`, and `need`, `field`, `type` and
+#                        `severity` where named
 #     needs.<ID>       - one table per pinned need: field = value
 #     nulls            - <ID> = [the fields pinned as unset] (TOML has no null)
 #     absent           - <ID> = [the fields pinned as not existing]
@@ -2996,7 +3075,7 @@ field = "x"
 
 [[case]]
 name = "field-named-as-back-links"
-why = "a fields entry named as a link type's back links (links_back, or rel_back beside a [needs.links.rel] entry) declares no field: it is one type_conflict, and the back links are computed on every need as without it, no need validated against the entry's schema"
+why = "a fields entry named as a link type's back links (links_back, or rel_back beside a [needs.links.rel] entry) declares no field (their count is a back_links entry, [needs.types.t.back_links.rel]): it is one type_conflict, and the back links are computed on every need as without it, no need validated against the entry's schema"
 config = '''
 [needs.links.rel]
 
@@ -3359,6 +3438,55 @@ SPEC_002 = ["asil"]
 REQ_001 = ["asil", "lvl", "weight", "weights"]
 [case.expect.schema.asil]
 default = "QM"
+
+[[case]]
+name = "link-default-in-the-schema"
+why = "needs.json's needs_schema gives a link type's literal default as the links it holds, link strings sorted and deduplicated as a written link list, not []; a need type's own default is not the schema's: under json_remove_defaults a need holding the link type's default leaves it out, and the schema restores it, and a need holding its type's default writes it"
+config = '''
+[needs]
+json_remove_defaults = true
+
+[needs.links.rel]
+default = ["REQ_1", "REQ_0", "REQ_1"]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.rel]
+default = ["REQ_0"]
+'''
+source = '''
+.. req:: Target
+   :id: REQ_0
+
+.. req:: The link type's default
+   :id: REQ_1
+
+.. spec:: Its type's default
+   :id: SPEC_1
+
+.. req:: Its own links
+   :id: REQ_2
+   :rel: REQ_0
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+rel = ["REQ_0", "REQ_1"]
+[case.expect.needs.SPEC_1]
+rel = ["REQ_0"]
+[case.expect.needs.REQ_2]
+rel = ["REQ_0"]
+[case.expect.omitted]
+REQ_0 = ["rel"]
+REQ_1 = ["rel"]
+[case.expect.schema.rel]
+default = ["REQ_0", "REQ_1"]
 
 [[case]]
 name = "defaults-left-out-restored-from-the-file"
@@ -4944,6 +5072,1188 @@ code = "type_conflict"
 field = "all_links"
 type = "req"
 
+# --- the severity of a failed declaration ---------------------------------------------
+
+[[case]]
+name = "a-failed-declaration-is-a-violation"
+why = "a need failing its type's declaration fails a violation: an enum (field_fail), a maxItems (link_fail), and nullable = false with no value (create_need, the need not created), each pinned with its severity"
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.category]
+schema = { type = "string", enum = ["a", "b"] }
+
+[needs.types.req.fields.owner]
+nullable = false
+
+[needs.types.req.links.links]
+schema = { maxItems = 1 }
+'''
+source = '''
+.. req:: Outside the enum
+   :id: REQ_1
+   :owner: alice
+   :category: z
+
+.. req:: Too many links
+   :id: REQ_2
+   :owner: bob
+   :links: REQ_1, REQ_4
+
+.. req:: No owner
+   :id: REQ_3
+
+.. req:: Clean
+   :id: REQ_4
+   :owner: carol
+   :category: a
+'''
+[case.expect]
+missing = ["REQ_3"]
+[case.expect.needs.REQ_1]
+category = "z"
+[case.expect.needs.REQ_2]
+links = ["REQ_1", "REQ_4"]
+[case.expect.needs.REQ_4]
+category = "a"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "category"
+severity = "violation"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_2"
+field = "links"
+severity = "violation"
+[[case.expect.findings]]
+code = "create_need"
+field = "owner"
+severity = "violation"
+
+[[case]]
+name = "severity-lowers-what-a-failed-declaration-reports"
+why = "severity on a type's entry is the severity of every constraint of its declaration: req's enum (a needs_fields enum it gives warning), its links' minItems and maxItems (warning) and a link type it declares alone (info) are reported at those severities; spec, with no entry, fails the same enum as a violation"
+config = '''
+[needs.fields.category]
+schema = { type = "string", enum = ["a", "b"] }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.category]
+severity = "warning"
+
+[needs.types.req.links.links]
+schema = { minItems = 1, maxItems = 1 }
+severity = "warning"
+
+[needs.types.req.links.verifies]
+schema = { minItems = 1 }
+severity = "info"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. spec:: Outside the enum
+   :id: SPEC_1
+   :category: z
+
+.. req:: Outside the enum, no links
+   :id: REQ_1
+   :category: z
+
+.. req:: Too many links
+   :id: REQ_2
+   :links: SPEC_1, REQ_1
+   :verifies: SPEC_1
+
+.. req:: Clean
+   :id: REQ_3
+   :category: a
+   :links: SPEC_1
+   :verifies: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+category = "z"
+links = []
+verifies = []
+[case.expect.needs.REQ_2]
+links = ["REQ_1", "SPEC_1"]
+[case.expect.needs.REQ_3]
+category = "a"
+[[case.expect.findings]]
+code = "field_fail"
+need = "SPEC_1"
+field = "category"
+severity = "violation"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "category"
+severity = "warning"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_1"
+field = "links"
+severity = "warning"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_1"
+field = "verifies"
+severity = "info"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_2"
+field = "links"
+severity = "warning"
+
+[[case]]
+name = "nullable-false-at-warning-creates-the-need"
+why = "below violation, nullable = false is reported, not enforced: req's need without asil (a needs_fields field not nullable, which req's entry gives severity warning) and without owner (a field req alone declares not nullable, at info) is created, holding null, one field_fail each at that severity; spec's need without asil is not created (create_need), and needs.json writes asil nullable, as a need may hold null of it"
+config = '''
+[needs.fields.asil]
+schema = { type = "string" }
+nullable = false
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.asil]
+severity = "warning"
+
+[needs.types.req.fields.owner]
+schema = { type = "string" }
+nullable = false
+severity = "info"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: No asil, no owner
+   :id: REQ_1
+
+.. req:: Both
+   :id: REQ_2
+   :asil: QM
+   :owner: alice
+
+.. spec:: No asil
+   :id: SPEC_1
+
+.. spec:: Asil
+   :id: SPEC_2
+   :asil: QM
+'''
+[case.expect]
+missing = ["SPEC_1"]
+[case.expect.needs.REQ_2]
+asil = "QM"
+owner = "alice"
+[case.expect.needs.SPEC_2]
+asil = "QM"
+[case.expect.nulls]
+REQ_1 = ["asil", "owner"]
+SPEC_2 = ["owner"]
+[case.expect.schema.asil]
+type = ["string", "null"]
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "asil"
+severity = "warning"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "owner"
+severity = "info"
+[[case.expect.findings]]
+code = "create_need"
+field = "asil"
+severity = "violation"
+
+[[case]]
+name = "nullable-false-at-warning-without-schema-validation"
+why = "nullable = false below violation is checked by the schema validation alone: with sphinx-needs' schema_validation_enabled switched off (a setting ubCode does not have), req's need without asil is created, holding null, and nothing is reported"
+python_only = true
+config = '''
+[needs]
+schema_validation_enabled = false
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.asil]
+schema = { type = "string" }
+nullable = false
+severity = "warning"
+'''
+source = '''
+.. req:: No asil
+   :id: REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.nulls]
+REQ_1 = ["asil"]
+
+[[case]]
+name = "severity-is-inherited-raised-not-lowered"
+why = "a type inheriting a declaration keeps its severity (sub, whose own entry gives none: warning), may raise it (strict: violation), and may not lower one an ancestor gives (lax: info under req's warning is type_widening, the entry ignored, so warning); an ancestor giving none leaves its children free (child: info under base's default)"
+config = '''
+[needs.fields.category]
+schema = { type = "string", enum = ["a", "b"] }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.category]
+severity = "warning"
+
+[needs.types.sub]
+title = "Sub"
+prefix = "SU_"
+inherits = "req"
+
+[needs.types.sub.fields.category]
+description = "Narrowed, its severity kept"
+
+[needs.types.strict]
+title = "Strict"
+prefix = "ST_"
+inherits = "req"
+
+[needs.types.strict.fields.category]
+severity = "violation"
+
+[needs.types.lax]
+title = "Lax"
+prefix = "L_"
+inherits = "req"
+
+[needs.types.lax.fields.category]
+severity = "info"
+
+[needs.types.base]
+title = "Base"
+prefix = "B_"
+
+[needs.types.base.fields.category]
+schema = { enum = ["a"] }
+
+[needs.types.child]
+title = "Child"
+prefix = "C_"
+inherits = "base"
+
+[needs.types.child.fields.category]
+severity = "info"
+'''
+source = '''
+.. req:: Req
+   :id: REQ_1
+   :category: z
+
+.. sub:: Sub
+   :id: SUB_1
+   :category: z
+
+.. strict:: Strict
+   :id: STRICT_1
+   :category: z
+
+.. lax:: Lax
+   :id: LAX_1
+   :category: z
+
+.. base:: Base
+   :id: BASE_1
+   :category: b
+
+.. child:: Child
+   :id: CHILD_1
+   :category: b
+'''
+[case.expect]
+[case.expect.needs.LAX_1]
+category = "z"
+[case.expect.needs.CHILD_1]
+category = "b"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "category"
+severity = "warning"
+[[case.expect.findings]]
+code = "field_fail"
+need = "SUB_1"
+field = "category"
+severity = "warning"
+[[case.expect.findings]]
+code = "field_fail"
+need = "STRICT_1"
+field = "category"
+severity = "violation"
+[[case.expect.findings]]
+code = "field_fail"
+need = "LAX_1"
+field = "category"
+severity = "warning"
+[[case.expect.findings]]
+code = "type_widening"
+type = "lax"
+field = "category"
+[[case.expect.findings]]
+code = "field_fail"
+need = "BASE_1"
+field = "category"
+severity = "violation"
+[[case.expect.findings]]
+code = "field_fail"
+need = "CHILD_1"
+field = "category"
+severity = "info"
+
+[[case]]
+name = "a-severity-of-no-such-name-is-ignored"
+why = "a severity that is not violation, warning or info is ignored (each tool's configuration finding, not compared, so the case pins its consequence): the rest of the entry is used, at the default, a violation"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.category]
+schema = { type = "string", enum = ["a", "b"] }
+severity = "error"
+'''
+source = '''
+.. req:: Outside the enum
+   :id: REQ_1
+   :category: z
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+category = "z"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_1"
+field = "category"
+severity = "violation"
+
+[[case]]
+name = "needs-json-writes-nullable-only-below-violation"
+why = "needs.json's needs_schema is one block for every need type: asil, not nullable, is written nullable only because one type (req) lets its needs hold null of it, at warning; owner, which a type declares not nullable at violation only, is not, and stays the type the field declares"
+config = '''
+[needs.fields.asil]
+schema = { type = "string" }
+nullable = false
+default = "QM"
+
+[needs.fields.owner]
+schema = { type = "string" }
+nullable = false
+default = "nobody"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.asil]
+severity = "warning"
+
+[needs.types.req.fields.owner]
+description = "Who answers for the requirement"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: Defaults
+   :id: REQ_1
+
+.. spec:: Defaults
+   :id: SPEC_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+asil = "QM"
+owner = "nobody"
+[case.expect.needs.SPEC_1]
+asil = "QM"
+owner = "nobody"
+[case.expect.schema.asil]
+type = ["string", "null"]
+[case.expect.schema.owner]
+type = "string"
+
+[[case]]
+name = "a-derived-field-below-violation-holds-its-empty-value"
+why = "a severity below violation lets a need hold null of a field it does not set, not of a derived field: one not nullable holds its empty value until its rule computes it (here a count, 0 where no link), and needs.json writes it not nullable"
+config = '''
+[needs.fields.n]
+schema = { type = "integer" }
+nullable = false
+derive = { kind = "count", over = "links" }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.fields.n]
+severity = "warning"
+'''
+source = '''
+.. req:: Links nothing
+   :id: REQ_1
+
+.. req:: Links one
+   :id: REQ_2
+   :links: REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+n = 0
+[case.expect.needs.REQ_2]
+n = 1
+[case.expect.schema.n]
+type = "integer"
+
+[[case]]
+name = "a-severity-on-a-global-entry-is-ignored"
+why = "a severity is a need type's declaration's: on a needs_fields or needs_links entry it is ignored (each tool's configuration finding, not compared, so the case pins its consequence): the field's enum and the link type's maxItems a type declares fail as violations"
+config = '''
+[needs.fields.category]
+schema = { type = "string", enum = ["a", "b"] }
+severity = "warning"
+
+[needs.links.satisfies]
+severity = "info"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.satisfies]
+schema = { maxItems = 1 }
+'''
+source = '''
+.. req:: Target
+   :id: REQ_1
+
+.. req:: Outside the enum, too many links
+   :id: REQ_2
+   :category: z
+   :satisfies: REQ_1, REQ_3
+
+.. req:: Target
+   :id: REQ_3
+'''
+[case.expect]
+[case.expect.needs.REQ_2]
+category = "z"
+[[case.expect.findings]]
+code = "field_fail"
+need = "REQ_2"
+field = "category"
+severity = "violation"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_2"
+field = "satisfies"
+severity = "violation"
+
+# --- the count of a link type's back links --------------------------------------------
+
+[[case]]
+name = "back-links-count-incoming-links"
+why = "a back_links entry naming a link type (satisfies) declares how many links of it point to a need of the type, its back links satisfies_back: a req no need satisfies fails minItems, one satisfied by two fails maxItems (link_fail, field satisfies_back, at the target need), one satisfied once is clean; spec, which declares none, is not counted"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.back_links.satisfies]
+description = "The architecture elements satisfying the requirement"
+schema = { minItems = 1, maxItems = 1 }
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+'''
+source = '''
+.. req:: Not satisfied
+   :id: REQ_1
+
+.. req:: Satisfied twice
+   :id: REQ_2
+
+.. req:: Satisfied once
+   :id: REQ_3
+
+.. spec:: Satisfies two
+   :id: SPEC_1
+   :satisfies: REQ_2, REQ_3
+
+.. spec:: Satisfies one
+   :id: SPEC_2
+   :satisfies: REQ_2
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+satisfies_back = []
+[case.expect.needs.REQ_2]
+satisfies_back = ["SPEC_1", "SPEC_2"]
+[case.expect.needs.REQ_3]
+satisfies_back = ["SPEC_1"]
+[case.expect.needs.SPEC_1]
+satisfies_back = []
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_1"
+field = "satisfies_back"
+severity = "violation"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_2"
+field = "satisfies_back"
+severity = "violation"
+
+[[case]]
+name = "back-links-count-is-inherited-and-narrowed"
+why = "a type inheriting a count of back links keeps it (sub: minItems 1), may narrow it (strict: minItems 2, at warning), and may not widen it (lax: minItems 0 is type_widening, the entry ignored, so minItems 1); a need of a type inheriting none is not counted"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.back_links.satisfies]
+schema = { minItems = 1 }
+
+[needs.types.sub]
+title = "Sub"
+prefix = "SU_"
+inherits = "req"
+
+[needs.types.strict]
+title = "Strict"
+prefix = "ST_"
+inherits = "req"
+
+[needs.types.strict.back_links.satisfies]
+schema = { minItems = 2 }
+severity = "warning"
+
+[needs.types.lax]
+title = "Lax"
+prefix = "L_"
+inherits = "req"
+
+[needs.types.lax.back_links.satisfies]
+schema = { minItems = 0 }
+
+[needs.types.arch]
+title = "Architecture"
+prefix = "A_"
+'''
+source = '''
+.. sub:: Not satisfied
+   :id: SUB_1
+
+.. strict:: Satisfied once
+   :id: STRICT_1
+
+.. lax:: Not satisfied
+   :id: LAX_1
+
+.. arch:: Satisfies the strict one
+   :id: ARCH_1
+   :satisfies: STRICT_1
+'''
+[case.expect]
+[case.expect.needs.STRICT_1]
+satisfies_back = ["ARCH_1"]
+[case.expect.needs.ARCH_1]
+satisfies_back = []
+[[case.expect.findings]]
+code = "link_fail"
+need = "SUB_1"
+field = "satisfies_back"
+severity = "violation"
+[[case.expect.findings]]
+code = "link_fail"
+need = "STRICT_1"
+field = "satisfies_back"
+severity = "warning"
+[[case.expect.findings]]
+code = "link_fail"
+need = "LAX_1"
+field = "satisfies_back"
+severity = "violation"
+[[case.expect.findings]]
+code = "type_widening"
+type = "lax"
+field = "satisfies_back"
+
+[[case]]
+name = "back-links-count-every-link"
+why = "the count of back links is every link of the link type pointing to the need, as minItems counts outgoing links: one from a need whose type's target_types refuses the target still counts (link_target_type at its source), and links of another link type do not"
+config = '''
+[needs.links.verifies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.back_links.verifies]
+schema = { minItems = 1 }
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+target_types = ["test"]
+'''
+source = '''
+.. req:: Verified by a link its source refuses
+   :id: REQ_1
+
+.. req:: Only linked
+   :id: REQ_2
+
+.. test:: Verifies a req
+   :id: TEST_1
+   :verifies: REQ_1
+   :links: REQ_2
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+verifies_back = ["TEST_1"]
+[case.expect.needs.REQ_2]
+verifies_back = []
+links_back = ["TEST_1"]
+[[case.expect.findings]]
+code = "link_target_type"
+need = "TEST_1"
+field = "verifies"
+type = "req"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_2"
+field = "verifies_back"
+
+[[case]]
+name = "back-links-count-of-a-type-local-link-type"
+why = "a count of the back links of a link type need types declare alone (verifies, declared by test), at severity info: a req no test verifies is reported at info"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.back_links.verifies]
+schema = { minItems = 1 }
+severity = "info"
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+'''
+source = '''
+.. req:: Verified
+   :id: REQ_1
+
+.. req:: Not verified
+   :id: REQ_2
+
+.. test:: Verifies
+   :id: TEST_1
+   :verifies: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+verifies_back = ["TEST_1"]
+[case.expect.needs.REQ_2]
+verifies_back = []
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_2"
+field = "verifies_back"
+severity = "info"
+
+[[case]]
+name = "back-links-count-exempts-external-needs"
+why = "a need from needs_external_needs is not counted, since its own project's links to it are not loaded here and its count would be partial (an external req satisfied by nothing is clean); a need a needimport imports is this project's, and is (link_fail at it)"
+config = '''
+[needs]
+external_needs = [{ base_url = "http://example.org", json_path = "other.json", id_prefix = "E_" }]
+
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.back_links.satisfies]
+schema = { minItems = 1 }
+'''
+source = '''
+.. needimport:: other.json
+   :filter: id == 'REQ_9'
+
+.. req:: Satisfied by nothing
+   :id: REQ_1
+'''
+files = { "other.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "REQ_9": {"id": "REQ_9", "type": "req", "title": "From outside"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+[case.expect.needs.REQ_9]
+satisfies_back = []
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_1"
+field = "satisfies_back"
+[[case.expect.findings]]
+code = "link_fail"
+need = "REQ_9"
+field = "satisfies_back"
+
+[[case]]
+name = "back-links-entry-takes-a-count-alone"
+why = "a back_links entry takes only a description, a schema of minItems and maxItems, and a severity: one giving a default, or a schema keyword of another name, is one type_conflict and ignored whole, so its count does not apply"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.back_links.satisfies]
+schema = { minItems = 1 }
+default = ["SPEC_1"]
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.back_links.satisfies]
+schema = { minItems = 1, uniqueItems = true }
+'''
+source = '''
+.. req:: Not satisfied
+   :id: REQ_1
+
+.. spec:: Not satisfied
+   :id: SPEC_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+satisfies_back = []
+[case.expect.needs.SPEC_1]
+satisfies_back = []
+[[case.expect.findings]]
+code = "type_conflict"
+type = "req"
+field = "satisfies_back"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "spec"
+field = "satisfies_back"
+
+[[case]]
+name = "back-links-entry-with-an-unknown-key-is-ignored"
+why = "a key no entry has (a misspelt severity) on a back_links entry is a key the count does not take: one type_conflict, the entry ignored whole, so its count does not apply, as for a default or another schema keyword"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.back_links.satisfies]
+schema = { minItems = 1 }
+severty = "warning"
+'''
+source = '''
+.. req:: Not satisfied
+   :id: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+satisfies_back = []
+[[case.expect.findings]]
+code = "type_conflict"
+type = "req"
+field = "satisfies_back"
+
+[[case]]
+name = "links-entry-named-as-back-links-counts-nothing"
+why = "a links entry named as the back links of a link type of the project (satisfies_back beside [needs.links.satisfies], verifies_back beside verifies, which need types declare alone) declares nothing, its schema included: one type_conflict each, as a fields entry of that name, and no need is counted; their count is a back_links entry"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.links.satisfies_back]
+schema = { minItems = 1 }
+
+[needs.types.req.links.verifies_back]
+schema = { minItems = 1 }
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.verifies]
+'''
+source = '''
+.. req:: Neither satisfied nor verified
+   :id: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+satisfies_back = []
+verifies_back = []
+[[case.expect.findings]]
+code = "type_conflict"
+type = "req"
+field = "satisfies_back"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "req"
+field = "verifies_back"
+
+[[case]]
+name = "back-links-entry-naming-no-link-type-is-ignored"
+why = "a back_links entry is named after the link type whose back links it counts: one naming no link type (implemnts, misspelt) is one type_conflict and ignored, so no need is counted"
+config = '''
+[needs.links.implements]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.req.back_links.implemnts]
+schema = { minItems = 1 }
+'''
+source = '''
+.. req:: Not implemented
+   :id: REQ_1
+'''
+[case.expect]
+[case.expect.needs.REQ_1]
+implements_back = []
+[[case.expect.findings]]
+code = "type_conflict"
+type = "req"
+field = "implemnts_back"
+
+[[case]]
+name = "back-links-count-links-to-parts"
+why = "a link to a part of a need is one of the need's back links, so it counts for the need (SPEC_1, satisfied through its part p1); so is a link to a part the need lacks, a dead link where it is written (the dead-link finding, each tool's own) which still counts (SPEC_2); SPEC_3, linked by nothing, fails minItems"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.back_links.satisfies]
+schema = { minItems = 1 }
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+'''
+source = '''
+.. spec:: With a part
+   :id: SPEC_1
+
+   A part :np:`(p1) here`.
+
+.. spec:: Without parts
+   :id: SPEC_2
+
+.. spec:: Linked by nothing
+   :id: SPEC_3
+
+.. impl:: To a part
+   :id: IMPL_1
+   :satisfies: SPEC_1.p1
+
+.. impl:: To a part its target lacks
+   :id: IMPL_2
+   :satisfies: SPEC_2.p9
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+satisfies_back = ["IMPL_1"]
+[case.expect.needs.SPEC_2]
+satisfies_back = ["IMPL_2"]
+[case.expect.needs.SPEC_3]
+satisfies_back = []
+[case.expect.needs.IMPL_2]
+satisfies = ["SPEC_2.p9"]
+[[case.expect.findings]]
+code = "link_fail"
+need = "SPEC_3"
+field = "satisfies_back"
+severity = "violation"
+
+# --- the ids of a need type -----------------------------------------------------------
+
+[[case]]
+name = "type-id-regex-refuses-an-id"
+why = "a need type's id_regex is matched (re.match: anchored at the start, so X_REQ_001 fails REQ_) beside needs_id_regex, and the id_regex of each type it inherits from: an id failing any of them is a need not created (create_need); ids matching all of them are kept"
+python_only = true
+config = '''
+[needs]
+id_regex = "^[A-Z0-9_]{5,}[0-9]$"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+id_regex = "REQ_"
+
+[needs.types.safety]
+title = "Safety requirement"
+prefix = "S_"
+inherits = "req"
+id_regex = "[A-Z]+_S[0-9]"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "SP_"
+'''
+source = '''
+.. req:: Matches its type and the project
+   :id: REQ_001
+
+.. req:: Fails its type's id_regex
+   :id: SPEC_001
+
+.. req:: Matches its type, fails the project's
+   :id: REQ_00A
+
+.. req:: Holds its type's pattern, not at the start
+   :id: X_REQ_001
+
+.. safety:: Matches its own and the inherited
+   :id: REQ_S01
+
+.. safety:: Matches the inherited, fails its own
+   :id: REQ_002
+
+.. safety:: Matches its own, fails the inherited
+   :id: XYZ_S01
+
+.. spec:: A type without one
+   :id: REQ_003
+'''
+[case.expect]
+missing = ["SPEC_001", "REQ_00A", "X_REQ_001", "REQ_002", "XYZ_S01"]
+[case.expect.needs.REQ_001]
+type = "req"
+[case.expect.needs.REQ_S01]
+type = "safety"
+[case.expect.needs.REQ_003]
+type = "spec"
+[[case.expect.findings]]
+code = "create_need"
+severity = "violation"
+[[case.expect.findings]]
+code = "create_need"
+severity = "violation"
+[[case.expect.findings]]
+code = "create_need"
+severity = "violation"
+[[case.expect.findings]]
+code = "create_need"
+severity = "violation"
+[[case.expect.findings]]
+code = "create_need"
+severity = "violation"
+
+[[case]]
+name = "type-id-regex-refuses-an-id-kept-by-ubcode"
+why = "the case before, as ubCode runs it: a need whose id fails needs_id_regex or an id_regex of its type (its own or an inherited one; X_REQ_001 holds REQ_ but not at the start) is kept, and reported (id_regex at the need)"
+ubcode_only = true
+config = '''
+[needs]
+id_regex = "^[A-Z0-9_]{5,}[0-9]$"
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+id_regex = "REQ_"
+
+[needs.types.safety]
+title = "Safety requirement"
+prefix = "S_"
+inherits = "req"
+id_regex = "[A-Z]+_S[0-9]"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "SP_"
+'''
+source = '''
+.. req:: Matches its type and the project
+   :id: REQ_001
+
+.. req:: Fails its type's id_regex
+   :id: SPEC_001
+
+.. req:: Matches its type, fails the project's
+   :id: REQ_00A
+
+.. req:: Holds its type's pattern, not at the start
+   :id: X_REQ_001
+
+.. safety:: Matches its own and the inherited
+   :id: REQ_S01
+
+.. safety:: Matches the inherited, fails its own
+   :id: REQ_002
+
+.. safety:: Matches its own, fails the inherited
+   :id: XYZ_S01
+
+.. spec:: A type without one
+   :id: REQ_003
+'''
+[case.expect]
+[case.expect.needs.REQ_001]
+type = "req"
+[case.expect.needs.SPEC_001]
+type = "req"
+[case.expect.needs.REQ_00A]
+type = "req"
+[case.expect.needs.X_REQ_001]
+type = "req"
+[case.expect.needs.REQ_S01]
+type = "safety"
+[case.expect.needs.REQ_002]
+type = "safety"
+[case.expect.needs.XYZ_S01]
+type = "safety"
+[case.expect.needs.REQ_003]
+type = "spec"
+[[case.expect.findings]]
+code = "id_regex"
+need = "SPEC_001"
+[[case.expect.findings]]
+code = "id_regex"
+need = "REQ_00A"
+[[case.expect.findings]]
+code = "id_regex"
+need = "X_REQ_001"
+[[case.expect.findings]]
+code = "id_regex"
+need = "REQ_002"
+[[case.expect.findings]]
+code = "id_regex"
+need = "XYZ_S01"
+
+[[case]]
+name = "type-id-regex-exempts-imported-needs"
+why = "a need a needimport imports keeps its id, as for needs_id_regex: an imported req whose id fails req's id_regex is created, with no finding"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+id_regex = "REQ_"
+'''
+source = '''
+.. needimport:: other.json
+   :filter: id == 'SPEC_009'
+
+.. req:: Authored
+   :id: REQ_001
+'''
+files = { "other.json" = '''
+{
+  "current_version": "1.0",
+  "versions": {
+    "1.0": {
+      "needs": {
+        "SPEC_009": {"id": "SPEC_009", "type": "req", "title": "From outside"}
+      }
+    }
+  }
+}
+''' }
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_009]
+type = "req"
+[case.expect.needs.REQ_001]
+type = "req"
+
+[[case]]
+name = "type-id-regex-that-does-not-compile-is-ignored"
+why = "an id_regex that is not a regular expression is one type_conflict and ignored: the type's needs, and those of the types inheriting from it, are checked against the rest alone (here the default needs_id_regex)"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+id_regex = "REQ_["
+
+[needs.types.sub]
+title = "Sub"
+prefix = "SU_"
+inherits = "req"
+'''
+source = '''
+.. req:: Any id
+   :id: ANY_001
+
+.. sub:: Any id
+   :id: ANY_002
+'''
+[case.expect]
+[case.expect.needs.ANY_001]
+type = "req"
+[case.expect.needs.ANY_002]
+type = "sub"
+[[case.expect.findings]]
+code = "type_conflict"
+type = "req"
+
 # --- an entry naming a default type ---------------------------------------------------
 
 [[case]]
@@ -5040,3 +6350,459 @@ type_name = "Requirement"
 [[case.expect.findings]]
 code = "type_inherits"
 type = "req"
+
+# --- the need types and fields an extension registers ---------------------------------
+
+[[case]]
+name = "an-extensions-field-narrowed-on-a-project-type"
+why = "a project type's entry of a field an extension registers narrows it on that type, a value outside the narrowing failing it (field_fail), and the extension's own needs keep their values: a case the report gives no file, line or parameter for holds null there, never an empty string"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.fields.suite]
+schema = { pattern = "^suite_" }
+'''
+source = '''
+.. spec:: In a suite
+   :id: S_0001
+   :suite: suite_a
+
+.. spec:: Not in a suite
+   :id: S_0002
+   :suite: other
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.needs.S_0001]
+suite = "suite_a"
+[case.expect.needs.TF_0001_F0D]
+type = "testsuite"
+suite = "suite_a"
+[case.expect.needs.TF_0001_F0D_61F00]
+type = "testcase"
+suite = "suite_a"
+case_name = "test_pass"
+result = "passed"
+[case.expect.needs.TF_0001_F0D_85463]
+case_name = "test_fail"
+case_parameter = "a-b"
+[case.expect.nulls]
+TF_0001_F0D_61F00 = ["case_parameter", "case_file", "case_line"]
+TF_0001_F0D_85463 = ["case_file", "case_line"]
+[[case.expect.findings]]
+code = "field_fail"
+need = "S_0002"
+field = "suite"
+
+[[case]]
+name = "a-bare-entry-narrows-an-extensions-type-with-a-derived-link-type"
+why = "a bare entry naming a need type an extension registers narrows it: the link type it declares alone, derived by a join on the extension's case_name, holds the matching test needs on its cases, and no links elsewhere; a project type's entry naming the extension's field keeps it there"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.fields.case_name]
+
+[needs.types.testcase.links.evidence_for]
+derive = { kind = "links", join = { field = "case_name", equals = "case_name" }, where = "type == 'test'" }
+'''
+source = '''
+.. test:: A test spec
+   :id: T_0001
+   :case_name: test_pass
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+findings = []
+[case.expect.needs.TF_0001_F0D_61F00]
+type_name = "Test-Case"
+evidence_for = ["T_0001"]
+[case.expect.needs.TF_0001_F0D_85463]
+evidence_for = []
+[case.expect.needs.TF_0001_F0D]
+evidence_for = []
+[case.expect.needs.T_0001]
+case_name = "test_pass"
+evidence_for = []
+
+[[case]]
+name = "a-bare-entry-narrows-an-extensions-field-on-its-type"
+why = "a bare entry naming a need type an extension registers narrows the extension's field on that type, the type keeping the extension's title: a value its narrower schema refuses is field_fail on that type's needs, not on the extension's other types"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.testcase.fields.suite]
+schema = { minLength = 10 }
+'''
+source = '''
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.needs.TF_0001_F0D]
+suite = "suite_a"
+[case.expect.needs.TF_0001_F0D_61F00]
+suite = "suite_a"
+type_name = "Test-Case"
+[[case.expect.findings]]
+code = "field_fail"
+need = "TF_0001_F0D_61F00"
+field = "suite"
+[[case.expect.findings]]
+code = "field_fail"
+need = "TF_0001_F0D_85463"
+field = "suite"
+
+[[case]]
+name = "a-full-entry-narrows-an-extensions-type"
+why = "an entry with a title and a prefix naming a need type an extension registers narrows it too, the keys it gives winning, the extension's other types untouched"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.testcase]
+title = "Case"
+prefix = "C_"
+'''
+source = '''
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+findings = []
+[case.expect.needs.TF_0001_F0D_61F00]
+type_name = "Case"
+result = "passed"
+[case.expect.needs.TF_0001_F0D]
+type_name = "Test-Suite"
+
+[[case]]
+name = "an-extensions-field-is-declared-on-its-types-alone"
+why = "a field an extension declares on its own need types alone is absent on every other type: a project need setting it is undeclared_for_type and holds null, and the extension's needs of a type not declaring it hold null"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+'''
+source = '''
+.. test:: A test spec
+   :id: T_0001
+   :classname: tests.test_x
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.needs.TF_0001]
+cases = 2
+file = "report.xml"
+[case.expect.needs.TF_0001_F0D]
+cases = 2
+suite = "suite_a"
+[case.expect.needs.TF_0001_F0D_61F00]
+classname = "tests.test_x"
+suite = "suite_a"
+[case.expect.nulls]
+T_0001 = ["classname"]
+TF_0001 = ["suite", "classname"]
+TF_0001_F0D = ["classname", "suites"]
+TF_0001_F0D_61F00 = ["cases", "suites"]
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "T_0001"
+field = "classname"
+type = "test"
+
+[[case]]
+name = "a-refused-entry-does-not-declare-an-extensions-field-on-its-type"
+why = "a project type's entry naming a field an extension declares on its own types alone, refused for changing the field's type (type_conflict), declares nothing: the type stays without the field, a value there undeclared_for_type, the need created"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.fields.classname]
+schema = { type = "integer" }
+'''
+source = '''
+.. test:: A test spec
+   :id: T_0001
+   :classname: tests.test_x
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.needs.T_0001]
+title = "A test spec"
+[case.expect.needs.TF_0001_F0D_61F00]
+classname = "tests.test_x"
+[case.expect.nulls]
+T_0001 = ["classname"]
+[[case.expect.findings]]
+code = "type_conflict"
+field = "classname"
+type = "test"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "T_0001"
+field = "classname"
+type = "test"
+
+[[case]]
+name = "a-full-entry-of-an-extensions-type-stands-where-config-gives-it"
+why = "a type an entry with a title and a prefix narrows stands where config gives the entry in the walk order: given before another type, it is the first root declaration of a field both declare alone, which sets its type, and the other's is refused"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.testcase]
+title = "Case"
+prefix = "C_"
+
+[needs.types.testcase.fields.weight]
+schema = { type = "integer" }
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.fields.weight]
+schema = { type = "string" }
+'''
+source = '''
+.. test:: A test spec
+   :id: T_0001
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.nulls]
+T_0001 = ["weight"]
+TF_0001_F0D_61F00 = ["weight"]
+[case.expect.schema.weight]
+type = ["integer", "null"]
+[[case.expect.findings]]
+code = "type_conflict"
+field = "weight"
+type = "test"
+
+[[case]]
+name = "a-bare-entry-of-an-extensions-type-stands-where-the-extension-registers-it"
+why = "a type a bare entry narrows stands where the extension registers it in the walk order, after the types config declares, wherever config gives the entry: a type config declares after it is the first root declaration of a field both declare alone, and the narrowed type's is refused"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.testcase.fields.weight]
+schema = { type = "integer" }
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.fields.weight]
+schema = { type = "string" }
+'''
+source = '''
+.. test:: A test spec
+   :id: T_0001
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.nulls]
+T_0001 = ["weight"]
+TF_0001_F0D_61F00 = ["weight"]
+[case.expect.schema.weight]
+type = ["string", "null"]
+[[case.expect.findings]]
+code = "type_conflict"
+field = "weight"
+type = "testcase"
+
+[[case]]
+name = "a-severity-on-a-narrowed-extensions-type"
+why = "a severity on a bare entry's declaration of a field of a need type an extension registers is the severity of its constraints, as on a project type: a value its narrower schema refuses is field_fail at that severity, on that type's needs alone"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.testcase.fields.suite]
+schema = { minLength = 10 }
+severity = "warning"
+'''
+source = '''
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.needs.TF_0001_F0D]
+suite = "suite_a"
+[case.expect.needs.TF_0001_F0D_61F00]
+suite = "suite_a"
+[[case.expect.findings]]
+code = "field_fail"
+need = "TF_0001_F0D_61F00"
+field = "suite"
+severity = "warning"
+[[case.expect.findings]]
+code = "field_fail"
+need = "TF_0001_F0D_85463"
+field = "suite"
+severity = "warning"
+
+[[case]]
+name = "a-back-links-count-on-a-narrowed-extensions-type"
+why = "a back_links entry of a bare entry naming a need type an extension registers counts the links each of its needs receives, as on a project type: the test case no need links to fails minItems (link_fail, field links_back), the one linked to is clean, the extension's other types are not counted"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.testcase.back_links.links]
+schema = { minItems = 1 }
+'''
+source = '''
+.. test:: A test spec
+   :id: T_0001
+   :links: TF_0001_F0D_61F00
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="suite_a" tests="2" errors="0" failures="1" skipped="0" time="0.5">
+<testcase classname="tests.test_x" name="test_pass" time="0.1"/>
+<testcase classname="tests.test_x" name="test_fail[a-b]" time="0.2"><failure message="boom">trace</failure></testcase>
+</testsuite>
+</testsuites>
+''' }
+[case.expect]
+[case.expect.needs.TF_0001_F0D_61F00]
+links_back = ["T_0001"]
+[case.expect.needs.TF_0001_F0D_85463]
+links_back = []
+[[case.expect.findings]]
+code = "link_fail"
+need = "TF_0001_F0D_85463"
+field = "links_back"
+severity = "violation"

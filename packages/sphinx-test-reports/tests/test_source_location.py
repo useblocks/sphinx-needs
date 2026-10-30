@@ -170,3 +170,34 @@ class TestFieldNameCollisionIsRejected:
         )
 
         assert check_field_name_collisions(config) is None
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "needs", "srcdir": "doc_test/source_location"}],
+    indirect=True,
+)
+def test_an_absent_location_or_parameter_is_null(test_app):
+    """A case the report gives no ``file``/``line`` for (pytest's default
+    ``junit_family``), and one without a parameter, hold null in ``case_file``,
+    ``case_line`` and ``case_parameter``, never ``""`` (#2372); a location the
+    report gives is kept."""
+    import json
+
+    app = test_app
+    app.build()
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    needs = data["versions"][data["current_version"]]["needs"].values()
+    cases = [need for need in needs if need["type"] == "testcase"]
+    pytest_cases = [n for n in cases if n["id"].startswith("SRCLOC_TF_2")]
+    gtest_cases = [n for n in cases if n["id"].startswith("SRCLOC_TF_1")]
+    assert pytest_cases and gtest_cases
+    # pytest's report gives a file but no line
+    for need in pytest_cases:
+        assert need["case_line"] is None, need["id"]
+    for need in cases:
+        assert need["case_parameter"] is None, need["id"]
+        assert "" not in (need["case_file"], need["case_line"]), need["id"]
+    assert {(n["case_file"], n["case_line"]) for n in gtest_cases} >= {
+        ("src/math_test.cc", "12")
+    }

@@ -981,19 +981,23 @@ def test_required_on_the_types_that_declare_it(test_app: Any) -> None:
     ],
     indirect=True,
 )
-def test_an_extensions_field_is_never_declared_on_need_types_alone(
+def test_an_extensions_field_is_declared_on_its_types_and_the_types_naming_it(
     test_app: Any,
 ) -> None:
-    """A need type's entry of a field an extension registers is a narrowing of it,
-    however late the extension registers it: the field stays the extension's, on
-    every need type."""
+    """A field an extension declares on its own need types alone (sphinx-test-reports'
+    ``suite``, on its test suites and test cases, #2372) stays the extension's, however
+    late the extension registers it: a need type's entry of it is a narrowing, and
+    declares it on that type too; a type with no entry does not declare it."""
     app = test_app
     app.build()
     schema = _schema(app)
     assert not schema.is_project_field("suite")
-    for need_type in ("tr_case", "tr_suite", "req"):
+    assert schema.declaring_types("suite") == {"testsuite", "testcase", "spec"}
+    for need_type in ("testsuite", "testcase", "spec"):
         field = _field(app, need_type, "suite")
         assert (field.directive_option, field.allow_extend) == (True, True), need_type
+    field = _field(app, "req", "suite")
+    assert (field.directive_option, field.allow_extend) == (False, False)
     assert _field(app, "spec", "suite").schema["minLength"] == 1
 
 
@@ -1513,7 +1517,8 @@ def test_a_link_type_under_fields_is_no_field(test_app: Any) -> None:
 def test_a_field_named_as_back_links_is_refused(test_app: Any) -> None:
     """#2301: a ``fields`` entry named as the back links of a link type -- of ``links``,
     of ``parent_needs``, of a ``needs_links`` type -- declares no field: it is one
-    finding per entry, as a ``links`` entry of that name is, and the back links are
+    finding per entry, naming the ``links`` entry that declares their count, and the
+    back links are
     computed on every need as without it, never validated against the entry's schema;
     the need directive has no option of the name (it used to take the value, and lose
     it to the back links)."""
@@ -1523,7 +1528,9 @@ def test_a_field_named_as_back_links_is_refused(test_app: Any) -> None:
         *(
             _conflict(
                 f"needs_types['spec'].fields[{name!r}] declares {name!r}, which is a "
-                "link type's back links"
+                "link type's back links, whose count a need type declares under "
+                "'back_links' (needs_types['spec']"
+                f".back_links[{name.removesuffix('_back')!r}])"
             )
             for name in ("links_back", "parent_needs_back", "blocks_back")
         ),
@@ -1568,7 +1575,8 @@ def test_a_field_named_as_extra_links_back_links_is_refused(test_app: Any) -> No
         '"needs_links" instead. [needs.deprecated]',
         _conflict(
             "needs_types['spec'].fields['blocks_back'] declares 'blocks_back', which is "
-            "a link type's back links"
+            "a link type's back links, whose count a need type declares under "
+            "'back_links' (needs_types['spec'].back_links['blocks'])"
         ),
     ]
     assert _needs(app)["R_001"]["blocks_back"] == ["S_001"]

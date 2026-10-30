@@ -20,7 +20,9 @@ and is not re-exported by the package, so a suite that runs no corpus never load
 
 from __future__ import annotations
 
+import math
 import re
+import struct
 from collections import Counter
 from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path, PurePosixPath
@@ -178,7 +180,8 @@ def match_findings(
 
 
 def same(actual: Any, expected: Any) -> bool:
-    """Equal, and of the same type for a number (``7.0`` is not ``7``)."""
+    """Equal, and of the same type for a number (``7.0`` is not ``7``); a float is
+    compared by its bits (``-0.0`` is not ``0.0``), every NaN being one value."""
     if isinstance(expected, list):
         return (
             isinstance(actual, list)
@@ -187,9 +190,19 @@ def same(actual: Any, expected: Any) -> bool:
         )
     if isinstance(expected, bool) or isinstance(actual, bool):
         return actual is expected
-    if isinstance(expected, int | float):
-        return type(actual) is type(expected) and actual == expected
+    if isinstance(expected, float):
+        return type(actual) is float and _float_bits(actual) == _float_bits(expected)
+    if isinstance(expected, int):
+        return type(actual) is int and actual == expected
     return actual == expected
+
+
+def _float_bits(value: float) -> bytes:
+    """The IEEE 754 bits of *value*, with every NaN mapped to one pattern: ``needs.json``
+    cannot tell two NaNs apart, so neither does a pin. ``==`` would not do, as it makes
+    ``-0.0`` and ``0.0`` one value and a NaN no value at all (ubCode compares
+    ``f64::to_bits`` for the same reason)."""
+    return struct.pack("<d", math.nan if math.isnan(value) else value)
 
 
 def schema_defaults(properties: Mapping[str, Any]) -> dict[str, Any]:
@@ -321,17 +334,21 @@ def params(
     cases: Iterable[Mapping[str, Any]],
     *,
     files: Callable[[Mapping[str, Any]], list[tuple[Path, str]]],
+    skip: Callable[[Mapping[str, Any]], str | None] | None = None,
 ) -> list[Any]:
     """One ``pytest.param`` per case for an indirect ``test_app``: a ``needs`` build of
     ``files(case)``, the case itself, the case's name as the id, and a skip for a case
-    only ubCode runs."""
+    only ubCode runs, or for which *skip* gives a reason (a case loading an extension
+    that is not installed, say: the skip has to be the param's, since the ``test_app``
+    fixture builds the project before a test body could skip)."""
     built = []
     for case in cases:
-        marks = (
-            [pytest.mark.skip(reason="ubcode_only: a case only ubCode runs")]
+        reason = (
+            "ubcode_only: a case only ubCode runs"
             if case.get("ubcode_only")
-            else []
+            else (skip(case) if skip is not None else None)
         )
+        marks = [pytest.mark.skip(reason=reason)] if reason is not None else []
         built.append(
             pytest.param(
                 {"buildername": "needs", "files": files(case)},

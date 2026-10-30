@@ -10,6 +10,7 @@ from docutils.statemachine import StringList
 from sphinx.util.docutils import SphinxDirective
 from sphinx_data_viewer.api import get_data_viewer_node
 
+from sphinx_needs._need_source import NeedSourceHop, NeedSourceSemantic, directive_hops
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
@@ -137,6 +138,15 @@ class NeedserviceDirective(SphinxDirective):
             }
             #: need type -> the options of a datum of that type
             defined_by_type: dict[str | None, set[str]] = {}
+            # every need of the directive shares its hops: the service that made it,
+            # then the file and page the directive is written on
+            hops = directive_hops(
+                self,
+                first=NeedSourceHop(
+                    kind="generated",
+                    semantic=(NeedSourceSemantic(kind="service", name=service_name),),
+                ),
+            )
             for datum in service_data:
                 options = {}
 
@@ -190,7 +200,7 @@ class NeedserviceDirective(SphinxDirective):
 
                 # ToDo: Tags and Status are not set (but exist in data)
                 source = NeedItemSourceService(
-                    docname=self.env.docname, lineno=self.lineno
+                    docname=self.env.docname, lineno=self.lineno, hops=hops
                 )
                 try:
                     section += add_need(

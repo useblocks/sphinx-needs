@@ -66,7 +66,8 @@ class TestSplitCaseName:
     @pytest.mark.parametrize(
         ("name", "expected"),
         [
-            ("test_x", ("test_x", "")),
+            # No parameter: None, so the field is null, not "" (#2372).
+            ("test_x", ("test_x", None)),
             ("test_x[a-b]", ("test_x", "a-b")),
             ("tests.test_cli.test_help[1-2]", ("tests.test_cli.test_help", "1-2")),
             # An empty parameter list is a parameter of "".
@@ -74,13 +75,13 @@ class TestSplitCaseName:
             # The parameter is greedy: brackets inside it survive.
             ("test_x[a[0]-b]", ("test_x", "a[0]-b")),
             # googletest's parameterised spelling carries no brackets at all.
-            ("Works/0", ("Works/0", "")),
+            ("Works/0", ("Works/0", None)),
             # Not the pytest shape: the name is kept whole, never cut at a
             # bracket -- an unclosed one, text after the closing one, or a
             # name that starts with one.
-            ("test_x[abc", ("test_x[abc", "")),
-            ("test_x[a]b", ("test_x[a]b", "")),
-            ("[only]", ("[only]", "")),
+            ("test_x[abc", ("test_x[abc", None)),
+            ("test_x[a]b", ("test_x[a]b", None)),
+            ("[only]", ("[only]", None)),
         ],
     )
     def test_splits_pytest_s_shape_and_only_that(self, name, expected):

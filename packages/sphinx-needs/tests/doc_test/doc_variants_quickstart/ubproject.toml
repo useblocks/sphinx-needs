@@ -41,7 +41,7 @@ default = ""
 
 [needs.fields.platform_note]
 description = "Note describing the active platform"
-type = "string"
+schema = { type = "string" }
 nullable = true
 default = ""
 parse_variants = true

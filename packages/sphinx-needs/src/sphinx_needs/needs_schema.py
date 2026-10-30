@@ -45,6 +45,20 @@ from sphinx_needs.variants import VariantFunctionParsed
 if TYPE_CHECKING:
     from sphinx_needs.functions.functions import DynamicFunctionParsed
 
+#: The severity a need failing a declaration is reported at: the ``severity`` of a
+#: need type's entry of a field or link type. Unset, it is ``violation``.
+Severity: TypeAlias = Literal["violation", "warning", "info"]
+
+#: The severities, lowest first: a need type's declaration may raise the severity an
+#: ancestor gives, never lower it (:func:`narrowing_problems`).
+SEVERITIES: Final[tuple[Severity, ...]] = ("info", "warning", "violation")
+
+
+def _check_severity(severity: object) -> None:
+    """:raises ValueError: if ``severity`` is neither ``None`` nor a severity."""
+    if severity is not None and severity not in SEVERITIES:
+        raise ValueError("severity must be one of 'violation', 'warning' or 'info'.")
+
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class FieldSchema:
@@ -95,6 +109,16 @@ class FieldSchema:
     An empty mapping is a field derived on no need type (its ``derive_by_type`` could
     not be read).
     """
+    severity: Severity | None = None
+    """The severity a need failing this declaration is reported at -- its ``schema``
+    keywords, and ``nullable = false`` -- or ``None``, not given: ``violation``
+    (:attr:`failure_severity`). A need type's entry gives it; a type inheriting the
+    declaration keeps it, and may raise it but not lower it.
+
+    Below ``violation``, ``nullable = false`` is reported rather than enforced: a need
+    without a value is created, holding ``None`` (:attr:`admits_null`), and the schema
+    validation reports it.
+    """
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -106,6 +130,7 @@ class FieldSchema:
         ):
             raise ValueError("derive must be a DeriveRule or a DeriveInvalid.")
         _check_derive_by_type(self.derive_by_type)
+        _check_severity(self.severity)
         try:
             validate_field_schema(self.schema)
         except TypeError as exc:
@@ -162,6 +187,22 @@ class FieldSchema:
     def kind(self) -> Literal["field"]:
         """What it declares: a field (a core field or an extra field)."""
         return "field"
+
+    @property
+    def failure_severity(self) -> Severity:
+        """The severity a need failing this declaration is reported at: its
+        :attr:`severity`, else ``violation``."""
+        return self.severity or "violation"
+
+    @property
+    def admits_null(self) -> bool:
+        """Whether a need of this declaration may hold ``None``: it is nullable, or
+        not nullable at a severity below ``violation`` (:attr:`severity`), which a
+        need without a value fails without being refused. A derived field holds its
+        empty value, not ``None``, where it is not nullable."""
+        return self.nullable or (
+            not self.derived and self.failure_severity != "violation"
+        )
 
     @property
     def derived(self) -> bool:
@@ -820,6 +861,10 @@ class LinkSchema:
     rule holds :meth:`off_type_value`: the literal ``default``, which only
     ``derive_by_type`` without ``derive`` may carry, else no links.
     """
+    severity: Severity | None = None
+    """The severity a need whose links fail this declaration's ``schema`` is reported
+    at, or ``None``, not given: ``violation`` (:attr:`failure_severity`). As
+    :attr:`FieldSchema.severity`."""
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -831,6 +876,7 @@ class LinkSchema:
         ):
             raise ValueError("derive must be a DeriveRule or a DeriveInvalid.")
         _check_derive_by_type(self.derive_by_type)
+        _check_severity(self.severity)
         if self.target_types is not None:
             if not isinstance(self.target_types, LinkTargetTypes):
                 raise ValueError("target_types must be a LinkTargetTypes.")
@@ -874,6 +920,12 @@ class LinkSchema:
     def kind(self) -> Literal["link"]:
         """What it declares: a link type."""
         return "link"
+
+    @property
+    def failure_severity(self) -> Severity:
+        """The severity a need whose links fail this declaration is reported at: its
+        :attr:`severity`, else ``violation``."""
+        return self.severity or "violation"
 
     @property
     def derived(self) -> bool:
@@ -1155,6 +1207,66 @@ class LinkSchema:
                 )
 
 
+#: The keywords a need type's declaration of a link type's back links may give in its
+#: ``schema``: how many needs link to a need of the type.
+BACK_LINKS_KEYWORDS: Final[tuple[str, ...]] = ("minItems", "maxItems")
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
+class BackLinksSchema:
+    """A need type's declaration of the back links of a link type, ``<l>_back``: how
+    many links of that link type point to a need of the type (a
+    ``[needs.types.<t>.back_links.<l>]`` entry).
+
+    The count is the length of the need's ``<l>_back``: every link of the link type
+    to it, whatever the type of the need it comes from. It is checked by the schema
+    validation, once every link is final, on the needs of the declaring type and of
+    the types inheriting from it, but those from ``needs_external_needs``: the links
+    of such a need's own project to it are not loaded here, so its count would be
+    partial. A link to a part of the need counts for the need, a part it lacks too
+    (a dead link where it is written). A need that fails it is a
+    ``link_fail`` of the field ``<l>_back`` at the :attr:`severity` the declaration
+    gives (``violation`` when it gives none).
+    """
+
+    name: str
+    """The back links' name, ``<link_type>_back``."""
+    link_type: str
+    """The link type whose links are counted."""
+    description: str = ""
+    schema: Mapping[str, int]
+    """The ``minItems`` and ``maxItems`` given, each a non-negative integer."""
+    severity: Severity | None = None
+    """The severity a need failing the count is reported at; ``None``: violation."""
+
+    def __post_init__(self) -> None:
+        if self.name != f"{self.link_type}_back":
+            raise ValueError("name must be the link type's name and '_back'.")
+        if not isinstance(self.description, str):
+            raise ValueError("description must be a string.")
+        if not isinstance(self.schema, Mapping) or any(
+            key not in BACK_LINKS_KEYWORDS
+            or isinstance(value, bool)
+            or not isinstance(value, int)
+            or value < 0
+            for key, value in self.schema.items()
+        ):
+            raise ValueError(
+                "schema must give only 'minItems' and 'maxItems', each a "
+                "non-negative integer."
+            )
+        _check_severity(self.severity)
+
+    @property
+    def failure_severity(self) -> Severity:
+        """The severity a need failing the count is reported at."""
+        return self.severity or "violation"
+
+    def json_schema(self) -> dict[str, Any]:
+        """The schema the back links of a need of the type are validated against."""
+        return {"type": "array", "items": {"type": "string"}, **self.schema}
+
+
 class FieldShape(Protocol):
     """The shape of a field: what is the same on every need type.
 
@@ -1235,11 +1347,13 @@ class FieldsSchema:
 
     __slots__ = (
         "_absent",
+        "_back_links",
         "_core_fields",
         "_derived_names",
         "_extra_fields",
         "_frozen",
         "_global_view",
+        "_id_patterns",
         "_link_fields",
         "_local",
         "_need_types",
@@ -1257,6 +1371,10 @@ class FieldsSchema:
         self._project_fields: set[str] = set()
         #: need type -> field name -> the field's declaration for that need type
         self._type_overlays: dict[str, dict[str, FieldSchema | LinkSchema]] = {}
+        #: need type -> back links name -> the type's declaration of those back links
+        self._back_links: dict[str, dict[str, BackLinksSchema]] = {}
+        #: need type -> the (declaring need type, ``id_regex``) its needs' ids match
+        self._id_patterns: dict[str, tuple[tuple[str, str], ...]] = {}
         #: field name -> its declaration on a need type that does not declare it, one
         #: for every such type
         self._absent: dict[str, FieldSchema | LinkSchema] = {}
@@ -1339,7 +1457,7 @@ class FieldsSchema:
             return
         self._frozen = True
         self._derived_names = self._collect_derived_names()
-        for need_type in (*self._type_overlays, *self._lacking()):
+        for need_type in (*self._type_overlays, *self._back_links, *self._lacking()):
             self._resolved(need_type)
         self._resolved(None)
 
@@ -1431,7 +1549,7 @@ class FieldsSchema:
         if self._need_types is not None:
             raise ValueError("The need types of the fields schema are already set.")
         need_types = frozenset(names)
-        for need_type in self._type_overlays:
+        for need_type in (*self._type_overlays, *self._back_links):
             if need_type not in need_types:
                 raise ValueError(
                     f"Need type {need_type!r} declares fields anew, but {need_type!r} "
@@ -1477,6 +1595,68 @@ class FieldsSchema:
             raise ValueError(f"{head}{joint}{'; '.join(problems)}")
         self._type_overlays.setdefault(need_type, {})[field.name] = field
 
+    def add_back_links(self, need_type: str, back_links: BackLinksSchema) -> None:
+        """Declare how many links of a link type point to a need of one need type: the
+        type's declaration of the link type's back links (:class:`BackLinksSchema`).
+
+        It is read by :meth:`back_links` of the schema of that need type (:meth:`for_type`);
+        a second declaration of the same back links for the same need type replaces the
+        first. Registered for each type it reaches -- the declaring type and every type
+        inheriting from it -- as an overlay is.
+
+        :raises ValueError: if the need type is not configured, or the schema has no
+            link type whose back links they are
+        :raises TypeError: if the schema is frozen, or the schema of one need type
+        """
+        self._mutating()
+        if not isinstance(need_type, str) or not need_type:
+            raise ValueError("need_type must be a non-empty string.")
+        if self._need_types is not None and need_type not in self._need_types:
+            raise ValueError(
+                f"Cannot declare {back_links.name!r} for need type {need_type!r}: "
+                f"{need_type!r} is not a configured need type."
+            )
+        if back_links.link_type not in self._link_fields:
+            raise ValueError(
+                f"Cannot declare {back_links.name!r} for need type {need_type!r}: "
+                f"there is no link type {back_links.link_type!r}."
+            )
+        self._back_links.setdefault(need_type, {})[back_links.name] = back_links
+
+    def set_id_patterns(
+        self, need_type: str, patterns: Iterable[tuple[str, str]]
+    ) -> None:
+        """Set the ``id_regex`` patterns the id of a need of ``need_type`` matches,
+        beside ``needs_id_regex``: each a (declaring need type, pattern) pair, the
+        type's own and those of the types it inherits from. A second call replaces
+        the first.
+
+        :raises ValueError: if the need type is not configured
+        :raises TypeError: if the schema is frozen, or the schema of one need type
+        """
+        self._mutating()
+        if self._need_types is not None and need_type not in self._need_types:
+            raise ValueError(
+                f"Cannot declare an id_regex for need type {need_type!r}: "
+                f"{need_type!r} is not a configured need type."
+            )
+        self._id_patterns[need_type] = tuple(patterns)
+
+    def id_patterns(self, need_type: str) -> tuple[tuple[str, str], ...]:
+        """The (declaring need type, ``id_regex``) pairs the id of a need of
+        ``need_type`` matches (:meth:`set_id_patterns`), the root's first; empty
+        where neither the type nor an ancestor gives one."""
+        return self._base()._id_patterns.get(need_type, ())
+
+    def back_links(self) -> Mapping[str, BackLinksSchema]:
+        """The declarations of back links of the need type this is the schema of
+        (:meth:`for_type`), by name, read-only: empty for the global view, and for the
+        schema itself, which is the schema of no need type."""
+        if self._view_of is None or self._view_of[1] is None:
+            return MappingProxyType({})
+        base, need_type = self._view_of
+        return MappingProxyType(dict(base._back_links.get(need_type, {})))
+
     def for_type(self, need_type: str | None) -> TypeFieldsSchema:
         """The schema of the needs of ``need_type``, every field in full.
 
@@ -1502,7 +1682,9 @@ class FieldsSchema:
         for every need type with overlays, every need type that does not declare a
         field declared on need types alone, and the global view)."""
         if need_type is not None and (
-            need_type in self._type_overlays or self._lacks_local(need_type)
+            need_type in self._type_overlays
+            or need_type in self._back_links
+            or self._lacks_local(need_type)
         ):
             if (view := self._type_views.get(need_type)) is None:
                 view = self._type_views[need_type] = self._resolve_type(need_type)
@@ -1554,13 +1736,19 @@ class FieldsSchema:
         It keeps the global ``default`` and ``predicate_defaults``, which no reader
         applies: creation gives an absent field its empty value without defaults, the
         validation's off-type default is a derived field's only, and the readers of a
-        default read the global view.
+        default read the global view. A field is nullable where it is absent, so that
+        empty value is null, whatever the declaring types say: an extension's field
+        (``add_field``'s ``types``) may be not nullable where it is declared.
         """
         if field.derived:
             return field
         if (absent := self._absent.get(field.name)) is None:
-            absent = self._absent[field.name] = replace(
-                field, directive_option=False, allow_extend=False
+            absent = self._absent[field.name] = (
+                replace(
+                    field, directive_option=False, allow_extend=False, nullable=True
+                )
+                if isinstance(field, FieldSchema)
+                else replace(field, directive_option=False, allow_extend=False)
             )
         return absent
 
@@ -1601,6 +1789,13 @@ class FieldsSchema:
     def is_project_field(self, name: str) -> bool:
         """Whether the extra field ``name`` is one the project declares."""
         return name in self._project_fields
+
+    def declaring_types(self, name: str) -> frozenset[str] | None:
+        """The need types declaring ``name``, a field or link type declared on need
+        types alone -- by their entries (:ref:`needs_types_fields`), or by an
+        extension's ``add_field(..., types=...)`` -- or ``None`` for one every need
+        type has (see ``_localise``)."""
+        return self._base()._local.get(name)
 
     def add_link_field(self, field: LinkSchema) -> None:
         """Add a link field to the schema.
@@ -2282,7 +2477,11 @@ def narrowing_problems(
         sets compared) are among those of ``base``: a link a need of the type may
         hold is one a need of any type may. An overlay without ``target_types`` under
         a base with them drops them: defensive, since a declaration from the
-        configuration that gives none (or names no need type) keeps the base's.
+        configuration that gives none (or names no need type) keeps the base's;
+    12. a ``severity`` no lower than the ``severity`` ``base`` gives (``info`` below
+        ``warning`` below ``violation``): what a declaration enforces, a narrower
+        one enforces too. Where ``base`` gives none it is free, an overlay giving none
+        under a base giving one drops it (defensive, as for ``target_types``).
 
     The ``description`` is free. A reason of the rules 1 to 3 reads on from the name
     of the field ("Cannot declare field 'x' for need type 't' ..."), the others are
@@ -2369,7 +2568,24 @@ def narrowing_problems(
                     f"inheriting from {'it' if len(parent.names) == 1 else 'them'}) "
                     "do not."
                 )
+    problems.extend(severity_problems(base.severity, overlay.severity))
     return problems
+
+
+def severity_problems(base: Severity | None, overlay: Severity | None) -> list[str]:
+    """Why a declaration's ``severity`` ``overlay`` lowers ``base``, the one before it
+    (rule 12 of :func:`narrowing_problems`): empty when it does not."""
+    if base is None:
+        return []
+    if overlay is None:
+        # defensive: a declaration from the configuration keeps the severity before
+        # it when it gives none
+        return [f"Child drops parent 'severity' {base!r}."]
+    if SEVERITIES.index(overlay) < SEVERITIES.index(base):
+        return [
+            f"Child 'severity' {overlay!r} is lower than parent 'severity' {base!r}."
+        ]
+    return []
 
 
 def _default_problems(
