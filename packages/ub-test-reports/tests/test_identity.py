@@ -153,6 +153,13 @@ class TestCaseNameAndParameter:
     def test_the_name_s_bracket_then_the_value_then_the_type(self, case, expected):
         assert case_name_and_parameter(case) == expected
 
+    def test_a_name_the_caller_spells_otherwise_is_the_one_split(self):
+        """The converter writes ``""`` for the parser's ``"unknown"`` name; the
+        report's parameter still comes from the case."""
+        case = {"name": "unknown", "value_param": "1", "type_param": ""}
+        assert case_name_and_parameter(case, name="") == ("", "1")
+        assert case_name_and_parameter(case, name="t[2]") == ("t", "2")
+
 
 class TestDeterministicCaseId:
     def test_is_score_compatible(self):
