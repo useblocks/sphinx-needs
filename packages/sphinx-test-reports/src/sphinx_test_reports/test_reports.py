@@ -18,6 +18,7 @@ from sphinx_needs.exceptions import (
 )
 from sphinx_test_reports import __version__
 from sphinx_test_reports.directives.test_case import TestCase, TestCaseDirective
+from sphinx_test_reports.directives.test_common import DIRECTIVE_FIELDS
 from sphinx_test_reports.directives.test_env import EnvReport, EnvReportDirective
 from sphinx_test_reports.directives.test_file import TestFile, TestFileDirective
 from sphinx_test_reports.directives.test_report import (
@@ -244,6 +245,25 @@ _BUILT_IN_OPTIONS = {
 }
 
 
+def _fields_the_directives_set(config: Config) -> dict[str, str]:
+    """The need fields the three directives give their needs besides the extra options,
+    each with who sets it, for the message that refuses an extra option of its name: the
+    fields of :data:`~sphinx_test_reports.directives.test_common.DIRECTIVE_FIELDS`, and
+    the report-path and source-location fields under their configured names."""
+    directive_names = {
+        "file": config.tr_file[0],
+        "suite": config.tr_suite[0],
+        "case": config.tr_case[0],
+    }
+    taken: dict[str, str] = {}
+    for kind, names in DIRECTIVE_FIELDS.items():
+        for name in sorted(names):
+            taken.setdefault(name, f"{directive_names[kind]} sets itself")
+    for option in ("tr_file_option", "tr_source_file_option", "tr_source_line_option"):
+        taken.setdefault(getattr(config, option), f"{option} names")
+    return taken
+
+
 def register_tr_extra_options(app: Sphinx) -> None:
     """Register extra options with directives."""
 
@@ -256,6 +276,7 @@ def register_tr_extra_options(app: Sphinx) -> None:
     # keeps the configured spelling (#2115). Two names that differ only in case would be
     # one option.
     written: dict[str, str] = {}
+    fields_set = _fields_the_directives_set(app.config)
     for option_name in tr_extra_options or []:
         lowered = option_name.lower()
         if written.get(lowered, option_name) != option_name:
@@ -273,6 +294,14 @@ def register_tr_extra_options(app: Sphinx) -> None:
                     f"tr_extra_options holds '{option_name}', which {directive_name} "
                     f"reads as its own :{lowered}: option; choose another name."
                 )
+        # A field the directives set themselves, or one configuration names, would be
+        # given twice in the one mapping a need is created from: the extra option
+        # overriding the directive's value without a word (#2181).
+        if (taken_by := fields_set.get(option_name)) is not None:
+            raise InvalidConfigurationError(
+                f"tr_extra_options holds '{option_name}', which is a field {taken_by}; "
+                f"choose another name."
+            )
         if lowered != option_name:
             log.info(
                 f"tr_extra_options: write '{option_name}' on a directive as "

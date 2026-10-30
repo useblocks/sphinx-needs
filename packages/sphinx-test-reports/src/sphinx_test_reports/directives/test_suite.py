@@ -5,7 +5,6 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 
 import sphinx_test_reports.directives.test_case
-from sphinx_needs.api import add_need
 from sphinx_needs.exceptions import InvalidNeedException
 from sphinx_needs.utils import add_doc
 from sphinx_test_reports.directives.test_common import (
@@ -93,7 +92,7 @@ class TestSuiteDirective(TestCommonDirective):
         # Flatten JUnit <properties> into extra_options so that
         # suite-level properties are surfaced as sphinx-needs fields.
         # Only propagate properties that are explicitly listed in
-        # tr_extra_options to avoid unknown-kwarg errors from add_need.
+        # tr_extra_options to avoid unknown-field errors from sphinx-needs.
         allowed_extras = set(getattr(self.app.config, "tr_extra_options", []))
         suite_properties = suite.get("properties", {})
         for prop_name, prop_value in suite_properties.items():
@@ -109,33 +108,31 @@ class TestSuiteDirective(TestCommonDirective):
         main_section = []
         docname = self.state.document.settings.env.docname
         # The fields whose NAMES come from configuration -- the renameable report-path
-        # field and the configured extra options -- in one mapping. `dict[str, Any]`
-        # because `add_need` types each keyword parameter separately.
+        # field and the configured extra options -- in one mapping.
         report_fields: dict[str, Any] = {
             self.report_file_field(): self.test_file_given,
             **self.extra_options,
         }
         try:
-            main_section += add_need(
-                self.app,
-                self.state,
-                docname,
-                self.lineno,
-                need_type=self.need_type,
-                title=self.test_name,
-                id=self.test_id,
-                content=self.test_content,
-                links=self.test_links,
-                tags=self.test_tags,
-                status=self.test_status,
-                collapse=self.collapse,
-                suite=suite["name"],
-                cases=cases,
-                passed=passed,
-                skipped=skipped,
-                failed=failed,
-                errors=errors,
-                **report_fields,
+            main_section += self.create_report_need(
+                "suite",
+                {
+                    "id": self.test_id,
+                    "type": self.need_type,
+                    "title": self.test_name,
+                    "content": self.test_content,
+                    "links": self.test_links,
+                    "tags": self.test_tags,
+                    "status": self.test_status,
+                    "collapse": self.collapse,
+                    "suite": suite["name"],
+                    "cases": cases,
+                    "passed": passed,
+                    "skipped": skipped,
+                    "failed": failed,
+                    "errors": errors,
+                },
+                report_fields,
             )
         except InvalidNeedException as error:
             return self.need_refused(error)

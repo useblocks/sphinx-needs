@@ -273,7 +273,10 @@ so a name configured as ``Owner`` is written ``:owner:`` (``:Owner:`` works too,
 and the need field keeps the configured spelling, ``Owner``.
 The build says so at its start, once per such name.
 Two names that differ only in case cannot both be written on a directive, and are a configuration error;
-so is a name the directives already have as an option of their own (``Status`` or ``status``, ``Tags``, ``File``, ...).
+so is a name the directives already have as an option of their own (``Status`` or ``status``, ``Tags``, ``File``, ...),
+and one they set as a field of their own (``result``, ``time``, ``case_name``, ``cases``, ``passed``, ``title``, ...),
+or that :ref:`tr_file_option`, :ref:`tr_source_file_option` or :ref:`tr_source_line_option` names:
+the extra option would otherwise override that field's value.
 
 You can then use these options in your directives:
 

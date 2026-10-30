@@ -6,7 +6,7 @@ A Common directive, from which all other test directives inherit the shared func
 import os
 import pathlib
 import re
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from typing import Any
 
 from docutils import nodes
@@ -18,10 +18,13 @@ from sphinx.util import logging
 # `sphinx-needs>=8.5.0,<9` at the workspace import, so the `make_hashed_id` fallback this
 # used to carry could no longer run -- and no longer resolves, since the name is gone from
 # `sphinx_needs.api` entirely (measured against 8.5.0).
+from sphinx_needs.api import create_need
 from sphinx_needs.api.need import _make_hashed_id
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.exceptions import InvalidNeedException
+from sphinx_needs.need_item import NeedItemSourceUnknown
 from sphinx_test_reports.exceptions import SphinxError
+from ub_test_reports.fields import FILE_NEED_FIELDS, SUITE_NEED_FIELDS
 from ub_test_reports.identity import deterministic_case_id
 from ub_test_reports.jsonparser import JsonParser
 from ub_test_reports.junitparser import JUnitParser, ReportReadError
@@ -29,6 +32,33 @@ from ub_test_reports.junitparser import JUnitParser, ReportReadError
 # fmt: on
 
 logger = logging.getLogger(__name__)
+
+#: The fields the creation call of every directive is given beside the counts or the
+#: case's own: the core fields it sets (``id``, ``type``, ``title`` and ``content`` as
+#: its own arguments, ``links`` as a link type).
+_EVERY_NEED = ("id", "type", "title", "content", "links", "tags", "status", "collapse")
+
+#: The need fields each directive sets itself, by the kind of need it creates: what
+#: :meth:`TestCommonDirective.create_report_need` is handed, exactly, beside the
+#: report-path and source-location fields (named by configuration) and the configured
+#: extra options. ``tr_extra_options`` may name none of them (#2181).
+DIRECTIVE_FIELDS: dict[str, frozenset[str]] = {
+    "file": frozenset({*_EVERY_NEED, *FILE_NEED_FIELDS}),
+    "suite": frozenset({*_EVERY_NEED, *SUITE_NEED_FIELDS}),
+    "case": frozenset(
+        {
+            *_EVERY_NEED,
+            "style",
+            "suite",
+            "case",
+            "case_name",
+            "case_parameter",
+            "classname",
+            "result",
+            "time",
+        }
+    ),
+}
 
 
 def warn(directive: Directive, subtype: str, message: str) -> None:
@@ -208,7 +238,7 @@ class TestCommonDirective(Directive):
         # `load_test_file`) before any directive reads it. Declared here with the type each
         # one actually holds, because the bare `None` they used to start as is what the
         # subclasses' `self.results[0]`, `for x in self.results`, `self.extra_options[k]`
-        # and `add_need(title=self.test_name, ...)` were all being type-checked against.
+        # and the need's `title=self.test_name` were all being type-checked against.
         # `test_file` and `test_id` start EMPTY rather than `None`: both are required, and
         # the two guards that enforced that are now falsiness checks. For `test_id` that is
         # exactly identical behaviour. For `test_file` it is NOT, and the difference is a
@@ -237,9 +267,7 @@ class TestCommonDirective(Directive):
         self.test_status: str | None = None
         self.collapse: bool | str = False
         self.need_type: str = ""
-        #: Values read off the Sphinx config and the report, so `Any` rather than `str`:
-        #: this mapping is splatted into `add_need`, whose keyword parameters are typed
-        #: individually, and a `dict[str, str]` would be checked against every one of them.
+        #: Values read off the Sphinx config and the report, so `Any` rather than `str`.
         self.extra_options: dict[str, Any] = {}
 
         self.log = logging.getLogger(__name__)
@@ -296,6 +324,61 @@ class TestCommonDirective(Directive):
         """Record an option refusal; the first one recorded is the one reported."""
         if self.refusal is None:
             self.refusal = (subtype, message)
+
+    def create_report_need(
+        self, kind: str, own: Mapping[str, Any], report_fields: Mapping[str, Any]
+    ) -> list[nodes.Node]:
+        """Create this directive's need through Sphinx-Needs' ``create_need``.
+
+        :param kind: ``file``, ``suite`` or ``case``: the key of
+            :data:`DIRECTIVE_FIELDS`.
+        :param own: The values of the fields the directive sets itself, exactly the
+            names :data:`DIRECTIVE_FIELDS` lists for ``kind``.
+        :param report_fields: The fields whose names configuration chooses (the
+            report path, the source location, the extra options) and the report's own
+            further values. A name also in ``own`` is refused, never an override: the
+            configuration check keeps ``tr_extra_options`` from naming one, and a report
+            value of such a name refuses the need.
+        :return: The need's nodes.
+        :raises InvalidNeedException: What ``create_need`` raises, and for a name in
+            both mappings.
+        """
+        if own.keys() != DIRECTIVE_FIELDS[kind]:
+            raise AssertionError(
+                f"the {kind} directive sets {sorted(own)}, "
+                f"DIRECTIVE_FIELDS lists {sorted(DIRECTIVE_FIELDS[kind])}"
+            )
+        if clashing := sorted(own.keys() & report_fields.keys()):
+            raise InvalidNeedException(
+                "invalid_kwargs",
+                f"{clashing!r} given by the report or the configuration, and set by "
+                f"the directive itself",
+            )
+        values = {**own, **report_fields}
+        need_id, title, content = (
+            values.pop("id"),
+            values.pop("title"),
+            values.pop("content"),
+        )
+        need_type = values.pop("type")
+        # the link types this package sets: the built-in one, and those the JUnit
+        # properties are mapped to
+        link_names = {
+            "links",
+            *getattr(self.app.config, "tr_property_link_types", {}).values(),
+        }
+        _, created = create_need(
+            self.app,
+            self.state,
+            NeedItemSourceUnknown(docname=self.env.docname, lineno=self.lineno),
+            need_type,
+            title,
+            id=need_id,
+            content=content,
+            fields={k: v for k, v in values.items() if k not in link_names},
+            links={k: v for k, v in values.items() if k in link_names},
+        )
+        return created
 
     def need_refused(self, error: InvalidNeedException) -> list[nodes.Node]:
         """Report sphinx-needs' refusal of this directive's need, and return the box.

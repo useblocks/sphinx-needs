@@ -4,6 +4,28 @@ Changelog
 Unreleased
 ----------
 
+Fixed
+.....
+
+- 🐛 A :ref:`tr_extra_options` name that is a field the directives set themselves
+  (``result``, ``time``, ``case_name``, ``cases``, ``passed``, ``title``, ...), or that
+  :ref:`tr_file_option`, :ref:`tr_source_file_option` or :ref:`tr_source_line_option`
+  names, is refused when the build starts, with an ``InvalidConfigurationError`` naming the
+  option, as a name the directives read as an option of their own already is
+  (`#2181 <https://github.com/useblocks/sphinx-needs/issues/2181>`__). It ended the build
+  with a bare ``TypeError`` from inside a directive (``add_need() got multiple values for
+  keyword argument 'result'``), or, for ``case_file`` and ``case_line``, silently overrode
+  the test's source location. The same holds for ``extra_options`` in ``[test_reports]``. A
+  report value of such a name (a ``tr_json_mapping`` key, say) refuses its need with the
+  directive's warning, where it crashed the build too.
+
+- 🐛 A :ref:`tr_extra_options` name that is no field the directives set but one of
+  Sphinx-Needs' own parameter names, such as ``state``, is an ordinary field: it ended the
+  build with ``TypeError: add_need() got multiple values for keyword argument 'state'``
+  (`#2392 <https://github.com/useblocks/sphinx-needs/issues/2392>`__). The directives create
+  their needs through Sphinx-Needs' ``create_need``, which takes the fields and links as two
+  mappings; this requires the Sphinx-Needs release that adds it.
+
 Changed
 .......
 

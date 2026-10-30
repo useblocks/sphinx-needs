@@ -79,7 +79,6 @@ def _built_values(app, name):
         "case_line",
     ],
 )
-@pytest.mark.xfail(strict=True, reason="#2181: refused with the move to create_need")
 def test_an_extra_option_named_like_a_field_a_directive_sets_is_refused(
     make_app, tmp_path, clean_docutils_registry, name
 ):
@@ -96,7 +95,6 @@ def test_an_extra_option_named_like_a_field_a_directive_sets_is_refused(
         pytest.fail(f"built, the field holding {_built_values(app, name)!r}")
 
 
-@pytest.mark.xfail(strict=True, reason="#2181: refused with the move to create_need")
 def test_an_extra_option_named_like_a_renamed_field_is_refused(
     make_app, tmp_path, clean_docutils_registry
 ):
@@ -114,7 +112,6 @@ def test_an_extra_option_named_like_a_renamed_field_is_refused(
         pytest.fail(f"built, the field holding {_built_values(app, 'report')!r}")
 
 
-@pytest.mark.xfail(strict=True, reason="#2181: refused with the move to create_need")
 def test_an_extra_option_of_the_declarative_file_is_refused_alike(
     make_app, tmp_path, clean_docutils_registry
 ):
@@ -149,7 +146,6 @@ def test_the_value_of_a_field_a_directive_sets_is_the_report_s(
     )
 
 
-@pytest.mark.xfail(strict=True, reason="#2392: fixed with the move to create_need")
 def test_an_extra_option_named_state_is_an_ordinary_field(
     make_app, tmp_path, clean_docutils_registry
 ):
@@ -163,3 +159,69 @@ def test_an_extra_option_named_state_is_an_ordinary_field(
     assert _built_values(app, "state") == dict.fromkeys(
         ("TF_001", "TS_001", "TC_001"), "from-the-option"
     )
+
+
+JSON_MAPPING = """
+tr_json_mapping = {
+    "clash": {
+        "testsuite": {
+            "name": (["name"], "unknown"),
+            "tests": (["tests"], 0),
+            "errors": (["errors"], 0),
+            "failures": (["failures"], 0),
+            "skips": (["skips"], 0),
+            "passed": (["passed"], 0),
+            "time": (["time"], 0),
+            "testcases": (["testcase"], []),
+        },
+        "testcase": {
+            "name": (["name"], "unknown"),
+            "classname": (["classname"], "unknown"),
+            "file": (["file"], "unknown"),
+            "line": (["line"], -1),
+            "time": (["time"], 0),
+            "result": (["result"], "passed"),
+            "type": (["type"], ""),
+            "text": (["text"], ""),
+            "message": (["message"], ""),
+            "system-out": (["system-out"], ""),
+            "case_name": (["case_name"], ""),
+        },
+    }
+}
+"""
+
+JSON_REPORT = (
+    b'[{"name": "s1", "tests": 1, "errors": 0, "failures": 0, "skips": 0, "passed": 1,'
+    b' "time": 1, "testcase": [{"name": "t1", "classname": "c1", "result": "passed",'
+    b' "case_name": "from-the-report"}]}]'
+)
+
+
+def test_a_report_value_named_like_a_field_a_directive_sets_refuses_the_need(
+    make_app, tmp_path, clean_docutils_registry
+):
+    """A JSON report mapped to a key the directive sets itself (``case_name``) reached
+    ``add_need`` twice and crashed; it refuses the need, with the directive's warning,
+    rather than override the directive's value."""
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "conf.py").write_text(
+        'extensions = ["sphinx_needs", "sphinx_test_reports"]\n' + JSON_MAPPING,
+        encoding="utf-8",
+    )
+    (src / "index.rst").write_text(
+        "Probe\n=====\n\n"
+        ".. test-case:: C\n   :id: TC_001\n   :file: r.json\n   :suite: s1\n"
+        "   :case: t1\n",
+        encoding="utf-8",
+    )
+    (src / "r.json").write_bytes(JSON_REPORT)
+    warning = io.StringIO()
+    app = make_app("html", srcdir=src, freshenv=True, warning=warning)
+    app.build()
+    assert (
+        "index.rst:4: WARNING: Need could not be created: ['case_name'] given by the "
+        "report or the configuration, and set by the directive itself"
+    ) in warning.getvalue()
+    assert "TC_001" not in SphinxNeedsData(app.env).get_needs_view()
