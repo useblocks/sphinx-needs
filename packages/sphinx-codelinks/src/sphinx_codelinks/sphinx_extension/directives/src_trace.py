@@ -42,7 +42,12 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     scope_store,
     source_pages_store,
 )
-from sphinx_needs.api import InvalidNeedException, create_need
+from sphinx_needs.api import (
+    InvalidNeedException,
+    NeedItemSource,
+    NeedSourceHop,
+    create_need,
+)
 
 try:  # remove at the 9.0.0 floor bump: the record path is new in Sphinx-Needs 9.0.0
     from sphinx_needs.api import ingest_need_record
@@ -52,7 +57,6 @@ except ImportError:  # pragma: no cover - the tests stub the name instead
 from sphinx_needs.api.need import _make_hashed_id
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.need_item import NeedItemSourceUnknown
 from sphinx_needs.utils import add_doc, coerce_to_boolean
 
 logger = logging.getLogger(__name__)
@@ -291,6 +295,15 @@ class SourceTracingDirective(SphinxDirective):
         "file": directives.unchanged_required,
         "directory": directives.unchanged_required,
     }
+
+    def _need_source(self) -> NeedItemSource:
+        """The source of a need this directive creates: its page, at the directive's
+        line as the parser counts it (the source ``NeedItemSourceUnknown(docname=,
+        lineno=)`` built)."""
+        return NeedItemSource(
+            (NeedSourceHop(kind="page", document=self.env.docname),),
+            lineno=self.lineno,
+        )
 
     @measure_time("src-trace")
     def run(self) -> list[nodes.Node]:
@@ -539,9 +552,7 @@ class SourceTracingDirective(SphinxDirective):
                 self.env.app,
                 self.state,
                 record,
-                need_source=NeedItemSourceUnknown(
-                    docname=self.env.docname, lineno=self.lineno
-                ),
+                need_source=self._need_source(),
                 content_markup=markup,
                 content_source=(
                     (os.path.abspath(filepath), int(content_start["line"]))
@@ -767,9 +778,7 @@ class SourceTracingDirective(SphinxDirective):
                     _, created = create_need(
                         self.env.app,
                         self.state,
-                        NeedItemSourceUnknown(
-                            docname=self.env.docname, lineno=self.lineno
-                        ),
+                        self._need_source(),
                         str(marker.need["type"]),
                         str(marker.need["title"]),
                         id=None if marker_id is None else str(marker_id),
