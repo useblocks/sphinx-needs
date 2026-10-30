@@ -467,7 +467,8 @@ A need type may declare fields and link types anew for its needs, in its entry:
   or a name nothing else declares, a link type of this type's needs alone -- to the type's declaration of it;
 * ``back_links``: a dictionary from the name of a link type ``l`` to how many links of ``l`` point to a need of the type,
   its back links ``<l>_back`` (below);
-* ``inherits``: the directive name of one other need type, whose declarations this type starts from.
+* ``inherits``: the directive name of one other need type, whose declarations this type starts from;
+  a filter's ``c.is_a`` follows it (:ref:`filter_is_a`).
 
 A declaration in ``fields`` may carry these keys, each as :ref:`needs_fields` takes it:
 

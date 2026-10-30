@@ -2132,6 +2132,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     order, parent, inherits_findings = _inherits_order(type_entries)
     #: each need type with the types inheriting from it, as ``target_types`` reads them
     below = _type_descendants(order, parent)
+    # and as ``c.is_a`` reads them, in every filter of this build: set at its start, as
+    # the ``var`` proxy is (``filter_common.is_a_types``)
+    needs_config.is_a_types = below
     #: one rule for the name of a link type's back links, wherever the field or link
     #: type of that name comes from (every field is registered by now, a service's
     #: too): what it refuses does not exist, and is not read from the configuration
