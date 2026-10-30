@@ -68,7 +68,7 @@ class NeedSourcePhysical:
     test run's, for a test report's test file)."""
     path: str | None = None
     """POSIX, relative to ``root``, with ``..`` for a file outside it; under a ``None``
-    root, as the producer gives it."""
+    root, relative to the producer's own root, as the producer gives it (still POSIX)."""
     url: str | None = None
     """For a file that is not on this machine: a downloaded ``needs.json``, the page of
     an external need."""
