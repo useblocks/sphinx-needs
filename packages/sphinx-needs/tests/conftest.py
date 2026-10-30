@@ -114,6 +114,8 @@ def _need_source_fence() -> Iterator[None]:
     - the legacy ``sections`` and ``signature`` the walk writes equal the projection of
       the placement hop's semantic location, which the walk computes from the doctree on
       its own (:func:`~sphinx_needs._need_source.placement_semantic`), for every need;
+    - the ``parent_needs`` the walk writes name the nearest need node enclosing the need's
+      node, read from the doctree before the walk (:func:`_enclosing_need`), or nothing;
     - every hop with a path has the one root, ``srcdir``, and a relative path;
     - the walk changes the placement hop alone, and only its ``semantic`` (unset before);
     - lines point at text: every hop under the ``srcdir`` root names a file that exists,
@@ -142,7 +144,17 @@ def _need_source_fence() -> Iterator[None]:
             and type(need.source).__module__ == NeedItem.__module__
         ]
         assert not lacking, f"sources without hops: {lacking}"
+        # read before the walk, which takes the hidden needs out of the doctree
+        enclosing = {
+            node["refid"]: _enclosing_need(node) for node in doctree.findall(Need)
+        }
         original(app, doctree)
+        wrong_parents = {
+            need_id: (need["parent_needs"], enclosing[need_id])
+            for need_id, need in walked.items()
+            if list(need["parent_needs"]) != enclosing[need_id]
+        }
+        assert not wrong_parents, f"parent_needs (walked, enclosing): {wrong_parents}"
         files: dict[Path, list[str]] = {}
         for need_id, hops in before.items():
             _check_need_source(app, walked[need_id], hops, files)
@@ -150,6 +162,21 @@ def _need_source_fence() -> Iterator[None]:
     with pytest.MonkeyPatch.context() as patch:
         patch.setattr(sphinx_needs.needs, "analyse_need_locations", fenced)
         yield
+
+
+def _enclosing_need(node: Need) -> list[str]:
+    """The id of the nearest need node above this one, as a one-item list, or ``[]``.
+
+    The whole of what ``parent_needs`` means, read from the doctree alone and
+    independently of the walk: a need is the child of the need whose content holds it,
+    wherever it sits in that content, hidden or not (#2398).
+    """
+    parent = node.parent
+    while parent is not None:
+        if isinstance(parent, Need):
+            return [parent["refid"]]
+        parent = parent.parent
+    return []
 
 
 def _check_need_source(
