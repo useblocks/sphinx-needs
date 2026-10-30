@@ -1401,6 +1401,8 @@ Array fields store lists of homogeneous typed values:
 - ``items``: Schema for all array elements (required).
   The dictionary can contain any of the basic type schemas outlined above.
   The ``items.type`` field is required.
+  A schema rule's property on an array field (not a link type) may leave it out beside ``contains``,
+  as ``"tags": {"contains": {"const": "a"}}``: the field's item type is then its ``items``.
 - ``uniqueItems``: If set to ``true``, all elements in the array must be unique.
 - ``minItems`` / ``maxItems``: Array size constraints
 - ``contains`` Schema for some elements in the array.

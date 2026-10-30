@@ -146,6 +146,11 @@ Improvements
   through. ``add_need`` is unchanged and not deprecated yet: that waits for the final shape of the source, so that
   an extension moves once. See :func:`~sphinx_needs.api.need.create_need`.
 
+- 👌 A :ref:`needs_fields` entry naming a core field a need computes (``type_name``, ``docname`` and the other core
+  fields that take no declaration) is reported as ignored, with a ``needs.config`` warning, where it was ignored
+  silently. Nothing read such an entry, so no output changes, but a build run with ``-W`` (warnings as errors) that
+  has one now fails until the entry is removed
+
 - 👌 The ``needs.derive_scope`` warning at a :ref:`needextend` whose filter names a computed field says what
   computes it: "a derive rule" for a field a :ref:`derive <needs_derive>` rule computes, "a dynamic function or
   variant" for a ``[[…]]``, ``<<…>>`` or ``<{…}>``, and "a derive rule, a dynamic function or a variant" when the
@@ -222,6 +227,10 @@ Bug fixes
   ``add_external_need`` dropped a record's ``state`` as if it were ``add_need``'s parser state, so the field was
   ``None`` on every external need. A ``state`` that names no field of the project is reported as an unknown key of
   the source and dropped, as before.
+
+- 🐛 A schema rule's property on an array field may give ``contains`` without ``items``
+  (``"tags": {"contains": {"const": "a"}}``): the build stopped with a schema error, where the rule now applies,
+  the field's item type standing for ``items``. A link type's property is unchanged.
 
 - 🐛 A :ref:`needs_types` entry with a ``title`` and a ``prefix`` naming a need type an extension adds no longer
   stops the build with ``NeedsApiConfigException: testcase already exists as need type`` from the extension's

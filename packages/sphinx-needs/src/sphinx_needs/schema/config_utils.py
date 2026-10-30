@@ -483,6 +483,7 @@ def _inject_field_type(
             field_name,
             schema_name,
             path,
+            link=True,
         )
     elif (core_field := fields_schema.get_core_field(field_name)) is not None:
         _inject_type_and_item_type(
@@ -568,8 +569,15 @@ def _inject_type_and_item_type(
     field_name: str,
     schema_name: str,
     path: str,
+    *,
+    link: bool = False,
 ) -> None:
-    """Inject type and item type (for arrays) into a field schema, validating any existing values."""
+    """Inject type and item type (for arrays) into a field schema, validating any existing values.
+
+    A field's array schema takes ``items``, so one that gives ``contains`` alone
+    (``tags: {contains: {const: a}}``) is given the ``items`` its values
+    already satisfy, the item type; a link type's takes neither.
+    """
     # Cast to dict for mutation (TypedDict union makes direct assignment complex)
     schema_dict = cast(dict[str, Any], field_schema)
 
@@ -584,6 +592,8 @@ def _inject_type_and_item_type(
 
     # For array types, also inject/validate item types in 'items' and 'contains'
     if expected_type == "array" and expected_item_type is not None:
+        if not link and "contains" in schema_dict and "items" not in schema_dict:
+            schema_dict["items"] = {}
         for container_key in ("items", "contains"):
             if container_key in schema_dict:
                 container = schema_dict[container_key]
