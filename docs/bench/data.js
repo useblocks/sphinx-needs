@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793378927215,
+  "lastUpdate": 1793379980444,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27504,6 +27504,42 @@ window.BENCHMARK_DATA = {
             "value": 45.553191795,
             "unit": "s",
             "extra": "Commit: 8dcf332fd0f5fcd102e8b9df5a14e7b2f888d247\nBranch: master\nTime: 2026-10-30T17:47:26+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "30e2617857cf0a9de4254ec233b050e5f13cbd42",
+          "message": "🔧 sphinx-codelinks and sphinx-test-reports: no private Sphinx-Needs id helper, and no pre-9.0.0 guard (#2423)\n\nsphinx-codelinks and sphinx-test-reports no longer import Sphinx-Needs'\nprivate `_make_hashed_id`, and every id\neither of them produces is byte-identical to before.\n\nsphinx-codelinks predicts the id Sphinx-Needs gives a need that has\nnone, so its duplicate check and the `[docs]`\nlink on the source page can name it. It now derives that id through the\npublic `generate_need_id`. A new table pins\nthe prediction byte for byte, covering 20 need shapes across 6 project\nsettings (`needs_id_length`,\n`needs_id_from_title`, `needs_max_title_length`, a declared\n`full_title`, `needs_id_required`).\n\nsphinx-test-reports' id for a `test-file`, `test-suite` or `test-case`\nwithout `:id:` is its own scheme: the need\ntype's *name* followed by the hash (`testfile0FE7D`), not the type's\nprefix. So it does not go through\n`generate_need_id`, which would give `TF_0FE7D`. The package now\ncomputes it itself from `needs_id_from_title` and\n`needs_id_length`. A table of directives and settings pins every id.\nWhether to move to the type's prefix is\n#2422, a decision of its own.\n\nThe guard that let sphinx-codelinks import against a Sphinx-Needs older\nthan 9.0.0 is removed too:\n`try: from sphinx_needs.api import ingest_need_record except\nImportError`, the branch that warned when the name was\nmissing, and their two tests. The floor is `sphinx-needs>=9.1.0`, which\nexports it. `AGENTS.md` and\n`compat-requirements.txt` now give that floor.\n\n**Changes**\n\n- `would_be_id`\n(`sphinx_codelinks/sphinx_extension/directives/src_trace.py`) calls\n`generate_need_id`. An unknown\ntype is caught as the `InvalidNeedException` `generate_need_id` raises,\nand gives no id. A given id is still the\n  id, and `needs_id_required` still gives no id.\n- `_fallback_id` (`sphinx_test_reports/directives/test_common.py`)\nreplaces the `_make_hashed_id` call.\n- The `ingest_need_record` guard, its warning branch and its tests are\nremoved, and the docs line about the\n  pre-9.0.0 warning is dropped.\n- `_make_hashed_id`'s docstring says it is kept for the published\nsibling releases that import it (codelinks\n2.0.x; test-reports up to 3.0.x, including the uncapped 1.x and 2.0.0)\nand removed in 10.0 (#2421).\n- Pins: `packages/sphinx-codelinks/tests/test_would_be_id_table.py`; a\nbuild pin of #2410's declared-`full_title`\ncase as it stands (the fix stays in #2410);\n`packages/sphinx-test-reports/tests/test_hashed_ids_table.py`.\n- Changelogs: two 🔧 lines in sphinx-codelinks', one in\nsphinx-test-reports'.\n\nCloses #2407\nCloses #2408",
+          "timestamp": "2026-10-30T18:04:46+01:00",
+          "tree_id": "30f7beddb90da9c749d05ecae9b6ac04dd583902",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/30e2617857cf0a9de4254ec233b050e5f13cbd42"
+        },
+        "date": 1793379971545,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09858876100000202,
+            "unit": "s",
+            "extra": "Commit: 30e2617857cf0a9de4254ec233b050e5f13cbd42\nBranch: master\nTime: 2026-10-30T18:04:46+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.089995273,
+            "unit": "s",
+            "extra": "Commit: 30e2617857cf0a9de4254ec233b050e5f13cbd42\nBranch: master\nTime: 2026-10-30T18:04:46+01:00"
           }
         ]
       }
