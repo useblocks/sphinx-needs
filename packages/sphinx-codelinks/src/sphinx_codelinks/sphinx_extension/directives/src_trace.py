@@ -42,12 +42,7 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     scope_store,
     source_pages_store,
 )
-from sphinx_needs.api import (
-    InvalidNeedException,
-    NeedItemSource,
-    NeedSourceHop,
-    create_need,
-)
+from sphinx_needs.api import InvalidNeedException, NeedItemSource, create_need
 
 try:  # remove at the 9.0.0 floor bump: the record path is new in Sphinx-Needs 9.0.0
     from sphinx_needs.api import ingest_need_record
@@ -300,10 +295,7 @@ class SourceTracingDirective(SphinxDirective):
         """The source of a need this directive creates: its page, at the directive's
         line as the parser counts it (the source ``NeedItemSourceUnknown(docname=,
         lineno=)`` built)."""
-        return NeedItemSource(
-            (NeedSourceHop(kind="page", document=self.env.docname),),
-            lineno=self.lineno,
-        )
+        return NeedItemSource.on_page(self.env.docname, lineno=self.lineno)
 
     @measure_time("src-trace")
     def run(self) -> list[nodes.Node]:
