@@ -657,3 +657,101 @@ def test_add_need_warns_at_the_line_of_the_extension_calling_it(
         assert warning.category is DeprecationWarning
         assert str(warning.message) == ADD_NEED_WARNING
         assert Path(warning.filename).name == "source_shapes_ext.py"
+
+
+# --- the comparison key of a need that only moved -----------------------------------
+
+
+def _moved_pairs() -> dict[str, tuple[Any, Any]]:
+    """For each kind of source, the source of a need and of the same need written lower
+    (every line field and every hop line moved by 10)."""
+    from sphinx_needs.need_item import NeedItemSource
+
+    def lined(start: int) -> NeedSourceHop:
+        return dataclasses.replace(
+            LINED_A,
+            physical=NeedSourcePhysical(
+                root="srcdir", path="a.rst", start_line=start, end_line=start + 1
+            ),
+        )
+
+    def fragment(start: int) -> NeedSourceHop:
+        return NeedSourceHop(
+            kind="file",
+            physical=NeedSourcePhysical(
+                root="srcdir", path="f.rst", start_line=start, end_line=start + 2
+            ),
+            language=".rst",
+        )
+
+    def directive(at: int) -> Any:
+        return NeedItemSource(
+            (lined(at),), lineno=at, lineno_content=at + 2, parser_lineno=at + 4
+        )
+
+    def included(at: int) -> Any:
+        return NeedItemSource(
+            (fragment(at), PAGE_A), lineno=at, lineno_content=at + 1, parser_lineno=at
+        )
+
+    return {
+        "directive": (directive(5), directive(15)),
+        "included": (included(3), included(13)),
+        "service": (
+            NeedItemSource((GENERATED, lined(5)), lineno=9),
+            NeedItemSource((GENERATED, lined(15)), lineno=19),
+        ),
+        "import": (
+            NeedItemSource((IMPORTED, lined(5)), lineno=9, is_import=True),
+            NeedItemSource((IMPORTED, lined(15)), lineno=19, is_import=True),
+        ),
+        "api": (
+            NeedItemSource.on_page("a", lineno=3),
+            NeedItemSource.on_page("a", lineno=13),
+        ),
+    }
+
+
+@pytest.mark.xfail(strict=True, reason="fix round 2: the comparison-key seam")
+@pytest.mark.parametrize("kind", ["directive", "included", "service", "import", "api"])
+def test_a_need_that_only_moved_compares_equal_through_the_seam(kind: str):
+    """``NeedItemSource._without_lines()`` is the key an incremental build compares a
+    re-read need by (``NeedItem.moved_only``): the source without its line fields and
+    without its hops' lines -- the key ``_without_lines`` built from outside the class
+    before -- so a need that only moved is the same need, and one from another file is
+    not."""
+    from sphinx_needs.need_item import _without_lines
+
+    before, after = _moved_pairs()[kind]
+    assert before != after
+    assert before._without_lines() == after._without_lines()
+    assert _without_lines(before) == before._without_lines()
+    # the key #2414 built from the outside: the class, and its fields but the lines
+    assert before._without_lines() == (
+        type(before),
+        (
+            ("hops", tuple(hop._without_lines() for hop in before.hops)),
+            ("is_import", before.is_import),
+        ),
+    )
+    for hop in before.hops:
+        if hop.physical is not None:
+            assert hop._without_lines().physical == dataclasses.replace(
+                hop.physical, start_line=None, end_line=None
+            )
+    assert _need(before).moved_only(_need(after))
+    assert not _need(before).moved_only(_need(before))
+    # placed elsewhere is no move
+    from sphinx_needs.need_item import NeedItemSource
+
+    assert not _need(before).moved_only(_need(NeedItemSource.on_page("b", lineno=3)))
+
+
+def _need(source: Any) -> need_item.NeedItem:
+    return need_item.NeedItem(
+        source=source,
+        content=need_item.NeedsContent(doctype=".rst", content=""),
+        core=core(),
+        extras={},
+        links={},
+    )
