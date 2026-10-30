@@ -20,7 +20,8 @@ from sphinx_needs._need_source import (
     item_check,
     located_hops,
 )
-from sphinx_needs.api import InvalidNeedException, add_need
+from sphinx_needs.api import InvalidNeedException, create_need
+from sphinx_needs.api.need import _split_values
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.need import _get_title
@@ -390,12 +391,13 @@ class List2NeedDirective(SphinxDirective):
             warn=warn,
         )
 
+        jinja_content = kwargs.pop("jinja_content", None)
+        fields, links = _split_values(SphinxNeedsData(self.env).get_schema(), kwargs)
         try:
-            return add_need(
-                app=self.env.app,
-                state=self.state,
-                need_source=NeedItemSourceDirective(
-                    docname=self.env.docname,
+            _, need_nodes = create_need(
+                self.env.app,
+                self.state,
+                NeedItemSourceDirective(
                     lineno=lineno,
                     # ``lineno_content`` and ``parser_lineno`` are parser coordinates
                     # rather than source lines, exactly as a need directive gives them:
@@ -410,16 +412,19 @@ class List2NeedDirective(SphinxDirective):
                     parser_lineno=self.content_offset + 1 + list_need["line"],
                     hops=self._item_hops(list_need),
                 ),
-                need_type=list_need["type"],
-                title=title,
+                list_need["type"],
+                title,
                 full_title=full_title,
                 id=list_need["need_id"],
                 content=content,
-                **kwargs,
+                jinja_content=jinja_content,
+                fields=fields,
+                links=links,
             )
         except InvalidNeedException as err:
             warn(f"Need could not be created: {err.message}", "create_need")
             return []
+        return need_nodes
 
     def _content(self, list_need: _ListNeed) -> tuple[StringList, int]:
         """Build the source mapped content of one parsed list item.

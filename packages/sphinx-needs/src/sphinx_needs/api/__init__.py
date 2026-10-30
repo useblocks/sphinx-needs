@@ -13,6 +13,7 @@ from .configuration import (
 from .need import (
     add_external_need,
     add_need,
+    create_need,
     del_need,
     generate_need,
     generate_need_id,
@@ -30,6 +31,7 @@ __all__ = (
     "add_need",
     "add_need_layout",
     "add_need_type",
+    "create_need",
     "del_need",
     "generate_need",
     "generate_need_id",

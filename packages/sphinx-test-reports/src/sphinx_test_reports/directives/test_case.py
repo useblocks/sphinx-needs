@@ -3,7 +3,6 @@ from typing import Any
 from docutils import nodes
 from docutils.parsers.rst import directives
 
-from sphinx_needs.api import add_need
 from sphinx_needs.exceptions import InvalidNeedException
 from sphinx_needs.utils import add_doc
 from sphinx_test_reports.config import DEFAULT_OPTIONS
@@ -164,7 +163,7 @@ class TestCaseDirective(TestCommonDirective):
         # Flatten JUnit <properties> into top-level case keys so that
         # the extra-data loop below picks them up as sphinx-needs fields.
         # Only propagate properties that are explicitly listed in
-        # tr_extra_options to avoid unknown-kwarg errors from add_need.
+        # tr_extra_options to avoid unknown-field errors from sphinx-needs.
         # Properties do not overwrite core JUnit attributes (name, time, etc.).
         allowed_extras = set(getattr(self.app.config, "tr_extra_options", []))
         case_properties = case.get("properties", {})
@@ -191,37 +190,34 @@ class TestCaseDirective(TestCommonDirective):
         main_section = []
         # The fields whose NAMES come from configuration, in one mapping: the report-path
         # field is renameable, the source-location pair with it, and the configured extra
-        # options are arbitrary. `dict[str, Any]` because `add_need` types each keyword
-        # parameter separately and none of these names is known here.
+        # options are arbitrary.
         report_fields: dict[str, Any] = {
             self.report_file_field(): self.test_file_given,
             **self.source_location_fields(case),
             **self.extra_options,
         }
-        # Merge all options including extra ones
         try:
-            main_section += add_need(
-                self.app,
-                self.state,
-                docname,
-                self.lineno,
-                need_type=self.need_type,
-                title=self.test_name,
-                id=self.test_id,
-                content=content,
-                links=self.test_links,
-                tags=self.test_tags,
-                status=self.test_status,
-                collapse=self.collapse,
-                suite=suite["name"],
-                case=case_full_name,
-                case_name=case_name,
-                case_parameter=case_parameter,
-                classname=class_name,
-                result=result,
-                time=time_str,
-                style=style,
-                **report_fields,
+            main_section += self.create_report_need(
+                "case",
+                {
+                    "id": self.test_id,
+                    "type": self.need_type,
+                    "title": self.test_name,
+                    "content": content,
+                    "links": self.test_links,
+                    "tags": self.test_tags,
+                    "status": self.test_status,
+                    "collapse": self.collapse,
+                    "suite": suite["name"],
+                    "case": case_full_name,
+                    "case_name": case_name,
+                    "case_parameter": case_parameter,
+                    "classname": class_name,
+                    "result": result,
+                    "time": time_str,
+                    "style": style,
+                },
+                report_fields,
             )
         except InvalidNeedException as error:
             return self.need_refused(error)

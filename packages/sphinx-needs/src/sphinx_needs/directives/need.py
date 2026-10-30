@@ -12,7 +12,7 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs._need_source import directive_hops, placement_semantic
 from sphinx_needs._wording import joined
-from sphinx_needs.api import InvalidNeedException, add_need
+from sphinx_needs.api import InvalidNeedException, create_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -180,7 +180,6 @@ class NeedDirective(SphinxDirective):
         # in an include) with its true lines only; ``lineno`` is checked against them.
         _, resolved_lineno = self.get_source_info()
         source = NeedItemSourceDirective(
-            docname=self.env.docname,
             lineno=resolved_lineno or self.lineno,
             lineno_content=self.content_offset + 1,
             parser_lineno=self.lineno,
@@ -188,28 +187,30 @@ class NeedDirective(SphinxDirective):
         )
 
         try:
-            need_nodes = add_need(
-                app=self.env.app,
-                state=self.state,
-                need_source=source,
-                need_type=self.name,
-                title=title,
+            _, need_nodes = create_need(
+                self.env.app,
+                self.state,
+                source,
+                self.name,
+                title,
                 full_title=full_title,
                 id=id,
                 content=self.content,
-                status=status,
-                tags=tags,
-                template=template,
-                pre_template=pre_template,
-                post_template=post_template,
-                hide=hide,
-                collapse=collapse,
-                style=style,
-                layout=layout,
                 jinja_content=jinja_content,
-                constraints=constraints,
-                **extras,  # ty: ignore[invalid-argument-type]
-                **links,
+                fields={
+                    "status": status,
+                    "tags": tags,
+                    "template": template,
+                    "pre_template": pre_template,
+                    "post_template": post_template,
+                    "hide": hide,
+                    "collapse": collapse,
+                    "style": style,
+                    "layout": layout,
+                    "constraints": constraints,
+                    **extras,
+                },
+                links=links,
             )
         except InvalidNeedException as err:
             self._log_warning(
