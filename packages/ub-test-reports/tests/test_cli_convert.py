@@ -798,3 +798,20 @@ class TestGoogleTestParameters:
             _needs(data)["testcase__ParamTest_0__Legacy_owuvz"]["case_parameter"]
             is None
         )
+
+
+def test_a_case_without_a_name_keeps_an_empty_case_name(tmp_path):
+    """The converter writes ``""`` for the parser's ``"unknown"`` name -- in ``case``,
+    the title and ``case_name`` -- and the report's parameter still reaches
+    ``case_parameter`` (#2390)."""
+    report = tmp_path / "nameless.xml"
+    report.write_text(
+        '<testsuites><testsuite name="S" tests="1">'
+        '<testcase classname="K" value_param="5"/>'
+        "</testsuite></testsuites>",
+        encoding="utf-8",
+    )
+    code, data = _convert(tmp_path, "--no-config", xml=report)
+    assert code == 0
+    (need,) = _needs(data).values()
+    assert (need["case"], need["case_name"], need["case_parameter"]) == ("", "", "5")

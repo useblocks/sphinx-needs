@@ -616,6 +616,43 @@ def test_a_google_test_parameter_is_the_case_parameter_and_the_hop_s(build):
     }
 
 
+def test_a_json_mapping_s_unknown_parameter_is_no_parameter(build):
+    """A ``tr_json_mapping`` defaulting ``value_param`` / ``type_param`` to
+    ``"unknown"``, as the documented example defaults every key: a case without them
+    has no parameter, in the field or the hop; one with a value has it (#2390)."""
+    report = (
+        b'[{"name": "s1", "tests": 2, "errors": 0, "failures": 0, "skips": 0,'
+        b' "passed": 2, "time": 1, "testcase": ['
+        b'{"name": "t1", "classname": "c1", "result": "passed"},'
+        b' {"name": "t2", "classname": "c1", "result": "passed", "value_param": "7"}'
+        b"]}]"
+    )
+    needs, warnings = build(
+        {
+            "index.rst": "Probe\n=====\n\n"
+            ".. test-case:: C1\n   :id: TC_J1\n   :file: r.json\n   :suite: s1\n"
+            "   :case: t1\n\n"
+            ".. test-case:: C2\n   :id: TC_J2\n   :file: r.json\n   :suite: s1\n"
+            "   :case: t2\n"
+        },
+        {"r.json": report},
+        conf=JSON_MAPPING.format(
+            extra='"value_param": (["value_param"], "unknown"),'
+            ' "type_param": (["type_param"], "unknown"),'
+        ),
+    )
+    assert warnings == ""
+    assert needs["TC_J1"]["case_parameter"] is None
+    assert needs["TC_J2"]["case_parameter"] == "7"
+    assert _hops(needs, "TC_J1")[0] == (
+        "report srcdir:r.json (.json) :: suite 's1' > scope 'c1' > case 't1'"
+    )
+    assert _hops(needs, "TC_J2")[0] == (
+        "report srcdir:r.json (.json) :: suite 's1' > scope 'c1' > case 't2'"
+        " parameter='7'"
+    )
+
+
 # --- the test's own line: the code hop and ``case_line`` (#2381) -------------------
 
 #: ``REPORT`` as the ub-test-reports plugin writes it: the same cases, counted from 1,
