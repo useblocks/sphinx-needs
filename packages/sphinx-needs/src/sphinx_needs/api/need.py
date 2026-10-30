@@ -2049,9 +2049,9 @@ def _make_hashed_id(
 ) -> str:
     """Create an ID based on the type and title of the need.
 
-    Private. Kept for the published sibling packages (sphinx-codelinks 2.0.x,
-    sphinx-test-reports 3.0.x), which import it; removed in 10.0. New code calls
-    :func:`generate_need_id`.
+    Private. Kept for the published sibling packages, which import it
+    (sphinx-codelinks 2.0.x; sphinx-test-reports up to 3.0.x, including its uncapped
+    1.x and 2.0.0); removed in 10.0. New code calls :func:`generate_need_id`.
     """
     hashable_content = full_title or content
     hashed = hashlib.sha1(hashable_content.encode("UTF-8")).hexdigest().upper()
