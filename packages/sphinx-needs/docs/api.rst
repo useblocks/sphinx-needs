@@ -276,7 +276,10 @@ Data
    Elsewhere the hop has no line. A recorded line can still be wrong only where the file holds an identical copy of
    the need's text at the line the parser claims: through an included slice (``:start-after:``, ``:start-line:``)
    after an example of the directive, or a MyST need nested at once inside an identical twin (same name, same
-   title). Every path is relative to the source directory. The shape may
+   title). Every path is POSIX and relative to its hop's root: the source directory (``"srcdir"``, with ``..`` for a
+   file outside it), or, where ``root`` is ``None``, the producer's own root, which this build does not know, the path
+   as the producer gives it (a test report's test file, relative to the test run's root). A hop's ``semantic`` is
+   ``None`` where it is not determined, or where nothing finer than the file is known. The shape may
    change in a minor release, without a deprecation, until it reaches ``needs.json``; ``NeedItemSourceProtocol`` does
    not include it, so read it with ``getattr(need.source, "hops", ())``. Nothing a filter, a table or ``needs.json``
    shows depends on it.

@@ -218,6 +218,8 @@ class TestCaseDirective(TestCommonDirective):
                     "style": style,
                 },
                 report_fields,
+                suite=suite,
+                case=case,
             )
         except InvalidNeedException as error:
             return self.need_refused(error)

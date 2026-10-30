@@ -234,6 +234,11 @@ def setup(app: Sphinx) -> dict[str, object]:
 
     return {
         "version": VERSION,  # identifies the version of our extension
+        # What the pickled environment holds of a test need -- its line and its source
+        # -- changes with this number: an upgraded build reads every page again rather
+        # than keep what an earlier release recorded. 1: the hops, and the line the
+        # directive is written on (#2209).
+        "env_version": 1,
         "parallel_read_safe": True,  # support parallel modes
         "parallel_write_safe": True,
     }
