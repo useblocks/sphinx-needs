@@ -47,6 +47,7 @@ from ub_test_reports.fields import (
     declaration,
     need_kinds,
 )
+from ub_test_reports.junitparser import LINE_BASES, is_line_base
 from ub_test_reports.projectconfig import (
     BRIDGE_KEYS,
     DEFAULT_FIELD_NAMES,
@@ -125,6 +126,12 @@ def setup(app: Sphinx) -> dict[str, object]:
     # Required (not just recommended) when the build consumes a needs.json
     # produced by `test-reports build needs`, which always writes them.
     app.add_config_value("tr_deterministic_case_ids", False, "html")
+    # What the `line` of a report without a line-base mark counts from (#2381). A Google
+    # Test case always counts from 1. "auto": the reader's rule -- a pytest-shaped report
+    # from 0 (an earlier plugin's too, which carries no mark), any other report as
+    # written. 0 or 1: that base for every other report without a mark. "env": a test
+    # need records its line.
+    app.add_config_value("tr_line_base", "auto", "env", types=(str, int))
     # Declarative configuration: the [test_reports] section of this file
     # overrides the tr_* config values above at config-inited. The default is
     # searched for upwards from the confdir to the repository root; an explicit
@@ -227,6 +234,7 @@ def setup(app: Sphinx) -> dict[str, object]:
     # silently break it. (Sphinx's own check_confval_types sits at 800, so it
     # still validates what the bridge wrote.)
     app.connect("config-inited", load_toml_config, priority=100)
+    app.connect("config-inited", check_line_base)
     app.connect("config-inited", tr_preparation)
     app.connect("config-inited", sphinx_needs_update)
 
@@ -237,8 +245,10 @@ def setup(app: Sphinx) -> dict[str, object]:
         # What the pickled environment holds of a test need -- its line and its source
         # -- changes with this number: an upgraded build reads every page again rather
         # than keep what an earlier release recorded. 1: the hops, and the line the
-        # directive is written on (#2209).
-        "env_version": 1,
+        # directive is written on (#2209). 2: a test case's line read by its report's
+        # base, so a plain pytest report's `case_line` is one more, and the code hop's
+        # line where the base is known (#2381).
+        "env_version": 2,
         "parallel_read_safe": True,  # support parallel modes
         "parallel_write_safe": True,
     }
@@ -435,6 +445,26 @@ def load_toml_config(app: Sphinx, config: Config) -> None:
         log.info(
             f"Kept the -D value of {', '.join(sorted(skipped))} over "
             f"[{SECTION}] in {path}"
+        )
+
+
+def check_line_base(app: Sphinx, config: Config) -> None:
+    """Refuse a ``tr_line_base`` other than ``"auto"``, ``0`` or ``1``, when the build
+    starts.
+
+    After the bridge, so a value from ``[test_reports]`` (which the loader has checked)
+    and one from ``conf.py`` or ``-D`` are held to the same set. ``-D`` can only give
+    text, so ``"0"`` and ``"1"`` are the numbers.
+    """
+    value = config.tr_line_base
+    if value in ("0", "1"):
+        value = int(value)
+        config.tr_line_base = value
+    if not is_line_base(value):
+        allowed = ", ".join(repr(base) for base in LINE_BASES)
+        raise InvalidConfigurationError(
+            f"tr_line_base is {value!r}; it must be one of {allowed}: what the line of "
+            f"a report without a line-base mark counts from."
         )
 
 

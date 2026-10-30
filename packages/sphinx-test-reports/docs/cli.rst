@@ -258,6 +258,17 @@ rule holds for the *merged* value -- a ``--need-type`` flag, or the built-in
 default, disagreeing with the file's ``case`` is refused just like a
 disagreeing ``need_type`` in the file.
 
+Source lines
+------------
+
+A test case's ``case_line`` and the ``#L`` anchor of its URL are its line in the test
+file, counted from 1, by the build's rule (:ref:`pytest_line_base`): a plain
+``pytest --junitxml`` report counts from 0 and is read one more, the pytest plugin's
+reports say that they count from 1. ``line_base`` in ``[test_reports]``
+(:ref:`tr_line_base`) sets what a report that does not say counts from, and
+``--line-base`` overrides it for one run -- for reports written by an earlier version of
+the plugin, or by S-CORE's ``score_pytest``, ``--line-base 1``.
+
 Reproducible output
 -------------------
 
@@ -295,7 +306,7 @@ All options
                         [--need-type TYPE] [--tags TAGS]
                         [--extra-option NAME] [--link-property PROPERTY=LINK_FIELD]
                         [--remote-url URL] [--commit COMMITISH]
-                        [--url-pattern PATTERN]
+                        [--url-pattern PATTERN] [--line-base {auto,0,1}]
 
 ``--project`` and ``--version`` fill the ``needs.json`` envelope;
 ``--need-type`` (default ``testcase``) sets the need type and the ID prefix;

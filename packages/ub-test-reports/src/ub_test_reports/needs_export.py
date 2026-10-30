@@ -225,7 +225,14 @@ def build_need(
     source_line = optional(case.get("line"), -1)
     time = optional(case.get("time"), -1)
 
-    url = source_url(base_url, commit, source_file, source_line, url_pattern)
+    # A line the reader knows the base of and that is below 1 is no line of the file:
+    # line 0 of a report counted from 1. The URL gets no anchor there, as the build's
+    # code hop gets no line; `case_line` keeps the report's value.
+    line = case.get("line")
+    anchor = source_line
+    if case.get("line_base_known") is True and isinstance(line, int) and line < 1:
+        anchor = ""
+    url = source_url(base_url, commit, source_file, anchor, url_pattern)
     content = build_content(case)
 
     need: NeedItem = {

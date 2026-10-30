@@ -216,6 +216,46 @@ See :ref:`tr_source_file_option`.
 
 Default: **case_line**
 
+The line is counted from 1 wherever the report says, or the readers can tell, what
+it counts from; for a pytest test, it is the line of its first decorator, or of its
+``def``. See :ref:`tr_line_base`.
+
+.. _tr_line_base:
+
+tr_line_base
+------------
+
+What the ``line`` of a test case counts from, in a report that does not say: ``"auto"``,
+``0`` or ``1``.
+
+The ub-test-reports :ref:`pytest plugin <pytest_plugin>` marks each suite it writes with
+the property ``ub_test_reports:line_base`` = ``1``, and a suite with that property is
+always read by it. With ``"auto"``, a suite without it is read by what wrote it: a plain
+``pytest --junitxml`` report counts from 0, so its lines are read one more; a Google Test
+case counts from 1; any other report's line is read as written, and what it counts from
+is not known -- the record of where the need comes from then gives the test file without
+a line. :ref:`pytest_line_base` has the rule in full.
+
+``1`` reads every report without the property as counting from 1: the setting for
+reports written by an earlier version of the plugin, which carry no property, and by
+S-CORE's ``score_pytest``. ``0`` reads every such report as counting from 0.
+
+An explicit value covers only the reports whose base the readers are not sure of. A
+report with the property is read by it, and so is a Google Test report, whose cases
+carry Google Test's ``status`` and ``result`` attributes and always count from 1:
+``tr_line_base = 0`` leaves its lines as they are. A JSON report's line is always read
+as its :ref:`tr_json_mapping` gives it.
+
+Any other value stops the build with a configuration error. On the command line,
+``-D tr_line_base=1`` gives the number. The converter reads the same key from
+``ubproject.toml`` (``line_base``), and takes ``--line-base`` too.
+
+.. code-block:: python
+
+   tr_line_base = 1   # reports from score_pytest, or an earlier plugin
+
+Default: **"auto"**
+
 .. _tr_deterministic_case_ids:
 
 tr_deterministic_case_ids
@@ -497,6 +537,7 @@ applies it to the ``tr_*`` values below when a build starts.
    source_file_option = "file"
    source_line_option = "line"
    deterministic_case_ids = true
+   line_base = "auto"
    extra_options = ["more_info", "priority"]
    property_link_types = { request = "req" }
    # Base directory the directives look their report files up under -- not an
@@ -518,13 +559,14 @@ applies it to the ``tr_*`` values below when a build starts.
 **Keys.** Every key is named like its ``tr_*`` config value without the prefix
 (``file_option`` configures ``tr_file_option``, and so on). The build applies
 them all; the :ref:`build needs command <cli>` reads the three field-name keys
-(``file_option``, ``source_file_option``, ``source_line_option``) and
-``extra_options`` as well, so the needs it writes have the shape of the needs
-the build creates and carry exactly the fields the build accepts -- and it
+(``file_option``, ``source_file_option``, ``source_line_option``),
+``extra_options`` and ``line_base`` as well, so the needs it writes have the shape
+of the needs the build creates, carry exactly the fields the build accepts and give
+a test the line the build gives it -- and it
 refuses a file whose path fields share a name or take a fixed field's, as the
 build does. A key carrying the
 wrong type is an error -- that is the typo class this validation exists to
-catch. An *unknown* key is reported as a warning and ignored: the file is
+catch -- and so is a ``line_base`` other than ``"auto"``, ``0`` or ``1``. An *unknown* key is reported as a warning and ignored: the file is
 shared with tools on independent release cadences, so a key this version does
 not model must not take your build down.
 

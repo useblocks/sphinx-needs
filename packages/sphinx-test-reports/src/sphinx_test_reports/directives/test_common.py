@@ -131,6 +131,21 @@ def _case_source_file(case: Mapping[str, Any]) -> str | None:
     return _given(case.get("file", UNKNOWN))
 
 
+def _case_source_line(case: Mapping[str, Any]) -> int | None:
+    """The test's line in its source file, counted from 1, or ``None`` where it is not
+    known to be one.
+
+    The JUnit reader says whether it knew the base of the report's ``line``
+    (``line_base_known``, #2381); a line it passed through without knowing, a line
+    below 1 (``-1`` is "no line") and a JSON report's line (its mapping says nothing of
+    a base) are none. Read from the case itself, as its file is.
+    """
+    line = case.get("line")
+    if case.get("line_base_known") is True and type(line) is int and line >= 1:
+        return line
+    return None
+
+
 def _suite_chain(
     suites: list[dict[str, Any]], suite: Mapping[str, Any]
 ) -> list[Mapping[str, Any]] | None:
@@ -427,11 +442,15 @@ class TestCommonDirective(Directive):
           or extra option of the same field name, #2411), with ``/`` for a ``\\`` (a
           report written on Windows; the need's field keeps the value as given), and no
           hop where the report gives none. ``root`` is ``None``: the path is relative to
-          the test run's root (pytest's rootdir), which this build does not know. No
-          line: the reader cannot
-          tell a plain pytest report's 0-based ``line`` from the plugin's 1-based one
-          (#2381). ``language`` is ``None``: the report does not say what language the
-          test is written in.
+          the test run's root (pytest's rootdir), which this build does not know. Its
+          ``start_line`` is the case's ``line`` where the reader knows what the report
+          counts it from (``line_base_known``: a line-base mark, a plain pytest report,
+          a Google Test case, or an explicit ``tr_line_base``; #2381) and it is a line of
+          the file, counted from 1; for a pytest test, the line of its first decorator,
+          or of its ``def``. No ``end_line``: no report gives one. A line of a producer
+          the reader does not recognise is no hop's, as the need's ``case_line`` keeps
+          it as the report wrote it. ``language`` is ``None``: the report does not say
+          what language the test is written in.
         - The ``report`` hop: the report file, under the source directory
           (:func:`_report_physical`), its own suffix as ``language`` (``".xml"``,
           ``".json"``). Its semantic location is the element in the report, outermost
@@ -472,7 +491,8 @@ class TestCommonDirective(Directive):
                     NeedSourceHop(
                         kind="code",
                         physical=NeedSourcePhysical(
-                            path=source_file.replace("\\", "/")
+                            path=source_file.replace("\\", "/"),
+                            start_line=_case_source_line(case),
                         ),
                     )
                 )
@@ -658,10 +678,13 @@ class TestCommonDirective(Directive):
             try:
                 if os.path.splitext(self.test_file)[1] == ".json":
                     mapping = next(iter(self.app.config.tr_json_mapping.values()))
-                    parser = JsonParser(self.test_file, json_mapping=mapping)
+                    parsed = JsonParser(self.test_file, json_mapping=mapping).parse()
                 else:
-                    parser = JUnitParser(self.test_file)
-                self.app.testreport_data[self.test_file] = parser.parse()
+                    # `line_base_known` for the code hop's line (`_case_source_line`)
+                    parsed = JUnitParser(
+                        self.test_file, line_base=self.app.config.tr_line_base
+                    ).parse(line_base_known=True)
+                self.app.testreport_data[self.test_file] = parsed
             except ReportReadError as error:
                 # Nothing is cached: every directive reading this report says so itself.
                 self.report_error = str(error)
