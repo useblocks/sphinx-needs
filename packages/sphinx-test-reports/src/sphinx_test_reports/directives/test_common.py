@@ -475,6 +475,12 @@ class TestCommonDirective(Directive):
             root_path = pathlib.Path(self.app.config.tr_rootdir)
             test_path = root_path / test_path
         self.test_file = str(test_path)
+        # The page depends on the report, read or not: an edited report re-reads the
+        # page, and so does one that is created or fixed (Sphinx re-reads a page whose
+        # dependency is missing on every build). The path that is opened, made absolute:
+        # Sphinx reads a relative one against the source directory, which `tr_rootdir`
+        # need not be.
+        self.env.note_dependency(os.path.abspath(self.test_file))
         if not test_path.exists():
             self.report_error = f"Test file not found: {self.test_file}"
             warn(self, "report_missing", self.report_error)

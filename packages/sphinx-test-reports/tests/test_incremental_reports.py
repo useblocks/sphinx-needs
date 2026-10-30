@@ -343,17 +343,7 @@ def test_the_project_builds_cleanly(make_app, tmp_path):
     }
 
 
-#: Pending until a page depends on the report it reads (#2424).
-PENDING = pytest.mark.xfail(strict=True, reason="#2424: a page depends on its report")
-
-
-@pytest.mark.parametrize(
-    "scenario",
-    [
-        pytest.param(name, marks=PENDING) if name in REPORT_SCENARIOS else name
-        for name in SCENARIOS
-    ],
-)
+@pytest.mark.parametrize("scenario", SCENARIOS)
 def test_an_incremental_build_equals_a_fresh_build(make_app, tmp_path, scenario):
     _assert_equivalent(make_app, tmp_path, scenario)
 
@@ -371,7 +361,6 @@ def test_an_incremental_build_equals_a_fresh_build(make_app, tmp_path, scenario)
         ("unreadable-report-fixed", "case"),
     ],
 )
-@PENDING
 def test_a_report_change_re_reads_only_the_pages_reading_it(
     make_app, tmp_path, scenario, page
 ):
