@@ -42,7 +42,7 @@ def _fallback_id(
 
     This package's own scheme, not the id Sphinx-Needs generates, so not
     ``generate_need_id``, which starts with the type's prefix: ``tests/test_hashed_ids_table.py``
-    pins it byte for byte. Moving to the type's prefix is a follow-up.
+    pins it byte for byte. Whether to move to the type's prefix is open: #2422.
     """
     hashed = hashlib.sha1((title or content).encode("UTF-8")).hexdigest().upper()
     if config.id_from_title:
