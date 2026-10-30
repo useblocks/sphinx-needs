@@ -8,7 +8,10 @@ add_need() got multiple values for keyword argument 'state'``. They now go to
 
 from pathlib import Path
 
+import pytest
+
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs_testkit import build_warnings
 
 from .test_need_id_refs import _build, _MakeApp, _project
 
@@ -35,3 +38,51 @@ def test_a_one_line_field_named_like_a_parameter_is_an_ordinary_field(
     app = _build(tmp_path, make_app)
     need = SphinxNeedsData(app.env).get_needs_view()["IMPL_1"]
     assert (need["state"], need["app"]) == ("draft", "mine")
+
+
+def _style(name: str) -> str:
+    return (
+        "\n[codelinks.projects.src.analyse.oneline_comment_style]\n"
+        'needs_fields = [{ name = "title" }, { name = "id" }, '
+        f'{{ name = "{name}" }}, {{ name = "type", default = "impl" }}]\n'
+    )
+
+
+@pytest.mark.xfail(strict=True, reason="FR2: add_need's arguments stay arguments")
+def test_a_one_line_field_named_content_sets_the_content(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """``content`` is no field but an argument of the creation: a marker field of that
+    name is the need's content, as ``add_need`` took it."""
+    _project(
+        tmp_path,
+        toml_extra=_style("content"),
+        files={
+            "src/impl.cpp": "// @first impl, IMPL_1, the body text\nvoid impl() {}\n"
+        },
+    )
+    app = _build(tmp_path, make_app)
+    assert SphinxNeedsData(app.env).get_needs_view()["IMPL_1"]["content"] == (
+        "the body text"
+    )
+
+
+def test_a_one_line_field_named_like_a_core_field_no_marker_sets_refuses_the_need(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A Sphinx-Needs core field that is neither a field nor an argument of the
+    creation (``external_url``) refuses the marker's need, with the one-line warning."""
+    _project(
+        tmp_path,
+        toml_extra=_style("external_url"),
+        files={
+            "src/impl.cpp": "// @first impl, IMPL_1, http://x.org\nvoid impl() {}\n"
+        },
+    )
+    app = _build(tmp_path, make_app)
+    assert "IMPL_1" not in SphinxNeedsData(app.env).get_needs_view()
+    assert any(
+        "one-line need could not be created: {'external_url'} not in 'needs_fields'"
+        in warning
+        for warning in build_warnings(app)
+    )
