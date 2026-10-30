@@ -52,6 +52,11 @@ Changed
   ``NeedItemSourceUnknown``; nothing they record changes. Requires the Sphinx-Needs
   release that adds ``NeedItemSource``.
 
+- 🔧 The id a ``test-file``, ``test-suite`` or ``test-case`` gets without ``:id:`` is
+  computed in this package, where it went through a private Sphinx-Needs helper
+  (``_make_hashed_id``); every id is the one it was
+  (`#2407 <https://github.com/useblocks/sphinx-needs/issues/2407>`__).
+
 - ‼️ Each field is declared on the need types that carry it, no longer on every need
   (changed output; `#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__): the
   counters on test files and test suites, ``suite`` on test suites and test cases, the case's own
