@@ -67,9 +67,11 @@ Every need the directives create is sourced through Sphinx-Needs'
 `lineno` is the line the directive is written on — for a need a `test-report` generates, the
 `test-report`'s, whose page hop then has no line — and its hops are, innermost first: a test
 case's `code` hop, the `report` hop (the report under `"srcdir"`, its suffix, and the
-`suite` / `scope` (classname) / `case` (+ `parameter`) of the element; a `test-file`'s has
-none), then the page. The code hop is the report's `file` as given, read from the case itself
-and never from the merged fields a report key can override (#2411); it has **no root**
+element's place: one `suite` per level from the top-level suite down, read from the parsed
+tree, then `scope` (classname) and `case` (+ `parameter`); the parsers' `"unknown"` suite or
+classname is no entry; a `test-file`'s hop has none), then the page. The code hop is the
+report's `file` with `/` for `\`, read from the case itself and never from the merged fields
+a report key can override (#2411); it has **no root**
 (the path is relative to the test run's root, which the build does not know), **no line** (a
 plain pytest report's 0-based `line` cannot be told from the plugin's 1-based one, #2381) and
 **no language** (the report names none; codelinks' code hops are where a language name comes
