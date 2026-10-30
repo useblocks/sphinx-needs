@@ -451,3 +451,28 @@ def test_an_argument_of_create_need_in_fields_or_links_is_refused_naming_it(
         app, None, source, "req", "T", id="R_Y", fields={"full_title": "a field"}
     )
     assert need["full_title"] == "a field"
+
+
+@pytest.mark.xfail(strict=True, reason="FR9: the six names, and the plural's comma")
+def test_only_the_need_s_own_values_are_named_as_arguments(make_app, tmp_path):
+    """The names refused as arguments are the need's own values -- ``title``, ``id``,
+    ``content``, ``doctype``, ``jinja_content``, ``full_title`` --, never the caller's
+    plumbing (``state``, ``source``, ...), which a field author reading a sibling's
+    warning cannot give; two of them are named together."""
+    (tmp_path / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\n', encoding="utf-8"
+    )
+    (tmp_path / "index.rst").write_text("Arguments\n=========\n", encoding="utf-8")
+    app = make_app("html", srcdir=tmp_path, freshenv=True)
+    app.build()
+    source = NeedItemSourceExternal(url="http://example.org/x.html")
+    refusals = []
+    for fields in ({"content": "C", "title": "T"}, {"state": "draft"}):
+        with pytest.raises(InvalidNeedException) as err:
+            create_need(app, None, source, "req", "T", id="R_X", fields=fields)
+        refusals.append(err.value.message)
+    assert refusals == [
+        "['content', 'title'] are arguments of create_need: give them as content=, "
+        "title=, not in 'fields'.",
+        "{'state'} not in 'needs_fields' or 'needs_links'.",
+    ]

@@ -9,6 +9,7 @@ an unknown field, and the need into a refusal.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -182,3 +183,67 @@ def test_a_field_named_like_a_deprecated_key_is_a_field(needs):
     """``add_need`` drops its deprecated keys (``hide_status``, ...) with a warning; a
     field the project declares under such a name is a field through the producers."""
     assert needs["R_DIR"]["hide_status"] == "kept"
+
+
+SERVICE_FULL_TITLE = """\
+from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.services.base import BaseService
+
+
+class FullTitleService(BaseService):
+    options = []
+
+    def __init__(self, app, name, config, **kwargs):
+        super().__init__()
+
+    def request(self, options):
+        return [{"title": "short", "type": "req", "full_title": "A much longer title"}]
+
+    def debug(self, options):
+        return {}
+
+
+def _register(app, env, docnames):
+    services = SphinxNeedsData(env).get_or_create_services()
+    if "full" not in services.services:
+        services.register("full", FullTitleService)
+
+
+def setup(app):
+    app.connect("env-before-read-docs", _register)
+    return {"parallel_read_safe": True}
+"""
+
+
+@pytest.mark.xfail(strict=True, reason="FR7: a generated id does not move")
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    Path("conf.py"),
+                    "import sys\nfrom pathlib import Path\n\n"
+                    "sys.path.insert(0, str(Path(__file__).parent))\n"
+                    'sys.modules.pop("full_title_service", None)\n'
+                    'extensions = ["sphinx_needs", "full_title_service"]\n'
+                    'needs_fields = {"full_title": {"nullable": True}}\n',
+                ),
+                (Path("full_title_service.py"), SERVICE_FULL_TITLE),
+                (Path("index.rst"), "Ids\n===\n\n.. needservice:: full\n"),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_service_s_declared_full_title_keeps_its_generated_id(test_app):
+    """A service datum's ``full_title`` that the project declares as a field is the
+    field, and still the full title the generated id is derived from, as ``add_need``
+    took it: the id is the one it had."""
+    test_app.build()
+    assert build_warnings(test_app) == []
+    needs = SphinxNeedsData(test_app.env).get_needs_view()
+    expected = "R_" + hashlib.sha1(b"A much longer title").hexdigest().upper()[:5]
+    assert list(needs) == [expected]
+    assert needs[expected]["full_title"] == "A much longer title"
