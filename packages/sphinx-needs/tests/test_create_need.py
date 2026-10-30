@@ -453,7 +453,6 @@ def test_an_argument_of_create_need_in_fields_or_links_is_refused_naming_it(
     assert need["full_title"] == "a field"
 
 
-@pytest.mark.xfail(strict=True, reason="FR9: the six names, and the plural's comma")
 def test_only_the_need_s_own_values_are_named_as_arguments(make_app, tmp_path):
     """The names refused as arguments are the need's own values -- ``title``, ``id``,
     ``content``, ``doctype``, ``jinja_content``, ``full_title`` --, never the caller's

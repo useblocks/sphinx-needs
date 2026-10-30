@@ -204,6 +204,9 @@ class NeedserviceDirective(SphinxDirective):
                 need_id = datum.pop("id", None)
                 need_content = datum.pop("content", "")
                 jinja_content = datum.pop("jinja_content", None)
+                # a field the project declares as full_title: the field, and the full
+                # title the generated id is derived from, as add_need took it
+                full_title = datum.get("full_title")
                 fields, links = _split_values(needs_schema, datum)
                 try:
                     _, need_nodes = create_need(
@@ -215,6 +218,7 @@ class NeedserviceDirective(SphinxDirective):
                         id=need_id,
                         content=need_content,
                         jinja_content=jinja_content,
+                        full_title=full_title,
                         fields=fields,
                         links=links,
                     )

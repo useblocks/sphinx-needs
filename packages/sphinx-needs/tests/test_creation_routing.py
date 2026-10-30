@@ -215,7 +215,6 @@ def setup(app):
 """
 
 
-@pytest.mark.xfail(strict=True, reason="FR7: a generated id does not move")
 @pytest.mark.parametrize(
     "test_app",
     [

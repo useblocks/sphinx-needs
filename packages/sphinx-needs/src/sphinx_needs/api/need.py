@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import inspect
 import os
 import re
 import warnings
@@ -1078,9 +1077,9 @@ def create_need(
             "invalid_kwargs",
             f"{misplaced!r} are fields: give them in 'fields', not in 'links'.",
         )
-    # a name of one of this function's own arguments, unless the project declares a
-    # field or a link type of that name
-    arguments = _CREATE_NEED_ARGUMENTS - field_names - link_names
+    # a name of one of the need's values this function takes as an argument, unless
+    # the project declares a field or a link type of that name
+    arguments = _NEED_VALUE_ARGUMENTS - field_names - link_names
     for given, mapping in ((fields, "fields"), (links, "links")):
         if misplaced := sorted(given.keys() & arguments):
             raise InvalidNeedException(
@@ -1089,7 +1088,7 @@ def create_need(
                 f"{misplaced[0]}=, not in {mapping!r}."
                 if len(misplaced) == 1
                 else f"{misplaced!r} are arguments of create_need: give them as "
-                f"{', '.join(name + '=' for name in misplaced)} not in {mapping!r}.",
+                f"{', '.join(name + '=' for name in misplaced)}, not in {mapping!r}.",
             )
     return _create_need(
         app,
@@ -1123,12 +1122,13 @@ def _split_values(
     return fields, links
 
 
-_CREATE_NEED_ARGUMENTS = frozenset(inspect.signature(create_need).parameters) - {
-    "fields",
-    "links",
-}
-"""The names of :func:`create_need`'s own arguments, which a name in its ``fields`` or
-``links`` is refused as, naming the argument, unless the project declares it."""
+_NEED_VALUE_ARGUMENTS = frozenset(
+    ("title", "id", "content", "doctype", "jinja_content", "full_title")
+)
+"""The arguments of :func:`create_need` that are values of the need, which a name in its
+``fields`` or ``links`` is refused as, naming the argument, unless the project declares
+it. Its other arguments (``app``, ``state``, ``source``, ...) are the caller's, and a
+field of their name is an unknown name like any other."""
 
 
 def _create_need(
