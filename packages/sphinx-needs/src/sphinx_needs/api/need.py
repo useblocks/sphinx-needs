@@ -1033,9 +1033,9 @@ def create_need(
         :class:`~sphinx_needs.need_item.NeedItemSourceProtocol` interface. It gives the
         need its ``docname``, ``lineno`` and the other location fields, and says whether
         it is imported or external. In a directive it is
-        ``NeedItemSource.from_directive(self)``, as above; for needs at lines other
-        than the directive's own (needs made from data),
-        ``NeedItemSource.on_page(docname, lineno=lineno)``.
+        ``NeedItemSource.from_directive(self)``, as above; for a need on the page at
+        a line the caller gives (the directive's parser line, as ``add_need`` took
+        it), ``NeedItemSource.on_page(docname, lineno=lineno)``.
     :param need_type: The need type, by the name of its directive.
     :param title: The need's title.
     :param id: The need's id. If not given, one is generated (see

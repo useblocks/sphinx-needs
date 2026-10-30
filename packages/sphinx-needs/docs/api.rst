@@ -89,10 +89,12 @@ With it, ``need["lineno"]`` is the line the directive is written on, which diffe
 ``self.lineno`` where ``rst_prolog``, an include or generated input shifts the parser's
 count; to keep the old number exactly, use
 ``NeedItemSource.on_page(self.env.docname, lineno=self.lineno)``, which is the source
-``add_need`` built. For needs at lines other than the directive's own -- a directive creating
-needs from data, at the lines the data names, as sphinx-codelinks' ``src-trace`` does --
-``NeedItemSource.on_page(docname, lineno=lineno)`` is the source, in a docutils ``Directive``
-and in a nested parse alike; it is also the ``need_source`` to give ``generate_need``.
+``add_need`` built. ``on_page`` gives the need its page and the line the caller passes,
+nothing more, so it is the source wherever the caller chooses the line: the directive's own
+parser line, as ``add_need`` took it (every need sphinx-codelinks' ``src-trace`` creates sits
+at its directive's parser line), or the lines a directive's data names. It works in a docutils
+``Directive`` and in a nested parse alike, and is also the ``need_source`` to give
+``generate_need``.
 ``from_directive`` and ``on_page`` are stable, as the class's name and keywords are; the
 hops they build are provisional (see the provisional note under "Data", below).
 
@@ -110,8 +112,8 @@ refused that with an ``AssertionError``, ``create_need`` raises ``ValueError``.
    * - ``add_need``
      - ``create_need``
    * - ``docname``, ``lineno``
-     - ``source=NeedItemSource.from_directive(self)``; for a line other than the
-       directive's own, ``NeedItemSource.on_page(docname, lineno=lineno)``
+     - ``source=NeedItemSource.from_directive(self)``; for a line the caller gives
+       (``add_need``'s ``self.lineno``), ``NeedItemSource.on_page(docname, lineno=lineno)``
    * - ``lineno_content``
      - ``NeedItemSource(..., lineno_content=...)`` (``from_directive`` sets it)
    * - ``need_source``

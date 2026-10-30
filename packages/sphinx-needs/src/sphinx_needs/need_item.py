@@ -79,9 +79,9 @@ class NeedItemSource:
 
     Every need sphinx-needs creates has one, and so does a need an extension creates
     through :func:`~sphinx_needs.api.need.create_need`: in a directive,
-    ``NeedItemSource.from_directive(self)``; for a need at a line other than the one the
-    directive is written on (needs made from data), ``NeedItemSource.on_page(docname,
-    lineno=lineno)``. Its name, its constructor's
+    ``NeedItemSource.from_directive(self)``; for a need on the page at a line the caller
+    gives (the directive's parser line, as ``add_need`` took it; a line its data names),
+    ``NeedItemSource.on_page(docname, lineno=lineno)``. Its name, its constructor's
     keywords, :meth:`from_directive` and :meth:`on_page` are stable; ``hops`` and the hop
     types are **provisional** (see :ref:`api`): they may change in a minor release,
     without a deprecation, until they reach ``needs.json``.
@@ -197,11 +197,12 @@ class NeedItemSource:
         ``page`` hop of that document, with no file and no line of its own (nothing is
         read from the file, nothing checked against it); no hop without a document.
 
-        It is the source ``add_need(app, state, docname, lineno, ...)`` built. Use it
-        where a parser state is at hand but the need's line is not the directive's own:
-        a directive creating needs from data, at the lines the data names (as
-        sphinx-codelinks' ``src-trace`` does), or one keeping ``add_need``'s line, the
-        parser's; and as the ``need_source`` of
+        It gives the need its page and the line the caller passes, nothing more: it is
+        the source ``add_need(app, state, docname, lineno, ...)`` built. Use it where a
+        parser state is at hand and the caller chooses the need's line: a directive
+        keeping ``add_need``'s line, its own parser line (``self.lineno``; every need
+        sphinx-codelinks' ``src-trace`` creates sits there), or one placing needs at the
+        lines its data names; and as the ``need_source`` of
         :func:`~sphinx_needs.api.need.generate_need` or
         :func:`~sphinx_needs.api.need.ingest_need_record`. It works alike in a
         docutils ``Directive`` and in a nested parse. A need placed on a page is
