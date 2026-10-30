@@ -179,7 +179,8 @@ def test_an_unknown_key_refuses_a_count(test_app: Any) -> None:
         "WARNING: needs_types['req'].links['other_back'] has an unknown key 'bar'; "
         "known keys are allow_dead_links, color, copy, default, derive, description, "
         "incoming, outgoing, predicates, schema, severity, style, style_end, "
-        "style_part, style_start, target_types; the key is ignored [needs.config]",
+        "style_part, style_start, summary, target_types; the key is ignored "
+        "[needs.config]",
         "WARNING: needs_types['req'].back_links['satisfies'] sets 'severty', but a "
         "need type declares only the description, schema (minItems, maxItems) and "
         "severity of a link type's back links ('satisfies_back'); the entry is "
@@ -286,7 +287,8 @@ def test_a_back_links_name_of_no_link_type_is_checked_as_a_link_type(
         "WARNING: needs_types['req'].links['zzz_back'] has an unknown key 'foo'; "
         "known keys are allow_dead_links, color, copy, default, derive, description, "
         "incoming, outgoing, predicates, schema, severity, style, style_end, "
-        "style_part, style_start, target_types; the key is ignored [needs.config]",
+        "style_part, style_start, summary, target_types; the key is ignored "
+        "[needs.config]",
     ]
 
 
