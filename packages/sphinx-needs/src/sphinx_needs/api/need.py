@@ -1082,6 +1082,22 @@ def create_need(
     )
 
 
+def _split_values(
+    schema: FieldsSchema, values: Mapping[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """A flat mapping of a need's field and link values as :func:`create_need`'s
+    ``(fields, links)``: the project's link types to ``links``, the rest to ``fields``
+    (a field and a link type never share a name).
+
+    For this package's producers that hold the two in one mapping, as the options of a
+    ``list2need`` item or a service's datum do.
+    """
+    link_names = set(schema.iter_link_field_names())
+    fields = {k: v for k, v in values.items() if k not in link_names}
+    links = {k: v for k, v in values.items() if k in link_names}
+    return fields, links
+
+
 def _create_need(
     app: Sphinx,
     state: RSTState | None,
