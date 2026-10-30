@@ -21,6 +21,15 @@ New and Improved
 Fixed
 .....
 
+- 🐛 A Google Test case's parameter reaches its need: ``case_parameter`` holds a
+  value-parameterised case's ``value_param`` (``1``, ``(1, 2)``), a typed case's
+  ``type_param`` (``int``), or, for a test registered with both through
+  ``testing::RegisterTest``, the type first (``int, 42``), each verbatim, where it held no
+  value for any Google Test case
+  (`#2390 <https://github.com/useblocks/sphinx-needs/issues/2390>`__). The record of where
+  the need comes from names the same parameter beside the case. ``case_name`` keeps the name
+  as given (``Value/0``), and no id moves.
+
 - 🐛 A need's ``lineno`` is the line its directive is written on. A need a ``test-report``
   generates -- its ``test-file``, suites and cases -- recorded its line in the expanded
   input, a line the page does not have (``defined at index:44`` in the warning about a

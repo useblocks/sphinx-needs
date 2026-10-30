@@ -6,6 +6,16 @@ Changelog
 Unreleased
 ----------
 
+New and Improved
+................
+
+- ✨ ``ub_test_reports.identity.case_name_and_parameter(case)`` gives a parsed test case's
+  ``case_name`` and ``case_parameter`` by one rule: the parameter in the name's ``[…]``
+  (pytest's ``test_x[3]``), else Google Test's ``value_param``, else its ``type_param``,
+  and both as ``"<type_param>, <value_param>"``
+  (`#2390 <https://github.com/useblocks/sphinx-needs/issues/2390>`__). The converter and
+  sphinx-test-reports' directives share it. ``split_case_name`` is unchanged.
+
 Changed
 .......
 
@@ -29,6 +39,14 @@ Changed
 
 Fixed
 .....
+
+- 🐛 The ``test-reports build needs`` converter writes a Google Test case's parameter in
+  ``case_parameter``, where it wrote no value for any Google Test case
+  (`#2390 <https://github.com/useblocks/sphinx-needs/issues/2390>`__): a value-parameterised
+  case's ``value_param`` (``1``, ``(1, 2)``), a typed case's ``type_param`` (``int``), and
+  for a test registered with both through ``testing::RegisterTest``, the type first
+  (``int, 42``), each verbatim. Google Test writes the parameter beside the name, never in
+  it. ``case_name`` keeps the name as given (``Value/0``), and no id moves.
 
 - 🐛 The documented ``filterwarnings`` line that silences the pytest plugin's start-up notice,
   ``ignore::ub_test_reports.pytest_plugin.TestReportsConfigWarning``, crashed pytest 9.2 and

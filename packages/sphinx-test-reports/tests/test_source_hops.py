@@ -15,6 +15,7 @@ import hashlib
 import io
 import os
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -522,3 +523,126 @@ def test_the_report_path_under_a_symlinked_directory_is_sphinx_needs_rule(tmp_pa
         (tmp_path / "docs" / "linked", tmp_path / "real" / "r.xml"),
     ]:
         assert _report_physical(srcdir, path) == physical_for(srcdir, path)
+
+
+# --- Google Test's parameters (#2390) ----------------------------------------------
+
+#: googletest 1.17.0's ``--gtest_output=xml`` over ``TEST_P``, ``TYPED_TEST``,
+#: ``TYPED_TEST_P`` and ``testing::RegisterTest``: the parameter is in ``value_param`` /
+#: ``type_param``, never in the name.
+GTEST_PARAMS_XML = (
+    Path(__file__).parent / "doc_test" / "utils" / "gtest_params.xml"
+).read_bytes()
+
+_LIBCXX_STRING = (
+    "std::basic_string<char,std::__1::char_traits<char>,std::__1::allocator<char>>"
+)
+
+#: Each case's deterministic id -- the converter's, unchanged by #2390 -- and its
+#: ``case_name`` and ``case_parameter``: the value, the type, or both, type first.
+GTEST_PARAMS = {
+    "testcase__Inst_IntP__Value_0_uhxix": ("Value/0", "1"),
+    "testcase__Inst_IntP__Value_1_flspz": ("Value/1", "2"),
+    "testcase__S_StrP__Str_0_jeebm": ("Str/0", '"a \\"b\\" <c>"'),
+    "testcase__S_StrP__Str_1_lpzaf": ("Str/1", '""'),
+    "testcase__PairP__Pair_0_ojtcw": ("Pair/0", "(1, 2)"),
+    "testcase__Typed_0__T1_fvlzv": ("T1", "int"),
+    "testcase__Typed_1__T1_notmu": ("T1", _LIBCXX_STRING),
+    "testcase__My_TP_0__Each_megvw": ("Each", "int"),
+    "testcase__My_TP_1__Each_nrkup": ("Each", _LIBCXX_STRING),
+    "testcase__DynSuite__Both_riqkf": ("Both", "float, 3.5"),
+    # a hand test-case of the RegisterTest case
+    "TC_BOTH": ("Both", "float, 3.5"),
+}
+
+GTEST_PARAMS_PAGE = """\
+Probe
+=====
+
+.. test-file:: Parameters
+   :file: params.xml
+   :id: TF_PARAMS
+   :auto_suites:
+   :auto_cases:
+
+.. test-case:: Both by hand
+   :file: params.xml
+   :id: TC_BOTH
+   :suite: DynSuite
+   :case: Both
+"""
+
+
+def _gtest_params_build(build):
+    needs, warnings = build(
+        {"index.rst": GTEST_PARAMS_PAGE},
+        {"params.xml": GTEST_PARAMS_XML},
+        conf="tr_deterministic_case_ids = True\n",
+    )
+    assert warnings == ""
+    return {k: needs[k] for k in needs if needs[k]["type"] == "testcase"}
+
+
+def test_a_google_test_parameter_moves_no_id(build):
+    assert sorted(_gtest_params_build(build)) == sorted(GTEST_PARAMS)
+
+
+def test_a_google_test_parameter_is_the_case_parameter_and_the_hop_s(build):
+    """``case_parameter`` and the report hop's ``parameter`` extra are one value: what
+    the name's ``[…]`` gives, else ``value_param``, else ``type_param``, both joined
+    type first; ``case_name`` keeps gtest's ``/N``."""
+    cases = _gtest_params_build(build)
+    got = {}
+    for need_id, need in cases.items():
+        report = need.source.hops[1]
+        assert report.kind == "report"
+        assert report.semantic is not None
+        case = report.semantic[-1]
+        assert case.kind == "case"
+        got[need_id] = (
+            need["case_name"],
+            need["case_parameter"],
+            case.name,
+            case.extras,
+        )
+    assert got == {
+        need_id: (name, parameter, name, (("parameter", parameter),))
+        for need_id, (name, parameter) in GTEST_PARAMS.items()
+    }
+
+
+def test_a_json_mapping_s_unknown_parameter_is_no_parameter(build):
+    """A ``tr_json_mapping`` defaulting ``value_param`` / ``type_param`` to
+    ``"unknown"``, as the documented example defaults every key: a case without them
+    has no parameter, in the field or the hop; one with a value has it (#2390)."""
+    report = (
+        b'[{"name": "s1", "tests": 2, "errors": 0, "failures": 0, "skips": 0,'
+        b' "passed": 2, "time": 1, "testcase": ['
+        b'{"name": "t1", "classname": "c1", "result": "passed"},'
+        b' {"name": "t2", "classname": "c1", "result": "passed", "value_param": "7"}'
+        b"]}]"
+    )
+    needs, warnings = build(
+        {
+            "index.rst": "Probe\n=====\n\n"
+            ".. test-case:: C1\n   :id: TC_J1\n   :file: r.json\n   :suite: s1\n"
+            "   :case: t1\n\n"
+            ".. test-case:: C2\n   :id: TC_J2\n   :file: r.json\n   :suite: s1\n"
+            "   :case: t2\n"
+        },
+        {"r.json": report},
+        conf=JSON_MAPPING.format(
+            extra='"value_param": (["value_param"], "unknown"),'
+            ' "type_param": (["type_param"], "unknown"),'
+        ),
+    )
+    assert warnings == ""
+    assert needs["TC_J1"]["case_parameter"] is None
+    assert needs["TC_J2"]["case_parameter"] == "7"
+    assert _hops(needs, "TC_J1")[0] == (
+        "report srcdir:r.json (.json) :: suite 's1' > scope 'c1' > case 't1'"
+    )
+    assert _hops(needs, "TC_J2")[0] == (
+        "report srcdir:r.json (.json) :: suite 's1' > scope 'c1' > case 't2'"
+        " parameter='7'"
+    )

@@ -11,7 +11,7 @@ from sphinx_test_reports.directives.test_common import (
     error_node,
     find_suite,
 )
-from ub_test_reports.identity import split_case_name
+from ub_test_reports.identity import case_name_and_parameter
 
 
 class TestCase(nodes.General, nodes.Element):
@@ -158,7 +158,7 @@ class TestCaseDirective(TestCommonDirective):
         # If time is already a string or None, keep it as is
         style = "tr_" + case["result"]
 
-        case_name, case_parameter = split_case_name(case["name"])
+        case_name, case_parameter = case_name_and_parameter(case)
 
         # Flatten JUnit <properties> into top-level case keys so that
         # the extra-data loop below picks them up as sphinx-needs fields.

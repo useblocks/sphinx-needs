@@ -27,8 +27,8 @@ from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from ub_test_reports.fields import case_needs_schema
 from ub_test_reports.identity import (
     UNKNOWN,
+    case_name_and_parameter,
     deterministic_case_id,
-    split_case_name,
 )
 from ub_test_reports.projectconfig import DEFAULT_FIELD_NAMES
 from ub_test_reports.remote import DEFAULT_URL_PATTERN, source_url
@@ -142,7 +142,7 @@ def optional(value: object, absent: object) -> str:
 
     A field the report gives no value for is written ``None`` (null) instead, by
     :func:`build_need`: the source location here, the parameter in
-    :func:`~ub_test_reports.identity.split_case_name`.
+    :func:`~ub_test_reports.identity.case_name_and_parameter`.
     """
     return "" if value is None or value == absent else str(value)
 
@@ -220,7 +220,7 @@ def build_need(
 
     classname = optional(case.get("classname"), UNKNOWN)
     name = optional(case.get("name"), UNKNOWN)
-    case_name, case_parameter = split_case_name(name)
+    case_name, case_parameter = case_name_and_parameter(case, name=name)
     source_file = optional(case.get("file"), UNKNOWN)
     source_line = optional(case.get("line"), -1)
     time = optional(case.get("time"), -1)

@@ -745,3 +745,73 @@ def test_direct_cases_of_a_suite_with_nested_suites_are_exported(tmp_path):
     assert by_case["test_second"]["result"] == "failed"
     assert by_case["test_nested"]["suite"] == "inner"
     assert by_case["test_top_level"]["suite"] == "inner"
+
+
+#: ``gtest_params.xml``, written by googletest 1.17.0 (``--gtest_output=xml``) over
+#: ``TEST_P`` (``int``, ``std::string``, ``std::pair``), ``TYPED_TEST``, ``TYPED_TEST_P``
+#: and ``testing::RegisterTest`` with a type and a value: each case's id, its
+#: ``case_name`` (gtest's name, ``/N`` and all) and its ``case_parameter`` (#2390).
+GTEST_PARAMS = {
+    "testcase__Inst_IntP__Value_0_uhxix": ("Value/0", "1"),
+    "testcase__Inst_IntP__Value_1_flspz": ("Value/1", "2"),
+    "testcase__S_StrP__Str_0_jeebm": ("Str/0", '"a \\"b\\" <c>"'),
+    "testcase__S_StrP__Str_1_lpzaf": ("Str/1", '""'),
+    "testcase__PairP__Pair_0_ojtcw": ("Pair/0", "(1, 2)"),
+    "testcase__Typed_0__T1_fvlzv": ("T1", "int"),
+    "testcase__Typed_1__T1_notmu": (
+        "T1",
+        "std::basic_string<char,std::__1::char_traits<char>,std::__1::allocator<char>>",
+    ),
+    "testcase__My_TP_0__Each_megvw": ("Each", "int"),
+    "testcase__My_TP_1__Each_nrkup": (
+        "Each",
+        "std::basic_string<char,std::__1::char_traits<char>,std::__1::allocator<char>>",
+    ),
+    "testcase__DynSuite__Both_riqkf": ("Both", "float, 3.5"),
+}
+
+
+class TestGoogleTestParameters:
+    """Google Test writes a parameterised case's parameter in ``value_param`` and a
+    typed one's type in ``type_param``, never in the name (#2390)."""
+
+    def test_no_id_moves(self, tmp_path):
+        code, data = _convert(tmp_path, "--no-config", xml=UTILS / "gtest_params.xml")
+        assert code == 0
+        assert sorted(_needs(data)) == sorted(GTEST_PARAMS)
+
+    def test_the_report_s_parameter_is_the_case_parameter(self, tmp_path):
+        _, data = _convert(tmp_path, "--no-config", xml=UTILS / "gtest_params.xml")
+        assert {
+            need_id: (need["case"], need["case_name"], need["case_parameter"])
+            for need_id, need in _needs(data).items()
+        } == {
+            need_id: (name, name, parameter)
+            for need_id, (name, parameter) in GTEST_PARAMS.items()
+        }
+
+    def test_a_case_with_a_type_and_a_value_has_both(self, tmp_path):
+        _, data = _convert(tmp_path, "--no-config")
+        need = _needs(data)["testcase__ParamTest_0__Works_0_ugfea"]
+        assert (need["case_name"], need["case_parameter"]) == ("Works/0", "int, 42")
+        assert (
+            _needs(data)["testcase__ParamTest_0__Legacy_owuvz"]["case_parameter"]
+            is None
+        )
+
+
+def test_a_case_without_a_name_keeps_an_empty_case_name(tmp_path):
+    """The converter writes ``""`` for the parser's ``"unknown"`` name -- in ``case``,
+    the title and ``case_name`` -- and the report's parameter still reaches
+    ``case_parameter`` (#2390)."""
+    report = tmp_path / "nameless.xml"
+    report.write_text(
+        '<testsuites><testsuite name="S" tests="1">'
+        '<testcase classname="K" value_param="5"/>'
+        "</testsuite></testsuites>",
+        encoding="utf-8",
+    )
+    code, data = _convert(tmp_path, "--no-config", xml=report)
+    assert code == 0
+    (need,) = _needs(data).values()
+    assert (need["case"], need["case_name"], need["case_parameter"]) == ("", "", "5")
