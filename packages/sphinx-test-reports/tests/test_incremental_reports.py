@@ -12,6 +12,7 @@ The oracle is a fresh build of the same sources.
 from __future__ import annotations
 
 import json
+import pickle
 import re
 from collections.abc import Callable
 from pathlib import Path
@@ -366,3 +367,25 @@ def test_a_report_change_re_reads_only_the_pages_reading_it(
 ):
     """Only the page reading the report is read again, not every page."""
     assert _assert_equivalent(make_app, tmp_path, scenario) == [page]
+
+
+@pytest.mark.xfail(strict=True, reason="sphinx-test-reports declares no env_version")
+def test_an_environment_pickled_by_an_earlier_release_is_read_again(make_app, tmp_path):
+    """An environment an earlier release pickled holds its test needs as it recorded
+    them -- the line in the expanded input, no hops -- and nothing in the sources
+    changed: the extension's ``env_version`` is what has the upgraded build read every
+    page again. An earlier release declared none, which is what is simulated here."""
+    srcdir = _write(tmp_path, FILES)
+    app, _ = _build(make_app, srcdir, fresh=True)
+    pickled = Path(app.doctreedir, "environment.pickle")
+    env = pickle.loads(pickled.read_bytes())
+    env.version = {
+        name: version
+        for name, version in env.version.items()
+        if name != "sphinx_test_reports"
+    }
+    pickled.write_bytes(pickle.dumps(env, pickle.HIGHEST_PROTOCOL))
+
+    app, read = _build(make_app, srcdir, fresh=False)
+    assert "file" in read
+    assert "report" in read
