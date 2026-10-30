@@ -29,6 +29,10 @@ New and Improved
   ``NeedItemSource`` (their page, at the directive's line), where they used its deprecated
   ``NeedItemSourceUnknown``; nothing they record changes. Requires the Sphinx-Needs
   release that adds ``NeedItemSource``.
+- 🔧 The id the duplicate check and the ``[docs]`` link name for a need without an id is
+  derived through Sphinx-Needs' public ``generate_need_id``, where it imported the private
+  ``_make_hashed_id``; every id is the one it was
+  (`#2407 <https://github.com/useblocks/sphinx-needs/issues/2407>`__).
 
 .. _`release:2.0.1`:
 
