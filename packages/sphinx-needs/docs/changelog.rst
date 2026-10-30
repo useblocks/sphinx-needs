@@ -98,10 +98,9 @@ Improvements
   directive's fence with its name and title; elsewhere it records no line (it can still be wrong only where the
   file holds an identical copy of the need's text at the line the parser claims). It is provisional: the
   shape may change in a minor release until it reaches ``needs.json``. Nothing a filter, a table or ``needs.json``
-  shows changes; the first build after upgrading reads every document again. The dataclass fields of the concrete
-  ``NeedItemSource*`` classes changed: construct them with their keywords (``dataclasses.replace`` and ``asdict`` on
-  them no longer give the old fields, and an explicit ``None`` for a required keyword is refused); they are not
-  documented API (``NeedItemSourceProtocol`` is, and is unchanged).
+  shows changes; the first build after upgrading reads every document again. The five concrete ``NeedItemSource*``
+  classes this release started with are one class now, ``NeedItemSource`` (below); ``NeedItemSourceProtocol`` is
+  unchanged.
 
 - ✨ A derive rule of kind ``copy`` takes ``where`` beside ``over`` or ``join`` (:ref:`needs_derive_kind_copy`,
   :issue:`2246`)
@@ -168,13 +167,34 @@ Improvements
   the need's field values as ``fields`` (the core fields such as ``status`` and ``tags``, and the project's fields)
   and its links as ``links``, kept apart from its own parameters, so any name a project gives a field can be used.
   It returns ``(need, nodes)``: the need as recorded, which an extension no longer has to look up or re-derive the
-  id of, and the nodes to insert. Its location is a ``source`` object, which is provisional for extensions. A name
+  id of, and the nodes to insert. Its location is a ``NeedItemSource`` (below). A name
   in the wrong mapping, or one of its own arguments given in a mapping (``title``, ``content``, ...), is refused,
   naming where it belongs. This package's need directives, ``list2need`` and ``needservice``, sphinx-codelinks'
   one-line needs and sphinx-test-reports' needs are created through it; ``needimport``, ``needs_external_needs``
-  and sphinx-codelinks' multi-line needs through the same path, as records. ``add_need`` is unchanged and not
-  deprecated yet: that waits for the final shape of the source, so that an extension moves once. See
-  :func:`~sphinx_needs.api.need.create_need`.
+  and sphinx-codelinks' multi-line needs through the same path, as records. ``add_need`` is deprecated in its
+  favour (see Deprecations). See :func:`~sphinx_needs.api.need.create_need`.
+
+- ✨ ``NeedItemSource``: one class for where a need comes from, public from ``sphinx_needs.api``, with
+  ``NeedItemSource.from_directive(self)`` as the source of a need an extension's directive creates and
+  ``NeedItemSource.on_page(docname, lineno=lineno)`` for a need at a line the caller gives (:issue:`2137`)
+
+  The source :func:`~sphinx_needs.api.need.create_need` takes is one frozen class,
+  :class:`~sphinx_needs.need_item.NeedItemSource`: the hops the need's text came through, and the location facts
+  the hops cannot give yet (``lineno``, ``lineno_content``, ``parser_lineno``, ``is_import``). Every need
+  sphinx-needs creates has one, and so does every need sphinx-codelinks and sphinx-test-reports create. In a
+  directive, ``NeedItemSource.from_directive(self)`` records what a need directive records: the line the directive
+  is written on (resolved through ``rst_prolog`` and includes), its parser line and content offset, and the file and
+  page it is written in, after any hops given as ``first``; it takes any docutils ``Directive``, not only a
+  ``SphinxDirective``. ``NeedItemSource.on_page(docname, lineno=lineno)`` gives a need its page and the line the
+  caller passes, the source ``add_need`` built: for a need at its directive's parser line, as ``add_need`` took it
+  (sphinx-codelinks' needs sit there), or at a line the directive's data names. The class's name, ``from_directive`` and ``on_page`` are
+  stable, and so is reading a source through ``NeedItemSourceProtocol``; the general constructor and its keywords
+  (``hops``, ``lineno``, ``lineno_content``, ``parser_lineno``, ``is_import``) are provisional, for sphinx-needs' own
+  producers and advanced use, as ``hops`` and the hop types, ``NeedSourceHop``, ``NeedSourcePhysical`` and
+  ``NeedSourceSemantic``, now also importable from ``sphinx_needs.api``, are: they may change without a deprecation,
+  until ``needs.json`` carries them. A need's ``docname``, ``lineno`` and the other location keys are unchanged, and so is
+  ``NeedItemSourceProtocol``; the first build after upgrading reads every document again. See
+  :ref:`api_migrating_add_need`.
 
 - 👌 A :ref:`needs_fields` entry naming a core field a need computes (``type_name``, ``docname`` and the other core
   fields that take no declaration) is reported as ignored, with a ``needs.config`` warning, where it was ignored
@@ -236,6 +256,38 @@ Improvements
   declares a field of need types 'req' alone; did you mean 'asil'?``; the field is declared all the same. A deliberate
   near name, such as a ``tag`` of one type beside ``tags``, is reported too: ``suppress_warnings =
   ["needs.type_near_name"]`` silences these alone. See :ref:`need_types_misspelt`.
+
+Deprecations
+............
+
+- ⚠️ ``add_need`` is deprecated, and is removed in 10.0: ``create_need`` replaces it (:issue:`2137`)
+
+  Each call of :func:`~sphinx_needs.api.need.add_need` is one Python ``DeprecationWarning``, at the line that
+  calls it, naming ``create_need`` and :ref:`api_migrating_add_need`; it creates the need as before. It is not a
+  Sphinx warning, so a build run with ``-W`` (warnings as errors) is not failed by an extension that still calls
+  it, such as sphinx-codelinks 2.0 and sphinx-test-reports 3.0. ``create_need`` takes the need's location as one
+  ``NeedItemSource`` (``NeedItemSource.from_directive(self)`` in a directive), its fields and links as two
+  mappings, and returns the need with its nodes; the migration section maps each of ``add_need``'s arguments.
+  ``generate_need``, ``add_external_need`` and ``ingest_need_record`` are not deprecated.
+
+- ⚠️ The five source classes ``NeedItemSourceUnknown``, ``NeedItemSourceDirective``, ``NeedItemSourceService``,
+  ``NeedItemSourceExternal`` and ``NeedItemSourceImport`` are deprecated names of ``sphinx_needs.need_item``, and
+  are removed in 10.0: ``NeedItemSource`` replaces them
+
+  Each is a function now, taking its class's keywords and returning the ``NeedItemSource`` with the location keys
+  that class gave, and reading the name (``from sphinx_needs.need_item import NeedItemSourceUnknown``) is a
+  ``DeprecationWarning`` at that line. They were not documented API, and what they did beyond their keywords is
+  gone: a source is a ``NeedItemSource``, so ``isinstance``, a ``match`` class pattern or a subclass naming an old
+  name raises ``TypeError`` (a function is no class: test ``isinstance(source, NeedItemSource)``), ``type(source)``
+  is never one of them, and an annotation ``NeedItemSourceUnknown | None`` evaluated at run time raises too;
+  ``dataclasses.replace`` raises ``TypeError`` (build a new source) and ``dataclasses.asdict`` gives the one class's
+  fields; the attributes ``url`` (``NeedItemSourceExternal``), ``path`` (``NeedItemSourceImport``),
+  ``external_url`` and ``is_external`` (``NeedItemSourceUnknown``) are gone (read ``source.dict_repr``);
+  ``dir(sphinx_needs.need_item)`` and, at run time, ``from sphinx_needs.need_item import *`` no longer include
+  them (a type checker sees each as a deprecated function of its keywords); and no combination of keywords is
+  refused: given ``hops``, the hops decide ``docname``, ``external_url``, ``is_external`` (but
+  ``NeedItemSourceUnknown(is_external=True)`` still puts an external hop first) and, without a ``lineno``, the
+  line, while a ``lineno`` given is the need's, and an ``external_url`` without ``is_external`` is dropped.
 
 Bug fixes
 .........
@@ -320,8 +372,9 @@ Bug fixes
   its readers finished. Needs from
   ``needs_external_needs`` are not compared (:issue:`353`). See :ref:`incremental_builds`.
 
-- 🔧 ``ENV_DATA_VERSION`` is 18: the first build after upgrading re-reads every document, which records
-  the views and need roles each document holds and where each hidden need is (:issue:`2398`), and computes the
+- 🔧 ``ENV_DATA_VERSION`` is 19: the first build after upgrading re-reads every document, which records
+  the views and need roles each document holds and where each hidden need is (:issue:`2398`), stores each need's
+  source as one class, and computes the
   links a ``copy`` or ``collect`` on a link type, refused until now, computes
 
 - 🐛 A need with ``:hide:`` is located as a visible need in the same place is **(changed output)** (:issue:`2398`)

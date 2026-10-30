@@ -47,6 +47,11 @@ Fixed
 Changed
 .......
 
+- 🔧 The directives' needs take their location as Sphinx-Needs' one ``NeedItemSource``
+  (their page, at the directive's line), where they used its deprecated
+  ``NeedItemSourceUnknown``; nothing they record changes. Requires the Sphinx-Needs
+  release that adds ``NeedItemSource``.
+
 - ‼️ Each field is declared on the need types that carry it, no longer on every need
   (changed output; `#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__): the
   counters on test files and test suites, ``suite`` on test suites and test cases, the case's own

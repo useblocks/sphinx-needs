@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 18
+ENV_DATA_VERSION: Final = 19
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -121,7 +121,17 @@ and ``parent_needs``, empty in 9.1.0, are now its place's, and after another nee
 The sources do not change, so without the bump an upgraded build would keep the old
 values, and the back links built from them, on the pages whose sources did not change.
 
-Version 18 changes what the stored values mean again: a ``copy`` or ``collect``
+Version 18 stores every need's source as one class,
+:class:`~sphinx_needs.need_item.NeedItemSource` (its hops, the given ``lineno``,
+``lineno_content``, ``parser_lineno`` and ``is_import``), where versions 14 to 17
+stored one of five ``NeedItemSource*`` classes, each with its own fields. The five names
+now resolve to factory functions, so an old environment happens to fail to unpickle
+(``NEWOBJ class argument must be a type``) and is read again; the bump makes that the
+rule rather than an accident of how the names are kept, since a slotted dataclass
+pickles its fields by position and any class found under an old name would take the
+old fields into the wrong slots.
+
+Version 19 changes what the stored values mean again: a ``copy`` or ``collect``
 declared on a link type, which 9.1.0 refused (``needs.derive_invalid``, the link type
 empty), now computes a chain's far ends as links, with back links, and ``summary`` on
 a link type's entry, a key 9.1.0 did not read, now leaves the link type out of a

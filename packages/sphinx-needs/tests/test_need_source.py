@@ -114,32 +114,37 @@ def _sources() -> dict[str, NeedItemSourceProtocol]:
     [
         (
             NeedItemSourceDirective(docname="a", lineno=3, lineno_content=4),
-            "NeedItemSourceDirective(docname='a', lineno=3, lineno_content=4, parser_lineno=None)",
+            "NeedItemSource(docname='a', lineno=3, lineno_content=4, external_url=None, "
+            "is_import=False, is_external=False, parser_lineno=None)",
         ),
         (
             NeedItemSourceService(docname="a", lineno=3),
-            "NeedItemSourceService(docname='a', lineno=3)",
+            "NeedItemSource(docname='a', lineno=3, lineno_content=None, "
+            "external_url=None, is_import=False, is_external=False, parser_lineno=None)",
         ),
         (
             NeedItemSourceImport(docname="a", lineno=3, path="x.json"),
-            "NeedItemSourceImport(docname='a', lineno=3, path='x.json')",
+            "NeedItemSource(docname='a', lineno=3, lineno_content=None, "
+            "external_url=None, is_import=True, is_external=False, parser_lineno=None)",
         ),
         (
             NeedItemSourceExternal(url="http://x"),
-            "NeedItemSourceExternal(url='http://x')",
+            "NeedItemSource(docname=None, lineno=None, lineno_content=None, "
+            "external_url='http://x', is_import=False, is_external=True, "
+            "parser_lineno=None)",
         ),
         (
             NeedItemSourceUnknown(docname="a", lineno=3),
-            "NeedItemSourceUnknown(docname='a', lineno=3, lineno_content=None, "
-            "external_url=None, is_import=False, is_external=False)",
+            "NeedItemSource(docname='a', lineno=3, lineno_content=None, "
+            "external_url=None, is_import=False, is_external=False, parser_lineno=None)",
         ),
     ],
 )
 def test_the_legacy_constructors_and_reprs_are_unchanged(
     source: NeedItemSourceProtocol, expected: str
 ):
-    """Every class keeps its keywords, and its repr is the dataclass's it had: the hops
-    are not in it, nor in the repr of a need."""
+    """Every name keeps its keywords, and builds the one class, whose repr is its legacy
+    keys and its parser line: the hops are not in it, nor in the repr of a need."""
     assert repr(source) == expected
     assert str(source) == expected
 
@@ -183,80 +188,20 @@ def test_a_directive_without_a_true_line_stores_lineno():
     source = NeedItemSourceDirective(lineno=5, lineno_content=7, hops=hops)
     assert source.lineno == 5
     assert source.dict_repr["lineno"] == 5
-    with pytest.raises(ValueError, match="lineno is required"):
-        NeedItemSourceDirective(lineno_content=7, hops=hops)
-
-
-@pytest.mark.parametrize(
-    "make",
-    [
-        pytest.param(
-            lambda: NeedItemSourceDirective(
-                docname="b",
-                lineno=4,
-                lineno_content=6,
-                hops=(_fragment("f.rst", 4), PAGE_A),
-            ),
-            id="directive-docname",
-        ),
-        pytest.param(
-            lambda: NeedItemSourceDirective(
-                docname="a",
-                lineno=5,
-                lineno_content=6,
-                hops=(_fragment("f.rst", 4), PAGE_A),
-            ),
-            id="directive-lineno",
-        ),
-        pytest.param(
-            lambda: NeedItemSourceDirective(lineno=4, lineno_content=6, hops=()),
-            id="directive-no-placement",
-        ),
-        pytest.param(
-            lambda: NeedItemSourceService(docname="b", lineno=1, hops=(PAGE_A,)),
-            id="service-docname",
-        ),
-        pytest.param(
-            lambda: NeedItemSourceImport(
-                docname="b", lineno=1, path="x", hops=(PAGE_A,)
-            ),
-            id="import-docname",
-        ),
-        pytest.param(
-            lambda: NeedItemSourceExternal(
-                url="http://b",
-                hops=(
-                    NeedSourceHop(
-                        kind="external", physical=NeedSourcePhysical(url="http://a")
-                    ),
-                ),
-            ),
-            id="external-url",
-        ),
-        pytest.param(
-            lambda: NeedItemSourceUnknown(docname="b", hops=(PAGE_A,)),
-            id="unknown-docname",
-        ),
-        pytest.param(
-            lambda: NeedItemSourceUnknown(docname="b", hops=()),
-            id="unknown-docname-no-placement",
-        ),
-    ],
-)
-def test_hops_that_disagree_with_a_keyword_are_refused(make: Callable[[], Any]):
-    """Given both, the hops and the legacy keywords must agree: neither is preferred."""
-    with pytest.raises(ValueError, match="hop"):
-        make()
+    # without one, the need has no lineno: nothing is refused (row 2 of the path)
+    assert (
+        NeedItemSourceDirective(lineno_content=7, hops=hops).dict_repr["lineno"] is None
+    )
 
 
 def test_a_missing_keyword_is_refused_without_hops():
-    """Without hops, a keyword the class requires is still required."""
-    with pytest.raises(TypeError, match="'docname'"):
-        NeedItemSourceDirective(lineno=1, lineno_content=1)
+    """A keyword a name's signature requires is still required, and a hop is a
+    ``NeedSourceHop``; the keywords only the hops could have given are no longer
+    required (row 2 of the path: no keyword is given twice)."""
     with pytest.raises(TypeError, match="'lineno'"):
-        NeedItemSourceDirective(docname="a", lineno_content=1)
-    with pytest.raises(TypeError, match="'url'"):
-        NeedItemSourceExternal()
+        NeedItemSourceService(docname="a")
+    with pytest.raises(TypeError, match="'path'"):
+        NeedItemSourceImport(docname="a", lineno=1)
     with pytest.raises(TypeError, match="NeedSourceHop"):
         NeedItemSourceService(lineno=1, hops=("a",))
 

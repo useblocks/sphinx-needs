@@ -1,5 +1,11 @@
+from sphinx_needs._need_source import (
+    NeedSourceHop,
+    NeedSourcePhysical,
+    NeedSourceSemantic,
+)
 from sphinx_needs.exceptions import InvalidNeedException
 from sphinx_needs.need_content import MarkupContent
+from sphinx_needs.need_item import NeedItemSource
 
 from .configuration import (
     add_dynamic_function,
@@ -24,6 +30,10 @@ from .need import (
 __all__ = (
     "InvalidNeedException",
     "MarkupContent",
+    "NeedItemSource",
+    "NeedSourceHop",
+    "NeedSourcePhysical",
+    "NeedSourceSemantic",
     "add_dynamic_function",
     "add_external_need",
     "add_extra_option",

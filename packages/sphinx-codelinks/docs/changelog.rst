@@ -25,6 +25,10 @@ New and Improved
   ...) refuses its need, with the ``codelinks.oneline`` warning naming it. ``add_need``
   took such a field as its own keyword: ``external_css`` set the need's css class,
   ``is_external`` made the need external, and the others were ignored.
+- 🔧 The needs of a ``src-trace`` directive take their location as Sphinx-Needs' one
+  ``NeedItemSource`` (their page, at the directive's line), where they used its deprecated
+  ``NeedItemSourceUnknown``; nothing they record changes. Requires the Sphinx-Needs
+  release that adds ``NeedItemSource``.
 
 .. _`release:2.0.1`:
 

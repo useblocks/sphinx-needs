@@ -27,7 +27,7 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import filter_import_item
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_content import resolve_content_parser
-from sphinx_needs.need_item import NeedItemSourceImport
+from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs.utils import (
     add_doc,
     coerce_to_boolean,
@@ -244,7 +244,7 @@ class NeedimportDirective(SphinxDirective):
 
         # every need of the directive shares its hops: the imported file (resolved),
         # then the file and page the directive is written on
-        hops = directive_hops(self, first=imported)
+        hops = directive_hops(self, first=(imported,))
         need_nodes = []
         for need_params in needs_list.values():
             record = dict(need_params)
@@ -272,11 +272,7 @@ class NeedimportDirective(SphinxDirective):
                 continue
 
             # set location
-            need_source = NeedItemSourceImport(
-                lineno=self.lineno,
-                path=need_import_path,
-                hops=hops,
-            )
+            need_source = NeedItemSource(hops, lineno=self.lineno, is_import=True)
 
             # a template is a file of the importing project, written in the page's
             # markup: a need rendered through one is parsed as the page's, as its
