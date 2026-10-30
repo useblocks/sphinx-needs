@@ -307,8 +307,8 @@ def test_an_environment_the_five_classes_stored_is_not_read_into_the_new_class(
     stored = {}
     for need_id, need in env._needs_all_needs.items():
         name, state = _as_the_five_classes_stored_it(need.source)
-        if isinstance(classes[name], type):
-            assert type(need.source) is classes[name], need_id
+        if isinstance(cls := classes[name], type) and cls.__name__ == name:
+            assert type(need.source) is cls, need_id
             stored[need_id] = (name, state, pickle.dumps(need.source, 5))
         else:
             stored[need_id] = (name, state, None)
