@@ -457,7 +457,6 @@ ADD_NEED_WARNING = (
 )
 
 
-@pytest.mark.xfail(strict=True, reason="slice 3a: add_need is deprecated")
 def test_add_need_warns_at_the_line_of_the_extension_calling_it(
     make_app, tmp_path: Path
 ):

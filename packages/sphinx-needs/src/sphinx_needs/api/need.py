@@ -850,11 +850,14 @@ def add_need(
     ``add_need`` allows to create needs programmatically and use its returned node to be integrated in any
     docutils based structure.
 
-    :func:`create_need` is its successor, which takes the need's fields and links as
-    two mappings and its location as a source object, and returns the need with its
-    nodes; ``add_need`` will be deprecated once the source types are final.
+    .. deprecated:: 9.2.0
 
-    .. seealso:: :func:`create_need`
+       Use :func:`create_need`, which takes the need's location as a
+       :class:`~sphinx_needs.need_item.NeedItemSource`
+       (``NeedItemSource.from_directive(self)`` in a directive) and its fields and links
+       as two mappings, and returns the need with its nodes. Each call is a
+       ``DeprecationWarning`` at the calling line; ``add_need`` is removed in 10.0. See
+       :ref:`api_migrating_add_need`.
 
     ``kwargs`` can contain options defined in ``needs_fields`` and ``needs_links``.
     If an entry is found in ``kwargs``, which *is not* specified in the configuration or registered e.g. via
@@ -919,6 +922,15 @@ def add_need(
 
     :return: list of nodes
     """
+    warnings.warn(
+        "add_need is deprecated and will be removed in sphinx-needs 10.0: use "
+        "sphinx_needs.api.create_need, which takes the need's location as a "
+        "NeedItemSource (NeedItemSource.from_directive(self) in a directive) and its "
+        "fields and links as two mappings; see 'Migrating from add_need' in the API "
+        "documentation",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     # remove deprecated kwargs
     if kwargs.keys() & _deprecated_kwargs:
         warnings.warn(

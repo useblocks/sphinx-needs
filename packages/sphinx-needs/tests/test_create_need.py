@@ -76,12 +76,17 @@ def setup(app):
 def test_add_need_still_warns_once_of_a_deprecated_key(test_app: SphinxTestApp):
     """``add_need``'s own ``DeprecationWarning`` for a key it no longer reads is
     unchanged: once per call, from ``api/need.py`` (its ``stacklevel=1``), and the key
-    is dropped rather than refused."""
+    is dropped rather than refused. (``add_need`` warns of its own deprecation too,
+    which ``test_need_item_source.py`` pins: this one is told apart by its message.)"""
     app = test_app
     app.build()
     assert build_warnings(app) == []
     assert "R_DEP" in SphinxNeedsData(app.env).get_needs_view()
-    caught = app.env.deprecated_key_warnings
+    caught = [
+        warning
+        for warning in app.env.deprecated_key_warnings
+        if not warning[1].startswith("add_need is deprecated")
+    ]
     assert [(category, message) for category, message, _ in caught] == [
         ("DeprecationWarning", "deprecated key found in kwargs")
     ]
