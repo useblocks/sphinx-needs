@@ -81,7 +81,6 @@ def _modules() -> list[Path]:
     )
 
 
-@pytest.mark.xfail(strict=True, reason="the producers move to create_need")
 def test_no_producer_calls_the_legacy_functions():
     found = {
         f"{path.relative_to(PACKAGES).as_posix()}:{line}": name
