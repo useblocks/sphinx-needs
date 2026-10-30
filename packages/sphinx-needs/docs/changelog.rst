@@ -296,12 +296,15 @@ Bug fixes
 - 🐛 A :ref:`needs_external_needs` source whose ``target_url`` renders an absolute URL (``scheme://…`` or ``//…``)
   links to that URL, where ``base_url/`` was put in front of it (:issue:`2389`)
 
-  ``target_url: "{{need['remote_url']}}"`` with ``base_url: ""`` linked every need to ``/https://github.com/…``, and
-  with a ``base_url`` set to ``https://site/https://github.com/…``; it now links to ``https://github.com/…``, and the
-  need's ``external_url`` is that URL. Every other render, ``req:REQ_1`` included, is still appended to ``base_url``.
-  The one configuration that changes is a ``base_url`` that is itself a URL-prefix service, such as
-  ``https://proxy/`` in front of an absolute ``target_url``: put the prefix in the template instead,
-  ``target_url: "https://proxy/{{need['remote_url']}}"``.
+  With ``target_url: "{{need['remote_url']}}"``, a ``base_url: ""`` linked every need to ``/https://github.com/…``,
+  and a ``base_url`` such as ``https://site`` to ``https://site/https://github.com/…``; both now link to
+  ``https://github.com/…``, and the need's ``external_url`` is that URL. Every other render, ``req:REQ_1`` included,
+  is still appended to ``base_url``. Two configurations change. A ``base_url`` that is itself a URL-prefix service,
+  such as ``https://proxy`` in front of an absolute ``target_url``, is no longer put in front: put the prefix in the
+  template instead, ``target_url: "https://proxy/{{need['remote_url']}}"``. And a template whose render starts with
+  ``//`` because a leading field is empty (``"/{{need['x']}}/{{need['id']}}"`` rendering ``//REQ_1``) is now a
+  scheme-relative URL, where it was ``base_url//REQ_1``: fill the field, or write the template without the leading
+  ``/``.
 
 - 🐛 A field named like a parameter of ``add_need`` -- ``state``, ``app``, ``need_type``, ``full_title``,
   ``need_source`` or ``allow_type_coercion`` -- is an ordinary field in a need directive, ``list2need``,

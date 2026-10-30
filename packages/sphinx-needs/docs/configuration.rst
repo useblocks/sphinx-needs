@@ -3126,7 +3126,7 @@ keys:
   unless it renders an absolute URL (``scheme://…`` or ``//…``, such as ``"{{need['remote_url']}}"`` rendering
   ``https://github.com/…``), which is used as it is; ``base_url`` may then be ``""``. A render with a scheme but no
   ``//``, such as ``req:REQ_1``, is appended as before.
-  If not, the external need url uses the default calculated ``base_url``.
+  If no ``target_url`` is given, the external need url uses the default calculated ``base_url``.
   |br| The ``target_url`` supports Jinja context ``{{need[]}}``, ``need option`` used as key, e.g ``{{need['id']}}`` or ``{{need['type']}}``.
 :json_url: An url, which can be used to download the ``needs.json`` (or similar) file.
 :json_path: The path to a ``needs.json`` file located inside your documentation project. Can not be used together with

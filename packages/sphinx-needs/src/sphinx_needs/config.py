@@ -530,8 +530,8 @@ class ExternalSource(TypedDict, total=False):
     """Override `current_version` from loaded JSON (optional)"""
 
     base_url: str
-    """Used to create the `external_url` field for each need item (required),
-    unless `target_url` renders an absolute URL"""
+    """Used to create the `external_url` field for each need item (required, may be ``""``);
+    not put in front of a `target_url` that renders an absolute URL"""
 
     target_url: str
     """Used to create the `external_url` field for each need item (optional):
