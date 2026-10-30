@@ -1,17 +1,17 @@
 """Where a need's text came from: its source, as a list of hops.
 
-**Provisional.** Every ``NeedItemSource*`` class of :mod:`sphinx_needs.need_item` carries
-``hops``, innermost first: ``hops[0]`` is the innermost place this build knows the need
+**Provisional.** :class:`~sphinx_needs.need_item.NeedItemSource` carries ``hops``,
+innermost first: ``hops[0]`` is the innermost place this build knows the need
 came through -- the file a directive is written in, the needs.json an imported need was
 read from, the service that made a need, an external need's page -- and the last hop
 with a ``document`` is the page the need is placed on (its *placement*, a role rather
 than a hop kind; an external need has none). The legacy location keys of a need -- ``docname``, ``lineno``,
 ``lineno_content``, ``is_import``, ``is_external``, ``external_url`` -- are computed from
-the hops plus a few stored legacy facts, and are unchanged. Nothing here is re-exported
-from a public module, and the shape may change in a minor release until it reaches
-``needs.json``.
+the hops plus a few stored legacy facts, and are unchanged. The hop types are
+re-exported from :mod:`sphinx_needs.api`; their shape may change in a minor release
+until it reaches ``needs.json``.
 
-This module holds the hop types and what the source classes and the producers share:
+This module holds the hop types and what the source class and the producers share:
 the placement lookup, the builders of a directive's hops, the doctree walk that finds the
 placement's semantic location, and the projection of that location onto the legacy
 ``sections`` and ``signature``. It never imports :mod:`sphinx_needs.need_item`, which
@@ -25,7 +25,6 @@ a file outside it.
 
 from __future__ import annotations
 
-import copy
 import dataclasses
 import os
 import re
@@ -40,10 +39,8 @@ from docutils.statemachine import string2lines
 from sphinx import addnodes
 
 if TYPE_CHECKING:
-    from typing import Self
-
+    from docutils.parsers.rst import Directive
     from sphinx.environment import BuildEnvironment
-    from sphinx.util.docutils import SphinxDirective
 
 SRCDIR_ROOT: Final = "srcdir"
 """The key of the one root slice 1 has: the Sphinx source directory."""
@@ -113,7 +110,24 @@ class NeedSourceHop:
     document: str | None = None
     """The docname, on the hop of a page the need is placed on."""
     language: str | None = None
-    """The file's suffix: ``".rst"``, ``".md"``, ``".json"``, ``".py"``."""
+    """What the hop's text is written in, by the kind of hop: for a ``page`` hop, the
+    page's suffix its parser keys on (``".rst"``, ``".md"``); for a ``file`` hop, the
+    file's own suffix (``".rst"``, ``".json"``; an included ``inc.rst.txt`` records
+    ``".txt"``, whichever parser reads it); for a ``code`` hop, the language's name
+    (``"python"``, ``"cpp"``, ...). The ``code`` hop of a docstring autodoc reads still
+    records its file's suffix (``".py"``), until sphinx-codelinks' code hops land and
+    move it."""
+
+    def _without_lines(self) -> NeedSourceHop:
+        """This hop with its file's start and end line left out: what a need that only
+        moved keeps (an incremental build's comparison key). Every other field is kept,
+        a field added later too (``dataclasses.replace``), so it fails safe."""
+        if self.physical is None:
+            return self
+        return dataclasses.replace(
+            self,
+            physical=dataclasses.replace(self.physical, start_line=None, end_line=None),
+        )
 
 
 def placement_index(hops: tuple[NeedSourceHop, ...]) -> int | None:
@@ -147,53 +161,6 @@ def checked_hops(hops: Iterable[NeedSourceHop]) -> tuple[NeedSourceHop, ...]:
         if not isinstance(hop, NeedSourceHop):
             raise TypeError(f"a hop must be a NeedSourceHop, not {hop!r}")
     return result
-
-
-class HopsSource:
-    """What every source class with hops shares: the placement, and the one way to
-    replace the hops (the doctree walk's, through ``NeedItem._set_placement_semantic``).
-
-    A base class rather than a protocol: :class:`~sphinx_needs.need_item.NeedItem`
-    tests for it, and a third party's source, which obeys only
-    ``NeedItemSourceProtocol``, has no hops.
-    """
-
-    __slots__ = ()
-
-    hops: tuple[NeedSourceHop, ...]
-
-    @property
-    def placement(self) -> NeedSourceHop | None:
-        """The hop of the page the need is placed on: the last hop with a ``document``.
-
-        **Provisional**, as ``hops`` is.
-        """
-        return placement_of(self.hops)
-
-    def _with_placement_semantic(
-        self, semantic: tuple[NeedSourceSemantic, ...]
-    ) -> Self:
-        """A copy of this source whose placement hop has ``semantic``.
-
-        :raises ValueError: if there is no placement, or its semantic location is
-            already set: it is written once per need.
-        """
-        index = placement_index(self.hops)
-        if index is None:
-            raise ValueError("the source has no placement hop")
-        hop = self.hops[index]
-        if hop.semantic is not None:
-            raise ValueError(
-                "the semantic location of the placement hop is already set"
-            )
-        hops = (
-            *self.hops[:index],
-            dataclasses.replace(hop, semantic=semantic),
-            *self.hops[index + 1 :],
-        )
-        new = copy.copy(self)
-        object.__setattr__(new, "hops", hops)
-        return new
 
 
 def physical_for(
@@ -386,7 +353,7 @@ def located_hops(
     check: LineCheck,
     tab_width: int,
     fragment_lines: bool,
-    first: NeedSourceHop | None = None,
+    first: Iterable[NeedSourceHop] = (),
 ) -> tuple[NeedSourceHop, ...]:
     """The hops of text written at ``source:start_line`` and placed on ``docname``.
 
@@ -400,16 +367,16 @@ def located_hops(
     :param fragment_lines: Whether the lines are true in an included file too. They are
         under docutils; myst-parser reports an included file's lines one late, so a
         hop of an included file takes no line there.
-    :param first: A hop before the file, if any: an imported ``needs.json``, the
-        service that made the need.
-    :return: ``[first], file, page`` for text in an included file (the page hop then
+    :param first: The hops before the file, innermost first, if any: an imported
+        ``needs.json``, the service that made the need.
+    :return: ``[first...], file, page`` for text in an included file (the page hop then
         has no line: the ``include`` line is not recoverable), ``[first], page``
         otherwise. A docstring (autodoc) is a ``code`` hop of the Python file, with no
         line: the one autodoc gives counts from the docstring, not the file.
     """
     srcdir = env.srcdir
     host = os.path.abspath(env.doc2path(docname))
-    hops: list[NeedSourceHop] = [] if first is None else [first]
+    hops: list[NeedSourceHop] = list(checked_hops(first))
 
     def page(start: int | None = None, end: int | None = None) -> NeedSourceHop:
         return NeedSourceHop(
@@ -467,9 +434,14 @@ def document_tab_width(state: object) -> int:
 
 
 def directive_hops(
-    directive: SphinxDirective, *, first: NeedSourceHop | None = None
+    directive: Directive, *, first: Iterable[NeedSourceHop] = ()
 ) -> tuple[NeedSourceHop, ...]:
     """The hops of the text of ``directive``, placed on the document being read.
+
+    ``directive`` is any docutils ``Directive`` run in a Sphinx build (a
+    ``SphinxDirective`` is one): its file and line are read from its state machine,
+    and the environment from its document's settings, as
+    ``SphinxDirective.get_source_info`` and ``.env`` read them.
 
     Under docutils the end line is the last non-blank line of the directive's block,
     and the lines are recorded where the file holds the block there
@@ -478,15 +450,16 @@ def directive_hops(
     opens the directive's fence there, with its name and its title
     (:func:`fence_check`).
     """
-    source, start_line = directive.get_source_info()
+    source, start_line = directive.state_machine.get_source_and_line(directive.lineno)
+    env = directive.state.document.settings.env
     rst = isinstance(directive.state, RSTState)
     end_line = None
     if rst and start_line:
         length = len(directive.block_text.rstrip().splitlines())
         end_line = start_line + max(length, 1) - 1
     return located_hops(
-        directive.env,
-        directive.env.docname,
+        env,
+        env.docname,
         source,
         start_line,
         end_line,

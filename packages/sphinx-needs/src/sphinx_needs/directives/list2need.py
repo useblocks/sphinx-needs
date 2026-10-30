@@ -26,7 +26,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.need import _get_title
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
-from sphinx_needs.need_item import NeedItemSourceDirective
+from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import add_doc, coerce_to_boolean
 
@@ -397,7 +397,8 @@ class List2NeedDirective(SphinxDirective):
             _, need_nodes = create_need(
                 self.env.app,
                 self.state,
-                NeedItemSourceDirective(
+                NeedItemSource(
+                    self._item_hops(list_need),
                     lineno=lineno,
                     # ``lineno_content`` and ``parser_lineno`` are parser coordinates
                     # rather than source lines, exactly as a need directive gives them:
@@ -410,7 +411,6 @@ class List2NeedDirective(SphinxDirective):
                     # ``.. include::``).
                     lineno_content=self.content_offset + 1 + content_index,
                     parser_lineno=self.content_offset + 1 + list_need["line"],
-                    hops=self._item_hops(list_need),
                 ),
                 list_need["type"],
                 title,

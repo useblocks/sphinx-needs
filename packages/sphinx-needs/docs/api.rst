@@ -32,6 +32,129 @@ Need
    :members:
    :exclude-members: create_need
 
+.. _api_migrating_add_need:
+
+Migrating from ``add_need``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. deprecated:: 9.2.0
+
+   :func:`~sphinx_needs.api.need.add_need` is deprecated, and is removed in 10.0. Each
+   call is one Python ``DeprecationWarning`` at the calling line (not a Sphinx warning, so
+   a ``-W`` build of a project using an extension that still calls it is not failed by
+   it).
+
+:func:`~sphinx_needs.api.need.create_need` takes the need's location as one
+:class:`~sphinx_needs.need_item.NeedItemSource`, and its field values and links as two
+mappings, kept apart from its own arguments, so no name a project gives a field meets one
+of them. In a directive the source is ``NeedItemSource.from_directive(self)``:
+
+.. code-block:: python
+
+   # before
+   from sphinx.util.docutils import SphinxDirective
+
+   from sphinx_needs.api import add_need
+
+
+   class ReqDirective(SphinxDirective):
+       def run(self):
+           return add_need(
+               self.env.app, self.state, self.env.docname, self.lineno,
+               "req", self.arguments[0],
+               id=self.options.get("id"), status="open", priority="high", links="REQ_0",
+           )
+
+.. code-block:: python
+
+   # after
+   from sphinx.util.docutils import SphinxDirective
+
+   from sphinx_needs.api import NeedItemSource, create_need
+
+
+   class ReqDirective(SphinxDirective):
+       def run(self):
+           need, nodes = create_need(
+               self.env.app, self.state, NeedItemSource.from_directive(self),
+               "req", self.arguments[0],
+               id=self.options.get("id"),
+               fields={"status": "open", "priority": "high"},
+               links={"links": "REQ_0"},
+           )
+           return nodes
+
+``from_directive`` works for any docutils ``Directive``, not only a ``SphinxDirective``.
+With it, ``need["lineno"]`` is the line the directive is written on, which differs from
+``self.lineno`` where ``rst_prolog``, an include or generated input shifts the parser's
+count; to keep the old number exactly, use
+``NeedItemSource.on_page(self.env.docname, lineno=self.lineno)``, which is the source
+``add_need`` built. ``on_page`` gives the need its page and the line the caller passes,
+nothing more, so it is the source wherever the caller chooses the line: the directive's own
+parser line, as ``add_need`` took it (every need sphinx-codelinks' ``src-trace`` creates sits
+at its directive's parser line), or the lines a directive's data names. It works in a docutils
+``Directive`` and in a nested parse alike, and is also the ``need_source`` to give
+``generate_need``.
+``from_directive`` and ``on_page`` are stable, as the class's name is; the hops they build,
+and ``NeedItemSource``'s general constructor with its keywords (``hops``, ``lineno``,
+``lineno_content``, ``parser_lineno``, ``is_import``), are provisional: they may change
+without a deprecation, until needs.json carries them (see the provisional note under "Data",
+below). The constructor is for sphinx-needs' own producers and advanced use.
+
+A need placed on a page is created with a parser state, through ``create_need`` as through
+``add_need``: an event handler or a role, which has none, cannot create one, and without a
+state only an external need can be created (``add_external_need``). Where ``add_need``
+refused that with an ``AssertionError``, ``create_need`` raises ``ValueError``.
+
+``add_need``'s other arguments:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - ``add_need``
+     - ``create_need``
+   * - ``docname``, ``lineno``
+     - ``source=NeedItemSource.from_directive(self)``; for a line the caller gives
+       (``add_need``'s ``self.lineno``), ``NeedItemSource.on_page(docname, lineno=lineno)``
+   * - ``lineno_content``
+     - ``from_directive`` sets it (the provisional constructor takes ``lineno_content=``)
+   * - ``need_source``
+     - ``source``
+   * - ``status``, ``tags``, ``constraints``, ``hide``, ``collapse``, ``style``,
+       ``layout``, ``template``, ``pre_template``, ``post_template``, and every field
+     - ``fields={...}``
+   * - every link type
+     - ``links={...}``
+   * - ``id``, ``content``, ``doctype``, ``jinja_content``, ``full_title``,
+       ``allow_type_coercion``
+     - the same keyword
+   * - ``is_external``, ``external_url``, ``external_css``
+     - :func:`~sphinx_needs.api.need.add_external_need`, which is not deprecated (an
+       ``external`` hop as ``create_need``'s source, with ``state=None``, is the
+       provisional hop type, and takes no ``external_css``)
+   * - ``is_import``
+     - ``NeedItemSource(..., is_import=True)`` (the provisional constructor), or
+       :func:`~sphinx_needs.api.need.ingest_need_record` for a needs.json-style record
+   * - ``parts``, ``arch``, ``sections``, ``signature``
+     - none: for a need on the page they are computed from its content and the page (a
+       record's ``parts`` and ``arch`` through
+       :func:`~sphinx_needs.api.need.ingest_need_record`); an external need ``add_need``
+       made kept them as given, which neither ``create_need`` nor ``add_external_need``
+       takes
+   * - the deprecated ``links_string``, ``hide_tags``, ``hide_status``, ``delete``,
+       ``constraints_passed``
+     - none (``add_need`` drops them, with a warning)
+   * - the return value, ``list[nodes.Node]``
+     - ``(need, nodes)``: the need as recorded, and the nodes
+
+The five source classes of 9.1.0, ``NeedItemSourceUnknown``, ``NeedItemSourceDirective``,
+``NeedItemSourceService``, ``NeedItemSourceExternal`` and ``NeedItemSourceImport``, are
+deprecated names of :mod:`sphinx_needs.need_item` until 10.0: each is a function taking its
+class's keywords and returning the ``NeedItemSource`` with the legacy keys that class gave,
+and reading one is a ``DeprecationWarning``. ``NeedItemSourceUnknown(docname=docname,
+lineno=lineno)`` is ``NeedItemSource.on_page(docname, lineno=lineno)``.
+
 .. _api_content_markup:
 
 Content written in another markup
@@ -126,17 +249,25 @@ Data
 ----
 
 .. automodule:: sphinx_needs.need_item
-   :members: NeedItem, NeedLink, NeedPartItem, NeedItemSourceProtocol, NeedsContent, NeedPartData, NeedModification, NeedConstraintResults
+   :members: NeedItem, NeedLink, NeedPartItem, NeedItemSource, NeedItemSourceProtocol, NeedsContent, NeedPartData, NeedModification, NeedConstraintResults
 
 .. note::
 
-   **Provisional**: the source of a need sphinx-needs creates also has ``hops``, where the need's text came from,
-   innermost first. The first hop is the innermost place sphinx-needs knows the need came through: for a need
+   **Stable**: ``NeedItemSource``'s name, ``NeedItemSource.from_directive`` and ``NeedItemSource.on_page``, and
+   reading a source through ``NeedItemSourceProtocol`` (``dict_repr``). **Provisional**: ``NeedItemSource``'s general
+   constructor and its keywords (``hops``, ``lineno``, ``lineno_content``, ``parser_lineno``, ``is_import``), the
+   stored legacy facts a later release turns into projections, for sphinx-needs' own producers and advanced use; and
+   the hops, below.
+
+   **Provisional**: a :class:`~sphinx_needs.need_item.NeedItemSource` has ``hops``, where the need's text came from,
+   innermost first; the hop types, ``NeedSourceHop``, ``NeedSourcePhysical`` and ``NeedSourceSemantic``, are
+   importable from ``sphinx_needs.api``. The first hop is the innermost place sphinx-needs knows the need came through: for a need
    directive or ``list2need``, the file the need is written in (an included file's own, in an include; the module,
    for an autodoc docstring); for an imported need, the ``needs.json`` it was read from (where the exporting project
    wrote the need is not a hop yet); for a service, the service that made it, then the file of the ``needservice``
    directive; for an external need, its page on the other site, its only hop. A need created
-   through the API has its page with no path, and no hops without a document. The last hop with a ``document`` is
+   through ``add_need`` or ``NeedItemSource.on_page`` has its page with no path, and no hops without a document
+   (``NeedItemSource.from_directive`` records the directive's file and lines, as a need directive does). The last hop with a ``document`` is
    the page the need is placed on (an external need has none), and carries its sections and the domain objects it
    is written in, outermost first. A hop has a line
    range only where the file, read from disk, holds the need's text there: in reStructuredText every line of the
@@ -149,6 +280,21 @@ Data
    change in a minor release, without a deprecation, until it reaches ``needs.json``; ``NeedItemSourceProtocol`` does
    not include it, so read it with ``getattr(need.source, "hops", ())``. Nothing a filter, a table or ``needs.json``
    shows depends on it.
+
+   A hop's ``language`` is what its text is written in, by the kind of hop: for a ``page`` hop, the page's suffix
+   its parser keys on (``.rst``, ``.md``); for a ``file`` hop, the file's own suffix (``.rst``, ``.json``; an
+   included ``inc.rst.txt`` records ``.txt``, whichever parser reads it); for a ``code`` hop, the language's name
+   (``python``, ``cpp``, ...). The ``code`` hop of a docstring autodoc reads still records its file's suffix
+   (``.py``), until sphinx-codelinks' code hops land and move it.
+
+.. autoclass:: sphinx_needs.api.NeedSourceHop
+   :members:
+
+.. autoclass:: sphinx_needs.api.NeedSourcePhysical
+   :members:
+
+.. autoclass:: sphinx_needs.api.NeedSourceSemantic
+   :members:
 
 .. automodule:: sphinx_needs.data
    :members: NeedsInfoType, NeedsInfoComputedType, NeedsSourceInfoType, NeedsMutable, NeedsPartType

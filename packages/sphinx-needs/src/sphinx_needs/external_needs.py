@@ -9,12 +9,13 @@ from sphinx.environment import BuildEnvironment
 
 import ub_needs_exchange as exchange
 from sphinx_needs._jinja import compile_template
+from sphinx_needs._need_source import NeedSourceHop, NeedSourcePhysical
 from sphinx_needs.api import InvalidNeedException, del_need
 from sphinx_needs.api.need import _create_from_record, _record_params
 from sphinx_needs.config import ExternalSource, NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedItemSourceExternal
+from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
 
 log = get_logger(__name__)
@@ -158,7 +159,14 @@ def load_external_needs(
                     app,
                     None,
                     need_params,
-                    source=NeedItemSourceExternal(url=external_url),
+                    source=NeedItemSource(
+                        (
+                            NeedSourceHop(
+                                kind="external",
+                                physical=NeedSourcePhysical(url=external_url),
+                            ),
+                        )
+                    ),
                     allow_type_coercion=source.get("allow_type_coercion", True),
                 )
             except InvalidNeedException as err:
