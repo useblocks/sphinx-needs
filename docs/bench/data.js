@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793323369706,
+  "lastUpdate": 1793338212905,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27288,6 +27288,42 @@ window.BENCHMARK_DATA = {
             "value": 35.70452735400001,
             "unit": "s",
             "extra": "Commit: f1ec25e53d522b8b7b10c712682b5ebce48e51b8\nBranch: master\nTime: 2026-10-30T02:21:44+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c54fc77fe8cd3cf0ca4bd81c2314b79af6737cd3",
+          "message": "🐛 Schema rules take `contains` without `items`, and a `needs_fields` entry naming a computed core field is reported (#2405)\n\n## What\n\n`packages/sphinx-needs`. Two small, independent fixes, one commit each.\n\n- **A schema rule's property on an array field may give `contains`\nwithout `items`.**\n`\"tags\": {\"contains\": {\"const\": \"a\"}}`, in a rule's `local` properties\nor its `select`, failed the meta-schema and stopped\nthe build. The type injection now gives such a property the field's item\ntype as `items`, which every value already satisfies,\nso the rule applies. A link type's property takes neither and is\nunchanged. Documented under the array keywords of\n  `docs/schema/index.rst`.\n- **A `needs_fields` entry naming a core field a need computes is\nreported.** An entry such as `type_name` or `docname`\ndeclared nothing and was ignored in silence. It is now one\n`needs.config` warning, and still ignored. A core field that takes\na declaration (`status`, `tags`, …) is specialised as before. Documented\nin `needs_fields`.\nNothing read such an entry, so no output changes. But **a `-W` build\nthat has one now fails** until the entry is removed,\n  as the changelog says.\n\n## Why\n\nBoth were found while building #2322 (`c.is_a`, #2401), and were split\nout of that pull request because neither is about it.\nNo open issue covers either. #2199 is the link-side twin of the second\nfix (a link type named after a core field stops the build\ninstead of being refused at load). It is related but not fixed here: the\nwarning added here is for `needs_fields` entries alone.\n\n## Tests\n\n- Red first:\n`tests/schema/test_populate_field_type.py::test_field_array_contains_alone_gets_items`\nand the schema fixture\n`tags_contains_without_items` fail on master.\n`test_link_contains_alone_gets_no_items` pins that link types are\nunchanged.\n\n`tests/test_config_unknown_keys.py::test_an_entry_naming_a_core_field_a_need_computes_is_reported`\nfails on master\n  (no warning).\n- An independent review reproduced both red-on-master proofs and checked\na `contains`-only property in a rule's `select` by probe\n  (it applies; no test pins that shape yet).\n- After merging master (#2401): `uv run poe lint` 0, `uv run poe\ntypecheck` 0, full `uv run poe test-needs` 0\n(4040 passed, 15 skipped), `uv run poe smoke-needs` 0. `docs-needs`: no\nwarning from this repository's pages or docstrings\n(the sandbox cannot reach the intersphinx hosts, so only those\nreferences stay unresolved there).\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-30T06:28:59+01:00",
+          "tree_id": "9e38ae49243b767dad2b98b2651b62ab2cf6bf28",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c54fc77fe8cd3cf0ca4bd81c2314b79af6737cd3"
+        },
+        "date": 1793338204023,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07482431999999761,
+            "unit": "s",
+            "extra": "Commit: c54fc77fe8cd3cf0ca4bd81c2314b79af6737cd3\nBranch: master\nTime: 2026-10-30T06:28:59+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 42.435424368,
+            "unit": "s",
+            "extra": "Commit: c54fc77fe8cd3cf0ca4bd81c2314b79af6737cd3\nBranch: master\nTime: 2026-10-30T06:28:59+01:00"
           }
         ]
       }
