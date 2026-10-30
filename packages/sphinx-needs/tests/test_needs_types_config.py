@@ -480,10 +480,6 @@ FINDINGS = [
         ],
         [{**REQ, "fields": {"status": {}}, "links": {"links": {"incoming": "in"}}}],
         id="declaration-unknown-keys",
-        marks=pytest.mark.xfail(
-            strict=True,
-            reason="pinned ahead of the change: a link type need types alone declare can be a summary",
-        ),
     ),
     _conf_case(
         {

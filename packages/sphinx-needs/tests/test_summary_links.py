@@ -65,10 +65,6 @@ def _version(app) -> dict:
     return data["versions"][data["current_version"]]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="pinned ahead of the change: a link type need types alone declare can be a summary",
-)
 @pytest.mark.parametrize(
     "test_app", [_project(CONF_SHAPES, INDEX_SHAPES)], indirect=True
 )
@@ -195,14 +191,7 @@ def _debug_sources(outdir: Path) -> list[str]:
     "test_app",
     [
         pytest.param(_project(CONF_FLOW, INDEX_FLOW, "html"), id="needs_links"),
-        pytest.param(
-            _project(CONF_FLOW_TYPES, INDEX_FLOW, "html"),
-            id="need_types",
-            marks=pytest.mark.xfail(
-                strict=True,
-                reason="pinned ahead of the change: a link type need types alone declare can be a summary",
-            ),
-        ),
+        pytest.param(_project(CONF_FLOW_TYPES, INDEX_FLOW, "html"), id="need_types"),
     ],
     indirect=True,
 )
@@ -394,10 +383,6 @@ def _count_failed(field: str) -> str:
     )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="pinned ahead of the change: a link type need types alone declare can be a summary",
-)
 @pytest.mark.parametrize(
     "test_app", [_project(CONF_PER_TYPE, INDEX_PER_TYPE)], indirect=True
 )
@@ -483,10 +468,6 @@ On need types
 """
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="pinned ahead of the change: a link type need types alone declare can be a summary",
-)
 @pytest.mark.parametrize(
     "test_app", [_project(CONF_TYPE_LOCAL, INDEX_TYPE_LOCAL)], indirect=True
 )
@@ -584,10 +565,6 @@ Paths
 """
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="pinned ahead of the change: a link type need types alone declare can be a summary",
-)
 @pytest.mark.parametrize(
     "test_app", [_project(CONF_TYPE_PATH, INDEX_TYPE_PATH)], indirect=True
 )
@@ -660,10 +637,6 @@ Global
 """
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="pinned ahead of the change: a link type need types alone declare can be a summary",
-)
 @pytest.mark.parametrize(
     "test_app", [_project(CONF_TYPE_GLOBAL, INDEX_TYPE_GLOBAL)], indirect=True
 )

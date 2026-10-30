@@ -597,7 +597,8 @@ class NeedLinksConfig(TypedDict, total=False):
     ``over``, a needflow's ``link_types``, a schema rule) and in a need's links and back
     links, and is left out of every view that takes all link types (a needflow without
     ``link_types``). A link type a ``copy`` or ``collect`` rule computes is one. Default:
-    False.
+    False. On a link type declared on need types alone, the first root declaration's
+    ``summary`` sets it (the others may repeat it).
     """
     target_types: NotRequired[list[str]]
     """

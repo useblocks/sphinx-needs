@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 19
+ENV_DATA_VERSION: Final = 20
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -138,6 +138,12 @@ a link type's entry, a key 9.1.0 did not read, now leaves the link type out of a
 needflow without ``:link_types:``. The configuration does not change, so without the
 bump an upgraded build would keep the empty link lists and the old diagrams on the
 pages whose sources did not change.
+
+Version 20 is the same case for a link type need types alone declare: ``summary`` on a
+need type's entry of it, which version 19 ignored (a ``needs.config`` finding), now
+makes it a summary, left out of a needflow without ``:link_types:``. The configuration
+does not change, so without the bump an upgraded build would keep the old diagrams on
+the pages whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

@@ -643,7 +643,8 @@ class DeriveProblem:
         is ignored, and the field is not derived.
     :ivar part: What of the field's configuration it is about: ``derive`` (the rule,
         or a key beside it), ``derive_by_type`` (the table), ``derive_by_type.<type>``
-        (one entry), or ``beside`` (a key beside ``derive_by_type`` alone).
+        (one entry, or a key beside the rule a need type's entry gives), or ``beside``
+        (a key beside ``derive_by_type`` alone).
     :ivar on_types: For a ``derive`` rule in a cycle on some need types only (through
         their ``derive_by_type`` entries): those types. The rule cannot be read there,
         and applies on every other type.
