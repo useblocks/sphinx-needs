@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793371853410,
+  "lastUpdate": 1793378927215,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27468,6 +27468,42 @@ window.BENCHMARK_DATA = {
             "value": 40.183428846000005,
             "unit": "s",
             "extra": "Commit: c1562e0586a568597f8db66afd84274b1d2f67c8\nBranch: master\nTime: 2026-10-30T15:49:43+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8dcf332fd0f5fcd102e8b9df5a14e7b2f888d247",
+          "message": "✨ Summary link types, and `copy` / `collect` on a link type: a chain's far ends as links (#2418)\n\nRead by the data-model side before going out of draft: needs.json's\n`\"summary\": true` marker and the exchange-contract sentence fit, and\nnothing collides with its in-flight work. The ubCode side is\nuseblocks/ubcode#4452; this PR merges first.\n\n## What\n\n`packages/sphinx-needs` (+ one sentence in\n`packages/ub-needs-exchange`'s exchange contract, and a reader test).\n\n1. **The stance.** `summary = true` on a link type's `needs_links` entry\n(any link type, authored or derived) says its links materialise a path,\nnot an edge of the trace. A summary link type is read where it is named\n(a filter, a needtable column, a rule's `over` / `field`, a needflow's\n`:link_types:`, a schema rule, a need type's `back_links` count, which\ncounts its computed links too), and a need holds its links and back\nlinks\nas for any link type. It is left out of every view that reads all link\ntypes:\nin sphinx-needs, the needflow default (without `:link_types:` a summary\nlink type is neither drawn nor walked from `:root_id:`, and the\n`needs_flow_link_types` fallback leaves it out too). A union cannot name\none as a member (`needs.derive_invalid`). `summary` beside the\ndeprecated\n`copy = true` is reported and the copy ignored, so a summary link never\nleaks into `links`. needs.json's schema marks the link type and its back\nlinks\n`\"summary\": true`, and ub-needs-exchange passes it through. The stance\nis one per name: a need type's entry giving it is a `needs.config`\nfinding.\n2. **The kinds.** On a link type, `copy` takes `field = \"id\"` and\n`over`, and links each need `over` names. `collect` takes `field` (a\nlink type, a derived\none included) and `over`, and gives the links `field` holds on each need\n`over` names. Both take `where` (`c.is_a(...)` included), and both may\nbe\ndeclared on need types alone (`[needs.types.<t>.links.<l>]`). Each link\nappears once by target and part,\nits condition dropped. A dead link is carried and reported where it is\nwritten, rendered as that link type allows, and does not mark the needs\nbelow it\nas having dead links. Such a link type is a summary implicitly. `over`\nmay name a union, read through its members, so a chain can climb a\n`trace_up`-style\nunion rung by rung. What the link step cannot wait for is refused at\nload:\n   - an `over` naming back links;\n- a `collect` of its own link type over a link type another rule\ncomputes (it would read itself on every need);\n   - a `field` naming a value field or back links;\n   - a `copy` of a field other than `id`;\n   - a `select` other than `\"list\"`;\n   - `after`;\n   - `allow_dead_links` beside such a rule.\n\nPer need, a path is ordered after the needs it reads; needs reading one\nanother's chain around a ring (through a union too) are\n`needs.derive_cycle`,\nand only those. The density guard counts these links; fingerprints leave\nthem out.\n3. **Incremental builds.** A `collect` on a link type links needs its\nneed does not name (a chain's far ends), so it is classified as a\n`links` rule\nis: in a project with one, every change of a need re-writes every\nneed-relevant page. A `copy` over a link type written in the needs links\nonly the\nneeds its own links name, and stays a read of its links (a `copy` over a\ncomputed link type is classified as unnamed too).\n`ENV_DATA_VERSION` is 19 (17 is #2415's, 18 #2419's): a `copy` /\n`collect` on a link type, refused by 9.1.0, now computes, and `summary`\nnow changes a\n   needflow's default, with the configuration unchanged.\n\n## Why\n\nCloses #2370.\n\nThe far ends of a chain (the requirements a test result is evidence for,\nthree hops up) were only expressible as a field: strings, with no back\nlinks\n(\"the test results that reach me\"), no `:need:` rendering, no direct\nrelationship in a graph consumer. The link form adds them. The stance it\nneeds, that such a link\nis a summary and not a trace edge, applies to authored and other derived\nlink types too.\n\n**Bringing it up to master.** The branch was built on the derive branch,\nsince squash-merged as #2384; master was merged in (merge commits, no\nrebase).\nThe conflicts kept both sides: the changelog's Unreleased bullets,\n`LinkSchema`'s `severity` (#2395) beside `summary` in the basic-doc\nsnapshot,\na path's `select` default, and the corpus (master's\n`where-follows-inherits` where master has it, this branch's cases after\nit). Checked against what master\ngained since: the incremental rules of #2414 (a `collect` on a link type\nwas read as an ordinary `over` and left the old far end's page stale:\nfixed,\nred first, with scratch-vs-incremental cases for both kinds); a\n`[needs.types.<t>.back_links.<l>]` count (#2395) naming a summary or\ncomputed link type\n(allowed, counts every link, pinned); `c.is_a` (#2401) in a path's\n`where` (pinned in a test and the corpus); a path declared on need types\nalone and a need\ntype's `summary` (#2400, pinned); the needs.json writer's nullable rule\nand `\"\"` -> null (#2395, #2400: fields only, beside `summary` on link\ntypes), and\nthe needflow change on master (a view category only). Later merges\nbrought in #2415 (hidden-need location) and #2419 (`NeedItemSource`),\nwhich took\nversions 17 and 18, so this branch's bump is 19; every bump stays in\n`data.py`'s version notes and in the changelog's bump bullet.\n\n**Corpus.** `derive_conformance.toml` gains twelve cases on top of\nmaster's 92 (104, sha256\n`c4721bcc6cb1532b4a39a79c3ba5325c75b006762ca5d25a5e1c78809923ba01`;\npython_only 2, ubcode_only 1) and an optional `schema.<name>`\nexpectation, documented in the header; master's cases are untouched.\nubCode re-vendors it and mirrors the stance and the kinds in\nuseblocks/ubcode#4452, including its own consumers that read all link\ntypes:\nthe needflow default, the agent walks, `ubc diff`'s default, the Need\nViewer tree and the Cypher schema flag.\n\n**Follow-up, not in this PR.** `summary` on a need type's own link entry\nis a `needs.config` finding today, so an authored link type declared on\nneed types alone cannot be a summary. It can be lifted under the\none-name-one-shape rule (#2284): accept it there when every need type\ndeclaring\nthe name agrees, and report a disagreement as any other shape mismatch.\n\n## Tests\n\n- Red first for both slices and for the incremental fix; two independent\nreviews reproduced every proof, ruled on the two judgement calls (the\nrefusal of a\nderived `over` lifted for unions; a call-computed `over` making only\nthat need a cycle, kept) and added mutations of their own, each now\nkilled (the needflow\ndefault and fallback, the union refusal, load-time refusals, stratum\norder, implied summary, dead links, the `forbidden` rendering with both\n`allow_dead_links` values). After the first merge: mutations of the\nincremental classification (both directions), of the back links of a\ncomputed summary\n  link type, and of `c.is_a` in a `where`, each red.\n- After the merge, master's unknown-key report (#2388) pins the keys of\na link type's entry: `summary` is one now, and its test says so.\n- `uv run poe lint` 0, `uv run poe typecheck` 0, full `uv run poe\ntest-needs` 4244 passed / 15 skipped (after the #2419 merge),\n`uv run poe test-ub-needs-exchange` 0 (246 passed), `uv run poe\nsmoke-needs` 0.\n`docs-needs` warns only on what intersphinx resolves (the inventories\nare unreachable from the sandbox); none of this PR's references.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-needs`, `uv run poe\ntest-ub-needs-exchange`) and they pass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-30T17:47:26+01:00",
+          "tree_id": "2db3dad02bbbe6f2be9930e99d33e24063b7f6dd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8dcf332fd0f5fcd102e8b9df5a14e7b2f888d247"
+        },
+        "date": 1793378917205,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.06942542099999827,
+            "unit": "s",
+            "extra": "Commit: 8dcf332fd0f5fcd102e8b9df5a14e7b2f888d247\nBranch: master\nTime: 2026-10-30T17:47:26+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 45.553191795,
+            "unit": "s",
+            "extra": "Commit: 8dcf332fd0f5fcd102e8b9df5a14e7b2f888d247\nBranch: master\nTime: 2026-10-30T17:47:26+01:00"
           }
         ]
       }
