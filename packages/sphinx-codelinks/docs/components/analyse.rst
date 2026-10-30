@@ -129,6 +129,7 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
 
 ``scope`` is ``null`` exactly when ``tagged_scope`` is: the marker is attached to no entity (the file), and always
 under the libclang engine.
+The record then carries no ``language`` either, since ``language`` is recorded only inside ``scope``.
 The names are best effort, from the syntax alone: overloads share a name,
 a free function defined with a namespace qualifier (``void ns::f() {}``) reads as a method,
 and a function a macro defines (``TEST(LoginTest, RateLimited) {...}``) is bound but not named,
