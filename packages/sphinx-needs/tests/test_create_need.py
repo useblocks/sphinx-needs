@@ -11,7 +11,7 @@ from sphinx.testing.util import SphinxTestApp
 from sphinx_needs.api import add_need, create_need
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import InvalidNeedException
-from sphinx_needs.need_item import NeedItemSourceExternal
+from sphinx_needs.need_item import NeedItemSourceExternal, NeedItemSourceUnknown
 from sphinx_needs_testkit import build_warnings
 
 DEPRECATED_KEY_EXT = '''\
@@ -379,7 +379,8 @@ def test_every_keyword_of_add_need_is_in_a_case(delegation_rows):
 
 def test_a_link_type_in_fields_or_a_field_in_links_is_refused(make_app, tmp_path):
     """``create_need``'s own refusals, before anything is recorded: a name given in the
-    wrong mapping is named, with the mapping it belongs in."""
+    wrong mapping is named, with the mapping it belongs in; and a need on a page without
+    a parser state."""
     (tmp_path / "conf.py").write_text(
         'extensions = ["sphinx_needs"]\nneeds_fields = {"prio": {"nullable": True}}\n',
         encoding="utf-8",
@@ -404,3 +405,7 @@ def test_a_link_type_in_fields_or_a_field_in_links_is_refused(make_app, tmp_path
         ),
     ]
     assert "R_X" not in SphinxNeedsData(app.env).get_needs_mutable()
+
+    # a need placed on a page is rendered: it needs the page's parser state
+    with pytest.raises(ValueError, match="a parser state is required"):
+        create_need(app, None, NeedItemSourceUnknown(docname="index"), "req", "T")

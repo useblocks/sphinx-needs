@@ -1016,11 +1016,11 @@ def create_need(
     :param title: The need's title.
     :param id: The need's id. If not given, one is generated (see
         :func:`generate_need_id`).
-    :param fields: The need's field values, by field name: the core fields of the
-        field schema other than ``title`` (``status``, ``tags``, ``constraints``,
-        ``hide``, ``collapse``, ``style``, ``layout``, ``template``, ``pre_template``,
-        ``post_template``) and the fields the project declares (:ref:`needs_fields`).
-        A value ``None`` is a value not given, so a default applies.
+    :param fields: The need's field values, by field name: the core fields the field
+        schema declares, such as ``status``, ``tags``, ``hide`` or ``template``
+        (``title`` is an argument of its own), and the fields the project declares
+        (:ref:`needs_fields`). A value ``None`` is a value not given, so a default
+        applies.
     :param links: The need's links, by link type (:ref:`needs_links`): a string of
         comma separated ids, or a list of ids.
     :param content: The need's content, either as a ``str`` or a ``StringList`` (a
@@ -1046,6 +1046,7 @@ def create_need(
         parser of the project; (type ``invalid_kwargs``) for a name in ``fields`` or
         ``links`` the project does not declare, or one given in the wrong mapping: a
         link type in ``fields``, or a field in ``links``.
+    :raises ValueError: If ``state`` is ``None`` for a source that is not external.
 
     .. versionadded:: 9.2.0
     """
@@ -1915,28 +1916,29 @@ def generate_need_id(
     *,
     full_title: str | None = None,
 ) -> str:
-    """Return the id :func:`add_need` assigns to a need that is given no ``id``.
+    """Return the id :func:`create_need` (and :func:`add_need`) assigns to a need that
+    is given no ``id``.
 
-    The arguments are those of the same name given to :func:`add_need`, which derives
-    the id with this same code: the type's ``prefix``, followed by a hash of
+    The arguments are those of the same name given to :func:`create_need`, which
+    derives the id with this same code: the type's ``prefix``, followed by a hash of
     ``full_title`` (if given, else ``title``), or of ``content`` when that is empty,
     shaped by :ref:`needs_id_from_title` and :ref:`needs_id_length`.
     An extension that creates needs can use it to find out, before it calls
-    :func:`add_need`, whether a need with that id already exists.
+    :func:`create_need`, whether a need with that id already exists.
 
-    The id is not checked: :func:`add_need` may still refuse the need, for example
+    The id is not checked: :func:`create_need` may still refuse the need, for example
     because :ref:`needs_id_required` is set, the id does not match
     :ref:`needs_id_regex`, or a need with that id already exists.
 
     :param app: Sphinx application object.
-    :param need_type: Name of the need type, as given to :func:`add_need`.
+    :param need_type: Name of the need type, as given to :func:`create_need`.
     :param title: Title of the need.
     :param content: Content of the need, either as a ``str``
-        or a ``StringList``, as :func:`add_need` takes it.
+        or a ``StringList``, as :func:`create_need` takes it.
     :param full_title: The untrimmed title, if ``title`` was trimmed.
     :return: The generated id.
     :raises InvalidNeedException: If ``need_type`` is not a configured need type
-        (type ``invalid_type``, as :func:`add_need` raises it).
+        (type ``invalid_type``, as :func:`create_need` raises it).
     """
     needs_config = NeedsSphinxConfig(app.config)
     return _generate_need_id(

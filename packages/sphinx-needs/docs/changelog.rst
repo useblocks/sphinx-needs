@@ -133,6 +133,19 @@ Improvements
   wrong id should refuse the need; one that should only be reported stays a rule. A pattern that is not a regular
   expression is a ``needs.type_conflict`` warning, and is ignored. See :ref:`need_types_id_regex`.
 
+- ✨ ``create_need``: an extension creates a need with its fields and links as two mappings, and gets the need back
+  with its nodes (:issue:`2137`)
+
+  ``sphinx_needs.api.create_need(app, state, source, need_type, title, *, id, fields, links, content, ...)`` takes
+  the need's field values as ``fields`` (the core fields such as ``status`` and ``tags``, and the project's fields)
+  and its links as ``links``, kept apart from its own parameters, so any name a project gives a field can be used.
+  It returns ``(need, nodes)``: the need as recorded, which an extension no longer has to look up or re-derive the
+  id of, and the nodes to insert. Its location is a ``source`` object, which is provisional for extensions. A name
+  in the wrong mapping is refused, naming the right one. It is what this package's directives, ``needservice``,
+  ``needimport`` and ``needs_external_needs``, and sphinx-codelinks and sphinx-test-reports, create their needs
+  through. ``add_need`` is unchanged and not deprecated yet: that waits for the final shape of the source, so that
+  an extension moves once. See :func:`~sphinx_needs.api.need.create_need`.
+
 - 👌 The ``needs.derive_scope`` warning at a :ref:`needextend` whose filter names a computed field says what
   computes it: "a derive rule" for a field a :ref:`derive <needs_derive>` rule computes, "a dynamic function or
   variant" for a ``[[…]]``, ``<<…>>`` or ``<{…}>``, and "a derive rule, a dynamic function or a variant" when the
@@ -191,6 +204,24 @@ Improvements
 
 Bug fixes
 .........
+
+- 🐛 A field named like a parameter of ``add_need`` -- ``state``, ``app``, ``need_type``, ``full_title``,
+  ``need_source`` or ``allow_type_coercion`` -- is an ordinary field in a need directive, ``list2need``,
+  ``needservice``, ``needimport`` and ``needs_external_needs`` (:issue:`2392`)
+
+  The first need setting one ended the build with ``TypeError: add_need() got multiple values for keyword argument
+  'state'``, and a need setting ``allow_type_coercion`` lost the value without a word; an external needs.json record
+  carrying ``app``, ``need_source`` or ``allow_type_coercion`` ended the build the same way. A needimport or
+  external record's field named ``need_type`` was overwritten by the record's type, and one named ``full_title``
+  dropped as the legacy key; both are read now. Every producer now creates its needs with the fields as a mapping.
+  ``add_need`` itself still takes them as keyword arguments, so an extension calling it keeps the collision;
+  ``create_need`` has none.
+
+- 🐛 An external need keeps a field named ``state`` the project declares (:issue:`2403`)
+
+  ``add_external_need`` dropped a record's ``state`` as if it were ``add_need``'s parser state, so the field was
+  ``None`` on every external need. A ``state`` that names no field of the project is reported as an unknown key of
+  the source and dropped, as before.
 
 - 🐛 A :ref:`needs_types` entry with a ``title`` and a ``prefix`` naming a need type an extension adds no longer
   stops the build with ``NeedsApiConfigException: testcase already exists as need type`` from the extension's
