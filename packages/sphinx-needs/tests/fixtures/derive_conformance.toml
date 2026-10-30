@@ -22,7 +22,9 @@
 #     to the case directory. A case writes only inside its own directory: a `files` key
 #     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
-#     the default ones (`req`, `spec`, `impl`, `test`)
+#     the default ones (`req`, `spec`, `impl`, `test`). A case may give one of them an
+#     `inherits` through a bare `[needs.types.<t>]` entry (no `title`, no `prefix`), which
+#     keeps the four: the bare-entry rule of `field_declaration_conformance.toml`
 #   - a hidden need's content is unpinned until the hidden-needs follow-up (ubCode reads its
 #     references; sphinx-needs 9.0.0 does not)
 #   - a `[needs.fields.<name>]` entry without `nullable` is nullable in both tools
@@ -5113,3 +5115,61 @@ field = "cyc_b"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "readable"
+
+# --- c.is_a in a where ----------------------------------------------------------------
+
+[[case]]
+name = "where-follows-inherits"
+why = "a where reads c.is_a as a filter does: c.is_a('req') counts a req and every type inheriting from it, transitively, as the need type declarations give inherits, c.is_a('spec') a spec and every type inheriting from it, c.is_a('nope') no need, type == 'req' a req alone; a bare entry naming a default type keeps the default types"
+config = '''
+[needs.types.spec]
+inherits = "req"
+
+[needs.types.impl]
+inherits = "spec"
+
+[needs.fields.n_req_like]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.is_a('req')" }
+
+[needs.fields.n_req]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "type == 'req'" }
+
+[needs.fields.n_spec_like]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.is_a('spec')" }
+
+[needs.fields.n_unknown]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.is_a('nope')" }
+'''
+source = '''
+.. req:: A requirement
+   :id: REQ_1
+
+.. spec:: Inherits req
+   :id: SPEC_1
+
+.. impl:: Inherits spec
+   :id: IMPL_1
+
+.. test:: Links all of them
+   :id: TEST_1
+   :links: REQ_1, SPEC_1, IMPL_1, TEST_2
+
+.. test:: Links none
+   :id: TEST_2
+'''
+[case.expect]
+findings = []
+[case.expect.needs.TEST_1]
+n_req_like = 3
+n_req = 1
+n_spec_like = 2
+n_unknown = 0
+[case.expect.needs.TEST_2]
+n_req_like = 0
+n_req = 0
+n_spec_like = 0
+n_unknown = 0

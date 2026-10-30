@@ -54,8 +54,8 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "filter_conformance.toml"
 #: carries. Raising one is the normal consequence of adding a case or an entry; lowering
 #: it needs a reason in the commit message, and ubCode's vendored copy has to follow
 #: either way.
-EXPECTED_CASE_COUNT = 20
-EXPECTED_FILTER_COUNT = 233
+EXPECTED_CASE_COUNT = 21
+EXPECTED_FILTER_COUNT = 250
 
 #: The configuration the runner gives every case besides its ``ubproject.toml``.
 CONF_PY = """\
@@ -95,6 +95,17 @@ _ENTRY_KEYS = {
 
 #: The values of an entry's ``tier``.
 _TIERS = ("index", "fast", "eval", "refused")
+
+#: The warning a case's build may give besides none (:func:`test_case`): the
+#: deprecation of `filter_data`, which the residue's own filters read.
+_DEPRECATED = "[needs.deprecated]"
+
+#: The finding of an `inherits` naming no need type, which the header leaves uncompared;
+#: an `inherits` on a cycle gives the same code, and is no case's to give.
+_UNKNOWN_INHERITS = re.compile(
+    r"WARNING: Need type '[^']+' inherits '[^']+', which is not a need type; "
+    r"its inherits is ignored\. \[needs\.type_inherits\]"
+)
 
 #: The one code a reported filter carries, compared bare.
 _FILTER_CODE = "filter"
@@ -286,10 +297,14 @@ def test_case(test_app: Any, case: dict[str, Any]) -> None:
     app = test_app
     app.build()
     # the project itself builds clean: a case whose configuration or document is not
-    # read as written tests something else (the one warning a case may earn is the
-    # deprecation of `filter_data`, which the residue's own filters read)
+    # read as written tests something else (the warnings a case may earn are the
+    # deprecation of `filter_data`, which the residue's own filters read, and the
+    # finding of an `inherits` naming no need type, a configuration finding the header
+    # leaves uncompared)
     assert [
-        w for w in build_warnings(app) if not w.endswith("[needs.deprecated]")
+        w
+        for w in build_warnings(app)
+        if not w.endswith(_DEPRECATED) and not _UNKNOWN_INHERITS.fullmatch(w)
     ] == [], case["name"]
     problems = [
         problem

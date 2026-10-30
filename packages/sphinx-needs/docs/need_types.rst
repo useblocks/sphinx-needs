@@ -181,6 +181,8 @@ and the per-type defaults of a ``req`` (below).
 Its own entries add to them, and may only narrow them:
 a declaration that would widen its parent's is ignored, with a ``needs.type_widening`` warning
 (see :ref:`needs_types_fields`).
+A :ref:`filter <filter_is_a>` follows ``inherits`` through ``c.is_a``:
+``c.is_a('req')`` is true for a ``req`` need and for a ``safety_req`` one.
 
 A field required on one type
 ----------------------------
@@ -315,6 +317,8 @@ and a dead link is not checked: it is left to the dead-link warning, which ``all
 ``target_types`` follows ``inherits``.
 A :ref:`filter <filter_string>` such as ``type == 'req'`` and a schema rule's ``const`` do not:
 they compare the type name literally.
+A filter follows it with ``c.is_a('req')``, which selects a ``req`` and a ``safety_req``
+(see :ref:`filter_is_a`).
 Since a subtype is accepted, ``inherits`` reads as "is a".
 A type that inherits another only to reuse its fields is accepted wherever its parent is.
 "A ``req`` but not a ``safety_req``" takes a schema rule,

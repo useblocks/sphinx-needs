@@ -10,6 +10,19 @@ Unreleased
 Improvements
 ............
 
+- ✨ ``c.is_a('req')`` is true for a need whose type is ``req`` or inherits from it (:issue:`2322`)
+
+  ``type == 'req'`` compares the type's name alone; ``c.is_a('req')`` follows :ref:`inherits <needs_types_fields>`,
+  directly or through other types, as the project's need types declare it: with ``sys_req`` inheriting ``req`` and
+  ``hw_req`` inheriting ``sys_req``, it selects the needs of all three, as ``type in ['req', 'sys_req', 'hw_req']``
+  does. It reads the need's type and the need type declarations, and no field: a need carries no list of its types.
+  A name that is no need type selects nothing, unreported. It is a check beside ``c.this_doc()``, in the portable
+  filter language with a string literal as its argument, answered without ``eval``, and in the ``eval`` tier for
+  any other argument. It reads the need alone, so it is available in a filter configured in ``conf.py`` and in a
+  derived field's ``where``, where ``c.this_doc()`` is not; like ``c.this_doc()``, it is not available in a
+  :ref:`needimport` ``:filter:`` nor in the ``predicates`` of a :ref:`needs_fields` entry. ``c.is_a`` tests the
+  need's type: to follow a link type named ``is_a``, use the link. See :ref:`filter_is_a`.
+
 - ✨ A :ref:`needs_types` entry naming a need type an extension adds narrows that type, where it was ignored
   (:issue:`2371`)
 
