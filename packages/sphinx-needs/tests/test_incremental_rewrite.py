@@ -473,6 +473,23 @@ _INCLUDED = {
     "frag.txt": ".. req:: Written in an included file\n   :id: REQ_060\n"
     "   :links: REQ_002\n",
 }
+#: the same need, the page now including an identical copy of it from another file:
+#: its text is the same, but it came from elsewhere
+_INCLUDED_ELSEWHERE = {
+    **_replace(_INCLUDED, "included.rst", "include:: frag.txt", "include:: frag2.txt"),
+    "frag2.txt": _INCLUDED["frag.txt"],
+}
+#: a need imported from a needs.json, linking ``REQ_002``; its source keeps the line of
+#: the ``needimport`` directive beside its hops, which have none
+_IMPORTED = {
+    **_with_pages(
+        PAGES,
+        {"imported.rst": "Imported\n========\n\n.. needimport:: needs.json\n"},
+    ),
+    "needs.json": '{"current_version": "1.0", "versions": {"1.0": {"needs": '
+    '{"IMP_001": {"id": "IMP_001", "type": "req", "title": "Imported", '
+    '"links": ["REQ_002"], "description": ""}}}}}',
+}
 #: every requirement counts the links pointing to it: one at least
 _COUNTED = {
     **PAGES,
@@ -581,6 +598,11 @@ SCENARIOS: dict[str, tuple[dict[str, str], dict[str, str]]] = {
         {**_INCLUDED, "frag.txt": "Prose first.\n\n" + _INCLUDED["frag.txt"]},
     ),
     "back-links-counted": (_COUNTED, _replace(_COUNTED, *EDITS["link-removed"])),
+    "need-moved-to-another-included-file": (_INCLUDED, _INCLUDED_ELSEWHERE),
+    "prose-above-imported-need": (
+        _IMPORTED,
+        _replace(_IMPORTED, "imported.rst", "========\n\n", "========\n\nProse.\n\n"),
+    ),
     "document-removed": (
         PAGES,
         {
@@ -786,6 +808,37 @@ def test_edit_above_an_included_need_rewrites_only_the_views(
     """
     written = _assert_equivalent(make_app, tmp_path, "prose-above-included-need")
     assert sorted(written) == ["charts", "included", "index", "views"]
+
+
+def test_need_moved_to_another_included_file_is_a_changed_need(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """The same text from another file is not a move: where a need came from is its
+    hops, and the file of one differs, so the pages showing the need it links to are
+    re-written too, as for any changed need: ``reqs``, where ``REQ_002`` shows its back
+    link, and ``copies`` and ``roles``, whose roles name ``REQ_002``."""
+    written = _assert_equivalent(
+        make_app, tmp_path, "need-moved-to-another-included-file"
+    )
+    assert sorted(written) == [
+        "charts",
+        "copies",
+        "included",
+        "index",
+        "reqs",
+        "roles",
+        "views",
+    ]
+
+
+def test_edit_above_an_imported_need_rewrites_only_the_views(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """An imported need's source keeps the line of its ``needimport`` beside its hops:
+    prose above the directive moves it, and no more -- ``reqs``, where the need it
+    links to shows it as a back link, is not re-written."""
+    written = _assert_equivalent(make_app, tmp_path, "prose-above-imported-need")
+    assert sorted(written) == ["charts", "imported", "index", "views"]
 
 
 def test_back_links_counts_are_checked_again_on_an_incremental_build(
