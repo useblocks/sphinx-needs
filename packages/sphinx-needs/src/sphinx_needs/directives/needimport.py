@@ -273,7 +273,6 @@ class NeedimportDirective(SphinxDirective):
 
             # set location
             need_source = NeedItemSourceImport(
-                docname=self.env.docname,
                 lineno=self.lineno,
                 path=need_import_path,
                 hops=hops,

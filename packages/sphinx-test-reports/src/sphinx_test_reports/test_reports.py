@@ -1,4 +1,5 @@
 # fmt: off
+import inspect
 import os
 from pathlib import Path
 
@@ -12,12 +13,15 @@ from sphinx_needs.api import (
     add_dynamic_function,
     add_field,
     add_need_type,
+    create_need,
 )
+from sphinx_needs.data import NeedsCoreFields
 from sphinx_needs.exceptions import (
     NeedsApiConfigWarning,
 )
 from sphinx_test_reports import __version__
 from sphinx_test_reports.directives.test_case import TestCase, TestCaseDirective
+from sphinx_test_reports.directives.test_common import DIRECTIVE_FIELDS
 from sphinx_test_reports.directives.test_env import EnvReport, EnvReportDirective
 from sphinx_test_reports.directives.test_file import TestFile, TestFileDirective
 from sphinx_test_reports.directives.test_report import (
@@ -244,6 +248,43 @@ _BUILT_IN_OPTIONS = {
 }
 
 
+def _fields_the_directives_set(config: Config) -> dict[str, str]:
+    """The names no extra option may have, each with why, for the message that refuses
+    one (#2181):
+
+    - a field of :data:`~sphinx_test_reports.directives.test_common.DIRECTIVE_FIELDS`
+      a directive sets itself, but a core field of the field schema that some directive
+      leaves unset (``style``): it is that field there, as an extra option always was;
+    - the report-path and source-location fields under their configured names;
+    - a Sphinx-Needs core field that is neither a field of the field schema nor an
+      argument of ``create_need`` (``external_url``, ``sections``, ...): ``add_need``
+      took one as its own keyword, and it sets nothing a test report means.
+    """
+    directive_names = {
+        "file": config.tr_file[0],
+        "suite": config.tr_suite[0],
+        "case": config.tr_case[0],
+    }
+    schema_core = {
+        name
+        for name, spec in NeedsCoreFields.items()
+        if spec.get("add_to_field_schema")
+    }
+    every_directive = frozenset.intersection(*DIRECTIVE_FIELDS.values())
+    taken: dict[str, str] = {}
+    for kind, names in DIRECTIVE_FIELDS.items():
+        for name in sorted(names):
+            if name in schema_core and name not in every_directive:
+                continue
+            taken.setdefault(name, f"a field {directive_names[kind]} sets itself")
+    for option in ("tr_file_option", "tr_source_file_option", "tr_source_line_option"):
+        taken.setdefault(getattr(config, option), f"a field {option} names")
+    arguments = set(inspect.signature(create_need).parameters)
+    for name in sorted(set(NeedsCoreFields) - schema_core - arguments):
+        taken.setdefault(name, "a core field of Sphinx-Needs that no option can set")
+    return taken
+
+
 def register_tr_extra_options(app: Sphinx) -> None:
     """Register extra options with directives."""
 
@@ -256,6 +297,7 @@ def register_tr_extra_options(app: Sphinx) -> None:
     # keeps the configured spelling (#2115). Two names that differ only in case would be
     # one option.
     written: dict[str, str] = {}
+    fields_set = _fields_the_directives_set(app.config)
     for option_name in tr_extra_options or []:
         lowered = option_name.lower()
         if written.get(lowered, option_name) != option_name:
@@ -273,6 +315,14 @@ def register_tr_extra_options(app: Sphinx) -> None:
                     f"tr_extra_options holds '{option_name}', which {directive_name} "
                     f"reads as its own :{lowered}: option; choose another name."
                 )
+        # A field the directives set themselves, or one configuration names, would be
+        # given twice in the one mapping a need is created from: the extra option
+        # overriding the directive's value without a word (#2181).
+        if (taken_by := fields_set.get(option_name)) is not None:
+            raise InvalidConfigurationError(
+                f"tr_extra_options holds '{option_name}', which is {taken_by}; "
+                f"choose another name."
+            )
         if lowered != option_name:
             log.info(
                 f"tr_extra_options: write '{option_name}' on a directive as "

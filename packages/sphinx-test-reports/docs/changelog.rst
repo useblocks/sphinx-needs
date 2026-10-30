@@ -4,6 +4,46 @@ Changelog
 Unreleased
 ----------
 
+Fixed
+.....
+
+- 🐛 A :ref:`tr_extra_options` name that is a field the directives set themselves
+  (``result``, ``time``, ``case_name``, ``cases``, ``passed``, ``title``, ...), or that
+  :ref:`tr_file_option`, :ref:`tr_source_file_option` or :ref:`tr_source_line_option`
+  names, is refused when the build starts, with an ``InvalidConfigurationError`` naming the
+  option, as a name the directives read as an option of their own already is
+  (`#2181 <https://github.com/useblocks/sphinx-needs/issues/2181>`__). On the directive that
+  sets the field, the option ended the build with a bare ``TypeError`` (``add_need() got
+  multiple values for keyword argument 'result'``), or, for ``case_file`` and ``case_line``,
+  silently overrode the test's source location; on the others it set nothing (the field is
+  not declared on their need type) or crashed the same way. ``style``, which only
+  ``test-case`` sets, is not refused: it keeps setting the style of a ``test-file`` and a
+  ``test-suite``, and a test case it would override refuses its need with the directive's
+  warning, where it crashed. The same holds for ``extra_options`` in ``[test_reports]``. A
+  report value of a name the directive sets (a ``tr_json_mapping`` key, say) refuses its
+  need the same way, where it crashed the build too.
+
+- ‼️ A :ref:`tr_extra_options` name that is a Sphinx-Needs core field no option can set --
+  one that is neither a field of the field schema nor an argument of the need's creation,
+  such as ``docname``, ``lineno`` or ``parts`` (which crashed the build) -- is refused when
+  the build starts, with the same ``InvalidConfigurationError``. Eight of them built on
+  master, where ``add_need`` took the option as its own keyword, and are now this
+  configuration error: ``external_css`` and ``is_import`` set the need's value,
+  ``is_external`` made the need external, ``constraints_passed`` was dropped with a
+  ``DeprecationWarning``, and ``arch``, ``external_url``, ``sections`` and ``signature``
+  were ignored. As a report value (a ``tr_json_mapping`` key) such a name refuses its need
+  with the directive's warning. ``doctype`` and ``jinja_content`` keep reaching
+  Sphinx-Needs as the need's own arguments; ``full_title`` and ``allow_type_coercion`` are
+  fields, as every other extra option is (#2392), and ``full_title`` is still given as the
+  need's full title.
+
+- 🐛 A :ref:`tr_extra_options` name that is no field the directives set but one of
+  Sphinx-Needs' own parameter names, such as ``state``, is an ordinary field: it ended the
+  build with ``TypeError: add_need() got multiple values for keyword argument 'state'``
+  (`#2392 <https://github.com/useblocks/sphinx-needs/issues/2392>`__). The directives create
+  their needs through Sphinx-Needs' ``create_need``, which takes the fields and links as two
+  mappings; this requires the Sphinx-Needs release that adds it.
+
 Changed
 .......
 

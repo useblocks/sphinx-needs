@@ -11,7 +11,8 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx_data_viewer.api import get_data_viewer_node
 
 from sphinx_needs._need_source import NeedSourceHop, NeedSourceSemantic, directive_hops
-from sphinx_needs.api import InvalidNeedException, add_need
+from sphinx_needs.api import InvalidNeedException, create_need
+from sphinx_needs.api.need import _split_values
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
@@ -199,18 +200,29 @@ class NeedserviceDirective(SphinxDirective):
                 datum.update(options)
 
                 # ToDo: Tags and Status are not set (but exist in data)
-                source = NeedItemSourceService(
-                    docname=self.env.docname, lineno=self.lineno, hops=hops
-                )
+                source = NeedItemSourceService(lineno=self.lineno, hops=hops)
+                need_id = datum.pop("id", None)
+                need_content = datum.pop("content", "")
+                jinja_content = datum.pop("jinja_content", None)
+                # a field the project declares as full_title: the field, and the full
+                # title the generated id is derived from, as add_need took it
+                full_title = datum.get("full_title")
+                fields, links = _split_values(needs_schema, datum)
                 try:
-                    section += add_need(
-                        app=self.env.app,
-                        state=self.state,
-                        need_source=source,
-                        need_type=need_type,
-                        title=need_title,
-                        **datum,
+                    _, need_nodes = create_need(
+                        self.env.app,
+                        self.state,
+                        source,
+                        need_type,
+                        need_title,
+                        id=need_id,
+                        content=need_content,
+                        jinja_content=jinja_content,
+                        full_title=full_title,
+                        fields=fields,
+                        links=links,
                     )
+                    section += need_nodes
                 except InvalidNeedException as err:
                     hint = (
                         _unconfigured_builtin_hint(service, need_type)
