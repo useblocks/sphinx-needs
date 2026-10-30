@@ -8,8 +8,6 @@ add_need() got multiple values for keyword argument 'state'``. They now go to
 
 from pathlib import Path
 
-import pytest
-
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import build_warnings
 
@@ -48,7 +46,6 @@ def _style(name: str) -> str:
     )
 
 
-@pytest.mark.xfail(strict=True, reason="FR2: add_need's arguments stay arguments")
 def test_a_one_line_field_named_content_sets_the_content(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:

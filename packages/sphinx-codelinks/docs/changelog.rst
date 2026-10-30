@@ -14,6 +14,13 @@ New and Improved
   creation call (``state``, ``app``, ...) is an ordinary field where it ended the build
   (`#2392 <https://github.com/useblocks/sphinx-needs/issues/2392>`__). Requires the
   Sphinx-Needs release that adds ``create_need``.
+- 👌 A marker field named ``content``, ``doctype``, ``jinja_content`` or ``full_title`` (the
+  last unless the project declares a field of that name) is still the need's content,
+  ``doctype``, Jinja switch or full title, as Sphinx-Needs' ``add_need`` took it. A marker
+  field named like a Sphinx-Needs core field that is neither a field nor one of those
+  (``external_url``, ``external_css``, ``sections``, ...) now refuses its need with the
+  ``codelinks.oneline`` warning, where ``add_need`` took it as its own keyword: no such field
+  was ever a field of the need.
 
 .. _`release:2.0.1`:
 

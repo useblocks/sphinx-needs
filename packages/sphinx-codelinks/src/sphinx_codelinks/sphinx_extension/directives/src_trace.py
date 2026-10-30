@@ -129,6 +129,16 @@ def generate_remote_url(
     )
 
 
+#: the marker field names ``add_need`` took as its own keywords and ``create_need``
+#: takes as arguments, rather than as fields
+_CREATION_ARGUMENTS = ("content", "doctype", "jinja_content", "full_title")
+
+
+def _marker_text(value: str | list[str]) -> str:
+    """A marker field's value as one string: a list joined as it was written."""
+    return value if isinstance(value, str) else ", ".join(value)
+
+
 def would_be_id(app: Sphinx, need: Mapping[str, Any]) -> str | None:
     """The id a one-line need is created with: its ``id`` field, else the one
     Sphinx-Needs generates for a need without one -- ``generate_need`` calls
@@ -719,10 +729,9 @@ class SourceTracingDirective(SphinxDirective):
                 # render needs from one-line marker
                 # the marker's fields but its title, type and id, which are the
                 # creation's own arguments; its link types apart, as create_need
-                # takes them (a name not declared is refused there, as before)
-                link_names = frozenset(
-                    SphinxNeedsData(self.env).get_schema().iter_link_field_names()
-                )
+                # takes them
+                schema = SphinxNeedsData(self.env).get_schema()
+                link_names = frozenset(schema.iter_link_field_names())
                 values: dict[str, str | list[str]] = {
                     field_name: field_value
                     for field_name, field_value in marker.need.items()
@@ -733,6 +742,19 @@ class SourceTracingDirective(SphinxDirective):
                 if remote_url_field and remote_link_name is not None:
                     values[remote_url_field] = remote_link_name
                 marker_id = marker.need.get("id")
+                # the names add_need took as its own keywords and create_need takes
+                # as arguments, unless the project declares a field of the name; any
+                # other name is a field or a link, and one no field has is refused
+                declared = {
+                    *link_names,
+                    *schema.iter_core_field_names(),
+                    *schema.iter_extra_field_names(),
+                }
+                arguments = {
+                    name: _marker_text(values.pop(name))
+                    for name in _CREATION_ARGUMENTS
+                    if name in values and name not in declared
+                }
 
                 try:
                     _, created = create_need(
@@ -744,6 +766,13 @@ class SourceTracingDirective(SphinxDirective):
                         str(marker.need["type"]),
                         str(marker.need["title"]),
                         id=None if marker_id is None else str(marker_id),
+                        content=arguments.get("content", ""),
+                        doctype=arguments.get("doctype"),
+                        # a string, true when not empty, as add_need read it
+                        jinja_content=bool(arguments["jinja_content"])
+                        if "jinja_content" in arguments
+                        else None,
+                        full_title=arguments.get("full_title"),
                         fields={k: v for k, v in values.items() if k not in link_names},
                         links={k: v for k, v in values.items() if k in link_names},
                     )
