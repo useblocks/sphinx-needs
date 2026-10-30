@@ -196,6 +196,20 @@ def _edit(name: str, old: str, new: str) -> dict[str, str | None]:
     return {name: text.replace(old, new)}
 
 
+#: The project with its reports under a ``tr_rootdir`` that is not the source directory
+#: (and none in the source directory, where a path as written would be looked for).
+ROOTED: dict[str, str | None] = {
+    "conf.py": CONF
+    + "import os\n"
+    + 'tr_rootdir = os.path.join(os.path.dirname(__file__), "..", "root")\n',
+    **{
+        f"../root/{name}": text
+        for name, text in FILES.items()
+        if name.startswith("reports/")
+    },
+    **{name: None for name in FILES if name.startswith("reports/")},
+}
+
 #: ``(before, after)``: what changes between the two builds (``None``: absent).
 SCENARIOS: dict[str, tuple[dict[str, str | None], dict[str, str | None]]] = {
     # the report changes: the page re-reads it
@@ -216,6 +230,13 @@ SCENARIOS: dict[str, tuple[dict[str, str | None], dict[str, str | None]]] = {
     "json-report": ({}, _edit("reports/r.json", '"t1"', '"t1_renamed"')),
     "report-of-test-results": ({}, _edit("reports/results.xml", *_RENAMED)),
     "report-of-test-env": ({}, _edit("reports/env.json", '"a==1"', '"a==2"')),
+    "report-under-another-tr_rootdir": (
+        ROOTED,
+        {
+            **ROOTED,
+            "../root/reports/file.xml": FILES["reports/file.xml"].replace(*_RENAMED),
+        },
+    ),
     # a report that could not be read: missing, then created; unreadable, then fixed
     "missing-report-created": ({"reports/file.xml": None}, {}),
     "unreadable-report-fixed": ({"reports/case.xml": "<testsuites"}, {}),
@@ -297,7 +318,9 @@ def _sources(app: SphinxTestApp) -> dict[str, object]:
 def _assert_equivalent(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path, scenario: str
 ) -> list[str]:
-    """Build, edit, build incrementally, and compare with a fresh build of the edit.
+    """Build, edit, build incrementally, and compare with a fresh build of the edit;
+    then build again with no change, which reads nothing (every report it depends on
+    is there, at the path noted).
 
     :return: The documents the incremental build re-read.
     """
@@ -325,6 +348,8 @@ def _assert_equivalent(
         == []
     )
     assert _sources(app) == _sources(fresh_app)
+    _, again = _build(make_app, incremental, fresh=False)
+    assert again == []
     return read
 
 
@@ -344,6 +369,14 @@ def test_the_project_builds_cleanly(make_app, tmp_path):
     }
 
 
+def test_the_project_under_another_tr_rootdir_builds_cleanly(make_app, tmp_path):
+    """The reports are read from ``tr_rootdir``: the same needs, and no warning."""
+    srcdir = _write(tmp_path, {**FILES, **ROOTED})
+    app, _ = _build(make_app, srcdir, fresh=True)
+    assert strip_colors(app._warning.getvalue()) == ""
+    assert "TF_F" in SphinxNeedsData(app.env).get_needs_view()
+
+
 @pytest.mark.parametrize("scenario", SCENARIOS)
 def test_an_incremental_build_equals_a_fresh_build(make_app, tmp_path, scenario):
     _assert_equivalent(make_app, tmp_path, scenario)
@@ -358,6 +391,7 @@ def test_an_incremental_build_equals_a_fresh_build(make_app, tmp_path, scenario)
         ("json-report", "json"),
         ("report-of-test-results", "results"),
         ("report-of-test-env", "env"),
+        ("report-under-another-tr_rootdir", "file"),
         ("missing-report-created", "file"),
         ("unreadable-report-fixed", "case"),
     ],
