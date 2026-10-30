@@ -5,13 +5,21 @@ Derived fields
 
 .. versionadded:: 9.0.0
 
+Many values in a requirements project are not decided on the need that shows them, but follow from other needs:
+the effort of a story is the sum of the effort of its tasks,
+a requirement is verified once every test of it has passed,
+a test result is evidence for the requirements its test traces to.
+Written by hand, such a value is out of date as soon as one of those needs changes.
+
 A field whose entry carries a ``derive`` table is **derived**: a rule computes its value
 for every need the project creates from its sources, or only for the needs of the need types it is declared on,
 and an author does not write it.
-The table names a ``kind``, and the kind's operands, each under a fixed role name.
+The table names a ``kind``, what to compute, and the kind's operands, each under a fixed role name.
 In the :ref:`TOML file <needs_from_toml>`:
 
 .. code-block:: toml
+
+   [needs.links.tests]
 
    [needs.fields.hours]
    schema = { type = "number" }
@@ -27,7 +35,10 @@ In the :ref:`TOML file <needs_from_toml>`:
    [needs.links.mentions]
    derive = { kind = "content_links" }
 
-or in :file:`conf.py`, as every other key of the entry:
+``total_hours`` adds up the ``hours`` of the needs a need links to,
+``verified`` says whether every test naming the need in its ``tests`` has passed,
+and ``mentions`` links the needs that a need's text references.
+The same rule in :file:`conf.py`, as every other key of the entry:
 
 .. code-block:: python
 
@@ -62,12 +73,28 @@ and a need of another type ``None``.
 
 A link type is derived the same way, with ``derive`` on its :ref:`needs_links` entry
 and one of the kinds that compute a link list: ``links``, ``content_links`` and ``union``,
-or ``copy`` and ``collect``, which there compute a path through other links (:ref:`needs_derive_link_chain`).
+or ``copy`` and ``collect``, which there link the far ends of a chain of other links (:ref:`needs_derive_link_chain`).
 A derived field is closed to authors: a value written for it in a need is ignored, and reported
 (see :ref:`needs_derive_holds`).
 How a rule relates to the ``[[…]]`` calls that compute a value per need is described in :ref:`dynamic_functions_derived`.
 Whether a value is better computed by a rule, an inline call or a variant is set out in
 :doc:`Delayed field evaluation <dynamic_functions>`.
+
+Before declaring a rule, bear in mind:
+
+- **Nobody can write the value.** A value written for a derived field in a need, or set by a :ref:`needextend`,
+  is ignored and reported (``needs.derive_authored``).
+  A value that someone must be able to write, or to correct by hand, needs a field of its own.
+- **Mistakes are found when the configuration is read.** A rule that cannot be read is reported as
+  ``needs.derive_invalid``, and the field holds its empty value (:ref:`needs_derive_holds`).
+- **Storing costs, computing does not.** A value per need costs little; a rule that links many needs to many
+  stores a list on each need and a back link on each target (``needs.derive_dense``, :ref:`needs_derive_cost`).
+- **Incremental builds re-write more pages.** When a need changes, the pages of the needs whose rules read it are
+  re-written too; in a project with a ``links`` rule, a ``content_links`` rule with ``from``, a ``collect`` on a link type,
+  or a ``copy`` on a link type over a link type a rule computes,
+  every change of a need re-writes every page holding a need (:ref:`incremental_builds`).
+- **A simpler tool may do.** To show a set of needs in one place, a :ref:`needtable` or :ref:`needlist` with a filter
+  shows it once; a value for one need alone is a ``[[…]]`` call written in it (:ref:`dynamic_functions_derived`).
 
 .. _`needs_derive_declaring`:
 
@@ -76,29 +103,25 @@ Declaring a rule
 
 ``derive`` in a field's :ref:`needs_fields` entry, or in a link type's :ref:`needs_links` entry,
 gives its rule to every need.
+Use it when the value is computed the same way whatever the need's type,
+such as a ``verified`` on every need that tests name, or a fingerprint of every need.
 ``types`` is not a role: a rule for some need types only is declared in those types' own entries
 (:ref:`needs_derive_by_type`).
 A rule on a core field (``status``, ``tags``, ``title`` and the other core fields, and the ``parent_needs`` link type),
-or on a link type named after a core field (such as ``parts``), is not available in this release: it is reported, and ignored.
+or on a link type named after a core field (such as ``parts``), is not available in this release:
+it is reported (``needs.derive_invalid``), and ignored.
 
 .. _`needs_derive_by_type`:
 
 Rules per need type
 ~~~~~~~~~~~~~~~~~~~
 
+One value is often computed differently on different need types.
+Effort is written on tasks and rolled up through stories and epics:
+on a task the total is the task's own effort, on a story or an epic the sum of the totals of the needs it links.
+That takes two fields:
+the one authors write, and a derived one, which copies it on a task and sums itself over the links of a story or an epic.
 A need type's own entry (:ref:`needs_types_fields`) gives the rule to the needs of that type:
-a ``derive`` in its declaration of the field, under ``fields``, or of the link type, under ``links``.
-The entry is one of :ref:`needs_types`: the type is declared there, with its ``title`` and ``prefix``,
-and declaring need types replaces the default ones (see :ref:`need_types_howto`);
-an entry naming a default type with neither ``title`` nor ``prefix`` is that type, narrowed,
-so ``[needs.types.req.fields.<field>]`` alone gives ``req`` a rule and keeps every default type.
-A type inheriting from it uses the rule too, unless it declares one of its own.
-A need uses the rule of its type, else ``derive``, else none.
-A need type's own declaration of a derived field narrows its description, schema and ``nullable``,
-but gives it no default.
-
-Effort written on tasks and rolled up through stories and epics takes two fields:
-the one authors write, and a derived one, which copies it on a task and sums itself over the links of a story or an epic:
 
 .. code-block:: toml
 
@@ -155,8 +178,28 @@ the one authors write, and a derived one, which copies it on a task and sums its
 Each task's ``total_effort`` is its ``effort`` (``3.0``, ``5.0``, ``2.0``),
 ``STORY_1``'s is ``8.0``, and ``EPIC_1``'s ``10.0``: a rule reading its own field over a link type
 reads the value each linked need computes, through any depth.
-Needs linking one another in a cycle cannot compute such a value, and are reported (``needs.derive_cycle``).
-One field cannot do both: a derived field is closed on every need type, also where it has no rule.
+
+Bear in mind:
+
+- **One name, one shape.** A field or link type means the same thing on every need type that declares it:
+  its type (``number`` here) and whether it is derived belong to the field, not to a need type,
+  and so, for a link type, do how its links are drawn, whether a dead link is allowed and whether it is a summary.
+  A need type's own declaration of a derived field narrows its description, schema and ``nullable``,
+  but gives it no default.
+  ``summary`` in a need type's ``links`` entry is reported (``needs.config``) and ignored:
+  it is set on the link type's :ref:`needs_links` entry (:ref:`needs_derive_summary`).
+- **One field cannot do both.** A derived field is closed on every need type, also where it has no rule,
+  so the value authors write on tasks is a field of its own, ``effort``.
+- **Cycles.** Needs linking one another in a cycle cannot compute such a value, and are reported (``needs.derive_cycle``).
+- **Other need types.** A need of a type without a rule holds the same value on every need of the type, set out below.
+
+The entry is one of :ref:`needs_types`: the type is declared there, with its ``title`` and ``prefix``,
+and declaring need types replaces the default ones (see :ref:`need_types_howto`);
+an entry naming a default type with neither ``title`` nor ``prefix`` is that type, narrowed,
+so ``[needs.types.req.fields.<field>]`` alone gives ``req`` a rule and keeps every default type.
+The rule is a ``derive`` in the type's declaration of the field, under ``fields``, or of the link type, under ``links``.
+A type inheriting from it uses the rule too, unless it declares one of its own.
+A need uses the rule of its type, else ``derive``, else none.
 
 A need of a type without a rule holds the same value on every need of the type:
 
@@ -184,7 +227,7 @@ a value that varies per need is what a rule is for.
 
 ``derive_by_type`` on the field's or link type's own entry is the spelling of the same rules
 for a need type the project does not declare, and an older one for a type it does:
-a table from need type, by its directive name
+a table from need type, by its name
 (the value ``type`` holds, as a filter reads it: ``type == 'story'``), to a rule, as ``derive`` takes one,
 such as ``derive_by_type.story = { kind = "sum", field = "total_effort", over = "links" }``.
 A ``derive`` in a type's own entry is the field's ``derive_by_type`` entry for that type,
@@ -196,7 +239,7 @@ a type a :ref:`GitHub service <github_service>` adds, which an entry would repla
 and it alone gives a type a rule that the types inheriting from it do not get.
 
 Rules per need type are checked when the configuration is read, one ``needs.derive_invalid`` per entry:
-a ``derive_by_type`` key naming no need type is ignored (a type's title is not its directive name, and the warning says which is meant);
+a ``derive_by_type`` key naming no need type is ignored (a type's title is not its name, and the warning says which is meant);
 an empty ``derive_by_type``, or one that is not a table, adds no rule: the field stays derived,
 every need type using the ``derive`` beside it, or, without one, no rule;
 an entry that cannot be read, as a ``derive`` that cannot be read, leaves the needs of its type at the empty value,
