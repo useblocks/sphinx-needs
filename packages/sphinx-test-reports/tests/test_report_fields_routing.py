@@ -9,12 +9,16 @@ creation's arguments, as they did. A core field of Sphinx-Needs no option can se
 refused at configuration as an extra option, and refuses its need as a report value.
 """
 
+import inspect
 import io
 import json
 
 import pytest
 
-from sphinx_needs.data import SphinxNeedsData
+import sphinx_test_reports.directives.test_common
+from sphinx_needs.api import create_need
+from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
+from sphinx_test_reports.directives.test_common import DIRECTIVE_FIELDS
 from sphinx_test_reports.exceptions import InvalidConfigurationError
 
 PAGE = "Probe\n=====\n\n.. req:: r1\n   :id: REQ_1\n\n.. req:: r2\n   :id: REQ_2\n\n"
@@ -182,7 +186,40 @@ def test_an_extra_option_doctype_sets_it(make_app, tmp_path, clean_docutils_regi
     assert needs["TF_001"]["doctype"] == ".md"
 
 
-@pytest.mark.parametrize("name", ["external_url", "external_css", "sections"])
+#: the core fields no option can set, from the sources the configuration check reads: a
+#: Sphinx-Needs core field that is neither a field of the field schema nor an argument of
+#: ``create_need`` (those the directives set are refused as theirs)
+CORE_ONLY = sorted(
+    set(NeedsCoreFields)
+    - {
+        name
+        for name, spec in NeedsCoreFields.items()
+        if spec.get("add_to_field_schema")
+    }
+    - set(inspect.signature(create_need).parameters)
+    - set().union(*DIRECTIVE_FIELDS.values())
+)
+
+#: the ones of them an extra option built with on master (#2181's round 2): ``add_need``
+#: set them (``external_css``, ``is_import``), ignored them, dropped them with a
+#: warning (``constraints_passed``), or made the need external (``is_external``)
+BUILT_ON_MASTER = (
+    "arch",
+    "constraints_passed",
+    "external_css",
+    "external_url",
+    "is_external",
+    "is_import",
+    "sections",
+    "signature",
+)
+
+
+def test_the_core_fields_no_option_sets_include_those_that_built_on_master():
+    assert set(BUILT_ON_MASTER) <= set(CORE_ONLY)
+
+
+@pytest.mark.parametrize("name", CORE_ONLY)
 def test_an_extra_option_named_like_a_core_field_no_option_sets_is_refused(
     make_app, tmp_path, clean_docutils_registry, name
 ):
@@ -264,3 +301,95 @@ def test_an_extra_option_style_refuses_only_the_case_needs(
         "Need could not be created: ['style'] given by the report or the "
         "configuration, and set by the directive itself" in warnings
     )
+
+
+# --- full_title and allow_type_coercion: arguments, and a declared full_title also a field
+
+
+def _record_arguments(monkeypatch) -> dict[str, dict]:
+    """What each need is handed to ``create_need`` with, by need id."""
+    handed: dict[str, dict] = {}
+    module = sphinx_test_reports.directives.test_common
+    real = module.create_need
+
+    def recording(*args, **kwargs):
+        handed[kwargs["id"]] = kwargs
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(module, "create_need", recording)
+    return handed
+
+
+@pytest.mark.xfail(
+    strict=True, reason="FR7: a declared full_title is also the argument"
+)
+def test_an_extra_option_full_title_is_the_field_and_the_argument(
+    make_app, tmp_path, clean_docutils_registry, monkeypatch
+):
+    """The extra option registers its field, which holds the value (#2392), and the
+    creation is also given it as the full title, as ``add_need`` took it."""
+    handed = _record_arguments(monkeypatch)
+    needs, warnings = _build(
+        make_app,
+        tmp_path,
+        'tr_extra_options = ["full_title"]\n',
+        FILE.format(options="   :full_title: A much longer title"),
+        {"r.xml": REPORT},
+    )
+    assert warnings == ""
+    assert needs["TF_001"]["full_title"] == "A much longer title"
+    assert (
+        handed["TF_001"]["full_title"],
+        handed["TF_001"]["fields"]["full_title"],
+    ) == (
+        "A much longer title",
+        "A much longer title",
+    )
+
+
+@pytest.mark.xfail(strict=True, reason="FR8: allow_type_coercion is an argument")
+def test_report_values_full_title_and_allow_type_coercion_are_the_arguments(
+    make_app, tmp_path, clean_docutils_registry, monkeypatch
+):
+    """Undeclared, a report's ``full_title`` and ``allow_type_coercion`` are the
+    creation's arguments, as written, and no field: the need is built."""
+    handed = _record_arguments(monkeypatch)
+    needs, warnings = _build(
+        make_app,
+        tmp_path,
+        JSON_MAPPING.format(key="allow_type_coercion")
+        + 'tr_json_mapping["cfg"]["testcase"]["full_title"] = (["long"], "")\n',
+        CASE.format(file="r.json"),
+        {
+            "r.json": json.dumps(
+                [
+                    {
+                        "name": "s1",
+                        "tests": 1,
+                        "errors": 0,
+                        "failures": 0,
+                        "skips": 0,
+                        "passed": 1,
+                        "time": 1,
+                        "testcase": [
+                            {
+                                "name": "t1",
+                                "classname": "c1",
+                                "result": "passed",
+                                "extra": "yes",
+                                "long": "A much longer title",
+                            }
+                        ],
+                    }
+                ]
+            ).encode()
+        },
+    )
+    assert warnings == ""
+    assert "TC_001" in needs
+    kwargs = handed["TC_001"]
+    assert (kwargs["allow_type_coercion"], kwargs["full_title"]) == (
+        "yes",
+        "A much longer title",
+    )
+    assert not {"allow_type_coercion", "full_title"} & set(kwargs["fields"])
