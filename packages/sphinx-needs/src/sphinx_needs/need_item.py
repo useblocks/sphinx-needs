@@ -81,10 +81,16 @@ class NeedItemSource:
     through :func:`~sphinx_needs.api.need.create_need`: in a directive,
     ``NeedItemSource.from_directive(self)``; for a need on the page at a line the caller
     gives (the directive's parser line, as ``add_need`` took it; a line its data names),
-    ``NeedItemSource.on_page(docname, lineno=lineno)``. Its name, its constructor's
-    keywords, :meth:`from_directive` and :meth:`on_page` are stable; ``hops`` and the hop
-    types are **provisional** (see :ref:`api`): they may change in a minor release,
-    without a deprecation, until they reach ``needs.json``.
+    ``NeedItemSource.on_page(docname, lineno=lineno)``.
+
+    **Stable**: the class's name, :meth:`from_directive` (the ``first`` hops it takes are
+    provisional, as every hop is), :meth:`on_page`, and reading a source through
+    :class:`NeedItemSourceProtocol` (``dict_repr``). **Provisional**: the constructor
+    itself and its keywords (``hops``, ``lineno``, ``lineno_content``,
+    ``parser_lineno``, ``is_import``), like the hop types (see :ref:`api`): they may
+    change without a deprecation, until ``needs.json`` carries them. They are the
+    stored legacy facts a later release turns into projections of the hops, and are
+    for sphinx-needs' own producers and advanced use.
 
     The legacy location keys of the need (``dict_repr``, which
     :class:`NeedItemSourceProtocol` requires), one rule each:

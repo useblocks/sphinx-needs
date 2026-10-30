@@ -159,10 +159,12 @@ Improvements
   page it is written in, after any hops given as ``first``; it takes any docutils ``Directive``, not only a
   ``SphinxDirective``. ``NeedItemSource.on_page(docname, lineno=lineno)`` gives a need its page and the line the
   caller passes, the source ``add_need`` built: for a need at its directive's parser line, as ``add_need`` took it
-  (sphinx-codelinks' needs sit there), or at a line the directive's data names. ``NeedItemSource``, its constructor's keywords, ``from_directive`` and ``on_page``
-  are stable; ``hops`` and the hop types, ``NeedSourceHop``, ``NeedSourcePhysical`` and
-  ``NeedSourceSemantic``, now also importable from ``sphinx_needs.api``, stay provisional until they reach
-  ``needs.json``. A need's ``docname``, ``lineno`` and the other location keys are unchanged, and so is
+  (sphinx-codelinks' needs sit there), or at a line the directive's data names. The class's name, ``from_directive`` and ``on_page`` are
+  stable, and so is reading a source through ``NeedItemSourceProtocol``; the general constructor and its keywords
+  (``hops``, ``lineno``, ``lineno_content``, ``parser_lineno``, ``is_import``) are provisional, for sphinx-needs' own
+  producers and advanced use, as ``hops`` and the hop types, ``NeedSourceHop``, ``NeedSourcePhysical`` and
+  ``NeedSourceSemantic``, now also importable from ``sphinx_needs.api``, are: they may change without a deprecation,
+  until ``needs.json`` carries them. A need's ``docname``, ``lineno`` and the other location keys are unchanged, and so is
   ``NeedItemSourceProtocol``; the first build after upgrading reads every document again. See
   :ref:`api_migrating_add_need`.
 

@@ -95,8 +95,11 @@ parser line, as ``add_need`` took it (every need sphinx-codelinks' ``src-trace``
 at its directive's parser line), or the lines a directive's data names. It works in a docutils
 ``Directive`` and in a nested parse alike, and is also the ``need_source`` to give
 ``generate_need``.
-``from_directive`` and ``on_page`` are stable, as the class's name and keywords are; the
-hops they build are provisional (see the provisional note under "Data", below).
+``from_directive`` and ``on_page`` are stable, as the class's name is; the hops they build,
+and ``NeedItemSource``'s general constructor with its keywords (``hops``, ``lineno``,
+``lineno_content``, ``parser_lineno``, ``is_import``), are provisional: they may change
+without a deprecation, until needs.json carries them (see the provisional note under "Data",
+below). The constructor is for sphinx-needs' own producers and advanced use.
 
 A need placed on a page is created with a parser state, through ``create_need`` as through
 ``add_need``: an event handler or a role, which has none, cannot create one, and without a
@@ -115,7 +118,7 @@ refused that with an ``AssertionError``, ``create_need`` raises ``ValueError``.
      - ``source=NeedItemSource.from_directive(self)``; for a line the caller gives
        (``add_need``'s ``self.lineno``), ``NeedItemSource.on_page(docname, lineno=lineno)``
    * - ``lineno_content``
-     - ``NeedItemSource(..., lineno_content=...)`` (``from_directive`` sets it)
+     - ``from_directive`` sets it (the provisional constructor takes ``lineno_content=``)
    * - ``need_source``
      - ``source``
    * - ``status``, ``tags``, ``constraints``, ``hide``, ``collapse``, ``style``,
@@ -131,7 +134,7 @@ refused that with an ``AssertionError``, ``create_need`` raises ``ValueError``.
        ``external`` hop as ``create_need``'s source, with ``state=None``, is the
        provisional hop type, and takes no ``external_css``)
    * - ``is_import``
-     - ``NeedItemSource(..., is_import=True)``, or
+     - ``NeedItemSource(..., is_import=True)`` (the provisional constructor), or
        :func:`~sphinx_needs.api.need.ingest_need_record` for a needs.json-style record
    * - ``parts``, ``arch``, ``sections``, ``signature``
      - none: for a need on the page they are computed from its content and the page (a
@@ -249,6 +252,12 @@ Data
    :members: NeedItem, NeedLink, NeedPartItem, NeedItemSource, NeedItemSourceProtocol, NeedsContent, NeedPartData, NeedModification, NeedConstraintResults
 
 .. note::
+
+   **Stable**: ``NeedItemSource``'s name, ``NeedItemSource.from_directive`` and ``NeedItemSource.on_page``, and
+   reading a source through ``NeedItemSourceProtocol`` (``dict_repr``). **Provisional**: ``NeedItemSource``'s general
+   constructor and its keywords (``hops``, ``lineno``, ``lineno_content``, ``parser_lineno``, ``is_import``), the
+   stored legacy facts a later release turns into projections, for sphinx-needs' own producers and advanced use; and
+   the hops, below.
 
    **Provisional**: a :class:`~sphinx_needs.need_item.NeedItemSource` has ``hops``, where the need's text came from,
    innermost first; the hop types, ``NeedSourceHop``, ``NeedSourcePhysical`` and ``NeedSourceSemantic``, are

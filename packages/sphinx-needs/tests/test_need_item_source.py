@@ -826,3 +826,34 @@ def test_a_third_party_source_takes_the_fallback_not_the_seam():
     assert not _need(before).moved_only(
         _need(_DataclassSource((lined(15, "b.rst"),), 15))
     )
+
+
+def test_what_is_stable_of_the_one_class():
+    """What ``NeedItemSource`` promises as stable, and nothing more: its name, public
+    from ``sphinx_needs.api``, and the two constructors' signatures. (The general
+    constructor and its keywords are provisional; ``test_the_one_class`` pins them as
+    they are today, which is not a promise.) A change here is a change of the stable
+    API: it needs a deprecation."""
+    import sphinx_needs.api
+    from sphinx_needs.need_item import NeedItemSource
+
+    assert sphinx_needs.api.NeedItemSource is NeedItemSource
+    assert NeedItemSource.__name__ == "NeedItemSource"
+
+    def described(function: Any) -> list[tuple[str, Any, Any]]:
+        return [
+            (parameter.name, parameter.kind, parameter.default)
+            for parameter in inspect.signature(function).parameters.values()
+        ]
+
+    positional = inspect.Parameter.POSITIONAL_OR_KEYWORD
+    keyword = inspect.Parameter.KEYWORD_ONLY
+    empty = inspect.Parameter.empty
+    assert described(NeedItemSource.from_directive) == [
+        ("directive", positional, empty),
+        ("first", keyword, ()),
+    ]
+    assert described(NeedItemSource.on_page) == [
+        ("docname", positional, empty),
+        ("lineno", keyword, None),
+    ]

@@ -1035,7 +1035,9 @@ def create_need(
         it is imported or external. In a directive it is
         ``NeedItemSource.from_directive(self)``, as above; for a need on the page at
         a line the caller gives (the directive's parser line, as ``add_need`` took
-        it), ``NeedItemSource.on_page(docname, lineno=lineno)``.
+        it), ``NeedItemSource.on_page(docname, lineno=lineno)``. Those two spellings
+        are stable; ``NeedItemSource``'s general constructor and its keywords are
+        provisional.
     :param need_type: The need type, by the name of its directive.
     :param title: The need's title.
     :param id: The need's id. If not given, one is generated (see
