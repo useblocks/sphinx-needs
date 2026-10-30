@@ -32,6 +32,8 @@ so when a need changes, Sphinx-Needs has Sphinx re-write (not re-read) every pag
   - a :ref:`derive rule <needs_derive>` reads the needs it links to (``over`` a link type,
     including the links a needextend adds), those linking to it (``over`` a ``<link type>_back``),
     or the need ``from`` names, back links read as above;
+    a ``where`` narrowing those needs (beside a ``copy`` too) reads them alone, unless it names a back link
+    or reads ``needs``, and ``c.is_a(...)`` in it reads their type and the need types' ``inherits``;
     a rule reading needs it does not name (a ``join``, a ``transitive`` rule, a ``where`` of ``content_links``)
     counts on every change;
 
@@ -62,6 +64,14 @@ a view or a need role:
 The same happens after a change of a needextend with a filter rather than an id,
 and after a change of a need that a needextend with a filter links to (``:+links:``)
 or whose value its dynamic function copies (``copy`` with a need id).
+
+A change of the need types -- :ref:`needs_types`, or the ``[needs.types]`` of ``ubproject.toml``,
+including an ``inherits`` (which ``c.is_a(...)`` follows, see :ref:`filter_is_a`),
+the fields and links a type declares, and its ``id_regex`` -- re-reads every document,
+and so re-writes every page.
+What the schema reports of a need, a type's count of the links it receives (:ref:`need_types_incoming`)
+and a declaration's ``severity`` included, is checked over every need on every build, incremental or not,
+so a link removed on one page is reported for the need it pointed to though that need's page is not re-read.
 
 Needs loaded with :ref:`needs_external_needs` are not compared:
 after the external ``needs.json`` changes, build with ``-E`` to bring the pages showing its needs up to date.
