@@ -126,10 +126,10 @@ def setup(app: Sphinx) -> dict[str, object]:
     # Required (not just recommended) when the build consumes a needs.json
     # produced by `test-reports build needs`, which always writes them.
     app.add_config_value("tr_deterministic_case_ids", False, "html")
-    # What the `line` of a report without a line-base mark counts from (#2381). "auto":
-    # the reader's rule -- a pytest-shaped report from 0 (an earlier plugin's too, which
-    # carries no mark), a Google Test case from 1, any other report as written. 0 or 1:
-    # that base for every report without a mark, Google Test's included. "env": a test
+    # What the `line` of a report without a line-base mark counts from (#2381). A Google
+    # Test case always counts from 1. "auto": the reader's rule -- a pytest-shaped report
+    # from 0 (an earlier plugin's too, which carries no mark), any other report as
+    # written. 0 or 1: that base for every other report without a mark. "env": a test
     # need records its line.
     app.add_config_value("tr_line_base", "auto", "env", types=(str, int))
     # Declarative configuration: the [test_reports] section of this file

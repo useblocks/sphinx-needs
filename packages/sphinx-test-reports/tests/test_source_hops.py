@@ -788,6 +788,19 @@ def test_tr_line_base_0_reads_an_unrecognised_producer_from_0(build):
     assert _code(needs, "TC_OTHER") == ("8", "code None:src/other.x:8")
 
 
+@pytest.mark.parametrize("value", [0, 1])
+def test_tr_line_base_does_not_apply_to_google_test(build, value):
+    """A Google Test-shaped case is a known base, like a marked one (#2381, 2026-10-30):
+    ``tr_line_base`` covers only the reports whose base the reader is not sure of."""
+    needs, warnings = build(
+        {"index.rst": OTHER_PAGE},
+        {"other.xml": OTHER_REPORTS},
+        conf=f"tr_line_base = {value}\n",
+    )
+    assert warnings == ""
+    assert _code(needs, "TC_GTEST") == ("3", "code None:tests/gt_probe.cpp:3")
+
+
 def test_a_mark_wins_over_tr_line_base(build):
     needs, warnings = build(
         {"index.rst": PAGE},

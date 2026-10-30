@@ -36,6 +36,11 @@ LineBase = Literal["auto", 0, 1]
 #: Every :data:`LineBase`, in the order they are documented.
 LINE_BASES: tuple[LineBase, ...] = ("auto", 0, 1)
 
+#: A suite's line bases, as :meth:`JUnitParser.parse` decides them: ``(mark,
+#: fallback)``, the base a mark gives and the base of a case without Google Test's
+#: shape (an explicit ``line_base``, or pytest's 0), each ``None`` where there is none.
+_SuiteBase = tuple[int | None, int | None]
+
 #: The suite name pytest writes unless ``junit_suite_name`` changes it, and the name it
 #: always gives the root.
 _PYTEST_SUITE = "pytest"
@@ -270,29 +275,29 @@ class JUnitParser:
         reader knows what the report counts from (#2381). pytest's own writer counts
         from 0, the ub-test-reports plugin and Google Test from 1, and nothing else
         tells their reports apart. So the base is decided per ``<testsuite>``, and a
-        nested suite inherits its parent's:
+        nested suite inherits its parent's, in this order:
 
         1. a suite's :data:`LINE_BASE_PROPERTY` property, ``"1"`` or ``"0"``, gives it
            (any other value is no mark);
-        2. else a suite named ``pytest``, or the root ``<testsuites name="pytest
+        2. else a test case carrying both of Google Test's ``status`` and ``result``
+           attributes counts from 1, and is read as it is;
+        3. else an explicit ``line_base`` (``0`` or ``1``) gives it;
+        4. else a suite named ``pytest``, or the root ``<testsuites name="pytest
            tests">``, counts from 0, so its lines are read one more (pytest names the
            root so from 8.4.0 on: with an older pytest, a suite renamed with
-           ``junit_suite_name`` falls under rule 4);
-        3. else a test case carrying both of Google Test's ``status`` and ``result``
-           attributes counts from 1, and is read as it is;
-        4. else the line is passed through, and its base is not known.
+           ``junit_suite_name`` falls under rule 5);
+        5. else the line is passed through, and its base is not known.
 
-        An explicit ``line_base`` (``0`` or ``1``) is the base of every suite without a
-        mark, in place of rules 2 to 4: a mark still wins. A ``line`` below 0 is the "no
-        line" sentinel and is never shifted, so ``-1`` stays ``-1``; a ``line`` of 0
-        counted from 0 is line 1.
+        So the explicit ``line_base`` covers only the reports whose base the reader is
+        not sure of: a mark and Google Test's shape are known bases. A ``line`` below 0
+        is the "no line" sentinel and is never shifted, so ``-1`` stays ``-1``; a
+        ``line`` of 0 counted from 0 is line 1.
 
         For a pytest test the line is that of its first decorator, or of its ``def``
         (CPython's ``co_firstlineno``).
 
         :param line_base_known: Give each test case the key ``line_base_known``: whether
-            the reader knew its base (``True`` by rules 1 to 3 and an explicit
-            ``line_base``, ``False`` by rule 4). Where it is ``True``, a ``line`` of 1 or
+            the reader knew its base (``True`` by rules 1 to 4, ``False`` by rule 5). Where it is ``True``, a ``line`` of 1 or
             more is a line of the file, counted from 1. Off by default, so a caller
             that does not ask gets exactly the keys it always got: sphinx-test-reports
             3.0.1 and earlier turn every key they do not know into a need field.
@@ -309,29 +314,34 @@ class JUnitParser:
         def suite_line_base(
             testsuite: objectify.ObjectifiedElement,
             properties: dict[str, str],
-            inherited: int | None,
-        ) -> int | None:
-            """The base a suite's lines count from, ``None`` where it is not known."""
+            inherited: _SuiteBase,
+        ) -> _SuiteBase:
+            """A suite's ``(mark, fallback)``: the base its own or an ancestor's mark
+            gives (rule 1), and the base of a case that is not Google Test-shaped
+            (rules 3 and 4), each ``None`` where there is none."""
+            inherited_mark, inherited_fallback = inherited
             mark = properties.get(LINE_BASE_PROPERTY)
-            if mark in ("0", "1"):
-                return int(mark)
-            if inherited is not None:
-                return inherited
-            if self.line_base != "auto":
-                return self.line_base
-            if pytest_root or testsuite.attrib.get("name") == _PYTEST_SUITE:
-                return 0
-            return None
+            own_mark = int(mark) if mark in ("0", "1") else None
+            fallback = inherited_fallback
+            if fallback is None:
+                if self.line_base != "auto":
+                    fallback = self.line_base
+                elif pytest_root or testsuite.attrib.get("name") == _PYTEST_SUITE:
+                    fallback = 0
+            return (own_mark if own_mark is not None else inherited_mark), fallback
 
         def parse_testcase(
-            xml_object: objectify.ObjectifiedElement, line_base: int | None
+            xml_object: objectify.ObjectifiedElement, suite_base: _SuiteBase
         ) -> dict[str, Any]:
             testcase = xml_object
 
-            if line_base is None and (
-                "status" in testcase.attrib and "result" in testcase.attrib
-            ):
-                line_base = 1
+            mark, fallback = suite_base
+            if mark is not None:
+                line_base: int | None = mark
+            elif "status" in testcase.attrib and "result" in testcase.attrib:
+                line_base = 1  # Google Test's shape: a known base, like a mark
+            else:
+                line_base = fallback
             line = _numeric(path, testcase, "line", int)
             if line_base == 0 and line >= 0:
                 line += 1
@@ -401,7 +411,8 @@ class JUnitParser:
             return tc_dict
 
         def parse_testsuite(
-            xml_object: objectify.ObjectifiedElement, inherited: int | None = None
+            xml_object: objectify.ObjectifiedElement,
+            inherited: _SuiteBase = (None, None),
         ) -> dict[str, Any]:
             testsuite = xml_object
 

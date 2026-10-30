@@ -106,12 +106,13 @@ its parent's:
 
 #. a suite carrying the property above (``1``, or ``0`` for a producer that
    declares it) is read by it;
+#. else a test case carrying Google Test's ``status`` and ``result`` attributes
+   counts from 1, as it is;
+#. else :ref:`tr_line_base`, when it is ``0`` or ``1``, gives it (below);
 #. else a suite named ``pytest``, or a report whose root is
    ``<testsuites name="pytest tests">`` -- what ``pytest --junitxml`` writes from
    pytest 8.4 on, the root also when ``junit_suite_name`` renames the suite -- counts
    from 0, and each line is read one more;
-#. else a test case carrying Google Test's ``status`` and ``result`` attributes
-   counts from 1, as it is;
 #. else the line is read as written, and what it counts from is not known: the
    need's ``case_line`` is the report's, and the record of where the need comes from
    gives the test file without a line.
@@ -120,13 +121,15 @@ A ``line`` of ``-1`` means "no line" and stays so. A report whose suite
 ``junit_suite_name`` renamed falls under the last rule when its root is not pytest's:
 written by a pytest older than 8.4, which writes the root without a name, or rewritten
 by a merge tool. Load the plugin for such reports, or set :ref:`tr_line_base` to ``0``
-where the project reads no other report without the property. A merge tool may also
+unless the project also reads reports that count from 1 without saying so (an earlier
+plugin's, ``score_pytest``'s). A merge tool may also
 fold the suites of one name into one suite (``junit-report-merger`` does, by its
 source), and then one base applies to all their cases: a plain and a marked report
 merged that way cannot both be read right. ``junitparser merge`` keeps them apart.
 
 :ref:`tr_line_base` (``line_base`` in ``[test_reports]``) sets what every report
-**without the property** counts from, in place of rules 2 to 4: ``1`` for a report
+**without the property** counts from, unless it is a Google Test report, in place of
+rules 4 and 5: ``1`` for a report
 that already counts from 1 but says nothing -- one written by an earlier version of
 this plugin, or by S-CORE's ``score_pytest`` -- and ``0`` for a producer the readers
 do not recognise that counts from 0. A report with the property is always read by

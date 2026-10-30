@@ -181,11 +181,12 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=[str(base) for base in LINE_BASES],
         default=None,
         help=(
-            "What the line of a report without a line-base mark counts from. auto: "
-            "the reader's rule, a pytest-shaped report from 0 (an earlier plugin's "
-            "too, which carries no mark), Google Test from 1, any other report as "
-            "written. 0 or 1: that base for every report without a mark, Google "
-            f"Test's included. Overrides line_base in [{SECTION}] (default: auto)."
+            "What the line of a report without a line-base mark counts from. A "
+            "Google Test case always counts from 1. auto: the reader's rule, a "
+            "pytest-shaped report from 0 (an earlier plugin's too, which carries no "
+            "mark), any other report as written. 0 or 1: that base for every other "
+            f"report without a mark. Overrides line_base in [{SECTION}] (default: "
+            "auto)."
         ),
     )
     needs.add_argument(

@@ -240,11 +240,11 @@ a line. :ref:`pytest_line_base` has the rule in full.
 reports written by an earlier version of the plugin, which carry no property, and by
 S-CORE's ``score_pytest``. ``0`` reads every such report as counting from 0.
 
-An explicit value is the base of **every** JUnit report without the property that the
-project reads, Google Test's included: with ``tr_line_base = 0``, a Google Test case's
-line is read one more as well, one line late. ``"auto"`` is what reads each producer by
-its own base. A JSON report's line is always read as its :ref:`tr_json_mapping` gives
-it.
+An explicit value covers only the reports whose base the readers are not sure of. A
+report with the property is read by it, and so is a Google Test report, whose cases
+carry Google Test's ``status`` and ``result`` attributes and always count from 1:
+``tr_line_base = 0`` leaves its lines as they are. A JSON report's line is always read
+as its :ref:`tr_json_mapping` gives it.
 
 Any other value stops the build with a configuration error. On the command line,
 ``-D tr_line_base=1`` gives the number. The converter reads the same key from

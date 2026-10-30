@@ -5,13 +5,14 @@ Test from 1, and the readers took every report's ``line`` as it was. The parser 
 decides the base per ``<testsuite>``, and a nested suite inherits it:
 
 1. a suite's ``ub_test_reports:line_base`` property (``1``, or ``0``) gives it;
-2. else a suite named ``pytest``, or the root ``<testsuites name="pytest tests">``, is
+2. else a case carrying Google Test's ``status`` and ``result`` is 1-based;
+3. else ``[test_reports] line_base``, set to ``0`` or ``1``, gives it;
+4. else a suite named ``pytest``, or the root ``<testsuites name="pytest tests">``, is
    0-based;
-3. else a case carrying Google Test's ``status`` and ``result`` is 1-based;
-4. else the line is passed through, and its base is not known.
+5. else the line is passed through, and its base is not known.
 
-``[test_reports] line_base`` set to ``0`` or ``1`` is the base of every unmarked suite, in
-place of rules 2 to 4; a mark still wins.
+So an explicit ``line_base`` covers only the reports whose base the reader is not sure of
+(Chris's addendum to the #2381 ruling, 2026-10-30).
 
 A ``line`` below 0 means "no line" and is never shifted. Asked to
 (``parse(line_base_known=True)``), each case says whether its base is known, which is what
@@ -81,9 +82,9 @@ def _read(name: str, **options) -> list[tuple[str, str, int, bool]]:
 
 #: Every fixture as the default (``"auto"``) reads it.
 RULE = {
-    # rule 2: a suite named pytest is 0-based
+    # rule 4: a suite named pytest is 0-based
     "plain": _probe("pytest", TRUE_LINES),
-    # rule 2 through the root's name: the suite was renamed with junit_suite_name
+    # rule 4 through the root's name: the suite was renamed with junit_suite_name
     "custom_suite": _probe("unit", TRUE_LINES),
     # rule 1: the plugin's mark
     "marked": _probe("pytest", TRUE_LINES),
@@ -101,13 +102,13 @@ RULE = {
         ("marked", "test_marked_zero", 0, True),
         ("other", "test_unknown_zero", 0, False),
     ],
-    # rule 3: Google Test, 1-based as written
+    # rule 2: Google Test, 1-based as written
     "gtest": [
         ("Suite", "Plain", 3, True),
         ("Inst/ParamFix", "Param/0", 21, True),
         ("Inst/ParamFix", "Param/1", 21, True),
     ],
-    # rule 4: passed through, base not known
+    # rule 5: passed through, base not known
     "unknown": [
         ("tests\\Unit\\CalculatorTest", "testAdd", 12, False),
         ("tests\\Unit\\CalculatorTest", "testSubtract", 18, False),
@@ -129,8 +130,8 @@ def test_the_reader_s_rule_over_every_fixture(name):
     assert _read(name) == RULE[name]
 
 
-#: ``[test_reports] line_base`` set to a number: the base of every UNMARKED suite; a
-#: mark still wins.
+#: ``[test_reports] line_base`` set to a number: the base of every UNMARKED case that is
+#: not Google Test-shaped; a mark and Google Test's shape still win.
 OVERRIDE = {
     # the migration for unmarked reports that already count from 1
     ("plain", 1): _probe("pytest", PYTEST_LINES),
@@ -149,12 +150,9 @@ OVERRIDE = {
         ("tests\\Unit\\CalculatorTest", "testSubtract", 18, True),
         ("crash_suite", "Killed", 7, True),
     ],
-    # every unmarked report: Google Test's too
-    ("gtest", 0): [
-        ("Suite", "Plain", 4, True),
-        ("Inst/ParamFix", "Param/0", 22, True),
-        ("Inst/ParamFix", "Param/1", 22, True),
-    ],
+    # Google Test's shape is a known base, like a mark: no override applies to it
+    ("gtest", 0): RULE["gtest"],
+    ("gtest", 1): RULE["gtest"],
     ("nested", 0): [
         ("pytest/inner", "t_inherits_pytest", 5, True),
         ("pytest/inner-marked", "t_own_mark_wins", 4, True),
@@ -217,3 +215,36 @@ def test_the_lines_do_not_depend_on_asking_for_line_base_known():
     asked = plain.parse(line_base_known=True)
     lines = [case["line"] for case in plain.parse()[0]["testcases"]]
     assert lines == [case["line"] for case in asked[0]["testcases"]] == TRUE_LINES
+
+
+def test_a_google_test_case_is_read_by_its_shape_before_pytest_s(tmp_path):
+    """The order is mark, Google Test's shape, an explicit ``line_base``, pytest's
+    shape: a case carrying ``status`` and ``result`` in a suite named ``pytest`` (or
+    under pytest's root) counts from 1, and a mark still wins over the shape."""
+    report = tmp_path / "r.xml"
+    report.write_text(
+        '<testsuites name="pytest tests">'
+        '<testsuite name="pytest" tests="2">'
+        '<testcase classname="S" name="gtest" file="t.cc" line="4" status="run" '
+        'result="completed"/>'
+        '<testcase classname="S" name="pytest" file="t.py" line="4"/></testsuite>'
+        '<testsuite name="marked" tests="1"><properties>'
+        '<property name="ub_test_reports:line_base" value="0"/></properties>'
+        '<testcase classname="S" name="marked" file="t.cc" line="4" status="run" '
+        'result="completed"/></testsuite></testsuites>',
+        encoding="utf-8",
+    )
+    for line_base in ("auto", 0, 1):
+        cases = {
+            case["name"]: (case["line"], case["line_base_known"])
+            for suite in JUnitParser(str(report), line_base=line_base).parse(
+                line_base_known=True
+            )
+            for case in suite["testcases"]
+        }
+        pytest_line = 4 if line_base == 1 else 5
+        assert cases == {
+            "gtest": (4, True),
+            "pytest": (pytest_line, True),
+            "marked": (5, True),
+        }, line_base

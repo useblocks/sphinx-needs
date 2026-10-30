@@ -13,7 +13,8 @@ New and Improved
   ``--line-base`` flag, which overrides it: what the ``line`` of a report without a
   line-base mark counts from (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__).
   ``"auto"``, the default, is the reader's rule below; ``0`` or ``1`` is the base of every
-  such report, Google Test's too; a mark always wins. Any other value is refused, as a key
+  such report whose base the reader is not sure of: a mark and Google Test's shape always
+  win. Any other value is refused, as a key
   of the wrong type is. sphinx-test-reports bridges it as ``tr_line_base``. A change to the
   ``[test_reports]`` model: ubCode reads the same table.
 
@@ -55,8 +56,9 @@ Fixed
   (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__). They are now one
   more than before. The reader decides the base per ``<testsuite>``, and a nested suite
   inherits it: a suite's ``ub_test_reports:line_base`` property (``1``, or ``0``) gives it;
-  else a suite named ``pytest`` or the root ``<testsuites name="pytest tests">`` (pytest
-  8.4 and later) counts from 0; else a case carrying Google Test's ``status`` and ``result`` counts from 1; else the
+  else a case carrying Google Test's ``status`` and ``result`` counts from 1; else an
+  explicit ``line_base`` gives it; else a suite named ``pytest`` or the root
+  ``<testsuites name="pytest tests">`` (pytest 8.4 and later) counts from 0; else the
   line is passed through, and its base is not known. A ``line`` below 0 is "no line" and
   stays so. The pytest plugin now marks every ``<testsuite>`` it writes with
   ``<property name="ub_test_reports:line_base" value="1"/>`` (under ``xunit1``, once under
@@ -109,6 +111,10 @@ Upgrading: test-case lines from pytest reports
    ``conf.py``).
    A merged file that holds both plain pytest suites and suites of an earlier plugin cannot
    be read right by any one setting: regenerate it.
+   With sphinx-test-reports 3.0.1 or earlier, this ub-test-reports changes the lines as
+   well, but ``line_base`` has no effect there (it is logged as applied all the same), and
+   an incremental build keeps each page's old ``case_line`` until a full build (``-E``):
+   upgrade sphinx-test-reports too.
 4. ``JUnitParser`` returns lines counted from 1 where it knows the report's base, and says
    so per test case when asked (``parse(line_base_known=True)``); a plain ``parse()`` gives
    the keys it always gave.
