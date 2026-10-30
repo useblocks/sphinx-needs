@@ -1034,7 +1034,19 @@ The rules:
 Digests
 -------
 
+A review holds only while what was reviewed stays the same:
+a specification checked against a requirement should be checked again once the requirement changes.
+A digest is a value that changes when the need does, so a :ref:`link condition <need_conditional_links>`
+naming the value seen at the review reports the need once it changes (:ref:`needs_derive_changed`).
 These kinds compute a ``string`` from the need's own values, after every other rule of the need.
+
+Bear in mind:
+
+- **Which values count.** A ``hash`` reads only the fields it lists; a ``fingerprint`` reads the whole need,
+  so a change of any value it includes moves it, a typo fixed in the content too.
+- **Derived values are left out.** A ``fingerprint`` never includes a derived field or link type,
+  so a rule's result changing on a linked need does not move it.
+- **Cost.** Each stores one string per need, computed from that need's own values.
 
 .. _`needs_derive_kind_hash`:
 
@@ -1154,6 +1166,10 @@ Writing only the start of the fingerprint is enough to tell a change apart:
 The roles
 ---------
 
+Each operand of a rule goes under a role name, the same for every kind that takes it:
+``over`` always names the links to follow, ``where`` always narrows the candidates.
+The table is the reference; each kind's section above shows its roles in use.
+
 .. list-table::
    :header-rows: 1
    :widths: 16 22 62
@@ -1233,6 +1249,8 @@ A ``join`` matches the needs whose field equals one of this need's values (:ref:
 How rules are computed
 ----------------------
 
+When a rule gives a value you did not expect, or a finding names a step,
+the order below and what a rule does with an unset value or with no candidate explain it.
 A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_order`):
 ``links``, ``content_links``, ``union``, and ``copy`` and ``collect`` on a link type, with the link fields,
 ``hash``, ``fingerprint`` and the rules with
@@ -1271,6 +1289,7 @@ A rule is computed with the ``[[…]]`` of its step (see :ref:`needs_processing_
 What a rule costs
 -----------------
 
+Most rules store one value per need and cost little; a rule computing links can store far more.
 A rule is computed once per step for every need holding it (a ``links`` rule's ``where`` is tested once,
 on each candidate alone), so writing one costs little: what costs is what it **stores**.
 Every need holding a ``links`` rule with a ``where`` (and no ``join``) is linked to the same needs (but itself),
@@ -1287,6 +1306,9 @@ A rule that ten needs pass stores about ten links per need.
   ``{ kind = "count", over = "tests_back", where = "status == 'open'" }`` stores one number.
 - :ref:`links_from_filter` written in every need stores what the ``links`` rule stores, and also tests its filter
   on every need once per call, so on many needs prefer the declared rule.
+- On an incremental build, a ``links`` rule, a ``content_links`` rule with ``from``, a ``collect`` on a link type,
+  or a ``copy`` on a link type over a link type a rule computes makes every change of a need
+  re-write every page holding a need (:ref:`incremental_builds`).
 
 A link type whose computed links number more than :ref:`needs_derive_max_links_per_need` (``100``) per need of the project
 is reported once, as the warning ``needs.derive_dense``,
@@ -1297,6 +1319,9 @@ naming the links, the needs holding the rule and the longest list.
 What a derived field holds
 --------------------------
 
+This section answers what happens around a rule:
+when an author writes the field anyway, when a need comes from another project,
+and what is reported when a rule cannot be read or cannot be computed.
 A derived field (one with a rule: a ``derive``, also in a need type's entry, or a ``derive_by_type``)
 is closed to authors, on every need type,
 also on a type it has no rule for:
@@ -1372,7 +1397,10 @@ Rules and inline calls
 
 A built-in call computes a value for the one need it is written in.
 A :ref:`derived field <needs_derive>` declares the same computation once, in :ref:`needs_fields` or :ref:`needs_links`,
-for every need of the project:
+for every need of the project.
+Declare a rule when every need, or every need of a type, computes the value the same way,
+and the authors should not set it;
+write a call when one need alone computes it, or when the computation has no declared form (in the table below):
 
 .. code-block:: toml
 
