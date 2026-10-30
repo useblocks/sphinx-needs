@@ -112,14 +112,37 @@ def _report_physical(
     return NeedSourcePhysical(root="srcdir", path=PurePath(relative).as_posix())
 
 
+def _given(value: Any) -> str | None:
+    """A report value as a string, or ``None`` for the parsers' placeholder of an
+    absent one (``"unknown"``) and for no value at all."""
+    return None if value in (UNKNOWN, None, "") else str(value)
+
+
 def _case_source_file(case: Mapping[str, Any]) -> str | None:
     """The test's source file as the report gives it, or ``None`` when it gives none.
 
     The parsers report ``"unknown"`` for an absent ``file`` attribute (the norm for
     pytest, whose default ``junit_family = xunit2`` leaves it out).
     """
-    source_file = case.get("file", UNKNOWN)
-    return None if source_file in (UNKNOWN, None, "") else str(source_file)
+    return _given(case.get("file", UNKNOWN))
+
+
+def _suite_chain(
+    suites: list[dict[str, Any]], suite: Mapping[str, Any]
+) -> list[Mapping[str, Any]] | None:
+    """The suites from a top-level one of ``suites`` down to ``suite``, outermost first,
+    or ``None`` if ``suite`` is not in them.
+
+    A parsed suite names its nested suites (``testsuite_nested``), not its parent: the
+    chain is read from the parsed report, by identity.
+    """
+    for candidate in suites:
+        if candidate is suite:
+            return [candidate]
+        below = _suite_chain(candidate.get("testsuite_nested", []), suite)
+        if below is not None:
+            return [candidate, *below]
+    return None
 
 
 def warn(directive: Directive, subtype: str, message: str) -> None:
@@ -384,7 +407,10 @@ class TestCommonDirective(Directive):
             self.refusal = (subtype, message)
 
     def report_hops(
-        self, kind: str, suite: str | None, case: Mapping[str, Any] | None
+        self,
+        kind: str,
+        suite: Mapping[str, Any] | None,
+        case: Mapping[str, Any] | None,
     ) -> tuple[NeedSourceHop, ...]:
         """Where this directive's need came from before the page, innermost first.
 
@@ -394,9 +420,11 @@ class TestCommonDirective(Directive):
 
         - A test case's ``code`` hop: the test's source file, as the report's ``file``
           gives it (:func:`_case_source_file`, the case's own value, never a report key
-          or extra option of the same field name, #2411), and no hop where the report
-          gives none. ``root`` is ``None``: the path is relative to the test run's root
-          (pytest's rootdir), which this build does not know. No line: the reader cannot
+          or extra option of the same field name, #2411), with ``/`` for a ``\\`` (a
+          report written on Windows; the need's field keeps the value as given), and no
+          hop where the report gives none. ``root`` is ``None``: the path is relative to
+          the test run's root (pytest's rootdir), which this build does not know. No
+          line: the reader cannot
           tell a plain pytest report's 0-based ``line`` from the plugin's 1-based one
           (#2381). ``language`` is ``None``: the report does not say what language the
           test is written in.
@@ -405,32 +433,44 @@ class TestCommonDirective(Directive):
           ``".json"``). Its semantic location is the element in the report, outermost
           first, one entry per kind (the vocabulary is open):
 
-          - ``"suite"``: the test suite's name (a ``test-suite`` and a ``test-case``);
-          - ``"scope"``: the test case's ``classname``, where the report gives one;
+          - ``"suite"``: a test suite's name, one entry per level from the top-level
+            suite down to the suite itself, or to the suite the case is directly in (a
+            ``test-suite`` and a ``test-case``);
+          - ``"scope"``: the test case's ``classname``;
           - ``"case"``: the test case's name, without its parameter, which is the
             ``("parameter", ...)`` extra where the name carries one (``test_x[3]``).
 
-          A ``test-file``'s report hop is the whole file: its semantic location is
-          ``None``, as a ``file`` hop's is.
+          A suite or a classname the report does not give (the parsers' ``"unknown"``)
+          has no entry; a case always has one (JUnit requires its ``name``), its name as
+          the parser gives it, a placeholder too. A ``test-file``'s report hop is the
+          whole file: its semantic location is ``None``, as a ``file`` hop's is.
 
         :param kind: ``file``, ``suite`` or ``case``: the key of :data:`DIRECTIVE_FIELDS`.
-        :param suite: The name of the suite in the report, for ``suite`` and ``case``.
+        :param suite: The suite as the report gives it, for ``suite`` and ``case``: the
+            suite itself, or the one the case is directly in.
         :param case: The test case as the report gives it, for ``case``.
         """
         hops: list[NeedSourceHop] = []
         semantic: list[NeedSourceSemantic] = []
         if suite is not None:
-            semantic.append(NeedSourceSemantic(kind="suite", name=suite))
+            chain = _suite_chain(self.results or [], suite) or [suite]
+            semantic.extend(
+                NeedSourceSemantic(kind="suite", name=name)
+                for level in chain
+                if (name := _given(level.get("name"))) is not None
+            )
         if case is not None:
             if (source_file := _case_source_file(case)) is not None:
                 hops.append(
                     NeedSourceHop(
-                        kind="code", physical=NeedSourcePhysical(path=source_file)
+                        kind="code",
+                        physical=NeedSourcePhysical(
+                            path=source_file.replace("\\", "/")
+                        ),
                     )
                 )
-            classname = case.get("classname")
-            if classname not in (UNKNOWN, None, ""):
-                semantic.append(NeedSourceSemantic(kind="scope", name=str(classname)))
+            if (classname := _given(case.get("classname"))) is not None:
+                semantic.append(NeedSourceSemantic(kind="scope", name=classname))
             name, parameter = split_case_name(str(case["name"]))
             semantic.append(
                 NeedSourceSemantic(
@@ -454,6 +494,7 @@ class TestCommonDirective(Directive):
         kind: str,
         own: Mapping[str, Any],
         report_fields: Mapping[str, Any],
+        suite: Mapping[str, Any] | None = None,
         case: Mapping[str, Any] | None = None,
     ) -> list[nodes.Node]:
         """Create this directive's need through Sphinx-Needs' ``create_need``.
@@ -467,14 +508,20 @@ class TestCommonDirective(Directive):
             further values. A name also in ``own`` is refused, never an override: the
             configuration check keeps ``tr_extra_options`` from naming one, and a report
             value of such a name refuses the need.
-        :param case: The test case as the report gives it, for ``case``: what its
+        :param suite: The suite as the report gives it, for ``suite`` and ``case``
+            (the suite itself, or the one the case is directly in), and
+        :param case: the test case as the report gives it, for ``case``: what the
             ``code`` and ``report`` hops are built from (:meth:`report_hops`).
         :return: The need's nodes.
         :raises InvalidNeedException: What ``create_need`` raises, and for a name in
             both mappings.
         """
-        if (kind == "case") != (case is not None):
-            raise AssertionError(f"a {kind} need is given case={case!r}")
+        if (kind == "case") != (case is not None) or (kind == "file") != (
+            suite is None
+        ):
+            raise AssertionError(
+                f"a {kind} need is given suite={suite!r}, case={case!r}"
+            )
         if own.keys() != DIRECTIVE_FIELDS[kind]:
             raise AssertionError(
                 f"the {kind} directive sets {sorted(own)}, "
@@ -517,7 +564,7 @@ class TestCommonDirective(Directive):
         # need a test-report generates: the test-report's own line), and where the need
         # came from: the report (and the test's file), then the page
         source = NeedItemSource.from_directive(
-            self, first=self.report_hops(kind, own.get("suite"), case)
+            self, first=self.report_hops(kind, suite, case)
         )
         _, created = create_need(
             self.app,

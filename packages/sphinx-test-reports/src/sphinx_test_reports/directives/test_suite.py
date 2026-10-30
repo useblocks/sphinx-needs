@@ -133,6 +133,7 @@ class TestSuiteDirective(TestCommonDirective):
                     "errors": errors,
                 },
                 report_fields,
+                suite=suite,
             )
         except InvalidNeedException as error:
             return self.need_refused(error)

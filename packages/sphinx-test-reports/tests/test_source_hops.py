@@ -363,6 +363,119 @@ def test_no_id_depends_on_a_line(build):
     assert set(second) == ids
 
 
+# --- the report's element: nested suites, what a report leaves out ---------------------
+
+#: Two suites named ``inner`` under two parents, each with the case ``k.t1``; a suite
+#: with no name, holding a case with no ``classname``; and a case with no ``name``.
+NESTED = (
+    b'<testsuites><testsuite name="outerA" tests="1">'
+    b'<testsuite name="inner" tests="1"><testcase classname="k" name="t1"/></testsuite>'
+    b'</testsuite><testsuite name="outerB" tests="1">'
+    b'<testsuite name="inner" tests="1"><testcase classname="k" name="t1"/></testsuite>'
+    b'</testsuite><testsuite tests="2"><testcase name="t2"/>'
+    b'<testcase classname="k"/></testsuite></testsuites>'
+)
+
+NESTED_PAGE = """\
+Probe
+=====
+
+.. test-file:: Nested
+   :file: nested.xml
+   :id: TF_N
+   :auto_suites:
+   :auto_cases:
+
+.. test-suite:: The first inner
+   :file: nested.xml
+   :id: TS_INNER
+   :suite: inner
+
+.. test-case:: In the first inner
+   :file: nested.xml
+   :id: TC_INNER
+   :suite: inner
+   :case: t1
+"""
+
+_A, _B = _suite_id("TF_N", "outerA"), _suite_id("TF_N", "outerB")
+_NAMELESS = _suite_id("TF_N", "unknown")
+
+#: The report hop of each need: the suites from the top-level one down, outermost first.
+NESTED_REPORT_HOPS = {
+    _A: "report srcdir:nested.xml (.xml) :: suite 'outerA'",
+    _suite_id(_A, "inner"): "report srcdir:nested.xml (.xml) :: suite 'outerA' > "
+    "suite 'inner'",
+    _case_id(_suite_id(_A, "inner"), "k", "t1"): "report srcdir:nested.xml (.xml) :: "
+    "suite 'outerA' > suite 'inner' > scope 'k' > case 't1'",
+    _case_id(_suite_id(_B, "inner"), "k", "t1"): "report srcdir:nested.xml (.xml) :: "
+    "suite 'outerB' > suite 'inner' > scope 'k' > case 't1'",
+    # a hand suite and case naming ``inner``: the first in pre-order, outerA's
+    "TS_INNER": "report srcdir:nested.xml (.xml) :: suite 'outerA' > suite 'inner'",
+    "TC_INNER": "report srcdir:nested.xml (.xml) :: suite 'outerA' > suite 'inner' > "
+    "scope 'k' > case 't1'",
+    # no suite name, no classname: no entry; no case name: the parser's, as given
+    _case_id(
+        _NAMELESS, "unknown", "t2"
+    ): "report srcdir:nested.xml (.xml) :: case 't2'",
+    _case_id(
+        _NAMELESS, "k", "unknown"
+    ): "report srcdir:nested.xml (.xml) :: scope 'k' > case 'unknown'",
+    _NAMELESS: "report srcdir:nested.xml (.xml)",
+}
+
+
+@pytest.mark.parametrize("need_id", list(NESTED_REPORT_HOPS))
+def test_the_report_hop_names_the_element_s_place_in_the_report(build, need_id):
+    """Two cases alike in two suites alike, under two parents, are told apart; what a
+    report does not give (the parsers' ``"unknown"``) is no entry, but a case's."""
+    needs, warnings = build({"index.rst": NESTED_PAGE}, {"nested.xml": NESTED})
+    assert warnings == ""
+    assert [hop for hop in _hops(needs, need_id) if hop.startswith("report")] == [
+        NESTED_REPORT_HOPS[need_id]
+    ]
+
+
+def test_a_code_hop_s_path_is_posix_and_the_field_as_given(build):
+    """A report written on Windows names the test with backslashes: the hop's path is
+    POSIX, and the need's ``case_file`` keeps the report's value."""
+    report = (
+        b'<testsuite name="s" tests="1"><testcase classname="c" name="t" '
+        b'file="tests\\sub\\test_w.py" line="3"/></testsuite>'
+    )
+    needs, warnings = build(
+        {
+            "index.rst": "Probe\n=====\n\n"
+            ".. test-case:: W\n   :id: TC_W\n   :file: w.xml\n   :suite: s\n"
+            "   :case: t\n"
+        },
+        {"w.xml": report},
+    )
+    assert warnings == ""
+    assert needs["TC_W"]["case_file"] == "tests\\sub\\test_w.py"
+    assert _hops(needs, "TC_W")[0] == "code None:tests/sub/test_w.py"
+
+
+def test_a_warning_in_a_test_need_s_content_is_on_its_line(build):
+    """The content of a hand ``test-case`` is parsed at its own line: a warning raised
+    in it names the line it is on (was the line of the directive's ``:file:``)."""
+    page = (
+        "Probe\n=====\n\n"  # 1-3
+        ".. test-case:: A hand case\n"  # 4
+        "   :id: TC_HAND\n"
+        "   :file: reports/plain.xml\n"
+        "   :suite: pytest\n"
+        "   :case: test_method\n"
+        "   :classname: tests.test_lines.TestKlass\n"
+        "\n"
+        "   First line of the content.\n"  # 11
+        "\n"
+        "   A :nosuchrole:`x` here.\n"  # 13
+    )
+    _, warnings = build({"index.rst": page}, {"reports/plain.xml": REPORT})
+    assert "index.rst:13: ERROR: Unknown interpreted text role" in warnings, warnings
+
+
 # --- the report hop's path: Sphinx-Needs' rule, computed here ---------------------------
 
 _SRCDIR = os.path.join(os.sep, "project", "docs")
