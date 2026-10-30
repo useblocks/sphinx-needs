@@ -1071,7 +1071,8 @@ def _normalise_declarations(
             findings.append(
                 f"{where} has 'summary', which a need type's entry cannot give: "
                 "whether a link type is a summary is the same on every need type, and "
-                "is given on its needs_links entry; the key is ignored"
+                "is given on its needs_links entry (a link type declared on need types "
+                "alone cannot be a summary yet); the key is ignored"
             )
             entry = {key: item for key, item in entry.items() if key != "summary"}
         wrong, text = _not_of_their_shape(where, entry, known)

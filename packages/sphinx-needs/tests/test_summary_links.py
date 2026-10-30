@@ -77,7 +77,8 @@ def test_summary_is_a_boolean_of_the_link_types_entry(test_app):
     assert build_warnings(app) == [
         "WARNING: needs_types entry 2 ('spec').links['satisfies'] has 'summary', "
         "which a need type's entry cannot give: whether a link type is a summary is "
-        "the same on every need type, and is given on its needs_links entry; the key "
+        "the same on every need type, and is given on its needs_links entry "
+        "(a link type declared on need types alone cannot be a summary yet); the key "
         "is ignored [needs.config]",
         "WARNING: needs_links['tagged'] has a 'summary' that is not a boolean (got "
         "str); the key is ignored [needs.config]",
@@ -384,7 +385,8 @@ def test_a_summary_link_type_on_need_types(test_app):
     assert build_warnings(app) == [
         "WARNING: needs_types entry 3 ('spec').links['chain'] has 'summary', which a "
         "need type's entry cannot give: whether a link type is a summary is the same "
-        "on every need type, and is given on its needs_links entry; the key is "
+        "on every need type, and is given on its needs_links entry "
+        "(a link type declared on need types alone cannot be a summary yet); the key is "
         "ignored [needs.config]",
         _count_failed("mitigates_back"),
         _count_failed("chain_back"),

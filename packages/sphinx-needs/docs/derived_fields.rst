@@ -862,8 +862,9 @@ the links rendered on the card, back links, and in ``needs.json`` a link list wi
 - **Cost.** A leaf stores a link per need its chain reaches, depth times fan-in, and each of those a back link:
   ``needs.derive_dense`` counts them (:ref:`needs_derive_cost`).
   It is left out of every ``fingerprint``, as every derived link type is.
-  A ``collect`` links needs its need does not name, so in a project with one an incremental build
-  re-writes every page holding a need on each change of a need (:ref:`incremental_builds`).
+  A ``collect``, or a ``copy`` over a link type another rule computes, links needs its need does not name,
+  so in a project with one an incremental build re-writes every page holding a need on each change of a need
+  (:ref:`incremental_builds`).
 
 .. _`needs_derive_digests`:
 

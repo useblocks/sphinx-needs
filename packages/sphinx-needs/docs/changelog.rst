@@ -23,8 +23,8 @@ Improvements
   around a ring are ``needs.derive_cycle``. ``over`` may name a union, read through its members, so a chain climbs
   several link types at once (``over = "trace_up"``); a ``collect`` of its own link type over a link type another
   kind of rule computes is refused. A dead link carried is flagged (``has_dead_links``) and drawn forbidden only as
-  the link type it is written in says. A ``collect`` links needs its need does not name, so in a project with one
-  every change of a need re-writes every need-relevant page on an incremental build (:ref:`incremental_builds`).
+  the link type it is written in says. A ``collect``, or a ``copy`` over a link type another rule computes, links needs
+  its need does not name, so in a project with one every change of a need re-writes every need-relevant page on an incremental build (:ref:`incremental_builds`).
   On a field, ``copy`` and ``collect`` are unchanged.
 
 - ✨ A link type may be a **summary**, ``summary = true`` on its :ref:`needs_links` entry, whose links materialise
