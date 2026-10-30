@@ -110,7 +110,8 @@ class MarkedContentSchema:
     scope: dict[str, Any] | None = field(
         default=None, metadata={"schema": {"type": ["object", "null"]}}
     )
-    """The entity the marker is attached to (kind, lines, name, mechanism)."""
+    """The entity the marker is attached to (kind, lines, language, name and its parts,
+    mechanism)."""
 
     @classmethod
     def get_schema(cls, name: str) -> dict[str, Any] | None:

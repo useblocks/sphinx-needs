@@ -28,8 +28,10 @@ With the following extracted markers fron the ``analyse`` command,
                },
                "tagged_scope": "void dummy_func1(){\n     //...\n }",
                "scope": {
-                   "kind": "function_definition", "start": 4, "end": 6,
-                   "entity_kind": "function", "qualified_name": "dummy_func1", "mechanism": "leading"
+                   "kind": "function_definition", "start": 4, "end": 6, "language": "cpp",
+                   "entity_kind": "function", "qualified_name": "dummy_func1",
+                   "semantic": [{"kind": "function", "name": "dummy_func1"}],
+                   "mechanism": "leading"
                },
                "need_ids": ["NEED_001", "NEED_002", "NEED_003", "NEED_004"],
                "marker": "@need-ids:",
