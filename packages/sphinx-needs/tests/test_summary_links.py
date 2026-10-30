@@ -288,3 +288,115 @@ def test_a_summary_links_is_not_drawn_by_the_fallback(test_app):
     assert '"SPEC_1"' in every
     assert '"SPEC_1" -> "REQ_1"' not in every
     assert '"SPEC_1" -> "REQ_1"' in named
+
+
+CONF_PER_TYPE = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {"satisfies": {}, "implements": {}, "mitigates": {"summary": True}}
+_COUNTS = {
+    "chain": {"schema": {"minItems": 1}, "severity": "warning"},
+    "mitigates": {"schema": {"minItems": 1}, "severity": "warning"},
+}
+needs_types = [
+    {"directive": "req", "title": "Requirement", "prefix": "R_", "back_links": _COUNTS},
+    {"directive": "sysreq", "title": "System", "prefix": "SR_", "inherits": "req"},
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "links": {
+            "chain": {
+                "summary": True,
+                "derive": {
+                    "kind": "copy",
+                    "field": "id",
+                    "over": "satisfies",
+                    "where": "c.is_a('req')",
+                },
+            }
+        },
+    },
+    {
+        "directive": "impl",
+        "title": "Implementation",
+        "prefix": "I_",
+        "links": {
+            "chain": {
+                "derive": {"kind": "collect", "field": "chain", "over": "implements"}
+            }
+        },
+    },
+]
+"""
+
+INDEX_PER_TYPE = """\
+Chain
+=====
+
+.. req:: Reached and mitigated
+   :id: REQ_1
+
+.. sysreq:: Reached through inherits
+   :id: SYS_1
+
+.. req:: Neither reached nor mitigated
+   :id: REQ_2
+
+.. spec:: Satisfies
+   :id: SPEC_1
+   :satisfies: REQ_1, SYS_1, SPEC_2
+   :mitigates: REQ_1, SYS_1
+
+.. spec:: A specification satisfied
+   :id: SPEC_2
+
+.. impl:: Implements
+   :id: IMPL_1
+   :implements: SPEC_1
+"""
+
+
+def _count_failed(field: str) -> str:
+    return (
+        "WARNING: Need 'REQ_2' has schema warnings:\n"
+        "  Severity:       warning\n"
+        f"  Field:          {field}\n"
+        "  Need path:      REQ_2\n"
+        f"  Schema path:    links > schema > properties > {field} > minItems\n"
+        "  Schema message: [] has less than 1 item [sn_schema_warning.link_fail]"
+    )
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_PER_TYPE, INDEX_PER_TYPE)], indirect=True
+)
+def test_a_summary_link_type_on_need_types(test_app):
+    """A summary link type is read where it is named, and a need type's declarations
+    name it as any link type: a ``back_links`` count of it counts its links, those a
+    ``copy`` or ``collect`` computes included (REQ_1 and SYS_1 are reached, REQ_2 is not
+    and fails both counts). A ``copy`` and a ``collect`` may be declared on need types
+    alone, the link type a summary all the same, and a ``where`` reads ``c.is_a``
+    (``sysreq`` inherits ``req``; a satisfied specification is not copied). A need
+    type's ``summary`` is still a ``needs.config`` finding, its rule applied."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types entry 3 ('spec').links['chain'] has 'summary', which a "
+        "need type's entry cannot give: whether a link type is a summary is the same "
+        "on every need type, and is given on its needs_links entry; the key is "
+        "ignored [needs.config]",
+        _count_failed("mitigates_back"),
+        _count_failed("chain_back"),
+    ]
+    version = _version(app)
+    needs = version["needs"]
+    assert needs["SPEC_1"]["chain"] == ["REQ_1", "SYS_1"]
+    assert needs["IMPL_1"]["chain"] == ["REQ_1", "SYS_1"]
+    assert needs["REQ_1"]["chain_back"] == ["IMPL_1", "SPEC_1"]
+    assert needs["SYS_1"]["chain_back"] == ["IMPL_1", "SPEC_1"]
+    assert needs["SYS_1"]["mitigates_back"] == ["SPEC_1"]
+    assert needs["REQ_2"]["chain_back"] == needs["REQ_2"]["mitigates_back"] == []
+    properties = version["needs_schema"]["properties"]
+    for name in ("chain", "chain_back", "mitigates", "mitigates_back"):
+        assert properties[name]["summary"] is True, name

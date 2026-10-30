@@ -647,7 +647,8 @@ Summary link types
 A link type whose :ref:`needs_links` entry says ``summary = true`` is a **summary**:
 its links materialise a path through other links, not an edge of the trace.
 It is read where it is named -- a filter, a needtable column, a rule's ``over`` or ``field``,
-a needflow's ``:link_types:`` -- and a need holds its links and back links as any link type's,
+a needflow's ``:link_types:``, a need type's count of the links it receives (:ref:`need_types_incoming`),
+which counts every link of it, computed ones included -- and a need holds its links and back links as any link type's,
 while a view that reads every link type leaves it out (a :ref:`needflow` without ``:link_types:``),
 and a ``union`` cannot name it as a member.
 The stance is the link type's, on every need type, so it is given on its :ref:`needs_links` entry, beside ``derive``:
