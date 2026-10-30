@@ -503,9 +503,6 @@ def test_external_needs_other_target_url_joined(test_app):
     assert {need_id: links[need_id] for need_id in expected} == expected
 
 
-@pytest.mark.xfail(
-    strict=True, reason="#2389: a graphviz needflow links no scheme-relative URL"
-)
 @pytest.mark.parametrize("test_app", [_ABSOLUTE_TARGET_URL_PROJECT], indirect=True)
 def test_external_needs_absolute_target_url_needflow(test_app):
     """A graphviz needflow links an external need to its absolute render as the
