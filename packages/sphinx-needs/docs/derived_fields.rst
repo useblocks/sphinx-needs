@@ -90,7 +90,8 @@ Before declaring a rule, bear in mind:
 - **Storing costs, computing does not.** A value per need costs little; a rule that links many needs to many
   stores a list on each need and a back link on each target (``needs.derive_dense``, :ref:`needs_derive_cost`).
 - **Incremental builds re-write more pages.** When a need changes, the pages of the needs whose rules read it are
-  re-written too; in a project with a ``links`` rule, a ``content_links`` rule with ``from``, a ``collect`` on a link type,
+  re-written too;
+  in a project with a ``links`` rule, a ``content_links`` rule with ``from``, a ``collect`` on a link type,
   or a ``copy`` on a link type over a link type a rule computes,
   every change of a need re-writes every page holding a need (:ref:`incremental_builds`).
 - **A simpler tool may do.** To show a set of needs in one place, a :ref:`needtable` or :ref:`needlist` with a filter
@@ -120,7 +121,8 @@ One value is often computed differently on different need types.
 Effort is written on tasks and rolled up through stories and epics:
 on a task the total is the task's own effort, on a story or an epic the sum of the totals of the needs it links.
 That takes two fields:
-the one authors write, and a derived one, which copies it on a task and sums itself over the links of a story or an epic.
+the one authors write, and a derived one,
+which copies it on a task and sums itself over the links of a story or an epic.
 A need type's own entry (:ref:`needs_types_fields`) gives the rule to the needs of that type:
 
 .. code-block:: toml
@@ -190,7 +192,8 @@ Bear in mind:
   it is set on the link type's :ref:`needs_links` entry (:ref:`needs_derive_summary`).
 - **One field cannot do both.** A derived field is closed on every need type, also where it has no rule,
   so the value authors write on tasks is a field of its own, ``effort``.
-- **Cycles.** Needs linking one another in a cycle cannot compute such a value, and are reported (``needs.derive_cycle``).
+- **Cycles.** Needs linking one another in a cycle cannot compute such a value,
+  and are reported (``needs.derive_cycle``).
 - **Other need types.** A need of a type without a rule holds the same value on every need of the type, set out below.
 
 The entry is one of :ref:`needs_types`: the type is declared there, with its ``title`` and ``prefix``,
@@ -239,7 +242,8 @@ a type a :ref:`GitHub service <github_service>` adds, which an entry would repla
 and it alone gives a type a rule that the types inheriting from it do not get.
 
 Rules per need type are checked when the configuration is read, one ``needs.derive_invalid`` per entry:
-a ``derive_by_type`` key naming no need type is ignored (a type's title is not its name, and the warning says which is meant);
+a ``derive_by_type`` key naming no need type is ignored
+(a type's title is not its name, and the warning says which is meant);
 an empty ``derive_by_type``, or one that is not a table, adds no rule: the field stays derived,
 every need type using the ``derive`` beside it, or, without one, no rule;
 an entry that cannot be read, as a ``derive`` that cannot be read, leaves the needs of its type at the empty value,
@@ -265,7 +269,8 @@ Pick a kind by what the need should show:
 - the values of several needs as one list, such as the requirements a test traces to: ``collect``;
 - links that follow from the needs' fields, or from the references in their text: ``links``, ``content_links``;
 - the links of several link types as one: ``union``;
-- the far ends of a chain, such as the requirements a test result is evidence for, as links: ``copy`` or ``collect`` on a link type;
+- the far ends of a chain, such as the requirements a test result is evidence for, as links:
+  ``copy`` or ``collect`` on a link type;
 - a value that changes when a need does, to notice a change since a review: ``hash`` or ``fingerprint``.
 
 .. list-table::
@@ -535,8 +540,10 @@ Bear in mind:
 
 - **Values, not ids.** A join compares values exactly, so a test naming ``Login`` matches no ``login``;
   where the test can name the specification's id, a written link is simpler.
-- **Incremental builds.** A ``links`` rule, with ``join`` too, makes every change of a need re-write every page holding a need;
-  the pages of the needs holding a ``copy`` with ``join`` are re-written on every change of a need (:ref:`incremental_builds`).
+- **Incremental builds.** A ``links`` rule, with ``join`` too,
+  makes every change of a need re-write every page holding a need;
+  the pages of the needs holding a ``copy`` with ``join`` are re-written on every change of a need
+  (:ref:`incremental_builds`).
 
 The rules:
 
@@ -800,10 +807,12 @@ With one open requirement, ``REQ_1``, every other need holds ``REQ_1`` in ``open
 
 Bear in mind:
 
-- **It is stored on every need holding the rule.** Every such need links to every need the ``where`` passes (but itself);
+- **It is stored on every need holding the rule.**
+  Every such need links to every need the ``where`` passes (but itself);
   to show that set in one place, a :ref:`needtable` or :ref:`needlist` with the same filter shows it once.
   Declare the rule only for the need types that use it (:ref:`needs_derive_by_type`).
-- **Incremental builds.** With a ``links`` rule in the project, every change of a need re-writes every page holding a need
+- **Incremental builds.** With a ``links`` rule in the project,
+  every change of a need re-writes every page holding a need
   (:ref:`incremental_builds`).
 
 Its candidates are every need, and with ``include_parts`` every need's parts (after it, in part-id order),
@@ -984,10 +993,11 @@ Bear in mind:
 
 - **It is a summary.** Its links skip the steps between, so a needflow draws them only when ``:link_types:`` names
   the link type, and a ``union`` cannot read it (below).
-- **Cost.** Each need stores a link per far end its chain reaches, and each far end a back link from every need reaching it;
+- **Cost.** Each need stores a link per far end its chain reaches,
+  and each far end a back link from every need reaching it;
   on a deep, wide trace, the field form stores the same ids without the back links.
-- **Incremental builds.** A ``collect``, or a ``copy`` over a link type another rule computes, makes every change of a need
-  re-write every page holding a need (below).
+- **Incremental builds.** A ``collect``, or a ``copy`` over a link type another rule computes,
+  makes every change of a need re-write every page holding a need (below).
 
 The rules:
 
