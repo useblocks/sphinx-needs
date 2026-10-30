@@ -3,6 +3,43 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Changed
+.......
+
+- 👌 ``ub_test_reports.fields`` says which kinds of need carry each field: ``need_kinds(name,
+  role)`` over ``NEED_KINDS`` (``file``, ``suite``, ``case``), with the new ``FILE_NEED_FIELDS``
+  and ``SUITE_NEED_FIELDS`` beside ``CASE_FIELDS`` -- the tables ubCode's ``ubc_test_reports``
+  has -- so sphinx-test-reports declares each field on the need types that carry it
+  (`#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__). The converter's output is
+  unchanged by it: it writes test cases, and its ``needs_schema`` declares the test-case fields.
+
+- 👌 The ``test-reports build needs`` converter writes ``null`` in ``case_file``, ``case_line``
+  (or the fields ``source_file_option`` and ``source_line_option`` name) and ``case_parameter``
+  where the report gives no source file, no line or no parameter, where it wrote ``""``
+  (changed output; `#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__), as its
+  ``needs_schema`` already declared them nullable. **API change:** ``split_case_name`` now
+  returns ``tuple[str, str | None]``: ``None`` for the parameter of a name pytest did not
+  parameterise (``""`` stays the parameter of an empty ``[]``), so a caller that concatenated
+  or compared the parameter as a string handles ``None``. A filter written ``case_line == ''`` no longer matches such a case: write
+  ``case_line is None`` (or ``not case_line``) instead. sphinx-test-reports' directives write
+  the same.
+
+Fixed
+.....
+
+- 🐛 The documented ``filterwarnings`` line that silences the pytest plugin's start-up notice,
+  ``ignore::ub_test_reports.pytest_plugin.TestReportsConfigWarning``, crashed pytest 9.2 and
+  later at start-up with a ``PytestAssertRewriteWarning`` traceback ("Module already imported
+  so cannot be rewritten") when the plugin is loaded with ``-p`` and warnings are errors, and
+  added that warning to every run's summary when they are not.
+  pytest 9.2 resolves the filter -- importing the plugin -- before it loads the ``-p``
+  plugins. The plugin module now opts out of pytest's assertion rewriting (it has no
+  ``assert`` to rewrite), so the line works on every pytest again; nothing changes in your
+  configuration.
+
 .. _`release:1.1.0`:
 
 1.1.0

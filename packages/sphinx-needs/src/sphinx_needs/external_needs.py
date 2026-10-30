@@ -9,8 +9,8 @@ from sphinx.environment import BuildEnvironment
 
 import ub_needs_exchange as exchange
 from sphinx_needs._jinja import compile_template
-from sphinx_needs.api import InvalidNeedException, add_external_need, del_need
-from sphinx_needs.api.need import _record_params
+from sphinx_needs.api import InvalidNeedException, del_need
+from sphinx_needs.api.need import _create_from_record, _record_params
 from sphinx_needs.config import ExternalSource, NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
@@ -122,7 +122,7 @@ def load_external_needs(
                 # an external need left from a previous build: removed before its
                 # record is read again, so a record now refused leaves no need behind.
                 # One added in this pass, by this source or another, is a duplicate:
-                # ``add_external_need`` refuses it
+                # its creation refuses it
                 del_need(app, ext_need_id)
 
             try:
@@ -152,11 +152,14 @@ def load_external_needs(
             need_params["external_css"] = source.get("css_class")
 
             try:
-                add_external_need(
+                # the record's fields and links as one mapping, never as keywords, so
+                # that no field is named like an argument (#2392, #2403)
+                _create_from_record(
                     app,
-                    need_source=NeedItemSourceExternal(url=external_url),
+                    None,
+                    need_params,
+                    source=NeedItemSourceExternal(url=external_url),
                     allow_type_coercion=source.get("allow_type_coercion", True),
-                    **need_params,
                 )
             except InvalidNeedException as err:
                 _refuse_need(ext_need_id, source_str, err)

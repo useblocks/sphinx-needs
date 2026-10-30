@@ -495,6 +495,7 @@
       schema=dict({
         'type': 'boolean',
       }),
+      severity=None,
     ),
     'completion': FieldSchema(
       allow_defaults=True,
@@ -513,6 +514,7 @@
       schema=dict({
         'type': 'integer',
       }),
+      severity=None,
     ),
     'constraints': FieldSchema(
       allow_defaults=True,
@@ -537,6 +539,7 @@
         }),
         'type': 'array',
       }),
+      severity=None,
     ),
     'duration': FieldSchema(
       allow_defaults=True,
@@ -555,6 +558,7 @@
       schema=dict({
         'type': 'integer',
       }),
+      severity=None,
     ),
     'hide': FieldSchema(
       allow_defaults=True,
@@ -575,6 +579,7 @@
       schema=dict({
         'type': 'boolean',
       }),
+      severity=None,
     ),
     'layout': FieldSchema(
       allow_defaults=True,
@@ -593,6 +598,7 @@
       schema=dict({
         'type': 'string',
       }),
+      severity=None,
     ),
     'links': LinkSchema(
       allow_dead_links=False,
@@ -628,6 +634,7 @@
         }),
         'type': 'array',
       }),
+      severity=None,
       summary=False,
       target_types=None,
     ),
@@ -665,6 +672,7 @@
         }),
         'type': 'array',
       }),
+      severity=None,
       summary=False,
       target_types=None,
     ),
@@ -685,6 +693,7 @@
       schema=dict({
         'type': 'string',
       }),
+      severity=None,
     ),
     'pre_template': FieldSchema(
       allow_defaults=True,
@@ -703,6 +712,7 @@
       schema=dict({
         'type': 'string',
       }),
+      severity=None,
     ),
     'status': FieldSchema(
       allow_defaults=True,
@@ -721,6 +731,7 @@
       schema=dict({
         'type': 'string',
       }),
+      severity=None,
     ),
     'style': FieldSchema(
       allow_defaults=True,
@@ -739,6 +750,7 @@
       schema=dict({
         'type': 'string',
       }),
+      severity=None,
     ),
     'tags': FieldSchema(
       allow_defaults=True,
@@ -763,6 +775,7 @@
         }),
         'type': 'array',
       }),
+      severity=None,
     ),
     'template': FieldSchema(
       allow_defaults=True,
@@ -781,6 +794,7 @@
       schema=dict({
         'type': 'string',
       }),
+      severity=None,
     ),
     'title': FieldSchema(
       allow_defaults=False,
@@ -799,6 +813,7 @@
       schema=dict({
         'type': 'string',
       }),
+      severity=None,
     ),
   })
 # ---

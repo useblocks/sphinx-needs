@@ -5,13 +5,14 @@ from collections.abc import Callable, Iterable, Sequence
 from typing import Any, Final
 
 from docutils import nodes
-from sphinx.addnodes import desc_name, desc_signature
+from sphinx.addnodes import desc_name, desc_signature, desc_signature_line
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs._need_source import directive_hops, placement_semantic
 from sphinx_needs._wording import joined
-from sphinx_needs.api import InvalidNeedException, add_need
+from sphinx_needs.api import InvalidNeedException, create_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -175,37 +176,41 @@ class NeedDirective(SphinxDirective):
         # stays on the parser's counter as well: both are handed to ``nested_parse`` in
         # ``_create_need_node`` as offsets into that counter's space, not read as source
         # lines.
+        # The hops record the file the directive is written in (an included file's own,
+        # in an include) with its true lines only; ``lineno`` is checked against them.
         _, resolved_lineno = self.get_source_info()
         source = NeedItemSourceDirective(
-            docname=self.env.docname,
             lineno=resolved_lineno or self.lineno,
             lineno_content=self.content_offset + 1,
             parser_lineno=self.lineno,
+            hops=directive_hops(self),
         )
 
         try:
-            need_nodes = add_need(
-                app=self.env.app,
-                state=self.state,
-                need_source=source,
-                need_type=self.name,
-                title=title,
+            _, need_nodes = create_need(
+                self.env.app,
+                self.state,
+                source,
+                self.name,
+                title,
                 full_title=full_title,
                 id=id,
                 content=self.content,
-                status=status,
-                tags=tags,
-                template=template,
-                pre_template=pre_template,
-                post_template=post_template,
-                hide=hide,
-                collapse=collapse,
-                style=style,
-                layout=layout,
                 jinja_content=jinja_content,
-                constraints=constraints,
-                **extras,  # ty: ignore[invalid-argument-type]
-                **links,
+                fields={
+                    "status": status,
+                    "tags": tags,
+                    "template": template,
+                    "pre_template": pre_template,
+                    "post_template": post_template,
+                    "hide": hide,
+                    "collapse": collapse,
+                    "style": style,
+                    "layout": layout,
+                    "constraints": constraints,
+                    **extras,
+                },
+                links=links,
             )
         except InvalidNeedException as err:
             self._log_warning(
@@ -282,11 +287,26 @@ def get_sections_and_signature_and_needs(
                     break
                 if isinstance(sibling, desc_signature):
                     # Check the child of the found signature for the text content/node.
-                    for desc_child in sibling.children:
-                        if isinstance(desc_child, desc_name) and isinstance(
+                    # The C and C++ domains put the name in a desc_signature_line,
+                    # and they and the JavaScript domain wrap it in a desc_sig_name.
+                    for desc_child in (
+                        line_child
+                        for child in sibling.children
+                        for line_child in (
+                            child.children
+                            if isinstance(child, desc_signature_line)
+                            else [child]
+                        )
+                    ):
+                        if not isinstance(desc_child, desc_name):
+                            continue
+                        if desc_child.children and isinstance(
                             desc_child.children[0], nodes.Text
                         ):
                             signature = desc_child.children[0]
+                        elif desc_child.astext():
+                            # an empty name is no name
+                            signature = nodes.Text(desc_child.astext())
                 if signature:
                     break
 
@@ -338,6 +358,9 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
         need_info["sections"] = tuple(sections)
         need_info["signature"] = str(signature) if signature is not None else None
         need_info["parent_needs"] = parent_needs
+        # the second phase of the need's source: the semantic location of its placement
+        # hop, found from the doctree on its own (not from the legacy values above)
+        need_info._set_placement_semantic(placement_semantic(need_node))
 
         if need_node.get("hidden"):
             hidden_needs.append(need_node)
@@ -376,6 +399,7 @@ def post_process_needs_data(app: Sphinx) -> None:
         needs_config = NeedsSphinxConfig(app.config)
         needs_schema = needs_data.get_schema()
         needs = needs_data.get_needs_mutable()
+        order_needs_by_document(needs)
         app.emit("needs-before-post-processing", needs)
         extend_needs_data(
             needs,
@@ -401,6 +425,24 @@ def post_process_needs_data(app: Sphinx) -> None:
                     "If you are adding needs manually, consider using the add_need API."
                 )
         needs_data.needs_is_post_processed = True
+
+
+def order_needs_by_document(needs: NeedsMutable) -> None:
+    """Order the needs as a serial fresh build reads them, in place.
+
+    The needs with no document (external ones, ``add_need`` without one) first, then
+    by document name, each document's in the order it gave them. The order is what a
+    view without a sort shows (a needlist, a needflow): without it, the needs of the
+    documents an incremental build re-reads come last, and those of a parallel build in
+    the order its readers finish.
+    """
+    ordered = sorted(
+        needs.items(),
+        key=lambda item: (item[1]["docname"] is not None, item[1]["docname"] or ""),
+    )
+    if list(needs) != [need_id for need_id, _ in ordered]:
+        needs.clear()
+        needs.update(ordered)
 
 
 def process_need_nodes(app: Sphinx, doctree: nodes.document, fromdocname: str) -> None:

@@ -93,6 +93,9 @@ class NewFieldParams:
     derive_by_type: Any | None = None
     """The rules per need type computing the field, as configured (a dict of need
     type to rule), if any: each overrides ``derive`` on its need type."""
+    types: tuple[str, ...] | None = None
+    """The need types an extension declares the field on alone (``add_field``'s
+    ``types``), or ``None``: the field is declared on every need type."""
 
 
 class NeedFunctionsType(TypedDict):
@@ -102,6 +105,22 @@ class NeedFunctionsType(TypedDict):
     """What the function reads (a ``Declaration`` of ``functions.order``), from
     ``add_dynamic_function``'s ``reads`` or the function's own declaration, as its
     registration checked it."""
+
+
+@dataclass(frozen=True)
+class TypeNarrowing:
+    """A ``needs_types`` entry with neither a ``title`` nor a ``prefix`` that names no
+    default type: a narrowing of the need type an extension registers under its
+    directive, whenever the extension registers it (#2371).
+
+    It is kept from ``config-inited`` (priority 12, where ``needs_types`` is resolved)
+    to the building of the schema, where one no extension's type claims is reported.
+    """
+
+    named: str
+    """The entry as a finding names it (``needs_types['story']``)."""
+    entry: dict[str, Any]
+    """The entry, of its shape: its ``directive``, and the keys it gives."""
 
 
 class _Config:
@@ -120,6 +139,8 @@ class _Config:
         self._builtin_types: dict[str, NeedType] = {}
         self._builtin_layouts: dict[str, dict[str, Any]] = {}
         self._builtin_services: list[str] = []
+        self._type_narrowings: dict[str, TypeNarrowing] = {}
+        self._type_entries: frozenset[str] | None = None
 
     def clear(self) -> None:
         self._fields = {}
@@ -130,6 +151,8 @@ class _Config:
         self._builtin_types = {}
         self._builtin_layouts = {}
         self._builtin_services = []
+        self._type_narrowings = {}
+        self._type_entries = None
 
     @property
     def fields(self) -> Mapping[str, NewFieldParams]:
@@ -168,6 +191,7 @@ class _Config:
         parse_dynamic_functions: bool | None = None,
         derive: Any | None = None,
         derive_by_type: Any | None = None,
+        types: tuple[str, ...] | None = None,
         override: bool = False,
     ) -> None:
         """Adds a need field to the configuration."""
@@ -202,6 +226,7 @@ class _Config:
             parse_dynamic_functions=parse_dynamic_functions,
             derive=derive,
             derive_by_type=derive_by_type,
+            types=types,
         )
 
     @property
@@ -351,6 +376,12 @@ class _Config:
         if name not in self._builtin_services:
             self._builtin_services.append(name)
 
+    @property
+    def builtin_types(self) -> Mapping[str, NeedType]:
+        """The need types sphinx-needs itself provides (the configured GitHub
+        services'), by directive (:meth:`add_builtin_need_type`)."""
+        return self._builtin_types
+
     def add_builtin_need_type(self, need_type: NeedType) -> None:
         """Adds a need type sphinx-needs itself provides (the configured GitHub
         services' ones).
@@ -366,16 +397,61 @@ class _Config:
         services' one), the lowest tier, as :meth:`add_builtin_need_type`."""
         self._builtin_layouts[name] = copy.deepcopy(layout)
 
+    @property
+    def type_narrowings(self) -> Mapping[str, TypeNarrowing]:
+        """The bare ``needs_types`` entries naming no default type, by directive: each
+        narrows the need type an extension adds under its directive, once one does
+        (:meth:`merged_types`)."""
+        return self._type_narrowings
+
+    @property
+    def type_entries(self) -> frozenset[str] | None:
+        """The directives the project's own ``needs_types`` entries name, bare ones
+        included; ``None`` until ``needs_types`` is resolved. A default type no entry
+        names is not one: an extension adding its directive is refused."""
+        return self._type_entries
+
+    def set_type_entries(
+        self, named: frozenset[str], narrowings: Mapping[str, TypeNarrowing]
+    ) -> None:
+        """Record what the resolved ``needs_types`` names, and its pending narrowings
+        (:attr:`type_entries`, :attr:`type_narrowings`)."""
+        self._type_entries = named
+        self._type_narrowings = dict(narrowings)
+
     def merged_types(self, configured: list[NeedType]) -> list[NeedType]:
         """The configured need types, then the added ones, then the built-in ones,
-        each tier without the directives an earlier one has."""
-        merged = list(configured)
-        seen = {need_type["directive"] for need_type in configured}
-        for tier in (self._types, self._builtin_types):
-            for directive, need_type in tier.items():
-                if directive not in seen:
-                    seen.add(directive)
-                    merged.append(need_type)
+        each tier without the directives an earlier one has.
+
+        A configured entry naming a type added from code narrows it: the keys the entry
+        gives win, and the ``color`` and ``style`` it leaves out are the added type's.
+        So does a pending narrowing (:attr:`type_narrowings`), at the added type's
+        position. The built-in types (the GitHub services') are not narrowed: a
+        configured type replaces one of its directive.
+        """
+        merged: list[NeedType] = []
+        seen: set[str] = set()
+        for need_type in configured:
+            directive = need_type["directive"]
+            seen.add(directive)
+            added = self._types.get(directive)
+            merged.append(
+                need_type if added is None else cast(NeedType, {**added, **need_type})
+            )
+        for directive, need_type in self._types.items():
+            if directive in seen:
+                continue
+            seen.add(directive)
+            narrowing = self._type_narrowings.get(directive)
+            merged.append(
+                need_type
+                if narrowing is None
+                else cast(NeedType, {**need_type, **narrowing.entry})
+            )
+        for directive, need_type in self._builtin_types.items():
+            if directive not in seen:
+                seen.add(directive)
+                merged.append(need_type)
         return merged
 
     def merged_layouts(
@@ -394,7 +470,8 @@ _NEEDS_CONFIG = _Config()
 
 
 def type_field_names(config: _SphinxConfig) -> set[str]:
-    """The names the ``fields`` of the ``needs_types`` entries declare.
+    """The names the ``fields`` of the ``needs_types`` entries declare, the pending
+    narrowings of the types extensions add included (:attr:`_Config.type_narrowings`).
 
     The configuration readers that run before the fields schema is built read them
     beside the registered fields: a name only a need type declares is the name of a
@@ -402,14 +479,19 @@ def type_field_names(config: _SphinxConfig) -> set[str]:
     as the configuration holds it, which is the list once ``config-inited`` has
     resolved it; a configuration without ``needs_types`` declares none.
     """
-    # the configured types only, not NeedsSphinxConfig.types: a type added from code
-    # (add_need_type, the GitHub services) cannot declare fields, as it takes none
+    # the configured types and the pending narrowings of the types extensions add,
+    # not NeedsSphinxConfig.types: a type added from code (add_need_type, the GitHub
+    # services) declares no fields itself, as it takes none; an entry narrowing it
+    # does, whether or not the extension has added the type yet
     need_types = getattr(config, "needs_types", [])
     if not isinstance(need_types, list):
         return set()
+    narrowings = [
+        narrowing.entry for narrowing in _NEEDS_CONFIG.type_narrowings.values()
+    ]
     return {
         name
-        for entry in need_types
+        for entry in [*need_types, *narrowings]
         if isinstance(entry, Mapping)
         and isinstance(table := entry.get("fields"), Mapping)
         for name in table
@@ -583,12 +665,18 @@ class NeedType(TypedDict):
     """The default node style to use in diagrams (default: "node")."""
     inherits: NotRequired[str]
     """The need type whose declarations of fields and link types this type starts from."""
+    id_regex: NotRequired[str]
+    """A regular expression the id of a need of this type matches (``re.match``), as it
+    matches ``needs_id_regex``, and the ``id_regex`` of every type it inherits from."""
     fields: NotRequired[dict[str, NeedTypeFieldDeclaration]]
     """The fields this type declares anew: field name to its declaration. A name
     nothing else declares is a field of the types that declare it alone."""
     links: NotRequired[dict[str, NeedTypeLinkDeclaration]]
     """The link types this type declares anew: link type name to its declaration. A
     name nothing else declares is a link type of the types that declare it alone."""
+    back_links: NotRequired[dict[str, NeedTypeBackLinksDeclaration]]
+    """How many links of a link type point to a need of this type: link type name to
+    the count of its back links (``<l>_back``)."""
 
 
 #: The default need types: the value of ``needs_types`` when it is not configured.
@@ -646,6 +734,7 @@ class NeedTypeFieldDeclaration(TypedDict, total=False):
     default: Any
     predicates: list[tuple[str, Any]]
     derive: dict[str, Any]
+    severity: Literal["violation", "warning", "info"]
 
 
 class NeedTypeLinkDeclaration(TypedDict, total=False):
@@ -662,6 +751,7 @@ class NeedTypeLinkDeclaration(TypedDict, total=False):
     predicates: list[tuple[str, Any]]
     derive: dict[str, Any]
     target_types: list[str]
+    severity: Literal["violation", "warning", "info"]
     incoming: str
     outgoing: str
     copy: bool
@@ -671,6 +761,17 @@ class NeedTypeLinkDeclaration(TypedDict, total=False):
     style_part: str
     style_start: str
     style_end: str
+
+
+class NeedTypeBackLinksDeclaration(TypedDict, total=False):
+    """A need type's declaration of how many links of a link type point to each of its
+    needs: a count of the link type's back links, narrowed by the types inheriting
+    from the type. Any other key refuses the declaration."""
+
+    description: str
+    schema: dict[str, int]
+    """``minItems`` and ``maxItems`` alone."""
+    severity: Literal["violation", "warning", "info"]
 
 
 class NeedFields(TypedDict):
@@ -718,11 +819,23 @@ class NeedFields(TypedDict):
     """
 
 
-class NeedField(NeedFields):
-    """Defines an extra option for needs"""
+class NeedField(TypedDict):
+    """Defines an extra option for needs (an entry of ``needs_extra_options``, deprecated:
+    use ``needs_fields`` instead).
+
+    These are the keys such an entry is read for; any other key is reported, and ignored.
+    """
 
     name: str
     """The name of the option."""
+    description: NotRequired[str]
+    """A description of the field."""
+    schema: NotRequired[FieldSchemaTypes]
+    """A JSON schema definition for the field, as a ``needs_fields`` entry takes one."""
+    derive: NotRequired[dict[str, Any]]
+    """A rule computing the field for every need, as a ``needs_fields`` entry takes one."""
+    derive_by_type: NotRequired[dict[str, Any]]
+    """Rules per need type, as a ``needs_fields`` entry takes them."""
 
 
 class StringLinkConf(TypedDict):

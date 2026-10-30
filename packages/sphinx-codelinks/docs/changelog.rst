@@ -3,6 +3,29 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+New and Improved
+................
+
+- 🔧 A one-line need is created through Sphinx-Needs' ``create_need``, its fields and
+  links as two mappings, so a marker field named like a parameter of Sphinx-Needs'
+  creation call (``state``, ``app``, ...) is an ordinary field where it ended the build
+  (`#2392 <https://github.com/useblocks/sphinx-needs/issues/2392>`__). Requires the
+  Sphinx-Needs release that adds ``create_need``.
+- 👌 A marker field named ``content``, ``doctype``, ``jinja_content``, ``full_title`` or
+  ``allow_type_coercion`` is still the need's argument of that name, as Sphinx-Needs'
+  ``add_need`` took it: ``content`` the need's content, ``jinja_content`` its Jinja switch,
+  and so on. A ``full_title`` the project declares as a field is that field too, and still
+  the full title a need without an id has its id hashed from, so the id is the one it had
+  and the one the duplicate check and the ``[docs]`` link name.
+- 👌 A marker field named like another Sphinx-Needs core field that the project cannot
+  declare as a field (``external_url``, ``external_css``, ``is_external``, ``sections``,
+  ...) refuses its need, with the ``codelinks.oneline`` warning naming it. ``add_need``
+  took such a field as its own keyword: ``external_css`` set the need's css class,
+  ``is_external`` made the need external, and the others were ignored.
+
 .. _`release:2.0.1`:
 
 2.0.1

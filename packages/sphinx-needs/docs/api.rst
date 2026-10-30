@@ -26,8 +26,11 @@ Configuration
 Need
 ----
 
+.. autofunction:: sphinx_needs.api.need.create_need
+
 .. automodule:: sphinx_needs.api.need
    :members:
+   :exclude-members: create_need
 
 .. _api_content_markup:
 
@@ -37,15 +40,16 @@ Content written in another markup
 An extension that creates needs whose text was written somewhere else -- a comment in a
 source file, an imported file -- in a markup that is not the page's passes
 ``MarkupContent(text, markup=..., source=...)`` as the ``content`` of
-:func:`~sphinx_needs.api.need.add_need`. ``markup`` is the source suffix of that markup
+:func:`~sphinx_needs.api.need.create_need` (:func:`~sphinx_needs.api.need.add_need` takes
+the same ``content``). ``markup`` is the source suffix of that markup
 (``".rst"``, ``".md"``, or any suffix ``source_suffix`` maps to a reStructuredText or MyST
 parser): the content is parsed by that parser, whatever the page's parser, and the need
 records the suffix as its ``doctype``. With ``source=(path, first_line)``, the warnings
 raised while parsing the content, and those for references in it that do not resolve,
 name ``path`` and the line the content came from rather than the page -- through
 ``sphinx.util.docutils.switch_source_input``, the same mechanism ``sphinx.ext.autodoc`` uses
-to report a docstring's lines at the Python file. ``add_need`` takes no other argument for
-this, so no field or link name is reserved.
+to report a docstring's lines at the Python file. ``create_need`` takes no other argument
+for this, and takes the fields and links as mappings, so no field or link name is reserved.
 :func:`~sphinx_needs.api.need.ingest_need_record` creates a need from a needs.json-style
 record, and is the path :ref:`needimport` itself takes for each need it imports; with
 :ref:`needs_import_parse_by_doctype` or its ``:parse_by_doctype:`` option set, needimport
@@ -124,6 +128,28 @@ Data
 .. automodule:: sphinx_needs.need_item
    :members: NeedItem, NeedLink, NeedPartItem, NeedItemSourceProtocol, NeedsContent, NeedPartData, NeedModification, NeedConstraintResults
 
+.. note::
+
+   **Provisional**: the source of a need sphinx-needs creates also has ``hops``, where the need's text came from,
+   innermost first. The first hop is the innermost place sphinx-needs knows the need came through: for a need
+   directive or ``list2need``, the file the need is written in (an included file's own, in an include; the module,
+   for an autodoc docstring); for an imported need, the ``needs.json`` it was read from (where the exporting project
+   wrote the need is not a hop yet); for a service, the service that made it, then the file of the ``needservice``
+   directive; for an external need, its page on the other site, its only hop. A need created
+   through the API has its page with no path, and no hops without a document. The last hop with a ``document`` is
+   the page the need is placed on (an external need has none), and carries its sections and the domain objects it
+   is written in, outermost first. A hop has a line
+   range only where the file, read from disk, holds the need's text there: in reStructuredText every line of the
+   directive equals the file's line (whole lines, after a block quote's or a table cell's border, and the bullets of
+   the list item the directive opens); in MyST the line opens the directive's fence with its name and title.
+   Elsewhere the hop has no line. A recorded line can still be wrong only where the file holds an identical copy of
+   the need's text at the line the parser claims: through an included slice (``:start-after:``, ``:start-line:``)
+   after an example of the directive, or a MyST need nested at once inside an identical twin (same name, same
+   title). Every path is relative to the source directory. The shape may
+   change in a minor release, without a deprecation, until it reaches ``needs.json``; ``NeedItemSourceProtocol`` does
+   not include it, so read it with ``getattr(need.source, "hops", ())``. Nothing a filter, a table or ``needs.json``
+   shows depends on it.
+
 .. automodule:: sphinx_needs.data
    :members: NeedsInfoType, NeedsInfoComputedType, NeedsSourceInfoType, NeedsMutable, NeedsPartType
 
@@ -144,8 +170,8 @@ Schema
 .. automodule:: sphinx_needs.needs_schema
    :members: FieldsSchema, TypeFieldsSchema, FieldShape, LinkShape, FieldSchema,
              FieldFunctionArray, LinksFunctionArray, FieldLiteralValue, LinkSchema,
-             LinkDisplayConfig, LinkTargetTypes, LinksLiteralValue, AllowedTypes,
-             narrowing_problems
+             LinkDisplayConfig, LinkTargetTypes, LinksLiteralValue, BackLinksSchema,
+             AllowedTypes, narrowing_problems
 
 .. automodule:: sphinx_needs.derive
    :members: DeriveRule, DeriveJoin, DeriveInvalid, DeriveCall

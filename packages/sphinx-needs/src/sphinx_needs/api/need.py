@@ -80,6 +80,19 @@ _deprecated_kwargs = {
 }
 
 
+def _id_matched_by_patterns(need_id: str, /) -> str:
+    """The id :ref:`needs_id_regex` and a need type's ``id_regex`` are matched against:
+    the need's local id, as it is written in the need or generated, before any
+    namespace. While a need's id carries no namespace, that is the whole id.
+
+    The one place both patterns read the id from, so that they keep matching the local
+    id should an id ever carry more.
+
+    :param need_id: The id of the need being created.
+    """
+    return need_id
+
+
 def generate_need(
     needs_config: NeedsSphinxConfig,
     needs_schema: FieldsSchema,
@@ -170,19 +183,103 @@ def generate_need(
     :param post_template: Template name to use for the content added after need
     :param allow_type_coercion: If true, values will be coerced to the expected type where possible.
     """
-    source = (
-        NeedItemSourceUnknown(
+    return _generate_need(
+        needs_config,
+        needs_schema,
+        need_type,
+        title,
+        source=_legacy_source(
+            need_source,
             docname=docname,
             lineno=lineno,
             lineno_content=lineno_content,
             is_import=is_import,
             is_external=is_external,
-            external_url=external_url if is_external else None,
-        )
-        if need_source is None
-        else need_source
+            external_url=external_url,
+        ),
+        values={
+            "status": status,
+            "tags": tags,
+            "constraints": constraints,
+            "hide": hide,
+            "collapse": collapse,
+            "style": style,
+            "layout": layout,
+            "template": template,
+            "pre_template": pre_template,
+            "post_template": post_template,
+            **kwargs,
+        },
+        id=id,
+        doctype=doctype,
+        content=content,
+        parts=parts,
+        arch=arch,
+        signature=signature,
+        sections=sections,
+        jinja_content=jinja_content,
+        template_root=template_root,
+        external_css=external_css,
+        full_title=full_title,
+        allow_type_coercion=allow_type_coercion,
     )
 
+
+def _legacy_source(
+    need_source: NeedItemSourceProtocol | None,
+    *,
+    docname: str | None = None,
+    lineno: int | None = None,
+    lineno_content: int | None = None,
+    is_import: bool = False,
+    is_external: bool = False,
+    external_url: str | None = None,
+) -> NeedItemSourceProtocol:
+    """The source :func:`add_need`, :func:`generate_need` and :func:`add_external_need`
+    record: the one given, else the API's default, made from their location keywords."""
+    if need_source is not None:
+        return need_source
+    return NeedItemSourceUnknown(
+        docname=docname,
+        lineno=lineno,
+        lineno_content=lineno_content,
+        is_import=is_import,
+        is_external=is_external,
+        external_url=external_url if is_external else None,
+    )
+
+
+def _generate_need(
+    needs_config: NeedsSphinxConfig,
+    needs_schema: FieldsSchema,
+    need_type: str,
+    title: str,
+    *,
+    source: NeedItemSourceProtocol,
+    values: Mapping[str, Any],
+    id: str | None = None,
+    doctype: str = ".rst",
+    content: str = "",
+    parts: dict[str, NeedsPartType] | None = None,
+    arch: dict[str, str] | None = None,
+    signature: str | None = None,
+    sections: Sequence[str] | None = None,
+    jinja_content: bool | None = None,
+    template_root: Path | None = None,
+    external_css: str | None = "external_link",
+    full_title: str | None = None,
+    allow_type_coercion: bool = True,
+) -> NeedItem:
+    """The body of :func:`generate_need`, which every creation path shares.
+
+    :param values: The need's field and link values, by name: the core fields of the
+        field schema (``title`` excepted, which is an argument of its own), the extra
+        fields and the link types. A value ``None`` is a value not given. Never
+        keyword arguments, so that no field name meets a parameter (#2392).
+    :raises InvalidNeedException: If the data fails any validation issue; (type
+        ``invalid_kwargs``) if ``values`` names no field or link type of the need's
+        type.
+    """
     # location is used to provide source mapped warnings
     location = (
         (source.dict_repr["docname"], source.dict_repr["lineno"])
@@ -193,12 +290,15 @@ def generate_need(
     # the fields of a need of this type, as the type declares them
     schema = needs_schema.for_type(need_type)
 
-    # validate kwargs
+    #: the core fields of the field schema, which ``values`` sets (``title`` excepted)
+    core_names = [name for name in schema.iter_core_field_names() if name != "title"]
+    # validate the values
     allowed_kwargs = {
+        *core_names,
         *schema.iter_link_field_names(),
         *schema.iter_extra_field_names(),
     }
-    unknown_kwargs = set(kwargs) - allowed_kwargs
+    unknown_kwargs = set(values) - allowed_kwargs
     if unknown_kwargs:
         raise InvalidNeedException(
             "invalid_kwargs",
@@ -226,29 +326,37 @@ def generate_need(
     from_outside = bool(
         source.dict_repr["is_import"] or source.dict_repr["is_external"]
     )
+    #: what the patterns test: the need's local id
+    matched_id = _id_matched_by_patterns(need_id)
     if (
         needs_config.id_regex
         and not from_outside
-        and not re.match(needs_config.id_regex, need_id)
+        and not re.match(needs_config.id_regex, matched_id)
     ):
         raise InvalidNeedException(
             "invalid_id",
             f"Given ID {need_id!r} does not match configured regex {needs_config.id_regex!r}",
         )
+    # and the id_regex of its need type, and of each type that one inherits from
+    for declared_by, pattern in (
+        () if from_outside else needs_schema.id_patterns(need_type)
+    ):
+        if not re.match(pattern, matched_id):
+            inherited = (
+                ""
+                if declared_by == need_type
+                else f", which need type {need_type!r} inherits"
+            )
+            raise InvalidNeedException(
+                "invalid_id",
+                f"Given ID {need_id!r} does not match the id_regex {pattern!r} of need "
+                f"type {declared_by!r}{inherited}",
+            )
 
     # Convert all schema-enabled core fields
     _raw_core: dict[str, Any] = {
         "title": title,
-        "status": status,
-        "tags": tags,
-        "constraints": constraints,
-        "layout": layout,
-        "style": style,
-        "hide": hide,
-        "collapse": collapse,
-        "template": template,
-        "pre_template": pre_template,
-        "post_template": post_template,
+        **{name: values.get(name) for name in core_names},
     }
     core_converted: dict[str, FieldLiteralValue | FieldFunctionArray | None] = {}
     for _name, _raw in _raw_core.items():
@@ -292,15 +400,15 @@ def generate_need(
         # a derived field the type does not declare is absent: no data from outside
         authored = not extra_field.derived or not schema.declares(extra_field.name)
         if not extra_field.directive_option and (
-            authored or not from_outside or kwargs.get(extra_field.name) is None
+            authored or not from_outside or values.get(extra_field.name) is None
         ):
             if not from_outside or (
                 authored
-                and kwargs.get(extra_field.name) != extra_field.off_type_value()
+                and values.get(extra_field.name) != extra_field.off_type_value()
             ):
                 _refuse_authored(
                     extra_field,
-                    kwargs,
+                    values,
                     location,
                     need_type,
                     need_id,
@@ -310,15 +418,15 @@ def generate_need(
                 extra_field, need_type
             )
             final.add(extra_field.name)
-        elif extra_field.name not in kwargs:
+        elif extra_field.name not in values:
             extras_no_defaults[extra_field.name] = None
         else:
             try:
                 extras_no_defaults[extra_field.name] = (
                     None
-                    if kwargs[extra_field.name] is None
+                    if values[extra_field.name] is None
                     else extra_field.convert_or_type_check(
-                        kwargs[extra_field.name], allow_coercion=allow_type_coercion
+                        values[extra_field.name], allow_coercion=allow_type_coercion
                     )
                 )
             except Exception as err:
@@ -332,14 +440,14 @@ def generate_need(
         # a derived link type the type does not declare is absent: no data from outside
         authored = not link_field.derived or not schema.declares(link_field.name)
         if not link_field.directive_option and (
-            authored or not from_outside or kwargs.get(link_field.name) is None
+            authored or not from_outside or values.get(link_field.name) is None
         ):
             if not from_outside or (
-                authored and kwargs.get(link_field.name) != link_field.off_type_value()
+                authored and values.get(link_field.name) != link_field.off_type_value()
             ):
                 _refuse_authored(
                     link_field,
-                    kwargs,
+                    values,
                     location,
                     need_type,
                     need_id,
@@ -350,15 +458,15 @@ def generate_need(
                 if link_field.derived and link_field.rule_for(need_type) is None
                 else []
             )
-        elif link_field.name not in kwargs:
+        elif link_field.name not in values:
             links_no_defaults[link_field.name] = None
         else:
             try:
                 links_no_defaults[link_field.name] = (
                     None
-                    if kwargs[link_field.name] is None
+                    if values[link_field.name] is None
                     else link_field.convert_or_type_check(
-                        kwargs[link_field.name], allow_coercion=allow_type_coercion
+                        values[link_field.name], allow_coercion=allow_type_coercion
                     )
                 )
             except Exception as err:
@@ -660,13 +768,18 @@ def _unwrap_field_value(
 ) -> tuple[Any, FieldFunctionArray | None]:
     """Unwrap a converted field value into a concrete value and optional dynamic function.
 
+    A field without a value holds ``None`` where its declaration admits it
+    (:attr:`~sphinx_needs.needs_schema.FieldSchema.admits_null`): it is nullable, or
+    not nullable at a ``severity`` below ``violation``, which the schema validation
+    reports rather than the need being refused.
+
     :param field_schema: The schema for the field.
     :param converted: The converted value from ``convert_or_type_check``.
     :return: A tuple of (concrete_value, dynamic_func_or_none).
     :raises InvalidNeedException: If the value is invalid for the field.
     """
     if converted is None:
-        if not field_schema.nullable:
+        if not field_schema.admits_null:
             raise InvalidNeedException(
                 "invalid_value",
                 f"Field {field_schema.name!r} is not nullable, but no value or default was given.",
@@ -726,6 +839,12 @@ def add_need(
 
     ``add_need`` allows to create needs programmatically and use its returned node to be integrated in any
     docutils based structure.
+
+    :func:`create_need` is its successor, which takes the need's fields and links as
+    two mappings and its location as a source object, and returns the need with its
+    nodes; ``add_need`` will be deprecated once the source types are final.
+
+    .. seealso:: :func:`create_need`
 
     ``kwargs`` can contain options defined in ``needs_fields`` and ``needs_links``.
     If an entry is found in ``kwargs``, which *is not* specified in the configuration or registered e.g. via
@@ -797,6 +916,250 @@ def add_need(
         )
         kwargs = {k: v for k, v in kwargs.items() if k not in _deprecated_kwargs}
 
+    _, need_nodes = _create_need(
+        app,
+        state,
+        _legacy_source(
+            need_source,
+            docname=docname,
+            lineno=lineno,
+            lineno_content=lineno_content,
+            is_import=is_import,
+            is_external=is_external,
+            external_url=external_url,
+        ),
+        need_type,
+        title,
+        values={
+            "status": status,
+            "tags": tags,
+            "constraints": constraints,
+            "hide": hide,
+            "collapse": collapse,
+            "style": style,
+            "layout": layout,
+            "template": template,
+            "pre_template": pre_template,
+            "post_template": post_template,
+            **kwargs,
+        },
+        id=id,
+        content=content,
+        doctype=doctype,
+        jinja_content=jinja_content,
+        full_title=full_title,
+        allow_type_coercion=allow_type_coercion,
+        parts=parts,
+        arch=arch,
+        signature=signature,
+        sections=sections,
+        external_css=external_css,
+    )
+    return need_nodes
+
+
+def create_need(
+    app: Sphinx,
+    state: RSTState | None,
+    source: NeedItemSourceProtocol,
+    need_type: str,
+    title: str,
+    *,
+    id: str | None = None,
+    fields: Mapping[str, Any] | None = None,
+    links: Mapping[str, Any] | None = None,
+    content: str | StringList | MarkupContent = "",
+    doctype: str | None = None,
+    jinja_content: bool | None = None,
+    full_title: str | None = None,
+    allow_type_coercion: bool = True,
+) -> tuple[NeedItem, list[nodes.Node]]:
+    """Create a need, record it in the project, and return it with its nodes.
+
+    The need's field values and its links are two mappings, kept apart from the
+    function's own parameters, so any name the project declares for a field or a link
+    type can be used: nothing a project names a field meets an argument of this
+    function. It is how sphinx-needs' need directives, ``list2need`` and
+    ``needservice``, sphinx-codelinks' one-line needs and sphinx-test-reports' needs are
+    created; ``needimport``, ``needs_external_needs`` and sphinx-codelinks' multi-line
+    needs are created from records, through the same path.
+
+    .. code-block:: python
+
+        from sphinx_needs.api import create_need
+        from sphinx_needs.need_item import NeedItemSourceUnknown
+
+        need, need_nodes = create_need(
+            app,
+            state,
+            NeedItemSourceUnknown(docname=env.docname, lineno=lineno),
+            "req",
+            "A requirement",
+            id="REQ_1",
+            fields={"status": "open", "priority": "high"},
+            links={"links": ["REQ_0"]},
+        )
+
+    :param app: Sphinx application object.
+    :param state: The parser state of the document the need is rendered in; ``None``
+        only for an external source, whose need has no nodes.
+    :param source: Where the need comes from: an object with the
+        :class:`~sphinx_needs.need_item.NeedItemSourceProtocol` interface. It gives the
+        need its ``docname``, ``lineno`` and the other location fields, and says whether
+        it is imported or external.
+
+        **Provisional for extensions**: the source objects sphinx-needs provides, such
+        as ``NeedItemSourceUnknown(docname=..., lineno=...)`` above, may change without
+        a deprecation, as the source's ``hops`` may. An extension may keep calling
+        :func:`add_need`, which builds that source from its ``docname`` and ``lineno``,
+        until it is deprecated.
+    :param need_type: The need type, by the name of its directive.
+    :param title: The need's title.
+    :param id: The need's id. If not given, one is generated (see
+        :func:`generate_need_id`).
+    :param fields: The need's field values, by field name: the core fields the field
+        schema declares, such as ``status``, ``tags``, ``hide`` or ``template``
+        (``title`` is an argument of its own), and the fields the project declares
+        (:ref:`needs_fields`). A value ``None`` is a value not given, so a default
+        applies.
+    :param links: The need's links, by link type (:ref:`needs_links`): a string of
+        comma separated ids, or a list of ids.
+    :param content: The need's content, either as a ``str`` or a ``StringList`` (a
+        string with mapping to the source text), parsed by the parser of the document
+        the need is created in; or as a :class:`~sphinx_needs.api.MarkupContent`, the
+        content with the markup it is written in. See :ref:`api_content_markup`.
+    :param doctype: The source suffix the need is recorded as written in (e.g.
+        ``".rst"``). If not given, it is the ``markup`` of a ``MarkupContent`` content,
+        else the suffix of the document the need is created in.
+    :param jinja_content: If true, the content is rendered as a Jinja template first.
+    :param full_title: The title before it was trimmed, if it was: the generated id is
+        derived from it.
+    :param allow_type_coercion: If true, values are coerced to the type of their field
+        where possible.
+    :return: The need, as it is recorded in the project (the object, not a copy), and
+        the nodes to insert into the document (none for an external need). The need is
+        the one created in this read of the document: in a parallel build (``-j``) the
+        merge of the processes' needs may still drop it, for an id another process
+        created too.
+    :raises InvalidNeedException: If the need is refused, before anything is recorded:
+        for a value its field or link type refuses, an id that is missing, invalid or
+        taken, a ``MarkupContent`` whose ``markup`` names no reStructuredText or MyST
+        parser of the project, and any other validation the need fails, such as an
+        unknown need type, a constraint not in :ref:`needs_constraints`, a template that
+        does not exist, or Jinja content that does not render; (type
+        ``invalid_kwargs``) for a name in ``fields`` or ``links`` the project does not
+        declare, or one given in the wrong place: a link type in ``fields``, a field in
+        ``links``, or one of this function's own arguments (``title``, ``content``, ...)
+        in either.
+    :raises ValueError: If ``state`` is ``None`` for a source that is not external.
+
+    .. versionadded:: 9.2.0
+    """
+    if state is None and not source.dict_repr["is_external"]:
+        raise ValueError("a parser state is required for a need that is not external")
+    schema = SphinxNeedsData(app.env).get_schema()
+    fields = fields or {}
+    links = links or {}
+    link_names = set(schema.iter_link_field_names())
+    if misplaced := sorted(fields.keys() & link_names):
+        raise InvalidNeedException(
+            "invalid_kwargs",
+            f"{misplaced!r} are link types: give them in 'links', not in 'fields'.",
+        )
+    #: what ``fields`` takes: the field schema's core fields (``title`` excepted, an
+    #: argument of its own) and the extra fields
+    field_names = {
+        *schema.iter_core_field_names(),
+        *schema.iter_extra_field_names(),
+    } - {"title"}
+    if misplaced := sorted(links.keys() & field_names):
+        raise InvalidNeedException(
+            "invalid_kwargs",
+            f"{misplaced!r} are fields: give them in 'fields', not in 'links'.",
+        )
+    # a name of one of the need's values this function takes as an argument, unless
+    # the project declares a field or a link type of that name
+    arguments = _NEED_VALUE_ARGUMENTS - field_names - link_names
+    for given, mapping in ((fields, "fields"), (links, "links")):
+        if misplaced := sorted(given.keys() & arguments):
+            raise InvalidNeedException(
+                "invalid_kwargs",
+                f"{misplaced[0]!r} is an argument of create_need: give it as "
+                f"{misplaced[0]}=, not in {mapping!r}."
+                if len(misplaced) == 1
+                else f"{misplaced!r} are arguments of create_need: give them as "
+                f"{', '.join(name + '=' for name in misplaced)}, not in {mapping!r}.",
+            )
+    return _create_need(
+        app,
+        state,
+        source,
+        need_type,
+        title,
+        values={**fields, **links},
+        id=id,
+        content=content,
+        doctype=doctype,
+        jinja_content=jinja_content,
+        full_title=full_title,
+        allow_type_coercion=allow_type_coercion,
+    )
+
+
+def _split_values(
+    schema: FieldsSchema, values: Mapping[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """A flat mapping of a need's field and link values as :func:`create_need`'s
+    ``(fields, links)``: the project's link types to ``links``, the rest to ``fields``
+    (a field and a link type never share a name).
+
+    For this package's producers that hold the two in one mapping, as the options of a
+    ``list2need`` item or a service's datum do.
+    """
+    link_names = set(schema.iter_link_field_names())
+    fields = {k: v for k, v in values.items() if k not in link_names}
+    links = {k: v for k, v in values.items() if k in link_names}
+    return fields, links
+
+
+_NEED_VALUE_ARGUMENTS = frozenset(
+    ("title", "id", "content", "doctype", "jinja_content", "full_title")
+)
+"""The arguments of :func:`create_need` that are values of the need, which a name in its
+``fields`` or ``links`` is refused as, naming the argument, unless the project declares
+it. Its other arguments (``app``, ``state``, ``source``, ...) are the caller's, and a
+field of their name is an unknown name like any other."""
+
+
+def _create_need(
+    app: Sphinx,
+    state: RSTState | None,
+    source: NeedItemSourceProtocol,
+    need_type: str,
+    title: str,
+    *,
+    values: Mapping[str, Any],
+    id: str | None = None,
+    content: str | StringList | MarkupContent = "",
+    doctype: str | None = None,
+    jinja_content: bool | None = None,
+    full_title: str | None = None,
+    allow_type_coercion: bool = True,
+    parts: dict[str, NeedsPartType] | None = None,
+    arch: dict[str, str] | None = None,
+    signature: str | None = None,
+    sections: Sequence[str] | None = None,
+    external_css: str | None = "external_link",
+) -> tuple[NeedItem, list[nodes.Node]]:
+    """The one creation path: generate the need, record it, render its nodes.
+
+    Every entry point comes here: :func:`create_need`, :func:`add_need`,
+    :func:`ingest_need_record`, :func:`add_external_need` and the external needs
+    reader. The fields and links are ``values``, one mapping (see
+    :func:`_generate_need`), never keyword arguments. ``parts``, ``arch``,
+    ``signature``, ``sections`` and ``external_css`` are computed for a need placed on
+    a page, so only the record paths and :func:`add_need` give them.
+    """
     content_parser: type[Parser] | None = None
     content_source: tuple[str, int] | None = None
     if isinstance(content, MarkupContent):
@@ -808,46 +1171,30 @@ def add_need(
 
     if (
         doctype is None
-        and not (need_source.dict_repr["is_external"] if need_source else is_external)
-        and (_docname := need_source.dict_repr["docname"] if need_source else docname)
+        and not source.dict_repr["is_external"]
+        and (_docname := source.dict_repr["docname"])
     ):
         doctype = os.path.splitext(app.env.doc2path(_docname))[1]
 
-    needs_info = generate_need(
-        needs_config=NeedsSphinxConfig(app.config),
-        needs_schema=SphinxNeedsData(app.env).get_schema(),
-        need_source=need_source,
-        need_type=need_type,
-        title=title,
-        full_title=full_title,
-        docname=docname,
-        lineno=lineno,
+    needs_info = _generate_need(
+        NeedsSphinxConfig(app.config),
+        SphinxNeedsData(app.env).get_schema(),
+        need_type,
+        title,
+        source=source,
+        values=values,
         id=id,
         doctype=doctype or "",
         content=_content_text(content),
-        lineno_content=lineno_content,
-        status=status,
-        tags=tags,
-        constraints=constraints,
         parts=parts,
         arch=arch,
         signature=signature,
         sections=sections,
         jinja_content=jinja_content,
-        hide=hide,
-        collapse=collapse,
-        style=style,
-        layout=layout,
         template_root=Path(str(app.srcdir)),
-        template=template,
-        pre_template=pre_template,
-        post_template=post_template,
-        is_import=is_import,
-        is_external=is_external,
-        external_url=external_url,
         external_css=external_css,
+        full_title=full_title,
         allow_type_coercion=allow_type_coercion,
-        **kwargs,
     )
 
     data = SphinxNeedsData(app.env)
@@ -878,7 +1225,7 @@ def add_need(
     data.add_need(needs_info)
 
     if needs_info["is_external"]:
-        return []
+        return needs_info, []
 
     assert state is not None, "parser state must be set if need is not external"
 
@@ -887,7 +1234,7 @@ def add_need(
         # then we can no longer use the original potentially source mapped StringList
         content = needs_info["content"]
 
-    return _create_need_node(
+    return needs_info, _create_need_node(
         needs_info,
         app.env,
         state,
@@ -933,15 +1280,17 @@ def _import_key_sets(
     """
     flag = "exclude_import" if reader == "import" else "exclude_external"
     link_names = list(needs_schema.iter_link_field_names())
+    extra_names = set(needs_schema.iter_extra_field_names())
     known = {
         "full_title",  # legacy
         *NeedsCoreFields,
         *link_names,
         *(f"{x}_back" for x in link_names),
-        *needs_schema.iter_extra_field_names(),
+        *extra_names,
     }
     omitted = {
-        "full_title",  # legacy
+        # legacy, unless the project declares a field of that name (#2392)
+        *({"full_title"} - extra_names),
         *(k for k, v in NeedsCoreFields.items() if v.get(flag)),
         *(f"{x}_back" for x in link_names),
     }
@@ -954,10 +1303,11 @@ def _need_record_params(
     *,
     reader: RecordReader = "import",
 ) -> tuple[dict[str, Any], set[str]]:
-    """The ``add_need`` keyword arguments for a needs.json-style record.
+    """The creation parameters of a needs.json-style record: its keys that the project
+    reads, ``type`` defaulting to ``""`` (see :func:`_create_from_record`).
 
     :param reader: Which reader the record is read by: the core fields it omits.
-    :return: The arguments, and the record's keys the project does not know (dropped).
+    :return: The parameters, and the record's keys the project does not know (dropped).
     """
     params = dict(record)
     map_legacy_keys(params)
@@ -980,12 +1330,12 @@ def _need_record_params(
             del params[key]
         elif key in omitted:
             del params[key]
-    params["need_type"] = params.pop("type", "")
+    params.setdefault("type", "")
     return params, unknown
 
 
 def _check_record_params(params: Mapping[str, Any]) -> None:
-    """Refuse a record whose values ``add_need`` reads before it validates any field.
+    """Refuse a record whose values the creation reads before it validates any field.
 
     :raises InvalidNeedException: If its ``id`` is given but empty or not a string, its ``title``
         is missing or not a string, its ``content`` or ``type`` not a string, or its
@@ -1009,10 +1359,10 @@ def _check_record_params(params: Mapping[str, Any]) -> None:
             "content",
             f"content must be a string, not {type(params['content']).__name__}",
         )
-    if not isinstance(params["need_type"], str):
+    if not isinstance(params["type"], str):
         raise InvalidNeedException(
             "invalid_type",
-            f"type must be a string, not {type(params['need_type']).__name__}",
+            f"type must be a string, not {type(params['type']).__name__}",
         )
     if (parts := params.get("parts")) is not None:
         if not isinstance(parts, Mapping):
@@ -1034,14 +1384,14 @@ def _record_params(
     reader: RecordReader,
     unknown_keys: set[str] | None = None,
 ) -> tuple[dict[str, Any], set[str]]:
-    """The one record path of both needs.json readers: a record's ``add_need``
-    keyword arguments, checked.
+    """The one record path of both needs.json readers: a record's creation
+    parameters, checked.
 
     :param reader: Which reader the record is read by.
     :param unknown_keys: If given, the record's keys unknown to the project are added
         to it before the record is checked, so a caller collecting them over several
         records has them also for a record that is refused.
-    :return: The arguments, and the record's keys the project does not know (dropped).
+    :return: The parameters, and the record's keys the project does not know (dropped).
     :raises InvalidNeedException: What :func:`_check_record_params` raises.
     """
     params, unknown = _need_record_params(record, needs_schema, reader=reader)
@@ -1072,8 +1422,10 @@ def ingest_need_record(
     It is not modified. A legacy ``description`` is taken as the ``content`` when that is
     empty; keys the project does not know are dropped and returned; keys that are
     computed rather than imported (such as ``docname``, ``lineno``, ``full_title`` or
-    the ``<link>_back`` names) are dropped silently. The rest is passed to
-    :func:`add_need`, with ``type`` as its ``need_type``.
+    the ``<link>_back`` names) are dropped silently. The need is created from the rest
+    through the same path as :func:`create_need`: ``type`` as its ``need_type``, and
+    its fields and links as one mapping, so a record key named like an argument of
+    that path is the field of its name.
 
     :param app: The Sphinx application.
     :param state: The parser state of the document the need is rendered in.
@@ -1081,18 +1433,18 @@ def ingest_need_record(
     :param need_source: Where the need is recorded as coming from, e.g. a
         ``NeedItemSourceImport``.
     :param content_markup: The source suffix of the markup the record's ``content`` is
-        written in: given, the content is passed to :func:`add_need` as a
+        written in: given, the content is created as a
         :class:`~sphinx_needs.api.MarkupContent` with this ``markup``, and the need
         records it as its ``doctype`` if the record has none.
     :param content_source: The ``source`` of that ``MarkupContent``: ``(path,
         first_line)`` of the content. Only meaningful with ``content_markup``.
-    :param allow_type_coercion: Passed to :func:`add_need`.
+    :param allow_type_coercion: As for :func:`create_need`.
     :param unknown_keys: If given, the record's keys that are unknown to the project
         are added to it before the need is created, so a caller collecting them over
         several records has them also for a record whose need cannot be created.
     :return: The need's nodes, and the set of the record's keys that were dropped as
         unknown to the project (the caller decides whether to warn about them).
-    :raises InvalidNeedException: What :func:`add_need` raises; (type ``content``) if
+    :raises InvalidNeedException: What :func:`create_need` raises; (type ``content``) if
         the record's ``content`` (or the legacy ``description`` taken as it) is present
         but not a string; (type ``invalid_type``) if its ``type`` is not a string;
         (type ``invalid_value``) if its ``title`` is missing or not a string; (type
@@ -1118,14 +1470,50 @@ def ingest_need_record(
             "content_markup",
             "content_source is only meaningful together with content_markup.",
         )
-    need_nodes = add_need(
+    _, need_nodes = _create_from_record(
         app,
         state,
-        need_source=need_source,
+        params,
+        source=need_source,
         allow_type_coercion=allow_type_coercion,
-        **params,
     )
     return need_nodes, unknown
+
+
+def _create_from_record(
+    app: Sphinx,
+    state: RSTState | None,
+    params: dict[str, Any],
+    *,
+    source: NeedItemSourceProtocol,
+    allow_type_coercion: bool = True,
+) -> tuple[NeedItem, list[nodes.Node]]:
+    """Create a need from a record's parameters (:func:`_record_params`), as both
+    needs.json readers do.
+
+    The keys that are arguments of :func:`_create_need` are taken out of ``params``,
+    which is consumed; the rest are its fields and links. Each of those keys is a core
+    field, which no field of the project can be named like.
+    """
+    return _create_need(
+        app,
+        state,
+        source,
+        params.pop("type"),
+        params.pop("title"),
+        id=params.pop("id", None),
+        content=params.pop("content", ""),
+        doctype=params.pop("doctype", None),
+        jinja_content=params.pop("jinja_content", None),
+        parts=params.pop("parts", None),
+        arch=params.pop("arch", None),
+        signature=params.pop("signature", None),
+        sections=params.pop("sections", None),
+        # ``None``: the default css class (``_generate_need`` holds it)
+        external_css=params.pop("external_css", None),
+        allow_type_coercion=allow_type_coercion,
+        values=params,
+    )
 
 
 def _template_parse_offset(data: NeedItem) -> int:
@@ -1437,7 +1825,7 @@ def add_external_need(
     :raises InvalidNeedException: If the need could not be added due to a validation issue.
 
     """
-    for fixed_key in ("state", "docname", "lineno", "is_external"):
+    for fixed_key in ("docname", "lineno", "is_external"):
         if fixed_key in kwargs:
             kwargs.pop(fixed_key)
             # TODO Although it seems prudent to not silently ignore user input here,
@@ -1445,24 +1833,69 @@ def add_external_need(
             # raise ValueError(
             #     f"{fixed_key} is not allowed in kwargs for add_external_need"
             # )
-
-    return add_need(
-        app=app,
-        need_source=need_source,
-        need_type=need_type,
-        id=id,
-        content=content,
+    schema = SphinxNeedsData(app.env).get_schema()
+    if "state" in kwargs and "state" not in {
+        *schema.iter_extra_field_names(),
+        *schema.iter_link_field_names(),
+    }:
+        # ``add_need``'s parser state, which an external need has none of: dropped as
+        # before, but a field of the project of that name is a field (#2403)
+        kwargs.pop("state")
+    if kwargs.keys() & _deprecated_kwargs:
+        # as ``add_need``, which this function called, warns of them
+        warnings.warn(
+            "deprecated key found in kwargs", DeprecationWarning, stacklevel=1
+        )
+        kwargs = {k: v for k, v in kwargs.items() if k not in _deprecated_kwargs}
+    # a key naming one of ``add_need``'s other keywords is that keyword, as when this
+    # function called it; the rest are the need's fields and links
+    keywords = {k: kwargs.pop(k) for k in _ADD_NEED_KEYWORDS if k in kwargs}
+    _, need_nodes = _create_need(
+        app,
+        None,
+        _legacy_source(
+            need_source,
+            lineno_content=keywords.pop("lineno_content", None),
+            is_import=keywords.pop("is_import", False),
+            is_external=True,
+            external_url=external_url,
+        ),
+        need_type,
         # TODO a title being None is not "type compatible" with other parts of the code base,
         # however, at present changing it to an empty string breaks some existing tests.
-        title=title,  # ty: ignore[invalid-argument-type]
-        status=status,
-        tags=tags,
-        constraints=constraints,
-        is_external=True,
-        external_url=external_url,
+        title,  # ty: ignore[invalid-argument-type]
+        values={"status": status, "tags": tags, "constraints": constraints, **kwargs},
+        id=id,
+        content=content,
+        doctype=keywords.get("doctype"),
+        jinja_content=keywords.get("jinja_content"),
+        full_title=keywords.get("full_title"),
+        allow_type_coercion=keywords.get("allow_type_coercion", True),
+        parts=keywords.get("parts"),
+        arch=keywords.get("arch"),
+        signature=keywords.get("signature"),
+        sections=keywords.get("sections"),
         external_css=external_css,
-        **kwargs,
     )
+    return need_nodes
+
+
+_ADD_NEED_KEYWORDS = (
+    "lineno_content",
+    "is_import",
+    "doctype",
+    "jinja_content",
+    "full_title",
+    "allow_type_coercion",
+    "parts",
+    "arch",
+    "signature",
+    "sections",
+)
+"""The keywords of :func:`add_need` that :func:`add_external_need` takes from its
+``**kwargs`` as keywords rather than as fields, as it did when it called
+:func:`add_need`: those it does not name itself, and that are no field of the field
+schema."""
 
 
 def _prepare_template(
@@ -1517,28 +1950,29 @@ def generate_need_id(
     *,
     full_title: str | None = None,
 ) -> str:
-    """Return the id :func:`add_need` assigns to a need that is given no ``id``.
+    """Return the id :func:`create_need` (and :func:`add_need`) assigns to a need that
+    is given no ``id``.
 
-    The arguments are those of the same name given to :func:`add_need`, which derives
-    the id with this same code: the type's ``prefix``, followed by a hash of
+    The arguments are those of the same name given to :func:`create_need`, which
+    derives the id with this same code: the type's ``prefix``, followed by a hash of
     ``full_title`` (if given, else ``title``), or of ``content`` when that is empty,
     shaped by :ref:`needs_id_from_title` and :ref:`needs_id_length`.
     An extension that creates needs can use it to find out, before it calls
-    :func:`add_need`, whether a need with that id already exists.
+    :func:`create_need`, whether a need with that id already exists.
 
-    The id is not checked: :func:`add_need` may still refuse the need, for example
+    The id is not checked: :func:`create_need` may still refuse the need, for example
     because :ref:`needs_id_required` is set, the id does not match
     :ref:`needs_id_regex`, or a need with that id already exists.
 
     :param app: Sphinx application object.
-    :param need_type: Name of the need type, as given to :func:`add_need`.
+    :param need_type: Name of the need type, as given to :func:`create_need`.
     :param title: Title of the need.
     :param content: Content of the need, either as a ``str``
-        or a ``StringList``, as :func:`add_need` takes it.
+        or a ``StringList``, as :func:`create_need` takes it.
     :param full_title: The untrimmed title, if ``title`` was trimmed.
     :return: The generated id.
     :raises InvalidNeedException: If ``need_type`` is not a configured need type
-        (type ``invalid_type``, as :func:`add_need` raises it).
+        (type ``invalid_type``, as :func:`create_need` raises it).
     """
     needs_config = NeedsSphinxConfig(app.config)
     return _generate_need_id(

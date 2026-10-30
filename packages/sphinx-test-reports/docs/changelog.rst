@@ -1,6 +1,87 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Fixed
+.....
+
+- 🐛 A :ref:`tr_extra_options` name that is a field the directives set themselves
+  (``result``, ``time``, ``case_name``, ``cases``, ``passed``, ``title``, ...), or that
+  :ref:`tr_file_option`, :ref:`tr_source_file_option` or :ref:`tr_source_line_option`
+  names, is refused when the build starts, with an ``InvalidConfigurationError`` naming the
+  option, as a name the directives read as an option of their own already is
+  (`#2181 <https://github.com/useblocks/sphinx-needs/issues/2181>`__). On the directive that
+  sets the field, the option ended the build with a bare ``TypeError`` (``add_need() got
+  multiple values for keyword argument 'result'``), or, for ``case_file`` and ``case_line``,
+  silently overrode the test's source location; on the others it set nothing (the field is
+  not declared on their need type) or crashed the same way. ``style``, which only
+  ``test-case`` sets, is not refused: it keeps setting the style of a ``test-file`` and a
+  ``test-suite``, and a test case it would override refuses its need with the directive's
+  warning, where it crashed. The same holds for ``extra_options`` in ``[test_reports]``. A
+  report value of a name the directive sets (a ``tr_json_mapping`` key, say) refuses its
+  need the same way, where it crashed the build too.
+
+- ‼️ A :ref:`tr_extra_options` name that is a Sphinx-Needs core field no option can set --
+  one that is neither a field of the field schema nor an argument of the need's creation,
+  such as ``docname``, ``lineno`` or ``parts`` (which crashed the build) -- is refused when
+  the build starts, with the same ``InvalidConfigurationError``. Eight of them built on
+  master, where ``add_need`` took the option as its own keyword, and are now this
+  configuration error: ``external_css`` and ``is_import`` set the need's value,
+  ``is_external`` made the need external, ``constraints_passed`` was dropped with a
+  ``DeprecationWarning``, and ``arch``, ``external_url``, ``sections`` and ``signature``
+  were ignored. As a report value (a ``tr_json_mapping`` key) such a name refuses its need
+  with the directive's warning. ``doctype`` and ``jinja_content`` keep reaching
+  Sphinx-Needs as the need's own arguments; ``full_title`` and ``allow_type_coercion`` are
+  fields, as every other extra option is (#2392), and ``full_title`` is still given as the
+  need's full title.
+
+- 🐛 A :ref:`tr_extra_options` name that is no field the directives set but one of
+  Sphinx-Needs' own parameter names, such as ``state``, is an ordinary field: it ended the
+  build with ``TypeError: add_need() got multiple values for keyword argument 'state'``
+  (`#2392 <https://github.com/useblocks/sphinx-needs/issues/2392>`__). The directives create
+  their needs through Sphinx-Needs' ``create_need``, which takes the fields and links as two
+  mappings; this requires the Sphinx-Needs release that adds it.
+
+Changed
+.......
+
+- ‼️ Each field is declared on the need types that carry it, no longer on every need
+  (changed output; `#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__): the
+  counters on test files and test suites, ``suite`` on test suites and test cases, the case's own
+  fields (``case``, ``case_name``, ``case_parameter``, ``classname``, ``time``, ``result``,
+  ``result_text``, ``remote_url`` and the source location) on test cases, and the report path and
+  the ``tr_extra_options`` on all three, through Sphinx-Needs' ``add_field(..., types=[...])``. A
+  need of another type holds null in them, as before, but a value set there is now reported
+  (``needs.undeclared_for_type``) and ignored, and a ``needextend`` setting one on such needs is refused
+  (``needs.needextend``). **Migration:** a need type of your own that carries
+  one -- a ``test`` need giving the ``case_name`` or ``classname`` a ``tr_link`` or a derived link
+  type joins on -- names it in its ``needs_types`` entry, which declares it there too:
+  ``[needs.types.test.fields.case_name]`` (or ``needs_types = {"test": {"fields": {"case_name":
+  {}}}}`` in ``conf.py``); a ``needs_fields`` entry of the name is the field on every need type,
+  as before. A ``needs_types`` entry naming ``testcase``, ``testsuite`` or ``testfile`` now
+  narrows that type, where a bare one was ignored and a full one stopped the build. Requires the
+  Sphinx-Needs release with ``add_field``'s ``types``. See :ref:`tr_fields_per_type`.
+
+- 👌 A test case the report gives no source file or line for, or that has no parameter, holds
+  ``null`` in ``case_file``, ``case_line`` and ``case_parameter`` (or the fields
+  ``tr_source_file_option`` and ``tr_source_line_option`` name), where it held ``""``
+  (changed output; `#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__). The fields
+  were already declared nullable; pytest's default ``junit_family = xunit2`` writes no ``file``
+  or ``line``, so on its reports every case changes. A filter written ``case_line == ''`` no
+  longer matches such a case: write ``case_line is None`` (or ``not case_line``, which matches
+  both) instead. Under ``needs_json_remove_defaults`` the three keys are now left out of the
+  ``needs.json`` for such a case (null is their default), where ``""`` was written. The converter
+  of ub-test-reports writes the same.
+
+- 📚 The pytest plugin page says what pytest 9.2 changes for the deprecated
+  ``-p sphinxcontrib.test_reports.pytest_plugin``: pytest applies its ``filterwarnings``
+  while it loads the plugin, so the ``FutureWarning`` is reported in its warnings summary, a
+  filter reaches it, and under ``filterwarnings = error`` it stops pytest -- as does a
+  ``filterwarnings`` line naming the old module, whatever the ``-p`` line says. Nothing
+  changes in the package.
+
 .. _`release:3.0.1`:
 
 3.0.1

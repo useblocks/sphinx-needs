@@ -214,6 +214,7 @@ This module defines the schema data structures that serve as the single source o
   - `name`, `description`, `schema` (JSON Schema type/constraints)
   - `nullable`, `directive_option`, `parse_dynamic_functions`, `parse_variants`
   - `allow_defaults`, `allow_extend`, `default`, `predicate_defaults`
+  - `severity`: what a need failing the declaration is reported at (a need type's entry gives it; unset is `violation`)
   - Methods: `convert_directive_option()`, `type_check()`, `json_schema()`
 
 - `LinkSchema` - Immutable dataclass for link fields with similar structure to `FieldSchema`
@@ -247,6 +248,15 @@ A `links` entry naming no link type and no field (fields are synthesised first) 
 `needs_extra_links` entries, so the loop that builds those builds it; its shape is its derivation
 and its display, `copy` and dead links, which the first root declaration sets and the others may
 only repeat, and its absence is the same projection, holding `[]`.
+A `back_links` entry, named after a link type `l` (any link type of the project), is a
+`BackLinksSchema` (a `minItems`/`maxItems` count of the links of `l` pointing to the type's needs, its
+back links `<l>_back`, and a `severity`); a `links` or `fields` entry named `<l>_back` declares
+nothing (`needs.type_conflict`). The count is registered with `FieldsSchema.add_back_links` for the type and every type inheriting
+from it, read through `for_type(t).back_links()`, and validated beside the type's link types in
+`schema/core.py` (never on a need from `needs_external_needs`).
+A type's `id_regex` (with its ancestors', root first) is registered by `_resolve_id_patterns` through
+`FieldsSchema.set_id_patterns`, and `generate_need` matches `id_patterns(type)` where it matches
+`needs_id_regex` (`re.match`, never on an imported or external need).
 The normaliser at `config-inited` checks only the shape of those keys, and the resolver checks it
 again, with the normaliser's helpers, for an entry added after it. The schema has two tiers.
 The union, `FieldsSchema` itself, answers a field's shape (`FieldShape`, `LinkShape`: its name,
@@ -376,12 +386,19 @@ app.connect("config-inited", check_configuration, priority=600)   # Validate con
 (the list, or a table keyed by directive) into the list, reports what it cannot use as `needs.config`
 findings through the pure `normalise_need_types`, and writes it back, so `load_config`,
 `add_need_type` and every later reader see one list, and `_register_need_directive` registers each
-type's directive once whichever of the two runs first.
+type's directive once whichever of the two runs first. A bare entry naming no default type is
+not in that list: it is kept in `_NEEDS_CONFIG.type_narrowings` as a pending narrowing of the
+type an extension adds under its directive, which `merged_types` applies on every read (so when
+the extension adds it does not matter), and `create_schema` reports one no extension claimed. A
+configured entry naming an added type narrows it the same way (#2371).
 
 **Variant data in the TOML comes through `ub-project`** (`read_variants`, a runtime
 dependency): it decides which location is read — `[<prefix>.variants]`, or the legacy
 `[<prefix>.needs] variant_data*` — and validates it. What stays in `load_config_from_toml` is
-sphinx-needs' policy: `-D`-overridden keys are removed from both locations before the read,
+sphinx-needs' policy: `-D needs_variant_data_file` is passed as ub-project's data-file override
+(`data_file_override`, its contract §6.8: it swaps the file, never the table, so the location,
+refusals and findings stay the document's; an empty one is `NO_DATA_FILE`),
+a `-D`-set confval is never overwritten,
 each finding is mapped to a `needs.*` warning subtype (the legacy location to a `-v` line),
 a `ProjectConfigError` is re-raised as `NeedsConfigException`, and the declared keys are
 written to the two confvals one by one (the file through `_abs_path`), so that

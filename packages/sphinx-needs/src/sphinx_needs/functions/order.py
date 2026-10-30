@@ -177,6 +177,14 @@ def _arguments(call: DynamicFunctionParsed) -> dict[str, Any] | None:
     return args
 
 
+def builtin_arguments(call: DynamicFunctionParsed) -> dict[str, Any] | None:
+    """A call's arguments by parameter, when it is a call of a built-in function that
+    they fit; else ``None``."""
+    if call.name not in _PARAMETERS:
+        return None
+    return _arguments(call)
+
+
 def unset_selector(
     call: DynamicFunctionParsed, need: NeedItem | NeedPartItem
 ) -> str | None:
@@ -283,8 +291,9 @@ def filter_names(
     nor are the names the filter context supplies over the need's fields (``search``,
     ``c``, ``var``, and ``not_fields``, the keys of ``needs_filter_data``). A builtin's
     name is kept: a field of that name shadows it, and no other is computed.
-    ``c.this_doc()`` reads ``docname``, which nothing computes. A filter that does not
-    parse reads nothing here; evaluating it reports the error.
+    ``c.this_doc()`` reads ``docname`` and ``c.is_a(...)`` ``type``, which nothing
+    computes. A filter that does not parse reads nothing here; evaluating it reports
+    the error.
 
     :param filter_string: The filter.
     :param not_fields: The names supplied by ``needs_filter_data``.
@@ -317,6 +326,12 @@ def filter_names(
         ):
             current.add(node.slice.value)
             constant_current.add(id(node.value))
+    #: the `c` of each `c.is_a`
+    is_a_checks = {
+        id(node.value)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Attribute) and node.attr == "is_a"
+    }
     names: set[str] = set()
     opaque = False
     for node in ast.walk(tree):
@@ -331,7 +346,9 @@ def filter_names(
         elif node.id not in _FILTER_GLOBALS and node.id not in not_fields:
             names.add(node.id)
         elif node.id == "c":
-            names.add("docname")
+            # `c` itself is no field: `c.is_a(...)` reads the type, any other use of it
+            # (`c.this_doc()`, a bare `c`) the document
+            names.add("type" if id(node) in is_a_checks else "docname")
     return FilterNames(frozenset(names), frozenset(current), opaque)
 
 

@@ -41,7 +41,7 @@ the shim.
 | the useblocks look of the furo docs sites | `docs-theme/` — a local Sphinx extension, `ub_docs_theme.py`, with the `static/ub-furo.css` and `templates/side-github.html` it adds to a furo build; a directory, not a package, and its `README.md` says why. Each furo site's `docs/conf.py` loads it from the checkout when the directory is there (an sdist has none, and falls back to plain furo); a rule only one site needs stays in that site's own `_static/` |
 | CI | `.github/workflows/`, and `.github/scripts/` for the three checks that must run *inside* a CI environment |
 | the docker image | `docker/` — a repository-level deliverable, like the workflows |
-| Read the Docs | sphinx-needs: `.readthedocs.yml`, and it stays at the root under that exact name — the configuration path applies to every version, so moving it makes older tags unbuildable. sphinx-mounts: `packages/sphinx-mounts/.readthedocs.yaml`, sphinx-codelinks: `packages/sphinx-codelinks/.readthedocs.yaml`, and sphinx-test-reports: `packages/sphinx-test-reports/.readthedocs.yaml`, each of which its own RTD project points at; every path inside those is relative to the REPOSITORY root, not to the file. ub-test-reports has no RTD project: it is documented on sphinx-test-reports' site, whose yaml installs it from the checkout first. ub-project has no docs site. sphinx-ai-index has no RTD project either: every `sphinx-*` site LOADS it, and each site's yaml pip-installs `packages/sphinx-ai-index` from the checkout before the package it documents, and lists it in its `post_checkout` skip filter. Every yaml whose site loads `docs-theme/` lists that directory in the same filter: RTD checks out the whole repository, so the `conf.py` finds it, but a pull request touching only it would otherwise skip the preview |
+| Read the Docs | sphinx-needs: `.readthedocs.yml`, and it stays at the root under that exact name — the configuration path applies to every version, so moving it makes older tags unbuildable. sphinx-mounts: `packages/sphinx-mounts/.readthedocs.yaml`, sphinx-codelinks: `packages/sphinx-codelinks/.readthedocs.yaml`, and sphinx-test-reports: `packages/sphinx-test-reports/.readthedocs.yaml`, each of which its own RTD project points at; every path inside those is relative to the REPOSITORY root, not to the file. ub-test-reports has no RTD project: it is documented on sphinx-test-reports' site, whose yaml installs it from the checkout first. ub-project has no docs site. sphinx-ai-index has no RTD project either: every `sphinx-*` site LOADS it, and each site's yaml pip-installs `packages/sphinx-ai-index` from the checkout before the package it documents, and lists it in its `post_checkout` skip filter. The runtime libraries are installed the same way: every yaml installs from the checkout, ahead of the package it documents, each workspace library that package (or sphinx-needs, where it is installed too) depends on at runtime -- `packages/ub-project`, and `packages/ub-needs-exchange` beside sphinx-needs -- and lists it in the same filter, since pip would otherwise take the release from PyPI and the build breaks the day the tree uses a name the release lacks. Every yaml whose site loads `docs-theme/` lists that directory in the same filter: RTD checks out the whole repository, so the `conf.py` finds it, but a pull request touching only it would otherwise skip the preview |
 
 **`tools/` is the workspace's tooling — a virtual member, never released, whose manifest
 declares the tooling's dependencies; `.github/scripts/` keeps only the checks that must
@@ -130,7 +130,8 @@ uv run poe docs-needs                 # the furo docs build
 uv run poe docs-mounts                # the sphinx-mounts docs build
 uv run poe docs-codelinks             # the sphinx-codelinks docs build
 uv run poe docs-reports               # the sphinx-test-reports docs build (renders; needs java + dot)
-uv run poe smoke-needs                # build the wheel and test the built package
+uv run poe smoke-needs                # build the wheel and test the built package (siblings from the tree)
+uv run poe smoke-needs-published      # the same with ub-project & co. as PUBLISHED: the pre-release check
 uv run poe verify-plantuml            # the committed PlantUML jar is the one its pin names
 uv run poe fetch-plantuml             # download it -- a bump step; otherwise a hash check
 uv run poe check-workspace            # the manifests agree with each other (Lint runs it)
@@ -178,8 +179,9 @@ own hand-written copies of the same three-route chain in `packages/sphinx-needs/
 and `packages/sphinx-needs/performance/performance_test.py`, and have to: a docs build and a
 benchmark must not import a test-only member. `test-mounts-bazel` is the one task that still
 needs `uses = { PLANTUML_JAR = "fetch-plantuml" }`, because its build runs in a Bazel sandbox
-that cannot see `vendor/` — and `lint` declares `verify-plantuml`. `smoke-needs`, `test-needs-js` and the
-sphinx-mounts docs render nothing and declare neither.
+that cannot see `vendor/` — and `lint` declares `verify-plantuml`. `smoke-needs`,
+`smoke-needs-published`, `test-needs-js` and the sphinx-mounts docs render nothing and declare
+neither.
 
 Both suites resolve a renderer through ONE function in the shared test layer, and **both
 assert rather than skip** when it finds none: `PLANTUML_JAR` (an explicit choice, and an error when it names no file) →
@@ -252,9 +254,11 @@ checkout, which the Extensions cell's last step fails on.
 
 Rough runtimes on a CI-class machine, so you can decide what to background: `lint` 15 s ·
 `typecheck` seconds once `.venvs/typing` exists (the first run creates it) ·
-`smoke-needs` 6 s · `test-needs-js` 3 s once the browser is installed (9 s cold) · `docs-needs` under
-2 min · `test-needs` 7–8 min serial · `test-mounts` 1–3 min · `docs-mounts` seconds ·
-`benchmark-needs` 4 min. `docs-needs` runs with `--keep-going`, so it prints every warning
+`smoke-needs` and `smoke-needs-published` 7–8 s each (the first builds the siblings'
+wheels, the second resolves them from the index) · `test-needs-js` 3 s once the browser is
+installed (9 s cold) · `docs-needs` under 2 min · `test-needs` 7–8 min serial ·
+`test-mounts` 1–3 min · `docs-mounts` seconds · `benchmark-needs` 4 min.
+`docs-needs` runs with `--keep-going`, so it prints every warning
 and then exits 1 — do not read a full log as success. `benchmark-needs` is currently red
 (12 failures in `tests/benchmarks/test_querying.py`: the test mocks `NeedsSphinxConfig`
 with a spec, which lacks the dynamically assigned `variant_data_proxy` — #1840, unrelated
@@ -414,7 +418,11 @@ workflow holds no API token, and every one of its checks fails closed.
    compare link 404s in Docs-Linkcheck until the tag exists; that is expected and not a
    required check.
 3. **Check it locally**: `uv run poe lint` (which now runs `check-workspace`) and
-   `uv run poe smoke-needs`.
+   `uv run poe smoke-needs`. `smoke-needs` builds the workspace siblings sphinx-needs
+   depends on from the tree, so for a sphinx-needs release the pre-release check is
+   `uv run poe smoke-needs-published` (CI's informational job of the same name runs it on
+   every pull request): the wheel with every sibling as PyPI has it, where red means a
+   sibling release is owed first -- and the release workflow would refuse to publish anyway.
 4. **Merge**, then push the tag from `master`:
    ```bash
    git tag <dist>-v<version> && git push origin <dist>-v<version>

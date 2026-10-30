@@ -138,7 +138,12 @@ def _first_message(case: Mapping[str, object]) -> str:
 
 
 def optional(value: object, absent: object) -> str:
-    """String form of an attribute, empty when the parser reported it absent."""
+    """String form of an attribute, empty when the parser reported it absent.
+
+    A field the report gives no value for is written ``None`` (null) instead, by
+    :func:`build_need`: the source location here, the parameter in
+    :func:`~ub_test_reports.identity.split_case_name`.
+    """
     return "" if value is None or value == absent else str(value)
 
 
@@ -240,8 +245,10 @@ def build_need(
         "case_parameter": case_parameter,
         "classname": classname,
         names["file_option"]: report_path,
-        names["source_file_option"]: source_file,
-        names["source_line_option"]: source_line,
+        # null, not "", where the report gives no location (pytest's default
+        # junit_family writes none), as the build's directives write it
+        names["source_file_option"]: source_file or None,
+        names["source_line_option"]: source_line or None,
         "time": time,
         "result": str(case.get("result", "")),
         "result_text": _first_message(case),

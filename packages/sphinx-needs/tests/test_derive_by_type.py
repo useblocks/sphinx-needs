@@ -633,12 +633,13 @@ def test_what_the_load_checks_leave(test_app: Any) -> None:
     assert (req["rel_beside"], spec["rel_beside"]) == (["SPEC_1"], [])
     assert (req["rel_default"], spec["rel_default"]) == (["REQ_1"], ["REQ_1"])
     # the export's schema default of a link type derived by type alone is its
-    # off-type links; every other link type's is unchanged
+    # off-type links; a link type not derived gives its literal default (#2208);
+    # a dynamic one, and none, give no links
     exported = _export_schema(app)
     assert [
         exported[name]["default"]
         for name in ("rel_default", "rel", "rel_beside", "plain_default", "links")
-    ] == [["REQ_1"], ["SPEC_1"], [], [], []]
+    ] == [["REQ_1"], ["SPEC_1"], [], ["REQ_1"], []]
     # in the order the export writes a link list, as the off-type needs hold it
     assert (
         exported["rel_unsorted"]["default"]
