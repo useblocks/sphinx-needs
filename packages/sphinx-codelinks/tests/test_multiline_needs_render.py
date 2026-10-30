@@ -1139,6 +1139,37 @@ def test_full_title_does_not_move_the_predicted_id(
     assert f'href="../page_f.html#{need_id}">[docs]</a>' in page
 
 
+def test_a_declared_full_title_keeps_the_ids_it_has(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A block without ``:id:`` whose ``:full_title:`` the project declares as a field:
+    the need's id is hashed from the title, while the id predicted for the duplicate
+    check and the ``[docs]`` link is hashed from the full title. That mismatch is #2410's,
+    pinned here as it is so that moving the prediction to ``generate_need_id`` (#2407)
+    is seen not to change either id."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/conf.py": CONF.replace(
+                "needs_fields = {",
+                'needs_fields = {"full_title": {"nullable": True}, ',
+            ),
+            "docs/page_f.rst": "F\n=\n\n.. src-trace::\n   :project: src\n   :file: f.c\n",
+            "src/f.c": "// @need req: Short title\n// :full_title: A much longer title\n"
+            "// @endneed\nvoid f() {}\n",
+        },
+    )
+    app = _build(tmp_path, make_app)
+    need_id = "R_" + hashlib.sha1(b"Short title").hexdigest().upper()[:5]
+    predicted = "R_" + hashlib.sha1(b"A much longer title").hexdigest().upper()[:5]
+    needs = _json(app)["needs"]
+    assert need_id in needs
+    assert needs[need_id]["full_title"] == "A much longer title"
+    assert predicted not in needs
+    page = Path(app.outdir, "src", "f.html").read_text(encoding="utf-8")
+    assert f'href="../page_f.html#{predicted}">[docs]</a>' in page
+
+
 def test_one_line_needs_keep_the_analysis_order(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:
