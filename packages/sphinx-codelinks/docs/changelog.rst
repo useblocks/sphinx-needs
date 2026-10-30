@@ -3,6 +3,18 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+New and Improved
+................
+
+- 🔧 A one-line need is created through Sphinx-Needs' ``create_need``, its fields and
+  links as two mappings, so a marker field named like a parameter of Sphinx-Needs'
+  creation call (``state``, ``app``, ...) is an ordinary field where it ended the build
+  (`#2392 <https://github.com/useblocks/sphinx-needs/issues/2392>`__). Requires the
+  Sphinx-Needs release that adds ``create_need``.
+
 .. _`release:2.0.1`:
 
 2.0.1

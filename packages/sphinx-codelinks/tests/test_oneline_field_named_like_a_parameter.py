@@ -8,8 +8,6 @@ add_need() got multiple values for keyword argument 'state'``. They now go to
 
 from pathlib import Path
 
-import pytest
-
 from sphinx_needs.data import SphinxNeedsData
 
 from .test_need_id_refs import _build, _MakeApp, _project
@@ -21,7 +19,6 @@ STYLE = (
 )
 
 
-@pytest.mark.xfail(strict=True, reason="#2392: fixed with the move to create_need")
 def test_a_one_line_field_named_like_a_parameter_is_an_ordinary_field(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:

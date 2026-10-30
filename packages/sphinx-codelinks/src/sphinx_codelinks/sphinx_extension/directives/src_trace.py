@@ -1,7 +1,7 @@
 import os
 from collections.abc import Callable, Collection, Mapping
 from pathlib import Path, PurePosixPath
-from typing import Any, ClassVar, cast
+from typing import Any, ClassVar
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -42,7 +42,7 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     scope_store,
     source_pages_store,
 )
-from sphinx_needs.api import InvalidNeedException, add_need
+from sphinx_needs.api import InvalidNeedException, create_need
 
 try:  # remove at the 9.0.0 floor bump: the record path is new in Sphinx-Needs 9.0.0
     from sphinx_needs.api import ingest_need_record
@@ -130,11 +130,11 @@ def generate_remote_url(
 
 
 def would_be_id(app: Sphinx, need: Mapping[str, Any]) -> str | None:
-    """The id ``add_need`` will give a one-line need: its ``id`` field, else the one
+    """The id a one-line need is created with: its ``id`` field, else the one
     Sphinx-Needs generates for a need without one -- ``generate_need`` calls
     ``_make_hashed_id(<the type's prefix>, <full_title, else title>, <content>, config)``
     (``sphinx_needs/api/need.py``, at the 9.0.0 floor), with the type, title and
-    fields :meth:`SourceTracingDirective.render_needs` passes. ``None`` when ``add_need``
+    fields :meth:`SourceTracingDirective.render_needs` passes. ``None`` when Sphinx-Needs
     refuses the need before any id exists (an unknown type, ``needs_id_required``).
     """
     given = need.get("id")
@@ -424,7 +424,7 @@ class SourceTracingDirective(SphinxDirective):
         marker's line (a multi-line need's open line) and remember the owner, for
         :meth:`run`.
 
-        ``need_id`` is the one ``add_need`` will use: written in the marker, or generated
+        ``need_id`` is the one sphinx-needs will use: written in the marker, or generated
         by Sphinx-Needs (:func:`would_be_id`). The first owner keeps an id -- another
         ``src-trace`` directive, a hand-written need, an imported one: codelinks never
         takes an id over. A need of a document this build has still to read is the
@@ -675,7 +675,7 @@ class SourceTracingDirective(SphinxDirective):
                             location=location(line),
                         )
                     continue
-            # the id add_need gives the need: the marker's, or the generated one (#2082)
+            # the id sphinx-needs gives the need: the marker's, or the generated one (#2082)
             need_id = would_be_id(
                 self.env.app, record if record is not None else marker.need
             )
@@ -717,30 +717,35 @@ class SourceTracingDirective(SphinxDirective):
                 )
             elif marker.need:
                 # render needs from one-line marker
-                kwargs: dict[str, str | list[str]] = {
+                # the marker's fields but its title, type and id, which are the
+                # creation's own arguments; its link types apart, as create_need
+                # takes them (a name not declared is refused there, as before)
+                link_names = frozenset(
+                    SphinxNeedsData(self.env).get_schema().iter_link_field_names()
+                )
+                values: dict[str, str | list[str]] = {
                     field_name: field_value
                     for field_name, field_value in marker.need.items()
-                    if field_name
-                    not in [
-                        "title",
-                        "type",
-                    ]  # title and type are mandatory for add_need()
+                    if field_name not in ("title", "type", "id")
                 }
-
                 if local_url_field and local_link_name is not None:
-                    kwargs[local_url_field] = local_link_name
+                    values[local_url_field] = local_link_name
                 if remote_url_field and remote_link_name is not None:
-                    kwargs[remote_url_field] = remote_link_name
+                    values[remote_url_field] = remote_link_name
+                marker_id = marker.need.get("id")
 
                 try:
-                    created = add_need(
-                        app=self.env.app,  # The Sphinx application object
-                        state=self.state,  # The docutils state object
-                        docname=self.env.docname,  # The current document name
-                        lineno=self.lineno,  # The line number where the directive is used
-                        need_type=str(marker.need["type"]),  # The type of the need
-                        title=str(marker.need["title"]),  # The title of the need
-                        **cast(dict[str, Any], kwargs),
+                    _, created = create_need(
+                        self.env.app,
+                        self.state,
+                        NeedItemSourceUnknown(
+                            docname=self.env.docname, lineno=self.lineno
+                        ),
+                        str(marker.need["type"]),
+                        str(marker.need["title"]),
+                        id=None if marker_id is None else str(marker_id),
+                        fields={k: v for k, v in values.items() if k not in link_names},
+                        links={k: v for k, v in values.items() if k in link_names},
                     )
                 except InvalidNeedException as err:
                     # a marker that fits the style, but a need Sphinx-Needs refuses
@@ -754,7 +759,7 @@ class SourceTracingDirective(SphinxDirective):
             if created is None:
                 continue
             rendered_needs.extend(created)
-            # a need add_need refused was skipped above (no anchor), so need_id
+            # a need sphinx-needs refused was skipped above (no anchor), so need_id
             # is the need's id here
             if local_url_field and need_id is not None:
                 # the page's [docs] link back to the need, resolved when written
