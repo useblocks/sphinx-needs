@@ -379,7 +379,7 @@ exclude = ["*.md"]
 # the files -- what breaks then is only the editor's view.
 [tool.ty.src]
 # The repository's own tooling is checked too -- `tools/src` for the fences and the release
-# plan, `.github/scripts` for the three checks that must run inside a specific CI
+# plan, `.github/scripts` for the four scripts that must run inside a specific CI
 # environment, and `scripts` for the smoke test. None of it is imported by the suite, so
 # nothing else would ever look at it, and `tools/src/sn_tools/release_plan.py` is the script
 # whose failure mode is a bad release
