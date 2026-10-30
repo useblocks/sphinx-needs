@@ -28,7 +28,11 @@ from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import InvalidNeedException
 from sphinx_test_reports.exceptions import SphinxError
 from ub_test_reports.fields import FILE_NEED_FIELDS, SUITE_NEED_FIELDS
-from ub_test_reports.identity import UNKNOWN, deterministic_case_id, split_case_name
+from ub_test_reports.identity import (
+    UNKNOWN,
+    case_name_and_parameter,
+    deterministic_case_id,
+)
 from ub_test_reports.jsonparser import JsonParser
 from ub_test_reports.junitparser import JUnitParser, ReportReadError
 
@@ -438,7 +442,10 @@ class TestCommonDirective(Directive):
             ``test-suite`` and a ``test-case``);
           - ``"scope"``: the test case's ``classname``;
           - ``"case"``: the test case's name, without its parameter, which is the
-            ``("parameter", ...)`` extra where the name carries one (``test_x[3]``).
+            ``("parameter", ...)`` extra where the name carries one (``test_x[3]``)
+            or the report gives one (Google Test's ``value_param`` / ``type_param``):
+            the need's ``case_parameter``, one rule for both
+            (:func:`~ub_test_reports.identity.case_name_and_parameter`).
 
           A suite or a classname the report does not give (the parsers' ``"unknown"``)
           has no entry; a case always has one (JUnit requires its ``name``), its name as
@@ -471,7 +478,7 @@ class TestCommonDirective(Directive):
                 )
             if (classname := _given(case.get("classname"))) is not None:
                 semantic.append(NeedSourceSemantic(kind="scope", name=classname))
-            name, parameter = split_case_name(str(case["name"]))
+            name, parameter = case_name_and_parameter(case)
             semantic.append(
                 NeedSourceSemantic(
                     kind="case",

@@ -20,6 +20,7 @@ import pytest
 from ub_test_reports.identity import (
     PLACEHOLDER_FILE,
     case_display_name,
+    case_name_and_parameter,
     deterministic_case_id,
     short_hash,
     split_case_name,
@@ -98,7 +99,6 @@ class TestCaseNameAndParameter:
     googletest 1.17.0) and the parser's ``""`` for an absent attribute.
     """
 
-    @pytest.mark.xfail(strict=True, reason="#2390: no case_name_and_parameter yet")
     @pytest.mark.parametrize(
         ("case", "expected"),
         [
@@ -151,9 +151,7 @@ class TestCaseNameAndParameter:
         ],
     )
     def test_the_name_s_bracket_then_the_value_then_the_type(self, case, expected):
-        from ub_test_reports import identity
-
-        assert identity.case_name_and_parameter(case) == expected
+        assert case_name_and_parameter(case) == expected
 
 
 class TestDeterministicCaseId:

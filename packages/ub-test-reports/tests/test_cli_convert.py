@@ -780,7 +780,6 @@ class TestGoogleTestParameters:
         assert code == 0
         assert sorted(_needs(data)) == sorted(GTEST_PARAMS)
 
-    @pytest.mark.xfail(strict=True, reason="#2390: gtest's parameters are dropped")
     def test_the_report_s_parameter_is_the_case_parameter(self, tmp_path):
         _, data = _convert(tmp_path, "--no-config", xml=UTILS / "gtest_params.xml")
         assert {
@@ -791,7 +790,6 @@ class TestGoogleTestParameters:
             for need_id, (name, parameter) in GTEST_PARAMS.items()
         }
 
-    @pytest.mark.xfail(strict=True, reason="#2390: gtest's parameters are dropped")
     def test_a_case_with_a_type_and_a_value_has_both(self, tmp_path):
         _, data = _convert(tmp_path, "--no-config")
         need = _needs(data)["testcase__ParamTest_0__Works_0_ugfea"]

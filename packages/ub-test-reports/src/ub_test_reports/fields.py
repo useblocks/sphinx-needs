@@ -28,11 +28,13 @@ FIELDS: dict[str, tuple[str, str]] = {
     "suite": ("string", "Test suite name"),
     "case": ("string", "Test case name"),
     # pytest spells a parameterised case ``name[param]``; the two halves are
-    # split apart so a filter can address either.
+    # split apart so a filter can address either. Google Test writes the
+    # parameter beside the name, in ``value_param`` / ``type_param`` (#2390).
     "case_name": ("string", "Test case name without its parameter"),
     "case_parameter": (
         "string",
-        "Parameter of a parameterised test case ('a-b' for pytest's test_x[a-b])",
+        "Parameter of a parameterised test case ('a-b' for pytest's test_x[a-b];"
+        " Google Test's value_param, its type_param, or both as 'int, 42')",
     ),
     "classname": ("string", "Test class name"),
     # A string, not a number, because that is what the directives have always

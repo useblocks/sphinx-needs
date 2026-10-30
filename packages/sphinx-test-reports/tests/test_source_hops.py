@@ -587,7 +587,6 @@ def test_a_google_test_parameter_moves_no_id(build):
     assert sorted(_gtest_params_build(build)) == sorted(GTEST_PARAMS)
 
 
-@pytest.mark.xfail(strict=True, reason="#2390: gtest's parameters are dropped")
 def test_a_google_test_parameter_is_the_case_parameter_and_the_hop_s(build):
     """``case_parameter`` and the report hop's ``parameter`` extra are one value: what
     the name's ``[…]`` gives, else ``value_param``, else ``type_param``, both joined

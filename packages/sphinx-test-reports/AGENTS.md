@@ -68,7 +68,9 @@ Every need the directives create is sourced through Sphinx-Needs'
 `test-report`'s, whose page hop then has no line — and its hops are, innermost first: a test
 case's `code` hop, the `report` hop (the report under `"srcdir"`, its suffix, and the
 element's place: one `suite` per level from the top-level suite down, read from the parsed
-tree, then `scope` (classname) and `case` (+ `parameter`); the parsers' `"unknown"` suite or
+tree, then `scope` (classname) and `case` (+ `parameter`, where the name carries one or the
+report gives one: Google Test's `value_param` / `type_param`, through the same
+`case_name_and_parameter` as `case_parameter`); the parsers' `"unknown"` suite or
 classname is no entry; a `test-file`'s hop has none), then the page. The code hop is the
 report's `file` with `/` for `\`, read from the case itself and never from the merged fields
 a report key can override (#2411); it has **no root**

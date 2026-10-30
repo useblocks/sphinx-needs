@@ -181,7 +181,8 @@ def test_an_absent_location_or_parameter_is_null(test_app):
     """A case the report gives no ``file``/``line`` for (pytest's default
     ``junit_family``), and one without a parameter, hold null in ``case_file``,
     ``case_line`` and ``case_parameter``, never ``""`` (#2372); a location the
-    report gives is kept."""
+    report gives is kept. ``Works/0``, the one case with a parameter (Google
+    Test's ``value_param`` / ``type_param``), holds it (#2390)."""
     import json
 
     app = test_app
@@ -195,29 +196,13 @@ def test_an_absent_location_or_parameter_is_null(test_app):
     # pytest's report gives a file but no line
     for need in pytest_cases:
         assert need["case_line"] is None, need["id"]
+    # gtest's type and value, type first; the name keeps its /0
+    (works,) = [n for n in gtest_cases if n["case"] == "Works/0"]
+    assert (works["case_name"], works["case_parameter"]) == ("Works/0", "int, 42")
     for need in cases:
-        assert need["case_parameter"] is None, need["id"]
+        if need is not works:
+            assert need["case_parameter"] is None, need["id"]
         assert "" not in (need["case_file"], need["case_line"]), need["id"]
     assert {(n["case_file"], n["case_line"]) for n in gtest_cases} >= {
         ("src/math_test.cc", "12")
     }
-
-
-@pytest.mark.parametrize(
-    "test_app",
-    [{"buildername": "needs", "srcdir": "doc_test/source_location"}],
-    indirect=True,
-)
-@pytest.mark.xfail(strict=True, reason="#2390: gtest's parameters are dropped")
-def test_a_google_test_parameter_is_the_case_parameter(test_app):
-    """``Works/0`` carries ``type_param="int"`` and ``value_param="42"``: its
-    ``case_parameter`` is both, type first, and its ``case_name`` keeps the ``/0``
-    (#2390)."""
-    import json
-
-    app = test_app
-    app.build()
-    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
-    needs = data["versions"][data["current_version"]]["needs"].values()
-    (works,) = [n for n in needs if n["type"] == "testcase" and n["case"] == "Works/0"]
-    assert (works["case_name"], works["case_parameter"]) == ("Works/0", "int, 42")
