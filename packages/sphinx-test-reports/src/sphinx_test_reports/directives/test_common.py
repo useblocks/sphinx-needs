@@ -42,7 +42,7 @@ _EVERY_NEED = ("id", "type", "title", "content", "links", "tags", "status", "col
 #: The names an extra option or a report value may have that ``add_need`` took as its
 #: own keywords, and that ``create_need`` takes as arguments rather than as fields
 #: (``content`` and ``title`` every directive sets itself).
-_CREATION_ARGUMENTS = ("doctype", "jinja_content", "full_title")
+_CREATION_ARGUMENTS = ("doctype", "jinja_content", "full_title", "allow_type_coercion")
 
 #: The need fields each directive sets itself, by the kind of need it creates: what
 #: :meth:`TestCommonDirective.create_report_need` is handed, exactly, beside the
@@ -385,6 +385,10 @@ class TestCommonDirective(Directive):
             for name in _CREATION_ARGUMENTS
             if name in values and name not in declared
         }
+        # a declared full_title (an extra option always is) is the field, and still the
+        # full title a generated id is derived from, as add_need took it
+        if "full_title" in values:
+            arguments["full_title"] = values["full_title"]
         _, created = create_need(
             self.app,
             self.state,
@@ -397,6 +401,7 @@ class TestCommonDirective(Directive):
             # the option's string, as add_need took and recorded it
             jinja_content=arguments.get("jinja_content"),
             full_title=arguments.get("full_title"),
+            allow_type_coercion=arguments.get("allow_type_coercion", True),
             fields={k: v for k, v in values.items() if k not in link_names},
             links={k: v for k, v in values.items() if k in link_names},
         )

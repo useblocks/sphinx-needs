@@ -24,14 +24,17 @@ Fixed
   need the same way, where it crashed the build too.
 
 - ‼️ A :ref:`tr_extra_options` name that is a Sphinx-Needs core field no option can set --
-  ``external_url``, ``external_css``, ``sections``, ``signature``, ``is_external``,
-  ``docname``, ``lineno`` and the other core fields that are neither fields of the field
-  schema nor arguments of the need's creation -- is refused when the build starts, with the
-  same ``InvalidConfigurationError``. ``add_need`` took such an option as its own keyword:
-  some were ignored, ``external_css`` set the css class of an external link the need never
-  has, and ``lineno_content`` crashed. As a report value (a ``tr_json_mapping`` key) such a
-  name refuses its need with the directive's warning. ``doctype``, ``jinja_content`` and
-  ``full_title`` keep reaching Sphinx-Needs as the need's own arguments.
+  one that is neither a field of the field schema nor an argument of the need's creation,
+  such as ``docname``, ``lineno`` or ``parts`` (which crashed the build) -- is refused when
+  the build starts, with the same ``InvalidConfigurationError``. Eight of them built on
+  master, where ``add_need`` took the option as its own keyword, and are now this
+  configuration error: ``external_css`` and ``is_import`` set the need's value,
+  ``is_external`` made the need external, ``constraints_passed`` was dropped with a
+  ``DeprecationWarning``, and ``arch``, ``external_url``, ``sections`` and ``signature``
+  were ignored. As a report value (a ``tr_json_mapping`` key) such a name refuses its need
+  with the directive's warning. ``doctype``, ``jinja_content`` and ``allow_type_coercion``
+  keep reaching Sphinx-Needs as the need's own arguments; ``full_title`` is a field, as
+  every extra option is (#2392), and is still given as the need's full title.
 
 - 🐛 A :ref:`tr_extra_options` name that is no field the directives set but one of
   Sphinx-Needs' own parameter names, such as ``state``, is an ordinary field: it ended the

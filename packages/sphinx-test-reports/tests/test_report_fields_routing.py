@@ -320,9 +320,6 @@ def _record_arguments(monkeypatch) -> dict[str, dict]:
     return handed
 
 
-@pytest.mark.xfail(
-    strict=True, reason="FR7: a declared full_title is also the argument"
-)
 def test_an_extra_option_full_title_is_the_field_and_the_argument(
     make_app, tmp_path, clean_docutils_registry, monkeypatch
 ):
@@ -347,7 +344,6 @@ def test_an_extra_option_full_title_is_the_field_and_the_argument(
     )
 
 
-@pytest.mark.xfail(strict=True, reason="FR8: allow_type_coercion is an argument")
 def test_report_values_full_title_and_allow_type_coercion_are_the_arguments(
     make_app, tmp_path, clean_docutils_registry, monkeypatch
 ):
