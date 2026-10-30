@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793400799510,
+  "lastUpdate": 1793402505184,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27720,6 +27720,48 @@ window.BENCHMARK_DATA = {
             "value": 57.437660626000024,
             "unit": "s",
             "extra": "Commit: 8b108b6a2133e370bf0ce110dff01c760a179d43\nBranch: master\nTime: 2026-10-30T23:51:52+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2d9059aeeb7e1f56ac06d602602a23065ca300b6",
+          "message": "🔧 Benchmarks: time sphinx-needs, not the runner, and judge against same-CPU history (#2432)\n\n## What\n\nThe `Benchmark` workflow (`.github/workflows/benchmark.yaml`) and the\nsphinx-needs benchmarks under `packages/sphinx-needs/tests/benchmarks/`:\n\n- **Timed builds render no PlantUML.** A new helper,\n`tests/benchmarks/_builds.py`, gives every round a fresh application and\nenvironment, makes the renderer inert (diagrams are still parsed and\ntheir sources generated), and leaves out the suite's own fences (the\n`analyse_need_locations` wrapper and the parent-child doctree walk),\nwhich were running inside the timed builds.\n- **Several rounds, the fastest reported.** 3 rounds for the\ndocumentation, 20 for the small project, instead of one sample each.\n`extract_benchmark_data.py` now reports `min` instead of `mean`.\n- **Peak memory is tracked.** `test_official_memory` records memray's\npeak in `extra_info`, and it becomes a new chart series, \"Official\nSphinx-Needs documentation: peak memory\" (MB).\n- **A new regression check.** Each result now carries the runner's CPU\nmodel. The new `.github/scripts/check_benchmark_regression.py` fails the\njob when a duration is more than 30% above the median of the last 10\nresults **on the same CPU model**, or peak memory is more than 10% above\nits last 10 results. It writes a results table to the job summary. With\nfewer than 3 comparable results it reports \"not judged\" and passes.\n- **The action only stores results now.** github-action-benchmark has\n`fail-on-alert` and `comment-on-alert` off. The flamegraph is still\npublished when the check fails. The dead `actions/cache` step is gone\n(its `external-data-json-path` was commented out).\n- **The docs series starts fresh** as \"Official Sphinx-Needs\ndocumentation (no diagram rendering)\", because the measurement changed.\nThe small project keeps its name.\n\n## Why\n\nThe workflow fails about one master push in ten for no code change, e.g.\nrun 41127213772 on #2429: both benchmarks were 1.6–1.7× slower, and the\nmemory step was slower too.\n\nFrom the 768 results on the `benchmarks` branch:\n\n- **Two speeds of runner.** Through 2025 the docs build varied by 2–7%\nwithin a month. Since 2026-09, about a third of runs land on machines\nabout 1.5× faster (37–45 s against 55–62 s), and the variation is\n13–14%.\n- **The alert can't cope with that.** It compares one sample with the\none result before it, at a 150% threshold, which is about the gap\nbetween the two runner speeds. A slow run after a fast one trips it: 15\nalerts in 160 pushes in 2026-10.\n- **Most of the time was Java.** Built locally, the documentation takes\n66–73 s with PlantUML and 18.5 s with rendering disabled. About 85\ndiagrams are each one JVM start, and JVM start-up is what varies most\nbetween machines. (#1900–#1904 briefly showed 10–15 s on CI for the same\nreason.)\n- **No regression is visible.** Per period, on comparable runners, the\ndocumentation build has been flat to slightly faster since 2025 while\nthe documentation grew, and the small project has come down steadily.\n\nThat runner speed follows the CPU model is an inference: until now\nnothing logged the CPU. The check records it from the first run, so the\nfirst runs will confirm or refute it.\n\n## Tests\n\nRun locally (4 cores):\n\n- `-k _time`: the small project at 80 ms (fastest of 20) and the\ndocumentation at 15.1 s (fastest of 3, spread about 6%). The step takes\n55 s in total, against one 60 s+ build before.\n- `-k _memory`: a peak of 185.4 MB and 186.5 MB on two runs (0.6%\napart). The step takes 30 s, against 42–69 s.\n- `check_benchmark_regression.py` against the real `data.js`: every\nseries \"not judged\" (no comparable history yet), exit 0. Against a\nsynthetic history 0.7× / 0.8× of the current values: all three flagged\nwith `::error::`, exit 1.\n\n`tests/benchmarks/test_querying.py` is still red (#1840), and CI still\nruns only the `_time` and `_memory` subsets.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [ ] I ran the package's tests (`uv run poe test-<package>`) and they\npass. (Only the benchmark tests were run; `test-needs` ignores\n`tests/benchmarks`, and nothing outside it changed.)\n- [x] Documentation is updated where behaviour or options change.\n(`docs/contributing.rst`, `AGENTS.md`)\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-10-31T00:20:24+01:00",
+          "tree_id": "1b5c757364514ba96de4b6e15d8dbc18b991950c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2d9059aeeb7e1f56ac06d602602a23065ca300b6"
+        },
+        "date": 1793402504196,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.0538872379999944,
+            "unit": "s",
+            "extra": "Commit: 2d9059aeeb7e1f56ac06d602602a23065ca300b6\nBranch: master\nTime: 2026-10-31T00:20:24+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 10.362654440999997,
+            "unit": "s",
+            "extra": "Commit: 2d9059aeeb7e1f56ac06d602602a23065ca300b6\nBranch: master\nTime: 2026-10-31T00:20:24+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 186.603932,
+            "unit": "MB",
+            "extra": "Commit: 2d9059aeeb7e1f56ac06d602602a23065ca300b6\nBranch: master\nTime: 2026-10-31T00:20:24+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
           }
         ]
       }
