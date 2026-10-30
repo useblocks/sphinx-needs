@@ -33,14 +33,13 @@ import sphinx_needs.needs
 from sphinx_needs._jinja import render_template_string
 from sphinx_needs._need_source import (
     SRCDIR_ROOT,
-    HopsSource,
     NeedSourceHop,
     placement_index,
     project_legacy,
 )
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.need import previous_sibling
-from sphinx_needs.need_item import NeedItem
+from sphinx_needs.need_item import NeedItem, NeedItemSource
 from sphinx_needs.nodes import Need
 from sphinx_needs_testkit import make_plantuml_inert
 
@@ -111,7 +110,7 @@ def _need_source_fence() -> Iterator[None]:
     looked up by name when each application is set up, so every application of the
     session is covered, in every xdist worker) and checks each need the walk visits:
 
-    - a source of one of sphinx-needs' own classes carries hops;
+    - a source of sphinx-needs' own class carries hops;
     - the legacy ``sections`` and ``signature`` the walk writes equal the projection of
       the placement hop's semantic location, which the walk computes from the doctree on
       its own (:func:`~sphinx_needs._need_source.placement_semantic`) -- for every need
@@ -140,9 +139,9 @@ def _need_source_fence() -> Iterator[None]:
         before = {
             need_id: need.source.hops
             for need_id, need in walked.items()
-            if isinstance(need.source, HopsSource)
+            if isinstance(need.source, NeedItemSource)
         }
-        # sphinx-needs' own source classes all carry hops; a third party's need not
+        # sphinx-needs' own source class carries hops; a third party's need not
         lacking = [
             need_id
             for need_id, need in walked.items()
@@ -189,7 +188,7 @@ def _check_need_source(
 ) -> None:
     """The checks of :func:`_need_source_fence` on one walked need."""
     source = need.source
-    assert isinstance(source, HopsSource)
+    assert isinstance(source, NeedItemSource)
     after = source.hops
     where = f"{need.id}: {after!r}"
     index = placement_index(after)

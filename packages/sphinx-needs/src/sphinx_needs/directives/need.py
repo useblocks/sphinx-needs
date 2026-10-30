@@ -10,7 +10,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs._need_source import directive_hops, placement_semantic
+from sphinx_needs._need_source import placement_semantic
 from sphinx_needs._wording import joined
 from sphinx_needs.api import InvalidNeedException, create_need
 from sphinx_needs.config import NeedsSphinxConfig
@@ -26,7 +26,7 @@ from sphinx_needs.functions.functions import (
 from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_constraints import process_constraints
-from sphinx_needs.need_item import NeedItem, NeedItemSourceDirective, NeedLink
+from sphinx_needs.need_item import NeedItem, NeedItemSource, NeedLink
 from sphinx_needs.needs_schema import FieldsSchema, LinkTargetTypes
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import (
@@ -167,24 +167,17 @@ class NeedDirective(SphinxDirective):
         # ``self.lineno`` counts the lines of what the parser was handed, which anything
         # putting text into the document shifts for everything after it -- Sphinx's
         # ``rst_prolog``, and the ``insert_input`` of ``.. include::`` and
-        # ``.. list2need::``. Resolve it back to the line the directive is actually
-        # written on (see #1349).
-        # ``get_source_info`` is what ``get_location`` -- and so every warning this
-        # directive itself emits -- is already built on, so the two now agree.
-        # It returns ``(None, None)`` if the state machine cannot map the line.
+        # ``.. list2need::``. ``from_directive`` resolves it back to the line the
+        # directive is actually written on (see #1349), through the state machine's
+        # ``get_source_and_line``, which ``get_source_info`` -- and so ``get_location``
+        # and every warning this directive itself emits -- is built on, so the two
+        # agree; where the state machine cannot map the line, ``self.lineno`` stays.
         # The unresolved number is kept as ``parser_lineno``, and ``lineno_content``
         # stays on the parser's counter as well: both are handed to ``nested_parse`` in
         # ``_create_need_node`` as offsets into that counter's space, not read as source
-        # lines.
-        # The hops record the file the directive is written in (an included file's own,
-        # in an include) with its true lines only; ``lineno`` is checked against them.
-        _, resolved_lineno = self.get_source_info()
-        source = NeedItemSourceDirective(
-            lineno=resolved_lineno or self.lineno,
-            lineno_content=self.content_offset + 1,
-            parser_lineno=self.lineno,
-            hops=directive_hops(self),
-        )
+        # lines. The hops record the file the directive is written in (an included
+        # file's own, in an include) with its true lines only.
+        source = NeedItemSource.from_directive(self)
 
         try:
             _, need_nodes = create_need(

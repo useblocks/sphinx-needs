@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 15
+ENV_DATA_VERSION: Final = 16
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -105,6 +105,16 @@ now selects the needs of a type and of the types inheriting from it, and a deriv
 field reading it computes. The configuration does not change, so without the bump an
 upgraded build would keep the empty selections and values on the pages whose sources
 did not change.
+
+Version 16 stores every need's source as one class,
+:class:`~sphinx_needs.need_item.NeedItemSource` (its hops, the given ``lineno``,
+``lineno_content``, ``parser_lineno`` and ``is_import``), where versions 14 and 15
+stored one of five ``NeedItemSource*`` classes, each with its own fields. The five names
+now resolve to factory functions, so an old environment happens to fail to unpickle
+(``NEWOBJ class argument must be a type``) and is read again; the bump makes that the
+rule rather than an accident of how the names are kept, since a slotted dataclass
+pickles its fields by position and any class found under an old name would take the
+old fields into the wrong slots.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

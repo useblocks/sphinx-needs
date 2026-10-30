@@ -164,7 +164,6 @@ def _deprecations(
     return [w for w in caught if issubclass(w.category, DeprecationWarning)]
 
 
-@pytest.mark.xfail(strict=True, reason="slice 3a: the five names become factories")
 @pytest.mark.parametrize(
     ("name", "keywords", "keys", "hops"),
     FACTORY_CASES,
@@ -194,7 +193,6 @@ def test_each_old_name_is_a_deprecated_factory_of_the_one_class(
     assert source.hops == hops
 
 
-@pytest.mark.xfail(strict=True, reason="slice 3a: the five names become factories")
 def test_an_old_name_imported_warns_at_the_import():
     """``from sphinx_needs.need_item import <name>`` -- how sphinx-codelinks 2.0 reads
     one -- warns at the importing line."""
@@ -206,7 +204,6 @@ def test_an_old_name_imported_warns_at_the_import():
     assert "NeedItemSourceUnknown" in str(warning.message)
 
 
-@pytest.mark.xfail(strict=True, reason="slice 3a: the five names become factories")
 def test_the_old_names_are_not_listed_and_a_wrong_name_is_an_attribute_error():
     """``dir()`` lists the one class and not the five deprecated names, so nothing that
     walks the module meets a warning; a name that is neither raises ``AttributeError``,
@@ -221,7 +218,6 @@ def test_the_old_names_are_not_listed_and_a_wrong_name_is_an_attribute_error():
     assert _deprecations(caught) == []
 
 
-@pytest.mark.xfail(strict=True, reason="slice 3a: one source class")
 def test_the_one_class():
     """Frozen and slotted; its constructor takes the hops and the facts they cannot
     give, and nothing twice."""
@@ -246,6 +242,7 @@ def test_the_one_class():
         NeedItemSource(["page"])  # ty: ignore[invalid-argument-type]
     # a need made without a source has the empty one
     need = need_item.NeedItem(
+        source=None,
         content=need_item.NeedsContent(doctype=".rst", content=""),
         core=core(),
         extras={},
@@ -254,7 +251,22 @@ def test_the_one_class():
     assert need.source == NeedItemSource()
 
 
-@pytest.mark.xfail(strict=True, reason="slice 3a: one source class")
+def test_a_name_given_both_keywords_and_hops_keeps_the_hops():
+    """The five names refuse no combination (row 2 of the path: no keyword is given
+    twice): where 9.1.0 refused a keyword that disagreed with the hops, the hops are the
+    source, and a ``lineno`` given is the need's."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        unknown = need_item.NeedItemSourceUnknown(docname="b", hops=(PAGE_A,))
+        external = need_item.NeedItemSourceExternal(url="http://b", hops=(EXTERNAL,))
+        directive = need_item.NeedItemSourceDirective(
+            lineno=9, lineno_content=1, hops=(LINED_A,)
+        )
+    assert unknown.dict_repr["docname"] == "a"
+    assert external.dict_repr["external_url"] == URL
+    assert directive.dict_repr["lineno"] == 9
+
+
 @pytest.mark.parametrize(
     ("hops", "given", "lineno"),
     [
@@ -276,7 +288,6 @@ def test_lineno_is_as_given_else_the_first_hops_line(
     assert source.lineno == lineno
 
 
-@pytest.mark.xfail(strict=True, reason="slice 3a: one source class")
 @pytest.mark.parametrize(
     ("hops", "is_import", "keys"),
     [
@@ -305,7 +316,6 @@ def test_the_legacy_keys_one_rule_each(
     assert NeedItemSource(hops, is_import=is_import).dict_repr == keys
 
 
-@pytest.mark.xfail(strict=True, reason="slice 3a: the public names")
 def test_the_class_and_the_hop_types_are_public_from_the_api():
     import sphinx_needs.api
     from sphinx_needs import _need_source
@@ -320,7 +330,6 @@ def test_the_class_and_the_hop_types_are_public_from_the_api():
         assert getattr(sphinx_needs.api, name) is getattr(module, name)
 
 
-@pytest.mark.xfail(strict=True, reason="slice 3a: the base class goes")
 def test_the_hops_base_class_is_gone():
     from sphinx_needs import _need_source
 
@@ -378,7 +387,6 @@ def setup(app):
 '''
 
 
-@pytest.mark.xfail(strict=True, reason="slice 3a: from_directive")
 @pytest.mark.parametrize(
     "test_app",
     [

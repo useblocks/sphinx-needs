@@ -16,7 +16,7 @@ from sphinx_needs.api.need import _split_values
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedItemSourceService
+from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs.needs_schema import FieldsSchema
 from sphinx_needs.services.base import BaseService
 from sphinx_needs.services.config.github import GITHUB_SERVICES
@@ -143,9 +143,13 @@ class NeedserviceDirective(SphinxDirective):
             # then the file and page the directive is written on
             hops = directive_hops(
                 self,
-                first=NeedSourceHop(
-                    kind="generated",
-                    semantic=(NeedSourceSemantic(kind="service", name=service_name),),
+                first=(
+                    NeedSourceHop(
+                        kind="generated",
+                        semantic=(
+                            NeedSourceSemantic(kind="service", name=service_name),
+                        ),
+                    ),
                 ),
             )
             for datum in service_data:
@@ -200,7 +204,7 @@ class NeedserviceDirective(SphinxDirective):
                 datum.update(options)
 
                 # ToDo: Tags and Status are not set (but exist in data)
-                source = NeedItemSourceService(lineno=self.lineno, hops=hops)
+                source = NeedItemSource(hops, lineno=self.lineno)
                 need_id = datum.pop("id", None)
                 need_content = datum.pop("content", "")
                 jinja_content = datum.pop("jinja_content", None)

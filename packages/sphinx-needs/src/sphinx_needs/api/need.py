@@ -19,6 +19,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs._jinja import render_template_string
+from sphinx_needs._need_source import NeedSourceHop, NeedSourcePhysical
 from sphinx_needs.config import NeedsSphinxConfig, NeedType
 from sphinx_needs.data import (
     NeedsCoreFields,
@@ -42,9 +43,8 @@ from sphinx_needs.need_content import (
 )
 from sphinx_needs.need_item import (
     NeedItem,
-    NeedItemSourceDirective,
+    NeedItemSource,
     NeedItemSourceProtocol,
-    NeedItemSourceUnknown,
     NeedLink,
     NeedPartData,
     NeedsContent,
@@ -236,16 +236,26 @@ def _legacy_source(
     external_url: str | None = None,
 ) -> NeedItemSourceProtocol:
     """The source :func:`add_need`, :func:`generate_need` and :func:`add_external_need`
-    record: the one given, else the API's default, made from their location keywords."""
+    record: the one given, else the API's default, made from their location keywords --
+    the page of ``docname``, and an external need's ``external`` hop (its URL, where it
+    has one) before it."""
     if need_source is not None:
         return need_source
-    return NeedItemSourceUnknown(
-        docname=docname,
-        lineno=lineno,
-        lineno_content=lineno_content,
-        is_import=is_import,
-        is_external=is_external,
-        external_url=external_url if is_external else None,
+    hops: tuple[NeedSourceHop, ...] = (
+        () if docname is None else (NeedSourceHop(kind="page", document=docname),)
+    )
+    if is_external:
+        hops = (
+            NeedSourceHop(
+                kind="external",
+                physical=None
+                if external_url is None
+                else NeedSourcePhysical(url=external_url),
+            ),
+            *hops,
+        )
+    return NeedItemSource(
+        hops, lineno=lineno, lineno_content=lineno_content, is_import=is_import
     )
 
 
@@ -986,33 +996,36 @@ def create_need(
 
     .. code-block:: python
 
-        from sphinx_needs.api import create_need
-        from sphinx_needs.need_item import NeedItemSourceUnknown
+        from sphinx.util.docutils import SphinxDirective
 
-        need, need_nodes = create_need(
-            app,
-            state,
-            NeedItemSourceUnknown(docname=env.docname, lineno=lineno),
-            "req",
-            "A requirement",
-            id="REQ_1",
-            fields={"status": "open", "priority": "high"},
-            links={"links": ["REQ_0"]},
-        )
+        from sphinx_needs.api import NeedItemSource, create_need
+
+
+        class ReqDirective(SphinxDirective):
+            def run(self):
+                need, need_nodes = create_need(
+                    self.env.app,
+                    self.state,
+                    NeedItemSource.from_directive(self),
+                    "req",
+                    "A requirement",
+                    id="REQ_1",
+                    fields={"status": "open", "priority": "high"},
+                    links={"links": ["REQ_0"]},
+                )
+                return need_nodes
 
     :param app: Sphinx application object.
     :param state: The parser state of the document the need is rendered in; ``None``
         only for an external source, whose need has no nodes.
-    :param source: Where the need comes from: an object with the
+    :param source: Where the need comes from: a
+        :class:`~sphinx_needs.need_item.NeedItemSource`, or any object with the
         :class:`~sphinx_needs.need_item.NeedItemSourceProtocol` interface. It gives the
         need its ``docname``, ``lineno`` and the other location fields, and says whether
-        it is imported or external.
-
-        **Provisional for extensions**: the source objects sphinx-needs provides, such
-        as ``NeedItemSourceUnknown(docname=..., lineno=...)`` above, may change without
-        a deprecation, as the source's ``hops`` may. An extension may keep calling
-        :func:`add_need`, which builds that source from its ``docname`` and ``lineno``,
-        until it is deprecated.
+        it is imported or external. In a directive it is
+        ``NeedItemSource.from_directive(self)``, as above; outside one,
+        ``NeedItemSource([NeedSourceHop(kind="page", document=docname)],
+        lineno=lineno)``.
     :param need_type: The need type, by the name of its directive.
     :param title: The need's title.
     :param id: The need's id. If not given, one is generated (see
@@ -1430,8 +1443,9 @@ def ingest_need_record(
     :param app: The Sphinx application.
     :param state: The parser state of the document the need is rendered in.
     :param record: The need record.
-    :param need_source: Where the need is recorded as coming from, e.g. a
-        ``NeedItemSourceImport``.
+    :param need_source: Where the need is recorded as coming from, e.g.
+        ``NeedItemSource(hops, lineno=lineno, is_import=True)`` for a need read from a
+        file.
     :param content_markup: The source suffix of the markup the record's ``content`` is
         written in: given, the content is created as a
         :class:`~sphinx_needs.api.MarkupContent` with this ``markup``, and the need
@@ -1529,9 +1543,7 @@ def _template_parse_offset(data: NeedItem) -> int:
     of source still stores it in ``lineno`` itself.
     """
     source = data.source
-    parser_lineno = (
-        source.parser_lineno if isinstance(source, NeedItemSourceDirective) else None
-    )
+    parser_lineno = source.parser_lineno if isinstance(source, NeedItemSource) else None
     if parser_lineno is None:
         parser_lineno = data["lineno"]
     return (parser_lineno - 1) if parser_lineno else 0

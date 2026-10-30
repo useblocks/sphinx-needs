@@ -9,20 +9,25 @@
 # For NeedItem, we allow mutability, but only for values, i.e. it should not allow adding or removing keys.
 from __future__ import annotations
 
+import copy
+import dataclasses
 import re
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+import warnings
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from itertools import chain
 from operator import attrgetter
+from types import FunctionType
 from typing import TYPE_CHECKING, Any, Literal, Protocol, overload, runtime_checkable
 
 from sphinx_needs._need_source import (
-    HopsSource,
     NeedSourceHop,
     NeedSourcePhysical,
     NeedSourceSemantic,
     checked_hops,
+    directive_hops,
     first_line,
+    placement_index,
     placement_of,
 )
 from sphinx_needs.data import (
@@ -34,6 +39,8 @@ from sphinx_needs.data import (
 )
 
 if TYPE_CHECKING:
+    from docutils.parsers.rst import Directive
+
     from sphinx_needs.needs_schema import (
         AllowedTypes,
         FieldFunctionArray,
@@ -57,130 +64,39 @@ def _set(source: object, **values: object) -> None:
         object.__setattr__(source, name, value)
 
 
-def _placed_docname(
-    cls: type, hops: tuple[NeedSourceHop, ...], docname: str | None
-) -> str:
-    """The placement's document, checked against a ``docname`` also given.
+@dataclass(slots=True, frozen=True, kw_only=True, init=False, repr=False)
+class NeedItemSource:
+    """Where a need comes from: the hops its text came through, and the location facts
+    the hops cannot give yet.
 
-    :raises ValueError: if the hops place the need nowhere, or elsewhere.
-    """
-    placement = placement_of(hops)
-    if placement is None or placement.document is None:
-        raise ValueError(f"{cls.__name__}: the hops have no placement (no document)")
-    if docname is not None and docname != placement.document:
-        raise ValueError(
-            f"{cls.__name__}: the hops place the need on {placement.document!r}, "
-            f"not on {docname!r}"
-        )
-    return placement.document
+    Every need sphinx-needs creates has one, and so does a need an extension creates
+    through :func:`~sphinx_needs.api.need.create_need`: in a directive,
+    ``NeedItemSource.from_directive(self)``; elsewhere,
+    ``NeedItemSource([NeedSourceHop(kind="page", document=docname)], lineno=lineno)``.
+    Its name, its constructor's keywords and :meth:`from_directive` are stable;
+    ``hops`` and the hop types are **provisional** (see :ref:`api`): they may change in a
+    minor release, without a deprecation, until they reach ``needs.json``.
 
+    The legacy location keys of the need (``dict_repr``, which
+    :class:`NeedItemSourceProtocol` requires), one rule each:
 
-def _required(cls: type, name: str, value: object) -> None:
-    """Refuse a legacy keyword missing where there are no hops to derive it from."""
-    if value is None:
-        raise TypeError(
-            f"{cls.__name__}.__init__() missing required keyword argument: {name!r} "
-            "(it can be omitted only when hops give it)"
-        )
-
-
-@dataclass(slots=True, frozen=True, init=False, repr=False)
-class NeedItemSourceUnknown(HopsSource):
-    """A class representing the source of a need item, from an unknown source.
-
-    Its keywords are free (an ``external_url`` without ``is_external`` is a valid
-    source), so it stores every one of them; ``docname``, where it is given with
-    ``hops``, must be the document of their placement.
-
-    ``hops`` is **provisional**: where the need's text came from, innermost first (see
-    :mod:`sphinx_needs._need_source`). It may change without a deprecation until it
-    reaches ``needs.json``; nothing a filter, a table or ``needs.json`` shows depends
-    on it. Without ``hops``, a source with a ``docname`` has one ``page`` hop.
+    - ``docname``: the ``document`` of the placement, the last hop with one (``None``
+      without);
+    - ``lineno``: ``lineno`` as given, else the start line of ``hops[0]``;
+    - ``lineno_content``: as given;
+    - ``is_external`` / ``external_url``: whether ``hops[0]`` is an ``external`` hop,
+      and its URL;
+    - ``is_import``: as given (no hop says that a ``needimport`` read the file: an
+      included file is a ``file`` hop too).
     """
 
-    docname: str | None
-    lineno: int | None
+    hops: tuple[NeedSourceHop, ...]
+    """Where the need's text came from, innermost first (**provisional**)."""
+    _lineno: int | None
+    """``lineno`` as given: a line the hops cannot give (a parser line, for a service,
+    an import or an API need; the line a directive is written on)."""
     lineno_content: int | None
-    external_url: str | None
-    is_import: bool
-    is_external: bool
-    hops: tuple[NeedSourceHop, ...]
-    dict_repr: NeedsSourceInfoType = field(init=False)
-
-    def __init__(
-        self,
-        *,
-        docname: str | None = None,
-        lineno: int | None = None,
-        lineno_content: int | None = None,
-        external_url: str | None = None,
-        is_import: bool = False,
-        is_external: bool = False,
-        hops: Iterable[NeedSourceHop] | None = None,
-    ) -> None:
-        if hops is None:
-            hops = (
-                (NeedSourceHop(kind="page", document=docname),)
-                if docname is not None
-                else ()
-            )
-        else:
-            hops = checked_hops(hops)
-            placement = placement_of(hops)
-            placed = None if placement is None else placement.document
-            if docname is None:
-                docname = placed
-            elif docname != placed:
-                raise ValueError(
-                    f"NeedItemSourceUnknown: the hops place the need on {placed!r}, "
-                    f"not on {docname!r}"
-                )
-        _set(
-            self,
-            docname=docname,
-            lineno=lineno,
-            lineno_content=lineno_content,
-            external_url=external_url,
-            is_import=is_import,
-            is_external=is_external,
-            hops=hops,
-            dict_repr={
-                "docname": docname,
-                "lineno": lineno,
-                "lineno_content": lineno_content,
-                "external_url": external_url,
-                "is_import": is_import,
-                "is_external": is_external,
-            },
-        )
-
-    def __repr__(self) -> str:
-        return (
-            f"{type(self).__qualname__}(docname={self.docname!r}, "
-            f"lineno={self.lineno!r}, lineno_content={self.lineno_content!r}, "
-            f"external_url={self.external_url!r}, is_import={self.is_import!r}, "
-            f"is_external={self.is_external!r})"
-        )
-
-
-@dataclass(slots=True, frozen=True, init=False, repr=False)
-class NeedItemSourceDirective(HopsSource):
-    """A class representing the source of a need item, from a need directive.
-
-    ``docname`` is the document of the placement hop, and ``lineno`` the start line of
-    ``hops[0]`` -- the file the directive is written in, an included file's own line in
-    an include. Where ``hops[0]`` has no true line (a docstring read by autodoc, a line
-    the state machine cannot map), ``lineno`` is stored beside the hops.
-
-    ``hops`` is **provisional**: where the need's text came from, innermost first (see
-    :mod:`sphinx_needs._need_source`). It may change without a deprecation until it
-    reaches ``needs.json``; nothing a filter, a table or ``needs.json`` shows depends
-    on it. ``docname`` and ``lineno`` can be omitted when ``hops`` give them; given with
-    ``hops``, they must agree with them.
-    """
-
-    hops: tuple[NeedSourceHop, ...]
-    lineno_content: int
+    """The line of the content, as the parser counts it."""
     parser_lineno: int | None
     """The directive's line in the *parser's* own line space, where that differs from
     ``lineno``.
@@ -193,279 +109,246 @@ class NeedItemSourceDirective(HopsSource):
     unresolved number has to survive alongside the resolved one.
 
     Deliberately not part of ``dict_repr``: it is a parser coordinate rather than need
-    data, and never reaches ``needs.json``. ``None`` means the two are the same.
+    data, and never reaches ``needs.json``. ``None`` means the two are the same, or the
+    need has no directive.
     """
-    _lineno: int | None
-    """``lineno``, where ``hops[0]`` has no true line to give it."""
+    is_import: bool
+    """Whether :ref:`needimport` read the need from a ``needs.json``."""
     dict_repr: NeedsSourceInfoType = field(init=False)
 
     def __init__(
         self,
+        hops: Iterable[NeedSourceHop] = (),
         *,
-        docname: str | None = None,
         lineno: int | None = None,
-        lineno_content: int,
+        lineno_content: int | None = None,
         parser_lineno: int | None = None,
-        hops: Iterable[NeedSourceHop] | None = None,
+        is_import: bool = False,
     ) -> None:
-        if hops is None:
-            _required(type(self), "docname", docname)
-            _required(type(self), "lineno", lineno)
-            hops = (NeedSourceHop(kind="page", document=docname),)
-        else:
-            hops = checked_hops(hops)
-        docname = _placed_docname(type(self), hops, docname)
-        line = first_line(hops)
-        if line is None:
-            if lineno is None:
-                raise ValueError(
-                    "NeedItemSourceDirective: lineno is required, the first hop has "
-                    "no line to give it"
-                )
-            stored, line = lineno, lineno
-        elif lineno is not None and lineno != line:
-            raise ValueError(
-                f"NeedItemSourceDirective: the first hop gives lineno {line!r}, "
-                f"not {lineno!r}"
-            )
-        else:
-            stored = None
+        hops = checked_hops(hops)
+        placement = placement_of(hops)
+        external = hops[0] if hops and hops[0].kind == "external" else None
         _set(
             self,
             hops=hops,
+            _lineno=lineno,
             lineno_content=lineno_content,
             parser_lineno=parser_lineno,
-            _lineno=stored,
+            is_import=is_import,
             dict_repr={
-                "docname": docname,
-                "lineno": line,
+                "docname": None if placement is None else placement.document,
+                "lineno": first_line(hops) if lineno is None else lineno,
                 "lineno_content": lineno_content,
-                "external_url": None,
-                "is_import": False,
-                "is_external": False,
+                "external_url": None
+                if external is None or external.physical is None
+                else external.physical.url,
+                "is_import": is_import,
+                "is_external": external is not None,
             },
         )
 
-    @property
-    def docname(self) -> str:
-        """The document of the placement hop."""
-        return _placed_docname(type(self), self.hops, None)
+    @classmethod
+    def from_directive(
+        cls, directive: Directive, *, first: Iterable[NeedSourceHop] = ()
+    ) -> NeedItemSource:
+        """The source of a need a directive creates, as a need directive records its
+        own.
+
+        Its hops are the file and the page the directive is written on (the lines of the
+        directive where the file holds them), after ``first``: the hops the need's text
+        came through before the directive, innermost first, if any. ``lineno`` is the
+        line the directive is written on, resolved through the state machine (which
+        ``rst_prolog``, an include or generated input shift); its content offset and its
+        line in the parser's own count are kept as ``lineno_content`` and
+        ``parser_lineno``.
+
+        :param directive: The directive, a docutils ``Directive`` (a ``SphinxDirective``
+            is one) being run in a Sphinx build.
+        :param first: Hops to place before the directive's own (**provisional**, as the
+            hops are).
+        """
+        _, resolved = directive.state_machine.get_source_and_line(directive.lineno)
+        return cls(
+            directive_hops(directive, first=first),
+            lineno=resolved or directive.lineno,
+            lineno_content=directive.content_offset + 1,
+            parser_lineno=directive.lineno,
+        )
 
     @property
-    def lineno(self) -> int:
-        """The start line of ``hops[0]``, else the stored line."""
-        line = first_line(self.hops)
-        if line is None:
-            line = self._lineno
-        if line is None:  # refused by ``__init__``
-            raise ValueError("NeedItemSourceDirective: no lineno")
-        return line
+    def docname(self) -> str | None:
+        """The document of the placement hop."""
+        return self.dict_repr["docname"]
+
+    @property
+    def lineno(self) -> int | None:
+        """``lineno`` as given, else the start line of ``hops[0]``."""
+        return self.dict_repr["lineno"]
+
+    @property
+    def placement(self) -> NeedSourceHop | None:
+        """The hop of the page the need is placed on: the last hop with a ``document``.
+
+        **Provisional**, as ``hops`` is.
+        """
+        return placement_of(self.hops)
+
+    def _with_placement_semantic(
+        self, semantic: tuple[NeedSourceSemantic, ...]
+    ) -> NeedItemSource:
+        """A copy of this source whose placement hop has ``semantic``.
+
+        The doctree-read walk's one write, through ``NeedItem._set_placement_semantic``.
+
+        :raises ValueError: if there is no placement, or its semantic location is
+            already set: it is written once per need.
+        """
+        index = placement_index(self.hops)
+        if index is None:
+            raise ValueError("the source has no placement hop")
+        hop = self.hops[index]
+        if hop.semantic is not None:
+            raise ValueError(
+                "the semantic location of the placement hop is already set"
+            )
+        hops = (
+            *self.hops[:index],
+            dataclasses.replace(hop, semantic=semantic),
+            *self.hops[index + 1 :],
+        )
+        new = copy.copy(self)
+        object.__setattr__(new, "hops", hops)
+        return new
 
     def __repr__(self) -> str:
+        # the legacy keys and the parser line; not the hops, which are provisional
+        keys = self.dict_repr
         return (
-            f"{type(self).__qualname__}(docname={self.docname!r}, "
-            f"lineno={self.lineno!r}, lineno_content={self.lineno_content!r}, "
+            f"{type(self).__qualname__}(docname={keys['docname']!r}, "
+            f"lineno={keys['lineno']!r}, lineno_content={keys['lineno_content']!r}, "
+            f"external_url={keys['external_url']!r}, "
+            f"is_import={keys['is_import']!r}, is_external={keys['is_external']!r}, "
             f"parser_lineno={self.parser_lineno!r})"
         )
 
 
-@dataclass(slots=True, frozen=True, init=False, repr=False)
-class NeedItemSourceService(HopsSource):
-    """A class representing the source of a need item, from a service directive.
+# The five source classes of 9.1.0, as deprecated factories of NeedItemSource, served by
+# the module's ``__getattr__`` until 10.0 (an extension written against 9.1.0, such as
+# sphinx-codelinks 2.0, imports one). Each takes its class's keywords and builds the
+# source with the legacy keys that class gave; it refuses no combination of them.
 
-    ``docname`` is the document of the placement hop. ``lineno`` is the directive's
-    line in the parser's own line space (shifted by ``rst_prolog`` and includes), so it
-    is stored beside the hops, whose lines are the file's.
 
-    ``hops`` is **provisional**: where the need's text came from, innermost first (see
-    :mod:`sphinx_needs._need_source`). It may change without a deprecation until it
-    reaches ``needs.json``; nothing a filter, a table or ``needs.json`` shows depends
-    on it. ``docname`` can be omitted when ``hops`` give it; given with ``hops``, it
-    must agree with them.
-    """
+def _page(docname: str | None) -> tuple[NeedSourceHop, ...]:
+    return () if docname is None else (NeedSourceHop(kind="page", document=docname),)
 
-    hops: tuple[NeedSourceHop, ...]
-    _lineno: int
-    dict_repr: NeedsSourceInfoType = field(init=False)
 
-    def __init__(
-        self,
-        *,
-        docname: str | None = None,
-        lineno: int,
-        hops: Iterable[NeedSourceHop] | None = None,
-    ) -> None:
-        if hops is None:
-            _required(type(self), "docname", docname)
-            hops = (NeedSourceHop(kind="page", document=docname),)
-        else:
-            hops = checked_hops(hops)
-        docname = _placed_docname(type(self), hops, docname)
-        _set(
-            self,
-            hops=hops,
-            _lineno=lineno,
-            dict_repr={
-                "docname": docname,
-                "lineno": lineno,
-                "lineno_content": None,
-                "external_url": None,
-                "is_import": False,
-                "is_external": False,
-            },
+def _external(url: str | None) -> NeedSourceHop:
+    return NeedSourceHop(
+        kind="external", physical=None if url is None else NeedSourcePhysical(url=url)
+    )
+
+
+def _unknown(
+    *,
+    docname: str | None = None,
+    lineno: int | None = None,
+    lineno_content: int | None = None,
+    external_url: str | None = None,
+    is_import: bool = False,
+    is_external: bool = False,
+    hops: Iterable[NeedSourceHop] | None = None,
+) -> NeedItemSource:
+    """``NeedItemSourceUnknown``: the hops given, else the page of ``docname``; for an
+    external need, its ``external`` hop first."""
+    given = _page(docname) if hops is None else checked_hops(hops)
+    if is_external and not (given and given[0].kind == "external"):
+        given = (_external(external_url), *given)
+    return NeedItemSource(
+        given, lineno=lineno, lineno_content=lineno_content, is_import=is_import
+    )
+
+
+def _directive(
+    *,
+    docname: str | None = None,
+    lineno: int | None = None,
+    lineno_content: int,
+    parser_lineno: int | None = None,
+    hops: Iterable[NeedSourceHop] | None = None,
+) -> NeedItemSource:
+    """``NeedItemSourceDirective``: the hops given, else the page of ``docname``."""
+    return NeedItemSource(
+        _page(docname) if hops is None else hops,
+        lineno=lineno,
+        lineno_content=lineno_content,
+        parser_lineno=parser_lineno,
+    )
+
+
+def _service(
+    *,
+    docname: str | None = None,
+    lineno: int,
+    hops: Iterable[NeedSourceHop] | None = None,
+) -> NeedItemSource:
+    """``NeedItemSourceService``: the hops given, else the page of ``docname``."""
+    return NeedItemSource(_page(docname) if hops is None else hops, lineno=lineno)
+
+
+def _external_source(
+    *, url: str | None = None, hops: Iterable[NeedSourceHop] | None = None
+) -> NeedItemSource:
+    """``NeedItemSourceExternal``: the hops given, else the ``external`` hop of
+    ``url``."""
+    return NeedItemSource((_external(url),) if hops is None else hops)
+
+
+def _import(
+    *,
+    docname: str | None = None,
+    lineno: int,
+    path: str,
+    hops: Iterable[NeedSourceHop] | None = None,
+) -> NeedItemSource:
+    """``NeedItemSourceImport``: the hops given, else a ``file`` hop and the page of
+    ``docname``; ``path`` (the argument as written) is not kept."""
+    if hops is None:
+        hops = (NeedSourceHop(kind="file"), *_page(docname))
+    return NeedItemSource(hops, lineno=lineno, is_import=True)
+
+
+def _named(name: str, factory: FunctionType) -> FunctionType:
+    """``factory``, named as the class the caller wrote (a ``TypeError`` for a wrong
+    keyword names it)."""
+    factory.__name__ = factory.__qualname__ = name
+    return factory
+
+
+_DEPRECATED_SOURCES: Mapping[str, Callable[..., NeedItemSource]] = {
+    name: _named(name, factory)
+    for name, factory in (
+        ("NeedItemSourceUnknown", _unknown),
+        ("NeedItemSourceDirective", _directive),
+        ("NeedItemSourceService", _service),
+        ("NeedItemSourceExternal", _external_source),
+        ("NeedItemSourceImport", _import),
+    )
+}
+"""The five names of 9.1.0, and the factory each now is (removed in 10.0)."""
+
+
+def __getattr__(name: str) -> Any:
+    """The five deprecated names, each warning where it is read."""
+    if (factory := _DEPRECATED_SOURCES.get(name)) is not None:
+        warnings.warn(
+            f"sphinx_needs.need_item.{name} is deprecated and will be removed in "
+            "sphinx-needs 10.0: use sphinx_needs.api.NeedItemSource "
+            "(NeedItemSource.from_directive(self) in a directive)",
+            DeprecationWarning,
+            stacklevel=2,
         )
-
-    @property
-    def docname(self) -> str:
-        """The document of the placement hop."""
-        return _placed_docname(type(self), self.hops, None)
-
-    @property
-    def lineno(self) -> int:
-        """The directive's parser line (a stored legacy fact)."""
-        return self._lineno
-
-    def __repr__(self) -> str:
-        return (
-            f"{type(self).__qualname__}(docname={self.docname!r}, "
-            f"lineno={self.lineno!r})"
-        )
-
-
-@dataclass(slots=True, frozen=True, init=False, repr=False)
-class NeedItemSourceExternal(HopsSource):
-    """A class representing the source of a need item, from an external source.
-
-    ``url`` is the URL of ``hops[0]``, the need's page on the external site.
-
-    ``hops`` is **provisional**: where the need's text came from, innermost first (see
-    :mod:`sphinx_needs._need_source`). It may change without a deprecation until it
-    reaches ``needs.json``; nothing a filter, a table or ``needs.json`` shows depends
-    on it. ``url`` can be omitted when ``hops`` give it; given with ``hops``, it must
-    agree with them.
-    """
-
-    hops: tuple[NeedSourceHop, ...]
-    dict_repr: NeedsSourceInfoType = field(init=False)
-
-    def __init__(
-        self,
-        *,
-        url: str | None = None,
-        hops: Iterable[NeedSourceHop] | None = None,
-    ) -> None:
-        if hops is None:
-            _required(type(self), "url", url)
-            hops = (
-                NeedSourceHop(kind="external", physical=NeedSourcePhysical(url=url)),
-            )
-        else:
-            hops = checked_hops(hops)
-        derived = _external_url(hops)
-        if url is not None and url != derived:
-            raise ValueError(
-                f"NeedItemSourceExternal: the hops give url {derived!r}, not {url!r}"
-            )
-        _set(
-            self,
-            hops=hops,
-            dict_repr={
-                "docname": None,
-                "lineno": None,
-                "lineno_content": None,
-                "external_url": derived,
-                "is_import": False,
-                "is_external": True,
-            },
-        )
-
-    @property
-    def url(self) -> str:
-        """The URL of ``hops[0]``."""
-        return _external_url(self.hops)
-
-    def __repr__(self) -> str:
-        return f"{type(self).__qualname__}(url={self.url!r})"
-
-
-def _external_url(hops: tuple[NeedSourceHop, ...]) -> str:
-    """The URL of an external need's first hop.
-
-    :raises ValueError: if it has none.
-    """
-    physical = hops[0].physical if hops else None
-    if physical is None or physical.url is None:
-        raise ValueError("NeedItemSourceExternal: the first hop has no url")
-    return physical.url
-
-
-@dataclass(slots=True, frozen=True, init=False, repr=False)
-class NeedItemSourceImport(HopsSource):
-    """A class representing the source of a need item, from an import directive.
-
-    ``docname`` is the document of the placement hop. ``lineno`` (the directive's line
-    in the parser's own line space) and ``path`` (the argument as written) are stored
-    beside the hops; the first hop is the imported file, resolved.
-
-    ``hops`` is **provisional**: where the need's text came from, innermost first (see
-    :mod:`sphinx_needs._need_source`). It may change without a deprecation until it
-    reaches ``needs.json``; nothing a filter, a table or ``needs.json`` shows depends
-    on it. ``docname`` can be omitted when ``hops`` give it; given with ``hops``, it
-    must agree with them.
-    """
-
-    hops: tuple[NeedSourceHop, ...]
-    _lineno: int
-    path: str
-    dict_repr: NeedsSourceInfoType = field(init=False)
-
-    def __init__(
-        self,
-        *,
-        docname: str | None = None,
-        lineno: int,
-        path: str,
-        hops: Iterable[NeedSourceHop] | None = None,
-    ) -> None:
-        if hops is None:
-            _required(type(self), "docname", docname)
-            hops = (
-                NeedSourceHop(kind="file"),
-                NeedSourceHop(kind="page", document=docname),
-            )
-        else:
-            hops = checked_hops(hops)
-        docname = _placed_docname(type(self), hops, docname)
-        _set(
-            self,
-            hops=hops,
-            _lineno=lineno,
-            path=path,
-            dict_repr={
-                "docname": docname,
-                "lineno": lineno,
-                "lineno_content": None,
-                "external_url": None,
-                "is_import": True,
-                "is_external": False,
-            },
-        )
-
-    @property
-    def docname(self) -> str:
-        """The document of the placement hop."""
-        return _placed_docname(type(self), self.hops, None)
-
-    @property
-    def lineno(self) -> int:
-        """The directive's parser line (a stored legacy fact)."""
-        return self._lineno
-
-    def __repr__(self) -> str:
-        return (
-            f"{type(self).__qualname__}(docname={self.docname!r}, "
-            f"lineno={self.lineno!r}, path={self.path!r})"
-        )
+        return factory
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)
@@ -843,7 +726,7 @@ class NeedItem:
 
         """
         self._content = content
-        self._source = source if source is not None else NeedItemSourceUnknown()
+        self._source = source if source is not None else NeedItemSource()
         self.set_parts(parts, _recompute=False)
         self._modifications = tuple(modifications)
         self.set_constraint_results(constraint_results, _recompute=False)
@@ -960,7 +843,7 @@ class NeedItem:
         :raises ValueError: if the placement's semantic location is already set.
         """
         source = self._source
-        if not isinstance(source, HopsSource) or source.placement is None:
+        if not isinstance(source, NeedItemSource) or source.placement is None:
             return
         self._source = source._with_placement_semantic(semantic)
 
