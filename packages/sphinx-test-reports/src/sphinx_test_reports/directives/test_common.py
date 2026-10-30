@@ -678,12 +678,13 @@ class TestCommonDirective(Directive):
             try:
                 if os.path.splitext(self.test_file)[1] == ".json":
                     mapping = next(iter(self.app.config.tr_json_mapping.values()))
-                    parser = JsonParser(self.test_file, json_mapping=mapping)
+                    parsed = JsonParser(self.test_file, json_mapping=mapping).parse()
                 else:
-                    parser = JUnitParser(
+                    # `line_base_known` for the code hop's line (`_case_source_line`)
+                    parsed = JUnitParser(
                         self.test_file, line_base=self.app.config.tr_line_base
-                    )
-                self.app.testreport_data[self.test_file] = parser.parse()
+                    ).parse(line_base_known=True)
+                self.app.testreport_data[self.test_file] = parsed
             except ReportReadError as error:
                 # Nothing is cached: every directive reading this report says so itself.
                 self.report_error = str(error)

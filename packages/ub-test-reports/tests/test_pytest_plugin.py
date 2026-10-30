@@ -867,7 +867,7 @@ def _read_lines(report):
 
     return {
         case["name"]: (case["line"], case.get("line_base_known"))
-        for suite in JUnitParser(str(report)).parse()
+        for suite in JUnitParser(str(report)).parse(line_base_known=True)
         for case in suite["testcases"]
     }
 

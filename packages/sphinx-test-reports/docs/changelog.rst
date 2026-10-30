@@ -155,8 +155,12 @@ Upgrading: test-case lines from pytest reports
 
 1. The lines of a plain ``pytest --junitxml`` report (``junit_family = xunit1``) are now the
    test's own line, one more than before: its need's ``case_line`` (or the field
-   :ref:`tr_source_line_option` names). A filter that names a line (``case_line == "12"``)
-   names the line after it now.
+   :ref:`tr_source_line_option` names). A filter or a link written against the old value
+   (``case_line == "12"`` for a test on line 13) no longer finds that test: write the
+   test's own line (``"13"``). This holds for every plain report with pytest 8.4 or later,
+   and with any pytest for the default suite name ``pytest``; with an older pytest, a
+   report whose suite ``junit_suite_name`` renamed is read as before (pytest names the
+   root ``pytest tests`` only from 8.4.0).
 2. The ub-test-reports pytest plugin now marks its reports, with the suite property
    ``ub_test_reports:line_base`` = ``1``; their lines are read as they are.
 3. A report that already counts from 1 but carries no mark is read one line late: one
@@ -164,9 +168,12 @@ Upgrading: test-case lines from pytest reports
    ub-test-reports 1.1.0 or earlier), or by another tool such as S-CORE's
    ``score_pytest``. Regenerate it with this version's plugin, or set
    ``tr_line_base = 1`` (``line_base = 1`` in ``[test_reports]``).
+   A merged file that holds both plain pytest suites and suites of an earlier plugin cannot
+   be read right by any one setting: regenerate it.
 4. ub-test-reports' ``JUnitParser``, which ``sphinxcontrib.test_reports.junitparser``
    still names until 4.0, returns lines counted from 1 where it knows the report's base,
-   and says so per test case (``line_base_known``).
+   and says so per test case when asked (``parse(line_base_known=True)``); a plain
+   ``parse()`` gives the keys it always gave.
 
 .. _`release:3.0.1`:
 

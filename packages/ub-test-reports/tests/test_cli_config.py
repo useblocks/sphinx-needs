@@ -646,3 +646,25 @@ class TestLineBase:
         code, _ = run_convert(tmp_path, [], toml="[test_reports]\nline_base = 2\n")
         assert code == 2
         assert "line_base" in capsys.readouterr().err
+
+    def test_line_0_of_a_report_counted_from_1_has_no_anchor(self, tmp_path):
+        """No line of the file: the URL gets no ``#L``, as the build's code hop gets no
+        line; ``case_line`` keeps the report's 0. Line 0 of a plain pytest report is
+        line 1, and an unrecognised producer's 0 is passed through, as before."""
+        code, payload = run_convert(
+            tmp_path, self.REMOTE, xml=str(UTILS / "line_base_zero.xml")
+        )
+        assert code == 0
+        needs = payload["versions"][payload["current_version"]]["needs"].values()
+        got = {
+            need["case_name"]: (
+                need["case_line"],
+                need["remote_url"].rpartition("/")[2],
+            )
+            for need in needs
+        }
+        assert got == {
+            "test_on_line_one": ("1", "test_first.py#L1"),
+            "test_marked_zero": ("0", "test_first.py"),
+            "test_unknown_zero": ("0", "other.x#L0"),
+        }

@@ -717,6 +717,43 @@ def test_a_google_test_line_is_the_code_hop_s(build):
     assert _code(needs, "TC_GTEST") == ("3", "code None:tests/gt_probe.cpp:3")
 
 
+_RENAMED_SUITE_PAGE = """\
+Probe
+=====
+
+.. test-case:: A hand case
+   :id: TC_UNIT
+   :file: reports/unit.xml
+   :suite: unit
+   :case: test_method
+   :classname: tests.test_lines.TestKlass
+"""
+
+
+@pytest.mark.parametrize(
+    ("root", "expected"),
+    [
+        # pytest 8.4 and later name the root so, whatever junit_suite_name says
+        (
+            b'<testsuites name="pytest tests">',
+            ("28", "code None:tests/test_lines.py:28"),
+        ),
+        # an older pytest, or a merge tool, writes another root: not recognised
+        (b"<testsuites>", ("27", "code None:tests/test_lines.py")),
+    ],
+    ids=["pytest-root", "other-root"],
+)
+def test_a_renamed_pytest_suite_is_recognised_by_its_root(build, root, expected):
+    report = REPORT.replace(b"<testsuites>", root).replace(
+        b'<testsuite name="pytest"', b'<testsuite name="unit"'
+    )
+    needs, warnings = build(
+        {"index.rst": _RENAMED_SUITE_PAGE}, {"reports/unit.xml": report}
+    )
+    assert warnings == ""
+    assert _code(needs, "TC_UNIT") == expected
+
+
 def test_the_line_of_an_unrecognised_producer_is_no_hop_s(build):
     """Its base is not known: ``case_line`` is the report's, and the code hop has no
     line, as before."""

@@ -261,7 +261,7 @@ class JUnitParser:
 
         return self.valid_xml
 
-    def parse(self) -> list[dict[str, Any]]:
+    def parse(self, *, line_base_known: bool = False) -> list[dict[str, Any]]:
         """
         Creates a common python list of object, no matter what information are
         supported by the parsed xml file for test results junit().
@@ -275,7 +275,9 @@ class JUnitParser:
         1. a suite's :data:`LINE_BASE_PROPERTY` property, ``"1"`` or ``"0"``, gives it
            (any other value is no mark);
         2. else a suite named ``pytest``, or the root ``<testsuites name="pytest
-           tests">``, counts from 0, so its lines are read one more;
+           tests">``, counts from 0, so its lines are read one more (pytest names the
+           root so from 8.4.0 on: with an older pytest, a suite renamed with
+           ``junit_suite_name`` falls under rule 4);
         3. else a test case carrying both of Google Test's ``status`` and ``result``
            attributes counts from 1, and is read as it is;
         4. else the line is passed through, and its base is not known.
@@ -285,14 +287,18 @@ class JUnitParser:
         line" sentinel and is never shifted, so ``-1`` stays ``-1``; a ``line`` of 0
         counted from 0 is line 1.
 
-        Each test case says whether the reader knew its base, as ``line_base_known``
-        (``True`` by rules 1 to 3 and an explicit ``line_base``, ``False`` by rule 4):
-        where it is ``True``, a ``line`` of 1 or more is a line of the file, counted
-        from 1. For a pytest test that is the line of its first decorator, or of its
-        ``def`` (CPython's ``co_firstlineno``).
+        For a pytest test the line is that of its first decorator, or of its ``def``
+        (CPython's ``co_firstlineno``).
 
+        :param line_base_known: Give each test case the key ``line_base_known``: whether
+            the reader knew its base (``True`` by rules 1 to 3 and an explicit
+            ``line_base``, ``False`` by rule 4). Where it is ``True``, a ``line`` of 1 or
+            more is a line of the file, counted from 1. Off by default, so a caller
+            that does not ask gets exactly the keys it always got: sphinx-test-reports
+            3.0.1 and earlier turn every key they do not know into a need field.
         :return: list of test suites as dictionaries
         """
+        with_known = line_base_known
 
         path = self.junit_xml_path
         root = self.junit_xml_object
@@ -334,7 +340,6 @@ class JUnitParser:
                 "classname": testcase.attrib.get("classname", "unknown"),
                 "file": testcase.attrib.get("file", "unknown"),
                 "line": line,
-                "line_base_known": line_base is not None,
                 "name": testcase.attrib.get("name", "unknown"),
                 "time": _numeric(path, testcase, "time", float),
                 # googletest attributes; empty (never absent) so that consumers
@@ -390,6 +395,8 @@ class JUnitParser:
             tc_dict["properties"] = _collect_properties(
                 testcase, TESTCASE_KNOWN_ATTRIBUTES
             )
+            if with_known:
+                tc_dict["line_base_known"] = line_base is not None
 
             return tc_dict
 

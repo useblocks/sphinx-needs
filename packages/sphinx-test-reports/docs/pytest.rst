@@ -87,6 +87,12 @@ command <cli>` -- a report of this plugin from a plain pytest report, which is
 otherwise the same and counts from 0. Merged with ``junitparser merge``, each
 suite keeps its own property. Under pytest-xdist the controller writes it, once.
 
+The property is the mark wherever it comes from: a run without this plugin that
+records it itself -- ``record_testsuite_property("ub_test_reports:line_base", "1")``,
+from a session-scoped fixture of a ``score_pytest`` project, say -- declares the base
+of its report the same way. With the plugin loaded, do not record it: the plugin
+writes it already, and of two, the reader takes the last.
+
 .. _pytest_line_base:
 
 Lines of reports without the plugin
@@ -101,17 +107,23 @@ its parent's:
 #. a suite carrying the property above (``1``, or ``0`` for a producer that
    declares it) is read by it;
 #. else a suite named ``pytest``, or a report whose root is
-   ``<testsuites name="pytest tests">`` -- what ``pytest --junitxml`` writes, the root
-   also when ``junit_suite_name`` renames the suite -- counts from 0, and each line
-   is read one more;
+   ``<testsuites name="pytest tests">`` -- what ``pytest --junitxml`` writes from
+   pytest 8.4 on, the root also when ``junit_suite_name`` renames the suite -- counts
+   from 0, and each line is read one more;
 #. else a test case carrying Google Test's ``status`` and ``result`` attributes
    counts from 1, as it is;
 #. else the line is read as written, and what it counts from is not known: the
    need's ``case_line`` is the report's, and the record of where the need comes from
    gives the test file without a line.
 
-A ``line`` of ``-1`` means "no line" and stays so. A report a merge tool rewrote
-with a renamed suite and without pytest's root falls under the last rule.
+A ``line`` of ``-1`` means "no line" and stays so. A report whose suite
+``junit_suite_name`` renamed falls under the last rule when its root is not pytest's:
+written by a pytest older than 8.4, which writes the root without a name, or rewritten
+by a merge tool. Load the plugin for such reports, or set :ref:`tr_line_base` to ``0``
+where the project reads no other report without the property. A merge tool may also
+fold the suites of one name into one suite (``junit-report-merger`` does, by its
+source), and then one base applies to all their cases: a plain and a marked report
+merged that way cannot both be read right. ``junitparser merge`` keeps them apart.
 
 :ref:`tr_line_base` (``line_base`` in ``[test_reports]``) sets what every report
 **without the property** counts from, in place of rules 2 to 4: ``1`` for a report

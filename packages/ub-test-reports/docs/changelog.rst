@@ -55,14 +55,17 @@ Fixed
   (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__). They are now one
   more than before. The reader decides the base per ``<testsuite>``, and a nested suite
   inherits it: a suite's ``ub_test_reports:line_base`` property (``1``, or ``0``) gives it;
-  else a suite named ``pytest`` or the root ``<testsuites name="pytest tests">`` counts from
-  0; else a case carrying Google Test's ``status`` and ``result`` counts from 1; else the
+  else a suite named ``pytest`` or the root ``<testsuites name="pytest tests">`` (pytest
+  8.4 and later) counts from 0; else a case carrying Google Test's ``status`` and ``result`` counts from 1; else the
   line is passed through, and its base is not known. A ``line`` below 0 is "no line" and
   stays so. The pytest plugin now marks every ``<testsuite>`` it writes with
   ``<property name="ub_test_reports:line_base" value="1"/>`` (under ``xunit1``, once under
   pytest-xdist), so its reports keep their lines. No id moves: no id scheme reads a line.
-  **API change:** ``JUnitParser.parse()`` returns these lines, takes ``line_base=`` (``"auto"``,
-  ``0`` or ``1``), and gives each test case ``line_base_known``; ``LINE_BASE_PROPERTY``,
+  **API change:** ``JUnitParser.parse()`` returns these lines, ``JUnitParser`` takes
+  ``line_base=`` (``"auto"``, ``0`` or ``1``), and ``parse(line_base_known=True)`` gives
+  each test case ``line_base_known``. A plain ``parse()`` gives the keys it always gave, so
+  sphinx-test-reports 3.0.1 and earlier, which turn every case key they do not know into a
+  need field, keep working with this release. ``LINE_BASE_PROPERTY``,
   ``LineBase``, ``LINE_BASES`` and ``is_line_base`` are new in ``ub_test_reports.junitparser``.
   A test's line is that of its first decorator, or of its ``def``, as pytest counts it.
   See "Upgrading" below.
@@ -90,8 +93,12 @@ Upgrading: test-case lines from pytest reports
 
 1. The lines of a plain ``pytest --junitxml`` report (``junit_family = xunit1``) are now the
    test's own line, one more than before: its ``case_line``, the converter's ``#L`` anchor,
-   and what a direct user of ``JUnitParser`` gets. A filter or a link that names a line
-   (``case_line == "12"``) names the line after it now.
+   and what a direct user of ``JUnitParser`` gets. A filter or a link written against the
+   old value (``case_line == "12"`` for a test on line 13) no longer finds that test:
+   write the test's own line (``"13"``). This holds for every plain report with pytest 8.4
+   or later, and with any pytest for the default suite name ``pytest``; with an older
+   pytest, a report whose suite ``junit_suite_name`` renamed is read as before (pytest
+   names the root ``pytest tests`` only from 8.4.0).
 2. The pytest plugin now marks its reports, with the suite property
    ``ub_test_reports:line_base`` = ``1``; its lines are read as they are.
 3. A report that already counts from 1 but carries no mark is read one line late: one
@@ -100,8 +107,11 @@ Upgrading: test-case lines from pytest reports
    ``score_pytest``. Regenerate it with this version's plugin, or set ``line_base = 1`` in
    ``[test_reports]`` (``--line-base 1`` for the converter, ``tr_line_base = 1`` in
    ``conf.py``).
+   A merged file that holds both plain pytest suites and suites of an earlier plugin cannot
+   be read right by any one setting: regenerate it.
 4. ``JUnitParser`` returns lines counted from 1 where it knows the report's base, and says
-   so per test case (``line_base_known``).
+   so per test case when asked (``parse(line_base_known=True)``); a plain ``parse()`` gives
+   the keys it always gave.
 
 .. _`release:1.1.0`:
 

@@ -426,9 +426,10 @@ def test_an_environment_pickled_by_an_earlier_release_is_read_again(make_app, tm
 
 def test_an_environment_pickled_at_env_version_1_is_read_again(make_app, tmp_path):
     """Version 1 recorded a plain pytest report's ``line`` as it is, one before the
-    test's own (#2381), and a code hop with no line. Nothing in the sources changed:
-    ``env_version`` 2 is what has the upgraded build read the pages again, rather than
-    keep those records."""
+    test's own (#2381), and a code hop with no line. Nothing in the sources or the
+    configuration changed: ``env_version`` 2 is what has the build read the pages again
+    here, rather than keep those records. (On a real upgrade the new ``tr_line_base``
+    config value has it read them again as well.)"""
     srcdir = _write(tmp_path, FILES)
     app, _ = _build(make_app, srcdir, fresh=True)
     pickled = Path(app.doctreedir, "environment.pickle")
