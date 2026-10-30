@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793396190482,
+  "lastUpdate": 1793400799510,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27684,6 +27684,42 @@ window.BENCHMARK_DATA = {
             "value": 50.987766094,
             "unit": "s",
             "extra": "Commit: 93da1d1d3b5b5710a999c46ef5d70a6889b9aff1\nBranch: master\nTime: 2026-10-30T22:35:06+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8b108b6a2133e370bf0ce110dff01c760a179d43",
+          "message": "‼️ Test-case lines from pytest reports are the test's own line (#2431)\n\nA test case read from a plain `pytest --junitxml` report is now on the\ntest's own line. pytest counts the `line`\nattribute from 0, and the readers took it as counting from 1, so every\nsuch case's `case_line` and the converter's\n`{base}/blob/{commit}/{file}#L{line}` link pointed one line early:\nusually a blank line, or `class TestX:` for a\nmethod. Now `case_line` and the link are the line of the test's first\ndecorator, or of its `def`.\n\n- **ub-test-reports, the reader.** The JUnit reader decides per\n`<testsuite>`, and a nested suite inherits it, what\n  the lines count from:\n  1. a `ub_test_reports:line_base` property gives it;\n2. else a Google Test case (it carries `status` and `result`) counts\nfrom 1;\n  3. else an explicit `line_base` gives it (below);\n4. else a suite named `pytest`, or the root `<testsuites name=\"pytest\ntests\">`, counts from 0;\n  5. else the line is read as written, and its base is not known.\n\n`-1` (\"no line\") is never shifted. pytest names the root so from 8.4.0,\nso with an older pytest a renamed suite\nis read as before. `JUnitParser` takes `line_base=`, and\n`parse(line_base_known=True)` says per case whether the\n  base is known.\n- **ub-test-reports, the pytest plugin.** It marks every `<testsuite>`\nit writes with\n`<property name=\"ub_test_reports:line_base\" value=\"1\"/>` (under\n`xunit1`, once under pytest-xdist), so its reports\nkeep their lines. The property survives `junitparser merge`, suite by\nsuite.\n- **`line_base = \"auto\" | 0 | 1` in `[test_reports]`** sets what a\nreport counts from when the reader is not sure:\na marked report and a Google Test report are read by their own base\nwhatever it says. `--line-base` for the\nconverter, `tr_line_base` in the build, where `-D` wins. Any other value\nis refused at start-up.\n- **sphinx-test-reports.** The record of where a test case comes from\nnow gives the test file's line where the\nreport's base is known (no end line), and no line where it is not. The\nconverter writes no `#L` anchor for line 0\nof a report counted from 1, for the same reason. `env_version` is 2, so\nan existing `_build` is\n  read again once.\n- No id moves: no id scheme reads a line.\n\n**Upgrading: test-case lines from pytest reports**\n1. A plain `pytest --junitxml` report's lines are one more than before:\n`case_line`, the converter's `#L` anchor,\nand what `JUnitParser` returns. A filter or a link written against the\nold value (`case_line == \"12\"` for a\ntest on line 13) no longer finds that test: write the test's own line.\nWith a pytest older than 8.4, a report\n   whose suite `junit_suite_name` renamed is read as before.\n2. The pytest plugin now marks its reports, and their lines are read as\nthey are.\n3. A report that already counts from 1 but has no mark is read one line\nlate. That covers reports written by an\nearlier plugin (ub-test-reports ≤ 1.1.0, sphinx-test-reports\n2.0.0–3.0.1) and by S-CORE's `score_pytest`.\nRegenerate it with this plugin, or set `line_base = 1` (`--line-base 1`,\n`tr_line_base = 1`).\n4. `JUnitParser` returns lines counted from 1 where it knows the base,\nand says so per case when asked\n   (`parse(line_base_known=True)`).\n\nA merged file that holds both plain pytest suites and suites of an\nearlier plugin cannot be read right by any one\nsetting: regenerate it. A project that upgrades ub-test-reports but\nkeeps sphinx-test-reports 3.0.1 or earlier gets\nthe new lines too, but `line_base` has no effect there and an\nincremental build keeps each page's old `case_line`\nuntil a full build (`-E`): upgrade sphinx-test-reports too.\n\n**Released sphinx-test-reports keeps working.** A plain\n`JUnitParser.parse()` returns exactly the keys it always\ndid, so sphinx-test-reports 3.0.1 (which allows this ub-test-reports)\nkeeps building with it. Over all 49 report\nfixtures of the repository, a plugin-marked one included, 3.0.1 with\nthis ub-test-reports gives the same 1893 needs,\nthe same ids and the same warnings as with master's; the only field\nvalue that differs is `case_line`, +1 on the\nplain pytest reports (the `needs_schema` carries the new `case_line`\ndescription).\n\nWhat moves in the docs: the `case_line` of the 1160 needs read from the\ntwo pytest example reports, and the\n`case_line` field's description. Nothing else moves.\n\nCloses #2381",
+          "timestamp": "2026-10-30T23:51:52+01:00",
+          "tree_id": "47bd63e3b193c0f69fa7d436e771cc22660db668",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8b108b6a2133e370bf0ce110dff01c760a179d43"
+        },
+        "date": 1793400791188,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.09291649399997937,
+            "unit": "s",
+            "extra": "Commit: 8b108b6a2133e370bf0ce110dff01c760a179d43\nBranch: master\nTime: 2026-10-30T23:51:52+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.437660626000024,
+            "unit": "s",
+            "extra": "Commit: 8b108b6a2133e370bf0ce110dff01c760a179d43\nBranch: master\nTime: 2026-10-30T23:51:52+01:00"
           }
         ]
       }
