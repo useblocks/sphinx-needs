@@ -725,6 +725,7 @@ def test_render_semantic(
         (CommentType.ts, "a.mjs", "javascript"),
         (CommentType.ts, "a.cjs", "javascript"),
         (CommentType.ts, "a.JS", "javascript"),
+        (CommentType.ts, "a.py", "typescript"),
         (CommentType.rust, "a.rs", "rust"),
         (CommentType.go, "a.go", "go"),
         (CommentType.yaml, "a.yml", "yaml"),
