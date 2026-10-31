@@ -27,6 +27,7 @@ from _pytest.mark import ParameterSet
 from docutils.nodes import document
 from docutils.statemachine import string2lines
 from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 from sphinx.testing.util import SphinxTestApp
 
 import sphinx_needs.needs
@@ -140,8 +141,28 @@ def _need_source_fence() -> Iterator[None]:
     - lines point at text: every hop under the ``srcdir`` root names a file that exists,
       and where it has a ``start_line``, that line holds the directive's marker or the
       list item, and its ``end_line`` a non-blank line at or after it.
+
+    It wraps ``load_external_needs`` too, and checks each external need after it: its
+    first hop is an ``external`` hop, and where that hop has a section chain (outermost
+    first), the legacy ``sections`` (innermost first) is its projection.
     """
     original = sphinx_needs.needs.analyse_need_locations
+    original_external = sphinx_needs.needs.load_external_needs
+
+    def fenced_external(
+        app: Sphinx, env: BuildEnvironment, docnames: list[str]
+    ) -> None:
+        original_external(app, env, docnames)
+        for need in SphinxNeedsData(app.env).get_needs_mutable().values():
+            if not need["is_external"] or not isinstance(need.source, NeedItemSource):
+                continue
+            hop = need.source.hops[0]
+            assert hop.kind == "external", need.id
+            if hop.semantic is not None:
+                assert project_legacy(hop.semantic) == (
+                    tuple(need["sections"]),
+                    None,
+                ), need.id
 
     def fenced(app: Sphinx, doctree: document) -> None:
         needs = SphinxNeedsData(app.env).get_needs_mutable()
@@ -180,6 +201,7 @@ def _need_source_fence() -> Iterator[None]:
 
     with pytest.MonkeyPatch.context() as patch:
         patch.setattr(sphinx_needs.needs, "analyse_need_locations", fenced)
+        patch.setattr(sphinx_needs.needs, "load_external_needs", fenced_external)
         yield
 
 

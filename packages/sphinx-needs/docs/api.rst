@@ -265,7 +265,8 @@ Data
    directive or ``list2need``, the file the need is written in (an included file's own, in an include; the module,
    for an autodoc docstring); for an imported need, the ``needs.json`` it was read from (where the exporting project
    wrote the need is not a hop yet); for a service, the service that made it, then the file of the ``needservice``
-   directive; for an external need, its page on the other site, its only hop. In a nested reStructuredText include,
+   directive; for an external need, its page on the other site, its only hop, with the need's sections there as its
+   semantic location, outermost first (the legacy ``sections`` keeps them innermost first). In a nested reStructuredText include,
    the included file's hop is followed by one ``file`` hop per file it was included through, innermost first, each
    with its path and suffix and no line, as docutils' ``include_log`` names them; myst-parser's ``{include}`` logs no
    chain, so in MyST only the innermost file is a hop (a reStructuredText include in ``eval-rst`` is logged). A need created
@@ -300,7 +301,8 @@ Data
    does not know).
 
    A semantic entry's ``kind`` is in the vocabulary of its hop's kind and producer: a ``page`` hop's entries use the
-   document's (``section``, ``<domain>:<objtype>``), a ``generated`` hop's name its generator (``service``), and a
+   document's (``section``, ``<domain>:<objtype>``), an ``external`` hop's are the ``section`` entries of the other
+   site's page, a ``generated`` hop's name its generator (``service``), and a
    ``code`` hop's use its producer's entity kinds, read with the hop's ``language``: sphinx-codelinks' bare ones
    (``function``, ``method``, ``class``, ``impl``, ...). In a ``code`` hop the kinds may carry
    identity the names alone do not (Python's ``<locals>`` boundary is implied by a function or method followed by

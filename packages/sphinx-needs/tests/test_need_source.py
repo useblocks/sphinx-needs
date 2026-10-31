@@ -582,10 +582,15 @@ def test_the_hops_of_every_need(
             ),
         ),
     )
+    # an external need: its page on the other site, and its sections there
     assert hops["EXT_X1"] == (
         NeedSourceHop(
             kind="external",
             physical=NeedSourcePhysical(url="http://example.org/remote/page.html#X1"),
+            semantic=(
+                NeedSourceSemantic(kind="section", name="Remote top"),
+                NeedSourceSemantic(kind="section", name="Remote sec"),
+            ),
         ),
     )
 
@@ -725,7 +730,6 @@ def test_a_need_created_on_its_page_records_the_page_s_path(
     assert needs["REQ_APIX"]["lineno"] == 15
 
 
-@pytest.mark.xfail(strict=True, reason="G8: an external hop carries no sections")
 def test_an_external_need_s_hop_carries_its_upstream_sections(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ):

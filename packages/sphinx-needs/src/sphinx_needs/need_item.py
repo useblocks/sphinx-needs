@@ -264,8 +264,9 @@ class NeedItemSource:
         computed from them as the constructor computes them, every other field kept.
 
         ``create_need``'s one write, before the need exists: what the creation adds to
-        the hops it is given (a page's file,
-        :func:`~sphinx_needs._need_source.with_page_paths`).
+        the hops it is given (a page's file, an external need's sections;
+        :func:`~sphinx_needs._need_source.with_page_paths`,
+        :func:`~sphinx_needs._need_source.with_external_sections`).
         """
         hops = checked_hops(hops)
         new = copy.copy(self)

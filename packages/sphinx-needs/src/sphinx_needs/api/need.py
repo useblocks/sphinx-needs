@@ -22,6 +22,7 @@ from sphinx_needs._jinja import render_template_string
 from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
+    with_external_sections,
     with_page_paths,
 )
 from sphinx_needs.config import NeedsSphinxConfig, NeedType
@@ -1191,8 +1192,11 @@ def _create_need(
     """
     if isinstance(source, NeedItemSource):
         # what the source's own producer could not record: the file of a page given
-        # with no path (``NeedItemSource.on_page``, ``add_need``'s default source)
-        hops = with_page_paths(source.hops, app.env.srcdir, app.env.doc2path)
+        # with no path (``NeedItemSource.on_page``, ``add_need``'s default source),
+        # and an external need's sections on the other site, on its external hop
+        hops = with_external_sections(
+            with_page_paths(source.hops, app.env.srcdir, app.env.doc2path), sections
+        )
         if hops is not source.hops:
             source = source._with_hops(hops)
     content_parser: type[Parser] | None = None

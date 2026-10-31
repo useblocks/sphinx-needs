@@ -98,7 +98,9 @@ class NeedSourceSemantic:
     kind: str
     """What the entry is, in the vocabulary of its hop's kind and producer. A ``page``
     hop's entries use the document's: ``"section"``, ``"<domain>:<objtype>"``
-    (``"py:method"``). A ``generated`` hop's name its generator (``"service"``). A
+    (``"py:method"``). An ``external`` hop's are the ``"section"`` entries of the
+    need's page on the other site, as its record gives them. A ``generated`` hop's
+    name its generator (``"service"``). A
     ``code`` hop's use its producer's entity kinds, read together with the hop's
     ``language``: sphinx-codelinks' bare ones (``"function"``, ``"method"``,
     ``"class"``, ``"impl"``, ...). Autodoc's docstring hop uses the same Python kinds
@@ -136,8 +138,9 @@ class NeedSourceHop:
     physical: NeedSourcePhysical | None = None
     semantic: tuple[NeedSourceSemantic, ...] | None = None
     """Outermost to innermost; ``None`` where it is not determined (the placement's,
-    until the doctree has been read), or where nothing finer than the file is known (a
-    ``file`` hop, a whole report)."""
+    until the doctree has been read; an external need's whose record gives no
+    sections), or where nothing finer than the file is known (a ``file`` hop, a whole
+    report)."""
     document: str | None = None
     """The docname, on the hop of a page the need is placed on."""
     language: str | None = None
@@ -248,6 +251,28 @@ def with_page_paths(
     if all(new is old for new, old in zip(completed, hops, strict=True)):
         return hops
     return tuple(completed)
+
+
+def with_external_sections(
+    hops: tuple[NeedSourceHop, ...], sections: object
+) -> tuple[NeedSourceHop, ...]:
+    """``hops``, an external need's ``external`` hop given its section chain on the other
+    site as its semantic location: one ``section`` entry per name of ``sections``,
+    outermost first, where ``sections`` (the legacy field's value, innermost first) is
+    a list of strings. Otherwise, and where the hop's semantic location is already set,
+    ``hops`` as they are.
+    """
+    if not (hops and hops[0].kind == "external" and hops[0].semantic is None):
+        return hops
+    if not (
+        isinstance(sections, list | tuple)
+        and all(isinstance(name, str) for name in sections)
+    ):
+        return hops
+    semantic = tuple(
+        NeedSourceSemantic(kind="section", name=name) for name in reversed(sections)
+    )
+    return (dataclasses.replace(hops[0], semantic=semantic), *hops[1:])
 
 
 LineCheck = Callable[[Sequence[str], int, int | None], bool]

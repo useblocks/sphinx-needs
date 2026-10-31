@@ -2,7 +2,7 @@
 # name: test_the_hops_of_every_need
   dict({
     'EXT_X1': list([
-      'external http://example.org/remote/page.html#X1',
+      "external http://example.org/remote/page.html#X1 :: section 'Remote top' > section 'Remote sec'",
     ]),
     'I1': list([
       'file srcdir:imp.json (.json)',

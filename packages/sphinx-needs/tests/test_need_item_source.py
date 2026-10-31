@@ -722,7 +722,6 @@ def test_create_need_records_an_on_page_need_s_page_path(test_app: SphinxTestApp
         )
 
 
-@pytest.mark.xfail(strict=True, reason="G8: an external hop carries no sections")
 @pytest.mark.parametrize("test_app", [ON_PAGE_PROJECT], indirect=True)
 def test_add_external_need_puts_its_sections_on_the_external_hop(
     test_app: SphinxTestApp,
