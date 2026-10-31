@@ -651,13 +651,15 @@ def _docstring_hop(
     Autodoc's source is ``<file>:docstring of <name>`` (no ``<file>:`` where it has no
     analyser of the module), ``<name>`` the object's ``__module__`` and
     ``__qualname__`` where it has both: its definition, not the path it is documented
-    under. The name is split at the longest prefix that is an imported module
-    (:func:`_split_module`), that module's source is read as Python reads it, through
+    under. The name is split at each prefix that is an imported module, longest first
+    (:func:`_module_splits`); that module's source is read as Python reads it, through
     Sphinx's cached :class:`~sphinx.pycode.ModuleAnalyzer`, and the rest of the name is
-    looked up in its syntax (:func:`_python_definitions`). The definition found is
-    trusted only where its docstring -- an attribute's ``#:`` comment or docstring, a
-    module's docstring -- holds ``text``, the need's first line: the name says which
-    object the docstring belongs to, not where the text is.
+    looked up in its syntax (:func:`_python_definitions`). The first definition found
+    whose docstring -- an attribute's ``#:`` comment or docstring, a module's docstring
+    -- holds every line of ``text`` is the one: the name says which object the
+    docstring belongs to, not where the text is, and a module and a class can share a
+    name (``pkg.main`` the submodule, and the function ``pkg/__init__.py`` imports from
+    it; a class ``Shape`` defined over the submodule ``pkg.Shape``).
 
     - ``physical``: the file of the definition that holds the text, which is not the one
       ``<file>`` names for a member inherited from another module; otherwise
@@ -672,25 +674,30 @@ def _docstring_hop(
     - ``language``: ``"python"``, whatever the file.
     - no line: the one autodoc gives counts from the docstring, not the file.
 
-    :param text: The need's first line, stripped; ``None`` where the producer gives
-        none, and then no definition is trusted.
+    :param text: The need's text as written, its directive's block: each of its
+        non-blank lines, stripped, must be a line of the docstring, so that a need
+        sharing a line with another (a title, an untitled need's directive line) is not
+        taken for it. ``None`` where the producer gives none, and then no definition is
+        trusted.
     """
     file, _, name = source.partition(_DOCSTRING_OF)
     file = file.removesuffix(":")
     semantic: tuple[NeedSourceSemantic, ...] | None = None
-    if text and (split := _split_module(name)) is not None:
-        module, qualname = split
+    block = {line.strip() for line in (text or "").splitlines()} - {""}
+    for module, qualname in _module_splits(name) if block else ():
         try:
             analyzer = ModuleAnalyzer.for_module(module)
         except PycodeError:
-            analyzer = None
-        if analyzer is not None and os.path.isfile(analyzer.srcname):
-            definition = _python_definitions(analyzer.code).get(qualname)
-            if definition is not None and text in _docstring_lines(
-                analyzer, qualname, definition
-            ):
-                file = analyzer.srcname
-                semantic = _semantic(definition.parts)
+            continue
+        if not os.path.isfile(analyzer.srcname):
+            continue
+        definition = _python_definitions(analyzer.code).get(qualname)
+        if definition is not None and block <= _docstring_lines(
+            analyzer, qualname, definition
+        ):
+            file = analyzer.srcname
+            semantic = _semantic(definition.parts)
+            break
     return NeedSourceHop(
         kind="code",
         physical=physical_for(srcdir, file) if file else None,
@@ -699,26 +706,14 @@ def _docstring_hop(
     )
 
 
-def _split_module(name: str) -> tuple[str, str] | None:
-    """``name`` split at its longest prefix that is a module in ``sys.modules``: the
-    module and the rest (``""`` for the module itself); ``None`` if no prefix is one.
-
-    A submodule counts only while its package's attribute of its name is that module: a
-    class ``Shape`` defined in ``pkg/__init__.py`` after ``pkg.Shape`` was imported
-    replaces it, and ``pkg.Shape.area`` is then the class' method.
-    """
+def _module_splits(name: str) -> Iterator[tuple[str, str]]:
+    """``name`` split at each prefix that is a module in ``sys.modules``, longest
+    first: the module and the rest (``""`` for the module itself)."""
     parts = name.split(".")
     for index in range(len(parts), 0, -1):
         module = ".".join(parts[:index])
-        if module in sys.modules and (
-            index == 1
-            or getattr(
-                sys.modules.get(".".join(parts[: index - 1])), parts[index - 1], None
-            )
-            is sys.modules[module]
-        ):
-            return module, ".".join(parts[index:])
-    return None
+        if module in sys.modules:
+            yield module, ".".join(parts[index:])
 
 
 _PythonParts = tuple[tuple[str, str], ...]
@@ -890,9 +885,9 @@ def located_hops(
         hop of an included file takes no line there.
     :param first: The hops before the file, innermost first, if any: an imported
         ``needs.json``, the service that made the need.
-    :param text: The text's first line, stripped: in a docstring, the definition its
-        name resolves to is trusted only where that definition's docstring holds it
-        (:func:`_docstring_hop`).
+    :param text: The text as written (a directive's block): in a docstring, the
+        definition its name resolves to is trusted only where that definition's
+        docstring holds each of its lines (:func:`_docstring_hop`).
     :return: ``[first...], file, page`` for text in an included file (the page hop then
         has no line: the ``include`` line is not recoverable), ``[first], page``
         otherwise. A docstring (autodoc) is a ``code`` hop of the Python file it is
@@ -985,14 +980,7 @@ def directive_hops(
         tab_width=document_tab_width(directive.state),
         fragment_lines=rst,
         first=first,
-        text=next(
-            (
-                line.strip()
-                for line in directive.block_text.splitlines()
-                if line.strip()
-            ),
-            None,
-        ),
+        text=directive.block_text,
     )
 
 

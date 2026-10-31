@@ -36,6 +36,21 @@ alias = make
 #:    :id: R_ALIAS_THERE
 far = area_of
 
+
+def titled():
+    """A function whose need has a title an alias' need has too.
+
+    .. req:: Same title
+       :id: R_SAME_A
+    """
+
+
+#: An alias whose need shares its first line with the function's.
+#:
+#: .. req:: Same title
+#:    :id: R_SAME_B
+same_title = titled
+
 #: An alias of a function with no Python source.
 #:
 #: .. req:: Alias of a builtin

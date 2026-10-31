@@ -307,9 +307,10 @@ Data
    method go``. A ``property``, a ``staticmethod`` or a ``classmethod`` is a ``method``, an exception a ``class``:
    the page hop keeps autodoc's object type (``py:property``). An attribute documented with ``#:`` is a leaf
    ``attribute`` (``class Shape > attribute sides``), where sphinx-codelinks attaches the same comment to the
-   enclosing class, or to the file. Autodoc names a docstring by its object's module and qualified name, and the
-   definition that name resolves to is trusted only where its docstring holds the need's first line; the file is
-   then that definition's, so a member inherited from another module records that module's file. A module docstring
+   enclosing class, or to the file. Autodoc names a docstring by its object's module and qualified name; the name is
+   tried at each module it starts with, longest first, and the definition it resolves to is trusted only where its
+   docstring holds every line of the need. The file is then that definition's, so a member inherited from another
+   module records that module's file. A module docstring
    records its file alone. Where no definition holds the text, the hop records the file autodoc gives and nothing
    finer, never another entity: an alias (autodoc names it by the object it aliases), an override that inherits its
    docstring, an object made at run time, a function with no Python source. A function whose ``__module__`` is
