@@ -70,16 +70,12 @@ def _version(app) -> dict:
 )
 def test_summary_is_a_boolean_of_the_link_types_entry(test_app):
     """``summary = true`` marks a link type, and it alone; a value that is not a
-    boolean, and a need type's ``summary``, are ``needs.config`` findings, ignored; a
-    union naming a summary link type is refused."""
+    boolean, and a need type's ``summary`` on a link type ``needs_links`` declares,
+    are ``needs.config`` findings, ignored; a union naming a summary link type is
+    refused."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        "WARNING: needs_types entry 2 ('spec').links['satisfies'] has 'summary', "
-        "which a need type's entry cannot give: whether a link type is a summary is "
-        "the same on every need type, and is given on its needs_links entry "
-        "(a link type declared on need types alone cannot be a summary yet); the key "
-        "is ignored [needs.config]",
         "WARNING: needs_links['tagged'] has a 'summary' that is not a boolean (got "
         "str); the key is ignored [needs.config]",
         "WARNING: Invalid derive of link type 'trace': kind 'union': the role "
@@ -87,6 +83,9 @@ def test_summary_is_a_boolean_of_the_link_types_entry(test_app):
         "a union is read as one set of edges, and a summary link is a shortcut, not "
         "an edge; the link type cannot be set in a need or by a needextend, and holds "
         "no links [needs.derive_invalid]",
+        "WARNING: needs_types['spec'].links['satisfies'] sets 'summary', which a need "
+        "type gives only a link type declared on need types alone; 'satisfies' keeps "
+        "its own on every need type and the key is ignored [needs.config]",
     ]
     schema = SphinxNeedsData(app.env).get_schema()
     summaries = {
@@ -135,6 +134,15 @@ needs_links = {
 }
 """
 
+#: the same, chain a summary declared on need types alone (``impl``'s bare entry
+#: narrows the default type)
+CONF_FLOW_TYPES = """\
+extensions = ["sphinx_needs"]
+needs_flow_engine = "graphviz"
+needs_links = {"satisfies": {}}
+needs_types = [{"directive": "impl", "links": {"chain": {"summary": True}}}]
+"""
+
 INDEX_FLOW = """\
 Flows
 =====
@@ -180,12 +188,18 @@ def _debug_sources(outdir: Path) -> list[str]:
 
 
 @pytest.mark.parametrize(
-    "test_app", [_project(CONF_FLOW, INDEX_FLOW, "html")], indirect=True
+    "test_app",
+    [
+        pytest.param(_project(CONF_FLOW, INDEX_FLOW, "html"), id="needs_links"),
+        pytest.param(_project(CONF_FLOW_TYPES, INDEX_FLOW, "html"), id="need_types"),
+    ],
+    indirect=True,
 )
 def test_a_needflow_without_link_types_leaves_summary_link_types_out(test_app):
     """A needflow without ``:link_types:`` draws every link type but the summaries,
     and walks from ``:root_id:`` along the same; one naming a summary link type draws
-    it and walks it."""
+    it and walks it -- a summary declared on need types alone as one ``needs_links``
+    declares."""
     app = test_app
     app.build()
     assert build_warnings(app) == []
@@ -378,16 +392,11 @@ def test_a_summary_link_type_on_need_types(test_app):
     ``copy`` or ``collect`` computes included (REQ_1 and SYS_1 are reached, REQ_2 is not
     and fails both counts). A ``copy`` and a ``collect`` may be declared on need types
     alone, the link type a summary all the same, and a ``where`` reads ``c.is_a``
-    (``sysreq`` inherits ``req``; a satisfied specification is not copied). A need
-    type's ``summary`` is still a ``needs.config`` finding, its rule applied."""
+    (``sysreq`` inherits ``req``; a satisfied specification is not copied). The first
+    root's ``summary = true`` says what the rule implies: no finding."""
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        "WARNING: needs_types entry 3 ('spec').links['chain'] has 'summary', which a "
-        "need type's entry cannot give: whether a link type is a summary is the same "
-        "on every need type, and is given on its needs_links entry "
-        "(a link type declared on need types alone cannot be a summary yet); the key is "
-        "ignored [needs.config]",
         _count_failed("mitigates_back"),
         _count_failed("chain_back"),
     ]
@@ -402,3 +411,384 @@ def test_a_summary_link_type_on_need_types(test_app):
     properties = version["needs_schema"]["properties"]
     for name in ("chain", "chain_back", "mitigates", "mitigates_back"):
         assert properties[name]["summary"] is True, name
+
+
+CONF_TYPE_LOCAL = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_types = [
+    {"directive": "req", "title": "Requirement", "prefix": "R_"},
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "links": {"evid": {"summary": True}, "rel": {}},
+    },
+    {
+        "directive": "test",
+        "title": "Test",
+        "prefix": "T_",
+        "links": {"evid": {"summary": True}, "rel": {"summary": True}},
+    },
+    {"directive": "impl", "title": "Implementation", "prefix": "I_", "links": {"evid": {}}},
+    {
+        "directive": "sub",
+        "title": "Sub-specification",
+        "prefix": "SU_",
+        "inherits": "spec",
+        "links": {"evid": {"summary": False}},
+    },
+]
+"""
+
+INDEX_TYPE_LOCAL = """\
+On need types
+=============
+
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Sets the shapes: evid a summary, rel none
+   :id: SPEC_1
+   :evid: REQ_1
+   :rel: REQ_1
+
+.. test:: Repeats evid's, refused for rel's
+   :id: TEST_1
+   :evid: REQ_1
+   :rel: REQ_1
+
+.. impl:: Leaves evid's out
+   :id: IMPL_1
+   :evid: REQ_1
+
+.. sub:: Refused child, still declaring evid through its parent
+   :id: SUB_1
+   :evid: REQ_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_TYPE_LOCAL, INDEX_TYPE_LOCAL)], indirect=True
+)
+def test_a_summary_link_type_declared_on_need_types_alone(test_app):
+    """``summary`` is part of the shape of a link type need types alone declare: its
+    first root declaration sets it, a silent one too (``false``), and every other
+    declaration may repeat it or leave it out; another value is a
+    ``needs.type_conflict``, which refuses a root's entry and leaves a child declaring
+    the link type through its parent. needs.json marks a summary, and its back links,
+    as one ``needs_links`` declares."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types['sub'].links['evid'] cannot be declared with summary "
+        "False: its summary is True on every need type, as need type 'spec' declares "
+        "it; the entry is ignored [needs.type_conflict]",
+        "WARNING: needs_types['test'].links['rel'] cannot be declared with summary "
+        "True: its summary is False on every need type, as need type 'spec' declares "
+        "it; the entry is ignored [needs.type_conflict]",
+        "<srcdir>/index.rst:12: WARNING: Link type 'rel' is not declared on need type "
+        "'test' and cannot be set in need 'TEST_1'; the value 'REQ_1' is ignored "
+        "[needs.undeclared_for_type]",
+    ]
+    schema = SphinxNeedsData(app.env).get_schema()
+    evid, rel = schema.get_link_field("evid"), schema.get_link_field("rel")
+    assert evid is not None and evid.summary
+    assert rel is not None and not rel.summary
+    for need_type in ("spec", "test", "impl", "sub"):
+        declared = schema.for_type(need_type).get_link_field("evid")
+        assert declared is not None and declared.summary, need_type
+    version = _version(app)
+    properties = version["needs_schema"]["properties"]
+    assert properties["evid"]["summary"] is True
+    assert properties["evid_back"]["summary"] is True
+    assert "summary" not in properties["rel"]
+    assert "summary" not in properties["rel_back"]
+    needs = version["needs"]
+    for need_id in ("SPEC_1", "TEST_1", "IMPL_1", "SUB_1"):
+        assert needs[need_id]["evid"] == ["REQ_1"], need_id
+    assert needs["REQ_1"]["evid_back"] == ["IMPL_1", "SPEC_1", "SUB_1", "TEST_1"]
+    assert needs["TEST_1"]["rel"] == []
+
+
+CONF_TYPE_PATH = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {"satisfies": {}}
+_COPY = {"kind": "copy", "field": "id", "over": "satisfies"}
+needs_types = [
+    {"directive": "req", "title": "Requirement", "prefix": "R_"},
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "links": {
+            "reach": {"summary": False, "derive": _COPY},
+            "chain": {"derive": _COPY},
+            "mitigates": {"summary": True, "copy": True},
+        },
+    },
+    {
+        "directive": "test",
+        "title": "Test",
+        "prefix": "T_",
+        "links": {"chain": {"summary": False, "derive": _COPY}},
+    },
+    {
+        "directive": "impl",
+        "title": "Implementation",
+        "prefix": "I_",
+        "links": {"chain": {"summary": True, "derive": _COPY}},
+    },
+]
+"""
+
+INDEX_TYPE_PATH = """\
+Paths
+=====
+
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_1
+   :mitigates: REQ_1
+
+.. test:: Test
+   :id: TEST_1
+   :satisfies: REQ_1
+
+.. impl:: Implementation
+   :id: IMPL_1
+   :satisfies: REQ_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_TYPE_PATH, INDEX_TYPE_PATH)], indirect=True
+)
+def test_a_path_on_need_types_is_a_summary_whatever_a_declaration_says(test_app):
+    """A copy or collect makes a link type need types alone declare a summary, as on
+    ``needs_links``: a declaration may say so, and ``summary = false`` beside the rule
+    is a ``needs.derive_invalid`` finding at the entry giving it -- the first root's or
+    a later root's -- the key ignored and the rule applied there, not a conflict of the
+    link type's shape. ``copy = true`` beside ``summary = true`` on an authored one is
+    a ``needs.config`` finding at its first root's entry, ignored, and so not
+    deprecated: nothing is copied into ``links``."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types['spec'].links['mitigates'] has 'copy = true' beside "
+        "'summary = true': a copy in links would make a summary link an edge; copy is "
+        "ignored [needs.config]",
+        "WARNING: Invalid derive of link type 'chain': needs_types['test'].links"
+        "['chain']: 'summary' cannot be given beside derive, and is ignored (a link a "
+        "copy or collect computes is a path, not an edge); the rule applies "
+        "[needs.derive_invalid]",
+        "WARNING: Invalid derive of link type 'reach': needs_types['spec'].links"
+        "['reach']: 'summary' cannot be given beside derive, and is ignored (a link a "
+        "copy or collect computes is a path, not an edge); the rule applies "
+        "[needs.derive_invalid]",
+    ]
+    schema = SphinxNeedsData(app.env).get_schema()
+    for name in ("chain", "reach", "mitigates"):
+        link = schema.get_link_field(name)
+        assert link is not None and link.summary, name
+    mitigates = schema.get_link_field("mitigates")
+    assert mitigates is not None and not mitigates.copy
+    version = _version(app)
+    properties = version["needs_schema"]["properties"]
+    for name in ("chain", "chain_back", "reach", "reach_back"):
+        assert properties[name]["summary"] is True, name
+    needs = version["needs"]
+    assert needs["SPEC_1"]["reach"] == ["REQ_1"]
+    for need_id in ("SPEC_1", "TEST_1", "IMPL_1"):
+        assert needs[need_id]["chain"] == ["REQ_1"], need_id
+    assert needs["SPEC_1"]["mitigates"] == ["REQ_1"]
+    assert needs["SPEC_1"]["links"] == []
+
+
+CONF_TYPE_GLOBAL = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {"evid": {"summary": True}}
+needs_types = [
+    {"directive": "req", "title": "Requirement", "prefix": "R_"},
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "links": {"evid": {"summary": True, "description": "Its evidence"}},
+    },
+]
+"""
+
+INDEX_TYPE_GLOBAL = """\
+Global
+======
+
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :evid: REQ_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_TYPE_GLOBAL, INDEX_TYPE_GLOBAL)], indirect=True
+)
+def test_a_need_type_gives_no_summary_of_a_link_type_declared_otherwise(test_app):
+    """On a link type ``needs_links`` declares, ``summary`` is its entry's: a need
+    type's entry giving it is a ``needs.config`` finding even where it repeats the
+    link type's own, the key ignored and the rest of the entry used."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: needs_types['spec'].links['evid'] sets 'summary', which a need type "
+        "gives only a link type declared on need types alone; 'evid' keeps its own on "
+        "every need type and the key is ignored [needs.config]",
+    ]
+    schema = SphinxNeedsData(app.env).get_schema()
+    evid = schema.for_type("spec").get_link_field("evid")
+    assert evid is not None and evid.summary
+    assert evid.description == "Its evidence"
+    assert _version(app)["needs"]["SPEC_1"]["evid"] == ["REQ_1"]
+
+
+CONF_TYPE_UNREAD = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {"satisfies": {}}
+_COPY = {"kind": "copy", "field": "id", "over": "satisfies"}
+_NO_OVER = {"kind": "copy", "field": "id"}
+_OVER_BACK = {"kind": "copy", "field": "id", "over": "satisfies_back"}
+needs_types = [
+    {"directive": "req", "title": "Requirement", "prefix": "R_"},
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "links": {
+            "chain": {"derive": _COPY},
+            "reach": {"summary": False, "derive": _NO_OVER},
+            "loop": {"summary": False, "derive": _OVER_BACK},
+        },
+    },
+    {
+        "directive": "test",
+        "title": "Test",
+        "prefix": "T_",
+        "links": {
+            "chain": {"summary": False, "derive": _NO_OVER},
+            "reach": {"derive": _COPY},
+            "loop": {"derive": _COPY},
+        },
+    },
+]
+"""
+
+INDEX_TYPE_UNREAD = """\
+Unread
+======
+
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_1
+
+.. test:: Test
+   :id: TEST_1
+   :satisfies: REQ_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_TYPE_UNREAD, INDEX_TYPE_UNREAD)], indirect=True
+)
+def test_summary_false_beside_a_rule_that_cannot_be_read(test_app):
+    """``summary = false`` beside a rule that cannot be read, in the first root
+    declaration or a later one, is not reported: the rule's own finding is, alone,
+    since the rule applies nowhere (its type holds no links); the other types' rules
+    apply."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: Invalid derive of link type 'chain': needs_types['test'].links"
+        "['chain'].derive: kind 'copy' on a link type requires the role 'over'; the "
+        "link type cannot be set in a need or by a needextend, and on need type "
+        "'test' holds no links [needs.derive_invalid]",
+        "WARNING: Invalid derive of link type 'loop': needs_types['spec'].links"
+        "['loop'].derive: kind 'copy': the role 'over' names the back links "
+        "'satisfies_back', which a link type's rule cannot read: they are built after "
+        "the link types; the link type cannot be set in a need or by a needextend, "
+        "and on need type 'spec' holds no links [needs.derive_invalid]",
+        "WARNING: Invalid derive of link type 'reach': needs_types['spec'].links"
+        "['reach'].derive: kind 'copy' on a link type requires the role 'over'; the "
+        "link type cannot be set in a need or by a needextend, and on need type "
+        "'spec' holds no links [needs.derive_invalid]",
+    ]
+    needs = _version(app)["needs"]
+    assert needs["SPEC_1"]["chain"] == needs["TEST_1"]["reach"] == ["REQ_1"]
+    assert needs["TEST_1"]["loop"] == ["REQ_1"]
+    assert needs["TEST_1"]["chain"] == needs["SPEC_1"]["reach"] == []
+    assert needs["SPEC_1"]["loop"] == []
+
+
+CONF_TYPE_KIND = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {"satisfies": {}}
+needs_types = [
+    {"directive": "req", "title": "Requirement", "prefix": "R_"},
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "links": {
+            "chain": {"derive": {"kind": "union", "fields": ["satisfies"]}},
+            "reach": {"derive": {"kind": {"copy": True}, "field": "id"}},
+        },
+    },
+    {
+        "directive": "test",
+        "title": "Test",
+        "prefix": "T_",
+        "links": {"chain": {"derive": {"kind": ["copy"], "field": "id"}}},
+    },
+]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_TYPE_KIND, INDEX_TYPE_UNREAD)], indirect=True
+)
+def test_a_kind_that_is_not_a_string_on_need_types(test_app):
+    """A ``kind`` that is not a string, a list or a table, in a need type's entry of a
+    link type need types alone declare is the rule's ``needs.derive_invalid`` finding,
+    as any unknown kind is; the build goes on, and it computes no summary."""
+    app = test_app
+    app.build()
+    kinds = (
+        "the kinds are copy, sum, count, min, max, any, all, collect, hash, "
+        "fingerprint, links, content_links, union"
+    )
+    assert build_warnings(app) == [
+        "WARNING: Invalid derive of link type 'chain': needs_types['test'].links"
+        f"['chain'].derive: the kind ['copy'] is unknown; {kinds}; the link type "
+        "cannot be set in a need or by a needextend, and on need type 'test' holds no "
+        "links [needs.derive_invalid]",
+        "WARNING: Invalid derive of link type 'reach': needs_types['spec'].links"
+        f"['reach'].derive: the kind {{'copy': True}} is unknown; {kinds}; the link "
+        "type cannot be set in a need or by a needextend, and on need type 'spec' "
+        "holds no links [needs.derive_invalid]",
+    ]
+    version = _version(app)
+    assert version["needs"]["SPEC_1"]["chain"] == ["REQ_1"]
+    assert version["needs"]["TEST_1"]["chain"] == []
+    for name in ("chain", "reach"):
+        assert "summary" not in version["needs_schema"]["properties"][name], name

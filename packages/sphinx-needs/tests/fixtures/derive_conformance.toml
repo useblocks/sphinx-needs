@@ -62,17 +62,20 @@
 #     (`versions.<current_version>.needs_schema.properties.<name>`), each compared
 #     type-strict; a key it leaves out is not compared, and a name with no entry, or a
 #     pinned key the entry lacks, fails the case. A SUMMARY link type -- `summary = true` on its `[needs.links.*]`
-#     entry -- carries `"summary": true` there, and so do its back links; no other link
-#     type carries a `summary` key. `summary` is no key of a need type's entry, nor a role
-#     of a rule: a need type's `summary` is each tool's configuration finding (not
-#     compared) and ignored, as is one that is not a boolean, while one in a `derive` or a
-#     `derive_by_type` entry is `derive_invalid`, and the rule holds no links. A summary
-#     link type holds and reads as any other (its links, its back links, a rule naming it
-#     in `over` or `field`); a `union` cannot name one as a member (`derive_invalid`, the
-#     union holds no links)
+#     entry, or on its first root declaration where need types alone declare it
+#     (`field_declaration_conformance.toml`) -- carries `"summary": true` there, and so do
+#     its back links; no other link type carries a `summary` key. `summary` is no role of
+#     a rule, nor a key of a need type's entry of a link type declared otherwise: such an
+#     entry's `summary` is each tool's configuration finding (not compared) and ignored,
+#     as is one that is not a boolean, while one in a `derive` or a `derive_by_type`
+#     entry is `derive_invalid`, and the rule holds no links. A summary link type holds
+#     and reads as any other (its links, its back links, a rule naming it in `over` or
+#     `field`); a `union` cannot name one as a member (`derive_invalid`, the union holds
+#     no links)
 #   - a `copy` or a `collect` declared on a link type computes a link list, and the link
 #     type is a summary whether or not it says so (`summary = false` beside such a rule
-#     is `derive_invalid`, ignored: the rule applies). `copy` takes `field = "id"` and
+#     is `derive_invalid`, ignored: the rule applies -- in any need type's declaration of
+#     a link type need types alone declare too). `copy` takes `field = "id"` and
 #     `over`, and links each need `over` names (`select`, if given, is `"list"`);
 #     `collect` takes `field`, a link type (a derived one included), and `over`, and
 #     gives the links `field` holds on each need `over` names; both take `where`, tested
@@ -5214,7 +5217,7 @@ n_unknown = 0
 
 [[case]]
 name = "summary-key-shapes"
-why = "summary = true on a link type's entry marks it, and its back links, as a summary in needs.json's schema, an authored and a derived one alike, and changes no value: its links and back links are held as any link type's; summary in a rule is no role (derive_invalid, the rule holds no links); a summary that is not a boolean, or one a need type's entry gives, is ignored, so a union may name those link types"
+why = "summary = true on a link type's entry marks it, and its back links, as a summary in needs.json's schema, an authored and a derived one alike, and changes no value: its links and back links are held as any link type's; summary in a rule is no role (derive_invalid, the rule holds no links); a summary that is not a boolean, or one a need type's entry gives on a link type declared otherwise, is ignored, so a union may name those link types"
 config = '''
 [needs.links.satisfies]
 
@@ -5650,6 +5653,67 @@ field = "not_summary"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "trace"
+
+[[case]]
+name = "link-path-summary-false-on-need-types"
+why = "on a link type need types alone declare, a copy or collect makes it a summary as on a [needs.links] entry: summary = false beside the rule, in the first root declaration or a later one, is derive_invalid, the key ignored and the entry used, so the rule applies on that type too; the first root's ignored false sets no shape, so a later root may give summary = true"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.spec.links.reach]
+summary = false
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.types.spec.links.chain]
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.types.test.links.chain]
+summary = false
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.types.spec.links.span]
+summary = false
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.types.test.links.span]
+summary = true
+derive = { kind = "copy", field = "id", over = "satisfies" }
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_1
+
+.. test:: Test
+   :id: TEST_1
+   :satisfies: REQ_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+reach = ["REQ_1"]
+chain = ["REQ_1"]
+span = ["REQ_1"]
+[case.expect.needs.TEST_1]
+chain = ["REQ_1"]
+span = ["REQ_1"]
+[case.expect.schema.reach]
+summary = true
+[case.expect.schema.chain]
+summary = true
+[case.expect.schema.span]
+summary = true
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "reach"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "chain"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "span"
 
 [[case]]
 name = "link-collect-dense"

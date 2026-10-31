@@ -46,9 +46,14 @@
 #     first root declaration -- of a type none of whose ancestors declares it -- giving a
 #     `schema` `type`; a root of another shape is refused. A link type need types alone
 #     declare has one shape too: whether it is derived, and its `incoming`, `outgoing`,
-#     `copy`, `allow_dead_links`, `color` and `style*` keys, set by its first root
-#     declaration, an empty one included (the `[needs.links.*]` defaults for the keys it
-#     leaves out); every other declaration may repeat a value, and no more
+#     `copy`, `allow_dead_links`, `summary`, `color` and `style*` keys, set by its first
+#     root declaration, an empty one included (the `[needs.links.*]` defaults for the
+#     keys it leaves out: `summary` is `false`, or `true` where a `copy` or `collect`
+#     computes the link type -- a derived one, in the `derive` of a declaration not
+#     refused for another key); every other declaration may repeat a value, and no more.
+#     Beside such a `copy` or `collect`, `summary = false` is `derive_invalid` in any
+#     declaration, the first root's included, ignored (it sets no shape), and its entry
+#     used
 #   - the walk order decides which is first: the types in the order the `config` gives
 #     them, but each parent before its children wherever it is given, and the members of a
 #     broken `inherits` cycle in the order of the walk up from the first type given that is
@@ -2864,6 +2869,373 @@ field = "verifies"
 code = "needextend"
 type = "spec"
 field = "verifies"
+
+[[case]]
+name = "type-local-link-summary-agreed"
+why = "summary is part of a link type's shape: the first root declaration giving summary = true makes a link type need types alone declare a summary, and every other declaration may repeat it or leave it out; its schema marks it summary and a union cannot name it (derive_invalid, the union holds no links), while a link type no declaration marks is none, and a union reads it; a summary link type's links are held as any link type's"
+config = '''
+[needs.links.trace]
+derive = { kind = "union", fields = ["evid"] }
+
+[needs.links.rel_trace]
+derive = { kind = "union", fields = ["rel"] }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.evid]
+summary = true
+
+[needs.types.spec.links.rel]
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.evid]
+summary = true
+
+[needs.types.test.links.rel]
+
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+
+[needs.types.impl.links.evid]
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Sets the shape: a summary
+   :id: SPEC_1
+   :evid: REQ_1
+   :rel: REQ_1
+
+.. test:: Repeats it
+   :id: TEST_1
+   :evid: REQ_1
+   :rel: REQ_1
+
+.. impl:: Leaves it out
+   :id: IMPL_1
+   :evid: REQ_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+evid = ["REQ_1"]
+rel = ["REQ_1"]
+trace = []
+rel_trace = ["REQ_1"]
+[case.expect.needs.TEST_1]
+evid = ["REQ_1"]
+rel = ["REQ_1"]
+trace = []
+rel_trace = ["REQ_1"]
+[case.expect.needs.IMPL_1]
+evid = ["REQ_1"]
+trace = []
+[case.expect.schema.evid]
+summary = true
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "trace"
+
+[[case]]
+name = "type-local-link-summary-disagrees"
+why = "summary is set by the first root declaration, a silent one too (false), and another declaration may repeat it and no more: a later root giving summary = true where the first is silent, or false where the first gives true, is one type_conflict and does not declare the link type (its need holds [], a link there is undeclared_for_type); a child giving another value is one type_conflict and still declares it through its parent"
+config = '''
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.links.rel]
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+
+[needs.types.b.links.rel]
+summary = true
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+
+[needs.types.c.links.ev]
+summary = true
+
+[needs.types.cc]
+title = "CC"
+prefix = "CC_"
+inherits = "c"
+
+[needs.types.cc.links.ev]
+summary = false
+
+[needs.types.d]
+title = "D"
+prefix = "D_"
+
+[needs.types.d.links.ev]
+summary = false
+'''
+source = '''
+.. a:: Sets rel's shape, silent: not a summary
+   :id: A_001
+
+.. b:: Refused: rel is no summary
+   :id: B_001
+   :rel: A_001
+
+.. c:: Sets ev's shape: a summary
+   :id: C_001
+   :ev: A_001
+
+.. cc:: Refused child, still declaring
+   :id: CC_001
+   :ev: A_001
+
+.. d:: Refused root: ev is a summary
+   :id: D_001
+   :ev: A_001
+'''
+[case.expect]
+[case.expect.needs.B_001]
+rel = []
+[case.expect.needs.C_001]
+ev = ["A_001"]
+[case.expect.needs.CC_001]
+ev = ["A_001"]
+[case.expect.needs.D_001]
+ev = []
+[case.expect.schema.ev]
+summary = true
+[case.expect.schema.rel]
+description = "Declared by need types 'a'"
+[[case.expect.findings]]
+code = "type_conflict"
+field = "rel"
+type = "b"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "B_001"
+field = "rel"
+type = "b"
+[[case.expect.findings]]
+code = "type_conflict"
+field = "ev"
+type = "cc"
+[[case.expect.findings]]
+code = "type_conflict"
+field = "ev"
+type = "d"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "D_001"
+field = "ev"
+type = "d"
+
+[[case]]
+name = "type-local-link-summary-refused-path"
+why = "a link type is a summary by a copy or collect only where a declaration's rule is read: a copy in a declaration refused (a derive where the first root gives none, or another value of a key of the shape) computes nothing, so the link type is no summary, and a later root giving summary = true is one type_conflict and does not declare it"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.links.lk]
+
+[needs.types.a.links.lm]
+derive = { kind = "union", fields = ["satisfies"] }
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+
+[needs.types.b.links.lk]
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.types.b.links.lm]
+color = "#ff0000"
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+
+[needs.types.c.links.lk]
+summary = true
+
+[needs.types.c.links.lm]
+summary = true
+derive = { kind = "union", fields = ["satisfies"] }
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. a:: Sets both shapes: lk authored, lm a union
+   :id: A_001
+   :satisfies: REQ_1
+   :lk: REQ_1
+
+.. b:: Refused: a derive on lk, a color on lm
+   :id: B_001
+   :satisfies: REQ_1
+
+.. c:: Refused: neither is a summary
+   :id: C_001
+   :satisfies: REQ_1
+   :lk: REQ_1
+'''
+[case.expect]
+[case.expect.needs.A_001]
+lk = ["REQ_1"]
+lm = ["REQ_1"]
+[case.expect.needs.B_001]
+lk = []
+lm = []
+[case.expect.needs.C_001]
+lk = []
+lm = []
+[[case.expect.findings]]
+code = "type_conflict"
+field = "lk"
+type = "b"
+[[case.expect.findings]]
+code = "type_conflict"
+field = "lm"
+type = "b"
+[[case.expect.findings]]
+code = "type_conflict"
+field = "lk"
+type = "c"
+[[case.expect.findings]]
+code = "type_conflict"
+field = "lm"
+type = "c"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "C_001"
+field = "lk"
+type = "c"
+
+[[case]]
+name = "type-local-link-summary-implied-by-a-path"
+why = "a link type need types alone declare that a copy or collect computes is a summary whether or not its first root says so, so another declaration may give summary = true; copy = true beside summary = true on an authored one copies nothing into links (each tool's configuration finding, not compared)"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.chain]
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.types.spec.links.mitigates]
+summary = true
+copy = true
+
+[needs.types.test]
+title = "Test"
+prefix = "T_"
+
+[needs.types.test.links.chain]
+summary = true
+derive = { kind = "copy", field = "id", over = "satisfies" }
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_1
+   :mitigates: REQ_1
+
+.. test:: Test
+   :id: TEST_1
+   :satisfies: REQ_1
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+chain = ["REQ_1"]
+mitigates = ["REQ_1"]
+links = []
+[case.expect.needs.TEST_1]
+chain = ["REQ_1"]
+[case.expect.schema.chain]
+summary = true
+[case.expect.schema.mitigates]
+summary = true
+
+[[case]]
+name = "type-local-link-summary-beside-needs-links"
+why = "on a link type declared otherwise, summary is the [needs.links] entry's: a need type's entry giving it, true or false, is ignored (each tool's configuration finding, not compared), so a summary stays one (a union cannot name it) and a link type that is none stays none (a union reads it)"
+config = '''
+[needs.links.ev]
+summary = true
+
+[needs.links.rel]
+
+[needs.links.ev_trace]
+derive = { kind = "union", fields = ["ev"] }
+
+[needs.links.rel_trace]
+derive = { kind = "union", fields = ["rel"] }
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.spec.links.ev]
+summary = false
+
+[needs.types.spec.links.rel]
+summary = true
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :ev: REQ_1
+   :rel: REQ_1
+'''
+[case.expect]
+[case.expect.needs.SPEC_1]
+ev = ["REQ_1"]
+rel = ["REQ_1"]
+ev_trace = []
+rel_trace = ["REQ_1"]
+[case.expect.schema.ev]
+summary = true
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "ev_trace"
 
 [[case]]
 name = "link-shape-keys-on-a-narrowing"

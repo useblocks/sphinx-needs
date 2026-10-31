@@ -193,8 +193,6 @@ Bear in mind:
   sets them; an entry giving another value is reported (``needs.type_conflict``) and ignored).
   A need type's own declaration of a derived field narrows its description, schema and ``nullable``,
   but gives it no default.
-  ``summary`` in a need type's ``links`` entry is reported (``needs.config``) and ignored:
-  it is set on the link type's :ref:`needs_links` entry (:ref:`needs_derive_summary`).
 - **One field cannot do both.** A derived field is closed on every need type, also where it has no rule,
   so the value authors write on tasks is a field of its own, ``effort``.
 - **Cycles.** Needs linking one another in a cycle cannot compute such a value,
@@ -775,6 +773,13 @@ Mark such a link type as a **summary** in its :ref:`needs_links` entry:
    [needs.links.covers]
    summary = true
 
+A link type declared on need types alone is marked in the entry of the first need type declaring it:
+
+.. code-block:: toml
+
+   [needs.types.result.links.covers]
+   summary = true
+
 Wherever you name it, a summary link type works as any link type:
 a filter (``"REQ_1" in covers``), a needtable column, a rule's ``over`` or ``field``,
 a needflow's ``:link_types:``, a need type's count of the links it receives (:ref:`need_types_incoming`,
@@ -787,9 +792,11 @@ You rarely write such links by hand: a ``copy`` or ``collect`` on the link type 
 (:ref:`needs_derive_link_chain`), and a link type computed that way is a summary whether or not its entry says so.
 A link type written in the needs may be one too, such as a ``mitigates`` that says what a risk is about.
 
-``summary`` belongs to the link type, so it is set on its :ref:`needs_links` entry and holds on every need type.
-``summary`` in a need type's own ``links`` entry is reported (``needs.config``) and ignored,
-so a link type declared on need types alone is a summary only when a ``copy`` or ``collect`` computes it.
+``summary`` belongs to the link type, so it holds on every need type.
+On a link type declared on need types alone, the other need types declaring it may repeat it or leave it out;
+one giving another value is reported (``needs.type_conflict``) and its entry ignored, as for the rest of the link type's shape.
+On a link type declared in :ref:`needs_links`, ``summary`` in a need type's own ``links`` entry is reported (``needs.config``)
+and ignored.
 A ``union`` cannot name a summary link type as a member, and ``summary`` is no key of a rule
 (each ``needs.derive_invalid``).
 

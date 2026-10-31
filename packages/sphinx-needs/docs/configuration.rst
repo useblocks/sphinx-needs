@@ -524,13 +524,16 @@ and a declaration in ``links`` these, as :ref:`needs_links` takes them:
      - whether the links are copied into ``links``: likewise
    * - ``allow_dead_links``
      - whether a link to no need is allowed: likewise
+   * - ``summary``
+     - whether the link type is a summary (:ref:`needs_derive_summary`): likewise
    * - ``color``, ``style``, ``style_part``, ``style_start``, ``style_end``
      - the links' color, and their line styles in a :ref:`needflow` (see :ref:`links_style`): likewise
 
-A link type's ``incoming``, ``outgoing``, ``copy``, ``allow_dead_links``, ``color`` and ``style*`` are the same on every need type:
+A link type's ``incoming``, ``outgoing``, ``copy``, ``allow_dead_links``, ``summary``, ``color`` and ``style*`` are the same on every need type:
 the first declaration of a link type declared on need types alone without a declaring ancestor sets them,
 and its other declarations may repeat them (below).
-On any other link type a declaration giving them is one ``needs.config`` warning, those keys ignored and the rest of the declaration used::
+On any other link type a declaration giving them, even with the link type's own value, is one ``needs.config`` warning,
+those keys ignored and the rest of the declaration used::
 
    needs_types['spec'].links['blocks'] sets 'incoming' and 'copy', which a need type gives only a link type declared on need types alone; 'blocks' keeps its own on every need type and the keys are ignored
 
@@ -704,11 +707,15 @@ is refused on every entry, one ``needs.type_conflict`` warning each, and does no
    needs_types['spec'].links['x'] declares 'x', whose back links would be 'x_back', which is a field; the entry is ignored
 
 Every type that declares it agrees on its shape: whether it is derived, and the keys a :ref:`needs_links` entry gives a link type
-for every need type -- ``incoming``, ``outgoing``, ``copy``, ``allow_dead_links``, ``color``, ``style``, ``style_part``, ``style_start`` and ``style_end``.
+for every need type -- ``incoming``, ``outgoing``, ``copy``, ``allow_dead_links``, ``summary``, ``color``, ``style``, ``style_part``, ``style_start`` and ``style_end``.
 The first declaration of a type none of whose ancestors declares it, in the order the types are resolved (as for a field), sets them,
 an empty one too: the keys it gives, the defaults of a ``needs_links`` entry for the others
-(``incoming`` is ``"<name> incoming"``, ``outgoing`` the name, ``copy`` and ``allow_dead_links`` are ``false``),
+(``incoming`` is ``"<name> incoming"``, ``outgoing`` the name, ``copy`` and ``allow_dead_links`` are ``false``,
+and ``summary`` is ``false``, or ``true`` where a ``copy`` or ``collect`` computes the link type:
+a derived one, in the ``derive`` of a declaration not refused for another key),
 and derived if it gives a ``derive``.
+Beside such a ``copy`` or ``collect``, ``summary = false`` is refused in any declaration, the first included
+(``needs.derive_invalid``): the key is ignored and the declaration used, as on a :ref:`needs_links` entry.
 Every other declaration may repeat a value, and no more: one that gives another value -- of a key the first declaration leaves out too --
 or is derived where the link type is not (or the other way round), is one ``needs.type_conflict`` warning::
 
@@ -1203,9 +1210,11 @@ Each configured link can define:
   it is a ``needs.config`` warning, and nothing is copied.
   With every link type a summary, a :ref:`needflow` without ``:link_types:`` draws none,
   its ``needs_flow_link_types`` fallback included.
-  It is a link type's on every need type: a need type's entry (:ref:`needs_types_fields`) does not give it,
-  and one that does is a ``needs.config`` warning, the key ignored;
-  nor does a rule (``derive``, ``derive_by_type``), where it is no role (``needs.derive_invalid``).
+  It is a link type's on every need type: on a link type declared here, a need type's entry (:ref:`needs_types_fields`)
+  does not give it, and one that does is a ``needs.config`` warning, the key ignored;
+  a link type declared on need types alone takes it from the first need type's entry declaring it,
+  which the others may repeat (:ref:`needs_types_fields`);
+  a rule (``derive``, ``derive_by_type``) does not give it, where it is no role (``needs.derive_invalid``).
   A value that is not a boolean is a ``needs.config`` warning, and ignored.
   *New in version 9.2.0.*
 - ``target_types`` (optional): The need types the links may point to, a list of directive names, such as ``["req"]``.
