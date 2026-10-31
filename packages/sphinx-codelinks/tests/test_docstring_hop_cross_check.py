@@ -187,6 +187,24 @@ def make():
 
 
 Made = make()
+
+
+# a class made in a METHOD: ``<locals>`` after a method, ``Outer.factory.<locals>.InMethod``
+class Outer:
+    def factory(self):
+        class InMethod:
+            """A class made in a method.
+
+            .. req:: In method class
+               :id: R_INMETHOD
+
+            @In method marker, CL_INMETHOD, impl
+            """
+
+        return InMethod
+
+
+InMethod = Outer().factory()
 '''
 
 CONF = """\
@@ -253,6 +271,7 @@ ENTITIES = [
     "INHERITED",
     "MADE",
     "MADE_METHOD",
+    "INMETHOD",
 ]
 
 
@@ -359,3 +378,25 @@ def test_both_producers_render_the_same_qualified_name(
     assert ours == {case: _qualified_name(code_hops[f"CL_{case}"]) for case in ENTITIES}
     assert ours["MADE_METHOD"] == "make.<locals>.Made.go"
     assert [case for case, name in ours.items() if name is None] == ["MODULE"]
+
+
+@pytest.mark.xfail(strict=True, reason="M-2: name_chain reads the qualified_name extra")
+def test_parts_rebuilt_from_a_hop_keep_their_containment(
+    code_hops: dict[str, NeedSourceHop],
+) -> None:
+    """A reader may rebuild the analysis' parts from a hop with every extra
+    (``{kind, name, **extras}``): ``name_chain`` leaves ``qualified_name`` out, the
+    rendering of the chain itself, so a class's chain is still a prefix of its
+    method's."""
+
+    def chain(need_id: str) -> Any:
+        hop = code_hops[need_id]
+        parts = [
+            {"kind": p.kind, "name": p.name, **dict(p.extras)}
+            for p in hop.semantic or ()
+        ]
+        return name_chain(parts, hop.language or "")
+
+    for outer, inner in (("CLASS", "METHOD"), ("NESTED", "NESTED_METHOD")):
+        container, member = chain(f"CL_{outer}"), chain(f"CL_{inner}")
+        assert member[: len(container)] == container, (outer, inner)

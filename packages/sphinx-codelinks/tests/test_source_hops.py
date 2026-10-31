@@ -847,3 +847,30 @@ def test_an_environment_pickled_at_env_version_2_is_read_again(
     app, read, _ = _build(make_app, srcdir, fresh=False)
     assert read == ["index"]
     assert _hops(app) == EXPECTED_HOPS
+
+
+def test_an_entity_s_qualified_name_follows_its_trait(tmp_path: Path) -> None:
+    """A marker attached to a Rust trait impl itself: the entity's extras are its
+    ``trait`` and then its ``qualified_name``, in that order (extras are compared in
+    order)."""
+    from types import SimpleNamespace
+
+    from sphinx_codelinks.source_discover.config import CommentType
+    from sphinx_codelinks.sphinx_extension.directives.src_trace import code_hop
+
+    marker = SimpleNamespace(
+        source_map={"start": {"row": 6}, "end": {"row": 6}},
+        scope={
+            "language": "rust",
+            "qualified_name": "<Widget as Shape>",
+            "semantic": [{"kind": "impl", "name": "Widget", "trait": "Shape"}],
+        },
+    )
+    hop = code_hop(
+        marker,  # ty: ignore[invalid-argument-type]
+        tmp_path / "lib.rs",
+        tmp_path,
+        CommentType.rust,
+    )
+    (impl,) = hop.semantic or ()
+    assert impl.extras == (("trait", "Shape"), ("qualified_name", "<Widget as Shape>"))

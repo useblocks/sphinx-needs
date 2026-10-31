@@ -437,14 +437,16 @@ def test_a_page_hop_given_no_path_takes_its_page_s_file(tmp_path: Path):
 
 def test_an_external_hop_takes_a_list_of_section_names():
     """An external need's sections, innermost first, are its external hop's semantic
-    location, outermost first: from a list of names alone, onto an external hop with
-    none."""
+    location, outermost first: from a list or a tuple of names alone, onto an
+    external hop with none."""
     external = NeedSourceHop(kind="external", physical=NeedSourcePhysical(url="u"))
-    (hop,) = with_external_sections((external,), ["inner", "outer"])
-    assert hop.semantic == (
+    chain = (
         NeedSourceSemantic(kind="section", name="outer"),
         NeedSourceSemantic(kind="section", name="inner"),
     )
+    for sections in (["inner", "outer"], ("inner", "outer")):
+        (hop,) = with_external_sections((external,), sections)
+        assert hop.semantic == chain, sections
     assert with_external_sections((external,), [])[0].semantic == ()
     for sections in (None, "a string", ["a", 1], {"a": "b"}):
         assert with_external_sections((external,), sections) == (external,)

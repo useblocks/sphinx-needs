@@ -624,6 +624,7 @@ from docutils.parsers.rst import Directive
 
 from sphinx_needs.api import (
     NeedItemSource,
+    NeedSourceHop,
     add_external_need,
     create_need,
     ingest_need_record,
@@ -647,6 +648,16 @@ class OnPage(Directive):
             {"id": "R_INGESTED", "type": "req", "title": "ingested on its page"},
             need_source=NeedItemSource.on_page(env.docname, lineno=self.lineno),
         )
+        two_pages = NeedItemSource(
+            (
+                NeedSourceHop(kind="page", document="inc"),
+                NeedSourceHop(kind="page", document="index"),
+            ),
+            lineno=self.lineno,
+        )
+        _, two = create_need(
+            env.app, self.state, two_pages, "req", "two pages", id="R_TWO_PAGES"
+        )
         add_external_need(
             env.app,
             "req",
@@ -662,7 +673,7 @@ class OnPage(Directive):
             id="R_EXTERNAL_BARE",
             external_url="http://example.org/e.html#R_EXTERNAL_BARE",
         )
-        return [*created, *ingested]
+        return [*created, *ingested, *two]
 
 
 def setup(app):
@@ -720,6 +731,23 @@ def test_create_need_records_an_on_page_need_s_page_path(test_app: SphinxTestApp
         assert (
             source.dict_repr == NeedItemSource.on_page("index", lineno=lineno).dict_repr
         )
+
+
+@pytest.mark.parametrize("test_app", [ON_PAGE_PROJECT], indirect=True)
+def test_create_need_records_the_file_of_each_page_hop_given_none(
+    test_app: SphinxTestApp,
+):
+    """Every page hop with a document and no path is given its document's file, not
+    the placement alone: a source written by hand with two page hops (the included
+    file's document, then the page)."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    hops = SphinxNeedsData(app.env).get_needs_view()["R_TWO_PAGES"].source.hops
+    assert [(hop.document, hop.physical, hop.language) for hop in hops] == [
+        ("inc", NeedSourcePhysical(root="srcdir", path="inc.rst"), ".rst"),
+        ("index", NeedSourcePhysical(root="srcdir", path="index.rst"), ".rst"),
+    ]
 
 
 @pytest.mark.parametrize("test_app", [ON_PAGE_PROJECT], indirect=True)
@@ -996,3 +1024,29 @@ def test_what_is_stable_of_the_one_class():
         ("docname", positional, empty),
         ("lineno", keyword, None),
     ]
+
+
+def test_with_hops_keeps_every_other_field():
+    """``create_need``'s one write on a source replaces its hops and nothing else: the
+    given ``lineno``, ``lineno_content``, ``parser_lineno`` (the template's parse
+    offset reads it) and ``is_import`` are kept, and the legacy keys are recomputed."""
+    from sphinx_needs.need_item import NeedItemSource
+
+    bare = NeedSourceHop(kind="page", document="index")
+    filled = NeedSourceHop(
+        kind="page",
+        document="index",
+        physical=NeedSourcePhysical(root="srcdir", path="index.rst"),
+    )
+    source = NeedItemSource(
+        (bare,), lineno=3, lineno_content=4, parser_lineno=2, is_import=True
+    )
+    new = source._with_hops((filled,))
+    assert new.hops == (filled,)
+    assert (new._lineno, new.lineno_content, new.parser_lineno, new.is_import) == (
+        3,
+        4,
+        2,
+        True,
+    )
+    assert new.dict_repr == source.dict_repr

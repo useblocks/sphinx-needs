@@ -537,6 +537,25 @@ def test_a_code_hop_s_path_is_posix_and_the_field_as_given(build):
     assert _hops(needs, "TC_W")[0] == "code None:tests/sub/test_w.py (python)"
 
 
+def test_an_upper_case_c_file_is_cpp_on_the_hop(build):
+    """The language is read from the file as the report gives it: a ``.C`` file is
+    C++, as sphinx-codelinks names it, where its lower-case ``.c`` would be C."""
+    report = (
+        b'<testsuite name="s" tests="1"><testcase classname="c" name="t" '
+        b'file="tests/test_w.C" line="3"/></testsuite>'
+    )
+    needs, warnings = build(
+        {
+            "index.rst": "Probe\n=====\n\n"
+            ".. test-case:: W\n   :id: TC_W\n   :file: w.xml\n   :suite: s\n"
+            "   :case: t\n"
+        },
+        {"w.xml": report},
+    )
+    assert warnings == ""
+    assert _hops(needs, "TC_W")[0].endswith("(cpp)"), _hops(needs, "TC_W")[0]
+
+
 def test_a_warning_in_a_test_need_s_content_is_on_its_line(build):
     """The content of a hand ``test-case`` is parsed at its own line: a warning raised
     in it names the line it is on (was the line of the directive's ``:file:``)."""
