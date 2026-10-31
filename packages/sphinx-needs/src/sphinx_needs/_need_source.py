@@ -768,8 +768,10 @@ def _python_definitions(text: str) -> dict[str, _PythonDefinition]:
     parser takes cannot exhaust the stack."""
     try:
         with warnings.catch_warnings():
-            # the import has reported them already
-            warnings.simplefilter("ignore", SyntaxWarning)
+            # the import has reported them already: a SyntaxWarning, or on Python
+            # 3.11 a DeprecationWarning (an invalid escape), which ``-W error`` turns
+            # into a SyntaxError
+            warnings.simplefilter("ignore")
             tree = ast.parse(text)
     except (SyntaxError, ValueError, RecursionError, MemoryError):
         return {}

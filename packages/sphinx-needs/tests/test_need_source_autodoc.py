@@ -273,9 +273,11 @@ def test_the_name_splits_at_each_module_longest_first() -> None:
 
 def test_a_walk_past_the_recursion_limit_reads_the_syntax() -> None:
     """The walk is iterative over statements: a valid module of any depth the parser
-    takes is read, never a ``RecursionError``."""
+    takes is read, never a ``RecursionError``. The chain is deep enough to exhaust a
+    recursive walk (about 500 terms) and shallow enough for every supported parser
+    (3000 is refused on Python 3.11, and on 3.12 on Windows)."""
     assert _python_semantic("dispatch", DEEP) is not None
-    chain = "x = " + "+".join(["1"] * 3000) + "\n\n\ndef f(): ...\n"
+    chain = "x = " + "+".join(["1"] * 800) + "\n\n\ndef f(): ...\n"
     assert [(p.kind, p.name) for p in _python_semantic("f", chain) or ()] == [
         ("function", "f")
     ]
@@ -305,9 +307,10 @@ def test_a_definition_whose_docstring_does_not_hold_the_text_is_not_trusted(
         assert hop.semantic is None
         assert hop.physical is not None
         assert hop.physical.path == "given.py"
-    # and where it does: this test's own docstring holds its first line
+    # and where it does: this test's own docstring holds its first line. Relative to
+    # this file's directory: ``tmp_path`` may be on another drive (Windows)
     hop = _docstring_hop(
-        tmp_path,
+        Path(__file__).parent,
         f"{given}:docstring of {__name__}."
         "test_a_definition_whose_docstring_does_not_hold_the_text_is_not_trusted",
         "autodoc gives, nothing finer. With no text, nothing is trusted.",
@@ -319,5 +322,4 @@ def test_a_definition_whose_docstring_does_not_hold_the_text_is_not_trusted(
         )
     ]
     assert hop.physical is not None
-    assert hop.physical.path is not None
-    assert hop.physical.path.endswith("test_need_source_autodoc.py")
+    assert hop.physical.path == "test_need_source_autodoc.py"
