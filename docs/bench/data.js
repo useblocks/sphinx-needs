@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793445075187,
+  "lastUpdate": 1793448158419,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27930,6 +27930,48 @@ window.BENCHMARK_DATA = {
             "value": 186.851877,
             "unit": "MB",
             "extra": "Commit: cc38e36646e5114ffca0b0111070281555b1f4d8\nBranch: master\nTime: 2026-10-31T12:09:32+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "670b7639a2c8638a7440d98462576acad9c9cc40",
+          "message": "✨ sphinx-codelinks: every need records where it comes from: its source file, lines, entity and language (#2440)\n\n## What\n\n✨ **Every need `src-trace` creates now records where it comes from: its\nsource file, lines, entity and language.**\n\nThis applies to one-line and multi-line needs alike. Each records the\nmarker it was made from, before the page the\ndirective is written on, as a `code` hop of Sphinx-Needs' source model:\n\n| field | value |\n|---|---|\n| `physical` | the analysed file under the Sphinx source directory\n(POSIX, `..` outside it), and the marker's 1-based lines: a one-line\nneed's own line, a multi-line need's `@need` to `@endneed` |\n| `semantic` | the entity the marker is attached to, outermost first, as\nthe analysis of #2435 names it (`class Shape` > `method area`); a Rust\ntrait impl's `impl` part carries its `trait`; `None` for a marker\nattached to the file, to nothing, or to a YAML / JSONC entry |\n| `language` | the file's language (`python`, `cpp`, `c`, `rust`,\n`typescript`, `yaml`, …), from the record, else from the project's\ncomment type and the suffix |\n\nFor example, `code srcdir:../src/rust/lib.rs:8-8 (rust) :: impl 'Widget'\ntrait='Shape' > method 'area'`.\n\nThe record is provisional, as Sphinx-Needs' hops are. It reaches no\n`needs.json` and adds no field.\n\n**Identity.** A code hop's kinds are codelinks' entity kinds, read with\nits `language`. Its identity is codelinks'\n`name_chain(semantic, language)`: the names, the `trait`, and Python's\n`<locals>` implied by the kinds. So a C++\nmethod defined in its class (`namespace ns` > `class W` > `method f`)\nand out of line (`scope ns` > `class W` >\n`method f`) are one entity.\n\n🐛 **A `src-trace` need's `lineno` is the line the directive is written\non**, as a `need` directive's is:\n\n- after `rst_prolog` it used to count the prolog's lines;\n- in an included file it was the line in the expanded input.\n\nIt is now the line in the file the directive is written in. No id moves.\n\n**What a body is anchored at does not change.** A need's body is the\nmarker's, not the directive's content. So where\nit is parsed at the page (a one-line need's `content`, or the last\nfallback of a multi-line need), it stays anchored\nat the directive's line: `lineno_content` is the directive's line, not\nthe line after its block.\n\n**The upgrade.** `env_version` is now 2, so the first build after\nupgrading reads every page once. Otherwise an\nexisting build directory would keep needs without their hop.\n\nSphinx-Needs gains text only: a semantic entry's `kind` is in the\nvocabulary of its hop's kind, and code hops\ncompare by their producer's identity rule.\n\nRelated to #1877.\n\n## Tests\n\n`tests/test_source_hops.py`, landed first as strict xfails, red at\nmaster (32 xfailed, 4 passed):\n\n- the full hop table, per language: python, cpp, c, rust, typescript,\nyaml. One-line and multi-line, plus:\n  - a marker attached to nothing;\n  - a `.py` file traced by a C++ project;\n  - a file inside and outside the source directory;\n  - CRLF line ends;\n  - a Rust trait impl, with a one-line and a multi-line need;\n  - the C++ in-class / out-of-line pair;\n- `lineno` after `rst_prolog` (7 → 4) and in an included file (10 → 3,\nthe line in the included file);\n- the body's anchor at the directive's line;\n- the path rule, equal to Sphinx-Needs' own over a table of path shapes;\n- no hop in `needs.json`;\n- three incremental builds against a fresh one: a marker that moves\n(only its own page is written), a renamed entity,\n  an edited file;\n- an environment pickled at `env_version` 1, read again.\n\nNine mutants (drop the hop, 0-based lines, drop `trait`, drop `trait` on\nmulti-line needs only, the language from the suffix, the path from the\ngit root,\n`on_page`, `env_version` unbumped, `from_directive`'s own\n`lineno_content`) each turn a pin red.\n\n`uv run poe test-codelinks -n 4`: 1663 passed. `uv run poe test-needs -n\n4`: 4261 passed, unchanged.\n`uv run poe lint`, `uv run poe typecheck` and `uv run poe\ndocs-codelinks` are green. The docs' needs.json is unchanged\nbut for the need the new test module's header marker adds.",
+          "timestamp": "2026-10-31T13:01:04+01:00",
+          "tree_id": "d92bb40905aa3f228284c095d6701f0e48e16f95",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/670b7639a2c8638a7440d98462576acad9c9cc40"
+        },
+        "date": 1793448157821,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07297590299999968,
+            "unit": "s",
+            "extra": "Commit: 670b7639a2c8638a7440d98462576acad9c9cc40\nBranch: master\nTime: 2026-10-31T13:01:04+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 12.770916146999994,
+            "unit": "s",
+            "extra": "Commit: 670b7639a2c8638a7440d98462576acad9c9cc40\nBranch: master\nTime: 2026-10-31T13:01:04+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 186.859029,
+            "unit": "MB",
+            "extra": "Commit: 670b7639a2c8638a7440d98462576acad9c9cc40\nBranch: master\nTime: 2026-10-31T13:01:04+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
