@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793463804678,
+  "lastUpdate": 1793464806379,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28056,6 +28056,48 @@ window.BENCHMARK_DATA = {
             "value": 186.374606,
             "unit": "MB",
             "extra": "Commit: 09a66ae91da7364a008a0b5058d72024f54fb6f7\nBranch: master\nTime: 2026-10-31T17:21:49+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "260b8e62b67725c498203faf013dbf66f03453e9",
+          "message": "✨ A misspelt type in c.is_a is reported, with a did-you-mean (#2445)\n\n`c.is_a('rq')` used to select nothing, silently: a misspelt need type in\na needtable, a `needextend`, a derived\nfield's `where` or a `needs_warnings` filter went unnoticed. Now a\nstring literal of `c.is_a(...)` that names no\nneed type of the project is reported where the filter is written, with\nthe type it was probably meant to be:\n\n```\nindex.rst:19: WARNING: Filter \"c.is_a('rq')\" names 'rq', which is not a need type (did you mean 'req'?); c.is_a('rq') selects no need [needs.filter_type]\n```\n\n- Whichever way the filter is evaluated (a literal in an `eval`-tier\nfilter such as `c.is_a('rq') == True` too),\nand even where the rest of the filter leaves no need to evaluate it on.\n- Once per filter and place it is written (a view, a `needextend`); a\nfilter with no place (a derived field's\n`where`, a link condition, a constraint) once per filter string; a\n`needs_warnings` filter once per entry, naming\nit. Again on each full build; a view on a page an incremental build does\nnot rewrite is not re-resolved, so not\n  re-reported.\n- The hint names the type whose title was written\n(`c.is_a('Requirement')` → `req`), else a close type name.\n- A name that is not a literal (`c.is_a(type)`) is each need's own value\nand is not reported.\n- Its own subtype: a filter naming a type on purpose (one shared by\nprojects that do not all declare it) is\nsilenced with `suppress_warnings = [\"needs.filter_type\"]`, which leaves\nfailed filters (`needs.filter`) reported.\n- `c.is_a` is unreleased, so no existing `-W` build meets this warning\nwithout meeting `c.is_a` itself.\n- The `needs_debug_measurement` record of `filter_single_need` is now\nkeyed `filtering__filter_single_need`\n  (its `name` is unchanged).\n- The filter conformance corpus says so: the finding is each tool's own\nand not compared, like an `inherits`\nnaming no type; what such a filter selects (nothing) is still compared.\n\nCloses #2402.",
+          "timestamp": "2026-10-31T17:38:26+01:00",
+          "tree_id": "1a8d1ccd3c3d42dbefe61f95ff8564a016911c78",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/260b8e62b67725c498203faf013dbf66f03453e9"
+        },
+        "date": 1793464805805,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07667923900000062,
+            "unit": "s",
+            "extra": "Commit: 260b8e62b67725c498203faf013dbf66f03453e9\nBranch: master\nTime: 2026-10-31T17:38:26+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.931816420000004,
+            "unit": "s",
+            "extra": "Commit: 260b8e62b67725c498203faf013dbf66f03453e9\nBranch: master\nTime: 2026-10-31T17:38:26+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 187.370638,
+            "unit": "MB",
+            "extra": "Commit: 260b8e62b67725c498203faf013dbf66f03453e9\nBranch: master\nTime: 2026-10-31T17:38:26+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
