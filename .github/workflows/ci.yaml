@@ -61,7 +61,7 @@ jobs:
         # ONE probe at a time, and one per package: with both planted at once a gate that had
         # dropped one package would still go red on the other and look healthy.
         run: |
-          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py packages/ub-test-reports/src/ub_test_reports/_ty_gate_probe.py packages/ub-project/src/ub_project/_ty_gate_probe.py packages/ub-needs-exchange/src/ub_needs_exchange/_ty_gate_probe.py packages/sphinx-ai-index/src/sphinx_ai_index/_ty_gate_probe.py"
+          probes="packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py packages/sphinx-mounts/src/sphinx_mounts/_ty_gate_probe.py packages/sphinx-codelinks/src/sphinx_codelinks/_ty_gate_probe.py packages/sphinx-test-reports/src/sphinx_test_reports/_ty_gate_probe.py packages/ub-test-reports/src/ub_test_reports/_ty_gate_probe.py packages/ub-project/src/ub_project/_ty_gate_probe.py packages/ub-needs-exchange/src/ub_needs_exchange/_ty_gate_probe.py packages/sphinx-ai-index/src/sphinx_ai_index/_ty_gate_probe.py packages/sphinx-ub-directives/src/sphinx_ub_directives/_ty_gate_probe.py"
           # shellcheck disable=SC2064
           trap "rm -f $probes" EXIT
           for probe in $probes; do
@@ -455,6 +455,30 @@ jobs:
         # renderer: these docs draw no diagrams
         run: uv run --no-sync sphinx-build -nW --keep-going -b html docs docs/_build/html -T
         working-directory: packages/sphinx-mounts
+
+  docs-ub-directives:
+    name: Docs ub-directives
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    # The same shape as `docs-mounts`, for the same reasons: its Read the Docs pull-request
+    # build is not a required check, and the site loads `docs-theme/` from the repository
+    # root. No `paths:` filter and no `if:`. A few seconds of build, no renderer.
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          enable-cache: true
+          cache-suffix: docs-ub-directives
+          # no `python-version`, so this runs on the root `.python-version`
+          cache-python: true
+      - name: Install the docs environment
+        # keep in step with the `docs-ub-directives` poe task
+        run: uv sync --frozen --no-default-groups --extra docs-ub-directives
+      - name: Build the docs
+        # `-nW --keep-going`, from the poe task, so a nitpick warning is an error
+        run: uv run --no-sync sphinx-build -nW --keep-going -b html docs docs/_build/html -T
+        working-directory: packages/sphinx-ub-directives
 
   docs-reports:
     name: Docs reports
@@ -861,6 +885,7 @@ jobs:
       - tests-extensions
       - docs-codelinks
       - docs-mounts
+      - docs-ub-directives
       - docs-reports
       - toolchain-free
       - plugin-floor

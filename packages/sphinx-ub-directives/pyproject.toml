@@ -1,0 +1,68 @@
+[project]
+name = "sphinx-ub-directives"
+version = "0.1.0"
+description = "Directive presets and declared template directives from ubproject.toml, for Sphinx"
+authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.11,<4"
+dependencies = [
+  "sphinx>=7.4,<10",
+  "docutils>=0.21",
+  # the template engine; the same series sphinx-needs pins, so the two co-install
+  "minijinja~=2.15",
+  "ub-project>=1.1.0,<2",
+]
+keywords = [
+  "sphinx",
+  "directives",
+  "presets",
+  "templates",
+  "jinja",
+  "ubproject",
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Framework :: Sphinx",
+  "Framework :: Sphinx :: Extension",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Documentation",
+  "Topic :: Documentation :: Sphinx",
+  "Topic :: Software Development :: Documentation",
+  "Typing :: Typed",
+]
+
+# The member's own extra. The root re-exports it as `docs-ub-directives` -- uv resolves
+# `--extra` against the project, which is the workspace root, so an extra that lives only
+# here is not reachable by name without that pass-through.
+[project.optional-dependencies]
+docs = [
+  "furo>=2025.12.19",
+  "myst-parser>=4.0.0",
+  "sphinx-ai-index>=1.0.0,<2",
+  "sphinx-design>=0.6.1",
+]
+
+[project.urls]
+Repository = "https://github.com/useblocks/sphinx-needs"
+Issues = "https://github.com/useblocks/sphinx-needs/issues"
+Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphinx-ub-directives/docs/changelog.rst"
+
+[build-system]
+requires = ["flit_core >=3.4,<5"]
+build-backend = "flit_core.buildapi"
+
+# Deliberately NO `[tool.flit.sdist]`: the wheel and sdist carry the module (with its
+# `py.typed` marker), README, LICENSE and this file. Everything else -- ruff, ty, pytest
+# and the dependency groups -- is the ROOT's, and `tools/src/sn_tools/check_workspace.py`
+# refuses those tables here: a member `[tool.ruff]` does not extend the root's
+# configuration, it replaces it.

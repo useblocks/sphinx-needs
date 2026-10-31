@@ -34,6 +34,7 @@ dependencies = [
   "ub-project",
   "ub-needs-exchange",
   "sphinx-ai-index",
+  "sphinx-ub-directives",
   "sphinx-needs-workspace-tools",
 ]
 
@@ -55,6 +56,8 @@ docs-codelinks = ["sphinx-codelinks[docs]"]
 # only one that needs a renderer: three `needflow` directives across two pages. (sphinx-needs'
 # own docs render too, and far more.)
 docs-reports = ["sphinx-test-reports[docs]"]
+# and so does sphinx-ub-directives
+docs-ub-directives = ["sphinx-ub-directives[docs]"]
 # sphinx-codelinks' optional preprocessor-aware C/C++ engine. CI drives it from the
 # `codelinks-libclang` GROUP below rather than through this line -- a group composes with
 # `--no-default-groups --group test --group sphinx-N` without changing the shape of the
@@ -75,6 +78,7 @@ ub-test-reports = { workspace = true }
 ub-project = { workspace = true }
 ub-needs-exchange = { workspace = true }
 sphinx-ai-index = { workspace = true }
+sphinx-ub-directives = { workspace = true }
 sphinx-needs-workspace-tools = { workspace = true }
 sphinx-needs-testkit = { workspace = true }
 
@@ -300,6 +304,8 @@ src = [
   "packages/ub-needs-exchange/src",
   "packages/sphinx-ai-index",
   "packages/sphinx-ai-index/src",
+  "packages/sphinx-ub-directives",
+  "packages/sphinx-ub-directives/src",
 ]
 
 [tool.ruff.lint]
@@ -394,6 +400,7 @@ include = [
   "packages/ub-project/src",
   "packages/ub-needs-exchange/src",
   "packages/sphinx-ai-index/src",
+  "packages/sphinx-ub-directives/src",
   "tools/src",
   ".github/scripts",
   "scripts",
@@ -474,6 +481,7 @@ include = [
   "packages/ub-needs-exchange/src",
   "packages/ub-project/src",
   "packages/sphinx-ai-index/src",
+  "packages/sphinx-ub-directives/src",
   ".github/scripts",
   "scripts",
   "docs-theme",
@@ -820,6 +828,45 @@ executor = { type = "uv", frozen = true, no-group = "dev", group = [
 ] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
 
+# sphinx-ub-directives. The short name drops the `sphinx-` prefix, like every extension's. No
+# path is named, like `test-ai-index`: `poe test-ub-directives tests/test_extension.py`
+# narrows the run rather than adding to it. No renderer, no git and no network: the suite
+# builds one small Sphinx project per conformance case and draws nothing
+[tool.poe.tasks.test-ub-directives]
+help = "Run the sphinx-ub-directives suite against the default (newest) sphinx; trailing args go to pytest"
+cmd = "pytest"
+cwd = "packages/sphinx-ub-directives"
+
+[tool.poe.tasks.test-ub-directives-sphinx7]
+help = "Run the sphinx-ub-directives suite against sphinx 7.4 (set UV_PYTHON to pick the interpreter)"
+cmd = "pytest"
+cwd = "packages/sphinx-ub-directives"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-7",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-7" }
+
+[tool.poe.tasks.test-ub-directives-sphinx8]
+help = "Run the sphinx-ub-directives suite against sphinx 8.2 (set UV_PYTHON to pick the interpreter)"
+cmd = "pytest"
+cwd = "packages/sphinx-ub-directives"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-8",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-8" }
+
+[tool.poe.tasks.test-ub-directives-sphinx9]
+help = "Run the sphinx-ub-directives suite against sphinx 9.1 (python >= 3.12; set UV_PYTHON to pick the interpreter)"
+cmd = "pytest"
+cwd = "packages/sphinx-ub-directives"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-9",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
+
 # ub-project. The short name is the whole distribution name: there is no `sphinx-` prefix to
 # drop. ONE task and no `-sphinxN` cells: the package depends on nothing but the standard
 # library, so a sphinx series is not an axis it has. The environment that matters is the one
@@ -864,7 +911,7 @@ help = "Type-check every package with ty against the oldest supported sphinx (th
 # but it is NOT a fence on `src.include` above: ty intersects the two, so a stale `include`
 # makes this check zero files and exit 0. The canary step in ci.yaml's Lint job is what
 # guards that.
-cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks packages/sphinx-test-reports/src packages/ub-test-reports/src/ub_test_reports packages/ub-project/src/ub_project packages/ub-needs-exchange/src/ub_needs_exchange packages/sphinx-ai-index/src/sphinx_ai_index tools/src .github/scripts scripts docs-theme --python .venvs/typing"
+cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks packages/sphinx-test-reports/src packages/ub-test-reports/src/ub_test_reports packages/ub-project/src/ub_project packages/ub-needs-exchange/src/ub_needs_exchange packages/sphinx-ai-index/src/sphinx_ai_index packages/sphinx-ub-directives/src/sphinx_ub_directives tools/src .github/scripts scripts docs-theme --python .venvs/typing"
 executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 
@@ -1030,6 +1077,16 @@ help = "Import every sphinx-ai-index module from its built wheel, with dependenc
 # imports, and it depends on no sibling
 cmd = "python tools/src/sn_tools/import_check.py sphinx-ai-index"
 
+[tool.poe.tasks.build-ub-directives]
+help = "Build the sphinx-ub-directives sdist + wheel into dist/sphinx-ub-directives"
+cmd = "uv build --package sphinx-ub-directives --no-sources -o dist/sphinx-ub-directives"
+
+[tool.poe.tasks.import-check-ub-directives]
+help = "Import every sphinx-ub-directives module from its built wheel, with dependencies as PUBLISHED"
+# no extras: the wheel's `Requires-Dist` (sphinx, docutils, minijinja, ub-project) is
+# everything it imports; sphinx-needs and myst-parser are imported only when loaded
+cmd = "python tools/src/sn_tools/import_check.py sphinx-ub-directives"
+
 [tool.poe.tasks.build-ub-project]
 help = "Build the ub-project sdist + wheel into dist/ub-project"
 cmd = "uv build --package ub-project --no-sources -o dist/ub-project"
@@ -1080,6 +1137,14 @@ cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html -T"
 cwd = "packages/sphinx-mounts"
 executor = { type = "uv", frozen = true, no-group = "dev", extra = "docs-mounts" }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-mounts" }
+
+[tool.poe.tasks.docs-ub-directives]
+help = "Build the sphinx-ub-directives HTML docs"
+# `extra = "docs-ub-directives"` is the ROOT's pass-through name, not the member's `docs`
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html -T"
+cwd = "packages/sphinx-ub-directives"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = "docs-ub-directives" }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-ub-directives" }
 
 [tool.poe.tasks.docs-mounts-clean]
 help = "Delete the built sphinx-mounts HTML docs, then build them again from scratch"
