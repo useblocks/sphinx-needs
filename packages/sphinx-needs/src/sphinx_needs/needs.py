@@ -1579,7 +1579,7 @@ def _derive_variant_data_proxy(config: NeedsSphinxConfig) -> None:
 
     :param config: The Sphinx-Needs configuration.
     """
-    config.variant_data_proxy = (
+    _NEEDS_CONFIG.build.variant_data_proxy = (
         VariantDataProxy(config.variant_data) if config.variant_data else None
     )
 
@@ -1592,7 +1592,8 @@ def resolve_variant_data_config(app: Sphinx, config: Config) -> None:
     are read at all (``exclude_patterns``), which can only be changed at that point.
 
     After this call, ``needs_variant_data`` holds the fully merged result and
-    ``needs_variant_data_proxy`` the matching ``var`` proxy for filter expressions.
+    ``NeedsSphinxConfig.variant_data_proxy`` the matching ``var`` proxy for filter
+    expressions.
 
     :param app: The Sphinx application.
     :param config: The Sphinx configuration.
@@ -2143,8 +2144,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     #: each need type with the types inheriting from it, as ``target_types`` reads them
     below = _type_descendants(order, parent)
     # and as ``c.is_a`` reads them, in every filter of this build: set at its start, as
-    # the ``var`` proxy is (``filter_common.is_a_types``)
-    needs_config.is_a_types = below
+    # the ``var`` proxy is (``NeedsSphinxConfig.is_a_types``)
+    _NEEDS_CONFIG.build.is_a_types = below
     #: one rule for the name of a link type's back links, wherever the field or link
     #: type of that name comes from (every field is registered by now, a service's
     #: too): what it refuses does not exist, and is not read from the configuration

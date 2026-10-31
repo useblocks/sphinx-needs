@@ -915,13 +915,6 @@
         "expression: str"
       ]
     },
-    "sphinx_needs.variant_data.VariantDataProxy": {
-      "kind": "slots",
-      "slots": [
-        "_data: dict[str, object]",
-        "_path: tuple[str, ...]"
-      ]
-    },
     "sphinx_needs.variants.VariantFunctionParsed": {
       "kind": "dataclass",
       "slots": true,

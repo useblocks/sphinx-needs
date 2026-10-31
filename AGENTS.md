@@ -260,10 +260,9 @@ wheels, the second resolves them from the index) · `test-needs-js` 3 s once the
 installed (9 s cold) · `docs-needs` under 2 min · `test-needs` 7–8 min serial ·
 `test-mounts` 1–3 min · `docs-mounts` seconds · `benchmark-needs` 4 min.
 `docs-needs` runs with `--keep-going`, so it prints every warning
-and then exits 1 — do not read a full log as success. `benchmark-needs` is currently red
-(12 failures in `tests/benchmarks/test_querying.py`: the test mocks `NeedsSphinxConfig`
-with a spec, which lacks the dynamically assigned `variant_data_proxy` — #1840, unrelated
-to the layout); CI runs only its `_time` and `_memory` subsets, which pass.
+and then exits 1 — do not read a full log as success. CI runs only `benchmark-needs`'
+`_time` and `_memory` subsets, so a benchmark that stops working elsewhere in the
+directory goes unseen until the task is run locally (#1840 was red for months that way).
 
 **Naming rule:** a task that acts on the whole repository is bare (`lint`); a task that
 acts on one package ends in that package's short name — the distribution name minus its

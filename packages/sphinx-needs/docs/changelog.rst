@@ -444,6 +444,11 @@ Documentation
 Internal changes
 ................
 
+- 🔧 The ``var`` proxy over the variant data and the need types ``c.is_a`` reads are kept by sphinx-needs rather
+  than on Sphinx's configuration, which holds the declared options alone (:issue:`1840`, :issue:`2402`):
+  ``app.config.needs_variant_data_proxy``, undocumented since 8.2.0, is removed without a deprecation, and is read
+  as ``NeedsSphinxConfig(app.config).variant_data_proxy``
+
 - 🔧 The benchmark workflow measures sphinx-needs rather than the runner: a build time is the fastest of several
   fresh builds with no PlantUML diagram rendered (about three quarters of the old documentation figure was Java),
   the peak memory of the documentation build is tracked, and a regression is judged against the median of recent

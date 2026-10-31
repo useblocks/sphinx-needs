@@ -77,7 +77,6 @@ def _undeclared_needs_values(config: Any) -> list[str]:
     return sorted(k for k in vars(config) if k.startswith("needs_") and k not in config)
 
 
-@pytest.mark.xfail(strict=True, reason="pin: the build writes two undeclared values")
 @pytest.mark.parametrize(
     "test_app",
     [
@@ -110,7 +109,6 @@ def test_a_build_writes_no_undeclared_configuration_value(test_app: Any) -> None
     }
 
 
-@pytest.mark.xfail(strict=True, reason="pin: the values live on Sphinx's Config")
 def test_an_application_reads_no_build_data_until_it_builds(
     make_app: Any, tmp_path: Path
 ) -> None:
@@ -135,7 +133,6 @@ def test_an_application_reads_no_build_data_until_it_builds(
     assert config.variant_data_proxy is None
 
 
-@pytest.mark.xfail(strict=True, reason="pin: the values can be written")
 @pytest.mark.parametrize("name", ["variant_data_proxy", "is_a_types"])
 def test_the_build_data_cannot_be_written_through_the_configuration(
     name: str, make_app: Any, tmp_path: Path
