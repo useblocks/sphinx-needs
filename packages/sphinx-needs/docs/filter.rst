@@ -379,7 +379,8 @@ test report, or the needs written in an included fragment:
       :filter: source.path == "fragments/safety.rst"
 
 A need records the places its text came through, innermost first (its *hops*, see :ref:`api`).
-Each facet reads one named position in them, never a producer, so a longer chain needs no new rule:
+Each facet reads a named position in them, never a producer, so a longer chain needs no new rule;
+``source.kind`` also reads whether the need was imported or is external, as the need records it:
 
 .. list-table::
    :header-rows: 1
@@ -388,9 +389,9 @@ Each facet reads one named position in them, never a producer, so a longer chain
    * - facet
      - what it reads
    * - ``source.kind``
-     - The producer, from the whole chain; the first that applies:
+     - The producer, from the whole chain and the need's import and external flags; the first that applies:
+       ``"import"`` (:ref:`needimport`, whatever the imported need was where it came from),
        ``"external"`` (an :ref:`external need <needs_external_needs>`),
-       ``"import"`` (:ref:`needimport`),
        ``"report"`` (a test report's file, suite or case: sphinx-test-reports),
        ``"code"`` (traced from source code: sphinx-codelinks, a docstring autodoc reads),
        ``"generated"`` (a :ref:`service <services>`),
@@ -402,15 +403,17 @@ Each facet reads one named position in them, never a producer, so a longer chain
    * - ``source.line``
      - The need's line in that file, 1-based, where the file holds the need there; ``None`` where ``source.path`` is.
    * - ``source.paths``
-     - Every file the need came through, innermost first, each once: an included file, each file it was included
-       through, then the page; a needs.json, then the page it is imported on; a report, then its page.
+     - Every file the need came through that this build records, innermost first, each once: an included file,
+       each file it was included through, then the page; a needs.json, then the page it is imported on; a report,
+       then its page. It may gain entries (below), so test membership (``'x' in source.paths``).
    * - ``source.symbol``
      - The code entity a traced need is attached to, by the qualified name its producer gives it
        (``Engine.start``, ``ns::Widget::draw``).
    * - ``source.document``
-     - The placement: the document the need is placed on, ``docname``.
+     - The placement: the document the need is placed on, the need's ``docname``.
    * - ``source.sections``
-     - The placement: the sections the need is placed under, innermost first, ``sections``.
+     - The placement: the sections the need is placed under, innermost first, or an external need's sections on
+       the other site, as its record gives them: the need's ``sections``.
 
 A path is POSIX and relative to the Sphinx source directory, with ``..`` for a file outside it:
 in a project whose documents are in ``docs/`` and whose code is in ``src/``, a traced need reads ``../src/engine.py``,
@@ -419,18 +422,25 @@ A file outside the repository (a mount reached through a symbolic link, a module
 package) has a path that depends on where the checkout sits on the machine.
 
 A facet is ``None`` where this build does not know the answer yet, and later data only fills it,
-so a filter written today selects the same needs then:
+so a filter on it written today selects the same needs then:
 ``source.path`` and ``source.line`` of an imported or an external need (its file is another project's),
 of a service's need, and of a test case, whose test file is relative to the test run's root, which the build does
 not know (sphinx-test-reports' ``case_file`` field holds it); ``source.paths`` of an external need is empty;
 ``source.symbol`` of a need written in a document, its domain object included.
 The kinds are open: a later producer adds one, so a negated test such as ``source.kind != 'page'``
 may select more needs in a later release, where ``source.kind in ['import', 'external']`` will not.
+``source.paths`` is the exception to filling: it gains an entry wherever more of a chain is recorded --
+a test case's test file once its root is known, the files a MyST ``{include}`` was included through (myst-parser
+logs no chain), a file included through a ``:parser:`` include on docutils 0.22 and later (which logs none) --
+and it differs between those docutils versions today. Test whether a file is in it, never its length or
+the position of an entry.
 
-**Guard a method of a facet that can be** ``None``.
+**Guard a facet that can be** ``None``.
 ``source.path.startswith('src/')`` fails on a need with no path: that need is excluded and the filter reported
-(``needs.filter``). Write ``source.path is not None and source.path.startswith('src/')``;
-``==``, ``in`` and ``is None`` need no guard.
+(``needs.filter``). Write ``source.path is not None and source.path.startswith('src/')``.
+``==``, ``in`` and ``is None`` need no guard; a method, an order comparison (``source.line > 5``) and ``len()`` do.
+In a derived field's ``where`` a failure is not reported at all: the candidate is excluded silently, so guard there
+too.
 
 The location names a filter had before stay, each as it was:
 
@@ -441,7 +451,8 @@ The location names a filter had before stay, each as it was:
    * - name
      - and ``source``
    * - ``docname``
-     - ``source.document`` is an alias of it, always equal.
+     - ``source.document`` is an alias of the need's ``docname`` (a :ref:`needs_filter_data` key named ``docname``
+       shadows the name in a filter, not the facet).
    * - ``sections``, ``section_name``
      - ``source.sections`` is an alias of ``sections``, innermost first; ``section_name`` is its first entry.
    * - ``lineno``
@@ -449,7 +460,8 @@ The location names a filter had before stay, each as it was:
        is a line of that file while ``docname`` is the page, and for an imported, service or API need is counted in
        the page's parse. ``source.path`` and ``source.line`` are one file's, a pair that always agrees.
    * - ``is_import``, ``is_external``
-     - ``source.kind == 'import'`` and ``source.kind == 'external'``; both kept.
+     - ``is_import`` is ``source.kind == 'import'``; ``is_external`` is ``source.kind == 'external'`` for a need that
+       is not imported (an imported need is ``"import"`` whatever it was where it came from). Both kept.
    * - ``signature``
      - The bare name of the domain object a need is written in; ``source.symbol`` is a traced need's qualified name,
        and does not read domain objects yet.
@@ -459,7 +471,9 @@ switches the facets off for the whole project. The declaration wins: ``source`` 
 every need, a need of a type that does not declare the field included, so ``source == 'customer'`` selects by
 the field as it always has, and declaring the name reports nothing. A filter reading a facet there
 (``source.path``) fails, as the declaration's value has none, and its ``needs.filter`` report says why:
-``... has no attribute 'path'; the project declares a field named 'source', which switches the source.* facets off``.
+``... has no attribute 'path'; the project declares a field named 'source', which switches the source.* facets off``
+-- a link condition's under its own ``needs.link_condition_invalid``, with the same reason. A method of the field
+itself (``source.startswith('ISO')``) is no facet read, and fails, where it does, as it always did.
 To use the facets, rename the declaration.
 
 The facets are available wherever a filter selects needs: the need-listing and diagram directives,
@@ -467,7 +481,8 @@ The facets are available wherever a filter selects needs: the need-listing and d
 ``where``. They are not available in the ``predicates`` of a :ref:`needs_fields` entry, which is evaluated as the
 need is created, in a :ref:`needimport` ``:filter:``, which reads the imported record rather than a need of this
 build, nor in a variant condition: ``source`` there fails with
-``name 'source' is not defined; the source.* facets are not available in a field predicate`` (or the place it is).
+``name 'source' is not defined; the source.* facets are not available in a field predicate`` (or the place it is),
+and so does a facet read where a field named ``source`` is declared.
 The ``:columns:`` of a :ref:`needtable` and the ``:sort:`` and ``:sort_by:`` of the views do not read a facet yet.
 A filter on the facets is in the :ref:`portable filter language <filter_string_performance>`;
 `ubCode <https://ubcode.useblocks.com>`__ does not read them yet.

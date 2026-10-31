@@ -19,6 +19,19 @@ file outside it; a hop under another root, or with a URL alone, has none.
 One function per facet, each costing its own work only, over a source and the need it
 belongs to. No Sphinx import of its own and no environment: the facets are computed
 from what a need holds, which the legacy projections of the hops will reuse.
+
+``paths`` is the one facet that may gain an entry rather than fill a ``None``, as more
+of a chain is recorded (a test case's test file once its root is known; MyST include
+chains; a file included through a ``:parser:`` include on docutils 0.22 and later);
+filters test membership of it.
+
+The rule for the legacy projections (slice 4): ``document`` and ``sections`` are derived
+from the placement hop where there is one, else from an ``external`` hop's own section
+chain, else they stay the legacy read. Derived from the placement alone, five kinds of
+need would move: a hop-less ``NeedItemSource()`` and ``NeedItemSource((),
+is_import=True)`` placed by a directive (their walked ``sections`` would become ``()``,
+G15), and third-party protocol sources, plain, imported and external (their
+``docname`` from ``dict_repr`` would become ``None``, their walked ``sections`` ``()``).
 """
 
 from __future__ import annotations

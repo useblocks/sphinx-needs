@@ -1263,7 +1263,8 @@ so that a rule means the same in every tool that reads the configuration.
 against the project's need types (see :ref:`filter_is_a`).
 A ``where`` may read the candidate's ``source.*`` facets (:ref:`filter_source`), such as
 ``where = "source.path is not None and source.path.startswith('../src/')"``: they read where it comes from,
-which no rule computes.
+which no rule computes. A ``where`` that fails on a candidate excludes it without a report, so guard a facet that
+can be ``None``, as that example does.
 
 A ``join`` matches the needs whose field equals one of this need's values (:ref:`needs_derive_join`).
 

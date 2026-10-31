@@ -4,8 +4,8 @@
 facet selects, for every producer it can build, in both tiers. This module pins the rest:
 each facet's rule over the hops of every producer, those the corpus cannot build among
 them (a service, autodoc, an external need given a page, a needs.json read from a URL, a
-source with no hops); a declaration named ``source`` switching the facets off (W-1), with
-its one warning; the ``eval`` tier binding them only for a filter naming them; the
+source with no hops); a declaration named ``source`` switching the facets off (W-1), and
+a facet read there reported where it fails; the ``eval`` tier binding them only for a filter naming them; the
 did-you-mean of an unknown facet; the places that have no facets saying so; a derived
 field's ``where`` reading them.
 """
