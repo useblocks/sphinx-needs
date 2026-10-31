@@ -234,13 +234,19 @@ Index
 def test_need_attribute_is_applied_and_resolves(test_app: Sphinx, field: str, value):
     """A ``need.<field>`` argument parses, so the option is applied, and the call resolves.
 
-    ``need.source`` names the need the call reads, on the need the extend modifies.
+    ``need.source`` names the need the call reads, on the need the extend modifies. A
+    field named ``source`` switches the ``source.*`` filter facets off, which is the one
+    warning: the dynamic function reads the field, not a filter.
     """
     app = test_app
     app.build()
     assert app.statuscode == 0
 
-    assert build_warnings(app) == []
+    assert build_warnings(app) == [
+        "WARNING: A field named 'source' is declared, which switches the source.* "
+        "filter facets off for the project: 'source' in a filter reads the field "
+        "[needs.source_shadowed]"
+    ]
     need = needs_by_id(app)["REQ_C"]
     assert need[field] == value
     assert need["is_modified"] is True

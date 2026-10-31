@@ -44,7 +44,6 @@ from sphinx_needs.ubquery import CompiledFilter
 from sphinx_needs_testkit import build_warnings
 
 #: pinned before the source facets land: red until the commit that serves each
-_UNTIL_W1 = pytest.mark.xfail(strict=True, reason="W-1 lands in its own commit")
 _UNTIL_MESSAGES = pytest.mark.xfail(
     strict=True, reason="the unavailability messages land in their own commit"
 )
@@ -368,7 +367,6 @@ def _both_tiers(app: Any, filter_string: str) -> dict[str, bool | str]:
 SHADOWED = "which switches the source.* filter facets off for the project"
 
 
-@_UNTIL_W1
 @pytest.mark.parametrize(
     ("test_app", "warning", "reads"),
     [
@@ -390,6 +388,21 @@ SHADOWED = "which switches the source.* filter facets off for the project"
             id="link-type",
         ),
         pytest.param(
+            _project(
+                "needs_types = [\n"
+                '    {"directive": "req", "title": "Req", "prefix": "R_",'
+                ' "fields": {"source": {"schema": {"type": "string"}}}},\n'
+                '    {"directive": "spec", "title": "Spec", "prefix": "S_"},\n'
+                "]\n",
+                INDEX.format(source=":source: manual"),
+            ),
+            f"A field named 'source' is declared, {SHADOWED}: 'source' in a filter "
+            "reads the field",
+            # a spec reads the field too, which its type does not declare: unset there
+            {"REQ_001": True, "REQ_002": False, "SPEC_001": False},
+            id="field-of-one-need-type",
+        ),
+        pytest.param(
             _project('needs_filter_data = {"source": "manual"}\n'),
             f"A needs_filter_data key named 'source' is declared, {SHADOWED}: 'source' "
             "in a filter reads the needs_filter_data key",
@@ -404,8 +417,10 @@ def test_a_declaration_named_source_switches_the_facets_off(
 ) -> None:
     """W-1: a field, a link type or a ``needs_filter_data`` key named ``source`` switches
     the facets off for the whole project, with one warning per build, and ``source``
-    reads the declaration in both tiers. (A field and a ``needs_filter_data`` key of
-    one name are refused by the configuration already.)"""
+    reads the declaration in both tiers -- on every need, a need of a type that does
+    not declare the field included, so that no filter reads the facets on some needs
+    and the field on others. (A field and a ``needs_filter_data`` key of one name are
+    refused by the configuration already.)"""
     app = test_app
     app.build()
     assert [w for w in build_warnings(app) if not w.endswith("[needs.deprecated]")] == [

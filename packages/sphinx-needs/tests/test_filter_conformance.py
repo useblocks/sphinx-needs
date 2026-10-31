@@ -386,24 +386,12 @@ def test_a_case_loading_sphinx_codelinks_is_a_git_checkout() -> None:
         _files({"config": "", "source": "", "extensions": ["sphinx_mounts"]})
 
 
-#: The cases red until sphinx-needs serves the ``source`` namespace.
-_PINNED = frozenset({"a-field-named-source-switches-the-facets-off"})
-
-
 @pytest.mark.parametrize(
     "test_app,case",
     params(CASES, files=_files, skip=uninstalled_extension),
     indirect=["test_app"],
 )
-def test_case(
-    test_app: Any, case: dict[str, Any], request: pytest.FixtureRequest
-) -> None:
-    if case["name"] in _PINNED:
-        request.applymarker(
-            pytest.mark.xfail(
-                strict=True, reason="pinned before the source facets land"
-            )
-        )
+def test_case(test_app: Any, case: dict[str, Any]) -> None:
     app = test_app
     app.build()
     # the project itself builds clean: a case whose configuration or document is not

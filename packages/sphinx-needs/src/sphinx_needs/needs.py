@@ -211,6 +211,7 @@ from sphinx_needs.services.github import (
     add_configured_github_services,
 )
 from sphinx_needs.string_links import compile_string_links
+from sphinx_needs.ubquery import SOURCE_NAME
 from sphinx_needs.utils import node_match
 from sphinx_needs.variant_data import VariantDataProxy
 from sphinx_needs.warnings import process_warnings
@@ -2872,8 +2873,42 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     _resolve_id_patterns(schema, type_entries, order, parent)
     # the schema is complete: nothing declares a field once it is built
     schema.freeze()
+    # a declaration named ``source`` switches the ``source.*`` facets off in every filter
+    # of this build, as ``c.is_a`` reads the types set above
+    _NEEDS_CONFIG.build.source_shadowed = _shadows_source(schema, needs_config)
 
     SphinxNeedsData(env)._set_schema(schema)
+
+
+def _shadows_source(schema: FieldsSchema, needs_config: NeedsSphinxConfig) -> bool:
+    """Whether the project declares the name ``source``: a field, a link type or a
+    ``needs_filter_data`` key, each of which a filter's ``source`` would otherwise read
+    on some needs and the facets on others. It switches the facets off for the whole
+    project, with one ``needs.source_shadowed`` warning per build naming what declares
+    it, so that no filter's selection depends on which needs carry the field."""
+    declared = [
+        what
+        for what, found in (
+            ("a field", schema.get_extra_field(SOURCE_NAME) is not None),
+            ("a link type", schema.get_link_field(SOURCE_NAME) is not None),
+            ("a needs_filter_data key", SOURCE_NAME in needs_config.filter_data),
+        )
+        if found
+    ]
+    if not declared:
+        return False
+    # ``needs_filter_data`` is set over a need's fields, so its key is what the name reads
+    read = declared[-1].removeprefix("a ")
+    log_warning(
+        LOGGER,
+        f"{joined(declared).capitalize()} named 'source' "
+        f"{'is' if len(declared) == 1 else 'are'} declared, which switches the "
+        f"source.* filter facets off for the project: 'source' in a filter reads the "
+        f"{read}",
+        "source_shadowed",
+        None,
+    )
+    return True
 
 
 def _copy_deprecation(where: str, name: str, schema: FieldsSchema) -> str:
