@@ -150,6 +150,18 @@ SHAPES: dict[str, tuple[Any, tuple[Any, ...]]] = {
         NeedItemSource((_SERVICE, _file("frag/a.rst", 10), _page("index.rst"))),
         ("generated", None, None, ("frag/a.rst", "index.rst"), None),
     ),
+    "a-service-writing-a-file": (
+        NeedItemSource(
+            (
+                NeedSourceHop(
+                    kind="generated",
+                    physical=NeedSourcePhysical(root="srcdir", path="gen/out.json"),
+                ),
+                _page("index.rst"),
+            )
+        ),
+        ("generated", None, None, ("gen/out.json", "index.rst"), None),
+    ),
     "autodoc": (
         NeedItemSource(
             (
@@ -601,3 +613,61 @@ def test_a_derived_where_reads_the_facets(test_app: Any) -> None:
     needs = SphinxNeedsData(app.env).get_needs_view()
     assert needs["REQ_001"]["same_file"] == []
     assert needs["REQ_002"]["same_file"] == ["REQ_001"]
+
+
+CONF_LATE = """\
+extensions = ["sphinx_needs"]
+suppress_warnings = ["config.cache"]
+
+
+def my_source(app, need, needs, *args, **kwargs):
+    return "tool"
+
+
+def my_reader(app, need, needs, *args, **kwargs):
+    from sphinx_needs.config import NeedsSphinxConfig
+    from sphinx_needs.filter_common import filter_needs_and_parts
+
+    found = filter_needs_and_parts(
+        list(needs.values()),
+        NeedsSphinxConfig(app.config),
+        "[s for s in [source] if s == 'tool']",
+    )
+    return " ".join(sorted(n["id"] for n in found))
+
+
+needs_functions = [my_source, my_reader]
+needs_fields = {"source": {"nullable": True}, "reads": {"nullable": True}}
+"""
+
+INDEX_LATE = """\
+Index
+=====
+
+.. req:: Reads it through eval, in your own function
+   :id: AAA_001
+   :reads: [[my_reader()]]
+
+.. req:: Its source is your own function's
+   :id: REQ_001
+   :source: [[my_source()]]
+"""
+
+
+@pytest.mark.parametrize("test_app", [_project(CONF_LATE, INDEX_LATE)], indirect=True)
+def test_a_field_named_source_is_still_a_field_the_pass_watches(test_app: Any) -> None:
+    """The facets read hops fixed before the pass, so ``eval`` treats them as no field
+    read; a field named ``source``, which switches them off, is one, and your own
+    function's filter reading it before another computed it is reported as any late
+    read."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        f"WARNING: A field named 'source' is declared, {SHADOWED}: 'source' in a filter "
+        "reads the field [needs.source_shadowed]",
+        "<srcdir>/index.rst:4: WARNING: dynamic function 'my_reader' for option "
+        "'reads' read 'source' on need 'REQ_001' before it was computed: it is "
+        "computed by your own function 'my_source', after this call: your own "
+        "functions, and the calls whose filter cannot be read, run after the built-in "
+        "functions, in (need id, field) order [needs.derive_scope]",
+    ]
