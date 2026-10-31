@@ -449,8 +449,9 @@ def test_the_hops_of_every_need(
 
     Read with the files: ``REQ_AX`` is written on line 4 of ``frag/a.rst``, which
     ``inc_host.rst`` includes, so its first hop is that file's, and the page hop has no
-    line; ``REQ_BX`` is in ``frag/b.rst``, which ``frag/a.rst`` includes -- docutils keeps
-    no chain of includes, so only the innermost file is a hop. The service and the import
+    line; ``REQ_BX`` is in ``frag/b.rst``, which ``frag/a.rst`` includes: its hops are
+    ``frag/b.rst`` with the need's lines, then ``frag/a.rst`` with none, read from
+    docutils' ``document.include_log``, then the page. The service and the import
     have their directive's true line, not the parser's (``rst_prolog`` shifts it by 4).
     ``REQ_CFX`` is in a C function, whose ``desc_name`` wraps a ``desc_sig_name``: the
     semantic location names it, and its ``signature`` extra is what the legacy walk
@@ -476,8 +477,16 @@ def test_the_hops_of_every_need(
 
     assert lines("REQ_HOST1X") == [("inc_host.rst", 4, 7)]
     assert lines("REQ_AX") == [("frag/a.rst", 4, 7), ("inc_host.rst", None, None)]
-    assert lines("REQ_BX") == [("frag/b.rst", 1, 2), ("inc_host.rst", None, None)]
-    assert lines("REQ_L1X") == [("frag/b.rst", 7, 8), ("inc_host.rst", None, None)]
+    assert lines("REQ_BX") == [
+        ("frag/b.rst", 1, 2),
+        ("frag/a.rst", None, None),
+        ("inc_host.rst", None, None),
+    ]
+    assert lines("REQ_L1X") == [
+        ("frag/b.rst", 7, 8),
+        ("frag/a.rst", None, None),
+        ("inc_host.rst", None, None),
+    ]
     assert lines("SVC_A") == [
         (None, None, None),
         ("frag/a.rst", 10, 10),
@@ -652,7 +661,6 @@ NESTED_FILES = {
 }
 
 
-@pytest.mark.xfail(strict=True, reason="G4: the include intermediates are not recorded")
 def test_a_nested_include_records_each_file_it_passes_through(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ):

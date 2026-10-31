@@ -101,7 +101,9 @@ Improvements
   ``need.source.hops`` starts at the innermost place sphinx-needs knows the need came through -- the file a
   directive is written in (an included file's own, in an include), the ``needs.json`` an imported need was read
   from, the service that made a need, an external need's page -- and ends at the page the need is placed on, with
-  its sections and the domain objects it is written in (an external need has no such page). A need in a docstring
+  its sections and the domain objects it is written in (an external need has no such page). In a nested
+  reStructuredText include, each file the need's file was included through is a hop between the two, innermost
+  first and with no line (a MyST ``{include}`` chain records its innermost file alone). A need in a docstring
   autodoc reads starts at a ``code`` hop of its Python file, with the language ``python`` and, where the definition
   autodoc names holds the need in its docstring, that definition's file (for a member inherited from another module,
   that module's) and its name in the file in sphinx-codelinks' Python kinds (``class Shape > method area``), so it

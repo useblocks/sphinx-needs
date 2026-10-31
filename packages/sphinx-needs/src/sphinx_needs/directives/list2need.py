@@ -481,6 +481,7 @@ class List2NeedDirective(SphinxDirective):
                 check=check,
                 tab_width=tab_width,
                 fragment_lines=True,
+                document=self.state.document,
             )
         if isinstance(self.state, RSTState):
             return located_hops(

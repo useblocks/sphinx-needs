@@ -265,7 +265,10 @@ Data
    directive or ``list2need``, the file the need is written in (an included file's own, in an include; the module,
    for an autodoc docstring); for an imported need, the ``needs.json`` it was read from (where the exporting project
    wrote the need is not a hop yet); for a service, the service that made it, then the file of the ``needservice``
-   directive; for an external need, its page on the other site, its only hop. A need created
+   directive; for an external need, its page on the other site, its only hop. In a nested reStructuredText include,
+   the included file's hop is followed by one ``file`` hop per file it was included through, innermost first, each
+   with its path and suffix and no line, as docutils' ``include_log`` names them; myst-parser's ``{include}`` logs no
+   chain, so in MyST only the innermost file is a hop (a reStructuredText include in ``eval-rst`` is logged). A need created
    through ``add_need`` or ``NeedItemSource.on_page`` has its page with no path, and no hops without a document
    (``NeedItemSource.from_directive`` records the directive's file and lines, as a need directive does). The last hop with a ``document`` is
    the page the need is placed on (an external need has none), and carries its sections and the domain objects it

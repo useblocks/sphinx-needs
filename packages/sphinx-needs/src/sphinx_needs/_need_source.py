@@ -118,6 +118,12 @@ class NeedSourceSemantic:
 class NeedSourceHop:
     """One place a need's text passed through.
 
+    Text in an included file has a ``file`` hop of that file, then one per file it was
+    included through, innermost first, each with no line, read from docutils'
+    ``document.include_log``, then the page. myst-parser's ``{include}`` logs nothing,
+    so a MyST include chain records its innermost file alone (a known gap; a
+    reStructuredText include in a MyST page's ``eval-rst`` block is recorded).
+
     **Provisional**: it may change without a deprecation until it reaches
     ``needs.json``.
     """
@@ -330,6 +336,42 @@ def _include_entry(
             start_after = "\n\n"
         return start_line, end_line, start_after or ""
     return None
+
+
+def _include_chain(document: object, source: str) -> tuple[str, ...]:
+    """The files the innermost active include of ``source`` was included through,
+    innermost first, as ``document.include_log`` names them; ``()`` where there are none,
+    and where an entry of the log is not as expected or names no file.
+
+    The log is a stack: an include pushes ``(path, options)`` (the options in the orders
+    :func:`_include_entry` reads), and the ``.. end of inclusion`` comment after its text
+    pops it. Its first entry is the source the document was being read from at its
+    first include (the page, or ``rst_prolog``), never an include, so the includes
+    between it and the innermost entry of ``source`` are the chain. reStructuredText
+    only: myst-parser's ``{include}`` logs nothing (myst-parser 4 and 5), so a MyST
+    include chain has none; a reStructuredText include in a MyST page's ``eval-rst``
+    block is logged.
+    """
+    log = getattr(document, "include_log", None)
+    if not isinstance(log, list):
+        return ()
+    paths: list[str] = []
+    for entry in log[1:]:
+        if not (
+            isinstance(entry, tuple)
+            and len(entry) == 2
+            and isinstance(entry[0], str | os.PathLike)
+            and isinstance(entry[1], tuple)
+            and len(entry[1]) == 4
+            and isinstance(path := os.fspath(entry[0]), str)
+        ):
+            return ()
+        paths.append(path)
+    for index in range(len(paths) - 1, -1, -1):
+        if paths[index] == source:
+            chain = tuple(reversed(paths[:index]))
+            return chain if all(map(os.path.isfile, chain)) else ()
+    return ()
 
 
 def _numbered_from_the_slice(lines: StringList, index: int, source: str) -> bool:
@@ -873,6 +915,7 @@ def located_hops(
     fragment_lines: bool,
     first: Iterable[NeedSourceHop] = (),
     text: str | None = None,
+    document: object = None,
 ) -> tuple[NeedSourceHop, ...]:
     """The hops of text written at ``source:start_line`` and placed on ``docname``.
 
@@ -891,11 +934,15 @@ def located_hops(
     :param text: The text as written (a directive's block): in a docstring, the
         definition its name resolves to is trusted only where that definition's
         docstring holds each of its lines (:func:`_docstring_hop`).
-    :return: ``[first...], file, page`` for text in an included file (the page hop then
-        has no line: the ``include`` line is not recoverable), ``[first], page``
-        otherwise. A docstring (autodoc) is a ``code`` hop of the Python file it is
-        defined in (:func:`_docstring_hop`), with no line: the one autodoc gives counts
-        from the docstring, not the file.
+    :param document: The document being read, whose ``include_log`` names the files an
+        included file was included through (:func:`_include_chain`), or ``None``.
+    :return: ``[first...], file, [through...], page`` for text in an included file: the
+        file, then one ``file`` hop per file it was included through, innermost first,
+        each with its path and suffix and no line (the page hop has no line either: an
+        ``include`` line is not recoverable); ``[first], page`` otherwise. A docstring
+        (autodoc) is a ``code`` hop of the Python file it is defined in
+        (:func:`_docstring_hop`), with no line: the one autodoc gives counts from the
+        docstring, not the file.
     """
     srcdir = env.srcdir
     host = os.path.abspath(env.doc2path(docname))
@@ -932,6 +979,12 @@ def located_hops(
                 physical=physical_for(srcdir, source, *lines),
                 language=_suffix(source),
             )
+        )
+        hops.extend(
+            NeedSourceHop(
+                kind="file", physical=physical_for(srcdir, path), language=_suffix(path)
+            )
+            for path in _include_chain(document, source)
         )
         hops.append(page())
     else:
@@ -984,6 +1037,7 @@ def directive_hops(
         fragment_lines=rst,
         first=first,
         text=directive.block_text,
+        document=directive.state.document,
     )
 
 

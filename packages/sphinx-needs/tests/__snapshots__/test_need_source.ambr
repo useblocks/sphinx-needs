@@ -23,6 +23,7 @@
     ]),
     'REQ_BX': list([
       'file srcdir:frag/b.rst:1-2 (.rst)',
+      'file srcdir:frag/a.rst (.rst)',
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
     ]),
     'REQ_CFX': list([
@@ -89,14 +90,17 @@
     ]),
     'REQ_L1X': list([
       'file srcdir:frag/b.rst:7-8 (.rst)',
+      'file srcdir:frag/a.rst (.rst)',
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
     ]),
     'REQ_L2X': list([
       'file srcdir:frag/b.rst:9-9 (.rst)',
+      'file srcdir:frag/a.rst (.rst)',
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
     ]),
     'REQ_L3X': list([
       'file srcdir:frag/b.rst:10-10 (.rst)',
+      'file srcdir:frag/a.rst (.rst)',
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
     ]),
     'REQ_LINEBLOCKX': list([
