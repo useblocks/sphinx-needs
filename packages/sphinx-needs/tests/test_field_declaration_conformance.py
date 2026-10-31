@@ -47,6 +47,7 @@ from sphinx_needs_testkit.conformance import (
     match_findings,
     params,
     read_findings,
+    uninstalled_extension,
 )
 
 CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformance.toml"
@@ -286,16 +287,11 @@ EXTENSION_CASE = {"config": "", "source": "", "extensions": ["sphinx_test_report
 
 def _files(case: Mapping[str, Any]) -> list[tuple[Path, str]]:
     """The case's project: its configuration, its document, and its other files."""
-    extensions = ["sphinx_needs", *case.get("extensions", [])]
-    return case_files(case, conf_py=CONF_PY.format(extensions=extensions), title=TITLE)
+    return case_files(case, conf_py=CONF_PY, title=TITLE, extensions=EXTENSIONS)
 
 
-def _skip(case: Mapping[str, Any]) -> str | None:
-    """Why the case cannot run here: an extension it loads is not installed."""
-    for extension in case.get("extensions", []):
-        if importlib.util.find_spec(extension) is None:
-            return f"{extension} is not installed"
-    return None
+#: Why the case cannot run here: an extension it loads is not installed.
+_skip = uninstalled_extension
 
 
 @pytest.mark.parametrize(

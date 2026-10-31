@@ -27,9 +27,9 @@ from __future__ import annotations
 import re
 import tomllib
 from collections import Counter
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from contextlib import contextmanager
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 from unittest.mock import patch
 
@@ -46,7 +46,12 @@ from sphinx_needs.filter_common import (
 )
 from sphinx_needs.ubquery import CompiledFilter, try_build_simple_predicate
 from sphinx_needs_testkit import build_warnings
-from sphinx_needs_testkit.conformance import case_files, params
+from sphinx_needs_testkit.conformance import (
+    case_files,
+    inside,
+    params,
+    uninstalled_extension,
+)
 
 CORPUS_PATH = Path(__file__).parent / "fixtures" / "filter_conformance.toml"
 
@@ -54,14 +59,32 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "filter_conformance.toml"
 #: carries. Raising one is the normal consequence of adding a case or an entry; lowering
 #: it needs a reason in the commit message, and ubCode's vendored copy has to follow
 #: either way.
-EXPECTED_CASE_COUNT = 21
-EXPECTED_FILTER_COUNT = 250
+EXPECTED_CASE_COUNT = 25
+EXPECTED_FILTER_COUNT = 305
 
-#: The configuration the runner gives every case besides its ``ubproject.toml``.
+#: The configuration the runner gives every case besides its ``ubproject.toml``: its
+#: ``extensions`` are sphinx-needs, then the case's own, and each reads the case's
+#: ``ubproject.toml`` (one directory up for a case whose ``srcdir`` is a subdirectory).
 CONF_PY = """\
-extensions = ["sphinx_needs"]
-needs_from_toml = "ubproject.toml"
+extensions = {extensions!r}
+needs_from_toml = "{toml}"
 """
+
+#: The extensions a case may load besides sphinx-needs (its ``extensions`` key), each
+#: with the line of ``conf.py`` pointing it at the case's ``ubproject.toml`` where that
+#: is not beside ``conf.py``.
+EXTENSIONS = {
+    "sphinx_codelinks": 'src_trace_config_from_toml = "{toml}"\n',
+    "sphinx_test_reports": 'tr_config_from_toml = "{toml}"\n',
+}
+
+#: The ``.git`` a case loading sphinx-codelinks is given, as the header states it: a
+#: detached ``HEAD`` and an ``origin``, so that its remote and its commit are found
+#: with no ``git`` binary, and the build is clean.
+GIT_FILES = {
+    ".git/HEAD": "0123456789abcdef0123456789abcdef01234567\n",
+    ".git/config": '[remote "origin"]\n\turl = https://github.com/example/case.git\n',
+}
 
 #: The title the runner puts above every case's ``source``.
 TITLE = "Case\n====\n\n"
@@ -75,6 +98,8 @@ _CASE_KEYS = {
     "config",
     "source",
     "files",
+    "extensions",
+    "srcdir",
     "python_only",
     "ubcode_only",
     "filters",
@@ -99,6 +124,10 @@ _TIERS = ("index", "fast", "eval", "refused")
 #: The warning a case's build may give besides none (:func:`test_case`): the
 #: deprecation of `filter_data`, which the residue's own filters read.
 _DEPRECATED = "[needs.deprecated]"
+
+#: The finding of a field named `source`, which switches the facets off: each tool
+#: reports it its own way, and the header leaves it uncompared.
+_SOURCE_SHADOWED = "[needs.source_shadowed]"
 
 #: The finding of an `inherits` naming no need type, which the header leaves uncompared;
 #: an `inherits` on a cycle gives the same code, and is no case's to give.
@@ -148,6 +177,15 @@ def test_every_case_has_a_complete_expectation() -> None:
         assert case["why"] and isinstance(case["config"], str) and case["source"], name
         assert not (case.get("python_only") and case.get("ubcode_only")), name
         assert case["filters"], name
+        extensions = case.get("extensions", [])
+        assert isinstance(extensions, list) and set(extensions) <= set(EXTENSIONS), name
+        assert len(set(extensions)) == len(extensions), name
+        if "srcdir" in case:
+            # a subdirectory of the case directory, which the case's own
+            # `ubproject.toml` names as its source directory, as ubCode reads it
+            srcdir = case["srcdir"]
+            assert srcdir and inside(srcdir) != Path(), name
+            assert tomllib.loads(case["config"])["source"]["dir"] == srcdir, name
         seen: set[tuple[str, bool, bool]] = set()
         for entry in case["filters"]:
             where = f"{name}: {entry.get('filter')!r}"
@@ -187,9 +225,24 @@ def test_the_corpus_header_records_where_it_is_canonical() -> None:
     assert "THIS copy is CANONICAL" in header
 
 
-def _files(case: dict[str, Any]) -> list[tuple[Path, str]]:
-    """The case's project: its configuration, its document, and its other files."""
-    return case_files(case, conf_py=CONF_PY, title=TITLE)
+def _files(case: Mapping[str, Any]) -> list[tuple[Path, str]]:
+    """The case's project: its configuration, its document, its other files, and a
+    ``.git`` where it loads sphinx-codelinks."""
+    srcdir = case.get("srcdir")
+    toml = "../" * len(PurePosixPath(srcdir).parts) if srcdir else ""
+    toml += "ubproject.toml"
+    loaded = case.get("extensions", [])
+    template = CONF_PY.replace("{toml}", toml)
+    if srcdir:
+        template += "".join(
+            EXTENSIONS[name].replace("{toml}", toml)
+            for name in loaded
+            if name in EXTENSIONS
+        )
+    files = case_files(case, conf_py=template, title=TITLE, extensions=EXTENSIONS)
+    if "sphinx_codelinks" in loaded:
+        files += [(Path(path), text) for path, text in GIT_FILES.items()]
+    return files
 
 
 @pytest.mark.parametrize(
@@ -295,21 +348,82 @@ def _check(app: Any, entry: dict[str, Any]) -> list[str]:
     return problems
 
 
-@pytest.mark.parametrize(
-    "test_app,case", params(CASES, files=_files), indirect=["test_app"]
+def test_a_case_loading_sphinx_codelinks_is_a_git_checkout() -> None:
+    """The runner writes the header's two ``.git`` files for a case loading
+    sphinx-codelinks, its extensions into ``conf.py``, and, for a case whose ``srcdir``
+    is a subdirectory, its ``conf.py`` and document there, every extension pointed at
+    the ``ubproject.toml`` one directory up."""
+    case = {
+        "config": "[source]\ndir = 'docs'\n",
+        "source": "",
+        "srcdir": "docs",
+        "extensions": ["sphinx_codelinks", "sphinx_test_reports"],
+    }
+    files = {path.as_posix(): text for path, text in _files(case)}
+    assert set(files) == {
+        "docs/conf.py",
+        "docs/index.rst",
+        "ubproject.toml",
+        ".git/HEAD",
+        ".git/config",
+    }
+    assert files[".git/HEAD"] == GIT_FILES[".git/HEAD"]
+    assert files[".git/config"] == GIT_FILES[".git/config"]
+    assert files["docs/conf.py"] == (
+        "extensions = ['sphinx_needs', 'sphinx_codelinks', 'sphinx_test_reports']\n"
+        'needs_from_toml = "../ubproject.toml"\n'
+        'src_trace_config_from_toml = "../ubproject.toml"\n'
+        'tr_config_from_toml = "../ubproject.toml"\n'
+    )
+    plain = {
+        path.as_posix(): text for path, text in _files({"config": "", "source": ""})
+    }
+    assert set(plain) == {"conf.py", "index.rst", "ubproject.toml"}
+    assert plain["conf.py"] == (
+        "extensions = ['sphinx_needs']\nneeds_from_toml = \"ubproject.toml\"\n"
+    )
+    with pytest.raises(AssertionError, match="does not allow"):
+        _files({"config": "", "source": "", "extensions": ["sphinx_mounts"]})
+
+
+#: The cases red until sphinx-needs serves the ``source`` namespace.
+_PINNED = frozenset(
+    {
+        "source-facets-of-page-include-import-and-external-needs",
+        "source-facets-of-code-and-report-needs",
+        "source-paths-are-relative-to-the-source-directory",
+        "a-field-named-source-switches-the-facets-off",
+    }
 )
-def test_case(test_app: Any, case: dict[str, Any]) -> None:
+
+
+@pytest.mark.parametrize(
+    "test_app,case",
+    params(CASES, files=_files, skip=uninstalled_extension),
+    indirect=["test_app"],
+)
+def test_case(
+    test_app: Any, case: dict[str, Any], request: pytest.FixtureRequest
+) -> None:
+    if case["name"] in _PINNED:
+        request.applymarker(
+            pytest.mark.xfail(
+                strict=True, reason="pinned before the source facets land"
+            )
+        )
     app = test_app
     app.build()
     # the project itself builds clean: a case whose configuration or document is not
     # read as written tests something else (the warnings a case may earn are the
-    # deprecation of `filter_data`, which the residue's own filters read, and the
-    # finding of an `inherits` naming no need type, a configuration finding the header
-    # leaves uncompared)
+    # deprecation of `filter_data`, which the residue's own filters read, the finding of
+    # an `inherits` naming no need type, and that of a field named `source`, which
+    # switches the facets off: configuration findings the header leaves uncompared)
     assert [
         w
         for w in build_warnings(app)
-        if not w.endswith(_DEPRECATED) and not _UNKNOWN_INHERITS.fullmatch(w)
+        if not w.endswith(_DEPRECATED)
+        and not w.endswith(_SOURCE_SHADOWED)
+        and not _UNKNOWN_INHERITS.fullmatch(w)
     ] == [], case["name"]
     problems = [
         problem

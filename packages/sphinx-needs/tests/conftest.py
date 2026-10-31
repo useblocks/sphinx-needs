@@ -256,11 +256,22 @@ def _check_need_source(
         physical = hop.physical
         if physical is None or physical.path is None:
             continue
+        if physical.root is None:
+            # a producer's own root, which the build does not know: a test report's
+            # test file (sphinx-test-reports' suite checks it), as the filter corpus's
+            # extension cases build it
+            assert hop.kind == "code", where
+            assert not PurePath(physical.path).is_absolute(), where
+            continue
         # R6: one root, and a path relative to it
         assert physical.root == SRCDIR_ROOT, where
         assert not PurePath(physical.path).is_absolute(), where
         file = Path(app.srcdir, physical.path)
         assert file.is_file(), f"{where}: no file {file}"
+        if hop.kind == "code":
+            # its lines are its producer's, a sphinx-codelinks marker in a code file,
+            # which sphinx-codelinks' suite checks; the docstring hop has none
+            continue
         if physical.start_line is None:
             assert physical.end_line is None, where
             continue
