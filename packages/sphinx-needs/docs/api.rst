@@ -271,9 +271,10 @@ Data
    the included file's hop is followed by one ``file`` hop per file it was included through, innermost first, each
    with its path and suffix and no line, as docutils' ``include_log`` names them. Two known gaps: myst-parser's
    ``{include}`` is never logged, so a chain through MyST includes records its reStructuredText links alone (a
-   reStructuredText include in ``eval-rst`` is logged, a MyST include around it is not), and a file included with
-   ``:parser:`` is a link of the chain under docutils 0.21 only (0.22 and later parse it into a document of its own
-   without logging it). A need created
+   reStructuredText include in ``eval-rst`` is logged, a MyST include around it is not), and under docutils 0.22 and
+   later a file included with ``:parser:`` is not logged (it is parsed into a document of its own), so it is no link
+   of a chain through it, and a need written in that file itself records no chain at all (docutils 0.21 logs it). A
+   need created
    through ``add_need`` or ``NeedItemSource.on_page`` has its page alone, whose file ``create_need`` records with no line
    (the line the caller gives is not checked in the file); ``generate_need`` has no application, so it records no
    page path; and no hops without a document

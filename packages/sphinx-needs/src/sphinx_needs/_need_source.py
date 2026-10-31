@@ -134,8 +134,10 @@ class NeedSourceHop:
     ``document.include_log``, then the page. Two known gaps: myst-parser's
     ``{include}`` is never logged, so a chain through MyST includes records its
     reStructuredText links alone (an include in a MyST page's ``eval-rst`` block is
-    one); and a file included with ``:parser:`` is a link under docutils 0.21 only
-    (0.22 and later parse it as a document of its own, unlogged).
+    one); and under docutils 0.22 and later a file included with ``:parser:`` is not
+    logged (it is parsed as a document of its own), so it is no link of a chain
+    through it, and a need written in that file itself records no chain at all
+    (docutils 0.21 logs it).
 
     **Provisional**: it may change without a deprecation until it reaches
     ``needs.json``.
@@ -417,7 +419,9 @@ def _include_chain(document: object, source: str) -> tuple[str, ...]:
     include is never a link, and a chain through one has its reStructuredText links
     alone (an include in a MyST page's ``eval-rst`` block is logged). A ``:parser:``
     include is logged by docutils 0.21 and not by 0.22 and later, whose
-    ``custom_parse`` never pushes it.
+    ``custom_parse`` never pushes it: there it is no link of a chain through it, and
+    a need written in the ``:parser:`` file itself, whose source is not in the log,
+    gets no chain at all.
     """
     log = getattr(document, "include_log", None)
     if not isinstance(log, list):
