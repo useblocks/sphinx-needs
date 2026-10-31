@@ -13,6 +13,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "No Scope",
       "id": "IMPL_GO_NONE",

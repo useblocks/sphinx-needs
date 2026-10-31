@@ -1,0 +1,78 @@
+[
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 31
+      }
+    },
+    "tagged_scope": "public record Point(int X, int Y);",
+    "scope": {
+      "kind": "record_declaration",
+      "start": 2,
+      "end": 2,
+      "language": "csharp",
+      "entity_kind": "record",
+      "qualified_name": "Point",
+      "semantic": [
+        {
+          "kind": "record",
+          "name": "Point"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Record",
+      "id": "IMPL_R_RECORD",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "record_declaration"
+  },
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 33
+      }
+    },
+    "tagged_scope": "public interface IShape { double Area(); }",
+    "scope": {
+      "kind": "interface_declaration",
+      "start": 4,
+      "end": 4,
+      "language": "csharp",
+      "entity_kind": "interface",
+      "qualified_name": "IShape",
+      "semantic": [
+        {
+          "kind": "interface",
+          "name": "IShape"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Interface",
+      "id": "IMPL_R_IFACE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "interface_declaration"
+  }
+]

@@ -1,0 +1,44 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
+      },
+      "end": {
+        "row": 1,
+        "column": 52
+      }
+    },
+    "tagged_scope": "def inner():\n        pass",
+    "scope": {
+      "kind": "function_definition",
+      "start": 3,
+      "end": 4,
+      "language": "python",
+      "entity_kind": "function",
+      "qualified_name": "outer.<locals>.inner",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "outer"
+        },
+        {
+          "kind": "function",
+          "name": "inner"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Above the first statement",
+      "id": "IMPL_R_BLOCK",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

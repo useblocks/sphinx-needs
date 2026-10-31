@@ -295,8 +295,8 @@ typescript_const_arrow:
     export const handle = (): void => {};
 
 typescript_plain_const_is_skipped:
-  # A plain const between the marker and the function it documents does not
-  # take the association.
+  # A plain const is no entity, and it is code: between the marker and the
+  # function it ends the marker's adjacency, so the marker binds neither (null).
   lang: typescript
   config: default
   source: |
@@ -305,8 +305,8 @@ typescript_plain_const_is_skipped:
     function handle(): void {}
 
 typescript_plain_var_is_skipped:
-  # A `var` declaration is a scope only when it holds a function: the marker binds
-  # the function after `var limit = 3;`.
+  # A `var` declaration is an entity only when it holds a function: `var limit = 3;`
+  # is code between the marker and the function, so the marker binds neither.
   lang: typescript
   config: default
   source: |
@@ -402,8 +402,8 @@ typescript_class_field_function:
     }
 
 typescript_plain_class_field_is_skipped:
-  # A class field is a scope only when it holds a function: the marker binds the
-  # method after `label = "ok";`.
+  # A class field is an entity only when it holds a function: `label = "ok";` ends
+  # the marker's adjacency, so it binds the enclosing class, not the method after it.
   lang: typescript
   config: default
   source: |
@@ -502,8 +502,8 @@ js_export_default_anonymous:
     export default () => {};
 
 js_plain_assignment_is_skipped:
-  # An assignment is a scope only when it assigns a function: the marker binds the
-  # function after `count = 1;`.
+  # An assignment is an entity only when it assigns a function: `count = 1;` ends
+  # the marker's adjacency, so it binds neither it nor the function after it.
   lang: js
   config: default
   source: |
@@ -512,8 +512,8 @@ js_plain_assignment_is_skipped:
     function tick() {}
 
 js_export_default_value_is_skipped:
-  # A default export is a scope only when it exports a function or a class: the
-  # marker binds the function after `export default 42;`.
+  # A default export is an entity only when it exports a function or a class:
+  # `export default 42;` ends the marker's adjacency, so it binds neither.
   lang: js
   config: default
   source: |

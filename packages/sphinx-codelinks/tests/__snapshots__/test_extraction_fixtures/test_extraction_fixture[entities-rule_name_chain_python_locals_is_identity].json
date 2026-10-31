@@ -1,0 +1,94 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 11
+      },
+      "end": {
+        "row": 2,
+        "column": 57
+      }
+    },
+    "tagged_scope": "def g(self):\n            pass",
+    "scope": {
+      "kind": "function_definition",
+      "start": 4,
+      "end": 5,
+      "language": "python",
+      "entity_kind": "method",
+      "qualified_name": "A.f.g",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "A"
+        },
+        {
+          "kind": "class",
+          "name": "f"
+        },
+        {
+          "kind": "method",
+          "name": "g"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Method of a nested class",
+      "id": "IMPL_R_CHAIN_5",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 11
+      },
+      "end": {
+        "row": 7,
+        "column": 53
+      }
+    },
+    "tagged_scope": "def g():\n            pass",
+    "scope": {
+      "kind": "function_definition",
+      "start": 9,
+      "end": 10,
+      "language": "python",
+      "entity_kind": "function",
+      "qualified_name": "A.f.<locals>.g",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "A"
+        },
+        {
+          "kind": "method",
+          "name": "f"
+        },
+        {
+          "kind": "function",
+          "name": "g"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Function in a method",
+      "id": "IMPL_R_CHAIN_6",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

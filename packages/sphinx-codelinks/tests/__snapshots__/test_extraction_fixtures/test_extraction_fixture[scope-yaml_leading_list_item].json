@@ -13,6 +13,16 @@
       }
     },
     "tagged_scope": "- item1",
+    "scope": {
+      "kind": "block_sequence_item",
+      "start": 2,
+      "end": 2,
+      "language": "yaml",
+      "entity_kind": "item",
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Leading List Marker",
       "id": "IMPL_YAML_LIST",

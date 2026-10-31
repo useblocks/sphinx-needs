@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "void precedence(int a, int b) {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 11,
+      "end": 11,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "precedence",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "precedence"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
     "need": {
       "title": "Doc comment marker",
       "id": "DOC_1",
@@ -67,7 +82,17 @@
       "scope": {
         "kind": "function_definition",
         "start": 11,
-        "end": 11
+        "end": 11,
+        "language": "cpp",
+        "entity_kind": "function",
+        "qualified_name": "precedence",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "precedence"
+          }
+        ],
+        "mechanism": "doc_comment"
       }
     },
     "type": "multiline-need",
@@ -87,6 +112,21 @@
       }
     },
     "tagged_scope": "void precedence(int a, int b) {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 11,
+      "end": 11,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "precedence",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "precedence"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
     "need_ids": [
       "REQ_AFTER"
     ],
@@ -108,6 +148,21 @@
       }
     },
     "tagged_scope": "void outside() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 15,
+      "end": 15,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "outside",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "outside"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Outside marker",
       "id": "OUT_1",
@@ -131,6 +186,21 @@
       }
     },
     "tagged_scope": "void outside() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 15,
+      "end": 15,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "outside",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "outside"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need_ids": [
       "REQ_OUT"
     ],

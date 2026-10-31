@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 5
+      },
+      "end": {
+        "row": 0,
+        "column": 62
+      }
+    },
+    "tagged_scope": "void f();",
+    "scope": {
+      "kind": "declaration",
+      "start": 3,
+      "end": 3,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Documented across a blank line",
+      "id": "IMPL_R_DOC_HDR_CPP",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  }
+]

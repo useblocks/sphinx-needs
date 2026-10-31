@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "def dummy_func1():\n    \"\"\"\n    @Docstring Marker, IMPL_PY_DOC, impl, [REQ_PY_DOC]\n    \"\"\"\n    pass",
+    "scope": {
+      "kind": "function_definition",
+      "start": 1,
+      "end": 5,
+      "language": "python",
+      "entity_kind": "function",
+      "qualified_name": "dummy_func1",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "dummy_func1"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
     "need": {
       "title": "Docstring Marker",
       "id": "IMPL_PY_DOC",

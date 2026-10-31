@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 57
+      }
+    },
+    "tagged_scope": "fn f() {}",
+    "scope": {
+      "kind": "function_item",
+      "start": 2,
+      "end": 2,
+      "language": "rust",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "File header without blank",
+      "id": "IMPL_R_HEADER_RS_ADJ",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  }
+]

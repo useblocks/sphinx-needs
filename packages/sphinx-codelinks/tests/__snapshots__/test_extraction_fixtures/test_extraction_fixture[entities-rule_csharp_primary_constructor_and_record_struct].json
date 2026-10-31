@@ -1,0 +1,132 @@
+[
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 8
+      },
+      "end": {
+        "row": 2,
+        "column": 50
+      }
+    },
+    "tagged_scope": "public class Point(int x, int y)\n    {\n        // @Distance, IMPL_R_CS12_2, impl\n        public double Distance() => System.Math.Sqrt(x * x + y * y);\n    }",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 4,
+      "end": 8,
+      "language": "csharp",
+      "entity_kind": "class",
+      "qualified_name": "Geo.Point",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "Geo"
+        },
+        {
+          "kind": "class",
+          "name": "Point"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "A primary constructor",
+      "id": "IMPL_R_CS12_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  },
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 12
+      },
+      "end": {
+        "row": 5,
+        "column": 41
+      }
+    },
+    "tagged_scope": "public double Distance() => System.Math.Sqrt(x * x + y * y);",
+    "scope": {
+      "kind": "method_declaration",
+      "start": 7,
+      "end": 7,
+      "language": "csharp",
+      "entity_kind": "method",
+      "qualified_name": "Geo.Point.Distance",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "Geo"
+        },
+        {
+          "kind": "class",
+          "name": "Point"
+        },
+        {
+          "kind": "method",
+          "name": "Distance"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Distance",
+      "id": "IMPL_R_CS12_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "method_declaration"
+  },
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 8
+      },
+      "end": {
+        "row": 9,
+        "column": 44
+      }
+    },
+    "tagged_scope": "public record struct Pair(int A, int B);",
+    "scope": {
+      "kind": "record_declaration",
+      "start": 11,
+      "end": 11,
+      "language": "csharp",
+      "entity_kind": "record",
+      "qualified_name": "Geo.Pair",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "Geo"
+        },
+        {
+          "kind": "record",
+          "name": "Pair"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "A record struct",
+      "id": "IMPL_R_CS12_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "record_declaration"
+  }
+]

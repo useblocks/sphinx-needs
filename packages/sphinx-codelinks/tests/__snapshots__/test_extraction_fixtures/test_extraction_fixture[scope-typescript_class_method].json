@@ -13,6 +13,25 @@
       }
     },
     "tagged_scope": "run(): void {}",
+    "scope": {
+      "kind": "method_definition",
+      "start": 3,
+      "end": 3,
+      "language": "typescript",
+      "entity_kind": "method",
+      "qualified_name": "Service.run",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Service"
+        },
+        {
+          "kind": "method",
+          "name": "run"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Method",
       "id": "IMPL_TS_METHOD",

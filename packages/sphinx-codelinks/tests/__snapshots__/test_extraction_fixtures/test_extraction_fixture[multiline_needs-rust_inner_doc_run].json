@@ -12,7 +12,7 @@
         "column": 12
       }
     },
-    "tagged_scope": "fn main() {}",
+    "tagged_scope": null,
     "need": {
       "type": "req",
       "title": "Crate level need",
@@ -41,13 +41,9 @@
       "option_lines": {
         "id": 2
       },
-      "scope": {
-        "kind": "function_item",
-        "start": 7,
-        "end": 7
-      }
+      "scope": null
     },
     "type": "multiline-need",
-    "tagged_scope_type": "function_item"
+    "tagged_scope_type": null
   }
 ]

@@ -1,0 +1,258 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 6
+      },
+      "end": {
+        "row": 1,
+        "column": 45
+      }
+    },
+    "tagged_scope": "class Widget {\n    // @Draw method, TS_02, impl, [REQ_DRAW]\n    draw(): void {\n      // @need-ids: TSREF_03\n      console.log(\"x\");\n    }\n  }",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 3,
+      "end": 9,
+      "language": "typescript",
+      "entity_kind": "class",
+      "qualified_name": "Gfx.Widget",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "Gfx"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Widget class",
+      "id": "TS_01",
+      "type": "impl",
+      "links": [
+        "REQ_WIDGET"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 44
+      }
+    },
+    "tagged_scope": "draw(): void {\n      // @need-ids: TSREF_03\n      console.log(\"x\");\n    }",
+    "scope": {
+      "kind": "method_definition",
+      "start": 5,
+      "end": 8,
+      "language": "typescript",
+      "entity_kind": "method",
+      "qualified_name": "Gfx.Widget.draw",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "Gfx"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "draw"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Draw method",
+      "id": "TS_02",
+      "type": "impl",
+      "links": [
+        "REQ_DRAW"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "method_definition"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 20
+      },
+      "end": {
+        "row": 5,
+        "column": 28
+      }
+    },
+    "tagged_scope": "draw(): void {\n      // @need-ids: TSREF_03\n      console.log(\"x\");\n    }",
+    "scope": {
+      "kind": "method_definition",
+      "start": 5,
+      "end": 8,
+      "language": "typescript",
+      "entity_kind": "method",
+      "qualified_name": "Gfx.Widget.draw",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "Gfx"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "draw"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need_ids": [
+      "TSREF_03"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "method_definition"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 11,
+        "column": 4
+      },
+      "end": {
+        "row": 11,
+        "column": 45
+      }
+    },
+    "tagged_scope": "const onClick = (e: number): number => e * 2;",
+    "scope": {
+      "kind": "lexical_declaration",
+      "start": 13,
+      "end": 13,
+      "language": "typescript",
+      "entity_kind": "function",
+      "qualified_name": "onClick",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "onClick"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Arrow handler",
+      "id": "TS_04",
+      "type": "impl",
+      "links": [
+        "REQ_HANDLER"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "lexical_declaration"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 14,
+        "column": 4
+      },
+      "end": {
+        "row": 14,
+        "column": 41
+      }
+    },
+    "tagged_scope": "function area(w: number, h: number): number {\n  return w * h;\n}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 16,
+      "end": 18,
+      "language": "typescript",
+      "entity_kind": "function",
+      "qualified_name": "area",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "area"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Plain function",
+      "id": "TS_05",
+      "type": "impl",
+      "links": [
+        "REQ_FN"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 19,
+        "column": 4
+      },
+      "end": {
+        "row": 19,
+        "column": 45
+      }
+    },
+    "tagged_scope": "interface Shape {\n  area(): number;\n}",
+    "scope": {
+      "kind": "interface_declaration",
+      "start": 21,
+      "end": 23,
+      "language": "typescript",
+      "entity_kind": "interface",
+      "qualified_name": "Shape",
+      "semantic": [
+        {
+          "kind": "interface",
+          "name": "Shape"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Shape interface",
+      "id": "TS_06",
+      "type": "impl",
+      "links": [
+        "REQ_SHAPE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "interface_declaration"
+  }
+]

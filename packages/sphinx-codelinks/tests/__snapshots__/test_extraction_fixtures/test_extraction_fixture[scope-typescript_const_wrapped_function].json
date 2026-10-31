@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "const onClick = (() => {}) as Handler;",
+    "scope": {
+      "kind": "lexical_declaration",
+      "start": 2,
+      "end": 2,
+      "language": "typescript",
+      "entity_kind": "function",
+      "qualified_name": "onClick",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "onClick"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "As",
       "id": "IMPL_TS_AS",
@@ -38,6 +53,21 @@
       }
     },
     "tagged_scope": "const onKey = (() => {}) satisfies Handler;",
+    "scope": {
+      "kind": "lexical_declaration",
+      "start": 4,
+      "end": 4,
+      "language": "typescript",
+      "entity_kind": "function",
+      "qualified_name": "onKey",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "onKey"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Satisfies",
       "id": "IMPL_TS_SATISFIES",
@@ -63,6 +93,21 @@
       }
     },
     "tagged_scope": "const onDrop = (() => {})!;",
+    "scope": {
+      "kind": "lexical_declaration",
+      "start": 6,
+      "end": 6,
+      "language": "typescript",
+      "entity_kind": "function",
+      "qualified_name": "onDrop",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "onDrop"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Non Null",
       "id": "IMPL_TS_NON_NULL",

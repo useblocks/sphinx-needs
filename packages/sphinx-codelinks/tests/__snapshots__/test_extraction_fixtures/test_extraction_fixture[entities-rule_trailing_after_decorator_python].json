@@ -1,0 +1,82 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 42
+      },
+      "end": {
+        "row": 3,
+        "column": 81
+      }
+    },
+    "tagged_scope": "def test_f(x):\n    pass",
+    "scope": {
+      "kind": "function_definition",
+      "start": 5,
+      "end": 6,
+      "language": "python",
+      "entity_kind": "function",
+      "qualified_name": "test_f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "test_f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "After a decorator",
+      "id": "IMPL_R_TD_PY_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 26
+      },
+      "end": {
+        "row": 9,
+        "column": 76
+      }
+    },
+    "tagged_scope": "def test_m(self):\n        pass",
+    "scope": {
+      "kind": "function_definition",
+      "start": 11,
+      "end": 12,
+      "language": "python",
+      "entity_kind": "method",
+      "qualified_name": "TestA.test_m",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "TestA"
+        },
+        {
+          "kind": "method",
+          "name": "test_m"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "After a decorator in a class",
+      "id": "IMPL_R_TD_PY_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]
