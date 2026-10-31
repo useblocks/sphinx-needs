@@ -26,8 +26,8 @@ New and Improved
   took such a field as its own keyword: ``external_css`` set the need's css class,
   ``is_external`` made the need external, and the others were ignored.
 - 🔧 The needs of a ``src-trace`` directive take their location as Sphinx-Needs' one
-  ``NeedItemSource`` (their page, at the directive's line), where they used its deprecated
-  ``NeedItemSourceUnknown``; nothing they record changes. Requires the Sphinx-Needs
+  ``NeedItemSource``, where they used its deprecated ``NeedItemSourceUnknown`` (what they
+  now record is below: their code hop, and their ``lineno``). Requires the Sphinx-Needs
   release that adds ``NeedItemSource``.
 - 🔧 The id the duplicate check and the ``[docs]`` link name for a need without an id is
   derived through Sphinx-Needs' public ``generate_need_id``, where it imported the private
@@ -54,10 +54,32 @@ New and Improved
   ``codelinks write rst`` accepts (and ignores) the new key.
   The needs ``src-trace`` creates carry no field for the entity yet.
   See :ref:`attachment`.
+- ✨ Each need records where it comes from: its source file, lines, entity and language.
+
+  Every need ``src-trace`` creates, one-line and multi-line, records the marker it was
+  made from, before the page the directive is written on, for Sphinx-Needs' source
+  model (a ``code`` hop). The record holds:
+
+  - the file, relative to the Sphinx source directory, with ``..`` for a file outside it;
+  - the marker's lines: a one-line need's own line, and a multi-line need's ``@need`` to
+    ``@endneed`` lines;
+  - the entity the marker is attached to, in the analysis' parts (``class Shape``,
+    ``method area``), with a Rust trait impl's trait;
+  - the file's language (``python``, ``cpp``, ``c``, ``rust``, ...).
+
+  The record is provisional, as Sphinx-Needs' hops are: it reaches no ``needs.json`` and
+  adds no field. The first build after upgrading reads every page once (the extension's
+  ``env_version`` is now 2).
 
 Fixes
 .....
 
+- 🐛 A ``src-trace`` need's ``lineno`` is the line the directive is written on, as a
+  Sphinx-Needs ``need`` directive's is. After ``rst_prolog`` it counted the prolog's lines
+  too, and in an included file it was the line in the expanded input, a line neither file
+  has the directive on; it is now the line in the file the directive is written in (the
+  included file's, for an included one), and so is the ``lineno`` in ``needs.json``. No id
+  moves: no id depends on a line.
 - 🐛 A marker attaches only to an adjacent code entity.
 
   A marker used to bind the next function, class or struct at its level however much

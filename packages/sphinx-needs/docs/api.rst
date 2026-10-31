@@ -291,8 +291,16 @@ Data
    A hop's ``language`` is what its text is written in, by the kind of hop: for a ``page`` hop, the page's suffix
    its parser keys on (``.rst``, ``.md``); for a ``file`` hop, the file's own suffix (``.rst``, ``.json``; an
    included ``inc.rst.txt`` records ``.txt``, whichever parser reads it); for a ``code`` hop, the language's name
-   (``python``, ``cpp``, ...). The ``code`` hop of a docstring autodoc reads still records its file's suffix
-   (``.py``), until sphinx-codelinks' code hops land and move it.
+   (``python``, ``cpp``, ...), as sphinx-codelinks records it. The ``code`` hop of a docstring autodoc reads still
+   records its file's suffix (``.py``), until it is aligned with sphinx-codelinks' code hops.
+
+   A semantic entry's ``kind`` is in the vocabulary of its hop's kind and producer: a ``page`` hop's entries use the
+   document's (``section``, ``<domain>:<objtype>``), a ``generated`` hop's name its generator (``service``), and a
+   ``code`` hop's use its producer's entity kinds, read with the hop's ``language``: sphinx-codelinks' bare ones
+   (``function``, ``method``, ``class``, ``impl``, ...), and autodoc's docstring hop's ``py:docstring``, until it is
+   aligned with them. In a ``code`` hop the kinds may carry
+   identity the names alone do not (Python's ``<locals>`` boundary is implied by a function or method followed by
+   another entry), so code hops compare by their producer's identity rule, not entry by entry.
 
 .. autoclass:: sphinx_needs.api.NeedSourceHop
    :members:

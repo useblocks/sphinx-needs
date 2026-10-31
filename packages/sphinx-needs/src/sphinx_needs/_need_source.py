@@ -90,8 +90,17 @@ class NeedSourceSemantic:
     """
 
     kind: str
-    """What the entry is: ``"section"``, ``"<domain>:<objtype>"`` (``"py:method"``),
-    ``"service"``, ``"py:docstring"``; it describes the entry, the name identifies it."""
+    """What the entry is, in the vocabulary of its hop's kind and producer. A ``page``
+    hop's entries use the document's: ``"section"``, ``"<domain>:<objtype>"``
+    (``"py:method"``). A ``generated`` hop's name its generator (``"service"``). A
+    ``code`` hop's use its producer's entity kinds, read together with the hop's
+    ``language``: sphinx-codelinks' bare ones (``"function"``, ``"method"``,
+    ``"class"``, ``"impl"``, ...), and autodoc's ``"py:docstring"`` until it is aligned
+    with them. The kind describes the entry, the name identifies it; but in a ``code``
+    hop the kinds may carry identity the names alone do not (Python's ``<locals>``
+    boundary is implied by a function or method followed by another entry), so code
+    hops compare by their producer's identity rule, not by each entry's
+    ``(name, extras)``."""
     name: str
     extras: tuple[tuple[str, str], ...] = ()
     """Identity-bearing extras, e.g. ``("id", <the first signature id>)``."""
@@ -122,9 +131,9 @@ class NeedSourceHop:
     page's suffix its parser keys on (``".rst"``, ``".md"``); for a ``file`` hop, the
     file's own suffix (``".rst"``, ``".json"``; an included ``inc.rst.txt`` records
     ``".txt"``, whichever parser reads it); for a ``code`` hop, the language's name
-    (``"python"``, ``"cpp"``, ...). The ``code`` hop of a docstring autodoc reads still
-    records its file's suffix (``".py"``), until sphinx-codelinks' code hops land and
-    move it."""
+    (``"python"``, ``"cpp"``, ...), as sphinx-codelinks records it. The ``code`` hop
+    of a docstring autodoc reads still records its file's suffix (``".py"``), until it
+    is aligned with sphinx-codelinks' code hops."""
 
     def _without_lines(self) -> NeedSourceHop:
         """This hop with its file's start and end line left out: what a need that only
