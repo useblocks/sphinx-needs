@@ -88,6 +88,21 @@
 #                    `needs`, or a key it does not have (an `id` the reader must not use)
 #     unset        - optional; by record key, the fields that record must NOT have. The
 #                    record itself must be read
+#     namespaced_ids - optional; whether the selected version is MARKED as namespaced:
+#                    `true` only when the version's own `namespaced_ids` is the JSON
+#                    `true`. Any other value, none, or one of the envelope reads `false`,
+#                    and is no finding. Absent: not compared
+#     split        - optional, only in a case that expects `namespaced_ids = true`; by
+#                    record key, the `namespace` (its segments, in order; `[]` for a key
+#                    with no `::`) and the `local_id` the key splits into by the
+#                    contract's rule: at its LAST `::`, each segment a letter and then
+#                    letters, digits, `_` or `-`, the local id not empty, not beginning
+#                    with `:`, and holding neither `::` nor `.`. The runner splits the
+#                    key read; the reader itself splits nothing, and every record keeps
+#                    its key as written
+#     unsplittable - optional, under the same condition; record keys the rule refuses to
+#                    split. Each must still be read, keyed as written, and the case's
+#                    `diagnostics` say what is reported for it (nothing, today)
 #
 # Error codes (the file is refused), fixed by the contract:
 #   invalid_json               - the text is not JSON (or, read from bytes, not UTF-8)
@@ -912,6 +927,129 @@ json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_defaults_remove
 [case.expect]
 diagnostics = []
 keys = ["A"]
+
+# --- namespaced ids -----------------------------------------------------------------
+
+[[case]]
+name = "namespaced-ids-true-marks-the-version"
+why = "a version whose namespaced_ids is true says its ids are namespaced: each splits at its LAST ::, one with no :: has no namespace, and every record keeps its key as written"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"namespaced_ids": true, "needs": {"nc::testcase::T_001": {"id": "nc::testcase::T_001", "type": "req", "title": "t"}, "nc::T_002": {"id": "nc::T_002", "type": "req", "title": "t"}, "Ab-c_9::d::X_1": {"id": "Ab-c_9::d::X_1", "type": "req", "title": "t"}, "PLAIN_1": {"id": "PLAIN_1", "type": "req", "title": "t"}, "nc::testcase::001": {"id": "nc::testcase::001", "type": "req", "title": "t"}, "a::X:Y": {"id": "a::X:Y", "type": "req", "title": "t"}, "a-::X": {"id": "a-::X", "type": "req", "title": "t"}, "a::é": {"id": "a::é", "type": "req", "title": "t"}, "a::X Y": {"id": "a::X Y", "type": "req", "title": "t"}, "a::X-y_1": {"id": "a::X-y_1", "type": "req", "title": "t"}, "a::X:": {"id": "a::X:", "type": "req", "title": "t"}, "a::X ": {"id": "a::X ", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+namespaced_ids = true
+keys = ["nc::testcase::T_001", "nc::T_002", "Ab-c_9::d::X_1", "PLAIN_1", "nc::testcase::001", "a::X:Y", "a-::X", "a::é", "a::X Y", "a::X-y_1", "a::X:", "a::X "]
+[case.expect.split]
+"nc::testcase::T_001" = { namespace = ["nc", "testcase"], local_id = "T_001" }
+"nc::T_002" = { namespace = ["nc"], local_id = "T_002" }
+"Ab-c_9::d::X_1" = { namespace = ["Ab-c_9", "d"], local_id = "X_1" }
+"PLAIN_1" = { namespace = [], local_id = "PLAIN_1" }
+"nc::testcase::001" = { namespace = ["nc", "testcase"], local_id = "001" }
+"a::X:Y" = { namespace = ["a"], local_id = "X:Y" }
+"a-::X" = { namespace = ["a-"], local_id = "X" }
+"a::é" = { namespace = ["a"], local_id = "é" }
+"a::X Y" = { namespace = ["a"], local_id = "X Y" }
+"a::X-y_1" = { namespace = ["a"], local_id = "X-y_1" }
+"a::X:" = { namespace = ["a"], local_id = "X:" }
+"a::X " = { namespace = ["a"], local_id = "X " }
+
+[[case]]
+name = "namespaced-ids-false-says-nothing"
+why = "a namespaced_ids of false says nothing: the ids are read as today, a :: in one being characters of it"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"namespaced_ids": false, "needs": {"nc::T_001": {"id": "nc::T_001", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+namespaced_ids = false
+keys = ["nc::T_001"]
+
+[[case]]
+name = "namespaced-ids-absent-says-nothing"
+why = "a version without namespaced_ids is read as today, a :: in an id being characters of it"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"nc::T_001": {"id": "nc::T_001", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+namespaced_ids = false
+keys = ["nc::T_001"]
+
+[[case]]
+name = "namespaced-ids-a-string-is-not-true"
+why = "only the JSON true marks a version: the string \"true\" says nothing, and is no finding, as for needs_defaults_removed"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"namespaced_ids": "true", "needs": {"nc::T_001": {"id": "nc::T_001", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+namespaced_ids = false
+keys = ["nc::T_001"]
+
+[[case]]
+name = "namespaced-ids-a-number-is-not-true"
+why = "only the JSON true marks a version: the number 1 says nothing, and is no finding"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"namespaced_ids": 1, "needs": {"nc::T_001": {"id": "nc::T_001", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+namespaced_ids = false
+keys = ["nc::T_001"]
+
+[[case]]
+name = "namespaced-ids-of-the-envelope-is-ignored"
+why = "the marker is a version's: a namespaced_ids of the envelope is ignored like every other unknown envelope key, and marks no version"
+layer = "document"
+json = '''{"namespaced_ids": true, "current_version": "1.0", "versions": {"1.0": {"needs": {"nc::T_001": {"id": "nc::T_001", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+namespaced_ids = false
+keys = ["nc::T_001"]
+
+[[case]]
+name = "namespaced-ids-the-marked-version-of-two"
+why = "a file accumulates versions built before and after a project turns namespaces on: the marked version selected is namespaced"
+layer = "document"
+json = '''{"current_version": "2.0", "versions": {"1.0": {"needs": {"nc::T_001": {"id": "nc::T_001", "type": "req", "title": "t"}}}, "2.0": {"namespaced_ids": true, "needs": {"nc::T_002": {"id": "nc::T_002", "type": "req", "title": "t"}}}}}'''
+[case.options]
+version = "2.0"
+[case.expect]
+diagnostics = []
+namespaced_ids = true
+keys = ["nc::T_002"]
+[case.expect.split]
+"nc::T_002" = { namespace = ["nc"], local_id = "T_002" }
+
+[[case]]
+name = "namespaced-ids-the-unmarked-version-of-two"
+why = "the unmarked version of the same file, selected, is read as today though a later version is marked and current"
+layer = "document"
+json = '''{"current_version": "2.0", "versions": {"1.0": {"needs": {"nc::T_001": {"id": "nc::T_001", "type": "req", "title": "t"}}}, "2.0": {"namespaced_ids": true, "needs": {"nc::T_002": {"id": "nc::T_002", "type": "req", "title": "t"}}}}}'''
+[case.options]
+version = "1.0"
+[case.expect]
+diagnostics = []
+namespaced_ids = false
+keys = ["nc::T_001"]
+
+[[case]]
+name = "namespaced-ids-links-are-read-as-written"
+why = "under a marked version, link targets with a part or conditions are handed on as written: a reader strips the part and the conditions before it splits"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"namespaced_ids": true, "needs": {"nc::testcase::T_001": {"id": "nc::testcase::T_001", "type": "req", "title": "t", "links": ["nc::testcase::T_002", "nc::testcase::T_002.p1", "nc::testcase::T_002[status==\"open\"]"]}, "nc::testcase::T_002": {"id": "nc::testcase::T_002", "type": "req", "title": "t", "parts": {"p1": {"id": "p1", "content": "part one"}}}}}}}'''
+[case.expect]
+diagnostics = []
+namespaced_ids = true
+keys = ["nc::testcase::T_001", "nc::testcase::T_002"]
+records = { "nc::testcase::T_001" = { links = ["nc::testcase::T_002", "nc::testcase::T_002.p1", 'nc::testcase::T_002[status=="open"]'] } }
+
+[[case]]
+name = "namespaced-ids-an-id-that-does-not-split-is-read-as-written"
+why = "under a marked version, an id that is not of the grammar does not split, and the reader still reads its record keyed as written and reports nothing: what it is worth is each consumer's"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"namespaced_ids": true, "needs": {"::X": {"id": "::X", "type": "req", "title": "t"}, "a::": {"id": "a::", "type": "req", "title": "t"}, "a::::X": {"id": "a::::X", "type": "req", "title": "t"}, "a:::X": {"id": "a:::X", "type": "req", "title": "t"}, "1a::X": {"id": "1a::X", "type": "req", "title": "t"}, "a.b::X": {"id": "a.b::X", "type": "req", "title": "t"}, "a::X.y": {"id": "a::X.y", "type": "req", "title": "t"}, "é::X": {"id": "é::X", "type": "req", "title": "t"}, "_a::X": {"id": "_a::X", "type": "req", "title": "t"}, "-a::X": {"id": "-a::X", "type": "req", "title": "t"}}}}}'''
+[case.expect]
+diagnostics = []
+namespaced_ids = true
+keys = ["::X", "a::", "a::::X", "a:::X", "1a::X", "a.b::X", "a::X.y", "é::X", "_a::X", "-a::X"]
+unsplittable = ["::X", "a::", "a::::X", "a:::X", "1a::X", "a.b::X", "a::X.y", "é::X", "_a::X", "-a::X"]
 
 # --- findings together --------------------------------------------------------------
 
