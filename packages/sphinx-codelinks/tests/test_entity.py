@@ -7,6 +7,7 @@ reaches (an operator, an indexer, a file-scoped namespace, a generic receiver).
 """
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 from tree_sitter import Node as TreeSitterNode
@@ -772,6 +773,9 @@ def test_name_chain() -> None:
     assert name_chain(nested_class, "python") != name_chain(in_a_method, "python")
     # only Python writes the boundary
     assert name_chain(in_a_method, "rust") == name_chain(nested_class, "rust")
+    # a code hop's rendering of the chain, on a component rebuilt from it, is no link
+    rebuilt: Any = [{"kind": "class", "name": "A", "qualified_name": "A"}]
+    assert name_chain(rebuilt, "python") == ((("name", "A"),),)
 
 
 def test_describe_entity_refuses_a_node_that_is_no_entity() -> None:

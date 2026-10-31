@@ -302,16 +302,11 @@ def _qualified_name(hop: NeedSourceHop) -> str | None:
 
 
 def _identity(hop: NeedSourceHop) -> tuple[Any, ...]:
-    """What names a code hop's entity -- its file, its language, its name chain over the
-    analysis' components (the hop's own ``qualified_name`` extra left out), and the
-    qualified name -- and its parts as values, kinds and extras included."""
+    """What names a code hop's entity -- its file, its language, its name chain (which
+    leaves the ``qualified_name`` extra out), and the qualified name -- and its parts as
+    values, kinds and extras included."""
     parts: list[Any] = [
-        {
-            "kind": p.kind,
-            "name": p.name,
-            **{key: value for key, value in p.extras if key != "qualified_name"},
-        }
-        for p in hop.semantic or ()
+        {"kind": p.kind, "name": p.name, **dict(p.extras)} for p in hop.semantic or ()
     ]
     physical = hop.physical
     return (
@@ -380,7 +375,6 @@ def test_both_producers_render_the_same_qualified_name(
     assert [case for case, name in ours.items() if name is None] == ["MODULE"]
 
 
-@pytest.mark.xfail(strict=True, reason="M-2: name_chain reads the qualified_name extra")
 def test_parts_rebuilt_from_a_hop_keep_their_containment(
     code_hops: dict[str, NeedSourceHop],
 ) -> None:

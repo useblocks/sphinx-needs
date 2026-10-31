@@ -1523,11 +1523,16 @@ def name_chain(
     ``<locals>`` after a function or a method (``A.f.<locals>.g`` is not ``A.f.g``) is
     a link of its own, ``(("name", "<locals>"),)``, which no Python name can be.
 
+    A ``qualified_name`` key is left out too: a component rebuilt from a code hop's
+    semantic entry carries one on the entity, the rendering of this very chain, which
+    adds no identity and would break containment (a class's chain is a prefix of its
+    method's only without it).
+
     :param semantic: An entity's components (``scope.semantic``).
     :param language: The entity's file's language (``scope.language``).
     :return: One tuple of ``(key, value)`` pairs per component, its keys sorted,
-        ``kind`` left out, and a ``<locals>`` link where Python writes one; ``None``
-        for no components.
+        ``kind`` and ``qualified_name`` left out, and a ``<locals>`` link where Python
+        writes one; ``None`` for no components.
     """
     if semantic is None:
         return None
@@ -1536,7 +1541,9 @@ def name_chain(
         chain.append(
             tuple(
                 sorted(
-                    (key, str(value)) for key, value in element.items() if key != "kind"
+                    (key, str(value))
+                    for key, value in element.items()
+                    if key not in ("kind", "qualified_name")
                 )
             )
         )
