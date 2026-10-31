@@ -251,6 +251,33 @@ def compile_portable(filter_string: str) -> CompiledFilter:
     )
 
 
+@lru_cache(maxsize=256)
+def is_a_literals(filter_string: str) -> tuple[str, ...]:
+    """The names a filter string's ``c.is_a("<type>")`` calls give as a string literal,
+    each once, in the order they are written: whichever tier answers the string, since
+    the name is the string's own.
+
+    A call with any other argument (a field, two arguments, a keyword) gives no name
+    of the string's: the name is each need's own value. Empty for a string that does
+    not parse. Cached per string, as :func:`compile_portable` is.
+    """
+    try:
+        tree = ast.parse(filter_string, mode="eval")
+    except (SyntaxError, ValueError):
+        return ()
+    found: list[tuple[int, int, str]] = []
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Call)
+            and _is_c_check(node, "is_a")
+            and len(node.args) == 1
+            and not node.keywords
+            and (name := _string(node.args[0])) is not None
+        ):
+            found.append((node.lineno, node.col_offset, name))
+    return tuple(dict.fromkeys(name for *_, name in sorted(found)))
+
+
 def try_build_simple_predicate(
     filter_string: str,
 ) -> SimplePredicate | None:

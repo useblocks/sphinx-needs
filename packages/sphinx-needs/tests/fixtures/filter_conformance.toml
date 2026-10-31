@@ -34,6 +34,9 @@
 #     the default ones (`req`, `spec`, `impl`, `test`) unless the case's `config` declares
 #     its own. An `inherits` naming no need type is a configuration finding of each
 #     tool's own, not compared, and the type it is on is a root
+#   - a string literal of `c.is_a(...)` naming no need type selects nothing, which
+#     `expected` compares; whether and how a tool reports it is each tool's own, not
+#     compared
 #   - no case declares a field named `c`, `var`, `search`, `needs` or `current_need`:
 #     which of a field and the context name a filter reads there is not pinned yet
 #   - each `[[case.filters]]` entry is one filter string, evaluated over the needs of the
@@ -1949,7 +1952,7 @@ why = "what c.is_a('req') selects here, spelled out"
 filter = 'c.is_a("nope")'
 expected = []
 tier = "fast"
-why = "a name that is no need type selects nothing, and is not reported -- the inherits naming it included"
+why = "a name that is no need type selects nothing -- the inherits naming it included"
 
 [[case.filters]]
 filter = 'c.is_a("Requirement")'

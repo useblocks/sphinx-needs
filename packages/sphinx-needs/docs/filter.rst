@@ -333,8 +333,14 @@ selects the ``req`` needs, and those of every other type inheriting from ``req``
 - It reads the need's type and the project's need types, nothing else: no field of a need lists its types.
   A type whose ``inherits`` names no need type or is on a cycle inherits from none:
   that ``inherits`` is ignored, with a ``needs.type_inherits`` warning.
-- A name that is no need type is false on every need, and is not reported: ``c.is_a('rq')`` selects nothing,
-  as ``type == 'rq'`` does. A type is named by its directive name, never its title.
+- A name that is no need type is false on every need: ``c.is_a('rq')`` selects nothing, as ``type == 'rq'`` does.
+  A type is named by its directive name, never its title. A string literal naming no need type is reported with a
+  ``needs.filter_type`` warning naming the type it is the title of or is close to, once per filter and place it is
+  written; a filter with no place (a derived field's ``where``, a link condition, a constraint) once per filter string,
+  and a :ref:`needs_warnings` filter once per entry, naming it:
+  ``Filter "c.is_a('rq')" names 'rq', which is not a need type (did you mean 'req'?); c.is_a('rq') selects no need``.
+  A filter naming a type on purpose, such as one shared by projects that do not all declare it, is silenced with
+  ``suppress_warnings = ["needs.filter_type"]``, which leaves the failures of filters (``needs.filter``) reported.
 - A need part has its need's type.
 - Its argument is a string literal in the portable filter language: ``c.is_a(type)`` or ``c.is_a('req') == True``
   is evaluated by ``eval``, as ``c.this_doc() == True`` is.

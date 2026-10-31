@@ -13,15 +13,21 @@ from __future__ import annotations
 
 import io
 import json
+import re
 from pathlib import Path
 from typing import Any
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from sphinx.util.parallel import parallel_available
 
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs import filter_common
+from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.derive import filter_problem
+from sphinx_needs.filter_common import filter_needs_and_parts, filter_single_need
 from sphinx_needs.functions.order import filter_names
+from sphinx_needs.ubquery import is_a_literals
 from sphinx_needs_testkit import build_warnings
 
 CONF = """\
@@ -160,24 +166,39 @@ def test_the_build_gives_its_filters_the_declared_types(test_app: Any) -> None:
     assert "nope" not in types
 
 
-@pytest.mark.parametrize(
-    "test_app",
-    [
-        _project(
-            INDEX
-            + "".join(
-                f"\n.. needextend:: \"c.is_a('{name}')\"\n   :+tags: is_{name}\n"
-                for name in [*SELECTS, "nope"]
-            )
-        )
-    ],
-    indirect=True,
+#: :data:`INDEX` with a needextend per declared type, and one naming no type
+EXTENDS_INDEX = INDEX + "".join(
+    f"\n.. needextend:: \"c.is_a('{name}')\"\n   :+tags: is_{name}\n"
+    for name in [*SELECTS, "nope"]
 )
+
+
+def _line(index: str, text: str) -> int:
+    """The line of the document :func:`_project` writes on which *text* starts: the
+    project adds a title of three lines above *index*."""
+    return 3 + 1 + index[: index.index(text)].count("\n")
+
+
+def _unknown(name: str, filter_string: str | None = None, hint: str = "") -> str:
+    """The warning for a ``c.is_a`` literal naming no need type, without a location."""
+    filter_string = filter_string or f"c.is_a({name!r})"
+    return (
+        f"WARNING: Filter {filter_string!r} names {name!r}, which is not a need type"
+        f"{hint}; c.is_a({name!r}) selects no need [needs.filter_type]"
+    )
+
+
+@pytest.mark.parametrize("test_app", [_project(EXTENDS_INDEX)], indirect=True)
 def test_a_needextend_filter_reads_it(test_app: Any) -> None:
-    """One word is an id unless it is quoted; the filter is evaluated once per type."""
+    """One word is an id unless it is quoted; the filter is evaluated once per type, and
+    the one naming no need type is reported where it is written."""
     app = test_app
     app.build()
-    assert build_warnings(app) == [INHERITS_NOPE]
+    line = _line(EXTENDS_INDEX, ".. needextend:: \"c.is_a('nope')\"")
+    assert build_warnings(app) == [
+        INHERITS_NOPE,
+        f"<srcdir>/index.rst:{line}: {_unknown('nope')}",
+    ]
     view = SphinxNeedsData(app.env).get_needs_view()
     for name, ids in SELECTS.items():
         assert sorted(i for i, n in view.items() if f"is_{name}" in n["tags"]) == ids
@@ -344,3 +365,308 @@ def test_each_project_reads_its_own_types_in_one_process(
             step,
             inherits,
         )
+
+
+# --- a c.is_a literal naming no need type is reported (#2402) ---
+
+#: a derived count whose ``where`` names no need type, over three candidates
+DERIVE_TOML = (
+    TYPES
+    + """
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+
+[needs.fields.n_rq]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "WHERE" }
+"""
+)
+
+
+@pytest.mark.parametrize(
+    ("test_app", "where"),
+    [
+        pytest.param(
+            _project(
+                INDEX + "\n.. impl:: Links three\n   :id: IMPL_001\n"
+                "   :links: REQ_001, SYS_001, HW_001\n",
+                toml=DERIVE_TOML.replace("WHERE", where),
+            ),
+            where,
+            id=where,
+        )
+        # the second raises on every candidate, which a ``where`` reads as "does not
+        # pass", silently: the name is checked before either tier evaluates it
+        for where in ["c.is_a('rq')", "c.is_a('rq') or tags.nope"]
+    ],
+    indirect=["test_app"],
+)
+def test_a_derive_where_is_reported_once_whatever_it_is_evaluated_on(
+    test_app: Any, where: str
+) -> None:
+    """A ``where`` is evaluated candidate by candidate, and has no location: the string
+    is reported once, with the type its name is closest to, however its evaluation
+    ends."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        INHERITS_NOPE,
+        _unknown("rq", where, hint=" (did you mean 'req'?)"),
+    ]
+    assert SphinxNeedsData(app.env).get_needs_view()["IMPL_001"]["n_rq"] == 0
+
+
+#: two derived counts whose ``where`` misspell two different types
+TWO_WHERES_TOML = (
+    TYPES
+    + """
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+
+[needs.fields.n_rq]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.is_a('rq')" }
+
+[needs.fields.n_sp]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.is_a('sp')" }
+"""
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            INDEX + "\n.. impl:: Links two\n   :id: IMPL_001\n"
+            "   :links: REQ_001, SPEC_001\n",
+            toml=TWO_WHERES_TOML,
+        )
+    ],
+    indirect=True,
+)
+def test_two_wheres_naming_two_unknown_types_are_each_reported(test_app: Any) -> None:
+    """Two filters with no place are two strings: each is reported once, the second
+    is not taken for the first."""
+    app = test_app
+    app.build()
+    assert sorted(build_warnings(app)) == sorted(
+        [
+            INHERITS_NOPE,
+            _unknown("rq", hint=" (did you mean 'req'?)"),
+            _unknown("sp"),
+        ]
+    )
+
+
+#: a filter of a needtable, and what it reports: each name with its hint, in order
+TABLE_FILTERS: list[tuple[str, list[tuple[str, str]]]] = [
+    ("c.is_a('req')", []),
+    ("c.is_a('nope')", [("nope", "")]),
+    ("c.is_a('rq')", [("rq", " (did you mean 'req'?)")]),
+    # too far from every type's name for a hint ('req' is 0.67 alike)
+    ("c.is_a('rqq')", [("rqq", "")]),
+    ("c.is_a('Requirement')", [("Requirement", " (did you mean 'req'?)")]),
+    # each name, in the order written
+    (
+        "c.is_a('rq') or c.is_a('sp')",
+        [("rq", " (did you mean 'req'?)"), ("sp", "")],
+    ),
+    # the index selects no need to evaluate it on
+    ("type == 'none' and c.is_a('rq')", [("rq", " (did you mean 'req'?)")]),
+    # answered by the eval tier
+    ("c.is_a('rq') == True", [("rq", " (did you mean 'req'?)")]),
+    # no literal: the name is each need's own value
+    ("c.is_a(type)", []),
+    ("c.is_a(lineage)", []),
+]
+
+
+def _table_index(filter_string: str) -> str:
+    return INDEX + f"\n.. needtable::\n   :filter: {filter_string}\n"
+
+
+@pytest.mark.parametrize(
+    ("test_app", "filter_string", "reported"),
+    [
+        pytest.param(
+            _project(_table_index(filter_string), toml=FIELD_TOML, buildername="html"),
+            filter_string,
+            reported,
+            id=filter_string,
+        )
+        for filter_string, reported in TABLE_FILTERS
+    ],
+    indirect=["test_app"],
+)
+def test_a_view_filter_reports_a_literal_naming_no_type(
+    test_app: Any, filter_string: str, reported: list[tuple[str, str]]
+) -> None:
+    """Whichever tier answers the string, and even where the index leaves no need to
+    evaluate it on, a literal naming no need type is reported at the view, with the type
+    its name is close to or the title of; a name that is no literal is not."""
+    app = test_app
+    app.build()
+    line = _line(_table_index(filter_string), ".. needtable::")
+    assert build_warnings(app) == [
+        INHERITS_NOPE,
+        *(
+            f"<srcdir>/index.rst:{line}: {_unknown(name, filter_string, hint)}"
+            for name, hint in reported
+        ),
+    ]
+
+
+#: two documents, each with a needtable of the same filter naming no need type
+OTHER = """\
+Other
+=====
+
+.. needtable::
+   :filter: c.is_a('rq')
+"""
+
+TWO_DOCUMENTS_INDEX = (
+    INDEX
+    + "\n.. needtable::\n   :filter: c.is_a('rq')\n"
+    + "\n.. toctree::\n\n   other\n"
+    + "".join(f"   page{i}\n" for i in range(5))
+)
+
+
+def _two_documents(parallel: int) -> dict[str, Any]:
+    project = _project(TWO_DOCUMENTS_INDEX, buildername="html")
+    project["files"].append((Path("other.rst"), OTHER))
+    # Sphinx reads and writes in parallel from six documents on
+    project["files"].extend(
+        (Path(f"page{i}.rst"), f"Page {i}\n======\n") for i in range(5)
+    )
+    project["parallel"] = parallel
+    return project
+
+
+def _two_documents_warnings() -> list[str]:
+    unknown = _unknown("rq", hint=" (did you mean 'req'?)")
+    return [
+        INHERITS_NOPE,
+        f"<srcdir>/index.rst:{_line(TWO_DOCUMENTS_INDEX, '.. needtable::')}: {unknown}",
+        f"<srcdir>/other.rst:4: {unknown}",
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_two_documents(0), _two_documents(2)],
+    indirect=True,
+    ids=["serial", "parallel"],
+)
+def test_one_filter_in_two_places_is_reported_at_each(test_app: Any) -> None:
+    """Once per filter and location: the same string in two documents is reported at
+    each, once, and a parallel build reports what a serial one does (every filter that
+    can hold ``c`` is evaluated in the main process)."""
+    app = test_app
+    app.build()
+    assert sorted(build_warnings(app)) == sorted(_two_documents_warnings())
+    # the parallel build did read in chunks (``index .. page0``), where forking is
+    # available (POSIX): the warnings above are no serial build's
+    status = re.sub(r"\x1b\[[0-9;]*m", "", app._status.getvalue())
+    chunked = re.search(r"reading sources\.\.\. \[ *\d+%\] \S+ \.\. ", status)
+    assert (chunked is not None) is (app.parallel > 1 and parallel_available)
+
+
+@pytest.mark.parametrize("test_app", [_two_documents(0)], indirect=True)
+def test_each_build_reports_again(test_app: Any) -> None:
+    """Once per build: a second build of the same application reports again."""
+    app = test_app
+    app.build()
+    app.build(force_all=True)
+    reported = [w for w in build_warnings(app) if w.endswith("[needs.filter_type]")]
+    assert len(reported) == 4
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(conf=CONF + "needs_warnings = {'odd': \"c.is_a('rq')\"}\n")],
+    indirect=True,
+)
+def test_a_warnings_filter_says_which_it_is(test_app: Any) -> None:
+    """A filter configured outside every document has no location: the report says
+    which it is, as a failed one does."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        INHERITS_NOPE,
+        _unknown("rq", hint=" (did you mean 'req'?)").replace(
+            " [needs.filter_type]", " (from warning filter 'odd') [needs.filter_type]"
+        ),
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            conf=CONF
+            + "needs_warnings = {'first': \"c.is_a('rq')\", 'second': \"c.is_a('rq')\"}\n"
+        )
+    ],
+    indirect=True,
+)
+def test_each_warnings_filter_is_reported_naming_itself(test_app: Any) -> None:
+    """Two ``needs_warnings`` entries with the same string are two filters, each with
+    its own origin: each is reported, naming itself."""
+    app = test_app
+    app.build()
+    unknown = _unknown("rq", hint=" (did you mean 'req'?)")
+    assert build_warnings(app) == [
+        INHERITS_NOPE,
+        *(
+            unknown.replace(
+                " [needs.filter_type]",
+                f" (from warning filter {name!r}) [needs.filter_type]",
+            )
+            for name in ("first", "second")
+        ),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("filter_string", "names"),
+    [
+        ("c.is_a('b') and c.is_a('a') or c.is_a('b')", ("b", "a")),
+        # written first, nested deeper: an AST walk meets 'b' first
+        ("(x and c.is_a('a')) or c.is_a('b')", ("a", "b")),
+        ("c.is_a('a') == True", ("a",)),
+        ("c.is_a(r'a') or c.is_a('a',)", ("a",)),
+        # one literal, as Python reads it
+        ("c.is_a('re' 'q')", ("req",)),
+        ("c.is_a(type)", ()),
+        ("c.is_a()", ()),
+        ("c.is_a('a', 'b')", ()),
+        ("c.is_a(name='a')", ()),
+        ("x.is_a('a')", ()),
+        ("c.is_a('a'", ()),
+    ],
+)
+def test_the_names_a_filter_gives_as_a_literal(
+    filter_string: str, names: tuple[str, ...]
+) -> None:
+    """A call of ``c.is_a`` with one string literal and nothing else gives a name of the
+    string's own, in the order written, each once; any other shape gives none."""
+    assert is_a_literals(filter_string) == names
+
+
+def test_nothing_is_reported_before_a_build_gives_the_types() -> None:
+    """With no need types (no build has prepared them) nothing is known about a name, so
+    none is reported: ``c.is_a`` then answers each type itself alone."""
+    _NEEDS_CONFIG.clear()  # no name reported by an earlier build is remembered
+    config = Mock(spec=["filter_data", "variant_data_proxy", "is_a_types"])
+    config.filter_data = {}
+    config.variant_data_proxy = None
+    config.is_a_types = None
+    with patch.object(filter_common, "log_warning") as warn:
+        assert filter_needs_and_parts([], config, "c.is_a('rq')") == []
+        assert filter_single_need(MagicMock(), config, "c.is_a('rq')") is False
+    assert warn.call_args_list == []
