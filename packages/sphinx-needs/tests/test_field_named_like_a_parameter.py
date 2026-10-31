@@ -168,10 +168,20 @@ INDEX = "\n".join(
     indirect=True,
 )
 def test_a_field_named_like_a_parameter_round_trips(test_app: SphinxTestApp):
-    """Every producer creates its need, and every field holds what it set."""
+    """Every producer creates its need, and every field holds what it set. A field named
+    ``source`` (``create_need``'s parameter) switches the ``source.*`` filter facets off,
+    which is the one warning."""
     app = test_app
     app.build()
-    assert build_warnings(app) == []
+    assert build_warnings(app) == (
+        [
+            "WARNING: A field named 'source' is declared, which switches the source.* "
+            "filter facets off for the project: 'source' in a filter reads the field "
+            "[needs.source_shadowed]"
+        ]
+        if "source" in NAMES
+        else []
+    )
     needs = SphinxNeedsData(app.env).get_needs_view()
     assert {
         need_id: {name: needs[need_id][name] for name in NAMES}
