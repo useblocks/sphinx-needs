@@ -417,6 +417,50 @@ def test_a_derive_where_is_reported_once_whatever_it_is_evaluated_on(
     assert SphinxNeedsData(app.env).get_needs_view()["IMPL_001"]["n_rq"] == 0
 
 
+#: two derived counts whose ``where`` misspell two different types
+TWO_WHERES_TOML = (
+    TYPES
+    + """
+[needs.types.impl]
+title = "Implementation"
+prefix = "I_"
+
+[needs.fields.n_rq]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.is_a('rq')" }
+
+[needs.fields.n_sp]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = "c.is_a('sp')" }
+"""
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            INDEX + "\n.. impl:: Links two\n   :id: IMPL_001\n"
+            "   :links: REQ_001, SPEC_001\n",
+            toml=TWO_WHERES_TOML,
+        )
+    ],
+    indirect=True,
+)
+def test_two_wheres_naming_two_unknown_types_are_each_reported(test_app: Any) -> None:
+    """Two filters with no place are two strings: each is reported once, the second
+    is not taken for the first."""
+    app = test_app
+    app.build()
+    assert sorted(build_warnings(app)) == sorted(
+        [
+            INHERITS_NOPE,
+            _unknown("rq", hint=" (did you mean 'req'?)"),
+            _unknown("sp"),
+        ]
+    )
+
+
 #: a filter of a needtable, and what it reports: each name with its hint, in order
 TABLE_FILTERS: list[tuple[str, list[tuple[str, str]]]] = [
     ("c.is_a('req')", []),
