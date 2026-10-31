@@ -941,10 +941,11 @@ def _report_unknown_types(
     """Report each name a ``c.is_a("<type>")`` of the string gives as a literal that is
     no need type of the build: such a check is false on every need.
 
-    Once per build for the string and where it is written, once per string where the
-    caller gives no location; nothing before a build has set the types
-    (``config.is_a_types``), when no name is known to be wrong. A name that is a type's
-    title, or close to a type's name, is hinted at.
+    Once per build for the string, where it is written and the origin the caller
+    appends (a ``needs_warnings`` entry names itself), so once per string for a filter
+    with neither, such as a derived field's ``where``. Nothing before a build has set
+    the types (``config.is_a_types``), when no name is known to be wrong. A name that
+    is a type's title, or close to a type's name, is hinted at.
     """
     if not (names := is_a_literals(filter_string)):
         return
@@ -954,9 +955,9 @@ def _report_unknown_types(
         return
     where = get_source_line(location) if isinstance(location, nodes.Node) else location
     reported = _NEEDS_CONFIG.build.is_a_reported
-    if (filter_string, where) in reported:
+    if (key := (filter_string, where, append_warning)) in reported:
         return
-    reported.add((filter_string, where))
+    reported.add(key)
     titles = {
         need_type["directive"]: str(need_type.get("title", ""))
         for need_type in config.types
@@ -1099,7 +1100,7 @@ def filter_single_need(
     """Checks if a single need/need_part passes a filter_string.
 
     A ``c.is_a`` literal naming no need type is reported once per build for the
-    string, which has no location here.
+    string, which has no location or origin here.
 
     :param need: the data for a single need
     :param config: NeedsSphinxConfig object

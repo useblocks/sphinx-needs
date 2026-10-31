@@ -560,7 +560,6 @@ def test_a_warnings_filter_says_which_it_is(test_app: Any) -> None:
     ]
 
 
-@pytest.mark.xfail(strict=True, reason="pin: one report per string, not per entry")
 @pytest.mark.parametrize(
     "test_app",
     [

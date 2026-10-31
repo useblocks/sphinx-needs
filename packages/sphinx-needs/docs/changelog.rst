@@ -48,11 +48,13 @@ Improvements
   directly or through other types, as the project's need types declare it: with ``sys_req`` inheriting ``req`` and
   ``hw_req`` inheriting ``sys_req``, it selects the needs of all three, as ``type in ['req', 'sys_req', 'hw_req']``
   does. It reads the need's type and the need type declarations, and no field: a need carries no list of its types.
-  A name that is no need type selects nothing; a string literal naming one is reported, once per filter and place,
-  as ``needs.filter_type``, with the type it is the title of or is close to (silence a deliberate one with
-  ``suppress_warnings = ["needs.filter_type"]``). It is a check beside ``c.this_doc()``, in the portable
-  filter language with a string literal as its argument, answered without ``eval``, and in the ``eval`` tier for
-  any other argument. It reads the need alone, so it is available in a filter configured in ``conf.py`` and in a
+  A name that is no need type selects nothing; a string literal naming one is reported as ``needs.filter_type``, with
+  the type it is the title of or is close to: once per filter and place it is written, once per filter string where
+  it has no place (such as a derived field's ``where``), and once per :ref:`needs_warnings` entry, naming it.
+  Silence a deliberate one with ``suppress_warnings = ["needs.filter_type"]``. It is a check beside
+  ``c.this_doc()``, in the portable filter language with a string literal as its argument, answered without
+  ``eval``, and in the ``eval`` tier for any other argument. It reads the need alone, so it is available in a
+  filter configured in ``conf.py`` and in a
   derived field's ``where``, where ``c.this_doc()`` is not; like ``c.this_doc()``, it is not available in a
   :ref:`needimport` ``:filter:`` nor in the ``predicates`` of a :ref:`needs_fields` entry. ``c.is_a`` tests the
   need's type: to follow a link type named ``is_a``, use the link. See :ref:`filter_is_a`.
