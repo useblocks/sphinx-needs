@@ -1545,21 +1545,35 @@ def name_chain(
     return tuple(chain)
 
 
-def scope_language(comment_type: CommentType, path: PurePath) -> str:
-    """The language a source file was analysed as, by its name (``scope.language``).
+# The suffixes of the ``ts`` comment type that are JavaScript, in lower case.
+_JAVASCRIPT_SUFFIXES = frozenset({".js", ".jsx", ".mjs", ".cjs"})
 
-    ``c`` for a ``.c`` file, ``cpp`` for every other C and C++ file (a ``.h`` header
-    included: its language is not in its name; and a ``.C`` file, which compilers read
-    as C++), otherwise the comment type (``python``, ``rust``, ``cs``, ``ts``, ``go``,
-    ``yaml``, ``jsonc``, ``bash``). A ``.c`` file is parsed with the C++ grammar and
-    its components render as C++'s.
+
+def scope_language(comment_type: CommentType, path: PurePath) -> str:
+    """The language a source file was analysed as, by its name (``scope.language``),
+    spelled as editors' language identifiers spell it.
+
+    ``c`` for a ``.c`` file and ``cpp`` for every other C and C++ file (a ``.h`` header
+    included: its name does not say whether it is C or C++, and it is analysed as C++;
+    and a ``.C`` file, which compilers read as C++); ``csharp``; ``javascript`` for a
+    ``.js``, ``.jsx``, ``.mjs`` or ``.cjs`` file, in any case, and ``typescript`` for
+    every other file of the ``ts`` comment type, ``.tsx`` included; otherwise the
+    comment type (``python``, ``rust``, ``go``, ``yaml``, ``jsonc``, ``bash``). The
+    comment type decides, not the suffix: a ``.py`` file analysed as C++ is ``cpp``. A
+    ``.c`` file is parsed with the C++ grammar and its components render as C++'s.
 
     :param comment_type: The comment type the file was analysed as.
-    :param path: The file's path; only its suffix is read, case included (discovery
+    :param path: The file's path; only its suffix is read, case included for C (discovery
         reads it in any case, so a ``.C`` file is traced, as C++).
     """
     if comment_type == CommentType.cpp:
         return "c" if path.suffix == ".c" else "cpp"
+    if comment_type == CommentType.cs:
+        return "csharp"
+    if comment_type == CommentType.ts:
+        if path.suffix.lower() in _JAVASCRIPT_SUFFIXES:
+            return "javascript"
+        return "typescript"
     return comment_type.value
 
 

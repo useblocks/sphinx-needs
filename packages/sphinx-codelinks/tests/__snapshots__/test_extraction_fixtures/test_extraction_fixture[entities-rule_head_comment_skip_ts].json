@@ -17,7 +17,7 @@
       "kind": "class_declaration",
       "start": 1,
       "end": 2,
-      "language": "ts",
+      "language": "typescript",
       "entity_kind": "class",
       "qualified_name": "Service",
       "semantic": [

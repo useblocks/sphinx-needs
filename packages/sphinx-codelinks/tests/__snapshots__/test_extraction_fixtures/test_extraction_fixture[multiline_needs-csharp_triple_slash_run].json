@@ -45,7 +45,7 @@
         "kind": "method_declaration",
         "start": 8,
         "end": 8,
-        "language": "cs",
+        "language": "csharp",
         "entity_kind": "method",
         "qualified_name": "Calc.Add",
         "semantic": [

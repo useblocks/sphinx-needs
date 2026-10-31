@@ -17,7 +17,7 @@
       "kind": "public_field_definition",
       "start": 3,
       "end": 3,
-      "language": "ts",
+      "language": "typescript",
       "entity_kind": "method",
       "qualified_name": "Button.onClick",
       "semantic": [

@@ -17,7 +17,7 @@
       "kind": "method_declaration",
       "start": 3,
       "end": 4,
-      "language": "cs",
+      "language": "csharp",
       "entity_kind": "method",
       "qualified_name": "A.M",
       "semantic": [

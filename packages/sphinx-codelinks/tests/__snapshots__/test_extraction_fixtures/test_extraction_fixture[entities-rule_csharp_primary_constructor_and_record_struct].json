@@ -17,7 +17,7 @@
       "kind": "class_declaration",
       "start": 4,
       "end": 8,
-      "language": "cs",
+      "language": "csharp",
       "entity_kind": "class",
       "qualified_name": "Geo.Point",
       "semantic": [
@@ -59,7 +59,7 @@
       "kind": "method_declaration",
       "start": 7,
       "end": 7,
-      "language": "cs",
+      "language": "csharp",
       "entity_kind": "method",
       "qualified_name": "Geo.Point.Distance",
       "semantic": [
@@ -105,7 +105,7 @@
       "kind": "record_declaration",
       "start": 11,
       "end": 11,
-      "language": "cs",
+      "language": "csharp",
       "entity_kind": "record",
       "qualified_name": "Geo.Pair",
       "semantic": [

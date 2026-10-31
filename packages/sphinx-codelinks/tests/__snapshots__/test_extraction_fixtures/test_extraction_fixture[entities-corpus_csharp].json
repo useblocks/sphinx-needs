@@ -17,7 +17,7 @@
       "kind": "class_declaration",
       "start": 4,
       "end": 23,
-      "language": "cs",
+      "language": "csharp",
       "entity_kind": "class",
       "qualified_name": "Acme.Gfx.Widget",
       "semantic": [
@@ -65,7 +65,7 @@
       "kind": "constructor_declaration",
       "start": 7,
       "end": 7,
-      "language": "cs",
+      "language": "csharp",
       "entity_kind": "constructor",
       "qualified_name": "Acme.Gfx.Widget.Widget",
       "semantic": [
@@ -117,7 +117,7 @@
       "kind": "property_declaration",
       "start": 10,
       "end": 10,
-      "language": "cs",
+      "language": "csharp",
       "entity_kind": "property",
       "qualified_name": "Acme.Gfx.Widget.W",
       "semantic": [
@@ -169,7 +169,7 @@
       "kind": "method_declaration",
       "start": 13,
       "end": 17,
-      "language": "cs",
+      "language": "csharp",
       "entity_kind": "method",
       "qualified_name": "Acme.Gfx.Widget.Draw",
       "semantic": [
@@ -221,7 +221,7 @@
       "kind": "method_declaration",
       "start": 13,
       "end": 17,
-      "language": "cs",
+      "language": "csharp",
       "entity_kind": "method",
       "qualified_name": "Acme.Gfx.Widget.Draw",
       "semantic": [
@@ -269,7 +269,7 @@
       "kind": "struct_declaration",
       "start": 20,
       "end": 20,
-      "language": "cs",
+      "language": "csharp",
       "entity_kind": "struct",
       "qualified_name": "Acme.Gfx.Widget.Point",
       "semantic": [

@@ -688,7 +688,7 @@ def test_describe_entity(
             id="go",
         ),
         pytest.param(
-            "ts",
+            "typescript",
             _s(("namespace", "A"), ("function", "module.exports.f")),
             "A.module.exports.f",
             id="typescript",

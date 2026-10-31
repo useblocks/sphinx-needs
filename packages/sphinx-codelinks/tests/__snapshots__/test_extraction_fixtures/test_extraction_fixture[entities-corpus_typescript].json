@@ -17,7 +17,7 @@
       "kind": "class_declaration",
       "start": 3,
       "end": 9,
-      "language": "ts",
+      "language": "typescript",
       "entity_kind": "class",
       "qualified_name": "Gfx.Widget",
       "semantic": [
@@ -61,7 +61,7 @@
       "kind": "method_definition",
       "start": 5,
       "end": 8,
-      "language": "ts",
+      "language": "typescript",
       "entity_kind": "method",
       "qualified_name": "Gfx.Widget.draw",
       "semantic": [
@@ -109,7 +109,7 @@
       "kind": "method_definition",
       "start": 5,
       "end": 8,
-      "language": "ts",
+      "language": "typescript",
       "entity_kind": "method",
       "qualified_name": "Gfx.Widget.draw",
       "semantic": [
@@ -153,7 +153,7 @@
       "kind": "lexical_declaration",
       "start": 13,
       "end": 13,
-      "language": "ts",
+      "language": "typescript",
       "entity_kind": "function",
       "qualified_name": "onClick",
       "semantic": [
@@ -193,7 +193,7 @@
       "kind": "function_declaration",
       "start": 16,
       "end": 18,
-      "language": "ts",
+      "language": "typescript",
       "entity_kind": "function",
       "qualified_name": "area",
       "semantic": [
@@ -233,7 +233,7 @@
       "kind": "interface_declaration",
       "start": 21,
       "end": 23,
-      "language": "ts",
+      "language": "typescript",
       "entity_kind": "interface",
       "qualified_name": "Shape",
       "semantic": [

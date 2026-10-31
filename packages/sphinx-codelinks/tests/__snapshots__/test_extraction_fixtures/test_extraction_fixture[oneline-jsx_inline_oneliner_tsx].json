@@ -17,7 +17,7 @@
       "kind": "lexical_declaration",
       "start": 1,
       "end": 5,
-      "language": "ts",
+      "language": "typescript",
       "entity_kind": "function",
       "qualified_name": "App",
       "semantic": [

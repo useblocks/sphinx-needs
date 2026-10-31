@@ -45,7 +45,7 @@
         "kind": "lexical_declaration",
         "start": 8,
         "end": 8,
-        "language": "ts",
+        "language": "typescript",
         "entity_kind": "function",
         "qualified_name": "LoginButton",
         "semantic": [

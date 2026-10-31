@@ -17,7 +17,7 @@
       "kind": "class_declaration",
       "start": 2,
       "end": 2,
-      "language": "cs",
+      "language": "csharp",
       "entity_kind": "class",
       "qualified_name": "C",
       "semantic": [

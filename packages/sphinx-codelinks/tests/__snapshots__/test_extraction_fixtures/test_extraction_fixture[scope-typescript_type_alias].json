@@ -17,7 +17,7 @@
       "kind": "type_alias_declaration",
       "start": 2,
       "end": 2,
-      "language": "ts",
+      "language": "typescript",
       "entity_kind": "type",
       "qualified_name": "Handler",
       "semantic": [

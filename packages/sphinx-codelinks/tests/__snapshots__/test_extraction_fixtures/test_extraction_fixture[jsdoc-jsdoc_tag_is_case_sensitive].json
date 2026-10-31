@@ -17,7 +17,7 @@
       "kind": "function_declaration",
       "start": 4,
       "end": 4,
-      "language": "ts",
+      "language": "typescript",
       "entity_kind": "function",
       "qualified_name": "f",
       "semantic": [
