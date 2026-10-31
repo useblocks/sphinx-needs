@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793439764343,
+  "lastUpdate": 1793443832139,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27846,6 +27846,48 @@ window.BENCHMARK_DATA = {
             "value": 183.369952,
             "unit": "MB",
             "extra": "Commit: de6d5d2181c2f83f7d178e9d07050927db53d0d6\nBranch: master\nTime: 2026-10-31T10:41:18+01:00\nCPU: INTEL(R) XEON(R) PLATINUM 8573C"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2590d689a1dc63906c6b23faef14ebd68caa3f48",
+          "message": "🧪 A test fails when the shape of the data stored in the environment changes without an ENV_DATA_VERSION bump (#2436)\n\nSphinx loads the pickled environment and doctrees of an earlier build as\nlong as `ENV_DATA_VERSION` is\nunchanged. If the shape of what sphinx-needs stores there changes\nwithout a bump, the old data is loaded into\nthe new shape. A slotted dataclass pickles its fields by position, so an\nadded, removed or moved field takes the\nold values into the wrong slots. Until now nothing noticed a missing\nbump.\n\n`tests/test_env_data_fingerprint.py` builds a representative project:\nneed directives with parts, `needimport`,\nexternal needs, `list2need`, `needservice`, `add_need` and\n`create_need`, a derived field, variants, `needextend`,\na need type's own field, link type and back links, a schema, and the\nviews and roles on its pages. It then records what is stored,\nrather than relying on a list:\n\n- every class of sphinx-needs that the pickled environment and doctrees\nreference, read back through an\n  `Unpickler` that records each global;\n- the declared type of each `env._need*` attribute, taken from its\n`SphinxNeedsData` accessor;\n- the classes that their stored fields' annotations name, transitively.\nThis is how the `TypedDict`s are found,\n  since one pickles as a plain dict.\n\nA name it cannot resolve fails the test, and so does a slot whose type\nnothing declares, or a stored class with\nits own pickling method. Each slot is pinned as the type it is stored\nas: the slots of `NeedItem`,\n`FieldsSchema`, `NeedConstraintResults` and `VariantDataProxy` that did\nnot say so gain an annotation, which is\ntype-only and checked by ty against the value.\n\nFor each of these 77 classes the test fingerprints the stored shape: a\ndataclass's fields in order, a\n`TypedDict`'s keys, an enum's members, a slotted class's slots with\ntheir declared types, and a node's\n`attributes`. Each field is\nrecorded with its annotation as written in the source, which reads the\nsame from Python 3.11 to 3.14 and on\nSphinx 7, 8 and 9. The fingerprint is pinned in\n`tests/fixtures/env_data_fingerprint.json`, beside the version.\n\nThe test fails:\n\n- when the shape changes and the version does not. The message names\neach field added or removed and says to\n  bump `ENV_DATA_VERSION`, add its `Version N` paragraph and re-pin;\n- when the version changes and the pin was not updated, so that the two\nmove together.\n\n`uv run poe test-needs tests/test_env_data_fingerprint.py\n--snapshot-update` re-pins once the version has been\nbumped, and refuses to before that. When the fingerprint moves and the\nstored shape does not (the test finds\nmore, an annotation is spelled differently), deleting the pin and\nre-pinning writes it afresh.\n\nA change of what stored values mean, or of what is rendered from them,\nleaves the shape unchanged, as in\nversions 8, 10–12, 15, 17, 19 and 20, so the test cannot see it. The\ntest's docstring and the guidance under `ENV_DATA_VERSION` say so.\n\nCloses #2420",
+          "timestamp": "2026-10-31T11:49:01+01:00",
+          "tree_id": "58eeb15de4d8652694f99e249145ec4cc8ae9a0e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2590d689a1dc63906c6b23faef14ebd68caa3f48"
+        },
+        "date": 1793443831154,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.05648499599999823,
+            "unit": "s",
+            "extra": "Commit: 2590d689a1dc63906c6b23faef14ebd68caa3f48\nBranch: master\nTime: 2026-10-31T11:49:01+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 11.69031589099999,
+            "unit": "s",
+            "extra": "Commit: 2590d689a1dc63906c6b23faef14ebd68caa3f48\nBranch: master\nTime: 2026-10-31T11:49:01+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 183.375081,
+            "unit": "MB",
+            "extra": "Commit: 2590d689a1dc63906c6b23faef14ebd68caa3f48\nBranch: master\nTime: 2026-10-31T11:49:01+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
           }
         ]
       }
