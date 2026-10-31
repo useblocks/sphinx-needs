@@ -64,12 +64,14 @@ New and Improved
   - the marker's lines: a one-line need's own line, and a multi-line need's ``@need`` to
     ``@endneed`` lines;
   - the entity the marker is attached to, in the analysis' parts (``class Shape``,
-    ``method area``), with a Rust trait impl's trait;
+    ``method area``), with a Rust trait impl's trait, and the entity's qualified name
+    as the analysis renders it (``Shape.area``, ``ns::Widget::draw``,
+    ``<Widget as Shape>::area``);
   - the file's language (``python``, ``cpp``, ``c``, ``rust``, ...).
 
   The record is provisional, as Sphinx-Needs' hops are: it reaches no ``needs.json`` and
   adds no field. The first build after upgrading reads every page once (the extension's
-  ``env_version`` is now 2).
+  ``env_version`` is now 3).
 
 Fixes
 .....

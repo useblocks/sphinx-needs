@@ -45,7 +45,7 @@
       "page [domains] srcdir:domains.rst:44-45 (.rst) :: section 'Domains' > cpp:class 'Widget' id='_CPPv4N2ns6WidgetE' signature='Widget' > cpp:function 'run' id='_CPPv4N2ns6Widget3runEi' signature='run'",
     ]),
     'REQ_DOCSTRINGX': list([
-      "code srcdir:../outside/source_hops_module.py (python) :: function 'documented'",
+      "code srcdir:../outside/source_hops_module.py (python) :: function 'documented' qualified_name='documented'",
       "page [autodoc_page] srcdir:autodoc_page.rst (.rst) :: section 'Autodoc' > py:function 'documented' id='source_hops_module.documented' signature='documented'",
     ]),
     'REQ_ENVX': list([

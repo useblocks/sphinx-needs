@@ -128,10 +128,15 @@ def code_hop(
       line for both, a multi-line need's open and close lines.
     - ``semantic``: the entity the marker is attached to (``scope.semantic``), outermost
       first, each component's ``kind`` and ``name`` as the analysis gives them, and a Rust
-      trait impl's ``trait`` as an extra; ``None`` for a marker attached to no named
-      entity (the file, nothing, a YAML or JSONC entry). The kinds are the analysis'
-      entity kinds, read with ``language``; what identifies the entity is
-      :func:`~sphinx_codelinks.analyse.entity.name_chain`, not the kinds.
+      trait impl's ``trait`` as an extra; on the last component, the entity itself, the
+      analysis' rendering of its qualified name (``scope.qualified_name``:
+      ``ns::Widget::draw``, ``<Widget as Shape>::area``, ``Shape.area.<locals>.inner``) as
+      a ``("qualified_name", ...)`` extra, after a trait. ``None`` for a marker attached
+      to no named entity (the file, nothing, a YAML or JSONC entry). The kinds are the
+      analysis' entity kinds, read with ``language``; what identifies the entity is
+      :func:`~sphinx_codelinks.analyse.entity.name_chain`, not the kinds. The entity's
+      own lines (``scope.start``, ``scope.end``) are not recorded: they do not identify
+      it.
     - ``language``: the file's language (``scope.language``, or
       :func:`~sphinx_codelinks.analyse.entity.scope_language` where the marker is
       attached to no entity, which gives the same name).
@@ -148,6 +153,7 @@ def code_hop(
         start = end = marker.source_map["start"]["row"] + 1
     scope = marker.scope
     parts = scope["semantic"] if scope is not None else None
+    qualified_name = scope["qualified_name"] if scope is not None else None
     return NeedSourceHop(
         kind="code",
         physical=_code_physical(srcdir, filepath, start, end),
@@ -157,9 +163,16 @@ def code_hop(
             NeedSourceSemantic(
                 kind=part["kind"],
                 name=part["name"],
-                extras=(("trait", part["trait"]),) if "trait" in part else (),
+                extras=(
+                    *((("trait", part["trait"]),) if "trait" in part else ()),
+                    *(
+                        (("qualified_name", qualified_name),)
+                        if index == len(parts) - 1 and qualified_name is not None
+                        else ()
+                    ),
+                ),
             )
-            for part in parts
+            for index, part in enumerate(parts)
         ),
         language=scope["language"]
         if scope is not None

@@ -107,8 +107,10 @@ Improvements
   on its page (``NeedItemSource.on_page``, ``add_need``) records the page's file, with no line. A need in a docstring
   autodoc reads starts at a ``code`` hop of its Python file, with the language ``python`` and, where the definition
   autodoc names holds the need in its docstring, that definition's file (for a member inherited from another module,
-  that module's) and its name in the file in sphinx-codelinks' Python kinds (``class Shape > method area``), so it
-  compares with the code hop of a sphinx-codelinks marker in the same docstring. A hop records a line range only where the file, read from disk, holds the need's text there: under
+  that module's) and its name in the file in sphinx-codelinks' Python kinds (``class Shape > method area``), with
+  its qualified name rendered as sphinx-codelinks renders it (``Shape.area``, ``make.<locals>.Made``), so it
+  compares with the code hop of a sphinx-codelinks marker in the same docstring. A sphinx-codelinks marker's code
+  hop carries the qualified name its analysis renders (``ns::Widget::draw``, ``<Widget as Shape>::area``). A hop records a line range only where the file, read from disk, holds the need's text there: under
   reStructuredText every line of the directive equals the file's line (whole lines), under MyST the line opens the
   directive's fence with its name and title; elsewhere it records no line (it can still be wrong only where the
   file holds an identical copy of the need's text at the line the parser claims). It is provisional: the

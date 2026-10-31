@@ -567,7 +567,13 @@ def test_the_hops_of_every_need(
     docstring = hops["REQ_DOCSTRINGX"][0]
     assert (docstring.language, docstring.semantic) == (
         "python",
-        (NeedSourceSemantic(kind="function", name="documented"),),
+        (
+            NeedSourceSemantic(
+                kind="function",
+                name="documented",
+                extras=(("qualified_name", "documented"),),
+            ),
+        ),
     )
     # through the API: the page's file, recorded by create_need with no line, walked
     assert hops["REQ_APIX"] == (

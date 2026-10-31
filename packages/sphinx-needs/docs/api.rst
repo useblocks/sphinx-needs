@@ -306,7 +306,12 @@ Data
    ``code`` hop's use its producer's entity kinds, read with the hop's ``language``: sphinx-codelinks' bare ones
    (``function``, ``method``, ``class``, ``impl``, ...). In a ``code`` hop the kinds may carry
    identity the names alone do not (Python's ``<locals>`` boundary is implied by a function or method followed by
-   another entry), so code hops compare by their producer's identity rule, not entry by entry.
+   another entry), so code hops compare by their producer's identity rule, not entry by entry. The innermost entry
+   of a ``code`` hop, the entity, carries its qualified name in its file as the producer renders it, a
+   ``("qualified_name", ...)`` extra: sphinx-codelinks' analysis renders it by the language (``ns::Widget::draw``,
+   ``<Widget as Shape>::area``, ``Shape.area.<locals>.inner``), and autodoc's docstring hop renders a Python entity
+   exactly as sphinx-codelinks does (``make.<locals>.Made.go``). The entity's own line range is not recorded: an
+   extra identifies, and lines do not.
 
    Autodoc's docstring hop uses the same Python kinds as sphinx-codelinks, read from the syntax of the file the
    docstring is defined in: ``class``, ``method`` for a ``def`` directly in a class, ``function`` for any other

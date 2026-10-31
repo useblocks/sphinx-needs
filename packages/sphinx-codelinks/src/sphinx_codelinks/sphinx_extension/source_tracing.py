@@ -145,8 +145,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
         # the environment holds the source pages since #2070: an older one (no page
         # records) is discarded by Sphinx, so the first build after an upgrade reads
         # every document once and records them; 2: every need records its code hop
-        # (an environment at 1 holds needs without one)
-        "env_version": 2,
+        # (an environment at 1 holds needs without one); 3: the code hop's entity
+        # carries its qualified name
+        "env_version": 3,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

@@ -113,7 +113,13 @@ class NeedSourceSemantic:
     ``(name, extras)``."""
     name: str
     extras: tuple[tuple[str, str], ...] = ()
-    """Identity-bearing extras, e.g. ``("id", <the first signature id>)``."""
+    """Identity-bearing extras, e.g. ``("id", <the first signature id>)``. The innermost
+    entry of a ``code`` hop, the entity itself, carries its qualified name in its file
+    as its producer renders it, ``("qualified_name", ...)``: sphinx-codelinks' analysis
+    (``ns::Widget::draw``, ``<Widget as Shape>::area``, ``Shape.area.<locals>.inner``),
+    and for autodoc's docstring hop the same rendering of a Python entity
+    (``make.<locals>.Made.go``; ``Shape.sides`` for an attribute). The entity's own
+    line range is not an extra: it does not identify the entity."""
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)
@@ -762,7 +768,9 @@ def _docstring_hop(
       ``<file>`` names for a member inherited from another module; otherwise
       ``<file>``, as autodoc gives it.
     - ``semantic``: that definition's parts, by sphinx-codelinks' Python rule
-      (:func:`_python_semantic`); ``None`` for a module docstring, and wherever no
+      (:func:`_python_semantic`), the last carrying the in-file qualified name as
+      sphinx-codelinks renders it (:func:`_python_qualified_name`); ``None`` for a
+      module docstring, and wherever no
       definition holding the text is found: an alias (autodoc names its docstring by
       the object it aliases), an override that inherits its docstring, an object made
       at run time, a function with no Python source, a ``__module__`` rewritten to
@@ -830,9 +838,37 @@ class _PythonDefinition:
 
 
 def _semantic(parts: _PythonParts | None) -> tuple[NeedSourceSemantic, ...] | None:
+    """The entries of ``parts``, the last, the entity, with its qualified name as a
+    ``("qualified_name", ...)`` extra (:func:`_python_qualified_name`)."""
     if parts is None:
         return None
-    return tuple(NeedSourceSemantic(kind=kind, name=name) for kind, name in parts)
+    last = len(parts) - 1
+    return tuple(
+        NeedSourceSemantic(
+            kind=kind,
+            name=name,
+            extras=(("qualified_name", _python_qualified_name(parts)),)
+            if index == last
+            else (),
+        )
+        for index, (kind, name) in enumerate(parts)
+    )
+
+
+def _python_qualified_name(parts: _PythonParts) -> str:
+    """The qualified name of ``parts`` in its file, rendered exactly as sphinx-codelinks
+    renders a Python entity's (``render_semantic``): the names joined with ``.``, and
+    CPython's ``<locals>`` after a function or a method another part follows
+    (``make.<locals>.Made.go``). An ``attribute``, a kind sphinx-codelinks does not
+    have, is a name like any other (``Shape.sides``). The two renderings are compared
+    in sphinx-codelinks' suite (``tests/test_docstring_hop_cross_check.py``), since
+    this package cannot import that one."""
+    names: list[str] = []
+    for index, (kind, name) in enumerate(parts):
+        names.append(name)
+        if kind in ("function", "method") and index < len(parts) - 1:
+            names.append("<locals>")
+    return ".".join(names)
 
 
 def _python_semantic(qualname: str, text: str) -> tuple[NeedSourceSemantic, ...] | None:
