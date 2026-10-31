@@ -142,9 +142,13 @@ def _need_source_fence() -> Iterator[None]:
       and where it has a ``start_line``, that line holds the directive's marker or the
       list item, and its ``end_line`` a non-blank line at or after it.
 
-    It wraps ``load_external_needs`` too, and checks each external need after it: its
-    first hop is an ``external`` hop, and where that hop has a section chain (outermost
-    first), the legacy ``sections`` (innermost first) is its projection.
+    It wraps ``load_external_needs`` too, and checks the external needs in the
+    environment after it (those it read, and any an earlier build left): the first hop
+    is an ``external`` hop, and where that hop has a section chain (outermost first),
+    the legacy ``sections`` (innermost first) is its projection. A hop with no chain is
+    not checked, nor an external need ``add_external_need`` adds later in the build;
+    ``add_external_need(sections=...)`` is pinned directly
+    (``test_need_item_source.py``).
     """
     original = sphinx_needs.needs.analyse_need_locations
     original_external = sphinx_needs.needs.load_external_needs

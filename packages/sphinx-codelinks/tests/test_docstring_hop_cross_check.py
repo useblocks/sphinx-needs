@@ -10,7 +10,10 @@ class, the two code hops have the same file, the same language, the same entity 
 ``qualified_name`` extra of the entity: this package's analysis renders it, sphinx-needs
 restates the Python rendering), and the same parts, kinds included (``name_chain``
 leaves the kinds out, and does not tell a ``method`` from a ``function``), so the two
-rules cannot drift apart.
+rules cannot drift apart. ``<locals>`` is covered after a function (``make``) and after
+a method (``Outer.factory``). A name CPython NFKC-normalises (``ﬁle``) is where they
+would differ, not covered here: autodoc's hop reads it normalised, this package's as
+written.
 
 An attribute is where they differ by design: sphinx-needs names the attribute autodoc
 documents (a leaf ``attribute``), this package attaches the ``#:`` comment to the

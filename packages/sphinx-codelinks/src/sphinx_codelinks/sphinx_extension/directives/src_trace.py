@@ -131,7 +131,8 @@ def code_hop(
       trait impl's ``trait`` as an extra; on the last component, the entity itself, the
       analysis' rendering of its qualified name (``scope.qualified_name``:
       ``ns::Widget::draw``, ``<Widget as Shape>::area``, ``Shape.area.<locals>.inner``) as
-      a ``("qualified_name", ...)`` extra, after a trait. ``None`` for a marker attached
+      a ``("qualified_name", ...)`` extra, after a trait: a rendering of the parts, which
+      adds no identity and which ``name_chain`` leaves out. ``None`` for a marker attached
       to no named entity (the file, nothing, a YAML or JSONC entry). The kinds are the
       analysis' entity kinds, read with ``language``; what identifies the entity is
       :func:`~sphinx_codelinks.analyse.entity.name_chain`, not the kinds. The entity's

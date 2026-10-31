@@ -193,7 +193,8 @@ class NeedItemSource:
         """The source of a need placed on the page ``docname``, at ``lineno``: one
         ``page`` hop of that document, with no line of its own (nothing is read from the
         file, nothing checked against it), whose file
-        :func:`~sphinx_needs.api.need.create_need` records; no hop without a document.
+        :func:`~sphinx_needs.api.need.create_need` records (``generate_need``, which has
+        no application, records none); no hop without a document.
 
         It gives the need its page and the line the caller passes, nothing more: it is
         the source ``add_need(app, state, docname, lineno, ...)`` built. Use it where a

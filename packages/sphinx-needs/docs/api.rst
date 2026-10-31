@@ -94,7 +94,8 @@ nothing more, so it is the source wherever the caller chooses the line: the dire
 parser line, as ``add_need`` took it (every need sphinx-codelinks' ``src-trace`` creates sits
 at its directive's parser line), or the lines a directive's data names. It works in a docutils
 ``Directive`` and in a nested parse alike, and is also the ``need_source`` to give
-``generate_need``.
+``generate_need``; ``create_need`` records the page's file on its hop, ``generate_need``,
+which has no application, does not.
 ``from_directive`` and ``on_page`` are stable, as the class's name is; the hops they build,
 and ``NeedItemSource``'s general constructor with its keywords (``hops``, ``lineno``,
 ``lineno_content``, ``parser_lineno``, ``is_import``), are provisional: they may change
@@ -268,10 +269,14 @@ Data
    directive; for an external need, its page on the other site, its only hop, with the need's sections there as its
    semantic location, outermost first (the legacy ``sections`` keeps them innermost first). In a nested reStructuredText include,
    the included file's hop is followed by one ``file`` hop per file it was included through, innermost first, each
-   with its path and suffix and no line, as docutils' ``include_log`` names them; myst-parser's ``{include}`` logs no
-   chain, so in MyST only the innermost file is a hop (a reStructuredText include in ``eval-rst`` is logged). A need created
+   with its path and suffix and no line, as docutils' ``include_log`` names them. Two known gaps: myst-parser's
+   ``{include}`` is never logged, so a chain through MyST includes records its reStructuredText links alone (a
+   reStructuredText include in ``eval-rst`` is logged, a MyST include around it is not), and a file included with
+   ``:parser:`` is a link of the chain under docutils 0.21 only (0.22 and later parse it into a document of its own
+   without logging it). A need created
    through ``add_need`` or ``NeedItemSource.on_page`` has its page alone, whose file ``create_need`` records with no line
-   (the line the caller gives is not checked in the file), and no hops without a document
+   (the line the caller gives is not checked in the file); ``generate_need`` has no application, so it records no
+   page path; and no hops without a document
    (``NeedItemSource.from_directive`` records the directive's file and lines, as a need directive does). The last hop with a ``document`` is
    the page the need is placed on (an external need has none), and carries its sections and the domain objects it
    is written in, outermost first. A hop has a line
@@ -310,8 +315,10 @@ Data
    of a ``code`` hop, the entity, carries its qualified name in its file as the producer renders it, a
    ``("qualified_name", ...)`` extra: sphinx-codelinks' analysis renders it by the language (``ns::Widget::draw``,
    ``<Widget as Shape>::area``, ``Shape.area.<locals>.inner``), and autodoc's docstring hop renders a Python entity
-   exactly as sphinx-codelinks does (``make.<locals>.Made.go``). The entity's own line range is not recorded: an
-   extra identifies, and lines do not.
+   as sphinx-codelinks does (``make.<locals>.Made.go``), except a name CPython NFKC-normalises (``ﬁle`` reads
+   ``file`` in autodoc's hop and as written in sphinx-codelinks'). It is the producer's rendering of the entries'
+   names, so it adds no identity, and identity comparisons (sphinx-codelinks' ``name_chain``) leave it out. The
+   entity's own line range is not recorded: it is not identity.
 
    Autodoc's docstring hop uses the same Python kinds as sphinx-codelinks, read from the syntax of the file the
    docstring is defined in: ``class``, ``method`` for a ``def`` directly in a class, ``function`` for any other

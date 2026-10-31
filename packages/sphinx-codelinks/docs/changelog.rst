@@ -66,7 +66,8 @@ New and Improved
   - the entity the marker is attached to, in the analysis' parts (``class Shape``,
     ``method area``), with a Rust trait impl's trait, and the entity's qualified name
     as the analysis renders it (``Shape.area``, ``ns::Widget::draw``,
-    ``<Widget as Shape>::area``);
+    ``<Widget as Shape>::area``), a rendering that ``name_chain`` leaves out of an
+    entity's identity;
   - the file's language (``python``, ``cpp``, ``c``, ``rust``, ...).
 
   The record is provisional, as Sphinx-Needs' hops are: it reaches no ``needs.json`` and

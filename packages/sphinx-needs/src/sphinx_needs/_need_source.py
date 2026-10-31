@@ -113,13 +113,16 @@ class NeedSourceSemantic:
     ``(name, extras)``."""
     name: str
     extras: tuple[tuple[str, str], ...] = ()
-    """Identity-bearing extras, e.g. ``("id", <the first signature id>)``. The innermost
-    entry of a ``code`` hop, the entity itself, carries its qualified name in its file
-    as its producer renders it, ``("qualified_name", ...)``: sphinx-codelinks' analysis
-    (``ns::Widget::draw``, ``<Widget as Shape>::area``, ``Shape.area.<locals>.inner``),
-    and for autodoc's docstring hop the same rendering of a Python entity
-    (``make.<locals>.Made.go``; ``Shape.sides`` for an attribute). The entity's own
-    line range is not an extra: it does not identify the entity."""
+    """Identity-bearing extras, e.g. ``("id", <the first signature id>)``, with one
+    exception. The innermost entry of a ``code`` hop, the entity itself, carries its
+    qualified name in its file as its producer renders it, ``("qualified_name", ...)``:
+    sphinx-codelinks' analysis (``ns::Widget::draw``, ``<Widget as Shape>::area``,
+    ``Shape.area.<locals>.inner``), and for autodoc's docstring hop the same rendering
+    of a Python entity (``make.<locals>.Made.go``; ``Shape.sides`` for an attribute; a
+    name CPython NFKC-normalises reads normalised there, as written in
+    sphinx-codelinks'). It renders the entries' names, so it adds no identity, and
+    identity comparisons leave it out (sphinx-codelinks' ``name_chain`` does). The
+    entity's own line range is not an extra: it is not identity."""
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)
@@ -128,9 +131,11 @@ class NeedSourceHop:
 
     Text in an included file has a ``file`` hop of that file, then one per file it was
     included through, innermost first, each with no line, read from docutils'
-    ``document.include_log``, then the page. myst-parser's ``{include}`` logs nothing,
-    so a MyST include chain records its innermost file alone (a known gap; a
-    reStructuredText include in a MyST page's ``eval-rst`` block is recorded).
+    ``document.include_log``, then the page. Two known gaps: myst-parser's
+    ``{include}`` is never logged, so a chain through MyST includes records its
+    reStructuredText links alone (an include in a MyST page's ``eval-rst`` block is
+    one); and a file included with ``:parser:`` is a link under docutils 0.21 only
+    (0.22 and later parse it as a document of its own, unlogged).
 
     **Provisional**: it may change without a deprecation until it reaches
     ``needs.json``.
@@ -409,8 +414,10 @@ def _include_chain(document: object, source: str) -> tuple[str, ...]:
     first include (the page, or ``rst_prolog``), never an include, so the includes
     between it and the innermost entry of ``source`` are the chain. reStructuredText
     only: myst-parser's ``{include}`` logs nothing (myst-parser 4 and 5), so a MyST
-    include chain has none; a reStructuredText include in a MyST page's ``eval-rst``
-    block is logged.
+    include is never a link, and a chain through one has its reStructuredText links
+    alone (an include in a MyST page's ``eval-rst`` block is logged). A ``:parser:``
+    include is logged by docutils 0.21 and not by 0.22 and later, whose
+    ``custom_parse`` never pushes it.
     """
     log = getattr(document, "include_log", None)
     if not isinstance(log, list):
@@ -860,7 +867,9 @@ def _python_qualified_name(parts: _PythonParts) -> str:
     renders a Python entity's (``render_semantic``): the names joined with ``.``, and
     CPython's ``<locals>`` after a function or a method another part follows
     (``make.<locals>.Made.go``). An ``attribute``, a kind sphinx-codelinks does not
-    have, is a name like any other (``Shape.sides``). The two renderings are compared
+    have, is a name like any other (``Shape.sides``). A name CPython NFKC-normalises
+    (``ﬁle``) is the normalised one here, the syntax tree's, and as written in
+    sphinx-codelinks'. The two renderings are compared
     in sphinx-codelinks' suite (``tests/test_docstring_hop_cross_check.py``), since
     this package cannot import that one."""
     names: list[str] = []
