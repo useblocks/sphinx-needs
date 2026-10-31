@@ -54,6 +54,7 @@ from dataclasses import dataclass
 from functools import lru_cache, partial
 from typing import Any
 
+from sphinx_needs._source_facets import READERS, SourceFacets
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 
 _COMPARE_OPS: dict[type, Callable[[Any, Any], Any]] = {
@@ -99,6 +100,16 @@ _FALLBACK_ROOTS: frozenset[str] = frozenset({"var"})
 #: what ``c.this_doc()`` compares a need's document with. No name in a filter can be it,
 #: so it never shadows a field. ``filter_common`` sets it, for a filter that reads it.
 ORIGIN_KEY = "\x00origin"
+
+#: The name of the facets of a need's source (``source.path``, ``source.kind``, ...:
+#: :mod:`sphinx_needs._source_facets`), read by operands of their own, never as a field.
+SOURCE_NAME = "source"
+
+#: The key, in the per-call context mapping, that switches the facets off: the project
+#: declares a field or a ``needs_filter_data`` key named ``source``, which the name then
+#: reads, in every tier. As :data:`ORIGIN_KEY`, no name in a filter can be it.
+#: ``filter_common`` sets it, for a filter that reads ``source`` in such a project.
+SOURCE_SHADOWED_KEY = "\x00source"
 
 #: The key, in the per-call context mapping, of the need types ``c.is_a`` reads: each
 #: need type with itself and every type inheriting from it (:func:`is_a`). As
@@ -189,6 +200,31 @@ def _read_chain(
     return _resolve_chain(fallback, chain)
 
 
+def _read_facet(
+    facet: str,
+    read: Callable[[NeedItem], Any],
+    need: NeedItem | NeedPartItem,
+    fallback: Mapping[str, Any] | None = None,
+) -> Any:
+    """``source.<facet>``: *read* of the need (a part's need, for a part), the reader the
+    ``eval`` tier's :class:`~sphinx_needs._source_facets.SourceFacets` calls; where a
+    declaration of ``source`` switches the facets off, the attribute of what the name
+    reads, as ``eval`` reads it."""
+    if fallback is not None and SOURCE_SHADOWED_KEY in fallback:
+        return getattr(_read_name(SOURCE_NAME, need, fallback), facet)
+    return read(need._need if isinstance(need, NeedPartItem) else need)
+
+
+def _read_source(
+    need: NeedItem | NeedPartItem, fallback: Mapping[str, Any] | None = None
+) -> Any:
+    """``source`` alone: the facets, as the ``eval`` tier binds them; where a declaration
+    of the name switches them off, what the name reads."""
+    if fallback is not None and SOURCE_SHADOWED_KEY in fallback:
+        return _read_name(SOURCE_NAME, need, fallback)
+    return SourceFacets(need._need if isinstance(need, NeedPartItem) else need)
+
+
 #: Type alias for predicates returned by the fast-path builder.
 #: The second argument is an optional fallback mapping (e.g. ``config.filter_data``).
 SimplePredicate = Callable[[NeedItem | NeedPartItem, Mapping[str, Any] | None], bool]
@@ -223,6 +259,9 @@ class CompiledFilter:
     reads_types: bool = False
     """Whether the predicate reads the project's need types (``c.is_a("...")``): the
     caller then passes them under :data:`IS_A_KEY`."""
+    reads_source: bool = False
+    """Whether the predicate reads ``source``: in a project declaring the name, the
+    caller then passes :data:`SOURCE_SHADOWED_KEY`."""
 
 
 @lru_cache(maxsize=256)
@@ -248,6 +287,7 @@ def compile_portable(filter_string: str) -> CompiledFilter:
         None,
         any(map(_is_this_doc, nodes)),
         any(_is_c_check(node, "is_a") for node in nodes),
+        any(isinstance(node, ast.Name) and node.id == SOURCE_NAME for node in nodes),
     )
 
 
@@ -680,7 +720,11 @@ def _plain_name(node: ast.expr) -> str | None:
     """The name, if *node* is a plain name a field can hold (not one eval binds to its
     own context), for the arms that read it with no reader in between: they then cost
     what they cost before the other operands existed."""
-    if isinstance(node, ast.Name) and node.id not in _CONTEXT_ONLY_NAMES:
+    if (
+        isinstance(node, ast.Name)
+        and node.id not in _CONTEXT_ONLY_NAMES
+        and node.id != SOURCE_NAME
+    ):
         return node.id
     return None
 
@@ -715,7 +759,8 @@ def _operand(node: ast.expr) -> _Getter:
 
 
 def _field(node: ast.expr, *, within: str | None = None) -> _Getter:
-    """Compile a field (`var_field`): a name, or a ``var.`` chain.
+    """Compile a field (`var_field`): a name, a ``var.`` chain, or a facet of the need's
+    source, ``source.<facet>`` (``source`` alone reads the facets, as ``eval`` does).
 
     A name that no key defines reads a Python builtin, as eval reads it
     (:func:`_read_name`).
@@ -732,12 +777,22 @@ def _field(node: ast.expr, *, within: str | None = None) -> _Getter:
             or _is_dunder(node.id)
         ):
             raise _NotPortable(f"name:{node.id}")
+        if node.id == SOURCE_NAME:
+            return _read_source
         return partial(_read_name, node.id)
-    # a dotted name: only the variant data's, var.<key>...
+    # a dotted name: the variant data's, var.<key>..., or a facet, source.<facet>
     if isinstance(node, ast.Attribute):
         chain = _unpack_attribute_chain(node)
         if chain is not None and chain[0] in _FALLBACK_ROOTS:
             return partial(_read_chain, chain)
+        if (
+            chain is not None
+            and len(chain) == 2
+            and chain[0] == SOURCE_NAME
+            and (read := READERS.get(chain[1])) is not None
+        ):
+            return partial(_read_facet, chain[1], read)
+        # an unknown facet falls to eval, which reports it with the closest facet
         raise _NotPortable(_describe(node))
     if within is not None and not isinstance(node, ast.Subscript):
         raise _NotPortable(within)

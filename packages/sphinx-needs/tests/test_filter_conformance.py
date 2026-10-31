@@ -387,14 +387,7 @@ def test_a_case_loading_sphinx_codelinks_is_a_git_checkout() -> None:
 
 
 #: The cases red until sphinx-needs serves the ``source`` namespace.
-_PINNED = frozenset(
-    {
-        "source-facets-of-page-include-import-and-external-needs",
-        "source-facets-of-code-and-report-needs",
-        "source-paths-are-relative-to-the-source-directory",
-        "a-field-named-source-switches-the-facets-off",
-    }
-)
+_PINNED = frozenset({"a-field-named-source-switches-the-facets-off"})
 
 
 @pytest.mark.parametrize(

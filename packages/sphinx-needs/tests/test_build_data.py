@@ -140,12 +140,7 @@ def test_an_application_reads_no_build_data_until_it_builds(
     [
         "variant_data_proxy",
         "is_a_types",
-        pytest.param(
-            "source_shadowed",
-            marks=pytest.mark.xfail(
-                strict=True, reason="pinned before the source facets land"
-            ),
-        ),
+        "source_shadowed",
     ],
 )
 def test_the_build_data_cannot_be_written_through_the_configuration(
