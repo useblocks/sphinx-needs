@@ -17,6 +17,7 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx_needs._need_source import (
     NeedSourceHop,
     document_tab_width,
+    file_line,
     item_check,
     located_hops,
 )
@@ -545,8 +546,14 @@ class List2NeedDirective(SphinxDirective):
         )
 
     def _source_line(self, index: int) -> int:
-        """Return the 1-based source line number of content line ``index``."""
-        return self._source_info(index)[1] + 1
+        """Return the 1-based source line number of content line ``index``: in its
+        file, also inside an include's slice (:func:`file_line`)."""
+        source, offset = self._source_info(index)
+        if not self._content_is_source_mapped():
+            return offset + 1
+        return file_line(self.state, self.content, index, source, offset + 1) or (
+            offset + 1
+        )
 
     def make_hashed_id(self, type_prefix: str, title: str, id_length: int) -> str:
         hashable_content = title

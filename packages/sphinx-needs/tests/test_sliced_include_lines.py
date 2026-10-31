@@ -75,18 +75,13 @@ TRUE_LINES: dict[str, tuple[int, tuple[int, int]]] = {
     "REQ_LIST_B": (26, (26, 26)),
 }
 
-SLICED = pytest.mark.xfail(
-    strict=True, reason="#2428: a need in a slice records the slice's line"
-)
-
 VARIANTS = [
     pytest.param([], id="control"),
-    pytest.param([":start-line: 3"], id="start-line", marks=SLICED),
-    pytest.param([":start-after: START-HERE"], id="start-after", marks=SLICED),
+    pytest.param([":start-line: 3"], id="start-line"),
+    pytest.param([":start-after: START-HERE"], id="start-after"),
     pytest.param(
         [":start-line: 3", ":start-after: START-HERE"],
         id="start-line+start-after",
-        marks=SLICED,
     ),
     pytest.param([":end-line: 28"], id="end-line"),
     pytest.param([":end-before: END-HERE"], id="end-before"),
@@ -179,10 +174,8 @@ FORM_FEED_INSIDE = (
 @pytest.mark.parametrize(
     ("fragment", "start_line", "need_id", "line"),
     [
-        pytest.param(FORM_FEED_ABOVE, 3, "REQ_FF_ABOVE", 5, id="above", marks=SLICED),
-        pytest.param(
-            FORM_FEED_INSIDE, 2, "REQ_FF_INSIDE", 6, id="inside", marks=SLICED
-        ),
+        pytest.param(FORM_FEED_ABOVE, 3, "REQ_FF_ABOVE", 5, id="above"),
+        pytest.param(FORM_FEED_INSIDE, 2, "REQ_FF_INSIDE", 6, id="inside"),
     ],
 )
 def test_a_form_feed_is_no_line_break_of_the_file(

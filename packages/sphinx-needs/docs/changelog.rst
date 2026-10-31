@@ -296,6 +296,18 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 A need in a sliced include records the line it is written on in the file, where it recorded its line in the
+  slice **(changed output)** (:issue:`2428`)
+
+  docutils numbers an include's slice (``:start-line:``, ``:start-after:``) from the slice's first line, so a need
+  written on line 22 of a fragment included with ``:start-line: 3`` had ``lineno`` 19 in filters, tables and
+  needs.json, and its file hop had no line. sphinx-needs now recovers the slice's start from the include's options,
+  on docutils 0.21 and 0.22, so the ``lineno`` of a need directive's need, a ``list2need`` item and
+  sphinx-test-reports' test needs is the file's line, and so is the file hop of those and of the needs a
+  ``needimport`` or a ``needservice`` creates. docutils' own messages about the same text, and sphinx-needs' own
+  warnings, still name the slice's line. ``:end-line:`` and ``:end-before:`` moved nothing and still move nothing;
+  MyST includes are unchanged.
+
 - 🐛 A :ref:`needs_external_needs` source whose ``target_url`` renders an absolute URL (``scheme://…`` or ``//…``)
   links to that URL, where ``base_url/`` was put in front of it (:issue:`2389`)
 
@@ -389,11 +401,12 @@ Bug fixes
   its readers finished. Needs from
   ``needs_external_needs`` are not compared (:issue:`353`). See :ref:`incremental_builds`.
 
-- 🔧 ``ENV_DATA_VERSION`` is 20: the first build after upgrading re-reads every document, which records
+- 🔧 ``ENV_DATA_VERSION`` is 21: the first build after upgrading re-reads every document, which records
   the views and need roles each document holds and where each hidden need is (:issue:`2398`), stores each need's
   source as one class, computes the
-  links a ``copy`` or ``collect`` on a link type, refused until now, computes, and leaves the summary link types
-  out of a needflow without ``:link_types:``
+  links a ``copy`` or ``collect`` on a link type, refused until now, computes, leaves the summary link types
+  out of a needflow without ``:link_types:``, and records the file's line for a need in a sliced include
+  (:issue:`2428`)
 
 - 🐛 A need with ``:hide:`` is located as a visible need in the same place is **(changed output)** (:issue:`2398`)
 
