@@ -20,6 +20,7 @@ import pickle
 import shutil
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -34,9 +35,12 @@ from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
     NeedSourceSemantic,
+    _include_chain,
     block_check,
     fence_check,
     project_legacy,
+    with_external_sections,
+    with_page_paths,
 )
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.data import SphinxNeedsData
@@ -375,6 +379,80 @@ def test_a_myst_fence_must_be_the_directives_with_its_title():
     assert not check(["```{req}"], 1, None)
     assert not check([":id: X"], 1, None)
     assert fence_check("req", "")(["```{req}"], 1, None)
+
+
+def test_the_include_chain_reads_the_log_as_a_stack(tmp_path: Path):
+    """The files between the document's own entry and the innermost entry of the
+    source, innermost first; the entries after it are not in the chain. Nothing where
+    the source is not logged, an entry is not ``(path, four options)``, or a file of
+    the chain is not one."""
+    a, b = str(tmp_path / "a.rst"), str(tmp_path / "b.rst")
+    for path in (a, b):
+        Path(path).write_text("", encoding="utf-8")
+    plain, sliced = (None, None, "", ""), (2, None, "", "")
+    log = [("host.rst", plain), (a, plain), (b, plain), (a, sliced), ("x.rst", plain)]
+    document = SimpleNamespace(include_log=log)
+    assert _include_chain(document, a) == (b, a)
+    assert _include_chain(document, b) == (a,)
+    assert _include_chain(document, "host.rst") == ()
+    assert _include_chain(document, "nowhere.rst") == ()
+    malformed = SimpleNamespace(
+        include_log=[("host.rst", plain), (a, (2,)), (b, plain)]
+    )
+    assert _include_chain(malformed, b) == ()
+    missing = str(tmp_path / "missing.rst")
+    gone = SimpleNamespace(
+        include_log=[("host.rst", plain), (missing, plain), (a, plain)]
+    )
+    assert _include_chain(gone, a) == ()
+    assert _include_chain(object(), a) == ()
+
+
+def test_a_page_hop_given_no_path_takes_its_page_s_file(tmp_path: Path):
+    """``create_need``'s completion of a page hop with a document and no path: the
+    document's file, no line, its suffix where the hop has no language. A document with
+    no file, and a hop with a path or of another kind, are left as they are."""
+    (tmp_path / "a.rst").write_text("", encoding="utf-8")
+
+    def doc2path(docname: str) -> Path:
+        return tmp_path / f"{docname}.rst"
+
+    bare = NeedSourceHop(kind="page", document="a")
+    assert with_page_paths((bare,), tmp_path, doc2path) == (
+        dataclasses.replace(
+            bare,
+            physical=NeedSourcePhysical(root="srcdir", path="a.rst"),
+            language=".rst",
+        ),
+    )
+    spoken = dataclasses.replace(bare, language=".txt")
+    assert with_page_paths((spoken,), tmp_path, doc2path)[0].language == ".txt"
+    kept = (
+        NeedSourceHop(kind="page", document="missing"),
+        PAGE_A,
+        NeedSourceHop(kind="file"),
+    )
+    assert with_page_paths(kept, tmp_path, doc2path) is kept
+
+
+def test_an_external_hop_takes_a_list_of_section_names():
+    """An external need's sections, innermost first, are its external hop's semantic
+    location, outermost first: from a list of names alone, onto an external hop with
+    none."""
+    external = NeedSourceHop(kind="external", physical=NeedSourcePhysical(url="u"))
+    (hop,) = with_external_sections((external,), ["inner", "outer"])
+    assert hop.semantic == (
+        NeedSourceSemantic(kind="section", name="outer"),
+        NeedSourceSemantic(kind="section", name="inner"),
+    )
+    assert with_external_sections((external,), [])[0].semantic == ()
+    for sections in (None, "a string", ["a", 1], {"a": "b"}):
+        assert with_external_sections((external,), sections) == (external,)
+    known = dataclasses.replace(
+        external, semantic=(NeedSourceSemantic(kind="section", name="given"),)
+    )
+    assert with_external_sections((known,), ["other"]) == (known,)
+    assert with_external_sections((PAGE_A,), ["other"]) == (PAGE_A,)
 
 
 # --- the project ---------------------------------------------------------------------
