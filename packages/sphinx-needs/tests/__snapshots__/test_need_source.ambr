@@ -69,7 +69,7 @@
       "page [hidden] srcdir:hidden.rst:6-8 (.rst) :: section 'Hidden'",
     ]),
     'REQ_HIT_A': list([
-      'file srcdir:frag/hit.rst (.rst)',
+      'file srcdir:frag/hit.rst:4-5 (.rst)',
       "page [lines] srcdir:lines.rst (.rst) :: section 'Lines' > section 'Outside'",
     ]),
     'REQ_HOST1X': list([
@@ -168,11 +168,11 @@
       "page [srcread] srcdir:srcread.rst (.rst) :: section 'Source read'",
     ]),
     'REQ_STARTAFTERX': list([
-      'file srcdir:frag/after.rst (.rst)',
+      'file srcdir:frag/after.rst:5-6 (.rst)',
       "page [lines] srcdir:lines.rst (.rst) :: section 'Lines'",
     ]),
     'REQ_STARTLINEX': list([
-      'file srcdir:frag/from_line.rst (.rst)',
+      'file srcdir:frag/from_line.rst:4-5 (.rst)',
       "page [lines] srcdir:lines.rst (.rst) :: section 'Lines'",
     ]),
     'REQ_STDOX': list([
@@ -188,7 +188,7 @@
       "page [mdnest] srcdir:mdnest.md (.md) :: section 'MD nest'",
     ]),
     'REQ_X_TWIN': list([
-      'file srcdir:frag/twin.rst:3-4 (.rst)',
+      'file srcdir:frag/twin.rst:8-9 (.rst)',
       "page [lines] srcdir:lines.rst (.rst) :: section 'Lines' > section 'Outside'",
     ]),
     'R_8A5CD': list([

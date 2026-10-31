@@ -488,25 +488,28 @@ def test_the_hops_of_every_need(
         ("../outside/source_hops_module.py", None, None),
         ("autodoc_page.rst", None, None),
     ]
-    # the text the parser numbered is not the file's: no line, never a guessed one
+    # an include's slice: the line is the file's, the slice's start in it recovered
+    # from the include's options (#2428; it was no line)
     assert lines("REQ_STARTAFTERX") == [
-        ("frag/after.rst", None, None),
+        ("frag/after.rst", 5, 6),
         ("lines.rst", None, None),
     ]
     assert lines("REQ_STARTLINEX") == [
-        ("frag/from_line.rst", None, None),
+        ("frag/from_line.rst", 4, 5),
         ("lines.rst", None, None),
     ]
+    # the text the parser numbered is not the file's: no line, never a guessed one
     assert lines("REQ_SRCREADX") == [("srcread.rst", None, None)]
     assert lines("REQ_COLON2X") == [("mdnest.md", None, None)]
     assert lines("REQ_COLON3X") == [("mdnest.md", None, None)]
     # ... and where the file holds the text, its line
     assert lines("REQ_GRIDX") == [("lines.rst", 13, 14)]
     assert lines("REQ_QUOTEX") == [("mdnest.md", 17, None)]
-    # whole lines: ``.. req:: Alpha`` and ``:id: REQ_HIT_A`` are in the lines the parser
-    # claims (``.. req:: Alpha beta``, ``:id: REQ_HIT_AB``), but are not those lines
+    # in a slice, the file's lines (#2428): ``.. req:: Alpha`` and ``:id: REQ_HIT_A``
+    # on 4-5, where the slice's own count claimed lines 1-2 (``.. req:: Alpha beta``,
+    # ``:id: REQ_HIT_AB``), which hold them only as part of a line
     assert lines("REQ_HIT_A") == [
-        ("frag/hit.rst", None, None),
+        ("frag/hit.rst", 4, 5),
         ("lines.rst", None, None),
     ]
     # a source-read expansion inside a need's body and a list2need item: the first line
@@ -521,10 +524,10 @@ def test_the_hops_of_every_need(
     # takes the inner's fence line, 39, where it is written on 38
     (twin,) = (i for i, t in titles.items() if t == "twin" and i != "REQ_TWIN_INNERX")
     assert lines(twin) == [("mdnest.md", 39, None)]
-    # ... and in rst, an identical copy of the block at the line the parser claims (the
-    # directive shown in a literal block, then the slice after ``MARK``): a KNOWN GAP, the
-    # need takes the example's lines, 3-4, where it is written on 8-9
-    assert lines("REQ_X_TWIN") == [("frag/twin.rst", 3, 4), ("lines.rst", None, None)]
+    # ... while in rst, a slice after an example of the directive (a literal block, then
+    # the slice after ``MARK``) gives the need its own lines, 8-9, where the slice's count
+    # took the example's, 3-4 (#2428)
+    assert lines("REQ_X_TWIN") == [("frag/twin.rst", 8, 9), ("lines.rst", None, None)]
     # lines as docutils numbers them: a form feed, tabs at the documents' tab_width 4
     # (an internal tab in the title, an indenting one), a BOM
     assert lines("REQ_FORMFEEDX") == [("formfeed.rst", 8, 11)]
@@ -588,6 +591,44 @@ def test_the_hops_of_every_need(
         ("section", "Hidden"),
         ("py:function", "hidden_f"),
     ]
+
+
+def test_a_sliced_include_gives_the_file_lines(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+):
+    """The needs of ``lines.rst``'s sliced includes record the lines they are written
+    on in their files, and their file hops those lines (#2428)."""
+    app = make_app("html", srcdir=_copy(tmp_path), freshenv=True)
+    try:
+        app.build()
+        assert_no_warnings(app)
+        needs = SphinxNeedsData(app.env).get_needs_view()
+
+        def lines(need_id: str) -> tuple[int | None, list[tuple[Any, ...]]]:
+            return needs[need_id]["lineno"], [
+                (h.physical.path, h.physical.start_line, h.physical.end_line)
+                for h in needs[need_id].source.hops
+                if h.physical is not None
+            ]
+
+        assert lines("REQ_STARTAFTERX") == (
+            5,
+            [("frag/after.rst", 5, 6), ("lines.rst", None, None)],
+        )
+        assert lines("REQ_STARTLINEX") == (
+            4,
+            [("frag/from_line.rst", 4, 5), ("lines.rst", None, None)],
+        )
+        assert lines("REQ_HIT_A") == (
+            4,
+            [("frag/hit.rst", 4, 5), ("lines.rst", None, None)],
+        )
+        assert lines("REQ_X_TWIN") == (
+            8,
+            [("frag/twin.rst", 8, 9), ("lines.rst", None, None)],
+        )
+    finally:
+        app.cleanup()
 
 
 @pytest.mark.skipif(not parallel_available, reason="Parallel execution not supported")

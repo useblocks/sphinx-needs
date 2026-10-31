@@ -1,0 +1,934 @@
+{
+  "ENV_DATA_VERSION": 21,
+  "env": {
+    "_need_all_needextend": "dict[str, NeedsExtendType]",
+    "_needs_all_docs": "dict[str, list[str]]",
+    "_needs_all_needs": "dict[str, NeedItem]",
+    "_needs_all_needumls": "dict[str, NeedsUmlType]",
+    "_needs_all_nodes": "dict[str, Need]",
+    "_needs_builtin_services_read_with": "tuple[str, ...] | None",
+    "_needs_is_post_processed": "bool",
+    "_needs_resolved_schemas": "list[SchemasRootType]",
+    "_needs_role_refs": "dict[str, set[str]]",
+    "_needs_schema": "FieldsSchema",
+    "_needs_types_read_with": "list[dict[str, Any]] | None"
+  },
+  "classes": {
+    "sphinx_needs._need_source.NeedSourceHop": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "kind: str",
+        "origin: str | None",
+        "physical: NeedSourcePhysical | None",
+        "semantic: tuple[NeedSourceSemantic, ...] | None",
+        "document: str | None",
+        "language: str | None"
+      ]
+    },
+    "sphinx_needs._need_source.NeedSourcePhysical": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "root: str | None",
+        "path: str | None",
+        "url: str | None",
+        "start_line: int | None",
+        "end_line: int | None"
+      ]
+    },
+    "sphinx_needs._need_source.NeedSourceSemantic": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "kind: str",
+        "name: str",
+        "extras: tuple[tuple[str, str], ...]"
+      ]
+    },
+    "sphinx_needs.data.ExtendType": {
+      "kind": "enum",
+      "members": [
+        "REPLACE = ''",
+        "DELETE = '-'",
+        "APPEND = '+'"
+      ]
+    },
+    "sphinx_needs.data.GraphvizStyleType": {
+      "kind": "TypedDict",
+      "total": false,
+      "keys": [
+        "root: dict[str, str]",
+        "graph: dict[str, str]",
+        "node: dict[str, str]",
+        "edge: dict[str, str]"
+      ]
+    },
+    "sphinx_needs.data.NeedsBarType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "docname: str",
+        "lineno: int",
+        "target_id: str",
+        "status: list[str]",
+        "tags: list[str]",
+        "types: list[str]",
+        "filter: str | None",
+        "error_id: str",
+        "title: str | None",
+        "content: StringList",
+        "legend: bool",
+        "x_axis_title: str | None",
+        "xlabels: list[str] | None",
+        "xlabels_rotation: str | None",
+        "y_axis_title: str | None",
+        "ylabels: list[str] | None",
+        "ylabels_rotation: str | None",
+        "separator: str",
+        "stacked: bool",
+        "show_sum: bool | None",
+        "show_top_sum: bool | None",
+        "sum_rotation: str | None",
+        "transpose: bool",
+        "horizontal: bool",
+        "style: str",
+        "colors: list[str] | None",
+        "text_color: str | None"
+      ]
+    },
+    "sphinx_needs.data.NeedsContentInfoType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "jinja_content: bool",
+        "template: str | None",
+        "pre_template: str | None",
+        "post_template: str | None",
+        "doctype: str",
+        "content: str",
+        "pre_content: str | None",
+        "post_content: str | None"
+      ]
+    },
+    "sphinx_needs.data.NeedsExtendType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "docname: str",
+        "lineno: int",
+        "target_id: str",
+        "filter: str",
+        "filter_is_id: bool",
+        "modifications: list[tuple[str, ExtendType, FieldLiteralValue | FieldFunctionArray | None]]",
+        "list_modifications: list[tuple[str, ExtendType, LinksLiteralValue | LinksFunctionArray]]",
+        "strict: bool",
+        "extend_priority: int"
+      ]
+    },
+    "sphinx_needs.data.NeedsExtractType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "docname: str",
+        "lineno: int",
+        "target_id: str",
+        "status: list[str]",
+        "tags: list[str]",
+        "types: list[str]",
+        "filter: str | None",
+        "sort_by: str | None",
+        "filter_code: StringList",
+        "filter_func: str | None",
+        "filter_warning: str | None",
+        "layout: str | None",
+        "style: str | None",
+        "show_filters: bool",
+        "filter_arg: str | None"
+      ]
+    },
+    "sphinx_needs.data.NeedsFlowType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "docname: str",
+        "lineno: int",
+        "target_id: str",
+        "status: list[str]",
+        "tags: list[str]",
+        "types: list[str]",
+        "filter: str | None",
+        "sort_by: str | None",
+        "filter_code: StringList",
+        "filter_func: str | None",
+        "filter_warning: str | None",
+        "show_legend: bool",
+        "show_filters: bool",
+        "show_link_names: bool",
+        "link_types: list[str]",
+        "config: str",
+        "config_names: str",
+        "scale: str",
+        "highlight: str",
+        "align: str | None",
+        "debug: bool",
+        "caption: str | None",
+        "classes: list[str]",
+        "alt: str | None",
+        "root_id: str | None",
+        "root_direction: Literal['both', 'incoming', 'outgoing']",
+        "root_depth: int | None",
+        "border_color: str | None",
+        "graphviz_style: GraphvizStyleType",
+        "max_items: int | None",
+        "direction: Literal['down', 'up', 'right', 'left'] | None",
+        "config_direction: Literal['down', 'up', 'right', 'left'] | None",
+        "show_link_names_value: Literal['none', 'outgoing', 'incoming', 'type'] | None",
+        "show_legend_key: str"
+      ]
+    },
+    "sphinx_needs.data.NeedsGanttType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "docname: str",
+        "lineno: int",
+        "target_id: str",
+        "status: list[str]",
+        "tags: list[str]",
+        "types: list[str]",
+        "filter: str | None",
+        "sort_by: str | None",
+        "filter_code: StringList",
+        "filter_func: str | None",
+        "filter_warning: str | None",
+        "show_legend: bool",
+        "show_filters: bool",
+        "show_link_names: bool",
+        "link_types: list[str]",
+        "config: str",
+        "config_names: str",
+        "scale: str",
+        "highlight: str",
+        "align: str | None",
+        "debug: bool",
+        "caption: str | None",
+        "starts_with_links: list[str]",
+        "starts_after_links: list[str]",
+        "ends_with_links: list[str]",
+        "milestone_filter: str",
+        "start_date: str | None",
+        "timeline: Literal[None, 'daily', 'weekly', 'monthly']",
+        "no_color: bool",
+        "duration_option: str",
+        "completion_option: str"
+      ]
+    },
+    "sphinx_needs.data.NeedsInfoComputedType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "is_need: bool",
+        "is_part: bool",
+        "parts: Mapping[str, NeedsPartType]",
+        "is_modified: bool",
+        "modifications: int",
+        "id_parent: str",
+        "id_complete: str",
+        "section_name: str | None",
+        "parent_need: str | None",
+        "constraints_results: Mapping[str, Mapping[str, bool]] | None",
+        "constraints_error: str | None",
+        "constraints_passed: bool | None"
+      ]
+    },
+    "sphinx_needs.data.NeedsInfoType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "id: str",
+        "type: str",
+        "title: str",
+        "status: str | None",
+        "tags: list[str]",
+        "collapse: bool",
+        "hide: bool",
+        "layout: str | None",
+        "style: str | None",
+        "external_css: str",
+        "type_name: str",
+        "type_prefix: str",
+        "type_color: str",
+        "type_style: str",
+        "constraints: list[str]",
+        "arch: Mapping[str, str]",
+        "sections: tuple[str, ...]",
+        "signature: str | None",
+        "has_dead_links: bool",
+        "has_forbidden_dead_links: bool"
+      ]
+    },
+    "sphinx_needs.data.NeedsListType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "docname: str",
+        "lineno: int",
+        "target_id: str",
+        "status: list[str]",
+        "tags: list[str]",
+        "types: list[str]",
+        "filter: str | None",
+        "sort_by: str | None",
+        "filter_code: StringList",
+        "filter_func: str | None",
+        "filter_warning: str | None",
+        "show_tags: bool",
+        "show_status: bool",
+        "show_filters: bool",
+        "max_items: int | None"
+      ]
+    },
+    "sphinx_needs.data.NeedsPartType": {
+      "kind": "TypedDict",
+      "total": false,
+      "keys": [
+        "id: str",
+        "content: str"
+      ]
+    },
+    "sphinx_needs.data.NeedsPieType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "docname: str",
+        "lineno: int",
+        "target_id: str",
+        "status: list[str]",
+        "tags: list[str]",
+        "types: list[str]",
+        "filter: str | None",
+        "title: str",
+        "content: str",
+        "legend: bool",
+        "explode: list[float] | None",
+        "style: str | None",
+        "labels: list[str] | None",
+        "colors: list[str] | None",
+        "text_color: str | None",
+        "shadow: bool",
+        "filter_func: str | None",
+        "filter_warning: str | None"
+      ]
+    },
+    "sphinx_needs.data.NeedsSequenceType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "docname: str",
+        "lineno: int",
+        "target_id: str",
+        "status: list[str]",
+        "tags: list[str]",
+        "types: list[str]",
+        "filter: str | None",
+        "sort_by: str | None",
+        "filter_code: StringList",
+        "filter_func: str | None",
+        "filter_warning: str | None",
+        "show_legend: bool",
+        "show_filters: bool",
+        "show_link_names: bool",
+        "link_types: list[str]",
+        "config: str",
+        "config_names: str",
+        "scale: str",
+        "highlight: str",
+        "align: str | None",
+        "debug: bool",
+        "caption: str | None",
+        "start: str",
+        "max_items: int | None"
+      ]
+    },
+    "sphinx_needs.data.NeedsSourceInfoType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "docname: str | None",
+        "lineno: int | None",
+        "lineno_content: int | None",
+        "external_url: str | None",
+        "is_import: bool",
+        "is_external: bool"
+      ]
+    },
+    "sphinx_needs.data.NeedsTableType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "docname: str",
+        "lineno: int",
+        "target_id: str",
+        "status: list[str]",
+        "tags: list[str]",
+        "types: list[str]",
+        "filter: str | None",
+        "sort_by: str | None",
+        "filter_code: StringList",
+        "filter_func: str | None",
+        "filter_warning: str | None",
+        "caption: str | None",
+        "classes: list[str]",
+        "columns: list[tuple[str, str]]",
+        "colwidths: list[int]",
+        "style: str",
+        "style_row: str",
+        "sort: str",
+        "show_filters: bool",
+        "show_parts: bool",
+        "max_items: int | None",
+        "page_size: int | None"
+      ]
+    },
+    "sphinx_needs.data.NeedsUmlType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "docname: str",
+        "lineno: int",
+        "target_id: str",
+        "caption: str | None",
+        "content: str",
+        "scale: str",
+        "align: str",
+        "config_names: str | None",
+        "config: str",
+        "debug: bool",
+        "extra: dict[str, str]",
+        "key: str | None",
+        "save: str | None",
+        "is_arch: bool",
+        "content_calculated: str",
+        "process_time: float"
+      ]
+    },
+    "sphinx_needs.derive.DeriveInvalid": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "kind: str | None",
+        "reason: str",
+        "fallback: bool"
+      ]
+    },
+    "sphinx_needs.derive.DeriveJoin": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "field: str",
+        "equals: str"
+      ]
+    },
+    "sphinx_needs.derive.DeriveRule": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "kind: DeriveKind",
+        "field: str | None",
+        "fields: tuple[str, ...]",
+        "exclude: tuple[str, ...]",
+        "over: str | None",
+        "from_need: str | None",
+        "join: DeriveJoin | None",
+        "where: str | None",
+        "test: str | None",
+        "empty: bool | None",
+        "select: Literal['first', 'unique', 'list']",
+        "transitive: bool",
+        "include_self: bool",
+        "include_parts: bool",
+        "after_derived: bool",
+        "on_link: bool"
+      ]
+    },
+    "sphinx_needs.directives.needbar.Needbar": {
+      "kind": "node",
+      "attributes": "NeedsBarType"
+    },
+    "sphinx_needs.directives.needextend.Needextend": {
+      "kind": "node",
+      "attributes": null
+    },
+    "sphinx_needs.directives.needextract.Needextract": {
+      "kind": "node",
+      "attributes": "NeedsExtractType"
+    },
+    "sphinx_needs.directives.needflow._directive.NeedflowGraphiz": {
+      "kind": "node",
+      "attributes": "NeedsFlowType"
+    },
+    "sphinx_needs.directives.needflow._directive.NeedflowPlantuml": {
+      "kind": "node",
+      "attributes": "NeedsFlowType"
+    },
+    "sphinx_needs.directives.needgantt.Needgantt": {
+      "kind": "node",
+      "attributes": "NeedsGanttType"
+    },
+    "sphinx_needs.directives.needlist.Needlist": {
+      "kind": "node",
+      "attributes": "NeedsListType"
+    },
+    "sphinx_needs.directives.needpie.Needpie": {
+      "kind": "node",
+      "attributes": "NeedsPieType"
+    },
+    "sphinx_needs.directives.needsequence.Needsequence": {
+      "kind": "node",
+      "attributes": "NeedsSequenceType"
+    },
+    "sphinx_needs.directives.needtable.Needtable": {
+      "kind": "node",
+      "attributes": "NeedsTableType"
+    },
+    "sphinx_needs.directives.needuml.Needuml": {
+      "kind": "node",
+      "attributes": null
+    },
+    "sphinx_needs.functions.functions.DynamicFunctionParsed": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "name: str",
+        "args: tuple[DFuncArg, ...]",
+        "kwargs: tuple[tuple[str, DFuncArg], ...]"
+      ]
+    },
+    "sphinx_needs.functions.functions.NeedAttribute": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "name: str"
+      ]
+    },
+    "sphinx_needs.need_item.NeedConstraintResults": {
+      "kind": "slots",
+      "slots": [
+        "_data: Mapping[str, tuple[tuple[str, bool, str | None], ...]]"
+      ]
+    },
+    "sphinx_needs.need_item.NeedItem": {
+      "kind": "slots",
+      "slots": [
+        "_backlinks: dict[str, list[NeedLink]]",
+        "_backlinks_keymap: dict[str, str]",
+        "_computed: NeedsInfoComputedType",
+        "_constraint_results: NeedConstraintResults | None",
+        "_content: NeedsContent",
+        "_core: NeedsInfoType",
+        "_derived: frozenset[str]",
+        "_dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray]",
+        "_extras: dict[str, AllowedTypes | None]",
+        "_links: dict[str, list[NeedLink]]",
+        "_modifications: tuple[NeedModification, ...]",
+        "_parts: dict[str, NeedPartData]",
+        "_source: NeedItemSourceProtocol"
+      ]
+    },
+    "sphinx_needs.need_item.NeedItemSource": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "hops: tuple[NeedSourceHop, ...]",
+        "_lineno: int | None",
+        "lineno_content: int | None",
+        "parser_lineno: int | None",
+        "is_import: bool",
+        "dict_repr: NeedsSourceInfoType"
+      ]
+    },
+    "sphinx_needs.need_item.NeedLink": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "id: str",
+        "part: str | None",
+        "condition: str | None",
+        "_filter_string: str"
+      ]
+    },
+    "sphinx_needs.need_item.NeedModification": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "docname: str | None",
+        "lineno: int | None"
+      ]
+    },
+    "sphinx_needs.need_item.NeedPartData": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "id: str",
+        "content: str",
+        "backlinks: dict[str, list[NeedLink]]"
+      ]
+    },
+    "sphinx_needs.need_item.NeedsContent": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "doctype: str",
+        "content: str",
+        "pre_content: str | None",
+        "post_content: str | None",
+        "jinja_content: bool",
+        "template: str | None",
+        "pre_template: str | None",
+        "post_template: str | None",
+        "dict_repr: NeedsContentInfoType"
+      ]
+    },
+    "sphinx_needs.needs_schema.BackLinksSchema": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "name: str",
+        "link_type: str",
+        "description: str",
+        "schema: Mapping[str, int]",
+        "severity: Severity | None"
+      ]
+    },
+    "sphinx_needs.needs_schema.FieldFunctionArray": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "value: tuple[DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed | str | bool | int | float, ...]"
+      ]
+    },
+    "sphinx_needs.needs_schema.FieldLiteralValue": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "value: AllowedTypes"
+      ]
+    },
+    "sphinx_needs.needs_schema.FieldSchema": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "name: str",
+        "description: str",
+        "schema: FieldSchemaTypes",
+        "nullable: bool",
+        "directive_option: bool",
+        "parse_dynamic_functions: bool",
+        "parse_variants: bool",
+        "allow_defaults: bool",
+        "allow_extend: bool",
+        "predicate_defaults: tuple[tuple[str, FieldLiteralValue | FieldFunctionArray], ...]",
+        "default: FieldLiteralValue | FieldFunctionArray | None",
+        "derive: Derive | None",
+        "derive_by_type: Mapping[str, Derive] | None",
+        "severity: Severity | None"
+      ]
+    },
+    "sphinx_needs.needs_schema.FieldsSchema": {
+      "kind": "slots",
+      "slots": [
+        "_absent: dict[str, FieldSchema | LinkSchema]",
+        "_back_links: dict[str, dict[str, BackLinksSchema]]",
+        "_core_fields: dict[str, FieldSchema]",
+        "_derived_names: frozenset[str] | None",
+        "_extra_fields: dict[str, FieldSchema]",
+        "_frozen: bool",
+        "_global_view: TypeFieldsSchema | None",
+        "_id_patterns: dict[str, tuple[tuple[str, str], ...]]",
+        "_link_fields: dict[str, LinkSchema]",
+        "_local: dict[str, frozenset[str]]",
+        "_need_types: frozenset[str] | None",
+        "_project_fields: set[str]",
+        "_type_overlays: dict[str, dict[str, FieldSchema | LinkSchema]]",
+        "_type_views: dict[str, TypeFieldsSchema]",
+        "_view_of: tuple[FieldsSchema, str | None] | None"
+      ]
+    },
+    "sphinx_needs.needs_schema.LinkDisplayConfig": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "incoming: str",
+        "outgoing: str",
+        "color: str",
+        "style: str",
+        "style_part: str",
+        "style_start: str",
+        "style_end: str"
+      ]
+    },
+    "sphinx_needs.needs_schema.LinkSchema": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "name: str",
+        "description: str",
+        "schema: LinkSchemaType",
+        "directive_option: bool",
+        "allow_extend: bool",
+        "parse_dynamic_functions: bool",
+        "parse_variants: bool",
+        "parse_conditions: bool",
+        "allow_defaults: bool",
+        "predicate_defaults: tuple[tuple[str, LinksLiteralValue | LinksFunctionArray], ...]",
+        "default: LinksLiteralValue | LinksFunctionArray | None",
+        "display: LinkDisplayConfig",
+        "copy: bool",
+        "allow_dead_links: bool",
+        "summary: bool",
+        "target_types: LinkTargetTypes | None",
+        "derive: Derive | None",
+        "derive_by_type: Mapping[str, Derive] | None",
+        "severity: Severity | None"
+      ]
+    },
+    "sphinx_needs.needs_schema.LinkTargetTypes": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "names: tuple[str, ...]",
+        "types: frozenset[str]",
+        "declared_by: str | None"
+      ]
+    },
+    "sphinx_needs.needs_schema.LinksFunctionArray": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "value: tuple[NeedLink | DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed, ...]"
+      ]
+    },
+    "sphinx_needs.needs_schema.LinksLiteralValue": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "value: list[NeedLink]"
+      ]
+    },
+    "sphinx_needs.needs_schema.TypeFieldsSchema": {
+      "kind": "slots",
+      "slots": [
+        "_absent: dict[str, FieldSchema | LinkSchema]",
+        "_back_links: dict[str, dict[str, BackLinksSchema]]",
+        "_core_fields: dict[str, FieldSchema]",
+        "_derived_names: frozenset[str] | None",
+        "_extra_fields: dict[str, FieldSchema]",
+        "_frozen: bool",
+        "_global_view: TypeFieldsSchema | None",
+        "_id_patterns: dict[str, tuple[tuple[str, str], ...]]",
+        "_link_fields: dict[str, LinkSchema]",
+        "_local: dict[str, frozenset[str]]",
+        "_need_types: frozenset[str] | None",
+        "_project_fields: set[str]",
+        "_type_overlays: dict[str, dict[str, FieldSchema | LinkSchema]]",
+        "_type_views: dict[str, TypeFieldsSchema]",
+        "_view_of: tuple[FieldsSchema, str | None] | None",
+        "_undeclared: frozenset[str]"
+      ]
+    },
+    "sphinx_needs.nodes.Need": {
+      "kind": "node",
+      "attributes": null
+    },
+    "sphinx_needs.roles.need_count.NeedCount": {
+      "kind": "node",
+      "attributes": null
+    },
+    "sphinx_needs.roles.need_func.NeedFunc": {
+      "kind": "node",
+      "attributes": null
+    },
+    "sphinx_needs.roles.need_incoming.NeedIncoming": {
+      "kind": "node",
+      "attributes": null
+    },
+    "sphinx_needs.roles.need_outgoing.NeedOutgoing": {
+      "kind": "node",
+      "attributes": null
+    },
+    "sphinx_needs.roles.need_part.NeedPart": {
+      "kind": "node",
+      "attributes": null
+    },
+    "sphinx_needs.roles.need_ref.NeedRef": {
+      "kind": "node",
+      "attributes": null
+    },
+    "sphinx_needs.schema.config.AllOfSchemaType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "allOf: NotRequired[list[RefItemType | NeedFieldsSchemaType]]"
+      ]
+    },
+    "sphinx_needs.schema.config.FieldBooleanSchemaType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "type: Literal['boolean']",
+        "const: NotRequired[bool]"
+      ]
+    },
+    "sphinx_needs.schema.config.FieldIntegerSchemaType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "type: Literal['integer']",
+        "minimum: NotRequired[int]",
+        "exclusiveMinimum: NotRequired[int]",
+        "maximum: NotRequired[int]",
+        "exclusiveMaximum: NotRequired[int]",
+        "multipleOf: NotRequired[int]",
+        "enum: NotRequired[list[int]]",
+        "const: NotRequired[int]"
+      ]
+    },
+    "sphinx_needs.schema.config.FieldMultiValueSchemaType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "type: Literal['array']",
+        "items: FieldBaseSchemaTypes",
+        "minItems: NotRequired[int]",
+        "maxItems: NotRequired[int]",
+        "contains: NotRequired[FieldBaseSchemaTypes]",
+        "minContains: NotRequired[int]",
+        "maxContains: NotRequired[int]",
+        "uniqueItems: NotRequired[bool]"
+      ]
+    },
+    "sphinx_needs.schema.config.FieldNumberSchemaType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "type: Literal['number']",
+        "minimum: NotRequired[float]",
+        "exclusiveMinimum: NotRequired[float]",
+        "maximum: NotRequired[float]",
+        "exclusiveMaximum: NotRequired[float]",
+        "multipleOf: NotRequired[float]",
+        "enum: NotRequired[list[float]]",
+        "const: NotRequired[float]"
+      ]
+    },
+    "sphinx_needs.schema.config.FieldStringSchemaType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "type: Literal['string']",
+        "minLength: NotRequired[int]",
+        "maxLength: NotRequired[int]",
+        "pattern: NotRequired[str]",
+        "format: NotRequired[Literal['date-time', 'date', 'time', 'duration', 'email', 'uri', 'uuid']]",
+        "enum: NotRequired[list[str]]",
+        "const: NotRequired[str]"
+      ]
+    },
+    "sphinx_needs.schema.config.LinkItemSchemaType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "type: Literal['string']",
+        "minLength: NotRequired[int]",
+        "maxLength: NotRequired[int]",
+        "pattern: NotRequired[str]"
+      ]
+    },
+    "sphinx_needs.schema.config.LinkSchemaType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "type: Literal['array']",
+        "items: NotRequired[LinkItemSchemaType]",
+        "minItems: NotRequired[int]",
+        "maxItems: NotRequired[int]",
+        "contains: NotRequired[LinkItemSchemaType]",
+        "minContains: NotRequired[int]",
+        "maxContains: NotRequired[int]"
+      ]
+    },
+    "sphinx_needs.schema.config.NeedFieldsSchemaType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "allOf: NotRequired[list[RefItemType | NeedFieldsSchemaType]]",
+        "type: NotRequired[Literal['object']]",
+        "properties: NotRequired[dict[str, FieldAndLinkSchemaTypes]]",
+        "required: NotRequired[list[str]]",
+        "unevaluatedProperties: NotRequired[bool]"
+      ]
+    },
+    "sphinx_needs.schema.config.RefItemType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "$ref: str"
+      ]
+    },
+    "sphinx_needs.schema.config.ResolvedLinkSchemaType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "type: Literal['array']",
+        "items: NotRequired[ValidateSchemaType]",
+        "contains: NotRequired[ValidateSchemaType]",
+        "minContains: NotRequired[int]",
+        "maxContains: NotRequired[int]"
+      ]
+    },
+    "sphinx_needs.schema.config.SchemasRootType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "idx: int",
+        "id: NotRequired[str]",
+        "severity: Literal['violation', 'warning', 'info']",
+        "message: NotRequired[str]",
+        "select: NotRequired[RefItemType | AllOfSchemaType | NeedFieldsSchemaType]",
+        "validate: ValidateSchemaType"
+      ]
+    },
+    "sphinx_needs.schema.config.ValidateSchemaType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "local: NotRequired[RefItemType | AllOfSchemaType | NeedFieldsSchemaType]",
+        "network: NotRequired[dict[str, ResolvedLinkSchemaType]]",
+        "network_back: NotRequired[dict[str, ResolvedLinkSchemaType]]"
+      ]
+    },
+    "sphinx_needs.variant_data.VariantDataParsed": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "expression: str"
+      ]
+    },
+    "sphinx_needs.variant_data.VariantDataProxy": {
+      "kind": "slots",
+      "slots": [
+        "_data: dict[str, object]",
+        "_path: tuple[str, ...]"
+      ]
+    },
+    "sphinx_needs.variants.VariantFunctionParsed": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "expressions: tuple[tuple[str, bool, str | bool | int | float], ...]",
+        "final_value: str | bool | int | float | None"
+      ]
+    }
+  }
+}

@@ -42,11 +42,15 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 20
+ENV_DATA_VERSION: Final = 21
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
 handing a pickled doctree to code that no longer understands it.
+``tests/test_env_data_fingerprint.py`` fails when the shape changes without a bump. A
+change of what the stored values mean, or of what is rendered from them (versions 8, 10
+to 12, 15, 17, 19 and 20), leaves the shape as it was, so that test cannot see it, and
+the bump is needed all the same.
 
 Version 7 adds the resolved needflow presentation options to :class:`NeedsFlowType`.
 They are read while the diagram is rendered, i.e. from the doctree, so an unbumped
@@ -144,6 +148,13 @@ need type's entry of it, which version 19 ignored (a ``needs.config`` finding), 
 makes it a summary, left out of a needflow without ``:link_types:``. The configuration
 does not change, so without the bump an upgraded build would keep the old diagrams on
 the pages whose sources did not change.
+
+Version 21 changes what the stored values mean again: a need written in an include's
+slice (``:start-line:``, ``:start-after:``) records the line it is written on in its
+file as its ``lineno``, and its file hop that line where the file holds its text there,
+where version 20 stored the line in the slice and, mostly, no hop line (#2428). The
+sources do not change, so without the bump an upgraded build would keep the slice's
+lines on the pages whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

@@ -34,6 +34,7 @@ from sphinx_needs._need_source import (
     NeedSourceSemantic,
     checked_hops,
     directive_hops,
+    directive_line,
     first_line,
     placement_index,
     placement_of,
@@ -178,16 +179,17 @@ class NeedItemSource:
         directive where the file holds them), after ``first``: the hops the need's text
         came through before the directive, innermost first, if any. ``lineno`` is the
         line the directive is written on, resolved through the state machine (which
-        ``rst_prolog``, an include or generated input shift); its content offset and its
-        line in the parser's own count are kept as ``lineno_content`` and
-        ``parser_lineno``.
+        ``rst_prolog``, an include or generated input shift), in its file also inside an
+        include's slice (``:start-line:``, ``:start-after:``), where docutils counts from
+        the slice's first line; its content offset and its line in the parser's own
+        count are kept as ``lineno_content`` and ``parser_lineno``.
 
         :param directive: The directive, a docutils ``Directive`` (a ``SphinxDirective``
             is one) being run in a Sphinx build.
         :param first: Hops to place before the directive's own (**provisional**, as the
             hops are).
         """
-        _, resolved = directive.state_machine.get_source_and_line(directive.lineno)
+        _, resolved = directive_line(directive)
         return cls(
             directive_hops(directive, first=first),
             lineno=resolved or directive.lineno,
@@ -558,7 +560,7 @@ class NeedConstraintResults(Mapping[str, tuple[tuple[str, bool, str | None], ...
     def __init__(
         self, constraints: Mapping[str, tuple[tuple[str, bool, str | None], ...]]
     ) -> None:
-        self._data = constraints
+        self._data: Mapping[str, tuple[tuple[str, bool, str | None], ...]] = constraints
 
     def __getitem__(self, key: str) -> tuple[tuple[str, bool, str | None], ...]:
         return self._data[key]
@@ -849,14 +851,14 @@ class NeedItem:
                 raise TypeError("NeedItem dynamic_fields must be a dictionary or None.")
 
         # set internal fields
-        self._dynamic_fields = (
+        self._dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray] = (
             dynamic_fields.copy() if dynamic_fields is not None else {}
         )
-        self._core = core.copy()
-        self._extras = extras.copy()
+        self._core: NeedsInfoType = core.copy()
+        self._extras: dict[str, AllowedTypes | None] = extras.copy()
         # one set shared by the needs of a build, per process (a parallel worker
         # unpickles its own): a frozenset is not copied
-        self._derived = frozenset(derived)
+        self._derived: frozenset[str] = frozenset(derived)
         self._links: dict[str, list[NeedLink]] = {
             key: [NeedLink.from_string(v) if isinstance(v, str) else v for v in value]
             for key, value in links.items()
@@ -870,16 +872,20 @@ class NeedItem:
                 ]
                 for key, value in backlinks.items()
             }
-        self._backlinks_keymap = {f"{key}_back": key for key in self._links}
+        self._backlinks_keymap: dict[str, str] = {
+            f"{key}_back": key for key in self._links
+        }
         """mapping of exposed backlink keys to actual link keys, e.g. {'link_type_back': 'link_type'}
         
         This is required for distinct access to backlinks in the NeedItem API.
 
         """
-        self._content = content
-        self._source = source if source is not None else NeedItemSource()
+        self._content: NeedsContent = content
+        self._source: NeedItemSourceProtocol = (
+            source if source is not None else NeedItemSource()
+        )
         self.set_parts(parts, _recompute=False)
-        self._modifications = tuple(modifications)
+        self._modifications: tuple[NeedModification, ...] = tuple(modifications)
         self.set_constraint_results(constraint_results, _recompute=False)
         self._recompute()
 
@@ -1542,7 +1548,7 @@ class NeedItem:
             self._validate_part(part)
         if len({p.id for p in parts}) != len(parts):
             raise ValueError("NeedItem parts must have unique IDs.")
-        self._parts = {part.id: part for part in parts}
+        self._parts: dict[str, NeedPartData] = {part.id: part for part in parts}
         if _recompute:
             self._recompute()
 
@@ -1582,7 +1588,7 @@ class NeedItem:
             raise ValueError(
                 "constraint_results keys must match the constraints defined in the need."
             )
-        self._constraint_results = constraint_results
+        self._constraint_results: NeedConstraintResults | None = constraint_results
         if _recompute:
             self._recompute()
 
