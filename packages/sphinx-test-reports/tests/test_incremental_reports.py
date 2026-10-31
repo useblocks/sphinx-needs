@@ -445,7 +445,6 @@ def test_an_environment_pickled_at_env_version_1_is_read_again(make_app, tmp_pat
     assert SphinxNeedsData(app.env).get_needs_view()["TC_C"]["case_line"] == "10"
 
 
-@pytest.mark.xfail(strict=True, reason="env_version is still 2")
 def test_an_environment_pickled_at_env_version_2_is_read_again(make_app, tmp_path):
     """Version 2 recorded a test case's code hop with no language. Nothing in the
     sources or the configuration changed: ``env_version`` 3 is what has the build read

@@ -247,8 +247,9 @@ def setup(app: Sphinx) -> dict[str, object]:
         # than keep what an earlier release recorded. 1: the hops, and the line the
         # directive is written on (#2209). 2: a test case's line read by its report's
         # base, so a plain pytest report's `case_line` is one more, and the code hop's
-        # line where the base is known (#2381).
-        "env_version": 2,
+        # line where the base is known (#2381). 3: a test case's code hop names the
+        # language of its file.
+        "env_version": 3,
         "parallel_read_safe": True,  # support parallel modes
         "parallel_write_safe": True,
     }

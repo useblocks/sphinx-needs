@@ -291,8 +291,9 @@ Data
    A hop's ``language`` is what its text is written in, by the kind of hop: for a ``page`` hop, the page's suffix
    its parser keys on (``.rst``, ``.md``); for a ``file`` hop, the file's own suffix (``.rst``, ``.json``; an
    included ``inc.rst.txt`` records ``.txt``, whichever parser reads it); for a ``code`` hop, the language's name
-   (``python``, ``cpp``, ...), as sphinx-codelinks records it, and as the ``code`` hop of a docstring autodoc reads
-   records it (``python``).
+   (``python``, ``cpp``, ...), as sphinx-codelinks records it, as the ``code`` hop of a docstring autodoc reads
+   records it (``python``), and as sphinx-test-reports names a test case's file by its suffix (none for a suffix it
+   does not know).
 
    A semantic entry's ``kind`` is in the vocabulary of its hop's kind and producer: a ``page`` hop's entries use the
    document's (``section``, ``<domain>:<objtype>``), a ``generated`` hop's name its generator (``service``), and a

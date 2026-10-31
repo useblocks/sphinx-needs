@@ -139,8 +139,9 @@ class NeedSourceHop:
     page's suffix its parser keys on (``".rst"``, ``".md"``); for a ``file`` hop, the
     file's own suffix (``".rst"``, ``".json"``; an included ``inc.rst.txt`` records
     ``".txt"``, whichever parser reads it); for a ``code`` hop, the language's name
-    (``"python"``, ``"cpp"``, ...), as sphinx-codelinks records it, and as the ``code``
-    hop of a docstring autodoc reads records it (``"python"``)."""
+    (``"python"``, ``"cpp"``, ...), as sphinx-codelinks records it, as the ``code`` hop
+    of a docstring autodoc reads records it (``"python"``), and as sphinx-test-reports
+    names a test case's file by its suffix (``None`` for a suffix it does not know)."""
 
     def _without_lines(self) -> NeedSourceHop:
         """This hop with its file's start and end line left out: what a need that only
