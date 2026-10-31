@@ -140,6 +140,8 @@ it is less performant than the ``:ids:`` option, but more flexible.
 
 Please read :ref:`filter` for more information.
 A filter that fails is one ``needs.needimport`` warning for the directive.
+It reads each record of the file, not a need of this build, so the ``source.*`` facets (:ref:`filter_source`)
+are not available in it: ``source`` there is reported as not available in a needimport filter.
 
 hide
 ~~~~

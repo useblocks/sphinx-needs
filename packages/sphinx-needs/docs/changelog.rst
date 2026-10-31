@@ -10,6 +10,21 @@ Unreleased
 Improvements
 ............
 
+- ✨ ``source.*`` in a filter reads where a need comes from: the needs traced from code under ``../src/``, the needs
+  from one test report, the needs written in an included fragment (:ref:`filter_source`)
+
+  ``source.kind`` is the producer (``page``, ``code``, ``report``, ``import``, ``external``, ``generated``),
+  ``source.path`` and ``source.line`` the file the need is written in and its line there, ``source.paths`` every file
+  it came through, innermost first, and ``source.symbol`` the qualified name of the code entity a traced need is
+  attached to; ``source.document`` and ``source.sections`` are aliases of ``docname`` and ``sections``. A path is
+  relative to the source directory, with ``..`` for a file outside it. A facet the build does not know yet is
+  ``None`` -- the path of an imported or an external need, or of a test case -- and later releases only fill it.
+  The facets are in the portable filter language, answered without ``eval``; ``eval`` computes them only for a
+  filter naming ``source``. They are not available in a field predicate, a :ref:`needimport` ``:filter:`` or a
+  variant condition, where the error now says so. A field, link type or :ref:`needs_filter_data` key named
+  ``source`` switches them off for the project, with one ``needs.source_shadowed`` warning; ``source`` then reads
+  it. ``docname``, ``sections``, ``lineno``, ``is_import``, ``is_external`` and ``signature`` are unchanged.
+
 - ✨ A link type derives a chain's far ends as links: ``copy`` of ``id`` and ``collect`` of a link type, over a
   link type, declared on a link type (:ref:`needs_derive_link_chain`, :issue:`2370`)
 
