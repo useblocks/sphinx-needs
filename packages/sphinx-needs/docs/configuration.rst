@@ -711,10 +711,11 @@ for every need type -- ``incoming``, ``outgoing``, ``copy``, ``allow_dead_links`
 The first declaration of a type none of whose ancestors declares it, in the order the types are resolved (as for a field), sets them,
 an empty one too: the keys it gives, the defaults of a ``needs_links`` entry for the others
 (``incoming`` is ``"<name> incoming"``, ``outgoing`` the name, ``copy`` and ``allow_dead_links`` are ``false``,
-and ``summary`` is ``false``, or ``true`` where a declaration's ``copy`` or ``collect`` computes the link type),
+and ``summary`` is ``false``, or ``true`` where a ``copy`` or ``collect`` computes the link type:
+a derived one, in the ``derive`` of a declaration not refused for another key),
 and derived if it gives a ``derive``.
-Beside such a ``copy`` or ``collect``, ``summary = false`` is refused in any declaration (``needs.derive_invalid``):
-the key is ignored and the declaration used, as on a :ref:`needs_links` entry.
+Beside such a ``copy`` or ``collect``, ``summary = false`` is refused in any declaration, the first included
+(``needs.derive_invalid``): the key is ignored and the declaration used, as on a :ref:`needs_links` entry.
 Every other declaration may repeat a value, and no more: one that gives another value -- of a key the first declaration leaves out too --
 or is derived where the link type is not (or the other way round), is one ``needs.type_conflict`` warning::
 

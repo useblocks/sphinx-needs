@@ -2742,8 +2742,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     copied=link.get("copy", False),
                 )
                 derive_problems.extend(read)
-                # another declaration's summary = false beside a copy or collect: at
-                # its own entry, unless that entry's rule cannot be read
+                # a declaration's summary = false beside a copy or collect: at its own
+                # entry, unless that entry's rule cannot be read (as read here, or as
+                # checked, whose finding replaces this one)
                 unread = {
                     p.part for p in derive_problems if p.on_link and p.name == name
                 }
@@ -3584,13 +3585,15 @@ def _type_local_links(
     its entry is ignored: a root's then declares nothing, a child's still declares the
     link type through its parent.
 
-    A link type a ``copy`` or ``collect`` computes (in any declaration's ``derive``) is
-    a summary, as one ``needs_links`` declares: its ``summary`` is true unless given,
-    and a declaration's ``summary = false`` is no disagreement with the shape but a
+    A link type a ``copy`` or ``collect`` computes is a summary, as one ``needs_links``
+    declares: one that is derived, a declaration of which -- the first root's, or one
+    agreeing with it on the rest of the shape, so used -- gives such a rule
+    (:func:`_computes_paths`; a refused declaration's rule computes nothing). Its
+    ``summary`` is true, and a declaration's ``summary = false``, the first root's
+    included, is no disagreement with the shape, nor sets it, but a
     ``needs.derive_invalid`` finding beside the rules, the key ignored and the entry
-    used. The first root's is reported with the link type's rules
-    (:func:`create_schema` reads its entry); another declaration's is returned, and
-    reported there at its own entry.
+    used: it is returned, and reported by :func:`create_schema` at its own entry
+    (unless the entry's rule cannot be read, which is reported alone).
 
     A name that is the back links of a link type (``links_back``, or ``z_back`` beside a
     link type ``z`` need types declare alone) is none: the resolver refuses it. A link
@@ -3610,9 +3613,8 @@ def _type_local_links(
     :return: The link types, by name, in the order of their first root declarations;
         the (need type, link type) entries ignored; the findings, by link type, in
         ``order``; the need types whose root declarations declare each link type,
-        in ``order``; and the need types, but the first root, whose entry's
-        ``summary = false`` beside a ``copy`` or ``collect`` is ignored, by link type,
-        in ``order``.
+        in ``order``; and the need types whose entry's ``summary = false`` beside a
+        ``copy`` or ``collect`` is ignored, by link type, in ``order``.
     """
     #: link type -> its declarations, in order
     entries: dict[str, list[tuple[str, Mapping[str, Any]]]] = {}
@@ -3642,16 +3644,18 @@ def _type_local_links(
             continue
         # the first declaration is a root: an ancestor's would come before it
         by, first = declarations[0]
-        given = {k: first[k] for k in NEED_TYPE_LINK_SHAPE_KEYS if k in first}
-        # a copy or collect makes the link type a summary, whatever an entry says
-        # (its summary = false is derive_invalid beside the rules)
-        path = any(
-            (rule := keys.get("derive")) is not None and rule.get("kind") in PATH_KINDS
-            for _, keys in declarations
-        )
-        shape = {**_link_shape_defaults(name, path=path), **given}
-        shape["summary"] = shape["summary"] or path
         derived = first.get("derive") is not None
+        path = derived and _computes_paths(name, first, declarations)
+        # a copy or collect makes the link type a summary, whatever an entry says:
+        # summary = false is derive_invalid beside the rules, and sets no shape
+        given = {
+            k: first[k]
+            for k in NEED_TYPE_LINK_SHAPE_KEYS
+            if k in first and not (path and k == "summary" and first[k] is False)
+        }
+        if path and first.get("summary") is False:
+            summary_false[name] = [by]
+        shape = {**_link_shape_defaults(name, path=path), **given}
         roots = [by]
         for need_type, keys in declarations[1:]:
             root = not inherited(need_type, name)
@@ -3687,6 +3691,30 @@ def _type_local_links(
             description=f"Declared by need types {declaring}", **given
         )
     return local, refused, findings, declarers, summary_false
+
+
+def _computes_paths(
+    name: str,
+    first: Mapping[str, Any],
+    declarations: list[tuple[str, Mapping[str, Any]]],
+) -> bool:
+    """Whether a ``copy`` or ``collect`` computes a link type need types alone declare,
+    which is derived (its first root declaration gives a ``derive``): a declaration
+    giving one in its ``derive`` that is used, which agrees with the first root on every
+    key of the shape but ``summary`` (which such a rule implies). A declaration refused
+    for another key, or a ``derive`` on a link type that is not derived, computes
+    nothing."""
+    shape = {**_link_shape_defaults(name), **first}
+    return any(
+        (rule := keys.get("derive")) is not None
+        and rule.get("kind") in PATH_KINDS
+        and all(
+            keys[k] == shape[k]
+            for k in NEED_TYPE_LINK_SHAPE_KEYS
+            if k != "summary" and k in keys
+        )
+        for _, keys in declarations
+    )
 
 
 def _link_shape_defaults(name: str, *, path: bool = False) -> dict[str, Any]:

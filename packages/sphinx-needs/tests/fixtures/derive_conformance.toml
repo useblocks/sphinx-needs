@@ -67,11 +67,11 @@
 #     its back links; no other link type carries a `summary` key. `summary` is no role of
 #     a rule, nor a key of a need type's entry of a link type declared otherwise: such an
 #     entry's `summary` is each tool's configuration finding (not compared) and ignored,
-#     as is one that is not a boolean, while one in a `derive` or a
-#     `derive_by_type` entry is `derive_invalid`, and the rule holds no links. A summary
-#     link type holds and reads as any other (its links, its back links, a rule naming it
-#     in `over` or `field`); a `union` cannot name one as a member (`derive_invalid`, the
-#     union holds no links)
+#     as is one that is not a boolean, while one in a `derive` or a `derive_by_type`
+#     entry is `derive_invalid`, and the rule holds no links. A summary link type holds
+#     and reads as any other (its links, its back links, a rule naming it in `over` or
+#     `field`); a `union` cannot name one as a member (`derive_invalid`, the union holds
+#     no links)
 #   - a `copy` or a `collect` declared on a link type computes a link list, and the link
 #     type is a summary whether or not it says so (`summary = false` beside such a rule
 #     is `derive_invalid`, ignored: the rule applies -- in any need type's declaration of
@@ -5656,7 +5656,7 @@ field = "trace"
 
 [[case]]
 name = "link-path-summary-false-on-need-types"
-why = "on a link type need types alone declare, a copy or collect makes it a summary as on a [needs.links] entry: summary = false beside the rule, in the first root declaration or a later one, is derive_invalid, the key ignored and the entry used, so the rule applies on that type too"
+why = "on a link type need types alone declare, a copy or collect makes it a summary as on a [needs.links] entry: summary = false beside the rule, in the first root declaration or a later one, is derive_invalid, the key ignored and the entry used, so the rule applies on that type too; the first root's ignored false sets no shape, so a later root may give summary = true"
 config = '''
 [needs.links.satisfies]
 
@@ -5669,6 +5669,14 @@ derive = { kind = "copy", field = "id", over = "satisfies" }
 
 [needs.types.test.links.chain]
 summary = false
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.types.spec.links.span]
+summary = false
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.types.test.links.span]
+summary = true
 derive = { kind = "copy", field = "id", over = "satisfies" }
 '''
 source = '''
@@ -5687,11 +5695,15 @@ source = '''
 [case.expect.needs.SPEC_1]
 reach = ["REQ_1"]
 chain = ["REQ_1"]
+span = ["REQ_1"]
 [case.expect.needs.TEST_1]
 chain = ["REQ_1"]
+span = ["REQ_1"]
 [case.expect.schema.reach]
 summary = true
 [case.expect.schema.chain]
+summary = true
+[case.expect.schema.span]
 summary = true
 [[case.expect.findings]]
 code = "derive_invalid"
@@ -5699,6 +5711,9 @@ field = "reach"
 [[case.expect.findings]]
 code = "derive_invalid"
 field = "chain"
+[[case.expect.findings]]
+code = "derive_invalid"
+field = "span"
 
 [[case]]
 name = "link-collect-dense"

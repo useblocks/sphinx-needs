@@ -48,10 +48,12 @@
 #     declare has one shape too: whether it is derived, and its `incoming`, `outgoing`,
 #     `copy`, `allow_dead_links`, `summary`, `color` and `style*` keys, set by its first
 #     root declaration, an empty one included (the `[needs.links.*]` defaults for the
-#     keys it leaves out: `summary` is `false`, or `true` where a declaration's `copy` or
-#     `collect` computes the link type); every other declaration may repeat a value, and
-#     no more. Beside such a `copy` or `collect`, `summary = false` is `derive_invalid`
-#     in any declaration, ignored, and its entry used
+#     keys it leaves out: `summary` is `false`, or `true` where a `copy` or `collect`
+#     computes the link type -- a derived one, in the `derive` of a declaration not
+#     refused for another key); every other declaration may repeat a value, and no more.
+#     Beside such a `copy` or `collect`, `summary = false` is `derive_invalid` in any
+#     declaration, the first root's included, ignored (it sets no shape), and its entry
+#     used
 #   - the walk order decides which is first: the types in the order the `config` gives
 #     them, but each parent before its children wherever it is given, and the members of a
 #     broken `inherits` cycle in the order of the walk up from the first type given that is
@@ -3038,6 +3040,97 @@ code = "undeclared_for_type"
 need = "D_001"
 field = "ev"
 type = "d"
+
+[[case]]
+name = "type-local-link-summary-refused-path"
+why = "a link type is a summary by a copy or collect only where a declaration's rule is read: a copy in a declaration refused (a derive where the first root gives none, or another value of a key of the shape) computes nothing, so the link type is no summary, and a later root giving summary = true is one type_conflict and does not declare it"
+config = '''
+[needs.links.satisfies]
+
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.a]
+title = "A"
+prefix = "A_"
+
+[needs.types.a.links.lk]
+
+[needs.types.a.links.lm]
+derive = { kind = "union", fields = ["satisfies"] }
+
+[needs.types.b]
+title = "B"
+prefix = "B_"
+
+[needs.types.b.links.lk]
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.types.b.links.lm]
+color = "#ff0000"
+derive = { kind = "copy", field = "id", over = "satisfies" }
+
+[needs.types.c]
+title = "C"
+prefix = "C_"
+
+[needs.types.c.links.lk]
+summary = true
+
+[needs.types.c.links.lm]
+summary = true
+derive = { kind = "union", fields = ["satisfies"] }
+'''
+source = '''
+.. req:: Requirement
+   :id: REQ_1
+
+.. a:: Sets both shapes: lk authored, lm a union
+   :id: A_001
+   :satisfies: REQ_1
+   :lk: REQ_1
+
+.. b:: Refused: a derive on lk, a color on lm
+   :id: B_001
+   :satisfies: REQ_1
+
+.. c:: Refused: neither is a summary
+   :id: C_001
+   :satisfies: REQ_1
+   :lk: REQ_1
+'''
+[case.expect]
+[case.expect.needs.A_001]
+lk = ["REQ_1"]
+lm = ["REQ_1"]
+[case.expect.needs.B_001]
+lk = []
+lm = []
+[case.expect.needs.C_001]
+lk = []
+lm = []
+[[case.expect.findings]]
+code = "type_conflict"
+field = "lk"
+type = "b"
+[[case.expect.findings]]
+code = "type_conflict"
+field = "lm"
+type = "b"
+[[case.expect.findings]]
+code = "type_conflict"
+field = "lk"
+type = "c"
+[[case.expect.findings]]
+code = "type_conflict"
+field = "lm"
+type = "c"
+[[case.expect.findings]]
+code = "undeclared_for_type"
+need = "C_001"
+field = "lk"
+type = "c"
 
 [[case]]
 name = "type-local-link-summary-implied-by-a-path"

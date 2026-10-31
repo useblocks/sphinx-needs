@@ -656,3 +656,84 @@ def test_a_need_type_gives_no_summary_of_a_link_type_declared_otherwise(test_app
     assert evid is not None and evid.summary
     assert evid.description == "Its evidence"
     assert _version(app)["needs"]["SPEC_1"]["evid"] == ["REQ_1"]
+
+
+CONF_TYPE_UNREAD = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {"satisfies": {}}
+_COPY = {"kind": "copy", "field": "id", "over": "satisfies"}
+_NO_OVER = {"kind": "copy", "field": "id"}
+_OVER_BACK = {"kind": "copy", "field": "id", "over": "satisfies_back"}
+needs_types = [
+    {"directive": "req", "title": "Requirement", "prefix": "R_"},
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "links": {
+            "chain": {"derive": _COPY},
+            "reach": {"summary": False, "derive": _NO_OVER},
+            "loop": {"summary": False, "derive": _OVER_BACK},
+        },
+    },
+    {
+        "directive": "test",
+        "title": "Test",
+        "prefix": "T_",
+        "links": {
+            "chain": {"summary": False, "derive": _NO_OVER},
+            "reach": {"derive": _COPY},
+            "loop": {"derive": _COPY},
+        },
+    },
+]
+"""
+
+INDEX_TYPE_UNREAD = """\
+Unread
+======
+
+.. req:: Requirement
+   :id: REQ_1
+
+.. spec:: Specification
+   :id: SPEC_1
+   :satisfies: REQ_1
+
+.. test:: Test
+   :id: TEST_1
+   :satisfies: REQ_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_TYPE_UNREAD, INDEX_TYPE_UNREAD)], indirect=True
+)
+def test_summary_false_beside_a_rule_that_cannot_be_read(test_app):
+    """``summary = false`` beside a rule that cannot be read, in the first root
+    declaration or a later one, is not reported: the rule's own finding is, alone,
+    since the rule applies nowhere (its type holds no links); the other types' rules
+    apply."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "WARNING: Invalid derive of link type 'chain': needs_types['test'].links"
+        "['chain'].derive: kind 'copy' on a link type requires the role 'over'; the "
+        "link type cannot be set in a need or by a needextend, and on need type "
+        "'test' holds no links [needs.derive_invalid]",
+        "WARNING: Invalid derive of link type 'loop': needs_types['spec'].links"
+        "['loop'].derive: kind 'copy': the role 'over' names the back links "
+        "'satisfies_back', which a link type's rule cannot read: they are built after "
+        "the link types; the link type cannot be set in a need or by a needextend, "
+        "and on need type 'spec' holds no links [needs.derive_invalid]",
+        "WARNING: Invalid derive of link type 'reach': needs_types['spec'].links"
+        "['reach'].derive: kind 'copy' on a link type requires the role 'over'; the "
+        "link type cannot be set in a need or by a needextend, and on need type "
+        "'spec' holds no links [needs.derive_invalid]",
+    ]
+    needs = _version(app)["needs"]
+    assert needs["SPEC_1"]["chain"] == needs["TEST_1"]["reach"] == ["REQ_1"]
+    assert needs["TEST_1"]["loop"] == ["REQ_1"]
+    assert needs["TEST_1"]["chain"] == needs["SPEC_1"]["reach"] == []
+    assert needs["SPEC_1"]["loop"] == []
