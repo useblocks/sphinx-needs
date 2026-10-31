@@ -183,6 +183,36 @@ def test_semantic_spells_the_qualified_name(
     )
 
 
+@pytest.mark.parametrize(
+    ("kind", "expected"),
+    [
+        pytest.param(
+            "key", "component of unknown kind: {'kind': 'key', 'name': 'ns'}", id="key"
+        ),
+        pytest.param(
+            "item",
+            "component of unknown kind: {'kind': 'item', 'name': 'ns'}",
+            id="item",
+        ),
+        pytest.param("namespace", None, id="namespace"),
+        pytest.param("scope", None, id="scope"),
+    ],
+)
+def test_fence_refuses_a_data_kind_component(kind: str, expected: str | None) -> None:
+    """The fence's component kinds are the entity kinds but the data kinds ``key`` and
+    ``item`` (a data entry has no name, so no components), plus ``scope``: in a scope
+    that otherwise holds, a part of kind ``key`` or ``item`` is refused where one of
+    kind ``namespace`` or ``scope`` passes. No fixture can show this, since the
+    analysis never writes such a part, so the fence itself is pinned here."""
+    scope = {
+        "language": "cpp",
+        "qualified_name": "ns::f",
+        "entity_kind": "function",
+        "semantic": [{"kind": kind, "name": "ns"}, {"kind": "function", "name": "f"}],
+    }
+    assert _fence_difference(scope, "cpp") == expected
+
+
 def _semantic_of(case_name: str, tmp_path: Path) -> dict[str, list[dict[str, Any]]]:
     """The ``semantic`` of each marker of ``entities.yaml``'s case ``case_name``."""
     cases = yaml.safe_load((FIXTURE_DIR / "entities.yaml").read_text(encoding="utf-8"))
