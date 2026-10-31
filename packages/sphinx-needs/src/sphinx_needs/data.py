@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 21
+ENV_DATA_VERSION: Final = 22
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -155,6 +155,14 @@ file as its ``lineno``, and its file hop that line where the file holds its text
 where version 20 stored the line in the slice and, mostly, no hop line (#2428). The
 sources do not change, so without the bump an upgraded build would keep the slice's
 lines on the pages whose sources did not change.
+
+Version 22 is the same case for a need in a docstring autodoc reads: its ``code`` hop
+records the language ``python`` and the in-file qualified name in sphinx-codelinks'
+Python kinds (``class Shape > method area``), and the file of the definition whose
+docstring holds the need, where version 21 stored the suffix ``.py``, one ``py:docstring`` entry
+with the dotted name, and, for a member inherited from another module, the documenting
+module's file. The sources do not change, so without the bump an upgraded build would
+keep the old hops on the pages whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

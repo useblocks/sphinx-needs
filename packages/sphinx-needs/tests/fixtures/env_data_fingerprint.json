@@ -1,5 +1,5 @@
 {
-  "ENV_DATA_VERSION": 21,
+  "ENV_DATA_VERSION": 22,
   "env": {
     "_need_all_needextend": "dict[str, NeedsExtendType]",
     "_needs_all_docs": "dict[str, list[str]]",
