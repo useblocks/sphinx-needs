@@ -31,9 +31,6 @@ from sphinx_needs.data import SphinxNeedsData
 
 _MakeApp = Callable[..., SphinxTestApp]
 
-#: the pins, red until the code hop lands
-_LANDS = pytest.mark.xfail(strict=True, reason="srchop3c: the code hop lands next")
-
 # --- the project ----------------------------------------------------------------------
 
 PY = """\
@@ -446,7 +443,6 @@ EXPECTED_HOPS = {
 
 
 @pytest.mark.parametrize("need_id", list(EXPECTED_HOPS))
-@_LANDS
 def test_every_need_records_its_code_hop(built: SphinxTestApp, need_id: str) -> None:
     assert _hops(built)[need_id] == EXPECTED_HOPS[need_id]
 
@@ -455,7 +451,6 @@ def test_the_project_traces_exactly_the_pinned_needs(built: SphinxTestApp) -> No
     assert sorted(_hops(built)) == sorted(EXPECTED_HOPS)
 
 
-@_LANDS
 def test_the_cpp_pair_has_one_name_chain_and_two_kind_sequences(
     built: SphinxTestApp,
 ) -> None:
@@ -466,11 +461,11 @@ def test_the_cpp_pair_has_one_name_chain_and_two_kind_sequences(
     assert [p.kind for p in out.semantic or ()] == ["scope", "class", "method"]
 
     def chain(hop: NeedSourceHop) -> Any:
-        parts = [
+        parts: list[Any] = [
             {"kind": p.kind, "name": p.name, **dict(p.extras)}
             for p in hop.semantic or ()
         ]
-        return name_chain(parts, hop.language or "")  # ty: ignore[invalid-argument-type]
+        return name_chain(parts, hop.language or "")
 
     assert chain(nested) == chain(out)
 
@@ -479,8 +474,35 @@ def test_a_need_s_lineno_is_its_directive_s_line(built: SphinxTestApp) -> None:
     """The line the directive is written on: the page hop's start line."""
     needs = SphinxNeedsData(built.env).get_needs_view()
     assert {need_id: needs[need_id]["lineno"] for need_id in EXPECTED_HOPS} == {
-        need_id: int(re.search(r"index\.rst:(\d+)-", hops[-1]).group(1))  # ty: ignore[possibly-missing-attribute]
+        need_id: int(re.findall(r"index\.rst:(\d+)-", hops[-1])[0])
         for need_id, hops in EXPECTED_HOPS.items()
+    }
+
+
+def test_a_need_s_body_is_anchored_at_its_directive_s_line(
+    built: SphinxTestApp,
+) -> None:
+    """``lineno_content`` is the directive's line, one-line and multi-line alike, not
+    the line after its block where ``from_directive`` puts it: a body parsed at the page
+    without a ``content_source`` is the marker's, and is anchored at the directive
+    (``test_a_fallback_on_a_page_of_a_third_parser_keeps_the_need``)."""
+    needs = SphinxNeedsData(built.env).get_needs_view()
+    assert {
+        need_id: (
+            needs[need_id].source.lineno_content,
+            needs[need_id].source.parser_lineno,
+        )
+        for need_id in (
+            "IMPL_PY_ONE",
+            "IMPL_PY_MULTI",
+            "IMPL_RS_TRAIT",
+            "IMPL_RS_MULTI",
+        )
+    } == {
+        "IMPL_PY_ONE": (4, 4),
+        "IMPL_PY_MULTI": (4, 4),
+        "IMPL_RS_TRAIT": (17, 17),
+        "IMPL_RS_MULTI": (17, 17),
     }
 
 
@@ -491,7 +513,6 @@ def test_no_hop_reaches_needs_json(built: SphinxTestApp) -> None:
     assert "shapes.py" not in text
 
 
-@_LANDS
 def test_a_need_after_rst_prolog_is_at_its_line_in_the_file(
     make_app: _MakeApp, tmp_path: Path
 ) -> None:
@@ -501,10 +522,12 @@ def test_a_need_after_rst_prolog_is_at_its_line_in_the_file(
     needs = SphinxNeedsData(app.env).get_needs_view()
     assert needs["IMPL_PY_ONE"]["lineno"] == 4
     assert needs["IMPL_RS_TRAIT"]["lineno"] == 17
+    # the body's anchor stays in the parser's count, which the prolog shifts
+    source = needs["IMPL_PY_ONE"].source
+    assert source.lineno_content == source.parser_lineno == 7
     assert _hops(app)["IMPL_RS_TRAIT"] == EXPECTED_HOPS["IMPL_RS_TRAIT"]
 
 
-@_LANDS
 def test_a_need_in_an_included_file_is_at_its_line_there(
     make_app: _MakeApp, tmp_path: Path
 ) -> None:
@@ -518,6 +541,8 @@ def test_a_need_in_an_included_file_is_at_its_line_there(
         ),
     )
     needs = SphinxNeedsData(app.env).get_needs_view()
+    # line 3 of ``traced.rst.txt``, the included file, as a need directive records it
+    # (the parser's count, 10 before, was a line neither file has the directive on)
     assert needs["IMPL_RS_TRAIT"]["lineno"] == 3
     assert _hops(app)["IMPL_RS_TRAIT"] == [
         "code srcdir:../src/rust/lib.rs:8-8 (rust) :: impl 'Widget' trait='Shape' > "
@@ -547,7 +572,6 @@ if sys.platform == "win32":
 
 
 @pytest.mark.parametrize("shape", list(PATH_SHAPES))
-@_LANDS
 def test_the_code_path_is_sphinx_needs_rule(shape: str) -> None:
     from sphinx_codelinks.sphinx_extension.directives.src_trace import _code_physical
     from sphinx_needs._need_source import physical_for
@@ -557,7 +581,6 @@ def test_the_code_path_is_sphinx_needs_rule(shape: str) -> None:
     assert _code_physical(srcdir, path, 3, 7) == physical_for(srcdir, path, 3, 7)
 
 
-@_LANDS
 def test_the_code_path_under_a_symlinked_directory_is_sphinx_needs_rule(
     tmp_path: Path,
 ) -> None:
@@ -667,7 +690,6 @@ def _assert_equivalent(
     return app, written
 
 
-@_LANDS
 def test_a_marker_that_moves_rewrites_only_its_own_page(
     make_app: _MakeApp, tmp_path: Path
 ) -> None:
@@ -679,7 +701,6 @@ def test_a_marker_that_moves_rewrites_only_its_own_page(
     )
 
 
-@_LANDS
 def test_a_renamed_entity_rewrites_the_pages_showing_its_need(
     make_app: _MakeApp, tmp_path: Path
 ) -> None:
@@ -698,7 +719,6 @@ def test_an_edited_source_file_equals_a_fresh_build(
 # --- the upgrade ------------------------------------------------------------------------
 
 
-@_LANDS
 def test_an_environment_pickled_at_env_version_1_is_read_again(
     make_app: _MakeApp, tmp_path: Path
 ) -> None:

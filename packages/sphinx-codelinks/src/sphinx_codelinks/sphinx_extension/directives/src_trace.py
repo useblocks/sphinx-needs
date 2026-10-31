@@ -1,6 +1,6 @@
 import os
 from collections.abc import Callable, Collection, Mapping
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePath, PurePosixPath
 from typing import Any, ClassVar
 
 from docutils import nodes
@@ -10,6 +10,7 @@ from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
+from sphinx_codelinks.analyse.entity import scope_language
 from sphinx_codelinks.analyse.models import (
     MarkedContentType,
     MultilineNeed,
@@ -22,6 +23,7 @@ from sphinx_codelinks.config import (
     locate_src_dir,
     need_id_refs_field,
 )
+from sphinx_codelinks.source_discover.config import CommentType
 from sphinx_codelinks.sphinx_extension.debug import measure_time
 from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
 from sphinx_codelinks.sphinx_extension.project_analysis import (
@@ -45,6 +47,9 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
 from sphinx_needs.api import (
     InvalidNeedException,
     NeedItemSource,
+    NeedSourceHop,
+    NeedSourcePhysical,
+    NeedSourceSemantic,
     create_need,
     generate_need_id,
     ingest_need_record,
@@ -79,6 +84,87 @@ fields: a multi-line need takes these, and those fields, and nothing else."""
 
 RECORD_KEYS: frozenset[str] = frozenset({"type", "title", "content", "doctype"})
 """The keys a multi-line need's record sets itself, never from an option."""
+
+
+def _code_physical(
+    srcdir: str | os.PathLike[str],
+    path: str | os.PathLike[str],
+    start_line: int | None = None,
+    end_line: int | None = None,
+) -> NeedSourcePhysical | None:
+    """Where an analysed file is, for its ``code`` hop: under the ``"srcdir"`` root.
+
+    The path is POSIX and relative to the Sphinx source directory, with ``..`` for a file
+    outside it; ``None`` where no relative path exists (another drive, on Windows).
+
+    Sphinx-Needs' own rule for a file's location (its private ``physical_for``),
+    computed here because this package imports no private Sphinx-Needs name;
+    ``tests/test_source_hops.py`` holds the two equal.
+    """
+    try:
+        relative = os.path.relpath(os.path.abspath(path), os.path.abspath(srcdir))
+    except ValueError:
+        return None
+    return NeedSourcePhysical(
+        root="srcdir",
+        path=PurePath(relative).as_posix(),
+        start_line=start_line,
+        end_line=end_line,
+    )
+
+
+def code_hop(
+    marker: Marker,
+    filepath: Path,
+    srcdir: str | os.PathLike[str],
+    comment_type: CommentType,
+) -> NeedSourceHop:
+    """Where a need ``src-trace`` creates came from before the page: its ``code`` hop.
+
+    **Provisional**, as Sphinx-Needs' hops are: it reaches no ``needs.json``.
+
+    - ``physical``: the analysed file under the ``"srcdir"`` root
+      (:func:`_code_physical`), and the marker's 1-based lines -- a one-line need's own
+      line for both, a multi-line need's open and close lines.
+    - ``semantic``: the entity the marker is attached to (``scope.semantic``), outermost
+      first, each component's ``kind`` and ``name`` as the analysis gives them, and a Rust
+      trait impl's ``trait`` as an extra; ``None`` for a marker attached to no named
+      entity (the file, nothing, a YAML or JSONC entry). The kinds are the analysis'
+      entity kinds, read with ``language``; what identifies the entity is
+      :func:`~sphinx_codelinks.analyse.entity.name_chain`, not the kinds.
+    - ``language``: the file's language (``scope.language``, or
+      :func:`~sphinx_codelinks.analyse.entity.scope_language` where the marker is
+      attached to no entity, which gives the same name).
+
+    :param marker: The one-line or multi-line need.
+    :param filepath: The analysed file, absolute.
+    :param srcdir: The Sphinx source directory.
+    :param comment_type: The project's comment type.
+    """
+    if isinstance(marker, MultilineNeed):
+        start = int(marker.source["start"]["line"])
+        end = int(marker.source["end"]["line"])
+    else:
+        start = end = marker.source_map["start"]["row"] + 1
+    scope = marker.scope
+    parts = scope["semantic"] if scope is not None else None
+    return NeedSourceHop(
+        kind="code",
+        physical=_code_physical(srcdir, filepath, start, end),
+        semantic=None
+        if parts is None
+        else tuple(
+            NeedSourceSemantic(
+                kind=part["kind"],
+                name=part["name"],
+                extras=(("trait", part["trait"]),) if "trait" in part else (),
+            )
+            for part in parts
+        ),
+        language=scope["language"]
+        if scope is not None
+        else scope_language(comment_type, filepath),
+    )
 
 
 def from_document(docname: str, target: str) -> Path:
@@ -288,11 +374,19 @@ class SourceTracingDirective(SphinxDirective):
         "directory": directives.unchanged_required,
     }
 
-    def _need_source(self) -> NeedItemSource:
-        """The source of a need this directive creates: its page, at the directive's
-        line as the parser counts it (the source ``NeedItemSourceUnknown(docname=,
-        lineno=)`` built)."""
-        return NeedItemSource.on_page(self.env.docname, lineno=self.lineno)
+    def _need_source(self, hop: NeedSourceHop) -> NeedItemSource:
+        """The source of a need this directive creates: its ``code`` hop
+        (:func:`code_hop`), then the page (and an included file) the directive is
+        written on, at the directive's lines; its ``lineno`` is the line the directive is
+        written on, as a need directive's is."""
+        source = NeedItemSource.from_directive(self, first=(hop,))
+        # a body is the marker's, not the directive's content: parse it at this line
+        return NeedItemSource(
+            source.hops,
+            lineno=source.lineno,
+            lineno_content=self.lineno,
+            parser_lineno=self.lineno,
+        )
 
     @measure_time("src-trace")
     def run(self) -> list[nodes.Node]:
@@ -492,6 +586,7 @@ class SourceTracingDirective(SphinxDirective):
         *,
         need_id: str | None,
         project_template: bool,
+        hop: NeedSourceHop,
     ) -> list[nodes.Node] | None:
         """Create one multi-line need: its record, through ``ingest_need_record``.
 
@@ -513,6 +608,7 @@ class SourceTracingDirective(SphinxDirective):
         :param project_template: Whether the project gives needs a template (the
             ``template`` field's default, or a predicate): a need it may apply to counts
             as rendered through one.
+        :param hop: The need's ``code`` hop (:func:`code_hop`).
         :return: The need's nodes, or ``None`` when Sphinx-Needs refuses the need (warned
             at the open line).
         """
@@ -539,7 +635,7 @@ class SourceTracingDirective(SphinxDirective):
                 self.env.app,
                 self.state,
                 record,
-                need_source=self._need_source(),
+                need_source=self._need_source(hop),
                 content_markup=markup,
                 content_source=(
                     (os.path.abspath(filepath), int(content_start["line"]))
@@ -698,6 +794,13 @@ class SourceTracingDirective(SphinxDirective):
                     src_analyse.git_commit_rev,
                 )
 
+            # where the need comes from: the marker in its file, then this directive
+            hop = code_hop(
+                marker,
+                filepath,
+                self.env.srcdir,
+                src_analyse.analyse_config.comment_type,
+            )
             created: list[nodes.Node] | None = None
             if isinstance(marker, MultilineNeed) and record is not None:
                 if local_url_field and local_link_name is not None:
@@ -712,6 +815,7 @@ class SourceTracingDirective(SphinxDirective):
                     location,
                     need_id=need_id,
                     project_template=project_template,
+                    hop=hop,
                 )
             elif marker.need:
                 # render needs from one-line marker
@@ -754,7 +858,7 @@ class SourceTracingDirective(SphinxDirective):
                     _, created = create_need(
                         self.env.app,
                         self.state,
-                        self._need_source(),
+                        self._need_source(hop),
                         str(marker.need["type"]),
                         str(marker.need["title"]),
                         id=None if marker_id is None else str(marker_id),
