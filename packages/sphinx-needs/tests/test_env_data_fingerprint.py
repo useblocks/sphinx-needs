@@ -208,19 +208,29 @@ def _slots(cls: type) -> list[str]:
     ]
 
 
-def _shape(cls: type) -> dict[str, Any]:
-    """What a class stores, by its kind."""
+def _typed_fields(cls: type) -> list[tuple[str, str]]:
+    """The names a ``TypedDict`` or a dataclass stores, in order, with their
+    annotations."""
     if is_typeddict(cls):
         functional = _functional_typeddict(cls)
+        return [
+            (key, _annotation(functional.get(key, value), f"{_qualified(cls)}.{key}"))
+            for key, value in cls.__annotations__.items()
+        ]
+    return [
+        (field.name, _annotation(field.type, f"{_qualified(cls)}.{field.name}"))
+        for field in dataclasses.fields(cls)
+    ]
+
+
+def _shape(cls: type) -> dict[str, Any]:
+    """What a class stores, by its kind; a field as ``name: annotation``."""
+    if is_typeddict(cls):
         return {
             "kind": "TypedDict",
             "total": cls.__total__,
             "keys": [
-                [
-                    key,
-                    _annotation(functional.get(key, value), f"{_qualified(cls)}.{key}"),
-                ]
-                for key, value in cls.__annotations__.items()
+                f"{name}: {annotation}" for name, annotation in _typed_fields(cls)
             ],
         }
     if dataclasses.is_dataclass(cls):
@@ -228,14 +238,13 @@ def _shape(cls: type) -> dict[str, Any]:
             "kind": "dataclass",
             "slots": "__slots__" in vars(cls),
             "fields": [
-                [field.name, _annotation(field.type, f"{_qualified(cls)}.{field.name}")]
-                for field in dataclasses.fields(cls)
+                f"{name}: {annotation}" for name, annotation in _typed_fields(cls)
             ],
         }
     if issubclass(cls, enum.Enum):
         return {
             "kind": "enum",
-            "members": [[member.name, repr(member.value)] for member in cls],
+            "members": [f"{member.name} = {member.value!r}" for member in cls],
         }
     if issubclass(cls, nodes.Node):
         attributes = _class_annotations(cls).get("attributes")
@@ -255,14 +264,12 @@ def _shape(cls: type) -> dict[str, Any]:
 
 def _named(cls: type) -> list[str]:
     """The annotations of what a class stores, which name the classes it may hold."""
-    shape = _shape(cls)
-    if shape["kind"] == "TypedDict":
-        return [annotation for _, annotation in shape["keys"]]
-    if shape["kind"] == "dataclass":
-        return [annotation for _, annotation in shape["fields"]]
-    if shape["kind"] == "node":
-        return [] if shape["attributes"] is None else [shape["attributes"]]
-    if shape["kind"] == "slots":
+    if is_typeddict(cls) or dataclasses.is_dataclass(cls):
+        return [annotation for _, annotation in _typed_fields(cls)]
+    if issubclass(cls, nodes.Node):
+        attributes = _shape(cls)["attributes"]
+        return [] if attributes is None else [attributes]
+    if "__slots__" in vars(cls):
         # a slotted class declares what its slots hold by its constructor
         init = vars(cls).get("__init__")
         return [
@@ -442,15 +449,8 @@ def _describe(shape: Any) -> str:
     )
 
 
-def _items(items: list[Any]) -> str:
-    return (
-        "("
-        + ", ".join(
-            ": ".join(map(str, item)) if isinstance(item, list) else str(item)
-            for item in items
-        )
-        + ")"
-    )
+def _items(items: list[str]) -> str:
+    return "(" + ", ".join(items) + ")"
 
 
 def _changed(old: Any, new: Any) -> str:
