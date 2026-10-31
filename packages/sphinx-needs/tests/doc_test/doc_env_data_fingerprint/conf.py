@@ -39,3 +39,17 @@ needs_schema_definitions = {
         }
     ]
 }
+# a need type's own declarations: a field, back links, and a link type of its own
+needs_types = [
+    {
+        "directive": "req",
+        "title": "Requirement",
+        "prefix": "R_",
+        "fields": {"owner": {"schema": {"type": "string"}}},
+        "back_links": {
+            "links": {"description": "the specs", "schema": {"minItems": 0}}
+        },
+        "links": {"refines": {"incoming": "refined by", "outgoing": "refines"}},
+    },
+    {"directive": "spec", "title": "Specification", "prefix": "S_"},
+]

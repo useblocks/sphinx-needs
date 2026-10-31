@@ -10,6 +10,8 @@ Environment fingerprint
    :tags: a
    :status: open
    :effort: 3
+   :owner: me
+   :refines: REQ_2
 
    It has parts: :np:`(P1) the first part` and :np:`(P2) the second`.
 

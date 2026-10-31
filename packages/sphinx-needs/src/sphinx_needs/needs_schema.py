@@ -1418,7 +1418,7 @@ class FieldsSchema:
         #: view), for the schema of one need type (:meth:`for_type`)
         self._view_of: tuple[FieldsSchema, str | None] | None = None
         #: whether the schema has been read for a need type (:meth:`freeze`)
-        self._frozen = False
+        self._frozen: bool = False
         #: the names of the derived fields and link types, once the schema is frozen
         #: (:attr:`derived_names`)
         self._derived_names: frozenset[str] | None = None

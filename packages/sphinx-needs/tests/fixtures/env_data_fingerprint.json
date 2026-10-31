@@ -224,6 +224,24 @@
         "completion_option: str"
       ]
     },
+    "sphinx_needs.data.NeedsInfoComputedType": {
+      "kind": "TypedDict",
+      "total": true,
+      "keys": [
+        "is_need: bool",
+        "is_part: bool",
+        "parts: Mapping[str, NeedsPartType]",
+        "is_modified: bool",
+        "modifications: int",
+        "id_parent: str",
+        "id_complete: str",
+        "section_name: str | None",
+        "parent_need: str | None",
+        "constraints_results: Mapping[str, Mapping[str, bool]] | None",
+        "constraints_error: str | None",
+        "constraints_passed: bool | None"
+      ]
+    },
     "sphinx_needs.data.NeedsInfoType": {
       "kind": "TypedDict",
       "total": true,
@@ -269,6 +287,14 @@
         "show_status: bool",
         "show_filters: bool",
         "max_items: int | None"
+      ]
+    },
+    "sphinx_needs.data.NeedsPartType": {
+      "kind": "TypedDict",
+      "total": false,
+      "keys": [
+        "id: str",
+        "content: str"
       ]
     },
     "sphinx_needs.data.NeedsPieType": {
@@ -489,25 +515,25 @@
     "sphinx_needs.need_item.NeedConstraintResults": {
       "kind": "slots",
       "slots": [
-        "_data"
+        "_data: Mapping[str, tuple[tuple[str, bool, str | None], ...]]"
       ]
     },
     "sphinx_needs.need_item.NeedItem": {
       "kind": "slots",
       "slots": [
-        "_backlinks",
-        "_backlinks_keymap",
-        "_computed",
-        "_constraint_results",
-        "_content",
-        "_core",
-        "_derived",
-        "_dynamic_fields",
-        "_extras",
-        "_links",
-        "_modifications",
-        "_parts",
-        "_source"
+        "_backlinks: dict[str, list[NeedLink]]",
+        "_backlinks_keymap: dict[str, str]",
+        "_computed: NeedsInfoComputedType",
+        "_constraint_results: NeedConstraintResults | None",
+        "_content: NeedsContent",
+        "_core: NeedsInfoType",
+        "_derived: Iterable[str]",
+        "_dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray] | None",
+        "_extras: dict[str, AllowedTypes | None]",
+        "_links: dict[str, list[NeedLink]]",
+        "_modifications: Sequence[NeedModification]",
+        "_parts: Sequence[NeedPartData]",
+        "_source: NeedItemSourceProtocol | None"
       ]
     },
     "sphinx_needs.need_item.NeedItemSource": {
@@ -564,6 +590,17 @@
         "dict_repr: NeedsContentInfoType"
       ]
     },
+    "sphinx_needs.needs_schema.BackLinksSchema": {
+      "kind": "dataclass",
+      "slots": true,
+      "fields": [
+        "name: str",
+        "link_type: str",
+        "description: str",
+        "schema: Mapping[str, int]",
+        "severity: Severity | None"
+      ]
+    },
     "sphinx_needs.needs_schema.FieldFunctionArray": {
       "kind": "dataclass",
       "slots": true,
@@ -601,21 +638,21 @@
     "sphinx_needs.needs_schema.FieldsSchema": {
       "kind": "slots",
       "slots": [
-        "_absent",
-        "_back_links",
-        "_core_fields",
-        "_derived_names",
-        "_extra_fields",
-        "_frozen",
-        "_global_view",
-        "_id_patterns",
-        "_link_fields",
-        "_local",
-        "_need_types",
-        "_project_fields",
-        "_type_overlays",
-        "_type_views",
-        "_view_of"
+        "_absent: dict[str, FieldSchema | LinkSchema]",
+        "_back_links: dict[str, dict[str, BackLinksSchema]]",
+        "_core_fields: dict[str, FieldSchema]",
+        "_derived_names: frozenset[str] | None",
+        "_extra_fields: dict[str, FieldSchema]",
+        "_frozen: bool",
+        "_global_view: TypeFieldsSchema | None",
+        "_id_patterns: dict[str, tuple[tuple[str, str], ...]]",
+        "_link_fields: dict[str, LinkSchema]",
+        "_local: dict[str, frozenset[str]]",
+        "_need_types: frozenset[str] | None",
+        "_project_fields: set[str]",
+        "_type_overlays: dict[str, dict[str, FieldSchema | LinkSchema]]",
+        "_type_views: dict[str, TypeFieldsSchema]",
+        "_view_of: tuple[FieldsSchema, str | None] | None"
       ]
     },
     "sphinx_needs.needs_schema.LinkDisplayConfig": {
@@ -682,22 +719,22 @@
     "sphinx_needs.needs_schema.TypeFieldsSchema": {
       "kind": "slots",
       "slots": [
-        "_absent",
-        "_back_links",
-        "_core_fields",
-        "_derived_names",
-        "_extra_fields",
-        "_frozen",
-        "_global_view",
-        "_id_patterns",
-        "_link_fields",
-        "_local",
-        "_need_types",
-        "_project_fields",
-        "_type_overlays",
-        "_type_views",
-        "_view_of",
-        "_undeclared"
+        "_absent: dict[str, FieldSchema | LinkSchema]",
+        "_back_links: dict[str, dict[str, BackLinksSchema]]",
+        "_core_fields: dict[str, FieldSchema]",
+        "_derived_names: frozenset[str] | None",
+        "_extra_fields: dict[str, FieldSchema]",
+        "_frozen: bool",
+        "_global_view: TypeFieldsSchema | None",
+        "_id_patterns: dict[str, tuple[tuple[str, str], ...]]",
+        "_link_fields: dict[str, LinkSchema]",
+        "_local: dict[str, frozenset[str]]",
+        "_need_types: frozenset[str] | None",
+        "_project_fields: set[str]",
+        "_type_overlays: dict[str, dict[str, FieldSchema | LinkSchema]]",
+        "_type_views: dict[str, TypeFieldsSchema]",
+        "_view_of: tuple[FieldsSchema, str | None] | None",
+        "_undeclared: frozenset[str]"
       ]
     },
     "sphinx_needs.nodes.Need": {
@@ -881,8 +918,8 @@
     "sphinx_needs.variant_data.VariantDataProxy": {
       "kind": "slots",
       "slots": [
-        "_data",
-        "_path"
+        "_data: dict[str, object]",
+        "_path: tuple[str, ...]"
       ]
     },
     "sphinx_needs.variants.VariantFunctionParsed": {

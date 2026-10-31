@@ -559,7 +559,7 @@ class NeedConstraintResults(Mapping[str, tuple[tuple[str, bool, str | None], ...
     def __init__(
         self, constraints: Mapping[str, tuple[tuple[str, bool, str | None], ...]]
     ) -> None:
-        self._data = constraints
+        self._data: Mapping[str, tuple[tuple[str, bool, str | None], ...]] = constraints
 
     def __getitem__(self, key: str) -> tuple[tuple[str, bool, str | None], ...]:
         return self._data[key]
@@ -871,7 +871,9 @@ class NeedItem:
                 ]
                 for key, value in backlinks.items()
             }
-        self._backlinks_keymap = {f"{key}_back": key for key in self._links}
+        self._backlinks_keymap: dict[str, str] = {
+            f"{key}_back": key for key in self._links
+        }
         """mapping of exposed backlink keys to actual link keys, e.g. {'link_type_back': 'link_type'}
         
         This is required for distinct access to backlinks in the NeedItem API.
