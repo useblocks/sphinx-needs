@@ -647,7 +647,8 @@ The record
   to the project's source directory (``root: "src_dir"``), POSIX; the commit; the open line's start,
   the close line's end and the first body line's start (``null`` without a body), each with a
   1-based ``line`` and a 0-based ``col``; each option's line; and the code entity the block is
-  attached to, the ``scope`` object of :ref:`attachment` (``null`` under the libclang engine).
+  attached to, the ``scope`` object of :ref:`attachment` (``null`` when the block is attached to the file rather than
+  to an entity, and always under the libclang engine).
 - ``filepath``, ``remote_url``, ``source_map`` and ``tagged_scope`` are the fields every
   ``marked_content.json`` record has; ``source_map`` spans the open line to the close line, 0-based.
 
