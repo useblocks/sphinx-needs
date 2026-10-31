@@ -171,7 +171,10 @@ class NeedDirective(SphinxDirective):
         # directive is actually written on (see #1349), through the state machine's
         # ``get_source_and_line``, which ``get_source_info`` -- and so ``get_location``
         # and every warning this directive itself emits -- is built on, so the two
-        # agree; where the state machine cannot map the line, ``self.lineno`` stays.
+        # agree, except inside an include's slice (``:start-line:``, ``:start-after:``):
+        # the state machine counts from the slice's first line, and ``from_directive``
+        # recovers the line in the file (#2428) where the warnings keep docutils'
+        # count. Where the state machine cannot map the line, ``self.lineno`` stays.
         # The unresolved number is kept as ``parser_lineno``, and ``lineno_content``
         # stays on the parser's counter as well: both are handed to ``nested_parse`` in
         # ``_create_need_node`` as offsets into that counter's space, not read as source

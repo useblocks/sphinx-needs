@@ -27,7 +27,9 @@ path as the producer gives it.
 
 from __future__ import annotations
 
+import bisect
 import dataclasses
+import itertools
 import os
 import re
 from collections.abc import Callable, Iterable, Iterator, Sequence
@@ -35,9 +37,10 @@ from dataclasses import dataclass
 from pathlib import PurePath
 from typing import TYPE_CHECKING, Final
 
+import docutils
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
-from docutils.statemachine import string2lines
+from docutils.statemachine import StringList, string2lines
 from sphinx import addnodes
 
 if TYPE_CHECKING:
@@ -203,6 +206,24 @@ _LINES_KEY: Final = "sphinx_needs_source_hop_lines"
 (which Sphinx clears after each document, so nothing outlives the read)."""
 
 
+_TEXT_KEY: Final = "sphinx_needs_source_hop_texts"
+"""The key of the file texts read for the document being read, in ``env.temp_data``."""
+
+
+def _file_text(env: BuildEnvironment, path: str) -> str | None:
+    """The text of a file, read once per document with the project's
+    ``source_encoding``; ``None`` if the file cannot be read."""
+    cache: dict[str, str | None] = env.temp_data.setdefault(_TEXT_KEY, {})
+    key = os.path.abspath(path)
+    if key not in cache:
+        try:
+            with open(key, encoding=env.config.source_encoding) as stream:
+                cache[key] = stream.read()
+        except (OSError, UnicodeDecodeError, LookupError):
+            cache[key] = None
+    return cache[key]
+
+
 def _file_lines(env: BuildEnvironment, path: str, tab_width: int) -> list[str] | None:
     """The lines of a file as docutils numbers them, read once per document.
 
@@ -216,16 +237,273 @@ def _file_lines(env: BuildEnvironment, path: str, tab_width: int) -> list[str] |
     )
     key = (os.path.abspath(path), tab_width)
     if key not in cache:
-        try:
-            with open(key[0], encoding=env.config.source_encoding) as stream:
-                text = stream.read()
-        except (OSError, UnicodeDecodeError, LookupError):
-            cache[key] = None
-        else:
-            cache[key] = string2lines(
-                text, tab_width=tab_width, convert_whitespace=True
-            )
+        text = _file_text(env, path)
+        cache[key] = (
+            None
+            if text is None
+            else string2lines(text, tab_width=tab_width, convert_whitespace=True)
+        )
     return cache[key]
+
+
+# -- the file line of a line of an included slice (#2428) ----------------------------
+#
+# docutils hands the parser an include's slice (``:start-line:``, ``:start-after:``) as
+# input of its own: ``Include.insert_into_input_lines`` passes the clipped lines to
+# ``StateMachine.insert_input``, which numbers them from the slice's first line, so the
+# state machine reports a line of the slice (docutils knows: "TODO: if startline != 0,
+# line numbers are wrong", under that call in ``insert_into_input_lines``,
+# ``docutils/parsers/rst/directives/misc.py``; reported upstream). The include's options
+# are still on ``document.include_log`` while the slice is parsed (the ``.. end of
+# inclusion`` comment pops them), so the slice's start in the file is recovered from
+# there, and a need records the line it is written on in the file. docutils' own
+# messages keep the slice's line.
+
+_DOCUTILS_022: Final = docutils.__version_info__[:2] >= (0, 22)
+"""How ``document.include_log`` orders an include's options, and how ``:start-line:``
+joins the lines it keeps. docutils 0.22 logs ``(start-line, end-line, start-after,
+end-before)`` and joins the kept lines with ``\\n``; 0.21 logs ``(startline, endline,
+before_text, after_text)`` -- ``before_text`` is the ``:end-before:`` text,
+``after_text`` the ``:start-after:`` one -- and joins them as they were, line ends kept.
+Both keep lines by ``str.splitlines``."""
+
+_DOCUTILS_023: Final = docutils.__version_info__[:2] >= (0, 23)
+"""Whether an empty ``:start-after:`` means "after the first empty line": docutils 0.23
+logs an absent option as ``None`` and searches an empty one as ``\\n\\n``; before it,
+an absent option is logged as ``''`` (0.22) or ``None`` (0.21), and an empty one is
+refused."""
+
+_LINE_BREAK: Final = re.compile("\r\n|[\n\r\x1c\x1d\x1e\x85\u2028\u2029]")
+"""Where docutils' ``string2lines`` breaks a file's lines: ``str.splitlines``' breaks,
+less the vertical tab and the form feed, which it makes spaces first (as
+:func:`_file_lines` numbers the lines)."""
+
+_SLICES_KEY: Final = "sphinx_needs_source_hop_slices"
+"""The key of the slices' line maps, per file and options, in ``env.temp_data``."""
+
+_SliceLines = Callable[[int], int | None]
+"""The file line of a line of a slice, ``None`` where the slice has no such line."""
+
+
+def _include_entry(
+    document: nodes.document, source: str
+) -> tuple[int | None, int | None, str] | None:
+    """``(start-line, end-line, start-after)`` of the innermost active include of
+    ``source``, or ``None`` if there is none or its entry is not as expected."""
+    log = getattr(document, "include_log", None)
+    if not isinstance(log, list):
+        return None
+    for entry in reversed(log):
+        if not (isinstance(entry, tuple) and len(entry) == 2 and entry[0] == source):
+            continue
+        options = entry[1]
+        if not (isinstance(options, tuple) and len(options) == 4):
+            return None
+        if _DOCUTILS_022:
+            start_line, end_line, start_after, _ = options
+        else:
+            start_line, end_line, _, start_after = options
+        if not (
+            isinstance(start_line, int | None)
+            and isinstance(end_line, int | None)
+            and isinstance(start_after, str | None)
+        ):
+            return None
+        if start_after == "" and _DOCUTILS_023:
+            start_after = "\n\n"
+        return start_line, end_line, start_after or ""
+    return None
+
+
+def _numbered_from_the_slice(lines: StringList, index: int, source: str) -> bool:
+    """Whether the slice of ``source`` that line ``index`` of ``lines`` is in was
+    numbered from its own first line, as ``StateMachine.insert_input`` numbers it.
+
+    ``lines`` is followed up to the parser's whole input, where ``insert_input`` put
+    the slice after an ``internal padding before <source>`` line. ``False`` where that
+    line is not there (a list built for a nested parse, a ``:parser:`` include's own
+    document), or where the slice's first line already carries a line of the file: a
+    docutils that numbered the slice from the file would otherwise have it counted
+    twice.
+    """
+    while (parent := lines.parent) is not None:
+        index += lines.parent_offset
+        lines = parent
+    items = lines.items
+    if not 0 <= index < len(items):
+        return False
+    marker = "internal padding before " + source
+    for position in range(index, -1, -1):
+        if items[position][0] == marker:
+            if position + 1 >= len(items):
+                return False
+            first_source, first_offset = items[position + 1]
+            return first_source == source and first_offset == 0
+    return False
+
+
+def _slice_lines(
+    env: BuildEnvironment,
+    source: str,
+    start_line: int | None,
+    end_line: int | None,
+    start_after: str,
+) -> _SliceLines | None:
+    """The file lines of the slice of ``source`` an include keeps, by the slice's
+    lines; ``None`` if the file cannot be read or the ``:start-after:`` text is not in
+    it.
+
+    The include's clip is repeated on the file's text, to find where in the text the
+    slice starts, and that position is counted in the file's lines as
+    :func:`_file_lines` numbers them: ``:start-line:`` keeps lines by
+    ``str.splitlines``, which breaks a line at a form feed where the file's numbering
+    does not.
+    """
+    cache: dict[tuple[object, ...], _SliceLines | None] = env.temp_data.setdefault(
+        _SLICES_KEY, {}
+    )
+    key = (os.path.abspath(source), start_line, end_line, start_after)
+    if key not in cache:
+        text = _file_text(env, source)
+        cache[key] = (
+            None
+            if text is None
+            else _clip_lines(text, start_line, end_line, start_after)
+        )
+    return cache[key]
+
+
+def _clip_lines(
+    text: str, start_line: int | None, end_line: int | None, start_after: str
+) -> _SliceLines | None:
+    """:func:`_slice_lines` of a file's ``text``."""
+    breaks = [match.end() for match in _LINE_BREAK.finditer(text)]
+
+    def line_at(position: int) -> int:
+        return bisect.bisect_right(breaks, position) + 1
+
+    units = text.splitlines(keepends=True)
+    starts = list(itertools.accumulate(map(len, units), initial=0))
+    position, stop, first_unit = 0, len(text), 0
+    line_clip = bool(start_line) or end_line is not None
+    if line_clip:
+        first_unit, last_unit, _ = slice(start_line, end_line).indices(len(units))
+        position, stop = starts[first_unit], starts[max(first_unit, last_unit)]
+    if start_after and line_clip and _DOCUTILS_022:
+        # the kept lines joined with ``\n``: find the text there, and where its end is
+        # in the file's text
+        kept = text.splitlines()[start_line:end_line]
+        found = "\n".join(kept).find(start_after)
+        if found < 0:
+            return None
+        rest = found + len(start_after)
+        for kept_line in kept:
+            if rest <= len(kept_line):
+                break
+            rest -= len(kept_line) + 1
+            first_unit += 1
+        position = starts[first_unit] + rest
+    elif start_after:
+        # the kept text is the file's own
+        found = text.find(start_after, position, stop)
+        if found < 0:
+            return None
+        position = found + len(start_after)
+    first = line_at(position)
+    if line_clip and _DOCUTILS_022:
+        # each line of the slice is a ``str.splitlines`` line of the file, so a form
+        # feed inside the slice starts a line the file's numbering does not have
+        def joined(line: int) -> int | None:
+            unit = first_unit + line - 1
+            if line < 1 or unit >= len(units):
+                return None
+            return first if line == 1 else line_at(starts[unit])
+
+        return joined
+
+    # the slice is the file's text from ``position`` on: its lines are the file's
+    def kept_as_written(line: int) -> int | None:
+        return first + line - 1 if line >= 1 else None
+
+    return kept_as_written
+
+
+def file_line(
+    state: object,
+    lines: StringList | None,
+    index: int,
+    source: str | None,
+    line: int | None,
+    *,
+    check: LineCheck | None = None,
+) -> int | None:
+    """The line of its file that a line the parser read is written on.
+
+    The state machine gives ``(source, line)`` for line ``index`` of ``lines``; inside
+    an include's slice that ``line`` counts from the slice's first line, and the file
+    line is recovered from the include's options in ``document.include_log``
+    (reStructuredText only: myst-parser offsets its own include's lines). ``line`` is
+    returned unchanged wherever that cannot be done: no active include of ``source``
+    that clips it, a slice not numbered from its own start
+    (:func:`_numbered_from_the_slice`), a file the project's ``source_encoding`` cannot
+    read, a ``:start-after:`` text not found in it; and wherever the file does not hold
+    the text there (``check``): an ``include-read`` handler that rewrote the slice, a
+    file the include decoded otherwise than the project's ``source_encoding`` does. A
+    wrong line passes only where the file holds an identical copy of the whole text at
+    the line a rewritten or misdecoded slice gives, the twin the hops already document.
+
+    :param state: The parser state reading the line.
+    :param lines: The input the line is in, as the state machine holds it.
+    :param index: The line's index in ``lines``.
+    :param source: The file the state machine gives for the line.
+    :param line: The 1-based line the state machine gives for it.
+    :param check: Whether the file holds the text at a line: a directive's whole
+        block (:func:`block_check` of its ``block_text``); by default, the line the
+        parser read, ``lines[index]``, compared as :func:`block_check` compares a line.
+    """
+    if not (source and line and lines is not None and isinstance(state, RSTState)):
+        return line
+    document = state.document
+    entry = _include_entry(document, source)
+    if entry is None:
+        return line
+    start_line, end_line, start_after = entry
+    if not (start_line or end_line is not None or start_after):
+        return line
+    if not _numbered_from_the_slice(lines, index, source):
+        return line
+    slice_lines = _slice_lines(
+        document.settings.env, source, start_line, end_line, start_after
+    )
+    if slice_lines is None or (recovered := slice_lines(line)) is None:
+        return line
+    if check is None:
+        if not 0 <= index < len(lines):
+            return line
+        check = block_check(lines[index])
+    file_lines = _file_lines(document.settings.env, source, document_tab_width(state))
+    if file_lines is None or not check(file_lines, recovered, None):
+        return line
+    return recovered
+
+
+def directive_line(directive: Directive) -> tuple[str | None, int | None]:
+    """The file and the line ``directive`` is written on: the state machine's, with
+    the line of an included slice in its file (:func:`file_line`), where the file
+    holds the directive's whole block there."""
+    machine = directive.state_machine
+    source, line = machine.get_source_and_line(directive.lineno)
+    if not isinstance(directive.state, RSTState):
+        # myst-parser's mock state machine has no input lines (and needs none)
+        return source, line
+    return source, file_line(
+        directive.state,
+        machine.input_lines,
+        directive.lineno - machine.input_offset - 1,
+        source,
+        line,
+        check=block_check(directive.block_text),
+    )
 
 
 def _checked_lines(
@@ -239,9 +517,10 @@ def _checked_lines(
     """``(start_line, end_line)`` if the file holds the text there, else ``(None, None)``.
 
     The line a parser reports is the line of what it was handed, which is not the
-    file's wherever the text was changed on the way: an include's ``:start-after:`` or
-    ``:start-line:``, a ``source-read`` handler, myst-parser's nested colon fences. So a
-    line is recorded only where the file, read from disk, holds the text there, by the
+    file's wherever the text was changed on the way: a ``source-read`` or
+    ``include-read`` handler, myst-parser's nested colon fences, an include's slice
+    whose start in the file could not be recovered (:func:`file_line`). So a line is
+    recorded only where the file, read from disk, holds the text there, by the
     producer's ``check``.
     """
     if not start_line:
@@ -455,7 +734,7 @@ def directive_hops(
     opens the directive's fence there, with its name and its title
     (:func:`fence_check`).
     """
-    source, start_line = directive.state_machine.get_source_and_line(directive.lineno)
+    source, start_line = directive_line(directive)
     env = directive.state.document.settings.env
     rst = isinstance(directive.state, RSTState)
     end_line = None

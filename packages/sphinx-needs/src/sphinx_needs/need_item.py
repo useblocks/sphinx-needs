@@ -34,6 +34,7 @@ from sphinx_needs._need_source import (
     NeedSourceSemantic,
     checked_hops,
     directive_hops,
+    directive_line,
     first_line,
     placement_index,
     placement_of,
@@ -178,16 +179,17 @@ class NeedItemSource:
         directive where the file holds them), after ``first``: the hops the need's text
         came through before the directive, innermost first, if any. ``lineno`` is the
         line the directive is written on, resolved through the state machine (which
-        ``rst_prolog``, an include or generated input shift); its content offset and its
-        line in the parser's own count are kept as ``lineno_content`` and
-        ``parser_lineno``.
+        ``rst_prolog``, an include or generated input shift), in its file also inside an
+        include's slice (``:start-line:``, ``:start-after:``), where docutils counts from
+        the slice's first line; its content offset and its line in the parser's own
+        count are kept as ``lineno_content`` and ``parser_lineno``.
 
         :param directive: The directive, a docutils ``Directive`` (a ``SphinxDirective``
             is one) being run in a Sphinx build.
         :param first: Hops to place before the directive's own (**provisional**, as the
             hops are).
         """
-        _, resolved = directive.state_machine.get_source_and_line(directive.lineno)
+        _, resolved = directive_line(directive)
         return cls(
             directive_hops(directive, first=first),
             lineno=resolved or directive.lineno,
