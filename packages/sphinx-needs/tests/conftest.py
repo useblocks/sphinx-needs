@@ -80,15 +80,35 @@ def _check_parent_child(app: Sphinx, doctree: document, docname: str):
         )
 
 
+def _check_declared_config(app: Sphinx, exception: Exception | None) -> None:
+    """Sphinx's configuration holds the declared options alone: a ``needs_*`` attribute
+    that is no declared value is state a build wrote there (#2402), which a ``conf.py``
+    could set and Sphinx pickles. What a build stores elsewhere (on the environment, say)
+    is out of this check's reach. ``name in config`` asks Sphinx for its declared
+    values, its own ``needs_sphinx`` and ``needs_extensions`` included."""
+    if exception is not None:
+        return
+    undeclared = sorted(
+        k for k in vars(app.config) if k.startswith("needs_") and k not in app.config
+    )
+    assert undeclared == [], (
+        f"undeclared needs_* values on Sphinx's Config: {undeclared}"
+    )
+
+
 @pytest.fixture(scope="session")
 def test_app_events() -> Sequence[tuple[str, Callable[..., object], int]]:
     """What every ``test_app`` build in THIS suite asserts, over and above the test.
 
     The parent-child check runs after any other handler of ``doctree-resolved``, hence the
     priority: placing it here gives coverage to a large part of the suite, and to whatever
-    is added to it next.
+    is added to it next. The configuration check runs after every other handler of
+    ``build-finished``, so it sees what the whole build wrote.
     """
-    return (("doctree-resolved", _check_parent_child, 999),)
+    return (
+        ("doctree-resolved", _check_parent_child, 999),
+        ("build-finished", _check_declared_config, 999),
+    )
 
 
 #: what the first line of a need's text is: a directive's marker, reStructuredText or
