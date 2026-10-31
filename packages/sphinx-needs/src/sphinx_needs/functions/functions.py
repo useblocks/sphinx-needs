@@ -24,7 +24,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.util.logging import suppress_logging
 
 from sphinx_needs import _read_watch
-from sphinx_needs._source_facets import explained, source_undefined
+from sphinx_needs._source_facets import explained, unavailable
 from sphinx_needs._wording import joined
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
@@ -1756,12 +1756,12 @@ def _get_variant(
                     reads.note_read(reader, name)
         try:
             holds = bool(eval(expr, context.copy()))
-        except NameError as error:
-            if not source_undefined(error):
+        except Exception as error:
+            # a condition has no facets: ``source`` undefined there, or a facet read
+            # failing on a field named ``source``, says so
+            if not unavailable(error, expr):
                 raise
-            raise NameError(
-                explained(error, "a variant condition"), name=error.name
-            ) from None
+            raise ValueError(explained(error, "a variant condition", expr)) from None
         if holds:
             return value
     return variant.final_value

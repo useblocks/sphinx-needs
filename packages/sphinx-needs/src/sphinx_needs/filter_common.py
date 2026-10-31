@@ -25,7 +25,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs import _read_watch
-from sphinx_needs._source_facets import SourceFacets, explained
+from sphinx_needs._source_facets import SourceFacets, explained, reads_a_facet
 from sphinx_needs._wording import title_hint
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, NeedsMutable
@@ -43,7 +43,6 @@ from sphinx_needs.ubquery import (
     compile_portable,
     is_a,
     is_a_literals,
-    reads_a_facet,
 )
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
@@ -1080,7 +1079,7 @@ def apply_default_predicate(
         # evaluated as the need is created, before it exists: no facets there
         raise NeedsInvalidFilter(
             f"Predicate {predicate!r} not valid. "
-            f"Error: {explained(e, 'a field predicate')}."
+            f"Error: {explained(e, 'a field predicate', predicate)}."
         )
     return result
 
@@ -1107,9 +1106,10 @@ def filter_import_item(
         result = bool(eval(filter_string, filter_context))
     except Exception as e:
         # it reads the imported record, which has no hops of this build
+        where = "a needimport filter, which reads the imported record"
         raise NeedsInvalidFilter(
             f"Filter {filter_string!r} not valid. "
-            f"Error: {explained(e, 'a needimport filter, which reads the imported record')}."
+            f"Error: {explained(e, where, filter_string)}."
         )
     return result
 
@@ -1233,7 +1233,7 @@ def _filter_single_need(
         # the facets of the need's source, only for a filter naming them: binding them
         # costs every evaluation, where the parsed tier reads only the facets it names;
         # a declaration of the name switches them off, and ``source`` reads it
-        facets = _names_source(filter_compiled, filter_string) and (
+        facets = _string_names_source(filter_string) and (
             config.source_shadowed is None
         )
         if facets:
@@ -1305,19 +1305,17 @@ def _code_names_source(code: CodeType) -> bool:
 @lru_cache(maxsize=256)
 def _string_names_source(filter_string: str) -> bool:
     """:func:`_code_names_source` of a filter string, compiled as ``eval`` compiles it;
-    false for one that does not compile, which ``eval`` then reports."""
+    false for one that does not compile, which ``eval`` then reports.
+
+    Keyed on the string, which every caller passes, never on the code object a call
+    compiles afresh: a cache keyed on that hashes and compares the code by value need by
+    need, a quarter of ``eval``'s cost for a filter that never names ``source``
+    (measured)."""
     try:
         code = compile(filter_string, "<string>", "eval")
     except (SyntaxError, ValueError):
         return False
     return _code_names_source(code)
-
-
-def _names_source(code: CodeType | None, filter_string: str) -> bool:
-    """Whether the filter ``eval`` evaluates (*code*, else the string) names ``source``."""
-    if code is not None:
-        return _code_names_source(code)
-    return _string_names_source(filter_string)
 
 
 class NeedCheckContext:

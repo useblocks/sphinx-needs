@@ -142,7 +142,7 @@ def match_variants(
             log_warning(
                 LOGGER,
                 f"Error in variant expression {expr!r}: "
-                f"{explained(e, 'a variant condition')}",
+                f"{explained(e, 'a variant condition', expr)}",
                 "variant",
                 location=location,
             )

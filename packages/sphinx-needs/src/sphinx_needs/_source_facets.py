@@ -23,14 +23,19 @@ from what a need holds, which the legacy projections of the hops will reuse.
 
 from __future__ import annotations
 
+import ast
 import difflib
 from collections.abc import Callable, Mapping
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Final
 
 from sphinx_needs._need_source import SRCDIR_ROOT
 
 if TYPE_CHECKING:
     from sphinx_needs._need_source import NeedSourceHop
+
+SOURCE_NAME: Final = "source"
+"""The name a filter reads the facets by, ``source.<facet>``."""
 
 SOURCE_FACETS: Final = (
     "document",
@@ -57,7 +62,7 @@ def _hops(source: object) -> tuple[NeedSourceHop, ...]:
 def _srcdir_path(hop: NeedSourceHop) -> str | None:
     """The hop's path, where its root is the Sphinx source directory."""
     physical = hop.physical
-    if physical is None or physical.root != SRCDIR_ROOT:
+    if physical is None or physical.root != SRCDIR_ROOT or hop.origin is not None:
         return None
     return physical.path
 
@@ -75,10 +80,10 @@ def kind_of(source: Any) -> str | None:
     hops = _hops(source)
     keys = source.dict_repr
     first = hops[0].kind if hops else None
-    if first == "external" or keys.get("is_external"):
-        return "external"
     if keys.get("is_import"):
         return "import"
+    if first == "external" or keys.get("is_external"):
+        return "external"
     if any(hop.kind == "report" for hop in hops):
         return "report"
     if first in ("code", "generated"):
@@ -119,7 +124,7 @@ def paths_of(source: Any) -> tuple[str, ...]:
     after it can carry a local path, which is not where the need comes from.
     """
     hops = _hops(source)
-    if hops and hops[0].kind == "external":
+    if hops and hops[0].kind == "external" and not source.dict_repr.get("is_import"):
         return ()
     return tuple(
         dict.fromkeys(path for hop in hops if (path := _srcdir_path(hop)) is not None)
@@ -215,16 +220,42 @@ class SourceFacets:
         return f"<source of {self._need['id']!r}>"
 
 
+@lru_cache(maxsize=256)
+def reads_a_facet(expression: str) -> bool:
+    """Whether an expression reads a facet, ``source.<facet>`` for a name of
+    :data:`SOURCE_FACETS` -- not any attribute of ``source``: a method of a field named
+    ``source`` (``source.startswith(...)``) is no facet read. False for an expression
+    that does not parse. Cached per string."""
+    try:
+        tree = ast.parse(expression.strip(), mode="eval")
+    except (SyntaxError, ValueError):
+        return False
+    return any(
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and node.value.id == SOURCE_NAME
+        and node.attr in READERS
+        for node in ast.walk(tree)
+    )
+
+
 def source_undefined(error: BaseException) -> bool:
     """Whether *error* is ``source`` undefined, where an expression is evaluated with no
     facets."""
-    return isinstance(error, NameError) and getattr(error, "name", None) == "source"
+    return isinstance(error, NameError) and getattr(error, "name", None) == SOURCE_NAME
 
 
-def explained(error: BaseException, where: str) -> str:
-    """The text of an error of an expression evaluated where there are no facets
+def unavailable(error: BaseException, expression: str) -> bool:
+    """Whether an expression evaluated where there are no facets failed for want of
+    them: ``source`` undefined there, or a facet read failing on what ``source`` is
+    there (a field named ``source``, a record's key)."""
+    return source_undefined(error) or reads_a_facet(expression)
+
+
+def explained(error: BaseException, where: str, expression: str) -> str:
+    """The text of an error of *expression*, evaluated where there are no facets
     (*where*: a field predicate, a needimport filter, a variant condition), with why,
-    for ``source`` undefined there."""
-    if source_undefined(error):
+    where it failed for want of them (:func:`unavailable`)."""
+    if unavailable(error, expression):
         return f"{error}; the source.* facets are not available in {where}"
     return str(error)

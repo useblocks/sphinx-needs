@@ -54,7 +54,7 @@ from dataclasses import dataclass
 from functools import lru_cache, partial
 from typing import Any
 
-from sphinx_needs._source_facets import READERS, SourceFacets
+from sphinx_needs._source_facets import READERS, SOURCE_NAME, SourceFacets
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 
 _COMPARE_OPS: dict[type, Callable[[Any, Any], Any]] = {
@@ -100,10 +100,6 @@ _FALLBACK_ROOTS: frozenset[str] = frozenset({"var"})
 #: what ``c.this_doc()`` compares a need's document with. No name in a filter can be it,
 #: so it never shadows a field. ``filter_common`` sets it, for a filter that reads it.
 ORIGIN_KEY = "\x00origin"
-
-#: The name of the facets of a need's source (``source.path``, ``source.kind``, ...:
-#: :mod:`sphinx_needs._source_facets`), read by operands of their own, never as a field.
-SOURCE_NAME = "source"
 
 #: The key, in the per-call context mapping, that switches the facets off: the project
 #: declares a field or a ``needs_filter_data`` key named ``source``, which the name then
@@ -288,23 +284,6 @@ def compile_portable(filter_string: str) -> CompiledFilter:
         any(map(_is_this_doc, nodes)),
         any(_is_c_check(node, "is_a") for node in nodes),
         any(isinstance(node, ast.Name) and node.id == SOURCE_NAME for node in nodes),
-    )
-
-
-@lru_cache(maxsize=256)
-def reads_a_facet(filter_string: str) -> bool:
-    """Whether a filter string reads an attribute of ``source`` (``source.path``):
-    where a declaration of the name switches the facets off, its failure says so.
-    False for a string that does not parse. Cached per string."""
-    try:
-        tree = ast.parse(filter_string, mode="eval")
-    except (SyntaxError, ValueError):
-        return False
-    return any(
-        isinstance(node, ast.Attribute)
-        and isinstance(node.value, ast.Name)
-        and node.value.id == SOURCE_NAME
-        for node in ast.walk(tree)
     )
 
 

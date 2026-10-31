@@ -43,9 +43,6 @@ from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs.ubquery import CompiledFilter
 from sphinx_needs_testkit import build_warnings
 
-#: pinned before fix round 1 lands: red until the commit that serves it
-_UNTIL_FIX_ROUND_1 = pytest.mark.xfail(strict=True, reason="fix round 1")
-
 
 def _page(path: str, line: int | None = None, document: str = "index") -> NeedSourceHop:
     return NeedSourceHop(
@@ -255,19 +252,17 @@ SHAPES: dict[str, tuple[Any, tuple[Any, ...]]] = {
         ),
         ("page", "frag/a.rst", 2, ("frag/a.rst", "../m.py", "x.rst"), None),
     ),
-    "an-imported-external": pytest.param(
+    "an-imported-external": (
         NeedItemSource((_EXTERNAL, _page("imp.rst", 7)), is_import=True),
         ("import", None, None, ("imp.rst",), None),
-        marks=_UNTIL_FIX_ROUND_1,
     ),
-    "an-import-of-an-external-need-upstream": pytest.param(
+    "an-import-of-an-external-need-upstream": (
         NeedItemSource(
             (_EXTERNAL, _file("imp.json"), _page("imp.rst", 7)), is_import=True
         ),
         ("import", None, None, ("imp.json", "imp.rst"), None),
-        marks=_UNTIL_FIX_ROUND_1,
     ),
-    "an-upstream-hop-with-an-origin": pytest.param(
+    "an-upstream-hop-with-an-origin": (
         NeedItemSource(
             (
                 NeedSourceHop(
@@ -281,7 +276,6 @@ SHAPES: dict[str, tuple[Any, tuple[Any, ...]]] = {
             is_import=True,
         ),
         ("import", None, None, ("imp.json", "imp.rst"), None),
-        marks=_UNTIL_FIX_ROUND_1,
     ),
     "no-hops": (NeedItemSource(), (None, None, None, (), None)),
     "third-party": (_ThirdParty(), (None, None, None, (), None)),
@@ -540,7 +534,6 @@ def test_no_declaration_named_source_leaves_the_facets_on(test_app: Any) -> None
         assert set(_both_tiers(app, bare).values()) == {False}, bare
 
 
-@_UNTIL_FIX_ROUND_1
 @pytest.mark.parametrize("test_app", [_DECLARATIONS[0].values[0]], indirect=True)
 def test_a_method_of_a_field_named_source_is_no_facet_read(test_app: Any) -> None:
     """``source.startswith(...)`` where a field named ``source`` is declared calls the
@@ -827,7 +820,6 @@ def test_a_needflow_variant_condition_says_it_has_no_facets(
     ]
 
 
-@_UNTIL_FIX_ROUND_1
 @pytest.mark.parametrize("test_app", [_project("")], indirect=True)
 def test_eval_asks_whether_a_filter_names_source_once_per_string(
     test_app: Any, monkeypatch: pytest.MonkeyPatch
@@ -872,7 +864,6 @@ def test_eval_asks_whether_a_filter_names_source_once_per_string(
             "the source.* facets are not available in a variant condition "
             "[needs.dynamic_function]",
             id="variant-condition",
-            marks=_UNTIL_FIX_ROUND_1,
         ),
         pytest.param(
             _project(
