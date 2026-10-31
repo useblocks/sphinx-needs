@@ -371,12 +371,6 @@ def _both_tiers(app: Any, filter_string: str) -> dict[str, bool | str]:
     return parsed
 
 
-#: pinned before fix round 0 lands: red until the commit that serves it
-_UNTIL_FIX_ROUND_0 = pytest.mark.xfail(
-    strict=True, reason="the declaration is reported where a facet is read"
-)
-
-
 def _clause(declared: str) -> str:
     return (
         f"; the project declares {declared} named 'source', which switches the "
@@ -425,7 +419,6 @@ _DECLARATIONS = [
 ]
 
 
-@_UNTIL_FIX_ROUND_0
 @pytest.mark.parametrize(
     ("test_app", "declared", "reads"), _DECLARATIONS, indirect=["test_app"]
 )
@@ -447,7 +440,6 @@ def test_a_declaration_named_source_switches_the_facets_off(
     assert _both_tiers(app, 'source == "manual"') == reads
 
 
-@_UNTIL_FIX_ROUND_0
 @pytest.mark.parametrize(
     ("test_app", "declared", "reads"), _DECLARATIONS, indirect=["test_app"]
 )
@@ -479,7 +471,6 @@ def test_a_facet_read_where_source_is_declared_says_why(
     assert reported[0].endswith(f"{_clause(declared)}. [needs.filter]"), reported
 
 
-@_UNTIL_FIX_ROUND_0
 @pytest.mark.parametrize("test_app", [_project("")], indirect=True)
 def test_no_declaration_named_source_leaves_the_facets_on(test_app: Any) -> None:
     app = test_app
@@ -714,7 +705,6 @@ Index
 """
 
 
-@_UNTIL_FIX_ROUND_0
 @pytest.mark.parametrize("test_app", [_project(CONF_LATE, INDEX_LATE)], indirect=True)
 def test_a_field_named_source_is_still_a_field_the_pass_watches(test_app: Any) -> None:
     """The facets read hops fixed before the pass, so ``eval`` treats them as no field

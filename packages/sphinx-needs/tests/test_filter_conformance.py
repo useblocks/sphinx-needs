@@ -388,17 +388,9 @@ def test_a_case_loading_sphinx_codelinks_is_a_git_checkout() -> None:
     params(CASES, files=_files, skip=uninstalled_extension),
     indirect=["test_app"],
 )
-def test_case(
-    test_app: Any, case: dict[str, Any], request: pytest.FixtureRequest
-) -> None:
+def test_case(test_app: Any, case: dict[str, Any]) -> None:
     app = test_app
     app.build()
-    if case["name"] == "a-field-named-source-switches-the-facets-off":
-        request.applymarker(
-            pytest.mark.xfail(
-                strict=True, reason="no build warning for a field named source"
-            )
-        )
     # the project itself builds clean: a case whose configuration or document is not
     # read as written tests something else (the warnings a case may earn are the
     # deprecation of `filter_data`, which the residue's own filters read, and the

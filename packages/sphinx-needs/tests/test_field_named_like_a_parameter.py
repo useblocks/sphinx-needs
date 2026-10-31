@@ -167,7 +167,6 @@ INDEX = "\n".join(
     ],
     indirect=True,
 )
-@pytest.mark.xfail(strict=True, reason="no build warning for a field named source")
 def test_a_field_named_like_a_parameter_round_trips(test_app: SphinxTestApp):
     """Every producer creates its need, and every field holds what it set."""
     app = test_app

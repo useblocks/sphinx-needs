@@ -231,7 +231,6 @@ Index
     ],
     indirect=["test_app"],
 )
-@pytest.mark.xfail(strict=True, reason="no build warning for a field named source")
 def test_need_attribute_is_applied_and_resolves(test_app: Sphinx, field: str, value):
     """A ``need.<field>`` argument parses, so the option is applied, and the call resolves.
 

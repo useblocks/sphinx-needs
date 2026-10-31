@@ -43,6 +43,7 @@ from sphinx_needs.ubquery import (
     compile_portable,
     is_a,
     is_a_literals,
+    reads_a_facet,
 )
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
@@ -878,7 +879,7 @@ def filter_needs_and_parts(
             compiled,
             origin_docname,
             config.is_a_types if compiled.reads_types else None,
-            shadowed=compiled.reads_source and config.source_shadowed,
+            shadowed=compiled.reads_source and config.source_shadowed is not None,
         )
         found_needs: list[_NeedOrPartT] = []
         error_reported = False
@@ -895,7 +896,8 @@ def filter_needs_and_parts(
                         append_warning = f" {append_warning}"
                     log_warning(
                         log,
-                        f"Filter {filter_string!r} not valid. Error: {e}.{append_warning}",
+                        f"Filter {filter_string!r} not valid. "
+                        f"Error: {_failure(e, filter_string, config)}.{append_warning}",
                         "filter",
                         location=location,
                     )
@@ -1183,7 +1185,7 @@ def _filter_single_need(
         if simple_pred is not None:
             # called need by need: the mapping is built only for a predicate that reads it
             filter_data = config.filter_data
-            shadowed = compiled.reads_source and config.source_shadowed
+            shadowed = compiled.reads_source and config.source_shadowed is not None
             fallback = (
                 _fast_path_context(
                     filter_data,
@@ -1207,7 +1209,8 @@ def _filter_single_need(
                 raise
             except Exception as e:
                 raise NeedsInvalidFilter(
-                    f"Filter {filter_string!r} not valid. Error: {e}."
+                    f"Filter {filter_string!r} not valid. "
+                    f"Error: {_failure(e, filter_string, config)}."
                 )
 
         # === Slow path: fall back to eval() ===
@@ -1231,7 +1234,7 @@ def _filter_single_need(
         # costs every evaluation, where the parsed tier reads only the facets it names;
         # a declaration of the name switches them off, and ``source`` reads it
         facets = _names_source(filter_compiled, filter_string) and (
-            not config.source_shadowed
+            config.source_shadowed is None
         )
         if facets:
             filter_context[SOURCE_NAME] = SourceFacets(
@@ -1259,11 +1262,30 @@ def _filter_single_need(
             # a filter is read for its truth, whatever its value (#1773)
             result = bool(eval(filter_compiled or filter_string, filter_context))
         except Exception as e:
-            raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
+            raise NeedsInvalidFilter(
+                f"Filter {filter_string!r} not valid. "
+                f"Error: {_failure(e, filter_string, config)}."
+            )
         return result
     finally:
         if watch is not None:
             watch.active = False
+
+
+def _failure(error: Exception, filter_string: str, config: NeedsSphinxConfig) -> str:
+    """The text of a filter's failure on a need. Where a declaration named ``source``
+    switches the facets off and the filter reads one (``source.path``), it fails there
+    -- the declaration's value has no facets -- and the text says why, naming the
+    declaration, in either tier: declaring the name is no fault, so it is reported
+    where a facet is read, not where it is declared."""
+    if (declared := config.source_shadowed) is not None and reads_a_facet(
+        filter_string
+    ):
+        return (
+            f"{error}; the project declares {declared} named 'source', which switches "
+            "the source.* facets off"
+        )
+    return str(error)
 
 
 @lru_cache(maxsize=256)

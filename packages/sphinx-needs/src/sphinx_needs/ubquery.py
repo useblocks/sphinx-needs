@@ -292,6 +292,23 @@ def compile_portable(filter_string: str) -> CompiledFilter:
 
 
 @lru_cache(maxsize=256)
+def reads_a_facet(filter_string: str) -> bool:
+    """Whether a filter string reads an attribute of ``source`` (``source.path``):
+    where a declaration of the name switches the facets off, its failure says so.
+    False for a string that does not parse. Cached per string."""
+    try:
+        tree = ast.parse(filter_string, mode="eval")
+    except (SyntaxError, ValueError):
+        return False
+    return any(
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and node.value.id == SOURCE_NAME
+        for node in ast.walk(tree)
+    )
+
+
+@lru_cache(maxsize=256)
 def is_a_literals(filter_string: str) -> tuple[str, ...]:
     """The names a filter string's ``c.is_a("<type>")`` calls give as a string literal,
     each once, in the order they are written: whichever tier answers the string, since
