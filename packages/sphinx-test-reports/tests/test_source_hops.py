@@ -223,6 +223,83 @@ def test_a_code_hop_has_no_root_no_end_line_and_no_language(build):
     assert (code.language, code.origin) == (None, None)
 
 
+@pytest.mark.xfail(strict=True, reason="G1: a test case's code hop has no language")
+def test_a_code_hop_names_the_language_of_its_file(build):
+    """The language's name, by the test file's suffix, as a code hop records it."""
+    needs, _ = build({"index.rst": PAGE}, {"reports/plain.xml": REPORT})
+    assert needs["TC_HAND"].source.hops[0].language == "python"
+
+
+#: The language sphinx-codelinks gives a file of each suffix it traces, read from
+#: ``packages/sphinx-codelinks/src/sphinx_codelinks/source_discover/config.py``, which
+#: lists the suffixes of each comment type::
+#:
+#:     "cpp": ["c", "ci", "cpp", "cc", "cxx", "h", "hpp", "hxx", "hh", "ihl"],
+#:     "python": ["py"],
+#:     "cs": ["cs"],
+#:     "ts": ["ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs"],
+#:     "yaml": ["yml", "yaml"],
+#:     "rust": ["rs"],
+#:     "go": ["go"],
+#:     "jsonc": ["jsonc", "json"],
+#:     "bash": ["sh", "bash", "zsh", "ksh"],
+#:
+#: (discovery compares a suffix in lower case: ``filepath.suffix.lower() not in
+#: self.file_types``), and from ``.../analyse/entity.py``, ``scope_language``, which
+#: names the language::
+#:
+#:     if comment_type == CommentType.cpp:
+#:         return "c" if path.suffix == ".c" else "cpp"
+#:     if comment_type == CommentType.cs:
+#:         return "csharp"
+#:     if comment_type == CommentType.ts:
+#:         if path.suffix.lower() in _JAVASCRIPT_SUFFIXES:
+#:             return "javascript"
+#:         return "typescript"
+#:     return comment_type.value
+#:
+#: with ``_JAVASCRIPT_SUFFIXES = frozenset({".js", ".jsx", ".mjs", ".cjs"})``. A
+#: suffix in another case is traced too: ``.C`` is C++ (only ``.c`` is C), ``.JS``
+#: JavaScript, ``.PY`` Python.
+CODELINKS_LANGUAGES = {
+    ".c": "c",
+    **dict.fromkeys(
+        (".ci", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".hxx", ".hh", ".ihl"), "cpp"
+    ),
+    ".C": "cpp",
+    ".CPP": "cpp",
+    ".py": "python",
+    ".PY": "python",
+    ".cs": "csharp",
+    **dict.fromkeys((".ts", ".tsx", ".mts", ".cts"), "typescript"),
+    **dict.fromkeys((".js", ".jsx", ".mjs", ".cjs", ".JS"), "javascript"),
+    ".yml": "yaml",
+    ".yaml": "yaml",
+    ".rs": "rust",
+    ".go": "go",
+    ".jsonc": "jsonc",
+    ".json": "jsonc",
+    **dict.fromkeys((".sh", ".bash", ".zsh", ".ksh"), "bash"),
+}
+
+
+@pytest.mark.xfail(strict=True, reason="G1: test-reports names no language")
+def test_the_language_of_a_suffix_agrees_with_sphinx_codelinks():
+    """For every suffix both know, a test file's language is the one sphinx-codelinks
+    gives a file it traces; a suffix it does not know is no language, and a report
+    written on Windows names its file with ``\\``."""
+    from sphinx_test_reports.directives.test_common import _source_language
+
+    assert {
+        suffix: _source_language(f"tests/test_x{suffix}")
+        for suffix in CODELINKS_LANGUAGES
+    } == CODELINKS_LANGUAGES
+    assert _source_language("tests\\sub\\test_w.py") == "python"
+    assert _source_language("tests/test_x.java") == "java"
+    for unknown in ("tests/test_x.txt", "tests/test_x.rst", "tests/README", "x.", ""):
+        assert _source_language(unknown) is None, unknown
+
+
 #: The lines each need is written on: a generated need's is its test-report's (#2209).
 EXPECTED_LINES = {
     "TF_PLAIN": 4,

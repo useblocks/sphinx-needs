@@ -330,3 +330,22 @@ def test_an_attribute_differs_by_design(code_hops: dict[str, NeedSourceHop]) -> 
         assert ours[:3] == theirs[:3]
         ours_chain, theirs_chain = ours[3], theirs[3] or ()
         assert ours_chain[: len(theirs_chain)] == theirs_chain
+
+
+@pytest.mark.xfail(strict=True, reason="G11: neither code hop has a qualified name")
+def test_both_producers_render_the_same_qualified_name(
+    code_hops: dict[str, NeedSourceHop],
+) -> None:
+    """The entity's ``qualified_name`` extra: this package's rendering of the analysis,
+    and sphinx-needs' of the parts it reads from the syntax, are one string for every
+    function and class (``make.<locals>.Made.go``); the module docstring has none."""
+
+    def qualified(hop: NeedSourceHop) -> str | None:
+        if not hop.semantic:
+            return None
+        return dict(hop.semantic[-1].extras).get("qualified_name")
+
+    ours = {case: qualified(code_hops[f"R_{case}"]) for case in ENTITIES}
+    assert ours == {case: qualified(code_hops[f"CL_{case}"]) for case in ENTITIES}
+    assert ours["MADE_METHOD"] == "make.<locals>.Made.go"
+    assert [case for case, name in ours.items() if name is None] == ["MODULE"]

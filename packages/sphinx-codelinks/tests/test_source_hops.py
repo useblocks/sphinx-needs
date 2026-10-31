@@ -11,6 +11,7 @@ provisional and reach no ``needs.json``.
 
 from __future__ import annotations
 
+import dataclasses
 import io
 import json
 import os
@@ -484,6 +485,52 @@ def test_the_cpp_pair_has_one_name_chain_and_two_kind_sequences(
     assert chain(nested) == chain(out)
 
 
+#: The entity's qualified name as the analysis renders it (``scope.qualified_name``), by
+#: its file's language: ``::`` for C, C++ and Rust (a trait impl ``<Widget as Shape>``),
+#: ``.`` otherwise, and Python's ``<locals>``.
+QUALIFIED = {
+    "IMPL_PY_ONE": "Shape.area",
+    "IMPL_PY_LOCALS": "Shape.area.<locals>.inner",
+    "IMPL_PY_MULTI": "compute",
+    "IMPL_CRLF_ONE": "K.m",
+    "IMPL_CRLF_MULTI": "g",
+    "IMPL_CPP_IN": "ns::W::f",
+    "IMPL_CPP_OUT": "ns::W::f",
+    "IMPL_CPP_MULTI": "run",
+    "IMPL_C_ONE": "add",
+    "IMPL_C_MULTI": "sub",
+    "IMPL_RS_TRAIT": "<Widget as Shape>::area",
+    "IMPL_RS_TRAIT_MULTI": "<Widget as Shape>::perimeter",
+    "IMPL_RS_MULTI": "Widget::new",
+    "IMPL_TS_ONE": "Greeter.greet",
+    "IMPL_TS_MULTI": "farewell",
+    "IMPL_INSIDE": "inside",
+}
+
+
+@pytest.mark.xfail(strict=True, reason="G11: the code hop has no qualified name")
+def test_the_entity_carries_the_analysis_qualified_name(built: SphinxTestApp) -> None:
+    """The innermost entry of a code hop, the entity itself, carries the analysis'
+    rendering of its qualified name as a ``("qualified_name", ...)`` extra, after a
+    trait; no other entry has one, and a hop with no entity has no semantic location."""
+    needs = SphinxNeedsData(built.env).get_needs_view()
+
+    def qualified(need_id: str) -> list[str | None]:
+        return [
+            dict(entry.extras).get("qualified_name")
+            for entry in needs[need_id].source.hops[0].semantic or ()
+        ]
+
+    assert {need_id: qualified(need_id)[-1] for need_id in QUALIFIED} == QUALIFIED
+    for need_id in EXPECTED_HOPS:
+        names = qualified(need_id)
+        assert (names == []) == (need_id not in QUALIFIED), need_id
+        assert all(name is None for name in names[:-1]), need_id
+    impl, method = needs["IMPL_RS_TRAIT"].source.hops[0].semantic or ()
+    assert impl.extras == (("trait", "Shape"),)
+    assert method.extras == (("qualified_name", "<Widget as Shape>::area"),)
+
+
 def test_a_need_s_lineno_is_its_directive_s_line(built: SphinxTestApp) -> None:
     """The line the directive is written on: the page hop's start line."""
     needs = SphinxNeedsData(built.env).get_needs_view()
@@ -747,6 +794,40 @@ def test_an_environment_pickled_at_env_version_1_is_read_again(
     # what version 1 recorded: the page, at the directive's line, and nothing else
     for need in env._needs_all_needs.values():
         need._source = NeedItemSource.on_page(need["docname"], lineno=need["lineno"])
+    pickled.write_bytes(pickle.dumps(env, pickle.HIGHEST_PROTOCOL))
+
+    app, read, _ = _build(make_app, srcdir, fresh=False)
+    assert read == ["index"]
+    assert _hops(app) == EXPECTED_HOPS
+
+
+@pytest.mark.xfail(strict=True, reason="env_version is still 2")
+def test_an_environment_pickled_at_env_version_2_is_read_again(
+    make_app: _MakeApp, tmp_path: Path
+) -> None:
+    """Version 2 recorded each need's code hop without the entity's qualified name.
+    Nothing in the sources or the configuration changed: ``env_version`` 3 is what has
+    the build read the page again here, rather than keep those records."""
+    srcdir = _write(tmp_path, FILES)
+    app, _, _ = _build(make_app, srcdir)
+    pickled = Path(app.doctreedir, "environment.pickle")
+    env = pickle.loads(pickled.read_bytes())
+    env.version["sphinx_codelinks"] = 2
+    # what version 2 recorded: the code hop's entries without the qualified name
+    for need in env._needs_all_needs.values():
+        code, *rest = need._source.hops
+        entries = tuple(
+            dataclasses.replace(
+                entry,
+                extras=tuple(e for e in entry.extras if e[0] != "qualified_name"),
+            )
+            for entry in code.semantic or ()
+        )
+        hops = (
+            dataclasses.replace(code, semantic=entries if code.semantic else None),
+            *rest,
+        )
+        object.__setattr__(need._source, "hops", hops)
     pickled.write_bytes(pickle.dumps(env, pickle.HIGHEST_PROTOCOL))
 
     app, read, _ = _build(make_app, srcdir, fresh=False)

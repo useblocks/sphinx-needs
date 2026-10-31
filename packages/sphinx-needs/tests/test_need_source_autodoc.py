@@ -168,6 +168,49 @@ def test_a_docstring_s_code_hop(
     assert (page.kind, page.document) == ("page", "index")
 
 
+#: the entity's qualified name in its file, as sphinx-codelinks renders a Python entity
+#: (``.``-joined, ``<locals>`` after a function or a method another part follows)
+QUALIFIED = {
+    "R_FUNC": "area_of",
+    "R_CLASS": "Shape",
+    "R_METHOD": "Shape.area",
+    "R_NESTED_METHOD": "Shape.Inner.deep",
+    "R_INHERITED": "Base.describe",
+    "R_MADE": "make.<locals>.Made",
+    "R_MADE_METHOD": "make.<locals>.Made.go",
+    "R_ATTR": "Shape.sides",
+    "R_DATA": "LIMIT",
+    "R_COLLIDE_METHOD": "Thing.area",
+    "R_DEEP": "documented",
+}
+
+
+@pytest.mark.xfail(strict=True, reason="G11: the docstring hop has no qualified name")
+def test_a_docstring_hop_names_its_entity_s_qualified_name(
+    hops: dict[str, tuple[NeedSourceHop, ...]],
+) -> None:
+    """The entity, the innermost entry, carries its qualified name as a
+    ``("qualified_name", ...)`` extra; no other entry has one, nor a hop with no
+    semantic location."""
+
+    def qualified(need_id: str) -> list[str | None]:
+        return [
+            dict(entry.extras).get("qualified_name")
+            for entry in hops[need_id][0].semantic or ()
+        ]
+
+    assert {need_id: qualified(need_id)[-1] for need_id in QUALIFIED} == QUALIFIED
+    for need_id in EXPECTED:
+        names = qualified(need_id)
+        assert all(name is None for name in names[:-1]), need_id
+        assert (not names) or names[-1] is not None, need_id
+    semantic = _python_semantic("outer.<locals>.inner.<locals>.Local.m", _TEXT)
+    assert semantic is not None
+    assert semantic[-1].extras == (
+        ("qualified_name", "outer.<locals>.inner.<locals>.Local.m"),
+    )
+
+
 # --- the rule, on text --------------------------------------------------------------
 
 _TEXT = """\

@@ -11,6 +11,7 @@ The oracle is a fresh build of the same sources.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import pickle
 import re
@@ -442,3 +443,27 @@ def test_an_environment_pickled_at_env_version_1_is_read_again(make_app, tmp_pat
     app, read = _build(make_app, srcdir, fresh=False)
     assert "case" in read
     assert SphinxNeedsData(app.env).get_needs_view()["TC_C"]["case_line"] == "10"
+
+
+@pytest.mark.xfail(strict=True, reason="env_version is still 2")
+def test_an_environment_pickled_at_env_version_2_is_read_again(make_app, tmp_path):
+    """Version 2 recorded a test case's code hop with no language. Nothing in the
+    sources or the configuration changed: ``env_version`` 3 is what has the build read
+    the pages again here, rather than keep those records."""
+    srcdir = _write(tmp_path, FILES)
+    app, _ = _build(make_app, srcdir, fresh=True)
+    pickled = Path(app.doctreedir, "environment.pickle")
+    env = pickle.loads(pickled.read_bytes())
+    env.version["sphinx_test_reports"] = 2
+    # what version 2 recorded: the code hop with no language
+    source = env._needs_all_needs["TC_C"]._source
+    code, *rest = source.hops
+    object.__setattr__(
+        source, "hops", (dataclasses.replace(code, language=None), *rest)
+    )
+    pickled.write_bytes(pickle.dumps(env, pickle.HIGHEST_PROTOCOL))
+
+    app, read = _build(make_app, srcdir, fresh=False)
+    assert "case" in read
+    hop = SphinxNeedsData(app.env).get_needs_view()["TC_C"].source.hops[0]
+    assert (hop.kind, hop.language) == ("code", "python")

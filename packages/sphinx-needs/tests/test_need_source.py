@@ -604,6 +604,143 @@ def test_the_hops_of_every_need(
     ]
 
 
+def _needs(
+    make_app: Callable[..., SphinxTestApp], srcdir: Path, **kwargs: Any
+) -> dict[str, NeedItem]:
+    """Build the project at ``srcdir`` with no warning, and return every need."""
+    app = make_app("html", srcdir=srcdir, freshenv=True, **kwargs)
+    try:
+        app.build()
+        assert_no_warnings(app)
+        return dict(SphinxNeedsData(app.env).get_needs_view().items())
+    finally:
+        app.cleanup()
+
+
+#: a host, three reStructuredText includes deep (the innermost a slice, a ``list2need``
+#: in it), and a MyST page: two MyST includes deep, and two reStructuredText ones in an
+#: ``eval-rst`` block
+NESTED_FILES = {
+    "conf.py": (
+        'extensions = ["sphinx_needs", "myst_parser"]\n'
+        'source_suffix = {".rst": "restructuredtext", ".md": "markdown"}\n'
+        'exclude_patterns = ["frag/**", "_build"]\n'
+    ),
+    "index.rst": (
+        "Host\n====\n\n.. toctree::\n\n   mdpage\n\n.. include:: frag/a.rst\n\n"
+        ".. req:: In the host after\n   :id: NEST_HOST\n"
+    ),
+    "frag/a.rst": (
+        ".. req:: In A\n   :id: NEST_A\n\n.. include:: frag/b.rst\n\n"
+        ".. req:: In A after B\n   :id: NEST_A_AFTER\n"
+    ),
+    "frag/b.rst": (
+        ".. req:: In B\n   :id: NEST_B\n\n.. include:: frag/c.rst\n   :start-after: MARK\n"
+    ),
+    "frag/c.rst": (
+        "Not kept.\n\nMARK\n\n.. req:: In C\n   :id: NEST_C\n\n.. list2need::\n"
+        "   :types: req\n\n   * (NEST_L) A list need in C\n"
+    ),
+    "mdpage.md": (
+        "# MD\n\n```{include} frag/m1.md\n```\n\n"
+        "```{eval-rst}\n.. include:: frag/a2.rst\n```\n"
+    ),
+    "frag/m1.md": "```{include} frag/m2.md\n```\n",
+    "frag/m2.md": "```{req} In M2\n:id: NEST_M2\n```\n",
+    "frag/a2.rst": ".. include:: frag/b2.rst\n",
+    "frag/b2.rst": ".. req:: In B2\n   :id: NEST_B2\n",
+}
+
+
+@pytest.mark.xfail(strict=True, reason="G4: the include intermediates are not recorded")
+def test_a_nested_include_records_each_file_it_passes_through(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+):
+    """Between the innermost file and the page, one ``file`` hop per include the text
+    passed through, innermost first: its path, no line, no semantic location, its
+    suffix. They are read from docutils' ``document.include_log``, so a sliced include
+    in the chain is one too, and so are reStructuredText includes in a MyST page's
+    ``eval-rst``. myst-parser's own ``{include}`` logs nothing there: a MyST include
+    chain records its innermost file alone (a known gap)."""
+    srcdir = tmp_path / "project"
+    for name, text in NESTED_FILES.items():
+        (srcdir / name).parent.mkdir(parents=True, exist_ok=True)
+        (srcdir / name).write_text(text, encoding="utf-8")
+    needs = _needs(make_app, srcdir)
+    a, b = "file srcdir:frag/a.rst (.rst)", "file srcdir:frag/b.rst (.rst)"
+    host = "page [index] srcdir:index.rst (.rst) :: section 'Host'"
+    assert {
+        need_id: [_compact(hop) for hop in need.source.hops]
+        for need_id, need in needs.items()
+    } == {
+        "NEST_HOST": ["page [index] srcdir:index.rst:10-11 (.rst) :: section 'Host'"],
+        "NEST_A": ["file srcdir:frag/a.rst:1-2 (.rst)", host],
+        "NEST_A_AFTER": ["file srcdir:frag/a.rst:6-7 (.rst)", host],
+        "NEST_B": ["file srcdir:frag/b.rst:1-2 (.rst)", a, host],
+        "NEST_C": ["file srcdir:frag/c.rst:5-6 (.rst)", b, a, host],
+        "NEST_L": ["file srcdir:frag/c.rst:11-11 (.rst)", b, a, host],
+        "NEST_M2": [
+            "file srcdir:frag/m2.md (.md)",
+            "page [mdpage] srcdir:mdpage.md (.md) :: section 'MD'",
+        ],
+        "NEST_B2": [
+            "file srcdir:frag/b2.rst:1-2 (.rst)",
+            "file srcdir:frag/a2.rst (.rst)",
+            "page [mdpage] srcdir:mdpage.md (.md) :: section 'MD'",
+        ],
+    }
+    # the legacy keys read the innermost hop and the page, as they did
+    assert (needs["NEST_C"]["docname"], needs["NEST_C"]["lineno"]) == ("index", 5)
+
+
+@pytest.mark.xfail(strict=True, reason="G6: an on_page need records no page path")
+def test_a_need_created_on_its_page_records_the_page_s_path(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+):
+    """``add_need``'s default source, ``NeedItemSource.on_page``, gives a page hop with
+    no path; ``create_need`` records the page's path on it, and its suffix, with no
+    line: the line the caller gives is a parser line, not one checked in the file. The
+    need's ``lineno`` is the one given, as it was."""
+    needs = _needs(make_app, _copy(tmp_path))
+    (page,) = needs["REQ_APIX"].source.hops
+    assert page == NeedSourceHop(
+        kind="page",
+        document="p2",
+        physical=NeedSourcePhysical(root="srcdir", path="p2.rst"),
+        language=".rst",
+        semantic=(
+            NeedSourceSemantic(kind="section", name="Page 2"),
+            NeedSourceSemantic(kind="section", name="Sec"),
+        ),
+    )
+    assert needs["REQ_APIX"]["lineno"] == 15
+
+
+@pytest.mark.xfail(strict=True, reason="G8: an external hop carries no sections")
+def test_an_external_need_s_hop_carries_its_upstream_sections(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+):
+    """The record's ``sections`` (innermost first) are the ``external`` hop's semantic
+    location, outermost first; the legacy ``sections`` keeps the record's value and
+    order, and ``signature`` stays a field, never a hop's."""
+    needs = _needs(make_app, _copy(tmp_path))
+    need = needs["EXT_X1"]
+    assert need.source.hops == (
+        NeedSourceHop(
+            kind="external",
+            physical=NeedSourcePhysical(url="http://example.org/remote/page.html#X1"),
+            semantic=(
+                NeedSourceSemantic(kind="section", name="Remote top"),
+                NeedSourceSemantic(kind="section", name="Remote sec"),
+            ),
+        ),
+    )
+    assert need["sections"] == ("Remote sec", "Remote top")
+    assert need["signature"] == "remote_sig"
+    (hop,) = need.source.hops
+    assert project_legacy(hop.semantic or ()) == (tuple(need["sections"]), None)
+
+
 def test_a_sliced_include_gives_the_file_lines(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ):
