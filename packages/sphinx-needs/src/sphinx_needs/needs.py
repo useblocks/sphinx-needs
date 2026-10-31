@@ -3707,7 +3707,9 @@ def _computes_paths(
     shape = {**_link_shape_defaults(name), **first}
     return any(
         (rule := keys.get("derive")) is not None
-        and rule.get("kind") in PATH_KINDS
+        # a kind that is not a string is the rule's own finding, as read
+        and isinstance(kind := rule.get("kind"), str)
+        and kind in PATH_KINDS
         and all(
             keys[k] == shape[k]
             for k in NEED_TYPE_LINK_SHAPE_KEYS

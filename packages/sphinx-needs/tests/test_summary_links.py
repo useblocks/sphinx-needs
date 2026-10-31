@@ -737,3 +737,58 @@ def test_summary_false_beside_a_rule_that_cannot_be_read(test_app):
     assert needs["TEST_1"]["loop"] == ["REQ_1"]
     assert needs["TEST_1"]["chain"] == needs["SPEC_1"]["reach"] == []
     assert needs["SPEC_1"]["loop"] == []
+
+
+CONF_TYPE_KIND = """\
+extensions = ["sphinx_needs"]
+needs_build_json = True
+needs_links = {"satisfies": {}}
+needs_types = [
+    {"directive": "req", "title": "Requirement", "prefix": "R_"},
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "S_",
+        "links": {
+            "chain": {"derive": {"kind": "union", "fields": ["satisfies"]}},
+            "reach": {"derive": {"kind": {"copy": True}, "field": "id"}},
+        },
+    },
+    {
+        "directive": "test",
+        "title": "Test",
+        "prefix": "T_",
+        "links": {"chain": {"derive": {"kind": ["copy"], "field": "id"}}},
+    },
+]
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_TYPE_KIND, INDEX_TYPE_UNREAD)], indirect=True
+)
+def test_a_kind_that_is_not_a_string_on_need_types(test_app):
+    """A ``kind`` that is not a string, a list or a table, in a need type's entry of a
+    link type need types alone declare is the rule's ``needs.derive_invalid`` finding,
+    as any unknown kind is; the build goes on, and it computes no summary."""
+    app = test_app
+    app.build()
+    kinds = (
+        "the kinds are copy, sum, count, min, max, any, all, collect, hash, "
+        "fingerprint, links, content_links, union"
+    )
+    assert build_warnings(app) == [
+        "WARNING: Invalid derive of link type 'chain': needs_types['test'].links"
+        f"['chain'].derive: the kind ['copy'] is unknown; {kinds}; the link type "
+        "cannot be set in a need or by a needextend, and on need type 'test' holds no "
+        "links [needs.derive_invalid]",
+        "WARNING: Invalid derive of link type 'reach': needs_types['spec'].links"
+        f"['reach'].derive: the kind {{'copy': True}} is unknown; {kinds}; the link "
+        "type cannot be set in a need or by a needextend, and on need type 'spec' "
+        "holds no links [needs.derive_invalid]",
+    ]
+    version = _version(app)
+    assert version["needs"]["SPEC_1"]["chain"] == ["REQ_1"]
+    assert version["needs"]["TEST_1"]["chain"] == []
+    for name in ("chain", "reach"):
+        assert "summary" not in version["needs_schema"]["properties"][name], name
