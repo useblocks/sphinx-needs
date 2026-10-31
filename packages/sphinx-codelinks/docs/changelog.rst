@@ -50,8 +50,8 @@ New and Improved
   ``Shape.area``, ``<Widget as Shape>::area``), ``semantic``, that name in its parts
   (``namespace ns``, ``class Widget``, ``method draw``), and ``mechanism``, how the
   marker was attached (``doc_comment``, ``leading``, ``trailing`` or ``enclosing``).
-  ``tagged_scope`` is unchanged, and ``codelinks write rst`` accepts (and ignores) the
-  new key.
+  ``tagged_scope`` keeps its meaning (the fix below changes which entity it holds), and
+  ``codelinks write rst`` accepts (and ignores) the new key.
   The needs ``src-trace`` creates carry no field for the entity yet.
   See :ref:`attachment`.
 
@@ -90,6 +90,9 @@ Fixes
   nothing, as in every other language.
   A marker after code on its line (``int x = 1; // @...``) at file level now binds
   nothing, where it bound the next function.
+  In C and C++, a class or struct forward declaration (``struct Foo;``) is no longer an
+  entity: a marker right above one binds the entity it is inside, or nothing at file
+  level, where it bound the declaration.
 
 .. _`release:2.0.1`:
 
