@@ -17,6 +17,11 @@ any rewrite of the sources has to keep, byte for byte, for
 The hops of these needs are pinned by ``test_need_source.py``; here only what a filter, a
 table or ``needs.json`` reads.
 
+One change since, deliberate: the four needs written in an include's slice
+(``REQ_STARTAFTERX``, ``REQ_STARTLINEX``, ``REQ_HIT_A``, ``REQ_X_TWIN``) record the line
+they are written on in their files as ``lineno``, where the five classes gave the line in
+the slice (#2428).
+
 The last test is the upgrade path: an environment the five classes pickled is not read
 back into the new class, whatever their names now resolve to.
 """
