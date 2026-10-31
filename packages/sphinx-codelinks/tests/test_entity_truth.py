@@ -122,21 +122,22 @@ _COMPONENT_KINDS = (frozenset(get_args(EntityKind)) - {"key", "item"}) | {"scope
 
 
 # The ``scope.language`` of each fixture ``lang``: the language the file is analysed
-# as, by its name, ``c`` for a ``.c`` file and ``cpp`` for a ``.h`` one.
+# as, by its name, ``c`` for a ``.c`` file and ``cpp`` for a ``.h`` one, ``typescript``
+# for a ``.ts`` or ``.tsx`` file and ``javascript`` for a ``.js`` one.
 _LANGUAGES = {
     "cpp": "cpp",
     "c": "c",
     "cpp_header": "cpp",
     "python": "python",
-    "csharp": "cs",
+    "csharp": "csharp",
     "rust": "rust",
     "yaml": "yaml",
     "go": "go",
     "jsonc": "jsonc",
     "bash": "bash",
-    "typescript": "ts",
-    "tsx": "ts",
-    "js": "ts",
+    "typescript": "typescript",
+    "tsx": "typescript",
+    "js": "javascript",
 }
 
 

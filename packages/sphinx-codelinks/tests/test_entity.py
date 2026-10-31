@@ -713,10 +713,18 @@ def test_render_semantic(
         (CommentType.cpp, "a.cpp", "cpp"),
         (CommentType.cpp, "a.hpp", "cpp"),
         (CommentType.cpp, "a.ci", "cpp"),
+        (CommentType.cpp, "a.py", "cpp"),
         (CommentType.python, "a.py", "python"),
-        (CommentType.cs, "a.cs", "cs"),
-        (CommentType.ts, "a.js", "ts"),
-        (CommentType.ts, "a.tsx", "ts"),
+        (CommentType.cs, "a.cs", "csharp"),
+        (CommentType.ts, "a.ts", "typescript"),
+        (CommentType.ts, "a.tsx", "typescript"),
+        (CommentType.ts, "a.mts", "typescript"),
+        (CommentType.ts, "a.cts", "typescript"),
+        (CommentType.ts, "a.js", "javascript"),
+        (CommentType.ts, "a.jsx", "javascript"),
+        (CommentType.ts, "a.mjs", "javascript"),
+        (CommentType.ts, "a.cjs", "javascript"),
+        (CommentType.ts, "a.JS", "javascript"),
         (CommentType.rust, "a.rs", "rust"),
         (CommentType.go, "a.go", "go"),
         (CommentType.yaml, "a.yml", "yaml"),
@@ -727,9 +735,11 @@ def test_render_semantic(
 def test_scope_language(
     comment_type: CommentType, filename: str, expected: str
 ) -> None:
-    """The language a file is analysed as, by its name: ``c`` for a ``.c`` file
-    (lowercase: compilers read ``.C`` as C++), ``cpp`` for every other C and C++ file,
-    a header included, else the comment type."""
+    """The language a file is analysed as, by its name, as editors spell it: ``c`` for
+    a ``.c`` file (lowercase: compilers read ``.C`` as C++), ``cpp`` for every other C
+    and C++ file, a header included; ``csharp``; ``javascript`` for a JavaScript suffix
+    in any case and ``typescript`` for the rest of that comment type; else the comment
+    type. The comment type decides: a ``.py`` file analysed as C++ is ``cpp``."""
     assert scope_language(comment_type, Path(filename)) == expected
 
 
