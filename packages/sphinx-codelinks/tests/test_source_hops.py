@@ -117,6 +117,14 @@ impl Shape for Widget {
     fn area(&self) -> f64 {
         1.0
     }
+    // @need impl: Rust trait block
+    // :id: IMPL_RS_TRAIT_MULTI
+    //
+    // The body.
+    // @endneed
+    fn perimeter(&self) -> f64 {
+        2.0
+    }
 }
 
 impl Widget {
@@ -412,8 +420,14 @@ EXPECTED_HOPS = {
         "method 'area'",
         f"page [index] srcdir:index.rst:17-18 (.rst) :: {_LANGUAGES}",
     ],
+    # a multi-line need in a trait impl: the trait too
+    "IMPL_RS_TRAIT_MULTI": [
+        "code srcdir:../src/rust/lib.rs:12-16 (rust) :: impl 'Widget' trait='Shape' > "
+        "method 'perimeter'",
+        f"page [index] srcdir:index.rst:17-18 (.rst) :: {_LANGUAGES}",
+    ],
     "IMPL_RS_MULTI": [
-        "code srcdir:../src/rust/lib.rs:15-19 (rust) :: impl 'Widget' > method 'new'",
+        "code srcdir:../src/rust/lib.rs:23-27 (rust) :: impl 'Widget' > method 'new'",
         f"page [index] srcdir:index.rst:17-18 (.rst) :: {_LANGUAGES}",
     ],
     "IMPL_TS_ONE": [

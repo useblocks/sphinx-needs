@@ -87,14 +87,16 @@ class NeedSourceSemantic:
     """
 
     kind: str
-    """What the entry is, in the vocabulary of its hop's kind. A ``page`` hop's entries
-    use the document's: ``"section"``, ``"<domain>:<objtype>"`` (``"py:method"``),
-    ``"service"``, ``"py:docstring"``. A ``code`` hop's use its producer's bare entity
-    kinds (``"function"``, ``"method"``, ``"class"``, ``"impl"``, ...), read together
-    with the hop's ``language``. The kind describes the entry, the name identifies it;
-    but in a ``code`` hop the kinds may carry identity the names alone do not (Python's
-    ``<locals>`` boundary is implied by a function or method followed by another
-    entry), so code hops compare by their producer's identity rule, not by each entry's
+    """What the entry is, in the vocabulary of its hop's kind and producer. A ``page``
+    hop's entries use the document's: ``"section"``, ``"<domain>:<objtype>"``
+    (``"py:method"``). A ``generated`` hop's name its generator (``"service"``). A
+    ``code`` hop's use its producer's entity kinds, read together with the hop's
+    ``language``: sphinx-codelinks' bare ones (``"function"``, ``"method"``,
+    ``"class"``, ``"impl"``, ...), and autodoc's ``"py:docstring"`` until it is aligned
+    with them. The kind describes the entry, the name identifies it; but in a ``code``
+    hop the kinds may carry identity the names alone do not (Python's ``<locals>``
+    boundary is implied by a function or method followed by another entry), so code
+    hops compare by their producer's identity rule, not by each entry's
     ``(name, extras)``."""
     name: str
     extras: tuple[tuple[str, str], ...] = ()

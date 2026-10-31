@@ -68,8 +68,8 @@ New and Improved
   - the file's language (``python``, ``cpp``, ``c``, ``rust``, ...).
 
   The record is provisional, as Sphinx-Needs' hops are: it reaches no ``needs.json`` and
-  adds no field. The first build after upgrading reads every page with a ``src-trace``
-  directive once (the extension's ``env_version`` is now 2).
+  adds no field. The first build after upgrading reads every page once (the extension's
+  ``env_version`` is now 2).
 
 Fixes
 .....
@@ -78,7 +78,8 @@ Fixes
   Sphinx-Needs ``need`` directive's is. After ``rst_prolog`` it counted the prolog's lines
   too, and in an included file it was the line in the expanded input, a line neither file
   has the directive on; it is now the line in the file the directive is written in (the
-  included file's, for an included one). No id moves: no id depends on a line.
+  included file's, for an included one), and so is the ``lineno`` in ``needs.json``. No id
+  moves: no id depends on a line.
 - 🐛 A marker attaches only to an adjacent code entity.
 
   A marker used to bind the next function, class or struct at its level however much
