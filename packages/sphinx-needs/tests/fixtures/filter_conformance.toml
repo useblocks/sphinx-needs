@@ -60,8 +60,9 @@
 #   - no case declares a field named `c`, `var`, `search`, `needs` or `current_need`:
 #     which of a field and the context name a filter reads there is not pinned yet
 #   - a field named `source` switches the `source.*` facets off for the whole project:
-#     `source` reads the field, in every tier and on every need. One case declares one;
-#     each tool reports the switch its own way, which is not compared
+#     `source` reads the field, in every tier and on every need, and declaring it is no
+#     finding. One case declares one; a facet read there fails, as the field's value has
+#     no facets, and is reported
 #   - each `[[case.filters]]` entry is one filter string, evaluated over the needs of the
 #     built project -- and over their parts too, where it says `include_parts = true` --
 #     as a filter written in `index.rst` is: `c.this_doc()` compares with that document.

@@ -371,77 +371,115 @@ def _both_tiers(app: Any, filter_string: str) -> dict[str, bool | str]:
     return parsed
 
 
-SHADOWED = "which switches the source.* filter facets off for the project"
-
-
-@pytest.mark.parametrize(
-    ("test_app", "warning", "reads"),
-    [
-        pytest.param(
-            _project(
-                'needs_fields = {"source": {"nullable": True}}\n',
-                INDEX.format(source=":source: manual"),
-            ),
-            f"A field named 'source' is declared, {SHADOWED}: 'source' in a filter "
-            "reads the field",
-            {"REQ_001": True, "REQ_002": False, "SPEC_001": False},
-            id="field",
-        ),
-        pytest.param(
-            _project('needs_links = {"source": {}}\n'),
-            f"A link type named 'source' is declared, {SHADOWED}: 'source' in a filter "
-            "reads the link type",
-            {"REQ_001": False, "REQ_002": False, "SPEC_001": False},
-            id="link-type",
-        ),
-        pytest.param(
-            _project(
-                "needs_types = [\n"
-                '    {"directive": "req", "title": "Req", "prefix": "R_",'
-                ' "fields": {"source": {"schema": {"type": "string"}}}},\n'
-                '    {"directive": "spec", "title": "Spec", "prefix": "S_"},\n'
-                "]\n",
-                INDEX.format(source=":source: manual"),
-            ),
-            f"A field named 'source' is declared, {SHADOWED}: 'source' in a filter "
-            "reads the field",
-            # a spec reads the field too, which its type does not declare: unset there
-            {"REQ_001": True, "REQ_002": False, "SPEC_001": False},
-            id="field-of-one-need-type",
-        ),
-        pytest.param(
-            _project('needs_filter_data = {"source": "manual"}\n'),
-            f"A needs_filter_data key named 'source' is declared, {SHADOWED}: 'source' "
-            "in a filter reads the needs_filter_data key",
-            {"REQ_001": True, "REQ_002": True, "SPEC_001": True},
-            id="filter-data",
-        ),
-    ],
-    indirect=["test_app"],
+#: pinned before fix round 0 lands: red until the commit that serves it
+_UNTIL_FIX_ROUND_0 = pytest.mark.xfail(
+    strict=True, reason="the declaration is reported where a facet is read"
 )
-def test_a_declaration_named_source_switches_the_facets_off(
-    test_app: Any, warning: str, reads: dict[str, bool]
-) -> None:
-    """W-1: a field, a link type or a ``needs_filter_data`` key named ``source`` switches
-    the facets off for the whole project, with one warning per build, and ``source``
-    reads the declaration in both tiers -- on every need, a need of a type that does
-    not declare the field included, so that no filter reads the facets on some needs
-    and the field on others. (A field and a ``needs_filter_data`` key of one name are
-    refused by the configuration already.)"""
-    app = test_app
-    app.build()
-    assert [w for w in build_warnings(app) if not w.endswith("[needs.deprecated]")] == [
-        f"WARNING: {warning} [needs.source_shadowed]"
-    ]
-    assert NeedsSphinxConfig(app.config).source_shadowed is True
-    assert _both_tiers(app, 'source == "manual"') == reads
-    # an attribute of what the name reads: no facet
-    assert all(
-        isinstance(answer, str) and "has no attribute 'path'" in answer
-        for answer in _both_tiers(app, 'source.path == "index.rst"').values()
+
+
+def _clause(declared: str) -> str:
+    return (
+        f"; the project declares {declared} named 'source', which switches the "
+        "source.* facets off"
     )
 
 
+#: each declaration of the name, what the switch's report names, and what
+#: ``source == "manual"`` selects by it
+_DECLARATIONS = [
+    pytest.param(
+        _project(
+            'needs_fields = {"source": {"nullable": True}}\n',
+            INDEX.format(source=":source: manual"),
+        ),
+        "a field",
+        {"REQ_001": True, "REQ_002": False, "SPEC_001": False},
+        id="field",
+    ),
+    pytest.param(
+        _project('needs_links = {"source": {}}\n'),
+        "a link type",
+        {"REQ_001": False, "REQ_002": False, "SPEC_001": False},
+        id="link-type",
+    ),
+    pytest.param(
+        _project(
+            "needs_types = [\n"
+            '    {"directive": "req", "title": "Req", "prefix": "R_",'
+            ' "fields": {"source": {"schema": {"type": "string"}}}},\n'
+            '    {"directive": "spec", "title": "Spec", "prefix": "S_"},\n'
+            "]\n",
+            INDEX.format(source=":source: manual"),
+        ),
+        "a field",
+        # a spec reads the field too, which its type does not declare: unset there
+        {"REQ_001": True, "REQ_002": False, "SPEC_001": False},
+        id="field-of-one-need-type",
+    ),
+    pytest.param(
+        _project('needs_filter_data = {"source": "manual"}\n'),
+        "a needs_filter_data key",
+        {"REQ_001": True, "REQ_002": True, "SPEC_001": True},
+        id="filter-data",
+    ),
+]
+
+
+@_UNTIL_FIX_ROUND_0
+@pytest.mark.parametrize(
+    ("test_app", "declared", "reads"), _DECLARATIONS, indirect=["test_app"]
+)
+def test_a_declaration_named_source_switches_the_facets_off(
+    test_app: Any, declared: str, reads: dict[str, bool]
+) -> None:
+    """W-1: a field, a link type or a ``needs_filter_data`` key named ``source`` switches
+    the facets off for the whole project, and ``source`` reads the declaration in both
+    tiers -- on every need, a need of a type that does not declare the field included,
+    so that no filter reads the facets on some needs and the field on others. Declaring
+    it is no fault: the build reports nothing. (A field and a ``needs_filter_data`` key
+    of one name are refused by the configuration already.)"""
+    app = test_app
+    app.build()
+    assert [
+        w for w in build_warnings(app) if not w.endswith("[needs.deprecated]")
+    ] == []
+    assert NeedsSphinxConfig(app.config).source_shadowed == declared
+    assert _both_tiers(app, 'source == "manual"') == reads
+
+
+@_UNTIL_FIX_ROUND_0
+@pytest.mark.parametrize(
+    ("test_app", "declared", "reads"), _DECLARATIONS, indirect=["test_app"]
+)
+def test_a_facet_read_where_source_is_declared_says_why(
+    test_app: Any, declared: str, reads: dict[str, bool]
+) -> None:
+    """Where a declaration switches the facets off, a filter reading one fails (the
+    declaration's value has none), and its report says why, naming the declaration, in
+    both tiers and in the engine's one warning."""
+    app = test_app
+    app.build()
+    answers = _both_tiers(app, 'source.path == "index.rst"')
+    assert all(
+        isinstance(answer, str)
+        and "has no attribute 'path'" in answer
+        and answer.endswith(f"{_clause(declared)}.")
+        for answer in answers.values()
+    ), answers
+    stream = app._warning
+    start = len(stream.getvalue())
+    view = SphinxNeedsData(app.env).get_needs_view()
+    assert (
+        filter_needs_view(view, NeedsSphinxConfig(app.config), "source.path == 'x'")
+        == []
+    )
+    reported = build_warnings(stream.getvalue()[start:], srcdir=app.srcdir)
+    assert len(reported) == 1, reported
+    assert reported[0].startswith("WARNING: Filter \"source.path == 'x'\" not valid.")
+    assert reported[0].endswith(f"{_clause(declared)}. [needs.filter]"), reported
+
+
+@_UNTIL_FIX_ROUND_0
 @pytest.mark.parametrize("test_app", [_project("")], indirect=True)
 def test_no_declaration_named_source_leaves_the_facets_on(test_app: Any) -> None:
     app = test_app
@@ -452,7 +490,7 @@ def test_no_declaration_named_source_leaves_the_facets_on(test_app: Any) -> None
         "REQ_002": True,
         "SPEC_001": True,
     }
-    assert NeedsSphinxConfig(app.config).source_shadowed is False
+    assert NeedsSphinxConfig(app.config).source_shadowed is None
 
 
 @pytest.mark.parametrize("test_app", [_project("")], indirect=True)
@@ -676,6 +714,7 @@ Index
 """
 
 
+@_UNTIL_FIX_ROUND_0
 @pytest.mark.parametrize("test_app", [_project(CONF_LATE, INDEX_LATE)], indirect=True)
 def test_a_field_named_source_is_still_a_field_the_pass_watches(test_app: Any) -> None:
     """The facets read hops fixed before the pass, so ``eval`` treats them as no field
@@ -685,8 +724,6 @@ def test_a_field_named_source_is_still_a_field_the_pass_watches(test_app: Any) -
     app = test_app
     app.build()
     assert build_warnings(app) == [
-        f"WARNING: A field named 'source' is declared, {SHADOWED}: 'source' in a filter "
-        "reads the field [needs.source_shadowed]",
         "<srcdir>/index.rst:4: WARNING: dynamic function 'my_reader' for option "
         "'reads' read 'source' on need 'REQ_001' before it was computed: it is "
         "computed by your own function 'my_source', after this call: your own "

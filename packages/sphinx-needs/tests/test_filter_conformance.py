@@ -125,9 +125,6 @@ _TIERS = ("index", "fast", "eval", "refused")
 #: deprecation of `filter_data`, which the residue's own filters read.
 _DEPRECATED = "[needs.deprecated]"
 
-#: The finding of a field named `source`, which switches the facets off: each tool
-#: reports it its own way, and the header leaves it uncompared.
-_SOURCE_SHADOWED = "[needs.source_shadowed]"
 
 #: The finding of an `inherits` naming no need type, which the header leaves uncompared;
 #: an `inherits` on a cycle gives the same code, and is no case's to give.
@@ -391,20 +388,26 @@ def test_a_case_loading_sphinx_codelinks_is_a_git_checkout() -> None:
     params(CASES, files=_files, skip=uninstalled_extension),
     indirect=["test_app"],
 )
-def test_case(test_app: Any, case: dict[str, Any]) -> None:
+def test_case(
+    test_app: Any, case: dict[str, Any], request: pytest.FixtureRequest
+) -> None:
     app = test_app
     app.build()
+    if case["name"] == "a-field-named-source-switches-the-facets-off":
+        request.applymarker(
+            pytest.mark.xfail(
+                strict=True, reason="no build warning for a field named source"
+            )
+        )
     # the project itself builds clean: a case whose configuration or document is not
     # read as written tests something else (the warnings a case may earn are the
-    # deprecation of `filter_data`, which the residue's own filters read, the finding of
-    # an `inherits` naming no need type, and that of a field named `source`, which
-    # switches the facets off: configuration findings the header leaves uncompared)
+    # deprecation of `filter_data`, which the residue's own filters read, and the
+    # finding of an `inherits` naming no need type, a configuration finding the header
+    # leaves uncompared)
     assert [
         w
         for w in build_warnings(app)
-        if not w.endswith(_DEPRECATED)
-        and not w.endswith(_SOURCE_SHADOWED)
-        and not _UNKNOWN_INHERITS.fullmatch(w)
+        if not w.endswith(_DEPRECATED) and not _UNKNOWN_INHERITS.fullmatch(w)
     ] == [], case["name"]
     problems = [
         problem
