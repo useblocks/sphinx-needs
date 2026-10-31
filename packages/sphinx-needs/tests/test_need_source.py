@@ -181,7 +181,8 @@ def test_a_directive_without_a_true_line_stores_lineno():
         NeedSourceHop(
             kind="code",
             physical=NeedSourcePhysical(root="srcdir", path="mod.py"),
-            semantic=(NeedSourceSemantic(kind="py:docstring", name="mod.f"),),
+            semantic=(NeedSourceSemantic(kind="function", name="f"),),
+            language="python",
         ),
         PAGE_A,
     )
@@ -452,9 +453,11 @@ def test_the_hops_of_every_need(
     no chain of includes, so only the innermost file is a hop. The service and the import
     have their directive's true line, not the parser's (``rst_prolog`` shifts it by 4).
     ``REQ_CFX`` is in a C function, whose ``desc_name`` wraps a ``desc_sig_name``: the
-    semantic location names it, and its ``signature`` extra is what the legacy walk reads. ``REQ_DOCSTRINGX`` is in a docstring: a ``code`` hop of
-    the module, with no line. ``REQ_MDINCX`` is in a MyST include, whose lines
-    myst-parser reports one late: no line.
+    semantic location names it, and its ``signature`` extra is what the legacy walk
+    reads. ``REQ_DOCSTRINGX`` is in a docstring: a ``code`` hop of the module's file,
+    with no line, which names the function in sphinx-codelinks' Python vocabulary
+    (``test_need_source_autodoc.py`` pins each case). ``REQ_MDINCX`` is in a MyST
+    include, whose lines myst-parser reports one late: no line.
     """
     titles: dict[str, str] = {}
     hops = _build(make_app, _copy(tmp_path), titles, freshenv=True)
@@ -548,6 +551,14 @@ def test_the_hops_of_every_need(
         "../outside/source_hops_module.py",
         None,
         None,
+    )
+    # a docstring's code hop speaks sphinx-codelinks' Python vocabulary: the language's
+    # name and the in-file qualified name, no module prefix (it was ``.py`` and
+    # ``py:docstring 'source_hops_module.documented'``)
+    docstring = hops["REQ_DOCSTRINGX"][0]
+    assert (docstring.language, docstring.semantic) == (
+        "python",
+        (NeedSourceSemantic(kind="function", name="documented"),),
     )
     # through the API: a page hop with no path, walked
     assert hops["REQ_APIX"] == (

@@ -25,7 +25,7 @@ from pathlib import Path
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
-from sphinx_needs._need_source import NeedSourceHop
+from sphinx_needs._need_source import NeedSourceHop, _python_semantic, _split_module
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import assert_no_warnings
 from tests.test_need_source import _compact
@@ -102,9 +102,6 @@ def test_the_project_holds_exactly_the_pinned_needs(
     assert sorted(hops) == sorted(EXPECTED)
 
 
-@pytest.mark.xfail(
-    strict=True, reason="the docstring hop is not in codelinks' Python vocabulary yet"
-)
 @pytest.mark.parametrize("need_id", sorted(EXPECTED))
 def test_a_docstring_s_code_hop(
     hops: dict[str, tuple[NeedSourceHop, ...]], need_id: str
@@ -112,3 +109,106 @@ def test_a_docstring_s_code_hop(
     code, page = hops[need_id]
     assert _compact(code) == EXPECTED[need_id]
     assert (page.kind, page.document) == ("page", "index")
+
+
+# --- the rule, on text --------------------------------------------------------------
+
+_TEXT = """\
+import typing
+
+
+def outer():
+    def inner():
+        class Local:
+            def m(self): ...
+
+
+async def fetch(): ...
+
+
+class Twice: ...
+
+
+def Twice(): ...
+
+
+value = 1
+
+
+def value(): ...
+
+
+first, (second, *rest) = 1, (2, 3)
+annotated: int
+
+if typing.TYPE_CHECKING:
+    def guarded(): ...
+
+
+class K:
+    try:
+        slot: int = 0
+    except Exception:
+        pass
+
+    def method(self):
+        local = 1
+        self.instance = 2
+"""
+
+
+@pytest.mark.parametrize(
+    ("qualname", "expected"),
+    [
+        ("outer", [("function", "outer")]),
+        ("outer.<locals>.inner", [("function", "outer"), ("function", "inner")]),
+        (
+            "outer.<locals>.inner.<locals>.Local.m",
+            [
+                ("function", "outer"),
+                ("function", "inner"),
+                ("class", "Local"),
+                ("method", "m"),
+            ],
+        ),
+        # ``<locals>`` is where Python writes it, and nowhere else
+        ("outer.inner", None),
+        ("fetch", [("function", "fetch")]),
+        # two definitions of one name with different kinds: no guess
+        ("Twice", None),
+        # a definition wins over an assignment
+        ("value", [("function", "value")]),
+        ("first", [("attribute", "first")]),
+        ("second", [("attribute", "second")]),
+        ("rest", [("attribute", "rest")]),
+        ("annotated", [("attribute", "annotated")]),
+        ("guarded", [("function", "guarded")]),
+        ("K.slot", [("class", "K"), ("attribute", "slot")]),
+        # a name assigned in a function is no attribute; ``self.x`` is not read
+        ("K.method.<locals>.local", None),
+        ("K.instance", None),
+        ("missing", None),
+        # the module itself
+        ("", None),
+    ],
+)
+def test_the_rule_reads_the_syntax(
+    qualname: str, expected: list[tuple[str, str]] | None
+) -> None:
+    semantic = _python_semantic(qualname, _TEXT)
+    assert (
+        None if semantic is None else [(part.kind, part.name) for part in semantic]
+    ) == expected
+
+
+def test_text_that_does_not_parse_names_nothing() -> None:
+    assert _python_semantic("f", "def f(:\n") is None
+
+
+def test_the_name_splits_at_its_longest_module() -> None:
+    assert _split_module("sphinx_needs._need_source.NeedSourceHop.kind") == (
+        "sphinx_needs._need_source",
+        "NeedSourceHop.kind",
+    )
+    assert _split_module("sphinx_needs") == ("sphinx_needs", "")
+    assert _split_module("no_such_module_anywhere.f") is None

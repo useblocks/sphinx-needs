@@ -291,16 +291,26 @@ Data
    A hop's ``language`` is what its text is written in, by the kind of hop: for a ``page`` hop, the page's suffix
    its parser keys on (``.rst``, ``.md``); for a ``file`` hop, the file's own suffix (``.rst``, ``.json``; an
    included ``inc.rst.txt`` records ``.txt``, whichever parser reads it); for a ``code`` hop, the language's name
-   (``python``, ``cpp``, ...), as sphinx-codelinks records it. The ``code`` hop of a docstring autodoc reads still
-   records its file's suffix (``.py``), until it is aligned with sphinx-codelinks' code hops.
+   (``python``, ``cpp``, ...), as sphinx-codelinks records it, and as the ``code`` hop of a docstring autodoc reads
+   records it (``python``).
 
    A semantic entry's ``kind`` is in the vocabulary of its hop's kind and producer: a ``page`` hop's entries use the
    document's (``section``, ``<domain>:<objtype>``), a ``generated`` hop's name its generator (``service``), and a
    ``code`` hop's use its producer's entity kinds, read with the hop's ``language``: sphinx-codelinks' bare ones
-   (``function``, ``method``, ``class``, ``impl``, ...), and autodoc's docstring hop's ``py:docstring``, until it is
-   aligned with them. In a ``code`` hop the kinds may carry
+   (``function``, ``method``, ``class``, ``impl``, ...). In a ``code`` hop the kinds may carry
    identity the names alone do not (Python's ``<locals>`` boundary is implied by a function or method followed by
    another entry), so code hops compare by their producer's identity rule, not entry by entry.
+
+   Autodoc's docstring hop uses the same Python kinds as sphinx-codelinks, read from the syntax of the file the
+   docstring is defined in: ``class``, ``method`` for a ``def`` directly in a class, ``function`` for any other
+   ``def``, with ``<locals>`` implied, so a method of a class made in a function is ``function make > class Made >
+   method go``. A ``property``, a ``staticmethod`` or a ``classmethod`` is a ``method``, an exception a ``class``:
+   the page hop keeps autodoc's object type (``py:property``). An attribute documented with ``#:`` is a leaf
+   ``attribute`` (``class Shape > attribute sides``), where sphinx-codelinks attaches the same comment to the
+   enclosing class, or to the file. The file is the one of the module the docstring is defined in: a member
+   inherited from another module records that module's. A module docstring, and a name the file's syntax does not
+   define (an object made at run time, a function with no Python source), record the file alone. Autodoc names an
+   alias' docstring by the object it aliases, so an alias of a function records the function: a known gap.
 
 .. autoclass:: sphinx_needs.api.NeedSourceHop
    :members:

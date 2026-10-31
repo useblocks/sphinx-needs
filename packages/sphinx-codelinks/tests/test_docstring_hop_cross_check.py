@@ -292,9 +292,6 @@ def test_the_project_holds_both_producers_needs(
     )
 
 
-@pytest.mark.xfail(
-    strict=True, reason="the docstring hop is not in codelinks' Python vocabulary yet"
-)
 def test_both_producers_name_the_same_entity(
     code_hops: dict[str, NeedSourceHop],
 ) -> None:
@@ -306,9 +303,6 @@ def test_both_producers_name_the_same_entity(
     assert {code_hops[f"R_{case}"].language for case in ENTITIES} == {"python"}
 
 
-@pytest.mark.xfail(
-    strict=True, reason="the docstring hop is not in codelinks' Python vocabulary yet"
-)
 def test_an_attribute_differs_by_design(code_hops: dict[str, NeedSourceHop]) -> None:
     """sphinx-needs names the attribute autodoc documents; this package attaches its
     ``#:`` comment to the enclosing class, or to the file: the same file, and the
