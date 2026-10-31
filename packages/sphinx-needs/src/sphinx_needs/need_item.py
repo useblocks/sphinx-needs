@@ -206,9 +206,8 @@ class NeedItemSource:
         It gives the need its page and the line the caller passes, nothing more: it is
         the source ``add_need(app, state, docname, lineno, ...)`` built. Use it where a
         parser state is at hand and the caller chooses the need's line: a directive
-        keeping ``add_need``'s line, its own parser line (``self.lineno``; every need
-        sphinx-codelinks' ``src-trace`` creates sits there), or one placing needs at the
-        lines its data names; and as the ``need_source`` of
+        keeping ``add_need``'s line, its own parser line (``self.lineno``), or one placing
+        needs at the lines its data names; and as the ``need_source`` of
         :func:`~sphinx_needs.api.need.generate_need` or
         :func:`~sphinx_needs.api.need.ingest_need_record`. It works alike in a
         docutils ``Directive`` and in a nested parse. A need placed on a page is
