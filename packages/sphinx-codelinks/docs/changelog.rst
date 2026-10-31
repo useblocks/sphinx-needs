@@ -39,41 +39,56 @@ New and Improved
   (`#2408 <https://github.com/useblocks/sphinx-needs/issues/2408>`__).
 - ✨ The analysis names the code entity each marker is attached to.
 
-  Every record of ``codelinks analyse`` -- a one-line need, a reference, a multi-line need -- says which entity its
-  marker belongs to: a one-line need and a reference gain a ``scope`` object, right after ``tagged_scope``, and a
-  multi-line need's ``source.scope`` gains the same keys. Besides the syntax node and its lines, ``language`` (``c``,
-  ``cpp``, ``python``, ``rust``, ...), ``entity_kind`` (``function``, ``method``, ``class``, ``namespace``, ...),
-  ``qualified_name``, the entity's name within its file (``ns::Widget::draw``, ``Shape.area``,
-  ``<Widget as Shape>::area``), ``semantic``, that name in its parts (``namespace ns``, ``class Widget``,
-  ``method draw``), and ``mechanism``, how the marker was attached (``doc_comment``, ``leading``, ``trailing`` or
-  ``enclosing``). ``tagged_scope`` is unchanged, and ``codelinks write rst`` reads the new key. The needs
-  ``src-trace`` creates carry no field for the entity yet. See :ref:`attachment`.
+  Every record of ``codelinks analyse`` -- a one-line need, a reference, a multi-line
+  need -- says which entity its marker belongs to: a one-line need and a reference gain
+  a ``scope`` object, right after ``tagged_scope``, and a multi-line need's
+  ``source.scope`` gains the same keys.
+  Besides the syntax node and its lines, ``language`` (``c``, ``cpp``, ``python``,
+  ``rust``, ...), ``entity_kind`` (``function``, ``method``, ``class``, ``namespace``,
+  ...), ``qualified_name``, the entity's name within its file (``ns::Widget::draw``,
+  ``Shape.area``, ``<Widget as Shape>::area``), ``semantic``, that name in its parts
+  (``namespace ns``, ``class Widget``, ``method draw``), and ``mechanism``, how the
+  marker was attached (``doc_comment``, ``leading``, ``trailing`` or ``enclosing``).
+  ``tagged_scope`` is unchanged, and ``codelinks write rst`` accepts (and ignores) the
+  new key.
+  The needs ``src-trace`` creates carry no field for the entity yet.
+  See :ref:`attachment`.
 
 Fixes
 .....
 
 - 🐛 A marker attaches only to an adjacent code entity.
 
-  A marker used to bind the next function, class or struct at its level however much code stood in between: a
-  template, a decorated definition, a prototype, an in-class method declaration, a constructor, a macro call or a
-  statement was walked past, so the marker landed on a later entity. Against compiler ground truth, 24 of 98 markers
-  of a measured corpus in six languages were attached wrongly; now none is. A leading marker now belongs to the
-  entity right after it when only comments, blank lines, attributes and decorators stand between; a trailing marker
-  to the entity on its line (an attribute, a decorator or a template header before it is not code); a Rust ``//!``
-  comment to what it is inside; the comments before a file's first item, a blank line after the last, to the file,
-  unless it is a documentation comment, which documents the next item
-  (one with ``@file`` or ``@fileoverview`` keeps the file);
-  anything else to the entity it is inside, or the file.
-  More declarations are entities: C++ prototypes, in-class method declarations, conversion operators and namespaces,
-  Rust required trait methods, C# constructors, structs, records and interfaces, Go interface methods.
+  A marker used to bind the next function, class or struct at its level however much
+  code stood in between: a template, a decorated definition, a prototype, an in-class
+  method declaration, a constructor, a macro call or a statement was walked past, so the
+  marker landed on a later entity.
+  Against compiler ground truth, 2.0.1 attached 24 of the 98 markers of a measured corpus
+  in six languages to the wrong entity; now none.
+  A leading marker now belongs to the entity right after it when only comments, blank
+  lines, attributes and decorators stand between; a trailing marker to the entity on its
+  line (an attribute, a decorator or a template header before it is not code); a Rust
+  ``//!`` comment to what it is inside; the comments before a file's first item, a blank
+  line after the last, to the file, unless it is a documentation comment, which documents
+  the next item (one with ``@file`` or ``@fileoverview`` keeps the file); anything else
+  to the entity it is inside, or the file.
+  More declarations are entities:
+  C and C++ prototypes, in-class method and conversion operator declarations, unions and
+  enums with a body, and namespaces;
+  Rust required trait methods, unions, type aliases and ``macro_rules!`` definitions;
+  C# constructors, destructors, structs, records, interfaces, enums, operators,
+  conversion operators, indexers, events, delegates, local functions and namespaces;
+  Go interface methods.
   See :ref:`attachment`.
 
-  **Existing markers re-bind**, which changes ``tagged_scope`` (and the new ``scope``) in ``marked_content.json``;
-  nothing changes in the needs ``src-trace`` creates. In TypeScript and
-  JavaScript, a marker above a plain ``const``, ``let`` or ``var``, a class field without a function, an assignment
-  of a value or an ``export default`` of a value used to skip it and bind the next function; it now binds the enclosing
-  class, or nothing, as in every other language. A marker after code on its line (``int x = 1; // @...``) at file
-  level now binds nothing, where it bound the next function.
+  **Existing markers re-bind**, which changes ``tagged_scope`` (and the new ``scope``) in
+  ``marked_content.json``; nothing changes in the needs ``src-trace`` creates.
+  In TypeScript and JavaScript, a marker above a plain ``const``, ``let`` or ``var``, a
+  class field without a function, an assignment of a value or an ``export default`` of a
+  value used to skip it and bind the next function; it now binds the enclosing class, or
+  nothing, as in every other language.
+  A marker after code on its line (``int x = 1; // @...``) at file level now binds
+  nothing, where it bound the next function.
 
 .. _`release:2.0.1`:
 

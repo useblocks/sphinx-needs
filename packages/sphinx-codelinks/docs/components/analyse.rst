@@ -188,8 +188,8 @@ What counts as an entity
 - **Python**: functions and classes.
 - **Rust**: functions, required trait methods, structs, enums, unions, traits, impl blocks, modules, type aliases,
   ``macro_rules!`` definitions.
-- **C#**: methods, constructors, destructors, properties, indexers, operators, events, delegates, local functions,
-  classes, structs, interfaces, records, enums, namespaces.
+- **C#**: methods, constructors, destructors, properties, indexers, operators, conversion operators, events, delegates,
+  local functions, classes, structs, interfaces, records, enums, namespaces (block or file-scoped).
 - **Go**: functions, methods, type declarations, interface methods.
 - **TypeScript and JavaScript**: functions, classes, interfaces, enums, type aliases, namespaces, methods and method
   signatures; a ``const``, ``let`` or ``var``, a class field, an assignment or a default export only when it holds a
