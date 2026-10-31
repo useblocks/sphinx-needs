@@ -77,10 +77,50 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   Python decorator, a decorator on a TypeScript class member and a C++ template header above it are not part of it; a
   C# attribute list, a C++ attribute and a decorator on a TypeScript class are (unless the class is exported: then the
   decorator is the export's);
-- ``language`` -- the language the file was analysed as, by its name:
-  ``c`` for a ``.c`` file, ``cpp`` for every other C and C++ file
-  (a ``.h`` header included, since its name does not say which it is, and a ``.C`` file, which compilers read as C++),
-  otherwise ``python``, ``rust``, ``cs``, ``ts`` (TypeScript and JavaScript), ``go``, ``yaml``, ``jsonc`` or ``bash``.
+- ``language`` -- the language the file was analysed as, by its name, as editors' language identifiers spell it:
+
+  .. list-table::
+     :header-rows: 1
+     :widths: 20 80
+
+     * - ``language``
+       - Files
+     * - ``c``
+       - A ``.c`` file. The suffix is compared as written: a ``.C`` file, which compilers read as C++, is ``cpp``.
+     * - ``cpp``
+       - Every other C and C++ file: ``.cpp``, ``.cc``, ``.cxx``, ``.hpp``, ``.hh``, ``.hxx``, ``.h``, ``.ci``,
+         ``.ihl`` and ``.C``.
+         A ``.h`` header is ``cpp``: its name does not say whether it is C or C++, and it is analysed as C++.
+     * - ``csharp``
+       - ``.cs``
+     * - ``typescript``
+       - ``.ts``, ``.mts``, ``.cts`` and ``.tsx``, and every other file of the ``ts`` comment type that is not
+         JavaScript.
+     * - ``javascript``
+       - ``.js``, ``.mjs``, ``.cjs`` and ``.jsx``, the suffix compared in any case.
+     * - ``python``
+       - ``.py``
+     * - ``rust``
+       - ``.rs``
+     * - ``go``
+       - ``.go``
+     * - ``yaml``
+       - ``.yaml`` and ``.yml``
+     * - ``jsonc``
+       - ``.jsonc``, and a ``.json`` file that opens with a comment: JSON with comments.
+     * - ``bash``
+       - Every shell file the bash grammar reads: ``.sh``, ``.bash``, ``.zsh`` and ``.ksh``.
+
+  One language is one name, so the value groups files that editors may tell apart:
+  a ``.h`` header is ``cpp`` whether C or C++ includes it,
+  a TSX file is ``typescript`` and a JSX file ``javascript``,
+  the whole shell family is ``bash`` (the one value editors spell otherwise, as ``shellscript``),
+  and a ``.json`` file with comments is ``jsonc``.
+  The language is the one the file was analysed as, and the project's ``comment_type`` decides that, not the suffix:
+  a file that type does not discover, such as a ``src-trace`` ``:file:`` target with another suffix,
+  is parsed with that type's grammar and records its language --
+  a ``.py`` file named in a project with ``comment_type = "cpp"`` is parsed as C++ and records ``cpp``,
+  and under ``comment_type = "ts"`` every file but a JavaScript one records ``typescript``.
   A ``.c`` file is read with the C++ grammar, and its names follow C++'s rule;
 - ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
   ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,

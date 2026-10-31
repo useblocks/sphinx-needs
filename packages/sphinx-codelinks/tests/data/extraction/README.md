@@ -147,10 +147,13 @@ The fields of a marked-content entry, as `Metadata.to_dict()` writes them:
 - `scope` (a need and a reference; a multi-line need carries it as `source.scope`) —
   that declaration, named, or `null` exactly when `tagged_scope` is: `kind` (its
   tree-sitter kind), `start` and `end` (its 1-based first and last lines),
-  `language` (the language the file was analysed as, by its name:
-  `c` for a `.c` file, `cpp` for any other C or C++ file, a `.h` and a `.C` included,
-  else the comment type — `python`, `rust`, `cs`, `ts`,
-  `go`, `yaml`, `jsonc`, `bash`), `entity_kind` (`function`, `method`, `class`,
+  `language` (the language the file was analysed as, by its name, as editors'
+  language identifiers spell it: `c` for a `.c` file, `cpp` for any other C or C++
+  file, a `.h` and a `.C` included; `csharp`; `javascript` for `.js`, `.jsx`, `.mjs`
+  and `.cjs` in any case, `typescript` for the rest of the `ts` comment type, `.tsx`
+  included; else the comment type — `python`, `rust`, `go`, `yaml`, `jsonc`, `bash`;
+  so `lang: csharp` records `csharp`, `typescript` and `tsx` record `typescript`, and
+  `js` records `javascript`), `entity_kind` (`function`, `method`, `class`,
   `namespace`, …, `key` or `item` in a data file; `null` if it cannot be named),
   `qualified_name` (the name within the file, qualified by its containers —
   `ns::Widget::draw`, `Shape.area`, `<Widget as Shape>::area`; `null` if it has

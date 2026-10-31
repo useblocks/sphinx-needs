@@ -43,8 +43,9 @@ New and Improved
   need -- says which entity its marker belongs to: a one-line need and a reference gain
   a ``scope`` object, right after ``tagged_scope``, and a multi-line need's
   ``source.scope`` gains the same keys.
-  Besides the syntax node and its lines, ``language`` (``c``, ``cpp``, ``python``,
-  ``rust``, ...), ``entity_kind`` (``function``, ``method``, ``class``, ``namespace``,
+  Besides the syntax node and its lines, ``language``, the language's name (``c``,
+  ``cpp``, ``csharp``, ``python``, ``typescript``, ``javascript``, ...),
+  ``entity_kind`` (``function``, ``method``, ``class``, ``namespace``,
   ...), ``qualified_name``, the entity's name within its file (``ns::Widget::draw``,
   ``Shape.area``, ``<Widget as Shape>::area``), ``semantic``, that name in its parts
   (``namespace ns``, ``class Widget``, ``method draw``), and ``mechanism``, how the
