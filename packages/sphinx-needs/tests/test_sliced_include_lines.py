@@ -251,14 +251,36 @@ def test_a_test_file_in_a_slice_records_its_file_line(
     assert _lines(make_app, srcdir)["TF_FILE1"] == (7, (7, 9))
 
 
+GUARDED = (
+    "skip\nskip\nskip\n"
+    ".. req:: Guarded\n"
+    "   :id: REQ_GUARDED\n"
+    "..\n"
+    "   .. req:: Guarded\n"
+    "      :id: REQ_GUARDED\n"
+)
+"""A need on line 4 whose whole block the file holds again 3 lines below (in a
+comment): a line counted twice would pass the file's check there."""
+
+
+@pytest.mark.parametrize(
+    ("fragment", "expected"),
+    [
+        pytest.param(FRAGMENT, dict(TRUE_LINES.items()), id="fragment"),
+        pytest.param(GUARDED, {"REQ_GUARDED": (4, (4, 5))}, id="block-repeated"),
+    ],
+)
 def test_a_docutils_that_numbers_the_slice_itself_is_not_counted_twice(
     make_app: Callable[..., SphinxTestApp],
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    fragment: str,
+    expected: dict[str, tuple[int, tuple[int, int]]],
 ) -> None:
     """docutils' ``insert_input`` numbers the slice from its start (its own TODO says
     so); one that numbered it from the file's line would give the true line already,
-    and nothing is added to it."""
+    and nothing is added to it -- also where the file holds the need's block again at
+    the line a double count gives, which its check would let through."""
 
     def insert_input(self: StateMachine, input_lines: list[str], source: str) -> None:
         # what a fixed docutils would do for this project's ``:start-line: 3``
@@ -284,8 +306,8 @@ def test_a_docutils_that_numbers_the_slice_itself_is_not_counted_twice(
         )
 
     monkeypatch.setattr(StateMachine, "insert_input", insert_input)
-    srcdir = _project(tmp_path / "project", FRAGMENT, [":start-line: 3"])
-    assert _lines(make_app, srcdir) == dict(TRUE_LINES.items())
+    srcdir = _project(tmp_path / "project", fragment, [":start-line: 3"])
+    assert _lines(make_app, srcdir) == expected
 
 
 LATIN_1 = "Caf\xe9 header\nskipped\nskipped\n\n.. req:: Latin-1\n   :id: REQ_LATIN\n"
@@ -363,20 +385,39 @@ def test_tabs_and_trailing_spaces_keep_the_file_line(
     assert _lines(make_app, srcdir)["REQ_TABBED"] == (5, (5, 8))
 
 
+@pytest.mark.parametrize(
+    ("fragment", "expected"),
+    [
+        pytest.param(
+            "s1\ns2\ns3\n\n"
+            ".. req:: R one\n   :id: R_ONE\n\n"
+            "WORD here\n\n"
+            ".. req:: R two\n   :id: R_TWO\n",
+            {"R_ONE": (5, (5, 6)), "R_TWO": (10, (10, 11))},
+            id="prepended",
+        ),
+        pytest.param(
+            "s1\ns2\ns3\n\n"
+            ".. req:: Same title\n   :id: TW_ONE\n\n"
+            ".. req:: Same title\n   :id: TW_TWO\n\n"
+            "end\n",
+            {"TW_ONE": (5, (5, 6)), "TW_TWO": (8, (8, 9))},
+            id="same-first-line-below",
+        ),
+    ],
+)
 def test_a_slice_an_include_read_handler_rewrote_keeps_the_parser_line(
-    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+    make_app: Callable[..., SphinxTestApp],
+    tmp_path: Path,
+    fragment: str,
+    expected: dict[str, tuple[int, tuple[int, int]]],
 ) -> None:
     """An ``include-read`` handler that adds lines to the slice: the file does not
-    hold the parser's line at the recovered one, so the need keeps the state
-    machine's line (here it happens to be the file's, the handler adding as many lines
-    as ``:start-line:`` skips), never a line counted from the file through a slice the
-    file is not."""
-    fragment = (
-        "s1\ns2\ns3\n\n"
-        ".. req:: R one\n   :id: R_ONE\n\n"
-        "WORD here\n\n"
-        ".. req:: R two\n   :id: R_TWO\n"
-    )
+    hold the directive at the recovered line, so the need keeps the state machine's
+    line (here it happens to be the file's, the handler adding as many lines as
+    ``:start-line:`` skips), never a line counted from the file through a slice the
+    file is not. The whole block is checked, not its first line: ``TW_ONE``'s
+    recovered line holds ``TW_TWO``'s first line."""
     srcdir = _project(tmp_path / "project", fragment, [":start-line: 3"])
     with (srcdir / "conf.py").open("a", encoding="utf-8") as conf:
         conf.write(
@@ -385,7 +426,7 @@ def test_a_slice_an_include_read_handler_rewrote_keeps_the_parser_line(
             "def setup(app):\n"
             "    app.connect('include-read', _prepend)\n"
         )
-    assert _lines(make_app, srcdir) == {"R_ONE": (5, (5, 6)), "R_TWO": (10, (10, 11))}
+    assert _lines(make_app, srcdir) == expected
 
 
 def test_a_slice_decoded_otherwise_keeps_the_parser_line(

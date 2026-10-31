@@ -434,6 +434,8 @@ def file_line(
     index: int,
     source: str | None,
     line: int | None,
+    *,
+    check: LineCheck | None = None,
 ) -> int | None:
     """The line of its file that a line the parser read is written on.
 
@@ -444,17 +446,20 @@ def file_line(
     returned unchanged wherever that cannot be done: no active include of ``source``
     that clips it, a slice not numbered from its own start
     (:func:`_numbered_from_the_slice`), a file the project's ``source_encoding`` cannot
-    read, a ``:start-after:`` text not found in it; and wherever the file's line there
-    is not the line the parser read (``lines[index]``, compared as :func:`block_check`
-    compares a line): an ``include-read`` handler that rewrote the slice, a file the
-    include decoded otherwise than the project's ``source_encoding`` does. So the line
-    returned is the file's, or the state machine's, never a third one.
+    read, a ``:start-after:`` text not found in it; and wherever the file does not hold
+    the text there (``check``): an ``include-read`` handler that rewrote the slice, a
+    file the include decoded otherwise than the project's ``source_encoding`` does. A
+    wrong line passes only where the file holds an identical copy of the whole text at
+    the line a rewritten or misdecoded slice gives, the twin the hops already document.
 
     :param state: The parser state reading the line.
     :param lines: The input the line is in, as the state machine holds it.
     :param index: The line's index in ``lines``.
     :param source: The file the state machine gives for the line.
     :param line: The 1-based line the state machine gives for it.
+    :param check: Whether the file holds the text at a line: a directive's whole
+        block (:func:`block_check` of its ``block_text``); by default, the line the
+        parser read, ``lines[index]``, compared as :func:`block_check` compares a line.
     """
     if not (source and line and lines is not None and isinstance(state, RSTState)):
         return line
@@ -472,19 +477,20 @@ def file_line(
     )
     if slice_lines is None or (recovered := slice_lines(line)) is None:
         return line
-    if not 0 <= index < len(lines):
-        return line
+    if check is None:
+        if not 0 <= index < len(lines):
+            return line
+        check = block_check(lines[index])
     file_lines = _file_lines(document.settings.env, source, document_tab_width(state))
-    if file_lines is None or not block_check(lines[index])(
-        file_lines, recovered, recovered
-    ):
+    if file_lines is None or not check(file_lines, recovered, None):
         return line
     return recovered
 
 
 def directive_line(directive: Directive) -> tuple[str | None, int | None]:
     """The file and the line ``directive`` is written on: the state machine's, with
-    the line of an included slice in its file (:func:`file_line`)."""
+    the line of an included slice in its file (:func:`file_line`), where the file
+    holds the directive's whole block there."""
     machine = directive.state_machine
     source, line = machine.get_source_and_line(directive.lineno)
     if not isinstance(directive.state, RSTState):
@@ -496,6 +502,7 @@ def directive_line(directive: Directive) -> tuple[str | None, int | None]:
         directive.lineno - machine.input_offset - 1,
         source,
         line,
+        check=block_check(directive.block_text),
     )
 
 
