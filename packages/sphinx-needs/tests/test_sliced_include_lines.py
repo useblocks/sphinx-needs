@@ -16,13 +16,16 @@ from __future__ import annotations
 import importlib.util
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
 
 import pytest
 from docutils.statemachine import StateMachine, StringList
 from sphinx.testing.util import SphinxTestApp
 
+from sphinx_needs import _need_source
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs_testkit import assert_no_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 CONF = """\
 extensions = [{extensions}]
@@ -112,13 +115,21 @@ def _project(
 
 
 def _lines(
-    make_app: Callable[..., SphinxTestApp], srcdir: Path
+    make_app: Callable[..., SphinxTestApp], srcdir: Path, *, expected_warning: str = ""
 ) -> dict[str, tuple[int | None, tuple[int | None, int | None] | None]]:
-    """Every need's ``lineno``, and its ``frag.rst`` hop's lines (``None`` if no such hop)."""
+    """Every need's ``lineno``, and its ``frag.rst`` hop's lines (``None`` if no such hop).
+
+    :param expected_warning: Text every warning of the build contains, if it may have
+        any; else the build has none.
+    """
     app = make_app("html", srcdir=srcdir, freshenv=True)
     try:
         app.build()
-        assert_no_warnings(app)
+        if expected_warning:
+            warnings = build_warnings(app)
+            assert all(expected_warning in w for w in warnings), warnings
+        else:
+            assert_no_warnings(app)
         result: dict[str, tuple[int | None, tuple[int | None, int | None] | None]] = {}
         for need_id, need in SphinxNeedsData(app.env).get_needs_view().items():
             hop = next(
@@ -302,3 +313,129 @@ def test_where_the_slice_cannot_be_recovered_the_slice_line_stays(
     lineno, hop = _lines(make_app, srcdir)["REQ_LATIN"]
     assert lineno == 2
     assert hop in {None, (None, None)}
+
+
+@pytest.mark.parametrize(
+    ("fragment", "options", "need_id", "line"),
+    [
+        pytest.param(
+            "Title A\nTitle B\n\nSTART-HERE\n\nKept text.\n\n"
+            ".. req:: Deep need\n   :id: REQ_DEEP\n",
+            [":start-line: 1", ":start-after: START-HERE"],
+            "REQ_DEEP",
+            8,
+            id="marker-below-the-first-kept-line",
+        ),
+        pytest.param(
+            "Head\nMARK\nskip\nskip\nskip\nskip\nMARK\n\n"
+            ".. req:: After the second mark\n   :id: REQ_MARK2\n",
+            [":start-line: 4", ":start-after: MARK"],
+            "REQ_MARK2",
+            9,
+            id="marker-also-above-the-kept-lines",
+        ),
+    ],
+)
+def test_start_after_is_searched_in_the_kept_lines(
+    make_app: Callable[..., SphinxTestApp],
+    tmp_path: Path,
+    fragment: str,
+    options: list[str],
+    need_id: str,
+    line: int,
+) -> None:
+    """With ``:start-line:`` and ``:start-after:`` together, the text is searched in
+    the lines ``:start-line:`` keeps: docutils 0.22 searches them joined with ``\\n``,
+    0.21 as they were written; a marker above them is not the one."""
+    srcdir = _project(tmp_path / "project", fragment, options)
+    assert _lines(make_app, srcdir)[need_id] == (line, (line, line + 1))
+
+
+def test_tabs_and_trailing_spaces_keep_the_file_line(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """The file's line is compared with the parser's as the hop's check compares
+    them: a tab expanded at the document's ``tab_width``, trailing spaces dropped."""
+    fragment = (
+        "skip\nskip\nskip\n\n.. req:: Tab\there   \n\t:id: REQ_TABBED\n\n\tContent.  \n"
+    )
+    srcdir = _project(tmp_path / "project", fragment, [":start-line: 3"])
+    assert _lines(make_app, srcdir)["REQ_TABBED"] == (5, (5, 8))
+
+
+def test_a_slice_an_include_read_handler_rewrote_keeps_the_parser_line(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """An ``include-read`` handler that adds lines to the slice: the file does not
+    hold the parser's line at the recovered one, so the need keeps the state
+    machine's line (here it happens to be the file's, the handler adding as many lines
+    as ``:start-line:`` skips), never a line counted from the file through a slice the
+    file is not."""
+    fragment = (
+        "s1\ns2\ns3\n\n"
+        ".. req:: R one\n   :id: R_ONE\n\n"
+        "WORD here\n\n"
+        ".. req:: R two\n   :id: R_TWO\n"
+    )
+    srcdir = _project(tmp_path / "project", fragment, [":start-line: 3"])
+    with (srcdir / "conf.py").open("a", encoding="utf-8") as conf:
+        conf.write(
+            "def _prepend(app, path, docname, source):\n"
+            "    source[0] = 'Added.\\n\\nAdded 2.\\n' + source[0]\n"
+            "def setup(app):\n"
+            "    app.connect('include-read', _prepend)\n"
+        )
+    assert _lines(make_app, srcdir) == {"R_ONE": (5, (5, 6)), "R_TWO": (10, (10, 11))}
+
+
+def test_a_slice_decoded_otherwise_keeps_the_parser_line(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A UTF-8 fragment included with ``:encoding: utf-8`` in a latin-1 project: read
+    as latin-1, the file's ``Å`` (``C3 85``) holds a line break (``\\x85``), so the
+    file's lines are not the ones docutils sliced, and the need keeps the state
+    machine's line."""
+    fragment = (
+        "\u00c5ngstr\u00f6m\nskip\nskip\n\n"
+        ".. req:: Enc one\n   :id: ENC_ONE\n\n"
+        "MARK \u00c5\n\n"
+        ".. req:: Enc two\n   :id: ENC_TWO\n"
+    )
+    srcdir = _project(
+        tmp_path / "project", fragment, [":start-after: MARK", ":encoding: utf-8"]
+    )
+    with (srcdir / "conf.py").open("a", encoding="utf-8") as conf:
+        conf.write("source_encoding = 'latin-1'\n")
+    assert _lines(
+        make_app, srcdir, expected_warning="source encodings other than UTF-8"
+    ) == {"ENC_TWO": (3, (None, None))}
+
+
+EMPTY_START_AFTER = (
+    "a\nb\n\n"
+    ".. req:: Before blank\n   :id: SAE_ZERO\n\n"
+    ".. req:: E one\n   :id: SAE_ONE\n\n"
+    ".. req:: E two\n   :id: SAE_TWO\n"
+)
+
+
+def test_docutils_023_reads_an_empty_start_after_as_after_the_first_empty_line(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """docutils 0.23 logs an absent ``:start-after:`` as ``None``, and an empty one as
+    ``''``, which it searches as ``\\n\\n``; before it, ``''`` is an absent one. The
+    environment need not have 0.23: its log entry is given here."""
+    document: Any = SimpleNamespace(include_log=[("frag.rst", (3, None, "", None))])
+    monkeypatch.setattr(_need_source, "_DOCUTILS_022", True)
+    monkeypatch.setattr(_need_source, "_DOCUTILS_023", True)
+    assert _need_source._include_entry(document, "frag.rst") == (3, None, "\n\n")
+    # after the first empty line of the lines ``:start-line: 3`` keeps: ``E one``, on 7
+    lines = _need_source._clip_lines(EMPTY_START_AFTER, 3, None, "\n\n")
+    assert lines is not None
+    assert (lines(1), lines(4)) == (7, 10)
+    # with no line clip, after the file's first empty line: ``Before blank``, on 4
+    lines = _need_source._clip_lines(EMPTY_START_AFTER, None, None, "\n\n")
+    assert lines is not None
+    assert lines(1) == 4
+    monkeypatch.setattr(_need_source, "_DOCUTILS_023", False)
+    assert _need_source._include_entry(document, "frag.rst") == (3, None, "")

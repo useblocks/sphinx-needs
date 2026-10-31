@@ -267,6 +267,12 @@ before_text, after_text)`` -- ``before_text`` is the ``:end-before:`` text,
 ``after_text`` the ``:start-after:`` one -- and joins them as they were, line ends kept.
 Both keep lines by ``str.splitlines``."""
 
+_DOCUTILS_023: Final = docutils.__version_info__[:2] >= (0, 23)
+"""Whether an empty ``:start-after:`` means "after the first empty line": docutils 0.23
+logs an absent option as ``None`` and searches an empty one as ``\\n\\n``; before it,
+an absent option is logged as ``''`` (0.22) or ``None`` (0.21), and an empty one is
+refused."""
+
 _LINE_BREAK: Final = re.compile("\r\n|[\n\r\x1c\x1d\x1e\x85\u2028\u2029]")
 """Where docutils' ``string2lines`` breaks a file's lines: ``str.splitlines``' breaks,
 less the vertical tab and the form feed, which it makes spaces first (as
@@ -303,6 +309,8 @@ def _include_entry(
             and isinstance(start_after, str | None)
         ):
             return None
+        if start_after == "" and _DOCUTILS_023:
+            start_after = "\n\n"
         return start_line, end_line, start_after or ""
     return None
 
@@ -436,9 +444,11 @@ def file_line(
     returned unchanged wherever that cannot be done: no active include of ``source``
     that clips it, a slice not numbered from its own start
     (:func:`_numbered_from_the_slice`), a file the project's ``source_encoding`` cannot
-    read, a ``:start-after:`` text not found in it.
-
-    Whether the file holds the text at the line returned is for the hop's check to say.
+    read, a ``:start-after:`` text not found in it; and wherever the file's line there
+    is not the line the parser read (``lines[index]``, compared as :func:`block_check`
+    compares a line): an ``include-read`` handler that rewrote the slice, a file the
+    include decoded otherwise than the project's ``source_encoding`` does. So the line
+    returned is the file's, or the state machine's, never a third one.
 
     :param state: The parser state reading the line.
     :param lines: The input the line is in, as the state machine holds it.
@@ -460,9 +470,16 @@ def file_line(
     slice_lines = _slice_lines(
         document.settings.env, source, start_line, end_line, start_after
     )
-    if slice_lines is None:
+    if slice_lines is None or (recovered := slice_lines(line)) is None:
         return line
-    return slice_lines(line) or line
+    if not 0 <= index < len(lines):
+        return line
+    file_lines = _file_lines(document.settings.env, source, document_tab_width(state))
+    if file_lines is None or not block_check(lines[index])(
+        file_lines, recovered, recovered
+    ):
+        return line
+    return recovered
 
 
 def directive_line(directive: Directive) -> tuple[str | None, int | None]:
