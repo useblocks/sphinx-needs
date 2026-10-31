@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793464806379,
+  "lastUpdate": 1793482550273,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28098,6 +28098,48 @@ window.BENCHMARK_DATA = {
             "value": 187.370638,
             "unit": "MB",
             "extra": "Commit: 260b8e62b67725c498203faf013dbf66f03453e9\nBranch: master\nTime: 2026-10-31T17:38:26+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "31ff8162668cfccc339f782338243b01fbbeee23",
+          "message": "👌 Source hops record the include chain, an API need's page, an external need's sections, a test file's language and a code entity's qualified name (#2448)\n\nA need's source hops now carry five facts they were missing:\n\n- **A nested include's chain.** A need in a reStructuredText file\nincluded through other files records one `file`\nhop per file it passed through, innermost first, between its own file\nand the page, with each path and no line\n(read from docutils' `document.include_log`). An rst include inside a\nMyST page's `eval-rst` is recorded too.\nTwo known gaps: myst-parser's `{include}` is never recorded, so a chain\nthrough MyST includes records its rst\nlinks alone; and under docutils 0.22 and later a file included with\n`:parser:` is not logged, so it is no link\nof a chain through it, and a need written in that file itself records no\nchain at all (docutils 0.21 logs it).\n- **An API need's page file.** A need created on its page\n(`NeedItemSource.on_page`, `add_need`'s default source,\n`ingest_need_record` with either) records the page's file and suffix on\nits page hop, with no line: the line the\ncaller gives is not checked in the file. `generate_need`, which has no\napplication, records none.\n- **An external need's sections.** The other site's section chain is the\n`external` hop's semantic location,\noutermost first, for `needs_external_needs` and `add_external_need`\nalike. The `sections` and `signature` fields do\n  not move.\n- **A test file's language.** sphinx-test-reports names a test case's\nfile by its suffix (`python`, `cpp`, `java`,\n...), with sphinx-codelinks' name for every suffix it traces; an unknown\nsuffix names none.\n- **A code entity's qualified name.** The entity on a code hop carries a\n`qualified_name` extra: sphinx-codelinks'\nown rendering (`ns::Widget::draw`, `<Widget as Shape>::area`,\n`Shape.area.<locals>.inner`), and for a docstring\nautodoc reads, the same Python rendering (`make.<locals>.Made.go`),\ncompared against sphinx-codelinks in its suite.\nIt renders the entries' names, so it adds no identity: sphinx-codelinks'\n`name_chain` now leaves it out, and parts\nrebuilt from a hop keep their containment. The entity's line range is\nnot added.\n\nNothing a filter, a table or `needs.json` shows changes: the hops are\nprovisional and unreleased, and these are the\nfacts a later `source.*` vocabulary will read. The legacy location keys\nare unchanged (`test_need_source_legacy_keys`\nis untouched). A fence around `load_external_needs` holds an external\nneed's `sections` to its hop's chain, and\n`add_external_need(sections=…)` is pinned directly.\n\n`ENV_DATA_VERSION` 23 (the fingerprint moves by its version line only);\nsphinx-codelinks' and sphinx-test-reports'\n`env_version` 3, each pinned by a test that has an environment pickled\nat 2 read again.\n\nTests: each gap was pinned red first as a strict xfail, then flipped by\nits own commit. Every gap has mutation\nproofs, and the wrong versions the builds alone left green (five from\nthe builder, six from review) are now pinned\ndirectly.",
+          "timestamp": "2026-10-31T22:34:12+01:00",
+          "tree_id": "3adfc3765d67d6940b5f2774e40dd2241dafa6b8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/31ff8162668cfccc339f782338243b01fbbeee23"
+        },
+        "date": 1793482549421,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07303229299999714,
+            "unit": "s",
+            "extra": "Commit: 31ff8162668cfccc339f782338243b01fbbeee23\nBranch: master\nTime: 2026-10-31T22:34:12+01:00\nCPU: INTEL(R) XEON(R) PLATINUM 8573C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.412683274000003,
+            "unit": "s",
+            "extra": "Commit: 31ff8162668cfccc339f782338243b01fbbeee23\nBranch: master\nTime: 2026-10-31T22:34:12+01:00\nCPU: INTEL(R) XEON(R) PLATINUM 8573C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 186.084424,
+            "unit": "MB",
+            "extra": "Commit: 31ff8162668cfccc339f782338243b01fbbeee23\nBranch: master\nTime: 2026-10-31T22:34:12+01:00\nCPU: INTEL(R) XEON(R) PLATINUM 8573C"
           }
         ]
       }
