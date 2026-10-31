@@ -13,11 +13,13 @@ from __future__ import annotations
 
 import io
 import json
+import re
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from sphinx.util.parallel import parallel_available
 
 from sphinx_needs import filter_common
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
@@ -470,13 +472,18 @@ Other
 TWO_DOCUMENTS_INDEX = (
     INDEX
     + "\n.. needtable::\n   :filter: c.is_a('rq')\n"
-    + ("\n.. toctree::\n\n   other\n")
+    + "\n.. toctree::\n\n   other\n"
+    + "".join(f"   page{i}\n" for i in range(5))
 )
 
 
 def _two_documents(parallel: int) -> dict[str, Any]:
     project = _project(TWO_DOCUMENTS_INDEX, buildername="html")
     project["files"].append((Path("other.rst"), OTHER))
+    # Sphinx reads and writes in parallel from six documents on
+    project["files"].extend(
+        (Path(f"page{i}.rst"), f"Page {i}\n======\n") for i in range(5)
+    )
     project["parallel"] = parallel
     return project
 
@@ -503,6 +510,11 @@ def test_one_filter_in_two_places_is_reported_at_each(test_app: Any) -> None:
     app = test_app
     app.build()
     assert sorted(build_warnings(app)) == sorted(_two_documents_warnings())
+    # the parallel build did read in chunks (``index .. page0``), where forking is
+    # available (POSIX): the warnings above are no serial build's
+    status = re.sub(r"\x1b\[[0-9;]*m", "", app._status.getvalue())
+    chunked = re.search(r"reading sources\.\.\. \[ *\d+%\] \S+ \.\. ", status)
+    assert (chunked is not None) is (app.parallel > 1 and parallel_available)
 
 
 @pytest.mark.parametrize("test_app", [_two_documents(0)], indirect=True)
