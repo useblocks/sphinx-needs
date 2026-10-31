@@ -296,7 +296,7 @@ class _Need(dict[str, Any]):
 
 @pytest.mark.parametrize(("source", "facets"), SHAPES.values(), ids=SHAPES.keys())
 def test_each_facet_of_each_producer(source: Any, facets: tuple[Any, ...]) -> None:
-    """The rules by named position: ``kind`` the producer (external, import, report,
+    """The rules by named position: ``kind`` the producer (import, external, report,
     code, generated, page, in that order; open to more), ``path`` and ``line``
     ``hops[0]``'s under the source directory (none for an import, an external need or a
     service, and none where ``hops[0]`` has no such path: a test case's test file, a

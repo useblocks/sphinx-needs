@@ -4,7 +4,8 @@ A need's hops (:class:`~sphinx_needs.need_item.NeedItemSource`, innermost first)
 provisional; the facets are the stable view a filter reads of them. Each facet names a
 position in the hop list, never a producer, so a longer chain needs no new rule:
 
-- ``kind``: the producer, read from the whole chain (:func:`kind_of`);
+- ``kind``: the producer, read from the whole chain and the need's import and external
+  flags (:func:`kind_of`);
 - ``path``, ``line``, ``symbol``: ``hops[0]``, the innermost hop;
 - ``paths``: every hop;
 - ``document``, ``sections``: the placement, read for now from the legacy ``docname``
@@ -73,7 +74,8 @@ def _hops(source: object) -> tuple[NeedSourceHop, ...]:
 
 
 def _srcdir_path(hop: NeedSourceHop) -> str | None:
-    """The hop's path, where its root is the Sphinx source directory."""
+    """The hop's path, where its root is the Sphinx source directory of this project
+    (a hop with an ``origin``, another project's, has none here)."""
     physical = hop.physical
     if physical is None or physical.root != SRCDIR_ROOT or hop.origin is not None:
         return None
@@ -83,9 +85,11 @@ def _srcdir_path(hop: NeedSourceHop) -> str | None:
 def kind_of(source: Any) -> str | None:
     """``source.kind``: the producer of the need, the first rule that applies.
 
-    ``"external"`` (``hops[0]`` is ``external``, or the need is external),
     ``"import"`` (``needimport`` read it: its stored flag, as an imported needs.json
-    and an included file are both ``file`` hops), ``"report"`` (any hop is a test
+    and an included file are both ``file`` hops; first, so that an imported need stays
+    one when its upstream hops arrive, an external need upstream included),
+    ``"external"`` (``hops[0]`` is ``external``, or the need is external),
+    ``"report"`` (any hop is a test
     report's), ``"code"`` (``hops[0]`` is ``code``), ``"generated"`` (``hops[0]`` is
     ``generated``: a service), ``"page"`` (any ``page`` or ``file`` hop), else ``None``.
     The vocabulary is open: a later producer adds a value.
@@ -133,8 +137,9 @@ def paths_of(source: Any) -> tuple[str, ...]:
     """``source.paths``: every hop's path under the source directory, innermost first,
     each once.
 
-    ``()`` for an external need, keyed on ``hops[0]`` being ``external``: a page hop
-    after it can carry a local path, which is not where the need comes from.
+    ``()`` for an external need that is not imported, keyed on ``hops[0]`` being
+    ``external``: a page hop after it can carry a local path, which is not where the
+    need comes from. A hop with an ``origin`` (another project's) counts toward none.
     """
     hops = _hops(source)
     if hops and hops[0].kind == "external" and not source.dict_repr.get("is_import"):
