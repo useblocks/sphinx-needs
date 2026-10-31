@@ -868,7 +868,7 @@ def filter_needs_and_parts(
             config.variant_data_proxy,
             compiled,
             origin_docname,
-            is_a_types(config) if compiled.reads_types else None,
+            config.is_a_types if compiled.reads_types else None,
         )
         found_needs: list[_NeedOrPartT] = []
         error_reported = False
@@ -937,7 +937,7 @@ def _fast_path_context(
     What the ``eval`` tier's context holds besides the need's fields: the
     ``needs_filter_data`` keys, the variant data under ``var``, and, for a predicate
     that reads them, the document the filter is written in (``c.this_doc()``) and the
-    project's need types (``c.is_a("...")``, :func:`is_a_types`). Both are passed per
+    project's need types (``c.is_a("...")``, ``config.is_a_types``). Both are passed per
     call, never compiled in: one compiled filter serves every document a string is
     written in, and every project a process builds.
 
@@ -959,17 +959,6 @@ def _fast_path_context(
     if types is not None:
         fallback[IS_A_KEY] = types
     return fallback
-
-
-def is_a_types(config: NeedsSphinxConfig) -> Mapping[str, frozenset[str]] | None:
-    """The project's need types as ``c.is_a("...")`` reads them: each with itself and
-    every type inheriting from it, from the declarations once ``inherits`` is checked.
-
-    ``create_schema`` sets them on the configuration at the start of every build, as
-    ``prepare_env`` sets the ``var`` proxy, so a filter of the build reads the build's own
-    declarations. None for a configuration no build has prepared.
-    """
-    return getattr(config, "is_a_types", None)
 
 
 def need_search(*args: Any, **kwargs: Any) -> bool:
@@ -1094,7 +1083,7 @@ def filter_single_need(
                     var_proxy,
                     compiled,
                     origin_docname,
-                    is_a_types(config) if compiled.reads_types else None,
+                    config.is_a_types if compiled.reads_types else None,
                 )
                 if filter_data
                 or var_proxy is not None
@@ -1179,5 +1168,5 @@ class NeedCheckContext:
         """Whether the need's type is *name*, or a type inheriting from it, transitively,
         as the project's need types declare it (:func:`~sphinx_needs.ubquery.is_a`). A
         name that is no need type is false on every need."""
-        types = None if self._config is None else is_a_types(self._config)
+        types = None if self._config is None else self._config.is_a_types
         return is_a(self._need["type"], name, types)

@@ -801,10 +801,7 @@ def _is_a_config(
     config = Mock(spec=["filter_data", "variant_data_proxy", "is_a_types"])
     config.filter_data = filter_data or {}
     config.variant_data_proxy = None
-    if types is None:
-        del config.is_a_types
-    else:
-        config.is_a_types = types
+    config.is_a_types = types
     return config
 
 

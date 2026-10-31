@@ -28,7 +28,7 @@ from sphinx_needs.directives.need import resolve_links
 from sphinx_needs.filter_common import filter_needs_and_parts, filter_single_need
 from sphinx_needs.need_item import NeedItem, NeedLink, NeedsContent
 from sphinx_needs.needs_schema import FieldsSchema, LinkDisplayConfig, LinkSchema
-from sphinx_needs.ubquery import try_build_simple_predicate
+from sphinx_needs.ubquery import compile_portable
 
 
 def _make_needs_with_constrained_links(
@@ -43,7 +43,7 @@ def _make_needs_with_constrained_links(
     and ``type == "requirement"``.
 
     :param unique_conditions: If True, every link gets a unique condition string
-        so the LRU cache in ``_try_build_simple_predicate`` never hits.
+        so the LRU cache in ``compile_portable`` never hits.
     """
     conditions = [
         'status == "open"',
@@ -153,7 +153,7 @@ def test_resolve_links_unique_conditions(need_cnt: int, benchmark) -> None:
     )
 
     def run() -> None:
-        try_build_simple_predicate.cache_clear()
+        compile_portable.cache_clear()
         for need in needs.values():
             need.reset_backlinks()
         resolve_links(needs, config, schema)

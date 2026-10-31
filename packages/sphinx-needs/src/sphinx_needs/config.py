@@ -40,6 +40,7 @@ if TYPE_CHECKING:
 
     from sphinx_needs.functions.functions import DynamicFunction
     from sphinx_needs.need_item import NeedItem
+    from sphinx_needs.variant_data import VariantDataProxy
 
 
 LOGGER = get_logger(__name__)
@@ -123,6 +124,23 @@ class TypeNarrowing:
     """The entry, of its shape: its ``directive``, and the keys it gives."""
 
 
+@dataclass(slots=True)
+class _BuildData:
+    """What sphinx-needs derives from the configuration at the start of a build, for
+    every filter of it to read: never a configuration value, and never pickled.
+
+    Read through :class:`NeedsSphinxConfig` (``variant_data_proxy``, ``is_a_types``),
+    which cannot write it; written by the build alone.
+    """
+
+    variant_data_proxy: VariantDataProxy | None = None
+    """The ``var`` proxy over the variant data, or None when there is none: derived at
+    ``config-inited`` and again at ``env-before-read-docs`` (``prepare_env``)."""
+    is_a_types: Mapping[str, frozenset[str]] | None = None
+    """Each need type with itself and every type inheriting from it, as ``c.is_a``
+    reads them: set by ``create_schema``, None until a build has."""
+
+
 class _Config:
     """Stores sphinx-needs configuration values that can be set both via the sphinx configuration,
     and also via the API functions.
@@ -141,6 +159,7 @@ class _Config:
         self._builtin_services: list[str] = []
         self._type_narrowings: dict[str, TypeNarrowing] = {}
         self._type_entries: frozenset[str] | None = None
+        self._build = _BuildData()
 
     def clear(self) -> None:
         self._fields = {}
@@ -153,6 +172,13 @@ class _Config:
         self._builtin_services = []
         self._type_narrowings = {}
         self._type_entries = None
+        self._build = _BuildData()
+
+    @property
+    def build(self) -> _BuildData:
+        """What the build derives from the configuration for its filters to read, kept
+        here rather than on Sphinx's ``Config``, which holds the declared options alone."""
+        return self._build
 
     @property
     def fields(self) -> Mapping[str, NewFieldParams]:
@@ -919,6 +945,13 @@ LAYOUTS_READ_ONLY = (
 )
 
 
+#: Why a value the build derives cannot be changed through the read
+BUILD_DATA_READ_ONLY = (
+    "NeedsSphinxConfig.{name} is read-only: sphinx-needs derives it from the "
+    "configuration at the start of each build"
+)
+
+
 def _read_only(message: str) -> NoReturn:
     from sphinx_needs.exceptions import (
         NeedsApiConfigException,  # avoid circular import
@@ -971,7 +1004,15 @@ class _ReadOnlyLayouts(dict[str, dict[str, Any]]):
 
 #: The attributes :class:`NeedsSphinxConfig` answers itself, rather than from a
 #: ``needs_*`` configuration value of the same name.
-_OWN_ATTRIBUTES = ("_config", "functions", "warnings", "types", "layouts")
+_OWN_ATTRIBUTES = (
+    "_config",
+    "functions",
+    "warnings",
+    "types",
+    "layouts",
+    "variant_data_proxy",
+    "is_a_types",
+)
 
 
 @dataclass
@@ -990,9 +1031,41 @@ class NeedsSphinxConfig:
     # each is a property reading sphinx-needs' own registry (`_NEEDS_CONFIG`), and the
     # configuration value itself is the dataclass field of the same name with a
     # leading underscore (`_types` is `needs_types`).
+    # `variant_data_proxy` and `is_a_types` are no configuration values at all: the
+    # build derives them, and they are read-only properties over the same registry.
 
     def __init__(self, config: _SphinxConfig) -> None:
         super().__setattr__("_config", config)
+
+    @property
+    def variant_data_proxy(self) -> VariantDataProxy | None:
+        """The ``var`` proxy filters read over the variant data (``needs_variant_data``,
+        merged with its file), or None when there is none. Derived at ``config-inited``,
+        and again at the start of each build, so a map written after it was resolved
+        still matches what the ``variant`` role reads.
+
+        Read-only: a write raises ``NeedsApiConfigException``.
+        """
+        return _NEEDS_CONFIG.build.variant_data_proxy
+
+    @variant_data_proxy.setter
+    def variant_data_proxy(self, _value: object) -> None:
+        _read_only(BUILD_DATA_READ_ONLY.format(name="variant_data_proxy"))
+
+    @property
+    def is_a_types(self) -> Mapping[str, frozenset[str]] | None:
+        """The need types as ``c.is_a("...")`` reads them: each with itself and every
+        type inheriting from it, from the declarations once ``inherits`` is checked.
+        Set at the start of every build, where the schema is created, so a filter of the
+        build reads the build's own declarations; None until a build has.
+
+        Read-only: a write raises ``NeedsApiConfigException``.
+        """
+        return _NEEDS_CONFIG.build.is_a_types
+
+    @is_a_types.setter
+    def is_a_types(self, _value: object) -> None:
+        _read_only(BUILD_DATA_READ_ONLY.format(name="is_a_types"))
 
     def __getattribute__(self, name: str) -> Any:
         if name.startswith("__") or name in _OWN_ATTRIBUTES:

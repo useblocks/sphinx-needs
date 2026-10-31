@@ -21,7 +21,6 @@ import pytest
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.derive import filter_problem
-from sphinx_needs.filter_common import is_a_types
 from sphinx_needs.functions.order import filter_names
 from sphinx_needs_testkit import build_warnings
 
@@ -149,7 +148,7 @@ def test_the_build_gives_its_filters_the_declared_types(test_app: Any) -> None:
     app = test_app
     app.build()
     assert build_warnings(app) == [INHERITS_NOPE]
-    types = is_a_types(NeedsSphinxConfig(app.config))
+    types = NeedsSphinxConfig(app.config).is_a_types
     assert types is not None
     assert {name: sorted(types[name]) for name in SELECTS} == {
         "req": ["hw_req", "req", "sys_req"],
