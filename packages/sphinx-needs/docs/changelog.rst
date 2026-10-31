@@ -22,8 +22,9 @@ Improvements
   The facets are in the portable filter language, answered without ``eval``; ``eval`` computes them only for a
   filter naming ``source``. They are not available in a field predicate, a :ref:`needimport` ``:filter:`` or a
   variant condition, where the error now says so. A field, link type or :ref:`needs_filter_data` key named
-  ``source`` switches them off for the project, with one ``needs.source_shadowed`` warning; ``source`` then reads
-  it. ``docname``, ``sections``, ``lineno``, ``is_import``, ``is_external`` and ``signature`` are unchanged.
+  ``source`` keeps working as it did: it switches the facets off for the project, ``source`` reads it, and only a
+  filter reading a facet there is reported, naming the declaration. ``docname``, ``sections``, ``lineno``,
+  ``is_import``, ``is_external`` and ``signature`` are unchanged.
 
 - ✨ A link type derives a chain's far ends as links: ``copy`` of ``id`` and ``collect`` of a link type, over a
   link type, declared on a link type (:ref:`needs_derive_link_chain`, :issue:`2370`)

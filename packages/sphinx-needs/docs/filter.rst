@@ -455,10 +455,12 @@ The location names a filter had before stay, each as it was:
        and does not read domain objects yet.
 
 **A field named** ``source``: a field or link type declared with that name, or a :ref:`needs_filter_data` key,
-switches the facets off for the whole project, with one ``needs.source_shadowed`` warning per build:
-``source`` then reads the declaration, in every filter and on every need, a need of a type that does not declare
-the field included. Rename the field to use the facets, or keep it and silence the warning with
-``suppress_warnings = ["needs.source_shadowed"]``.
+switches the facets off for the whole project. The declaration wins: ``source`` reads it, in every filter and on
+every need, a need of a type that does not declare the field included, so ``source == 'customer'`` selects by
+the field as it always has, and declaring the name reports nothing. A filter reading a facet there
+(``source.path``) fails, as the declaration's value has none, and its ``needs.filter`` report says why:
+``... has no attribute 'path'; the project declares a field named 'source', which switches the source.* facets off``.
+To use the facets, rename the declaration.
 
 The facets are available wherever a filter selects needs: the need-listing and diagram directives,
 :ref:`needextend`, :ref:`needs_warnings`, a :ref:`link condition <need_conditional_links>` and a derived field's

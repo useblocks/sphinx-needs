@@ -4056,8 +4056,9 @@ function. The function gets executed during config loading and must return a str
 The value of ``needs_filter_data`` will be available as data inside :ref:`filter_string` and can be very powerful
 together with internal needs information to filter needs.
 
-A key named ``source`` switches the ``source.*`` filter facets off for the whole project, with one
-``needs.source_shadowed`` warning per build: ``source`` in a filter then reads the key (:ref:`filter_source`).
+A key named ``source`` switches the ``source.*`` filter facets off for the whole project: ``source`` in a filter
+then reads the key, and a filter reading a facet (``source.path``) fails with a report naming the key
+(:ref:`filter_source`).
 
 .. _`needs_extra_options`:
 
