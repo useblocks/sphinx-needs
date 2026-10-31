@@ -527,13 +527,13 @@
         "_constraint_results: NeedConstraintResults | None",
         "_content: NeedsContent",
         "_core: NeedsInfoType",
-        "_derived: Iterable[str]",
-        "_dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray] | None",
+        "_derived: frozenset[str]",
+        "_dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray]",
         "_extras: dict[str, AllowedTypes | None]",
         "_links: dict[str, list[NeedLink]]",
-        "_modifications: Sequence[NeedModification]",
-        "_parts: Sequence[NeedPartData]",
-        "_source: NeedItemSourceProtocol | None"
+        "_modifications: tuple[NeedModification, ...]",
+        "_parts: dict[str, NeedPartData]",
+        "_source: NeedItemSourceProtocol"
       ]
     },
     "sphinx_needs.need_item.NeedItemSource": {
