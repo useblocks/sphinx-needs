@@ -277,6 +277,23 @@ SHAPES: dict[str, tuple[Any, tuple[Any, ...]]] = {
         ),
         ("import", None, None, ("imp.json", "imp.rst"), None),
     ),
+    "an-upstream-code-hop-with-an-origin": (
+        NeedItemSource(
+            (
+                NeedSourceHop(
+                    kind="code",
+                    origin="upstream",
+                    physical=NeedSourcePhysical(
+                        root="srcdir", path="../src/e.py", start_line=4
+                    ),
+                ),
+                _file("imp.json"),
+                _page("imp.rst", 7),
+            ),
+            is_import=True,
+        ),
+        ("import", None, None, ("imp.json", "imp.rst"), None),
+    ),
     "no-hops": (NeedItemSource(), (None, None, None, (), None)),
     "third-party": (_ThirdParty(), (None, None, None, (), None)),
     "third-party-external": (
@@ -889,3 +906,74 @@ def test_where_source_is_declared_each_place_says_why_a_facet_fails(
     app = test_app
     app.build()
     assert build_warnings(app) == [expected]
+
+
+#: pinned before fix round 2 lands: red until the commit that serves it
+_UNTIL_FIX_ROUND_2 = pytest.mark.xfail(strict=True, reason="fix round 2")
+
+#: a need on the page, and one linking it under a condition written after a space
+INDEX_LEADING = """\
+Index
+=====
+
+.. req:: Linked
+   :id: REQ_001
+   {constraints}
+
+.. req:: Linking
+   :id: REQ_002
+   :links: REQ_001[ source.kind == "page"]
+"""
+
+
+@_UNTIL_FIX_ROUND_2
+@pytest.mark.parametrize(
+    "test_app", [_project("", INDEX_LEADING.format(constraints=""))], indirect=True
+)
+def test_a_link_condition_naming_source_after_a_space_reads_the_facets(
+    test_app: Any,
+) -> None:
+    """``eval`` strips a string's leading spaces and tabs, and so does the question
+    whether a filter names ``source``: a link condition written after a space holds,
+    unreported."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert [link.id for link in needs["REQ_002"].get_links("links", as_str=False)] == [
+        "REQ_001"
+    ]
+
+
+@_UNTIL_FIX_ROUND_2
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            'needs_constraints = {"page_only": '
+            '{"check_0": " source.kind == \'page\'", "severity": "CRITICAL"}}\n',
+            INDEX_LEADING.format(constraints=":constraints: page_only"),
+        )
+    ],
+    indirect=True,
+)
+def test_a_constraint_naming_source_after_a_space_reads_the_facets(
+    test_app: Any,
+) -> None:
+    """A constraint check written after a space reads the facets and passes: the build
+    goes on."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert needs["REQ_001"]["constraints_passed"] is True
+
+
+@_UNTIL_FIX_ROUND_2
+@pytest.mark.parametrize("test_app", [_project("")], indirect=True)
+def test_the_tiers_agree_on_a_filter_naming_source_after_a_tab(test_app: Any) -> None:
+    """The parsed tier refuses a filter after a tab, and ``eval`` strips the tab: both
+    read the facets."""
+    app = test_app
+    app.build()
+    assert set(_both_tiers(app, "\tsource.kind == 'page'").values()) == {True}
