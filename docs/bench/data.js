@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793457448782,
+  "lastUpdate": 1793463804678,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28014,6 +28014,48 @@ window.BENCHMARK_DATA = {
             "value": 186.05264,
             "unit": "MB",
             "extra": "Commit: 97e58643e7874f5b7d0fd55174e5b8618170d9d2\nBranch: master\nTime: 2026-10-31T15:35:52+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "09a66ae91da7364a008a0b5058d72024f54fb6f7",
+          "message": "🔧 Sphinx's configuration holds the declared options alone: the variant proxy and the c.is_a type sets move to sphinx-needs' own store (#2444)\n\nA `conf.py` can no longer collide with, nor a reader stumble over, two\n`needs_*` names on Sphinx's configuration that were never options.\n`needs_variant_data_proxy` and `needs_is_a_types` were written there by\nthe build itself (through `NeedsSphinxConfig`'s forwarding of unknown\nnames), and pickled with the environment. Both now live in sphinx-needs'\nown per-process registry, reset whenever the extension is set up, and\nare read as before, through `NeedsSphinxConfig(...).variant_data_proxy`\nand `.is_a_types`. Those are now read-only properties, so a mock with\n`spec=NeedsSphinxConfig` has them.\n\n- `app.config.needs_variant_data_proxy` (undocumented, written since\n8.2.0) is removed without a deprecation; read\n`NeedsSphinxConfig(app.config).variant_data_proxy`. No sibling package\nreads it.\n- `filter_common.is_a_types()` (unreleased) is gone; read\n`config.is_a_types`.\n- The benchmark module `tests/benchmarks/test_querying.py` is green\nagain (18 passed, 12 failed before): the properties fix the spec'd mock,\nand the test clears `compile_portable`'s cache, where the cache moved.\n- Fenced twice: a named test, and a check after every `test_app` build\nof the suite, that every `needs_*` attribute of Sphinx's `Config` is a\ndeclared value. A build that writes one turns the whole suite red.\n- No `ENV_DATA_VERSION` bump. The env-data fingerprint is re-pinned with\nexactly one change, `VariantDataProxy` is no longer stored: it was\nstored only inside `env.config`, which Sphinx replaces on load. A pickle\nwritten by the previous version loads and builds incrementally to the\nsame output.\n- One process building two applications interleaved (both set up before\neither builds) shares the store between them; every build re-derives\nboth values at its start, so builds are unaffected.\n\nChangelog (Unreleased, Internal changes): the `var` proxy over the\nvariant data and the need types `c.is_a` reads are kept by sphinx-needs\nrather than on Sphinx's configuration, which holds the declared options\nalone; `app.config.needs_variant_data_proxy` is removed without a\ndeprecation.\n\nCloses #1840. Part of #2402; the warning for a `c.is_a` name that is no\nneed type follows in a stacked pull request.",
+          "timestamp": "2026-10-31T17:21:49+01:00",
+          "tree_id": "faa578aafb03a08e787f5f4fdc9b8f449d5fdeb8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/09a66ae91da7364a008a0b5058d72024f54fb6f7"
+        },
+        "date": 1793463804142,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07287111900001264,
+            "unit": "s",
+            "extra": "Commit: 09a66ae91da7364a008a0b5058d72024f54fb6f7\nBranch: master\nTime: 2026-10-31T17:21:49+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 12.979025970999999,
+            "unit": "s",
+            "extra": "Commit: 09a66ae91da7364a008a0b5058d72024f54fb6f7\nBranch: master\nTime: 2026-10-31T17:21:49+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 186.374606,
+            "unit": "MB",
+            "extra": "Commit: 09a66ae91da7364a008a0b5058d72024f54fb6f7\nBranch: master\nTime: 2026-10-31T17:21:49+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
