@@ -69,7 +69,9 @@ def _write(srcdir: Path, conf: str) -> Path:
 
 
 def _undeclared_needs_values(config: Any) -> list[str]:
-    """The ``needs_*`` attributes of a Sphinx configuration that are no declared value.
+    """The ``needs_*`` attributes of a Sphinx configuration that are no declared value
+    (the suite checks it after every ``test_app`` build too, ``tests/conftest.py``; a
+    value stored on the environment instead is beyond both).
 
     ``name in config`` asks Sphinx for its declared values, Sphinx's own
     ``needs_sphinx`` and ``needs_extensions`` included, which share the prefix.
