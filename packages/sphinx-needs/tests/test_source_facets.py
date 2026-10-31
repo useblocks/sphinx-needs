@@ -502,6 +502,28 @@ def test_eval_binds_the_facets_only_for_a_filter_naming_source(
 
 
 @pytest.mark.parametrize("test_app", [_project("")], indirect=True)
+def test_a_facet_costs_its_own_work_alone(
+    test_app: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A filter reading one facet computes that facet, in either tier: ``source.path``
+    reads the kind (an import's or an external need's has none) and the path, never the
+    paths, the line or the symbol."""
+    app = test_app
+    app.build()
+    called: list[str] = []
+    for name in ("kind_of", "path_of", "line_of", "paths_of", "symbol_of"):
+        real = getattr(_source_facets, name)
+
+        def counting(source: Any, _real: Any = real, _name: str = name) -> Any:
+            called.append(_name)
+            return _real(source)
+
+        monkeypatch.setattr(_source_facets, name, counting)
+    assert set(_both_tiers(app, 'source.path == "index.rst"').values()) == {True}
+    assert set(called) == {"kind_of", "path_of"}
+
+
+@pytest.mark.parametrize("test_app", [_project("")], indirect=True)
 def test_an_unknown_facet_is_reported_with_the_closest_facet(test_app: Any) -> None:
     """``source.<name>`` naming no facet falls to ``eval``, which reports it on every
     need, naming the closest facet, or every facet where none is close."""
