@@ -13,6 +13,16 @@
       }
     },
     "tagged_scope": "{ \"k\": 1 }",
+    "scope": {
+      "kind": "object",
+      "start": 2,
+      "end": 2,
+      "language": "jsonc",
+      "entity_kind": "item",
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Jsonc Title",
       "id": "IMPL_JSONC",

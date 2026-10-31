@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "const ids = function* () {};",
+    "scope": {
+      "kind": "lexical_declaration",
+      "start": 2,
+      "end": 2,
+      "language": "typescript",
+      "entity_kind": "function",
+      "qualified_name": "ids",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "ids"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Const Generator",
       "id": "IMPL_TS_CONST_GEN",
@@ -38,6 +53,21 @@
       }
     },
     "tagged_scope": "const Widget = class {};",
+    "scope": {
+      "kind": "lexical_declaration",
+      "start": 4,
+      "end": 4,
+      "language": "typescript",
+      "entity_kind": "class",
+      "qualified_name": "Widget",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Widget"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Const Class",
       "id": "IMPL_TS_CONST_CLASS",

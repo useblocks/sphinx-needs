@@ -44,7 +44,17 @@
       "scope": {
         "kind": "function_declaration",
         "start": 6,
-        "end": 8
+        "end": 8,
+        "language": "typescript",
+        "entity_kind": "function",
+        "qualified_name": "handle",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "handle"
+          }
+        ],
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

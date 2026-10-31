@@ -44,7 +44,17 @@
       "scope": {
         "kind": "function_definition",
         "start": 6,
-        "end": 6
+        "end": 6,
+        "language": "cpp",
+        "entity_kind": "function",
+        "qualified_name": "md",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "md"
+          }
+        ],
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

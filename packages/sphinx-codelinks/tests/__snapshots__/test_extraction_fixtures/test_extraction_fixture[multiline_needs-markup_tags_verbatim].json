@@ -41,7 +41,17 @@
       "scope": {
         "kind": "function_definition",
         "start": 4,
-        "end": 4
+        "end": 4,
+        "language": "cpp",
+        "entity_kind": "function",
+        "qualified_name": "empty_tag",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "empty_tag"
+          }
+        ],
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",
@@ -89,7 +99,17 @@
       "scope": {
         "kind": "function_definition",
         "start": 9,
-        "end": 9
+        "end": 9,
+        "language": "cpp",
+        "entity_kind": "function",
+        "qualified_name": "upper_tag",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "upper_tag"
+          }
+        ],
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",
@@ -137,7 +157,17 @@
       "scope": {
         "kind": "function_definition",
         "start": 14,
-        "end": 14
+        "end": 14,
+        "language": "cpp",
+        "entity_kind": "function",
+        "qualified_name": "spaced_tag",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "spaced_tag"
+          }
+        ],
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

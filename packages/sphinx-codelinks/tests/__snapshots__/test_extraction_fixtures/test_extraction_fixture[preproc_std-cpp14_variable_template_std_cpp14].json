@@ -13,6 +13,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "C++14 variable template",
       "id": "IMPL_CPP14",

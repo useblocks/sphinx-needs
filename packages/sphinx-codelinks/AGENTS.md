@@ -42,6 +42,7 @@ src/sphinx_codelinks/   # Main source code
 ├── needextend_write.py # Write RST files with Sphinx-Needs directives (`write rst`, deprecated)
 ├── analyse/            # Code analysis module
 │   ├── analyse.py      # Main analysis orchestration
+│   ├── entity.py       # What a marker is attached to: entity kinds, trivia, wrappers, `describe_entity`, `semantic` and `render_semantic`
 │   ├── models.py       # dataclasses/TypedDicts/Enums for analysis results
 │   ├── multiline_parser.py # Multi-line needs: comment runs, prefixes stripped by comment kind, the block grammar
 │   ├── oneline_parser.py # One-line comment parser
@@ -461,7 +462,10 @@ and no registry object to subclass.
    to `COMMENT_FILETYPE` in the same file
 3. In `analyse/utils.py`: a `<LANG>_QUERY` tree-sitter query naming the comment nodes, a
    branch in the `comment_type ==` chain that builds `Language(tree_sitter_<lang>.language())`,
-   and — if scope association is wanted — an entry in `SCOPE_NODE_TYPES`
+   and — if attachment to code entities is wanted — entries in `analyse/entity.py`:
+   `ENTITY_NODE_TYPES` (and `TRIVIA_TYPES` / `WRAPPER_TYPES` where they apply) and a namer in
+   `describe_entity`'s table; `tests/data/extraction/entities.yaml` and its truth test pin
+   both
 4. Add test files under `tests/data/`
 5. Add tests in `tests/test_analyse.py`, and a fixture row in
    `tests/test_extraction_fixtures.py` if the language should be covered declaratively

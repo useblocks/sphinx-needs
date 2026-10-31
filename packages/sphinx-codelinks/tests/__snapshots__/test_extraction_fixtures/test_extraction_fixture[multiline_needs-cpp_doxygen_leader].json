@@ -48,7 +48,17 @@
       "scope": {
         "kind": "function_definition",
         "start": 14,
-        "end": 14
+        "end": 14,
+        "language": "cpp",
+        "entity_kind": "function",
+        "qualified_name": "login",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "login"
+          }
+        ],
+        "mechanism": "doc_comment"
       }
     },
     "type": "multiline-need",

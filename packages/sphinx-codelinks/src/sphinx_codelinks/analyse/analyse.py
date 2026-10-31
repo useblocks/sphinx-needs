@@ -9,6 +9,7 @@ from tree_sitter import Node as TreeSitterNode
 from tree_sitter import Parser, Query
 
 from sphinx_codelinks.analyse import multiline_parser, utils
+from sphinx_codelinks.analyse.entity import CodeScope, code_scope, scope_language
 from sphinx_codelinks.analyse.models import (
     MarkedContentType,
     MultilineNeed,
@@ -420,11 +421,13 @@ class SourceAnalyse:
         src_comment: SourceComment,
         first_row: int | None = None,
         first_column: int | None = None,
+        *,
+        scope: CodeScope | None = None,
     ) -> list[NeedIdRefs]:
         """Extract need-ids-refs from a comment.
 
         ``text`` starts at ``first_row`` and ``first_column`` (by default the
-        comment's own row and column).
+        comment's own row and column). ``scope`` is the named ``tagged_scope``.
         """
         if first_row is None:
             first_row = src_comment.node.start_point.row
@@ -468,6 +471,7 @@ class SourceAnalyse:
                     tagged_scope,
                     need_ids,
                     marker,
+                    scope=scope,
                 )
             )
         return anchors
@@ -578,11 +582,13 @@ class SourceAnalyse:
         oneline_comment_style: OneLineCommentStyle,
         first_row: int | None = None,
         first_column: int | None = None,
+        *,
+        scope: CodeScope | None = None,
     ) -> list[OneLineNeed]:
         """Extract the one-line needs of a comment.
 
         ``text`` starts at ``first_row`` and ``first_column`` (by default the
-        comment's own row and column).
+        comment's own row and column). ``scope`` is the named ``tagged_scope``.
         """
         if first_row is None:
             first_row = src_comment.node.start_point.row
@@ -626,6 +632,7 @@ class SourceAnalyse:
                     src_comment,
                     tagged_scope,
                     resolved,  # int arguments were deleted  # ty: ignore[invalid-argument-type]
+                    scope=scope,
                 )
             )
         return oneline_needs
@@ -694,11 +701,7 @@ class SourceAnalyse:
             ),
             run.comments[0],
         )
-        tagged_scope: TreeSitterNode | None = None
-        if not getattr(src_comment.node, "is_libclang", False):
-            tagged_scope = utils.find_associated_scope(
-                src_comment.node, self.analyse_config.comment_type
-            )
+        tagged_scope, scope = self._associate(src_comment, filepath)
         lineno = block.open_row + 1
         remote_url = self.git_remote_url
         if self.git_remote_url and self.git_commit_rev:
@@ -716,15 +719,6 @@ class SourceAnalyse:
         content_start = (
             {"line": block.content_start[0] + 1, "col": block.content_start[1]}
             if block.content_start is not None
-            else None
-        )
-        scope = (
-            {
-                "kind": tagged_scope.type,
-                "start": tagged_scope.start_point.row + 1,
-                "end": tagged_scope.end_point.row + 1,
-            }
-            if tagged_scope is not None
             else None
         )
         source: dict[str, Any] = {
@@ -747,6 +741,25 @@ class SourceAnalyse:
             block.need,
             block.markup,
             source,
+            scope=scope,
+        )
+
+    def _associate(
+        self, src_comment: SourceComment, filepath: Path
+    ) -> tuple[TreeSitterNode | None, CodeScope | None]:
+        """The entity a comment of ``filepath`` is attached to: its node and its
+        ``scope`` object.
+
+        A libclang comment has no tree-sitter node, so it is attached to nothing.
+        """
+        if getattr(src_comment.node, "is_libclang", False):
+            return None, None
+        comment_type = self.analyse_config.comment_type
+        association = utils.associate(src_comment.node, comment_type)
+        if association is None or not association.node.text:
+            return None, None
+        return association.node, code_scope(
+            association, comment_type, scope_language(comment_type, filepath)
         )
 
     def extract_marked_content(self) -> None:
@@ -761,12 +774,7 @@ class SourceAnalyse:
             )
             if not filepath:
                 continue
-            if getattr(src_comment.node, "is_libclang", False):
-                tagged_scope: TreeSitterNode | None = None
-            else:
-                tagged_scope = utils.find_associated_scope(
-                    src_comment.node, self.analyse_config.comment_type
-                )
+            tagged_scope, scope = self._associate(src_comment, filepath)
             for text, first_row, first_column in _scanned_texts(
                 src_comment, claimed.get(id(src_comment))
             ):
@@ -779,6 +787,7 @@ class SourceAnalyse:
                             src_comment,
                             first_row,
                             first_column,
+                            scope=scope,
                         )
                     )
                 if self.analyse_config.get_oneline_needs:
@@ -791,6 +800,7 @@ class SourceAnalyse:
                             self.analyse_config.oneline_comment_style,
                             first_row,
                             first_column,
+                            scope=scope,
                         )
                     )
 

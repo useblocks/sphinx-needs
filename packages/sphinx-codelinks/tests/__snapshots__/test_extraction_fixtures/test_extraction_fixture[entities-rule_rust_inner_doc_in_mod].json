@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 9
+      },
+      "end": {
+        "row": 1,
+        "column": 38
+      }
+    },
+    "tagged_scope": "mod m {\n    //! @Inner doc, IMPL_R_INNER, impl\n    fn f() {}\n}",
+    "scope": {
+      "kind": "mod_item",
+      "start": 1,
+      "end": 4,
+      "language": "rust",
+      "entity_kind": "module",
+      "qualified_name": "m",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "m"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Inner doc",
+      "id": "IMPL_R_INNER",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "mod_item"
+  }
+]

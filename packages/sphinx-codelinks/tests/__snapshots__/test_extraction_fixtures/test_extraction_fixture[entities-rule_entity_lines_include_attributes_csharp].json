@@ -1,0 +1,44 @@
+[
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 8
+      },
+      "end": {
+        "row": 2,
+        "column": 56
+      }
+    },
+    "tagged_scope": "[Obsolete]\n    public void M() {}",
+    "scope": {
+      "kind": "method_declaration",
+      "start": 4,
+      "end": 5,
+      "language": "csharp",
+      "entity_kind": "method",
+      "qualified_name": "C.M",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "C"
+        },
+        {
+          "kind": "method",
+          "name": "M"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "An attributed method",
+      "id": "IMPL_R_ATTR_LINES_CS",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "method_declaration"
+  }
+]

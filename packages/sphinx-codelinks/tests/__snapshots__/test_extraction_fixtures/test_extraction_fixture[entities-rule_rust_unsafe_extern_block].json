@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 8
+      },
+      "end": {
+        "row": 1,
+        "column": 45
+      }
+    },
+    "tagged_scope": "pub fn abs(x: i32) -> i32;",
+    "scope": {
+      "kind": "function_signature_item",
+      "start": 3,
+      "end": 3,
+      "language": "rust",
+      "entity_kind": "function",
+      "qualified_name": "abs",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "abs"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "A foreign function",
+      "id": "IMPL_R_RS24",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_signature_item"
+  }
+]

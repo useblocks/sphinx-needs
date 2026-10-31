@@ -13,6 +13,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "DB flavor",
       "id": "IMPL_DB_FLAVOR",

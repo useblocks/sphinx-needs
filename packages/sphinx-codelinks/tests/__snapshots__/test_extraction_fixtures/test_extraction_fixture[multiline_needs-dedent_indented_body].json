@@ -44,7 +44,17 @@
       "scope": {
         "kind": "function_definition",
         "start": 8,
-        "end": 9
+        "end": 9,
+        "language": "python",
+        "entity_kind": "function",
+        "qualified_name": "dedented",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "dedented"
+          }
+        ],
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

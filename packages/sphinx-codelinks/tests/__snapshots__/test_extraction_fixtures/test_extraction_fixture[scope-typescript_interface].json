@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "interface Options {\n  retries: number;\n}",
+    "scope": {
+      "kind": "interface_declaration",
+      "start": 2,
+      "end": 4,
+      "language": "typescript",
+      "entity_kind": "interface",
+      "qualified_name": "Options",
+      "semantic": [
+        {
+          "kind": "interface",
+          "name": "Options"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Interface",
       "id": "IMPL_TS_INTERFACE",

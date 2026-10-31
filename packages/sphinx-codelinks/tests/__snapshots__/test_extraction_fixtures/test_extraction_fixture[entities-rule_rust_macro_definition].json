@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 40
+      }
+    },
+    "tagged_scope": "macro_rules! square {\n    ($x:expr) => {\n        $x * $x\n    };\n}",
+    "scope": {
+      "kind": "macro_definition",
+      "start": 2,
+      "end": 6,
+      "language": "rust",
+      "entity_kind": "macro",
+      "qualified_name": "square",
+      "semantic": [
+        {
+          "kind": "macro",
+          "name": "square"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Macro definition",
+      "id": "IMPL_R_MACRO",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "macro_definition"
+  }
+]

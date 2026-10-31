@@ -12,7 +12,8 @@
         "column": 27
       }
     },
-    "tagged_scope": "void f() {}",
+    "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Row two",
       "id": "IMPL_R2",
@@ -20,6 +21,6 @@
       "links": []
     },
     "type": "need",
-    "tagged_scope_type": "function_definition"
+    "tagged_scope_type": null
   }
 ]
