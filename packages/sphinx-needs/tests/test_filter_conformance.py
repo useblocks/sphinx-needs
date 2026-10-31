@@ -222,6 +222,22 @@ def test_the_corpus_header_records_where_it_is_canonical() -> None:
     assert "THIS copy is CANONICAL" in header
 
 
+def test_the_header_states_the_git_files_the_runner_writes() -> None:
+    """A second runner writes the two ``.git`` files from the header alone: the bytes it
+    states are the bytes this runner writes."""
+    header = CORPUS_PATH.read_text(encoding="utf-8").split("\n[[case]]", 1)[0]
+    prose = " ".join(line.removeprefix("#").strip() for line in header.splitlines())
+    head = GIT_FILES[".git/HEAD"]
+    assert head.endswith("\n") and "\n" not in head[:-1]
+    assert f"`.git/HEAD` is `{head[:-1]}` and a newline" in prose
+    section, url = GIT_FILES[".git/config"].split("\n\t", 1)
+    assert url.endswith("\n") and "\n" not in url[:-1]
+    assert (
+        f"`.git/config` is `{section}`, a newline, a tab, `{url[:-1]}` and a newline"
+        in prose
+    )
+
+
 def _files(case: Mapping[str, Any]) -> list[tuple[Path, str]]:
     """The case's project: its configuration, its document, its other files, and a
     ``.git`` where it loads sphinx-codelinks."""

@@ -43,6 +43,9 @@ from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs.ubquery import CompiledFilter
 from sphinx_needs_testkit import build_warnings
 
+#: pinned before fix round 1 lands: red until the commit that serves it
+_UNTIL_FIX_ROUND_1 = pytest.mark.xfail(strict=True, reason="fix round 1")
+
 
 def _page(path: str, line: int | None = None, document: str = "index") -> NeedSourceHop:
     return NeedSourceHop(
@@ -241,6 +244,44 @@ SHAPES: dict[str, tuple[Any, tuple[Any, ...]]] = {
             )
         ),
         ("page", "alm.csv", None, ("alm.csv", "index.rst"), None),
+    ),
+    "a-code-hop-not-innermost": (
+        NeedItemSource(
+            (
+                _file("frag/a.rst", 2),
+                _code("../m.py", 3, entity=(("function", "f"),), qualified="f"),
+                _page("x.rst"),
+            )
+        ),
+        ("page", "frag/a.rst", 2, ("frag/a.rst", "../m.py", "x.rst"), None),
+    ),
+    "an-imported-external": pytest.param(
+        NeedItemSource((_EXTERNAL, _page("imp.rst", 7)), is_import=True),
+        ("import", None, None, ("imp.rst",), None),
+        marks=_UNTIL_FIX_ROUND_1,
+    ),
+    "an-import-of-an-external-need-upstream": pytest.param(
+        NeedItemSource(
+            (_EXTERNAL, _file("imp.json"), _page("imp.rst", 7)), is_import=True
+        ),
+        ("import", None, None, ("imp.json", "imp.rst"), None),
+        marks=_UNTIL_FIX_ROUND_1,
+    ),
+    "an-upstream-hop-with-an-origin": pytest.param(
+        NeedItemSource(
+            (
+                NeedSourceHop(
+                    kind="page",
+                    origin="upstream",
+                    physical=NeedSourcePhysical(root="srcdir", path="index.rst"),
+                ),
+                _file("imp.json"),
+                _page("imp.rst", 7),
+            ),
+            is_import=True,
+        ),
+        ("import", None, None, ("imp.json", "imp.rst"), None),
+        marks=_UNTIL_FIX_ROUND_1,
     ),
     "no-hops": (NeedItemSource(), (None, None, None, (), None)),
     "third-party": (_ThirdParty(), (None, None, None, (), None)),
@@ -476,7 +517,14 @@ def test_a_facet_read_where_source_is_declared_says_why(
     }
 
 
-@pytest.mark.parametrize("test_app", [_project("")], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(""),
+        _project('needs_fields = {"sources": {"nullable": True}}\n'),
+    ],
+    indirect=True,
+)
 def test_no_declaration_named_source_leaves_the_facets_on(test_app: Any) -> None:
     app = test_app
     app.build()
@@ -487,6 +535,25 @@ def test_no_declaration_named_source_leaves_the_facets_on(test_app: Any) -> None
         "SPEC_001": True,
     }
     assert NeedsSphinxConfig(app.config).source_shadowed is None
+    # ``source`` alone is the facets object in both tiers, never a field read
+    for bare in ('source == "x"', 'source in ["x"]', "not source"):
+        assert set(_both_tiers(app, bare).values()) == {False}, bare
+
+
+@_UNTIL_FIX_ROUND_1
+@pytest.mark.parametrize("test_app", [_DECLARATIONS[0].values[0]], indirect=True)
+def test_a_method_of_a_field_named_source_is_no_facet_read(test_app: Any) -> None:
+    """``source.startswith(...)`` where a field named ``source`` is declared calls the
+    field value's method: where the field is unset it fails as it always did, and the
+    report says nothing of facets the filter never read."""
+    app = test_app
+    app.build()
+    answers = _both_tiers(app, 'source.startswith("man")')
+    assert answers["REQ_001"] is True
+    assert answers["REQ_002"] == (
+        "error: Filter 'source.startswith(\"man\")' not valid. "
+        "Error: 'NoneType' object has no attribute 'startswith'."
+    )
 
 
 @pytest.mark.parametrize("test_app", [_project("")], indirect=True)
@@ -520,6 +587,9 @@ def test_eval_binds_the_facets_only_for_a_filter_naming_source(
 
     # eval, not naming source: nothing bound
     assert selected('any(t == "x" for t in tags) or id in [i for i in [id]]') == every
+    assert made == []
+    # ... its text saying source, in a string literal: no name
+    assert selected('id in [i for i in [id]] and title != "source"') == every
     assert made == []
     # the parsed tier reads the facet it names, binding nothing
     assert selected('source.path == "index.rst"') == every
@@ -588,6 +658,16 @@ UNAVAILABLE = "name 'source' is not defined; the source.* facets are not availab
             "Predicate 'source.path == \"index.rst\"' not valid. Error: "
             f"{UNAVAILABLE} a field predicate. The predicate is skipped. [needs.config]",
             id="field-predicate",
+        ),
+        pytest.param(
+            _project(
+                'needs_fields = {"owner": {"nullable": True, "predicates": '
+                '[(\'resource == "x"\', "me")]}}\n'
+            ),
+            "<srcdir>/index.rst:4: WARNING: needs_fields['owner']['predicates']: "
+            "Predicate 'resource == \"x\"' not valid. Error: name 'resource' is not "
+            "defined. The predicate is skipped. [needs.config]",
+            id="a-name-near-source",
         ),
         pytest.param(
             {
@@ -725,3 +805,96 @@ def test_a_field_named_source_is_still_a_field_the_pass_watches(test_app: Any) -
         "functions, and the calls whose filter cannot be read, run after the built-in "
         "functions, in (need id, field) order [needs.derive_scope]",
     ]
+
+
+def test_a_needflow_variant_condition_says_it_has_no_facets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``match_variants`` (needflow's variant options) evaluates over the need data
+    alone: ``source`` there is undefined, and its warning says why."""
+    from sphinx_needs import variants
+
+    logged: list[str] = []
+    monkeypatch.setattr(
+        variants,
+        "log_warning",
+        lambda _logger, message, *_a, **_k: logged.append(message),
+    )
+    assert variants.match_variants('[source.kind == "page"]:a, b', {}, {}) == "b"
+    assert logged == [
+        "Error in variant expression 'source.kind == \"page\"': name 'source' is not "
+        "defined; the source.* facets are not available in a variant condition"
+    ]
+
+
+@_UNTIL_FIX_ROUND_1
+@pytest.mark.parametrize("test_app", [_project("")], indirect=True)
+def test_eval_asks_whether_a_filter_names_source_once_per_string(
+    test_app: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Whether a filter names ``source`` is a property of the string: ``eval`` asks it
+    once, never need by need, so a filter that does not name it costs what it did.
+    (Asked per need of a code object compiled per call, it hashes and compares that
+    code by value each time: about a quarter of eval's per-need cost, measured.)"""
+    app = test_app
+    app.build()
+    asked: list[object] = []
+    real = filter_common._code_names_source
+
+    def counting(code: Any) -> bool:
+        asked.append(code)
+        return real(code)
+
+    monkeypatch.setattr(filter_common, "_code_names_source", counting)
+    filter_common._string_names_source.cache_clear()
+    view = SphinxNeedsData(app.env).get_needs_view()
+    config = NeedsSphinxConfig(app.config)
+    filter_string = 'docname in [d for d in ["index"]] and "not source"'
+    assert len(filter_needs_view(view, config, filter_string)) == len(view) == 3
+    # the filter's own code once (before Python 3.12 its comprehension's is a code of
+    # its own, scanned with it), never once per need
+    assert sum(code.co_name == "<module>" for code in asked) <= 1
+
+
+@pytest.mark.parametrize(
+    ("test_app", "expected"),
+    [
+        pytest.param(
+            _project(
+                'needs_fields = {"source": {"nullable": True}, '
+                '"owner": {"nullable": True, "parse_variants": True}}\n',
+                INDEX.format(
+                    source=':source: manual\n   :owner: <<source.kind == "page": a, b>>'
+                ),
+            ),
+            "<srcdir>/index.rst:4: WARNING: Error while resolving dynamic values for "
+            "field 'owner', of need 'REQ_001': 'str' object has no attribute 'kind'; "
+            "the source.* facets are not available in a variant condition "
+            "[needs.dynamic_function]",
+            id="variant-condition",
+            marks=_UNTIL_FIX_ROUND_1,
+        ),
+        pytest.param(
+            _project(
+                'needs_fields = {"source": {"nullable": True}}\n',
+                INDEX.format(source=":source: manual\n   :links: REQ_002[source.path]"),
+            ),
+            "<srcdir>/index.rst:4: WARNING: Need 'REQ_001' link 'REQ_002' in field "
+            "'links': invalid condition syntax 'source.path': Filter 'source.path' not "
+            "valid. Error: 'NoneType' object has no attribute 'path'; "
+            "the project declares a field named 'source', which switches the source.* "
+            "facets off. [needs.link_condition_invalid]",
+            id="link-condition",
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_where_source_is_declared_each_place_says_why_a_facet_fails(
+    test_app: Any, expected: str
+) -> None:
+    """Under the switch a facet read fails, and every place it can be written says why:
+    a link condition, under its own code, names the declaration; a variant condition,
+    which never has the facets, says so even where ``source`` is a field."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [expected]
