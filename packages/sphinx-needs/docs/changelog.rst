@@ -427,6 +427,11 @@ Internal changes
   results on the same CPU model instead of the single result before it, which failed about one push in ten in
   2026-10 on runners of different speeds
 
+- 🧪 A test fails when the shape of the data sphinx-needs stores in the environment changes without a bump of
+  ``ENV_DATA_VERSION``, and when the version is bumped without re-pinning that shape (:issue:`2420`). It builds a
+  project with every producer of needs, collects every class of sphinx-needs the pickled environment and doctrees
+  hold, with the ``TypedDict`` classes their annotations name, and compares their fields with the pinned ones
+
 .. _`release:9.1.0`:
 
 9.1.0

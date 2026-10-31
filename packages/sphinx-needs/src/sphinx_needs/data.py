@@ -47,6 +47,9 @@ ENV_DATA_VERSION: Final = 20
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
 handing a pickled doctree to code that no longer understands it.
+``tests/test_env_data_fingerprint.py`` fails when the shape changes without a bump. A
+change of what the stored values mean (versions 10 to 12, 15, 17, 19 and 20) leaves the
+shape as it was, so that test cannot see it, and the bump is needed all the same.
 
 Version 7 adds the resolved needflow presentation options to :class:`NeedsFlowType`.
 They are read while the diagram is rendered, i.e. from the doctree, so an unbumped
