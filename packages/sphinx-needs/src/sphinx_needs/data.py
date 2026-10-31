@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 22
+ENV_DATA_VERSION: Final = 23
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -163,6 +163,14 @@ docstring holds the need, where version 21 stored the suffix ``.py``, one ``py:d
 with the dotted name, and, for a member inherited from another module, the documenting
 module's file. The sources do not change, so without the bump an upgraded build would
 keep the old hops on the pages whose sources did not change.
+
+Version 23 is the same case for four more facts on the hops: a need in a nested
+reStructuredText include records a ``file`` hop for each file it was included through,
+a need created on its page (``NeedItemSource.on_page``, ``add_need``) its page's file,
+an external need its sections on the other site on its ``external`` hop, and the entity
+of a docstring's ``code`` hop its qualified name (``qualified_name``), none of which
+version 22 stored. The sources do not change, so without the bump an upgraded build
+would keep the old hops on the pages whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

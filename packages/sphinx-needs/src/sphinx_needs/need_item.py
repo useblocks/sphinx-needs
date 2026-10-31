@@ -144,8 +144,6 @@ class NeedItemSource:
         is_import: bool = False,
     ) -> None:
         hops = checked_hops(hops)
-        placement = placement_of(hops)
-        external = hops[0] if hops and hops[0].kind == "external" else None
         _set(
             self,
             hops=hops,
@@ -153,16 +151,7 @@ class NeedItemSource:
             lineno_content=lineno_content,
             parser_lineno=parser_lineno,
             is_import=is_import,
-            dict_repr={
-                "docname": None if placement is None else placement.document,
-                "lineno": first_line(hops) if lineno is None else lineno,
-                "lineno_content": lineno_content,
-                "external_url": None
-                if external is None or external.physical is None
-                else external.physical.url,
-                "is_import": is_import,
-                "is_external": external is not None,
-            },
+            dict_repr=_legacy_keys(hops, lineno, lineno_content, is_import),
         )
 
     @classmethod
@@ -202,8 +191,10 @@ class NeedItemSource:
         cls, docname: str | None, *, lineno: int | None = None
     ) -> NeedItemSource:
         """The source of a need placed on the page ``docname``, at ``lineno``: one
-        ``page`` hop of that document, with no file and no line of its own (nothing is
-        read from the file, nothing checked against it); no hop without a document.
+        ``page`` hop of that document, with no line of its own (nothing is read from the
+        file, nothing checked against it), whose file
+        :func:`~sphinx_needs.api.need.create_need` records (``generate_need``, which has
+        no application, records none); no hop without a document.
 
         It gives the need its page and the line the caller passes, nothing more: it is
         the source ``add_need(app, state, docname, lineno, ...)`` built. Use it where a
@@ -269,6 +260,26 @@ class NeedItemSource:
         object.__setattr__(new, "hops", hops)
         return new
 
+    def _with_hops(self, hops: Iterable[NeedSourceHop]) -> NeedItemSource:
+        """A copy of this source with ``hops`` in place of its own, its legacy keys
+        computed from them as the constructor computes them, every other field kept.
+
+        ``create_need``'s one write, before the need exists: what the creation adds to
+        the hops it is given (a page's file, an external need's sections;
+        :func:`~sphinx_needs._need_source.with_page_paths`,
+        :func:`~sphinx_needs._need_source.with_external_sections`).
+        """
+        hops = checked_hops(hops)
+        new = copy.copy(self)
+        _set(
+            new,
+            hops=hops,
+            dict_repr=_legacy_keys(
+                hops, self._lineno, self.lineno_content, self.is_import
+            ),
+        )
+        return new
+
     def _without_lines(
         self,
     ) -> tuple[type[NeedItemSource], tuple[tuple[str, object], ...]]:
@@ -309,6 +320,28 @@ class NeedItemSource:
 # the module's ``__getattr__`` until 10.0 (an extension written against 9.1.0, such as
 # sphinx-codelinks 2.0, imports one). Each takes its class's keywords and builds the
 # source with the legacy keys that class gave; it refuses no combination of them.
+
+
+def _legacy_keys(
+    hops: tuple[NeedSourceHop, ...],
+    lineno: int | None,
+    lineno_content: int | None,
+    is_import: bool,
+) -> NeedsSourceInfoType:
+    """The legacy location keys of a source (its ``dict_repr``), one rule each (see
+    :class:`NeedItemSource`)."""
+    placement = placement_of(hops)
+    external = hops[0] if hops and hops[0].kind == "external" else None
+    return {
+        "docname": None if placement is None else placement.document,
+        "lineno": first_line(hops) if lineno is None else lineno,
+        "lineno_content": lineno_content,
+        "external_url": None
+        if external is None or external.physical is None
+        else external.physical.url,
+        "is_import": is_import,
+        "is_external": external is not None,
+    }
 
 
 def _page(docname: str | None) -> tuple[NeedSourceHop, ...]:

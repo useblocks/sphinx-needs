@@ -153,13 +153,13 @@ EXPECTED_HOPS = {
         "page [index] srcdir:index.rst:4-8 (.rst) :: section 'Probe'",
     ],
     _case_id(SUITE, "tests.test_lines", "test_plain"): [
-        "code None:tests/test_lines.py:13",
+        "code None:tests/test_lines.py:13 (python)",
         "report srcdir:reports/plain.xml (.xml) :: suite 'pytest' > "
         "scope 'tests.test_lines' > case 'test_plain'",
         "page [index] srcdir:index.rst:4-8 (.rst) :: section 'Probe'",
     ],
     _case_id(SUITE, "tests.test_lines", "test_stacked[3]"): [
-        "code None:tests/test_lines.py:36",
+        "code None:tests/test_lines.py:36 (python)",
         "report srcdir:reports/plain.xml (.xml) :: suite 'pytest' > "
         "scope 'tests.test_lines' > case 'test_stacked' parameter='3'",
         "page [index] srcdir:index.rst:4-8 (.rst) :: section 'Probe'",
@@ -171,7 +171,7 @@ EXPECTED_HOPS = {
         "page [index] srcdir:index.rst:4-8 (.rst) :: section 'Probe'",
     ],
     "TC_HAND": [
-        "code None:tests/test_lines.py:28",
+        "code None:tests/test_lines.py:28 (python)",
         "report srcdir:reports/plain.xml (.xml) :: suite 'pytest' > "
         "scope 'tests.test_lines.TestKlass' > case 'test_method'",
         "page [index] srcdir:index.rst:13-18 (.rst) :: section 'Probe' > section 'Section'",
@@ -190,7 +190,7 @@ EXPECTED_HOPS = {
         "page [index] srcdir:index.rst (.rst) :: section 'Probe' > section 'Section'",
     ],
     _case_id(GEN_SUITE, "tests.test_lines.TestKlass", "test_method"): [
-        "code None:tests/test_lines.py:28",
+        "code None:tests/test_lines.py:28 (python)",
         "report srcdir:reports/plain.xml (.xml) :: suite 'pytest' > "
         "scope 'tests.test_lines.TestKlass' > case 'test_method'",
         "page [index] srcdir:index.rst (.rst) :: section 'Probe' > section 'Section'",
@@ -205,11 +205,10 @@ def test_every_kind_of_test_need_records_its_hops(build, need_id):
     assert _hops(needs, need_id) == EXPECTED_HOPS[need_id]
 
 
-def test_a_code_hop_has_no_root_no_end_line_and_no_language(build):
+def test_a_code_hop_has_no_root_and_no_end_line(build):
     """The test's file is relative to the test run's root, which the build does not
     know; the report gives the test's first line, read by its base (#2381: plain
-    pytest's ``27`` is the line above the method), and no last line; it names no
-    language."""
+    pytest's ``27`` is the line above the method), and no last line."""
     needs, _ = build({"index.rst": PAGE}, {"reports/plain.xml": REPORT})
     code = needs["TC_HAND"].source.hops[0]
     assert code.kind == "code"
@@ -220,7 +219,83 @@ def test_a_code_hop_has_no_root_no_end_line_and_no_language(build):
         28,
         None,
     )
-    assert (code.language, code.origin) == (None, None)
+    assert code.origin is None
+
+
+def test_a_code_hop_names_the_language_of_its_file(build):
+    """The language's name, by the test file's suffix, as a code hop records it: the
+    report does not say what language the test is written in."""
+    needs, _ = build({"index.rst": PAGE}, {"reports/plain.xml": REPORT})
+    assert needs["TC_HAND"].source.hops[0].language == "python"
+
+
+#: The language sphinx-codelinks gives a file of each suffix it traces, read from
+#: ``packages/sphinx-codelinks/src/sphinx_codelinks/source_discover/config.py``, which
+#: lists the suffixes of each comment type::
+#:
+#:     "cpp": ["c", "ci", "cpp", "cc", "cxx", "h", "hpp", "hxx", "hh", "ihl"],
+#:     "python": ["py"],
+#:     "cs": ["cs"],
+#:     "ts": ["ts", "tsx", "mts", "cts", "js", "jsx", "mjs", "cjs"],
+#:     "yaml": ["yml", "yaml"],
+#:     "rust": ["rs"],
+#:     "go": ["go"],
+#:     "jsonc": ["jsonc", "json"],
+#:     "bash": ["sh", "bash", "zsh", "ksh"],
+#:
+#: (discovery compares a suffix in lower case: ``filepath.suffix.lower() not in
+#: self.file_types``), and from ``.../analyse/entity.py``, ``scope_language``, which
+#: names the language::
+#:
+#:     if comment_type == CommentType.cpp:
+#:         return "c" if path.suffix == ".c" else "cpp"
+#:     if comment_type == CommentType.cs:
+#:         return "csharp"
+#:     if comment_type == CommentType.ts:
+#:         if path.suffix.lower() in _JAVASCRIPT_SUFFIXES:
+#:             return "javascript"
+#:         return "typescript"
+#:     return comment_type.value
+#:
+#: with ``_JAVASCRIPT_SUFFIXES = frozenset({".js", ".jsx", ".mjs", ".cjs"})``. A
+#: suffix in another case is traced too: ``.C`` is C++ (only ``.c`` is C), ``.JS``
+#: JavaScript, ``.PY`` Python.
+CODELINKS_LANGUAGES = {
+    ".c": "c",
+    **dict.fromkeys(
+        (".ci", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".hxx", ".hh", ".ihl"), "cpp"
+    ),
+    ".C": "cpp",
+    ".CPP": "cpp",
+    ".py": "python",
+    ".PY": "python",
+    ".cs": "csharp",
+    **dict.fromkeys((".ts", ".tsx", ".mts", ".cts"), "typescript"),
+    **dict.fromkeys((".js", ".jsx", ".mjs", ".cjs", ".JS"), "javascript"),
+    ".yml": "yaml",
+    ".yaml": "yaml",
+    ".rs": "rust",
+    ".go": "go",
+    ".jsonc": "jsonc",
+    ".json": "jsonc",
+    **dict.fromkeys((".sh", ".bash", ".zsh", ".ksh"), "bash"),
+}
+
+
+def test_the_language_of_a_suffix_agrees_with_sphinx_codelinks():
+    """For every suffix both know, a test file's language is the one sphinx-codelinks
+    gives a file it traces; a suffix it does not know is no language, and a report
+    written on Windows names its file with ``\\``."""
+    from sphinx_test_reports.directives.test_common import _source_language
+
+    assert {
+        suffix: _source_language(f"tests/test_x{suffix}")
+        for suffix in CODELINKS_LANGUAGES
+    } == CODELINKS_LANGUAGES
+    assert _source_language("tests\\sub\\test_w.py") == "python"
+    assert _source_language("tests/test_x.java") == "java"
+    for unknown in ("tests/test_x.txt", "tests/test_x.rst", "tests/README", "x.", ""):
+        assert _source_language(unknown) is None, unknown
 
 
 #: The lines each need is written on: a generated need's is its test-report's (#2209).
@@ -302,7 +377,7 @@ def test_a_need_from_a_json_report_has_a_json_report_hop(build):
     )
     assert warnings == ""
     assert _hops(needs, "TC_JSON") == [
-        "code None:tests/own.py",
+        "code None:tests/own.py (python)",
         "report srcdir:r.json (.json) :: suite 's1' > scope 'c1' > case 't1'",
         "page [index] srcdir:index.rst:4-8 (.rst) :: section 'Probe'",
     ]
@@ -352,7 +427,7 @@ def test_a_report_value_named_like_the_source_file_field_does_not_reach_the_hop(
         conf=JSON_MAPPING.format(extra='"case_file": (["other"], ""),'),
     )
     assert needs["TC_JSON"]["case_file"] == "tests/override.py"
-    assert _hops(needs, "TC_JSON")[0] == "code None:tests/own.py"
+    assert _hops(needs, "TC_JSON")[0] == "code None:tests/own.py (python)"
 
 
 def test_no_id_depends_on_a_line(build):
@@ -459,7 +534,26 @@ def test_a_code_hop_s_path_is_posix_and_the_field_as_given(build):
     )
     assert warnings == ""
     assert needs["TC_W"]["case_file"] == "tests\\sub\\test_w.py"
-    assert _hops(needs, "TC_W")[0] == "code None:tests/sub/test_w.py"
+    assert _hops(needs, "TC_W")[0] == "code None:tests/sub/test_w.py (python)"
+
+
+def test_an_upper_case_c_file_is_cpp_on_the_hop(build):
+    """The language is read from the file as the report gives it: a ``.C`` file is
+    C++, as sphinx-codelinks names it, where its lower-case ``.c`` would be C."""
+    report = (
+        b'<testsuite name="s" tests="1"><testcase classname="c" name="t" '
+        b'file="tests/test_w.C" line="3"/></testsuite>'
+    )
+    needs, warnings = build(
+        {
+            "index.rst": "Probe\n=====\n\n"
+            ".. test-case:: W\n   :id: TC_W\n   :file: w.xml\n   :suite: s\n"
+            "   :case: t\n"
+        },
+        {"w.xml": report},
+    )
+    assert warnings == ""
+    assert _hops(needs, "TC_W")[0].endswith("(cpp)"), _hops(needs, "TC_W")[0]
 
 
 def test_a_warning_in_a_test_need_s_content_is_on_its_line(build):
@@ -707,14 +801,20 @@ _PLAIN_CASE = _case_id(SUITE, "tests.test_lines", "test_plain")
 def test_a_marked_report_gives_its_lines_as_they_are(build):
     needs, warnings = build({"index.rst": PAGE}, {"reports/plain.xml": MARKED_REPORT})
     assert warnings == ""
-    assert _code(needs, "TC_HAND") == ("28", "code None:tests/test_lines.py:28")
-    assert _code(needs, _PLAIN_CASE) == ("13", "code None:tests/test_lines.py:13")
+    assert _code(needs, "TC_HAND") == (
+        "28",
+        "code None:tests/test_lines.py:28 (python)",
+    )
+    assert _code(needs, _PLAIN_CASE) == (
+        "13",
+        "code None:tests/test_lines.py:13 (python)",
+    )
 
 
 def test_a_google_test_line_is_the_code_hop_s(build):
     needs, warnings = build({"index.rst": OTHER_PAGE}, {"other.xml": OTHER_REPORTS})
     assert warnings == ""
-    assert _code(needs, "TC_GTEST") == ("3", "code None:tests/gt_probe.cpp:3")
+    assert _code(needs, "TC_GTEST") == ("3", "code None:tests/gt_probe.cpp:3 (cpp)")
 
 
 _RENAMED_SUITE_PAGE = """\
@@ -736,10 +836,10 @@ Probe
         # pytest 8.4 and later name the root so, whatever junit_suite_name says
         (
             b'<testsuites name="pytest tests">',
-            ("28", "code None:tests/test_lines.py:28"),
+            ("28", "code None:tests/test_lines.py:28 (python)"),
         ),
         # an older pytest, or a merge tool, writes another root: not recognised
-        (b"<testsuites>", ("27", "code None:tests/test_lines.py")),
+        (b"<testsuites>", ("27", "code None:tests/test_lines.py (python)")),
     ],
     ids=["pytest-root", "other-root"],
 )
@@ -765,7 +865,7 @@ def test_the_line_of_an_unrecognised_producer_is_no_hop_s(build):
 def test_line_0_of_a_report_counted_from_1_is_no_hop_s(build):
     report = MARKED_REPORT.replace(b'line="28"', b'line="0"')
     needs, _ = build({"index.rst": PAGE}, {"reports/plain.xml": report})
-    assert _code(needs, "TC_HAND") == ("0", "code None:tests/test_lines.py")
+    assert _code(needs, "TC_HAND") == ("0", "code None:tests/test_lines.py (python)")
 
 
 def test_tr_line_base_1_reads_an_unmarked_report_from_1(build):
@@ -775,7 +875,10 @@ def test_tr_line_base_1_reads_an_unmarked_report_from_1(build):
         {"index.rst": PAGE}, {"reports/plain.xml": REPORT}, conf="tr_line_base = 1\n"
     )
     assert warnings == ""
-    assert _code(needs, "TC_HAND") == ("27", "code None:tests/test_lines.py:27")
+    assert _code(needs, "TC_HAND") == (
+        "27",
+        "code None:tests/test_lines.py:27 (python)",
+    )
 
 
 def test_tr_line_base_0_reads_an_unrecognised_producer_from_0(build):
@@ -798,7 +901,7 @@ def test_tr_line_base_does_not_apply_to_google_test(build, value):
         conf=f"tr_line_base = {value}\n",
     )
     assert warnings == ""
-    assert _code(needs, "TC_GTEST") == ("3", "code None:tests/gt_probe.cpp:3")
+    assert _code(needs, "TC_GTEST") == ("3", "code None:tests/gt_probe.cpp:3 (cpp)")
 
 
 def test_a_mark_wins_over_tr_line_base(build):
@@ -808,7 +911,10 @@ def test_a_mark_wins_over_tr_line_base(build):
         conf="tr_line_base = 0\n",
     )
     assert warnings == ""
-    assert _code(needs, "TC_HAND") == ("28", "code None:tests/test_lines.py:28")
+    assert _code(needs, "TC_HAND") == (
+        "28",
+        "code None:tests/test_lines.py:28 (python)",
+    )
 
 
 @pytest.mark.parametrize("value", ["2", "-1", "'one'", "True", "1.0", "None"])
@@ -848,7 +954,9 @@ def test_a_json_report_s_line_is_passed_through_and_no_hop_s(build):
             {"r.json": report},
             conf=JSON_MAPPING.format(extra="") + conf,
         )
-        assert _code(needs, "TC_JSON") == ("12", "code None:tests/own.py"), conf
+        assert _code(needs, "TC_JSON") == ("12", "code None:tests/own.py (python)"), (
+            conf
+        )
 
 
 #: Every id the page and the plain report give, by each id scheme: no id reads a line.

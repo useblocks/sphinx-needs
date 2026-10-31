@@ -94,7 +94,8 @@ nothing more, so it is the source wherever the caller chooses the line: the dire
 parser line, as ``add_need`` took it (every need sphinx-codelinks' ``src-trace`` creates sits
 at its directive's parser line), or the lines a directive's data names. It works in a docutils
 ``Directive`` and in a nested parse alike, and is also the ``need_source`` to give
-``generate_need``.
+``generate_need``; ``create_need`` records the page's file on its hop, ``generate_need``,
+which has no application, does not.
 ``from_directive`` and ``on_page`` are stable, as the class's name is; the hops they build,
 and ``NeedItemSource``'s general constructor with its keywords (``hops``, ``lineno``,
 ``lineno_content``, ``parser_lineno``, ``is_import``), are provisional: they may change
@@ -265,8 +266,18 @@ Data
    directive or ``list2need``, the file the need is written in (an included file's own, in an include; the module,
    for an autodoc docstring); for an imported need, the ``needs.json`` it was read from (where the exporting project
    wrote the need is not a hop yet); for a service, the service that made it, then the file of the ``needservice``
-   directive; for an external need, its page on the other site, its only hop. A need created
-   through ``add_need`` or ``NeedItemSource.on_page`` has its page with no path, and no hops without a document
+   directive; for an external need, its page on the other site, its only hop, with the need's sections there as its
+   semantic location, outermost first (the legacy ``sections`` keeps them innermost first). In a nested reStructuredText include,
+   the included file's hop is followed by one ``file`` hop per file it was included through, innermost first, each
+   with its path and suffix and no line, as docutils' ``include_log`` names them. Two known gaps: myst-parser's
+   ``{include}`` is never logged, so a chain through MyST includes records its reStructuredText links alone (a
+   reStructuredText include in ``eval-rst`` is logged, a MyST include around it is not), and under docutils 0.22 and
+   later a file included with ``:parser:`` is not logged (it is parsed into a document of its own), so it is no link
+   of a chain through it, and a need written in that file itself records no chain at all (docutils 0.21 logs it). A
+   need created
+   through ``add_need`` or ``NeedItemSource.on_page`` has its page alone, whose file ``create_need`` records with no line
+   (the line the caller gives is not checked in the file); ``generate_need`` has no application, so it records no
+   page path; and no hops without a document
    (``NeedItemSource.from_directive`` records the directive's file and lines, as a need directive does). The last hop with a ``document`` is
    the page the need is placed on (an external need has none), and carries its sections and the domain objects it
    is written in, outermost first. A hop has a line
@@ -291,15 +302,24 @@ Data
    A hop's ``language`` is what its text is written in, by the kind of hop: for a ``page`` hop, the page's suffix
    its parser keys on (``.rst``, ``.md``); for a ``file`` hop, the file's own suffix (``.rst``, ``.json``; an
    included ``inc.rst.txt`` records ``.txt``, whichever parser reads it); for a ``code`` hop, the language's name
-   (``python``, ``cpp``, ...), as sphinx-codelinks records it, and as the ``code`` hop of a docstring autodoc reads
-   records it (``python``).
+   (``python``, ``cpp``, ...), as sphinx-codelinks records it, as the ``code`` hop of a docstring autodoc reads
+   records it (``python``), and as sphinx-test-reports names a test case's file by its suffix (none for a suffix it
+   does not know).
 
    A semantic entry's ``kind`` is in the vocabulary of its hop's kind and producer: a ``page`` hop's entries use the
-   document's (``section``, ``<domain>:<objtype>``), a ``generated`` hop's name its generator (``service``), and a
+   document's (``section``, ``<domain>:<objtype>``), an ``external`` hop's are the ``section`` entries of the other
+   site's page, a ``generated`` hop's name its generator (``service``), and a
    ``code`` hop's use its producer's entity kinds, read with the hop's ``language``: sphinx-codelinks' bare ones
    (``function``, ``method``, ``class``, ``impl``, ...). In a ``code`` hop the kinds may carry
    identity the names alone do not (Python's ``<locals>`` boundary is implied by a function or method followed by
-   another entry), so code hops compare by their producer's identity rule, not entry by entry.
+   another entry), so code hops compare by their producer's identity rule, not entry by entry. The innermost entry
+   of a ``code`` hop, the entity, carries its qualified name in its file as the producer renders it, a
+   ``("qualified_name", ...)`` extra: sphinx-codelinks' analysis renders it by the language (``ns::Widget::draw``,
+   ``<Widget as Shape>::area``, ``Shape.area.<locals>.inner``), and autodoc's docstring hop renders a Python entity
+   as sphinx-codelinks does (``make.<locals>.Made.go``), except a name CPython NFKC-normalises (``ﬁle`` reads
+   ``file`` in autodoc's hop and as written in sphinx-codelinks'). It is the producer's rendering of the entries'
+   names, so it adds no identity, and identity comparisons (sphinx-codelinks' ``name_chain``) leave it out. The
+   entity's own line range is not recorded: it is not identity.
 
    Autodoc's docstring hop uses the same Python kinds as sphinx-codelinks, read from the syntax of the file the
    docstring is defined in: ``class``, ``method`` for a ``def`` directly in a class, ``function`` for any other

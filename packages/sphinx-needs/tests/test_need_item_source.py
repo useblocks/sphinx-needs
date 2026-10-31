@@ -23,7 +23,11 @@ import pytest
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs import need_item
-from sphinx_needs._need_source import NeedSourceHop, NeedSourcePhysical
+from sphinx_needs._need_source import (
+    NeedSourceHop,
+    NeedSourcePhysical,
+    NeedSourceSemantic,
+)
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import assert_no_warnings
 from tests.test_need_item_api import core
@@ -610,6 +614,169 @@ def test_from_directive_gives_a_need_directive_s_source(test_app: SphinxTestApp)
     assert directive.parser_lineno == 12 + prolog
 
 
+# --- what create_need records of a source given on a page, or external -------------
+
+ON_PAGE_EXT = '''\
+"""A directive creating needs on its page through the stable spellings, and external
+needs through ``add_external_need``."""
+
+from docutils.parsers.rst import Directive
+
+from sphinx_needs.api import (
+    NeedItemSource,
+    NeedSourceHop,
+    add_external_need,
+    create_need,
+    ingest_need_record,
+)
+
+
+class OnPage(Directive):
+    def run(self):
+        env = self.state.document.settings.env
+        _, created = create_need(
+            env.app,
+            self.state,
+            NeedItemSource.on_page(env.docname, lineno=self.lineno),
+            "req",
+            "created on its page",
+            id="R_ON_PAGE",
+        )
+        ingested, _ = ingest_need_record(
+            env.app,
+            self.state,
+            {"id": "R_INGESTED", "type": "req", "title": "ingested on its page"},
+            need_source=NeedItemSource.on_page(env.docname, lineno=self.lineno),
+        )
+        two_pages = NeedItemSource(
+            (
+                NeedSourceHop(kind="page", document="inc"),
+                NeedSourceHop(kind="page", document="index"),
+            ),
+            lineno=self.lineno,
+        )
+        _, two = create_need(
+            env.app, self.state, two_pages, "req", "two pages", id="R_TWO_PAGES"
+        )
+        add_external_need(
+            env.app,
+            "req",
+            "external",
+            id="R_EXTERNAL",
+            external_url="http://example.org/e.html#R_EXTERNAL",
+            sections=["Inner", "Outer"],
+        )
+        add_external_need(
+            env.app,
+            "req",
+            "external, no sections",
+            id="R_EXTERNAL_BARE",
+            external_url="http://example.org/e.html#R_EXTERNAL_BARE",
+        )
+        return [*created, *ingested, *two]
+
+
+def setup(app):
+    app.add_directive("on-page", OnPage)
+    return {"parallel_read_safe": True}
+'''
+
+ON_PAGE_PROJECT = {
+    "buildername": "html",
+    "files": [
+        (
+            Path("conf.py"),
+            "import sys\nfrom pathlib import Path\n\n"
+            "sys.path.insert(0, str(Path(__file__).parent))\n"
+            'sys.modules.pop("on_page_ext", None)\n'
+            'extensions = ["sphinx_needs", "on_page_ext"]\n'
+            'exclude_patterns = ["inc.rst", "_build"]\n',
+        ),
+        (Path("on_page_ext.py"), ON_PAGE_EXT),
+        # the directive in an included file: the page is the document's, not that file
+        (Path("index.rst"), "Page\n====\n\n.. include:: inc.rst\n"),
+        (Path("inc.rst"), "Sub\n---\n\n.. on-page::\n"),
+    ],
+}
+
+
+@pytest.mark.parametrize("test_app", [ON_PAGE_PROJECT], indirect=True)
+def test_create_need_records_an_on_page_need_s_page_path(test_app: SphinxTestApp):
+    """``NeedItemSource.on_page`` builds a page hop with no path; ``create_need`` (and
+    ``ingest_need_record``, through it) records the page's path -- the document's file,
+    not the included file the directive is in -- and its suffix, with no line. The
+    legacy keys are ``on_page``'s, as they were."""
+    from sphinx_needs.need_item import NeedItemSource
+
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    for need_id in ("R_ON_PAGE", "R_INGESTED"):
+        source = needs[need_id].source
+        assert source.hops == (
+            NeedSourceHop(
+                kind="page",
+                document="index",
+                physical=NeedSourcePhysical(root="srcdir", path="index.rst"),
+                language=".rst",
+                semantic=(
+                    NeedSourceSemantic(kind="section", name="Page"),
+                    NeedSourceSemantic(kind="section", name="Sub"),
+                ),
+            ),
+        ), need_id
+        lineno = needs[need_id]["lineno"]
+        assert lineno is not None
+        assert (
+            source.dict_repr == NeedItemSource.on_page("index", lineno=lineno).dict_repr
+        )
+
+
+@pytest.mark.parametrize("test_app", [ON_PAGE_PROJECT], indirect=True)
+def test_create_need_records_the_file_of_each_page_hop_given_none(
+    test_app: SphinxTestApp,
+):
+    """Every page hop with a document and no path is given its document's file, not
+    the placement alone: a source written by hand with two page hops (the included
+    file's document, then the page)."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    hops = SphinxNeedsData(app.env).get_needs_view()["R_TWO_PAGES"].source.hops
+    assert [(hop.document, hop.physical, hop.language) for hop in hops] == [
+        ("inc", NeedSourcePhysical(root="srcdir", path="inc.rst"), ".rst"),
+        ("index", NeedSourcePhysical(root="srcdir", path="index.rst"), ".rst"),
+    ]
+
+
+@pytest.mark.parametrize("test_app", [ON_PAGE_PROJECT], indirect=True)
+def test_add_external_need_puts_its_sections_on_the_external_hop(
+    test_app: SphinxTestApp,
+):
+    """``sections`` (innermost first, as the legacy field holds them) are the
+    ``external`` hop's semantic location, outermost first; the legacy ``sections`` is
+    the value given. Without ``sections``, the hop's semantic location is unknown."""
+    app = test_app
+    app.build()
+    assert_no_warnings(app)
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert needs["R_EXTERNAL"].source.hops == (
+        NeedSourceHop(
+            kind="external",
+            physical=NeedSourcePhysical(url="http://example.org/e.html#R_EXTERNAL"),
+            semantic=(
+                NeedSourceSemantic(kind="section", name="Outer"),
+                NeedSourceSemantic(kind="section", name="Inner"),
+            ),
+        ),
+    )
+    assert needs["R_EXTERNAL"]["sections"] == ("Inner", "Outer")
+    (bare,) = needs["R_EXTERNAL_BARE"].source.hops
+    assert (bare.kind, bare.semantic) == ("external", None)
+    assert needs["R_EXTERNAL_BARE"]["sections"] == ()
+
+
 # --- add_need's deprecation --------------------------------------------------------
 
 ADD_NEED_WARNING = (
@@ -857,3 +1024,29 @@ def test_what_is_stable_of_the_one_class():
         ("docname", positional, empty),
         ("lineno", keyword, None),
     ]
+
+
+def test_with_hops_keeps_every_other_field():
+    """``create_need``'s one write on a source replaces its hops and nothing else: the
+    given ``lineno``, ``lineno_content``, ``parser_lineno`` (the template's parse
+    offset reads it) and ``is_import`` are kept, and the legacy keys are recomputed."""
+    from sphinx_needs.need_item import NeedItemSource
+
+    bare = NeedSourceHop(kind="page", document="index")
+    filled = NeedSourceHop(
+        kind="page",
+        document="index",
+        physical=NeedSourcePhysical(root="srcdir", path="index.rst"),
+    )
+    source = NeedItemSource(
+        (bare,), lineno=3, lineno_content=4, parser_lineno=2, is_import=True
+    )
+    new = source._with_hops((filled,))
+    assert new.hops == (filled,)
+    assert (new._lineno, new.lineno_content, new.parser_lineno, new.is_import) == (
+        3,
+        4,
+        2,
+        True,
+    )
+    assert new.dict_repr == source.dict_repr

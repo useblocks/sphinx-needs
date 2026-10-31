@@ -15,7 +15,10 @@ New and Improved
   test case, and the page the directive is written on. The record is provisional and
   reaches no ``needs.json``; it adds no field.
   The test's file carries the test's line where the report's base is known (see the ‼️
-  entry below), and no line where it is not.
+  entry below), and no line where it is not, and its language, named by its suffix
+  (``python``, ``cpp``, ``java``, ...; for a suffix sphinx-codelinks traces, the name it
+  gives), or none for a suffix not known. The first build after upgrading reads every page
+  once (the extension's ``env_version`` is now 3).
 
 - ✨ :ref:`tr_line_base` (``line_base`` in ``[test_reports]``): what the ``line`` of a report
   without a line-base mark counts from, ``"auto"`` (the default, the rule below), ``0`` or

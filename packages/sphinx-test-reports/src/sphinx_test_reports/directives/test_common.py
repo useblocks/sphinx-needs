@@ -131,6 +131,62 @@ def _case_source_file(case: Mapping[str, Any]) -> str | None:
     return _given(case.get("file", UNKNOWN))
 
 
+_SOURCE_LANGUAGES: Mapping[str, str] = {
+    # every suffix sphinx-codelinks traces, with the name it gives a file of it
+    # (``tests/test_source_hops.py`` holds the two equal)
+    ".c": "c",
+    **dict.fromkeys(
+        (".ci", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".hxx", ".hh", ".ihl"), "cpp"
+    ),
+    ".py": "python",
+    ".cs": "csharp",
+    **dict.fromkeys((".ts", ".tsx", ".mts", ".cts"), "typescript"),
+    **dict.fromkeys((".js", ".jsx", ".mjs", ".cjs"), "javascript"),
+    ".yml": "yaml",
+    ".yaml": "yaml",
+    ".rs": "rust",
+    ".go": "go",
+    ".jsonc": "jsonc",
+    ".json": "jsonc",
+    **dict.fromkeys((".sh", ".bash", ".zsh", ".ksh"), "bash"),
+    # the other languages whose test runners write a report naming the test's file
+    ".java": "java",
+    ".kt": "kotlin",
+    ".kts": "kotlin",
+    ".scala": "scala",
+    ".groovy": "groovy",
+    ".rb": "ruby",
+    ".php": "php",
+    ".swift": "swift",
+    ".dart": "dart",
+    ".ex": "elixir",
+    ".exs": "elixir",
+    ".erl": "erlang",
+    ".fs": "fsharp",
+    ".fsx": "fsharp",
+    ".vb": "vb",
+    ".lua": "lua",
+    ".pl": "perl",
+    ".pm": "perl",
+    ".r": "r",
+}
+"""The language of a test's source file by its suffix, in lower case: the names a
+``code`` hop records, as editors' language identifiers spell them."""
+
+
+def _source_language(path: str) -> str | None:
+    """The language of a test's source file by its suffix, in any case
+    (:data:`_SOURCE_LANGUAGES`), or ``None`` for a suffix it does not list.
+
+    Only a lower-case ``.c`` is C: a ``.C`` file is C++, as compilers read it and as
+    sphinx-codelinks names it. A ``\\`` separates the path too (a report written on
+    Windows).
+    """
+    suffix = pathlib.PurePosixPath(path.replace("\\", "/")).suffix
+    language = _SOURCE_LANGUAGES.get(suffix.lower())
+    return "cpp" if language == "c" and suffix != ".c" else language
+
+
 def _case_source_line(case: Mapping[str, Any]) -> int | None:
     """The test's line in its source file, counted from 1, or ``None`` where it is not
     known to be one.
@@ -449,8 +505,11 @@ class TestCommonDirective(Directive):
           the file, counted from 1; for a pytest test, the line of its first decorator,
           or of its ``def``. No ``end_line``: no report gives one. A line of a producer
           the reader does not recognise is no hop's, as the need's ``case_line`` keeps
-          it as the report wrote it. ``language`` is ``None``: the report does not say
-          what language the test is written in.
+          it as the report wrote it. ``language`` is the language's name, as a code
+          hop records it, by the file's suffix (:func:`_source_language`), and for a
+          suffix sphinx-codelinks traces the name it gives (``python``, ``cpp``, ...);
+          ``None`` for a suffix it does not know: the report does not say what language
+          the test is written in.
         - The ``report`` hop: the report file, under the source directory
           (:func:`_report_physical`), its own suffix as ``language`` (``".xml"``,
           ``".json"``). Its semantic location is the element in the report, outermost
@@ -494,6 +553,7 @@ class TestCommonDirective(Directive):
                             path=source_file.replace("\\", "/"),
                             start_line=_case_source_line(case),
                         ),
+                        language=_source_language(source_file),
                     )
                 )
             if (classname := _given(case.get("classname"))) is not None:

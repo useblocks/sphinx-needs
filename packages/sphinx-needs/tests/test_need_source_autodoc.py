@@ -7,7 +7,9 @@ need's text in its docstring, the hop records the file of its module, the langua
 ``python``, and its parts in that file as sphinx-codelinks' Python rule reads them from
 the file's syntax: ``class``; ``method`` for a ``def`` directly in a class; ``function``
 for any other ``def``; ``<locals>`` implied after a ``def``, not an entry. An attribute
-(a ``#:`` comment) is a leaf ``attribute``. A module docstring has no semantic location.
+(a ``#:`` comment) is a leaf ``attribute``. The last part, the entity, carries its
+qualified name as sphinx-codelinks renders a Python entity (``make.<locals>.Made``). A
+module docstring has no semantic location.
 Where no definition holding the text is found -- an alias, an override inheriting its
 docstring, an object made at run time -- the hop records the file autodoc gives, and no
 semantic location: a wrong part is never recorded.
@@ -50,45 +52,45 @@ _REEXPORT = "code srcdir:../src/docstring_hops/reexport/main.py (python)"
 EXPECTED: dict[str, str] = {
     # the module docstring: the file
     "R_MODULE": _SHAPES,
-    "R_FUNC": f"{_SHAPES} :: function 'area_of'",
-    "R_CLASS": f"{_SHAPES} :: class 'Shape'",
-    "R_METHOD": f"{_SHAPES} :: class 'Shape' > method 'area'",
+    "R_FUNC": f"{_SHAPES} :: function 'area_of' qualified_name='area_of'",
+    "R_CLASS": f"{_SHAPES} :: class 'Shape' qualified_name='Shape'",
+    "R_METHOD": f"{_SHAPES} :: class 'Shape' > method 'area' qualified_name='Shape.area'",
     # the syntax' kinds, not autodoc's objtypes (which the page hop keeps)
-    "R_STATIC": f"{_SHAPES} :: class 'Shape' > method 'make'",
-    "R_CLASSMETHOD": f"{_SHAPES} :: class 'Shape' > method 'build'",
-    "R_PROPERTY": f"{_SHAPES} :: class 'Shape' > method 'size'",
-    "R_NESTED": f"{_SHAPES} :: class 'Shape' > class 'Inner'",
-    "R_NESTED_METHOD": f"{_SHAPES} :: class 'Shape' > class 'Inner' > method 'deep'",
-    "R_EXCEPTION": f"{_SHAPES} :: class 'Oops'",
+    "R_STATIC": f"{_SHAPES} :: class 'Shape' > method 'make' qualified_name='Shape.make'",
+    "R_CLASSMETHOD": f"{_SHAPES} :: class 'Shape' > method 'build' qualified_name='Shape.build'",
+    "R_PROPERTY": f"{_SHAPES} :: class 'Shape' > method 'size' qualified_name='Shape.size'",
+    "R_NESTED": f"{_SHAPES} :: class 'Shape' > class 'Inner' qualified_name='Shape.Inner'",
+    "R_NESTED_METHOD": f"{_SHAPES} :: class 'Shape' > class 'Inner' > method 'deep' qualified_name='Shape.Inner.deep'",
+    "R_EXCEPTION": f"{_SHAPES} :: class 'Oops' qualified_name='Oops'",
     # documented under ``Shape`` in shapes.py, defined in base.py: the file it is in
     "R_INHERITED": (
         "code srcdir:../src/docstring_hops/base.py (python)"
-        " :: class 'Base' > method 'describe'"
+        " :: class 'Base' > method 'describe' qualified_name='Base.describe'"
     ),
     # ``make.<locals>.Made``: the ``<locals>`` is implied by the function before it
-    "R_MADE": f"{_FACTORY} :: function 'make' > class 'Made'",
-    "R_MADE_METHOD": f"{_FACTORY} :: function 'make' > class 'Made' > method 'go'",
+    "R_MADE": f"{_FACTORY} :: function 'make' > class 'Made' qualified_name='make.<locals>.Made'",
+    "R_MADE_METHOD": f"{_FACTORY} :: function 'make' > class 'Made' > method 'go' qualified_name='make.<locals>.Made.go'",
     # attributes (``#:``): a leaf ``attribute``, under its class or at the file
-    "R_ATTR": f"{_SHAPES} :: class 'Shape' > attribute 'sides'",
-    "R_DATA": f"{_SHAPES} :: attribute 'LIMIT'",
+    "R_ATTR": f"{_SHAPES} :: class 'Shape' > attribute 'sides' qualified_name='Shape.sides'",
+    "R_DATA": f"{_SHAPES} :: attribute 'LIMIT' qualified_name='LIMIT'",
     # a class named like a submodule its package imported first: the class, not the
     # submodule (whose docstring does not hold the text) nor its ``area``
-    "R_COLLIDE": f"{_COLLIDE} :: class 'Thing'",
-    "R_COLLIDE_METHOD": f"{_COLLIDE} :: class 'Thing' > method 'area'",
+    "R_COLLIDE": f"{_COLLIDE} :: class 'Thing' qualified_name='Thing'",
+    "R_COLLIDE_METHOD": f"{_COLLIDE} :: class 'Thing' > method 'area' qualified_name='Thing.area'",
     # a module whose package binds its name to a function it re-exports, and one its
     # package no longer binds: the module still
-    "R_MAIN": f"{_REEXPORT} :: function 'main'",
-    "R_MAIN_HELPER": f"{_REEXPORT} :: function 'helper'",
+    "R_MAIN": f"{_REEXPORT} :: function 'main' qualified_name='main'",
+    "R_MAIN_HELPER": f"{_REEXPORT} :: function 'helper' qualified_name='helper'",
     "R_DELETED": (
-        "code srcdir:../src/docstring_hops/deleted/_impl.py (python) :: function 'g'"
+        "code srcdir:../src/docstring_hops/deleted/_impl.py (python) :: function 'g' qualified_name='g'"
     ),
     # a need whose title another need, in the function's docstring, has too: every line
     # of the need is checked, so the alias' need is not taken for the function's
-    "R_SAME_A": f"{_FACTORY} :: function 'titled'",
+    "R_SAME_A": f"{_FACTORY} :: function 'titled' qualified_name='titled'",
     "R_SAME_B": _FACTORY,
     # a function nested past what a recursive walk takes (generated by ``hops``)
     "R_DEEP": (
-        "code srcdir:../src/docstring_hops/deep.py (python) :: function 'documented'"
+        "code srcdir:../src/docstring_hops/deep.py (python) :: function 'documented' qualified_name='documented'"
     ),
     # autodoc names each of these by an object whose docstring does not hold the text:
     # the file autodoc gives, nothing finer
@@ -166,6 +168,48 @@ def test_a_docstring_s_code_hop(
     code, page = hops[need_id]
     assert _compact(code) == EXPECTED[need_id]
     assert (page.kind, page.document) == ("page", "index")
+
+
+#: the entity's qualified name in its file, as sphinx-codelinks renders a Python entity
+#: (``.``-joined, ``<locals>`` after a function or a method another part follows)
+QUALIFIED = {
+    "R_FUNC": "area_of",
+    "R_CLASS": "Shape",
+    "R_METHOD": "Shape.area",
+    "R_NESTED_METHOD": "Shape.Inner.deep",
+    "R_INHERITED": "Base.describe",
+    "R_MADE": "make.<locals>.Made",
+    "R_MADE_METHOD": "make.<locals>.Made.go",
+    "R_ATTR": "Shape.sides",
+    "R_DATA": "LIMIT",
+    "R_COLLIDE_METHOD": "Thing.area",
+    "R_DEEP": "documented",
+}
+
+
+def test_a_docstring_hop_names_its_entity_s_qualified_name(
+    hops: dict[str, tuple[NeedSourceHop, ...]],
+) -> None:
+    """The entity, the innermost entry, carries its qualified name as a
+    ``("qualified_name", ...)`` extra; no other entry has one, nor a hop with no
+    semantic location."""
+
+    def qualified(need_id: str) -> list[str | None]:
+        return [
+            dict(entry.extras).get("qualified_name")
+            for entry in hops[need_id][0].semantic or ()
+        ]
+
+    assert {need_id: qualified(need_id)[-1] for need_id in QUALIFIED} == QUALIFIED
+    for need_id in EXPECTED:
+        names = qualified(need_id)
+        assert all(name is None for name in names[:-1]), need_id
+        assert (not names) or names[-1] is not None, need_id
+    semantic = _python_semantic("outer.<locals>.inner.<locals>.Local.m", _TEXT)
+    assert semantic is not None
+    assert semantic[-1].extras == (
+        ("qualified_name", "outer.<locals>.inner.<locals>.Local.m"),
+    )
 
 
 # --- the rule, on text --------------------------------------------------------------

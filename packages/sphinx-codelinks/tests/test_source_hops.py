@@ -11,6 +11,7 @@ provisional and reach no ``needs.json``.
 
 from __future__ import annotations
 
+import dataclasses
 import io
 import json
 import os
@@ -363,50 +364,58 @@ EXPECTED_HOPS = {
         f"page [index] srcdir:index.rst:4-5 (.rst) :: {_HOPS}",
     ],
     "IMPL_PY_ONE": [
-        "code srcdir:../src/py/shapes.py:4-4 (python) :: class 'Shape' > method 'area'",
+        "code srcdir:../src/py/shapes.py:4-4 (python) :: class 'Shape' > method 'area'"
+        " qualified_name='Shape.area'",
         f"page [index] srcdir:index.rst:4-5 (.rst) :: {_HOPS}",
     ],
     # Python's `<locals>` is implied by the kinds: a method another part follows
     "IMPL_PY_LOCALS": [
         "code srcdir:../src/py/shapes.py:6-6 (python) :: class 'Shape' > "
-        "method 'area' > function 'inner'",
+        "method 'area' > function 'inner'"
+        " qualified_name='Shape.area.<locals>.inner'",
         f"page [index] srcdir:index.rst:4-5 (.rst) :: {_HOPS}",
     ],
     # a multi-line need: its open line to its close line
     "IMPL_PY_MULTI": [
-        "code srcdir:../src/py/shapes.py:10-14 (python) :: function 'compute'",
+        "code srcdir:../src/py/shapes.py:10-14 (python) :: function 'compute'"
+        " qualified_name='compute'",
         f"page [index] srcdir:index.rst:4-5 (.rst) :: {_HOPS}",
     ],
     "IMPL_CRLF_ONE": [
-        "code srcdir:../src/py/crlf.py:2-2 (python) :: class 'K' > method 'm'",
+        "code srcdir:../src/py/crlf.py:2-2 (python) :: class 'K' > method 'm'"
+        " qualified_name='K.m'",
         f"page [index] srcdir:index.rst:4-5 (.rst) :: {_HOPS}",
     ],
     "IMPL_CRLF_MULTI": [
-        "code srcdir:../src/py/crlf.py:7-11 (python) :: function 'g'",
+        "code srcdir:../src/py/crlf.py:7-11 (python) :: function 'g'"
+        " qualified_name='g'",
         f"page [index] srcdir:index.rst:4-5 (.rst) :: {_HOPS}",
     ],
     # the pair: equal names, different kinds, carried as the analysis gives them
     "IMPL_CPP_IN": [
         "code srcdir:../src/cpp/nested.cpp:4-4 (cpp) :: namespace 'ns' > class 'W' > "
-        "method 'f'",
+        "method 'f'"
+        " qualified_name='ns::W::f'",
         f"page [index] srcdir:index.rst:7-8 (.rst) :: {_HOPS}",
     ],
     "IMPL_CPP_OUT": [
         "code srcdir:../src/cpp/outofline.cpp:8-8 (cpp) :: scope 'ns' > class 'W' > "
-        "method 'f'",
+        "method 'f'"
+        " qualified_name='ns::W::f'",
         f"page [index] srcdir:index.rst:7-8 (.rst) :: {_HOPS}",
     ],
     "IMPL_CPP_MULTI": [
-        "code srcdir:../src/cpp/nested.cpp:10-14 (cpp) :: function 'run'",
+        "code srcdir:../src/cpp/nested.cpp:10-14 (cpp) :: function 'run'"
+        " qualified_name='run'",
         f"page [index] srcdir:index.rst:7-8 (.rst) :: {_HOPS}",
     ],
     # a `.c` file is C, in a project of the cpp comment type
     "IMPL_C_ONE": [
-        "code srcdir:../src/cpp/calc.c:1-1 (c) :: function 'add'",
+        "code srcdir:../src/cpp/calc.c:1-1 (c) :: function 'add' qualified_name='add'",
         f"page [index] srcdir:index.rst:7-8 (.rst) :: {_HOPS}",
     ],
     "IMPL_C_MULTI": [
-        "code srcdir:../src/cpp/calc.c:5-9 (c) :: function 'sub'",
+        "code srcdir:../src/cpp/calc.c:5-9 (c) :: function 'sub' qualified_name='sub'",
         f"page [index] srcdir:index.rst:7-8 (.rst) :: {_HOPS}",
     ],
     # a `.py` file traced by a C++ project: the project's language, not the suffix's
@@ -417,26 +426,31 @@ EXPECTED_HOPS = {
     # a trait impl: the trait is an extra of the `impl` part
     "IMPL_RS_TRAIT": [
         "code srcdir:../src/rust/lib.rs:8-8 (rust) :: impl 'Widget' trait='Shape' > "
-        "method 'area'",
+        "method 'area'"
+        " qualified_name='<Widget as Shape>::area'",
         f"page [index] srcdir:index.rst:17-18 (.rst) :: {_LANGUAGES}",
     ],
     # a multi-line need in a trait impl: the trait too
     "IMPL_RS_TRAIT_MULTI": [
         "code srcdir:../src/rust/lib.rs:12-16 (rust) :: impl 'Widget' trait='Shape' > "
-        "method 'perimeter'",
+        "method 'perimeter'"
+        " qualified_name='<Widget as Shape>::perimeter'",
         f"page [index] srcdir:index.rst:17-18 (.rst) :: {_LANGUAGES}",
     ],
     "IMPL_RS_MULTI": [
-        "code srcdir:../src/rust/lib.rs:23-27 (rust) :: impl 'Widget' > method 'new'",
+        "code srcdir:../src/rust/lib.rs:23-27 (rust) :: impl 'Widget' > method 'new'"
+        " qualified_name='Widget::new'",
         f"page [index] srcdir:index.rst:17-18 (.rst) :: {_LANGUAGES}",
     ],
     "IMPL_TS_ONE": [
         "code srcdir:../src/ts/greeter.ts:2-2 (typescript) :: class 'Greeter' > "
-        "method 'greet'",
+        "method 'greet'"
+        " qualified_name='Greeter.greet'",
         f"page [index] srcdir:index.rst:20-21 (.rst) :: {_LANGUAGES}",
     ],
     "IMPL_TS_MULTI": [
-        "code srcdir:../src/ts/greeter.ts:9-13 (typescript) :: function 'farewell'",
+        "code srcdir:../src/ts/greeter.ts:9-13 (typescript) :: function 'farewell'"
+        " qualified_name='farewell'",
         f"page [index] srcdir:index.rst:20-21 (.rst) :: {_LANGUAGES}",
     ],
     # a YAML entry has no name: no semantic location
@@ -450,7 +464,8 @@ EXPECTED_HOPS = {
     ],
     # inside the source directory: no `..`
     "IMPL_INSIDE": [
-        "code srcdir:code/inside.py:1-1 (python) :: function 'inside'",
+        "code srcdir:code/inside.py:1-1 (python) :: function 'inside'"
+        " qualified_name='inside'",
         f"page [index] srcdir:index.rst:26-27 (.rst) :: {_LANGUAGES}",
     ],
 }
@@ -482,6 +497,51 @@ def test_the_cpp_pair_has_one_name_chain_and_two_kind_sequences(
         return name_chain(parts, hop.language or "")
 
     assert chain(nested) == chain(out)
+
+
+#: The entity's qualified name as the analysis renders it (``scope.qualified_name``), by
+#: its file's language: ``::`` for C, C++ and Rust (a trait impl ``<Widget as Shape>``),
+#: ``.`` otherwise, and Python's ``<locals>``.
+QUALIFIED = {
+    "IMPL_PY_ONE": "Shape.area",
+    "IMPL_PY_LOCALS": "Shape.area.<locals>.inner",
+    "IMPL_PY_MULTI": "compute",
+    "IMPL_CRLF_ONE": "K.m",
+    "IMPL_CRLF_MULTI": "g",
+    "IMPL_CPP_IN": "ns::W::f",
+    "IMPL_CPP_OUT": "ns::W::f",
+    "IMPL_CPP_MULTI": "run",
+    "IMPL_C_ONE": "add",
+    "IMPL_C_MULTI": "sub",
+    "IMPL_RS_TRAIT": "<Widget as Shape>::area",
+    "IMPL_RS_TRAIT_MULTI": "<Widget as Shape>::perimeter",
+    "IMPL_RS_MULTI": "Widget::new",
+    "IMPL_TS_ONE": "Greeter.greet",
+    "IMPL_TS_MULTI": "farewell",
+    "IMPL_INSIDE": "inside",
+}
+
+
+def test_the_entity_carries_the_analysis_qualified_name(built: SphinxTestApp) -> None:
+    """The innermost entry of a code hop, the entity itself, carries the analysis'
+    rendering of its qualified name as a ``("qualified_name", ...)`` extra, after a
+    trait; no other entry has one, and a hop with no entity has no semantic location."""
+    needs = SphinxNeedsData(built.env).get_needs_view()
+
+    def qualified(need_id: str) -> list[str | None]:
+        return [
+            dict(entry.extras).get("qualified_name")
+            for entry in needs[need_id].source.hops[0].semantic or ()
+        ]
+
+    assert {need_id: qualified(need_id)[-1] for need_id in QUALIFIED} == QUALIFIED
+    for need_id in EXPECTED_HOPS:
+        names = qualified(need_id)
+        assert (names == []) == (need_id not in QUALIFIED), need_id
+        assert all(name is None for name in names[:-1]), need_id
+    impl, method = needs["IMPL_RS_TRAIT"].source.hops[0].semantic or ()
+    assert impl.extras == (("trait", "Shape"),)
+    assert method.extras == (("qualified_name", "<Widget as Shape>::area"),)
 
 
 def test_a_need_s_lineno_is_its_directive_s_line(built: SphinxTestApp) -> None:
@@ -560,7 +620,7 @@ def test_a_need_in_an_included_file_is_at_its_line_there(
     assert needs["IMPL_RS_TRAIT"]["lineno"] == 3
     assert _hops(app)["IMPL_RS_TRAIT"] == [
         "code srcdir:../src/rust/lib.rs:8-8 (rust) :: impl 'Widget' trait='Shape' > "
-        "method 'area'",
+        "method 'area' qualified_name='<Widget as Shape>::area'",
         "file srcdir:traced.rst.txt:3-4 (.txt)",
         "page [index] srcdir:index.rst (.rst) :: section 'Hops'",
     ]
@@ -720,7 +780,9 @@ def test_a_renamed_entity_rewrites_the_pages_showing_its_need(
 ) -> None:
     app, written = _assert_equivalent(make_app, tmp_path, "entity-renamed")
     assert sorted(written) == ["index", "other"]
-    assert _hops(app)["IMPL_PY_ONE"][0].endswith(":: class 'Shape' > method 'surface'")
+    assert _hops(app)["IMPL_PY_ONE"][0].endswith(
+        ":: class 'Shape' > method 'surface' qualified_name='Shape.surface'"
+    )
 
 
 def test_an_edited_source_file_equals_a_fresh_build(
@@ -752,3 +814,63 @@ def test_an_environment_pickled_at_env_version_1_is_read_again(
     app, read, _ = _build(make_app, srcdir, fresh=False)
     assert read == ["index"]
     assert _hops(app) == EXPECTED_HOPS
+
+
+def test_an_environment_pickled_at_env_version_2_is_read_again(
+    make_app: _MakeApp, tmp_path: Path
+) -> None:
+    """Version 2 recorded each need's code hop without the entity's qualified name.
+    Nothing in the sources or the configuration changed: ``env_version`` 3 is what has
+    the build read the page again here, rather than keep those records."""
+    srcdir = _write(tmp_path, FILES)
+    app, _, _ = _build(make_app, srcdir)
+    pickled = Path(app.doctreedir, "environment.pickle")
+    env = pickle.loads(pickled.read_bytes())
+    env.version["sphinx_codelinks"] = 2
+    # what version 2 recorded: the code hop's entries without the qualified name
+    for need in env._needs_all_needs.values():
+        code, *rest = need._source.hops
+        entries = tuple(
+            dataclasses.replace(
+                entry,
+                extras=tuple(e for e in entry.extras if e[0] != "qualified_name"),
+            )
+            for entry in code.semantic or ()
+        )
+        hops = (
+            dataclasses.replace(code, semantic=entries if code.semantic else None),
+            *rest,
+        )
+        object.__setattr__(need._source, "hops", hops)
+    pickled.write_bytes(pickle.dumps(env, pickle.HIGHEST_PROTOCOL))
+
+    app, read, _ = _build(make_app, srcdir, fresh=False)
+    assert read == ["index"]
+    assert _hops(app) == EXPECTED_HOPS
+
+
+def test_an_entity_s_qualified_name_follows_its_trait(tmp_path: Path) -> None:
+    """A marker attached to a Rust trait impl itself: the entity's extras are its
+    ``trait`` and then its ``qualified_name``, in that order (extras are compared in
+    order)."""
+    from types import SimpleNamespace
+
+    from sphinx_codelinks.source_discover.config import CommentType
+    from sphinx_codelinks.sphinx_extension.directives.src_trace import code_hop
+
+    marker = SimpleNamespace(
+        source_map={"start": {"row": 6}, "end": {"row": 6}},
+        scope={
+            "language": "rust",
+            "qualified_name": "<Widget as Shape>",
+            "semantic": [{"kind": "impl", "name": "Widget", "trait": "Shape"}],
+        },
+    )
+    hop = code_hop(
+        marker,  # ty: ignore[invalid-argument-type]
+        tmp_path / "lib.rs",
+        tmp_path,
+        CommentType.rust,
+    )
+    (impl,) = hop.semantic or ()
+    assert impl.extras == (("trait", "Shape"), ("qualified_name", "<Widget as Shape>"))

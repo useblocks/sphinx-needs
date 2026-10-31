@@ -2,14 +2,14 @@
 # name: test_the_hops_of_every_need
   dict({
     'EXT_X1': list([
-      'external http://example.org/remote/page.html#X1',
+      "external http://example.org/remote/page.html#X1 :: section 'Remote top' > section 'Remote sec'",
     ]),
     'I1': list([
       'file srcdir:imp.json (.json)',
       "page [imp] srcdir:imp.rst:7-7 (.rst) :: section 'Imported' > section 'Imp sub'",
     ]),
     'REQ_APIX': list([
-      "page [p2] :: section 'Page 2' > section 'Sec'",
+      "page [p2] srcdir:p2.rst (.rst) :: section 'Page 2' > section 'Sec'",
     ]),
     'REQ_AX': list([
       'file srcdir:frag/a.rst:4-7 (.rst)',
@@ -23,6 +23,7 @@
     ]),
     'REQ_BX': list([
       'file srcdir:frag/b.rst:1-2 (.rst)',
+      'file srcdir:frag/a.rst (.rst)',
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
     ]),
     'REQ_CFX': list([
@@ -44,7 +45,7 @@
       "page [domains] srcdir:domains.rst:44-45 (.rst) :: section 'Domains' > cpp:class 'Widget' id='_CPPv4N2ns6WidgetE' signature='Widget' > cpp:function 'run' id='_CPPv4N2ns6Widget3runEi' signature='run'",
     ]),
     'REQ_DOCSTRINGX': list([
-      "code srcdir:../outside/source_hops_module.py (python) :: function 'documented'",
+      "code srcdir:../outside/source_hops_module.py (python) :: function 'documented' qualified_name='documented'",
       "page [autodoc_page] srcdir:autodoc_page.rst (.rst) :: section 'Autodoc' > py:function 'documented' id='source_hops_module.documented' signature='documented'",
     ]),
     'REQ_ENVX': list([
@@ -89,14 +90,17 @@
     ]),
     'REQ_L1X': list([
       'file srcdir:frag/b.rst:7-8 (.rst)',
+      'file srcdir:frag/a.rst (.rst)',
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
     ]),
     'REQ_L2X': list([
       'file srcdir:frag/b.rst:9-9 (.rst)',
+      'file srcdir:frag/a.rst (.rst)',
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
     ]),
     'REQ_L3X': list([
       'file srcdir:frag/b.rst:10-10 (.rst)',
+      'file srcdir:frag/a.rst (.rst)',
       "page [inc_host] srcdir:inc_host.rst (.rst) :: section 'Host' > section 'Frag A section'",
     ]),
     'REQ_LINEBLOCKX': list([

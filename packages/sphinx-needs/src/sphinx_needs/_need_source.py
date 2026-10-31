@@ -98,7 +98,9 @@ class NeedSourceSemantic:
     kind: str
     """What the entry is, in the vocabulary of its hop's kind and producer. A ``page``
     hop's entries use the document's: ``"section"``, ``"<domain>:<objtype>"``
-    (``"py:method"``). A ``generated`` hop's name its generator (``"service"``). A
+    (``"py:method"``). An ``external`` hop's are the ``"section"`` entries of the
+    need's page on the other site, as its record gives them. A ``generated`` hop's
+    name its generator (``"service"``). A
     ``code`` hop's use its producer's entity kinds, read together with the hop's
     ``language``: sphinx-codelinks' bare ones (``"function"``, ``"method"``,
     ``"class"``, ``"impl"``, ...). Autodoc's docstring hop uses the same Python kinds
@@ -111,12 +113,31 @@ class NeedSourceSemantic:
     ``(name, extras)``."""
     name: str
     extras: tuple[tuple[str, str], ...] = ()
-    """Identity-bearing extras, e.g. ``("id", <the first signature id>)``."""
+    """Identity-bearing extras, e.g. ``("id", <the first signature id>)``, with one
+    exception. The innermost entry of a ``code`` hop, the entity itself, carries its
+    qualified name in its file as its producer renders it, ``("qualified_name", ...)``:
+    sphinx-codelinks' analysis (``ns::Widget::draw``, ``<Widget as Shape>::area``,
+    ``Shape.area.<locals>.inner``), and for autodoc's docstring hop the same rendering
+    of a Python entity (``make.<locals>.Made.go``; ``Shape.sides`` for an attribute; a
+    name CPython NFKC-normalises reads normalised there, as written in
+    sphinx-codelinks'). It renders the entries' names, so it adds no identity, and
+    identity comparisons leave it out (sphinx-codelinks' ``name_chain`` does). The
+    entity's own line range is not an extra: it is not identity."""
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)
 class NeedSourceHop:
     """One place a need's text passed through.
+
+    Text in an included file has a ``file`` hop of that file, then one per file it was
+    included through, innermost first, each with no line, read from docutils'
+    ``document.include_log``, then the page. Two known gaps: myst-parser's
+    ``{include}`` is never logged, so a chain through MyST includes records its
+    reStructuredText links alone (an include in a MyST page's ``eval-rst`` block is
+    one); and under docutils 0.22 and later a file included with ``:parser:`` is not
+    logged (it is parsed as a document of its own), so it is no link of a chain
+    through it, and a need written in that file itself records no chain at all
+    (docutils 0.21 logs it).
 
     **Provisional**: it may change without a deprecation until it reaches
     ``needs.json``.
@@ -130,8 +151,9 @@ class NeedSourceHop:
     physical: NeedSourcePhysical | None = None
     semantic: tuple[NeedSourceSemantic, ...] | None = None
     """Outermost to innermost; ``None`` where it is not determined (the placement's,
-    until the doctree has been read), or where nothing finer than the file is known (a
-    ``file`` hop, a whole report)."""
+    until the doctree has been read; an external need's whose record gives no
+    sections), or where nothing finer than the file is known (a ``file`` hop, a whole
+    report)."""
     document: str | None = None
     """The docname, on the hop of a page the need is placed on."""
     language: str | None = None
@@ -139,8 +161,9 @@ class NeedSourceHop:
     page's suffix its parser keys on (``".rst"``, ``".md"``); for a ``file`` hop, the
     file's own suffix (``".rst"``, ``".json"``; an included ``inc.rst.txt`` records
     ``".txt"``, whichever parser reads it); for a ``code`` hop, the language's name
-    (``"python"``, ``"cpp"``, ...), as sphinx-codelinks records it, and as the ``code``
-    hop of a docstring autodoc reads records it (``"python"``)."""
+    (``"python"``, ``"cpp"``, ...), as sphinx-codelinks records it, as the ``code`` hop
+    of a docstring autodoc reads records it (``"python"``), and as sphinx-test-reports
+    names a test case's file by its suffix (``None`` for a suffix it does not know)."""
 
     def _without_lines(self) -> NeedSourceHop:
         """This hop with its file's start and end line left out: what a need that only
@@ -212,6 +235,57 @@ def physical_for(
 
 def _suffix(path: str | os.PathLike[str]) -> str | None:
     return os.path.splitext(path)[1] or None
+
+
+def with_page_paths(
+    hops: tuple[NeedSourceHop, ...],
+    srcdir: str | os.PathLike[str],
+    doc2path: Callable[[str], str | os.PathLike[str]],
+) -> tuple[NeedSourceHop, ...]:
+    """``hops``, each ``page`` hop that has a ``document`` and no physical location given
+    its page's file (:func:`physical_for` of ``doc2path(document)``), with no line, and,
+    where it has none, the page's suffix as its ``language``.
+
+    No line: the line a caller gives such a need (``NeedItemSource.on_page``) is a line
+    as the caller counts it, a parser line most often, never one checked in the file. A
+    hop whose document has no file is left as it is, and ``hops`` itself is returned
+    where no hop changes.
+    """
+    completed = list(hops)
+    for index, hop in enumerate(hops):
+        if hop.kind == "page" and hop.document is not None and hop.physical is None:
+            path = doc2path(hop.document)
+            if os.path.isfile(path):
+                completed[index] = dataclasses.replace(
+                    hop,
+                    physical=physical_for(srcdir, path),
+                    language=hop.language or _suffix(path),
+                )
+    if all(new is old for new, old in zip(completed, hops, strict=True)):
+        return hops
+    return tuple(completed)
+
+
+def with_external_sections(
+    hops: tuple[NeedSourceHop, ...], sections: object
+) -> tuple[NeedSourceHop, ...]:
+    """``hops``, an external need's ``external`` hop given its section chain on the other
+    site as its semantic location: one ``section`` entry per name of ``sections``,
+    outermost first, where ``sections`` (the legacy field's value, innermost first) is
+    a list of strings. Otherwise, and where the hop's semantic location is already set,
+    ``hops`` as they are.
+    """
+    if not (hops and hops[0].kind == "external" and hops[0].semantic is None):
+        return hops
+    if not (
+        isinstance(sections, list | tuple)
+        and all(isinstance(name, str) for name in sections)
+    ):
+        return hops
+    semantic = tuple(
+        NeedSourceSemantic(kind="section", name=name) for name in reversed(sections)
+    )
+    return (dataclasses.replace(hops[0], semantic=semantic), *hops[1:])
 
 
 LineCheck = Callable[[Sequence[str], int, int | None], bool]
@@ -329,6 +403,46 @@ def _include_entry(
             start_after = "\n\n"
         return start_line, end_line, start_after or ""
     return None
+
+
+def _include_chain(document: object, source: str) -> tuple[str, ...]:
+    """The files the innermost active include of ``source`` was included through,
+    innermost first, as ``document.include_log`` names them; ``()`` where there are none,
+    and where an entry of the log is not as expected or names no file.
+
+    The log is a stack: an include pushes ``(path, options)`` (the options in the orders
+    :func:`_include_entry` reads), and the ``.. end of inclusion`` comment after its text
+    pops it. Its first entry is the source the document was being read from at its
+    first include (the page, or ``rst_prolog``), never an include, so the includes
+    between it and the innermost entry of ``source`` are the chain. reStructuredText
+    only: myst-parser's ``{include}`` logs nothing (myst-parser 4 and 5), so a MyST
+    include is never a link, and a chain through one has its reStructuredText links
+    alone (an include in a MyST page's ``eval-rst`` block is logged). A ``:parser:``
+    include is logged by docutils 0.21 and not by 0.22 and later, whose
+    ``custom_parse`` never pushes it: there it is no link of a chain through it, and
+    a need written in the ``:parser:`` file itself, whose source is not in the log,
+    gets no chain at all.
+    """
+    log = getattr(document, "include_log", None)
+    if not isinstance(log, list):
+        return ()
+    paths: list[str] = []
+    for entry in log[1:]:
+        if not (
+            isinstance(entry, tuple)
+            and len(entry) == 2
+            and isinstance(entry[0], str | os.PathLike)
+            and isinstance(entry[1], tuple)
+            and len(entry[1]) == 4
+            and isinstance(path := os.fspath(entry[0]), str)
+        ):
+            return ()
+        paths.append(path)
+    for index in range(len(paths) - 1, -1, -1):
+        if paths[index] == source:
+            chain = tuple(reversed(paths[:index]))
+            return chain if all(map(os.path.isfile, chain)) else ()
+    return ()
 
 
 def _numbered_from_the_slice(lines: StringList, index: int, source: str) -> bool:
@@ -665,7 +779,9 @@ def _docstring_hop(
       ``<file>`` names for a member inherited from another module; otherwise
       ``<file>``, as autodoc gives it.
     - ``semantic``: that definition's parts, by sphinx-codelinks' Python rule
-      (:func:`_python_semantic`); ``None`` for a module docstring, and wherever no
+      (:func:`_python_semantic`), the last carrying the in-file qualified name as
+      sphinx-codelinks renders it (:func:`_python_qualified_name`); ``None`` for a
+      module docstring, and wherever no
       definition holding the text is found: an alias (autodoc names its docstring by
       the object it aliases), an override that inherits its docstring, an object made
       at run time, a function with no Python source, a ``__module__`` rewritten to
@@ -733,9 +849,39 @@ class _PythonDefinition:
 
 
 def _semantic(parts: _PythonParts | None) -> tuple[NeedSourceSemantic, ...] | None:
+    """The entries of ``parts``, the last, the entity, with its qualified name as a
+    ``("qualified_name", ...)`` extra (:func:`_python_qualified_name`)."""
     if parts is None:
         return None
-    return tuple(NeedSourceSemantic(kind=kind, name=name) for kind, name in parts)
+    last = len(parts) - 1
+    return tuple(
+        NeedSourceSemantic(
+            kind=kind,
+            name=name,
+            extras=(("qualified_name", _python_qualified_name(parts)),)
+            if index == last
+            else (),
+        )
+        for index, (kind, name) in enumerate(parts)
+    )
+
+
+def _python_qualified_name(parts: _PythonParts) -> str:
+    """The qualified name of ``parts`` in its file, rendered exactly as sphinx-codelinks
+    renders a Python entity's (``render_semantic``): the names joined with ``.``, and
+    CPython's ``<locals>`` after a function or a method another part follows
+    (``make.<locals>.Made.go``). An ``attribute``, a kind sphinx-codelinks does not
+    have, is a name like any other (``Shape.sides``). A name CPython NFKC-normalises
+    (``ﬁle``) is the normalised one here, the syntax tree's, and as written in
+    sphinx-codelinks'. The two renderings are compared
+    in sphinx-codelinks' suite (``tests/test_docstring_hop_cross_check.py``), since
+    this package cannot import that one."""
+    names: list[str] = []
+    for index, (kind, name) in enumerate(parts):
+        names.append(name)
+        if kind in ("function", "method") and index < len(parts) - 1:
+            names.append("<locals>")
+    return ".".join(names)
 
 
 def _python_semantic(qualname: str, text: str) -> tuple[NeedSourceSemantic, ...] | None:
@@ -872,6 +1018,7 @@ def located_hops(
     fragment_lines: bool,
     first: Iterable[NeedSourceHop] = (),
     text: str | None = None,
+    document: object = None,
 ) -> tuple[NeedSourceHop, ...]:
     """The hops of text written at ``source:start_line`` and placed on ``docname``.
 
@@ -890,11 +1037,15 @@ def located_hops(
     :param text: The text as written (a directive's block): in a docstring, the
         definition its name resolves to is trusted only where that definition's
         docstring holds each of its lines (:func:`_docstring_hop`).
-    :return: ``[first...], file, page`` for text in an included file (the page hop then
-        has no line: the ``include`` line is not recoverable), ``[first], page``
-        otherwise. A docstring (autodoc) is a ``code`` hop of the Python file it is
-        defined in (:func:`_docstring_hop`), with no line: the one autodoc gives counts
-        from the docstring, not the file.
+    :param document: The document being read, whose ``include_log`` names the files an
+        included file was included through (:func:`_include_chain`), or ``None``.
+    :return: ``[first...], file, [through...], page`` for text in an included file: the
+        file, then one ``file`` hop per file it was included through, innermost first,
+        each with its path and suffix and no line (the page hop has no line either: an
+        ``include`` line is not recoverable); ``[first], page`` otherwise. A docstring
+        (autodoc) is a ``code`` hop of the Python file it is defined in
+        (:func:`_docstring_hop`), with no line: the one autodoc gives counts from the
+        docstring, not the file.
     """
     srcdir = env.srcdir
     host = os.path.abspath(env.doc2path(docname))
@@ -931,6 +1082,12 @@ def located_hops(
                 physical=physical_for(srcdir, source, *lines),
                 language=_suffix(source),
             )
+        )
+        hops.extend(
+            NeedSourceHop(
+                kind="file", physical=physical_for(srcdir, path), language=_suffix(path)
+            )
+            for path in _include_chain(document, source)
         )
         hops.append(page())
     else:
@@ -983,6 +1140,7 @@ def directive_hops(
         fragment_lines=rst,
         first=first,
         text=directive.block_text,
+        document=directive.state.document,
     )
 
 

@@ -20,6 +20,7 @@ import pickle
 import shutil
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -34,9 +35,12 @@ from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
     NeedSourceSemantic,
+    _include_chain,
     block_check,
     fence_check,
     project_legacy,
+    with_external_sections,
+    with_page_paths,
 )
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.data import SphinxNeedsData
@@ -377,6 +381,82 @@ def test_a_myst_fence_must_be_the_directives_with_its_title():
     assert fence_check("req", "")(["```{req}"], 1, None)
 
 
+def test_the_include_chain_reads_the_log_as_a_stack(tmp_path: Path):
+    """The files between the document's own entry and the innermost entry of the
+    source, innermost first; the entries after it are not in the chain. Nothing where
+    the source is not logged, an entry is not ``(path, four options)``, or a file of
+    the chain is not one."""
+    a, b = str(tmp_path / "a.rst"), str(tmp_path / "b.rst")
+    for path in (a, b):
+        Path(path).write_text("", encoding="utf-8")
+    plain, sliced = (None, None, "", ""), (2, None, "", "")
+    log = [("host.rst", plain), (a, plain), (b, plain), (a, sliced), ("x.rst", plain)]
+    document = SimpleNamespace(include_log=log)
+    assert _include_chain(document, a) == (b, a)
+    assert _include_chain(document, b) == (a,)
+    assert _include_chain(document, "host.rst") == ()
+    assert _include_chain(document, "nowhere.rst") == ()
+    malformed = SimpleNamespace(
+        include_log=[("host.rst", plain), (a, (2,)), (b, plain)]
+    )
+    assert _include_chain(malformed, b) == ()
+    missing = str(tmp_path / "missing.rst")
+    gone = SimpleNamespace(
+        include_log=[("host.rst", plain), (missing, plain), (a, plain)]
+    )
+    assert _include_chain(gone, a) == ()
+    assert _include_chain(object(), a) == ()
+
+
+def test_a_page_hop_given_no_path_takes_its_page_s_file(tmp_path: Path):
+    """``create_need``'s completion of a page hop with a document and no path: the
+    document's file, no line, its suffix where the hop has no language. A document with
+    no file, and a hop with a path or of another kind, are left as they are."""
+    (tmp_path / "a.rst").write_text("", encoding="utf-8")
+
+    def doc2path(docname: str) -> Path:
+        return tmp_path / f"{docname}.rst"
+
+    bare = NeedSourceHop(kind="page", document="a")
+    assert with_page_paths((bare,), tmp_path, doc2path) == (
+        dataclasses.replace(
+            bare,
+            physical=NeedSourcePhysical(root="srcdir", path="a.rst"),
+            language=".rst",
+        ),
+    )
+    spoken = dataclasses.replace(bare, language=".txt")
+    assert with_page_paths((spoken,), tmp_path, doc2path)[0].language == ".txt"
+    kept = (
+        NeedSourceHop(kind="page", document="missing"),
+        PAGE_A,
+        NeedSourceHop(kind="file"),
+    )
+    assert with_page_paths(kept, tmp_path, doc2path) is kept
+
+
+def test_an_external_hop_takes_a_list_of_section_names():
+    """An external need's sections, innermost first, are its external hop's semantic
+    location, outermost first: from a list or a tuple of names alone, onto an
+    external hop with none."""
+    external = NeedSourceHop(kind="external", physical=NeedSourcePhysical(url="u"))
+    chain = (
+        NeedSourceSemantic(kind="section", name="outer"),
+        NeedSourceSemantic(kind="section", name="inner"),
+    )
+    for sections in (["inner", "outer"], ("inner", "outer")):
+        (hop,) = with_external_sections((external,), sections)
+        assert hop.semantic == chain, sections
+    assert with_external_sections((external,), [])[0].semantic == ()
+    for sections in (None, "a string", ["a", 1], {"a": "b"}):
+        assert with_external_sections((external,), sections) == (external,)
+    known = dataclasses.replace(
+        external, semantic=(NeedSourceSemantic(kind="section", name="given"),)
+    )
+    assert with_external_sections((known,), ["other"]) == (known,)
+    assert with_external_sections((PAGE_A,), ["other"]) == (PAGE_A,)
+
+
 # --- the project ---------------------------------------------------------------------
 
 
@@ -449,8 +529,9 @@ def test_the_hops_of_every_need(
 
     Read with the files: ``REQ_AX`` is written on line 4 of ``frag/a.rst``, which
     ``inc_host.rst`` includes, so its first hop is that file's, and the page hop has no
-    line; ``REQ_BX`` is in ``frag/b.rst``, which ``frag/a.rst`` includes -- docutils keeps
-    no chain of includes, so only the innermost file is a hop. The service and the import
+    line; ``REQ_BX`` is in ``frag/b.rst``, which ``frag/a.rst`` includes: its hops are
+    ``frag/b.rst`` with the need's lines, then ``frag/a.rst`` with none, read from
+    docutils' ``document.include_log``, then the page. The service and the import
     have their directive's true line, not the parser's (``rst_prolog`` shifts it by 4).
     ``REQ_CFX`` is in a C function, whose ``desc_name`` wraps a ``desc_sig_name``: the
     semantic location names it, and its ``signature`` extra is what the legacy walk
@@ -476,8 +557,16 @@ def test_the_hops_of_every_need(
 
     assert lines("REQ_HOST1X") == [("inc_host.rst", 4, 7)]
     assert lines("REQ_AX") == [("frag/a.rst", 4, 7), ("inc_host.rst", None, None)]
-    assert lines("REQ_BX") == [("frag/b.rst", 1, 2), ("inc_host.rst", None, None)]
-    assert lines("REQ_L1X") == [("frag/b.rst", 7, 8), ("inc_host.rst", None, None)]
+    assert lines("REQ_BX") == [
+        ("frag/b.rst", 1, 2),
+        ("frag/a.rst", None, None),
+        ("inc_host.rst", None, None),
+    ]
+    assert lines("REQ_L1X") == [
+        ("frag/b.rst", 7, 8),
+        ("frag/a.rst", None, None),
+        ("inc_host.rst", None, None),
+    ]
     assert lines("SVC_A") == [
         (None, None, None),
         ("frag/a.rst", 10, 10),
@@ -558,23 +647,36 @@ def test_the_hops_of_every_need(
     docstring = hops["REQ_DOCSTRINGX"][0]
     assert (docstring.language, docstring.semantic) == (
         "python",
-        (NeedSourceSemantic(kind="function", name="documented"),),
+        (
+            NeedSourceSemantic(
+                kind="function",
+                name="documented",
+                extras=(("qualified_name", "documented"),),
+            ),
+        ),
     )
-    # through the API: a page hop with no path, walked
+    # through the API: the page's file, recorded by create_need with no line, walked
     assert hops["REQ_APIX"] == (
         NeedSourceHop(
             kind="page",
             document="p2",
+            physical=NeedSourcePhysical(root="srcdir", path="p2.rst"),
+            language=".rst",
             semantic=(
                 NeedSourceSemantic(kind="section", name="Page 2"),
                 NeedSourceSemantic(kind="section", name="Sec"),
             ),
         ),
     )
+    # an external need: its page on the other site, and its sections there
     assert hops["EXT_X1"] == (
         NeedSourceHop(
             kind="external",
             physical=NeedSourcePhysical(url="http://example.org/remote/page.html#X1"),
+            semantic=(
+                NeedSourceSemantic(kind="section", name="Remote top"),
+                NeedSourceSemantic(kind="section", name="Remote sec"),
+            ),
         ),
     )
 
@@ -602,6 +704,140 @@ def test_the_hops_of_every_need(
         ("section", "Hidden"),
         ("py:function", "hidden_f"),
     ]
+
+
+def _needs(
+    make_app: Callable[..., SphinxTestApp], srcdir: Path, **kwargs: Any
+) -> dict[str, NeedItem]:
+    """Build the project at ``srcdir`` with no warning, and return every need."""
+    app = make_app("html", srcdir=srcdir, freshenv=True, **kwargs)
+    try:
+        app.build()
+        assert_no_warnings(app)
+        return dict(SphinxNeedsData(app.env).get_needs_view().items())
+    finally:
+        app.cleanup()
+
+
+#: a host, three reStructuredText includes deep (the innermost a slice, a ``list2need``
+#: in it), and a MyST page: two MyST includes deep, and two reStructuredText ones in an
+#: ``eval-rst`` block
+NESTED_FILES = {
+    "conf.py": (
+        'extensions = ["sphinx_needs", "myst_parser"]\n'
+        'source_suffix = {".rst": "restructuredtext", ".md": "markdown"}\n'
+        'exclude_patterns = ["frag/**", "_build"]\n'
+    ),
+    "index.rst": (
+        "Host\n====\n\n.. toctree::\n\n   mdpage\n\n.. include:: frag/a.rst\n\n"
+        ".. req:: In the host after\n   :id: NEST_HOST\n"
+    ),
+    "frag/a.rst": (
+        ".. req:: In A\n   :id: NEST_A\n\n.. include:: frag/b.rst\n\n"
+        ".. req:: In A after B\n   :id: NEST_A_AFTER\n"
+    ),
+    "frag/b.rst": (
+        ".. req:: In B\n   :id: NEST_B\n\n.. include:: frag/c.rst\n   :start-after: MARK\n"
+    ),
+    "frag/c.rst": (
+        "Not kept.\n\nMARK\n\n.. req:: In C\n   :id: NEST_C\n\n.. list2need::\n"
+        "   :types: req\n\n   * (NEST_L) A list need in C\n"
+    ),
+    "mdpage.md": (
+        "# MD\n\n```{include} frag/m1.md\n```\n\n"
+        "```{eval-rst}\n.. include:: frag/a2.rst\n```\n"
+    ),
+    "frag/m1.md": "```{include} frag/m2.md\n```\n",
+    "frag/m2.md": "```{req} In M2\n:id: NEST_M2\n```\n",
+    "frag/a2.rst": ".. include:: frag/b2.rst\n",
+    "frag/b2.rst": ".. req:: In B2\n   :id: NEST_B2\n",
+}
+
+
+def test_a_nested_include_records_each_file_it_passes_through(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+):
+    """Between the innermost file and the page, one ``file`` hop per include the text
+    passed through, innermost first: its path, no line, no semantic location, its
+    suffix. They are read from docutils' ``document.include_log``, so a sliced include
+    in the chain is one too, and so are reStructuredText includes in a MyST page's
+    ``eval-rst``. myst-parser's own ``{include}`` logs nothing there: a MyST include
+    chain records its innermost file alone (a known gap)."""
+    srcdir = tmp_path / "project"
+    for name, text in NESTED_FILES.items():
+        (srcdir / name).parent.mkdir(parents=True, exist_ok=True)
+        (srcdir / name).write_text(text, encoding="utf-8")
+    needs = _needs(make_app, srcdir)
+    a, b = "file srcdir:frag/a.rst (.rst)", "file srcdir:frag/b.rst (.rst)"
+    host = "page [index] srcdir:index.rst (.rst) :: section 'Host'"
+    assert {
+        need_id: [_compact(hop) for hop in need.source.hops]
+        for need_id, need in needs.items()
+    } == {
+        "NEST_HOST": ["page [index] srcdir:index.rst:10-11 (.rst) :: section 'Host'"],
+        "NEST_A": ["file srcdir:frag/a.rst:1-2 (.rst)", host],
+        "NEST_A_AFTER": ["file srcdir:frag/a.rst:6-7 (.rst)", host],
+        "NEST_B": ["file srcdir:frag/b.rst:1-2 (.rst)", a, host],
+        "NEST_C": ["file srcdir:frag/c.rst:5-6 (.rst)", b, a, host],
+        "NEST_L": ["file srcdir:frag/c.rst:11-11 (.rst)", b, a, host],
+        "NEST_M2": [
+            "file srcdir:frag/m2.md (.md)",
+            "page [mdpage] srcdir:mdpage.md (.md) :: section 'MD'",
+        ],
+        "NEST_B2": [
+            "file srcdir:frag/b2.rst:1-2 (.rst)",
+            "file srcdir:frag/a2.rst (.rst)",
+            "page [mdpage] srcdir:mdpage.md (.md) :: section 'MD'",
+        ],
+    }
+    # the legacy keys read the innermost hop and the page, as they did
+    assert (needs["NEST_C"]["docname"], needs["NEST_C"]["lineno"]) == ("index", 5)
+
+
+def test_a_need_created_on_its_page_records_the_page_s_path(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+):
+    """``add_need``'s default source, ``NeedItemSource.on_page``, gives a page hop with
+    no path; ``create_need`` records the page's path on it, and its suffix, with no
+    line: the line the caller gives is a parser line, not one checked in the file. The
+    need's ``lineno`` is the one given, as it was."""
+    needs = _needs(make_app, _copy(tmp_path))
+    (page,) = needs["REQ_APIX"].source.hops
+    assert page == NeedSourceHop(
+        kind="page",
+        document="p2",
+        physical=NeedSourcePhysical(root="srcdir", path="p2.rst"),
+        language=".rst",
+        semantic=(
+            NeedSourceSemantic(kind="section", name="Page 2"),
+            NeedSourceSemantic(kind="section", name="Sec"),
+        ),
+    )
+    assert needs["REQ_APIX"]["lineno"] == 15
+
+
+def test_an_external_need_s_hop_carries_its_upstream_sections(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+):
+    """The record's ``sections`` (innermost first) are the ``external`` hop's semantic
+    location, outermost first; the legacy ``sections`` keeps the record's value and
+    order, and ``signature`` stays a field, never a hop's."""
+    needs = _needs(make_app, _copy(tmp_path))
+    need = needs["EXT_X1"]
+    assert need.source.hops == (
+        NeedSourceHop(
+            kind="external",
+            physical=NeedSourcePhysical(url="http://example.org/remote/page.html#X1"),
+            semantic=(
+                NeedSourceSemantic(kind="section", name="Remote top"),
+                NeedSourceSemantic(kind="section", name="Remote sec"),
+            ),
+        ),
+    )
+    assert need["sections"] == ("Remote sec", "Remote top")
+    assert need["signature"] == "remote_sig"
+    (hop,) = need.source.hops
+    assert project_legacy(hop.semantic or ()) == (tuple(need["sections"]), None)
 
 
 def test_a_sliced_include_gives_the_file_lines(
