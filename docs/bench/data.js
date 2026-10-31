@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793448158419,
+  "lastUpdate": 1793457448782,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27972,6 +27972,48 @@ window.BENCHMARK_DATA = {
             "value": 186.859029,
             "unit": "MB",
             "extra": "Commit: 670b7639a2c8638a7440d98462576acad9c9cc40\nBranch: master\nTime: 2026-10-31T13:01:04+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "97e58643e7874f5b7d0fd55174e5b8618170d9d2",
+          "message": "👌 Autodoc's docstring hop records python and the in-file qualified name, in sphinx-codelinks' Python kinds (#2443)\n\nA need written in a docstring that autodoc reads now starts at a `code`\nhop in the same vocabulary as the code hop of\na sphinx-codelinks marker:\n\n- the language `python`;\n- the name within the file, by sphinx-codelinks' Python rule, read from\nthe file's syntax: `class Shape > method area`,\n`function make > class Made` for a class made in a function (`<locals>`\nimplied);\n- an attribute documented with `#:` as a leaf `attribute`.\n\nThe hop previously recorded `.py` and `py:docstring\n'pkg.mod.Shape.area'`. A member inherited from another module\nnow records the file its docstring is in, not the documenting module's.\n\nAutodoc names a docstring by its object's `__module__` and\n`__qualname__`. Each module's source is read through Sphinx's cached\n`ModuleAnalyzer`, and the qualname is looked up in its `ast`, at each\nimported module the name starts with, longest\nfirst. A definition is trusted only where its docstring holds every line\nof the need. Everywhere else the hop records\nthe file autodoc gives and nothing finer, never another entity:\n\n- an alias, which autodoc names by the object it aliases;\n- an override that inherits its docstring;\n- an object made at run time;\n- a function with no Python source.\n\nA module docstring records its file. The page hop keeps autodoc's object\ntype (`py:property`, `py:exception`).\n\n- A cross-check in sphinx-codelinks' suite builds one project with both\nproducers and asserts that, for every\nfunction and class, the two hops have the same file, language,\n`name_chain` and kinds.\n- `ENV_DATA_VERSION` 22: stored hop values change meaning, so the first\nbuild after upgrading re-reads.",
+          "timestamp": "2026-10-31T15:35:52+01:00",
+          "tree_id": "c15ee20a3456d2df806c7254b9d7eff9fc732a19",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/97e58643e7874f5b7d0fd55174e5b8618170d9d2"
+        },
+        "date": 1793457448181,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07393818599999946,
+            "unit": "s",
+            "extra": "Commit: 97e58643e7874f5b7d0fd55174e5b8618170d9d2\nBranch: master\nTime: 2026-10-31T15:35:52+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.472509900999995,
+            "unit": "s",
+            "extra": "Commit: 97e58643e7874f5b7d0fd55174e5b8618170d9d2\nBranch: master\nTime: 2026-10-31T15:35:52+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 186.05264,
+            "unit": "MB",
+            "extra": "Commit: 97e58643e7874f5b7d0fd55174e5b8618170d9d2\nBranch: master\nTime: 2026-10-31T15:35:52+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
