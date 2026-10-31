@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793402505184,
+  "lastUpdate": 1793424743771,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -27762,6 +27762,48 @@ window.BENCHMARK_DATA = {
             "value": 186.603932,
             "unit": "MB",
             "extra": "Commit: 2d9059aeeb7e1f56ac06d602602a23065ca300b6\nBranch: master\nTime: 2026-10-31T00:20:24+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1cc0593be9e27a81cbb2245c3f772797d68964c4",
+          "message": "👌 A link type declared on need types alone can be a summary (#2433)\n\nA link type declared on need types alone can now be a summary. Mark it\non the entry of the first need type that declares it:\n\n```toml\n[needs.types.result.links.covers]\nsummary = true\n```\n\nIt is then a summary on every need type, exactly as `summary = true` on\na `[needs.links.covers]` entry makes it: a needflow without\n`:link_types:` leaves it out, and the needs.json schema marks it, and\nits back links, `\"summary\": true`. Until now that key was reported\n(`needs.config`) and ignored, so such a link type could be a summary\nonly when a `copy` or `collect` computed it.\n\n`summary` follows the one-name-one-shape rule that the link type's other\nkeys (`incoming`, `copy`, `allow_dead_links`, the styles) already\nfollow:\n\n- **Agreement.** The first need type declaring the link type sets\n`summary`, and its silence means `false`. Every other need type may\nrepeat the value or leave it out. A need type giving another value is\nreported (`needs.type_conflict`) and its entry ignored.\n- **Computed link types.** A link type that a `copy` or `collect`\ncomputes is a summary in any case. That means a derived one, with the\nrule in a declaration that is used; a refused declaration computes\nnothing. A declaration may say so, and `summary = false` beside such a\nrule is reported (`needs.derive_invalid`) at that need type's entry and\nignored, whichever need type writes it. The rule still applies on that\ntype. This is what a `[needs.links]` entry already does.\n- **Link types declared in `needs_links`.** The `[needs.links]` entry\nkeeps the stance. A need type's entry giving `summary` is the usual\nshape-key warning (`needs.config`), even when it repeats the link type's\nown value.\n- **`copy = true` beside `summary = true`.** On a link type declared on\nneed types alone, this is now reported at the need type's entry\n(`needs_types['spec'].links['mitigates']`). Nothing is copied, so it is\nno longer also reported as deprecated.\n\nThis amends the unreleased \"Summary link types\" entry (#2418); it is not\na new change on its own. `ENV_DATA_VERSION` goes to 20, because the key\nnow changes a needflow's default under an unchanged configuration.\n\nThe shared corpora carry the rule:\n\n- `field_declaration_conformance.toml` gets five cases (agreed,\ndisagreeing, a copy in a refused declaration, implied by a copy, beside\na `[needs.links]` entry), and its count goes from 123 to 128.\n- `derive_conformance.toml` gets one case, `summary = false` beside a\ncopy on the first and on a later declaration, and its count goes from\n104 to 105. A first declaration's ignored `false` sets nothing, so a\nlater one may still say `true`.\n- Both headers now say `summary` is a shape key.\n\nubCode vendors both files, so this owes it a re-vendor and the matching\nchange.",
+          "timestamp": "2026-10-31T06:30:49+01:00",
+          "tree_id": "1eac9c8061d2c87150e342796dd3e95f81a6a516",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1cc0593be9e27a81cbb2245c3f772797d68964c4"
+        },
+        "date": 1793424743263,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07389312600000153,
+            "unit": "s",
+            "extra": "Commit: 1cc0593be9e27a81cbb2245c3f772797d68964c4\nBranch: master\nTime: 2026-10-31T06:30:49+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 12.855223782999992,
+            "unit": "s",
+            "extra": "Commit: 1cc0593be9e27a81cbb2245c3f772797d68964c4\nBranch: master\nTime: 2026-10-31T06:30:49+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 183.51332,
+            "unit": "MB",
+            "extra": "Commit: 1cc0593be9e27a81cbb2245c3f772797d68964c4\nBranch: master\nTime: 2026-10-31T06:30:49+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
