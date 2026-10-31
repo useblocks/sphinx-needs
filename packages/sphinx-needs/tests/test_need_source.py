@@ -590,6 +590,47 @@ def test_the_hops_of_every_need(
     ]
 
 
+@pytest.mark.xfail(
+    strict=True, reason="#2428: a need in a slice records the slice's line"
+)
+def test_a_sliced_include_gives_the_file_lines(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+):
+    """The needs of ``lines.rst``'s sliced includes record the lines they are written
+    on in their files, and their file hops those lines (#2428)."""
+    app = make_app("html", srcdir=_copy(tmp_path), freshenv=True)
+    try:
+        app.build()
+        assert_no_warnings(app)
+        needs = SphinxNeedsData(app.env).get_needs_view()
+
+        def lines(need_id: str) -> tuple[int | None, list[tuple[Any, ...]]]:
+            return needs[need_id]["lineno"], [
+                (h.physical.path, h.physical.start_line, h.physical.end_line)
+                for h in needs[need_id].source.hops
+                if h.physical is not None
+            ]
+
+        assert lines("REQ_STARTAFTERX") == (
+            5,
+            [("frag/after.rst", 5, 6), ("lines.rst", None, None)],
+        )
+        assert lines("REQ_STARTLINEX") == (
+            4,
+            [("frag/from_line.rst", 4, 5), ("lines.rst", None, None)],
+        )
+        assert lines("REQ_HIT_A") == (
+            4,
+            [("frag/hit.rst", 4, 5), ("lines.rst", None, None)],
+        )
+        assert lines("REQ_X_TWIN") == (
+            8,
+            [("frag/twin.rst", 8, 9), ("lines.rst", None, None)],
+        )
+    finally:
+        app.cleanup()
+
+
 @pytest.mark.skipif(not parallel_available, reason="Parallel execution not supported")
 def test_a_parallel_build_gives_the_same_hops(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
