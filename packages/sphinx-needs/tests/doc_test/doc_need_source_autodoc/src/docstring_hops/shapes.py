@@ -35,12 +35,22 @@ class Shape(Base):
     #:    :id: R_ATTR
     sides = 0
 
+    def summary(self):
+        # an override without a docstring: autodoc gives it ``Base.summary``'s
+        pass
+
     def area(self):
         """A method.
 
         .. req:: Method
            :id: R_METHOD
         """
+
+    #: An alias of a method, in the class.
+    #:
+    #: .. req:: Alias of a method
+    #:    :id: R_CLASS_ALIAS
+    other = area
 
     @staticmethod
     def make():

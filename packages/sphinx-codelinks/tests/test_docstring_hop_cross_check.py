@@ -5,8 +5,10 @@ Python file the docstring is defined in, with the in-file qualified name in this
 package's Python kinds -- a rule it restates, since it cannot import this package. Here
 both producers read the same files: each docstring holds a need of sphinx-needs (``R_*``)
 and a one-line marker of this package (``CL_*``), side by side. For every function and
-class, the two code hops have the same file, the same language and the same entity by
-:func:`~sphinx_codelinks.analyse.entity.name_chain`, so the two rules cannot drift apart.
+class, the two code hops have the same file, the same language, the same entity by
+:func:`~sphinx_codelinks.analyse.entity.name_chain`, and the same parts, kinds included
+(``name_chain`` leaves the kinds out, and does not tell a ``method`` from a
+``function``), so the two rules cannot drift apart.
 
 An attribute is where they differ by design: sphinx-needs names the attribute autodoc
 documents (a leaf ``attribute``), this package attaches the ``#:`` comment to the
@@ -271,7 +273,8 @@ def code_hops(make_app: _MakeApp, tmp_path: Path) -> dict[str, NeedSourceHop]:
 
 
 def _identity(hop: NeedSourceHop) -> tuple[Any, ...]:
-    """What names a code hop's entity: its file, its language, its name chain."""
+    """What names a code hop's entity -- its file, its language, its name chain -- and
+    its parts as values, kinds included."""
     parts: list[Any] = [
         {"kind": p.kind, "name": p.name, **dict(p.extras)} for p in hop.semantic or ()
     ]
@@ -281,6 +284,9 @@ def _identity(hop: NeedSourceHop) -> tuple[Any, ...]:
         None if physical is None else (physical.root, physical.path),
         hop.language,
         name_chain(parts if hop.semantic is not None else None, hop.language or ""),
+        None
+        if hop.semantic is None
+        else [(p.kind, p.name, p.extras) for p in hop.semantic],
     )
 
 
@@ -296,7 +302,7 @@ def test_both_producers_name_the_same_entity(
     code_hops: dict[str, NeedSourceHop],
 ) -> None:
     """For every function and class, and the module docstring: one file, ``python``, one
-    name chain."""
+    name chain, the same kinds."""
     assert {case: _identity(code_hops[f"R_{case}"]) for case in ENTITIES} == {
         case: _identity(code_hops[f"CL_{case}"]) for case in ENTITIES
     }
@@ -305,8 +311,8 @@ def test_both_producers_name_the_same_entity(
 
 def test_an_attribute_differs_by_design(code_hops: dict[str, NeedSourceHop]) -> None:
     """sphinx-needs names the attribute autodoc documents; this package attaches its
-    ``#:`` comment to the enclosing class, or to the file: the same file, and the
-    class' chain a prefix of the attribute's."""
+    ``#:`` comment to the enclosing class, or to the file: the same file and language,
+    and the class' name chain a prefix of the attribute's."""
 
     def parts(need_id: str) -> list[tuple[str, str]] | None:
         semantic = code_hops[need_id].semantic
@@ -322,3 +328,5 @@ def test_an_attribute_differs_by_design(code_hops: dict[str, NeedSourceHop]) -> 
             _identity(code_hops[f"CL_{case}"]),
         )
         assert ours[:3] == theirs[:3]
+        ours_chain, theirs_chain = ours[3], theirs[3] or ()
+        assert ours_chain[: len(theirs_chain)] == theirs_chain

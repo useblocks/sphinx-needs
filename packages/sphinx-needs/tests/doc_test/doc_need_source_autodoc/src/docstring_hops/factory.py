@@ -1,5 +1,7 @@
 """Objects made at run time, and aliases."""
 
+from docstring_hops.shapes import area_of
+
 
 def make():
     class Made:
@@ -22,11 +24,17 @@ def make():
 Made = make()
 
 #: An alias of a function of this module: autodoc names the docstring by the function's
-#: ``__qualname__``, so the hop names the function (a known gap).
+#: ``__qualname__``.
 #:
 #: .. req:: Alias of a function here
 #:    :id: R_ALIAS_HERE
 alias = make
+
+#: An alias of a function of another module.
+#:
+#: .. req:: Alias of a function there
+#:    :id: R_ALIAS_THERE
+far = area_of
 
 #: An alias of a function with no Python source.
 #:

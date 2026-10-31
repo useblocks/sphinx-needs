@@ -98,10 +98,10 @@ Improvements
   directive is written in (an included file's own, in an include), the ``needs.json`` an imported need was read
   from, the service that made a need, an external need's page -- and ends at the page the need is placed on, with
   its sections and the domain objects it is written in (an external need has no such page). A need in a docstring
-  autodoc reads starts at a ``code`` hop of the Python file the docstring is defined in (a member inherited from
-  another module: that module's), with the language ``python`` and the name in the file in sphinx-codelinks' Python
-  kinds (``class Shape > method area``), so it compares with the code hop of a sphinx-codelinks marker in the same
-  docstring. A hop records a line range only where the file, read from disk, holds the need's text there: under
+  autodoc reads starts at a ``code`` hop of its Python file, with the language ``python`` and, where the definition
+  autodoc names holds the need in its docstring, that definition's file (for a member inherited from another module,
+  that module's) and its name in the file in sphinx-codelinks' Python kinds (``class Shape > method area``), so it
+  compares with the code hop of a sphinx-codelinks marker in the same docstring. A hop records a line range only where the file, read from disk, holds the need's text there: under
   reStructuredText every line of the directive equals the file's line (whole lines), under MyST the line opens the
   directive's fence with its name and title; elsewhere it records no line (it can still be wrong only where the
   file holds an identical copy of the need's text at the line the parser claims). It is provisional: the

@@ -158,8 +158,8 @@ lines on the pages whose sources did not change.
 
 Version 22 is the same case for a need in a docstring autodoc reads: its ``code`` hop
 records the language ``python`` and the in-file qualified name in sphinx-codelinks'
-Python kinds (``class Shape > method area``), and the file of the module the docstring
-is defined in, where version 21 stored the suffix ``.py``, one ``py:docstring`` entry
+Python kinds (``class Shape > method area``), and the file of the definition whose
+docstring holds the need, where version 21 stored the suffix ``.py``, one ``py:docstring`` entry
 with the dotted name, and, for a member inherited from another module, the documenting
 module's file. The sources do not change, so without the bump an upgraded build would
 keep the old hops on the pages whose sources did not change.

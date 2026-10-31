@@ -7,3 +7,10 @@ class Base:
         .. req:: Inherited method
            :id: R_INHERITED
         """
+
+    def summary(self):
+        """A method an override without a docstring inherits the docstring of.
+
+        .. req:: Inherited docstring
+           :id: R_OVERRIDE
+        """

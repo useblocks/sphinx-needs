@@ -35,6 +35,7 @@ import itertools
 import os
 import re
 import sys
+import warnings
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import PurePath
@@ -642,39 +643,54 @@ def item_check(first: str, last: str) -> LineCheck:
     return check
 
 
-def _docstring_hop(srcdir: str | os.PathLike[str], source: str) -> NeedSourceHop:
+def _docstring_hop(
+    srcdir: str | os.PathLike[str], source: str, text: str | None
+) -> NeedSourceHop:
     """The ``code`` hop of text in a docstring autodoc reads.
 
     Autodoc's source is ``<file>:docstring of <name>`` (no ``<file>:`` where it has no
     analyser of the module), ``<name>`` the object's ``__module__`` and
     ``__qualname__`` where it has both: its definition, not the path it is documented
-    under. The name is split at its longest prefix in ``sys.modules``, the module
-    autodoc has just imported (:func:`_split_module`), and that module's source is read
-    as Python reads it, through Sphinx's cached :class:`~sphinx.pycode.ModuleAnalyzer`.
+    under. The name is split at the longest prefix that is an imported module
+    (:func:`_split_module`), that module's source is read as Python reads it, through
+    Sphinx's cached :class:`~sphinx.pycode.ModuleAnalyzer`, and the rest of the name is
+    looked up in its syntax (:func:`_python_definitions`). The definition found is
+    trusted only where its docstring -- an attribute's ``#:`` comment or docstring, a
+    module's docstring -- holds ``text``, the need's first line: the name says which
+    object the docstring belongs to, not where the text is.
 
-    - ``physical``: that module's file, which holds the docstring where the module
-      ``<file>`` names does not (a member inherited from another module); ``<file>``
-      where the module has no source file.
-    - ``semantic``: the rest of the name, read from that file's syntax by
-      sphinx-codelinks' Python rule (:func:`_python_semantic`); ``None`` for a module
-      docstring, for a name the syntax does not define, and where the module has no
-      source file. A KNOWN GAP: autodoc names an alias' docstring by the object's
-      name, so an alias of a function names the function, in the function's file.
+    - ``physical``: the file of the definition that holds the text, which is not the one
+      ``<file>`` names for a member inherited from another module; otherwise
+      ``<file>``, as autodoc gives it.
+    - ``semantic``: that definition's parts, by sphinx-codelinks' Python rule
+      (:func:`_python_semantic`); ``None`` for a module docstring, and wherever no
+      definition holding the text is found: an alias (autodoc names its docstring by
+      the object it aliases), an override that inherits its docstring, an object made
+      at run time, a function with no Python source, a ``__module__`` rewritten to
+      another module. In the last, ``<file>`` is the rewritten module's, which does not
+      hold the text either: a KNOWN GAP, as it was.
     - ``language``: ``"python"``, whatever the file.
     - no line: the one autodoc gives counts from the docstring, not the file.
+
+    :param text: The need's first line, stripped; ``None`` where the producer gives
+        none, and then no definition is trusted.
     """
     file, _, name = source.partition(_DOCSTRING_OF)
     file = file.removesuffix(":")
     semantic: tuple[NeedSourceSemantic, ...] | None = None
-    if (split := _split_module(name)) is not None:
+    if text and (split := _split_module(name)) is not None:
         module, qualname = split
         try:
             analyzer = ModuleAnalyzer.for_module(module)
         except PycodeError:
             analyzer = None
         if analyzer is not None and os.path.isfile(analyzer.srcname):
-            file = analyzer.srcname
-            semantic = _python_semantic(qualname, analyzer.code)
+            definition = _python_definitions(analyzer.code).get(qualname)
+            if definition is not None and text in _docstring_lines(
+                analyzer, qualname, definition
+            ):
+                file = analyzer.srcname
+                semantic = _semantic(definition.parts)
     return NeedSourceHop(
         kind="code",
         physical=physical_for(srcdir, file) if file else None,
@@ -685,17 +701,46 @@ def _docstring_hop(srcdir: str | os.PathLike[str], source: str) -> NeedSourceHop
 
 def _split_module(name: str) -> tuple[str, str] | None:
     """``name`` split at its longest prefix that is a module in ``sys.modules``: the
-    module and the rest (``""`` for the module itself); ``None`` if no prefix is one."""
+    module and the rest (``""`` for the module itself); ``None`` if no prefix is one.
+
+    A submodule counts only while its package's attribute of its name is that module: a
+    class ``Shape`` defined in ``pkg/__init__.py`` after ``pkg.Shape`` was imported
+    replaces it, and ``pkg.Shape.area`` is then the class' method.
+    """
     parts = name.split(".")
     for index in range(len(parts), 0, -1):
         module = ".".join(parts[:index])
-        if module in sys.modules:
+        if module in sys.modules and (
+            index == 1
+            or getattr(
+                sys.modules.get(".".join(parts[: index - 1])), parts[index - 1], None
+            )
+            is sys.modules[module]
+        ):
             return module, ".".join(parts[index:])
     return None
 
 
 _PythonParts = tuple[tuple[str, str], ...]
 """A qualified name's parts, outermost first, each ``(kind, name)``."""
+
+
+@dataclass(slots=True, frozen=True)
+class _PythonDefinition:
+    """What the syntax of a module says about one qualified name."""
+
+    parts: _PythonParts | None
+    """Its parts; ``None`` for the module itself, and where its definitions disagree."""
+    docstring: frozenset[str] | None
+    """The lines of its docstrings (of each of its definitions), stripped; ``None`` for
+    an attribute, whose ``#:`` comment the syntax tree does not keep
+    (:func:`_docstring_lines` reads it)."""
+
+
+def _semantic(parts: _PythonParts | None) -> tuple[NeedSourceSemantic, ...] | None:
+    if parts is None:
+        return None
+    return tuple(NeedSourceSemantic(kind=kind, name=name) for kind, name in parts)
 
 
 def _python_semantic(qualname: str, text: str) -> tuple[NeedSourceSemantic, ...] | None:
@@ -710,27 +755,39 @@ def _python_semantic(qualname: str, text: str) -> tuple[NeedSourceSemantic, ...]
     different kinds (a definition wins over an assignment), and for text that does not
     parse.
     """
-    parts = _python_definitions(text).get(qualname) if qualname else None
-    if parts is None:
-        return None
-    return tuple(NeedSourceSemantic(kind=kind, name=name) for kind, name in parts)
+    definition = _python_definitions(text).get(qualname)
+    return None if definition is None else _semantic(definition.parts)
+
+
+_BODIES: Final = ("body", "orelse", "finalbody", "handlers", "cases")
+"""The fields of a node that hold statements (or the handlers and match cases that
+hold them): no expression holds a ``def``, a ``class`` or an assignment statement."""
 
 
 @functools.lru_cache(maxsize=32)
-def _python_definitions(text: str) -> dict[str, _PythonParts | None]:
-    """Every qualified name the syntax of ``text`` defines, and its parts (``None``
-    where its definitions disagree). Cached by the text, so a module is parsed once
-    however many docstrings it holds."""
+def _python_definitions(text: str) -> dict[str, _PythonDefinition]:
+    """Every qualified name the syntax of the module ``text`` defines (``""`` the
+    module itself), by :func:`_python_semantic`'s rule. Cached by the text, so a module
+    is parsed once however many docstrings it holds; ``{}`` for text that does not
+    parse. The walk is iterative, over statements only, so nesting as deep as the
+    parser takes cannot exhaust the stack."""
     try:
-        tree = ast.parse(text)
-    except (SyntaxError, ValueError, RecursionError):
+        with warnings.catch_warnings():
+            # the import has reported them already
+            warnings.simplefilter("ignore", SyntaxWarning)
+            tree = ast.parse(text)
+    except (SyntaxError, ValueError, RecursionError, MemoryError):
         return {}
     definitions: dict[str, set[_PythonParts]] = {}
+    docstrings: dict[str, set[str]] = {"": _lines(ast.get_docstring(tree))}
     assignments: dict[str, set[_PythonParts]] = {}
-
-    def walk(node: ast.AST, parts: _PythonParts, prefix: str) -> None:
+    stack: list[tuple[ast.AST, _PythonParts, str]] = [(tree, (), "")]
+    while stack:
+        node, parts, prefix = stack.pop()
         in_class = bool(parts) and parts[-1][0] == "class"
-        for child in ast.iter_child_nodes(node):
+        for child in itertools.chain.from_iterable(
+            getattr(node, field, None) or () for field in _BODIES
+        ):
             if isinstance(child, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
                 if isinstance(child, ast.ClassDef):
                     kind = "class"
@@ -739,10 +796,15 @@ def _python_definitions(text: str) -> dict[str, _PythonParts | None]:
                 inner = (*parts, (kind, child.name))
                 qualname = prefix + child.name
                 definitions.setdefault(qualname, set()).add(inner)
-                walk(
-                    child,
-                    inner,
-                    f"{qualname}." if kind == "class" else f"{qualname}.<locals>.",
+                docstrings.setdefault(qualname, set()).update(
+                    _lines(ast.get_docstring(child))
+                )
+                stack.append(
+                    (
+                        child,
+                        inner,
+                        f"{qualname}." if kind == "class" else f"{qualname}.<locals>.",
+                    )
                 )
             elif isinstance(child, ast.Assign | ast.AnnAssign):
                 if not parts or in_class:
@@ -755,15 +817,39 @@ def _python_definitions(text: str) -> dict[str, _PythonParts | None]:
                         assignments.setdefault(prefix + name, set()).add(
                             (*parts, ("attribute", name))
                         )
-            else:
-                walk(child, parts, prefix)
+            elif isinstance(child, ast.stmt | ast.excepthandler | ast.match_case):
+                stack.append((child, parts, prefix))
+    table = {"": _PythonDefinition(None, frozenset(docstrings[""]))}
+    for qualname, found in definitions.items():
+        table[qualname] = _PythonDefinition(
+            next(iter(found)) if len(found) == 1 else None,
+            frozenset(docstrings[qualname]),
+        )
+    for qualname, found in assignments.items():
+        if qualname not in definitions:
+            table[qualname] = _PythonDefinition(
+                next(iter(found)) if len(found) == 1 else None, None
+            )
+    return table
 
-    walk(tree, (), "")
-    return {
-        qualname: next(iter(found)) if len(found) == 1 else None
-        for qualname in definitions.keys() | assignments.keys()
-        if (found := definitions.get(qualname) or assignments[qualname])
-    }
+
+def _lines(docstring: str | None) -> set[str]:
+    return {line.strip() for line in (docstring or "").splitlines()}
+
+
+def _docstring_lines(
+    analyzer: ModuleAnalyzer, qualname: str, definition: _PythonDefinition
+) -> frozenset[str]:
+    """The stripped lines of the docstring ``definition`` has in the analysed module:
+    an attribute's is its ``#:`` comment or the string after it, as autodoc reads it."""
+    if definition.docstring is not None:
+        return definition.docstring
+    namespace, _, attribute = qualname.rpartition(".")
+    try:
+        comment = analyzer.find_attr_docs().get((namespace, attribute), [])
+    except PycodeError:
+        return frozenset()
+    return frozenset(line.strip() for line in comment)
 
 
 def _assigned_names(targets: Iterable[ast.expr]) -> Iterator[str]:
@@ -788,6 +874,7 @@ def located_hops(
     tab_width: int,
     fragment_lines: bool,
     first: Iterable[NeedSourceHop] = (),
+    text: str | None = None,
 ) -> tuple[NeedSourceHop, ...]:
     """The hops of text written at ``source:start_line`` and placed on ``docname``.
 
@@ -803,6 +890,9 @@ def located_hops(
         hop of an included file takes no line there.
     :param first: The hops before the file, innermost first, if any: an imported
         ``needs.json``, the service that made the need.
+    :param text: The text's first line, stripped: in a docstring, the definition its
+        name resolves to is trusted only where that definition's docstring holds it
+        (:func:`_docstring_hop`).
     :return: ``[first...], file, page`` for text in an included file (the page hop then
         has no line: the ``include`` line is not recoverable), ``[first], page``
         otherwise. A docstring (autodoc) is a ``code`` hop of the Python file it is
@@ -826,7 +916,7 @@ def located_hops(
         # ``(None, None)``)
         hops.append(page())
     elif _DOCSTRING_OF in source:
-        hops.append(_docstring_hop(srcdir, source))
+        hops.append(_docstring_hop(srcdir, source, text))
         hops.append(page())
     elif os.path.abspath(source) == host:
         hops.append(
@@ -895,6 +985,14 @@ def directive_hops(
         tab_width=document_tab_width(directive.state),
         fragment_lines=rst,
         first=first,
+        text=next(
+            (
+                line.strip()
+                for line in directive.block_text.splitlines()
+                if line.strip()
+            ),
+            None,
+        ),
     )
 
 
