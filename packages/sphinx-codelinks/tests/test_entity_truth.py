@@ -121,9 +121,9 @@ def test_known_wrong_today_names_real_markers() -> None:
 _COMPONENT_KINDS = (frozenset(get_args(EntityKind)) - {"key", "item"}) | {"scope"}
 
 
-# The ``scope.language`` of each fixture ``lang``: the language the file is analysed
-# as, by its name, ``c`` for a ``.c`` file and ``cpp`` for a ``.h`` one, ``typescript``
-# for a ``.ts`` or ``.tsx`` file and ``javascript`` for a ``.js`` one.
+# The ``scope.language`` of each fixture ``lang``: the file's language, by its name,
+# ``c`` for a ``.c`` file and ``cpp`` for a ``.h`` one, ``typescript`` for a ``.ts``
+# or ``.tsx`` file and ``javascript`` for a ``.js`` one.
 _LANGUAGES = {
     "cpp": "cpp",
     "c": "c",

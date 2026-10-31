@@ -1550,19 +1550,22 @@ _JAVASCRIPT_SUFFIXES = frozenset({".js", ".jsx", ".mjs", ".cjs"})
 
 
 def scope_language(comment_type: CommentType, path: PurePath) -> str:
-    """The language a source file was analysed as, by its name (``scope.language``),
-    spelled as editors' language identifiers spell it.
+    """A source file's language, by its name (``scope.language``), spelled as editors'
+    language identifiers spell it.
 
-    ``c`` for a ``.c`` file and ``cpp`` for every other C and C++ file (a ``.h`` header
-    included: its name does not say whether it is C or C++, and it is analysed as C++;
-    and a ``.C`` file, which compilers read as C++); ``csharp``; ``javascript`` for a
-    ``.js``, ``.jsx``, ``.mjs`` or ``.cjs`` file, in any case, and ``typescript`` for
-    every other file of the ``ts`` comment type, ``.tsx`` included; otherwise the
-    comment type (``python``, ``rust``, ``go``, ``yaml``, ``jsonc``, ``bash``). The
-    comment type decides, not the suffix: a ``.py`` file analysed as C++ is ``cpp``. A
-    ``.c`` file is parsed with the C++ grammar and its components render as C++'s.
+    The comment type gives the language family and the grammar; the suffix then picks
+    ``c`` among C and C++ and ``javascript`` among the ``ts`` type's files, and the
+    comment type alone names a file of any other suffix (a ``.py`` file in a C++
+    project is ``cpp``). So: ``c`` for a ``.c`` file and ``cpp`` for every other C and
+    C++ file (a ``.h`` header included: its name does not say whether it is C or C++,
+    and it is analysed as C++; and a ``.C`` file, which compilers read as C++);
+    ``csharp``; ``javascript`` for a ``.js``, ``.jsx``, ``.mjs`` or ``.cjs`` file, in
+    any case, and ``typescript`` for every other file of the ``ts`` comment type,
+    ``.tsx`` included; otherwise the comment type (``python``, ``rust``, ``go``,
+    ``yaml``, ``jsonc``, ``bash``). A ``.c`` file is parsed with the C++ grammar too,
+    and its components render as C++'s.
 
-    :param comment_type: The comment type the file was analysed as.
+    :param comment_type: The project's comment type.
     :param path: The file's path; only its suffix is read, case included for C (discovery
         reads it in any case, so a ``.C`` file is traced, as C++).
     """

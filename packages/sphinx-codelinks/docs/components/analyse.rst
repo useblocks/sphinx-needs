@@ -77,7 +77,9 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   Python decorator, a decorator on a TypeScript class member and a C++ template header above it are not part of it; a
   C# attribute list, a C++ attribute and a decorator on a TypeScript class are (unless the class is exported: then the
   decorator is the export's);
-- ``language`` -- the language the file was analysed as, by its name, as editors' language identifiers spell it:
+- ``language`` -- the file's language, by its name, as editors' language identifiers spell it.
+  The project's ``comment_type`` gives the language family and the grammar,
+  and the suffix picks ``c`` among C and C++ and ``javascript`` among the ``ts`` type's files:
 
   .. list-table::
      :header-rows: 1
@@ -116,12 +118,12 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   a TSX file is ``typescript`` and a JSX file ``javascript``,
   the whole shell family is ``bash`` (the one value editors spell otherwise, as ``shellscript``),
   and a ``.json`` file with comments is ``jsonc``.
-  The language is the one the file was analysed as, and the project's ``comment_type`` decides that, not the suffix:
+  Beyond ``.c`` and the JavaScript suffixes, the comment type alone names the file:
   a file that type does not discover, such as a ``src-trace`` ``:file:`` target with another suffix,
   is parsed with that type's grammar and records its language --
   a ``.py`` file named in a project with ``comment_type = "cpp"`` is parsed as C++ and records ``cpp``,
   and under ``comment_type = "ts"`` every file but a JavaScript one records ``typescript``.
-  A ``.c`` file is read with the C++ grammar, and its names follow C++'s rule;
+  A ``.c`` file is read with the C++ grammar too, though it records ``c``, and its names follow C++'s rule;
 - ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
   ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,
   ``property``, ``event``, ``indexer`` or ``delegate``; in YAML and JSON ``key`` or ``item``;

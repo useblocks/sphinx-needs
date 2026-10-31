@@ -736,11 +736,13 @@ def test_render_semantic(
 def test_scope_language(
     comment_type: CommentType, filename: str, expected: str
 ) -> None:
-    """The language a file is analysed as, by its name, as editors spell it: ``c`` for
-    a ``.c`` file (lowercase: compilers read ``.C`` as C++), ``cpp`` for every other C
-    and C++ file, a header included; ``csharp``; ``javascript`` for a JavaScript suffix
-    in any case and ``typescript`` for the rest of that comment type; else the comment
-    type. The comment type decides: a ``.py`` file analysed as C++ is ``cpp``."""
+    """A file's language, by its name, as editors spell it. The comment type gives the
+    family and the suffix picks within it: ``c`` for a ``.c`` file (lowercase: compilers
+    read ``.C`` as C++), ``cpp`` for every other C and C++ file, a header included;
+    ``csharp``; ``javascript`` for a JavaScript suffix in any case and ``typescript``
+    for the rest of that comment type; else the comment type. The comment type alone
+    names any other suffix: a ``.py`` file is ``cpp`` in a C++ project and
+    ``typescript`` in a ``ts`` one."""
     assert scope_language(comment_type, Path(filename)) == expected
 
 
