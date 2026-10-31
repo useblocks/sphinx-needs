@@ -469,6 +469,11 @@ def test_a_facet_read_where_source_is_declared_says_why(
     assert len(reported) == 1, reported
     assert reported[0].startswith("WARNING: Filter \"source.path == 'x'\" not valid.")
     assert reported[0].endswith(f"{_clause(declared)}. [needs.filter]"), reported
+    # a failure that reads no facet says nothing of the declaration
+    assert set(_both_tiers(app, "nope == 1 or source == 'x'").values()) == {
+        "error: Filter \"nope == 1 or source == 'x'\" not valid. "
+        "Error: name 'nope' is not defined."
+    }
 
 
 @pytest.mark.parametrize("test_app", [_project("")], indirect=True)
