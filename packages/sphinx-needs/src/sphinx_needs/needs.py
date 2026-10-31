@@ -2146,6 +2146,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     # and as ``c.is_a`` reads them, in every filter of this build: set at its start, as
     # the ``var`` proxy is (``NeedsSphinxConfig.is_a_types``)
     _NEEDS_CONFIG.build.is_a_types = below
+    # a name of no need type in a filter's ``c.is_a`` is reported once per build
+    _NEEDS_CONFIG.build.is_a_reported.clear()
     #: one rule for the name of a link type's back links, wherever the field or link
     #: type of that name comes from (every field is registered by now, a service's
     #: too): what it refuses does not exist, and is not read from the configuration

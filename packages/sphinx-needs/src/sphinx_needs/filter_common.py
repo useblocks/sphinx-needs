@@ -6,6 +6,7 @@ like needtable, needlist and needflow.
 from __future__ import annotations
 
 import ast
+import difflib
 import json
 import math
 import re
@@ -19,11 +20,13 @@ from typing import Any, Literal, TypedDict, TypeVar, overload
 from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.statemachine import StringList
+from docutils.utils import get_source_line
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs import _read_watch
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs._wording import title_hint
+from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, NeedsMutable
 from sphinx_needs.debug import measure_time, measure_time_func
 from sphinx_needs.exceptions import NeedsInvalidFilter
@@ -36,6 +39,7 @@ from sphinx_needs.ubquery import (
     CompiledFilter,
     compile_portable,
     is_a,
+    is_a_literals,
 )
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
@@ -857,6 +861,8 @@ def filter_needs_and_parts(
             )
         finally:
             watch.active = False
+    # before either tier, and before the loop: reported even where no need is given
+    _report_unknown_types(filter_string, config, location, append_warning)
 
     # === Fast path: try compiled predicate to avoid eval() entirely ===
     compiled = compile_portable(filter_string)
@@ -900,7 +906,8 @@ def filter_needs_and_parts(
     error_reported = False
     for filter_need in needs:
         try:
-            if filter_single_need(
+            # the string is checked above, at this call's location
+            if _filter_single_need(
                 filter_need,
                 config,
                 filter_string,
@@ -923,6 +930,50 @@ def filter_needs_and_parts(
                 error_reported = True
 
     return found_needs_slow
+
+
+def _report_unknown_types(
+    filter_string: str,
+    config: NeedsSphinxConfig,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+) -> None:
+    """Report each name a ``c.is_a("<type>")`` of the string gives as a literal that is
+    no need type of the build: such a check is false on every need.
+
+    Once per build for the string and where it is written, once per string where the
+    caller gives no location; nothing before a build has set the types
+    (``config.is_a_types``), when no name is known to be wrong. A name that is a type's
+    title, or close to a type's name, is hinted at.
+    """
+    if not (names := is_a_literals(filter_string)):
+        return
+    if (types := config.is_a_types) is None:
+        return
+    if not (unknown := [name for name in names if name not in types]):
+        return
+    where = get_source_line(location) if isinstance(location, nodes.Node) else location
+    reported = _NEEDS_CONFIG.build.is_a_reported
+    if (filter_string, where) in reported:
+        return
+    reported.add((filter_string, where))
+    titles = {
+        need_type["directive"]: str(need_type.get("title", ""))
+        for need_type in config.types
+        if isinstance(need_type, dict) and isinstance(need_type.get("directive"), str)
+    }
+    for name in unknown:
+        hint = title_hint(name, titles)
+        if not hint and (close := difflib.get_close_matches(name, types, 1, 0.8)):
+            hint = f" (did you mean {close[0]!r}?)"
+        log_warning(
+            log,
+            f"Filter {filter_string!r} names {name!r}, which is not a need type{hint}; "
+            f"c.is_a({name!r}) selects no need"
+            + (f" {append_warning}" if append_warning else ""),
+            "filter_type",
+            location=location,
+        )
 
 
 def _fast_path_context(
@@ -1035,7 +1086,6 @@ def filter_import_item(
     return result
 
 
-@measure_time("filtering")
 def filter_single_need(
     need: NeedItem | NeedPartItem,
     config: NeedsSphinxConfig,
@@ -1047,6 +1097,9 @@ def filter_single_need(
     origin_docname: str | None = None,
 ) -> bool:
     """Checks if a single need/need_part passes a filter_string.
+
+    A ``c.is_a`` literal naming no need type is reported once per build for the
+    string, which has no location here.
 
     :param need: the data for a single need
     :param config: NeedsSphinxConfig object
@@ -1061,6 +1114,33 @@ def filter_single_need(
     """
     if _is_constant_filter(filter_string):
         raise NeedsInvalidFilter(_constant_filter_message(filter_string))
+    # before either tier
+    _report_unknown_types(filter_string, config)
+    return _filter_single_need(
+        need,
+        config,
+        filter_string,
+        needs,
+        current_need,
+        filter_compiled,
+        origin_docname=origin_docname,
+    )
+
+
+@measure_time("filtering", name="filter_single_need")
+def _filter_single_need(
+    need: NeedItem | NeedPartItem,
+    config: NeedsSphinxConfig,
+    filter_string: str,
+    needs: Iterable[NeedItem | NeedPartItem] | None = None,
+    current_need: NeedItem | NeedPartItem | None = None,
+    filter_compiled: CodeType | None = None,
+    *,
+    origin_docname: str | None = None,
+) -> bool:
+    """:func:`filter_single_need` without the checks of the string, which a caller
+    evaluating it need by need has made once (a constant is refused before this).
+    """
     # the check of the order of the pass sees what the filter reads, while it watches
     # the filters of a call
     watch = _read_watch.current

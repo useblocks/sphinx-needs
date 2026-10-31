@@ -25,6 +25,7 @@ from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.derive import filter_problem
 from sphinx_needs.filter_common import filter_needs_and_parts, filter_single_need
 from sphinx_needs.functions.order import filter_names
+from sphinx_needs.ubquery import is_a_literals
 from sphinx_needs_testkit import build_warnings
 
 CONF = """\
@@ -185,7 +186,6 @@ def _unknown(name: str, filter_string: str | None = None, hint: str = "") -> str
     )
 
 
-@pytest.mark.xfail(strict=True, reason="pin: a type name no type has is not reported")
 @pytest.mark.parametrize("test_app", [_project(EXTENDS_INDEX)], indirect=True)
 def test_a_needextend_filter_reads_it(test_app: Any) -> None:
     """One word is an id unless it is quoted; the filter is evaluated once per type, and
@@ -382,7 +382,6 @@ derive = { kind = "count", over = "links", where = "c.is_a('rq')" }
 )
 
 
-@pytest.mark.xfail(strict=True, reason="pin: a type name no type has is not reported")
 @pytest.mark.parametrize(
     "test_app",
     [
@@ -436,9 +435,6 @@ def _table_index(filter_string: str) -> str:
             filter_string,
             reported,
             id=filter_string,
-            marks=[]
-            if reported is None
-            else [pytest.mark.xfail(strict=True, reason="pin: not reported")],
         )
         for filter_string, reported in TABLE_FILTERS
     ],
@@ -494,7 +490,6 @@ def _two_documents_warnings() -> list[str]:
     ]
 
 
-@pytest.mark.xfail(strict=True, reason="pin: a type name no type has is not reported")
 @pytest.mark.parametrize(
     "test_app",
     [_two_documents(0), _two_documents(2)],
@@ -510,7 +505,6 @@ def test_one_filter_in_two_places_is_reported_at_each(test_app: Any) -> None:
     assert sorted(build_warnings(app)) == sorted(_two_documents_warnings())
 
 
-@pytest.mark.xfail(strict=True, reason="pin: a type name no type has is not reported")
 @pytest.mark.parametrize("test_app", [_two_documents(0)], indirect=True)
 def test_each_build_reports_again(test_app: Any) -> None:
     """Once per build: a second build of the same application reports again."""
@@ -521,7 +515,6 @@ def test_each_build_reports_again(test_app: Any) -> None:
     assert len(reported) == 4
 
 
-@pytest.mark.xfail(strict=True, reason="pin: a type name no type has is not reported")
 @pytest.mark.parametrize(
     "test_app",
     [_project(conf=CONF + "needs_warnings = {'odd': \"c.is_a('rq')\"}\n")],
@@ -538,6 +531,30 @@ def test_a_warnings_filter_says_which_it_is(test_app: Any) -> None:
             " [needs.filter_type]", " (from warning filter 'odd') [needs.filter_type]"
         ),
     ]
+
+
+@pytest.mark.parametrize(
+    ("filter_string", "names"),
+    [
+        ("c.is_a('b') and c.is_a('a') or c.is_a('b')", ("b", "a")),
+        ("c.is_a('a') == True", ("a",)),
+        ("c.is_a(r'a') or c.is_a('a',)", ("a",)),
+        # one literal, as Python reads it
+        ("c.is_a('re' 'q')", ("req",)),
+        ("c.is_a(type)", ()),
+        ("c.is_a()", ()),
+        ("c.is_a('a', 'b')", ()),
+        ("c.is_a(name='a')", ()),
+        ("x.is_a('a')", ()),
+        ("c.is_a('a'", ()),
+    ],
+)
+def test_the_names_a_filter_gives_as_a_literal(
+    filter_string: str, names: tuple[str, ...]
+) -> None:
+    """A call of ``c.is_a`` with one string literal and nothing else gives a name of the
+    string's own, in the order written, each once; any other shape gives none."""
+    assert is_a_literals(filter_string) == names
 
 
 def test_nothing_is_reported_before_a_build_gives_the_types() -> None:

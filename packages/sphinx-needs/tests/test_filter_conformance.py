@@ -109,6 +109,10 @@ _UNKNOWN_INHERITS = re.compile(
 
 #: The one code a reported filter carries, compared bare.
 _FILTER_CODE = "filter"
+
+#: The finding of a `c.is_a` literal naming no need type, which the header leaves
+#: uncompared: the filter selects nothing, which `expected` compares.
+_UNKNOWN_TYPE_CODE = "filter_type"
 _CODE = re.compile(r"\[needs\.([a-z_]+)\]$")
 
 
@@ -240,6 +244,7 @@ def _check(app: Any, entry: dict[str, Any]) -> list[str]:
         problem(f"selects {selected}, expected {expected}")
     reported = build_warnings(stream.getvalue()[start:], srcdir=app.srcdir)
     codes = [m[1] if (m := _CODE.search(w)) else w for w in reported]
+    codes = [code for code in codes if code != _UNKNOWN_TYPE_CODE]
     want = [_FILTER_CODE] if entry.get("error") else []
     if codes != want:
         problem(f"reports {reported}, expected codes {want}")
