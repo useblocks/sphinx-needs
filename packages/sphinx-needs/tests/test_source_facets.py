@@ -43,11 +43,6 @@ from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs.ubquery import CompiledFilter
 from sphinx_needs_testkit import build_warnings
 
-#: pinned before the source facets land: red until the commit that serves each
-_UNTIL_MESSAGES = pytest.mark.xfail(
-    strict=True, reason="the unavailability messages land in their own commit"
-)
-
 
 def _page(path: str, line: int | None = None, document: str = "index") -> NeedSourceHop:
     return NeedSourceHop(
@@ -513,7 +508,6 @@ def test_an_unknown_facet_is_reported_with_the_closest_facet(test_app: Any) -> N
 UNAVAILABLE = "name 'source' is not defined; the source.* facets are not available in"
 
 
-@_UNTIL_MESSAGES
 @pytest.mark.parametrize(
     ("test_app", "expected"),
     [

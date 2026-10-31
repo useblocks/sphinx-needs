@@ -213,3 +213,18 @@ class SourceFacets:
 
     def __repr__(self) -> str:
         return f"<source of {self._need['id']!r}>"
+
+
+def source_undefined(error: BaseException) -> bool:
+    """Whether *error* is ``source`` undefined, where an expression is evaluated with no
+    facets."""
+    return isinstance(error, NameError) and getattr(error, "name", None) == "source"
+
+
+def explained(error: BaseException, where: str) -> str:
+    """The text of an error of an expression evaluated where there are no facets
+    (*where*: a field predicate, a needimport filter, a variant condition), with why,
+    for ``source`` undefined there."""
+    if source_undefined(error):
+        return f"{error}; the source.* facets are not available in {where}"
+    return str(error)

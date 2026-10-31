@@ -25,7 +25,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs import _read_watch
-from sphinx_needs._source_facets import SourceFacets
+from sphinx_needs._source_facets import SourceFacets, explained
 from sphinx_needs._wording import title_hint
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, NeedsMutable
@@ -1075,7 +1075,11 @@ def apply_default_predicate(
         # a predicate is read for its truth, as a filter is
         result = bool(eval(predicate, predicate_context))
     except Exception as e:
-        raise NeedsInvalidFilter(f"Predicate {predicate!r} not valid. Error: {e}.")
+        # evaluated as the need is created, before it exists: no facets there
+        raise NeedsInvalidFilter(
+            f"Predicate {predicate!r} not valid. "
+            f"Error: {explained(e, 'a field predicate')}."
+        )
     return result
 
 
@@ -1100,7 +1104,11 @@ def filter_import_item(
         # a filter is read for its truth, whatever its value
         result = bool(eval(filter_string, filter_context))
     except Exception as e:
-        raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
+        # it reads the imported record, which has no hops of this build
+        raise NeedsInvalidFilter(
+            f"Filter {filter_string!r} not valid. "
+            f"Error: {explained(e, 'a needimport filter, which reads the imported record')}."
+        )
     return result
 
 

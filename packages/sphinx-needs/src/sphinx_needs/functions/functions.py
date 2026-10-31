@@ -24,6 +24,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.util.logging import suppress_logging
 
 from sphinx_needs import _read_watch
+from sphinx_needs._source_facets import explained, source_undefined
 from sphinx_needs._wording import joined
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
@@ -1753,7 +1754,15 @@ def _get_variant(
             for name in _condition_names(expr):
                 if name not in not_fields:
                     reads.note_read(reader, name)
-        if bool(eval(expr, context.copy())):
+        try:
+            holds = bool(eval(expr, context.copy()))
+        except NameError as error:
+            if not source_undefined(error):
+                raise
+            raise NameError(
+                explained(error, "a variant condition"), name=error.name
+            ) from None
+        if holds:
             return value
     return variant.final_value
 
