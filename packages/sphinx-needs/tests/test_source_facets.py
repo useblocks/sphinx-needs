@@ -908,9 +908,6 @@ def test_where_source_is_declared_each_place_says_why_a_facet_fails(
     assert build_warnings(app) == [expected]
 
 
-#: pinned before fix round 2 lands: red until the commit that serves it
-_UNTIL_FIX_ROUND_2 = pytest.mark.xfail(strict=True, reason="fix round 2")
-
 #: a need on the page, and one linking it under a condition written after a space
 INDEX_LEADING = """\
 Index
@@ -926,7 +923,6 @@ Index
 """
 
 
-@_UNTIL_FIX_ROUND_2
 @pytest.mark.parametrize(
     "test_app", [_project("", INDEX_LEADING.format(constraints=""))], indirect=True
 )
@@ -945,7 +941,6 @@ def test_a_link_condition_naming_source_after_a_space_reads_the_facets(
     ]
 
 
-@_UNTIL_FIX_ROUND_2
 @pytest.mark.parametrize(
     "test_app",
     [
@@ -969,7 +964,6 @@ def test_a_constraint_naming_source_after_a_space_reads_the_facets(
     assert needs["REQ_001"]["constraints_passed"] is True
 
 
-@_UNTIL_FIX_ROUND_2
 @pytest.mark.parametrize("test_app", [_project("")], indirect=True)
 def test_the_tiers_agree_on_a_filter_naming_source_after_a_tab(test_app: Any) -> None:
     """The parsed tier refuses a filter after a tab, and ``eval`` strips the tab: both

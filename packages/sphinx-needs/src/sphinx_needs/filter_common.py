@@ -1312,7 +1312,8 @@ def _string_names_source(filter_string: str) -> bool:
     need, a quarter of ``eval``'s cost for a filter that never names ``source``
     (measured)."""
     try:
-        code = compile(filter_string, "<string>", "eval")
+        # ``eval`` strips a string's leading spaces and tabs; ``compile`` does not
+        code = compile(filter_string.lstrip(" \t"), "<string>", "eval")
     except (SyntaxError, ValueError):
         return False
     return _code_names_source(code)
