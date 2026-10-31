@@ -689,7 +689,6 @@ ON_PAGE_PROJECT = {
 }
 
 
-@pytest.mark.xfail(strict=True, reason="G6: an on_page need records no page path")
 @pytest.mark.parametrize("test_app", [ON_PAGE_PROJECT], indirect=True)
 def test_create_need_records_an_on_page_need_s_page_path(test_app: SphinxTestApp):
     """``NeedItemSource.on_page`` builds a page hop with no path; ``create_need`` (and

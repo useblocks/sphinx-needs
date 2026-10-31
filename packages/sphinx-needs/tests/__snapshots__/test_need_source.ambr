@@ -9,7 +9,7 @@
       "page [imp] srcdir:imp.rst:7-7 (.rst) :: section 'Imported' > section 'Imp sub'",
     ]),
     'REQ_APIX': list([
-      "page [p2] :: section 'Page 2' > section 'Sec'",
+      "page [p2] srcdir:p2.rst (.rst) :: section 'Page 2' > section 'Sec'",
     ]),
     'REQ_AX': list([
       'file srcdir:frag/a.rst:4-7 (.rst)',

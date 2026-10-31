@@ -569,11 +569,13 @@ def test_the_hops_of_every_need(
         "python",
         (NeedSourceSemantic(kind="function", name="documented"),),
     )
-    # through the API: a page hop with no path, walked
+    # through the API: the page's file, recorded by create_need with no line, walked
     assert hops["REQ_APIX"] == (
         NeedSourceHop(
             kind="page",
             document="p2",
+            physical=NeedSourcePhysical(root="srcdir", path="p2.rst"),
+            language=".rst",
             semantic=(
                 NeedSourceSemantic(kind="section", name="Page 2"),
                 NeedSourceSemantic(kind="section", name="Sec"),
@@ -701,7 +703,6 @@ def test_a_nested_include_records_each_file_it_passes_through(
     assert (needs["NEST_C"]["docname"], needs["NEST_C"]["lineno"]) == ("index", 5)
 
 
-@pytest.mark.xfail(strict=True, reason="G6: an on_page need records no page path")
 def test_a_need_created_on_its_page_records_the_page_s_path(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ):

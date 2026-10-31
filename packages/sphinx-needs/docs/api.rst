@@ -269,7 +269,8 @@ Data
    the included file's hop is followed by one ``file`` hop per file it was included through, innermost first, each
    with its path and suffix and no line, as docutils' ``include_log`` names them; myst-parser's ``{include}`` logs no
    chain, so in MyST only the innermost file is a hop (a reStructuredText include in ``eval-rst`` is logged). A need created
-   through ``add_need`` or ``NeedItemSource.on_page`` has its page with no path, and no hops without a document
+   through ``add_need`` or ``NeedItemSource.on_page`` has its page alone, whose file ``create_need`` records with no line
+   (the line the caller gives is not checked in the file), and no hops without a document
    (``NeedItemSource.from_directive`` records the directive's file and lines, as a need directive does). The last hop with a ``document`` is
    the page the need is placed on (an external need has none), and carries its sections and the domain objects it
    is written in, outermost first. A hop has a line

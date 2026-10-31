@@ -221,6 +221,35 @@ def _suffix(path: str | os.PathLike[str]) -> str | None:
     return os.path.splitext(path)[1] or None
 
 
+def with_page_paths(
+    hops: tuple[NeedSourceHop, ...],
+    srcdir: str | os.PathLike[str],
+    doc2path: Callable[[str], str | os.PathLike[str]],
+) -> tuple[NeedSourceHop, ...]:
+    """``hops``, each ``page`` hop that has a ``document`` and no physical location given
+    its page's file (:func:`physical_for` of ``doc2path(document)``), with no line, and,
+    where it has none, the page's suffix as its ``language``.
+
+    No line: the line a caller gives such a need (``NeedItemSource.on_page``) is a line
+    as the caller counts it, a parser line most often, never one checked in the file. A
+    hop whose document has no file is left as it is, and ``hops`` itself is returned
+    where no hop changes.
+    """
+    completed = list(hops)
+    for index, hop in enumerate(hops):
+        if hop.kind == "page" and hop.document is not None and hop.physical is None:
+            path = doc2path(hop.document)
+            if os.path.isfile(path):
+                completed[index] = dataclasses.replace(
+                    hop,
+                    physical=physical_for(srcdir, path),
+                    language=hop.language or _suffix(path),
+                )
+    if all(new is old for new, old in zip(completed, hops, strict=True)):
+        return hops
+    return tuple(completed)
+
+
 LineCheck = Callable[[Sequence[str], int, int | None], bool]
 """Whether a file's lines (``lines[0]`` is line 1) hold the text at ``start..end``."""
 
