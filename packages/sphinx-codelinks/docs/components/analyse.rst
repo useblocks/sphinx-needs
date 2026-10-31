@@ -50,6 +50,197 @@ Limitations
 - **Language Support**: C/C++ (``//``, ``/* */``), C# (``//``, ``/* */``, ``///``), TypeScript/JavaScript (``//``, ``/* */``, and the legacy one-line ``<!--``), Python (``#``), YAML (``#``), Rust (``//``, ``/* */``, ``///``), Go (``//``, ``/* */``), JSONC (``//``, ``/* */``) and Bash (``#``) comment styles are supported
 - **Single Comment Style**: Each analysis run processes only one comment style at a time
 
+.. _attachment:
+
+Which code a marker is attached to
+----------------------------------
+
+Every marker -- a one-line need, a multi-line need (by the comment holding its open line) or an ``@need-ids:``
+reference -- is attached to at most one **code entity**: a function, a method, a class, a namespace, a module.
+The analysis records it in two forms: ``tagged_scope``, the entity's full text, and ``scope``, the entity named:
+
+.. code-block:: json
+
+   "scope": {
+       "kind": "function_definition", "start": 33, "end": 37, "language": "cpp",
+       "entity_kind": "method", "qualified_name": "ns::Widget::draw",
+       "semantic": [
+           {"kind": "namespace", "name": "ns"},
+           {"kind": "class", "name": "Widget"},
+           {"kind": "method", "name": "draw"}
+       ],
+       "mechanism": "leading"
+   }
+
+- ``kind`` -- the syntax node of the entity (tree-sitter's name for it);
+- ``start`` and ``end`` -- its first and last line, 1-based, as the grammar spans the definition: a Rust attribute, a
+  Python decorator, a decorator on a TypeScript class member and a C++ template header above it are not part of it; a
+  C# attribute list, a C++ attribute and a decorator on a TypeScript class are (unless the class is exported: then the
+  decorator is the export's);
+- ``language`` -- the file's language, by its name, as editors' language identifiers spell it.
+  The project's ``comment_type`` gives the language family and the grammar,
+  and the suffix picks ``c`` among C and C++ and ``javascript`` among the ``ts`` type's files:
+
+  .. list-table::
+     :header-rows: 1
+     :widths: 20 80
+
+     * - ``language``
+       - Files
+     * - ``c``
+       - A ``.c`` file. The suffix is compared as written: a ``.C`` file, which compilers read as C++, is ``cpp``.
+     * - ``cpp``
+       - Every other C and C++ file: ``.cpp``, ``.cc``, ``.cxx``, ``.hpp``, ``.hh``, ``.hxx``, ``.h``, ``.ci``,
+         ``.ihl`` and ``.C``.
+         A ``.h`` header is ``cpp``: its name does not say whether it is C or C++, and it is analysed as C++.
+     * - ``csharp``
+       - ``.cs``
+     * - ``typescript``
+       - ``.ts``, ``.mts``, ``.cts`` and ``.tsx``, and every other file of the ``ts`` comment type that is not
+         JavaScript.
+     * - ``javascript``
+       - ``.js``, ``.mjs``, ``.cjs`` and ``.jsx``, the suffix compared in any case.
+     * - ``python``
+       - ``.py``
+     * - ``rust``
+       - ``.rs``
+     * - ``go``
+       - ``.go``
+     * - ``yaml``
+       - ``.yaml`` and ``.yml``
+     * - ``jsonc``
+       - ``.jsonc``, and a ``.json`` file that opens with a comment: JSON with comments.
+     * - ``bash``
+       - Every shell file the bash grammar reads: ``.sh``, ``.bash``, ``.zsh`` and ``.ksh``.
+
+  One language is one name, so the value groups files that editors may tell apart:
+  a ``.h`` header is ``cpp`` whether C or C++ includes it,
+  a TSX file is ``typescript`` and a JSX file ``javascript``,
+  the whole shell family is ``bash`` (the one value editors spell otherwise, as ``shellscript``),
+  and a ``.json`` file with comments is ``jsonc``.
+  Beyond ``.c`` and the JavaScript suffixes, the comment type alone names the file:
+  a file that type does not discover, such as a ``src-trace`` ``:file:`` target with another suffix,
+  is parsed with that type's grammar and records its language --
+  a ``.py`` file named in a project with ``comment_type = "cpp"`` is parsed as C++ and records ``cpp``,
+  and under ``comment_type = "ts"`` every file but a JavaScript one records ``typescript``.
+  A ``.c`` file is read with the C++ grammar too, though it records ``c``, and its names follow C++'s rule;
+- ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
+  ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,
+  ``property``, ``event``, ``indexer`` or ``delegate``; in YAML and JSON ``key`` or ``item``;
+- ``qualified_name`` -- the entity's name within its file, qualified by the containers the file shows:
+  ``ns::Widget::draw`` in C++, ``Shape.area`` and ``outer.<locals>.inner`` in Python (its ``__qualname__``),
+  ``Widget::new`` and ``<Widget as Shape>::area`` (and ``<dyn Shape>::area`` for a type that is no path) in Rust,
+  ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in TypeScript.
+  No module, crate or package prefix: the file's path decides that.
+  ``null`` in YAML and JSON, and for an entity without a name;
+- ``semantic`` -- that name in its parts, outermost first and the entity itself last, each a ``kind`` and a ``name``
+  (``null`` exactly when ``qualified_name`` is). The kinds are those of ``entity_kind`` but ``key`` and ``item``
+  (a YAML or JSON entry has no name, so no parts), and one more, for what the syntax alone cannot classify:
+  ``scope``, a C++ qualifier such as the ``ns`` of ``void ns::W::f() {}`` (the qualifier right before a method,
+  a constructor, a destructor or a conversion operator is its ``class``; so is the ``ns`` of a free function defined
+  with a namespace qualifier, ``void ns::f() {}``, which reads as a method).
+  The type a Go method's receiver names is a part of kind ``type``.
+  A Rust ``impl`` is a part of kind ``impl`` named after its self type as written
+  (``Widget``, ``dyn Shape``), with a ``trait`` key for a trait impl (the trait as ``qualified_name`` spells it); the
+  in-file modules an impl is written in are parts of their own before it (``mod m { impl G {} }`` is ``module m``,
+  ``impl G``), and a path from the crate root keeps its ``crate::`` where that decides what it names
+  (``crate::Q`` in ``mod k``); nested Python functions are consecutive ``function`` parts (``<locals>`` is no part); a
+  name that is an expression, the left-hand side of a JavaScript assignment (``module.exports.f``), is one part; and a
+  C++ name keeps the arguments of an explicit specialisation (``Box<bool>``) and drops a class template's parameters
+  (``Box::get``), as ``qualified_name`` does. Joined by the rule of the ``language`` -- ``::`` for C, C++ and Rust
+  (with ``<Widget as Shape>`` from a ``trait``, ``<dyn Shape>`` for a self type that is no path, and the modules before
+  an impl folded into a self type written bare, ``m::G``, but not into a path, a primitive or a type that is no path),
+  ``.`` for Python (with ``<locals>`` after a function or a method another part follows) and every other language --
+  the parts are ``qualified_name``, exactly.
+
+  **Kinds describe, names identify.** A kind is a best-effort classification, for filtering and rendering, and one
+  entity's kinds can depend on how it is written: a method defined in its class is ``namespace ns``, ``class W``,
+  ``method f``, and the same method defined out of line is ``scope ns``, ``class W``, ``method f``. Whether two
+  ``semantic`` lists name the same entity, or one is inside the other, is decided by their *name chains*, the
+  identity-bearing part of their rendering: the names, a ``trait`` (``<Widget as Shape>::area`` and
+  ``<Widget as Other>::area`` differ by their ``trait`` alone) and Python's ``<locals>`` boundaries (``A.f.g``, the
+  method of a nested class, is not ``A.f.<locals>.g``, a function in a method) -- never by their kinds. So a Rust
+  impl's methods are inside the module the impl is written in, as its free functions are. A name chain cannot tell
+  apart what the qualified name cannot: overloads, a C ``struct stat`` and a function ``stat()``, a C++ partial
+  specialisation and its primary template (``Box``), C# classes that differ in their number of type parameters;
+- ``mechanism`` -- how the marker was attached: ``doc_comment`` (a documentation comment -- ``///``, ``//!``, ``/**``,
+  ``/*!``, a C# ``///``, a JSDoc ``/**`` -- or a Python docstring),
+  ``leading`` (a comment on the lines before the entity, or directly inside or right after an attribute, a decorator
+  or a template header in its head), ``trailing`` (after code on the entity's own line) or ``enclosing`` (inside its
+  body).
+
+``scope`` is ``null`` exactly when ``tagged_scope`` is: the marker is attached to no entity (the file), and always
+under the libclang engine.
+The record then carries no ``language`` either, since ``language`` is recorded only inside ``scope``.
+The names are best effort, from the syntax alone: overloads share a name,
+a free function defined with a namespace qualifier (``void ns::f() {}``) reads as a method,
+and a function a macro defines (``TEST(LoginTest, RateLimited) {...}``) is bound but not named,
+since the compiler's function is the macro's expansion
+(a macro whose arguments are not names, such as Catch2's ``TEST_CASE("…")``, may not be bound at all).
+A class declared with an export macro (``class EXPORT_API Widget``) is misread by the grammar:
+it is bound without a name, or not at all.
+In Rust, an ``impl`` inside a function is named without the function's path,
+and an ``impl W`` for a ``W`` brought in with ``use`` is named in the module the ``impl`` is written in.
+The needs ``src-trace`` creates carry no field for the entity: it is recorded here, in the analysis output,
+and will be exposed on the need together with the need's source record.
+
+The rules
+~~~~~~~~~
+
+In this order:
+
+1. **YAML and JSON**: the key/value pair or item on the comment's line, else the next one, else the enclosing one.
+2. **A Python docstring** documents the function or class it is in.
+3. **A Rust inner doc comment** (``//!``, ``/*!``) documents what it is inside: the module, or the file.
+4. **A trailing marker** -- code before it on its line -- belongs to the entity on that line (a Doxygen ``///<`` after
+   a function declaration is the classic case; after a data member or an enumerator it belongs to the enclosing class,
+   struct or enum), else to the entity it is inside: ``trailing`` when that entity starts on the marker's line
+   (``def f():  # @...``), ``enclosing`` otherwise. An attribute, a decorator or a template header before the marker
+   is not code: the marker leads the item they precede (an inner attribute, ``#![...]``, precedes none: it applies to
+   what it is inside).
+5. **The comments before a file's first item**, when a blank line separates the last of them from it, belong to the
+   file -- documentation comments (``///``, ``/** */``, ``/*!``) excepted: they document the next item, blank lines
+   or not, as rustc and Doxygen read them, unless the comment holding the marker says it documents the file
+   (``@file``, ``\file``, ``@fileoverview``, ``@packageDocumentation`` or ``@module``, as a whole word at the start
+   of the comment or after whitespace, ``*``, ``/`` or ``!``).
+   That exception holds only for the comments before the first item: a ``@file`` block after ``#pragma once`` or
+   inside an include guard documents the next item like any documentation comment, and so does a ``///`` line whose
+   ``\file`` is on another line of the run.
+6. **A leading marker** belongs to the entity right after it, when only *trivia* stands between: other comments,
+   blank lines, attributes (Rust ``#[...]``, C++ ``[[...]]``) and decorators (TypeScript). The entity is looked for
+   through what wraps it: a Python decorator, a C++ ``template <...>`` header or ``extern "C"``, a TypeScript
+   ``export`` or ``declare``. In Python, a comment between ``def f():`` and the first line of its body belongs to that
+   first line's entity, if it is one.
+7. **Otherwise**, the entity the marker is inside, if any: ``leading`` when the marker is directly inside, or right
+   after, an attribute, a decorator or a template header the entity owns (its head; a comment nested deeper, in such a
+   head's argument list, is not), ``trailing`` when it trails code on the entity's first line, ``enclosing``
+   otherwise.
+
+Anything else between a leading marker and an entity -- a statement, a variable, a macro call,
+a preprocessor directive (``#include``, ``#define``, ``#pragma``, ``#if``) -- breaks the attachment:
+the marker belongs to the entity it is inside, or to the file. A marker is never attached across code.
+
+What counts as an entity
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+- **C and C++**: functions, prototypes, in-class method declarations and conversion operators (not a function
+  pointer, nor a local that merely parses like a prototype), classes, structs, unions and enums with a body (not a
+  forward declaration), namespaces. A class member inside ``#if`` / ``#else`` is still a member (a constructor, a
+  destructor, a method).
+- **Python**: functions and classes.
+- **Rust**: functions, required trait methods, structs, enums, unions, traits, impl blocks, modules, type aliases,
+  ``macro_rules!`` definitions.
+- **C#**: methods, constructors, destructors, properties, indexers, operators, conversion operators, events, delegates,
+  local functions, classes, structs, interfaces, records, enums, namespaces (block or file-scoped).
+- **Go**: functions, methods, type declarations, interface methods.
+- **TypeScript and JavaScript**: functions, classes, interfaces, enums, type aliases, namespaces, methods and method
+  signatures; a ``const``, ``let`` or ``var``, a class field, an assignment or a default export only when it holds a
+  function or a class (one written with ``declare`` always does).
+- **Bash**: functions.
+
+Data members, variables, lambdas bound to a name and macro invocations are not entities, nor, yet, a C
+``typedef struct {...} T;``: a marker above one is attached to the entity it is inside, or to the file.
+
 Extraction Examples
 -------------------
 
@@ -90,6 +281,11 @@ Below is an example of a C++ source file containing need ID references and the c
                     "end": { "row": 2, "column": 52 }
                 },
                 "tagged_scope": "void dummy_func1(){\n     //...\n }",
+                "scope": {
+                    "kind": "function_definition", "start": 4, "end": 6, "language": "cpp",
+                    "entity_kind": "function", "qualified_name": "dummy_func1",
+                    "semantic": [{ "kind": "function", "name": "dummy_func1" }], "mechanism": "leading"
+                },
                 "need_ids": ["need_001", "need_002", "need_003", "need_004"],
                 "marker": "@need-ids:",
                 "type": "need-id-refs"
@@ -102,6 +298,11 @@ Below is an example of a C++ source file containing need ID references and the c
                     "end": { "row": 7, "column": 22 }
                 },
                 "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
+                "scope": {
+                    "kind": "function_definition", "start": 9, "end": 14, "language": "cpp",
+                    "entity_kind": "function", "qualified_name": "main",
+                    "semantic": [{ "kind": "function", "name": "main" }], "mechanism": "leading"
+                },
                 "need_ids": ["need_003"],
                 "marker": "@need-ids:",
                 "type": "need-id-refs"
@@ -113,7 +314,9 @@ Below is an example of a C++ source file containing need ID references and the c
 - ``filepath`` - Path to the source file containing the reference
 - ``remote_url`` - URL to the source code in the remote repository
 - ``source_map`` - Location information (row/column) of the marker
-- ``tagged_scope`` - The code scope associated with the marker
+- ``tagged_scope`` - The full text of the code entity the marker is attached to, or ``null``
+- ``scope`` - That entity, named: its kind, lines, language, name and the name's parts, and how the
+  marker was attached (see :ref:`attachment`), or ``null``
 - ``need_ids`` - List of referenced need IDs
 - ``marker`` - The marker string used for identification
 - ``type`` - Type of extraction ("need-id-refs")
@@ -430,7 +633,11 @@ The record
            "end": { "line": 11, "col": 11 },
            "content_start": { "line": 9, "col": 3 },
            "option_lines": { "id": 5, "links": 6, "status": 7 },
-           "scope": { "kind": "function_definition", "start": 13, "end": 15 }
+           "scope": {
+               "kind": "function_definition", "start": 13, "end": 15, "language": "c",
+               "entity_kind": "function", "qualified_name": "login",
+               "semantic": [{ "kind": "function", "name": "login" }], "mechanism": "doc_comment"
+           }
        },
        "type": "multiline-need"
    }
@@ -441,8 +648,9 @@ The record
 - ``source`` -- the codelinks project; the file, relative to the git root (``root: "git"``) or else
   to the project's source directory (``root: "src_dir"``), POSIX; the commit; the open line's start,
   the close line's end and the first body line's start (``null`` without a body), each with a
-  1-based ``line`` and a 0-based ``col``; each option's line; and the code scope the block is
-  attached to (``null`` under the libclang engine).
+  1-based ``line`` and a 0-based ``col``; each option's line; and the code entity the block is
+  attached to, the ``scope`` object of :ref:`attachment` (``null`` when the block is attached to the file rather than
+  to an entity, and always under the libclang engine).
 - ``filepath``, ``remote_url``, ``source_map`` and ``tagged_scope`` are the fields every
   ``marked_content.json`` record has; ``source_map`` spans the open line to the close line, 0-based.
 

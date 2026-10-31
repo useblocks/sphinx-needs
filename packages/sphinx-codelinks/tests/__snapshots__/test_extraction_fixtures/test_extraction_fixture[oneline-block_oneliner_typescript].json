@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "function f(): void {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 2,
+      "end": 2,
+      "language": "typescript",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Ts Block",
       "id": "IMPL_TS_BLOCK",

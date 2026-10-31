@@ -44,7 +44,17 @@
       "scope": {
         "kind": "function_definition",
         "start": 10,
-        "end": 10
+        "end": 10,
+        "language": "cpp",
+        "entity_kind": "function",
+        "qualified_name": "escaped",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "escaped"
+          }
+        ],
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

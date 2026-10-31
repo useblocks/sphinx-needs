@@ -13,6 +13,25 @@
       }
     },
     "tagged_scope": "public void Method()\n    {\n        int x = 1;\n        // @Inside Method, IMPL_CS_INSIDE, impl, [REQ_CS_INSIDE]\n    }",
+    "scope": {
+      "kind": "method_declaration",
+      "start": 3,
+      "end": 7,
+      "language": "csharp",
+      "entity_kind": "method",
+      "qualified_name": "DummyClass.Method",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "DummyClass"
+        },
+        {
+          "kind": "method",
+          "name": "Method"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
     "need": {
       "title": "Inside Method",
       "id": "IMPL_CS_INSIDE",

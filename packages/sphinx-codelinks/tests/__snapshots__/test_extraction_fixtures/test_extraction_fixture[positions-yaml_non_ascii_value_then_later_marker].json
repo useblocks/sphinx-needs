@@ -13,6 +13,16 @@
       }
     },
     "tagged_scope": "c: 2",
+    "scope": {
+      "kind": "block_mapping_pair",
+      "start": 4,
+      "end": 4,
+      "language": "yaml",
+      "entity_kind": "key",
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Later",
       "id": "IMPL_YAML_LATER",

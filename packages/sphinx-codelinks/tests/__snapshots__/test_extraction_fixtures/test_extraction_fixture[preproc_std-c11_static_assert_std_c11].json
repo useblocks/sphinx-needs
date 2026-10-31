@@ -13,6 +13,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "C11 _Static_assert",
       "id": "IMPL_C11",

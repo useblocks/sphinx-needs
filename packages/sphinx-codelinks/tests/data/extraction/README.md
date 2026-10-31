@@ -63,6 +63,12 @@ custom_brackets_c:
   must produce the same output.
 - `defines` (optional, libclang only): preprocessor defines, e.g.
   `["VARIANT_A=1", "PROTOCOL_VERSION=3"]`.
+- `truth` (optional): for each marker id, the entity the marker belongs to by
+  compiler ground truth or by an attachment rule — `{id, outcome, node_kind?,
+  entity_kind, qualified_name, start, mechanism?, compiler}`. The extraction harness ignores it;
+  `tests/test_entity_truth.py` compares every marker's `scope` with it.
+  `entities.yaml` holds the cases that carry it and documents each key and how the
+  truth was measured.
 
 ## Snapshots: the production shape
 
@@ -102,6 +108,7 @@ output of one case):
     "remote_url": null,
     "source_map": {"start": {"row": 0, "column": 4}, "end": {"row": 0, "column": 35}},
     "tagged_scope": "void f() {}",
+    "scope": {"kind": "function_definition", "start": 2, "end": 2, "language": "cpp", "entity_kind": "function", "qualified_name": "f", "semantic": [{"kind": "function", "name": "f"}], "mechanism": "leading"},
     "need": {"title": "My Title", "id": "IMPL_1", "type": "impl", "links": ["REQ_1"]},
     "type": "need",
     "tagged_scope_type": "function_definition"
@@ -111,6 +118,7 @@ output of one case):
     "remote_url": null,
     "source_map": {"start": {"row": 0, "column": 14}, "end": {"row": 0, "column": 33}},
     "tagged_scope": "void f() {}",
+    "scope": {"kind": "function_definition", "start": 2, "end": 2, "language": "cpp", "entity_kind": "function", "qualified_name": "f", "semantic": [{"kind": "function", "name": "f"}], "mechanism": "leading"},
     "need_ids": ["REQ_1", "REQ_2", "REQ_3"],
     "marker": "@need-ids:",
     "type": "need-id-refs",
@@ -136,6 +144,35 @@ The fields of a marked-content entry, as `Metadata.to_dict()` writes them:
   need starts at its title, a reference at its first id and ends after its last.
 - `tagged_scope` — the full text of the declaration `find_associated_scope`
   associates with the marker, or `null`.
+- `scope` (a need and a reference; a multi-line need carries it as `source.scope`) —
+  that declaration, named, or `null` exactly when `tagged_scope` is: `kind` (its
+  tree-sitter kind), `start` and `end` (its 1-based first and last lines),
+  `language` (the file's language, by its name, as editors' language identifiers
+  spell it; the comment type gives the family and the grammar, the suffix picks `c`
+  among C and C++ and `javascript` among the `ts` type's files, and the comment type
+  alone names any other suffix: `c` for a `.c` file, `cpp` for any other C or C++
+  file, a `.h` and a `.C` included; `csharp`; `javascript` for `.js`, `.jsx`, `.mjs`
+  and `.cjs` in any case, `typescript` for the rest of the `ts` comment type, `.tsx`
+  included; else the comment type — `python`, `rust`, `go`, `yaml`, `jsonc`, `bash`;
+  so `lang: csharp` records `csharp`, `typescript` and `tsx` record `typescript`, and
+  `js` records `javascript`), `entity_kind` (`function`, `method`, `class`,
+  `namespace`, …, `key` or `item` in a data file; `null` if it cannot be named),
+  `qualified_name` (the name within the file, qualified by its containers —
+  `ns::Widget::draw`, `Shape.area`, `<Widget as Shape>::area`; `null` if it has
+  none, and always in a data file), `semantic` (that name's parts, outermost first
+  and the entity last, each `{kind, name}` plus `trait` on a Rust trait impl's
+  `impl`; `null` exactly when `qualified_name` is) and `mechanism` (`doc_comment`,
+  `leading`, `trailing` or `enclosing`: how the marker was attached).
+  `analyse/entity.py` is the naming; its `render_semantic` joins the parts by the
+  `language`'s rule, and `tests/test_entity_truth.py` asserts, for every scope of
+  every case, that the join is `qualified_name`. Kinds describe, names identify:
+  two parts lists name the same entity when their name chains (`name_chain`: every
+  key but `kind`, and in Python a `<locals>` link where the rendering writes one)
+  are equal, whatever their kinds; the `rule_name_chain_*` cases of `entities.yaml`
+  pin a method defined in its class and out of line (equal chains, different
+  kinds), two trait impls' methods (chains that differ by `trait`), a nested class's
+  method and a function in a method (chains that differ by `<locals>`), and impls in
+  in-file modules (whose chains start with the module's, as a free function's do).
 - `type` — `"need"`, `"need-id-refs"` or `"multiline-need"`; a need's own `type` (e.g.
   `"impl"`) is inside `need`.
 - the payload — `need` (the `OneLineNeed.need` dict as is), `need_ids` and
@@ -148,14 +185,14 @@ strings, `content`, `doctype`), `markup` (the resolved tag) and `source`: here
 always `project` `""`, `path` `case.<ext>` with `root` `"src_dir"` and `commit` `null`, the
 `start`/`end`/`content_start` positions (1-based `line`, 0-based character
 `col`; `content_start` `null` without a body), `option_lines` and `scope`
-(`{kind, start, end}` or `null`). Its refusals and notes are warning records
+(the object above, or `null`). Its refusals and notes are warning records
 with `type` `"multiline-need"` and a `multiline_need_*` `sub_type`.
 
 A warning record has `file_path`, `lineno`, `msg`, `type` (the
 `MarkedContentType` being parsed: `"need"` from the one-line parser,
 `"multiline-need"` from the multi-line one) and `sub_type` (the kind, e.g. `"too_many_fields"`).
 No `SourceComment` or tree-sitter node object is snapshotted: production's
-`to_dict()` drops the comment and writes the scope as its text.
+`to_dict()` drops the comment and writes the scope as its text and its `scope` object.
 
 Two entries on one row are listed in source order, so a case may put two
 on a row (#2150). Entries starting at the same position are possible only

@@ -44,7 +44,17 @@
       "scope": {
         "kind": "function_definition",
         "start": 7,
-        "end": 9
+        "end": 9,
+        "language": "bash",
+        "entity_kind": "function",
+        "qualified_name": "deploy",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "deploy"
+          }
+        ],
+        "mechanism": "leading"
       }
     },
     "type": "multiline-need",

@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "void always() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 2,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "always",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "always"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Always Present",
       "id": "IMPL_ALWAYS",
@@ -38,6 +53,21 @@
       }
     },
     "tagged_scope": "void variant_a() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 6,
+      "end": 6,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "variant_a",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "variant_a"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Variant A Feature",
       "id": "IMPL_VAR_A",
@@ -63,6 +93,21 @@
       }
     },
     "tagged_scope": "void variant_b() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 9,
+      "end": 9,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "variant_b",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "variant_b"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Variant B Feature",
       "id": "IMPL_VAR_B",
@@ -88,6 +133,21 @@
       }
     },
     "tagged_scope": "void proto_v3() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 14,
+      "end": 14,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "proto_v3",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "proto_v3"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Protocol V3",
       "id": "IMPL_PROTO_3",
@@ -113,6 +173,21 @@
       }
     },
     "tagged_scope": "void linux_and_a() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 19,
+      "end": 19,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "linux_and_a",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "linux_and_a"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Linux And A",
       "id": "IMPL_LINUX_A",

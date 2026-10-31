@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "function handle(): void {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 5,
+      "end": 5,
+      "language": "typescript",
+      "entity_kind": "function",
+      "qualified_name": "handle",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "handle"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
     "need_ids": [
       "REQ_1",
       "REQ_2"

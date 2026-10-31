@@ -13,6 +13,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Complete function",
       "id": "IMPL_COMPLETE",
@@ -38,6 +39,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Half typed function",
       "id": "IMPL_HALF",
@@ -63,6 +65,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "After half typed",
       "id": "IMPL_AFTER_HALF",

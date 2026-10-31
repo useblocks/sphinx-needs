@@ -12,7 +12,8 @@
         "column": 54
       }
     },
-    "tagged_scope": "function tick() {}",
+    "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Skip Default",
       "id": "IMPL_JS_SKIP_DEFAULT",
@@ -22,6 +23,6 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_declaration"
+    "tagged_scope_type": null
   }
 ]

@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
+      },
+      "end": {
+        "row": 1,
+        "column": 49
+      }
+    },
+    "tagged_scope": "def outer():\n    # @Above a statement, IMPL_R_BLOCK_STMT, impl\n    value = 1\n    def inner():\n        pass",
+    "scope": {
+      "kind": "function_definition",
+      "start": 1,
+      "end": 5,
+      "language": "python",
+      "entity_kind": "function",
+      "qualified_name": "outer",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "outer"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Above a statement",
+      "id": "IMPL_R_BLOCK_STMT",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

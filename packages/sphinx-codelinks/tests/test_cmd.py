@@ -741,7 +741,16 @@ def test_analyse_writes_a_multiline_need_record(tmp_path: Path) -> None:
             "end": {"line": 6, "col": 11},
             "content_start": {"line": 5, "col": 3},
             "option_lines": {"id": 2, "links": 3},
-            "scope": {"kind": "function_definition", "start": 7, "end": 7},
+            "scope": {
+                "kind": "function_definition",
+                "start": 7,
+                "end": 7,
+                "language": "cpp",
+                "entity_kind": "function",
+                "qualified_name": "demo",
+                "semantic": [{"kind": "function", "name": "demo"}],
+                "mechanism": "leading",
+            },
         },
     }
 

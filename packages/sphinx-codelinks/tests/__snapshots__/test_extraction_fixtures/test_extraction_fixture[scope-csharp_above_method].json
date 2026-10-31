@@ -13,6 +13,25 @@
       }
     },
     "tagged_scope": "public void Method() {}",
+    "scope": {
+      "kind": "method_declaration",
+      "start": 4,
+      "end": 4,
+      "language": "csharp",
+      "entity_kind": "method",
+      "qualified_name": "DummyClass.Method",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "DummyClass"
+        },
+        {
+          "kind": "method",
+          "name": "Method"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Above Method",
       "id": "IMPL_CS_ABOVE",

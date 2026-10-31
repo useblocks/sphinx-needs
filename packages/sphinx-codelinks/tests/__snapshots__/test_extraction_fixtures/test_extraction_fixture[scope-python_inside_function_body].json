@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "def outer():\n    x = 1\n    # @Inside Function, IMPL_PY_INSIDE, impl, [REQ_PY_INSIDE]",
+    "scope": {
+      "kind": "function_definition",
+      "start": 1,
+      "end": 3,
+      "language": "python",
+      "entity_kind": "function",
+      "qualified_name": "outer",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "outer"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
     "need": {
       "title": "Inside Function",
       "id": "IMPL_PY_INSIDE",
