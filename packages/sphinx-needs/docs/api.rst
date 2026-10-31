@@ -277,13 +277,15 @@ Data
    the need's text at the line the parser claims: a MyST need nested at once inside an identical twin (same name, same
    title). In reStructuredText, a need in an included slice (``:start-after:``, ``:start-line:``) records the line it
    is written on in the file, as its ``lineno`` and on its file hop, although docutils' own messages about the same
-   text (an unknown role in its content, say) name the line counted from the slice's start. Every path is POSIX and relative to its hop's root: the source directory (``"srcdir"``, with ``..`` for a
-   file outside it), or, where ``root`` is ``None``, the producer's own root, which this build does not know, the path
-   as the producer gives it (a test report's test file, relative to the test run's root). A hop's ``semantic`` is
-   ``None`` where it is not determined, or where nothing finer than the file is known. The shape may
-   change in a minor release, without a deprecation, until it reaches ``needs.json``; ``NeedItemSourceProtocol`` does
-   not include it, so read it with ``getattr(need.source, "hops", ())``. Nothing a filter, a table or ``needs.json``
-   shows depends on it.
+   text (an unknown role in its content, say) name the line counted from the slice's start. It keeps the slice's line
+   where the slice cannot be matched with the file (an ``include-read`` handler that rewrote it, a ``:parser:``
+   include), and for a need in a table cell, in ``list2need`` item content or in content parsed in a declared markup.
+   Every path is POSIX and relative to its hop's root: the source directory (``"srcdir"``, with ``..`` for a file
+   outside it), or, where ``root`` is ``None``, the producer's own root, which this build does not know, the path as
+   the producer gives it (a test report's test file, relative to the test run's root). A hop's ``semantic`` is
+   ``None`` where it is not determined, or where nothing finer than the file is known. The shape may change in a minor
+   release, without a deprecation, until it reaches ``needs.json``; ``NeedItemSourceProtocol`` does not include it, so
+   read it with ``getattr(need.source, "hops", ())``. Nothing a filter, a table or ``needs.json`` shows depends on it.
 
    A hop's ``language`` is what its text is written in, by the kind of hop: for a ``page`` hop, the page's suffix
    its parser keys on (``.rst``, ``.md``); for a ``file`` hop, the file's own suffix (``.rst``, ``.json``; an
