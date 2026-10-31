@@ -139,6 +139,11 @@ class _BuildData:
     is_a_types: Mapping[str, frozenset[str]] | None = None
     """Each need type with itself and every type inheriting from it, as ``c.is_a``
     reads them: set by ``create_schema``, None until a build has."""
+    is_a_reported: set[tuple[str, object, str]] = field(default_factory=set)
+    """The filters whose ``c.is_a`` literal naming no need type is reported, each as its
+    string, where it is written (None where no caller says) and the origin its caller
+    appends to its warnings (``(from warning filter 'x')``): once per build, emptied
+    where the types are set."""
 
 
 class _Config:
