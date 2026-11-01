@@ -1076,6 +1076,9 @@ For ``predicates``, the match expression is a string, using Python syntax, that 
 - :ref:`needs_variant_data` (via the ``var`` namespace)
 
 An expression that cannot be evaluated, such as one naming something not in this list, is reported as a ``needs.config`` warning and then skipped, so that the remaining predicates and the ``default`` apply just as they would for an expression that did not match.
+The ``c.source`` facets of a filter (:ref:`filter_source`) are not in it, as a predicate is evaluated while the need is created,
+with no check context: ``c.source.path`` there is reported as
+``name 'c' is not defined; the c.source facets are not available in a field predicate``.
 
 For example:
 

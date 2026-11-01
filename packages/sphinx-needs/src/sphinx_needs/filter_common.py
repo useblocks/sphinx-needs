@@ -25,6 +25,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs import _read_watch
+from sphinx_needs._source_facets import SourceFacets, explained
 from sphinx_needs._wording import title_hint
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, NeedsMutable
@@ -1058,7 +1059,11 @@ def apply_default_predicate(
         # a predicate is read for its truth, as a filter is
         result = bool(eval(predicate, predicate_context))
     except Exception as e:
-        raise NeedsInvalidFilter(f"Predicate {predicate!r} not valid. Error: {e}.")
+        # evaluated as the need is created, with no check context: no facets there
+        raise NeedsInvalidFilter(
+            f"Predicate {predicate!r} not valid. "
+            f"Error: {explained(e, 'a field predicate', predicate)}."
+        )
     return result
 
 
@@ -1083,7 +1088,12 @@ def filter_import_item(
         # a filter is read for its truth, whatever its value
         result = bool(eval(filter_string, filter_context))
     except Exception as e:
-        raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
+        # it reads the imported record, which has no hops of this build
+        where = "a needimport filter, which reads the imported record"
+        raise NeedsInvalidFilter(
+            f"Filter {filter_string!r} not valid. "
+            f"Error: {explained(e, where, filter_string)}."
+        )
     return result
 
 
@@ -1244,6 +1254,13 @@ class NeedCheckContext:
         if self._origin_docname is None:
             raise ValueError("`this_doc` can not be used in this context")
         return self._need.is_in_document(self._origin_docname)
+
+    @property
+    def source(self) -> SourceFacets:
+        """The facets of the need's source, ``c.source.<facet>`` (a part's are its
+        need's), each computed when it is read (:mod:`sphinx_needs._source_facets`)."""
+        need = self._need
+        return SourceFacets(need._need if isinstance(need, NeedPartItem) else need)
 
     def is_a(self, name: str) -> bool:
         """Whether the need's type is *name*, or a type inheriting from it, transitively,

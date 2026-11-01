@@ -20,11 +20,12 @@ and is not re-exported by the package, so a suite that runs no corpus never load
 
 from __future__ import annotations
 
+import importlib.util
 import math
 import re
 import struct
 from collections import Counter
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -46,6 +47,7 @@ __all__ = [
     "read_findings",
     "same",
     "schema_defaults",
+    "uninstalled_extension",
 ]
 
 #: A found finding: its code, the need it is reported at, then what the runner's
@@ -86,17 +88,51 @@ def inside(relative: str) -> Path:
 
 
 def case_files(
-    case: Mapping[str, Any], *, conf_py: str, title: str
+    case: Mapping[str, Any],
+    *,
+    conf_py: str,
+    title: str,
+    extensions: Collection[str] = (),
 ) -> list[tuple[Path, str]]:
     """The case's project: the runner's *conf_py*, the case's ``config`` as its
     ``ubproject.toml``, its ``source`` under *title* as ``index.rst``, and its other
-    ``files``, each refused if it would land outside the case directory."""
+    ``files``, each refused if it would land outside the case directory.
+
+    :param extensions: The extensions a case of the runner's corpus may load besides
+        sphinx-needs (its ``extensions`` key). Where the runner allows any, *conf_py* is a
+        template whose ``{extensions}`` is formatted with the list the project loads:
+        ``sphinx_needs``, then the case's own. A case naming one that is not allowed is
+        a broken case.
+    :raises AssertionError: For a file outside the case directory, or an extension the
+        runner does not allow.
+    """
+    if extensions:
+        named = list(case.get("extensions", []))
+        if unknown := [name for name in named if name not in extensions]:
+            msg = f"the case loads {unknown}, which its corpus does not allow"
+            raise AssertionError(msg)
+        conf_py = conf_py.format(extensions=["sphinx_needs", *named])
+    elif case.get("extensions"):
+        msg = "the case loads extensions, which its corpus does not allow"
+        raise AssertionError(msg)
+    # a case whose ``srcdir`` is a subdirectory has its document and its ``conf.py``
+    # there, its ``ubproject.toml`` and other files at the case directory
+    srcdir = inside(case["srcdir"]) if case.get("srcdir") else Path()
     return [
-        (Path("conf.py"), conf_py),
+        (srcdir / "conf.py", conf_py),
         (Path("ubproject.toml"), case["config"]),
-        (Path("index.rst"), title + case["source"]),
+        (srcdir / "index.rst", title + case["source"]),
         *((inside(rel), text) for rel, text in case.get("files", {}).items()),
     ]
+
+
+def uninstalled_extension(case: Mapping[str, Any]) -> str | None:
+    """Why a case cannot run here: an extension it loads (its ``extensions`` key) is not
+    installed, as in a run against sphinx-needs' released dependencies alone."""
+    for extension in case.get("extensions", []):
+        if importlib.util.find_spec(extension) is None:
+            return f"{extension} is not installed"
+    return None
 
 
 def name_field(code: str, message: str) -> tuple[str | None]:
@@ -340,7 +376,9 @@ def params(
     ``files(case)``, the case itself, the case's name as the id, and a skip for a case
     only ubCode runs, or for which *skip* gives a reason (a case loading an extension
     that is not installed, say: the skip has to be the param's, since the ``test_app``
-    fixture builds the project before a test body could skip)."""
+    fixture builds the project before a test body could skip). A case with a ``srcdir``
+    is built from that subdirectory of its files (:func:`case_files` puts its document
+    and ``conf.py`` there)."""
     built = []
     for case in cases:
         reason = (
@@ -349,12 +387,8 @@ def params(
             else (skip(case) if skip is not None else None)
         )
         marks = [pytest.mark.skip(reason=reason)] if reason is not None else []
-        built.append(
-            pytest.param(
-                {"buildername": "needs", "files": files(case)},
-                case,
-                id=case["name"],
-                marks=marks,
-            )
-        )
+        build: dict[str, Any] = {"buildername": "needs", "files": files(case)}
+        if case.get("srcdir"):
+            build["files_srcdir"] = case["srcdir"]
+        built.append(pytest.param(build, case, id=case["name"], marks=marks))
     return built

@@ -199,17 +199,23 @@ def test_app(
     files = builder_params.get("files")
     if (srcdir is None) == (files is None):
         raise ValueError("Exactly one of srcdir, files must not be None")
+    # the Sphinx source directory, relative to where ``files`` are written: a project whose
+    # ``conf.py`` and documents sit in a subdirectory, its other files beside it
+    files_srcdir = builder_params.get("files_srcdir")
+    if files_srcdir is not None and files is None:
+        raise ValueError("files_srcdir is given with files alone")
 
     if srcdir is not None:
         # copy test srcdir to test temporary directory sphinx_test_tempdir
-        src_dir = copy_srcdir_to_tmpdir(
+        src_dir = root = copy_srcdir_to_tmpdir(
             srcdir, sphinx_test_tempdir, relative_to=tests_dir
         )
     else:
         # create given files in tmpdir
-        src_dir = create_src_files_in_tmpdir(files, sphinx_test_tempdir)
+        root = create_src_files_in_tmpdir(files, sphinx_test_tempdir)
+        src_dir = root if files_srcdir is None else root / files_srcdir
 
-    parent_path = src_dir.parent.resolve()
+    parent_path = root.parent.resolve()
 
     # return sphinx.testing fixture make_app and new srcdir which is in sphinx_test_tempdir
     app: SphinxTestApp = make_app(

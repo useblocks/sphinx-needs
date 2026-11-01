@@ -37,6 +37,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, TypeGuard
 
+from sphinx_needs._source_facets import READERS as FACET_READERS
 from sphinx_needs._wording import title_hint
 
 if TYPE_CHECKING:
@@ -1463,7 +1464,8 @@ def filter_problem(text: str) -> str | None:
     ``needs`` (every need), ``current_need`` (the reader) or a ``c.`` check (such as
     ``c.this_doc()``) is not portable, as ubCode cannot evaluate it -- but
     ``c.is_a("<type>")``, which reads the candidate's type alone, against the need
-    types the project declares.
+    types the project declares, and a facet of its source, ``c.source.<facet>``, which
+    reads the candidate's source alone.
 
     :param text: The predicate.
     """
@@ -1487,6 +1489,15 @@ def filter_problem(text: str) -> str | None:
         and isinstance(node.args[0], ast.Constant)
         and isinstance(node.args[0].value, str)
     }
+    #: the ``c.source`` of each ``c.source.<facet>``, which reads the candidate alone
+    facets = {
+        id(node.value)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Attribute)
+        and node.attr in FACET_READERS
+        and isinstance(node.value, ast.Attribute)
+        and node.value.attr == "source"
+    }
     for node in ast.walk(tree):
         if isinstance(node, ast.Name) and node.id in {"needs", "current_need"}:
             return f"names {node.id!r}, which a declared rule cannot read"
@@ -1495,6 +1506,7 @@ def filter_problem(text: str) -> str | None:
             and isinstance(node.value, ast.Name)
             and node.value.id == "c"
             and id(node) not in is_a
+            and id(node) not in facets
         ):
             return f"calls 'c.{node.attr}', which a declared rule cannot read"
     return None

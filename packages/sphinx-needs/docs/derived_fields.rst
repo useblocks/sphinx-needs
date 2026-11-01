@@ -1261,6 +1261,10 @@ a filter naming ``needs``, ``current_need`` or a ``c.`` check (such as ``c.this_
 so that a rule means the same in every tool that reads the configuration.
 ``c.is_a('req')`` with a string literal is the exception: it reads the candidate's type alone,
 against the project's need types (see :ref:`filter_is_a`).
+A ``where`` may also read the candidate's ``c.source`` facets (:ref:`filter_source`), such as
+``where = "c.source.path is not None and c.source.path.startswith('../src/')"``: they read where it comes from,
+which no rule computes. A ``where`` that fails on a candidate excludes it without a report, so guard a facet that
+can be ``None``, as that example does.
 
 A ``join`` matches the needs whose field equals one of this need's values (:ref:`needs_derive_join`).
 

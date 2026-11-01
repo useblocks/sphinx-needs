@@ -6,6 +6,7 @@ from typing import Any
 
 from docutils import nodes
 
+from sphinx_needs._source_facets import explained
 from sphinx_needs.exceptions import VariantParsingException
 from sphinx_needs.logging import get_logger, log_warning
 
@@ -140,7 +141,8 @@ def match_variants(
         except Exception as e:
             log_warning(
                 LOGGER,
-                f"Error in variant expression {expr!r}: {e}",
+                f"Error in variant expression {expr!r}: "
+                f"{explained(e, 'a variant condition', expr)}",
                 "variant",
                 location=location,
             )

@@ -297,7 +297,9 @@ Data
    gives it (a test report's test file, relative to the test run's root). A hop's ``semantic`` is ``None`` where it is
    not determined, or where nothing finer than the file is known. The shape may change in a minor release, without a
    deprecation, until it reaches ``needs.json``; ``NeedItemSourceProtocol`` does not include it, so read it with
-   ``getattr(need.source, "hops", ())``. Nothing a filter, a table or ``needs.json`` shows depends on it.
+   ``getattr(need.source, "hops", ())``. A filter reads it through the ``c.source`` facets (:ref:`filter_source`),
+   its stable view: each facet names a position in the hops (``c.source.path`` the innermost, ``c.source.paths`` every
+   one), and keeps its meaning when the hops change shape. Nothing a table or ``needs.json`` shows depends on it.
 
    A hop's ``language`` is what its text is written in, by the kind of hop: for a ``page`` hop, the page's suffix
    its parser keys on (``.rst``, ``.md``); for a ``file`` hop, the file's own suffix (``.rst``, ``.json``; an
