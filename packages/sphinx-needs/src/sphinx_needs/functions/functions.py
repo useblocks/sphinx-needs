@@ -1757,8 +1757,7 @@ def _get_variant(
         try:
             holds = bool(eval(expr, context.copy()))
         except Exception as error:
-            # a condition has no facets: ``source`` undefined there, or a facet read
-            # failing on a field named ``source``, says so
+            # a condition has no check context: a facet read there says so
             if not unavailable(error, expr):
                 raise
             raise ValueError(explained(error, "a variant condition", expr)) from None

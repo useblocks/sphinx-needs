@@ -1,25 +1,25 @@
-"""The ``source.*`` facets of a filter: what the shared corpus cannot say.
+"""The ``c.source`` facets of a filter: what the shared corpus cannot say.
 
 ``tests/fixtures/filter_conformance.toml`` (its "source facets" section) pins what each
 facet selects, for every producer it can build, in both tiers. This module pins the rest:
 each facet's rule over the hops of every producer, those the corpus cannot build among
 them (a service, autodoc, an external need given a page, a needs.json read from a URL, a
-source with no hops); a declaration named ``source`` switching the facets off (W-1), and
-a facet read there reported where it fails; the ``eval`` tier binding them only for a filter naming them; the
-did-you-mean of an unknown facet; the places that have no facets saying so; a derived
-field's ``where`` reading them.
+source with no hops); that ``c`` holds them whatever a project declares, and that a root
+``source`` is a field like any other; that every channel evaluating a filter binds
+``c``; the did-you-mean of an unknown facet; the places that have no facets saying so.
 """
 
 from __future__ import annotations
 
 import ast
 import inspect
+import json
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from sphinx_needs import _source_facets, filter_common
+from sphinx_needs import _source_facets, filter_common, variants
 from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
@@ -38,7 +38,7 @@ from sphinx_needs._source_facets import (
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import NeedsInvalidFilter
-from sphinx_needs.filter_common import filter_needs_view, filter_single_need
+from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs.ubquery import CompiledFilter
 from sphinx_needs_testkit import build_warnings
@@ -348,7 +348,7 @@ def test_a_part_and_the_eval_object_read_the_need_s_facets() -> None:
     assert facets == SourceFacets(need)
     assert facets != SourceFacets(_Need(need.source, **need))
     assert hash(facets) == hash(SourceFacets(need))
-    assert repr(facets) == "<source of 'IMPL_001'>"
+    assert repr(facets) == "<c.source of 'IMPL_001'>"
     with pytest.raises(AttributeError, match=r"no facet 'end_line' \(its facets: "):
         _ = facets.end_line
     with pytest.raises(AttributeError, match=r"no facet 'pathz' \(did you mean 'path'"):
@@ -423,205 +423,103 @@ def _both_tiers(app: Any, filter_string: str) -> dict[str, bool | str]:
     return parsed
 
 
-def _clause(declared: str) -> str:
-    return (
-        f"; the project declares {declared} named 'source', which switches the "
-        "source.* facets off"
-    )
+EVERY = {"REQ_001": True, "REQ_002": True, "SPEC_001": True}
 
 
-#: each declaration of the name, what the switch's report names, and what
-#: ``source == "manual"`` selects by it
-_DECLARATIONS = [
-    pytest.param(
-        _project(
-            'needs_fields = {"source": {"nullable": True}}\n',
-            INDEX.format(source=":source: manual"),
-        ),
-        "a field",
-        {"REQ_001": True, "REQ_002": False, "SPEC_001": False},
-        id="field",
-    ),
-    pytest.param(
-        _project('needs_links = {"source": {}}\n'),
-        "a link type",
-        {"REQ_001": False, "REQ_002": False, "SPEC_001": False},
-        id="link-type",
-    ),
-    pytest.param(
-        _project(
-            "needs_types = [\n"
-            '    {"directive": "req", "title": "Req", "prefix": "R_",'
-            ' "fields": {"source": {"schema": {"type": "string"}}}},\n'
-            '    {"directive": "spec", "title": "Spec", "prefix": "S_"},\n'
-            "]\n",
-            INDEX.format(source=":source: manual"),
-        ),
-        "a field",
-        # a spec reads the field too, which its type does not declare: unset there
-        {"REQ_001": True, "REQ_002": False, "SPEC_001": False},
-        id="field-of-one-need-type",
-    ),
-    pytest.param(
-        _project('needs_filter_data = {"source": "manual"}\n'),
-        "a needs_filter_data key",
-        {"REQ_001": True, "REQ_002": True, "SPEC_001": True},
-        id="filter-data",
-    ),
-]
+@pytest.mark.parametrize("test_app", [_project("")], indirect=True)
+def test_c_source_reads_the_facets_and_a_root_source_is_no_name(test_app: Any) -> None:
+    """``c.source.<facet>`` is the one spelling, in both tiers; ``source`` alone is a
+    name like any other, which nothing declares here: undefined, as on any filter."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert _both_tiers(app, 'c.source.path == "index.rst"') == EVERY
+    assert _both_tiers(app, 'c.source.kind == "page" and c.source.line > 3') == EVERY
+    assert set(_both_tiers(app, 'source.path == "index.rst"').values()) == {
+        "error: Filter 'source.path == \"index.rst\"' not valid. "
+        "Error: name 'source' is not defined."
+    }
 
 
 @pytest.mark.parametrize(
-    ("test_app", "declared", "reads"), _DECLARATIONS, indirect=["test_app"]
+    ("test_app", "reads"),
+    [
+        pytest.param(
+            _project(
+                'needs_fields = {"source": {"nullable": True}}\n',
+                INDEX.format(source=":source: manual"),
+            ),
+            {"REQ_001": True, "REQ_002": False, "SPEC_001": False},
+            id="field",
+        ),
+        pytest.param(
+            _project('needs_links = {"source": {}}\n'),
+            {"REQ_001": False, "REQ_002": False, "SPEC_001": False},
+            id="link-type",
+        ),
+        pytest.param(
+            _project('needs_filter_data = {"source": "manual"}\n'),
+            {"REQ_001": True, "REQ_002": True, "SPEC_001": True},
+            id="filter-data",
+        ),
+    ],
+    indirect=["test_app"],
 )
-def test_a_declaration_named_source_switches_the_facets_off(
-    test_app: Any, declared: str, reads: dict[str, bool]
+def test_a_declaration_named_source_is_a_name_like_any_other(
+    test_app: Any, reads: dict[str, bool]
 ) -> None:
-    """W-1: a field, a link type or a ``needs_filter_data`` key named ``source`` switches
-    the facets off for the whole project, and ``source`` reads the declaration in both
-    tiers -- on every need, a need of a type that does not declare the field included,
-    so that no filter reads the facets on some needs and the field on others. Declaring
-    it is no fault: the build reports nothing. (A field and a ``needs_filter_data`` key
-    of one name are refused by the configuration already.)"""
+    """A field, a link type or a ``needs_filter_data`` key named ``source`` is read as
+    it always was, and the build says nothing of it: the facets live under ``c``, which
+    no declaration reaches."""
     app = test_app
     app.build()
     assert [
         w for w in build_warnings(app) if not w.endswith("[needs.deprecated]")
     ] == []
-    assert NeedsSphinxConfig(app.config).source_shadowed == declared
     assert _both_tiers(app, 'source == "manual"') == reads
-
-
-@pytest.mark.parametrize(
-    ("test_app", "declared", "reads"), _DECLARATIONS, indirect=["test_app"]
-)
-def test_a_facet_read_where_source_is_declared_says_why(
-    test_app: Any, declared: str, reads: dict[str, bool]
-) -> None:
-    """Where a declaration switches the facets off, a filter reading one fails (the
-    declaration's value has none), and its report says why, naming the declaration, in
-    both tiers and in the engine's one warning."""
-    app = test_app
-    app.build()
-    answers = _both_tiers(app, 'source.path == "index.rst"')
-    assert all(
-        isinstance(answer, str)
-        and "has no attribute 'path'" in answer
-        and answer.endswith(f"{_clause(declared)}.")
-        for answer in answers.values()
-    ), answers
-    stream = app._warning
-    start = len(stream.getvalue())
-    view = SphinxNeedsData(app.env).get_needs_view()
-    assert (
-        filter_needs_view(view, NeedsSphinxConfig(app.config), "source.path == 'x'")
-        == []
-    )
-    reported = build_warnings(stream.getvalue()[start:], srcdir=app.srcdir)
-    assert len(reported) == 1, reported
-    assert reported[0].startswith("WARNING: Filter \"source.path == 'x'\" not valid.")
-    assert reported[0].endswith(f"{_clause(declared)}. [needs.filter]"), reported
-    # a failure that reads no facet says nothing of the declaration
-    assert set(_both_tiers(app, "nope == 1 or source == 'x'").values()) == {
-        "error: Filter \"nope == 1 or source == 'x'\" not valid. "
-        "Error: name 'nope' is not defined."
-    }
+    assert _both_tiers(app, 'c.source.kind == "page"') == EVERY
 
 
 @pytest.mark.parametrize(
     "test_app",
     [
-        _project(""),
-        _project('needs_fields = {"sources": {"nullable": True}}\n'),
+        pytest.param(
+            _project(
+                'needs_fields = {"c": {"nullable": True}}\n',
+                INDEX.format(source=":c: manual"),
+            ),
+            id="field",
+        ),
+        pytest.param(
+            _project('needs_filter_data = {"c": "manual"}\n'), id="filter-data"
+        ),
     ],
     indirect=True,
 )
-def test_no_declaration_named_source_leaves_the_facets_on(test_app: Any) -> None:
+def test_c_is_the_check_context_whatever_is_named_c(test_app: Any) -> None:
+    """``c`` is the check context in every tier, set over the need's fields and the
+    ``needs_filter_data`` keys, as ``c.this_doc()`` and ``c.is_a()`` always read it:
+    a field or a key named ``c`` reaches no facet."""
     app = test_app
     app.build()
-    assert build_warnings(app) == []
-    assert _both_tiers(app, 'source.path == "index.rst"') == {
+    assert [
+        w for w in build_warnings(app) if not w.endswith("[needs.deprecated]")
+    ] == []
+    assert _both_tiers(app, 'c.source.path == "index.rst"') == EVERY
+    assert _both_tiers(app, 'c.is_a("req")') == {
         "REQ_001": True,
         "REQ_002": True,
-        "SPEC_001": True,
+        "SPEC_001": False,
     }
-    assert NeedsSphinxConfig(app.config).source_shadowed is None
-    # ``source`` alone is the facets object in both tiers, never a field read
-    for bare in ('source == "x"', 'source in ["x"]', "not source"):
-        assert set(_both_tiers(app, bare).values()) == {False}, bare
-
-
-@pytest.mark.parametrize("test_app", [_DECLARATIONS[0].values[0]], indirect=True)
-def test_a_method_of_a_field_named_source_is_no_facet_read(test_app: Any) -> None:
-    """``source.startswith(...)`` where a field named ``source`` is declared calls the
-    field value's method: where the field is unset it fails as it always did, and the
-    report says nothing of facets the filter never read."""
-    app = test_app
-    app.build()
-    answers = _both_tiers(app, 'source.startswith("man")')
-    assert answers["REQ_001"] is True
-    assert answers["REQ_002"] == (
-        "error: Filter 'source.startswith(\"man\")' not valid. "
-        "Error: 'NoneType' object has no attribute 'startswith'."
-    )
-
-
-@pytest.mark.parametrize("test_app", [_project("")], indirect=True)
-def test_eval_binds_the_facets_only_for_a_filter_naming_source(
-    test_app: Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Binding the facets costs every evaluation, so ``eval`` binds them only where the
-    compiled filter names ``source``: in its own names, or in a code object it nests --
-    a generator expression's body, a lambda's -- where they are looked up too. The
-    parsed tier reads a facet without binding them at all. Counted, not timed."""
-    app = test_app
-    app.build()
-    made: list[str] = []
-    real = getattr(filter_common, "SourceFacets", None)
-
-    def counting(need: Any) -> Any:
-        made.append(need["id"])
-        assert real is not None
-        return real(need)
-
-    monkeypatch.setattr(filter_common, "SourceFacets", counting, raising=False)
-    view = SphinxNeedsData(app.env).get_needs_view()
-    config = NeedsSphinxConfig(app.config)
-    every = ["REQ_001", "REQ_002", "SPEC_001"]
-
-    def selected(filter_string: str) -> list[str]:
-        made.clear()
-        return sorted(
-            need["id"] for need in filter_needs_view(view, config, filter_string)
-        )
-
-    # eval, not naming source: nothing bound
-    assert selected('any(t == "x" for t in tags) or id in [i for i in [id]]') == every
-    assert made == []
-    # ... its text saying source, in a string literal: no name
-    assert selected('id in [i for i in [id]] and title != "source"') == every
-    assert made == []
-    # the parsed tier reads the facet it names, binding nothing
-    assert selected('source.path == "index.rst"') == every
-    assert made == []
-    # eval naming source: bound once per need
-    assert selected('source.path in [p for p in ["index.rst"]]') == every
-    assert sorted(made) == every
-    # ... in a generator expression's body alone
-    assert selected('any(source.kind == kind for kind in ["page"])') == every
-    assert sorted(made) == every
-    # ... and in a lambda's
-    assert selected('(lambda: source.kind)() == "page"') == every
-    assert sorted(made) == every
 
 
 @pytest.mark.parametrize("test_app", [_project("")], indirect=True)
 def test_a_facet_costs_its_own_work_alone(
     test_app: Any, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A filter reading one facet computes that facet, in either tier: ``source.path``
-    reads the kind (an import's or an external need's has none) and the path, never the
-    paths, the line or the symbol."""
+    """A filter reading one facet computes that facet, in either tier:
+    ``c.source.path`` reads the kind (an import's or an external need's has none) and
+    the path, never the paths, the line or the symbol."""
     app = test_app
     app.build()
     called: list[str] = []
@@ -633,27 +531,28 @@ def test_a_facet_costs_its_own_work_alone(
             return _real(source)
 
         monkeypatch.setattr(_source_facets, name, counting)
-    assert set(_both_tiers(app, 'source.path == "index.rst"').values()) == {True}
+    assert _both_tiers(app, 'c.source.path == "index.rst"') == EVERY
     assert set(called) == {"kind_of", "path_of"}
 
 
 @pytest.mark.parametrize("test_app", [_project("")], indirect=True)
 def test_an_unknown_facet_is_reported_with_the_closest_facet(test_app: Any) -> None:
-    """``source.<name>`` naming no facet falls to ``eval``, which reports it on every
+    """``c.source.<name>`` naming no facet falls to ``eval``, which reports it on every
     need, naming the closest facet, or every facet where none is close."""
     app = test_app
     app.build()
-    assert set(_both_tiers(app, 'source.pth == "x"').values()) == {
-        "error: Filter 'source.pth == \"x\"' not valid. Error: source has no facet "
-        "'pth' (did you mean 'path'?)."
+    assert set(_both_tiers(app, 'c.source.pth == "x"').values()) == {
+        "error: Filter 'c.source.pth == \"x\"' not valid. Error: c.source has no "
+        "facet 'pth' (did you mean 'path'?)."
     }
-    assert set(_both_tiers(app, 'source.colour == "x"').values()) == {
-        "error: Filter 'source.colour == \"x\"' not valid. Error: source has no facet "
-        "'colour' (its facets: document, kind, line, path, paths, sections, symbol)."
+    assert set(_both_tiers(app, 'c.source.colour == "x"').values()) == {
+        "error: Filter 'c.source.colour == \"x\"' not valid. Error: c.source has no "
+        "facet 'colour' (its facets: document, kind, line, path, paths, sections, "
+        "symbol)."
     }
 
 
-UNAVAILABLE = "name 'source' is not defined; the source.* facets are not available in"
+UNAVAILABLE = "the c.source facets are not available in"
 
 
 @pytest.mark.parametrize(
@@ -662,22 +561,23 @@ UNAVAILABLE = "name 'source' is not defined; the source.* facets are not availab
         pytest.param(
             _project(
                 'needs_fields = {"owner": {"nullable": True, "predicates": '
-                '[(\'source.path == "index.rst"\', "me")]}}\n'
+                '[(\'c.source.path == "index.rst"\', "me")]}}\n'
             ),
             "<srcdir>/index.rst:4: WARNING: needs_fields['owner']['predicates']: "
-            "Predicate 'source.path == \"index.rst\"' not valid. Error: "
-            f"{UNAVAILABLE} a field predicate. The predicate is skipped. [needs.config]",
+            "Predicate 'c.source.path == \"index.rst\"' not valid. Error: name 'c' is "
+            f"not defined; {UNAVAILABLE} a field predicate. The predicate is skipped. "
+            "[needs.config]",
             id="field-predicate",
         ),
         pytest.param(
             _project(
                 'needs_fields = {"owner": {"nullable": True, "predicates": '
-                '[(\'resource == "x"\', "me")]}}\n'
+                '[(\'c.is_a("req")\', "me")]}}\n'
             ),
             "<srcdir>/index.rst:4: WARNING: needs_fields['owner']['predicates']: "
-            "Predicate 'resource == \"x\"' not valid. Error: name 'resource' is not "
-            "defined. The predicate is skipped. [needs.config]",
-            id="a-name-near-source",
+            "Predicate 'c.is_a(\"req\")' not valid. Error: name 'c' is not defined. "
+            "The predicate is skipped. [needs.config]",
+            id="a-check-that-is-no-facet",
         ),
         pytest.param(
             {
@@ -687,7 +587,7 @@ UNAVAILABLE = "name 'source' is not defined; the source.* facets are not availab
                     (
                         Path("index.rst"),
                         "Index\n=====\n\n.. needimport:: imp.json\n"
-                        '   :filter: source.kind == "page"\n',
+                        '   :filter: c.source.kind == "page"\n',
                     ),
                     (
                         Path("imp.json"),
@@ -697,20 +597,34 @@ UNAVAILABLE = "name 'source' is not defined; the source.* facets are not availab
                     ),
                 ],
             },
-            "<srcdir>/index.rst:4: WARNING: needimport: Filter 'source.kind == \"page\"' "
-            f"not valid. Error: {UNAVAILABLE} a needimport filter, which reads the "
-            "imported record. [needs.needimport]",
+            "<srcdir>/index.rst:4: WARNING: needimport: Filter 'c.source.kind == "
+            "\"page\"' not valid. Error: name 'c' is not defined; "
+            f"{UNAVAILABLE} a needimport filter, which reads the imported record. "
+            "[needs.needimport]",
             id="needimport-filter",
         ),
         pytest.param(
             _project(
                 'needs_fields = {"owner": {"nullable": True, "parse_variants": True}}\n',
-                INDEX.format(source=':owner: <<source.kind == "page": a, b>>'),
+                INDEX.format(source=':owner: <<c.source.kind == "page": a, b>>'),
             ),
             "<srcdir>/index.rst:4: WARNING: Error while resolving dynamic values for "
-            "field 'owner', of need 'REQ_001': "
+            "field 'owner', of need 'REQ_001': name 'c' is not defined; "
             f"{UNAVAILABLE} a variant condition [needs.dynamic_function]",
             id="variant-condition",
+        ),
+        pytest.param(
+            _project(
+                'needs_fields = {"c": {"nullable": True}, '
+                '"owner": {"nullable": True, "parse_variants": True}}\n',
+                INDEX.format(
+                    source=':c: manual\n   :owner: <<c.source.kind == "page": a, b>>'
+                ),
+            ),
+            "<srcdir>/index.rst:4: WARNING: Error while resolving dynamic values for "
+            "field 'owner', of need 'REQ_001': 'str' object has no attribute 'source'; "
+            f"{UNAVAILABLE} a variant condition [needs.dynamic_function]",
+            id="variant-condition-and-a-field-named-c",
         ),
     ],
     indirect=["test_app"],
@@ -719,11 +633,84 @@ def test_where_there_are_no_facets_the_error_says_so(
     test_app: Any, expected: str
 ) -> None:
     """A field predicate runs as the need is created, a needimport filter reads the
-    imported record, and a variant condition reads the need's fields: none has the
-    facets, and ``source`` there fails with an error that says so."""
+    imported record, and a variant condition reads the need's fields: none has a check
+    context, and a facet read there fails with an error that says so -- ``c``
+    undefined, or, where a field is named ``c``, its value having no ``source``. A
+    failure that reads no facet reads as it always did."""
     app = test_app
     app.build()
     assert build_warnings(app) == [expected]
+
+
+def test_a_needflow_variant_condition_says_it_has_no_facets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """``match_variants`` (needflow's variant options) evaluates over the need data
+    alone: ``c`` there is undefined, and its warning says why."""
+    logged: list[str] = []
+    monkeypatch.setattr(
+        variants,
+        "log_warning",
+        lambda _logger, message, *_a, **_k: logged.append(message),
+    )
+    assert variants.match_variants('[c.source.kind == "page"]:a, b', {}, {}) == "b"
+    assert logged == [
+        "Error in variant expression 'c.source.kind == \"page\"': name 'c' is not "
+        f"defined; {UNAVAILABLE} a variant condition"
+    ]
+
+
+#: an ``eval``-tier facet read: the lambda keeps it out of the parsed tier, so only a
+#: bound ``c`` answers it (no brackets: it is also written inside a dynamic function)
+ON_INDEX = "(lambda: c.source.path)() == 'index.rst'"
+
+CONF_CHANNELS = f"""\
+needs_build_json = True
+needs_builder_filter = "{ON_INDEX}"
+needs_warnings = {{"off_index": "not ({ON_INDEX})"}}
+needs_constraints = {{"on_index": {{"check_0": "{ON_INDEX}", "severity": "CRITICAL"}}}}
+needs_links = {{"same_page": {{"derive": {{"kind": "links", "where": "{ON_INDEX}"}}}}}}
+needs_fields = {{"first_on_index": {{"nullable": True}}}}
+"""
+
+INDEX_CHANNELS = f"""\
+Index
+=====
+
+.. req:: One
+   :id: REQ_001
+   :constraints: on_index
+
+.. req:: Two
+   :id: REQ_002
+   :links: REQ_001[{ON_INDEX}]
+   :first_on_index: [[copy("id", filter="{ON_INDEX} and id == 'REQ_001'")]]
+
+.. needextend:: {ON_INDEX}
+   :+tags: on_index
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app", [_project(CONF_CHANNELS, INDEX_CHANNELS)], indirect=True
+)
+def test_every_channel_evaluating_a_filter_binds_c(test_app: Any) -> None:
+    """Each channel that evaluates a filter through ``eval`` gives it the check context,
+    so ``c.source`` reads the facets there: ``needs_builder_filter``, ``needs_warnings``,
+    a constraint, a derived field's ``where``, a link condition, ``copy(filter=...)`` and
+    a ``needextend``; the views are the corpus's."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert needs["REQ_001"]["constraints_passed"] is True
+    assert needs["REQ_001"]["same_page"] == ["REQ_002"]
+    assert needs["REQ_002"]["same_page"] == ["REQ_001"]
+    assert needs["REQ_002"]["first_on_index"] == "REQ_001"
+    assert all("on_index" in need["tags"] for need in needs.values())
+    written = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    version = written["versions"][written["current_version"]]
+    assert sorted(version["needs"]) == ["REQ_001", "REQ_002"]
 
 
 @pytest.mark.parametrize(
@@ -736,7 +723,7 @@ def test_where_there_are_no_facets_the_error_says_so(
                     Path("conf.py"),
                     'extensions = ["sphinx_needs"]\n'
                     'needs_links = {"same_file": {"derive": {"kind": "links", '
-                    '"where": "source.path == \'index.rst\'"}}}\n',
+                    '"where": "c.source.path == \'index.rst\'"}}}\n',
                 ),
                 (
                     Path("index.rst"),
@@ -750,224 +737,12 @@ def test_where_there_are_no_facets_the_error_says_so(
     indirect=True,
 )
 def test_a_derived_where_reads_the_facets(test_app: Any) -> None:
-    """A derived field's ``where`` may read the facets, which read hops fixed before
-    the pass: the rule computes (a need links every other one it selects), and no read
-    of them is reported."""
+    """A derived field's ``where`` may read ``c.source.<facet>`` (another ``c.`` check
+    but ``c.is_a`` is refused there): the rule computes (a need links every other one it
+    selects), and no read of them is reported."""
     app = test_app
     app.build()
     assert build_warnings(app) == []
     needs = SphinxNeedsData(app.env).get_needs_view()
     assert needs["REQ_001"]["same_file"] == []
     assert needs["REQ_002"]["same_file"] == ["REQ_001"]
-
-
-CONF_LATE = """\
-extensions = ["sphinx_needs"]
-suppress_warnings = ["config.cache"]
-
-
-def my_source(app, need, needs, *args, **kwargs):
-    return "tool"
-
-
-def my_reader(app, need, needs, *args, **kwargs):
-    from sphinx_needs.config import NeedsSphinxConfig
-    from sphinx_needs.filter_common import filter_needs_and_parts
-
-    found = filter_needs_and_parts(
-        list(needs.values()),
-        NeedsSphinxConfig(app.config),
-        "[s for s in [source] if s == 'tool']",
-    )
-    return " ".join(sorted(n["id"] for n in found))
-
-
-needs_functions = [my_source, my_reader]
-needs_fields = {"source": {"nullable": True}, "reads": {"nullable": True}}
-"""
-
-INDEX_LATE = """\
-Index
-=====
-
-.. req:: Reads it through eval, in your own function
-   :id: AAA_001
-   :reads: [[my_reader()]]
-
-.. req:: Its source is your own function's
-   :id: REQ_001
-   :source: [[my_source()]]
-"""
-
-
-@pytest.mark.parametrize("test_app", [_project(CONF_LATE, INDEX_LATE)], indirect=True)
-def test_a_field_named_source_is_still_a_field_the_pass_watches(test_app: Any) -> None:
-    """The facets read hops fixed before the pass, so ``eval`` treats them as no field
-    read; a field named ``source``, which switches them off, is one, and your own
-    function's filter reading it before another computed it is reported as any late
-    read."""
-    app = test_app
-    app.build()
-    assert build_warnings(app) == [
-        "<srcdir>/index.rst:4: WARNING: dynamic function 'my_reader' for option "
-        "'reads' read 'source' on need 'REQ_001' before it was computed: it is "
-        "computed by your own function 'my_source', after this call: your own "
-        "functions, and the calls whose filter cannot be read, run after the built-in "
-        "functions, in (need id, field) order [needs.derive_scope]",
-    ]
-
-
-def test_a_needflow_variant_condition_says_it_has_no_facets(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """``match_variants`` (needflow's variant options) evaluates over the need data
-    alone: ``source`` there is undefined, and its warning says why."""
-    from sphinx_needs import variants
-
-    logged: list[str] = []
-    monkeypatch.setattr(
-        variants,
-        "log_warning",
-        lambda _logger, message, *_a, **_k: logged.append(message),
-    )
-    assert variants.match_variants('[source.kind == "page"]:a, b', {}, {}) == "b"
-    assert logged == [
-        "Error in variant expression 'source.kind == \"page\"': name 'source' is not "
-        "defined; the source.* facets are not available in a variant condition"
-    ]
-
-
-@pytest.mark.parametrize("test_app", [_project("")], indirect=True)
-def test_eval_asks_whether_a_filter_names_source_once_per_string(
-    test_app: Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Whether a filter names ``source`` is a property of the string: ``eval`` asks it
-    once, never need by need, so a filter that does not name it costs what it did.
-    (Asked per need of a code object compiled per call, it hashes and compares that
-    code by value each time: about a quarter of eval's per-need cost, measured.)"""
-    app = test_app
-    app.build()
-    asked: list[object] = []
-    real = filter_common._code_names_source
-
-    def counting(code: Any) -> bool:
-        asked.append(code)
-        return real(code)
-
-    monkeypatch.setattr(filter_common, "_code_names_source", counting)
-    filter_common._string_names_source.cache_clear()
-    view = SphinxNeedsData(app.env).get_needs_view()
-    config = NeedsSphinxConfig(app.config)
-    filter_string = 'docname in [d for d in ["index"]] and "not source"'
-    assert len(filter_needs_view(view, config, filter_string)) == len(view) == 3
-    # the filter's own code once (before Python 3.12 its comprehension's is a code of
-    # its own, scanned with it), never once per need
-    assert sum(code.co_name == "<module>" for code in asked) <= 1
-
-
-@pytest.mark.parametrize(
-    ("test_app", "expected"),
-    [
-        pytest.param(
-            _project(
-                'needs_fields = {"source": {"nullable": True}, '
-                '"owner": {"nullable": True, "parse_variants": True}}\n',
-                INDEX.format(
-                    source=':source: manual\n   :owner: <<source.kind == "page": a, b>>'
-                ),
-            ),
-            "<srcdir>/index.rst:4: WARNING: Error while resolving dynamic values for "
-            "field 'owner', of need 'REQ_001': 'str' object has no attribute 'kind'; "
-            "the source.* facets are not available in a variant condition "
-            "[needs.dynamic_function]",
-            id="variant-condition",
-        ),
-        pytest.param(
-            _project(
-                'needs_fields = {"source": {"nullable": True}}\n',
-                INDEX.format(source=":source: manual\n   :links: REQ_002[source.path]"),
-            ),
-            "<srcdir>/index.rst:4: WARNING: Need 'REQ_001' link 'REQ_002' in field "
-            "'links': invalid condition syntax 'source.path': Filter 'source.path' not "
-            "valid. Error: 'NoneType' object has no attribute 'path'; "
-            "the project declares a field named 'source', which switches the source.* "
-            "facets off. [needs.link_condition_invalid]",
-            id="link-condition",
-        ),
-    ],
-    indirect=["test_app"],
-)
-def test_where_source_is_declared_each_place_says_why_a_facet_fails(
-    test_app: Any, expected: str
-) -> None:
-    """Under the switch a facet read fails, and every place it can be written says why:
-    a link condition, under its own code, names the declaration; a variant condition,
-    which never has the facets, says so even where ``source`` is a field."""
-    app = test_app
-    app.build()
-    assert build_warnings(app) == [expected]
-
-
-#: a need on the page, and one linking it under a condition written after a space
-INDEX_LEADING = """\
-Index
-=====
-
-.. req:: Linked
-   :id: REQ_001
-   {constraints}
-
-.. req:: Linking
-   :id: REQ_002
-   :links: REQ_001[ source.kind == "page"]
-"""
-
-
-@pytest.mark.parametrize(
-    "test_app", [_project("", INDEX_LEADING.format(constraints=""))], indirect=True
-)
-def test_a_link_condition_naming_source_after_a_space_reads_the_facets(
-    test_app: Any,
-) -> None:
-    """``eval`` strips a string's leading spaces and tabs, and so does the question
-    whether a filter names ``source``: a link condition written after a space holds,
-    unreported."""
-    app = test_app
-    app.build()
-    assert build_warnings(app) == []
-    needs = SphinxNeedsData(app.env).get_needs_view()
-    assert [link.id for link in needs["REQ_002"].get_links("links", as_str=False)] == [
-        "REQ_001"
-    ]
-
-
-@pytest.mark.parametrize(
-    "test_app",
-    [
-        _project(
-            'needs_constraints = {"page_only": '
-            '{"check_0": " source.kind == \'page\'", "severity": "CRITICAL"}}\n',
-            INDEX_LEADING.format(constraints=":constraints: page_only"),
-        )
-    ],
-    indirect=True,
-)
-def test_a_constraint_naming_source_after_a_space_reads_the_facets(
-    test_app: Any,
-) -> None:
-    """A constraint check written after a space reads the facets and passes: the build
-    goes on."""
-    app = test_app
-    app.build()
-    assert build_warnings(app) == []
-    needs = SphinxNeedsData(app.env).get_needs_view()
-    assert needs["REQ_001"]["constraints_passed"] is True
-
-
-@pytest.mark.parametrize("test_app", [_project("")], indirect=True)
-def test_the_tiers_agree_on_a_filter_naming_source_after_a_tab(test_app: Any) -> None:
-    """The parsed tier refuses a filter after a tab, and ``eval`` strips the tab: both
-    read the facets."""
-    app = test_app
-    app.build()
-    assert set(_both_tiers(app, "\tsource.kind == 'page'").values()) == {True}

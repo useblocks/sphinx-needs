@@ -25,7 +25,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs import _read_watch
-from sphinx_needs._source_facets import SourceFacets, explained, reads_a_facet
+from sphinx_needs._source_facets import SourceFacets, explained
 from sphinx_needs._wording import title_hint
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, NeedsMutable
@@ -37,8 +37,6 @@ from sphinx_needs.needs_schema import AllowedTypes
 from sphinx_needs.ubquery import (
     IS_A_KEY,
     ORIGIN_KEY,
-    SOURCE_NAME,
-    SOURCE_SHADOWED_KEY,
     CompiledFilter,
     compile_portable,
     is_a,
@@ -878,7 +876,6 @@ def filter_needs_and_parts(
             compiled,
             origin_docname,
             config.is_a_types if compiled.reads_types else None,
-            shadowed=compiled.reads_source and config.source_shadowed is not None,
         )
         found_needs: list[_NeedOrPartT] = []
         error_reported = False
@@ -895,8 +892,7 @@ def filter_needs_and_parts(
                         append_warning = f" {append_warning}"
                     log_warning(
                         log,
-                        f"Filter {filter_string!r} not valid. "
-                        f"Error: {_failure(e, filter_string, config)}.{append_warning}",
+                        f"Filter {filter_string!r} not valid. Error: {e}.{append_warning}",
                         "filter",
                         location=location,
                     )
@@ -988,8 +984,6 @@ def _fast_path_context(
     compiled: CompiledFilter,
     origin_docname: str | None,
     types: Mapping[str, frozenset[str]] | None = None,
-    *,
-    shadowed: bool = False,
 ) -> dict[str, Any] | None:
     """The mapping a compiled filter's predicate reads beside the need.
 
@@ -998,9 +992,7 @@ def _fast_path_context(
     that reads them, the document the filter is written in (``c.this_doc()``) and the
     project's need types (``c.is_a("...")``, ``config.is_a_types``). Both are passed per
     call, never compiled in: one compiled filter serves every document a string is
-    written in, and every project a process builds. So is whether a declaration named
-    ``source`` switches the facets off (*shadowed*, ``config.source_shadowed``), for a
-    predicate that reads ``source``.
+    written in, and every project a process builds.
 
     The caller passes the configuration values it has read: a read of one costs more
     than the rest of a per-need call, and :func:`filter_single_need` is called need by
@@ -1010,14 +1002,7 @@ def _fast_path_context(
     """
     origin = origin_docname if compiled.reads_origin else None
     types = types if compiled.reads_types else None
-    shadowed = shadowed and compiled.reads_source
-    if (
-        not filter_data
-        and var_proxy is None
-        and origin is None
-        and types is None
-        and not shadowed
-    ):
+    if not filter_data and var_proxy is None and origin is None and types is None:
         return None
     fallback: dict[str, Any] = dict(filter_data) if filter_data else {}
     if var_proxy is not None:
@@ -1026,8 +1011,6 @@ def _fast_path_context(
         fallback[ORIGIN_KEY] = origin
     if types is not None:
         fallback[IS_A_KEY] = types
-    if shadowed:
-        fallback[SOURCE_SHADOWED_KEY] = True
     return fallback
 
 
@@ -1076,7 +1059,7 @@ def apply_default_predicate(
         # a predicate is read for its truth, as a filter is
         result = bool(eval(predicate, predicate_context))
     except Exception as e:
-        # evaluated as the need is created, before it exists: no facets there
+        # evaluated as the need is created, with no check context: no facets there
         raise NeedsInvalidFilter(
             f"Predicate {predicate!r} not valid. "
             f"Error: {explained(e, 'a field predicate', predicate)}."
@@ -1185,7 +1168,6 @@ def _filter_single_need(
         if simple_pred is not None:
             # called need by need: the mapping is built only for a predicate that reads it
             filter_data = config.filter_data
-            shadowed = compiled.reads_source and config.source_shadowed is not None
             fallback = (
                 _fast_path_context(
                     filter_data,
@@ -1193,13 +1175,11 @@ def _filter_single_need(
                     compiled,
                     origin_docname,
                     config.is_a_types if compiled.reads_types else None,
-                    shadowed=shadowed,
                 )
                 if filter_data
                 or var_proxy is not None
                 or (origin_docname is not None and compiled.reads_origin)
                 or compiled.reads_types
-                or shadowed
                 else None
             )
             try:
@@ -1209,8 +1189,7 @@ def _filter_single_need(
                 raise
             except Exception as e:
                 raise NeedsInvalidFilter(
-                    f"Filter {filter_string!r} not valid. "
-                    f"Error: {_failure(e, filter_string, config)}."
+                    f"Filter {filter_string!r} not valid. Error: {e}."
                 )
 
         # === Slow path: fall back to eval() ===
@@ -1230,23 +1209,10 @@ def _filter_single_need(
         filter_context["search"] = need_search
 
         filter_context["c"] = NeedCheckContext(need, origin_docname, config)
-        # the facets of the need's source, only for a filter naming them: binding them
-        # costs every evaluation, where the parsed tier reads only the facets it names;
-        # a declaration of the name switches them off, and ``source`` reads it
-        facets = _string_names_source(filter_string) and (
-            config.source_shadowed is None
-        )
-        if facets:
-            filter_context[SOURCE_NAME] = SourceFacets(
-                need._need if isinstance(need, NeedPartItem) else need
-            )
         if _read_watch.current is not None:
             # the names the evaluation reads, for the check of the order of the pass; the
-            # need's fields are what the context does not set over them, and the facets,
-            # which read the hops, fixed before the pass
+            # need's fields are what the context does not set over them
             not_fields = {"needs", "current_need", "search", "c", "var"}
-            if facets:
-                not_fields.add(SOURCE_NAME)
             not_fields.update(config.filter_data)
             if isinstance(need, NeedPartItem):
                 # what a part sets over its need's fields (its id, its links) is
@@ -1262,61 +1228,11 @@ def _filter_single_need(
             # a filter is read for its truth, whatever its value (#1773)
             result = bool(eval(filter_compiled or filter_string, filter_context))
         except Exception as e:
-            raise NeedsInvalidFilter(
-                f"Filter {filter_string!r} not valid. "
-                f"Error: {_failure(e, filter_string, config)}."
-            )
+            raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
         return result
     finally:
         if watch is not None:
             watch.active = False
-
-
-def _failure(error: Exception, filter_string: str, config: NeedsSphinxConfig) -> str:
-    """The text of a filter's failure on a need. Where a declaration named ``source``
-    switches the facets off and the filter reads one (``source.path``), it fails there
-    -- the declaration's value has no facets -- and the text says why, naming the
-    declaration, in either tier: declaring the name is no fault, so it is reported
-    where a facet is read, not where it is declared."""
-    if (declared := config.source_shadowed) is not None and reads_a_facet(
-        filter_string
-    ):
-        return (
-            f"{error}; the project declares {declared} named 'source', which switches "
-            "the source.* facets off"
-        )
-    return str(error)
-
-
-@lru_cache(maxsize=256)
-def _code_names_source(code: CodeType) -> bool:
-    """Whether compiled filter code looks ``source`` up, in its own names or in those of
-    the code it nests: a generator expression's body, a lambda's, and before Python 3.12
-    a comprehension's are code objects of their own (``co_consts``), so a filter naming
-    ``source`` there alone would otherwise find it unbound. An attribute named ``source``
-    is in the names too, and binds the facets where nothing reads them: a cost, never a
-    different answer. Cached per code object."""
-    return SOURCE_NAME in code.co_names or any(
-        isinstance(const, CodeType) and _code_names_source(const)
-        for const in code.co_consts
-    )
-
-
-@lru_cache(maxsize=256)
-def _string_names_source(filter_string: str) -> bool:
-    """:func:`_code_names_source` of a filter string, compiled as ``eval`` compiles it;
-    false for one that does not compile, which ``eval`` then reports.
-
-    Keyed on the string, which every caller passes, never on the code object a call
-    compiles afresh: a cache keyed on that hashes and compares the code by value need by
-    need, a quarter of ``eval``'s cost for a filter that never names ``source``
-    (measured)."""
-    try:
-        # ``eval`` strips a string's leading spaces and tabs; ``compile`` does not
-        code = compile(filter_string.lstrip(" \t"), "<string>", "eval")
-    except (SyntaxError, ValueError):
-        return False
-    return _code_names_source(code)
 
 
 class NeedCheckContext:
@@ -1338,6 +1254,13 @@ class NeedCheckContext:
         if self._origin_docname is None:
             raise ValueError("`this_doc` can not be used in this context")
         return self._need.is_in_document(self._origin_docname)
+
+    @property
+    def source(self) -> SourceFacets:
+        """The facets of the need's source, ``c.source.<facet>`` (a part's are its
+        need's), each computed when it is read (:mod:`sphinx_needs._source_facets`)."""
+        need = self._need
+        return SourceFacets(need._need if isinstance(need, NeedPartItem) else need)
 
     def is_a(self, name: str) -> bool:
         """Whether the need's type is *name*, or a type inheriting from it, transitively,

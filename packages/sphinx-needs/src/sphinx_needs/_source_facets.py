@@ -1,8 +1,11 @@
-"""The ``source.*`` facets of a filter: where a need comes from, by named position.
+"""The ``c.source`` facets of a filter: where a need comes from, by named position.
 
 A need's hops (:class:`~sphinx_needs.need_item.NeedItemSource`, innermost first) are
-provisional; the facets are the stable view a filter reads of them. Each facet names a
-position in the hop list, never a producer, so a longer chain needs no new rule:
+provisional; the facets are the stable view a filter reads of them, as
+``c.source.<facet>``: ``c`` is the need's check context, which the filter context sets
+over every field, beside ``c.this_doc()`` and ``c.is_a()``, so no field a project
+declares can shadow them. Each facet names a position in the hop list, never a
+producer, so a longer chain needs no new rule:
 
 - ``kind``: the producer, read from the whole chain and the need's import and external
   flags (:func:`kind_of`);
@@ -48,8 +51,12 @@ from sphinx_needs._need_source import SRCDIR_ROOT
 if TYPE_CHECKING:
     from sphinx_needs._need_source import NeedSourceHop
 
+CHECKS_NAME: Final = "c"
+"""The name of a filter's check context, which holds the facets."""
+
 SOURCE_NAME: Final = "source"
-"""The name a filter reads the facets by, ``source.<facet>``."""
+"""The attribute of the check context a filter reads the facets by,
+``c.source.<facet>``."""
 
 SOURCE_FACETS: Final = (
     "document",
@@ -60,7 +67,7 @@ SOURCE_FACETS: Final = (
     "sections",
     "symbol",
 )
-"""The facets a filter reads as ``source.<facet>``, sorted."""
+"""The facets a filter reads as ``c.source.<facet>``, sorted."""
 
 _PATHLESS: Final = frozenset({"import", "external", "generated"})
 """The kinds whose ``path`` is ``None``: the file their text comes from is not one this
@@ -83,7 +90,7 @@ def _srcdir_path(hop: NeedSourceHop) -> str | None:
 
 
 def kind_of(source: Any) -> str | None:
-    """``source.kind``: the producer of the need, the first rule that applies.
+    """``c.source.kind``: the producer of the need, the first rule that applies.
 
     ``"import"`` (``needimport`` read it: its stored flag, as an imported needs.json
     and an included file are both ``file`` hops; first, so that an imported need stays
@@ -111,7 +118,7 @@ def kind_of(source: Any) -> str | None:
 
 
 def path_of(source: Any) -> str | None:
-    """``source.path``: ``hops[0]``'s path under the source directory.
+    """``c.source.path``: ``hops[0]``'s path under the source directory.
 
     ``None`` for an ``import``, ``external`` or ``generated`` need, where ``hops[0]`` has
     no path under the source directory (a test case's code file, whose root is the test
@@ -124,7 +131,7 @@ def path_of(source: Any) -> str | None:
 
 
 def line_of(source: Any) -> int | None:
-    """``source.line``: ``hops[0]``'s start line, where ``source.path`` is not ``None``
+    """``c.source.line``: ``hops[0]``'s start line, where ``c.source.path`` is not ``None``
     (the two are one hop's, so they are a coherent pair); 1-based, recorded only where
     it is a true line of the file."""
     if path_of(source) is None:
@@ -134,7 +141,7 @@ def line_of(source: Any) -> int | None:
 
 
 def paths_of(source: Any) -> tuple[str, ...]:
-    """``source.paths``: every hop's path under the source directory, innermost first,
+    """``c.source.paths``: every hop's path under the source directory, innermost first,
     each once.
 
     ``()`` for an external need that is not imported, keyed on ``hops[0]`` being
@@ -150,7 +157,7 @@ def paths_of(source: Any) -> tuple[str, ...]:
 
 
 def symbol_of(source: Any) -> str | None:
-    """``source.symbol``: where ``hops[0]`` is ``code``, the ``qualified_name`` extra of
+    """``c.source.symbol``: where ``hops[0]`` is ``code``, the ``qualified_name`` extra of
     its innermost semantic entry, the entity as its producer renders it
     (``ns::Widget::draw``, ``Shape.area.<locals>.inner``); otherwise ``None``."""
     hops = _hops(source)
@@ -160,12 +167,12 @@ def symbol_of(source: Any) -> str | None:
 
 
 def document_of(need: Any) -> str | None:
-    """``source.document``: the need's ``docname``, the document it is placed on."""
+    """``c.source.document``: the need's ``docname``, the document it is placed on."""
     return need["docname"]
 
 
 def sections_of(need: Any) -> Any:
-    """``source.sections``: the need's ``sections``, innermost first."""
+    """``c.source.sections``: the need's ``sections``, innermost first."""
     return need["sections"]
 
 
@@ -203,16 +210,17 @@ READERS: Final[Mapping[str, Callable[[Any], Any]]] = {
 
 
 def unknown_facet(name: str) -> str:
-    """The error of ``source.<name>`` naming no facet, with the closest facet."""
+    """The error of ``c.source.<name>`` naming no facet, with the closest facet."""
     close = difflib.get_close_matches(name, SOURCE_FACETS, 1, 0.8)
     if close:
-        return f"source has no facet {name!r} (did you mean {close[0]!r}?)"
-    return f"source has no facet {name!r} (its facets: {', '.join(SOURCE_FACETS)})"
+        return f"c.source has no facet {name!r} (did you mean {close[0]!r}?)"
+    return f"c.source has no facet {name!r} (its facets: {', '.join(SOURCE_FACETS)})"
 
 
 class SourceFacets:
-    """What ``source`` is in a filter ``eval`` evaluates: each facet computed when it is
-    read, so a filter pays for the facets it names alone."""
+    """What ``c.source`` is in a filter ``eval`` evaluates (``NeedCheckContext.source``):
+    each facet computed when it is read, so a filter pays for the facets it names
+    alone."""
 
     __slots__ = ("_need",)
 
@@ -226,8 +234,8 @@ class SourceFacets:
             raise AttributeError(unknown_facet(name))
         return reader(self._need)
 
-    # one need's facets are equal however often they are read: the parsed tier reads
-    # ``source`` once per operand, where ``eval`` binds it once
+    # one need's facets are equal however often they are read: each read of
+    # ``c.source`` builds them anew
     def __eq__(self, other: object) -> bool:
         return isinstance(other, SourceFacets) and other._need is self._need
 
@@ -235,39 +243,42 @@ class SourceFacets:
         return id(self._need)
 
     def __repr__(self) -> str:
-        return f"<source of {self._need['id']!r}>"
+        return f"<c.source of {self._need['id']!r}>"
+
+
+def _is_facet_read(node: ast.AST) -> bool:
+    """Whether *node* is ``c.source.<facet>`` for a name of :data:`SOURCE_FACETS`."""
+    return (
+        isinstance(node, ast.Attribute)
+        and node.attr in READERS
+        and isinstance(node.value, ast.Attribute)
+        and node.value.attr == SOURCE_NAME
+        and isinstance(node.value.value, ast.Name)
+        and node.value.value.id == CHECKS_NAME
+    )
 
 
 @lru_cache(maxsize=256)
 def reads_a_facet(expression: str) -> bool:
-    """Whether an expression reads a facet, ``source.<facet>`` for a name of
-    :data:`SOURCE_FACETS` -- not any attribute of ``source``: a method of a field named
-    ``source`` (``source.startswith(...)``) is no facet read. False for an expression
-    that does not parse. Cached per string."""
+    """Whether an expression reads a facet, ``c.source.<facet>``. False for an
+    expression that does not parse. Cached per string."""
     try:
         tree = ast.parse(expression.strip(), mode="eval")
     except (SyntaxError, ValueError):
         return False
-    return any(
-        isinstance(node, ast.Attribute)
-        and isinstance(node.value, ast.Name)
-        and node.value.id == SOURCE_NAME
-        and node.attr in READERS
-        for node in ast.walk(tree)
-    )
-
-
-def source_undefined(error: BaseException) -> bool:
-    """Whether *error* is ``source`` undefined, where an expression is evaluated with no
-    facets."""
-    return isinstance(error, NameError) and getattr(error, "name", None) == SOURCE_NAME
+    return any(map(_is_facet_read, ast.walk(tree)))
 
 
 def unavailable(error: BaseException, expression: str) -> bool:
-    """Whether an expression evaluated where there are no facets failed for want of
-    them: ``source`` undefined there, or a facet read failing on what ``source`` is
-    there (a field named ``source``, a record's key)."""
-    return source_undefined(error) or reads_a_facet(expression)
+    """Whether an expression evaluated where there are no facets (no check context)
+    failed for want of them: it reads a facet, and fails with ``c`` undefined, or with
+    an attribute error on what ``c`` is there (a field named ``c``: a predicate's and a
+    variant condition's contexts are built from the need's fields)."""
+    if not reads_a_facet(expression):
+        return False
+    if isinstance(error, NameError):
+        return getattr(error, "name", None) == CHECKS_NAME
+    return isinstance(error, AttributeError)
 
 
 def explained(error: BaseException, where: str, expression: str) -> str:
@@ -275,5 +286,5 @@ def explained(error: BaseException, where: str, expression: str) -> str:
     (*where*: a field predicate, a needimport filter, a variant condition), with why,
     where it failed for want of them (:func:`unavailable`)."""
     if unavailable(error, expression):
-        return f"{error}; the source.* facets are not available in {where}"
+        return f"{error}; the c.source facets are not available in {where}"
     return str(error)

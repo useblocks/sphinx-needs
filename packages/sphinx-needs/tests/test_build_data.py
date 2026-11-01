@@ -135,14 +135,7 @@ def test_an_application_reads_no_build_data_until_it_builds(
     assert config.variant_data_proxy is None
 
 
-@pytest.mark.parametrize(
-    "name",
-    [
-        "variant_data_proxy",
-        "is_a_types",
-        "source_shadowed",
-    ],
-)
+@pytest.mark.parametrize("name", ["variant_data_proxy", "is_a_types"])
 def test_the_build_data_cannot_be_written_through_the_configuration(
     name: str, make_app: Any, tmp_path: Path
 ) -> None:

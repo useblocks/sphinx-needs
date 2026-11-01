@@ -144,11 +144,6 @@ class _BuildData:
     string, where it is written (None where no caller says) and the origin its caller
     appends to its warnings (``(from warning filter 'x')``): once per build, emptied
     where the types are set."""
-    source_shadowed: str | None = None
-    """What declares the name ``source`` in the project (``"a field"``, ``"a link
-    type"``, ``"a needs_filter_data key"``), which switches the ``source.*`` facets off:
-    ``source`` in a filter then reads the declaration, in every tier. None where
-    nothing does. Set by ``create_schema``."""
 
 
 class _Config:
@@ -1022,7 +1017,6 @@ _OWN_ATTRIBUTES = (
     "layouts",
     "variant_data_proxy",
     "is_a_types",
-    "source_shadowed",
 )
 
 
@@ -1042,9 +1036,8 @@ class NeedsSphinxConfig:
     # each is a property reading sphinx-needs' own registry (`_NEEDS_CONFIG`), and the
     # configuration value itself is the dataclass field of the same name with a
     # leading underscore (`_types` is `needs_types`).
-    # `variant_data_proxy`, `is_a_types` and `source_shadowed` are no configuration
-    # values at all: the build derives them, and they are read-only properties over the
-    # same registry.
+    # `variant_data_proxy` and `is_a_types` are no configuration values at all: the
+    # build derives them, and they are read-only properties over the same registry.
 
     def __init__(self, config: _SphinxConfig) -> None:
         super().__setattr__("_config", config)
@@ -1078,22 +1071,6 @@ class NeedsSphinxConfig:
     @is_a_types.setter
     def is_a_types(self, _value: object) -> None:
         _read_only(BUILD_DATA_READ_ONLY.format(name="is_a_types"))
-
-    @property
-    def source_shadowed(self) -> str | None:
-        """What declares the name ``source`` in the project -- ``"a field"``, ``"a link
-        type"`` or ``"a needs_filter_data key"`` -- which switches the ``source.*``
-        filter facets off: ``source`` in a filter then reads the declaration. None
-        where nothing does. Set at the start of every build, where the schema is
-        created; None until a build has.
-
-        Read-only: a write raises ``NeedsApiConfigException``.
-        """
-        return _NEEDS_CONFIG.build.source_shadowed
-
-    @source_shadowed.setter
-    def source_shadowed(self, _value: object) -> None:
-        _read_only(BUILD_DATA_READ_ONLY.format(name="source_shadowed"))
 
     def __getattribute__(self, name: str) -> Any:
         if name.startswith("__") or name in _OWN_ATTRIBUTES:
