@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793543775932,
+  "lastUpdate": 1793567466469,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28308,6 +28308,48 @@ window.BENCHMARK_DATA = {
             "value": 185.96323,
             "unit": "MB",
             "extra": "Commit: c17f9abd9283fa39aa7a6b4b151bd6719a2857bf\nBranch: master\nTime: 2026-11-01T15:34:55+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "794d82b578e072ee3ecc0af5c198dc4cc4e8dcc8",
+          "message": "🐛 A test case with no test file in its report has no `c.source.path` (#2456)\n\nA test case whose report gives no test file (pytest's default xunit2\nwrites none) now has no `c.source.path`, as\nthe filter documentation says of every test case: its path is its test\ncode's, which the build does not know yet,\nso later data fills it rather than changes it. Before, such a case\nanswered the report, `c.source.path ==\n\"report.xml\"`, like its test file and suite. A test file and a test\nsuite keep the report as their path;\n`c.source.line` follows the path, and `c.source.paths` is unchanged (the\nreport, then the page).\n\nThe rule is by position, not by need type: a need whose innermost hop is\na report hop marking a test case (a\n`case` entry in its place in the report, as sphinx-test-reports records\none) has no path. A test case's code hop,\nonce its root is known, comes first and answers, so the path fills\nrather than stays unset.\n\nThe filter conformance corpus:\n- a new case, `a-test-case-with-no-test-file-has-no-path`, pins it: one\n`<testcase>` without `file`, and\n  `c.source.kind == \"report\" and c.source.path is None` selecting it;\n- the \"source facets\" section drops 52 of its 55 `divergent` markers,\nwhich ubCode measured by running every\nentry against its own engine: 49 entries it agrees with, the `eval`-tier\n`c.source.path in c.source.paths`\nit answers exactly, and the two report entries of\n`source-paths-are-relative-to-the-source-directory`, whose\ncase now reads its report under `[test_reports] rootdir = \".\"` (anchored\nat the `ubproject.toml`'s\ndirectory, so the facets still read `../report.xml` and every `expected`\nis unchanged);\n- three stay divergent, each saying what the other engine does instead:\ntwo `paths` entries (the files an\ninclude passes through are not recorded there yet) and\n`c.source.sections == sections` (a list field\ncompared with `==`, as in `mixed-type-values`); the section's header\nsays which, and why;\n- the 25 divergent entries outside the section are untouched.\n\nThe feature is unreleased, so the changelog's facets entry already\ndescribes the fixed behaviour and gains no\nseparate line.\n\n\nThe eval-tier rule in the corpus header now also names the entries\nubCode already answers and lists as pending pins in its own runner\n(`platform in var.archs`, and now `c.source.path in c.source.paths`).\n\nFollows #2451.",
+          "timestamp": "2026-11-01T22:09:32+01:00",
+          "tree_id": "86ccbb3d35d7394d6a6a67adc53b3b09b8ba6de3",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/794d82b578e072ee3ecc0af5c198dc4cc4e8dcc8"
+        },
+        "date": 1793567465623,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.0714289000000008,
+            "unit": "s",
+            "extra": "Commit: 794d82b578e072ee3ecc0af5c198dc4cc4e8dcc8\nBranch: master\nTime: 2026-11-01T22:09:32+01:00\nCPU: INTEL(R) XEON(R) PLATINUM 8573C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 12.938681922999997,
+            "unit": "s",
+            "extra": "Commit: 794d82b578e072ee3ecc0af5c198dc4cc4e8dcc8\nBranch: master\nTime: 2026-11-01T22:09:32+01:00\nCPU: INTEL(R) XEON(R) PLATINUM 8573C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 185.96323,
+            "unit": "MB",
+            "extra": "Commit: 794d82b578e072ee3ecc0af5c198dc4cc4e8dcc8\nBranch: master\nTime: 2026-11-01T22:09:32+01:00\nCPU: INTEL(R) XEON(R) PLATINUM 8573C"
           }
         ]
       }
