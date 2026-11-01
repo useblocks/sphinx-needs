@@ -580,6 +580,37 @@ UNAVAILABLE = "the c.source facets are not available in"
             id="a-check-that-is-no-facet",
         ),
         pytest.param(
+            _project(
+                'needs_fields = {"owner": {"nullable": True, "predicates": '
+                '[(\'nope == 1 and c.source.kind == "page"\', "me")]}}\n'
+            ),
+            "<srcdir>/index.rst:4: WARNING: needs_fields['owner']['predicates']: "
+            "Predicate 'nope == 1 and c.source.kind == \"page\"' not valid. Error: name 'nope' is not defined. "
+            "The predicate is skipped. [needs.config]",
+            id="a-name-other-than-c-undefined",
+        ),
+        pytest.param(
+            _project(
+                'needs_fields = {"owner": {"nullable": True, "predicates": '
+                "[('c.source == 1', \"me\")]}}\n"
+            ),
+            "<srcdir>/index.rst:4: WARNING: needs_fields['owner']['predicates']: "
+            "Predicate 'c.source == 1' not valid. Error: name 'c' is not defined. "
+            "The predicate is skipped. [needs.config]",
+            id="c-source-alone-is-no-facet",
+        ),
+        pytest.param(
+            _project(
+                'needs_fields = {"owner": {"nullable": True, "predicates": '
+                '[(\'title.nope == 1 or c.source.kind == "page"\', "me")]}}\n'
+            ),
+            "<srcdir>/index.rst:4: WARNING: needs_fields['owner']['predicates']: "
+            "Predicate 'title.nope == 1 or c.source.kind == \"page\"' not valid. Error: 'str' object has no attribute 'nope'. "
+            "The predicate is skipped. [needs.config]",
+            id="an-attribute-error-of-another-value",
+            marks=pytest.mark.xfail(strict=True, reason="fix round 4"),
+        ),
+        pytest.param(
             {
                 "buildername": "needs",
                 "files": [
@@ -746,3 +777,18 @@ def test_a_derived_where_reads_the_facets(test_app: Any) -> None:
     needs = SphinxNeedsData(app.env).get_needs_view()
     assert needs["REQ_001"]["same_file"] == []
     assert needs["REQ_002"]["same_file"] == ["REQ_001"]
+
+
+def test_only_c_roots_a_facet_and_a_declared_where_admits_facet_names_alone() -> None:
+    """The parsed tier compiles ``c.source.<facet>`` alone: a chain rooted at any other
+    name is eval's (a field's attribute, or an undefined name). A derived ``where``
+    admits the facet chain, never ``c.source`` alone or an unknown facet."""
+    from sphinx_needs.derive import filter_problem
+    from sphinx_needs.ubquery import compile_portable
+
+    assert compile_portable('c.source.path == "a"').predicate is not None
+    for other in ('x.source.path == "a"', 'need.source.kind == "page"'):
+        assert compile_portable(other).predicate is None, other
+    assert filter_problem('c.source.path == "a"') is None
+    for refused in ('c.source.pth == "a"', "c.source == 1"):
+        assert filter_problem(refused) is not None, refused
