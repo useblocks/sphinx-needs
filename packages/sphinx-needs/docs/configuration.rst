@@ -1076,8 +1076,9 @@ For ``predicates``, the match expression is a string, using Python syntax, that 
 - :ref:`needs_variant_data` (via the ``var`` namespace)
 
 An expression that cannot be evaluated, such as one naming something not in this list, is reported as a ``needs.config`` warning and then skipped, so that the remaining predicates and the ``default`` apply just as they would for an expression that did not match.
-The ``source.*`` facets of a filter (:ref:`filter_source`) are not in it, as a predicate is evaluated while the need is created:
-``source`` there is reported as ``name 'source' is not defined; the source.* facets are not available in a field predicate``.
+The ``c.source`` facets of a filter (:ref:`filter_source`) are not in it, as a predicate is evaluated while the need is created,
+with no check context: ``c.source.path`` there is reported as
+``name 'c' is not defined; the c.source facets are not available in a field predicate``.
 
 For example:
 
@@ -4055,10 +4056,6 @@ function. The function gets executed during config loading and must return a str
 
 The value of ``needs_filter_data`` will be available as data inside :ref:`filter_string` and can be very powerful
 together with internal needs information to filter needs.
-
-A key named ``source`` switches the ``source.*`` filter facets off for the whole project: ``source`` in a filter
-then reads the key, and a filter reading a facet (``source.path``) fails with a report naming the key
-(:ref:`filter_source`).
 
 .. _`needs_extra_options`:
 
