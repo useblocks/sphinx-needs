@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793527287884,
+  "lastUpdate": 1793527379228,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28224,6 +28224,48 @@ window.BENCHMARK_DATA = {
             "value": 185.035848,
             "unit": "MB",
             "extra": "Commit: 401b6b19e07fc5c4fba04899ca1ef9d85973dd96\nBranch: master\nTime: 2026-11-01T10:59:44+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "323730973+useblocks-automation[bot]@users.noreply.github.com",
+            "name": "useblocks-automation[bot]",
+            "username": "useblocks-automation[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cb69b410e99cd6074fc51085df8016748fdc1582",
+          "message": "🔧 Update pre-commit hook versions (#2454)\n\nHook revisions updated by `prek update --cooldown-days 7`:\n\n- https://github.com/astral-sh/ruff-pre-commit: `v0.16.8` -> `v0.17.2`\n- https://github.com/astral-sh/uv-pre-commit: `\"0.12.18\"` -> `\"0.13.5\"`\n\nhooks clean after autofix: yes — see [the workflow\nrun](https://github.com/useblocks/sphinx-needs/actions/runs/41279235251)\n\nOpened by the scheduled `Prek update` workflow.\n\nCo-authored-by: chrisjsewell <2997570+chrisjsewell@users.noreply.github.com>",
+          "timestamp": "2026-11-01T11:00:09+01:00",
+          "tree_id": "d3081f6f053b5d95a51d91a095d516ba7dfdb7e4",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/cb69b410e99cd6074fc51085df8016748fdc1582"
+        },
+        "date": 1793527378335,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.05752264200000212,
+            "unit": "s",
+            "extra": "Commit: cb69b410e99cd6074fc51085df8016748fdc1582\nBranch: master\nTime: 2026-11-01T11:00:09+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 11.967012613999998,
+            "unit": "s",
+            "extra": "Commit: cb69b410e99cd6074fc51085df8016748fdc1582\nBranch: master\nTime: 2026-11-01T11:00:09+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 186.084423,
+            "unit": "MB",
+            "extra": "Commit: cb69b410e99cd6074fc51085df8016748fdc1582\nBranch: master\nTime: 2026-11-01T11:00:09+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
           }
         ]
       }
