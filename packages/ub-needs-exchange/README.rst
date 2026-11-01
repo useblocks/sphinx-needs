@@ -13,7 +13,9 @@ so that it is read one way:
   ``format_version``;
 - **selecting a version** -- the one asked for, or the file's current one;
 - **the records** -- each keyed by its id, with the legacy ``description`` read as
-  ``content`` and the version's ``needs_schema`` defaults merged under it.
+  ``content`` and the version's ``needs_schema`` defaults merged under it;
+- **namespaced ids** -- a version's ``namespaced_ids`` marker, and ``split_id``, the one
+  rule by which a namespaced id splits into its namespace and its local id.
 
 Standard library only: no Sphinx, no docutils, no sibling distribution. A converter or a
 build action that runs without the documentation toolchain can use it.
