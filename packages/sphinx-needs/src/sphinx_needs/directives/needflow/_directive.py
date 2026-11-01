@@ -5,9 +5,6 @@ from typing import TYPE_CHECKING
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from sphinx.ext.graphviz import (
-    figure_wrapper,
-)
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import (
@@ -170,15 +167,19 @@ class NeedflowDirective(FilterBase):
                                     location=self.get_location(),
                                 )
                                 continue
+                            if key not in ("root", "graph", "node", "edge"):
+                                # no emitter reads another element type, so it is
+                                # not carried into the diagram's style
+                                continue
                             if key in graphviz_style:
-                                graphviz_style[key].update(value)  # ty: ignore[invalid-key]
+                                graphviz_style[key].update(value)
                             else:
                                 # copied, so that merging several configs cannot edit
                                 # the configuration itself: the first config's
                                 # attributes used to be taken by reference and then
                                 # updated with the second's, which leaked one diagram's
                                 # styles into every later one naming the same config
-                                graphviz_style[key] = dict(value)  # ty: ignore[invalid-key]
+                                graphviz_style[key] = dict(value)
                     elif config_name:
                         log_warning(
                             LOGGER,
@@ -255,18 +256,22 @@ class NeedflowDirective(FilterBase):
             gnode = NeedflowGraphiz("", **attributes)
             self.set_source_info(gnode)
 
-            if not self.arguments:
-                figure = nodes.figure("", gnode)
-                if "align" in gnode:
-                    figure["align"] = gnode.attributes.pop("align")  # ty: ignore[invalid-argument-type]
-                figure["ids"] = [targetid]
-                self.add_name(gnode)
-                return [figure]
-            else:
-                figure = figure_wrapper(self, gnode, self.arguments[0])  # ty: ignore[invalid-argument-type]
-                figure["ids"] = [targetid]
-                self.add_name(figure)
-                return [figure]
+            # wrapped as Sphinx's `figure_wrapper` wraps its own graphviz node -- which
+            # is all that function is typed to accept -- with the alignment moved onto the figure
+            figure = nodes.figure("", gnode)
+            if "align" in gnode:
+                # NeedsFlowType cannot say that `align` leaves the node for the figure
+                figure["align"] = gnode.attributes.pop("align")  # ty: ignore[invalid-argument-type]
+            if self.arguments:
+                inodes, messages = self.parse_inline(self.arguments[0])
+                caption = nodes.caption(self.arguments[0], "", *inodes)
+                caption.extend(messages)
+                self.set_source_info(caption)
+                figure += caption
+            figure["ids"] = [targetid]
+            # a captioned figure is the reference target, an uncaptioned one its diagram
+            self.add_name(figure if self.arguments else gnode)
+            return [figure]
 
         raise ValueError(f"Unknown needflow engine '{engine}'")
 

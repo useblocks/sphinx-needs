@@ -1242,6 +1242,15 @@ Internal changes
   could be proved to keep. The values a build gives are unchanged. Eight ``# ty: ignore``
   comments go, seven in ``needextend.py`` and one in ``needs_schema.py`` (:issue:`1835`)
 
+- 🏷️ The ``needflow`` options check a value against its ``Literal``'s values typed as that
+  ``Literal``, so the check narrows the value, and ``validated_config_enum`` returns a value of
+  the enumeration it is given. A ``needs_graphviz_styles`` element type other than ``root``,
+  ``graph``, ``node`` or ``edge``, which no emitter reads, is no longer carried into a
+  diagram's style, and a captioned graphviz ``needflow`` builds its figure itself, as Sphinx's
+  ``figure_wrapper`` does, since that function is typed to accept only Sphinx's own ``graphviz`` node.
+  Options, warnings and diagrams are unchanged. Eight ``# ty: ignore`` comments go
+  (:issue:`1835`)
+
 - 🏷️ Every function in the shipped code is annotated, and ruff's ``ANN`` rules keep it so
   across the workspace; ``sphinx_needs.setup`` now declares its types, and the internal
   ``profile`` decorator preserves the signature of what it wraps
