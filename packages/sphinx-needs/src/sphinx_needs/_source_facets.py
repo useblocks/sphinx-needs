@@ -16,9 +16,12 @@ producer, so a longer chain needs no new rule:
 
 A facet that is not yet knowable is ``None`` (``()`` for ``paths``), and later data
 only fills it: an imported or external need has no ``path`` until the upstream file is
-recorded, a test case none until its code root is known. A path is POSIX and relative
-to the Sphinx source directory (a hop whose ``root`` is ``"srcdir"``), with ``..`` for a
-file outside it; a hop under another root, or with a URL alone, has none.
+recorded, a test case none until its code root is known (the innermost place of a test
+case is its test code: a test case whose report gives no test file has the report as
+``hops[0]``, which is not where the case is written, so its path is ``None``; a case's
+code hop answers once its root is known). A path is POSIX
+and relative to the Sphinx source directory (a hop whose ``root`` is ``"srcdir"``), with
+``..`` for a file outside it; a hop under another root, or with a URL alone, has none.
 
 One function per facet, each costing its own work only, over a source and the need it
 belongs to. No Sphinx import of its own and no environment: the facets are computed
@@ -117,15 +120,26 @@ def kind_of(source: Any) -> str | None:
     return None
 
 
+def _is_test_case(hop: NeedSourceHop) -> bool:
+    """Whether a hop is a test report's place of a test case: a ``case`` entry in its
+    semantic location, as sphinx-test-reports records one."""
+    return hop.kind == "report" and any(
+        entry.kind == "case" for entry in hop.semantic or ()
+    )
+
+
 def path_of(source: Any) -> str | None:
     """``c.source.path``: ``hops[0]``'s path under the source directory.
 
     ``None`` for an ``import``, ``external`` or ``generated`` need, where ``hops[0]`` has
     no path under the source directory (a test case's code file, whose root is the test
-    run's; a needs.json downloaded from a URL), and without hops.
+    run's; a needs.json downloaded from a URL), and without hops. ``None`` for a test
+    case whose report gives no test file: its report is ``hops[0]``, which is not where
+    the case is written (its test code is); a case's code hop answers once its root is
+    known. A test file and a test suite are the report's, and keep its path.
     """
     hops = _hops(source)
-    if not hops or kind_of(source) in _PATHLESS:
+    if not hops or kind_of(source) in _PATHLESS or _is_test_case(hops[0]):
         return None
     return _srcdir_path(hops[0])
 

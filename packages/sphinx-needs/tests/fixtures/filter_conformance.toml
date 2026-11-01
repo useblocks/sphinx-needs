@@ -77,7 +77,8 @@
 #     by Python's rules, whatever its type, on every tier
 #   - an entry with `tier = "eval"` is OUTSIDE the portable language: ubCode's runner
 #     asserts that its engine refuses the string (it parses it to no query), unless the
-#     entry carries `divergent`, and sphinx-needs answers it through `eval`, which
+#     entry carries `divergent`, or ubCode's runner lists it as an entry its engine
+#     already answers (a pending pin), and sphinx-needs answers it through `eval`, which
 #     `expected` pins
 #   - an entry with `tier = "refused"` is a filter that is a constant alone: a literal (a
 #     string, bytes, a number with one sign or none, None or `...`), a tuple, list, set or
@@ -2022,8 +2023,11 @@ reason = "call:c.is_a"
 # place, `symbol` a traced code entity's qualified name, `document` and `sections` the
 # placement (read from `docname` and `sections`, which they are aliases of). `paths` may
 # gain entries as more of a chain is recorded, so entries test membership, never its
-# length or positions. Every entry is divergent for ubCode, its behaviour read rather
-# than run: the mirror measures each and drops the key where ubCode agrees.
+# length or positions. ubCode has run these entries against its own engine, and three
+# still diverge: two `paths` entries, as ubCode does not yet record the files an include
+# passes through, and a list field compared with `==`, which ubc_query refuses as it does
+# in `mixed-type-values`. The entry for a test case whose report gives no test file is
+# not yet run against ubCode.
 
 [[case]]
 name = "source-facets-of-page-include-import-and-external-needs"
@@ -2070,171 +2074,145 @@ files = { "frag/a.txt" = '''
 filter = 'c.source.kind == "page"'
 expected = ["REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
 why = "a need of a directive, in the page or in an included file, a list2need item among them, is a page need"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.kind == "import"'
 expected = ["IMP_001"]
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.kind == "external"'
 expected = ["EXT_001"]
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.kind != "page"'
 expected = ["EXT_001", "IMP_001"]
 why = "the kinds are open: a negated kind test selects every kind a later producer adds too"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.kind in ["import", "external"]'
 expected = ["EXT_001", "IMP_001"]
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path == "index.rst"'
 expected = ["REQ_AFTER", "REQ_PAGE"]
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path == "frag/a.txt"'
 expected = ["REQ_FRAG"]
 why = "needs written in an included fragment: the fragment, where docname is the page it is included in"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path == "frag/b.txt"'
 expected = ["REQ_DEEP", "REQ_ITEM"]
 why = "an include inside an include: the innermost file, a list2need item's too"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = '"frag/a.txt" in c.source.paths'
 expected = ["REQ_DEEP", "REQ_FRAG", "REQ_ITEM"]
 why = "paths holds every file a need came through: the needs written in frag/a.txt, and those included through it"
-divergent = { ubcode = "fails on c.source" }
+divergent = { ubcode = "the files an include passes through between the written-in file and the page are not recorded yet (ubCode's source-location fix PR 6, not yet open)" }
 
 [[case.filters]]
 filter = '"frag/b.txt" in c.source.paths and "frag/a.txt" in c.source.paths'
 expected = ["REQ_DEEP", "REQ_ITEM"]
 why = "the nested chain: the file a need is written in, and the file it was included through"
-divergent = { ubcode = "fails on c.source" }
+divergent = { ubcode = "the files an include passes through between the written-in file and the page are not recorded yet (ubCode's source-location fix PR 6, not yet open)" }
 
 [[case.filters]]
 filter = '"data/imp.json" in c.source.paths'
 expected = ["IMP_001"]
 why = "an imported need's paths hold the needs.json it was read from, then the page it is imported on"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = '"index.rst" in c.source.paths'
 expected = ["IMP_001", "REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = '"index.rst" not in c.source.paths'
 expected = ["EXT_001"]
 why = "an external need has no file of this project, not even the page an imported need is placed on"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path is None'
 expected = ["EXT_001", "IMP_001"]
 why = "an imported or external need's file is another project's, not yet recorded: its path is unset, which later data fills rather than changes"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.line == 4'
 expected = ["REQ_PAGE"]
 why = "the line in the file, 1-based: the runner's title is the first three lines of index.rst"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.line == 1'
 expected = ["REQ_DEEP", "REQ_FRAG"]
 why = "the line in the included file, the path's own"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path == "frag/b.txt" and c.source.line == 7'
 expected = ["REQ_ITEM"]
 why = "a list2need item's line is the item's"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.line is None'
 expected = ["EXT_001", "IMP_001"]
 why = "line is the path's: none where path is none"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.symbol is None'
 expected = ["EXT_001", "IMP_001", "REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
 why = "symbol is a traced code entity's; a page need's is not served yet"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.document == "index"'
 expected = ["IMP_001", "REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
 why = "the page a need is placed on, an included file's need and an imported need included"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.document is None'
 expected = ["EXT_001"]
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.document == docname'
 expected = ["EXT_001", "IMP_001", "REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
 why = "document is an alias of docname"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.sections == sections'
 expected = ["EXT_001", "IMP_001", "REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
 why = "sections is an alias of sections, innermost first"
-divergent = { ubcode = "fails on c.source" }
+divergent = { ubcode = "the filter fails: a list field is no value to compare with" }
 
 [[case.filters]]
 filter = '"Fragments" in c.source.sections'
 expected = ["IMP_001", "REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM"]
 why = "the sections of the page a need is placed on: an included file's need and an imported need take the place they are included or imported at"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = '"Remote sec" in c.source.sections'
 expected = ["EXT_001"]
 why = "an external need's sections are its record's, as sections is"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path.startswith("frag/")'
 expected = ["REQ_DEEP", "REQ_FRAG", "REQ_ITEM"]
 error = "filter"
 why = "the trap of an unset path: a method of path fails on a need that has none, which is excluded, and the filter is reported"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path is not None and c.source.path.startswith("frag/")'
 expected = ["REQ_DEEP", "REQ_FRAG", "REQ_ITEM"]
 why = "the guard: and stops before the method on a need with no path"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.kind == "page"'
 expected = ["REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE", "REQ_PAGE.1"]
 include_parts = true
 why = "a part reads its need's source"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path == "index.rst" and c.source.line == 4'
 expected = ["REQ_PAGE", "REQ_PAGE.1"]
 include_parts = true
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.pth == "index.rst"'
@@ -2243,7 +2221,6 @@ error = "filter"
 tier = "eval"
 reason = "attribute:c"
 why = "a name that is no facet is outside the language, and eval reports it on every need"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'any(c.source.kind == kind for kind in ["import", "external"])'
@@ -2251,7 +2228,6 @@ expected = ["EXT_001", "IMP_001"]
 tier = "eval"
 reason = "call:any"
 why = "eval reads c inside a generator expression's body too"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path in c.source.paths'
@@ -2259,7 +2235,6 @@ expected = ["REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
 tier = "eval"
 reason = "compare:name-in-name"
 why = "a facet in a facet is a name in a name, outside the language"
-divergent = { ubcode = "fails on c.source" }
 
 [[case]]
 name = "source-facets-of-code-and-report-needs"
@@ -2309,79 +2284,93 @@ class Engine:
 [[case.filters]]
 filter = 'c.source.kind == "code"'
 expected = ["IMPL_001", "IMPL_FILE"]
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.kind == "report"'
 expected = ["TF_0001", "TF_0001_0EA", "TF_0001_0EA_9A449", "TF_0001_0EA_A759D"]
 why = "the file, its suite and its cases"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path == "src/engine.py"'
 expected = ["IMPL_001", "IMPL_FILE"]
 why = "needs traced from a code file, by its path"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path is not None and c.source.path.startswith("src/")'
 expected = ["IMPL_001", "IMPL_FILE"]
 why = "needs traced from code under src/"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.line == 4'
 expected = ["IMPL_001"]
 why = "a marker's line in its file"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.symbol == "Engine.start"'
 expected = ["IMPL_001"]
 why = "the entity a marker is attached to, by its qualified name in its file"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.kind == "code" and c.source.symbol is None'
 expected = ["IMPL_FILE"]
 why = "a marker attached to no entity has no symbol"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path == "report.xml"'
 expected = ["TF_0001", "TF_0001_0EA"]
 why = "a test file's and a test suite's path is the report"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = '"report.xml" in c.source.paths'
 expected = ["TF_0001", "TF_0001_0EA", "TF_0001_0EA_9A449", "TF_0001_0EA_A759D"]
 why = "needs from this report"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.kind == "report" and c.source.path is None'
 expected = ["TF_0001_0EA_9A449", "TF_0001_0EA_A759D"]
 why = "a test case's path is unset until its test file's root is known"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = '"index.rst" in c.source.paths'
 expected = ["IMPL_001", "IMPL_FILE", "TF_0001", "TF_0001_0EA", "TF_0001_0EA_9A449", "TF_0001_0EA_A759D"]
 why = "a traced or reported need's paths hold the page that places it too"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.line is None'
 expected = ["TF_0001", "TF_0001_0EA", "TF_0001_0EA_9A449", "TF_0001_0EA_A759D"]
 why = "no line in a report, and none for a test case, whose path is unset"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = '"Code" in c.source.sections and c.source.document == "index"'
 expected = ["IMPL_001", "IMPL_FILE"]
 why = "a traced need is placed on the page of its src-trace"
-divergent = { ubcode = "fails on c.source" }
+
+[[case]]
+name = "a-test-case-with-no-test-file-has-no-path"
+why = "a test case's innermost place is its test code: where the report gives no test file (pytest's default xunit2), its path is unset, never the report, so that later data fills it rather than changes it"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs]
+'''
+source = '''
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" time="0.1"/>
+</testsuite>
+</testsuites>
+''' }
+
+[[case.filters]]
+filter = 'c.source.kind == "report" and c.source.path is None'
+expected = ["TF_0001_0EA_A759D"]
+divergent = { ubcode = "not yet run against ubCode" }
 
 [[case]]
 name = "source-paths-are-relative-to-the-source-directory"
@@ -2400,6 +2389,9 @@ comment_type = "python"
 
 [codelinks.projects.eng.analyse]
 get_oneline_needs = true
+
+[test_reports]
+rootdir = "."
 '''
 source = '''
 .. req:: On the page
@@ -2410,7 +2402,7 @@ source = '''
 
 .. test-file:: Report
    :id: TF_0001
-   :file: ../report.xml
+   :file: report.xml
 
 .. needimport:: ../data/imp.json
 '''
@@ -2432,33 +2424,27 @@ files = { "src/engine.py" = '''class Engine:
 filter = 'c.source.path == "index.rst"'
 expected = ["REQ_PAGE"]
 why = "a page in the source directory: not docs/index.rst"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path == "../src/engine.py"'
 expected = ["IMPL_001"]
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path is not None and c.source.path.startswith("../src/")'
 expected = ["IMPL_001"]
 why = "needs traced from code under ../src/"
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.path == "../report.xml"'
 expected = ["TF_0001"]
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = '"../data/imp.json" in c.source.paths'
 expected = ["IMP_001"]
-divergent = { ubcode = "fails on c.source" }
 
 [[case.filters]]
 filter = 'c.source.document == "index"'
 expected = ["IMPL_001", "IMP_001", "REQ_PAGE", "TF_0001"]
-divergent = { ubcode = "fails on c.source" }
 
 [[case]]
 name = "a-field-named-source-is-a-field-like-any-other"
@@ -2483,20 +2469,16 @@ source = '''
 [[case.filters]]
 filter = 'source == "manual"'
 expected = ["REQ_001"]
-divergent = { ubcode = "not yet run against ubCode" }
 
 [[case.filters]]
 filter = 'source != "tool"'
 expected = ["REQ_001", "REQ_003"]
-divergent = { ubcode = "not yet run against ubCode" }
 
 [[case.filters]]
 filter = 'source is None'
 expected = ["REQ_003"]
-divergent = { ubcode = "not yet run against ubCode" }
 
 [[case.filters]]
 filter = 'c.source.kind == "page"'
 expected = ["REQ_001", "REQ_002", "REQ_003"]
 why = "c is the check context, whatever a field is named"
-divergent = { ubcode = "fails on c.source" }

@@ -86,12 +86,21 @@ def _code(
     )
 
 
-def _report(path: str) -> NeedSourceHop:
+def _report(path: str, *element: tuple[str, str]) -> NeedSourceHop:
+    """A report hop; *element* is the place in the report, outermost first, as
+    sphinx-test-reports records it (``("suite", ...)``, ``("scope", ...)``,
+    ``("case", ...)``), none for a test file's."""
+    semantic = tuple(NeedSourceSemantic(kind=kind, name=name) for kind, name in element)
     return NeedSourceHop(
         kind="report",
         physical=NeedSourcePhysical(root="srcdir", path=path),
+        semantic=semantic or None,
         language=".xml",
     )
+
+
+_SUITE = ("suite", "pytest")
+_CASE = (("suite", "pytest"), ("scope", "tests.t"), ("case", "test_x"))
 
 
 _EXTERNAL = NeedSourceHop(
@@ -197,15 +206,42 @@ SHAPES: dict[str, tuple[Any, tuple[Any, ...]]] = {
         NeedItemSource((_report("r.xml"), _page("tests.rst", 3))),
         ("report", "r.xml", None, ("r.xml", "tests.rst"), None),
     ),
+    "test-suite": (
+        NeedItemSource((_report("r.xml", _SUITE), _page("tests.rst", 3))),
+        ("report", "r.xml", None, ("r.xml", "tests.rst"), None),
+    ),
     "test-case": (
         NeedItemSource(
             (
                 _code("tests/t.py", 28, root=None),
-                _report("r.xml"),
+                _report("r.xml", *_CASE),
                 _page("tests.rst", 3),
             )
         ),
         ("report", None, None, ("r.xml", "tests.rst"), None),
+    ),
+    # its innermost place is its test code, which the report does not give: the
+    # report is not where it is written, so the path stays unset for that code to fill
+    "a-test-case-with-no-test-file": (
+        NeedItemSource((_report("r.xml", *_CASE), _page("tests.rst", 3))),
+        ("report", None, None, ("r.xml", "tests.rst"), None),
+    ),
+    # once a test case's code root is known, its code hop answers: the unset path fills
+    "a-test-case-whose-code-root-is-known": (
+        NeedItemSource(
+            (
+                _code("tests/test_x.py", 28),
+                _report("r.xml", *_CASE),
+                _page("tests.rst", 3),
+            )
+        ),
+        (
+            "report",
+            "tests/test_x.py",
+            28,
+            ("tests/test_x.py", "r.xml", "tests.rst"),
+            None,
+        ),
     ),
     "needimport": (
         NeedItemSource((_file("imp.json"), _page("imp.rst", 7)), is_import=True),
@@ -316,8 +352,10 @@ def test_each_facet_of_each_producer(source: Any, facets: tuple[Any, ...]) -> No
     """The rules by named position: ``kind`` the producer (import, external, report,
     code, generated, page, in that order; open to more), ``path`` and ``line``
     ``hops[0]``'s under the source directory (none for an import, an external need or a
-    service, and none where ``hops[0]`` has no such path: a test case's test file, a
-    downloaded needs.json), ``paths`` every hop's, innermost first, each once (none for
+    service, none where ``hops[0]`` has no such path: a test case's test file, a
+    downloaded needs.json, and none for a test case whose report gives no test file,
+    whose innermost place is that unknown code), ``paths`` every hop's, innermost first,
+    each once (none for
     an external need, keyed on ``hops[0]``: a page after it is not where it comes
     from), ``symbol`` a code entity's qualified name."""
     found = tuple(f(source) for f in (kind_of, path_of, line_of, paths_of, symbol_of))
