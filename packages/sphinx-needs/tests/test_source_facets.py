@@ -608,7 +608,6 @@ UNAVAILABLE = "the c.source facets are not available in"
             "Predicate 'title.nope == 1 or c.source.kind == \"page\"' not valid. Error: 'str' object has no attribute 'nope'. "
             "The predicate is skipped. [needs.config]",
             id="an-attribute-error-of-another-value",
-            marks=pytest.mark.xfail(strict=True, reason="fix round 4"),
         ),
         pytest.param(
             {

@@ -2483,17 +2483,17 @@ source = '''
 [[case.filters]]
 filter = 'source == "manual"'
 expected = ["REQ_001"]
-divergent = { ubcode = "fails on c.source" }
+divergent = { ubcode = "not yet run against ubCode" }
 
 [[case.filters]]
 filter = 'source != "tool"'
 expected = ["REQ_001", "REQ_003"]
-divergent = { ubcode = "fails on c.source" }
+divergent = { ubcode = "not yet run against ubCode" }
 
 [[case.filters]]
 filter = 'source is None'
 expected = ["REQ_003"]
-divergent = { ubcode = "fails on c.source" }
+divergent = { ubcode = "not yet run against ubCode" }
 
 [[case.filters]]
 filter = 'c.source.kind == "page"'

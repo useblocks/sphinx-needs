@@ -278,7 +278,11 @@ def unavailable(error: BaseException, expression: str) -> bool:
         return False
     if isinstance(error, NameError):
         return getattr(error, "name", None) == CHECKS_NAME
-    return isinstance(error, AttributeError)
+    # the read itself failing: what ``c`` is there (a field named ``c``) has no ``source``
+    return (
+        isinstance(error, AttributeError)
+        and getattr(error, "name", None) == SOURCE_NAME
+    )
 
 
 def explained(error: BaseException, where: str, expression: str) -> str:
