@@ -59,8 +59,8 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "filter_conformance.toml"
 #: carries. Raising one is the normal consequence of adding a case or an entry; lowering
 #: it needs a reason in the commit message, and ubCode's vendored copy has to follow
 #: either way.
-EXPECTED_CASE_COUNT = 25
-EXPECTED_FILTER_COUNT = 305
+EXPECTED_CASE_COUNT = 26
+EXPECTED_FILTER_COUNT = 306
 
 #: The configuration the runner gives every case besides its ``ubproject.toml``: its
 #: ``extensions`` are sphinx-needs, then the case's own, and each reads the case's

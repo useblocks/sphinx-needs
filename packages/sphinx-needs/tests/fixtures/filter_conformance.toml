@@ -2345,6 +2345,33 @@ expected = ["IMPL_001", "IMPL_FILE"]
 why = "a traced need is placed on the page of its src-trace"
 
 [[case]]
+name = "a-test-case-with-no-test-file-has-no-path"
+why = "a test case's innermost place is its test code: where the report gives no test file (pytest's default xunit2), its path is unset, never the report, so that later data fills it rather than changes it"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs]
+'''
+source = '''
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" time="0.1"/>
+</testsuite>
+</testsuites>
+''' }
+
+[[case.filters]]
+filter = 'c.source.kind == "report" and c.source.path is None'
+expected = ["TF_0001_0EA_A759D"]
+divergent = { ubcode = "not yet run against ubCode" }
+
+[[case]]
 name = "source-paths-are-relative-to-the-source-directory"
 why = "a path is relative to the Sphinx source directory, which ubproject.toml names as [source] dir: a page in it reads its name there, and a file outside it -- traced code, a test report, an imported needs.json -- climbs out with .."
 srcdir = "docs"
