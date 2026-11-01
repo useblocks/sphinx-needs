@@ -226,6 +226,23 @@ SHAPES: dict[str, tuple[Any, tuple[Any, ...]]] = {
         NeedItemSource((_report("r.xml", *_CASE), _page("tests.rst", 3))),
         ("report", None, None, ("r.xml", "tests.rst"), None),
     ),
+    # once a test case's code root is known, its code hop answers: the unset path fills
+    "a-test-case-whose-code-root-is-known": (
+        NeedItemSource(
+            (
+                _code("tests/test_x.py", 28),
+                _report("r.xml", *_CASE),
+                _page("tests.rst", 3),
+            )
+        ),
+        (
+            "report",
+            "tests/test_x.py",
+            28,
+            ("tests/test_x.py", "r.xml", "tests.rst"),
+            None,
+        ),
+    ),
     "needimport": (
         NeedItemSource((_file("imp.json"), _page("imp.rst", 7)), is_import=True),
         ("import", None, None, ("imp.json", "imp.rst"), None),

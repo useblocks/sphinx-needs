@@ -77,7 +77,8 @@
 #     by Python's rules, whatever its type, on every tier
 #   - an entry with `tier = "eval"` is OUTSIDE the portable language: ubCode's runner
 #     asserts that its engine refuses the string (it parses it to no query), unless the
-#     entry carries `divergent`, and sphinx-needs answers it through `eval`, which
+#     entry carries `divergent`, or ubCode's runner lists it as an entry its engine
+#     already answers (a pending pin), and sphinx-needs answers it through `eval`, which
 #     `expected` pins
 #   - an entry with `tier = "refused"` is a filter that is a constant alone: a literal (a
 #     string, bytes, a number with one sign or none, None or `...`), a tuple, list, set or
