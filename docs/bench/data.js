@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793527379228,
+  "lastUpdate": 1793543775932,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28266,6 +28266,48 @@ window.BENCHMARK_DATA = {
             "value": 186.084423,
             "unit": "MB",
             "extra": "Commit: cb69b410e99cd6074fc51085df8016748fdc1582\nBranch: master\nTime: 2026-11-01T11:00:09+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c17f9abd9283fa39aa7a6b4b151bd6719a2857bf",
+          "message": "✨ Filter by where a need comes from: c.source.path, c.source.kind, c.source.paths, c.source.line, c.source.symbol (#2451)\n\nA filter can now select needs by where they come from, through\n`c.source.<facet>`, beside `c.this_doc()` and\n`c.is_a()`:\n\n- **needs traced from code under `../src/`**: `c.source.path is not None\nand c.source.path.startswith(\"../src/\")`;\n- **needs from this report**: `\"reports/unit.xml\" in c.source.paths`;\n- **needs written in an included fragment**: `c.source.path ==\n\"fragments/safety.rst\"` -- the fragment itself,\n  where `docname` is the page it is included in;\n- **needs of one producer**: `c.source.kind == \"code\"`\n(sphinx-codelinks, autodoc), `\"report\"`\n(sphinx-test-reports), `\"import\"`, `\"external\"`, `\"generated\"`\n(services), `\"page\"`;\n- **a traced code entity**: `c.source.symbol == \"Engine.start\"`.\n\n| facet | what it reads |\n|---|---|\n| `c.source.kind` | the producer, from the whole chain and the need's\nimport and external flags: `import`, `external`, `report`, `code`,\n`generated`, `page`, the first that applies (open: later producers add\nkinds) |\n| `c.source.path` | the innermost file the need is written in, relative\nto the source directory (`..` outside it) |\n| `c.source.line` | the need's line in that file (one file's, so path\nand line always agree) |\n| `c.source.paths` | every file it came through that the build records,\ninnermost first (test membership: it may gain entries) |\n| `c.source.symbol` | a traced code entity's qualified name |\n| `c.source.document`, `c.source.sections` | aliases of the need's\n`docname` and `sections` |\n\nA facet the build does not know yet is `None` -- the path of an imported\nor external need, of a service's need, of\na test case (its test file is relative to the test run's root;\n`case_file` keeps it) -- and later releases only fill\nit. A facet that can be `None` needs a guard (`c.source.path is not None\nand ...`) before a method, an order\ncomparison or `len()`; `==`, `in` and `is None` do not.\n\n`c` is the need's check context in every tier, set over the need's\nfields and `needs_filter_data`, so nothing a\nproject declares collides with the facets: a field named `source` is\nread as any field. The facets are in the\nportable filter language (the parsed tier answers them without `eval`,\neach costing its own work), and `eval`\ncomputes one only where the filter reads it. They are not available in a\nfield predicate, a needimport `:filter:`\nor a variant condition, which have no check context, and the error there\nnow says so. A derived field's `where`\nmay read them.\n\n| name | and `c.source` |\n|---|---|\n| `docname` | `c.source.document` is an alias of the need's `docname` |\n| `sections`, `section_name` | `c.source.sections` is an alias of\n`sections`; `section_name` is its first entry |\n| `lineno` | kept, not an alias: the line the directive is written on, a\nline of the included file while `docname` is the page; `c.source.path` +\n`c.source.line` are a pair that agrees |\n| `is_import`, `is_external` | `is_import` is `c.source.kind ==\n\"import\"`; `is_external` is `c.source.kind == \"external\"` for a need\nthat is not imported (an imported need is `import` whatever it was\nupstream); both kept |\n| `signature` | the bare name of the domain object a need is written in;\n`c.source.symbol` is a traced entity's qualified name |\n\nThe shared filter conformance corpus gains a \"source facets\" section:\nfour cases, 55 entries (page, include, nested\ninclude, list2need, needimport, external, sphinx-codelinks, test file /\nsuite / case, a source directory in `docs/`\npinning `../` paths, and a field named `source` read as any field), with\ntwo new case keys, `extensions` and\n`srcdir`; the two `.git` files a codelinks case is given are stated in\nthe header byte for byte. Every new entry is\ndivergent for ubCode until it is run there. The runner half they need\nmoves into\n`sphinx_needs_testkit.conformance`.\n\nNothing stored changes, so `ENV_DATA_VERSION` does not move.\n`:columns:`, `:sort:` and `:sort_by:` do not read a\nfacet yet.\n\nBuilds on #2448 (merged), whose source hops the facets read.\n\nTests: every pin was red before its change; mutation proofs for each\nrule, and the wrong versions the suite first\nleft green are pinned directly; every channel that evaluates a filter is\npinned to bind `c`.",
+          "timestamp": "2026-11-01T15:34:55+01:00",
+          "tree_id": "f6fdbe9b2fd9a1711763f6d2465c9d4f03c11cb0",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c17f9abd9283fa39aa7a6b4b151bd6719a2857bf"
+        },
+        "date": 1793543775106,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.04599750799999924,
+            "unit": "s",
+            "extra": "Commit: c17f9abd9283fa39aa7a6b4b151bd6719a2857bf\nBranch: master\nTime: 2026-11-01T15:34:55+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 11.123234575000012,
+            "unit": "s",
+            "extra": "Commit: c17f9abd9283fa39aa7a6b4b151bd6719a2857bf\nBranch: master\nTime: 2026-11-01T15:34:55+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 185.96323,
+            "unit": "MB",
+            "extra": "Commit: c17f9abd9283fa39aa7a6b4b151bd6719a2857bf\nBranch: master\nTime: 2026-11-01T15:34:55+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
           }
         ]
       }
