@@ -78,6 +78,21 @@ tr_json_mapping = {
         },
     }
 }
+tr_report_template = "report-template.txt"
+"""
+
+REPORT_TEMPLATE_ONE = """\
+Custom template version one
+===========================
+
+.. {file_type}:: {title}
+   :id: {id}{links_string}
+   :tags: {tags}
+   :file: {file}
+   :auto_suites:
+   :auto_cases:
+
+   {content}
 """
 
 #: One page per way a report is read; each reads its own report.
@@ -177,6 +192,7 @@ Other
 
 Reads no report.
 """,
+    "report-template.txt": REPORT_TEMPLATE_ONE,
     "reports/file.xml": REPORT,
     "reports/suite.xml": REPORT,
     "reports/case.xml": REPORT,
@@ -231,6 +247,14 @@ SCENARIOS: dict[str, tuple[dict[str, str | None], dict[str, str | None]]] = {
     "json-report": ({}, _edit("reports/r.json", '"t1"', '"t1_renamed"')),
     "report-of-test-results": ({}, _edit("reports/results.xml", *_RENAMED)),
     "report-of-test-env": ({}, _edit("reports/env.json", '"a==1"', '"a==2"')),
+    "report-template": (
+        {},
+        _edit(
+            "report-template.txt",
+            "Custom template version one",
+            "Custom template version two",
+        ),
+    ),
     "report-under-another-tr_rootdir": (
         ROOTED,
         {
@@ -392,6 +416,7 @@ def test_an_incremental_build_equals_a_fresh_build(make_app, tmp_path, scenario)
         ("json-report", "json"),
         ("report-of-test-results", "results"),
         ("report-of-test-env", "env"),
+        ("report-template", "report"),
         ("report-under-another-tr_rootdir", "file"),
         ("missing-report-created", "file"),
         ("unreadable-report-fixed", "case"),
@@ -402,6 +427,30 @@ def test_a_report_change_re_reads_only_the_pages_reading_it(
 ):
     """Only the page reading the report is read again, not every page."""
     assert _assert_equivalent(make_app, tmp_path, scenario) == [page]
+
+
+def test_a_report_template_change_updates_output_and_matches_a_fresh_build(
+    make_app, tmp_path
+):
+    incremental = _write(tmp_path / "incremental-template", FILES)
+    _build(make_app, incremental, fresh=True)
+
+    after = _edit(
+        "report-template.txt",
+        "Custom template version one",
+        "Custom template version two",
+    )
+    _write(tmp_path / "incremental-template", {**FILES, **after})
+    app, read = _build(make_app, incremental, fresh=False)
+
+    assert read == ["report"]
+    incremental_html = Path(app.outdir, "report.html").read_text(encoding="utf-8")
+    assert "Custom template version two" in incremental_html
+    assert "Custom template version one" not in incremental_html
+
+    fresh = _write(tmp_path / "fresh-template", {**FILES, **after})
+    fresh_app, _ = _build(make_app, fresh, fresh=True)
+    assert _pages(Path(app.outdir)) == _pages(Path(fresh_app.outdir))
 
 
 def test_an_environment_pickled_by_an_earlier_release_is_read_again(make_app, tmp_path):

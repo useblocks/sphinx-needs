@@ -60,6 +60,10 @@ Fixed
   does; a warning raised in a test need's own content names the line it is on, too. No id
   moves. The first build after the upgrade reads every page again, once.
 
+- 🐛 Editing a custom ``tr_report_template`` re-reads each page that uses a
+  ``test-report`` in an incremental build, so the template change reaches the generated
+  HTML (`#2427 <https://github.com/useblocks/sphinx-needs/issues/2427>`__).
+
 - 🐛 An edited test report is read again in an incremental build: every page a
   ``test-file``, ``test-suite``, ``test-case``, ``test-report``, ``test-results`` or
   ``test-env`` reads a report on depends on it, where an edit, even a renamed or removed
