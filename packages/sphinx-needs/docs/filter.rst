@@ -460,8 +460,8 @@ The location names a filter had before stay, each as it was:
      - ``c.source.sections`` is an alias of ``sections``, innermost first; ``section_name`` is its first entry.
    * - ``lineno``
      - Kept as it was, and not an alias: the line the directive is written on, which for a need in an included file
-       is a line of that file while ``docname`` is the page, and for an imported, service or API need is counted in
-       the page's parse. ``c.source.path`` and ``c.source.line`` are one file's, a pair that always agrees.
+       is a line of that file while ``docname`` is the page. It is counted in the page's parse only for an API need:
+       the line its caller gives. ``c.source.path`` and ``c.source.line`` are one file's, a pair that always agrees.
    * - ``is_import``, ``is_external``
      - ``is_import`` is ``c.source.kind == 'import'``; ``is_external`` is ``c.source.kind == 'external'`` for a need that
        is not imported (an imported need is ``"import"`` whatever it was where it came from). Both kept.

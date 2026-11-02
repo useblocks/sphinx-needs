@@ -10,7 +10,12 @@ from docutils.statemachine import StringList
 from sphinx.util.docutils import SphinxDirective
 from sphinx_data_viewer.api import get_data_viewer_node
 
-from sphinx_needs._need_source import NeedSourceHop, NeedSourceSemantic, directive_hops
+from sphinx_needs._need_source import (
+    NeedSourceHop,
+    NeedSourceSemantic,
+    directive_hops,
+    directive_line,
+)
 from sphinx_needs.api import InvalidNeedException, create_need
 from sphinx_needs.api.need import _split_values
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
@@ -152,6 +157,9 @@ class NeedserviceDirective(SphinxDirective):
                     ),
                 ),
             )
+            # each need's line is the one the directive is written on, as a need
+            # directive's (#1349); the parser's line anchors the text parsed for it
+            _, resolved = directive_line(self)
             for datum in service_data:
                 options = {}
 
@@ -204,7 +212,9 @@ class NeedserviceDirective(SphinxDirective):
                 datum.update(options)
 
                 # ToDo: Tags and Status are not set (but exist in data)
-                source = NeedItemSource(hops, lineno=self.lineno)
+                source = NeedItemSource(
+                    hops, lineno=resolved or self.lineno, parser_lineno=self.lineno
+                )
                 need_id = datum.pop("id", None)
                 need_content = datum.pop("content", "")
                 jinja_content = datum.pop("jinja_content", None)

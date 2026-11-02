@@ -111,8 +111,9 @@ class NeedItemSource:
     hops: tuple[NeedSourceHop, ...]
     """Where the need's text came from, innermost first (**provisional**)."""
     _lineno: int | None
-    """``lineno`` as given: a line the hops cannot give (a parser line, for a service,
-    an import or an API need; the line a directive is written on)."""
+    """``lineno`` as given: a line the hops cannot give (the line a directive is
+    written on, a service's and an import's included; the caller's line for an API
+    need)."""
     lineno_content: int | None
     """The line of the content, as the parser counts it."""
     parser_lineno: int | None

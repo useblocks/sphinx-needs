@@ -325,6 +325,15 @@ Deprecations
 Bug fixes
 .........
 
+- 🐛 A need a :ref:`needimport` or :ref:`needservice` creates records the line its directive is written on
+  **(changed output)**
+
+  ``rst_prolog``, an ``.. include::`` above the directive, and the include it is written in each shifted its
+  ``lineno`` by the lines they insert, as they did for need directives before 8.4.0 (:issue:`1349`): a needimport on
+  line 14 of a page below an include was recorded at line 33. Filters, tables, ``needs.json`` and the warnings placed
+  at a need's line now give the directive's line in the file it is written in, the included file's inside an
+  include. The warnings about the needs' content and rendered templates do not move.
+
 - 🐛 A need in a sliced include records the line it is written on in the file, where it recorded its line in the
   slice **(changed output)** (:issue:`2428`)
 

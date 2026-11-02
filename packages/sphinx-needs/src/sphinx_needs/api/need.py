@@ -1564,9 +1564,12 @@ def _template_parse_offset(data: NeedItem) -> int:
     parse's locations through the *enclosing* state machine
     (``abs_line_number()`` = ``line_offset + input_offset + 1``), so the anchor has to be
     given in that machine's line space -- the same space ``lineno_content`` is kept in,
-    and **not** the resolved source line a need records since #1349. A need directive
-    keeps the unresolved number as ``parser_lineno`` for exactly this; every other kind
-    of source still stores it in ``lineno`` itself.
+    and **not** the resolved source line a need records since #1349. Every directive
+    that creates needs (a need directive, ``list2need``, ``needimport``,
+    ``needservice``) keeps the unresolved number as ``parser_lineno`` for exactly this;
+    a source without one (an API need, at the line its caller gives) is anchored at its
+    ``lineno``. The content of a need with no ``lineno_content`` is parsed at the same
+    offset.
     """
     source = data.source
     parser_lineno = source.parser_lineno if isinstance(source, NeedItemSource) else None
@@ -1736,11 +1739,10 @@ def _create_need_node(
         nodes.target("", "", ids=[data["id"]], refid=data["id"], anonymous="")
     )
 
-    content_offset = 0
     if data["lineno_content"]:
         content_offset = data["lineno_content"] - 1
-    elif data["lineno"]:
-        content_offset = data["lineno"] - 1
+    else:
+        content_offset = _template_parse_offset(data)
     if content_parser is not None:
         _parse_declared_content(
             data,
