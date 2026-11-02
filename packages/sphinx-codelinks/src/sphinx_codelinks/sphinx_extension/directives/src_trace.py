@@ -1,7 +1,7 @@
 import os
 from collections.abc import Callable, Collection, Mapping
 from pathlib import Path, PurePath, PurePosixPath
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -238,19 +238,34 @@ _CREATION_ARGUMENTS = (
 )
 
 
-def would_be_id(app: Sphinx, need: Mapping[str, Any]) -> str | None:
-    """The id a one-line need is created with: its ``id`` field, else the one
-    Sphinx-Needs generates for a need without one (``generate_need_id``), from the
-    type, title, content and ``full_title`` :meth:`SourceTracingDirective.render_needs`
-    passes. ``None`` when Sphinx-Needs refuses the need before any id exists (an unknown
-    type, ``needs_id_required``).
+def would_be_id(
+    app: Sphinx,
+    need: Mapping[str, Any],
+    *,
+    route: Literal["marker", "record"] = "marker",
+) -> str | None:
+    """The id a need ``src-trace`` creates is given: its ``id``, else the one
+    Sphinx-Needs generates for a need without one (``generate_need_id``), from what
+    :meth:`SourceTracingDirective.render_needs` passes. ``None`` when Sphinx-Needs
+    refuses the need before any id exists (an unknown type, ``needs_id_required``).
+
+    The two routes generate it from different things, so ``route`` says which one
+    ``need`` is for:
+
+    - ``"marker"``, a one-line marker's fields, given to ``create_need``: a
+      ``full_title`` among them is its ``full_title`` argument, declared as a field or
+      not (as ``add_need`` took it), so the id is hashed from it;
+    - ``"record"``, a multi-line need's record (:func:`multiline_record`), given to
+      ``ingest_need_record``: that path passes no ``full_title`` argument -- a
+      ``full_title`` the project declares is only the field -- so the id is hashed from
+      the title, whatever ``full_title`` the record holds (#2410).
     """
     given = need.get("id")
     if given is not None:
         return given if isinstance(given, str) and given else None
     if NeedsSphinxConfig(app.config).id_required:
         return None
-    full_title = need.get("full_title")
+    full_title = need.get("full_title") if route == "marker" else None
     try:
         return generate_need_id(
             app,
@@ -784,8 +799,10 @@ class SourceTracingDirective(SphinxDirective):
                         )
                     continue
             # the id sphinx-needs gives the need: the marker's, or the generated one (#2082)
-            need_id = would_be_id(
-                self.env.app, record if record is not None else marker.need
+            need_id = (
+                would_be_id(self.env.app, marker.need)
+                if record is None
+                else would_be_id(self.env.app, record, route="record")
             )
             if self.defined_elsewhere(marker, need_id, filepath, root):
                 continue
