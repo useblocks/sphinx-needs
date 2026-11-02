@@ -984,6 +984,31 @@ def test_an_unclaimed_markup_is_parsed_as_the_page(
     assert _card(app, "page_k.html", "TXT_HIDDEN") is None
 
 
+def test_a_hidden_block_with_a_declared_full_title_is_not_warned_unclaimed(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A hidden block without ``:id:`` whose ``:full_title:`` the project declares, in a
+    markup no parser claims: nothing of it is parsed, so nothing is warned -- the
+    lookup that finds it hidden uses the id it is given (#2410)."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/conf.py": CONF.replace(
+                "needs_fields = {", 'needs_fields = {"full_title": {"nullable": True}, '
+            ),
+            "docs/page_h.rst": "H\n=\n\n.. src-trace::\n   :project: src\n   :file: h.c\n",
+            "src/h.c": "// @need[txt] req: Short title\n"
+            "// :full_title: A much longer title\n// :hide:\n//\n// Hidden *text*.\n"
+            "// @endneed\nvoid h() {}\n",
+        },
+        toml_extra=TXT_MARKUP,
+    )
+    app = _build(tmp_path, make_app)
+    assert _warnings(app) == []
+    assert _need(app, SHORT_TITLE_ID) is not None
+    assert _card(app, "page_h.html", SHORT_TITLE_ID) is None
+
+
 TEMPLATE = "**TPL bold** and `tlink <https://t.example>`_ then: {{content}}\n"
 TEMPLATED_BLOCK = """\
 // @need[md] req: Templated block
@@ -1173,6 +1198,21 @@ def test_a_declared_full_title_s_duplicate_check_names_the_need_s_id(
         )
     ]
     assert _need(app, SHORT_TITLE_ID)["title"] == "Written by hand"  # type: ignore[index]
+
+
+def test_a_declared_full_title_s_skip_is_read_again_when_its_owner_goes(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """The skip is remembered as any duplicate's is: when the need that owned the id
+    goes, the next incremental build reads ``page_f`` again and the block's need is
+    created (#2410)."""
+    _declared_full_title(tmp_path, make_app, owner=SHORT_TITLE_ID)
+    owner = tmp_path / "docs" / "owner.rst"
+    owner.write_text("Owner\n=====\n\nNo need.\n", encoding="utf-8")
+    _touch_later(owner)
+    app = _build(tmp_path, make_app, freshenv=False)
+    assert _warnings(app) == []
+    assert _need(app, SHORT_TITLE_ID)["docname"] == "page_f"  # type: ignore[index]
 
 
 def test_a_need_of_the_full_title_s_id_does_not_skip_the_block(
