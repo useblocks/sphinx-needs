@@ -19,13 +19,13 @@ that matched before keeps its value and the other is reported and ignored.
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs_testkit import build_warnings
 
@@ -68,13 +68,15 @@ def _build(
         (tmp_path / "index.rst").write_text("Probe\n=====\n\n" + body, encoding="utf-8")
     else:
         (tmp_path / "index.md").write_text("# Probe\n\n" + body, encoding="utf-8")
-    app = make_app("html", srcdir=tmp_path, freshenv=True)
+    app = make_app("needs", srcdir=tmp_path, freshenv=True)
     app.build()
     return app
 
 
 def _needs(app: Any) -> dict[str, Any]:
-    return dict(SphinxNeedsData(app.env).get_needs_view())
+    """The needs as the build's ``needs.json`` holds them."""
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    return data["versions"][data["current_version"]]["needs"]
 
 
 def _warnings(app: Any) -> list[str]:
@@ -203,12 +205,17 @@ def test_needextend_matches_its_keys_ignoring_case(
 def test_needextend_options_of_its_own_match_ignoring_case(
     make_app: Any, tmp_path: Path, host: str
 ) -> None:
-    """``:Strict:`` is ``needextend``'s own ``strict``, not an unknown field."""
+    """``:Strict: false`` is ``needextend``'s own ``strict``, not an unknown option:
+    the missing need is a warning, where ``needextend_strict`` would stop the build."""
     body = _directive(host, "req", "One", [("id", "R_1")]) + _directive(
-        host, "needextend", "R_NOPE", [("Strict", "false"), ("owner", "x")]
+        host, "needextend", "R_NOPE", [("Strict", "false")]
     )
-    app = _build(make_app, tmp_path, host, body)
-    assert _warnings(app) == []
+    app = _build(
+        make_app, tmp_path, host, body, conf=CAPITALS + "needextend_strict = True\n"
+    )
+    warnings = _warnings(app)
+    assert len(warnings) == 1
+    assert "Provided id 'R_NOPE' for needextend does not exist." in warnings[0]
 
 
 # -- what does not change -----------------------------------------------------------
