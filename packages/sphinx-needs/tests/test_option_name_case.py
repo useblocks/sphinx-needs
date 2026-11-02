@@ -26,6 +26,7 @@ from typing import Any
 
 import pytest
 
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs_testkit import build_warnings
 
@@ -47,15 +48,23 @@ needs_links = {"Satisfies": {}}
 
 
 def _directive(
-    host: str, name: str, argument: str, options: Sequence[tuple[str, str]]
+    host: str,
+    name: str,
+    argument: str,
+    options: Sequence[tuple[str, str]],
+    content: str = "",
 ) -> str:
     """A directive in the host's syntax, with its options written as given."""
     if host == "rst":
-        lines = [f".. {name}:: {argument}"]
+        lines = [f".. {name}:: {argument}".rstrip()]
         lines += [f"   :{key}: {value}".rstrip() for key, value in options]
+        if content:
+            lines += ["", f"   {content}"]
         return "\n".join(lines) + "\n\n"
-    lines = [f"```{{{name}}} {argument}"]
+    lines = [f"```{{{name}}} {argument}".rstrip()]
     lines += [f":{key}: {value}".rstrip() for key, value in options]
+    if content:
+        lines += ["", content]
     return "\n".join([*lines, "```"]) + "\n\n"
 
 
@@ -216,6 +225,135 @@ def test_needextend_options_of_its_own_match_ignoring_case(
     warnings = _warnings(app)
     assert len(warnings) == 1
     assert "Provided id 'R_NOPE' for needextend does not exist." in warnings[0]
+
+
+# -- the options a directive reads itself --------------------------------------------
+#
+# Each is MyST in a case other than its own (reStructuredText lowercased it already), so
+# each is an unknown option -- its value lost -- unless the directive matches its own
+# option names ignoring case too.
+
+
+@pytest.mark.parametrize(
+    ("written", "value", "field", "expected"),
+    [
+        ("Hide", "true", "hide", True),
+        ("Collapse", "true", "collapse", True),
+        ("Layout", "clean", "layout", "clean"),
+        ("Style", "red", "style", "red"),
+        ("Jinja_Content", "true", "jinja_content", True),
+    ],
+)
+def test_a_need_directive_option_of_its_own_matches_ignoring_case(
+    make_app: Any,
+    tmp_path: Path,
+    written: str,
+    value: str,
+    field: str,
+    expected: object,
+) -> None:
+    app = _build(
+        make_app,
+        tmp_path,
+        "myst",
+        _directive("myst", "req", "One", [("id", "R_1"), (written, value)]),
+    )
+    assert _warnings(app) == []
+    # ``hide`` and ``collapse`` do not reach needs.json: read the need as built
+    need = SphinxNeedsData(app.env).get_needs_view()["R_1"]
+    assert need[field] == expected
+
+
+def test_myst_delete_in_another_case_deletes_the_need(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """``:Delete: true`` is the need directive's ``delete``: no need is created."""
+    app = _build(
+        make_app,
+        tmp_path,
+        "myst",
+        _directive("myst", "req", "Kept", [("id", "R_0")])
+        + _directive("myst", "req", "Gone", [("id", "R_1"), ("Delete", "true")]),
+    )
+    assert _warnings(app) == []
+    assert sorted(_needs(app)) == ["R_0"]
+
+
+def test_myst_title_from_content_in_another_case_takes_the_title(
+    make_app: Any, tmp_path: Path
+) -> None:
+    app = _build(
+        make_app,
+        tmp_path,
+        "myst",
+        _directive(
+            "myst",
+            "req",
+            "",
+            [("id", "R_1"), ("Title_From_Content", "true")],
+            content="The first sentence. And more.",
+        ),
+    )
+    assert _warnings(app) == []
+    assert _needs(app)["R_1"]["title"] == "The first sentence"
+
+
+def test_myst_extend_priority_in_another_case_orders_the_extends(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """``:Extend_Priority: 600`` is applied after the default 500, although written
+    first; read as an unknown option, the two would apply in the order written."""
+    body = (
+        _directive("myst", "req", "One", [("id", "R_1")])
+        + _directive(
+            "myst",
+            "needextend",
+            "R_1",
+            [("Extend_Priority", "600"), ("status", "late")],
+        )
+        + _directive("myst", "needextend", "R_1", [("status", "early")])
+    )
+    app = _build(make_app, tmp_path, "myst", body)
+    assert _warnings(app) == []
+    assert _needs(app)["R_1"]["status"] == "late"
+
+
+def test_myst_debug_in_another_case_shows_the_service_debug_output(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """``:Debug:`` is needservice's ``debug``: the service's debug output (here: that it
+    has none) in place of its needs."""
+    app = _build(
+        make_app,
+        tmp_path,
+        "myst",
+        _directive("myst", "needservice", "echo", [("Debug", "")]),
+        conf=SERVICE,
+    )
+    assert [w for w in _warnings(app) if "unpickl" not in w] == []
+    assert "S_1" not in _needs(app)
+
+
+@pytest.mark.parametrize(
+    ("field", "option"),
+    [
+        ("Delete", "delete"),
+        ("Title_From_Content", "title_from_content"),
+        ("Extend_Priority", "extend_priority"),
+        ("Debug", "debug"),
+    ],
+)
+def test_a_field_equal_to_a_directive_option_ignoring_case_is_refused(
+    make_app: Any, tmp_path: Path, field: str, option: str
+) -> None:
+    """One per directive that reads options of its own: the need directive, needextend
+    and needservice."""
+    message = _refused(
+        make_app, tmp_path, CONF + f"needs_fields = {{{field!r}: {{}}}}\n"
+    )
+    assert f"field {field!r} (from needs_fields)" in message
+    assert f"option {option!r}" in message
+    assert "ignoring case" in message
 
 
 # -- what does not change -----------------------------------------------------------
