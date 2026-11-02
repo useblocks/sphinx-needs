@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793567466469,
+  "lastUpdate": 1793612531338,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28350,6 +28350,48 @@ window.BENCHMARK_DATA = {
             "value": 185.96323,
             "unit": "MB",
             "extra": "Commit: 794d82b578e072ee3ecc0af5c198dc4cc4e8dcc8\nBranch: master\nTime: 2026-11-01T22:09:32+01:00\nCPU: INTEL(R) XEON(R) PLATINUM 8573C"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5d7b367567425e8156123facf623f759508e9562",
+          "message": "🧪 Three c.source corpus entries ubCode now answers lose their divergent marker (#2458)\n\nThree entries of the filter conformance corpus's \"source facets\" section\nlose their `divergent` marker, because ubCode now answers them as\n`expected`:\n\n- `\"frag/a.txt\" in c.source.paths` and `\"frag/b.txt\" in c.source.paths\nand \"frag/a.txt\" in c.source.paths`. ubCode now records the files a\nnested include passes through, and `c.source.paths` reads them.\n- `c.source.kind == \"report\" and c.source.path is None`, for a test case\nwhose report gives no test file (#2456).\n\nubCode measured each by running every divergent entry against its own\nengine. The section's header now names the one entry that still\ndiverges: `c.source.sections == sections`, a list field compared with\n`==`.\n\nNothing else moves: no code, no `expected`, and every other entry is\nbyte-identical.",
+          "timestamp": "2026-11-02T10:40:34+01:00",
+          "tree_id": "14dfb19dba625eee62c22a6adcb12f37770332e0",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5d7b367567425e8156123facf623f759508e9562"
+        },
+        "date": 1793612530058,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.0543575080000096,
+            "unit": "s",
+            "extra": "Commit: 5d7b367567425e8156123facf623f759508e9562\nBranch: master\nTime: 2026-11-02T10:40:34+01:00\nCPU: Intel(R) Xeon(R) 6973P-C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 10.018269370999988,
+            "unit": "s",
+            "extra": "Commit: 5d7b367567425e8156123facf623f759508e9562\nBranch: master\nTime: 2026-11-02T10:40:34+01:00\nCPU: Intel(R) Xeon(R) 6973P-C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 185.96323,
+            "unit": "MB",
+            "extra": "Commit: 5d7b367567425e8156123facf623f759508e9562\nBranch: master\nTime: 2026-11-02T10:40:34+01:00\nCPU: Intel(R) Xeon(R) 6973P-C"
           }
         ]
       }
