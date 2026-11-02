@@ -85,9 +85,8 @@ Fixes
   elsewhere skipped the block as a duplicate, a need of its real id made Sphinx-Needs
   refuse the block instead of codelinks reporting a duplicate (a skip the next
   incremental build did not remember), and the ``[docs]`` link named an id no need has.
-  No need's id moves, and one-line
-  needs are unchanged: a declared ``full_title`` there is still the full title their id
-  is hashed from.
+  No need's id moves, and one-line needs are unchanged: a declared ``full_title`` there
+  is still the full title their id is hashed from.
 - 🐛 A ``src-trace`` need's ``lineno`` is the line the directive is written on, as a
   Sphinx-Needs ``need`` directive's is. After ``rst_prolog`` it counted the prolog's lines
   too, and in an included file it was the line in the expanded input, a line neither file
