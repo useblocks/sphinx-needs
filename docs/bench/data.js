@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793612531338,
+  "lastUpdate": 1793622541068,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28392,6 +28392,48 @@ window.BENCHMARK_DATA = {
             "value": 185.96323,
             "unit": "MB",
             "extra": "Commit: 5d7b367567425e8156123facf623f759508e9562\nBranch: master\nTime: 2026-11-02T10:40:34+01:00\nCPU: Intel(R) Xeon(R) 6973P-C"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "35e741be6488234bafa1a3e62acfed857ff2bd2f",
+          "message": "⬆️ Update the uv lock (monthly), with the ty 0.0.95 diagnostics answered (#2459)\n\n## What\n\nThe monthly `uv lock --upgrade` from #2455, with the code changes needed\nto keep Lint green under the ty it brings in. This PR replaces #2455.\n\n- **`uv.lock`**: taken unchanged from #2455's branch (`4182554`). Since\nthat branch's base, master has changed neither the lock nor any\nmanifest, so the commit applies as-is. The full upgrade list is in\n#2455's body. The notable major moves are `python-dateutil` 2.9 → 4.0,\n`python-slugify` 8 → 9, `sphinxcontrib-jsmath` 1 → 2, `pyee` 13 → 14 and\n`soupsieve` 2 → 3. Sphinx 9.2.0 joins the matrix.\n- **ty 0.0.84 → 0.0.95** reports 20 new diagnostics. This PR answers\nthem in `packages/sphinx-needs` and `packages/sphinx-test-reports`:\n- `deprecated` (7): `@contextmanager` functions annotated `->\nIterator[X]` are now `-> Generator[X]`, which is the decorator's\nnon-deprecated overload.\n- `redundant-cast` (3): ty already infers the merged need-type dicts in\n`_Config`, and `schema_definitions`' empty default, as the TypedDict, so\nthe casts are removed. `default_factory=dict` replaces the casting\nlambda; both readers of the factory only call it.\n- `invalid-attribute-override` (9): the `TYPE_CHECKING`-only\n`attributes: Needs<X>Type` declarations on the view nodes are\ndeliberate, and a TypedDict is never assignable to docutils' `dict[str,\nAny]`. They are suppressed by code, not by loosening `[tool.ty]`.\n- `unused-ignore-comment` (1): removes the `invalid-assignment`\nsuppression on sphinx-test-reports' `option_spec` assignment, which is\nno longer needed.\n\n## Why\n\nOn #2455, Lint failed on exactly these 20 ty diagnostics (the run's\nhooks line read \"hooks clean after the upgrade: no\"). Every pytest cell\nin that run passed on the new lock.\n\n#2455's other red check, \"Needs smoke test against the published\nsiblings\", is informational. It is unrelated to the lock: the ub-project\nrelease on PyPI lacks `NO_DATA_FILE`, which the tree's sphinx-needs\nimports, so an ub-project release is owed first.\n\n## Tests\n\nNo tests added. The changes are annotations and suppressions, plus one\n`default_factory` that produces the same `{}`. Run locally on this\nbranch:\n\n- `uv run poe lint`, ty included: exit 0.\n- `uv run poe test-needs -n 4`: 4439 passed, 15 skipped.\n- `uv run poe test-reports -n 4`: 650 passed.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change. (No\nbehaviour or option changes.)\n- [ ] The package's `docs/changelog.rst` has an entry under\n*Unreleased*. (No user-facing change: a lock update plus type\nannotations.)\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-11-02T13:27:31+01:00",
+          "tree_id": "d0315e638a6a10ec753ba1d281ca68dfd1ad2b14",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/35e741be6488234bafa1a3e62acfed857ff2bd2f"
+        },
+        "date": 1793622540385,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.058102665999999914,
+            "unit": "s",
+            "extra": "Commit: 35e741be6488234bafa1a3e62acfed857ff2bd2f\nBranch: master\nTime: 2026-11-02T13:27:31+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 11.830468392999997,
+            "unit": "s",
+            "extra": "Commit: 35e741be6488234bafa1a3e62acfed857ff2bd2f\nBranch: master\nTime: 2026-11-02T13:27:31+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 187.120288,
+            "unit": "MB",
+            "extra": "Commit: 35e741be6488234bafa1a3e62acfed857ff2bd2f\nBranch: master\nTime: 2026-11-02T13:27:31+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
           }
         ]
       }
