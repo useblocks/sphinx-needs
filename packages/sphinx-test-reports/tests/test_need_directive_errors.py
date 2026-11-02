@@ -472,7 +472,8 @@ def test_a_capitalised_extra_option_can_be_written_on_a_directive(
     # attribute still lands in the field (the control).
     assert needs["TF_OWN_" + _hex("MathTest", 3)]["Owner"] == "platform-team"
     assert (
-        "tr_extra_options: write 'Owner' on a directive as :owner:" in status.getvalue()
+        "tr_extra_options: 'Owner' is matched on a directive in any case"
+        in status.getvalue()
     )
 
 

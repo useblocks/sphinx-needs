@@ -337,10 +337,10 @@ def test_myst_debug_in_another_case_shows_the_service_debug_output(
 @pytest.mark.parametrize(
     ("field", "option"),
     [
-        ("Delete", "delete"),
-        ("Title_From_Content", "title_from_content"),
-        ("Extend_Priority", "extend_priority"),
-        ("Debug", "debug"),
+        ("Delete", "the need directive's option 'delete'"),
+        ("Title_From_Content", "the need directive's option 'title_from_content'"),
+        ("Extend_Priority", "needextend's option 'extend_priority'"),
+        ("Debug", "needservice's option 'debug'"),
     ],
 )
 def test_a_field_equal_to_a_directive_option_ignoring_case_is_refused(
@@ -352,7 +352,7 @@ def test_a_field_equal_to_a_directive_option_ignoring_case_is_refused(
         make_app, tmp_path, CONF + f"needs_fields = {{{field!r}: {{}}}}\n"
     )
     assert f"field {field!r} (from needs_fields)" in message
-    assert f"option {option!r}" in message
+    assert option in message
     assert "ignoring case" in message
 
 
@@ -530,9 +530,18 @@ CLASHES = {
     ),
     "field-directive_option": (
         'needs_fields = {"Strict": {}}\n',
-        ("field 'Strict' (from needs_fields)", "the directive option 'strict'"),
+        ("field 'Strict' (from needs_fields)", "needextend's option 'strict'"),
     ),
 }
+
+
+def test_a_service_field_is_named_with_its_service(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A field a service registers is named by the description it is registered with."""
+    message = _refused(make_app, tmp_path, SERVICE + 'needs_fields["query"] = {}\n')
+    assert "field 'Query' (from service('Added by service echo'))" in message
+    assert "field 'query' (from needs_fields)" in message
 
 
 @pytest.mark.parametrize("clash", CLASHES)

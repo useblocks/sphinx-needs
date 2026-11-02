@@ -2173,12 +2173,22 @@ def refuse_case_clashes(app: Sphinx) -> None:
         add(name, f"core field {name!r}")
     for name in sorted(_CORE_LINK_NAMES):
         add(name, f"core link type {name!r}")
-    for name in sorted(
-        NEED_DIRECTIVE_OPTIONS | NEEDEXTEND_OPTIONS | NEEDSERVICE_OPTIONS
+    for options, directive in (
+        (NEED_DIRECTIVE_OPTIONS, "the need directive's"),
+        (NEEDEXTEND_OPTIONS, "needextend's"),
+        (NEEDSERVICE_OPTIONS, "needservice's"),
     ):
-        add(name, f"the directive option {name!r}")
+        for name in sorted(options):
+            add(name, f"{directive} option {name!r}")
     for name, params in _NEEDS_CONFIG.fields.items():
-        add(name, f"field {name!r} (from {params.source})")
+        # an extension's or a service's field, by its description, as the duplicate
+        # registration of a field names it (``_Config.add_field``)
+        source = (
+            params.source
+            if params.source in {"needs_fields", "needs_extra_options"}
+            else f"{params.source}({params.description!r})"
+        )
+        add(name, f"field {name!r} (from {source})")
     for name in sorted(type_field_names(app.config)):
         add(name, f"field {name!r} (from needs_types)")
     link_types = dict.fromkeys(_CORE_LINK_NAMES, "core")

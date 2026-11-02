@@ -724,20 +724,24 @@ class TestCommonDirective(Directive):
 
         if tr_extra_options:
             registered = {option_name.lower() for option_name in tr_extra_options}
-            for written in list(self.options):
-                lowered = written.lower()
-                if written == lowered or lowered not in registered:
-                    continue
-                value = self.options.pop(written)
-                if lowered in self.options:
-                    warn(
-                        self,
-                        "option_invalid",
-                        f"Option '{written}' repeats option '{lowered}' (option names "
-                        "are matched ignoring case); it is ignored",
-                    )
-                else:
-                    self.options[lowered] = value
+            #: each extra option written, by its lower case: every spelling written
+            spellings: dict[str, list[str]] = {}
+            for written in self.options:
+                if (lowered := written.lower()) in registered:
+                    spellings.setdefault(lowered, []).append(written)
+            for lowered, written in spellings.items():
+                kept = lowered if lowered in written else written[0]
+                for repeat in written:
+                    if repeat != kept:
+                        self.options.pop(repeat)
+                        warn(
+                            self,
+                            "option_invalid",
+                            f"Option '{repeat}' repeats option '{kept}' (option names "
+                            "are matched ignoring case); it is ignored",
+                        )
+                if kept != lowered:
+                    self.options[lowered] = self.options.pop(kept)
             for option_name in tr_extra_options:
                 if option_name.lower() in self.options:
                     self.extra_options[option_name] = self.options[option_name.lower()]

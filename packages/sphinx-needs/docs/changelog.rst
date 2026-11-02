@@ -336,11 +336,12 @@ Bug fixes
   (whose service reads the declared name), and ``needs.json``, filters and tables keep the declared spelling. An
   option written exactly as a name matches it first, so no value set before changes: only an option that was an
   unknown one now lands. Where MyST writes one name twice in two cases, that option, or else the first written, keeps
-  its value and the other is ignored with a ``needs.directive`` warning. **Two names equal ignoring case are now a
-  configuration error** that stops the build: two fields, a field and a core field (``Status``), a field and a link
-  type, two link types, a link type's back links and another name (``Tests_Back`` beside ``tests``), or a name and
-  an option a directive reads itself (``Strict``). Names spelt alike are handled as before. The options of
-  ``list2need``'s items, ``((name="value"))``, are matched exactly, as before.
+  its value and the other is ignored with a warning (``needs.directive``; ``needs.needextend`` on a ``needextend``).
+  **Two names equal ignoring case are now a configuration error** that stops the build: two fields, a field and a
+  core field (``Status``), a field and a link type, two link types, a link type's back links and another name
+  (``Tests_Back`` beside ``tests``), or a name and an option a directive reads itself (``Strict``, needextend's
+  ``strict``). Names spelt alike are handled as before. The options of ``list2need``'s items, ``((name="value"))``,
+  are matched exactly, as before.
 
 - 🐛 A need in a sliced include records the line it is written on in the file, where it recorded its line in the
   slice **(changed output)** (:issue:`2428`)

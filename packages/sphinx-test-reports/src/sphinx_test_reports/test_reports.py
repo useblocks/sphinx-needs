@@ -352,8 +352,8 @@ def register_tr_extra_options(app: Sphinx) -> None:
             )
         if lowered != option_name:
             log.info(
-                f"tr_extra_options: write '{option_name}' on a directive as "
-                f":{lowered}: (docutils lowercases option names); the need field stays "
+                f"tr_extra_options: '{option_name}' is matched on a directive in any "
+                f"case (:{lowered}:, :{option_name}:, ...); the need field stays "
                 f"'{option_name}'."
             )
 

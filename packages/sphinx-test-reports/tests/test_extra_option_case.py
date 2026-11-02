@@ -65,23 +65,25 @@ def test_an_extra_option_is_set_by_any_case(
 
 
 @pytest.mark.parametrize(
-    ("options", "ignored"),
+    ("options", "ignored", "kept"),
     [
-        ([("testtype", "unit"), ("TestType", "system")], "TestType"),
-        ([("TestType", "system"), ("testtype", "unit")], "TestType"),
+        ([("testtype", "unit"), ("TestType", "system")], "TestType", "testtype"),
+        ([("TestType", "system"), ("testtype", "unit")], "TestType", "testtype"),
+        ([("TESTTYPE", "unit"), ("TestType", "system")], "TestType", "TESTTYPE"),
     ],
-    ids=["lower-first", "lower-second"],
+    ids=["lower-first", "lower-second", "neither-lower"],
 )
 def test_myst_writing_an_extra_option_twice_keeps_the_value_set_before(
-    make_app, tmp_path, clean_docutils_registry, options, ignored
+    make_app, tmp_path, clean_docutils_registry, options, ignored, kept
 ):
     """MyST ``:testtype:`` set the field before and ``:TestType:`` was unknown: the
-    value stays the lower-case one's, and the other is reported, once (the expansion's
-    suites are not each told again)."""
+    value stays the lower-case one's (else the first written), and the other is
+    reported, once (the expansion's suites are not each told again), naming the kept
+    option as it is written."""
     needs, warnings = _build(make_app, tmp_path, "myst", options)
     assert needs["TF_XXX"]["TestType"] == "unit"
     assert warnings.count("WARNING:") == 1
-    assert f"'{ignored}'" in warnings
+    assert f"Option '{ignored}' repeats option '{kept}'" in warnings
 
 
 def test_a_built_in_option_keeps_myst_matching_it_exactly(

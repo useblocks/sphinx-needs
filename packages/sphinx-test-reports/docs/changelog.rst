@@ -37,9 +37,10 @@ Fixed
   MyST writes one extra option twice in two cases, the one in lower case, else the first
   written, keeps its value and the other is a ``test_reports.option_invalid`` warning. A name
   equal ignoring case to a field the directives set themselves (``Result``) is now refused
-  with the configuration error an equal name is. The directives' own options are matched by
-  myst-parser exactly, as before. Requires the Sphinx-Needs release that matches its own
-  fields ignoring case.
+  with the configuration error an equal name is; one equal ignoring case to another
+  Sphinx-Needs field or link type is refused by Sphinx-Needs' own check. The directives' own
+  options are matched by myst-parser exactly, as before. The build-start line for a name with
+  capitals now says it is matched in any case.
 
 - ‼️ A test case read from a plain ``pytest --junitxml`` report is on the test's own line:
   pytest counts the ``line`` attribute from 0, and its ``case_line`` was one line early --

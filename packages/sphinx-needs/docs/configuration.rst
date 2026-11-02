@@ -961,7 +961,7 @@ and is ``Owner`` in the :ref:`needs.json <needs_builder_format>`, in filters and
 (docutils lowercases the name of every reStructuredText option, which made a field or link type declared with capitals unreachable from it.)
 An option written exactly as a name matches it first, so nothing set before changes;
 where MyST writes one name twice in two cases, that option -- or else the first written -- keeps its value,
-and the other is ignored with a ``needs.directive`` warning.
+and the other is ignored with a warning (``needs.directive``; ``needs.needextend`` on a :ref:`needextend`).
 Two names equal ignoring case cannot be told apart, so they are a configuration error that stops the build:
 two fields (``Owner`` and ``owner``), a field and a core field (``Status``), a field and a link type,
 two link types, a link type or field and a link type's back links (``Tests_Back`` beside the link type ``tests``),
