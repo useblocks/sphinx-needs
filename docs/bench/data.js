@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793622541068,
+  "lastUpdate": 1793624292590,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28434,6 +28434,48 @@ window.BENCHMARK_DATA = {
             "value": 187.120288,
             "unit": "MB",
             "extra": "Commit: 35e741be6488234bafa1a3e62acfed857ff2bd2f\nBranch: master\nTime: 2026-11-02T13:27:31+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "eec2f6c2c4dc9770eeee0eb223bc61b828ab68f9",
+          "message": "♻️ One walk locates each need: sections, signature and parent_needs from the semantic location (#2460)\n\n**For users, nothing changes**: every `sections`, `section_name`,\n`signature` and `parent_need(s)` that a doctree of\nSphinx's or docutils' own gives is as before, in filters, tables,\nlayouts and needs.json. Only where an extension\nbuilds the doctree by hand does the one walk read a different value, the\nneed's real place: a `desc_signature`\noutside any `desc`, or one the need is placed in, gives no `signature`;\na `desc_name` holding an empty text node is\nno name; and a need whose target an extension dropped keeps its sections\nand takes its nearest enclosing need as its\nparent, rather than none or the need before it. None of these occurs in\nthe four suites or the documentation build.\n\nSince the source hops landed, each need was located twice: the legacy\nwalk wrote `sections`, `signature` and\n`parent_needs`, and the semantic walk wrote the placement hop's semantic\nlocation, with a test fence holding the\ntwo together. Now the semantic walk is the only one:\n`analyse_need_locations` puts its result on the placement hop\nand writes `sections` and `signature` as its projection, and\n`parent_needs` as the nearest enclosing need. The legacy\nwalk goes (`get_sections_and_signature_and_needs`, `_location_before`,\n`previous_sibling`; the first and last were\nundocumented but unprefixed, and are named in the changelog), and so do\nthe fence's comparisons of the two walks, the\ntest that poisoned the legacy walk, and the test that called\n`_location_before`. The fence keeps its hop invariants.\n\nThe values are pinned end to end instead: the domain-signature,\nhidden-need, list2need and legacy-keys tests, plus a\nnew test for a need in a function inside a need (its signature, and its\nnearest need as parent), which a wrong walk\notherwise slipped past, and a pin for an empty-text `desc_name`.\nThirteen deliberately wrong walks each turn a value test red.\n\n`ENV_DATA_VERSION` is 24, so an upgraded incremental build reads its\ndocuments again once and recomputes those\n\nFollows the source-model work of #2399, #2419 and #2451.",
+          "timestamp": "2026-11-02T13:56:47+01:00",
+          "tree_id": "9e285d56202dc59d13378e08b9000d3b918fc1db",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/eec2f6c2c4dc9770eeee0eb223bc61b828ab68f9"
+        },
+        "date": 1793624291749,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.05411644599999477,
+            "unit": "s",
+            "extra": "Commit: eec2f6c2c4dc9770eeee0eb223bc61b828ab68f9\nBranch: master\nTime: 2026-11-02T13:56:47+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 10.809127496000002,
+            "unit": "s",
+            "extra": "Commit: eec2f6c2c4dc9770eeee0eb223bc61b828ab68f9\nBranch: master\nTime: 2026-11-02T13:56:47+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 187.364579,
+            "unit": "MB",
+            "extra": "Commit: eec2f6c2c4dc9770eeee0eb223bc61b828ab68f9\nBranch: master\nTime: 2026-11-02T13:56:47+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
           }
         ]
       }
