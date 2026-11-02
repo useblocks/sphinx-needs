@@ -16,7 +16,7 @@ def test_signature_of_domain_objects(test_app: SphinxTestApp):
     ``desc_sig_name`` (c, cpp, js) (#2394). A C++ template's parameter is a
     ``desc_name`` too, on the line before the declaration's own. The first
     signature of an object wins, the nearest enclosing object wins, and an
-    empty name is no name. A ``desc_signature`` outside any domain object names no
+    empty name is no name, even one written as an empty text node. A ``desc_signature`` outside any domain object names no
     object, so it gives no signature."""
     app = test_app
     app.build()
@@ -33,6 +33,7 @@ def test_signature_of_domain_objects(test_app: SphinxTestApp):
         "SIG_CPP_IN_PY": "inner",
         "SIG_EMPTY": None,
         "SIG_EMPTY_IN_PY": "Outer",
+        "SIG_EMPTY_TEXT_IN_PY": "OuterText",
         "SIG_JS": "go",
         "SIG_NEED_OUTER": None,
         "SIG_OUTSIDE": None,

@@ -64,6 +64,13 @@ Domain signatures
       .. spec:: In an object whose name is empty, inside a Python class
          :id: SIG_EMPTY_IN_PY
 
+.. py:class:: OuterText
+
+   .. empty-text:: anything
+
+      .. spec:: In an object whose name is an empty text, inside a Python class
+         :id: SIG_EMPTY_TEXT_IN_PY
+
 .. outside-signature::
 
    .. spec:: After a signature outside any domain object

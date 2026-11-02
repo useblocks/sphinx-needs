@@ -16,6 +16,14 @@ class NamelessObject(ObjectDescription):
         return sig
 
 
+class EmptyTextObject(ObjectDescription):
+    """An object whose ``desc_name`` holds an empty text node."""
+
+    def handle_signature(self, sig, signode):
+        signode += desc_name("", "", nodes.Text(""))
+        return sig
+
+
 class OutsideSignature(SphinxDirective):
     """A ``desc_signature`` outside any ``desc``, before the content it holds.
 
@@ -35,4 +43,5 @@ class OutsideSignature(SphinxDirective):
 
 def setup(app):
     app.add_directive("nameless", NamelessObject)
+    app.add_directive("empty-text", EmptyTextObject)
     app.add_directive("outside-signature", OutsideSignature)
