@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 24
+ENV_DATA_VERSION: Final = 25
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -181,6 +181,14 @@ target an extension dropped keeps its ``sections`` and its nearest enclosing nee
 parent, where version 23 stored what the older walk read there. A doctree of Sphinx's or
 docutils' own gives the same values. The sources do not change, so without the bump an
 upgraded build would keep the old values on the pages whose sources did not change.
+
+Version 25 changes what the stored values mean again: a need a ``needimport`` or a
+``needservice`` creates records the line its directive is written on in its file as its
+``lineno``, and the parser's line as ``parser_lineno``, where version 24 stored the
+parser's line as its ``lineno``, shifted by ``rst_prolog`` and by every line an include
+above the directive, or the include it is written in, inserts (#1349). The sources do
+not change, so without the bump an upgraded build would keep the parser's lines on the
+pages whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

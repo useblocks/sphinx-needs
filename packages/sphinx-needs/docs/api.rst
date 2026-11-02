@@ -91,8 +91,7 @@ count; to keep the old number exactly, use
 ``NeedItemSource.on_page(self.env.docname, lineno=self.lineno)``, which is the source
 ``add_need`` built. ``on_page`` gives the need its page and the line the caller passes,
 nothing more, so it is the source wherever the caller chooses the line: the directive's own
-parser line, as ``add_need`` took it (every need sphinx-codelinks' ``src-trace`` creates sits
-at its directive's parser line), or the lines a directive's data names. It works in a docutils
+parser line, as ``add_need`` took it, or the lines a directive's data names. It works in a docutils
 ``Directive`` and in a nested parse alike, and is also the ``need_source`` to give
 ``generate_need``; ``create_need`` records the page's file on its hop, ``generate_need``,
 which has no application, does not.

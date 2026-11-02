@@ -17,10 +17,16 @@ any rewrite of the sources has to keep, byte for byte, for
 The hops of these needs are pinned by ``test_need_source.py``; here only what a filter, a
 table or ``needs.json`` reads.
 
-One change since, deliberate: the four needs written in an include's slice
-(``REQ_STARTAFTERX``, ``REQ_STARTLINEX``, ``REQ_HIT_A``, ``REQ_X_TWIN``) record the line
-they are written on in their files as ``lineno``, where the five classes gave the line in
-the slice (#2428).
+Two changes since, deliberate:
+
+- the four needs written in an include's slice (``REQ_STARTAFTERX``, ``REQ_STARTLINEX``,
+  ``REQ_HIT_A``, ``REQ_X_TWIN``) record the line they are written on in their files as
+  ``lineno``, where the five classes gave the line in the slice (#2428);
+- the needs a ``needimport`` and a ``needservice`` create (``I1``, ``SVC_A``, ``SVC_B``)
+  record their directive's line as ``lineno``, as a need directive's do (#1349), where
+  the five classes gave the parser's, which ``rst_prolog`` and an include shift: ``I1``
+  7 (``imp.rst``), not 12; ``SVC_A`` and ``SVC_B`` 10 (``frag/a.rst``, which
+  ``inc_host.rst`` includes), not 26.
 
 The last test is the upgrade path: an environment the five classes pickled is not read
 back into the new class, whatever their names now resolve to.

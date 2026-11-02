@@ -18,6 +18,7 @@ from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
     directive_hops,
+    directive_line,
     physical_for,
 )
 from sphinx_needs.api import InvalidNeedException, ingest_need_record
@@ -245,6 +246,7 @@ class NeedimportDirective(SphinxDirective):
         # every need of the directive shares its hops: the imported file (resolved),
         # then the file and page the directive is written on
         hops = directive_hops(self, first=(imported,))
+        _, resolved = directive_line(self)
         need_nodes = []
         for need_params in needs_list.values():
             record = dict(need_params)
@@ -271,8 +273,14 @@ class NeedimportDirective(SphinxDirective):
                 )
                 continue
 
-            # set location
-            need_source = NeedItemSource(hops, lineno=self.lineno, is_import=True)
+            # its line is the one the directive is written on, as a need directive's
+            # (#1349); the parser's line anchors the text parsed for the need
+            need_source = NeedItemSource(
+                hops,
+                lineno=resolved or self.lineno,
+                parser_lineno=self.lineno,
+                is_import=True,
+            )
 
             # a template is a file of the importing project, written in the page's
             # markup: a need rendered through one is parsed as the page's, as its

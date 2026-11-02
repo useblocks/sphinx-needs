@@ -51,7 +51,7 @@ from sphinx_needs.need_item import (
     NeedItemSourceUnknown,
     NeedsContent,
 )
-from sphinx_needs_testkit import assert_no_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 from tests.test_need_item_api import core
 
 PROJECT = Path(__file__).parent / "doc_test" / "doc_need_source_hops"
@@ -871,6 +871,137 @@ def test_a_sliced_include_gives_the_file_lines(
             8,
             [("frag/twin.rst", 8, 9), ("lines.rst", None, None)],
         )
+    finally:
+        app.cleanup()
+
+
+#: a needimport and a needservice behind ``rst_prolog`` on a plain page, below an
+#: include, inside an include and inside a sliced include; the imported needs' content
+#: and ``pre_template``, and the service's content, each carry an unknown role, so the
+#: warnings read off where their text is parsed
+IMPORT_SERVICE_FILES = {
+    "conf.py": (
+        "import os, sys\n"
+        "sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\n"
+        'sys.modules.pop("lines_service", None)\n'
+        'extensions = ["sphinx_needs", "lines_service"]\n'
+        'needs_template_folder = "needs_templates"\n'
+        'exclude_patterns = ["frag/**", "_build"]\n'
+        'rst_prolog = """\n.. |p1| replace:: P1\n\n.. |p2| replace:: P2\n"""\n'
+    ),
+    "lines_service.py": (
+        "from sphinx_needs.data import SphinxNeedsData\n"
+        "from sphinx_needs.services.base import BaseService\n\n\n"
+        "class LinesService(BaseService):\n"
+        "    options = []\n\n"
+        "    def __init__(self, app, name, config, **kwargs):\n"
+        "        super().__init__()\n\n"
+        "    def request_from_directive(self, directive):\n"
+        "        page = directive.env.docname.upper()\n"
+        '        return [{"id": f"SVC_{page}", "title": "service need", "type": "req",\n'
+        '                 "content": "service body :unknown-svc:`x`"}]\n\n'
+        "    def request(self, options):\n"
+        "        return []\n\n"
+        "    def debug(self, options):\n"
+        "        return {}\n\n\n"
+        "def _register(app, env, docnames):\n"
+        "    services = SphinxNeedsData(env).get_or_create_services()\n"
+        '    if "lines" not in services.services:\n'
+        '        services.register("lines", LinesService)\n\n\n'
+        "def setup(app):\n"
+        '    app.connect("env-before-read-docs", _register)\n'
+        '    return {"parallel_read_safe": True, "parallel_write_safe": True}\n'
+    ),
+    "imp.json": (
+        '{"current_version": "1.0", "versions": {"1.0": {"needs": {'
+        '"IMP_ONE": {"id": "IMP_ONE", "type": "req", "title": "imported one", '
+        '"content": "imported body :unknown-imp:`x`"}, '
+        '"IMP_TWO": {"id": "IMP_TWO", "type": "req", "title": "imported two", '
+        '"content": "plain", "pre_template": "bad"}}}}}\n'
+    ),
+    "needs_templates/bad.need": ":unknown-tpl:`t` pre template of {{id}}\n",
+    "index.rst": (
+        "Lines\n=====\n\n.. toctree::\n\n   plain\n   below\n   inside\n   sliced\n"
+    ),
+    "plain.rst": (
+        "Plain\n=====\n\n.. needimport:: /imp.json\n   :id_prefix: PL_\n\n"
+        ".. needservice:: lines\n"
+    ),
+    "below.rst": (
+        "Below\n=====\n\n.. include:: frag/above.rst\n\n"
+        ".. needimport:: /imp.json\n   :id_prefix: BE_\n\n.. needservice:: lines\n"
+    ),
+    "frag/above.rst": "one\n\ntwo\n\nthree\n\nfour\n",
+    "inside.rst": "Inside\n======\n\ntext\n\n.. include:: frag/inside.rst\n",
+    "frag/inside.rst": (
+        "Fragment\n--------\n\ntext\n\n.. needimport:: /imp.json\n   :id_prefix: IN_\n\n"
+        ".. needservice:: lines\n"
+    ),
+    "sliced.rst": (
+        "Sliced\n======\n\n.. include:: frag/sliced.rst\n   :start-line: 4\n"
+    ),
+    "frag/sliced.rst": (
+        "skipped\n\nskipped\n\nkept\n\n.. needimport:: /imp.json\n   :id_prefix: SL_\n\n"
+        ".. needservice:: lines\n"
+    ),
+}
+
+
+def test_an_import_and_a_service_record_their_directive_s_line(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+):
+    """A need a ``needimport`` or a ``needservice`` creates records the line its
+    directive is written on, in the file it is written in, as a need directive's does
+    (#1349): ``rst_prolog``, an include above the directive and the (sliced) include it
+    sits in no longer shift it by the lines they insert. It is its own hop's line, and
+    it sets no ``lineno_content``. The parser's line still anchors the text parsed for
+    the need: the warnings about the needs' content and ``pre_template`` are where they
+    were (the parser's own count, which a sliced include offsets)."""
+    srcdir = tmp_path / "project"
+    for name, text in IMPORT_SERVICE_FILES.items():
+        (srcdir / name).parent.mkdir(parents=True, exist_ok=True)
+        (srcdir / name).write_text(text, encoding="utf-8")
+    app = make_app("html", srcdir=srcdir, freshenv=True)
+    try:
+        app.build()
+        # sphinx 7 writes no ``[docutils]`` type after docutils' own messages
+        warnings = [w.removesuffix(" [docutils]") for w in build_warnings(app)]
+        assert sorted(warnings) == [
+            f'<srcdir>/{where}: ERROR: Unknown interpreted text role "{role}".'
+            for where, roles in (
+                ("below.rst:6", ("unknown-imp", "unknown-tpl")),
+                ("below.rst:9", ("unknown-svc",)),
+                ("frag/inside.rst:6", ("unknown-imp", "unknown-tpl")),
+                ("frag/inside.rst:9", ("unknown-svc",)),
+                # the parser counts a slice's lines from its start
+                ("frag/sliced.rst:3", ("unknown-imp", "unknown-tpl")),
+                ("frag/sliced.rst:6", ("unknown-svc",)),
+                ("plain.rst:4", ("unknown-imp", "unknown-tpl")),
+                ("plain.rst:7", ("unknown-svc",)),
+            )
+            for role in roles
+        ]
+        needs = SphinxNeedsData(app.env).get_needs_view()
+        lines = {}
+        for need_id, need in needs.items():
+            own = need.source.hops[1].physical
+            assert own is not None
+            assert need["lineno_content"] is None, need_id
+            lines[need_id] = (need["lineno"], own.path, own.start_line)
+        assert lines == {
+            "PL_IMP_ONE": (4, "plain.rst", 4),
+            "PL_IMP_TWO": (4, "plain.rst", 4),
+            "SVC_PLAIN": (7, "plain.rst", 7),
+            "BE_IMP_ONE": (6, "below.rst", 6),
+            "BE_IMP_TWO": (6, "below.rst", 6),
+            "SVC_BELOW": (9, "below.rst", 9),
+            "IN_IMP_ONE": (6, "frag/inside.rst", 6),
+            "IN_IMP_TWO": (6, "frag/inside.rst", 6),
+            "SVC_INSIDE": (9, "frag/inside.rst", 9),
+            "SL_IMP_ONE": (7, "frag/sliced.rst", 7),
+            "SL_IMP_TWO": (7, "frag/sliced.rst", 7),
+            "SVC_SLICED": (10, "frag/sliced.rst", 10),
+        }
     finally:
         app.cleanup()
 

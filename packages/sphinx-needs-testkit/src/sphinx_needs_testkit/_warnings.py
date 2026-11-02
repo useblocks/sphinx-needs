@@ -103,6 +103,9 @@ def build_warnings(
         root = str(Path(srcdir))
         for separator in (os.sep, "/"):
             text = text.replace(root + separator, "<srcdir>/")
+        # docutils names an included file by a path written with ``/`` throughout, so on
+        # Windows its warnings carry the root as ``C:/…``, which the native ``C:\…`` misses
+        text = text.replace(Path(srcdir).as_posix() + "/", "<srcdir>/")
 
     records: list[str] = []
     for line in text.splitlines():
