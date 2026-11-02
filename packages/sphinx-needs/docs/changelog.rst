@@ -469,6 +469,14 @@ Documentation
 Internal changes
 ................
 
+- 🔧 Each need is located by one walk of the doctree: its ``sections``, ``signature`` and ``parent_needs`` are
+  written from the semantic location recorded on its placement in ``need.source``, which a second, older walk
+  duplicated until now. Every value is as before but one: a ``desc_signature`` an extension places outside any
+  ``desc`` no longer gives the needs after it a ``signature``, since it names no object (no Sphinx domain writes
+  one). The undocumented helpers ``get_sections_and_signature_and_needs`` and ``previous_sibling`` of
+  ``sphinx_needs.directives.need`` are removed without a deprecation. An existing build directory is read again in
+  full once.
+
 - 🔧 The ``var`` proxy over the variant data and the need types ``c.is_a`` reads are kept by sphinx-needs rather
   than on Sphinx's configuration, which holds the declared options alone (:issue:`1840`, :issue:`2402`):
   ``app.config.needs_variant_data_proxy``, undocumented since 8.2.0, is removed without a deprecation, and is read
