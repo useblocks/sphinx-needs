@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793624292590,
+  "lastUpdate": 1793634371849,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28476,6 +28476,48 @@ window.BENCHMARK_DATA = {
             "value": 187.364579,
             "unit": "MB",
             "extra": "Commit: eec2f6c2c4dc9770eeee0eb223bc61b828ab68f9\nBranch: master\nTime: 2026-11-02T13:56:47+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a52febad837a09756bfeeefc391f611fc78e2d32",
+          "message": "🐛 Match directive option names to declared field, link and extra-option names ignoring case (#2462)\n\n## What\n\n`packages/sphinx-needs` and `packages/sphinx-test-reports`: a directive\noption now matches a declared name ignoring case\n(`str.lower`, as docutils compares), in reStructuredText and MyST alike,\nand the value is stored under the declared spelling.\n\n- sphinx-needs: the need directives, `needextend` (its `+`/`-` keys too)\nand `needservice` (whose service now reads the\ndeclared names) key each option by the field, link type or core field it\nequals ignoring case. An exact spelling is\ntried first. `needs.json`, filters and tables keep the declared\nspelling.\n- Two names equal ignoring case but spelt apart are a configuration\nerror that stops the build. That covers two fields, a field and a\ncore field (`Status`), a field and a link type, two link types, a name\nand a link type's back links (`Tests_Back` beside\n`tests`), and a name and an option a directive reads itself (`Strict`).\nNames spelt alike keep their existing handling. The\nerror names each name's source: the need directive's, needextend's or\nneedservice's own options by directive, and a field an\nextension or a service registers by the description it was registered\nwith.\n- sphinx-test-reports: `tr_extra_options` are found by any case in MyST\ntoo, through a case-aware `option_spec`; the directives' own\noptions stay myst-parser's exact match. An extra option equal ignoring\ncase to a field the directives set (`Result`) is\nrefused like an equal one. The build-start line no longer tells you to\nwrite an extra in lower case.\n- In MyST, one name written twice in two cases: the exact spelling\n(sphinx-test-reports: the lowercase one), else the first\nwritten, keeps its value. The other gets a warning (`needs.directive`;\n`needs.needextend` on a needextend;\n  `test_reports.option_invalid`) naming the kept option as written.\n\n## Why\n\ndocutils lowercases every reStructuredText option name; myst-parser\nkeeps it as written. So with\n`needs_fields = {\"Owner\": {}}`, a need's `:Owner:` and `:owner:` were\nboth `Unknown option 'owner'` in reStructuredText and\nthe value was lost, while MyST took `:Owner:` alone. MyST's `:Status:`\nwas unknown where reStructuredText's set `status`,\nand sphinx-test-reports' MyST `:TestType:` was an unknown key for\n`tr_extra_options = [\"TestType\"]`. One project read\ndifferently per markup. This makes one rule for both hosts and both\npackages.\n\nThe change is additive. An option that matched before matches the same\nname, so only options that were reported unknown (their\nvalue lost) now land, apart from the new configuration error for names a\ndirective cannot tell apart. One consequence:\nMyST `:Delete:`, `:Hide:`, `:Title_From_Content:` and needextend's\n`:Strict:` / `:Extend_Priority:` now act, as their\nreStructuredText spellings always did.\n\nCompanion: useblocks/ubcode#4532. ubCode lowercases reStructuredText\noption names as docutils does and mirrors this rule.\n\n## Tests\n\n- `packages/sphinx-needs/tests/test_option_name_case.py` (62 cases, RST\nand MyST):\n  - a field and a link type declared with capitals, set by any case;\n  - core `:Status:`, `:ID:` and `:Tags:` in MyST;\n- needextend keys (`Owner`, `+Satisfies`, `Status`, `+TAGS`) and its own\n`:Strict:` and `:Extend_Priority:`;\n- needservice handing the service `Owner` and `Query`, and its own\n`:Debug:`;\n- each option a need directive reads itself, in MyST in another case:\n`:Delete:`, `:Hide:`, `:Collapse:`, `:Layout:`, `:Style:`,\n`:Jinja_Content:`, `:Title_From_Content:`;\n  - unknown options still unknown;\n  - MyST repeats keeping the value set before;\n- each kind of name clash refused, naming its source; names spelt alike\nnot refused.\n- `packages/sphinx-test-reports/tests/test_extra_option_case.py` (11\ncases):\n- `:TestType:`, `:testtype:` and `:TESTTYPE:` landing under `TestType`\nin both hosts, and on `:auto_suites:` suites;\n  - MyST repeats, including one with no lowercase spelling;\n  - built-in options unchanged;\n  - `Result` refused.\n- The tests were committed and shown failing first: 30 + 3 fail on the\nunfixed code, and the rest guard what must not change.\n  11 mutations of the fix each turn them red.\n- Reviewed adversarially (one reviewer, a fix round, then a validation\nround: SHIP). At the tip `e8d7bca7`, which merges\n`master` `eec2f6c2`, `uv run poe test-needs -n 4` (4500 passed), `uv run\npoe test-reports -n 4` (662 passed), `uv run poe lint`\n  and `uv run poe typecheck` all exit 0.\n\n## Follow-ups\n\n- sphinx-test-reports registers `tr_extra_options` into the directive\nclasses' `option_spec`, process-wide; that predates this change.\nIn a process that builds several projects (a test worker, a language\nserver rebuilding the app), an earlier project's\nextra stays registered. With this change, a later project's MyST `:Foo:`\nfor it passes myst-parser and is then dropped\n  without a warning. A per-app spec would close it.\n- `add_field` takes no extension name, so a field sphinx-test-reports\nregisters is named in the case-clash error as\n  `add_field('<description>')`, not as sphinx-test-reports'.\n- `list2need` item options `((name=\"value\"))` are still matched exactly\n(the same in both hosts); one rule would include them.\n\n## Checklist\n\n- [ ] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [x] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-11-02T16:44:37+01:00",
+          "tree_id": "9d84afe83aac3405b6536556cea0592106f50555",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a52febad837a09756bfeeefc391f611fc78e2d32"
+        },
+        "date": 1793634370839,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.06938184799999902,
+            "unit": "s",
+            "extra": "Commit: a52febad837a09756bfeeefc391f611fc78e2d32\nBranch: master\nTime: 2026-11-02T16:44:37+01:00\nCPU: INTEL(R) XEON(R) PLATINUM 8573C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 12.386553530000008,
+            "unit": "s",
+            "extra": "Commit: a52febad837a09756bfeeefc391f611fc78e2d32\nBranch: master\nTime: 2026-11-02T16:44:37+01:00\nCPU: INTEL(R) XEON(R) PLATINUM 8573C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 189.424046,
+            "unit": "MB",
+            "extra": "Commit: a52febad837a09756bfeeefc391f611fc78e2d32\nBranch: master\nTime: 2026-11-02T16:44:37+01:00\nCPU: INTEL(R) XEON(R) PLATINUM 8573C"
           }
         ]
       }
