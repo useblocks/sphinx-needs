@@ -2023,11 +2023,9 @@ reason = "call:c.is_a"
 # place, `symbol` a traced code entity's qualified name, `document` and `sections` the
 # placement (read from `docname` and `sections`, which they are aliases of). `paths` may
 # gain entries as more of a chain is recorded, so entries test membership, never its
-# length or positions. ubCode has run these entries against its own engine, and three
-# still diverge: two `paths` entries, as ubCode does not yet record the files an include
-# passes through, and a list field compared with `==`, which ubc_query refuses as it does
-# in `mixed-type-values`. The entry for a test case whose report gives no test file is
-# not yet run against ubCode.
+# length or positions. ubCode has run these entries against its own engine, and one
+# still diverges: a list field compared with `==`, which ubc_query refuses as it does
+# in `mixed-type-values`.
 
 [[case]]
 name = "source-facets-of-page-include-import-and-external-needs"
@@ -2110,13 +2108,11 @@ why = "an include inside an include: the innermost file, a list2need item's too"
 filter = '"frag/a.txt" in c.source.paths'
 expected = ["REQ_DEEP", "REQ_FRAG", "REQ_ITEM"]
 why = "paths holds every file a need came through: the needs written in frag/a.txt, and those included through it"
-divergent = { ubcode = "the files an include passes through between the written-in file and the page are not recorded yet (ubCode's source-location fix PR 6, not yet open)" }
 
 [[case.filters]]
 filter = '"frag/b.txt" in c.source.paths and "frag/a.txt" in c.source.paths'
 expected = ["REQ_DEEP", "REQ_ITEM"]
 why = "the nested chain: the file a need is written in, and the file it was included through"
-divergent = { ubcode = "the files an include passes through between the written-in file and the page are not recorded yet (ubCode's source-location fix PR 6, not yet open)" }
 
 [[case.filters]]
 filter = '"data/imp.json" in c.source.paths'
@@ -2370,7 +2366,6 @@ files = { "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
 [[case.filters]]
 filter = 'c.source.kind == "report" and c.source.path is None'
 expected = ["TF_0001_0EA_A759D"]
-divergent = { ubcode = "not yet run against ubCode" }
 
 [[case]]
 name = "source-paths-are-relative-to-the-source-directory"
