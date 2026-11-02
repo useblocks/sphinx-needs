@@ -25,20 +25,28 @@ and relative to the Sphinx source directory (a hop whose ``root`` is ``"srcdir"`
 
 One function per facet, each costing its own work only, over a source and the need it
 belongs to. No Sphinx import of its own and no environment: the facets are computed
-from what a need holds, which the legacy projections of the hops will reuse.
+from what a need holds.
 
 ``paths`` is the one facet that may gain an entry rather than fill a ``None``, as more
 of a chain is recorded (a test case's test file once its root is known; MyST include
 chains; a file included through a ``:parser:`` include on docutils 0.22 and later);
 filters test membership of it.
 
-The rule for the legacy projections (slice 4): ``document`` and ``sections`` are derived
-from the placement hop where there is one, else from an ``external`` hop's own section
-chain, else they stay the legacy read. Derived from the placement alone, five kinds of
-need would move: a hop-less ``NeedItemSource()`` and ``NeedItemSource((),
-is_import=True)`` placed by a directive (their walked ``sections`` would become ``()``,
-G15), and third-party protocol sources, plain, imported and external (their
-``docname`` from ``dict_repr`` would become ``None``, their walked ``sections`` ``()``).
+The legacy projections (slice 4a): ``document`` and ``sections`` stay reads of the
+need's ``docname`` and ``sections``, which ARE the placement hop's where a need has one.
+``docname`` is a ``NeedItemSource``'s placement ``document``; ``sections`` (with
+``signature``) is written once, as the projection of the semantic location the
+doctree-read walk puts on the placement hop (``project_legacy(placement_semantic(node))``),
+so there is no second walk to agree with. They stay stored fields rather than reads of
+the hops, because the hops cannot answer for every need: the same walk writes the
+``sections`` of a need with no placement hop (a hop-less ``NeedItemSource()``,
+``NeedItemSource.on_page(None)`` or ``NeedItemSource((), is_import=True)`` placed by a
+directive, G15; a third-party protocol source, whose ``docname`` is its ``dict_repr``'s),
+and a need no walk visits keeps the value it was given (an external need's record, an
+``add_need(sections=...)`` whose nodes are discarded). Read from the hops, the order
+would be an ``external`` ``hops[0]`` first (its section chain, ``None`` giving ``()``),
+then the placement's semantic location, with a stored fallback all the same; an external
+need's ``signature`` is on no hop.
 """
 
 from __future__ import annotations

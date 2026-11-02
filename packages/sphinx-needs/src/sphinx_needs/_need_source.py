@@ -13,8 +13,9 @@ until it reaches ``needs.json``.
 
 This module holds the hop types and what the source class and the producers share:
 the placement lookup, the builders of a directive's hops, the doctree walk that finds the
-placement's semantic location, and the projection of that location onto the legacy
-``sections`` and ``signature``. It never imports :mod:`sphinx_needs.need_item`, which
+placement's semantic location, the projection of that location onto the legacy
+``sections`` and ``signature``, and the need node enclosing a need's, its legacy
+``parent_needs``. It never imports :mod:`sphinx_needs.need_item`, which
 imports it.
 
 A hop's ``start_line`` / ``end_line`` is recorded only where it is a true 1-based line of
@@ -59,7 +60,7 @@ SRCDIR_ROOT: Final = "srcdir"
 """The key of the one root slice 1 has: the Sphinx source directory."""
 
 NON_BREAKING_SPACE: Final = re.compile("\xa0+")
-"""What auto-numbered section titles carry, replaced by one space (as the legacy walk does)."""
+"""What auto-numbered section titles carry, replaced by one space in a section's name."""
 
 _DOCSTRING_OF: Final = "docstring of "
 """What autodoc puts in the source of a docstring: ``<file>:docstring of <object>``."""
@@ -1158,11 +1159,12 @@ def placement_semantic(need_node: nodes.Node) -> tuple[NeedSourceSemantic, ...]:
     ``("signature", …)`` extra, which is what :func:`project_legacy` reads.
 
     Signatures are read only under an ``addnodes.desc``: a ``desc_signature`` an
-    extension places outside one is read by the legacy walk and not by this one.
+    extension places outside one names no object, and gives no signature.
 
-    Computed from the doctree alone, independently of the legacy walk
-    (``get_sections_and_signature_and_needs``), so that the fence comparing the two
-    is not a tautology.
+    It is the one walk that locates a need: ``analyse_need_locations`` puts its result
+    on the placement hop, and writes the legacy ``sections`` and ``signature`` as its
+    projection (:func:`project_legacy`), whether the need's source has a placement hop
+    or not, and ``parent_needs`` from :func:`enclosing_need`.
     """
     inner_first: list[NeedSourceSemantic] = []
     child: nodes.Node = need_node
@@ -1222,12 +1224,12 @@ def _domain_entry(node: addnodes.desc, below: nodes.Node) -> NeedSourceSemantic:
 def legacy_signature_text(desc_name: addnodes.desc_name) -> str | None:
     """The name the legacy ``signature`` reads from a ``desc_name``, if it reads one.
 
-    The legacy rule (``get_sections_and_signature_and_needs``), held here for the walk:
-    the ``desc_name``'s first child when it is text (even an empty one, which
-    overwrites, as the legacy walk's does); otherwise its text, as the c, cpp and js
-    domains write it (a ``desc_sig_name`` inside); an empty name is no name. Which
-    ``desc_name`` it is asked about is :func:`_signature_parts`' part of the rule: a
-    change to the legacy rule changes both, and the fence holds them together.
+    The ``desc_name``'s first child when it is text (even an empty one, which
+    overwrites a name an earlier ``desc_name`` of the same signature gave); otherwise
+    its text, as the c, cpp and js domains write it (a ``desc_sig_name`` inside); an
+    empty name is no name. Which ``desc_name`` it is asked about is
+    :func:`_signature_parts`' part of the rule, and which signature
+    :func:`_domain_entry`'s: the first of the object's that gives a name.
     """
     if desc_name.children and isinstance(desc_name.children[0], nodes.Text):
         return str(desc_name.children[0])
@@ -1240,7 +1242,7 @@ def _signature_parts(signature: addnodes.desc_signature) -> Iterator[nodes.Node]
     """The children of a signature, a ``desc_signature_line``'s in its place.
 
     The c and cpp domains put the ``desc_name`` in a ``desc_signature_line``, which the
-    legacy walk descends into.
+    ``signature`` rule descends into.
     """
     for child in signature.children:
         if isinstance(child, addnodes.desc_signature_line):
@@ -1255,7 +1257,8 @@ def project_legacy(
     """The legacy ``sections`` (innermost first) and ``signature`` of a semantic list.
 
     ``signature`` is the ``("signature", …)`` extra of the innermost domain object
-    that has one, as the legacy walk reads the innermost signature it can.
+    that has one: a need in a C++ function inside a Python class takes the function's
+    name.
     """
     sections = tuple(
         entry.name for entry in reversed(semantic) if entry.kind == "section"

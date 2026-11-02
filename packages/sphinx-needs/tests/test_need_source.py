@@ -531,8 +531,8 @@ def test_the_hops_of_every_need(
     docutils' ``document.include_log``, then the page. The service and the import
     have their directive's true line, not the parser's (``rst_prolog`` shifts it by 4).
     ``REQ_CFX`` is in a C function, whose ``desc_name`` wraps a ``desc_sig_name``: the
-    semantic location names it, and its ``signature`` extra is what the legacy walk
-    reads. ``REQ_DOCSTRINGX`` is in a docstring: a ``code`` hop of the module's file,
+    semantic location names it, and its ``signature`` extra is what the need's
+    ``signature`` is projected from. ``REQ_DOCSTRINGX`` is in a docstring: a ``code`` hop of the module's file,
     with no line, which names the function in sphinx-codelinks' Python vocabulary
     (``test_need_source_autodoc.py`` pins each case). ``REQ_MDINCX`` is in a MyST
     include, whose lines myst-parser reports one late: no line.
