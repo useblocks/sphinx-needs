@@ -5,12 +5,15 @@ from collections.abc import Callable, Iterable, Sequence
 from typing import Any, Final
 
 from docutils import nodes
-from sphinx.addnodes import desc_name, desc_signature, desc_signature_line
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs._need_source import placement_semantic
+from sphinx_needs._need_source import (
+    enclosing_need,
+    placement_semantic,
+    project_legacy,
+)
 from sphinx_needs._wording import joined
 from sphinx_needs.api import InvalidNeedException, create_need
 from sphinx_needs.config import NeedsSphinxConfig
@@ -38,8 +41,6 @@ from sphinx_needs.utils import (
 )
 
 LOGGER = get_logger(__name__)
-
-NON_BREAKING_SPACE = re.compile("\xa0+")
 
 
 class NeedDirective(SphinxDirective):
@@ -254,68 +255,6 @@ def _get_title(
         return "", None
 
 
-def get_sections_and_signature_and_needs(
-    need_node: nodes.Node | None,
-) -> tuple[list[str], nodes.Text | None, list[str]]:
-    """Gets the hierarchy of the section nodes as a list starting at the
-    section of the current need and then its parent sections"""
-    sections = []
-    parent_needs: list[str] = []
-    signature = None
-    current_node = need_node
-    while current_node:
-        if isinstance(current_node, nodes.section):
-            title = current_node.children[0].astext()
-            # If using auto-section numbering, then Sphinx inserts
-            # multiple non-breaking space unicode characters into the title
-            # we'll replace those with a simple space to make them easier to
-            # use in filters
-            title = NON_BREAKING_SPACE.sub(" ", title)
-            sections.append(title)
-
-        # Checking for a signature defined "above" the need.
-        # Used and set normally by directives like automodule.
-        # Only check as long as we haven't found a signature
-        if not signature and current_node.parent and current_node.parent.children:
-            for sibling in current_node.parent.children:
-                # We want to check only "above" current node, so no need to check sibling after current_node.
-                if sibling == current_node:
-                    break
-                if isinstance(sibling, desc_signature):
-                    # Check the child of the found signature for the text content/node.
-                    # The C and C++ domains put the name in a desc_signature_line,
-                    # and they and the JavaScript domain wrap it in a desc_sig_name.
-                    for desc_child in (
-                        line_child
-                        for child in sibling.children
-                        for line_child in (
-                            child.children
-                            if isinstance(child, desc_signature_line)
-                            else [child]
-                        )
-                    ):
-                        if not isinstance(desc_child, desc_name):
-                            continue
-                        if desc_child.children and isinstance(
-                            desc_child.children[0], nodes.Text
-                        ):
-                            signature = desc_child.children[0]
-                        elif desc_child.astext():
-                            # an empty name is no name
-                            signature = nodes.Text(desc_child.astext())
-                if signature:
-                    break
-
-        # Check if the need is nested inside another need (so part of its content)
-        # and we only want to find our parent and not add the grands, too.
-        if isinstance(current_node, Need) and len(parent_needs) == 0:
-            parent_needs.append(current_node["refid"])  # Store the need id, not more
-
-        current_node = getattr(current_node, "parent", None)
-
-    return sections, signature, parent_needs
-
-
 def purge_needs(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
     """
     Gets executed, if a doc file needs to be purged/ read in again.
@@ -344,16 +283,15 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
         need_id = need_node["refid"]
         need_info = needs[need_id]
 
-        # Fetch values from need
-        sections, signature, parent_needs = _location_before(need_node)
-
-        # append / set values from need
-        need_info["sections"] = tuple(sections)
-        need_info["signature"] = str(signature) if signature is not None else None
-        need_info["parent_needs"] = parent_needs
-        # the second phase of the need's source: the semantic location of its placement
-        # hop, found from the doctree on its own (not from the legacy values above)
-        need_info._set_placement_semantic(placement_semantic(need_node))
+        # one walk up from the node: its semantic location goes on its placement hop
+        # (the second phase of the need's source), and the legacy ``sections`` and
+        # ``signature`` are its projection
+        semantic = placement_semantic(need_node)
+        need_info._set_placement_semantic(semantic)
+        sections, signature = project_legacy(semantic)
+        need_info["sections"] = sections
+        need_info["signature"] = signature
+        need_info["parent_needs"] = enclosing_need(need_node)
 
         if need_node.get("hidden"):
             hidden_needs.append(need_node)
@@ -363,35 +301,6 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
     for need_node in hidden_needs:
         if need_node.parent is not None:
             need_node.parent.remove(need_node)
-
-
-def _location_before(
-    need_node: Need,
-) -> tuple[list[str], nodes.Text | None, list[str]]:
-    """The walk from the position immediately before the need node.
-
-    A visible need's own target sits there, so the walk starts from it. A hidden need
-    has no target, and its previous sibling, if it has one, is some other node: a need
-    there would be read as its parent, and as the first child of its container it would
-    have nothing to start from (#2398). The walk from that position is the walk from the
-    need node itself, except that the need is not its own parent: so ``sections`` and
-    ``signature`` are read from the need node, and ``parent_needs`` from its parent.
-    The doctree is not changed.
-    """
-    if not need_node.get("hidden"):
-        return get_sections_and_signature_and_needs(previous_sibling(need_node))
-    sections, signature, _ = get_sections_and_signature_and_needs(need_node)
-    _, _, parent_needs = get_sections_and_signature_and_needs(need_node.parent)
-    return sections, signature, parent_needs
-
-
-def previous_sibling(node: nodes.Node) -> nodes.Node | None:
-    """Return preceding sibling node or ``None``."""
-    try:
-        i = node.parent.index(node)
-    except AttributeError:
-        return None
-    return node.parent[i - 1] if i > 0 else None
 
 
 @profile("NEEDS_POST_PROCESS")
