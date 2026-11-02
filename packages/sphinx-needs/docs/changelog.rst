@@ -475,9 +475,9 @@ Internal changes
   builds the doctree by hand, the one walk reads the need's real place: a ``desc_signature`` outside any ``desc``,
   or one the need is placed in, gives no ``signature``, a ``desc_name`` holding an empty text node is no name, and
   a need whose target an extension dropped keeps its ``sections`` and takes its nearest enclosing need as its
-  parent, rather than none or the need before it. The undocumented helpers ``get_sections_and_signature_and_needs`` and ``previous_sibling`` of
-  ``sphinx_needs.directives.need`` are removed without a deprecation. An existing build directory is read again in
-  full once.
+  parent, rather than none or the need before it. The undocumented helpers ``get_sections_and_signature_and_needs``
+  and ``previous_sibling`` of ``sphinx_needs.directives.need`` are removed without a deprecation. An existing build
+  directory is read again in full once.
 
 - 🔧 The ``var`` proxy over the variant data and the need types ``c.is_a`` reads are kept by sphinx-needs rather
   than on Sphinx's configuration, which holds the declared options alone (:issue:`1840`, :issue:`2402`):
