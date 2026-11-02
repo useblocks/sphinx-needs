@@ -40,7 +40,7 @@ class Needbar(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsBarType],
         ) -> None: ...
 
-        attributes: NeedsBarType
+        attributes: NeedsBarType  # ty: ignore[invalid-attribute-override]
 
 
 class NeedbarDirective(FilterBase):

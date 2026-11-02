@@ -357,7 +357,7 @@ def register_tr_extra_options(app: Sphinx) -> None:
                 spec[option_name.lower()] = directives.unchanged
                 log.debug(f"Registered {option_name} with {direc}")
                 log.debug(f"{direc}.option_spec now has keys: {list(spec.keys())}")
-            direc.option_spec = spec  # ty: ignore[invalid-assignment]
+            direc.option_spec = spec
 
 
 def _command_line_overrides(config: Config) -> set[str]:

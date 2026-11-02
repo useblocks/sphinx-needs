@@ -281,7 +281,7 @@ class NeedflowPlantuml(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsFlowType],
         ) -> None: ...
 
-        attributes: NeedsFlowType
+        attributes: NeedsFlowType  # ty: ignore[invalid-attribute-override]
 
 
 class NeedflowGraphiz(nodes.General, nodes.Element):
@@ -294,4 +294,4 @@ class NeedflowGraphiz(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsFlowType],
         ) -> None: ...
 
-        attributes: NeedsFlowType
+        attributes: NeedsFlowType  # ty: ignore[invalid-attribute-override]
