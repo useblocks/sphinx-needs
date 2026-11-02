@@ -13,7 +13,6 @@ from typing import (
     NoReturn,
     SupportsIndex,
     TypedDict,
-    cast,
 )
 
 from sphinx.application import Sphinx
@@ -466,18 +465,14 @@ class _Config:
             directive = need_type["directive"]
             seen.add(directive)
             added = self._types.get(directive)
-            merged.append(
-                need_type if added is None else cast(NeedType, {**added, **need_type})
-            )
+            merged.append(need_type if added is None else {**added, **need_type})
         for directive, need_type in self._types.items():
             if directive in seen:
                 continue
             seen.add(directive)
             narrowing = self._type_narrowings.get(directive)
             merged.append(
-                need_type
-                if narrowing is None
-                else cast(NeedType, {**need_type, **narrowing.entry})
+                need_type if narrowing is None else {**need_type, **narrowing.entry}
             )
         for directive, need_type in self._builtin_types.items():
             if directive not in seen:
@@ -1175,7 +1170,7 @@ class NeedsSphinxConfig:
     )
     """Enable schema validation for needs."""
     schema_definitions: SchemasFileRootType = field(
-        default_factory=lambda: cast(SchemasFileRootType, {}),
+        default_factory=dict,
         metadata={"rebuild": "env", "types": (dict,)},
     )
     """Schema definitions to write complex validations based on selectors."""

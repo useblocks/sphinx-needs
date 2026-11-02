@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterator, Sequence
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from typing import TYPE_CHECKING, Final
@@ -49,7 +49,7 @@ class Needextract(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsExtractType],
         ) -> None: ...
 
-        attributes: NeedsExtractType
+        attributes: NeedsExtractType  # ty: ignore[invalid-attribute-override]
 
 
 #: View directives that an extract cannot render, and so drops from its copy,
@@ -355,7 +355,7 @@ def _degrade_footnote_references(
 
 
 @contextmanager
-def _scratch_document_state(env: BuildEnvironment, docname: str) -> Iterator[None]:
+def _scratch_document_state(env: BuildEnvironment, docname: str) -> Generator[None]:
     """Give the post-transforms a throwaway per-document state, named *docname*.
 
     This is what ``BuildEnvironment.apply_post_transforms`` does around its own
