@@ -68,3 +68,14 @@ Domain signatures
 
    .. spec:: After a signature outside any domain object
       :id: SIG_OUTSIDE
+
+.. spec:: A need holding a Python function
+   :id: SIG_NEED_OUTER
+
+   .. py:function:: in_need()
+
+      .. spec:: In a Python function inside a need
+         :id: SIG_PY_IN_NEED
+
+         .. spec:: In a need inside that need
+            :id: SIG_PY_IN_NEED_CHILD
