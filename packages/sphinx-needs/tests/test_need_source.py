@@ -964,9 +964,10 @@ def test_an_import_and_a_service_record_their_directive_s_line(
     app = make_app("html", srcdir=srcdir, freshenv=True)
     try:
         app.build()
-        assert sorted(build_warnings(app)) == [
-            f'<srcdir>/{where}: ERROR: Unknown interpreted text role "{role}". '
-            "[docutils]"
+        # sphinx 7 writes no ``[docutils]`` type after docutils' own messages
+        warnings = [w.removesuffix(" [docutils]") for w in build_warnings(app)]
+        assert sorted(warnings) == [
+            f'<srcdir>/{where}: ERROR: Unknown interpreted text role "{role}".'
             for where, roles in (
                 ("below.rst:6", ("unknown-imp", "unknown-tpl")),
                 ("below.rst:9", ("unknown-svc",)),
