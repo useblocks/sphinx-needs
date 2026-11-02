@@ -7,7 +7,7 @@ import hashlib
 import os
 import pathlib
 import re
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from pathlib import PurePath
 from typing import Any
 
@@ -381,6 +381,29 @@ def new_section(state: RSTState, title_text: str) -> nodes.section:
     return section
 
 
+class ExtraOptionSpec(dict[str, Callable[[str], Any]]):
+    """The ``option_spec`` of a directive taking ``tr_extra_options``: an extra option is
+    found by any case of its name.
+
+    Each extra option is registered under its name in lower case, as docutils looks a
+    reStructuredText option up after lowercasing its name. myst-parser looks the name
+    up as written, so a name written in another case -- ``:TestType:`` -- is found here
+    by its lower case. The directive's own options (``own``, the keys the spec was made
+    with) are not: myst-parser matches those exactly, as for every directive.
+    """
+
+    def __init__(self, spec: Mapping[str, Callable[[str], Any]]) -> None:
+        super().__init__(spec)
+        #: the directive's own options
+        self.own = frozenset(spec)
+
+    def __missing__(self, key: str) -> Callable[[str], Any]:
+        lowered = key.lower()
+        if lowered != key and lowered not in self.own and lowered in self:
+            return self[lowered]
+        raise KeyError(key)
+
+
 class TestCommonDirective(Directive):
     """
     Common directive, which provides some shared functions to "real" directives.
@@ -691,12 +714,34 @@ class TestCommonDirective(Directive):
 
         docutils lowercases an option's name before it looks it up, so a configured name is
         registered and read in lower case, and stored under the name it was configured with
-        -- the need field's name.
+        -- the need field's name. myst-parser hands a name over as written, so an extra
+        option written in another case is first keyed by its lower case
+        (:class:`ExtraOptionSpec` let it through); written twice in two cases, the one in
+        lower case, else the first written, keeps its value and the other is reported.
         """
         tr_extra_options = getattr(self.app.config, "tr_extra_options", [])
         self.extra_options = {}
 
         if tr_extra_options:
+            registered = {option_name.lower() for option_name in tr_extra_options}
+            #: each extra option written, by its lower case: every spelling written
+            spellings: dict[str, list[str]] = {}
+            for written in self.options:
+                if (lowered := written.lower()) in registered:
+                    spellings.setdefault(lowered, []).append(written)
+            for lowered, written in spellings.items():
+                kept = lowered if lowered in written else written[0]
+                for repeat in written:
+                    if repeat != kept:
+                        self.options.pop(repeat)
+                        warn(
+                            self,
+                            "option_invalid",
+                            f"Option '{repeat}' repeats option '{kept}' (option names "
+                            "are matched ignoring case); it is ignored",
+                        )
+                if kept != lowered:
+                    self.options[lowered] = self.options.pop(kept)
             for option_name in tr_extra_options:
                 if option_name.lower() in self.options:
                     self.extra_options[option_name] = self.options[option_name.lower()]

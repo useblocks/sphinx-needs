@@ -27,7 +27,34 @@ from sphinx_needs.services.base import BaseService
 from sphinx_needs.services.config.github import GITHUB_SERVICES
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.manager import NeedsServiceException, builtin_service_fix
-from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
+from sphinx_needs.utils import (
+    DummyOptionSpec,
+    add_doc,
+    coerce_to_boolean,
+    match_option_names,
+    repeated_option_message,
+)
+
+#: The options of a ``needservice`` that are no declared field or link type: the core
+#: fields it sets, and what it reads itself. A service's own options are fields.
+NEEDSERVICE_OPTIONS = frozenset(
+    {
+        "debug",
+        "id",
+        "status",
+        "tags",
+        "style",
+        "layout",
+        "template",
+        "pre_template",
+        "post_template",
+        "constraints",
+        "type",
+        "collapse",
+        "hide",
+        "jinja_content",
+    }
+)
 
 
 def _unconfigured_builtin_hint(service: BaseService, need_type: object) -> str:
@@ -271,6 +298,19 @@ class NeedserviceDirective(SphinxDirective):
         """
         link_keys = set(needs_schema.iter_link_field_names())
         extra_keys = set(needs_schema.iter_extra_field_names())
+        # each option by the name it matches ignoring case, as declared, which is the
+        # name the service reads it by: docutils lowercases a reStructuredText option's
+        # name, myst-parser keeps it
+        self.options, repeated = match_option_names(
+            self.options, NEEDSERVICE_OPTIONS | extra_keys | link_keys
+        )
+        for repeat in repeated:
+            log_warning(
+                self.log,
+                repeated_option_message(repeat),
+                "directive",
+                location=self.get_location(),
+            )
         for key in list(self.options):
             value: str | None = self.options[key]
             try:

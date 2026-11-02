@@ -325,6 +325,24 @@ Deprecations
 Bug fixes
 .........
 
+- ‼️ A directive option matches a field, link type or core field ignoring case, in reStructuredText and MyST alike,
+  and its value is stored under the declared name (:ref:`option names and case <needs_option_name_case>`)
+
+  docutils lowercases every reStructuredText option name, so a field or link type declared with capitals
+  (``needs_fields = {"Owner": {}}``, ``needs_links = {"Satisfies": {}}``) could not be set from reStructuredText at
+  all -- ``:Owner:`` and ``:owner:`` were both ``Unknown option 'owner'`` and the value was lost -- while MyST took
+  ``:Owner:`` alone, and MyST's ``:Status:`` was an unknown option where reStructuredText's set ``status``. Now any
+  case of the name sets it, on a need directive, a ``needextend`` (``+`` and ``-`` keys too) and a ``needservice``
+  (whose service reads the declared name), and ``needs.json``, filters and tables keep the declared spelling. An
+  option written exactly as a name matches it first, so no value set before changes: only an option that was an
+  unknown one now lands. Where MyST writes one name twice in two cases, that option, or else the first written, keeps
+  its value and the other is ignored with a warning (``needs.directive``; ``needs.needextend`` on a ``needextend``).
+  **Two names equal ignoring case are now a configuration error** that stops the build: two fields, a field and a
+  core field (``Status``), a field and a link type, two link types, a link type's back links and another name
+  (``Tests_Back`` beside ``tests``), or a name and an option a directive reads itself (``Strict``, needextend's
+  ``strict``). Names spelt alike are handled as before. The options of ``list2need``'s items, ``((name="value"))``,
+  are matched exactly, as before.
+
 - 🐛 A need a :ref:`needimport` or :ref:`needservice` creates records the line its directive is written on
   **(changed output)**
 
