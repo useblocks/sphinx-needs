@@ -50,7 +50,7 @@ class Needsequence(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsSequenceType],
         ) -> None: ...
 
-        attributes: NeedsSequenceType
+        attributes: NeedsSequenceType  # ty: ignore[invalid-attribute-override]
 
 
 class NeedsequenceDirective(FilterBase, DiagramBase, Exception):

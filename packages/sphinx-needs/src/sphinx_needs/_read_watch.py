@@ -15,7 +15,7 @@ and the filter functions test one module attribute, :data:`current`.
 
 from __future__ import annotations
 
-from collections.abc import Callable, Collection, Container, Iterator
+from collections.abc import Callable, Collection, Container, Generator
 from contextlib import contextmanager
 from typing import Any
 
@@ -78,7 +78,7 @@ def watching(
     filters_only: bool,
     names: Container[str],
     replayed: Callable[[list[tuple[str, str]]], None] | None = None,
-) -> Iterator[Watch]:
+) -> Generator[Watch]:
     """Watch the reads of one call while the block runs.
 
     :param on_read: What each read is passed to.
@@ -103,7 +103,7 @@ def watching(
 
 
 @contextmanager
-def recording() -> Iterator[list[tuple[str, str]]]:
+def recording() -> Generator[list[tuple[str, str]]]:
     """Keep the noted reads made while the block runs, to replay them
     (:func:`replay`) where a result computed once is used again, such as a ``links``
     rule's candidates."""
