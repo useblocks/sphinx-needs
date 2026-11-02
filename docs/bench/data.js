@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793634371849,
+  "lastUpdate": 1793635609718,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28518,6 +28518,48 @@ window.BENCHMARK_DATA = {
             "value": 189.424046,
             "unit": "MB",
             "extra": "Commit: a52febad837a09756bfeeefc391f611fc78e2d32\nBranch: master\nTime: 2026-11-02T16:44:37+01:00\nCPU: INTEL(R) XEON(R) PLATINUM 8573C"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "593fca48effb6fb5272b9a707ddc9ecd48526605",
+          "message": "🐛 A need a needimport or needservice creates records the line its directive is written on (changed output) (#2461)\n\nA need created by `needimport` or `needservice` now records, as its\n`lineno`, the line its directive is written on, in the\nfile it is written in — as every need directive has since 8.4.0 (#1349).\n**(changed output)**\n\nUntil now both stored the parser's running line count, which\n`rst_prolog`, an `.. include::` above the directive, and\nthe include the directive sits in each shift by the lines they insert.\nThe result was a line of no file: a needimport\non line 14 of a page below an include was recorded at line 33; inside an\ninclude, the value pointed past the end of\nthe included file. Filters, `needtable` columns, `needs.json` and the\nwarnings placed at a need's line now give the\ndirective's line, the included file's inside an include.\n\nThe warnings about the needs' content and rendered\n`pre_template`/`post_template` do not move: the parser's line is\nkept as `parser_lineno`, as a need directive keeps it, and the content\nof a need without `lineno_content` is now\nparsed at that line rather than at `lineno`.\n\n- `ENV_DATA_VERSION` 25: the stored value changes meaning on pages whose\nsources did not change.\n- Docs: the `lineno` row of the filter facets table, and a stale\nsentence about `src-trace` in the API page.\n- Tests: a project with a needimport and a needservice behind\n`rst_prolog`, below an include, inside an include and a\nsliced include, pinning each need's line and the 12 warnings as they\nwere; the legacy-keys snapshot takes the three\n  needs whose lines change (`I1` 12 → 7, `SVC_A`/`SVC_B` 26 → 10).\n\nubCode already records the resolved line for an imported need, so the\ntwo tools now agree.",
+          "timestamp": "2026-11-02T17:05:29+01:00",
+          "tree_id": "5ce7ced086d8aa2eb8964fba634f8905b12189f0",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/593fca48effb6fb5272b9a707ddc9ecd48526605"
+        },
+        "date": 1793635607583,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.04491580400000217,
+            "unit": "s",
+            "extra": "Commit: 593fca48effb6fb5272b9a707ddc9ecd48526605\nBranch: master\nTime: 2026-11-02T17:05:29+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 9.751108281,
+            "unit": "s",
+            "extra": "Commit: 593fca48effb6fb5272b9a707ddc9ecd48526605\nBranch: master\nTime: 2026-11-02T17:05:29+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 188.879171,
+            "unit": "MB",
+            "extra": "Commit: 593fca48effb6fb5272b9a707ddc9ecd48526605\nBranch: master\nTime: 2026-11-02T17:05:29+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
           }
         ]
       }
