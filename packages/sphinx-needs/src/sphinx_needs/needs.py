@@ -84,6 +84,7 @@ from sphinx_needs.derive import (
 )
 from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
 from sphinx_needs.directives.need import (
+    NEED_DIRECTIVE_OPTIONS,
     NeedDirective,
     analyse_need_locations,
     html_depart,
@@ -99,7 +100,11 @@ from sphinx_needs.directives.needchoose import (
     OtherwiseDirective,
     WhenDirective,
 )
-from sphinx_needs.directives.needextend import Needextend, NeedextendDirective
+from sphinx_needs.directives.needextend import (
+    NEEDEXTEND_OPTIONS,
+    Needextend,
+    NeedextendDirective,
+)
 from sphinx_needs.directives.needextract import (
     Needextract,
     NeedextractDirective,
@@ -133,7 +138,11 @@ from sphinx_needs.directives.needsequence import (
     NeedsequenceDirective,
     process_needsequence,
 )
-from sphinx_needs.directives.needservice import Needservice, NeedserviceDirective
+from sphinx_needs.directives.needservice import (
+    NEEDSERVICE_OPTIONS,
+    Needservice,
+    NeedserviceDirective,
+)
 from sphinx_needs.directives.needtable import (
     DEFAULT_PAGE_SIZE,
     DEFAULT_PAGE_SIZES,
@@ -2122,8 +2131,90 @@ def report_unclaimed_narrowings() -> None:
         )
 
 
+def _type_link_names(needs_config: NeedsSphinxConfig) -> set[str]:
+    """The names the ``links`` of the ``needs_types`` entries declare, the pending
+    narrowings of the types extensions add included (as :func:`type_field_names`)."""
+    narrowings = [
+        narrowing.entry for narrowing in _NEEDS_CONFIG.type_narrowings.values()
+    ]
+    return {
+        name
+        for entry in [*needs_config.types, *narrowings]
+        if isinstance(entry, Mapping)
+        and isinstance(table := entry.get("links"), Mapping)
+        for name in table
+        if isinstance(name, str)
+    }
+
+
+def refuse_case_clashes(app: Sphinx) -> None:
+    """Refuse two names a directive option cannot tell apart: equal ignoring case.
+
+    A directive option matches the field, link type or directive option of its name
+    ignoring case (``str.lower``, as docutils lowercases a reStructuredText option's
+    name, :func:`~sphinx_needs.utils.match_option_names`). So every name that shares the
+    options' namespace -- the core fields and link types, the options the directives read
+    themselves, every registered field (a service's and an extension's too), the fields
+    and link types need types declare, every link type and its back links -- differs from
+    every other in more than case. Names spelt alike keep the handling they always had
+    (a ``needs_fields`` entry of a core field specialises it, and so on); names equal
+    ignoring case but spelt apart are this configuration error, all of them at once.
+
+    :raises NeedsConfigException: Naming each set of names equal ignoring case.
+    """
+    needs_config = NeedsSphinxConfig(app.config)
+    #: each name as spelt, with what declares it (the first that does)
+    named: dict[str, str] = {}
+
+    def add(name: str, what: str) -> None:
+        named.setdefault(name, what)
+
+    for name in NeedsCoreFields:
+        add(name, f"core field {name!r}")
+    for name in sorted(_CORE_LINK_NAMES):
+        add(name, f"core link type {name!r}")
+    for name in sorted(
+        NEED_DIRECTIVE_OPTIONS | NEEDEXTEND_OPTIONS | NEEDSERVICE_OPTIONS
+    ):
+        add(name, f"the directive option {name!r}")
+    for name, params in _NEEDS_CONFIG.fields.items():
+        add(name, f"field {name!r} (from {params.source})")
+    for name in sorted(type_field_names(app.config)):
+        add(name, f"field {name!r} (from needs_types)")
+    link_types = dict.fromkeys(_CORE_LINK_NAMES, "core")
+    for name, entry in _global_link_entries(needs_config).items():
+        add(name, f"link type {name!r} (from {entry})")
+        link_types.setdefault(name, entry)
+    for name in sorted(_type_link_names(needs_config)):
+        add(name, f"link type {name!r} (from needs_types)")
+        link_types.setdefault(name, "needs_types")
+    for name in sorted(link_types):
+        back = f"{name}_back"
+        add(back, f"{back!r}, the back links of link type {name!r}")
+
+    by_lower: dict[str, list[str]] = {}
+    for name in named:
+        by_lower.setdefault(name.lower(), []).append(name)
+    clashes = [
+        joined([named[name] for name in spellings])
+        for _, spellings in sorted(by_lower.items())
+        if len(spellings) > 1
+    ]
+    if clashes:
+        raise NeedsConfigException(
+            "Names that differ only in case cannot be told apart by a directive option, "
+            "which matches a declared name ignoring case (reStructuredText lowercases "
+            "option names): "
+            + "; ".join(f"{clash} are equal ignoring case" for clash in clashes)
+            + ". Rename all but one of each."
+        )
+
+
 def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     needs_config = NeedsSphinxConfig(app.config)
+    # before anything is built from them: every field is registered by now, a service's
+    # too, so this sees every name
+    refuse_case_clashes(app)
     schema = FieldsSchema()
     report_unclaimed_narrowings()
     #: the ``derive`` findings, reported once the schema is complete

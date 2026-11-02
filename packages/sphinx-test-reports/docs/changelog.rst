@@ -29,6 +29,18 @@ New and Improved
 Fixed
 .....
 
+- 🐛 A :ref:`tr_extra_options` name matches a directive option ignoring case in MyST too, as
+  it did in reStructuredText (#2115): with ``tr_extra_options = ["TestType"]``, MyST's
+  ``:TestType:`` -- the configured spelling itself -- was an unknown option and its value
+  lost, and only ``:testtype:`` worked. Any case now lands under ``TestType``, on the
+  directive and the suites and cases its ``:auto_suites:`` / ``:auto_cases:`` create. Where
+  MyST writes one extra option twice in two cases, the one in lower case, else the first
+  written, keeps its value and the other is a ``test_reports.option_invalid`` warning. A name
+  equal ignoring case to a field the directives set themselves (``Result``) is now refused
+  with the configuration error an equal name is. The directives' own options are matched by
+  myst-parser exactly, as before. Requires the Sphinx-Needs release that matches its own
+  fields ignoring case.
+
 - ‼️ A test case read from a plain ``pytest --junitxml`` report is on the test's own line:
   pytest counts the ``line`` attribute from 0, and its ``case_line`` was one line early --
   usually a blank line, or ``class TestX:`` for a method
