@@ -49,6 +49,8 @@ from sphinx import addnodes
 from sphinx.errors import PycodeError
 from sphinx.pycode import ModuleAnalyzer
 
+from sphinx_needs.nodes import Need
+
 if TYPE_CHECKING:
     from docutils.parsers.rst import Directive
     from sphinx.environment import BuildEnvironment
@@ -1264,3 +1266,18 @@ def project_legacy(
             signature = value
             break
     return sections, signature
+
+
+def enclosing_need(need_node: nodes.Node) -> list[str]:
+    """The legacy ``parent_needs`` of a need node: the nearest need node above it.
+
+    A need is the child of the need whose content holds it, wherever it sits in that
+    content, hidden or not (#2398), and of no grandparent; a need in no need's content
+    has none. One id, as a list, since ``parent_needs`` is a link type.
+    """
+    parent = need_node.parent
+    while parent is not None:
+        if isinstance(parent, Need):
+            return [parent["refid"]]
+        parent = parent.parent
+    return []

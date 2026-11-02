@@ -63,3 +63,8 @@ Domain signatures
 
       .. spec:: In an object whose name is empty, inside a Python class
          :id: SIG_EMPTY_IN_PY
+
+.. outside-signature::
+
+   .. spec:: After a signature outside any domain object
+      :id: SIG_OUTSIDE

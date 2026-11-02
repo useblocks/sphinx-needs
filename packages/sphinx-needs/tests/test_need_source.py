@@ -28,8 +28,6 @@ from sphinx.testing.util import SphinxTestApp
 from sphinx.util.parallel import parallel_available
 from syrupy.assertion import SnapshotAssertion
 
-import sphinx_needs.directives.need
-import sphinx_needs.needs
 from sphinx_needs import need_item
 from sphinx_needs._need_source import (
     NeedSourceHop,
@@ -42,7 +40,6 @@ from sphinx_needs._need_source import (
     with_external_sections,
     with_page_paths,
 )
-from sphinx_needs.api import get_needs_view
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.need_item import (
     NeedItem,
@@ -911,41 +908,3 @@ def test_an_incremental_build_changes_only_the_edited_pages_hops(
     placement = after["REQ_P3X"][0].semantic
     assert placement is not None
     assert [entry.name for entry in placement] == ["Page 3", "Sec", "New sub"]
-
-
-def test_the_semantic_walk_is_independent_of_the_legacy_walk(
-    make_app: Callable[..., SphinxTestApp],
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-):
-    """The placement's semantic location is not read from the legacy walk.
-
-    With the legacy walk's result replaced, the hops still name the true sections and
-    objects, and their projection no longer equals the legacy values: the fence that
-    compares the two (``conftest.py``) is not a tautology. The session fence is lifted
-    for this build, since here the two must differ.
-    """
-    real = sphinx_needs.directives.need.get_sections_and_signature_and_needs
-
-    def poisoned(node):
-        _, _, parent_needs = real(node)
-        return ["poison"], None, parent_needs
-
-    monkeypatch.setattr(
-        sphinx_needs.directives.need, "get_sections_and_signature_and_needs", poisoned
-    )
-    monkeypatch.setattr(
-        sphinx_needs.needs,
-        "analyse_need_locations",
-        sphinx_needs.directives.need.analyse_need_locations,
-    )
-    app = make_app("html", srcdir=_copy(tmp_path), freshenv=True)
-    try:
-        app.build()
-        needs = get_needs_view(app)
-        need = needs["REQ_PYMX"]
-        assert need["sections"] == ("poison",)
-        placement = need.source.placement
-        assert project_legacy(placement.semantic) == (("Domains",), "meth")
-    finally:
-        app.cleanup()

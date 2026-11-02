@@ -36,7 +36,6 @@ from sphinx_needs._need_source import (
     SRCDIR_ROOT,
     NeedSourceHop,
     placement_index,
-    project_legacy,
 )
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.need_item import NeedItem, NeedItemSource
@@ -131,24 +130,24 @@ def _need_source_fence() -> Iterator[None]:
     session is covered, in every xdist worker) and checks each need the walk visits:
 
     - a source of sphinx-needs' own class carries hops;
-    - the legacy ``sections`` and ``signature`` the walk writes equal the projection of
-      the placement hop's semantic location, which the walk computes from the doctree on
-      its own (:func:`~sphinx_needs._need_source.placement_semantic`), for every need;
-    - the ``parent_needs`` the walk writes name the nearest need node enclosing the need's
-      node, read from the doctree before the walk (:func:`_enclosing_need`), or nothing;
     - every hop with a path has the one root, ``srcdir``, and a relative path;
-    - the walk changes the placement hop alone, and only its ``semantic`` (unset before);
+    - the walk sets the placement hop's ``semantic`` (unset before) and changes nothing
+      else on the hops;
     - lines point at text: every hop under the ``srcdir`` root names a file that exists,
       and where it has a ``start_line``, that line holds the directive's marker or the
       list item, and its ``end_line`` a non-blank line at or after it.
 
     It wraps ``load_external_needs`` too, and checks the external needs in the
     environment after it (those it read, and any an earlier build left): the first hop
-    is an ``external`` hop, and where that hop has a section chain (outermost first),
-    the legacy ``sections`` (innermost first) is its projection. A hop with no chain is
-    not checked, nor an external need ``add_external_need`` adds later in the build;
-    ``add_external_need(sections=...)`` is pinned directly
+    is an ``external`` hop. An external need ``add_external_need`` adds later in the
+    build is not checked; ``add_external_need(sections=...)`` is pinned directly
     (``test_need_item_source.py``).
+
+    The legacy ``sections``, ``signature`` and ``parent_needs`` are not compared here:
+    the walk writes them from the semantic location it puts on the placement hop, so
+    the end-to-end tests of their values are what pins them
+    (``test_domain_signatures.py``, ``test_hidden_need_location.py``,
+    ``test_need_source.py``).
     """
     original = sphinx_needs.needs.analyse_need_locations
     original_external = sphinx_needs.needs.load_external_needs
@@ -160,13 +159,7 @@ def _need_source_fence() -> Iterator[None]:
         for need in SphinxNeedsData(app.env).get_needs_mutable().values():
             if not need["is_external"] or not isinstance(need.source, NeedItemSource):
                 continue
-            hop = need.source.hops[0]
-            assert hop.kind == "external", need.id
-            if hop.semantic is not None:
-                assert project_legacy(hop.semantic) == (
-                    tuple(need["sections"]),
-                    None,
-                ), need.id
+            assert need.source.hops[0].kind == "external", need.id
 
     def fenced(app: Sphinx, doctree: document) -> None:
         needs = SphinxNeedsData(app.env).get_needs_mutable()
@@ -188,17 +181,7 @@ def _need_source_fence() -> Iterator[None]:
             and type(need.source).__module__ == NeedItem.__module__
         ]
         assert not lacking, f"sources without hops: {lacking}"
-        # read before the walk, which takes the hidden needs out of the doctree
-        enclosing = {
-            node["refid"]: _enclosing_need(node) for node in doctree.findall(Need)
-        }
         original(app, doctree)
-        wrong_parents = {
-            need_id: (need["parent_needs"], enclosing[need_id])
-            for need_id, need in walked.items()
-            if list(need["parent_needs"]) != enclosing[need_id]
-        }
-        assert not wrong_parents, f"parent_needs (walked, enclosing): {wrong_parents}"
         files: dict[Path, list[str]] = {}
         for need_id, hops in before.items():
             _check_need_source(app, walked[need_id], hops, files)
@@ -207,21 +190,6 @@ def _need_source_fence() -> Iterator[None]:
         patch.setattr(sphinx_needs.needs, "analyse_need_locations", fenced)
         patch.setattr(sphinx_needs.needs, "load_external_needs", fenced_external)
         yield
-
-
-def _enclosing_need(node: Need) -> list[str]:
-    """The id of the nearest need node above this one, as a one-item list, or ``[]``.
-
-    The whole of what ``parent_needs`` means, read from the doctree alone and
-    independently of the walk: a need is the child of the need whose content holds it,
-    wherever it sits in that content, hidden or not (#2398).
-    """
-    parent = node.parent
-    while parent is not None:
-        if isinstance(parent, Need):
-            return [parent["refid"]]
-        parent = parent.parent
-    return []
 
 
 def _check_need_source(
@@ -239,12 +207,7 @@ def _check_need_source(
     if index is None:
         assert after == before, where
         return
-    semantic = after[index].semantic
-    assert semantic is not None, where
-    assert project_legacy(semantic) == (
-        tuple(need["sections"]),
-        need["signature"],
-    ), where
+    assert after[index].semantic is not None, where
     assert len(after) == len(before), where
     for position, (old, new) in enumerate(zip(before, after, strict=True)):
         if position == index:
