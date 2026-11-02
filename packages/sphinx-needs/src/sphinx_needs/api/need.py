@@ -1349,7 +1349,11 @@ def _need_record_params(
     :return: The parameters, and the record's keys the project does not know (dropped).
     """
     params = dict(record)
-    map_legacy_keys(params)
+    # A project that declares ``description`` as a field reads a record's
+    # ``description`` as that field, not as the legacy spelling of the content.
+    map_legacy_keys(
+        params, description_as_content=not needs_schema.declares_field("description")
+    )
     # Remove unknown keys, as they may be defined in the source system, but not in this
     # project, and the keys that are computed rather than read; the keys of the
     # record's need type (a type that is not a string is refused later)

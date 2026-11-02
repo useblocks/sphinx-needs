@@ -150,7 +150,9 @@ class Version:
             if isinstance(spec, Mapping) and "default" in spec
         }
 
-    def records(self, apply_schema_defaults: bool = True) -> list[Record]:
+    def records(
+        self, apply_schema_defaults: bool = True, *, description_as_content: bool = True
+    ) -> list[Record]:
         """The version's records, in the file's order.
 
         The key of each is its id, its legacy keys are mapped, and the schema defaults
@@ -164,6 +166,10 @@ class Version:
 
         :param apply_schema_defaults: Merge the ``needs_schema`` defaults under each
             record.
+        :param description_as_content: Map a legacy ``description`` onto the content
+            when the record's ``content`` is empty. A project that declares
+            ``description`` as a field reads the key as that field instead, so its
+            readers pass ``False``.
         """
         defaults = self.schema_defaults() if apply_schema_defaults else {}
         needs: Mapping[str, Any] = self.data["needs"]
@@ -183,7 +189,7 @@ class Version:
                     )
                 )
             fields["id"] = key
-            map_legacy_keys(fields)
+            map_legacy_keys(fields, description_as_content=description_as_content)
             result.append(Record(key, fields, tuple(diagnostics)))
         return result
 
@@ -318,10 +324,16 @@ def load(path: str | Path) -> Document:
     return parse(text)
 
 
-def map_legacy_keys(fields: dict[str, Any]) -> None:
+def map_legacy_keys(
+    fields: dict[str, Any], *, description_as_content: bool = True
+) -> None:
     """Rename a record's legacy keys in place: a ``description`` is the ``content``
     when that is absent or empty (sphinx-needs before 4.0 wrote ``description``;
-    contract section 6.3)."""
+    contract section 6.3). A project that declares ``description`` as a field of
+    its own reads the key as that field, whatever wrote the file, so its readers
+    pass ``description_as_content=False``."""
+    if not description_as_content:
+        return
     if "description" in fields and not fields.get("content"):
         fields["content"] = fields.pop("description")
 

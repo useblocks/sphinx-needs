@@ -10,6 +10,26 @@ from syrupy.filters import props
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
+description_import_json = """
+{
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "IMP_1": {
+                    "id": "IMP_1",
+                    "type": "req",
+                    "title": "Imported",
+                    "content": "",
+                    "description": "kept?"
+                }
+            },
+            "needs_amount": 1
+        }
+    }
+}
+"""
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -534,3 +554,33 @@ def test_needimport_registers_dependency(test_app):
     assert any("needs.json" in str(dep) for dep in deps), (
         f"needs.json not found in dependencies: {deps}"
     )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    "conf.py",
+                    'extensions = ["sphinx_needs"]\n'
+                    'needs_fields = {"description": {"nullable": True}}',
+                ),
+                ("index.rst", ".. needimport:: import.json"),
+                ("import.json", description_import_json),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_declared_description_field_is_not_moved_into_the_content(test_app):
+    """#2465: a project that declares ``description`` reads an imported record's
+    ``description`` as that field, even when the record's ``content`` is empty."""
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+
+    need = SphinxNeedsData(app.env).get_needs_view()["IMP_1"]
+    assert need["description"] == "kept?"
+    assert not need["content"]

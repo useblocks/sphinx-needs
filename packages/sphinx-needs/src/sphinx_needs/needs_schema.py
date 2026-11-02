@@ -1981,6 +1981,11 @@ class FieldsSchema:
         """Iterate over all extra field names in the schema."""
         yield from self._extra_fields.keys()
 
+    def declares_field(self, name: str) -> bool:
+        """Whether the project declares ``name`` (case-insensitively) as one of its
+        own extra fields."""
+        return any(existing.lower() == name.lower() for existing in self._extra_fields)
+
     def iter_extra_fields(self) -> Iterable[FieldShape]:
         """Iterate over all extra fields in the schema."""
         yield from self._extra_fields.values()

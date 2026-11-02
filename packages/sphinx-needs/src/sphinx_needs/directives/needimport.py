@@ -136,7 +136,11 @@ class NeedimportDirective(SphinxDirective):
             return self._refuse(
                 f"Could not load needs import file {source_name}: {err.message}"
             )
-        records = selected.records()
+        records = selected.records(
+            description_as_content=not SphinxNeedsData(
+                self.env
+            ).get_schema().declares_field("description")
+        )
         for diagnostic in (
             *selected.diagnostics,
             *(d for r in records for d in r.diagnostics),

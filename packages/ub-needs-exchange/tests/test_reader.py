@@ -330,6 +330,37 @@ def test_map_legacy_keys_in_place():
     assert fields == {"content": "legacy"}
 
 
+def test_map_legacy_keys_keeps_a_declared_description_field():
+    """A project that declares ``description`` reads the key as that field (#2465)."""
+    fields = {"description": "kept?", "content": ""}
+    nx.map_legacy_keys(fields, description_as_content=False)
+    assert fields == {"description": "kept?", "content": ""}
+
+
+def test_a_declared_description_field_is_not_moved_into_the_content():
+    (rec,) = (
+        nx.parse(
+            json.dumps(
+                envelope(
+                    {
+                        "A": {
+                            "id": "A",
+                            "type": "req",
+                            "title": "T",
+                            "content": "",
+                            "description": "kept?",
+                        }
+                    }
+                )
+            )
+        )
+        .select_version(None)
+        .records(description_as_content=False)
+    )
+    assert rec.fields["description"] == "kept?"
+    assert rec.fields["content"] == ""
+
+
 def test_a_null_default_is_merged():
     (rec,) = (
         nx.parse(json.dumps(envelope({"A": record("A")}, needs_schema=SCHEMA)))

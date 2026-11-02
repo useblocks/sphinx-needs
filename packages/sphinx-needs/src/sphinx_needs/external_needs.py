@@ -72,7 +72,9 @@ def load_external_needs(
             )
             continue
 
-        records = selected.records()
+        records = selected.records(
+            description_as_content=not needs_schema.declares_field("description")
+        )
         for diagnostic in (
             *selected.diagnostics,
             *(d for r in records for d in r.diagnostics),
