@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 23
+ENV_DATA_VERSION: Final = 24
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -171,6 +171,16 @@ an external need its sections on the other site on its ``external`` hop, and the
 of a docstring's ``code`` hop its qualified name (``qualified_name``), none of which
 version 22 stored. The sources do not change, so without the bump an upgraded build
 would keep the old hops on the pages whose sources did not change.
+
+Version 24 changes what stored values mean in doctrees an extension builds by hand: the
+legacy ``sections``, ``signature`` and ``parent_needs`` are written from the one walk
+that finds the placement hop's semantic location, which reads the need's real place. A
+``desc_signature`` outside any ``desc``, or one the need is placed in, gives no
+``signature``, nor does a ``desc_name`` holding an empty text node, and a need whose
+target an extension dropped keeps its ``sections`` and its nearest enclosing need as
+parent, where version 23 stored what the older walk read there. A doctree of Sphinx's or
+docutils' own gives the same values. The sources do not change, so without the bump an
+upgraded build would keep the old values on the pages whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

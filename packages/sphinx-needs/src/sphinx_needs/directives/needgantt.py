@@ -44,7 +44,7 @@ class Needgantt(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsGanttType],
         ) -> None: ...
 
-        attributes: NeedsGanttType
+        attributes: NeedsGanttType  # ty: ignore[invalid-attribute-override]
 
 
 class NeedganttDirective(FilterBase, DiagramBase):

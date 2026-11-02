@@ -4,7 +4,7 @@ import hashlib
 import os
 import re
 import warnings
-from collections.abc import Iterable, Iterator, Mapping, Sequence
+from collections.abc import Generator, Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from copy import copy, deepcopy
 from dataclasses import replace
@@ -1576,7 +1576,7 @@ def _template_parse_offset(data: NeedItem) -> int:
 
 
 @contextmanager
-def _reset_rst_titles(state: RSTState) -> Iterator[None]:
+def _reset_rst_titles(state: RSTState) -> Generator[None]:
     """Temporarily reset the title styles and section level in the parser state,
     so that title styles can have different levels to the surrounding document.
     """

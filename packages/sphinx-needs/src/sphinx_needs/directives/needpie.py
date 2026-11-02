@@ -43,7 +43,7 @@ class Needpie(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsPieType],
         ) -> None: ...
 
-        attributes: NeedsPieType
+        attributes: NeedsPieType  # ty: ignore[invalid-attribute-override]
 
 
 class NeedpieDirective(FilterBase):

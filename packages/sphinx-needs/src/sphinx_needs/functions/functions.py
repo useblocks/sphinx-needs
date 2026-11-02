@@ -11,7 +11,7 @@ from __future__ import annotations
 import ast
 import inspect
 import re
-from collections.abc import Callable, Container, Iterator, Mapping, Sequence
+from collections.abc import Callable, Container, Generator, Mapping, Sequence
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
@@ -932,7 +932,7 @@ class _LateReads:
             )
 
         @contextmanager
-        def watched() -> Iterator[None]:
+        def watched() -> Generator[None]:
             try:
                 with _read_watch.watching(
                     on_read, filters_only=not own, names=computed, replayed=replayed
@@ -1045,7 +1045,7 @@ def _location(need: NeedItem) -> tuple[str, int | None] | None:
 @contextmanager
 def _reads_reported(
     what: str, option: str, need: NeedItem, reads_ctx: _ReadsContext
-) -> Iterator[UnresolvedReads]:
+) -> Generator[UnresolvedReads]:
     """Open the record of one call or ``<<…>>`` variant, and report its reads after it.
 
     They are reported whatever the outcome, so a call that fails because of a value it

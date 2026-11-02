@@ -35,7 +35,7 @@ class Needlist(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsListType],
         ) -> None: ...
 
-        attributes: NeedsListType
+        attributes: NeedsListType  # ty: ignore[invalid-attribute-override]
 
 
 class NeedlistDirective(FilterBase):
