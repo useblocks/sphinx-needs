@@ -77,6 +77,16 @@ New and Improved
 Fixes
 .....
 
+- 🐛 A multi-line need without an id whose ``:full_title:`` the project declares as a
+  field is checked for duplicates, and linked from its source page, by the id it is
+  actually given (`#2410 <https://github.com/useblocks/sphinx-needs/issues/2410>`__).
+  Its id is hashed from its title, the full title being only the field, but the
+  duplicate check and the link used the id hashed from the full title: a need of that id
+  elsewhere skipped the block as a duplicate, a need of its real id made Sphinx-Needs
+  refuse the block instead of codelinks reporting a duplicate (a skip the next
+  incremental build did not remember), and the ``[docs]`` link named an id no need has.
+  No need's id moves, and one-line needs are unchanged: a declared ``full_title`` there
+  is still the full title their id is hashed from.
 - 🐛 A ``src-trace`` need's ``lineno`` is the line the directive is written on, as a
   Sphinx-Needs ``need`` directive's is. After ``rst_prolog`` it counted the prolog's lines
   too, and in an included file it was the line in the expanded input, a line neither file

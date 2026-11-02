@@ -6,7 +6,10 @@ need as ``render_needs`` passes it (a one-line marker's fields, or a multi-line 
 record), and every column of :data:`CONFIGS` a project setting that shapes a generated
 id. :data:`EXPECTED` is what each pair gave when the prediction was derived through
 Sphinx-Needs' private ``_make_hashed_id``: moving the derivation to the public
-``generate_need_id`` must not move a single id (#2407).
+``generate_need_id`` must not move a single id (#2407). One row moved since, on purpose:
+a multi-line need's record with a declared ``full_title`` is predicted, as the record
+path generates it, from its title (#2410); its twin through the one-line route keeps
+the full title's hash.
 """
 
 from collections.abc import Callable
@@ -46,9 +49,31 @@ SHAPES: dict[str, dict[str, Any]] = {
         "content": "body text",
     },
     "id_none": {"type": "impl", "title": "Short", "id": None},
-    # a multi-line need's record with a declared ``full_title`` field (#2410: the
-    # prediction hashes it, the record path does not -- pinned as it is, not fixed)
+    # a multi-line need's record with a declared ``full_title`` field, through the
+    # record route (:data:`RECORDS`): hashed from the title (#2410) ...
     "record_declared_full_title": {
+        "type": "req",
+        "title": "Short title",
+        "full_title": "A much longer title",
+        "content": "The body.",
+        "status": "open",
+    },
+    # ... whatever ``full_title`` it holds: with an empty title, from the content ...
+    "record_declared_full_title_empty_title": {
+        "type": "req",
+        "title": "",
+        "full_title": "A much longer title",
+        "content": "The body.",
+    },
+    # ... and with an empty ``full_title``, from the title
+    "record_declared_empty_full_title": {
+        "type": "req",
+        "title": "Short title",
+        "full_title": "",
+        "content": "The body.",
+    },
+    # ... and the same mapping as a one-line marker's: hashed from the full title (#2406)
+    "marker_declared_full_title": {
         "type": "req",
         "title": "Short title",
         "full_title": "A much longer title",
@@ -63,6 +88,16 @@ SHAPES: dict[str, dict[str, Any]] = {
     "unknown_type": {"type": "nosuchtype", "title": "Short"},
     "no_type": {"title": "Short"},
 }
+
+#: the shapes that are a multi-line need's record, passed with ``route="record"``; every
+#: other is a one-line marker's fields, passed as the default ``"marker"`` route
+RECORDS = frozenset(
+    {
+        "record_declared_full_title",
+        "record_declared_full_title_empty_title",
+        "record_declared_empty_full_title",
+    }
+)
 
 #: a project setting that shapes a generated id: its configuration overrides
 CONFIGS: dict[str, dict[str, Any]] = {
@@ -91,7 +126,10 @@ EXPECTED: dict[str, dict[str, str | None]] = {
         "empty_title_content_none": "I_6EEF6",
         "empty_full_title_content": "I_8FE8C",
         "id_none": "I_0FE7D",
-        "record_declared_full_title": "R_F2895",
+        "record_declared_full_title": "R_D1C3C",
+        "record_declared_full_title_empty_title": "R_66A3B",
+        "record_declared_empty_full_title": "R_D1C3C",
+        "marker_declared_full_title": "R_F2895",
         "given_id": "IMPL_GIVEN",
         "given_empty_id": None,
         "given_non_str_id": None,
@@ -113,7 +151,10 @@ EXPECTED: dict[str, dict[str, str | None]] = {
         "empty_title_content_none": "I_6EEF664840",
         "empty_full_title_content": "I_8FE8C3D40E",
         "id_none": "I_0FE7D82F25",
-        "record_declared_full_title": "R_F28951319D",
+        "record_declared_full_title": "R_D1C3C0E37D",
+        "record_declared_full_title_empty_title": "R_66A3B2458F",
+        "record_declared_empty_full_title": "R_D1C3C0E37D",
+        "marker_declared_full_title": "R_F28951319D",
         "given_id": "IMPL_GIVEN",
         "given_empty_id": None,
         "given_non_str_id": None,
@@ -135,7 +176,10 @@ EXPECTED: dict[str, dict[str, str | None]] = {
         "empty_title_content_none": "I__6EEF6648406C333A4035CD5E60D0BF2ECF2606D",
         "empty_full_title_content": "I__8FE8C3D40E967714951A71B824A0471440AA3D5",
         "id_none": "I_SHORT_0FE7D82F25A3015040A206E54F9C1D3A97",
-        "record_declared_full_title": "R_A_MUCH_LONGER_TITLE_F28951319D48DD2AD57B",
+        "record_declared_full_title": "R_SHORT_TITLE_D1C3C0E37D5B4504455812AFAC23",
+        "record_declared_full_title_empty_title": "R__66A3B2458F6FFE6F68365FAD1103A9BEF14D534",
+        "record_declared_empty_full_title": "R_SHORT_TITLE_D1C3C0E37D5B4504455812AFAC23",
+        "marker_declared_full_title": "R_A_MUCH_LONGER_TITLE_F28951319D48DD2AD57B",
         "given_id": "IMPL_GIVEN",
         "given_empty_id": None,
         "given_non_str_id": None,
@@ -157,7 +201,10 @@ EXPECTED: dict[str, dict[str, str | None]] = {
         "empty_title_content_none": "I_6EEF6",
         "empty_full_title_content": "I_8FE8C",
         "id_none": "I_0FE7D",
-        "record_declared_full_title": "R_F2895",
+        "record_declared_full_title": "R_D1C3C",
+        "record_declared_full_title_empty_title": "R_66A3B",
+        "record_declared_empty_full_title": "R_D1C3C",
+        "marker_declared_full_title": "R_F2895",
         "given_id": "IMPL_GIVEN",
         "given_empty_id": None,
         "given_non_str_id": None,
@@ -179,7 +226,10 @@ EXPECTED: dict[str, dict[str, str | None]] = {
         "empty_title_content_none": "I_6EEF6",
         "empty_full_title_content": "I_8FE8C",
         "id_none": "I_0FE7D",
-        "record_declared_full_title": "R_F2895",
+        "record_declared_full_title": "R_D1C3C",
+        "record_declared_full_title_empty_title": "R_66A3B",
+        "record_declared_empty_full_title": "R_D1C3C",
+        "marker_declared_full_title": "R_F2895",
         "given_id": "IMPL_GIVEN",
         "given_empty_id": None,
         "given_non_str_id": None,
@@ -202,6 +252,9 @@ EXPECTED: dict[str, dict[str, str | None]] = {
         "empty_full_title_content": None,
         "id_none": None,
         "record_declared_full_title": None,
+        "record_declared_full_title_empty_title": None,
+        "record_declared_empty_full_title": None,
+        "marker_declared_full_title": None,
         "given_id": "IMPL_GIVEN",
         "given_empty_id": None,
         "given_non_str_id": None,
@@ -222,9 +275,12 @@ def _app(
 
 
 @pytest.mark.parametrize("config", list(CONFIGS))
-def test_would_be_id_is_unchanged_for_every_shape(
+def test_would_be_id_is_pinned_for_every_shape(
     tmp_path: Path, make_app: Callable[..., SphinxTestApp], config: str
 ) -> None:
     app = _app(tmp_path, make_app, CONFIGS[config])
-    got = {name: would_be_id(app, need) for name, need in SHAPES.items()}
+    got = {
+        name: would_be_id(app, need, route="record" if name in RECORDS else "marker")
+        for name, need in SHAPES.items()
+    }
     assert got == EXPECTED[config]
