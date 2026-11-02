@@ -1,0 +1,40 @@
+{
+  "$defs": {
+    "type-req": {
+      "properties": {
+        "type": { "const": "req" }
+      }
+    },
+    "type-spec": {
+      "properties": {
+        "type": { "const": "spec" }
+      }
+    },
+    "type-test": {
+      "properties": {
+        "type": { "const": "test" }
+      }
+    }
+  },
+  "schemas": [
+    {
+      "id": "spec-has-req-parent",
+      "select": {
+        "$ref": "#/$defs/type-spec"
+      },
+      "validate": {
+        "network": {
+          "parent_needs": {
+            "contains": {
+              "local": {
+                "$ref": "#/$defs/type-req"
+              }
+            },
+            "minContains": 1,
+            "maxContains": 1
+          }
+        }
+      }
+    }
+  ]
+}
