@@ -52,6 +52,69 @@ class DummyOptionSpec(dict[str, Callable[[str], str]]):
         return lambda x: x
 
 
+_OptionValue = TypeVar("_OptionValue")
+
+
+@dataclass(frozen=True, slots=True)
+class RepeatedOption:
+    """An option a directive was given twice, in two cases (:func:`match_option_names`)."""
+
+    written: str
+    """The option as written, whose value is ignored."""
+    kept: str
+    """The option as written whose value is kept."""
+    name: str
+    """The name both match."""
+
+
+def match_option_names(
+    options: dict[str, _OptionValue], names: Iterable[str]
+) -> tuple[dict[str, _OptionValue], list[RepeatedOption]]:
+    """Key each directive option by the name it matches, ignoring case.
+
+    docutils lowercases a reStructuredText option's name before a directive sees it;
+    myst-parser passes it on as written. So an option matches the name equal to it
+    ignoring case (``str.lower``, as docutils lowercases), and is keyed by that name as
+    it is declared: ``:owner:`` sets the field declared ``Owner``, MyST's ``:Status:``
+    the core field ``status``. An option equal to a name exactly matches it first, and
+    one matching no name keeps its own name (unknown, for the caller to report).
+
+    Names equal ignoring case are a configuration error, so a match is unique. Two
+    options matching one name -- possible in MyST alone, docutils refuses a repeated
+    option -- keep the value of the one written exactly as the name, else of the first
+    written: the option that matched before names were compared ignoring case.
+
+    :param options: The directive's options, by the name as written.
+    :param names: The names its options may have.
+    :return: The options by the name each matches, in the order written, and each
+        option ignored as a repeat.
+    """
+    declared = set(names)
+    by_lower = {name.lower(): name for name in declared}
+    matched: dict[str, tuple[str, _OptionValue]] = {}
+    repeated: list[RepeatedOption] = []
+    for written, value in options.items():
+        name = (
+            written if written in declared else by_lower.get(written.lower(), written)
+        )
+        if (held := matched.get(name)) is None:
+            matched[name] = (written, value)
+        elif written == name:
+            repeated.append(RepeatedOption(held[0], written, name))
+            matched[name] = (written, value)
+        else:
+            repeated.append(RepeatedOption(written, held[0], name))
+    return {name: value for name, (_, value) in matched.items()}, repeated
+
+
+def repeated_option_message(repeat: RepeatedOption) -> str:
+    """The warning for an option ignored as a repeat of another (:func:`match_option_names`)."""
+    return (
+        f"Option '{repeat.written}' repeats option '{repeat.kept}' (option names are "
+        f"matched ignoring case, both to {repeat.name!r}); it is ignored"
+    )
+
+
 def coerce_to_boolean(argument: str | None) -> bool:
     """Convert a string to a boolean.
 

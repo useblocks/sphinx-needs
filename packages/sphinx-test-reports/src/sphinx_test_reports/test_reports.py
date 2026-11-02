@@ -21,7 +21,10 @@ from sphinx_needs.exceptions import (
 )
 from sphinx_test_reports import __version__
 from sphinx_test_reports.directives.test_case import TestCase, TestCaseDirective
-from sphinx_test_reports.directives.test_common import DIRECTIVE_FIELDS
+from sphinx_test_reports.directives.test_common import (
+    DIRECTIVE_FIELDS,
+    ExtraOptionSpec,
+)
 from sphinx_test_reports.directives.test_env import EnvReport, EnvReportDirective
 from sphinx_test_reports.directives.test_file import TestFile, TestFileDirective
 from sphinx_test_reports.directives.test_report import (
@@ -314,6 +317,8 @@ def register_tr_extra_options(app: Sphinx) -> None:
     # one option.
     written: dict[str, str] = {}
     fields_set = _fields_the_directives_set(app.config)
+    # an option matches a field ignoring case, as Sphinx-Needs matches its own fields
+    fields_set_lower = {name.lower(): name for name in fields_set}
     for option_name in tr_extra_options or []:
         lowered = option_name.lower()
         if written.get(lowered, option_name) != option_name:
@@ -339,10 +344,16 @@ def register_tr_extra_options(app: Sphinx) -> None:
                 f"tr_extra_options holds '{option_name}', which is {taken_by}; "
                 f"choose another name."
             )
+        if (taken := fields_set_lower.get(lowered)) is not None:
+            raise InvalidConfigurationError(
+                f"tr_extra_options holds '{option_name}', which equals '{taken}' "
+                f"ignoring case, {fields_set[taken]}: a directive option matches a "
+                f"field ignoring case; choose another name."
+            )
         if lowered != option_name:
             log.info(
-                f"tr_extra_options: write '{option_name}' on a directive as "
-                f":{lowered}: (docutils lowercases option names); the need field stays "
+                f"tr_extra_options: '{option_name}' is matched on a directive in any "
+                f"case (:{lowered}:, :{option_name}:, ...); the need field stays "
                 f"'{option_name}'."
             )
 
@@ -352,7 +363,10 @@ def register_tr_extra_options(app: Sphinx) -> None:
             # class. All three define one, so this keeps mutating the existing
             # mapping; the assignment only matters in the case the type allows
             # for and the classes do not produce.
+            # an extra option is found by any case of its name, in MyST too
             spec = direc.option_spec or {}
+            if not isinstance(spec, ExtraOptionSpec):
+                spec = ExtraOptionSpec(spec)
             for option_name in tr_extra_options:
                 spec[option_name.lower()] = directives.unchanged
                 log.debug(f"Registered {option_name} with {direc}")

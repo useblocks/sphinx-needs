@@ -952,6 +952,22 @@ A field named as a link type's back links, ``<name>_back``, is kept, and the lin
 but a field named ``links_back`` or ``parent_needs_back``, the back links of the link types every project has,
 is ignored, one ``needs.config`` warning, as it is when an extension or a service registers it.
 
+.. _needs_option_name_case:
+
+A directive option matches a field or link type **ignoring case**, in reStructuredText and in MyST alike,
+and the value is stored under the name as declared:
+a field declared ``Owner`` is set by ``:Owner:``, ``:owner:`` or ``:OWNER:`` on a need directive, a :ref:`needextend` or a :ref:`needservice`,
+and is ``Owner`` in the :ref:`needs.json <needs_builder_format>`, in filters and in table columns; MyST's ``:Status:`` sets ``status``.
+(docutils lowercases the name of every reStructuredText option, which made a field or link type declared with capitals unreachable from it.)
+An option written exactly as a name matches it first, so nothing set before changes;
+where MyST writes one name twice in two cases, that option -- or else the first written -- keeps its value,
+and the other is ignored with a warning (``needs.directive``; ``needs.needextend`` on a :ref:`needextend`).
+Two names equal ignoring case cannot be told apart, so they are a configuration error that stops the build:
+two fields (``Owner`` and ``owner``), a field and a core field (``Status``), a field and a link type,
+two link types, a link type or field and a link type's back links (``Tests_Back`` beside the link type ``tests``),
+or one of these and an option a directive reads itself (``Strict`` and needextend's ``strict``).
+Names spelt alike keep what they always did: an entry of a core field's own name specialises it.
+
 For example:
 
 .. code-block:: python
@@ -1113,6 +1129,8 @@ needs_links
 .. versionadded:: 7.0.0
 
 Allows the definition of additional link types as a dictionary mapping link name to configuration.
+A link type's name is matched by a directive option ignoring case, as a field's is,
+and two names equal ignoring case are a configuration error (:ref:`option names and case <needs_option_name_case>`).
 
 Each configured link can define:
 

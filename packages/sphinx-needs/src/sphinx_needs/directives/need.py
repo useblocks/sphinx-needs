@@ -36,11 +36,35 @@ from sphinx_needs.utils import (
     DummyOptionSpec,
     add_doc,
     coerce_to_boolean,
+    match_option_names,
     profile,
     remove_node_from_tree,
+    repeated_option_message,
 )
 
 LOGGER = get_logger(__name__)
+
+#: The options of a need directive that are no declared field or link type: the core
+#: fields it sets, and what it reads itself. Its other options are the need type's fields
+#: and link types.
+NEED_DIRECTIVE_OPTIONS: Final = frozenset(
+    {
+        "id",
+        "jinja_content",
+        "status",
+        "tags",
+        "collapse",
+        "hide",
+        "style",
+        "layout",
+        "template",
+        "pre_template",
+        "post_template",
+        "constraints",
+        "delete",
+        "title_from_content",
+    }
+)
 
 
 class NeedDirective(SphinxDirective):
@@ -67,9 +91,21 @@ class NeedDirective(SphinxDirective):
 
     @measure_time("need")
     def run(self) -> Sequence[nodes.Node]:
-        # throughout this function, we gradually pop values from self.options
+        needs_schema = SphinxNeedsData(self.env).get_schema()
+        # the options of a need of this type (the directive's name)
+        type_schema = needs_schema.for_type(self.name)
+        link_keys = set(type_schema.iter_link_field_names())
+        extra_keys = set(type_schema.iter_extra_field_names())
+
+        # each option by the name it matches ignoring case, as declared: docutils
+        # lowercases a reStructuredText option's name, myst-parser keeps it
+        options, repeated = match_option_names(
+            self.options, NEED_DIRECTIVE_OPTIONS | extra_keys | link_keys
+        )
+        for repeat in repeated:
+            self._log_warning(repeated_option_message(repeat))
+        # throughout this function, we gradually pop values from options
         # so that we can warn about unknown options at the end
-        options: dict[str, str | None] = self.options
 
         try:
             delete = (
@@ -84,7 +120,6 @@ class NeedDirective(SphinxDirective):
             return []
 
         needs_config = NeedsSphinxConfig(self.env.config)
-        needs_schema = SphinxNeedsData(self.env).get_schema()
 
         try:
             # override global title_from_content if user set it in the directive
@@ -120,11 +155,6 @@ class NeedDirective(SphinxDirective):
         constraints: str | None = None
         extras: dict[str, str] = {}
         links: dict[str, str] = {}
-
-        # the options of a need of this type (the directive's name)
-        type_schema = needs_schema.for_type(self.name)
-        link_keys = set(type_schema.iter_link_field_names())
-        extra_keys = set(type_schema.iter_extra_field_names())
 
         while options:
             key, value = options.popitem()

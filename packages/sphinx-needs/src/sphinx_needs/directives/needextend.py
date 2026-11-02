@@ -28,7 +28,14 @@ from sphinx_needs.needs_schema import (
     LinksLiteralValue,
     TypeFieldsSchema,
 )
-from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean, counted_ids
+from sphinx_needs.utils import (
+    DummyOptionSpec,
+    add_doc,
+    coerce_to_boolean,
+    counted_ids,
+    match_option_names,
+    repeated_option_message,
+)
 
 logger = get_logger(__name__)
 
@@ -38,6 +45,10 @@ DEFAULT_EXTEND_PRIORITY: Final = 500
 Lower priorities are applied first, as for Sphinx's event handlers, whose default
 priority is 500 too.
 """
+
+
+#: The options of a ``needextend`` that are no field: what it reads itself.
+NEEDEXTEND_OPTIONS: Final = frozenset({"strict", "extend_priority"})
 
 
 class Needextend(nodes.General, nodes.Element):
@@ -70,16 +81,32 @@ class NeedextendDirective(SphinxDirective):
         )
 
     def run(self) -> Sequence[nodes.Node]:
-        # throughout this function, we gradually pop values from self.options
-        # so that we can warn about unknown options at the end
-        options: dict[str, str | None] = self.options
-
         needs_config = NeedsSphinxConfig(self.env.app.config)
         # the global view: a needextend may match needs of every type, and none is in
         # hand here, so its options are checked and converted against the declarations
         # every need type shares; each matched need is checked against its own type
         # where it is extended (_refused_on_type)
         needs_schema = SphinxNeedsData(self.env).get_schema().for_type(None)
+
+        # each option by the name it matches ignoring case, as declared, its ``+`` or
+        # ``-`` kept: docutils lowercases a reStructuredText option's name, myst-parser
+        # keeps it
+        field_names = [
+            *needs_schema.iter_core_field_names(),
+            *needs_schema.iter_extra_field_names(),
+            *needs_schema.iter_link_field_names(),
+        ]
+        options, repeated = match_option_names(
+            self.options,
+            {
+                *NEEDEXTEND_OPTIONS,
+                *(prefix + name for prefix in ("", "+", "-") for name in field_names),
+            },
+        )
+        for repeat in repeated:
+            self._log_warning(repeated_option_message(repeat))
+        # throughout this function, we gradually pop values from options
+        # so that we can warn about unknown options at the end
 
         try:
             # override global needextend_strict if user set it in the directive

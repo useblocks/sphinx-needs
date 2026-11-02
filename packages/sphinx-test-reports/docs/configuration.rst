@@ -308,13 +308,17 @@ is that field instead, on every need type, so a need of another type may set it 
    # Optional: make two of them fields of every need type, not only of the test-report needs
    needs_extra_options = ['more_info', 'priority']
 
-Write them on a directive in lower case: docutils lowercases an option's name before it looks it up,
-so a name configured as ``Owner`` is written ``:owner:`` (``:Owner:`` works too, being read the same way),
+A directive option matches an extra option ignoring case, in reStructuredText and in MyST alike,
+as Sphinx-Needs matches its own fields:
+a name configured as ``Owner`` is written ``:owner:``, ``:Owner:`` or ``:OWNER:``,
 and the need field keeps the configured spelling, ``Owner``.
 The build says so at its start, once per such name.
+(docutils lowercases a reStructuredText option's name; MyST took only ``:owner:`` until this release.)
+Where MyST writes one extra option twice in two cases, the one in lower case, else the first written, keeps its value,
+and the other is ignored with a ``test_reports.option_invalid`` warning.
 Two names that differ only in case cannot both be written on a directive, and are a configuration error;
 so is a name the directives already have as an option of their own (``Status`` or ``status``, ``Tags``, ``File``, ...),
-one they set as a field of their own (``result``, ``time``, ``case_name``, ``cases``, ``passed``, ``title``, ...),
+one they set as a field of their own, in any case (``result`` or ``Result``, ``time``, ``case_name``, ``cases``, ``passed``, ``title``, ...),
 or that :ref:`tr_file_option`, :ref:`tr_source_file_option` or :ref:`tr_source_line_option` names:
 the extra option would otherwise override that field's value;
 and a Sphinx-Needs core field that is no field an option can set (``external_url``, ``external_css``, ``sections``, ...).
