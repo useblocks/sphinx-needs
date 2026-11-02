@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793635609718,
+  "lastUpdate": 1793640455193,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28560,6 +28560,48 @@ window.BENCHMARK_DATA = {
             "value": 188.879171,
             "unit": "MB",
             "extra": "Commit: 593fca48effb6fb5272b9a707ddc9ecd48526605\nBranch: master\nTime: 2026-11-02T17:05:29+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a33d150dd80f9a647211084d1dc26a5170c2b71c",
+          "message": "🐛 sphinx-codelinks: a multi-line need's duplicate check and [docs] link name the id it is given (#2464)\n\n## What\n\n🐛 **A multi-line need (`@need` … `@endneed`) without an id, whose\n`:full_title:` the project declares as a field, is now checked for\nduplicates and linked from its source page by the id it is actually\ngiven.**\n\nSuch a need's id is hashed from its title — the declared `full_title` is\nonly the field — but `src-trace` predicted the id hashed from the full\ntitle, and used that prediction for its duplicate check and for the\n`[docs]` link on the source page. So:\n\n| before | after |\n|---|---|\n| the `[docs]` link pointed at an id no need has | it points at the need\n|\n| a need elsewhere that owned the full-title hash skipped the block as a\n\"duplicate\" (`codelinks.duplicate_need`) | the block is created; there\nis no clash |\n| a need elsewhere that owned the block's real id made Sphinx-Needs\nrefuse the block (`duplicate_id … [codelinks.multiline_need]`) instead\nof codelinks reporting a duplicate, and the next incremental build did\nnot remember the skip: when that need went, the block stayed missing |\nthe usual `codelinks.duplicate_need` warning names the real id, and when\nthat need goes the next incremental build reads the page again and\ncreates the block |\n\nNo need's id moves.\n\n## How\n\n`would_be_id` now takes the route its mapping is for: `route=\"marker\"`\n(the default), a one-line marker's fields given to `create_need`, where\na `full_title` — declared or not — is the full title the id is hashed\nfrom (#2406, unchanged); or `route=\"record\"`, a multi-line need's record\ngiven to `ingest_need_record`, which passes no full title, so the id is\nhashed from the title. `render_needs` passes `route=\"record\"` for a\nblock.\n\n**Unchanged:** the one-line route, how either route creates needs, and\nSphinx-Needs itself.\n\n## Tests\n\n- `test_multiline_needs_render.py`: five pins, red before the fix — the\ncreated id, the prediction (the `[docs]` anchor) and the title hash\nagree, with the field still holding the full title; a need owning the\nreal id gives the duplicate warning naming it; when that need goes, an\nincremental build creates the block; a need owning the full-title hash\nno longer skips the block; a hidden block in a markup no parser claims\nis not warned about. They replace the test that pinned the mismatch as\nit was.\n- `test_would_be_id_table.py`: the table now says which route each shape\ntakes; the record row moves to the title's hash in every configuration,\nits one-line twin keeps the full title's, and two more record rows pin\nan empty title (hashed from the content) and an empty `full_title`\n(hashed from the title).\n- The one-line pins of #2406 are untouched and green.\n\nCloses #2410",
+          "timestamp": "2026-11-02T18:25:49+01:00",
+          "tree_id": "3533451f56d8c1864c41ffc96315ac7a3efed1a4",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a33d150dd80f9a647211084d1dc26a5170c2b71c"
+        },
+        "date": 1793640454251,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07729645099999516,
+            "unit": "s",
+            "extra": "Commit: a33d150dd80f9a647211084d1dc26a5170c2b71c\nBranch: master\nTime: 2026-11-02T18:25:49+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.796806208999996,
+            "unit": "s",
+            "extra": "Commit: a33d150dd80f9a647211084d1dc26a5170c2b71c\nBranch: master\nTime: 2026-11-02T18:25:49+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 189.022539,
+            "unit": "MB",
+            "extra": "Commit: a33d150dd80f9a647211084d1dc26a5170c2b71c\nBranch: master\nTime: 2026-11-02T18:25:49+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
