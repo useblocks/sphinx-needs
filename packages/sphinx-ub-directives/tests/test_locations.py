@@ -142,9 +142,18 @@ def test_a_use_reports_at_its_directive_line(
     assert _needs(four_ways)[need]["lineno"] == line
     roles = [w for w in build_warnings(four_ways) if "nosuchrole" in w]
     assert len(roles) == 4, roles
-    assert len([w for w in roles if w.startswith(f"<srcdir>/{file}:{line}:")]) == 1, (
-        roles
+    assert [_where(w) for w in roles].count((file, line)) == 1, roles
+
+
+def _where(warning: str) -> tuple[str, int] | None:
+    """The file and line a warning is reported at. myst-parser 4 reports its own
+    warnings at ``(source path, line)``, which Sphinx 7 reads as a docname and gives a
+    source suffix (``index.rst.rst``) -- for a role written by hand in the page too, so
+    it is not this package's to fix; the line is right either way."""
+    found = re.match(
+        r"<srcdir>/(?P<file>[^:]+?\.(?:rst|md))(?:\.rst)?:(?P<line>\d+):", warning
     )
+    return (found["file"], int(found["line"])) if found else None
 
 
 #: Output whose need is inside another directive, which myst and docutils render again
