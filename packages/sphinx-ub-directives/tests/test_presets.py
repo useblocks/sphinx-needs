@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Callable
 from pathlib import Path
 
@@ -154,24 +155,15 @@ def test_a_build_without_presets_does_not_see_a_previous_builds(
 # --- a need type's options (§3.3.3, §3.5) ---------------------------------------------
 
 
-def test_need_meta_options_are_the_need_directives_own() -> None:
-    """Q2 fence: the need directive's own options (its options that are no field or link)
-    are copied here; a change to sphinx-needs' list is a red test in the same change. It
-    goes once ``sphinx_needs.api.resolve_need_option`` answers for both."""
-    need = pytest.importorskip("sphinx_needs.directives.need")
-    own = getattr(need, "NEED_DIRECTIVE_OPTIONS", None)
-    if own is None:
-        pytest.skip("this sphinx-needs predates NEED_DIRECTIVE_OPTIONS")
-    assert own == _presets.NEED_META_OPTIONS
-
-
 def test_a_need_type_option_is_never_read_from_an_earlier_schema(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:
-    """N4: before this build's ``create_schema`` the schema is missing (a fresh build) or
-    the previous build's (an incremental one), so the one helper refuses to answer then;
-    once the build has it, the rule is the need directive's: exact, then ignoring case,
-    answered by the DECLARED name."""
+    """N4/S2: before this build's ``create_schema`` the schema is missing (a fresh build) or
+    the previous build's (an incremental one), so sphinx-needs' ``resolve_need_option``,
+    and so the one helper, refuses to answer then;
+    once the build has it (from ``env-before-read-docs`` above 500, as the presets ask),
+    the rule is the need directive's: exact, then ignoring case, answered by the
+    DECLARED name."""
     toml = '[needs.fields.Priority]\nschema = { type = "string" }\n'
     root = tmp_path / "p"
     root.mkdir()
@@ -181,12 +173,21 @@ def test_a_need_type_option_is_never_read_from_an_earlier_schema(
     app = make_app("html", srcdir=root, freshenv=True)
     with pytest.raises(RuntimeError):
         _presets._need_option(app, "req", "status")
+    names = ("status", "STATUS", "priority", "Priority", "nope")
+    answers: dict[str, str | None] = {}
+
+    def ask(app: SphinxTestApp, *_args: object) -> None:
+        answers.update({n: _presets._need_option(app, "req", n) for n in names})
+
+    app.connect("env-before-read-docs", ask, priority=650)
     app.build()
-    assert _presets._need_option(app, "req", "status") == "status"
-    assert _presets._need_option(app, "req", "STATUS") == "status"
-    assert _presets._need_option(app, "req", "priority") == "Priority"
-    assert _presets._need_option(app, "req", "Priority") == "Priority"
-    assert _presets._need_option(app, "req", "nope") is None
+    assert answers == {
+        "status": "status",
+        "STATUS": "status",
+        "priority": "Priority",
+        "Priority": "Priority",
+        "nope": None,
+    }
     app.cleanup()
     # an incremental build has the previous build's schema in its environment from the
     # start: still no answer until this build's own is built
@@ -270,3 +271,104 @@ def test_a_forced_option_replaces_a_written_one_in_another_case_whole(
     warnings = build_warnings(app)
     assert not [w for w in warnings if "needs.directive" in w], warnings
     assert [w for w in warnings if "preset_forced_option" in w], warnings
+
+
+def test_need_type_presets_need_resolve_need_option(
+    make_app: Callable[..., SphinxTestApp],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """S3: with a sphinx-needs that has no public ``resolve_need_option`` (before 9.2), a
+    need-type preset is refused at load with one finding saying why; a preset of any other
+    base and a declared template keep working."""
+    api = pytest.importorskip("sphinx_needs.api")
+    monkeypatch.delattr(api, "resolve_need_option")
+    toml = (
+        '[parse.directive_presets.drafted]\nbase = "req"\noptions = { status = "draft" }\n\n'
+        '[parse.directive_presets.callout]\nbase = "note"\noptions = { class = "c" }\n\n'
+        '[parse.directive_templates.row]\nbody = "Row text."\n'
+    )
+    tmp_path.mkdir(exist_ok=True)
+    (tmp_path / "conf.py").write_text(CONF_PY, encoding="utf-8", newline="")
+    (tmp_path / "ubproject.toml").write_text(toml, encoding="utf-8", newline="")
+    (tmp_path / "index.rst").write_text(
+        "Case\n====\n\n.. callout::\n\n   Body.\n\n.. row::\n",
+        encoding="utf-8",
+        newline="",
+    )
+    app = make_app("html", srcdir=tmp_path, freshenv=True)
+    app.build()
+    warnings = build_warnings(app)
+    refused = [
+        w for w in warnings if "ub_directives.directive_preset_unknown_base" in w
+    ]
+    assert len(refused) == 1, warnings
+    assert "need-type presets need sphinx-needs 9.2 or later" in refused[0]
+    assert "drafted" in refused[0]
+    html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
+    # the class order of an admonition differs across Sphinx versions
+    classes = [set(c.split()) for c in re.findall(r'<div class="([^"]*)"', html)]
+    assert {"admonition", "note", "c"} in [
+        c & {"admonition", "note", "c"} for c in classes
+    ]
+    assert "Row text." in html
+
+
+#: An extension that registers ``myname`` itself, at ``{event}`` priority {priority}.
+_MYNAME = (
+    "from docutils.parsers.rst.directives.admonitions import Note\n"
+    "class Mine(Note):\n    pass\n"
+    "def _mine(app, *_args):\n    app.add_directive('myname', Mine, override=True)\n"
+    "def setup(app):\n    app.connect({event!r}, _mine, priority={priority})\n"
+)
+
+
+@pytest.mark.parametrize(
+    ("needs", "event", "priority"),
+    [
+        pytest.param(False, "builder-inited", 900, id="without-sphinx-needs"),
+        pytest.param(True, "env-before-read-docs", 650, id="with-sphinx-needs"),
+    ],
+)
+def test_a_preset_replaced_by_a_later_extension_warns(
+    make_app: Callable[..., SphinxTestApp],
+    tmp_path: Path,
+    needs: bool,
+    event: str,
+    priority: int,
+) -> None:
+    """S5 (§3.4.7): a preset of a NEW name that another extension registers over after
+    the presets were is reported, not lost silently -- in both registration modes (§3.5):
+    without sphinx-needs the presets register at ``builder-inited``, so a later handler
+    there replaces them; with it, at ``env-before-read-docs`` 600."""
+    # a module name of its own per case: Python caches an imported module by name
+    module = f"mine_{'needs' if needs else 'plain'}"
+    extensions = (
+        f'["sphinx_needs", "sphinx_ub_directives", "{module}"]'
+        if needs
+        else f'["sphinx_ub_directives", "{module}"]'
+    )
+    conf = (
+        "import os, sys\nsys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))\n"
+        f"extensions = {extensions}\nshow_warning_types = True\n"
+        + ('needs_from_toml = "ubproject.toml"\n' if needs else "")
+    )
+    tmp_path.mkdir(exist_ok=True)
+    (tmp_path / "conf.py").write_text(conf, encoding="utf-8", newline="")
+    (tmp_path / f"{module}.py").write_text(
+        _MYNAME.format(event=event, priority=priority), encoding="utf-8", newline=""
+    )
+    (tmp_path / "ubproject.toml").write_text(
+        '[parse.directive_presets.myname]\nbase = "note"\noptions = { class = "c" }\n',
+        encoding="utf-8",
+        newline="",
+    )
+    (tmp_path / "index.rst").write_text(
+        "Case\n====\n\n.. myname::\n\n   Body.\n", encoding="utf-8", newline=""
+    )
+    app = make_app("html", srcdir=tmp_path, freshenv=True)
+    app.build()
+    warnings = build_warnings(app)
+    replaced = [w for w in warnings if "ub_directives.preset_base_replaced" in w]
+    assert len(replaced) == 1, warnings
+    assert "this preset is not used" in replaced[0]

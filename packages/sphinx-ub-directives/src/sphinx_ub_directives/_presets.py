@@ -12,7 +12,6 @@ registered.
 from __future__ import annotations
 
 import re
-import weakref
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -34,26 +33,6 @@ ENTRY_KEYS = frozenset(
 )
 #: The option tables, in the order they are checked (§3.3).
 VERBS = ("options", "append_options", "force_options")
-#: The need directive's own options, besides the type's fields and links.
-NEED_META_OPTIONS = frozenset(
-    {
-        "id",
-        "status",
-        "tags",
-        "collapse",
-        "delete",
-        "jinja_content",
-        "hide",
-        "title_from_content",
-        "style",
-        "layout",
-        "template",
-        "pre_template",
-        "post_template",
-        "constraints",
-    }
-)
-
 Converter = Callable[[Any], Any]
 
 
@@ -136,49 +115,49 @@ def lookup(app: Sphinx, name: str) -> tuple[type[Directive], str | None] | None:
 
 
 def need_types(app: Sphinx) -> list[str]:
-    """The need types' directive names, as sphinx-needs registered them (empty when it is
+    """The need types' directive names, from sphinx-needs' public API (empty when it is
     not loaded)."""
     if "sphinx_needs" not in app.extensions:
         return []
-    from sphinx_needs.config import NeedsSphinxConfig
+    from sphinx_needs.api import get_need_types
 
-    return [str(t["directive"]) for t in NeedsSphinxConfig(app.config).types]
+    return [str(t) for t in get_need_types(app)]
 
 
-#: The builds whose sphinx-needs schema is this build's own (see :func:`_need_option`).
-_SCHEMA_READY: weakref.WeakSet[Sphinx] = weakref.WeakSet()
+def _resolver() -> Callable[[Sphinx, str, str], str | None] | None:
+    """sphinx-needs' public ``resolve_need_option`` (9.2 and later), or ``None`` for an
+    older sphinx-needs, whose need types are then no preset base (§3.2)."""
+    api = import_module("sphinx_needs.api")
+    resolve = getattr(api, "resolve_need_option", None)
+    return (
+        cast("Callable[[Sphinx, str, str], str | None]", resolve)
+        if callable(resolve)
+        else None
+    )
 
 
 def _need_option(app: Sphinx, need_type: str, name: str) -> str | None:
     """The option of need type ``need_type`` that ``name`` names, by its DECLARED name, or
-    ``None`` when the type takes no such option (§3.3.3): an exact match first, then one
-    ignoring case -- the need directive's own rule. The type's options are the directive's
-    own, the global fields and links, and the fields and links declared on the type
-    (inherited ones included).
+    ``None`` when the type's directive matches no such option (§3.3.3): sphinx-needs'
+    public ``resolve_need_option``, which answers as the need directive matches a written
+    option (exactly, else ignoring case).
 
-    The one place this package asks sphinx-needs about a need type's options: its body
-    becomes ``sphinx_needs.api.resolve_need_option(app, need_type, name)`` once that API
-    is released. Until then it reads sphinx-needs' schema, which is THIS build's only from
-    ``env-before-read-docs`` (priority 500) on -- before that it is missing, or on an
-    incremental build the previous build's -- so it refuses to answer earlier.
+    The one place this package asks sphinx-needs about a need type's options. Called only
+    once this build's schema exists (presets register at ``env-before-read-docs`` priority
+    600, §3.5), and only for a base that :func:`need_types` lists.
 
-    :raises RuntimeError: Before this build's schema exists.
+    :raises RuntimeError: Before this build's schema exists (sphinx-needs' own guard).
     """
-    if app not in _SCHEMA_READY:
-        msg = "a need type's options are known only once sphinx-needs built its schema"
+    resolve = _resolver()
+    if resolve is None:
+        msg = "need-type presets need sphinx-needs 9.2 or later"
         raise RuntimeError(msg)
-    from sphinx_needs.data import SphinxNeedsData
-
-    schema = SphinxNeedsData(app.env).get_schema().for_type(need_type)
-    names = {
-        *NEED_META_OPTIONS,
-        *schema.iter_link_field_names(),
-        *schema.iter_extra_field_names(),
-    }
-    if name in names:
-        return name
-    lowered = name.lower()
-    return next((n for n in sorted(names) if n.lower() == lowered), None)
+    try:
+        return resolve(app, need_type, name)
+    except ValueError as error:
+        # every call site passes a type need_types() listed
+        msg = f"{need_type!r} is no need type of this project"
+        raise AssertionError(msg) from error
 
 
 def float_text(value: float) -> str:
@@ -229,6 +208,11 @@ class Resolver:
             )
         lowered = [t for t in self.types if t == base.lower()]
         if lowered:
+            if _resolver() is None:
+                return (
+                    f"{base!r} is a need type, and need-type presets need sphinx-needs "
+                    "9.2 or later"
+                )
             cls = _lookup_docutils(lowered[0])
             if cls is not None:
                 return Base(lowered[0], cls, need_type=True)
@@ -594,7 +578,6 @@ def register_with_needs(app: Sphinx, *_args: Any) -> None:
     """``env-before-read-docs``, after sphinx-needs' ``create_schema`` (priority 500): with
     sphinx-needs loaded, its schema is now this build's, so register the presets."""
     if "sphinx_needs" in app.extensions:
-        _SCHEMA_READY.add(app)
         register(app)
 
 
@@ -604,14 +587,14 @@ def register(app: Sphinx) -> None:
     reading = resolved(app)
     table = reading["directive_presets"]
     # process state: a build without presets must not see a previous build's (D12)
-    _SELF_PRESETS[:] = []
+    _REGISTERED[:] = []
     if not table:
         return
     source = reading["sources"].get("directive_presets") or reading["file"]
     presets = Resolver(app, table, source).resolve()
     # [A4] the classes are built from the snapshotted bases before registering any
     classes = [(preset, preset_class(preset)) for preset in presets]
-    _SELF_PRESETS[:] = []
+    _REGISTERED[:] = []
     for preset, cls in classes:
         if preset.self_preset and preset.base.domain is not None:
             app.add_directive_to_domain(
@@ -619,24 +602,30 @@ def register(app: Sphinx) -> None:
             )
         else:
             app.add_directive(preset.name.lower(), cls, override=preset.self_preset)
-            if preset.self_preset:
-                _SELF_PRESETS.append((preset.name.lower(), cls, source))
+            _REGISTERED.append((preset.name.lower(), cls, source, preset.self_preset))
 
 
-#: The self-presets registered in the docutils registry this build (§3.4.7).
-_SELF_PRESETS: list[tuple[str, type[Directive], str | None]] = []
+#: The presets registered in the docutils registry this build, each with its source and
+#: whether it is a self-preset (§3.4.7).
+_REGISTERED: list[tuple[str, type[Directive], str | None, bool]] = []
 
 
 def check_replaced(app: Sphinx, *_args: Any) -> None:
-    """``env-before-read-docs``, after the presets are registered: warn once per
-    self-preset whose directive another extension registered over it since (§3.4.7)."""
+    """``env-before-read-docs``, after the presets are registered: warn once per preset
+    whose directive another extension registered over it since (§3.4.7) -- a self-preset's
+    defaults are then not applied, and a new name is the other extension's directive. It
+    runs in both registration modes (§3.5)."""
     registry = cast("dict[str, Any]", getattr(directives, "_directives"))  # noqa: B009
-    for name, cls, file in _SELF_PRESETS:
+    for name, cls, file, self_preset in _REGISTERED:
         if registry.get(name) is not cls:
+            lost = (
+                "the project defaults of this self-preset are not applied"
+                if self_preset
+                else "this preset is not used"
+            )
             warn(
                 "preset_base_replaced",
                 render_path(("parse", "directive_presets", name)),
-                f"another extension registered {name!r} after the presets were, so the "
-                "project defaults of this self-preset are not applied",
+                f"another extension registered {name!r} after the presets were, so {lost}",
                 location=file,
             )

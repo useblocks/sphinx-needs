@@ -232,6 +232,10 @@ force_options = { collapse = true }  # a use cannot change these
    verbatim but looks every directive up in lower case, so the type is unusable there, and
    a preset would make it usable under another name only. The corpora use lower-case need
    types only. Enforced by: test `test_presets.py::test_a_capitalised_need_type_is_refused_as_a_base`.
+   *Sphinx half:* a need type is no preset base on a sphinx-needs older than 9.2 (no
+   public `resolve_need_option`): `directive_preset_unknown_base`, saying "need-type
+   presets need sphinx-needs 9.2 or later"; every other preset and template works.
+   Enforced by: test `test_presets.py::test_need_type_presets_need_resolve_need_option`.
 7. A new (non-self) name that is already a directive — built in, a need type, any loaded
    extension's — is `directive_preset_name_taken` at the entry.
    Enforced by: corpus `refused-name-taken`, `refused-name-taken-by-a-need-type`.
@@ -254,7 +258,8 @@ sorted; the path is `….<name>.<table>.<key>`.
      ones declared on that type (inherited ones included), and one declared on ANOTHER type
      alone, which the directive matches and then ignores (sphinx-needs warns,
      `needs.undeclared_for_type`), so a preset setting it is accepted and its uses make the
-     need without that value, as a hand-written use does. A key matches as the directive
+     need without that value, as a hand-written use does; and a DERIVED field, which the
+     directive matches and replaces by its derived value (`needs.derive_authored`). A key matches as the directive
      matches a written option -- exactly first, then ignoring case -- and names the option
      by its DECLARED name (`STATUS` is `status`; `priority` is a declared `Priority`). A key
      and an option written at a use that name the same option are ONE option (3.4.2: a
@@ -269,7 +274,8 @@ sorted; the path is `….<name>.<table>.<key>`.
    `px-forced-option-beats-a-written-one-in-another-case-rst`, `…-md`,
    `need-type-own-field-through-options`, `need-type-own-field-forced`,
    `need-type-own-link-through-options`, `need-type-own-link-forced`,
-   `need-type-own-link-appended`, `need-type-own-field-on-another-type-is-taken-as-the-directive-takes-it`.
+   `need-type-own-link-appended`, `need-type-own-field-on-another-type-is-taken-as-the-directive-takes-it`,
+   `need-type-derived-field-through-options`.
 4. An `append_options` key other than `class` or `class-*` is
    `directive_preset_append_not_list`. Enforced by: corpus `refused-append-to-a-scalar`.
 5. A value the base's option rejects is `directive_preset_invalid_value`. The Sphinx half
@@ -310,27 +316,37 @@ sorted; the path is `….<name>.<table>.<key>`.
    it does not take the self-preset's values, whatever the order of registration.
    Enforced by: corpus `preset-of-a-self-preset-base-takes-the-original`.
 6. A default flag cannot be switched off by a use (there is no `:no-<option>:`).
-7. The bases are snapshotted when the presets are registered (Sphinx: §2.2).
-   An extension that replaces a self-preset's base AFTER that drops the self-preset; the
-   Sphinx half warns once (`ub_directives.preset_base_replaced`, Sphinx only).
+7. The bases are snapshotted when the presets are registered (Sphinx: §2.2, §3.5).
+   An extension that registers a preset's name AFTER that drops the preset -- a
+   self-preset's defaults are not applied, a new name is the other extension's directive;
+   the Sphinx half warns once (`ub_directives.preset_base_replaced`, Sphinx only), in both
+   registration modes. Enforced by: test
+   `test_presets.py::test_a_self_preset_whose_base_is_replaced_later_warns`,
+   `…::test_a_preset_replaced_by_a_later_extension_warns`.
 
 ### 3.5 The Sphinx half (informative: how this package meets §3)
 
-- When: with sphinx-needs loaded, at `env-before-read-docs` priority 600 -- after
-  sphinx-needs' `create_schema` (priority 500), the first point at which its schema is
-  THIS build's (missing before it on a fresh build, the previous build's on an incremental
-  one) -- with the declared templates at 610 and the replaced-base check (3.4.7) at 700;
-  without sphinx-needs, at `builder-inited`. Every directive is registered before any
-  document is read.
-- A need type's options are asked of sphinx-needs through ONE private helper,
-  `_need_option(app, need_type, name) -> declared name | None`, which refuses to answer
-  before that point. It reads sphinx-needs' schema (`for_type`) and the directive's own
-  options (`NEED_META_OPTIONS`, fenced equal to sphinx-needs' `NEED_DIRECTIVE_OPTIONS`) for
-  now; its body becomes `sphinx_needs.api.resolve_need_option` once that is released.
-  `run()` resolves each written option the same way, so a written `:priority:` and a
-  preset's `Priority` are one option. Enforced by: test
-  `test_presets.py::test_a_need_type_option_is_never_read_from_an_earlier_schema`,
-  `…::test_need_meta_options_are_the_need_directives_own`.
+- **Two registration modes**, each before any document is read:
+  - **without sphinx-needs**, presets then declared templates register at
+    `builder-inited`;
+  - **with sphinx-needs**, at `env-before-read-docs` priority 600 (presets) and 610
+    (declared templates) -- after sphinx-needs' `create_schema` (priority 500), the first
+    point at which its schema is THIS build's (missing before it on a fresh build, the
+    previous build's on an incremental one).
+
+  In both, the replaced-preset check (3.4.7) runs at `env-before-read-docs` priority 700.
+  So an extension's directive registered after `builder-inited` (at `env-before-read-docs`,
+  below 600) is a preset base, or takes a new preset name, only when sphinx-needs is loaded.
+- **Coupling to sphinx-needs: its public API only** (`sphinx_needs.api`), plus the
+  confvals `needs_from_toml` and `needs_variant_data`, read by name. The need types are
+  `get_need_types(app)`; a directive is a need's when its name, in lower case as Sphinx
+  looks it up, is one of them. A need type's options are asked through ONE private helper,
+  `_need_option(app, need_type, name) -> declared name | None`, whose body is
+  `resolve_need_option(app, need_type, name)` (sphinx-needs 9.2): it answers as the need
+  directive matches a written option, and only inside a build, from `env-before-read-docs`
+  above 500 to sphinx-needs' `build-finished`. `run()` resolves each written option the
+  same way, so a written `:priority:` and a preset's `Priority` are one option. Enforced
+  by: test `test_presets.py::test_a_need_type_option_is_never_read_from_an_earlier_schema`.
 - Each accepted preset is a subclass of the base's class, registered with
   `app.add_directive(name, cls, override=<self-preset>)`, every base class snapshotted
   before the first registration (3.4.5).

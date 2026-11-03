@@ -45,7 +45,8 @@ Set up a preset
 ---------------
 
 1. Pick the base: a built-in directive, one from a loaded extension (such as sphinx-design's ``dropdown``),
-   or a sphinx-needs need type.
+   or a sphinx-needs need type (this needs sphinx-needs 9.2 or later;
+   with an older one a need-type preset is refused, ``ub_directives.directive_preset_unknown_base``).
 2. Pick the name. A new name must not already be a directive;
    the same name as the base sets defaults for the base itself (a *self-preset*).
 3. Choose how each option combines with what a use writes:

@@ -19,7 +19,7 @@ ub_directive_presets = {
 
 Everything can be configured in `conf.py` or in `ubproject.toml`.
 
-**With sphinx-needs** (optional): a preset can be based on a need type, and every template
+**With sphinx-needs** (optional): a preset can be based on a need type (sphinx-needs 9.2 or later), and every template
 sees the project's variant data as `var`, the same values `.. if::` evaluates against.
 
 **With [ubCode](https://ubcode.useblocks.com/)**: ubCode reads the same tables from

@@ -279,14 +279,15 @@ def _conditional(
     return cls
 
 
-def _is_need_directive(cls: type[Directive] | None) -> bool:
-    if cls is None:
+def _is_need_type(name: str, env: Any) -> bool:
+    """Whether ``name`` (as Sphinx looks a directive up, in lower case) is a need type's
+    directive, by sphinx-needs' public ``get_need_types``."""
+    app = getattr(env, "app", None)
+    if app is None or "sphinx_needs" not in app.extensions:
         return False
-    try:
-        from sphinx_needs.directives.need import NeedDirective
-    except ImportError:
-        return False
-    return issubclass(cls, NeedDirective)
+    from sphinx_needs.api import get_need_types
+
+    return name in get_need_types(app)
 
 
 def test_report_names(env: Any) -> frozenset[str]:
@@ -366,8 +367,17 @@ def _refusal(
             use,
             lambda d: argument or bool(d.arguments and d.arguments[0].strip()),
         )
-    if _is_need_directive(cls):
-        return _conditional(cls, shown, use, lambda d: has(d, NEED_TEMPLATE_OPTIONS))
+    if _is_need_type(lower, env):
+        # the need directive matches its options ignoring case (MyST keeps the written
+        # case), so a ``:Template:`` reads a file as ``:template:`` does
+        return _conditional(
+            cls,
+            shown,
+            use,
+            lambda d: any(
+                k.lower() in NEED_TEMPLATE_OPTIONS for k in (*d.options, *merged)
+            ),
+        )
     return None
 
 

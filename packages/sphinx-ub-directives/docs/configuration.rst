@@ -16,6 +16,7 @@ There are two ways to configure the extension, and they say the same things:
 
 The settings are read when the configuration loads;
 a change to any of them re-reads every document.
+A preset based on a need type needs sphinx-needs 9.2 or later.
 
 .. list-table::
    :header-rows: 1

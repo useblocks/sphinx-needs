@@ -4037,3 +4037,39 @@ source = '''
 [[case.expect.findings]]
 code = "directive_preset_unknown_option"
 path = "parse.directive_presets.capnote.options.CLASS"
+
+[[case]]
+name = "need-type-derived-field-through-options"
+why = "a preset setting a derived field is accepted (the need directive matches it), and the need has the derived value, as a hand-written one (the written value is ignored)"
+config = '''
+[needs.fields.linked]
+schema = { type = "integer" }
+
+[needs.types.req.fields.linked]
+derive = { kind = "count", over = "links" }
+
+[parse.directive_presets.counted]
+base = "req"
+options = { linked = 5 }
+'''
+source = '''
+.. req:: Target
+   :id: REQ_DV0
+
+.. counted:: Preset
+   :id: REQ_DV2
+   :links: REQ_DV0
+'''
+equivalent = '''
+.. req:: Target
+   :id: REQ_DV0
+
+.. req:: Preset
+   :id: REQ_DV2
+   :links: REQ_DV0
+   :linked: 5
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_DV2]
+linked = 1
