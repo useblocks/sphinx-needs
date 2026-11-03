@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793715039569,
+  "lastUpdate": 1793718563020,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28644,6 +28644,48 @@ window.BENCHMARK_DATA = {
             "value": 191.385509,
             "unit": "MB",
             "extra": "Commit: 87df5d3e836c9a435e9b5b3b991838ca74a0ca27\nBranch: master\nTime: 2026-11-03T15:08:55+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "08986ea323d1209774d614582925786d20104e59",
+          "message": "✨ sphinx-ub-directives: directive presets and template directives from ubproject.toml (#2382)\n\nA new package, `sphinx-ub-directives`: a Sphinx extension for defining\nyour own directives without writing Python, configured in `conf.py` or\n`ubproject.toml`. It works with sphinx-needs, which is optional: need\ntypes can be preset bases, and templates see the project's variant data.\nIt is also compatible with ubCode, which implements the same\n`ubproject.toml` tables. Both implementations are held to one written\ncontract and two conformance corpora that ubCode vendors.\n\n- **Directive presets** (`[parse.directive_presets.<name>]`). A preset\nis a directive name that stands for an existing directive with preset\noptions: defaults, appended classes, forced values, or a default\nargument. A preset can also give project-wide defaults for an existing\ndirective. Need types can be bases when sphinx-needs is loaded.\n- **Declared template directives**\n(`[parse.directive_templates.<name>]`). These are a project's own\ndirectives, whose output is a minijinja template.\n- Each has a closed signature: typed options, choices, defaults and\nrequired items.\n- Context data comes from `[parse.template_contexts.<name>]`, either\ninline TOML or a JSON or TOML file.\n  - The project's variant data is available as `var`.\n- **`ub-template`**, the generic template directive, opt-in with\n`[parse] ub_template_enabled = true`. It coexists with sphinx-jinja2,\nand the docs have a migration page from sphinx-jinja2 and sphinx-jinja.\n\n### Configuration in `conf.py`\n\nThe same settings can also be written in `conf.py`. This is how every\nother extension in the monorepo is configured, and it is where a\nsphinx-jinja2 user starts. The settings are `ub_directive_presets`,\n`ub_directive_templates` and `ub_template_contexts` (dicts), and\n`ub_template_enabled` (a bool).\n\n- **Precedence.** It is per key, as in sphinx-needs. A key that\n`ubproject.toml`'s `[parse]` table sets replaces the `conf.py` value\nwhole, even when it is an empty table. `-D ub_template_enabled=0|1`\nbeats both. The three tables cannot be given on the command line.\n- **Data only.** A `conf.py` value must be one TOML could have written,\nand it is read as its exact base type:\n  - a tuple is a list;\n  - a subclass, such as an `IntEnum` or a `Markup`, is its plain value;\n  - a time zone is its fixed offset.\n\n`None`, sets, bytes, paths, functions, objects, out-of-range integers\nand over-deep nesting are refused with a `ConfigError` naming the\nsetting and the key path.\n- **Findings** point at the file their table came from.\n- **This is Sphinx only.** It is contract §2.5, outside the parity\npromise: ubCode reads only `ubproject.toml`, and the docs say so up\nfront. sphinx-jinja2's setting names are not read; the migration page\nmaps each one.\n\n### Coupling to sphinx-needs\n\nThe package uses sphinx-needs' public API only:\n`sphinx_needs.api.get_need_types` and `resolve_need_option` (#2468),\nplus the `needs_from_toml` and `needs_variant_data` settings, read by\nname. It imports no sphinx-needs internals, and sphinx-needs stays\noptional.\n\n- **Need-type presets.** A preset based on a need type takes exactly the\noptions that type's directive matches: fields and links declared on that\ntype are included, and keys match ignoring case, as on the directive. A\nfield declared on another type, or a derived field, is accepted and\nhandled at each use as the hand-written directive handles it.\n- **The sphinx-needs version.** Need-type presets need sphinx-needs 9.2\nor later. With an older sphinx-needs they are refused at load with one\nclear finding, and every other preset and template keeps working.\n- **The `needs` extra** (`sphinx-needs>=9.2,<10`) comes with the 9.2.0\nversion, because it cannot lock against the workspace's 9.1.0\nsphinx-needs yet.\n- **Registration.** With sphinx-needs loaded, presets register once its\nschema is built (`env-before-read-docs`). Without it, they register at\n`builder-inited` (contract §3.5).\n\n### The contract and the corpora\n\nThe contract is\n`packages/sphinx-ub-directives/design/directives-contract.md`.\n\n- It opens with the parity promise: the rendered text and the needs data\nare promised, and diagnostic locations never are. Findings compare by\ncode and attribution.\n- Every rule names the corpus case or test that enforces it.\n\nThe corpora are canonical here, and ubCode vendors them byte for byte:\n\n- `tests/fixtures/directive_presets_conformance.toml`: 166 cases;\n- `tests/fixtures/template_directives_conformance.toml`: 545 cases, of\nwhich 1 is `python_only`, because ubCode has no `eval-rst`.\n\nThey are project-per-case, like the derive corpus.\n\n### Rules worth knowing before review\n\n- **A reads-a-file directive in template output is refused.** This\ncovers `include`, `literalinclude`, `csv-table`/`raw` with `:file:`,\n`needimport`, need template options, diagrams with a file argument, the\ntest-report directives, and nested templates. It is decided on the\nresolved base and the merged options, so a preset cannot bypass it. A\nrefused directive renders nothing; the rest of the output renders.\n- **Template output may not contain a section title**\n(`template_heading`) in this first release. Three review rounds found\nnesting divergences in needs' `sections` between a docutils splice and\nubCode's. Generated needs take the section of the directive.\n- **Context data follows ub-project's shape rule, plus arrays of\ntables.**\n- Null, datetimes, non-finite floats, integers outside i64, and data\nnested deeper than 64 levels are refused.\n  - There is no YAML.\n- Mappings iterate in file order, except `var`, which iterates in sorted\norder.\n- **Paths are anchored at the source root.**\n  - They are `/`-separated; `\\`, `:` and NUL are refused.\n  - `..` is resolved by the filesystem.\n  - A path whose real path leaves the root is never read.\n- **Limits.**\n- Fuel, an output cap of 1 MiB, and a per-page breaker over distinct\ninputs.\n- The output cap is checked after rendering on this side. Memory is not\nbounded live, and the contract says so.\n- **The template language is minijinja 2.24.0 with a fixed dialect.**\nubCode compiles the matching features, and\n`tools/check_minijinja_version.py` pins the version.\n\n### Verification\n\n- The suite passes on every Sphinx cell (7.4, 8, 9.1).\n- `poe typecheck`, `poe lint`, `check_workspace.py` and the docs build\n(`-nW`, 0 warnings) pass, and so does the sphinx-needs suite as a smoke\ntest.\n- The mutation battery is 85 of 86 fully red. In the remaining one, the\ncontext half is equivalent.\n- ubCode's counterparts pass both corpora: the presets PR\nuseblocks/ubcode#4566, and the templates branch\n`feat/template-directives`, which opens after it.\n- A differential review wrote over 500 cases outside the corpora and ran\neach on both implementations. What it found was adjudicated and added to\nthe corpora. The general-parser differences it found in ubCode are\nregistered in contract §9.5, and no case depends on them.\n\n### Root wiring\n\nThe root wiring is one commit, `3b132710`. It covers:\n\n- the workspace member and the lock;\n- the poe tasks: `test-ub-directives[-sphinx7/8/9]`,\n`docs-ub-directives`, `build-ub-directives` and\n`import-check-ub-directives`;\n- the Extensions cell and the Codecov flag;\n- the ty probe and a docs job;\n- the labels and issue forms;\n- the trusted-publisher list;\n- the LF pin and formatter excludes for the corpora.\n\n### Ops before the first release\n\n- An RTD project pointing at\n`packages/sphinx-ub-directives/.readthedocs.yaml`.\n- A pending PyPI trusted publisher for `sphinx-ub-directives` (workflow\n`release.yaml`, environment `pypi-sphinx-ub-directives`).\n\nChangelog: `packages/sphinx-ub-directives/docs/changelog.rst`, under\nUnreleased.",
+          "timestamp": "2026-11-03T16:07:41+01:00",
+          "tree_id": "6c99f9e77bcf9659d25101676ab57a69e1d02849",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/08986ea323d1209774d614582925786d20104e59"
+        },
+        "date": 1793718562066,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07497739400000114,
+            "unit": "s",
+            "extra": "Commit: 08986ea323d1209774d614582925786d20104e59\nBranch: master\nTime: 2026-11-03T16:07:41+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.434981813999997,
+            "unit": "s",
+            "extra": "Commit: 08986ea323d1209774d614582925786d20104e59\nBranch: master\nTime: 2026-11-03T16:07:41+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 190.336933,
+            "unit": "MB",
+            "extra": "Commit: 08986ea323d1209774d614582925786d20104e59\nBranch: master\nTime: 2026-11-03T16:07:41+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
