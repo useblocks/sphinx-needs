@@ -1,7 +1,7 @@
 [project]
 name = "sphinx-ub-directives"
 version = "0.1.0"
-description = "Directive presets and declared template directives from ubproject.toml, for Sphinx"
+description = "Define your own Sphinx directives: presets of existing directives, and Jinja template directives"
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 license = { file = "LICENSE" }
 readme = "README.md"
