@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:1.2.0`:
+
+1.2.0
+-----
+
+:Released: 2026-11-04
 
 - **A data-file override swaps the file, never the table.** ``read_variants`` takes
   ``data_file_override``, a variant data file from outside the document (a consumer's

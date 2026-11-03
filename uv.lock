@@ -4214,7 +4214,7 @@ source = { editable = "packages/ub-needs-exchange" }
 
 [[package]]
 name = "ub-project"
-version = "1.1.0"
+version = "1.2.0"
 source = { editable = "packages/ub-project" }
 
 [[package]]
