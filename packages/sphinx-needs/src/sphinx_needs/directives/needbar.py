@@ -40,7 +40,7 @@ class Needbar(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsBarType],
         ) -> None: ...
 
-        attributes: NeedsBarType
+        attributes: NeedsBarType  # ty: ignore[invalid-attribute-override]
 
 
 class NeedbarDirective(FilterBase):
@@ -173,7 +173,7 @@ class NeedbarDirective(FilterBase):
         bar_node = Needbar("", **data_attributes)
         self.set_source_info(bar_node)
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needbar")
 
         return [targetnode, bar_node]
 

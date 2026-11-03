@@ -1,0 +1,26 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 14
+      },
+      "end": {
+        "row": 0,
+        "column": 60
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Trailing on a statement",
+      "id": "IMPL_R_TRAIL_PY",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

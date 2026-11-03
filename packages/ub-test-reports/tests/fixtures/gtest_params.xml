@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="10" failures="0" disabled="0" errors="0" time="0." timestamp="2026-10-30T20:23:27.806" name="AllTests">
+  <testsuite name="Typed/0" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-10-30T20:23:27.806">
+    <testcase name="T1" type_param="int" file="tests/gt2.cpp" line="20" status="run" result="completed" time="0." timestamp="2026-10-30T20:23:27.806" classname="Typed/0" />
+  </testsuite>
+  <testsuite name="Typed/1" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-10-30T20:23:27.806">
+    <testcase name="T1" type_param="std::basic_string&lt;char,std::__1::char_traits&lt;char&gt;,std::__1::allocator&lt;char&gt;&gt;" file="tests/gt2.cpp" line="20" status="run" result="completed" time="0." timestamp="2026-10-30T20:23:27.806" classname="Typed/1" />
+  </testsuite>
+  <testsuite name="My/TP/0" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-10-30T20:23:27.806">
+    <testcase name="Each" type_param="int" file="tests/gt2.cpp" line="24" status="run" result="completed" time="0." timestamp="2026-10-30T20:23:27.806" classname="My/TP/0" />
+  </testsuite>
+  <testsuite name="My/TP/1" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-10-30T20:23:27.806">
+    <testcase name="Each" type_param="std::basic_string&lt;char,std::__1::char_traits&lt;char&gt;,std::__1::allocator&lt;char&gt;&gt;" file="tests/gt2.cpp" line="24" status="run" result="completed" time="0." timestamp="2026-10-30T20:23:27.806" classname="My/TP/1" />
+  </testsuite>
+  <testsuite name="Inst/IntP" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-10-30T20:23:27.806">
+    <testcase name="Value/0" value_param="1" file="tests/gt2.cpp" line="6" status="run" result="completed" time="0." timestamp="2026-10-30T20:23:27.806" classname="Inst/IntP" />
+    <testcase name="Value/1" value_param="2" file="tests/gt2.cpp" line="6" status="run" result="completed" time="0." timestamp="2026-10-30T20:23:27.806" classname="Inst/IntP" />
+  </testsuite>
+  <testsuite name="S/StrP" tests="2" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-10-30T20:23:27.806">
+    <testcase name="Str/0" value_param="&quot;a \&quot;b\&quot; &lt;c&gt;&quot;" file="tests/gt2.cpp" line="10" status="run" result="completed" time="0." timestamp="2026-10-30T20:23:27.806" classname="S/StrP" />
+    <testcase name="Str/1" value_param="&quot;&quot;" file="tests/gt2.cpp" line="10" status="run" result="completed" time="0." timestamp="2026-10-30T20:23:27.806" classname="S/StrP" />
+  </testsuite>
+  <testsuite name="PairP" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-10-30T20:23:27.806">
+    <testcase name="Pair/0" value_param="(1, 2)" file="tests/gt2.cpp" line="14" status="run" result="completed" time="0." timestamp="2026-10-30T20:23:27.806" classname="PairP" />
+  </testsuite>
+  <testsuite name="DynSuite" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="0." timestamp="2026-10-30T20:23:27.806">
+    <testcase name="Both" value_param="3.5" type_param="float" file="tests/gt2.cpp" line="31" status="run" result="completed" time="0." timestamp="2026-10-30T20:23:27.806" classname="DynSuite" />
+  </testsuite>
+</testsuites>

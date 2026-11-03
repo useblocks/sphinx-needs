@@ -43,7 +43,7 @@ class Needpie(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsPieType],
         ) -> None: ...
 
-        attributes: NeedsPieType
+        attributes: NeedsPieType  # ty: ignore[invalid-attribute-override]
 
 
 class NeedpieDirective(FilterBase):
@@ -134,7 +134,7 @@ class NeedpieDirective(FilterBase):
         pie_node = Needpie("", **attributes)
         self.set_source_info(pie_node)
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needpie")
 
         return [targetnode, pie_node]
 

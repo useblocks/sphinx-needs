@@ -13,6 +13,16 @@
       }
     },
     "tagged_scope": "key: value",
+    "scope": {
+      "kind": "block_mapping_pair",
+      "start": 2,
+      "end": 2,
+      "language": "yaml",
+      "entity_kind": "key",
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
     "need": {
       "title": "Yaml Title",
       "id": "IMPL_YAML",

@@ -11,7 +11,7 @@ from __future__ import annotations
 import ast
 import inspect
 import re
-from collections.abc import Callable, Container, Iterator, Mapping, Sequence
+from collections.abc import Callable, Container, Generator, Mapping, Sequence
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
 from dataclasses import field as dataclass_field
@@ -24,6 +24,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.util.logging import suppress_logging
 
 from sphinx_needs import _read_watch
+from sphinx_needs._source_facets import explained, unavailable
 from sphinx_needs._wording import joined
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
@@ -931,7 +932,7 @@ class _LateReads:
             )
 
         @contextmanager
-        def watched() -> Iterator[None]:
+        def watched() -> Generator[None]:
             try:
                 with _read_watch.watching(
                     on_read, filters_only=not own, names=computed, replayed=replayed
@@ -1044,7 +1045,7 @@ def _location(need: NeedItem) -> tuple[str, int | None] | None:
 @contextmanager
 def _reads_reported(
     what: str, option: str, need: NeedItem, reads_ctx: _ReadsContext
-) -> Iterator[UnresolvedReads]:
+) -> Generator[UnresolvedReads]:
     """Open the record of one call or ``<<…>>`` variant, and report its reads after it.
 
     They are reported whatever the outcome, so a call that fails because of a value it
@@ -1753,7 +1754,14 @@ def _get_variant(
             for name in _condition_names(expr):
                 if name not in not_fields:
                     reads.note_read(reader, name)
-        if bool(eval(expr, context.copy())):
+        try:
+            holds = bool(eval(expr, context.copy()))
+        except Exception as error:
+            # a condition has no check context: a facet read there says so
+            if not unavailable(error, expr):
+                raise
+            raise ValueError(explained(error, "a variant condition", expr)) from None
+        if holds:
             return value
     return variant.final_value
 

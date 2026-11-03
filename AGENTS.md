@@ -40,7 +40,7 @@ the shim.
 | the repository's own tooling | `tools/` — the workspace fences and the release plan |
 | the PlantUML renderer | `vendor/plantuml/` — `pin.toml` (version + sha256, the one place either is written), the committed `plantuml-<version>.jar` it names, and a `README.md`. `uv run poe verify-plantuml` fences the two against each other |
 | the useblocks look of the furo docs sites | `docs-theme/` — a local Sphinx extension, `ub_docs_theme.py`, with the `static/ub-furo.css` and `templates/side-github.html` it adds to a furo build; a directory, not a package, and its `README.md` says why. Each furo site's `docs/conf.py` loads it from the checkout when the directory is there (an sdist has none, and falls back to plain furo); a rule only one site needs stays in that site's own `_static/` |
-| CI | `.github/workflows/`, and `.github/scripts/` for the three checks that must run *inside* a CI environment |
+| CI | `.github/workflows/`, and `.github/scripts/` for the four scripts that must run *inside* a CI environment |
 | the docker image | `docker/` — a repository-level deliverable, like the workflows |
 | Read the Docs | sphinx-needs: `.readthedocs.yml`, and it stays at the root under that exact name — the configuration path applies to every version, so moving it makes older tags unbuildable. sphinx-mounts: `packages/sphinx-mounts/.readthedocs.yaml`, sphinx-codelinks: `packages/sphinx-codelinks/.readthedocs.yaml`, sphinx-test-reports: `packages/sphinx-test-reports/.readthedocs.yaml`, and sphinx-ub-directives: `packages/sphinx-ub-directives/.readthedocs.yaml`, each of which its own RTD project points at; every path inside those is relative to the REPOSITORY root, not to the file. ub-test-reports has no RTD project: it is documented on sphinx-test-reports' site, whose yaml installs it from the checkout first. ub-project has no docs site. sphinx-ai-index has no RTD project either: every `sphinx-*` site LOADS it, and each site's yaml pip-installs `packages/sphinx-ai-index` from the checkout before the package it documents, and lists it in its `post_checkout` skip filter. The runtime libraries are installed the same way: every yaml installs from the checkout, ahead of the package it documents, each workspace library that package (or sphinx-needs, where it is installed too) depends on at runtime -- `packages/ub-project`, and `packages/ub-needs-exchange` beside sphinx-needs -- and lists it in the same filter, since pip would otherwise take the release from PyPI and the build breaks the day the tree uses a name the release lacks. Every yaml whose site loads `docs-theme/` lists that directory in the same filter: RTD checks out the whole repository, so the `conf.py` finds it, but a pull request touching only it would otherwise skip the preview |
 
@@ -56,8 +56,9 @@ CI for the two CI runs that way — `check_workspace.py` and `release_plan.py` �
 mistake is named rather than reported as a failed sync; `propagate_floors.py` is the release
 engineer's, and CI never runs it). `.github/scripts/` keeps
 `check_sphinx_cell.py` (it imports the cell's own sphinx), `check_typing_floor.py` (it runs
-inside `.venvs/typing`) and `extract_benchmark_data.py` (it runs inside the benchmark job) —
-none of which could move without dragging a member into every matrix cell. `scripts/smoke_needs.py`
+inside `.venvs/typing`), and `extract_benchmark_data.py` and `check_benchmark_regression.py`
+(they run inside the benchmark job, and the CPU model the first records and the second
+matches durations on is that runner's) — none of which could move without dragging a member into every matrix cell. `scripts/smoke_needs.py`
 stays too: its whole point is to run outside every project environment.
 
 The member is `[tool.uv] package = false`. That makes it **invisible to uv's workspace
@@ -262,10 +263,9 @@ wheels, the second resolves them from the index) · `test-needs-js` 3 s once the
 installed (9 s cold) · `docs-needs` under 2 min · `test-needs` 7–8 min serial ·
 `test-mounts` 1–3 min · `docs-mounts` seconds · `benchmark-needs` 4 min.
 `docs-needs` runs with `--keep-going`, so it prints every warning
-and then exits 1 — do not read a full log as success. `benchmark-needs` is currently red
-(12 failures in `tests/benchmarks/test_querying.py`: the test mocks `NeedsSphinxConfig`
-with a spec, which lacks the dynamically assigned `variant_data_proxy` — #1840, unrelated
-to the layout); CI runs only its `_time` and `_memory` subsets, which pass.
+and then exits 1 — do not read a full log as success. CI runs only `benchmark-needs`'
+`_time` and `_memory` subsets, so a benchmark that stops working elsewhere in the
+directory goes unseen until the task is run locally (#1840 was red for months that way).
 
 **Naming rule:** a task that acts on the whole repository is bare (`lint`); a task that
 acts on one package ends in that package's short name — the distribution name minus its

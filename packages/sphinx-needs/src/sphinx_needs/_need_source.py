@@ -1,0 +1,1286 @@
+"""Where a need's text came from: its source, as a list of hops.
+
+**Provisional.** :class:`~sphinx_needs.need_item.NeedItemSource` carries ``hops``,
+innermost first: ``hops[0]`` is the innermost place this build knows the need
+came through -- the file a directive is written in, the needs.json an imported need was
+read from, the service that made a need, an external need's page -- and the last hop
+with a ``document`` is the page the need is placed on (its *placement*, a role rather
+than a hop kind; an external need has none). The legacy location keys of a need -- ``docname``, ``lineno``,
+``lineno_content``, ``is_import``, ``is_external``, ``external_url`` -- are computed from
+the hops plus a few stored legacy facts, and are unchanged. The hop types are
+re-exported from :mod:`sphinx_needs.api`; their shape may change in a minor release
+until it reaches ``needs.json``.
+
+This module holds the hop types and what the source class and the producers share:
+the placement lookup, the builders of a directive's hops, the doctree walk that finds the
+placement's semantic location, the projection of that location onto the legacy
+``sections`` and ``signature``, and the need node enclosing a need's, its legacy
+``parent_needs``. It never imports :mod:`sphinx_needs.need_item`, which
+imports it.
+
+A hop's ``start_line`` / ``end_line`` is recorded only where it is a true 1-based line of
+that hop's file, the end inclusive; everywhere else it is ``None``. Every path is POSIX
+and relative to its hop's root: the Sphinx source directory (``"srcdir"``), with ``..``
+for a file outside it, or, where ``root`` is ``None``, the producer's own root, which this
+build does not know (a test report's test file is relative to the test run's root), the
+path as the producer gives it.
+"""
+
+from __future__ import annotations
+
+import ast
+import bisect
+import dataclasses
+import functools
+import itertools
+import os
+import re
+import sys
+import warnings
+from collections.abc import Callable, Iterable, Iterator, Sequence
+from dataclasses import dataclass
+from pathlib import PurePath
+from typing import TYPE_CHECKING, Final
+
+import docutils
+from docutils import nodes
+from docutils.parsers.rst.states import RSTState
+from docutils.statemachine import StringList, string2lines
+from sphinx import addnodes
+from sphinx.errors import PycodeError
+from sphinx.pycode import ModuleAnalyzer
+
+from sphinx_needs.nodes import Need
+
+if TYPE_CHECKING:
+    from docutils.parsers.rst import Directive
+    from sphinx.environment import BuildEnvironment
+
+SRCDIR_ROOT: Final = "srcdir"
+"""The key of the one root slice 1 has: the Sphinx source directory."""
+
+NON_BREAKING_SPACE: Final = re.compile("\xa0+")
+"""What auto-numbered section titles carry, replaced by one space in a section's name."""
+
+_DOCSTRING_OF: Final = "docstring of "
+"""What autodoc puts in the source of a docstring: ``<file>:docstring of <object>``."""
+
+
+@dataclass(slots=True, frozen=True, kw_only=True)
+class NeedSourcePhysical:
+    """Where a hop's text physically is: a file under a named root, or a URL.
+
+    **Provisional**: it may change without a deprecation until it reaches
+    ``needs.json``.
+    """
+
+    root: str | None = None
+    """The key of the root ``path`` is relative to: ``"srcdir"``, the Sphinx source
+    directory; ``None``, the producer's own root, which this build does not know (the
+    test run's, for a test report's test file)."""
+    path: str | None = None
+    """POSIX, relative to ``root``, with ``..`` for a file outside it; under a ``None``
+    root, relative to the producer's own root, as the producer gives it (still POSIX)."""
+    url: str | None = None
+    """For a file that is not on this machine: a downloaded ``needs.json``, the page of
+    an external need."""
+    start_line: int | None = None
+    """1-based; recorded only where it is a true line of the file."""
+    end_line: int | None = None
+    """1-based and inclusive; recorded only where it is a true line of the file."""
+
+
+@dataclass(slots=True, frozen=True, kw_only=True)
+class NeedSourceSemantic:
+    """One entry of a hop's semantic location: a section, a domain object, a service.
+
+    **Provisional**: it may change without a deprecation until it reaches
+    ``needs.json``.
+    """
+
+    kind: str
+    """What the entry is, in the vocabulary of its hop's kind and producer. A ``page``
+    hop's entries use the document's: ``"section"``, ``"<domain>:<objtype>"``
+    (``"py:method"``). An ``external`` hop's are the ``"section"`` entries of the
+    need's page on the other site, as its record gives them. A ``generated`` hop's
+    name its generator (``"service"``). A
+    ``code`` hop's use its producer's entity kinds, read together with the hop's
+    ``language``: sphinx-codelinks' bare ones (``"function"``, ``"method"``,
+    ``"class"``, ``"impl"``, ...). Autodoc's docstring hop uses the same Python kinds
+    as sphinx-codelinks, read from the file's syntax, and ``"attribute"`` for an
+    attribute (sphinx-codelinks attaches a ``#:`` comment to the enclosing class or
+    file instead). The kind describes the entry, the name identifies it; but in a ``code``
+    hop the kinds may carry identity the names alone do not (Python's ``<locals>``
+    boundary is implied by a function or method followed by another entry), so code
+    hops compare by their producer's identity rule, not by each entry's
+    ``(name, extras)``."""
+    name: str
+    extras: tuple[tuple[str, str], ...] = ()
+    """Identity-bearing extras, e.g. ``("id", <the first signature id>)``, with one
+    exception. The innermost entry of a ``code`` hop, the entity itself, carries its
+    qualified name in its file as its producer renders it, ``("qualified_name", ...)``:
+    sphinx-codelinks' analysis (``ns::Widget::draw``, ``<Widget as Shape>::area``,
+    ``Shape.area.<locals>.inner``), and for autodoc's docstring hop the same rendering
+    of a Python entity (``make.<locals>.Made.go``; ``Shape.sides`` for an attribute; a
+    name CPython NFKC-normalises reads normalised there, as written in
+    sphinx-codelinks'). It renders the entries' names, so it adds no identity, and
+    identity comparisons leave it out (sphinx-codelinks' ``name_chain`` does). The
+    entity's own line range is not an extra: it is not identity."""
+
+
+@dataclass(slots=True, frozen=True, kw_only=True)
+class NeedSourceHop:
+    """One place a need's text passed through.
+
+    Text in an included file has a ``file`` hop of that file, then one per file it was
+    included through, innermost first, each with no line, read from docutils'
+    ``document.include_log``, then the page. Two known gaps: myst-parser's
+    ``{include}`` is never logged, so a chain through MyST includes records its
+    reStructuredText links alone (an include in a MyST page's ``eval-rst`` block is
+    one); and under docutils 0.22 and later a file included with ``:parser:`` is not
+    logged (it is parsed as a document of its own), so it is no link of a chain
+    through it, and a need written in that file itself records no chain at all
+    (docutils 0.21 logs it).
+
+    **Provisional**: it may change without a deprecation until it reaches
+    ``needs.json``.
+    """
+
+    kind: str
+    """``"page"``, ``"file"``, ``"code"``, ``"external"``, ``"generated"`` (the
+    vocabulary is open)."""
+    origin: str | None = None
+    """A key into a registry of origins (a repository, a test run); ``None`` for now."""
+    physical: NeedSourcePhysical | None = None
+    semantic: tuple[NeedSourceSemantic, ...] | None = None
+    """Outermost to innermost; ``None`` where it is not determined (the placement's,
+    until the doctree has been read; an external need's whose record gives no
+    sections), or where nothing finer than the file is known (a ``file`` hop, a whole
+    report)."""
+    document: str | None = None
+    """The docname, on the hop of a page the need is placed on."""
+    language: str | None = None
+    """What the hop's text is written in, by the kind of hop: for a ``page`` hop, the
+    page's suffix its parser keys on (``".rst"``, ``".md"``); for a ``file`` hop, the
+    file's own suffix (``".rst"``, ``".json"``; an included ``inc.rst.txt`` records
+    ``".txt"``, whichever parser reads it); for a ``code`` hop, the language's name
+    (``"python"``, ``"cpp"``, ...), as sphinx-codelinks records it, as the ``code`` hop
+    of a docstring autodoc reads records it (``"python"``), and as sphinx-test-reports
+    names a test case's file by its suffix (``None`` for a suffix it does not know)."""
+
+    def _without_lines(self) -> NeedSourceHop:
+        """This hop with its file's start and end line left out: what a need that only
+        moved keeps (an incremental build's comparison key). Every other field is kept,
+        a field added later too (``dataclasses.replace``), so it fails safe."""
+        if self.physical is None:
+            return self
+        return dataclasses.replace(
+            self,
+            physical=dataclasses.replace(self.physical, start_line=None, end_line=None),
+        )
+
+
+def placement_index(hops: tuple[NeedSourceHop, ...]) -> int | None:
+    """The index of the placement: the last hop with a ``document``."""
+    for index in range(len(hops) - 1, -1, -1):
+        if hops[index].document is not None:
+            return index
+    return None
+
+
+def placement_of(hops: tuple[NeedSourceHop, ...]) -> NeedSourceHop | None:
+    """The placement hop, or ``None`` if no hop has a ``document``."""
+    index = placement_index(hops)
+    return None if index is None else hops[index]
+
+
+def first_line(hops: tuple[NeedSourceHop, ...]) -> int | None:
+    """The start line of ``hops[0]``, where it has one."""
+    if hops and (physical := hops[0].physical) is not None:
+        return physical.start_line
+    return None
+
+
+def checked_hops(hops: Iterable[NeedSourceHop]) -> tuple[NeedSourceHop, ...]:
+    """``hops`` as a tuple, each one a :class:`NeedSourceHop`.
+
+    :raises TypeError: if one is not.
+    """
+    result = tuple(hops)
+    for hop in result:
+        if not isinstance(hop, NeedSourceHop):
+            raise TypeError(f"a hop must be a NeedSourceHop, not {hop!r}")
+    return result
+
+
+def physical_for(
+    srcdir: str | os.PathLike[str],
+    path: str | os.PathLike[str],
+    start_line: int | None = None,
+    end_line: int | None = None,
+) -> NeedSourcePhysical | None:
+    """A file's physical location under the ``"srcdir"`` root.
+
+    The path is POSIX and relative to ``srcdir``, with ``..`` for a file outside it;
+    ``None`` where no relative path exists (another drive, on Windows).
+    """
+    try:
+        relative = os.path.relpath(os.path.abspath(path), os.path.abspath(srcdir))
+    except ValueError:
+        return None
+    return NeedSourcePhysical(
+        root=SRCDIR_ROOT,
+        path=PurePath(relative).as_posix(),
+        start_line=start_line,
+        end_line=end_line,
+    )
+
+
+def _suffix(path: str | os.PathLike[str]) -> str | None:
+    return os.path.splitext(path)[1] or None
+
+
+def with_page_paths(
+    hops: tuple[NeedSourceHop, ...],
+    srcdir: str | os.PathLike[str],
+    doc2path: Callable[[str], str | os.PathLike[str]],
+) -> tuple[NeedSourceHop, ...]:
+    """``hops``, each ``page`` hop that has a ``document`` and no physical location given
+    its page's file (:func:`physical_for` of ``doc2path(document)``), with no line, and,
+    where it has none, the page's suffix as its ``language``.
+
+    No line: the line a caller gives such a need (``NeedItemSource.on_page``) is a line
+    as the caller counts it, a parser line most often, never one checked in the file. A
+    hop whose document has no file is left as it is, and ``hops`` itself is returned
+    where no hop changes.
+    """
+    completed = list(hops)
+    for index, hop in enumerate(hops):
+        if hop.kind == "page" and hop.document is not None and hop.physical is None:
+            path = doc2path(hop.document)
+            if os.path.isfile(path):
+                completed[index] = dataclasses.replace(
+                    hop,
+                    physical=physical_for(srcdir, path),
+                    language=hop.language or _suffix(path),
+                )
+    if all(new is old for new, old in zip(completed, hops, strict=True)):
+        return hops
+    return tuple(completed)
+
+
+def with_external_sections(
+    hops: tuple[NeedSourceHop, ...], sections: object
+) -> tuple[NeedSourceHop, ...]:
+    """``hops``, an external need's ``external`` hop given its section chain on the other
+    site as its semantic location: one ``section`` entry per name of ``sections``,
+    outermost first, where ``sections`` (the legacy field's value, innermost first) is
+    a list of strings. Otherwise, and where the hop's semantic location is already set,
+    ``hops`` as they are.
+    """
+    if not (hops and hops[0].kind == "external" and hops[0].semantic is None):
+        return hops
+    if not (
+        isinstance(sections, list | tuple)
+        and all(isinstance(name, str) for name in sections)
+    ):
+        return hops
+    semantic = tuple(
+        NeedSourceSemantic(kind="section", name=name) for name in reversed(sections)
+    )
+    return (dataclasses.replace(hops[0], semantic=semantic), *hops[1:])
+
+
+LineCheck = Callable[[Sequence[str], int, int | None], bool]
+"""Whether a file's lines (``lines[0]`` is line 1) hold the text at ``start..end``."""
+
+_LINES_KEY: Final = "sphinx_needs_source_hop_lines"
+"""The key of the file lines read for the document being read, in ``env.temp_data``
+(which Sphinx clears after each document, so nothing outlives the read)."""
+
+
+_TEXT_KEY: Final = "sphinx_needs_source_hop_texts"
+"""The key of the file texts read for the document being read, in ``env.temp_data``."""
+
+
+def _file_text(env: BuildEnvironment, path: str) -> str | None:
+    """The text of a file, read once per document with the project's
+    ``source_encoding``; ``None`` if the file cannot be read."""
+    cache: dict[str, str | None] = env.temp_data.setdefault(_TEXT_KEY, {})
+    key = os.path.abspath(path)
+    if key not in cache:
+        try:
+            with open(key, encoding=env.config.source_encoding) as stream:
+                cache[key] = stream.read()
+        except (OSError, UnicodeDecodeError, LookupError):
+            cache[key] = None
+    return cache[key]
+
+
+def _file_lines(env: BuildEnvironment, path: str, tab_width: int) -> list[str] | None:
+    """The lines of a file as docutils numbers them, read once per document.
+
+    Read with the project's ``source_encoding`` and split by docutils' own
+    ``string2lines`` (form feeds and vertical tabs become spaces, tabs are expanded
+    at the document's ``tab_width``), so that line *n* here is the line *n* the parser
+    numbers. ``None`` if the file cannot be read.
+    """
+    cache: dict[tuple[str, int], list[str] | None] = env.temp_data.setdefault(
+        _LINES_KEY, {}
+    )
+    key = (os.path.abspath(path), tab_width)
+    if key not in cache:
+        text = _file_text(env, path)
+        cache[key] = (
+            None
+            if text is None
+            else string2lines(text, tab_width=tab_width, convert_whitespace=True)
+        )
+    return cache[key]
+
+
+# -- the file line of a line of an included slice (#2428) ----------------------------
+#
+# docutils hands the parser an include's slice (``:start-line:``, ``:start-after:``) as
+# input of its own: ``Include.insert_into_input_lines`` passes the clipped lines to
+# ``StateMachine.insert_input``, which numbers them from the slice's first line, so the
+# state machine reports a line of the slice (docutils knows: "TODO: if startline != 0,
+# line numbers are wrong", under that call in ``insert_into_input_lines``,
+# ``docutils/parsers/rst/directives/misc.py``; reported upstream). The include's options
+# are still on ``document.include_log`` while the slice is parsed (the ``.. end of
+# inclusion`` comment pops them), so the slice's start in the file is recovered from
+# there, and a need records the line it is written on in the file. docutils' own
+# messages keep the slice's line.
+
+_DOCUTILS_022: Final = docutils.__version_info__[:2] >= (0, 22)
+"""How ``document.include_log`` orders an include's options, and how ``:start-line:``
+joins the lines it keeps. docutils 0.22 logs ``(start-line, end-line, start-after,
+end-before)`` and joins the kept lines with ``\\n``; 0.21 logs ``(startline, endline,
+before_text, after_text)`` -- ``before_text`` is the ``:end-before:`` text,
+``after_text`` the ``:start-after:`` one -- and joins them as they were, line ends kept.
+Both keep lines by ``str.splitlines``."""
+
+_DOCUTILS_023: Final = docutils.__version_info__[:2] >= (0, 23)
+"""Whether an empty ``:start-after:`` means "after the first empty line": docutils 0.23
+logs an absent option as ``None`` and searches an empty one as ``\\n\\n``; before it,
+an absent option is logged as ``''`` (0.22) or ``None`` (0.21), and an empty one is
+refused."""
+
+_LINE_BREAK: Final = re.compile("\r\n|[\n\r\x1c\x1d\x1e\x85\u2028\u2029]")
+"""Where docutils' ``string2lines`` breaks a file's lines: ``str.splitlines``' breaks,
+less the vertical tab and the form feed, which it makes spaces first (as
+:func:`_file_lines` numbers the lines)."""
+
+_SLICES_KEY: Final = "sphinx_needs_source_hop_slices"
+"""The key of the slices' line maps, per file and options, in ``env.temp_data``."""
+
+_SliceLines = Callable[[int], int | None]
+"""The file line of a line of a slice, ``None`` where the slice has no such line."""
+
+
+def _include_entry(
+    document: nodes.document, source: str
+) -> tuple[int | None, int | None, str] | None:
+    """``(start-line, end-line, start-after)`` of the innermost active include of
+    ``source``, or ``None`` if there is none or its entry is not as expected."""
+    log = getattr(document, "include_log", None)
+    if not isinstance(log, list):
+        return None
+    for entry in reversed(log):
+        if not (isinstance(entry, tuple) and len(entry) == 2 and entry[0] == source):
+            continue
+        options = entry[1]
+        if not (isinstance(options, tuple) and len(options) == 4):
+            return None
+        if _DOCUTILS_022:
+            start_line, end_line, start_after, _ = options
+        else:
+            start_line, end_line, _, start_after = options
+        if not (
+            isinstance(start_line, int | None)
+            and isinstance(end_line, int | None)
+            and isinstance(start_after, str | None)
+        ):
+            return None
+        if start_after == "" and _DOCUTILS_023:
+            start_after = "\n\n"
+        return start_line, end_line, start_after or ""
+    return None
+
+
+def _include_chain(document: object, source: str) -> tuple[str, ...]:
+    """The files the innermost active include of ``source`` was included through,
+    innermost first, as ``document.include_log`` names them; ``()`` where there are none,
+    and where an entry of the log is not as expected or names no file.
+
+    The log is a stack: an include pushes ``(path, options)`` (the options in the orders
+    :func:`_include_entry` reads), and the ``.. end of inclusion`` comment after its text
+    pops it. Its first entry is the source the document was being read from at its
+    first include (the page, or ``rst_prolog``), never an include, so the includes
+    between it and the innermost entry of ``source`` are the chain. reStructuredText
+    only: myst-parser's ``{include}`` logs nothing (myst-parser 4 and 5), so a MyST
+    include is never a link, and a chain through one has its reStructuredText links
+    alone (an include in a MyST page's ``eval-rst`` block is logged). A ``:parser:``
+    include is logged by docutils 0.21 and not by 0.22 and later, whose
+    ``custom_parse`` never pushes it: there it is no link of a chain through it, and
+    a need written in the ``:parser:`` file itself, whose source is not in the log,
+    gets no chain at all.
+    """
+    log = getattr(document, "include_log", None)
+    if not isinstance(log, list):
+        return ()
+    paths: list[str] = []
+    for entry in log[1:]:
+        if not (
+            isinstance(entry, tuple)
+            and len(entry) == 2
+            and isinstance(entry[0], str | os.PathLike)
+            and isinstance(entry[1], tuple)
+            and len(entry[1]) == 4
+            and isinstance(path := os.fspath(entry[0]), str)
+        ):
+            return ()
+        paths.append(path)
+    for index in range(len(paths) - 1, -1, -1):
+        if paths[index] == source:
+            chain = tuple(reversed(paths[:index]))
+            return chain if all(map(os.path.isfile, chain)) else ()
+    return ()
+
+
+def _numbered_from_the_slice(lines: StringList, index: int, source: str) -> bool:
+    """Whether the slice of ``source`` that line ``index`` of ``lines`` is in was
+    numbered from its own first line, as ``StateMachine.insert_input`` numbers it.
+
+    ``lines`` is followed up to the parser's whole input, where ``insert_input`` put
+    the slice after an ``internal padding before <source>`` line. ``False`` where that
+    line is not there (a list built for a nested parse, a ``:parser:`` include's own
+    document), or where the slice's first line already carries a line of the file: a
+    docutils that numbered the slice from the file would otherwise have it counted
+    twice.
+    """
+    while (parent := lines.parent) is not None:
+        index += lines.parent_offset
+        lines = parent
+    items = lines.items
+    if not 0 <= index < len(items):
+        return False
+    marker = "internal padding before " + source
+    for position in range(index, -1, -1):
+        if items[position][0] == marker:
+            if position + 1 >= len(items):
+                return False
+            first_source, first_offset = items[position + 1]
+            return first_source == source and first_offset == 0
+    return False
+
+
+def _slice_lines(
+    env: BuildEnvironment,
+    source: str,
+    start_line: int | None,
+    end_line: int | None,
+    start_after: str,
+) -> _SliceLines | None:
+    """The file lines of the slice of ``source`` an include keeps, by the slice's
+    lines; ``None`` if the file cannot be read or the ``:start-after:`` text is not in
+    it.
+
+    The include's clip is repeated on the file's text, to find where in the text the
+    slice starts, and that position is counted in the file's lines as
+    :func:`_file_lines` numbers them: ``:start-line:`` keeps lines by
+    ``str.splitlines``, which breaks a line at a form feed where the file's numbering
+    does not.
+    """
+    cache: dict[tuple[object, ...], _SliceLines | None] = env.temp_data.setdefault(
+        _SLICES_KEY, {}
+    )
+    key = (os.path.abspath(source), start_line, end_line, start_after)
+    if key not in cache:
+        text = _file_text(env, source)
+        cache[key] = (
+            None
+            if text is None
+            else _clip_lines(text, start_line, end_line, start_after)
+        )
+    return cache[key]
+
+
+def _clip_lines(
+    text: str, start_line: int | None, end_line: int | None, start_after: str
+) -> _SliceLines | None:
+    """:func:`_slice_lines` of a file's ``text``."""
+    breaks = [match.end() for match in _LINE_BREAK.finditer(text)]
+
+    def line_at(position: int) -> int:
+        return bisect.bisect_right(breaks, position) + 1
+
+    units = text.splitlines(keepends=True)
+    starts = list(itertools.accumulate(map(len, units), initial=0))
+    position, stop, first_unit = 0, len(text), 0
+    line_clip = bool(start_line) or end_line is not None
+    if line_clip:
+        first_unit, last_unit, _ = slice(start_line, end_line).indices(len(units))
+        position, stop = starts[first_unit], starts[max(first_unit, last_unit)]
+    if start_after and line_clip and _DOCUTILS_022:
+        # the kept lines joined with ``\n``: find the text there, and where its end is
+        # in the file's text
+        kept = text.splitlines()[start_line:end_line]
+        found = "\n".join(kept).find(start_after)
+        if found < 0:
+            return None
+        rest = found + len(start_after)
+        for kept_line in kept:
+            if rest <= len(kept_line):
+                break
+            rest -= len(kept_line) + 1
+            first_unit += 1
+        position = starts[first_unit] + rest
+    elif start_after:
+        # the kept text is the file's own
+        found = text.find(start_after, position, stop)
+        if found < 0:
+            return None
+        position = found + len(start_after)
+    first = line_at(position)
+    if line_clip and _DOCUTILS_022:
+        # each line of the slice is a ``str.splitlines`` line of the file, so a form
+        # feed inside the slice starts a line the file's numbering does not have
+        def joined(line: int) -> int | None:
+            unit = first_unit + line - 1
+            if line < 1 or unit >= len(units):
+                return None
+            return first if line == 1 else line_at(starts[unit])
+
+        return joined
+
+    # the slice is the file's text from ``position`` on: its lines are the file's
+    def kept_as_written(line: int) -> int | None:
+        return first + line - 1 if line >= 1 else None
+
+    return kept_as_written
+
+
+def file_line(
+    state: object,
+    lines: StringList | None,
+    index: int,
+    source: str | None,
+    line: int | None,
+    *,
+    check: LineCheck | None = None,
+) -> int | None:
+    """The line of its file that a line the parser read is written on.
+
+    The state machine gives ``(source, line)`` for line ``index`` of ``lines``; inside
+    an include's slice that ``line`` counts from the slice's first line, and the file
+    line is recovered from the include's options in ``document.include_log``
+    (reStructuredText only: myst-parser offsets its own include's lines). ``line`` is
+    returned unchanged wherever that cannot be done: no active include of ``source``
+    that clips it, a slice not numbered from its own start
+    (:func:`_numbered_from_the_slice`), a file the project's ``source_encoding`` cannot
+    read, a ``:start-after:`` text not found in it; and wherever the file does not hold
+    the text there (``check``): an ``include-read`` handler that rewrote the slice, a
+    file the include decoded otherwise than the project's ``source_encoding`` does. A
+    wrong line passes only where the file holds an identical copy of the whole text at
+    the line a rewritten or misdecoded slice gives, the twin the hops already document.
+
+    :param state: The parser state reading the line.
+    :param lines: The input the line is in, as the state machine holds it.
+    :param index: The line's index in ``lines``.
+    :param source: The file the state machine gives for the line.
+    :param line: The 1-based line the state machine gives for it.
+    :param check: Whether the file holds the text at a line: a directive's whole
+        block (:func:`block_check` of its ``block_text``); by default, the line the
+        parser read, ``lines[index]``, compared as :func:`block_check` compares a line.
+    """
+    if not (source and line and lines is not None and isinstance(state, RSTState)):
+        return line
+    document = state.document
+    entry = _include_entry(document, source)
+    if entry is None:
+        return line
+    start_line, end_line, start_after = entry
+    if not (start_line or end_line is not None or start_after):
+        return line
+    if not _numbered_from_the_slice(lines, index, source):
+        return line
+    slice_lines = _slice_lines(
+        document.settings.env, source, start_line, end_line, start_after
+    )
+    if slice_lines is None or (recovered := slice_lines(line)) is None:
+        return line
+    if check is None:
+        if not 0 <= index < len(lines):
+            return line
+        check = block_check(lines[index])
+    file_lines = _file_lines(document.settings.env, source, document_tab_width(state))
+    if file_lines is None or not check(file_lines, recovered, None):
+        return line
+    return recovered
+
+
+def directive_line(directive: Directive) -> tuple[str | None, int | None]:
+    """The file and the line ``directive`` is written on: the state machine's, with
+    the line of an included slice in its file (:func:`file_line`), where the file
+    holds the directive's whole block there."""
+    machine = directive.state_machine
+    source, line = machine.get_source_and_line(directive.lineno)
+    if not isinstance(directive.state, RSTState):
+        # myst-parser's mock state machine has no input lines (and needs none)
+        return source, line
+    return source, file_line(
+        directive.state,
+        machine.input_lines,
+        directive.lineno - machine.input_offset - 1,
+        source,
+        line,
+        check=block_check(directive.block_text),
+    )
+
+
+def _checked_lines(
+    env: BuildEnvironment,
+    path: str,
+    start_line: int | None,
+    end_line: int | None,
+    check: LineCheck,
+    tab_width: int,
+) -> tuple[int | None, int | None]:
+    """``(start_line, end_line)`` if the file holds the text there, else ``(None, None)``.
+
+    The line a parser reports is the line of what it was handed, which is not the
+    file's wherever the text was changed on the way: a ``source-read`` or
+    ``include-read`` handler, myst-parser's nested colon fences, an include's slice
+    whose start in the file could not be recovered (:func:`file_line`). So a line is
+    recorded only where the file, read from disk, holds the text there, by the
+    producer's ``check``.
+    """
+    if not start_line:
+        return None, None
+    lines = _file_lines(env, path, tab_width)
+    if lines is None or not check(lines, start_line, end_line):
+        return None, None
+    return start_line, end_line
+
+
+_LIST_MARKERS: Final = re.compile(r"((?:[-*+]|#\.|\d+[.)]|\(\d+\))\s+)+")
+"""Bullets and enumerators before a directive that opens a list item (``- .. req::``,
+a list table's ``* - .. req::``)."""
+
+
+def _normalised(line: str) -> set[str]:
+    """A file line as the parser may hand its text on, each a whole line: stripped; then
+    without a MyST block quote's leading ``>``; then without a grid-table cell's ``|``
+    borders, where the line has them (a line block's own ``|`` is text, so the line
+    without the stripping is kept too)."""
+    text = line.strip()
+    forms = {text}
+    while text.startswith(">"):
+        text = text[1:].strip()
+    forms.add(text)
+    if text.startswith("|"):
+        text = text[1:].strip()
+        if text.endswith("|"):
+            text = text[:-1].strip()
+        forms.add(text)
+    return forms
+
+
+def block_check(block_text: str) -> LineCheck:
+    """The check of a docutils directive: each non-blank line of its block, stripped,
+    EQUALS the file's line it is numbered at in one of its normalised forms
+    (:func:`_normalised`); its first line may also follow the bullets or enumerators of
+    the list item it opens.
+
+    Whole lines, never a part of one: a line that only contains the text (``:id: A``
+    in ``:id: AB``) does not hold it.
+    """
+    block = [line.strip() for line in block_text.rstrip().splitlines()]
+
+    def check(lines: Sequence[str], start: int, end: int | None) -> bool:
+        if start + len(block) - 1 > len(lines):
+            return False
+        for index, text in enumerate(block):
+            if not text:
+                continue
+            forms = _normalised(lines[start - 1 + index])
+            if index == 0:
+                forms |= {
+                    _LIST_MARKERS.sub("", form, count=1)
+                    for form in forms
+                    if _LIST_MARKERS.match(form)
+                }
+            if text not in forms:
+                return False
+        return True
+
+    return check
+
+
+def fence_check(name: str, argument: str) -> LineCheck:
+    """The check of a myst-parser directive (myst-parser hands a directive its content
+    only, not its fence): the start line, in one of its normalised forms
+    (:func:`_normalised`), opens a
+    fence of the directive -- backticks, tildes or colons, then ``{name}`` -- followed
+    by exactly its argument (the title, as the directive received it), whitespace
+    collapsed.
+
+    A need nested at once inside a need of the same name and the same title cannot be
+    told from it: that is a known gap.
+    """
+    pattern = re.compile(rf"(`{{3,}}|~{{3,}}|:{{3,}})\s*\{{{re.escape(name)}\}}(.*)")
+    expected = " ".join(argument.split())
+
+    def check(lines: Sequence[str], start: int, end: int | None) -> bool:
+        if start > len(lines):
+            return False
+        return any(
+            (match := pattern.fullmatch(form)) is not None
+            and " ".join(match.group(2).split()) == expected
+            for form in _normalised(lines[start - 1])
+        )
+
+    return check
+
+
+def item_check(first: str, last: str) -> LineCheck:
+    """The check of a ``list2need`` item: its first and its last line, stripped, EQUAL
+    the file's lines they are numbered at in one of their normalised forms
+    (:func:`_normalised`)."""
+    first, last = first.strip(), last.strip()
+
+    def check(lines: Sequence[str], start: int, end: int | None) -> bool:
+        if start > len(lines) or first not in _normalised(lines[start - 1]):
+            return False
+        return end is None or (
+            end <= len(lines) and last in _normalised(lines[end - 1])
+        )
+
+    return check
+
+
+def _docstring_hop(
+    srcdir: str | os.PathLike[str], source: str, text: str | None
+) -> NeedSourceHop:
+    """The ``code`` hop of text in a docstring autodoc reads.
+
+    Autodoc's source is ``<file>:docstring of <name>`` (no ``<file>:`` where it has no
+    analyser of the module), ``<name>`` the object's ``__module__`` and
+    ``__qualname__`` where it has both: its definition, not the path it is documented
+    under. The name is split at each prefix that is an imported module, longest first
+    (:func:`_module_splits`); that module's source is read as Python reads it, through
+    Sphinx's cached :class:`~sphinx.pycode.ModuleAnalyzer`, and the rest of the name is
+    looked up in its syntax (:func:`_python_definitions`). The first definition found
+    whose docstring -- an attribute's ``#:`` comment or docstring, a module's docstring
+    -- holds every line of ``text`` is the one: the name says which object the
+    docstring belongs to, not where the text is, and a module and a class can share a
+    name (``pkg.main`` the submodule, and the function ``pkg/__init__.py`` imports from
+    it; a class ``Shape`` defined over the submodule ``pkg.Shape``).
+
+    - ``physical``: the file of the definition that holds the text, which is not the one
+      ``<file>`` names for a member inherited from another module; otherwise
+      ``<file>``, as autodoc gives it.
+    - ``semantic``: that definition's parts, by sphinx-codelinks' Python rule
+      (:func:`_python_semantic`), the last carrying the in-file qualified name as
+      sphinx-codelinks renders it (:func:`_python_qualified_name`); ``None`` for a
+      module docstring, and wherever no
+      definition holding the text is found: an alias (autodoc names its docstring by
+      the object it aliases), an override that inherits its docstring, an object made
+      at run time, a function with no Python source, a ``__module__`` rewritten to
+      another module. In the last, ``<file>`` is the rewritten module's, which does not
+      hold the text either: a KNOWN GAP, as it was.
+    - ``language``: ``"python"``, whatever the file.
+    - no line: the one autodoc gives counts from the docstring, not the file.
+
+    :param text: The need's text as written, its directive's block: each of its
+        non-blank lines, stripped, must be a line of the docstring, so that a need
+        sharing a line with another (a title, an untitled need's directive line) is not
+        taken for it. ``None`` where the producer gives none, and then no definition is
+        trusted.
+    """
+    file, _, name = source.partition(_DOCSTRING_OF)
+    file = file.removesuffix(":")
+    semantic: tuple[NeedSourceSemantic, ...] | None = None
+    block = {line.strip() for line in (text or "").splitlines()} - {""}
+    for module, qualname in _module_splits(name) if block else ():
+        try:
+            analyzer = ModuleAnalyzer.for_module(module)
+        except PycodeError:
+            continue
+        if not os.path.isfile(analyzer.srcname):
+            continue
+        definition = _python_definitions(analyzer.code).get(qualname)
+        if definition is not None and block <= _docstring_lines(
+            analyzer, qualname, definition
+        ):
+            file = analyzer.srcname
+            semantic = _semantic(definition.parts)
+            break
+    return NeedSourceHop(
+        kind="code",
+        physical=physical_for(srcdir, file) if file else None,
+        semantic=semantic,
+        language="python",
+    )
+
+
+def _module_splits(name: str) -> Iterator[tuple[str, str]]:
+    """``name`` split at each prefix that is a module in ``sys.modules``, longest
+    first: the module and the rest (``""`` for the module itself)."""
+    parts = name.split(".")
+    for index in range(len(parts), 0, -1):
+        module = ".".join(parts[:index])
+        if module in sys.modules:
+            yield module, ".".join(parts[index:])
+
+
+_PythonParts = tuple[tuple[str, str], ...]
+"""A qualified name's parts, outermost first, each ``(kind, name)``."""
+
+
+@dataclass(slots=True, frozen=True)
+class _PythonDefinition:
+    """What the syntax of a module says about one qualified name."""
+
+    parts: _PythonParts | None
+    """Its parts; ``None`` for the module itself, and where its definitions disagree."""
+    docstring: frozenset[str] | None
+    """The lines of its docstrings (of each of its definitions), stripped; ``None`` for
+    an attribute, whose ``#:`` comment the syntax tree does not keep
+    (:func:`_docstring_lines` reads it)."""
+
+
+def _semantic(parts: _PythonParts | None) -> tuple[NeedSourceSemantic, ...] | None:
+    """The entries of ``parts``, the last, the entity, with its qualified name as a
+    ``("qualified_name", ...)`` extra (:func:`_python_qualified_name`)."""
+    if parts is None:
+        return None
+    last = len(parts) - 1
+    return tuple(
+        NeedSourceSemantic(
+            kind=kind,
+            name=name,
+            extras=(("qualified_name", _python_qualified_name(parts)),)
+            if index == last
+            else (),
+        )
+        for index, (kind, name) in enumerate(parts)
+    )
+
+
+def _python_qualified_name(parts: _PythonParts) -> str:
+    """The qualified name of ``parts`` in its file, rendered exactly as sphinx-codelinks
+    renders a Python entity's (``render_semantic``): the names joined with ``.``, and
+    CPython's ``<locals>`` after a function or a method another part follows
+    (``make.<locals>.Made.go``). An ``attribute``, a kind sphinx-codelinks does not
+    have, is a name like any other (``Shape.sides``). A name CPython NFKC-normalises
+    (``ﬁle``) is the normalised one here, the syntax tree's, and as written in
+    sphinx-codelinks'. The two renderings are compared
+    in sphinx-codelinks' suite (``tests/test_docstring_hop_cross_check.py``), since
+    this package cannot import that one."""
+    names: list[str] = []
+    for index, (kind, name) in enumerate(parts):
+        names.append(name)
+        if kind in ("function", "method") and index < len(parts) - 1:
+            names.append("<locals>")
+    return ".".join(names)
+
+
+def _python_semantic(qualname: str, text: str) -> tuple[NeedSourceSemantic, ...] | None:
+    """The parts of ``qualname`` (a ``__qualname__``) in the Python module ``text``,
+    outermost first, by sphinx-codelinks' Python rule, read from the syntax.
+
+    ``class`` for a class; ``method`` for a ``def`` directly in a class; ``function``
+    for any other ``def`` (``async`` too); CPython's ``<locals>`` after a ``def`` is
+    implied, never an entry. A name assigned at the top of the module or of a class
+    body (what ``#:`` documents) is a leaf ``attribute``. ``None`` for the module
+    itself (``""``), for a name the syntax does not define, for one it defines with
+    different kinds (a definition wins over an assignment), and for text that does not
+    parse.
+    """
+    definition = _python_definitions(text).get(qualname)
+    return None if definition is None else _semantic(definition.parts)
+
+
+_BODIES: Final = ("body", "orelse", "finalbody", "handlers", "cases")
+"""The fields of a node that hold statements (or the handlers and match cases that
+hold them): no expression holds a ``def``, a ``class`` or an assignment statement."""
+
+
+@functools.lru_cache(maxsize=32)
+def _python_definitions(text: str) -> dict[str, _PythonDefinition]:
+    """Every qualified name the syntax of the module ``text`` defines (``""`` the
+    module itself), by :func:`_python_semantic`'s rule. Cached by the text, so a module
+    is parsed once however many docstrings it holds; ``{}`` for text that does not
+    parse. The walk is iterative, over statements only, so nesting as deep as the
+    parser takes cannot exhaust the stack."""
+    try:
+        with warnings.catch_warnings():
+            # the import has reported them already: a SyntaxWarning, or on Python
+            # 3.11 a DeprecationWarning (an invalid escape), which ``-W error`` turns
+            # into a SyntaxError
+            warnings.simplefilter("ignore")
+            tree = ast.parse(text)
+    except (SyntaxError, ValueError, RecursionError, MemoryError):
+        return {}
+    definitions: dict[str, set[_PythonParts]] = {}
+    docstrings: dict[str, set[str]] = {"": _lines(ast.get_docstring(tree))}
+    assignments: dict[str, set[_PythonParts]] = {}
+    stack: list[tuple[ast.AST, _PythonParts, str]] = [(tree, (), "")]
+    while stack:
+        node, parts, prefix = stack.pop()
+        in_class = bool(parts) and parts[-1][0] == "class"
+        for child in itertools.chain.from_iterable(
+            getattr(node, field, None) or () for field in _BODIES
+        ):
+            if isinstance(child, ast.ClassDef | ast.FunctionDef | ast.AsyncFunctionDef):
+                if isinstance(child, ast.ClassDef):
+                    kind = "class"
+                else:
+                    kind = "method" if in_class else "function"
+                inner = (*parts, (kind, child.name))
+                qualname = prefix + child.name
+                definitions.setdefault(qualname, set()).add(inner)
+                docstrings.setdefault(qualname, set()).update(
+                    _lines(ast.get_docstring(child))
+                )
+                stack.append(
+                    (
+                        child,
+                        inner,
+                        f"{qualname}." if kind == "class" else f"{qualname}.<locals>.",
+                    )
+                )
+            elif isinstance(child, ast.Assign | ast.AnnAssign):
+                if not parts or in_class:
+                    targets = (
+                        child.targets
+                        if isinstance(child, ast.Assign)
+                        else [child.target]
+                    )
+                    for name in _assigned_names(targets):
+                        assignments.setdefault(prefix + name, set()).add(
+                            (*parts, ("attribute", name))
+                        )
+            elif isinstance(child, ast.stmt | ast.excepthandler | ast.match_case):
+                stack.append((child, parts, prefix))
+    table = {"": _PythonDefinition(None, frozenset(docstrings[""]))}
+    for qualname, found in definitions.items():
+        table[qualname] = _PythonDefinition(
+            next(iter(found)) if len(found) == 1 else None,
+            frozenset(docstrings[qualname]),
+        )
+    for qualname, found in assignments.items():
+        if qualname not in definitions:
+            table[qualname] = _PythonDefinition(
+                next(iter(found)) if len(found) == 1 else None, None
+            )
+    return table
+
+
+def _lines(docstring: str | None) -> set[str]:
+    return {line.strip() for line in (docstring or "").splitlines()}
+
+
+def _docstring_lines(
+    analyzer: ModuleAnalyzer, qualname: str, definition: _PythonDefinition
+) -> frozenset[str]:
+    """The stripped lines of the docstring ``definition`` has in the analysed module:
+    an attribute's is its ``#:`` comment or the string after it, as autodoc reads it."""
+    if definition.docstring is not None:
+        return definition.docstring
+    namespace, _, attribute = qualname.rpartition(".")
+    try:
+        comment = analyzer.find_attr_docs().get((namespace, attribute), [])
+    except PycodeError:
+        return frozenset()
+    return frozenset(line.strip() for line in comment)
+
+
+def _assigned_names(targets: Iterable[ast.expr]) -> Iterator[str]:
+    """The plain names an assignment binds: ``x``, and each name of ``x, (y, *z)``."""
+    for target in targets:
+        if isinstance(target, ast.Name):
+            yield target.id
+        elif isinstance(target, ast.Tuple | ast.List):
+            yield from _assigned_names(target.elts)
+        elif isinstance(target, ast.Starred):
+            yield from _assigned_names([target.value])
+
+
+def located_hops(
+    env: BuildEnvironment,
+    docname: str,
+    source: str | None,
+    start_line: int | None,
+    end_line: int | None = None,
+    *,
+    check: LineCheck,
+    tab_width: int,
+    fragment_lines: bool,
+    first: Iterable[NeedSourceHop] = (),
+    text: str | None = None,
+    document: object = None,
+) -> tuple[NeedSourceHop, ...]:
+    """The hops of text written at ``source:start_line`` and placed on ``docname``.
+
+    :param source: The file the text is written in, as ``get_source_info()`` gives it
+        (relative to the working directory, for an included file), or ``None``.
+    :param start_line: Its 1-based line there, as the parser reports it.
+    :param end_line: The last line of the text, as the parser reports it.
+    :param check: Whether the file's lines hold the text at ``start_line..end_line``:
+        the lines are recorded only if they do (:func:`_checked_lines`).
+    :param tab_width: The document's ``tab_width``, which the file is read with.
+    :param fragment_lines: Whether the lines are true in an included file too. They are
+        under docutils; myst-parser reports an included file's lines one late, so a
+        hop of an included file takes no line there.
+    :param first: The hops before the file, innermost first, if any: an imported
+        ``needs.json``, the service that made the need.
+    :param text: The text as written (a directive's block): in a docstring, the
+        definition its name resolves to is trusted only where that definition's
+        docstring holds each of its lines (:func:`_docstring_hop`).
+    :param document: The document being read, whose ``include_log`` names the files an
+        included file was included through (:func:`_include_chain`), or ``None``.
+    :return: ``[first...], file, [through...], page`` for text in an included file: the
+        file, then one ``file`` hop per file it was included through, innermost first,
+        each with its path and suffix and no line (the page hop has no line either: an
+        ``include`` line is not recoverable); ``[first], page`` otherwise. A docstring
+        (autodoc) is a ``code`` hop of the Python file it is defined in
+        (:func:`_docstring_hop`), with no line: the one autodoc gives counts from the
+        docstring, not the file.
+    """
+    srcdir = env.srcdir
+    host = os.path.abspath(env.doc2path(docname))
+    hops: list[NeedSourceHop] = list(checked_hops(first))
+
+    def page(start: int | None = None, end: int | None = None) -> NeedSourceHop:
+        return NeedSourceHop(
+            kind="page",
+            document=docname,
+            physical=physical_for(srcdir, host, start, end),
+            language=_suffix(host),
+        )
+
+    if not source or not start_line:
+        # the state machine could not map the line (``get_source_info`` gives
+        # ``(None, None)``)
+        hops.append(page())
+    elif _DOCSTRING_OF in source:
+        hops.append(_docstring_hop(srcdir, source, text))
+        hops.append(page())
+    elif os.path.abspath(source) == host:
+        hops.append(
+            page(*_checked_lines(env, host, start_line, end_line, check, tab_width))
+        )
+    elif os.path.isfile(source):
+        lines = (
+            _checked_lines(env, source, start_line, end_line, check, tab_width)
+            if fragment_lines
+            else (None, None)
+        )
+        hops.append(
+            NeedSourceHop(
+                kind="file",
+                physical=physical_for(srcdir, source, *lines),
+                language=_suffix(source),
+            )
+        )
+        hops.extend(
+            NeedSourceHop(
+                kind="file", physical=physical_for(srcdir, path), language=_suffix(path)
+            )
+            for path in _include_chain(document, source)
+        )
+        hops.append(page())
+    else:
+        # a source that names no file (generated text): no line is a true one
+        hops.append(page())
+    return tuple(hops)
+
+
+def document_tab_width(state: object) -> int:
+    """The ``tab_width`` of the document a parser state is reading (docutils' 8 by
+    default)."""
+    document = getattr(state, "document", None)
+    return getattr(getattr(document, "settings", None), "tab_width", 8)
+
+
+def directive_hops(
+    directive: Directive, *, first: Iterable[NeedSourceHop] = ()
+) -> tuple[NeedSourceHop, ...]:
+    """The hops of the text of ``directive``, placed on the document being read.
+
+    ``directive`` is any docutils ``Directive`` run in a Sphinx build (a
+    ``SphinxDirective`` is one): its file and line are read from its state machine,
+    and the environment from its document's settings, as
+    ``SphinxDirective.get_source_info`` and ``.env`` read them.
+
+    Under docutils the end line is the last non-blank line of the directive's block,
+    and the lines are recorded where the file holds the block there
+    (:func:`block_check`, whole lines). myst-parser hands a directive its content only,
+    so there the end line is ``None``, and the start line is recorded where the file
+    opens the directive's fence there, with its name and its title
+    (:func:`fence_check`).
+    """
+    source, start_line = directive_line(directive)
+    env = directive.state.document.settings.env
+    rst = isinstance(directive.state, RSTState)
+    end_line = None
+    if rst and start_line:
+        length = len(directive.block_text.rstrip().splitlines())
+        end_line = start_line + max(length, 1) - 1
+    return located_hops(
+        env,
+        env.docname,
+        source,
+        start_line,
+        end_line,
+        check=block_check(directive.block_text)
+        if rst
+        else fence_check(directive.name, " ".join(directive.arguments)),
+        tab_width=document_tab_width(directive.state),
+        fragment_lines=rst,
+        first=first,
+        text=directive.block_text,
+        document=directive.state.document,
+    )
+
+
+def placement_semantic(need_node: nodes.Node) -> tuple[NeedSourceSemantic, ...]:
+    """The semantic location of a need node in its doctree, outermost to innermost.
+
+    The section chain and the domain objects (``desc`` nodes) above the node, in their
+    nesting order. A domain object is ``"<domain>:<objtype>"`` named by the last of its
+    first signature's ``_toc_parts`` (else its ``desc_name`` text), with that
+    signature's first id as an ``("id", …)`` extra where it has one. Where the legacy
+    ``signature`` rule reads a name at that object (:func:`legacy_signature_text`, the
+    last ``desc_name`` of the first signature that has one), the entry carries it as a
+    ``("signature", …)`` extra, which is what :func:`project_legacy` reads.
+
+    Signatures are read only under an ``addnodes.desc``: a ``desc_signature`` an
+    extension places outside one names no object, and gives no signature.
+
+    It is the one walk that locates a need: ``analyse_need_locations`` puts its result
+    on the placement hop, and writes the legacy ``sections`` and ``signature`` as its
+    projection (:func:`project_legacy`), whether the need's source has a placement hop
+    or not, and ``parent_needs`` from :func:`enclosing_need`.
+    """
+    inner_first: list[NeedSourceSemantic] = []
+    child: nodes.Node = need_node
+    parent = child.parent
+    while parent is not None:
+        if isinstance(parent, addnodes.desc) and not isinstance(
+            child, addnodes.desc_signature
+        ):
+            inner_first.append(_domain_entry(parent, child))
+        if isinstance(parent, nodes.section):
+            title = NON_BREAKING_SPACE.sub(" ", parent.children[0].astext())
+            inner_first.append(NeedSourceSemantic(kind="section", name=title))
+        child, parent = parent, parent.parent
+    return tuple(reversed(inner_first))
+
+
+def _domain_entry(node: addnodes.desc, below: nodes.Node) -> NeedSourceSemantic:
+    """The entry of a domain object, from the signatures before ``below``."""
+    signatures: list[addnodes.desc_signature] = []
+    for child in node.children:
+        if child is below:
+            break
+        if isinstance(child, addnodes.desc_signature):
+            signatures.append(child)
+    name = ""
+    extras: list[tuple[str, str]] = []
+    if signatures:
+        first = signatures[0]
+        toc_parts = first.get("_toc_parts")
+        if toc_parts:
+            name = str(toc_parts[-1])
+        elif (
+            desc_name := next(iter(first.findall(addnodes.desc_name)), None)
+        ) is not None:
+            name = desc_name.astext()
+        if ids := first.get("ids"):
+            extras.append(("id", str(ids[0])))
+    legacy: str | None = None
+    for signature in signatures:
+        for part in _signature_parts(signature):
+            if (
+                isinstance(part, addnodes.desc_name)
+                and (text := legacy_signature_text(part)) is not None
+            ):
+                legacy = text
+        if legacy:
+            break
+    if legacy:
+        extras.append(("signature", legacy))
+    return NeedSourceSemantic(
+        kind=f"{node.get('domain', '')}:{node.get('objtype', '')}",
+        name=name,
+        extras=tuple(extras),
+    )
+
+
+def legacy_signature_text(desc_name: addnodes.desc_name) -> str | None:
+    """The name the legacy ``signature`` reads from a ``desc_name``, if it reads one.
+
+    The ``desc_name``'s first child when it is text (even an empty one, which
+    overwrites a name an earlier ``desc_name`` of the same signature gave); otherwise
+    its text, as the c, cpp and js domains write it (a ``desc_sig_name`` inside); an
+    empty name is no name. Which ``desc_name`` it is asked about is
+    :func:`_signature_parts`' part of the rule, and which signature
+    :func:`_domain_entry`'s: the first of the object's that gives a name.
+    """
+    if desc_name.children and isinstance(desc_name.children[0], nodes.Text):
+        return str(desc_name.children[0])
+    if text := desc_name.astext():
+        return text
+    return None
+
+
+def _signature_parts(signature: addnodes.desc_signature) -> Iterator[nodes.Node]:
+    """The children of a signature, a ``desc_signature_line``'s in its place.
+
+    The c and cpp domains put the ``desc_name`` in a ``desc_signature_line``, which the
+    ``signature`` rule descends into.
+    """
+    for child in signature.children:
+        if isinstance(child, addnodes.desc_signature_line):
+            yield from child.children
+        else:
+            yield child
+
+
+def project_legacy(
+    semantic: tuple[NeedSourceSemantic, ...],
+) -> tuple[tuple[str, ...], str | None]:
+    """The legacy ``sections`` (innermost first) and ``signature`` of a semantic list.
+
+    ``signature`` is the ``("signature", …)`` extra of the innermost domain object
+    that has one: a need in a C++ function inside a Python class takes the function's
+    name.
+    """
+    sections = tuple(
+        entry.name for entry in reversed(semantic) if entry.kind == "section"
+    )
+    signature = None
+    for entry in reversed(semantic):
+        if entry.kind != "section" and (value := dict(entry.extras).get("signature")):
+            signature = value
+            break
+    return sections, signature
+
+
+def enclosing_need(need_node: nodes.Node) -> list[str]:
+    """The legacy ``parent_needs`` of a need node: the nearest need node above it.
+
+    A need is the child of the need whose content holds it, wherever it sits in that
+    content, hidden or not (#2398), and of no grandparent; a need in no need's content
+    has none. One id, as a list, since ``parent_needs`` is a link type.
+    """
+    parent = need_node.parent
+    while parent is not None:
+        if isinstance(parent, Need):
+            return [parent["refid"]]
+        parent = parent.parent
+    return []

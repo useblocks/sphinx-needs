@@ -49,7 +49,8 @@ Features
    * Detection of inline and block comments
    * Association of comments with function definitions
    * Support for standard C comment conventions
-   * Accurate scope detection for nested structures
+   * Attachment to the adjacent function, prototype, struct, union or enum, never across code
+     (see :ref:`attachment`)
 
    .. fault:: Traceability objects are not detected in C language
       :id: FAULT_C_1
@@ -69,7 +70,9 @@ Features
 
    Enhanced features for C++:
 
-   * Class and namespace scope detection
+   * Attachment to the adjacent class, struct, namespace, function, prototype or in-class
+     method declaration, through ``template`` headers and ``extern "C"``, with qualified names
+     such as ``ns::Widget::draw`` (see :ref:`attachment`)
    * Support for C++ style comments (``//``) and C style comments (``/* */``)
    * Template and method declaration handling
    * Accurate association with member functions and constructors
@@ -95,9 +98,10 @@ Features
    Key capabilities:
 
    * Detection of inline, block, and documentation comments
-   * Association of comments with method, class, and property declarations
+   * Association of comments with methods, constructors, properties, classes, structs,
+     interfaces, records, enums and namespaces
    * Support for standard C# comment conventions
-   * Accurate scope detection for nested structures
+   * Qualified names such as ``Acme.Gfx.Widget.Draw`` (see :ref:`attachment`)
 
    .. fault:: Traceability objects are not detected in C# language
       :id: FAULT_CSHARP_1
@@ -120,7 +124,8 @@ Features
    * Hash-style comment (``#``) detection
    * Docstring extraction from modules, classes, and functions
    * Proper handling of multi-line comments and docstrings
-   * Scope detection for functions, classes, and methods
+   * Attachment to functions, classes and methods, through decorators, named as their
+     ``__qualname__`` (see :ref:`attachment`)
    * Support for nested class and function definitions
    * Integration with Python's natural documentation patterns
 
@@ -174,7 +179,8 @@ Features
    * Detection of inline and block comments
    * Association of comments with function and method definitions
    * Support for standard Rust comment conventions
-   * Accurate scope detection for nested structures
+   * Attachment through attributes, inner doc comments (``//!``) documenting their module,
+     and names such as ``Widget::new`` and ``<Widget as Shape>::area`` (see :ref:`attachment`)
 
    .. fault:: Traceability objects are not detected in Rust language
       :id: FAULT_RUST_1
@@ -196,9 +202,9 @@ Features
    Key capabilities:
 
    * Detection of inline and block comments
-   * Association of comments with function and method declarations
+   * Association of comments with functions, methods, types and interface methods
    * Support for standard Go comment conventions
-   * Accurate scope detection for nested structures
+   * Qualified names such as ``Widget.Area`` (see :ref:`attachment`)
    * File extension ``.go`` auto-discovered when ``comment_type = "go"``
 
    .. fault:: Traceability objects are not detected in Go language
@@ -293,8 +299,10 @@ Features
      ambient declarations of a ``.d.ts`` file bind too)
    * A ``const``/``let``/``var`` declaration, a class field, an assignment such as
      ``module.exports = function () {}`` and an anonymous default export count as
-     scopes only when they hold a function or a class, seen through ``as``,
-     ``satisfies``, ``!``, ``<T>`` and parentheses
+     entities only when they hold a function or a class, seen through ``as``,
+     ``satisfies``, ``!``, ``<T>`` and parentheses; any other one between a marker and
+     the next entity is code, so the marker belongs to the enclosing class, or the file
+     (see :ref:`attachment`)
    * A JSDoc tag line (``@param a text``) under a start sequence JSDoc also uses is a
      ``jsdoc_tag`` warning, never a need
    * File extensions ``.ts``, ``.tsx``, ``.mts``, ``.cts``, ``.js``, ``.jsx``,

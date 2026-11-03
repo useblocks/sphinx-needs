@@ -403,12 +403,12 @@
 # ---
 # name: test_api_add_field_schema_wrong
   '''
-  Invalid field 'my_extra_option': Invalid schema: Additional properties are not allowed ('not_exist' was unexpected)
+  Invalid field 'my_extra_option': Invalid schema: "ten" is not of type "integer"
   
-  Failed validating "additionalProperties" in schema
+  Failed validating "type" in schema["properties"]["minimum"]
   
-  On instance:
-      {"not_exist":10,"type":"integer"}
+  On instance["minimum"]:
+      "ten"
   '''
 # ---
 # name: test_api_add_type[test_app0]

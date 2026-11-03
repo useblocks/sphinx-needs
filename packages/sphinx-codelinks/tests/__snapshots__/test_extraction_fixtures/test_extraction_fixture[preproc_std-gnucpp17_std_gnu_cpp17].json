@@ -13,6 +13,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "GNU C++17 dialect",
       "id": "IMPL_GNUCPP17",

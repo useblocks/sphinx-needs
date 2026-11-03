@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "def f():\n    \"\"\"@need-ids: REQ_ROW\"\"\"",
+    "scope": {
+      "kind": "function_definition",
+      "start": 1,
+      "end": 2,
+      "language": "python",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
     "need_ids": [
       "REQ_ROW"
     ],

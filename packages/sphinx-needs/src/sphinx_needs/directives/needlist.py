@@ -35,7 +35,7 @@ class Needlist(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsListType],
         ) -> None: ...
 
-        attributes: NeedsListType
+        attributes: NeedsListType  # ty: ignore[invalid-attribute-override]
 
 
 class NeedlistDirective(FilterBase):
@@ -76,7 +76,7 @@ class NeedlistDirective(FilterBase):
         list_node = Needlist("", **attributes)
         self.set_source_info(list_node)
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needlist")
 
         return [targetnode, list_node]
 

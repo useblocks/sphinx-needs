@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 8
+      },
+      "end": {
+        "row": 1,
+        "column": 46
+      }
+    },
+    "tagged_scope": "void f() {\n    // @Most vexing parse, IMPL_R_VEXING, impl\n    Widget w(Config());\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 1,
+      "end": 4,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Most vexing parse",
+      "id": "IMPL_R_VEXING",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

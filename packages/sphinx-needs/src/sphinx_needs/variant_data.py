@@ -106,6 +106,9 @@ class VariantDataProxy:
 
     __slots__ = ("_data", "_path")
 
+    _data: dict[str, object]
+    _path: tuple[str, ...]
+
     def __init__(self, data: dict[str, object], path: tuple[str, ...] = ()) -> None:
         object.__setattr__(self, "_data", data)
         object.__setattr__(self, "_path", path)

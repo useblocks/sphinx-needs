@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "def f():\n    \"\"\"@Todo fix the parser, IMPL_TODO2, impl\n    \"\"\"",
+    "scope": {
+      "kind": "function_definition",
+      "start": 1,
+      "end": 3,
+      "language": "python",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
     "need": {
       "title": "Todo fix the parser",
       "id": "IMPL_TODO2",

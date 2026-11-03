@@ -295,6 +295,196 @@ using it there raises ``this_doc can not be used in this context``.
 It is likewise unavailable in ``needimport`` ``:filter:``, which runs against
 needs imported from another project, and in ``needuml`` content filters.
 
+.. _filter_is_a:
+
+Filtering for a type and the types inheriting from it
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.2.0
+
+``type == 'req'`` compares the type's name: it selects the needs of type ``req`` and no other,
+not those of a type that :ref:`inherits <needs_types_fields>` from ``req``.
+``c.is_a('req')`` follows ``inherits``: it is true for a need whose type is ``req``,
+or a type inheriting from ``req``, directly or through other types.
+With these need types
+
+.. code-block:: toml
+
+   [needs.types.sys_req]
+   title = "System requirement"
+   prefix = "SR_"
+   inherits = "req"
+
+   [needs.types.hw_req]
+   title = "Hardware requirement"
+   prefix = "HR_"
+   inherits = "sys_req"
+
+``c.is_a('req')`` selects the ``req``, ``sys_req`` and ``hw_req`` needs, as ``type in ['req', 'sys_req', 'hw_req']`` does,
+``c.is_a('sys_req')`` the ``sys_req`` and ``hw_req`` ones, and ``c.is_a('hw_req')`` the ``hw_req`` ones alone; and
+
+.. code-block:: rst
+
+   .. needtable::
+      :filter: c.is_a('req') and not c.is_a('sys_req')
+
+selects the ``req`` needs, and those of every other type inheriting from ``req``, but not the ``sys_req`` and ``hw_req`` ones.
+
+- It reads the need's type and the project's need types, nothing else: no field of a need lists its types.
+  A type whose ``inherits`` names no need type or is on a cycle inherits from none:
+  that ``inherits`` is ignored, with a ``needs.type_inherits`` warning.
+- A name that is no need type is false on every need: ``c.is_a('rq')`` selects nothing, as ``type == 'rq'`` does.
+  A type is named by its directive name, never its title. A string literal naming no need type is reported with a
+  ``needs.filter_type`` warning naming the type it is the title of or is close to, once per filter and place it is
+  written; a filter with no place (a derived field's ``where``, a link condition, a constraint) once per filter string,
+  and a :ref:`needs_warnings` filter once per entry, naming it:
+  ``Filter "c.is_a('rq')" names 'rq', which is not a need type (did you mean 'req'?); c.is_a('rq') selects no need``.
+  A filter naming a type on purpose, such as one shared by projects that do not all declare it, is silenced with
+  ``suppress_warnings = ["needs.filter_type"]``, which leaves the failures of filters (``needs.filter``) reported.
+- A need part has its need's type.
+- Its argument is a string literal in the portable filter language: ``c.is_a(type)`` or ``c.is_a('req') == True``
+  is evaluated by ``eval``, as ``c.this_doc() == True`` is.
+- It reads the need's own type, never a :ref:`needs_filter_data` key named ``type``.
+- ``c.is_a`` tests the need's type; to follow a link type named ``is_a``, as a project modelling an ontology may declare,
+  use the link: ``'REQ_001' in is_a``.
+
+Unlike :ref:`c.this_doc() <filter_current_page>` it reads the need alone, not the document the filter is written in,
+so it is available in the filters configured in **conf.py**, such as :ref:`needs_warnings` and :ref:`needs_constraints`,
+and in a derived field's ``where`` (:ref:`needs_derive`), as well as in the filters of the need-listing and diagram
+directives, of :ref:`needextend` and of a :ref:`link condition <need_conditional_links>`.
+Like ``c.this_doc()``, it is *not* available in :ref:`needimport` ``:filter:``, which runs against
+the records of the imported file, nor in the ``predicates`` of a :ref:`needs_fields` entry;
+using it there fails with ``name 'c' is not defined``.
+
+Beside ``c.this_doc()`` and ``c.is_a()``, ``c.source`` holds the facets of where the need comes from
+(see :ref:`filter_source`).
+
+.. _filter_source:
+
+Filtering by where a need comes from (``c.source``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.2.0
+
+``c.source.<facet>`` reads where a need comes from: the file it is written in, the producer that made it,
+the code entity it is traced from. It selects the needs traced from code under ``../src/``, the needs from one
+test report, or the needs written in an included fragment:
+
+.. code-block:: rst
+
+   .. needtable::
+      :filter: c.source.path is not None and c.source.path.startswith("../src/")
+
+   .. needtable::
+      :filter: "reports/unit.xml" in c.source.paths
+
+   .. needlist::
+      :filter: c.source.path == "fragments/safety.rst"
+
+A need records the places its text came through, innermost first (its *hops*, see :ref:`api`).
+Each facet reads a named position in them, never a producer, so a longer chain needs no new rule;
+``c.source.kind`` also reads whether the need was imported or is external, as the need records it:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 18 82
+
+   * - facet
+     - what it reads
+   * - ``c.source.kind``
+     - The producer, from the whole chain and the need's import and external flags; the first that applies:
+       ``"import"`` (:ref:`needimport`, whatever the imported need was where it came from),
+       ``"external"`` (an :ref:`external need <needs_external_needs>`),
+       ``"report"`` (a test report's file, suite or case: sphinx-test-reports),
+       ``"code"`` (traced from source code: sphinx-codelinks, a docstring autodoc reads),
+       ``"generated"`` (a :ref:`service <services>`),
+       ``"page"`` (a directive in a document or in a file it includes), else ``None``.
+   * - ``c.source.path``
+     - The innermost place, the file the need is written in: for a need in an included file, that file,
+       where ``docname`` is the page it is included in; for a traced need, the code file; for a test file or suite,
+       the report.
+   * - ``c.source.line``
+     - The need's line in that file, 1-based, where the file holds the need there; ``None`` where ``c.source.path`` is.
+   * - ``c.source.paths``
+     - Every file the need came through that this build records, innermost first, each once: an included file,
+       each file it was included through, then the page; a needs.json, then the page it is imported on; a report,
+       then its page. It may gain entries (below), so test membership (``'x' in c.source.paths``).
+   * - ``c.source.symbol``
+     - The code entity a traced need is attached to, by the qualified name its producer gives it
+       (``Engine.start``, ``ns::Widget::draw``).
+   * - ``c.source.document``
+     - The placement: the document the need is placed on, the need's ``docname``.
+   * - ``c.source.sections``
+     - The placement: the sections the need is placed under, innermost first, or an external need's sections on
+       the other site, as its record gives them: the need's ``sections``.
+
+A path is POSIX and relative to the Sphinx source directory, with ``..`` for a file outside it:
+in a project whose documents are in ``docs/`` and whose code is in ``src/``, a traced need reads ``../src/engine.py``,
+whichever directory holds ``conf.py`` or ``ubproject.toml``.
+A file outside the repository (a mount reached through a symbolic link, a module autodoc imports from an installed
+package) has a path that depends on where the checkout sits on the machine.
+
+A facet is ``None`` where this build does not know the answer yet, and later data only fills it,
+so a filter on it written today selects the same needs then:
+``c.source.path`` and ``c.source.line`` of an imported or an external need (its file is another project's),
+of a service's need, and of a test case, whose test file is relative to the test run's root, which the build does
+not know (sphinx-test-reports' ``case_file`` field holds it); ``c.source.paths`` of an external need is empty;
+``c.source.symbol`` of a need written in a document, its domain object included.
+The kinds are open: a later producer adds one, so a negated test such as ``c.source.kind != 'page'``
+may select more needs in a later release, where ``c.source.kind in ['import', 'external']`` will not.
+``c.source.paths`` is the exception to filling: it gains an entry wherever more of a chain is recorded --
+a test case's test file once its root is known, the files a MyST ``{include}`` was included through (myst-parser
+logs no chain), a file included through a ``:parser:`` include on docutils 0.22 and later (which logs none) --
+and it differs between those docutils versions today. Test whether a file is in it, never its length or
+the position of an entry.
+
+**Guard a facet that can be** ``None``.
+``c.source.path.startswith('src/')`` fails on a need with no path: that need is excluded and the filter reported
+(``needs.filter``). Write ``c.source.path is not None and c.source.path.startswith('src/')``.
+``==``, ``in`` and ``is None`` need no guard; a method, an order comparison (``c.source.line > 5``) and ``len()`` do.
+In a derived field's ``where`` a failure is not reported at all: the candidate is excluded silently, so guard there
+too.
+
+The location names a filter had before stay, each as it was:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - name
+     - and ``c.source``
+   * - ``docname``
+     - ``c.source.document`` is an alias of the need's ``docname`` (a :ref:`needs_filter_data` key named ``docname``
+       shadows the name in a filter, not the facet).
+   * - ``sections``, ``section_name``
+     - ``c.source.sections`` is an alias of ``sections``, innermost first; ``section_name`` is its first entry.
+   * - ``lineno``
+     - Kept as it was, and not an alias: the line the directive is written on, which for a need in an included file
+       is a line of that file while ``docname`` is the page. An API need's is the line its caller gives (the page's
+       parse count, where the caller passes its directive's ``self.lineno``). ``c.source.path`` and ``c.source.line``
+       are one file's, a pair that always agrees.
+   * - ``is_import``, ``is_external``
+     - ``is_import`` is ``c.source.kind == 'import'``; ``is_external`` is ``c.source.kind == 'external'`` for a need that
+       is not imported (an imported need is ``"import"`` whatever it was where it came from). Both kept.
+   * - ``signature``
+     - The bare name of the domain object a need is written in; ``c.source.symbol`` is a traced need's qualified name,
+       and does not read domain objects yet.
+
+``c`` is the need's check context, as for ``c.this_doc()`` and ``c.is_a()``: it is set over the need's fields
+and the :ref:`needs_filter_data` keys, so a field named ``source`` (or ``c``) is read as any other field and
+leaves the facets as they are.
+
+The facets are available wherever a filter selects needs: the need-listing and diagram directives,
+:ref:`needextend`, :ref:`needs_warnings`, :ref:`needs_constraints`, :ref:`needs_builder_filter`,
+a :ref:`link condition <need_conditional_links>`, ``copy(filter=...)`` and a derived field's ``where``.
+They are not available in the ``predicates`` of a :ref:`needs_fields` entry, which is evaluated as the
+need is created, in a :ref:`needimport` ``:filter:``, which reads the imported record rather than a need of this
+build, nor in a variant condition: none has a check context, and a facet read there fails with
+``name 'c' is not defined; the c.source facets are not available in a field predicate`` (or the place it is).
+The ``:columns:`` of a :ref:`needtable` and the ``:sort:`` and ``:sort_by:`` of the views do not read a facet yet.
+A filter on the facets is in the :ref:`portable filter language <filter_string_performance>`;
+`ubCode <https://ubcode.useblocks.com>`__ does not read them yet.
+
 .. _re_search:
 
 search
@@ -361,7 +551,8 @@ so writing filters the first two take is recommended:
    It has:
 
    - **operands**: a field (any field of the need, a :ref:`needs_filter_data` key,
-     a :ref:`variant data <filter_variant_data>` key such as ``var.build.debug``),
+     a :ref:`variant data <filter_variant_data>` key such as ``var.build.debug``,
+     a facet of the need's source such as ``c.source.path``, see :ref:`filter_source`),
      ``len(field)``, ``field.lower()`` and ``field.upper()``;
    - **literals**: a string in single or double quotes, an integer or a float (``-1``, ``2.5``, ``1e-3``),
      ``True``, ``False``, ``None``, and a list of those after ``in``;
@@ -374,17 +565,20 @@ so writing filters the first two take is recommended:
    - ``x is None`` / ``x is not None``;
    - ``x.startswith('...')`` / ``x.endswith('...')`` after an operand: ``id.lower().startswith('req')``;
    - ``search('pattern', x)`` (see :ref:`re_search`), with a plain string literal as the pattern;
-   - ``c.this_doc()`` (see :ref:`filter_current_page`);
+   - ``c.this_doc()`` (see :ref:`filter_current_page`), and ``c.is_a('...')`` with a string literal
+     (see :ref:`filter_is_a`);
    - ``and``, ``or``, ``not``, parentheses, and an operand alone, which is read by its truthiness.
 
    Not in it, and so evaluated by ``eval``: a field ``in`` a field (``sphinx_tag in tags``),
    a list beside ``==`` or ``!=`` (``tags == ['a']``; write ``len(tags) == 1 and 'a' in tags``),
    arithmetic, subscripts (``sections[0]``), comprehensions, any other call or method (``any(...)``, ``bool(x)``, ``x.strip()``),
    ``is`` with anything but ``None``, a chain of comparisons (``1 < x < 5``), a dotted name not under ``var.``,
+   nor a ``c.source.`` facet, a name after ``c.source.`` that is no facet (``c.source.pth``, reported with the closest facet),
    and the names ``needs`` and ``current_need``.
 
 3. **Python's** ``eval``, for every other string: it is evaluated need by need against a context holding every field of the need,
    which costs far more than the first two tiers, nearly all of it building that context.
+   Its ``c.source`` computes a facet of the need's source when the filter reads it.
 
 The three tiers give the same answers, with three exceptions:
 

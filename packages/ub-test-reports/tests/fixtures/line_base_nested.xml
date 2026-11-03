@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The base is decided per <testsuite> and a nested suite inherits it: its own mark first,
+  else its parent's base, else the rules for an unmarked suite. A mark whose value is not
+  0 or 1 is no mark. Every case is on line 4 as the report writes it.
+-->
+<testsuites>
+  <testsuite name="pytest" tests="2">
+    <testsuite name="inner" tests="1">
+      <testcase classname="a" name="t_inherits_pytest" file="a.py" line="4"/>
+    </testsuite>
+    <testsuite name="inner-marked" tests="1">
+      <properties>
+        <property name="ub_test_reports:line_base" value="1"/>
+      </properties>
+      <testcase classname="a" name="t_own_mark_wins" file="a.py" line="4"/>
+    </testsuite>
+  </testsuite>
+  <testsuite name="outer-marked" tests="1">
+    <properties>
+      <property name="ub_test_reports:line_base" value="1"/>
+    </properties>
+    <testsuite name="pytest" tests="1">
+      <testcase classname="b" name="t_inherits_mark" file="b.py" line="4"/>
+    </testsuite>
+  </testsuite>
+  <testsuite name="outer-unknown" tests="2">
+    <testcase classname="c" name="t_unknown" file="c.py" line="4"/>
+    <testsuite name="inner-marked-0" tests="1">
+      <properties>
+        <property name="ub_test_reports:line_base" value="0"/>
+      </properties>
+      <testcase classname="c" name="t_declared_zero_based" file="c.py" line="4"/>
+    </testsuite>
+  </testsuite>
+  <testsuite name="outer-bad-mark" tests="1">
+    <properties>
+      <property name="ub_test_reports:line_base" value="2"/>
+    </properties>
+    <testcase classname="d" name="t_bad_mark" file="d.py" line="4"/>
+  </testsuite>
+</testsuites>

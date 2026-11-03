@@ -50,7 +50,7 @@ class Needsequence(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsSequenceType],
         ) -> None: ...
 
-        attributes: NeedsSequenceType
+        attributes: NeedsSequenceType  # ty: ignore[invalid-attribute-override]
 
 
 class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
@@ -97,7 +97,7 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
         node = Needsequence("", **attributes)
         self.set_source_info(node)
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needsequence")
 
         return [targetnode, node]
 

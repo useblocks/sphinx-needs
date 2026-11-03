@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 13
+      },
+      "end": {
+        "row": 0,
+        "column": 54
+      }
+    },
+    "tagged_scope": "def f():  # @On the def row, IMPL_R_TRAIL_DEF_PY, impl\n    pass",
+    "scope": {
+      "kind": "function_definition",
+      "start": 1,
+      "end": 2,
+      "language": "python",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "On the def row",
+      "id": "IMPL_R_TRAIL_DEF_PY",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 49
+      }
+    },
+    "tagged_scope": "pub fn nested_fn() -> u32 {\n    4\n}",
+    "scope": {
+      "kind": "function_item",
+      "start": 2,
+      "end": 4,
+      "language": "rust",
+      "entity_kind": "function",
+      "qualified_name": "nested_fn",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "nested_fn"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Nested file function",
+      "id": "RS_24",
+      "type": "impl",
+      "links": [
+        "REQ_NEST"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  }
+]

@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "def f(a):\n    # @param a: x, IMPL_HASH, impl\n    pass",
+    "scope": {
+      "kind": "function_definition",
+      "start": 1,
+      "end": 3,
+      "language": "python",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
     "need": {
       "title": "param a: x",
       "id": "IMPL_HASH",

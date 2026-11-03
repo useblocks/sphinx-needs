@@ -1,0 +1,1823 @@
+# Which code entity a marker is attached to, pinned against compiler ground truth.
+#
+# Each case carries a ``truth`` list, one entry per marker id, which
+# ``tests/test_entity_truth.py`` checks the case's ``scope`` objects against (the
+# extraction harness ignores the key):
+#
+#   id              the need id, or the first id of a reference
+#   outcome         ``exact``: the marker documents an entity the analysis models, bound
+#                   and named as the compiler names it; ``fallback``: the entity the
+#                   compiler reports is none the analysis models (a macro-generated
+#                   function, a data member, a lambda, an out-of-line module file), so
+#                   the expected binding is the honest fallback given, the enclosing
+#                   entity or the file (``null``); ``none``: by rule, no entity at all
+#   entity_kind     the expected ``scope.entity_kind`` (``null``: ``scope`` is ``null``,
+#                   unless ``node_kind`` is given)
+#   node_kind       (optional) the expected ``scope.kind``, for an entity bound but not
+#                   named (``entity_kind`` and ``qualified_name`` both ``null``)
+#   qualified_name  the expected in-file name: the compiler's name without the module,
+#                   crate or package prefix, which the file's path decides
+#   start           the expected ``scope.start``: the first line of the definition as
+#                   the grammar spans it -- a Rust attribute, a Python decorator, a
+#                   decorator on a TypeScript class member and a C++ template header
+#                   are outside it; a C# attribute list, a C++ attribute and a
+#                   decorator on a TypeScript class are inside it (unless the class is
+#                   exported: then the decorator is the export's, outside the class)
+#   mechanism       (rule cases) the expected ``scope.mechanism``
+#   compiler        where the truth comes from, verbatim: the tool and its output, or
+#                   ``syntax-only`` and why no symbol exists
+#
+# The ``corpus_*`` cases are whole sample files, unchanged. Their truth was measured
+# with:
+#
+#   C++     clang++ 18 -g -c widget.cpp && nm -C -l widget.o
+#   Python  CPython 3.13: compile() the module, walk the code objects' co_qualname
+#   Rust    RUSTFLAGS="-C symbol-mangling-version=v0" cargo build, nm -C -l on the rlib
+#   Go      go 1.24 build, go tool nm; go doc for the types
+#   TS      the TypeScript checker's getFullyQualifiedName on each declaration
+#   C#      no compiler: syntax-only
+#
+# Rust names follow the compiler's v0 form for trait impls (``<Widget as Shape>::area``)
+# and the path form for inherent methods (``Widget::new``); a generic function or impl
+# keeps its parameters as written. The ``rule_*`` cases pin one attachment rule each.
+
+corpus_cpp:
+  # p2 widget.cpp: 31 markers.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // Sample C++ translation unit with codelinks markers in the positions that matter
+    // for semantic attachment. Every marker carries a unique ID (CPP_xx / CPPREF_xx).
+    #include <cstdio>
+
+    #define EXPORT_API __attribute__((visibility("default")))
+    #define DEFINE_HANDLER(name) \
+        void handle_##name(int code) { std::printf("%d\n", code); }
+
+    namespace ns {
+
+    // @Widget class, CPP_01, impl, [REQ_WIDGET]
+    class Widget {
+    public:
+        // @Widget constructor, CPP_02, impl, [REQ_CTOR]
+        Widget(int w, int h) : w_(w), h_(h) {}
+
+        // @Draw declaration, CPP_03, impl, [REQ_DRAW]
+        void draw() const;
+
+        void resize(int w, int h);
+
+        // @Inline area, CPP_04, impl, [REQ_AREA]
+        int area() const { return w_ * h_; }
+
+        ~Widget();
+
+    private:
+        int w_;
+        int h_;
+    };
+
+    // @Draw out-of-line, CPP_05, impl, [REQ_DRAW]
+    void Widget::draw() const {
+        // @need-ids: CPPREF_06
+        int x = w_ + h_;
+        std::printf("%d\n", x);
+    }
+
+    Widget::~Widget() {}
+
+    namespace detail {
+    // @Helper in nested namespace, CPP_07, impl, [REQ_HELP]
+    static int helper(int v) { return v * 2; }
+    int use_helper() { return helper(1); }
+    }  // namespace detail
+
+    }  // namespace ns
+
+    // @Fully qualified out-of-line, CPP_08, impl, [REQ_RESIZE]
+    void ns::Widget::resize(int w, int h) {
+        w_ = w;
+        h_ = h;
+    }
+
+    // @Clamp template, CPP_09, impl, [REQ_CLAMP]
+    template <typename T>
+    T clamp(T v, T lo, T hi) {
+        return v < lo ? lo : (v > hi ? hi : v);
+    }
+
+    // @Scale int overload, CPP_10, impl, [REQ_SCALE]
+    int scale(int v) { return v * 2; }
+
+    // @Scale double overload, CPP_11, impl, [REQ_SCALE]
+    double scale(double v) { return v * 2.0; }
+
+    // @Exported prototype, CPP_12, impl, [REQ_EXPORT]
+    EXPORT_API void exported_fn();
+
+    // @Exported definition, CPP_13, impl, [REQ_EXPORT]
+    EXPORT_API void exported_fn() { std::printf("x\n"); }
+
+    // @Generated handler, CPP_14, impl, [REQ_HANDLER]
+    DEFINE_HANDLER(click)
+
+    template <typename T>
+    struct Box {
+        T value;
+        T get() const;
+    };
+
+    // @Box get out-of-line, CPP_15, impl, [REQ_BOX]
+    template <typename T>
+    T Box<T>::get() const {
+        return value;
+    }
+
+    // @Widget equality operator, CPP_16, impl, [REQ_EQ]
+    bool operator==(const ns::Widget& a, const ns::Widget& b) { return a.area() == b.area(); }
+
+    namespace ns::v2 {
+    // @Version in C++17 nested namespace, CPP_17, impl, [REQ_VER]
+    int version() { return 2; }
+    }  // namespace ns::v2
+
+    namespace {
+    int untraced_internal() { return 7; }
+    }  // namespace
+
+    // @Point struct, CPP_18, impl, [REQ_POINT]
+    struct Point {
+        int x;
+        int y;
+        int sum() const { return x + y; }
+    };
+
+    int main() {
+        ns::Widget w(1, 2);
+        // @need-ids: CPPREF_19
+        w.draw();
+        Box<int> b{3};
+        handle_click(clamp(b.get(), 0, 10));
+        exported_fn();
+        return scale(3) + static_cast<int>(scale(1.5)) + ns::detail::use_helper() + ns::v2::version() +
+               untraced_internal() + Point{1, 2}.sum() + (w == w);
+    }
+
+    // ---- p2 additions (lines below 117); CPP_01..CPPREF_19 keep p1's line numbers ----
+
+    /// @Doc slash function, CPP_20, impl, [REQ_DOC]
+    int doc_slash() { return 20; }
+
+    /** @Doc block class, CPP_21, impl, [REQ_DOC]
+     *  A class documented with a Javadoc block. */
+    class Gauge {
+    public:
+        /// @Gauge set int decl, CPP_22, impl, [REQ_SET]
+        void set(int v);
+        /// @Gauge set double decl, CPP_23, impl, [REQ_SET]
+        void set(double v);
+        int level = 0;  ///< @Trailing member doc, CPP_24, impl, [REQ_LEVEL]
+    protected:
+        // @Protected hook, CPP_25, impl, [REQ_HOOK]
+        virtual void on_change() {}
+    private:
+        static int count_;
+    };
+
+    void Gauge::set(int v) { level = v; }
+
+    // @Gauge set double def, CPP_26, impl, [REQ_SET]
+    void Gauge::set(double v) { level = static_cast<int>(v); }
+
+    // @Box bool specialisation, CPP_27, impl, [REQ_BOX]
+    template <>
+    struct Box<bool> {
+        bool get() const { return true; }
+    };
+
+    // @Clamp long specialisation, CPP_28, impl, [REQ_CLAMP]
+    template <>
+    long clamp<long>(long v, long lo, long hi) {
+        return v < lo ? lo : (v > hi ? hi : v);
+    }
+
+    /// @Doc generated handler, CPP_29, impl, [REQ_HANDLER]
+    DEFINE_HANDLER(key)
+
+    #ifdef USE_FAST_PATH
+    // @Fast path variant, CPP_30, impl, [REQ_PATH]
+    int compute_path() { return 1; }
+    #else
+    // @Slow path variant, CPP_31, impl, [REQ_PATH]
+    int compute_path() { return 2; }
+    #endif
+
+    int use_more() {
+        Gauge g;
+        g.set(1);
+        g.set(2.0);
+        handle_key(compute_path());
+        return doc_slash() + Box<bool>{}.get() + static_cast<int>(clamp<long>(1, 2, 3));
+    }
+  truth:
+    - {id: CPP_01, outcome: exact, entity_kind: "class", qualified_name: "ns::Widget", start: 12, compiler: "syntax-only: a class has no symbol (its constructor: nm -C: ns::Widget::Widget(int, int))"}
+    - {id: CPP_02, outcome: exact, entity_kind: "constructor", qualified_name: "ns::Widget::Widget", start: 15, compiler: "nm -C: ns::Widget::Widget(int, int)"}
+    - {id: CPP_03, outcome: exact, entity_kind: "method", qualified_name: "ns::Widget::draw", start: 18, compiler: "nm -C: ns::Widget::draw() const"}
+    - {id: CPP_04, outcome: exact, entity_kind: "method", qualified_name: "ns::Widget::area", start: 23, compiler: "nm -C: ns::Widget::area() const"}
+    - {id: CPP_05, outcome: exact, entity_kind: "method", qualified_name: "ns::Widget::draw", start: 33, compiler: "nm -C: ns::Widget::draw() const"}
+    - {id: CPPREF_06, outcome: exact, entity_kind: "method", qualified_name: "ns::Widget::draw", start: 33, compiler: "nm -C: ns::Widget::draw() const"}
+    - {id: CPP_07, outcome: exact, entity_kind: "function", qualified_name: "ns::detail::helper", start: 43, compiler: "nm -C: ns::detail::helper(int)"}
+    - {id: CPP_08, outcome: exact, entity_kind: "method", qualified_name: "ns::Widget::resize", start: 50, compiler: "nm -C: ns::Widget::resize(int, int)"}
+    - {id: CPP_09, outcome: exact, entity_kind: "function", qualified_name: "clamp", start: 57, compiler: "nm -C: int clamp<int>(int, int, int)"}
+    - {id: CPP_10, outcome: exact, entity_kind: "function", qualified_name: "scale", start: 62, compiler: "nm -C: scale(int)"}
+    - {id: CPP_11, outcome: exact, entity_kind: "function", qualified_name: "scale", start: 65, compiler: "nm -C: scale(double)"}
+    - {id: CPP_12, outcome: exact, entity_kind: "function", qualified_name: "exported_fn", start: 68, compiler: "nm -C: exported_fn()"}
+    - {id: CPP_13, outcome: exact, entity_kind: "function", qualified_name: "exported_fn", start: 71, compiler: "nm -C: exported_fn()"}
+    - {id: CPP_14, outcome: fallback, entity_kind: null, qualified_name: null, start: null, compiler: "nm -C: handle_click(int) -- generated by the DEFINE_HANDLER(click) macro invocation, no definition in the syntax"}
+    - {id: CPP_15, outcome: exact, entity_kind: "method", qualified_name: "Box::get", start: 84, compiler: "nm -C: Box<int>::get() const"}
+    - {id: CPP_16, outcome: exact, entity_kind: "operator", qualified_name: "operator==", start: 89, compiler: "nm -C: operator==(ns::Widget const&, ns::Widget const&)"}
+    - {id: CPP_17, outcome: exact, entity_kind: "function", qualified_name: "ns::v2::version", start: 93, compiler: "nm -C: ns::v2::version()"}
+    - {id: CPP_18, outcome: exact, entity_kind: "struct", qualified_name: "Point", start: 101, compiler: "syntax-only: a struct has no symbol (its member: nm -C: Point::sum() const)"}
+    - {id: CPPREF_19, outcome: exact, entity_kind: "function", qualified_name: "main", start: 107, compiler: "nm -C: main"}
+    - {id: CPP_20, outcome: exact, entity_kind: "function", qualified_name: "doc_slash", start: 121, compiler: "nm -C: doc_slash()"}
+    - {id: CPP_21, outcome: exact, entity_kind: "class", qualified_name: "Gauge", start: 125, compiler: "syntax-only: a class has no symbol (its constructor: nm -C: Gauge::Gauge())"}
+    - {id: CPP_22, outcome: exact, entity_kind: "method", qualified_name: "Gauge::set", start: 128, compiler: "nm -C: Gauge::set(int)"}
+    - {id: CPP_23, outcome: exact, entity_kind: "method", qualified_name: "Gauge::set", start: 130, compiler: "nm -C: Gauge::set(double)"}
+    - {id: CPP_24, outcome: fallback, entity_kind: "class", qualified_name: "Gauge", start: 125, compiler: "syntax-only: the data member Gauge::level has no symbol; a data member is no entity yet, so the enclosing class"}
+    - {id: CPP_25, outcome: exact, entity_kind: "method", qualified_name: "Gauge::on_change", start: 134, compiler: "nm -C: Gauge::on_change()"}
+    - {id: CPP_26, outcome: exact, entity_kind: "method", qualified_name: "Gauge::set", start: 142, compiler: "nm -C: Gauge::set(double)"}
+    - {id: CPP_27, outcome: exact, entity_kind: "struct", qualified_name: "Box<bool>", start: 146, compiler: "syntax-only: a struct has no symbol (its member: nm -C: Box<bool>::get() const)"}
+    - {id: CPP_28, outcome: exact, entity_kind: "function", qualified_name: "clamp<long>", start: 152, compiler: "nm -C: long clamp<long>(long, long, long)"}
+    - {id: CPP_29, outcome: fallback, entity_kind: null, qualified_name: null, start: null, compiler: "nm -C: handle_key(int) -- generated by the DEFINE_HANDLER(key) macro invocation, no definition in the syntax"}
+    - {id: CPP_30, outcome: exact, entity_kind: "function", qualified_name: "compute_path", start: 161, compiler: "syntax-only: the #ifdef USE_FAST_PATH branch is inactive by default, so no symbol"}
+    - {id: CPP_31, outcome: exact, entity_kind: "function", qualified_name: "compute_path", start: 164, compiler: "nm -C: compute_path()"}
+
+corpus_python:
+  # p2 pkg/sub/shapes.py (module pkg.sub.shapes): 25 markers.
+  lang: python
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    """Sample Python module with codelinks markers (PY_xx / PYREF_xx)."""
+
+    from __future__ import annotations
+
+    import functools
+    from typing import overload
+
+
+    # @Module level function, PY_01, impl, [REQ_MOD]
+    def module_function(x: int) -> int:
+        # @need-ids: PYREF_02
+        return x * 2
+
+
+    def untraced_function() -> None:
+        pass
+
+
+    # @Shape class, PY_03, impl, [REQ_SHAPE]
+    class Shape:
+        """A shape.
+
+        @need-ids: PYREF_04
+        """
+
+        # @Nested class, PY_05, impl, [REQ_NESTED]
+        class Meta:
+            kind = "shape"
+
+        # @Area method, PY_06, impl, [REQ_AREA]
+        def area(self) -> float:
+            return 0.0
+
+        # @Decorated method, PY_07, impl, [REQ_CACHE]
+        @functools.lru_cache(maxsize=None)
+        def cached(self) -> int:
+            return 1
+
+        # @Name property, PY_08, impl, [REQ_PROP]
+        @property
+        def name(self) -> str:
+            return "shape"
+
+        @staticmethod
+        def untraced_static() -> int:
+            return 3
+
+        def docstring_marked(self) -> int:
+            """Return four.
+
+            @need-ids: PYREF_09
+            """
+            return 4
+
+
+    # @Outer with nested function, PY_10, impl, [REQ_OUTER]
+    def outer() -> int:
+        # @Inner nested function, PY_11, impl, [REQ_INNER]
+        def inner() -> int:
+            return 1
+
+        return inner()
+
+
+    @overload
+    def convert(x: int) -> int: ...
+
+
+    # @Convert str overload, PY_12, impl, [REQ_CONV]
+    @overload
+    def convert(x: str) -> str: ...
+
+
+    def convert(x):
+        # @need-ids: PYREF_13
+        return x
+
+
+    # @Lambda assignment, PY_14, impl, [REQ_LAMBDA]
+    double = lambda v: v * 2  # noqa: E731
+
+
+    class Square(Shape):
+        # @Square area override, PY_15, impl, [REQ_AREA]
+        def area(self) -> float:
+            return 1.0
+
+        async def untraced_async(self) -> None:
+            pass
+
+
+    # ---- p2 additions (lines below 90); PY_01..PY_15 keep p1's line numbers ----
+    import sys
+    from dataclasses import dataclass
+
+
+    # @Dataclass point, PY_16, impl, [REQ_POINT]
+    @dataclass
+    class Point:
+        x: int = 0
+        y: int = 0
+
+        # @Temperature property setter, PY_17, impl, [REQ_PROP]
+        @property
+        def norm(self) -> int:
+            return self.x + self.y
+
+        @norm.setter
+        def norm(self, value: int) -> None:
+            # @need-ids: PYREF_18
+            self.x = value
+
+        # @Classmethod factory, PY_19, impl, [REQ_FACTORY]
+        @classmethod
+        def origin(cls) -> "Point":
+            return cls()
+
+        def compute(self) -> int:
+            # @Local helper in method, PY_20, impl, [REQ_LOCAL]
+            def helper(v: int) -> int:
+                return v + 1
+
+            return helper(self.x)
+
+        class Inner:
+            class Deeper:
+                # @Deeply nested method, PY_21, impl, [REQ_NESTED]
+                def deep(self) -> int:
+                    return 5
+
+
+    if sys.version_info >= (3, 12):
+        # @New python variant, PY_22, impl, [REQ_VARIANT]
+        def variant() -> str:
+            return "new"
+    else:
+        # @Old python variant, PY_23, impl, [REQ_VARIANT]
+        def variant() -> str:
+            return "old"
+
+
+    def make_registry():
+        registry = {}
+
+        def register(fn):
+            registry[fn.__name__] = fn
+            return fn
+
+        return register
+
+
+    register = make_registry()
+
+
+    # @Registered via decorator factory, PY_24, impl, [REQ_REG]
+    @register
+    async def handler(event: str) -> None:
+        """Handle an event.
+
+        @need-ids: PYREF_25
+        """
+  truth:
+    - {id: PY_01, outcome: exact, entity_kind: "function", qualified_name: "module_function", start: 10, compiler: "co_qualname: pkg.sub.shapes.module_function"}
+    - {id: PYREF_02, outcome: exact, entity_kind: "function", qualified_name: "module_function", start: 10, compiler: "co_qualname: pkg.sub.shapes.module_function"}
+    - {id: PY_03, outcome: exact, entity_kind: "class", qualified_name: "Shape", start: 20, compiler: "co_qualname: pkg.sub.shapes.Shape"}
+    - {id: PYREF_04, outcome: exact, entity_kind: "class", qualified_name: "Shape", start: 20, compiler: "co_qualname: pkg.sub.shapes.Shape"}
+    - {id: PY_05, outcome: exact, entity_kind: "class", qualified_name: "Shape.Meta", start: 27, compiler: "co_qualname: pkg.sub.shapes.Shape.Meta"}
+    - {id: PY_06, outcome: exact, entity_kind: "method", qualified_name: "Shape.area", start: 31, compiler: "co_qualname: pkg.sub.shapes.Shape.area"}
+    - {id: PY_07, outcome: exact, entity_kind: "method", qualified_name: "Shape.cached", start: 36, compiler: "co_qualname: pkg.sub.shapes.Shape.cached (co_firstlineno 35, the decorator)"}
+    - {id: PY_08, outcome: exact, entity_kind: "method", qualified_name: "Shape.name", start: 41, compiler: "co_qualname: pkg.sub.shapes.Shape.name (co_firstlineno 40, the decorator)"}
+    - {id: PYREF_09, outcome: exact, entity_kind: "method", qualified_name: "Shape.docstring_marked", start: 48, compiler: "co_qualname: pkg.sub.shapes.Shape.docstring_marked"}
+    - {id: PY_10, outcome: exact, entity_kind: "function", qualified_name: "outer", start: 57, compiler: "co_qualname: pkg.sub.shapes.outer"}
+    - {id: PY_11, outcome: exact, entity_kind: "function", qualified_name: "outer.<locals>.inner", start: 59, compiler: "co_qualname: pkg.sub.shapes.outer.<locals>.inner"}
+    - {id: PY_12, outcome: exact, entity_kind: "function", qualified_name: "convert", start: 71, compiler: "co_qualname: pkg.sub.shapes.convert (co_firstlineno 70, the decorator)"}
+    - {id: PYREF_13, outcome: exact, entity_kind: "function", qualified_name: "convert", start: 74, compiler: "co_qualname: pkg.sub.shapes.convert"}
+    - {id: PY_14, outcome: fallback, entity_kind: null, qualified_name: null, start: null, compiler: "co_qualname: pkg.sub.shapes.<lambda> -- a lambda bound to a name is no entity yet, so file level"}
+    - {id: PY_15, outcome: exact, entity_kind: "method", qualified_name: "Square.area", start: 85, compiler: "co_qualname: pkg.sub.shapes.Square.area"}
+    - {id: PY_16, outcome: exact, entity_kind: "class", qualified_name: "Point", start: 99, compiler: "co_qualname: pkg.sub.shapes.Point (co_firstlineno 98, the decorator)"}
+    - {id: PY_17, outcome: exact, entity_kind: "method", qualified_name: "Point.norm", start: 105, compiler: "co_qualname: pkg.sub.shapes.Point.norm (co_firstlineno 104, the decorator)"}
+    - {id: PYREF_18, outcome: exact, entity_kind: "method", qualified_name: "Point.norm", start: 109, compiler: "co_qualname: pkg.sub.shapes.Point.norm (co_firstlineno 108, the decorator)"}
+    - {id: PY_19, outcome: exact, entity_kind: "method", qualified_name: "Point.origin", start: 115, compiler: "co_qualname: pkg.sub.shapes.Point.origin (co_firstlineno 114, the decorator)"}
+    - {id: PY_20, outcome: exact, entity_kind: "function", qualified_name: "Point.compute.<locals>.helper", start: 120, compiler: "co_qualname: pkg.sub.shapes.Point.compute.<locals>.helper"}
+    - {id: PY_21, outcome: exact, entity_kind: "method", qualified_name: "Point.Inner.Deeper.deep", start: 128, compiler: "co_qualname: pkg.sub.shapes.Point.Inner.Deeper.deep"}
+    - {id: PY_22, outcome: exact, entity_kind: "function", qualified_name: "variant", start: 134, compiler: "co_qualname: pkg.sub.shapes.variant"}
+    - {id: PY_23, outcome: exact, entity_kind: "function", qualified_name: "variant", start: 138, compiler: "co_qualname: pkg.sub.shapes.variant"}
+    - {id: PY_24, outcome: exact, entity_kind: "function", qualified_name: "handler", start: 157, compiler: "co_qualname: pkg.sub.shapes.handler (co_firstlineno 156, the decorator)"}
+    - {id: PYREF_25, outcome: exact, entity_kind: "function", qualified_name: "handler", start: 157, compiler: "co_qualname: pkg.sub.shapes.handler (co_firstlineno 156, the decorator)"}
+
+corpus_rust_lib:
+  # p2 src/lib.rs (crate sample): 22 markers.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    //! Sample Rust crate root with codelinks markers. Every marker has a unique ID
+    //! (RS_xx / RSREF_xx).
+
+    // @Shape trait, RS_01, impl, [REQ_SHAPE]
+    pub trait Shape {
+        // @Area trait method, RS_02, impl, [REQ_AREA]
+        fn area(&self) -> f64;
+
+        fn name(&self) -> &'static str {
+            "shape"
+        }
+    }
+
+    // @Widget struct, RS_03, impl, [REQ_WIDGET]
+    pub struct Widget {
+        pub w: f64,
+        pub h: f64,
+    }
+
+    // @Widget inherent impl, RS_04, impl, [REQ_WIDGET]
+    impl Widget {
+        // @Widget constructor, RS_05, impl, [REQ_CTOR]
+        pub fn new(w: f64, h: f64) -> Self {
+            Self { w, h }
+        }
+
+        pub fn untraced_method(&self) -> f64 {
+            self.w
+        }
+    }
+
+    impl Shape for Widget {
+        // @Widget area via trait, RS_06, impl, [REQ_AREA]
+        fn area(&self) -> f64 {
+            // @need-ids: RSREF_07
+            self.w * self.h
+        }
+    }
+
+    /// Documented function.
+    /// @Doc comment marker, RS_08, impl, [REQ_DOC]
+    pub fn documented() -> u32 {
+        1
+    }
+
+    pub mod inner {
+        // @Inner helper, RS_09, impl, [REQ_HELP]
+        pub fn helper(v: u32) -> u32 {
+            v * 2
+        }
+
+        pub mod deeper {
+            pub struct Gadget;
+
+            impl crate::Shape for Gadget {
+                // @Gadget area, RS_10, impl, [REQ_AREA]
+                fn area(&self) -> f64 {
+                    0.0
+                }
+            }
+        }
+    }
+
+    // @Cfg gated function, RS_11, impl, [REQ_CFG]
+    #[cfg(target_os = "linux")]
+    pub fn platform_name() -> &'static str {
+        "linux"
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    pub fn platform_name() -> &'static str {
+        "other"
+    }
+
+    macro_rules! make_getter {
+        ($name:ident, $val:expr) => {
+            pub fn $name() -> u32 {
+                $val
+            }
+        };
+    }
+
+    // @Macro generated getter, RS_12, impl, [REQ_GEN]
+    make_getter!(generated_getter, 42);
+
+    // @Generic function, RS_13, impl, [REQ_GENERIC]
+    pub fn largest<T: PartialOrd + Copy>(items: &[T]) -> T {
+        let mut best = items[0];
+        for &item in items {
+            if item > best {
+                best = item;
+            }
+        }
+        best
+    }
+
+    // @Status enum, RS_14, impl, [REQ_STATUS]
+    pub enum Status {
+        Ok,
+        Failed(u32),
+    }
+
+    impl<T: Copy> Shape for (T, T) {
+        // @Tuple area, RS_15, impl, [REQ_AREA]
+        fn area(&self) -> f64 {
+            0.0
+        }
+    }
+
+    pub fn untraced_free() -> u32 {
+        // a closure inside
+        let add = |a: u32, b: u32| a + b;
+        add(1, 2)
+    }
+
+    #[cfg(test)]
+    mod tests {
+        // @Unit test, RS_16, test, [REQ_AREA]
+        #[test]
+        fn area_is_product() {
+            use super::Shape;
+            assert_eq!(super::Widget::new(2.0, 3.0).area(), 6.0);
+        }
+    }
+
+    // ---- p2 additions (lines below 125); RS_01..RS_16 keep p1's line numbers ----
+
+    impl Widget {
+        /// Doubles the width.
+        /// @Doc on method, RS_17, impl, [REQ_DOC]
+        pub fn doubled(&self) -> f64 {
+            self.w * 2.0
+        }
+
+        /** @Block doc on method, RS_18, impl, [REQ_DOC] */
+        pub fn halved(&self) -> f64 {
+            self.w / 2.0
+        }
+    }
+
+    // @Fast feature variant, RS_19, impl, [REQ_PATH]
+    #[cfg(feature = "fast")]
+    pub fn compute_path() -> u32 {
+        1
+    }
+
+    // @Slow default variant, RS_20, impl, [REQ_PATH]
+    #[cfg(not(feature = "fast"))]
+    pub fn compute_path() -> u32 {
+        2
+    }
+
+    macro_rules! make_doc_getter {
+        ($(#[$m:meta])* $name:ident) => {
+            $(#[$m])*
+            pub fn $name() -> u32 {
+                7
+            }
+        };
+    }
+
+    make_doc_getter!(
+        /// @Doc passed through macro, RS_21, impl, [REQ_GEN]
+        doc_generated
+    );
+
+    pub mod outline;
+
+    impl<T> Shape for Vec<T> {
+        // @Vec area generic impl, RS_25, impl, [REQ_AREA]
+        fn area(&self) -> f64 {
+            self.len() as f64
+        }
+    }
+  truth:
+    - {id: RS_01, outcome: exact, entity_kind: "trait", qualified_name: "Shape", start: 5, compiler: "syntax-only: a trait has no symbol"}
+    - {id: RS_02, outcome: exact, entity_kind: "method", qualified_name: "Shape::area", start: 7, compiler: "syntax-only: a required trait method has no symbol"}
+    - {id: RS_03, outcome: exact, entity_kind: "struct", qualified_name: "Widget", start: 15, compiler: "syntax-only: a struct has no symbol"}
+    - {id: RS_04, outcome: exact, entity_kind: "impl", qualified_name: "Widget", start: 21, compiler: "syntax-only: an impl block has no symbol (its method: rustc v0: <sample::Widget>::new)"}
+    - {id: RS_05, outcome: exact, entity_kind: "method", qualified_name: "Widget::new", start: 23, compiler: "rustc v0: <sample::Widget>::new"}
+    - {id: RS_06, outcome: exact, entity_kind: "method", qualified_name: "<Widget as Shape>::area", start: 34, compiler: "rustc v0: <sample::Widget as sample::Shape>::area"}
+    - {id: RSREF_07, outcome: exact, entity_kind: "method", qualified_name: "<Widget as Shape>::area", start: 34, compiler: "rustc v0: <sample::Widget as sample::Shape>::area"}
+    - {id: RS_08, outcome: exact, entity_kind: "function", qualified_name: "documented", start: 42, compiler: "rustc v0: sample::documented"}
+    - {id: RS_09, outcome: exact, entity_kind: "function", qualified_name: "inner::helper", start: 48, compiler: "rustc v0: sample::inner::helper"}
+    - {id: RS_10, outcome: exact, entity_kind: "method", qualified_name: "<inner::deeper::Gadget as Shape>::area", start: 57, compiler: "rustc v0: <sample::inner::deeper::Gadget as sample::Shape>::area"}
+    - {id: RS_11, outcome: exact, entity_kind: "function", qualified_name: "platform_name", start: 66, compiler: "rustc v0: sample::platform_name"}
+    - {id: RS_12, outcome: fallback, entity_kind: null, qualified_name: null, start: null, compiler: "rustc v0: sample::generated_getter -- generated by the make_getter! macro invocation, no definition in the syntax"}
+    - {id: RS_13, outcome: exact, entity_kind: "function", qualified_name: "largest", start: 87, compiler: "syntax-only: a generic function without an instantiation has no symbol"}
+    - {id: RS_14, outcome: exact, entity_kind: "enum", qualified_name: "Status", start: 98, compiler: "syntax-only: an enum has no symbol"}
+    - {id: RS_15, outcome: exact, entity_kind: "method", qualified_name: "<(T, T) as Shape>::area", start: 105, compiler: "syntax-only: a method of an uninstantiated generic impl has no symbol"}
+    - {id: RS_16, outcome: exact, entity_kind: "function", qualified_name: "tests::area_is_product", start: 120, compiler: "syntax-only: a #[cfg(test)] function is not built by cargo build"}
+    - {id: RS_17, outcome: exact, entity_kind: "method", qualified_name: "Widget::doubled", start: 131, compiler: "rustc v0: <sample::Widget>::doubled"}
+    - {id: RS_18, outcome: exact, entity_kind: "method", qualified_name: "Widget::halved", start: 136, compiler: "rustc v0: <sample::Widget>::halved"}
+    - {id: RS_19, outcome: exact, entity_kind: "function", qualified_name: "compute_path", start: 143, compiler: "syntax-only: the #[cfg(feature = \"fast\")] variant is inactive by default, so no symbol"}
+    - {id: RS_20, outcome: exact, entity_kind: "function", qualified_name: "compute_path", start: 149, compiler: "rustc v0: sample::compute_path"}
+    - {id: RS_21, outcome: fallback, entity_kind: null, qualified_name: null, start: null, compiler: "rustc v0: sample::doc_generated -- generated by the make_doc_getter! macro invocation, no definition in the syntax"}
+    - {id: RS_25, outcome: exact, entity_kind: "method", qualified_name: "<Vec<T> as Shape>::area", start: 171, compiler: "syntax-only: a method of an uninstantiated generic impl has no symbol"}
+
+corpus_rust_outline:
+  # p2 src/outline.rs (module sample::outline): 2 markers.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    //! Out-of-line module file.
+    //! @Module doc marker, RS_22, impl, [REQ_MOD]
+
+    // @Outline function, RS_23, impl, [REQ_OUT]
+    pub fn outline_fn() -> u32 {
+        3
+    }
+
+    pub mod nested;
+  truth:
+    - {id: RS_22, outcome: fallback, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: the module sample::outline is this whole file (an out-of-line module), so file level"}
+    - {id: RS_23, outcome: exact, entity_kind: "function", qualified_name: "outline_fn", start: 5, compiler: "rustc v0: sample::outline::outline_fn"}
+
+corpus_rust_nested:
+  # p2 src/outline/nested.rs (module sample::outline::nested): 1 marker.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @Nested file function, RS_24, impl, [REQ_NEST]
+    pub fn nested_fn() -> u32 {
+        4
+    }
+  truth:
+    - {id: RS_24, outcome: exact, entity_kind: "function", qualified_name: "nested_fn", start: 2, compiler: "rustc v0: sample::outline::nested::nested_fn"}
+
+corpus_csharp:
+  # p1 Widget.cs: 6 markers.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace Acme.Gfx
+    {
+        // @Widget class, CS_01, impl, [REQ_WIDGET]
+        public class Widget
+        {
+            // @Ctor, CS_02, impl, [REQ_CTOR]
+            public Widget(int w) { W = w; }
+
+            // @W property, CS_03, impl, [REQ_PROP]
+            public int W { get; set; }
+
+            // @Draw method, CS_04, impl, [REQ_DRAW]
+            public void Draw()
+            {
+                // @need-ids: CSREF_05
+                System.Console.WriteLine(W);
+            }
+
+            // @Nested struct, CS_06, impl, [REQ_POINT]
+            public struct Point { public int X; }
+
+            public void UntracedCs() { }
+        }
+    }
+  truth:
+    - {id: CS_01, outcome: exact, entity_kind: "class", qualified_name: "Acme.Gfx.Widget", start: 4, compiler: "syntax-only: no C# compiler in the measuring environment"}
+    - {id: CS_02, outcome: exact, entity_kind: "constructor", qualified_name: "Acme.Gfx.Widget.Widget", start: 7, compiler: "syntax-only: no C# compiler in the measuring environment"}
+    - {id: CS_03, outcome: exact, entity_kind: "property", qualified_name: "Acme.Gfx.Widget.W", start: 10, compiler: "syntax-only: no C# compiler in the measuring environment"}
+    - {id: CS_04, outcome: exact, entity_kind: "method", qualified_name: "Acme.Gfx.Widget.Draw", start: 13, compiler: "syntax-only: no C# compiler in the measuring environment"}
+    - {id: CSREF_05, outcome: exact, entity_kind: "method", qualified_name: "Acme.Gfx.Widget.Draw", start: 13, compiler: "syntax-only: no C# compiler in the measuring environment"}
+    - {id: CS_06, outcome: exact, entity_kind: "struct", qualified_name: "Acme.Gfx.Widget.Point", start: 20, compiler: "syntax-only: no C# compiler in the measuring environment"}
+
+corpus_go:
+  # p1 widget.go (package sample/widget): 5 markers.
+  lang: go
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    package widget
+
+    // @Widget type, GO_01, impl, [REQ_WIDGET]
+    type Widget struct {
+    	W, H int
+    }
+
+    // @Area method, GO_02, impl, [REQ_AREA]
+    func (w *Widget) Area() int {
+    	// @need-ids: GOREF_03
+    	return w.W * w.H
+    }
+
+    // @New constructor, GO_04, impl, [REQ_NEW]
+    func New(w, h int) *Widget { return &Widget{w, h} }
+
+    // @Shape interface, GO_05, impl, [REQ_SHAPE]
+    type Shape interface {
+    	Area() int
+    }
+
+    func untracedGo() {}
+  truth:
+    - {id: GO_01, outcome: exact, entity_kind: "struct", qualified_name: "Widget", start: 4, compiler: "go doc: type Widget struct"}
+    - {id: GO_02, outcome: exact, entity_kind: "method", qualified_name: "Widget.Area", start: 9, compiler: "go tool nm: sample/widget.(*Widget).Area"}
+    - {id: GOREF_03, outcome: exact, entity_kind: "method", qualified_name: "Widget.Area", start: 9, compiler: "go tool nm: sample/widget.(*Widget).Area"}
+    - {id: GO_04, outcome: exact, entity_kind: "function", qualified_name: "New", start: 15, compiler: "go tool nm: sample/widget.New"}
+    - {id: GO_05, outcome: exact, entity_kind: "interface", qualified_name: "Shape", start: 18, compiler: "go doc: type Shape interface"}
+
+corpus_typescript:
+  # p1 widget.ts (module widget): 6 markers.
+  lang: typescript
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    export namespace Gfx {
+      // @Widget class, TS_01, impl, [REQ_WIDGET]
+      export class Widget {
+        // @Draw method, TS_02, impl, [REQ_DRAW]
+        draw(): void {
+          // @need-ids: TSREF_03
+          console.log("x");
+        }
+      }
+    }
+
+    // @Arrow handler, TS_04, impl, [REQ_HANDLER]
+    export const onClick = (e: number): number => e * 2;
+
+    // @Plain function, TS_05, impl, [REQ_FN]
+    export function area(w: number, h: number): number {
+      return w * h;
+    }
+
+    // @Shape interface, TS_06, impl, [REQ_SHAPE]
+    interface Shape {
+      area(): number;
+    }
+
+    function untracedTs(): void {}
+  truth:
+    - {id: TS_01, outcome: exact, entity_kind: "class", qualified_name: "Gfx.Widget", start: 3, compiler: "tsc getFullyQualifiedName: \"widget\".Gfx.Widget"}
+    - {id: TS_02, outcome: exact, entity_kind: "method", qualified_name: "Gfx.Widget.draw", start: 5, compiler: "tsc getFullyQualifiedName: \"widget\".Gfx.Widget.draw"}
+    - {id: TSREF_03, outcome: exact, entity_kind: "method", qualified_name: "Gfx.Widget.draw", start: 5, compiler: "tsc getFullyQualifiedName: \"widget\".Gfx.Widget.draw"}
+    - {id: TS_04, outcome: exact, entity_kind: "function", qualified_name: "onClick", start: 13, compiler: "tsc getFullyQualifiedName: \"widget\".onClick"}
+    - {id: TS_05, outcome: exact, entity_kind: "function", qualified_name: "area", start: 16, compiler: "tsc getFullyQualifiedName: \"widget\".area"}
+    - {id: TS_06, outcome: exact, entity_kind: "interface", qualified_name: "Shape", start: 21, compiler: "tsc getFullyQualifiedName: Shape"}
+
+rule_adjacency_broken_by_code:
+  # A leading marker binds the next entity only when nothing but trivia separates them:
+  # a variable between the marker and the function breaks adjacency, so file level.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @Adjacency broken by code, IMPL_R_ADJ, impl
+    int counter = 1;
+    void f() {}
+  truth:
+    - {id: IMPL_R_ADJ, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+
+rule_blank_lines_are_trivia:
+  # Blank lines are trivia: the marker binds the function below them.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    void first() {}
+
+    // @Blank lines are trivia, IMPL_R_BLANK, impl
+
+
+    void f() {}
+  truth:
+    - {id: IMPL_R_BLANK, outcome: exact, entity_kind: "function", qualified_name: "f", start: 6, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_file_header_blank_line:
+  # The first comment block of a file, a blank line before the first item, is file level.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @File header, IMPL_R_HEADER, impl
+
+    void f() {}
+  truth:
+    - {id: IMPL_R_HEADER, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+
+rule_file_header_no_blank_line:
+  # Without the blank line the first comment block documents the first item.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @File header without blank, IMPL_R_HEADER_ADJ, impl
+    void f() {}
+  truth:
+    - {id: IMPL_R_HEADER_ADJ, outcome: exact, entity_kind: "function", qualified_name: "f", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_file_header_blank_line_rust:
+  # Rust, a plain line comment, then a blank line: file level.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @File header, IMPL_R_HEADER_RS, impl
+
+    fn f() {}
+  truth:
+    - {id: IMPL_R_HEADER_RS, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+
+rule_file_header_no_blank_line_rust:
+  # Rust, without the blank line: the first item.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @File header without blank, IMPL_R_HEADER_RS_ADJ, impl
+    fn f() {}
+  truth:
+    - {id: IMPL_R_HEADER_RS_ADJ, outcome: exact, entity_kind: "function", qualified_name: "f", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_trailing_on_function_row:
+  # A trailing marker binds the entity on its row, not the next one.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    void f() {} // @Trailing on a function, IMPL_R_TRAIL, impl
+    void g() {}
+  truth:
+    - {id: IMPL_R_TRAIL, outcome: exact, entity_kind: "function", qualified_name: "f", start: 1, mechanism: trailing, compiler: "syntax-only: rule case"}
+
+rule_trailing_on_data_member:
+  # A trailing marker after a data member (no entity) binds the enclosing struct.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    struct Gauge {
+        int level = 0; // @Trailing on a member, IMPL_R_TRAIL_MEMBER, impl
+        void set(int v);
+    };
+  truth:
+    - {id: IMPL_R_TRAIL_MEMBER, outcome: fallback, entity_kind: "struct", qualified_name: "Gauge", start: 1, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_trailing_python_module_statement:
+  # A trailing marker after a module-level statement is file level.
+  lang: python
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    limit = 3  # @Trailing on a statement, IMPL_R_TRAIL_PY, impl
+    def f():
+        pass
+  truth:
+    - {id: IMPL_R_TRAIL_PY, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+
+rule_rust_inner_doc_in_mod:
+  # A Rust inner doc comment (//!) documents the item it is inside.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    mod m {
+        //! @Inner doc, IMPL_R_INNER, impl
+        fn f() {}
+    }
+  truth:
+    - {id: IMPL_R_INNER, outcome: exact, entity_kind: "module", qualified_name: "m", start: 1, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
+rule_python_block_first_statement:
+  # A comment between a header and its body's first statement binds that statement.
+  lang: python
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    def outer():
+        # @Above the first statement, IMPL_R_BLOCK, impl
+        def inner():
+            pass
+        return inner
+  truth:
+    - {id: IMPL_R_BLOCK, outcome: exact, entity_kind: "function", qualified_name: "outer.<locals>.inner", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_python_block_first_statement_is_code:
+  # ... and when that statement is no entity, the enclosing function.
+  lang: python
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    def outer():
+        # @Above a statement, IMPL_R_BLOCK_STMT, impl
+        value = 1
+        def inner():
+            pass
+  truth:
+    - {id: IMPL_R_BLOCK_STMT, outcome: exact, entity_kind: "function", qualified_name: "outer", start: 1, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_cpp_extern_c:
+  # A prototype inside extern "C" binds.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @Extern C prototype, IMPL_R_EXTERN, impl
+    extern "C" void handler(int code);
+  truth:
+    - {id: IMPL_R_EXTERN, outcome: exact, entity_kind: "function", qualified_name: "handler", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_cpp_function_pointer_is_not_entity:
+  # A function-pointer variable is no entity, so file level.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    void first() {}
+    // @Function pointer, IMPL_R_FNPTR, impl
+    int (*callback)(int);
+    void g() {}
+  truth:
+    - {id: IMPL_R_FNPTR, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+
+rule_cpp_block_scope_vexing_parse_is_not_entity:
+  # A local that parses like a prototype is no entity: the enclosing function.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    void f() {
+        // @Most vexing parse, IMPL_R_VEXING, impl
+        Widget w(Config());
+    }
+  truth:
+    - {id: IMPL_R_VEXING, outcome: exact, entity_kind: "function", qualified_name: "f", start: 1, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_cpp_namespace:
+  # A namespace is an entity: above it, and around a marker inside it.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @Namespace above, IMPL_R_NS, impl
+    namespace gfx {
+    // @Inside namespace, IMPL_R_NS_IN, impl
+    int counter = 0;
+    }
+  truth:
+    - {id: IMPL_R_NS, outcome: exact, entity_kind: "namespace", qualified_name: "gfx", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_NS_IN, outcome: exact, entity_kind: "namespace", qualified_name: "gfx", start: 2, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_cpp_forward_declaration_is_not_entity:
+  # A forward declaration (no body) is no entity, so file level.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    void first() {}
+    // @Forward declaration, IMPL_R_FWD, impl
+    struct Foo;
+    void g() {}
+  truth:
+    - {id: IMPL_R_FWD, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+
+rule_ts_decorator_in_class_body:
+  # A decorator between the marker and a method is trivia.
+  lang: typescript
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    class Panel {
+      // @Decorated method, IMPL_R_DECO, impl
+      @observe()
+      render(): void {}
+    }
+  truth:
+    - {id: IMPL_R_DECO, outcome: exact, entity_kind: "method", qualified_name: "Panel.render", start: 4, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_csharp_record_and_interface:
+  # C# records and interfaces are entities.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @Record, IMPL_R_RECORD, impl
+    public record Point(int X, int Y);
+    // @Interface, IMPL_R_IFACE, impl
+    public interface IShape { double Area(); }
+  truth:
+    - {id: IMPL_R_RECORD, outcome: exact, entity_kind: "record", qualified_name: "Point", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_IFACE, outcome: exact, entity_kind: "interface", qualified_name: "IShape", start: 4, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_go_interface_method_elem:
+  # A Go interface method is an entity.
+  lang: go
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    package shapes
+
+    type Shape interface {
+    	// @Interface method, IMPL_R_ELEM, impl
+    	Area() int
+    }
+  truth:
+    - {id: IMPL_R_ELEM, outcome: exact, entity_kind: "method", qualified_name: "Shape.Area", start: 5, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_rust_macro_definition:
+  # A macro_rules! definition is an entity.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @Macro definition, IMPL_R_MACRO, impl
+    macro_rules! square {
+        ($x:expr) => {
+            $x * $x
+        };
+    }
+  truth:
+    - {id: IMPL_R_MACRO, outcome: exact, entity_kind: "macro", qualified_name: "square", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_cpp_header_prototype:
+  # A prototype in a header binds; a preprocessor line before the marker is not on its row.
+  lang: cpp_header
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #pragma once
+    // @Header prototype, IMPL_R_HDR, impl
+    void hdr_always(void);
+  truth:
+    - {id: IMPL_R_HDR, outcome: exact, entity_kind: "function", qualified_name: "hdr_always", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_multiline_need_above_decorated_def:
+  # A multi-line need's source.scope is the decorated function, not its decorator.
+  lang: python
+  config: default
+  extract: [multiline]
+  source: |
+    # @need impl: Decorated handler
+    # :id: IMPL_R_ML_DEC
+    # @endneed
+    @register
+    def handler(event):
+        pass
+  truth:
+    - {id: IMPL_R_ML_DEC, outcome: exact, entity_kind: "function", qualified_name: "handler", start: 5, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_need_ids_per_mechanism:
+  # One reference per mechanism: doc comment, leading, trailing, enclosing.
+  lang: cpp
+  config: default
+  extract: [need_refs]
+  source: |
+    /// @need-ids: REQ_R_DOC
+    void documented() {}
+    // @need-ids: REQ_R_LEAD
+    void leading() {}
+    void trailing() {} // @need-ids: REQ_R_TRAIL
+    void enclosing() {
+        // @need-ids: REQ_R_ENCL
+        int x = 0;
+    }
+  truth:
+    - {id: REQ_R_DOC, outcome: exact, entity_kind: "function", qualified_name: "documented", start: 2, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+    - {id: REQ_R_LEAD, outcome: exact, entity_kind: "function", qualified_name: "leading", start: 4, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: REQ_R_TRAIL, outcome: exact, entity_kind: "function", qualified_name: "trailing", start: 5, mechanism: trailing, compiler: "syntax-only: rule case"}
+    - {id: REQ_R_ENCL, outcome: exact, entity_kind: "function", qualified_name: "enclosing", start: 6, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_trailing_after_attribute_rust:
+  # A marker after an attribute on its row is not trailing code: the attribute is trivia,
+  # so the marker leads the item the attribute belongs to, at the top level, in a module
+  # and in an impl.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #[test] // @After an attribute, IMPL_R_TA_RS_1, impl
+    fn t() {}
+
+    #[cfg(test)]
+    mod tests {
+        #[test] // @After an attribute in a module, IMPL_R_TA_RS_2, impl
+        fn t2() {}
+    }
+
+    struct W;
+
+    impl W {
+        #[inline] // @After an attribute in an impl, IMPL_R_TA_RS_3, impl
+        fn f(&self) {}
+    }
+  truth:
+    - {id: IMPL_R_TA_RS_1, outcome: exact, entity_kind: "function", qualified_name: "t", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_TA_RS_2, outcome: exact, entity_kind: "function", qualified_name: "tests::t2", start: 7, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_TA_RS_3, outcome: exact, entity_kind: "method", qualified_name: "W::f", start: 14, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_trailing_after_decorator_python:
+  # A marker after a decorator on its row belongs to the decorated definition, and leads
+  # it: the grammar puts the comment inside the decorator, the definition's head.
+  lang: python
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    import pytest
+
+
+    @pytest.mark.parametrize("x", [1, 2])  # @After a decorator, IMPL_R_TD_PY_1, impl
+    def test_f(x):
+        pass
+
+
+    class TestA:
+        @pytest.mark.slow  # @After a decorator in a class, IMPL_R_TD_PY_2, impl
+        def test_m(self):
+            pass
+  truth:
+    - {id: IMPL_R_TD_PY_1, outcome: exact, entity_kind: "function", qualified_name: "test_f", start: 5, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_TD_PY_2, outcome: exact, entity_kind: "method", qualified_name: "TestA.test_m", start: 11, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_trailing_after_decorator_ts:
+  # A marker after a decorator on its row belongs to the decorated member or class.
+  lang: typescript
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    class C {
+      @Input() // @After a decorator in a class, IMPL_R_TD_TS_1, impl
+      foo(): void {}
+    }
+
+    @Injectable() // @After a class decorator, IMPL_R_TD_TS_2, impl
+    class Service {}
+  truth:
+    - {id: IMPL_R_TD_TS_1, outcome: exact, entity_kind: "method", qualified_name: "C.foo", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_TD_TS_2, outcome: exact, entity_kind: "class", qualified_name: "Service", start: 6, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_trailing_after_template_header_cpp:
+  # A marker after a template header on its row leads the templated function.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    template <typename T> // @After a template header, IMPL_R_TT_CPP, impl
+    T id(T x) { return x; }
+  truth:
+    - {id: IMPL_R_TT_CPP, outcome: exact, entity_kind: "function", qualified_name: "id", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_trailing_after_attribute_csharp:
+  # A marker after an attribute list on its row belongs to the attributed method, and
+  # leads it: the grammar puts the comment inside the declaration's head.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    class C
+    {
+        [Test] // @After an attribute, IMPL_R_TA_CS, impl
+        public void M() {}
+    }
+  truth:
+    - {id: IMPL_R_TA_CS, outcome: exact, entity_kind: "method", qualified_name: "C.M", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_doc_comment_header_blank_line_rust:
+  # A declared doc comment is exempt from the file-header rule: rustc makes an outer
+  # ``///`` an attribute of the next item, blank lines or not.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /// @Documented across a blank line, IMPL_R_DOC_HDR_RS, impl
+
+    fn f() {}
+  truth:
+    - {id: IMPL_R_DOC_HDR_RS, outcome: exact, entity_kind: "function", qualified_name: "f", start: 3, mechanism: doc_comment, compiler: "rustc: an outer doc comment is a #[doc] attribute of the next item"}
+
+rule_doc_comment_header_blank_line_cpp:
+  # A declared doc comment is exempt from the file-header rule: Doxygen documents the
+  # next declaration with a ``/** */`` block, blank lines or not.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /** @Documented across a blank line, IMPL_R_DOC_HDR_CPP, impl */
+
+    void f();
+  truth:
+    - {id: IMPL_R_DOC_HDR_CPP, outcome: exact, entity_kind: "function", qualified_name: "f", start: 3, mechanism: doc_comment, compiler: "Doxygen: a /** */ block documents the next declaration"}
+
+rule_file_header_ends_in_doc_comment_rust:
+  # A plain marker in a header whose last comment is a ``///`` line, then a blank line,
+  # is file level: the doc line comment's node takes its line break, so it ends at
+  # column 0 of the next row, and the blank line is measured from the row before.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @Plain header marker, IMPL_R_HDR_DOC_LAST, impl
+    /// Documents f.
+
+    fn f() {}
+  truth:
+    - {id: IMPL_R_HDR_DOC_LAST, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+
+rule_rust_block_is_not_entered:
+  # Only Python's grammar puts a comment between a header and its body's first
+  # statement; in Rust a comment before a function's block is inside the function.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    fn f()
+    // @Between the signature and the block, IMPL_R_RS_BLOCK, impl
+    {
+        fn inner() {}
+    }
+  truth:
+    - {id: IMPL_R_RS_BLOCK, outcome: exact, entity_kind: "function", qualified_name: "f", start: 1, mechanism: enclosing, compiler: "syntax-only: rule case"}
+
+rule_trailing_on_python_def_row:
+  # A marker after code on a definition's own row is trailing, though Python's grammar
+  # puts it inside the definition.
+  lang: python
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    def f():  # @On the def row, IMPL_R_TRAIL_DEF_PY, impl
+        pass
+  truth:
+    - {id: IMPL_R_TRAIL_DEF_PY, outcome: exact, entity_kind: "function", qualified_name: "f", start: 1, mechanism: trailing, compiler: "syntax-only: rule case"}
+
+rule_cpp_function_defining_macro:
+  # A macro that defines a function (a test framework's TEST) binds the definition, but
+  # the syntax cannot name it: the compiler's function is generated by the macro.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #include <gtest/gtest.h>
+
+    // @Login is rate limited, TEST_R_MACRO_1, test
+    TEST(LoginTest, RateLimited) {
+        EXPECT_TRUE(true);
+    }
+
+    // @Fixture test, TEST_R_MACRO_2, test
+    TEST_F(LoginFixture, Locks) {
+    }
+
+    // @Boost test case, TEST_R_MACRO_3, test
+    BOOST_AUTO_TEST_CASE(rate_limit) {
+    }
+  truth:
+    - {id: TEST_R_MACRO_1, outcome: fallback, node_kind: "function_definition", entity_kind: null, qualified_name: null, start: 4, mechanism: leading, compiler: "clang++ 18 nm -C: LoginTest_RateLimited_Test::TestBody() (macro-generated)"}
+    - {id: TEST_R_MACRO_2, outcome: fallback, node_kind: "function_definition", entity_kind: null, qualified_name: null, start: 9, mechanism: leading, compiler: "syntax-only: a fixture test's body, generated like TEST's"}
+    - {id: TEST_R_MACRO_3, outcome: fallback, node_kind: "function_definition", entity_kind: null, qualified_name: null, start: 13, mechanism: leading, compiler: "syntax-only: Boost.Test generates the test function"}
+
+rule_cpp_conversion_operator:
+  # A conversion operator is a function: declared in its class, defined in it, and
+  # defined out of line. Its name keeps the target type as written, up to the
+  # conversion's own parameter list (not one inside the target type).
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace ns {
+    class W {
+    public:
+        // @In-class conversion declaration, IMPL_R_CONV_1, impl
+        explicit operator bool() const;
+        // @In-class conversion definition, IMPL_R_CONV_2, impl
+        operator int() const { return 0; }
+        // @Conversion to a pointer, IMPL_R_CONV_4, impl
+        operator const char*() const;
+        // @Conversion to a reference, IMPL_R_CONV_5, impl
+        operator int&();
+        // @Conversion to a function wrapper, IMPL_R_CONV_6, impl
+        operator std::function<void(int)>() const;
+    };
+    }
+
+    // @Out-of-line conversion, IMPL_R_CONV_3, impl
+    ns::W::operator bool() const { return true; }
+    // @Out-of-line conversion to a function wrapper, IMPL_R_CONV_7, impl
+    ns::W::operator std::function<void(int)>() const { return {}; }
+  truth:
+    - {id: IMPL_R_CONV_1, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator bool", start: 5, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator bool() const"}
+    - {id: IMPL_R_CONV_2, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator int", start: 7, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator int() const"}
+    - {id: IMPL_R_CONV_4, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator const char*", start: 9, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator char const*() const (the target as written: const char*)"}
+    - {id: IMPL_R_CONV_5, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator int&", start: 11, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator int&()"}
+    - {id: IMPL_R_CONV_6, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator std::function<void(int)>", start: 13, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator std::function<void (int)>() const (the target as written: std::function<void(int)>)"}
+    - {id: IMPL_R_CONV_3, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator bool", start: 18, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator bool() const"}
+    - {id: IMPL_R_CONV_7, outcome: exact, entity_kind: "operator", qualified_name: "ns::W::operator std::function<void(int)>", start: 20, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::operator std::function<void (int)>() const (the target as written: std::function<void(int)>)"}
+
+rule_cpp_members_under_preprocessor:
+  # Class members inside #if / #else are still members: constructor, destructor, method.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace ns {
+    class W {
+    public:
+    #if defined(DEBUG)
+        // @Debug constructor, IMPL_R_PP_1, impl
+        W(int level);
+        // @Debug destructor, IMPL_R_PP_2, impl
+        ~W();
+        // @Debug dump, IMPL_R_PP_3, impl
+        void dump() const {}
+    #else
+        // @Release constructor, IMPL_R_PP_4, impl
+        W();
+    #endif
+    };
+    }
+  truth:
+    - {id: IMPL_R_PP_1, outcome: exact, entity_kind: "constructor", qualified_name: "ns::W::W", start: 6, mechanism: leading, compiler: "clang++ 18 -DDEBUG nm -C: ns::W::W(int)"}
+    - {id: IMPL_R_PP_2, outcome: exact, entity_kind: "destructor", qualified_name: "ns::W::~W", start: 8, mechanism: leading, compiler: "clang++ 18 -DDEBUG nm -C: ns::W::~W()"}
+    - {id: IMPL_R_PP_3, outcome: exact, entity_kind: "method", qualified_name: "ns::W::dump", start: 10, mechanism: leading, compiler: "clang++ 18 -DDEBUG nm -C: ns::W::dump() const"}
+    - {id: IMPL_R_PP_4, outcome: exact, entity_kind: "constructor", qualified_name: "ns::W::W", start: 13, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::W()"}
+
+rule_rust_names_trait_object_impl_and_nested_fn:
+  # A non-path self type keeps its brackets, as rustc prints it; a function nested in a
+  # method is a function, named through the method.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    pub trait Tr {}
+
+    impl dyn Tr {
+        // @Method on a trait object, IMPL_R_RSN_1, impl
+        pub fn m(&self) {}
+    }
+
+    pub struct W;
+
+    impl W {
+        pub fn m(&self) {
+            // @Helper in a method, IMPL_R_RSN_2, impl
+            fn helper() {}
+            helper()
+        }
+    }
+  truth:
+    - {id: IMPL_R_RSN_1, outcome: exact, entity_kind: "method", qualified_name: "<dyn Tr>::m", start: 5, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <dyn t::Tr>::m"}
+    - {id: IMPL_R_RSN_2, outcome: exact, entity_kind: "function", qualified_name: "W::m::helper", start: 13, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::W>::m::helper"}
+
+rule_entity_lines_include_attributes_cpp:
+  # A C++ attribute on its own line is part of the declaration it precedes, so the
+  # entity's first line is the attribute's.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    // @An attributed function, IMPL_R_ATTR_LINES_CPP, impl
+    [[nodiscard]]
+    int checked();
+  truth:
+    - {id: IMPL_R_ATTR_LINES_CPP, outcome: exact, entity_kind: "function", qualified_name: "checked", start: 2, mechanism: leading, compiler: "syntax-only: the attribute is part of the declaration"}
+
+rule_entity_lines_include_attributes_csharp:
+  # A C# attribute list is part of the declaration it precedes, so the entity's first
+  # line is the attribute's.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    class C
+    {
+        // @An attributed method, IMPL_R_ATTR_LINES_CS, impl
+        [Obsolete]
+        public void M() {}
+    }
+  truth:
+    - {id: IMPL_R_ATTR_LINES_CS, outcome: exact, entity_kind: "method", qualified_name: "C.M", start: 4, mechanism: leading, compiler: "syntax-only: the attribute list is part of the declaration"}
+
+rule_csharp_primary_constructor_and_record_struct:
+  # C# 12 primary constructors and record structs parse as the declarations they are.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace Geo
+    {
+        // @A primary constructor, IMPL_R_CS12_1, impl
+        public class Point(int x, int y)
+        {
+            // @Distance, IMPL_R_CS12_2, impl
+            public double Distance() => System.Math.Sqrt(x * x + y * y);
+        }
+
+        // @A record struct, IMPL_R_CS12_3, impl
+        public record struct Pair(int A, int B);
+    }
+  truth:
+    - {id: IMPL_R_CS12_1, outcome: exact, entity_kind: "class", qualified_name: "Geo.Point", start: 4, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_CS12_2, outcome: exact, entity_kind: "method", qualified_name: "Geo.Point.Distance", start: 7, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_CS12_3, outcome: exact, entity_kind: "record", qualified_name: "Geo.Pair", start: 11, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_rust_unsafe_extern_block:
+  # A Rust 2024 ``unsafe extern`` block's functions are entities, in the enclosing
+  # module's namespace.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    unsafe extern "C" {
+        // @A foreign function, IMPL_R_RS24, impl
+        pub fn abs(x: i32) -> i32;
+    }
+  truth:
+    - {id: IMPL_R_RS24, outcome: exact, entity_kind: "function", qualified_name: "abs", start: 3, mechanism: leading, compiler: "rustc 1.97 (edition 2024): the foreign function abs"}
+
+rule_doc_comment_file_block_is_file_level_cpp:
+  # A documentation comment that documents the file (Doxygen's ``@file``) keeps the
+  # file-header rule: a blank line after it, it is file level.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /**
+     * @file widget.h
+     * @need-ids: REQ_R_FILE_CPP
+     */
+
+    namespace ns {
+    void f();
+    }
+  truth:
+    - {id: REQ_R_FILE_CPP, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "Doxygen: a block with \\file documents the file"}
+
+rule_doc_comment_file_block_is_file_level_ts:
+  # A JSDoc comment that documents the file (``@fileoverview``) keeps the file-header
+  # rule: a blank line after it, it is file level.
+  lang: typescript
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /**
+     * @fileoverview Widgets.
+     * @need-ids: REQ_R_FILE_TS
+     */
+
+    export function f(): void {}
+  truth:
+    - {id: REQ_R_FILE_TS, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "JSDoc: @fileoverview documents the file"}
+
+rule_inner_attribute_is_no_entity_head:
+  # An inner attribute (``#![...]``) applies to what it is inside, so it heads no item:
+  # a marker after one on its row is trailing, and belongs to the module, or the file.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #![allow(dead_code)] // @After an inner attribute, IMPL_R_INNER_ATTR_1, impl
+    fn f() {}
+
+    mod m {
+        #![allow(unused)] // @After an inner attribute in a module, IMPL_R_INNER_ATTR_2, impl
+        fn g() {}
+    }
+  truth:
+    - {id: IMPL_R_INNER_ATTR_1, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "rustc: an inner attribute applies to the enclosing crate"}
+    - {id: IMPL_R_INNER_ATTR_2, outcome: exact, entity_kind: "module", qualified_name: "m", start: 4, mechanism: enclosing, compiler: "rustc: an inner attribute applies to the enclosing module"}
+
+rule_file_tag_needs_a_left_boundary:
+  # A file tag counts only at the start of the comment or after a space, ``*``, ``/`` or
+  # ``!``: an address like ``a@file.com`` in a header doc block is prose, so the block
+  # documents the next item.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /**
+     * Widgets; mail a@file.com for help.
+     * @need-ids: REQ_R_TAG_LEFT
+     */
+
+    void f();
+  truth:
+    - {id: REQ_R_TAG_LEFT, outcome: exact, entity_kind: "function", qualified_name: "f", start: 6, mechanism: doc_comment, compiler: "Doxygen: no file command, so the block documents the next declaration"}
+
+rule_file_tag_is_a_whole_word:
+  # A file tag must end the word: ``@filename`` is no ``@file``, so the block documents
+  # the next item.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /** @filename widget.h
+     * @need-ids: REQ_R_TAG_WORD */
+
+    void f();
+  truth:
+    - {id: REQ_R_TAG_WORD, outcome: exact, entity_kind: "function", qualified_name: "f", start: 4, mechanism: doc_comment, compiler: "Doxygen: @filename is no file command"}
+
+rule_file_tag_ascii_boundary:
+  # The word ends at the first character that is not an ASCII letter, digit or ``_``:
+  # Doxygen and JSDoc commands are ASCII, so ``@file`` followed by a combining mark is
+  # still ``@file``, and the block is file level.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /** @fileͅ widget.h
+     * @need-ids: REQ_R_TAG_ASCII */
+
+    void f();
+  truth:
+    - {id: REQ_R_TAG_ASCII, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case (ASCII command names)"}
+
+rule_file_tag_backslash_form:
+  # Doxygen's ``\file`` is ``@file``: the block is file level.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /** \file widget.h
+     * @need-ids: REQ_R_TAG_BACKSLASH */
+
+    void f();
+  truth:
+    - {id: REQ_R_TAG_BACKSLASH, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "Doxygen: \\file documents the file"}
+
+rule_file_tag_module_ts:
+  # JSDoc's ``@module`` documents the file: the block is file level.
+  lang: typescript
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /**
+     * @module widgets
+     * @need-ids: REQ_R_TAG_MODULE
+     */
+
+    export function f(): void {}
+  truth:
+    - {id: REQ_R_TAG_MODULE, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "JSDoc: @module documents the file"}
+
+rule_file_tag_package_documentation_ts:
+  # TSDoc's ``@packageDocumentation`` documents the file: the block is file level.
+  lang: typescript
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /**
+     * @packageDocumentation
+     * @need-ids: REQ_R_TAG_PACKAGE
+     */
+
+    export function f(): void {}
+  truth:
+    - {id: REQ_R_TAG_PACKAGE, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "TSDoc: @packageDocumentation documents the file"}
+
+rule_head_comment_skip_csharp:
+  # Another comment between an attribute and the marker does not take the marker out
+  # of the entity's head: it still leads the method.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    class A
+    {
+        [Test] /* c */ // @After an attribute and a comment, IMPL_R_HEAD_SKIP_CS, impl
+        public void M() {}
+    }
+  truth:
+    - {id: IMPL_R_HEAD_SKIP_CS, outcome: exact, entity_kind: "method", qualified_name: "A.M", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_head_comment_skip_ts:
+  # Another comment between a class decorator and the marker does not take the marker
+  # out of the class's head: it still leads the class.
+  lang: typescript
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    @Injectable() /* c */ // @After a decorator and a comment, IMPL_R_HEAD_SKIP_TS, impl
+    class Service {}
+  truth:
+    - {id: IMPL_R_HEAD_SKIP_TS, outcome: exact, entity_kind: "class", qualified_name: "Service", start: 1, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_head_before_trailing:
+  # A marker inside an attribute list that starts the entity's row trails code on that
+  # row, but it is in the head first: it leads the method.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    class A
+    {
+        [Test, // @Inside an attribute list, IMPL_R_HEAD_ORDER, impl
+         Category("x")]
+        public void M() {}
+    }
+  truth:
+    - {id: IMPL_R_HEAD_ORDER, outcome: exact, entity_kind: "method", qualified_name: "A.M", start: 3, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_file_tag_non_ascii_letter_ends_the_word:
+  # The word ends at the first character that is not an ASCII letter, digit or ``_``,
+  # even a non-ASCII letter: ``@file`` followed by ``é`` is still ``@file``, and the
+  # block is file level.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /** @fileé widget.h
+     * @need-ids: REQ_R_TAG_NON_ASCII */
+
+    void f();
+  truth:
+    - {id: REQ_R_TAG_NON_ASCII, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case (ASCII command names)"}
+
+rule_name_chain_cpp_method_in_class:
+  # Kinds describe, names identify. This case and the next define one method, here in
+  # its class and there out of line: their ``semantic`` name chains (the names, and a
+  # Rust impl's trait) are equal, their kinds are not -- the out-of-line qualifier
+  # ``ns`` is a ``scope``, which the syntax cannot classify.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace ns {
+    class W {
+    public:
+        // @Defined in its class, IMPL_R_CHAIN_1, impl
+        void f() {}
+    };
+    }
+  truth:
+    - {id: IMPL_R_CHAIN_1, outcome: exact, entity_kind: "method", qualified_name: "ns::W::f", start: 5, mechanism: leading, compiler: "clang++ 18 nm -C (odr-used): ns::W::f()"}
+
+rule_name_chain_cpp_method_out_of_line:
+  # The method of the case above, defined out of line.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace ns {
+    class W {
+    public:
+        void f();
+    };
+    }
+
+    // @Defined out of line, IMPL_R_CHAIN_2, impl
+    void ns::W::f() {}
+  truth:
+    - {id: IMPL_R_CHAIN_2, outcome: exact, entity_kind: "method", qualified_name: "ns::W::f", start: 9, mechanism: leading, compiler: "clang++ 18 nm -C: ns::W::f()"}
+
+rule_name_chain_rust_trait_is_identity:
+  # Two methods of one type, one per trait impl: their name chains differ only by the
+  # impl's ``trait``, which identifies, as a name does.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    pub trait Shape {
+        fn area(&self) -> f64;
+    }
+    pub trait Other {
+        fn area(&self) -> f64;
+    }
+    pub struct Widget;
+
+    impl Shape for Widget {
+        // @Area as a Shape, IMPL_R_CHAIN_3, impl
+        fn area(&self) -> f64 { 0.0 }
+    }
+
+    impl Other for Widget {
+        // @Area as an Other, IMPL_R_CHAIN_4, impl
+        fn area(&self) -> f64 { 1.0 }
+    }
+  truth:
+    - {id: IMPL_R_CHAIN_3, outcome: exact, entity_kind: "method", qualified_name: "<Widget as Shape>::area", start: 11, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::Widget as t::Shape>::area"}
+    - {id: IMPL_R_CHAIN_4, outcome: exact, entity_kind: "method", qualified_name: "<Widget as Other>::area", start: 16, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::Widget as t::Other>::area"}
+
+rule_name_chain_python_locals_is_identity:
+  # CPython's ``<locals>`` is identity, as a name is: ``A.f.g`` (the method ``g`` of a nested
+  # class ``f``) and ``A.f.<locals>.g`` (a function nested in the method ``f``) have the same
+  # names and two name chains, which differ by the ``<locals>`` boundary alone.
+  lang: python
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    class A:
+        class f:
+            # @Method of a nested class, IMPL_R_CHAIN_5, impl
+            def g(self):
+                pass
+
+        def f(self):
+            # @Function in a method, IMPL_R_CHAIN_6, impl
+            def g():
+                pass
+
+            return g
+  truth:
+    - {id: IMPL_R_CHAIN_5, outcome: exact, entity_kind: "method", qualified_name: "A.f.g", start: 4, mechanism: leading, compiler: "CPython 3.13 co_qualname: A.f.g"}
+    - {id: IMPL_R_CHAIN_6, outcome: exact, entity_kind: "function", qualified_name: "A.f.<locals>.g", start: 9, mechanism: leading, compiler: "CPython 3.13 co_qualname: A.f.<locals>.g"}
+
+rule_name_chain_rust_impl_in_module:
+  # An impl inside an in-file module is inside it by name chain: the module is a part of its
+  # own, before the impl, and the impl is its self type as written -- a bare name is folded back
+  # into the module's path when rendered (``m::G::new``), a path is not (``x::P::new``), and a
+  # path from the crate root keeps its ``crate::`` (``Q::q``, not ``k::Q::q``).
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    pub mod m {
+        pub trait Shape {
+            fn area(&self) -> f64;
+        }
+        pub struct G;
+
+        impl G {
+            // @New in a module, IMPL_R_MOD_1, impl
+            pub fn new() -> G {
+                G
+            }
+        }
+
+        impl Shape for G {
+            // @Area in a module, IMPL_R_MOD_2, impl
+            fn area(&self) -> f64 {
+                0.0
+            }
+        }
+
+        // @Free function in a module, IMPL_R_MOD_3, impl
+        pub fn free() {}
+
+        pub mod n {
+            pub struct H;
+
+            impl H {
+                // @Make in a nested module, IMPL_R_MOD_4, impl
+                pub fn make() -> H {
+                    H
+                }
+            }
+        }
+    }
+
+    pub mod x {
+        pub struct P;
+    }
+
+    pub struct Q;
+
+    pub mod k {
+        impl crate::x::P {
+            // @A type written as a path, IMPL_R_MOD_5, impl
+            pub fn new() -> crate::x::P {
+                crate::x::P
+            }
+        }
+
+        impl crate::Q {
+            // @A type written from the crate root, IMPL_R_MOD_6, impl
+            pub fn q() {}
+        }
+    }
+  truth:
+    - {id: IMPL_R_MOD_1, outcome: exact, entity_kind: "method", qualified_name: "m::G::new", start: 9, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::m::G>::new"}
+    - {id: IMPL_R_MOD_2, outcome: exact, entity_kind: "method", qualified_name: "<m::G as m::Shape>::area", start: 16, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::m::G as t::m::Shape>::area"}
+    - {id: IMPL_R_MOD_3, outcome: exact, entity_kind: "function", qualified_name: "m::free", start: 22, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: t::m::free"}
+    - {id: IMPL_R_MOD_4, outcome: exact, entity_kind: "method", qualified_name: "m::n::H::make", start: 29, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::m::n::H>::make"}
+    - {id: IMPL_R_MOD_5, outcome: exact, entity_kind: "method", qualified_name: "x::P::new", start: 45, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::x::P>::new"}
+    - {id: IMPL_R_MOD_6, outcome: exact, entity_kind: "method", qualified_name: "Q::q", start: 52, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::Q>::q"}

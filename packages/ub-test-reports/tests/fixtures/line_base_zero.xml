@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  line="0": in a plain pytest report it is a test on the file's first line (pytest counts
+  from 0), so it reads as 1; in a report counted from 1 (marked) it is no line of the file
+  and is kept as given; in a report of an unknown producer it is passed through.
+-->
+<testsuites>
+  <testsuite name="pytest" tests="1">
+    <testcase classname="tests.test_first" name="test_on_line_one" file="tests/test_first.py" line="0"/>
+  </testsuite>
+  <testsuite name="marked" tests="1">
+    <properties>
+      <property name="ub_test_reports:line_base" value="1"/>
+    </properties>
+    <testcase classname="tests.test_first" name="test_marked_zero" file="tests/test_first.py" line="0"/>
+  </testsuite>
+  <testsuite name="other" tests="1">
+    <testcase classname="Other" name="test_unknown_zero" file="src/other.x" line="0"/>
+  </testsuite>
+</testsuites>

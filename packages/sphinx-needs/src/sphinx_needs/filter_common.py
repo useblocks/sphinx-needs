@@ -6,6 +6,7 @@ like needtable, needlist and needflow.
 from __future__ import annotations
 
 import ast
+import difflib
 import json
 import math
 import re
@@ -19,18 +20,28 @@ from typing import Any, Literal, TypedDict, TypeVar, overload
 from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.statemachine import StringList
+from docutils.utils import get_source_line
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs import _read_watch
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs._source_facets import SourceFacets, explained
+from sphinx_needs._wording import title_hint
+from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, NeedsMutable
 from sphinx_needs.debug import measure_time, measure_time_func
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.needs_schema import AllowedTypes
-from sphinx_needs.ubquery import ORIGIN_KEY, CompiledFilter, compile_portable
+from sphinx_needs.ubquery import (
+    IS_A_KEY,
+    ORIGIN_KEY,
+    CompiledFilter,
+    compile_portable,
+    is_a,
+    is_a_literals,
+)
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
@@ -851,6 +862,8 @@ def filter_needs_and_parts(
             )
         finally:
             watch.active = False
+    # before either tier, and before the loop: reported even where no need is given
+    _report_unknown_types(filter_string, config, location, append_warning)
 
     # === Fast path: try compiled predicate to avoid eval() entirely ===
     compiled = compile_portable(filter_string)
@@ -858,7 +871,11 @@ def filter_needs_and_parts(
 
     if simple_pred is not None:
         fallback = _fast_path_context(
-            config.filter_data, config.variant_data_proxy, compiled, origin_docname
+            config.filter_data,
+            config.variant_data_proxy,
+            compiled,
+            origin_docname,
+            config.is_a_types if compiled.reads_types else None,
         )
         found_needs: list[_NeedOrPartT] = []
         error_reported = False
@@ -890,7 +907,8 @@ def filter_needs_and_parts(
     error_reported = False
     for filter_need in needs:
         try:
-            if filter_single_need(
+            # the string is checked above, at this call's location
+            if _filter_single_need(
                 filter_need,
                 config,
                 filter_string,
@@ -915,34 +933,84 @@ def filter_needs_and_parts(
     return found_needs_slow
 
 
+def _report_unknown_types(
+    filter_string: str,
+    config: NeedsSphinxConfig,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+) -> None:
+    """Report each name a ``c.is_a("<type>")`` of the string gives as a literal that is
+    no need type of the build: such a check is false on every need.
+
+    Once per build for the string, where it is written and the origin the caller
+    appends (a ``needs_warnings`` entry names itself), so once per string for a filter
+    with neither, such as a derived field's ``where``. Nothing before a build has set
+    the types (``config.is_a_types``), when no name is known to be wrong. A name that
+    is a type's title, or close to a type's name, is hinted at.
+    """
+    if not (names := is_a_literals(filter_string)):
+        return
+    if (types := config.is_a_types) is None:
+        return
+    if not (unknown := [name for name in names if name not in types]):
+        return
+    where = get_source_line(location) if isinstance(location, nodes.Node) else location
+    reported = _NEEDS_CONFIG.build.is_a_reported
+    if (key := (filter_string, where, append_warning)) in reported:
+        return
+    reported.add(key)
+    titles = {
+        need_type["directive"]: str(need_type.get("title", ""))
+        for need_type in config.types
+        if isinstance(need_type, dict) and isinstance(need_type.get("directive"), str)
+    }
+    for name in unknown:
+        hint = title_hint(name, titles)
+        if not hint and (close := difflib.get_close_matches(name, types, 1, 0.8)):
+            hint = f" (did you mean {close[0]!r}?)"
+        log_warning(
+            log,
+            f"Filter {filter_string!r} names {name!r}, which is not a need type{hint}; "
+            f"c.is_a({name!r}) selects no need"
+            + (f" {append_warning}" if append_warning else ""),
+            "filter_type",
+            location=location,
+        )
+
+
 def _fast_path_context(
     filter_data: Mapping[str, Any],
     var_proxy: Any,
     compiled: CompiledFilter,
     origin_docname: str | None,
+    types: Mapping[str, frozenset[str]] | None = None,
 ) -> dict[str, Any] | None:
     """The mapping a compiled filter's predicate reads beside the need.
 
     What the ``eval`` tier's context holds besides the need's fields: the
     ``needs_filter_data`` keys, the variant data under ``var``, and, for a predicate
-    that reads it (``c.this_doc()``), the document the filter is written in. The
-    document is passed per call, never compiled in: one compiled filter serves every
-    document a string is written in.
+    that reads them, the document the filter is written in (``c.this_doc()``) and the
+    project's need types (``c.is_a("...")``, ``config.is_a_types``). Both are passed per
+    call, never compiled in: one compiled filter serves every document a string is
+    written in, and every project a process builds.
 
-    The caller passes the two configuration values it has read: a read of one costs
-    more than the rest of a per-need call, and :func:`filter_single_need` is called
-    need by need.
+    The caller passes the configuration values it has read: a read of one costs more
+    than the rest of a per-need call, and :func:`filter_single_need` is called need by
+    need.
 
     :return: The mapping, or None when the predicate needs nothing of it.
     """
     origin = origin_docname if compiled.reads_origin else None
-    if not filter_data and var_proxy is None and origin is None:
+    types = types if compiled.reads_types else None
+    if not filter_data and var_proxy is None and origin is None and types is None:
         return None
     fallback: dict[str, Any] = dict(filter_data) if filter_data else {}
     if var_proxy is not None:
         fallback["var"] = var_proxy
     if origin is not None:
         fallback[ORIGIN_KEY] = origin
+    if types is not None:
+        fallback[IS_A_KEY] = types
     return fallback
 
 
@@ -991,7 +1059,11 @@ def apply_default_predicate(
         # a predicate is read for its truth, as a filter is
         result = bool(eval(predicate, predicate_context))
     except Exception as e:
-        raise NeedsInvalidFilter(f"Predicate {predicate!r} not valid. Error: {e}.")
+        # evaluated as the need is created, with no check context: no facets there
+        raise NeedsInvalidFilter(
+            f"Predicate {predicate!r} not valid. "
+            f"Error: {explained(e, 'a field predicate', predicate)}."
+        )
     return result
 
 
@@ -1016,11 +1088,15 @@ def filter_import_item(
         # a filter is read for its truth, whatever its value
         result = bool(eval(filter_string, filter_context))
     except Exception as e:
-        raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
+        # it reads the imported record, which has no hops of this build
+        where = "a needimport filter, which reads the imported record"
+        raise NeedsInvalidFilter(
+            f"Filter {filter_string!r} not valid. "
+            f"Error: {explained(e, where, filter_string)}."
+        )
     return result
 
 
-@measure_time("filtering")
 def filter_single_need(
     need: NeedItem | NeedPartItem,
     config: NeedsSphinxConfig,
@@ -1032,6 +1108,9 @@ def filter_single_need(
     origin_docname: str | None = None,
 ) -> bool:
     """Checks if a single need/need_part passes a filter_string.
+
+    A ``c.is_a`` literal naming no need type is reported once per build for the
+    string, which has no location or origin here.
 
     :param need: the data for a single need
     :param config: NeedsSphinxConfig object
@@ -1046,6 +1125,33 @@ def filter_single_need(
     """
     if _is_constant_filter(filter_string):
         raise NeedsInvalidFilter(_constant_filter_message(filter_string))
+    # before either tier
+    _report_unknown_types(filter_string, config)
+    return _filter_single_need(
+        need,
+        config,
+        filter_string,
+        needs,
+        current_need,
+        filter_compiled,
+        origin_docname=origin_docname,
+    )
+
+
+@measure_time("filtering", name="filter_single_need")
+def _filter_single_need(
+    need: NeedItem | NeedPartItem,
+    config: NeedsSphinxConfig,
+    filter_string: str,
+    needs: Iterable[NeedItem | NeedPartItem] | None = None,
+    current_need: NeedItem | NeedPartItem | None = None,
+    filter_compiled: CodeType | None = None,
+    *,
+    origin_docname: str | None = None,
+) -> bool:
+    """:func:`filter_single_need` without the checks of the string, which a caller
+    evaluating it need by need has made once (a constant is refused before this).
+    """
     # the check of the order of the pass sees what the filter reads, while it watches
     # the filters of a call
     watch = _read_watch.current
@@ -1063,10 +1169,17 @@ def filter_single_need(
             # called need by need: the mapping is built only for a predicate that reads it
             filter_data = config.filter_data
             fallback = (
-                _fast_path_context(filter_data, var_proxy, compiled, origin_docname)
+                _fast_path_context(
+                    filter_data,
+                    var_proxy,
+                    compiled,
+                    origin_docname,
+                    config.is_a_types if compiled.reads_types else None,
+                )
                 if filter_data
                 or var_proxy is not None
                 or (origin_docname is not None and compiled.reads_origin)
+                or compiled.reads_types
                 else None
             )
             try:
@@ -1095,7 +1208,7 @@ def filter_single_need(
 
         filter_context["search"] = need_search
 
-        filter_context["c"] = NeedCheckContext(need, origin_docname)
+        filter_context["c"] = NeedCheckContext(need, origin_docname, config)
         if _read_watch.current is not None:
             # the names the evaluation reads, for the check of the order of the pass; the
             # need's fields are what the context does not set over them
@@ -1125,15 +1238,33 @@ def filter_single_need(
 class NeedCheckContext:
     """A namespace for filter checks of the current need."""
 
-    __slots__ = ("_need", "_origin_docname")
+    __slots__ = ("_config", "_need", "_origin_docname")
 
     def __init__(
-        self, need: NeedItem | NeedPartItem, origin_docname: str | None
+        self,
+        need: NeedItem | NeedPartItem,
+        origin_docname: str | None,
+        config: NeedsSphinxConfig | None = None,
     ) -> None:
         self._need = need
         self._origin_docname = origin_docname
+        self._config = config
 
     def this_doc(self) -> bool:
         if self._origin_docname is None:
             raise ValueError("`this_doc` can not be used in this context")
         return self._need.is_in_document(self._origin_docname)
+
+    @property
+    def source(self) -> SourceFacets:
+        """The facets of the need's source, ``c.source.<facet>`` (a part's are its
+        need's), each computed when it is read (:mod:`sphinx_needs._source_facets`)."""
+        need = self._need
+        return SourceFacets(need._need if isinstance(need, NeedPartItem) else need)
+
+    def is_a(self, name: str) -> bool:
+        """Whether the need's type is *name*, or a type inheriting from it, transitively,
+        as the project's need types declare it (:func:`~sphinx_needs.ubquery.is_a`). A
+        name that is no need type is false on every need."""
+        types = None if self._config is None else self._config.is_a_types
+        return is_a(self._need["type"], name, types)

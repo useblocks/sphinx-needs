@@ -3,6 +3,132 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+New and Improved
+................
+
+- 🔧 A one-line need is created through Sphinx-Needs' ``create_need``, its fields and
+  links as two mappings, so a marker field named like a parameter of Sphinx-Needs'
+  creation call (``state``, ``app``, ...) is an ordinary field where it ended the build
+  (`#2392 <https://github.com/useblocks/sphinx-needs/issues/2392>`__). Requires the
+  Sphinx-Needs release that adds ``create_need``.
+- 👌 A marker field named ``content``, ``doctype``, ``jinja_content``, ``full_title`` or
+  ``allow_type_coercion`` is still the need's argument of that name, as Sphinx-Needs'
+  ``add_need`` took it: ``content`` the need's content, ``jinja_content`` its Jinja switch,
+  and so on. A ``full_title`` the project declares as a field is that field too, and still
+  the full title a need without an id has its id hashed from, so the id is the one it had
+  and the one the duplicate check and the ``[docs]`` link name.
+- 👌 A marker field named like another Sphinx-Needs core field that the project cannot
+  declare as a field (``external_url``, ``external_css``, ``is_external``, ``sections``,
+  ...) refuses its need, with the ``codelinks.oneline`` warning naming it. ``add_need``
+  took such a field as its own keyword: ``external_css`` set the need's css class,
+  ``is_external`` made the need external, and the others were ignored.
+- 🔧 The needs of a ``src-trace`` directive take their location as Sphinx-Needs' one
+  ``NeedItemSource``, where they used its deprecated ``NeedItemSourceUnknown`` (what they
+  now record is below: their code hop, and their ``lineno``). Requires the Sphinx-Needs
+  release that adds ``NeedItemSource``.
+- 🔧 The id the duplicate check and the ``[docs]`` link name for a need without an id is
+  derived through Sphinx-Needs' public ``generate_need_id``, where it imported the private
+  ``_make_hashed_id``; every id is the one it was
+  (`#2407 <https://github.com/useblocks/sphinx-needs/issues/2407>`__).
+- 🔧 The guard that let a Sphinx-Needs without ``ingest_need_record`` (before 9.0.0) import
+  this package, and the warning a directive with multi-line needs gave there, are gone:
+  the floor has been Sphinx-Needs 9.0.0 or later since 2.0.0
+  (`#2408 <https://github.com/useblocks/sphinx-needs/issues/2408>`__).
+- ✨ The analysis names the code entity each marker is attached to.
+
+  Every record of ``codelinks analyse`` -- a one-line need, a reference, a multi-line
+  need -- says which entity its marker belongs to: a one-line need and a reference gain
+  a ``scope`` object, right after ``tagged_scope``, and a multi-line need's
+  ``source.scope`` gains the same keys.
+  Besides the syntax node and its lines, ``language``, the language's name (``c``,
+  ``cpp``, ``csharp``, ``python``, ``typescript``, ``javascript``, ...),
+  ``entity_kind`` (``function``, ``method``, ``class``, ``namespace``,
+  ...), ``qualified_name``, the entity's name within its file (``ns::Widget::draw``,
+  ``Shape.area``, ``<Widget as Shape>::area``), ``semantic``, that name in its parts
+  (``namespace ns``, ``class Widget``, ``method draw``), and ``mechanism``, how the
+  marker was attached (``doc_comment``, ``leading``, ``trailing`` or ``enclosing``).
+  ``tagged_scope`` keeps its meaning (the fix below changes which entity it holds), and
+  ``codelinks write rst`` accepts (and ignores) the new key.
+  The needs ``src-trace`` creates carry no field for the entity yet.
+  See :ref:`attachment`.
+- ✨ Each need records where it comes from: its source file, lines, entity and language.
+
+  Every need ``src-trace`` creates, one-line and multi-line, records the marker it was
+  made from, before the page the directive is written on, for Sphinx-Needs' source
+  model (a ``code`` hop). The record holds:
+
+  - the file, relative to the Sphinx source directory, with ``..`` for a file outside it;
+  - the marker's lines: a one-line need's own line, and a multi-line need's ``@need`` to
+    ``@endneed`` lines;
+  - the entity the marker is attached to, in the analysis' parts (``class Shape``,
+    ``method area``), with a Rust trait impl's trait, and the entity's qualified name
+    as the analysis renders it (``Shape.area``, ``ns::Widget::draw``,
+    ``<Widget as Shape>::area``), a rendering that ``name_chain`` leaves out of an
+    entity's identity;
+  - the file's language (``python``, ``cpp``, ``c``, ``rust``, ...).
+
+  The record is provisional, as Sphinx-Needs' hops are: it reaches no ``needs.json`` and
+  adds no field. The first build after upgrading reads every page once (the extension's
+  ``env_version`` is now 3).
+
+Fixes
+.....
+
+- 🐛 A multi-line need without an id whose ``:full_title:`` the project declares as a
+  field is checked for duplicates, and linked from its source page, by the id it is
+  actually given (`#2410 <https://github.com/useblocks/sphinx-needs/issues/2410>`__).
+  Its id is hashed from its title, the full title being only the field, but the
+  duplicate check and the link used the id hashed from the full title: a need of that id
+  elsewhere skipped the block as a duplicate, a need of its real id made Sphinx-Needs
+  refuse the block instead of codelinks reporting a duplicate (a skip the next
+  incremental build did not remember), and the ``[docs]`` link named an id no need has.
+  No need's id moves, and one-line needs are unchanged: a declared ``full_title`` there
+  is still the full title their id is hashed from.
+- 🐛 A ``src-trace`` need's ``lineno`` is the line the directive is written on, as a
+  Sphinx-Needs ``need`` directive's is. After ``rst_prolog`` it counted the prolog's lines
+  too, and in an included file it was the line in the expanded input, a line neither file
+  has the directive on; it is now the line in the file the directive is written in (the
+  included file's, for an included one), and so is the ``lineno`` in ``needs.json``. No id
+  moves: no id depends on a line.
+- 🐛 A marker attaches only to an adjacent code entity.
+
+  A marker used to bind the next function, class or struct at its level however much
+  code stood in between: a template, a decorated definition, a prototype, an in-class
+  method declaration, a constructor, a macro call or a statement was walked past, so the
+  marker landed on a later entity.
+  Against compiler ground truth, 2.0.1 attached 24 of the 98 markers of a measured corpus
+  in six languages to the wrong entity; now none.
+  A leading marker now belongs to the entity right after it when only comments, blank
+  lines, attributes and decorators stand between; a trailing marker to the entity on its
+  line (an attribute, a decorator or a template header before it is not code); a Rust
+  ``//!`` comment to what it is inside; the comments before a file's first item, a blank
+  line after the last, to the file, unless it is a documentation comment, which documents
+  the next item (one with ``@file`` or ``@fileoverview`` keeps the file); anything else
+  to the entity it is inside, or the file.
+  More declarations are entities:
+  C and C++ prototypes, in-class method and conversion operator declarations, unions and
+  enums with a body, and namespaces;
+  Rust required trait methods, unions, type aliases and ``macro_rules!`` definitions;
+  C# constructors, destructors, structs, records, interfaces, enums, operators,
+  conversion operators, indexers, events, delegates, local functions and namespaces;
+  Go interface methods.
+  See :ref:`attachment`.
+
+  **Existing markers re-bind**, which changes ``tagged_scope`` (and the new ``scope``) in
+  ``marked_content.json``; nothing changes in the needs ``src-trace`` creates.
+  In TypeScript and JavaScript, a marker above a plain ``const``, ``let`` or ``var``, a
+  class field without a function, an assignment of a value or an ``export default`` of a
+  value used to skip it and bind the next function; it now binds the enclosing class, or
+  nothing, as in every other language.
+  A marker after code on its line (``int x = 1; // @...``) at file level now binds
+  nothing, where it bound the next function.
+  In C and C++, a class or struct forward declaration (``struct Foo;``) is no longer an
+  entity: a marker right above one binds the entity it is inside, or nothing at file
+  level, where it bound the declaration.
+
 .. _`release:2.0.1`:
 
 2.0.1

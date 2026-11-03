@@ -1,0 +1,324 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 60
+      }
+    },
+    "tagged_scope": "explicit operator bool() const;",
+    "scope": {
+      "kind": "declaration",
+      "start": 5,
+      "end": 5,
+      "language": "cpp",
+      "entity_kind": "operator",
+      "qualified_name": "ns::W::operator bool",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator bool"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "In-class conversion declaration",
+      "id": "IMPL_R_CONV_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 8
+      },
+      "end": {
+        "row": 5,
+        "column": 59
+      }
+    },
+    "tagged_scope": "operator int() const { return 0; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 7,
+      "end": 7,
+      "language": "cpp",
+      "entity_kind": "operator",
+      "qualified_name": "ns::W::operator int",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator int"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "In-class conversion definition",
+      "id": "IMPL_R_CONV_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 8
+      },
+      "end": {
+        "row": 7,
+        "column": 52
+      }
+    },
+    "tagged_scope": "operator const char*() const;",
+    "scope": {
+      "kind": "declaration",
+      "start": 9,
+      "end": 9,
+      "language": "cpp",
+      "entity_kind": "operator",
+      "qualified_name": "ns::W::operator const char*",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator const char*"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Conversion to a pointer",
+      "id": "IMPL_R_CONV_4",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 8
+      },
+      "end": {
+        "row": 9,
+        "column": 54
+      }
+    },
+    "tagged_scope": "operator int&();",
+    "scope": {
+      "kind": "declaration",
+      "start": 11,
+      "end": 11,
+      "language": "cpp",
+      "entity_kind": "operator",
+      "qualified_name": "ns::W::operator int&",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator int&"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Conversion to a reference",
+      "id": "IMPL_R_CONV_5",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 11,
+        "column": 8
+      },
+      "end": {
+        "row": 11,
+        "column": 61
+      }
+    },
+    "tagged_scope": "operator std::function<void(int)>() const;",
+    "scope": {
+      "kind": "declaration",
+      "start": 13,
+      "end": 13,
+      "language": "cpp",
+      "entity_kind": "operator",
+      "qualified_name": "ns::W::operator std::function<void(int)>",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator std::function<void(int)>"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Conversion to a function wrapper",
+      "id": "IMPL_R_CONV_6",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 16,
+        "column": 4
+      },
+      "end": {
+        "row": 16,
+        "column": 47
+      }
+    },
+    "tagged_scope": "ns::W::operator bool() const { return true; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 18,
+      "end": 18,
+      "language": "cpp",
+      "entity_kind": "operator",
+      "qualified_name": "ns::W::operator bool",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator bool"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Out-of-line conversion",
+      "id": "IMPL_R_CONV_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 18,
+        "column": 4
+      },
+      "end": {
+        "row": 18,
+        "column": 69
+      }
+    },
+    "tagged_scope": "ns::W::operator std::function<void(int)>() const { return {}; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 20,
+      "end": 20,
+      "language": "cpp",
+      "entity_kind": "operator",
+      "qualified_name": "ns::W::operator std::function<void(int)>",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "operator",
+          "name": "operator std::function<void(int)>"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Out-of-line conversion to a function wrapper",
+      "id": "IMPL_R_CONV_7",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

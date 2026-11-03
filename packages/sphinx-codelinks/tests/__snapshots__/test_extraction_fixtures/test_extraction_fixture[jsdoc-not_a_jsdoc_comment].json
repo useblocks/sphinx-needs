@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "function f(a: number, b: number, c: number): void {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 6,
+      "end": 6,
+      "language": "typescript",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "param a First",
       "id": "second",
@@ -36,6 +51,21 @@
       }
     },
     "tagged_scope": "function f(a: number, b: number, c: number): void {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 6,
+      "end": 6,
+      "language": "typescript",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "param b Third",
       "id": "fourth",
@@ -59,6 +89,21 @@
       }
     },
     "tagged_scope": "function f(a: number, b: number, c: number): void {}",
+    "scope": {
+      "kind": "function_declaration",
+      "start": 6,
+      "end": 6,
+      "language": "typescript",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "param c Fifth",
       "id": "sixth",

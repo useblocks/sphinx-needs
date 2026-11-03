@@ -114,7 +114,13 @@ class NeedsBuilder(Builder):
         pass
 
 
-def build_needs_json(app: Sphinx, _exception: Exception) -> None:
+def build_needs_json(app: Sphinx, exception: Exception | None) -> None:
+    if exception is not None:
+        # The build has failed: Sphinx re-raises its exception after this event,
+        # unless a handler raises in turn, so writing (and failing on the schema the
+        # failed build never made) would hide the real cause.
+        return
+
     env = app.env
 
     if not NeedsSphinxConfig(env.config).build_json:
@@ -187,7 +193,13 @@ class NeedsIdBuilder(Builder):
         LOGGER.info("Needs_id successfully exported")
 
 
-def build_needs_id_json(app: Sphinx, _exception: Exception) -> None:
+def build_needs_id_json(app: Sphinx, exception: Exception | None) -> None:
+    if exception is not None:
+        # The build has failed: Sphinx re-raises its exception after this event,
+        # unless a handler raises in turn, so writing (and failing on the schema the
+        # failed build never made) would hide the real cause.
+        return
+
     env = app.env
 
     if not NeedsSphinxConfig(env.config).build_json_per_id:
@@ -261,7 +273,13 @@ class NeedumlsBuilder(Builder):
         return ""
 
 
-def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
+def build_needumls_pumls(app: Sphinx, exception: Exception | None) -> None:
+    if exception is not None:
+        # The build has failed: Sphinx re-raises its exception after this event,
+        # unless a handler raises in turn, so writing (and failing on the schema the
+        # failed build never made) would hide the real cause.
+        return
+
     env = app.env
     config = NeedsSphinxConfig(env.config)
 

@@ -19,7 +19,7 @@ import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
-from ub_test_reports.junitparser import JUnitParser
+from ub_test_reports.junitparser import LINE_BASES, JUnitParser, LineBase, is_line_base
 from ub_test_reports.needs_export import (
     DEFAULT_VERSION,
     Report,
@@ -174,6 +174,20 @@ def _build_parser() -> argparse.ArgumentParser:
         "--url-pattern",
         default=None,
         help=f"Source-URL template (default: {DEFAULT_URL_PATTERN}).",
+    )
+    needs.add_argument(
+        # Named after `line_base` in [test_reports], which the flag overrides.
+        "--line-base",
+        choices=[str(base) for base in LINE_BASES],
+        default=None,
+        help=(
+            "What the line of a report without a line-base mark counts from. A "
+            "Google Test case always counts from 1. auto: the reader's rule, a "
+            "pytest-shaped report from 0 (an earlier plugin's too, which carries no "
+            "mark), any other report as written. 0 or 1: that base for every other "
+            f"report without a mark. Overrides line_base in [{SECTION}] (default: "
+            "auto)."
+        ),
     )
     needs.add_argument(
         "-v",
@@ -457,6 +471,18 @@ def _extra_options(
     return names
 
 
+def _line_base(arguments: argparse.Namespace, section: "dict[str, object]") -> LineBase:
+    """What an unmarked report's lines count from: ``--line-base``, else the section's
+    ``line_base`` (which the loader has checked), else ``"auto"``."""
+    flag: object = arguments.line_base
+    given: object
+    if isinstance(flag, str):
+        given = int(flag) if flag.isdigit() else flag
+    else:
+        given = section.get("line_base", "auto")
+    return given if is_line_base(given) else "auto"
+
+
 def _build_needs(arguments: argparse.Namespace) -> int:
     section, config_path, error = _load_section(arguments)
     if error:
@@ -518,6 +544,7 @@ def _build_needs(arguments: argparse.Namespace) -> int:
         )
         return 2
 
+    line_base = _line_base(arguments, section)
     reports: list[Report] = []
     for name in arguments.files:
         path = Path(name)
@@ -527,7 +554,9 @@ def _build_needs(arguments: argparse.Namespace) -> int:
         try:
             # The parser is not typed yet (#114), so both calls are
             # untyped to mypy; nothing to fix from this side.
-            parsed = JUnitParser(str(path)).parse()
+            parsed = JUnitParser(str(path), line_base=line_base).parse(
+                line_base_known=True
+            )
         except Exception as error:
             # The reader's own messages lead with the path; say it once.
             text = str(error)

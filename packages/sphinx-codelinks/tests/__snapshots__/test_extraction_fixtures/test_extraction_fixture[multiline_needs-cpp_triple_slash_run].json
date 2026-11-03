@@ -44,7 +44,17 @@
       "scope": {
         "kind": "function_definition",
         "start": 6,
-        "end": 6
+        "end": 6,
+        "language": "cpp",
+        "entity_kind": "function",
+        "qualified_name": "triple",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "triple"
+          }
+        ],
+        "mechanism": "doc_comment"
       }
     },
     "type": "multiline-need",

@@ -19,8 +19,9 @@ def tr_link(
     *args: Any,
     **kwargs: Any,
 ) -> list[str]:
-    # Guard on the VALUE, not the key: the test fields are registered on every need, so
-    # the key is present on a need that is not a test-case too, with the value `None`.
+    # Guard on the VALUE, not the key: a test field is a key of every need, `None` on
+    # a need of a type that does not declare it (each is declared on the need types
+    # that carry it), so the key is present on a need that is not a test-case too.
     # No links is the empty LIST: an empty string is read as one link to the id `""`,
     # which sphinx-needs reports as a dead outgoing link.
     if need is None:

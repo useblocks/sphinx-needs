@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
@@ -11,6 +13,7 @@ from sphinx_needs.logging import get_logger
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.needs_schema import FieldsSchema
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, split_need_id
+from sphinx_needs.views import NeedsView
 
 log = get_logger(__name__)
 
@@ -130,7 +133,9 @@ def process_need_outgoing(
                 # add a CSS class for disallowed unknown links
                 # note a warning is already emitted when validating the needs list
                 # so we don't need to do it here
-                if _forbidden(needs_schema, ref_need, link_type, need_id_full):
+                if _forbidden(
+                    needs_schema, needs_all_needs, ref_need, link_type, need_id_full
+                ):
                     dead_link_para.attributes["classes"].append("forbidden")
 
             # If we have several links, we add an empty text between them
@@ -143,21 +148,44 @@ def process_need_outgoing(
         node_need_ref.replace_self(node_link_container)
 
 
-def _forbidden(schema: FieldsSchema, need: NeedItem, link_type: str, link: str) -> bool:
+def _forbidden(
+    schema: FieldsSchema,
+    needs: Mapping[str, NeedItem] | NeedsView,
+    need: NeedItem,
+    link_type: str,
+    link: str,
+) -> bool:
     """Whether the dead ``link`` of ``need``'s ``link_type`` is a forbidden one.
 
-    That is, its link type does not allow dead links; for a ``union`` its rule
-    computed (:meth:`~sphinx_needs.needs_schema.LinkSchema.union_on`), a member
-    holding the same link does not, a member that is a union itself asked the same
-    way (cycles are refused at load).
+    That is, the link type it is written in does not allow dead links: for a link type
+    no union or path computed, the link type itself; for a ``union`` its rule computed
+    (:meth:`~sphinx_needs.needs_schema.LinkSchema.union_on`), a member holding the
+    same link on this need, a member that is a union asked the same way (cycles are
+    refused at load); for a ``copy`` or ``collect``
+    (:meth:`~sphinx_needs.needs_schema.LinkSchema.path_on`), the collected link type
+    on a need ``over`` names holding the link, asked the same way, rung by rung (a
+    copy of ``id`` links needs that exist, so is never dead).
     """
     link_field = schema.get_link_field(link_type)
     if link_field is None:
         return True
+    if (path := link_field.path_on(need)) is not None:
+        # imported here, as the functions modules import the roles
+        from sphinx_needs.functions.common import over_candidates
+
+        if path.over is None or path.field is None:
+            return False
+        return any(
+            _forbidden(schema, needs, target, path.field, link)
+            for target in over_candidates(
+                need, path.over, needs, frozenset(schema.iter_link_field_names())
+            )
+            if link in target.get_links(path.field)
+        )
     if (union := link_field.union_on(need)) is None:
         return not link_field.allow_dead_links
     return any(
-        _forbidden(schema, need, name, link)
+        _forbidden(schema, needs, need, name, link)
         for name in union.fields
         if schema.get_link_field(name) is not None and link in need[name]
     )

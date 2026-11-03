@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "struct Point {\n    // @X coordinate, IMPL_CPP_STRUCT, impl, [REQ_CPP_STRUCT]\n    int x;\n}",
+    "scope": {
+      "kind": "struct_specifier",
+      "start": 1,
+      "end": 4,
+      "language": "cpp",
+      "entity_kind": "struct",
+      "qualified_name": "Point",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "Point"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
     "need": {
       "title": "X coordinate",
       "id": "IMPL_CPP_STRUCT",

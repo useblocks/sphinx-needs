@@ -25,14 +25,41 @@
 # sphinx-needs reads one through Python, ubCode refuses it at the `r`.
 #
 # Rules for every runner:
-#   - a case is one project. `config` is its `ubproject.toml` (the `[needs]` configuration
-#     only); `source` is the body of its one reStructuredText document, `index.rst`, under
-#     a title the runner adds; `files` (optional) are other files of the project, relative
-#     to the case directory. A case writes only inside its own directory: a `files` key
-#     that would land outside it (`../x.json`) is a broken case, and the runner refuses it
+#   - a case is one project. `config` is its `ubproject.toml` (its `[needs]` table, and
+#     the `[codelinks]`, `[test_reports]` and `[source]` tables the rules below name);
+#     `source` is the body of its one reStructuredText document, `index.rst`, under
+#     a title the runner adds: `Case`, `====` and a blank line, three lines, so line N of
+#     `source` is line N + 3 of `index.rst`; `files` (optional) are other files of the
+#     project, relative to the case directory. A case writes only inside its own
+#     directory: a `files` key that would land outside it (`../x.json`) is a broken case,
+#     and the runner refuses it
+#   - a case with `extensions` loads those Sphinx extensions besides sphinx-needs:
+#     `sphinx_codelinks`, `sphinx_test_reports`, or both. Its `config` may carry
+#     `[codelinks]` and `[test_reports]` beside the `[needs]` table it must have, its
+#     source code and its JUnit reports are `files`, and its source may use the
+#     extensions' directives (`src-trace`, `test-file`, ...); a need such a directive
+#     creates has the id the extension gives it, which both tools compute alike
+#   - a case loading `sphinx_codelinks` is a git checkout: the RUNNER writes two files
+#     beside `ubproject.toml`, so that no tool needs a `git` binary and the build is
+#     clean. `.git/HEAD` is `0123456789abcdef0123456789abcdef01234567` and a newline;
+#     `.git/config` is `[remote "origin"]`, a newline, a tab,
+#     `url = https://github.com/example/case.git` and a newline
+#   - the Python runner adds a case's extensions to `conf.py`, and SKIPS a case whose
+#     extension is not installed (a run against sphinx-needs' released dependencies
+#     alone has none); ubCode's runner models each extension from its table of the
+#     same file
+#   - a case with `srcdir`, which one case has to pin the root of a path, is built from
+#     that subdirectory of the case directory: its `index.rst` (and the Python runner's
+#     `conf.py`) are written there, its `ubproject.toml` and `files` stay at the case
+#     directory, and its `config` names the subdirectory as `[source] dir`. The Python
+#     runner points sphinx-needs and each extension at that `ubproject.toml`
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
 #     the default ones (`req`, `spec`, `impl`, `test`) unless the case's `config` declares
-#     its own
+#     its own. An `inherits` naming no need type is a configuration finding of each
+#     tool's own, not compared, and the type it is on is a root
+#   - a string literal of `c.is_a(...)` naming no need type selects nothing, which
+#     `expected` compares; whether and how a tool reports it is each tool's own, not
+#     compared
 #   - no case declares a field named `c`, `var`, `search`, `needs` or `current_need`:
 #     which of a field and the context name a filter reads there is not pinned yet
 #   - each `[[case.filters]]` entry is one filter string, evaluated over the needs of the
@@ -50,7 +77,8 @@
 #     by Python's rules, whatever its type, on every tier
 #   - an entry with `tier = "eval"` is OUTSIDE the portable language: ubCode's runner
 #     asserts that its engine refuses the string (it parses it to no query), unless the
-#     entry carries `divergent`, and sphinx-needs answers it through `eval`, which
+#     entry carries `divergent`, or ubCode's runner lists it as an entry its engine
+#     already answers (a pending pin), and sphinx-needs answers it through `eval`, which
 #     `expected` pins
 #   - an entry with `tier = "refused"` is a filter that is a constant alone: a literal (a
 #     string, bytes, a number with one sign or none, None or `...`), a tuple, list, set or
@@ -88,6 +116,8 @@
 #   config       - the `ubproject.toml`
 #   source       - the body of `index.rst`
 #   files        - optional; other files, relative to the case directory, and their text
+#   extensions   - optional; the extensions the case loads besides sphinx-needs
+#   srcdir       - optional; the subdirectory of the case directory it is built from
 #   python_only  - optional; see the rules above
 #   ubcode_only  - optional; see the rules above
 #   [[case.filters]]
@@ -1843,3 +1873,607 @@ divergent = { ubcode = "the filter fails: a boolean is no number to order" }
 filter = 'tags == links'
 expected = ["REQ_001"]
 divergent = { ubcode = "the filter fails: a list field is no value to compare with" }
+
+# --- need types and inherits -----------------------------------------------------------
+
+[[case]]
+name = "is-a-follows-inherits"
+why = "c.is_a(x) is true for a need whose type is x or inherits from x, transitively, as the project's need type declarations give inherits: no field of the need is read but its type, and a name that is no need type is false on every need; type == compares the name alone, and a type whose inherits names no need type is a root"
+config = '''
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+
+[needs.types.sys_req]
+title = "System requirement"
+prefix = "SR_"
+inherits = "req"
+
+[needs.types.hw_req]
+title = "Hardware requirement"
+prefix = "HR_"
+inherits = "sys_req"
+
+[needs.types.spec]
+title = "Specification"
+prefix = "S_"
+
+[needs.types.stray]
+title = "Stray"
+prefix = "ST_"
+inherits = "nope"
+'''
+source = '''
+.. req:: A requirement
+   :id: REQ_001
+
+   :np:`(a) a part`
+
+.. sys_req:: A system requirement
+   :id: SYS_001
+
+.. hw_req:: A hardware requirement
+   :id: HW_001
+
+.. spec:: An unrelated root
+   :id: SPEC_001
+
+.. stray:: Inherits no need type
+   :id: STRAY_001
+'''
+
+[[case.filters]]
+filter = 'c.is_a("req")'
+expected = ["HW_001", "REQ_001", "SYS_001"]
+tier = "fast"
+why = "the type itself, a type inheriting from it, and one inheriting from that"
+
+[[case.filters]]
+filter = "c.is_a('sys_req')"
+expected = ["HW_001", "SYS_001"]
+tier = "fast"
+why = "one level down: the type and its descendants, never its ancestors"
+
+[[case.filters]]
+filter = 'c.is_a("hw_req")'
+expected = ["HW_001"]
+tier = "fast"
+why = "a type nothing inherits from is the type alone"
+
+[[case.filters]]
+filter = 'c.is_a("spec")'
+expected = ["SPEC_001"]
+why = "a type with no inherits, and none inheriting from it"
+
+[[case.filters]]
+filter = 'c.is_a("stray")'
+expected = ["STRAY_001"]
+why = "a type whose inherits names no need type is a root"
+
+[[case.filters]]
+filter = 'not c.is_a("req")'
+expected = ["SPEC_001", "STRAY_001"]
+tier = "fast"
+
+[[case.filters]]
+filter = 'c.is_a("req") and not c.is_a("sys_req")'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'c.is_a("sys_req") or type == "spec"'
+expected = ["HW_001", "SPEC_001", "SYS_001"]
+
+[[case.filters]]
+filter = 'type == "req"'
+expected = ["REQ_001"]
+tier = "index"
+why = "the exact type is still type: it compares the name literally, and does not follow inherits"
+
+[[case.filters]]
+filter = 'type in ["req", "sys_req", "hw_req"]'
+expected = ["HW_001", "REQ_001", "SYS_001"]
+why = "what c.is_a('req') selects here, spelled out"
+
+[[case.filters]]
+filter = 'c.is_a("nope")'
+expected = []
+tier = "fast"
+why = "a name that is no need type selects nothing -- the inherits naming it included"
+
+[[case.filters]]
+filter = 'c.is_a("Requirement")'
+expected = []
+why = "a type is named by its directive name, never its title"
+
+[[case.filters]]
+filter = 'c.is_a("req")'
+expected = ["HW_001", "REQ_001", "SYS_001"]
+in_document = false
+why = "unlike c.this_doc(), it reads the need alone, so a filter configured outside every document takes it"
+
+[[case.filters]]
+filter = 'c.is_a("req")'
+expected = ["HW_001", "REQ_001", "REQ_001.a", "SYS_001"]
+include_parts = true
+why = "a part's type is its need's"
+
+[[case.filters]]
+filter = 'c.is_a(type)'
+expected = ["HW_001", "REQ_001", "SPEC_001", "STRAY_001", "SYS_001"]
+tier = "eval"
+reason = "call:c.is_a"
+why = "the argument is a string literal in the language; any other is eval's"
+
+[[case.filters]]
+filter = 'c.is_a()'
+expected = []
+error = "filter"
+tier = "eval"
+reason = "call:c.is_a"
+
+[[case.filters]]
+filter = 'c.is_a("req") == True'
+expected = ["HW_001", "REQ_001", "SYS_001"]
+tier = "eval"
+reason = "call:c.is_a"
+
+# --- source facets ---------------------------------------------------------------------
+# `c.source.<facet>` reads where a need comes from, by a named position in its source:
+# `kind` the producer, `path` and `line` the innermost place (hops[0]), `paths` every
+# place, `symbol` a traced code entity's qualified name, `document` and `sections` the
+# placement (read from `docname` and `sections`, which they are aliases of). `paths` may
+# gain entries as more of a chain is recorded, so entries test membership, never its
+# length or positions. ubCode has run these entries against its own engine, and one
+# still diverges: a list field compared with `==`, which ubc_query refuses as it does
+# in `mixed-type-values`.
+
+[[case]]
+name = "source-facets-of-page-include-import-and-external-needs"
+why = "c.source reads a need's source by named position: kind is the producer (page, import, external), path and line the file the need is written in -- the included file, not the page --, paths every file innermost first; an imported or external need has no path or line yet, an external need no paths; a path is relative to the source directory; document and sections read docname and sections; a part reads its need's"
+config = '''
+[needs]
+external_needs = [{ base_url = "http://example.org", json_path = "data/ext.json" }]
+'''
+source = '''
+.. req:: On the page
+   :id: REQ_PAGE
+
+   With a :np:`(1) part`.
+
+Fragments
+---------
+
+.. include:: frag/a.txt
+
+.. needimport:: data/imp.json
+
+.. req:: After the include
+   :id: REQ_AFTER
+'''
+files = { "frag/a.txt" = '''
+.. req:: In a fragment
+   :id: REQ_FRAG
+
+.. include:: /frag/b.txt
+''', "frag/b.txt" = '''.. req:: Two includes deep
+   :id: REQ_DEEP
+
+.. list2need::
+   :types: req
+
+   * (REQ_ITEM) An item
+''', "data/imp.json" = '''
+{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_001": {"id": "IMP_001", "type": "req", "title": "Imported", "docname": "upstream/page", "lineno": 9, "sections": ["Upstream"], "content": ""}}}}}
+''', "data/ext.json" = '''
+{"current_version": "1.0", "versions": {"1.0": {"needs": {"EXT_001": {"id": "EXT_001", "type": "req", "title": "External", "docname": "remote/page", "lineno": 7, "sections": ["Remote sec", "Remote top"], "content": ""}}}}}
+''' }
+
+[[case.filters]]
+filter = 'c.source.kind == "page"'
+expected = ["REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
+why = "a need of a directive, in the page or in an included file, a list2need item among them, is a page need"
+
+[[case.filters]]
+filter = 'c.source.kind == "import"'
+expected = ["IMP_001"]
+
+[[case.filters]]
+filter = 'c.source.kind == "external"'
+expected = ["EXT_001"]
+
+[[case.filters]]
+filter = 'c.source.kind != "page"'
+expected = ["EXT_001", "IMP_001"]
+why = "the kinds are open: a negated kind test selects every kind a later producer adds too"
+
+[[case.filters]]
+filter = 'c.source.kind in ["import", "external"]'
+expected = ["EXT_001", "IMP_001"]
+
+[[case.filters]]
+filter = 'c.source.path == "index.rst"'
+expected = ["REQ_AFTER", "REQ_PAGE"]
+
+[[case.filters]]
+filter = 'c.source.path == "frag/a.txt"'
+expected = ["REQ_FRAG"]
+why = "needs written in an included fragment: the fragment, where docname is the page it is included in"
+
+[[case.filters]]
+filter = 'c.source.path == "frag/b.txt"'
+expected = ["REQ_DEEP", "REQ_ITEM"]
+why = "an include inside an include: the innermost file, a list2need item's too"
+
+[[case.filters]]
+filter = '"frag/a.txt" in c.source.paths'
+expected = ["REQ_DEEP", "REQ_FRAG", "REQ_ITEM"]
+why = "paths holds every file a need came through: the needs written in frag/a.txt, and those included through it"
+
+[[case.filters]]
+filter = '"frag/b.txt" in c.source.paths and "frag/a.txt" in c.source.paths'
+expected = ["REQ_DEEP", "REQ_ITEM"]
+why = "the nested chain: the file a need is written in, and the file it was included through"
+
+[[case.filters]]
+filter = '"data/imp.json" in c.source.paths'
+expected = ["IMP_001"]
+why = "an imported need's paths hold the needs.json it was read from, then the page it is imported on"
+
+[[case.filters]]
+filter = '"index.rst" in c.source.paths'
+expected = ["IMP_001", "REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
+
+[[case.filters]]
+filter = '"index.rst" not in c.source.paths'
+expected = ["EXT_001"]
+why = "an external need has no file of this project, not even the page an imported need is placed on"
+
+[[case.filters]]
+filter = 'c.source.path is None'
+expected = ["EXT_001", "IMP_001"]
+why = "an imported or external need's file is another project's, not yet recorded: its path is unset, which later data fills rather than changes"
+
+[[case.filters]]
+filter = 'c.source.line == 4'
+expected = ["REQ_PAGE"]
+why = "the line in the file, 1-based: the runner's title is the first three lines of index.rst"
+
+[[case.filters]]
+filter = 'c.source.line == 1'
+expected = ["REQ_DEEP", "REQ_FRAG"]
+why = "the line in the included file, the path's own"
+
+[[case.filters]]
+filter = 'c.source.path == "frag/b.txt" and c.source.line == 7'
+expected = ["REQ_ITEM"]
+why = "a list2need item's line is the item's"
+
+[[case.filters]]
+filter = 'c.source.line is None'
+expected = ["EXT_001", "IMP_001"]
+why = "line is the path's: none where path is none"
+
+[[case.filters]]
+filter = 'c.source.symbol is None'
+expected = ["EXT_001", "IMP_001", "REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
+why = "symbol is a traced code entity's; a page need's is not served yet"
+
+[[case.filters]]
+filter = 'c.source.document == "index"'
+expected = ["IMP_001", "REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
+why = "the page a need is placed on, an included file's need and an imported need included"
+
+[[case.filters]]
+filter = 'c.source.document is None'
+expected = ["EXT_001"]
+
+[[case.filters]]
+filter = 'c.source.document == docname'
+expected = ["EXT_001", "IMP_001", "REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
+why = "document is an alias of docname"
+
+[[case.filters]]
+filter = 'c.source.sections == sections'
+expected = ["EXT_001", "IMP_001", "REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
+why = "sections is an alias of sections, innermost first"
+divergent = { ubcode = "the filter fails: a list field is no value to compare with" }
+
+[[case.filters]]
+filter = '"Fragments" in c.source.sections'
+expected = ["IMP_001", "REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM"]
+why = "the sections of the page a need is placed on: an included file's need and an imported need take the place they are included or imported at"
+
+[[case.filters]]
+filter = '"Remote sec" in c.source.sections'
+expected = ["EXT_001"]
+why = "an external need's sections are its record's, as sections is"
+
+[[case.filters]]
+filter = 'c.source.path.startswith("frag/")'
+expected = ["REQ_DEEP", "REQ_FRAG", "REQ_ITEM"]
+error = "filter"
+why = "the trap of an unset path: a method of path fails on a need that has none, which is excluded, and the filter is reported"
+
+[[case.filters]]
+filter = 'c.source.path is not None and c.source.path.startswith("frag/")'
+expected = ["REQ_DEEP", "REQ_FRAG", "REQ_ITEM"]
+why = "the guard: and stops before the method on a need with no path"
+
+[[case.filters]]
+filter = 'c.source.kind == "page"'
+expected = ["REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE", "REQ_PAGE.1"]
+include_parts = true
+why = "a part reads its need's source"
+
+[[case.filters]]
+filter = 'c.source.path == "index.rst" and c.source.line == 4'
+expected = ["REQ_PAGE", "REQ_PAGE.1"]
+include_parts = true
+
+[[case.filters]]
+filter = 'c.source.pth == "index.rst"'
+expected = []
+error = "filter"
+tier = "eval"
+reason = "attribute:c"
+why = "a name that is no facet is outside the language, and eval reports it on every need"
+
+[[case.filters]]
+filter = 'any(c.source.kind == kind for kind in ["import", "external"])'
+expected = ["EXT_001", "IMP_001"]
+tier = "eval"
+reason = "call:any"
+why = "eval reads c inside a generator expression's body too"
+
+[[case.filters]]
+filter = 'c.source.path in c.source.paths'
+expected = ["REQ_AFTER", "REQ_DEEP", "REQ_FRAG", "REQ_ITEM", "REQ_PAGE"]
+tier = "eval"
+reason = "compare:name-in-name"
+why = "a facet in a facet is a name in a name, outside the language"
+
+[[case]]
+name = "source-facets-of-code-and-report-needs"
+why = "a need traced from source code is a code need, whose path and line are the marker's file and line and whose symbol is the entity's qualified name; a test report's needs are report needs, whose path is the report -- but a test case's, whose test file is relative to a root the build does not know, so its path is unset and its paths hold the report and the page, never the test file"
+extensions = ["sphinx_codelinks", "sphinx_test_reports"]
+config = '''
+[needs]
+
+[codelinks.projects.eng.source_discover]
+src_dir = "src"
+comment_type = "python"
+
+[codelinks.projects.eng.analyse]
+get_oneline_needs = true
+'''
+source = '''
+Code
+----
+
+.. src-trace::
+   :project: eng
+
+Tests
+-----
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "src/engine.py" = '''# @Engine module, IMPL_FILE, impl
+
+class Engine:
+    # @Start the engine, IMPL_001, impl
+    def start(self):
+        pass
+''', "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="2" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" file="tests/test_engine.py" line="3" time="0.05"/>
+<testcase classname="tests.test_engine.TestEngine" name="test_stop" file="tests/test_engine.py" line="9" time="0.05"/>
+</testsuite>
+</testsuites>
+''' }
+
+[[case.filters]]
+filter = 'c.source.kind == "code"'
+expected = ["IMPL_001", "IMPL_FILE"]
+
+[[case.filters]]
+filter = 'c.source.kind == "report"'
+expected = ["TF_0001", "TF_0001_0EA", "TF_0001_0EA_9A449", "TF_0001_0EA_A759D"]
+why = "the file, its suite and its cases"
+
+[[case.filters]]
+filter = 'c.source.path == "src/engine.py"'
+expected = ["IMPL_001", "IMPL_FILE"]
+why = "needs traced from a code file, by its path"
+
+[[case.filters]]
+filter = 'c.source.path is not None and c.source.path.startswith("src/")'
+expected = ["IMPL_001", "IMPL_FILE"]
+why = "needs traced from code under src/"
+
+[[case.filters]]
+filter = 'c.source.line == 4'
+expected = ["IMPL_001"]
+why = "a marker's line in its file"
+
+[[case.filters]]
+filter = 'c.source.symbol == "Engine.start"'
+expected = ["IMPL_001"]
+why = "the entity a marker is attached to, by its qualified name in its file"
+
+[[case.filters]]
+filter = 'c.source.kind == "code" and c.source.symbol is None'
+expected = ["IMPL_FILE"]
+why = "a marker attached to no entity has no symbol"
+
+[[case.filters]]
+filter = 'c.source.path == "report.xml"'
+expected = ["TF_0001", "TF_0001_0EA"]
+why = "a test file's and a test suite's path is the report"
+
+[[case.filters]]
+filter = '"report.xml" in c.source.paths'
+expected = ["TF_0001", "TF_0001_0EA", "TF_0001_0EA_9A449", "TF_0001_0EA_A759D"]
+why = "needs from this report"
+
+[[case.filters]]
+filter = 'c.source.kind == "report" and c.source.path is None'
+expected = ["TF_0001_0EA_9A449", "TF_0001_0EA_A759D"]
+why = "a test case's path is unset until its test file's root is known"
+
+[[case.filters]]
+filter = '"index.rst" in c.source.paths'
+expected = ["IMPL_001", "IMPL_FILE", "TF_0001", "TF_0001_0EA", "TF_0001_0EA_9A449", "TF_0001_0EA_A759D"]
+why = "a traced or reported need's paths hold the page that places it too"
+
+[[case.filters]]
+filter = 'c.source.line is None'
+expected = ["TF_0001", "TF_0001_0EA", "TF_0001_0EA_9A449", "TF_0001_0EA_A759D"]
+why = "no line in a report, and none for a test case, whose path is unset"
+
+[[case.filters]]
+filter = '"Code" in c.source.sections and c.source.document == "index"'
+expected = ["IMPL_001", "IMPL_FILE"]
+why = "a traced need is placed on the page of its src-trace"
+
+[[case]]
+name = "a-test-case-with-no-test-file-has-no-path"
+why = "a test case's innermost place is its test code: where the report gives no test file (pytest's default xunit2), its path is unset, never the report, so that later data fills it rather than changes it"
+extensions = ["sphinx_test_reports"]
+config = '''
+[needs]
+'''
+source = '''
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+   :auto_suites:
+   :auto_cases:
+'''
+files = { "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" time="0.1"/>
+</testsuite>
+</testsuites>
+''' }
+
+[[case.filters]]
+filter = 'c.source.kind == "report" and c.source.path is None'
+expected = ["TF_0001_0EA_A759D"]
+
+[[case]]
+name = "source-paths-are-relative-to-the-source-directory"
+why = "a path is relative to the Sphinx source directory, which ubproject.toml names as [source] dir: a page in it reads its name there, and a file outside it -- traced code, a test report, an imported needs.json -- climbs out with .."
+srcdir = "docs"
+extensions = ["sphinx_codelinks", "sphinx_test_reports"]
+config = '''
+[source]
+dir = "docs"
+
+[needs]
+
+[codelinks.projects.eng.source_discover]
+src_dir = "src"
+comment_type = "python"
+
+[codelinks.projects.eng.analyse]
+get_oneline_needs = true
+
+[test_reports]
+rootdir = "."
+'''
+source = '''
+.. req:: On the page
+   :id: REQ_PAGE
+
+.. src-trace::
+   :project: eng
+
+.. test-file:: Report
+   :id: TF_0001
+   :file: report.xml
+
+.. needimport:: ../data/imp.json
+'''
+files = { "src/engine.py" = '''class Engine:
+    # @Start the engine, IMPL_001, impl
+    def start(self):
+        pass
+''', "report.xml" = '''<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+<testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="0.1">
+<testcase classname="tests.test_engine" name="test_start" file="tests/test_engine.py" line="3" time="0.1"/>
+</testsuite>
+</testsuites>
+''', "data/imp.json" = '''
+{"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP_001": {"id": "IMP_001", "type": "req", "title": "Imported", "content": ""}}}}}
+''' }
+
+[[case.filters]]
+filter = 'c.source.path == "index.rst"'
+expected = ["REQ_PAGE"]
+why = "a page in the source directory: not docs/index.rst"
+
+[[case.filters]]
+filter = 'c.source.path == "../src/engine.py"'
+expected = ["IMPL_001"]
+
+[[case.filters]]
+filter = 'c.source.path is not None and c.source.path.startswith("../src/")'
+expected = ["IMPL_001"]
+why = "needs traced from code under ../src/"
+
+[[case.filters]]
+filter = 'c.source.path == "../report.xml"'
+expected = ["TF_0001"]
+
+[[case.filters]]
+filter = '"../data/imp.json" in c.source.paths'
+expected = ["IMP_001"]
+
+[[case.filters]]
+filter = 'c.source.document == "index"'
+expected = ["IMPL_001", "IMP_001", "REQ_PAGE", "TF_0001"]
+
+[[case]]
+name = "a-field-named-source-is-a-field-like-any-other"
+why = "a field named source is read as source like any other field, with nothing reported, and the facets under c stay what they are"
+config = '''
+[needs.fields.source]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Written by hand
+   :id: REQ_001
+   :source: manual
+
+.. req:: Written by a tool
+   :id: REQ_002
+   :source: tool
+
+.. req:: Not said
+   :id: REQ_003
+'''
+
+[[case.filters]]
+filter = 'source == "manual"'
+expected = ["REQ_001"]
+
+[[case.filters]]
+filter = 'source != "tool"'
+expected = ["REQ_001", "REQ_003"]
+
+[[case.filters]]
+filter = 'source is None'
+expected = ["REQ_003"]
+
+[[case.filters]]
+filter = 'c.source.kind == "page"'
+expected = ["REQ_001", "REQ_002", "REQ_003"]
+why = "c is the check context, whatever a field is named"

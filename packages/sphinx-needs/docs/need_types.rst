@@ -181,6 +181,8 @@ and the per-type defaults of a ``req`` (below).
 Its own entries add to them, and may only narrow them:
 a declaration that would widen its parent's is ignored, with a ``needs.type_widening`` warning
 (see :ref:`needs_types_fields`).
+A :ref:`filter <filter_is_a>` follows ``inherits`` through ``c.is_a``:
+``c.is_a('req')`` is true for a ``req`` need and for a ``safety_req`` one.
 
 A field required on one type
 ----------------------------
@@ -201,8 +203,53 @@ A field declared ``nullable = false`` with no default is required on the needs o
 
       index.rst:25: WARNING: Need could not be created: Field 'hazard' is not nullable, but no value or default was given. [needs.create_need]
 
-   To report a need without the field and keep it, use a schema rule's ``required`` instead:
-   see :ref:`schema_per_type_or_rules`.
+   To report a need without the field and keep it, give the entry a ``severity`` below ``violation`` (next section),
+   or use a schema rule's ``required``: see :ref:`schema_per_type_or_rules`.
+
+.. _`need_types_severity`:
+
+A constraint reported, not failed
+---------------------------------
+
+A need failing what its type declares is reported as a schema **violation**,
+and one without a required field is not created.
+``severity = "warning"`` (or ``"info"``) on the entry reports it at that severity instead,
+for every constraint of the declaration: its ``schema`` keywords and its ``nullable = false``.
+A required field below ``violation`` is asked for, not enforced: the need is created, the field ``None``, and it is reported.
+``spec`` declares ``owner`` so:
+
+.. literalinclude:: ../tests/doc_test/doc_need_types/ubproject.toml
+   :language: toml
+   :start-after: # [severity]
+   :end-before: # [/severity]
+
+A ``spec`` without an owner is kept, and reported as a warning:
+
+.. code-block:: text
+
+   WARNING: Need 'S_001' has schema warnings:
+     Severity:       warning
+     Field:          owner
+     Need path:      S_001
+     Schema path:    fields > nullable
+     Schema message: Field 'owner' is not nullable, but no value or default was given. [sn_schema_warning.field_fail]
+
+A ``severity`` on a ``links`` entry is the severity of its ``schema`` (``minItems``, ``maxItems``).
+A type inheriting the declaration keeps its severity, and may raise it, never lower it:
+a ``severity = "info"`` under a parent's explicit ``"warning"`` is ignored, as a ``needs.type_widening`` warning.
+A parent that gives none is a ``violation`` by default, and leaves its children free.
+
+Since a severity below ``violation`` moves the check of a required field into the schema validation,
+switching the validation off (:ref:`needs_schema_validation_enabled`) silences it:
+the need is created with ``None``, and nothing is reported.
+The :ref:`needs.json <needs_builder>` writes such a field as nullable (``"type": ["string", "null"]``),
+as a need may hold ``null`` of it. Its ``needs_schema`` is one block for every need type,
+so the field is written nullable as a whole, also where the other types' needs never hold ``null``;
+a field every type declares not nullable at ``violation`` is not.
+
+An ``info`` finding is still logged at Sphinx's ``WARNING`` level (as a schema rule's is),
+so a ``-W`` build fails on it as on a ``warning``;
+silence one with :ref:`suppress_warnings <suppress_validation_messages>`, such as ``sn_schema_info.field_fail``.
 
 A link type only one type may use
 ---------------------------------
@@ -270,6 +317,8 @@ and a dead link is not checked: it is left to the dead-link warning, which ``all
 ``target_types`` follows ``inherits``.
 A :ref:`filter <filter_string>` such as ``type == 'req'`` and a schema rule's ``const`` do not:
 they compare the type name literally.
+A filter follows it with ``c.is_a('req')``, which selects a ``req`` and a ``safety_req``
+(see :ref:`filter_is_a`).
 Since a subtype is accepted, ``inherits`` reads as "is a".
 A type that inherits another only to reuse its fields is accepted wherever its parent is.
 "A ``req`` but not a ``safety_req``" takes a schema rule,
@@ -292,6 +341,80 @@ Here ``hw_test`` inherits ``test``:
 ``["spec"]`` would widen: a ``test`` does not accept a ``spec``.
 A declaration that widens is ignored as a whole, its other keys included,
 with a ``needs.type_widening`` warning (see :ref:`needs_types_fields`).
+
+.. _`need_types_id_regex`:
+
+The ids of a type
+-----------------
+
+``id_regex`` in a type's entry is a pattern the ids of its needs match,
+beside :ref:`needs_id_regex`, and beside the ``id_regex`` of every type it inherits from:
+
+.. code-block:: toml
+
+   [needs.types.req]
+   title = "Requirement"
+   prefix = "REQ_"
+   id_regex = "REQ_"
+
+   [needs.types.safety_req]
+   title = "Safety requirement"
+   prefix = "REQ_S"
+   inherits = "req"
+   id_regex = "REQ_S"
+
+A ``req`` id starts with ``REQ_``, a ``safety_req`` id with ``REQ_S``, and so it is a ``req`` id too.
+The pattern is matched as :ref:`needs_id_regex` is, against the need's local id
+(the whole id while ids carry no namespace), with Python's ``re.match`` (anchored at the start only),
+on ids written in a need and ids generated from the type's ``prefix`` alike
+-- a generated id is the prefix, then (with :ref:`needs_id_from_title`) the title in upper case, then a hash of
+upper-case letters and digits, all of which the pattern must accept --
+and a need whose id does not match is **not created**::
+
+   Need could not be created: Given ID 'SR_001' does not match the id_regex 'REQ_' of need type 'req', which need type 'safety_req' inherits
+
+A need imported by :ref:`needimport` or loaded from :ref:`needs_external_needs` keeps its id unchecked.
+To report an id and keep the need, use a schema rule with a ``pattern`` on ``id`` instead.
+
+.. _`need_types_incoming`:
+
+Links a type must receive
+-------------------------
+
+A type can declare how many links of a link type point *to* its needs, its back links ``<link type>_back``:
+a ``back_links`` entry named after the link type, with a ``schema`` of ``minItems`` and ``maxItems``.
+Every ``spec`` must be verified by a test:
+
+.. literalinclude:: ../tests/doc_test/doc_need_types/ubproject.toml
+   :language: toml
+   :start-after: # [incoming]
+   :end-before: # [/incoming]
+
+A ``spec`` no need verifies is reported, at the ``spec``:
+
+.. code-block:: text
+
+   ERROR: Need 'S_002' has schema violations:
+     Severity:       violation
+     Field:          verifies_back
+     Need path:      S_002
+     Schema path:    links > schema > properties > verifies_back > minItems
+     Schema message: [] has less than 1 item [sn_schema_violation.link_fail]
+
+The count is every ``verifies`` link to the need, whatever its source:
+``S_001`` is verified by ``T_003``, whose link ``target_types`` refuses (above), and that link counts.
+Like ``minItems`` on the outgoing side, it is checked by the schema validation, once every link is final;
+a ``severity`` on the entry reports it at that severity, and a type inheriting it may narrow it.
+The entry names any link type, one the counted type declares or not: ``verifies`` here is the ``test`` type's.
+One naming no link type is a ``needs.type_conflict`` warning, and is ignored,
+with the link type it is close to, if any (``back_links['implemnts'] ... did you mean 'implements'?``);
+so is a ``links`` (or ``fields``) entry named ``verifies_back``, which declares nothing.
+A need from :ref:`needs_external_needs` is not counted: its own project's links to it are not loaded here,
+so its count would be partial; an imported need is.
+A link to a part of a need (``S_001.p1``) counts for the need,
+and so does a link to a part the need lacks, which is reported as a dead link where it is written.
+"Verified by at least one ``test``" among sources of several types takes a schema rule
+(:ref:`network_back_validation`); the rules in full are in :ref:`needs_types_fields`.
 
 Defaults per type
 -----------------
@@ -383,10 +506,25 @@ A misspelt field name
 .. warning::
 
    A ``fields`` entry naming no field declared elsewhere declares a new one.
-   So a misspelt name with a ``schema`` ``type``, such as ``[needs.types.safety_req.fields.hazrd]``,
-   gives no warning: it declares a field ``hazrd`` of the ``safety_req`` needs,
+   So a misspelt name with a ``schema`` ``type``, such as ``[needs.types.req.fields.asl]`` meant to narrow
+   a :ref:`needs_fields` entry ``asil``, declares a field ``asl`` of the ``req`` needs,
    and the misspelt declaration constrains nothing.
-   The :ref:`needs.json <needs_builder>` lists it, with the description ``Declared by need types 'safety_req'``.
+   The :ref:`needs.json <needs_builder>` lists it, with the description ``Declared by need types 'req'``.
+
+   When the name is close to that of a field or link type declared elsewhere -- a core field an author sets
+   (``status``, ``tags``, ...), a :ref:`needs_fields` entry, a field an extension or a service registers,
+   or a :ref:`needs_links` entry -- the build says so, one ``needs.type_near_name`` warning per field
+   (or link type, ``links['...']``, "a link type of need types ... alone"), naming the first entry declaring it::
+
+      needs_types['req'].fields['asl'] declares a field of need types 'req' alone; did you mean 'asil'? [needs.type_near_name]
+
+   Close means ``difflib.get_close_matches(name, known, n=1, cutoff=0.8)``.
+   The field is declared all the same, so a deliberate near name keeps working:
+   a field ``tag`` of one type beside the core field ``tags`` is reported too,
+   and ``suppress_warnings = ["needs.type_near_name"]`` silences these warnings alone.
+   A name is not compared with the other fields declared on need types alone,
+   so a misspelt ``[needs.types.safety_req.fields.hazrd]`` beside a ``hazard`` that need types declare alone
+   still gives no warning.
    A misspelt name without a ``schema`` ``type`` is refused, as a ``needs.type_conflict`` warning::
 
       needs_types['safety_req'].fields['hazzard'] declares 'hazzard', which no needs_fields entry declares, and no need type without an ancestor declaring it gives it a 'schema' 'type'; the entry is ignored
@@ -394,7 +532,8 @@ A misspelt field name
 When to use schema rules
 ------------------------
 
-A type's entry says what a need of the type may hold, and the types of the needs its links may point to.
-Rules about the needs it links to beyond their type, incoming links, conditions between fields
+A type's entry says what a need of the type may hold, the types of the needs its links may point to,
+and how many links point to it.
+Rules about the needs it links to beyond their type, incoming links from needs of a given type, conditions between fields
 and the other cases of :ref:`schema_per_type_still_rules` take :ref:`schema rules <schema_validation>`;
 :ref:`schema_per_type_or_rules` compares the two, and how each reports.

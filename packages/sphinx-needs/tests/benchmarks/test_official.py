@@ -9,6 +9,8 @@ from random import randrange
 import pytest
 import responses
 
+from sphinx_needs_testkit import make_plantuml_inert
+from tests.benchmarks._builds import time_html_builds, unfenced
 from tests.data.service_github import (
     GITHUB_ISSUE_SEARCH_ANSWER,
     GITHUB_SEARCH_COMMIT_ANSWER,
@@ -45,11 +47,7 @@ def random_data_callback(request):
     return 200, [], json.dumps(data)
 
 
-@responses.activate
-@pytest.mark.parametrize(
-    "test_app", [{"buildername": "html", "srcdir": "../docs"}], indirect=True
-)
-def test_official_time(test_app, benchmark):
+def _mock_github() -> None:
     responses.add_callback(
         responses.GET,
         re.compile(r"https://api.github.com/.*"),
@@ -60,37 +58,8 @@ def test_official_time(test_app, benchmark):
         responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body=""
     )
 
-    app = test_app
-    benchmark.pedantic(app.builder.build_all, rounds=1, iterations=1)
 
-    # Check if static files got copied correctly.
-    build_dir = Path(app.outdir) / "_static" / "sphinx-needs" / "libs" / "html"
-    files = [f for f in build_dir.glob("**/*") if f.is_file()]
-    assert build_dir / "sphinx_needs_collapse.js" in files
-
-
-@responses.activate
-@pytest.mark.parametrize(
-    "test_app",
-    [{"buildername": "html", "srcdir": "../docs", "parallel": 1}],
-    indirect=True,
-)
-@pytest.mark.skipif(
-    sys.platform.startswith("win"), reason="memray not available on Windows"
-)
-def test_official_memory(test_app):
-    responses.add_callback(
-        responses.GET,
-        re.compile(r"https://api.github.com/.*"),
-        callback=random_data_callback,
-        content_type="application/json",
-    )
-    responses.add(
-        responses.GET, re.compile(r"https://avatars.githubusercontent.com/.*"), body=""
-    )
-
-    app = test_app
-
+def _drop_copy_css_file(app) -> None:
     # Okay, that's really ugly.
     # There seems to be a bug in matplotlib for copying css-files when used with "../docs" (relative path!) as
     # app source. I don't know why. But we do not need the function for the test, so it gets removed from the listener.
@@ -98,13 +67,53 @@ def test_official_memory(test_app):
         if "_copy_css_file" in listener[1].__name__:
             del app.events.listeners["build-finished"][index]
 
-    mem_path = Path(__file__).parent / ".." / ".." / "mem_out.bin"
-    file_dest = memray.FileDestination(mem_path, overwrite=True)
 
-    with memray.Tracker(destination=file_dest):
-        app.build()
-
-    # Check if static files got copied correctly.
+def _assert_static_files(app) -> None:
     build_dir = Path(app.outdir) / "_static" / "sphinx-needs" / "libs" / "html"
     files = [f for f in build_dir.glob("**/*") if f.is_file()]
     assert build_dir / "sphinx_needs_collapse.js" in files
+
+
+@responses.activate
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "../docs"}], indirect=True
+)
+def test_official_time(test_app, make_app, benchmark):
+    _mock_github()
+    # 15-20 s a build once nothing renders; the fastest of three is the number reported
+    app = time_html_builds(benchmark, make_app, Path(test_app.srcdir), rounds=3)
+    _assert_static_files(app)
+
+
+@responses.activate
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": "../docs"}], indirect=True
+)
+@pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="memray not available on Windows"
+)
+def test_official_memory(test_app, make_app, benchmark):
+    """The peak heap of one build, as memray records it, and its flamegraph.
+
+    Unlike a duration, the peak barely depends on the machine, so it is the steadiest
+    number this workflow tracks. It travels in the benchmark's ``extra_info``; the
+    duration pytest-benchmark records beside it is memray's, and nothing reads it.
+    """
+    _mock_github()
+    with unfenced():
+        app = make_app(buildername="html", srcdir=Path(test_app.srcdir), freshenv=True)
+    make_plantuml_inert(app)
+    _drop_copy_css_file(app)
+
+    mem_path = Path(__file__).parent / ".." / ".." / "mem_out.bin"
+
+    def build() -> None:
+        file_dest = memray.FileDestination(mem_path, overwrite=True)
+        with memray.Tracker(destination=file_dest):
+            app.build()
+
+    benchmark.pedantic(build, rounds=1, iterations=1)
+    with memray.FileReader(mem_path) as reader:
+        benchmark.extra_info["peak_memory_bytes"] = reader.metadata.peak_memory
+
+    _assert_static_files(app)

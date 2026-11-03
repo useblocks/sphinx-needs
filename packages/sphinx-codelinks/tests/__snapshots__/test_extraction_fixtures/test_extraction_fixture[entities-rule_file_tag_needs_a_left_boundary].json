@@ -1,0 +1,38 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 14
+      },
+      "end": {
+        "row": 2,
+        "column": 28
+      }
+    },
+    "tagged_scope": "void f();",
+    "scope": {
+      "kind": "declaration",
+      "start": 6,
+      "end": 6,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need_ids": [
+      "REQ_R_TAG_LEFT"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "declaration"
+  }
+]

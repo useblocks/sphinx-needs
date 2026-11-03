@@ -13,6 +13,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Header Base",
       "id": "IMPL_HDR_BASE",
@@ -38,6 +39,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Header On",
       "id": "IMPL_HDR_ON",

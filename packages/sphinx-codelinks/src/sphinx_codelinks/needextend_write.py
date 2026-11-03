@@ -107,6 +107,12 @@ class MarkedContentSchema:
     )
     """Where a multi-line need is (root-relative path, lines, columns)."""
 
+    scope: dict[str, Any] | None = field(
+        default=None, metadata={"schema": {"type": ["object", "null"]}}
+    )
+    """The entity the marker is attached to (kind, lines, language, name and its parts,
+    mechanism)."""
+
     @classmethod
     def get_schema(cls, name: str) -> dict[str, Any] | None:
         _field = next(_field for _field in fields(cls) if _field.name is name)
@@ -172,6 +178,7 @@ class MarkedObjType(TypedDict):
     need: dict[str, str | list[str]] | None
     markup: NotRequired[str | None]
     source: NotRequired[dict[str, Any] | None]
+    scope: NotRequired[dict[str, Any] | None]
 
 
 def convert_marked_content(

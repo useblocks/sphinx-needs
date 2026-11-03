@@ -12,6 +12,8 @@ test-case need IDs moving.
 import base64
 import hashlib
 import re
+from collections.abc import Mapping
+from typing import Any
 
 #: Stand-in for a missing source file, so a case without a ``file`` attribute
 #: still gets a stable identity instead of an unstable or empty one.
@@ -42,19 +44,71 @@ def short_hash(value: str, length: int = 5) -> str:
 _PARAMETERISED = re.compile(r"^(?P<name>[^\[]+)(?:\[(?P<param>.*)\])?$")
 
 
-def split_case_name(name: str) -> tuple[str, str]:
-    """``("test_x", "a-b")`` for ``"test_x[a-b]"``, ``("test_x", "")`` for
+def split_case_name(name: str) -> tuple[str, str | None]:
+    """``("test_x", "a-b")`` for ``"test_x[a-b]"``, ``("test_x", None)`` for
     ``"test_x"``: the name is always there, the parameter only when pytest
-    spelled one.
+    spelled one (``""`` for an empty ``[]``), and ``None`` -- a null field, never
+    ``""`` -- when it did not.
 
-    One definition for the build's directives and the converter, so an
-    imported need and a locally created one for the same case agree on
-    ``case_name`` and ``case_parameter``.
+    The name's half of :func:`case_name_and_parameter`, the one definition the
+    build's directives and the converter share, so an imported need and a
+    locally created one for the same case agree on ``case_name`` and
+    ``case_parameter``.
     """
     match = _PARAMETERISED.match(name)
     if match is None:
-        return name, ""
-    return match.group("name"), match.group("param") or ""
+        return name, None
+    return match.group("name"), match.group("param")
+
+
+def case_name_and_parameter(
+    case: Mapping[str, Any], *, name: str | None = None
+) -> tuple[str, str | None]:
+    """A parsed test case's ``case_name`` and ``case_parameter``.
+
+    The parameter is, in this order:
+
+    1. what the name's ``[…]`` gives (pytest's ``test_x[3]``, see
+       :func:`split_case_name`), an empty ``[]`` too;
+    2. else Google Test's ``value_param`` (a ``TEST_P`` instance's ``GetParam()``),
+       verbatim;
+    3. else its ``type_param`` (a typed test's ``TypeParam``), verbatim;
+    4. where the report gives both (a test registered through
+       ``testing::RegisterTest``), ``"<type_param>, <value_param>"`` (``int, 42``),
+       gtest's own order;
+
+    and ``None`` -- a null field -- where none of them gives one. An empty, missing or
+    ``"unknown"`` attribute gives none: the JUnit parser writes ``""`` for an absent
+    one, and a ``tr_json_mapping`` may default it to the parsers' ``"unknown"``
+    placeholder. ``case_name`` is
+    the name as :func:`split_case_name` leaves it, so a gtest instance keeps its
+    ``/N`` (``Value/0``).
+
+    One definition for the converter, the ``test-case`` directive and the report
+    hop's ``parameter`` extra, so the three agree.
+
+    :param case: The test case as the parser gives it.
+    :param name: The name to split, where the caller spells it otherwise than the
+        case's own ``name`` (the converter writes ``""`` for the parser's
+        ``"unknown"``).
+    """
+    case_name, parameter = split_case_name(
+        str(case.get("name", "")) if name is None else name
+    )
+    if parameter is not None:
+        return case_name, parameter
+    value = _attribute(case, "value_param")
+    type_ = _attribute(case, "type_param")
+    if value and type_:
+        return case_name, f"{type_}, {value}"
+    return case_name, value or type_ or None
+
+
+def _attribute(case: Mapping[str, Any], key: str) -> str:
+    """The case's ``key`` as text, ``""`` where it is missing, ``None`` or the parsers'
+    :data:`UNKNOWN` placeholder."""
+    value = case.get(key)
+    return "" if value is None or value == UNKNOWN else str(value)
 
 
 def case_display_name(classname: str, name: str) -> str:

@@ -231,6 +231,29 @@ NEED_TYPES_WARNINGS = [
             "  Schema message: [] has less than 1 item [sn_schema_violation.link_fail]",
         ],
     ),
+    # A field spec declares not nullable at severity warning: reported, the need kept.
+    _schema_record(
+        "WARNING: Need 'S_001' has schema warnings:",
+        severity="warning",
+        field="owner",
+        need_path="S_001",
+        rest=[
+            "  Schema path:    fields > nullable",
+            "  Schema message: Field 'owner' is not nullable, but no value or default "
+            "was given. [sn_schema_warning.field_fail]",
+        ],
+    ),
+    # A spec declares how many tests verify it; S_001's one refused link counts.
+    _schema_record(
+        "ERROR: Need 'S_002' has schema violations:",
+        severity="violation",
+        field="verifies_back",
+        need_path="S_002",
+        rest=[
+            "  Schema path:    links > schema > properties > verifies_back > minItems",
+            "  Schema message: [] has less than 1 item [sn_schema_violation.link_fail]",
+        ],
+    ),
     # The unguarded filter, over a field only safety_req declares (None elsewhere).
     "<srcdir>/index.rst:51: WARNING: Filter 'hazard.startswith(\"loss\")' not valid. "
     "Error: 'NoneType' object has no attribute 'startswith'. [needs.filter]",
@@ -259,6 +282,7 @@ def test_need_types_example(test_app: SphinxTestApp) -> None:
         "R_004",
         "SR_001",
         "S_001",
+        "S_002",
         "T_001",
         "T_002",
         "T_003",
@@ -284,6 +308,11 @@ def test_need_types_example(test_app: SphinxTestApp) -> None:
     assert needs["R_001"]["layout"] is None
     assert needs["T_001"]["collapse"] is True
     assert needs["R_001"]["collapse"] is False
+    # A field not nullable at severity warning: the need is created, holding None.
+    assert needs["S_001"]["owner"] is None
+    # The count of a spec's verifies back links: a link target_types refuses counts.
+    assert needs["S_001"]["verifies_back"] == ["T_003"]
+    assert needs["S_002"]["verifies_back"] == []
 
     # Each of the three tables lists SR_001 alone: the unguarded filter warns once
     # and leaves out the needs it raised on, but still lists the ones it matched.
@@ -464,7 +493,7 @@ def _schema_page_section() -> str:
     ("page", "pinned", "count"),
     [
         ("schema", SCHEMA_PER_TYPE_WARNINGS, 8),
-        ("need_types", NEED_TYPES_WARNINGS, 7),
+        ("need_types", NEED_TYPES_WARNINGS, 9),
     ],
 )
 def test_docs_quote_the_pinned_warnings(

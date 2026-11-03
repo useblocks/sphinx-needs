@@ -13,6 +13,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Always Present",
       "id": "IMPL_ALWAYS",
@@ -38,6 +39,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Variant A Feature",
       "id": "IMPL_VAR_A",
@@ -63,6 +65,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Protocol V3",
       "id": "IMPL_PROTO_3",
@@ -88,6 +91,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Linux And A",
       "id": "IMPL_LINUX_A",

@@ -9,23 +9,37 @@ fixtures under it are what that plugin deliberately does not know: where this su
 projects live, and what a build of one of them must assert.
 
 Everything else in this file is sphinx-needs' own -- the parent-child doctree invariant,
-the ``fixture_file`` marker's parametrisation, and the two project builders.
+the fence on every need's source hops, the ``fixture_file`` marker's parametrisation, and
+the two project builders.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import json
-from collections.abc import Callable, Sequence
-from pathlib import Path
+import re
+from collections.abc import Callable, Iterator, Sequence
+from pathlib import Path, PurePath
 
 import pytest
 import yaml
 from _pytest.mark import ParameterSet
 from docutils.nodes import document
+from docutils.statemachine import string2lines
 from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 from sphinx.testing.util import SphinxTestApp
 
+import sphinx_needs.needs
 from sphinx_needs._jinja import render_template_string
+from sphinx_needs._need_source import (
+    SRCDIR_ROOT,
+    NeedSourceHop,
+    placement_index,
+)
+from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.need_item import NeedItem, NeedItemSource
+from sphinx_needs.nodes import Need
 from sphinx_needs_testkit import make_plantuml_inert
 
 # The order is load-bearing, not alphabetical: `sphinx.testing.fixtures` defines a
@@ -66,15 +80,180 @@ def _check_parent_child(app: Sphinx, doctree: document, docname: str):
         )
 
 
+def _check_declared_config(app: Sphinx, exception: Exception | None) -> None:
+    """Sphinx's configuration holds the declared options alone: a ``needs_*`` attribute
+    that is no declared value is state a build wrote there (#2402), which a ``conf.py``
+    could set and Sphinx pickles. What a build stores elsewhere (on the environment, say)
+    is out of this check's reach. ``name in config`` asks Sphinx for its declared
+    values, its own ``needs_sphinx`` and ``needs_extensions`` included."""
+    if exception is not None:
+        return
+    undeclared = sorted(
+        k for k in vars(app.config) if k.startswith("needs_") and k not in app.config
+    )
+    assert undeclared == [], (
+        f"undeclared needs_* values on Sphinx's Config: {undeclared}"
+    )
+
+
 @pytest.fixture(scope="session")
 def test_app_events() -> Sequence[tuple[str, Callable[..., object], int]]:
     """What every ``test_app`` build in THIS suite asserts, over and above the test.
 
     The parent-child check runs after any other handler of ``doctree-resolved``, hence the
     priority: placing it here gives coverage to a large part of the suite, and to whatever
-    is added to it next.
+    is added to it next. The configuration check runs after every other handler of
+    ``build-finished``, so it sees what the whole build wrote.
     """
-    return (("doctree-resolved", _check_parent_child, 999),)
+    return (
+        ("doctree-resolved", _check_parent_child, 999),
+        ("build-finished", _check_declared_config, 999),
+    )
+
+
+#: what the first line of a need's text is: a directive's marker, reStructuredText or
+#: MyST (backticks, tildes or colons), or the item of a ``list2need`` (whose ``*`` needs
+#: no space after it); after a MyST block quote's ``>``, an rst grid cell's ``|``, or
+#: the bullets of the list item the directive opens
+_TEXT_START = re.compile(
+    r"\s*([>|]\s*|(?:[-+]|#\.|\d+[.)])\s+)*"
+    r"(\.\. [\w:.-]+::|(`{3,}|~{3,}|:{3,})\s*\{[\w:.-]+\}|\*)"
+)
+
+
+@pytest.fixture(autouse=True, scope="session")
+def _need_source_fence() -> Iterator[None]:
+    """The fence on every need's source hops, in every build of this suite.
+
+    It wraps the doctree-read walk that ``setup()`` connects (``analyse_need_locations``,
+    looked up by name when each application is set up, so every application of the
+    session is covered, in every xdist worker) and checks each need the walk visits:
+
+    - a source of sphinx-needs' own class carries hops;
+    - every hop with a path has the one root, ``srcdir``, and a relative path;
+    - the walk sets the placement hop's ``semantic`` (unset before) and changes nothing
+      else on the hops;
+    - lines point at text: every hop under the ``srcdir`` root names a file that exists,
+      and where it has a ``start_line``, that line holds the directive's marker or the
+      list item, and its ``end_line`` a non-blank line at or after it.
+
+    It wraps ``load_external_needs`` too, and checks the external needs in the
+    environment after it (those it read, and any an earlier build left): the first hop
+    is an ``external`` hop. An external need ``add_external_need`` adds later in the
+    build is not checked; ``add_external_need(sections=...)`` is pinned directly
+    (``test_need_item_source.py``).
+
+    The legacy ``sections``, ``signature`` and ``parent_needs`` are not compared here:
+    the walk writes them from the semantic location it puts on the placement hop, so
+    the end-to-end tests of their values are what pins them
+    (``test_domain_signatures.py``, ``test_hidden_need_location.py``,
+    ``test_need_source.py``).
+    """
+    original = sphinx_needs.needs.analyse_need_locations
+    original_external = sphinx_needs.needs.load_external_needs
+
+    def fenced_external(
+        app: Sphinx, env: BuildEnvironment, docnames: list[str]
+    ) -> None:
+        original_external(app, env, docnames)
+        for need in SphinxNeedsData(app.env).get_needs_mutable().values():
+            if not need["is_external"] or not isinstance(need.source, NeedItemSource):
+                continue
+            assert need.source.hops[0].kind == "external", need.id
+
+    def fenced(app: Sphinx, doctree: document) -> None:
+        needs = SphinxNeedsData(app.env).get_needs_mutable()
+        walked = {
+            node["refid"]: needs[node["refid"]]
+            for node in doctree.findall(Need)
+            if node["refid"] in needs
+        }
+        before = {
+            need_id: need.source.hops
+            for need_id, need in walked.items()
+            if isinstance(need.source, NeedItemSource)
+        }
+        # sphinx-needs' own source class carries hops; a third party's need not
+        lacking = [
+            need_id
+            for need_id, need in walked.items()
+            if need_id not in before
+            and type(need.source).__module__ == NeedItem.__module__
+        ]
+        assert not lacking, f"sources without hops: {lacking}"
+        original(app, doctree)
+        files: dict[Path, list[str]] = {}
+        for need_id, hops in before.items():
+            _check_need_source(app, walked[need_id], hops, files)
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(sphinx_needs.needs, "analyse_need_locations", fenced)
+        patch.setattr(sphinx_needs.needs, "load_external_needs", fenced_external)
+        yield
+
+
+def _check_need_source(
+    app: Sphinx,
+    need: NeedItem,
+    before: tuple[NeedSourceHop, ...],
+    files: dict[Path, list[str]],
+) -> None:
+    """The checks of :func:`_need_source_fence` on one walked need."""
+    source = need.source
+    assert isinstance(source, NeedItemSource)
+    after = source.hops
+    where = f"{need.id}: {after!r}"
+    index = placement_index(after)
+    if index is None:
+        assert after == before, where
+        return
+    assert after[index].semantic is not None, where
+    assert len(after) == len(before), where
+    for position, (old, new) in enumerate(zip(before, after, strict=True)):
+        if position == index:
+            assert old.semantic is None, where
+            assert new == dataclasses.replace(old, semantic=new.semantic), where
+        else:
+            assert new == old, where
+    for hop in after:
+        physical = hop.physical
+        if physical is None or physical.path is None:
+            continue
+        if physical.root is None:
+            # a producer's own root, which the build does not know: a test report's
+            # test file (sphinx-test-reports' suite checks it), as the filter corpus's
+            # extension cases build it
+            assert hop.kind == "code", where
+            assert not PurePath(physical.path).is_absolute(), where
+            continue
+        # R6: one root, and a path relative to it
+        assert physical.root == SRCDIR_ROOT, where
+        assert not PurePath(physical.path).is_absolute(), where
+        file = Path(app.srcdir, physical.path)
+        assert file.is_file(), f"{where}: no file {file}"
+        if hop.kind == "code":
+            # its lines are its producer's, a sphinx-codelinks marker in a code file,
+            # which sphinx-codelinks' suite checks; the docstring hop has none
+            continue
+        if physical.start_line is None:
+            assert physical.end_line is None, where
+            continue
+        if file not in files:
+            # read as the product reads it: the project's encoding (a BOM stripped),
+            # split as docutils numbers lines
+            files[file] = string2lines(
+                file.read_text(encoding=app.config.source_encoding),
+                tab_width=app.env.settings.get("tab_width", 8),
+                convert_whitespace=True,
+            )
+        lines = files[file]
+        assert 1 <= physical.start_line <= len(lines), where
+        assert _TEXT_START.match(lines[physical.start_line - 1]), (
+            f"{where}: line {physical.start_line} is {lines[physical.start_line - 1]!r}"
+        )
+        if physical.end_line is not None:
+            assert physical.start_line <= physical.end_line <= len(lines), where
+            assert lines[physical.end_line - 1].strip(), where
 
 
 @pytest.fixture

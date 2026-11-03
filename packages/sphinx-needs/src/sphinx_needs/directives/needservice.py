@@ -10,17 +10,51 @@ from docutils.statemachine import StringList
 from sphinx.util.docutils import SphinxDirective
 from sphinx_data_viewer.api import get_data_viewer_node
 
-from sphinx_needs.api import InvalidNeedException, add_need
+from sphinx_needs._need_source import (
+    NeedSourceHop,
+    NeedSourceSemantic,
+    directive_hops,
+    directive_line,
+)
+from sphinx_needs.api import InvalidNeedException, create_need
+from sphinx_needs.api.need import _split_values
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedItemSourceService
+from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs.needs_schema import FieldsSchema
 from sphinx_needs.services.base import BaseService
 from sphinx_needs.services.config.github import GITHUB_SERVICES
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.manager import NeedsServiceException, builtin_service_fix
-from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
+from sphinx_needs.utils import (
+    DummyOptionSpec,
+    add_doc,
+    coerce_to_boolean,
+    match_option_names,
+    repeated_option_message,
+)
+
+#: The options of a ``needservice`` that are no declared field or link type: the core
+#: fields it sets, and what it reads itself. A service's own options are fields.
+NEEDSERVICE_OPTIONS = frozenset(
+    {
+        "debug",
+        "id",
+        "status",
+        "tags",
+        "style",
+        "layout",
+        "template",
+        "pre_template",
+        "post_template",
+        "constraints",
+        "type",
+        "collapse",
+        "hide",
+        "jinja_content",
+    }
+)
 
 
 def _unconfigured_builtin_hint(service: BaseService, need_type: object) -> str:
@@ -137,6 +171,22 @@ class NeedserviceDirective(SphinxDirective):
             }
             #: need type -> the options of a datum of that type
             defined_by_type: dict[str | None, set[str]] = {}
+            # every need of the directive shares its hops: the service that made it,
+            # then the file and page the directive is written on
+            hops = directive_hops(
+                self,
+                first=(
+                    NeedSourceHop(
+                        kind="generated",
+                        semantic=(
+                            NeedSourceSemantic(kind="service", name=service_name),
+                        ),
+                    ),
+                ),
+            )
+            # each need's line is the one the directive is written on, as a need
+            # directive's (#1349); the parser's line anchors the text parsed for it
+            _, resolved = directive_line(self)
             for datum in service_data:
                 options = {}
 
@@ -189,18 +239,31 @@ class NeedserviceDirective(SphinxDirective):
                 datum.update(options)
 
                 # ToDo: Tags and Status are not set (but exist in data)
-                source = NeedItemSourceService(
-                    docname=self.env.docname, lineno=self.lineno
+                source = NeedItemSource(
+                    hops, lineno=resolved or self.lineno, parser_lineno=self.lineno
                 )
+                need_id = datum.pop("id", None)
+                need_content = datum.pop("content", "")
+                jinja_content = datum.pop("jinja_content", None)
+                # a field the project declares as full_title: the field, and the full
+                # title the generated id is derived from, as add_need took it
+                full_title = datum.get("full_title")
+                fields, links = _split_values(needs_schema, datum)
                 try:
-                    section += add_need(
-                        app=self.env.app,
-                        state=self.state,
-                        need_source=source,
-                        need_type=need_type,
-                        title=need_title,
-                        **datum,
+                    _, need_nodes = create_need(
+                        self.env.app,
+                        self.state,
+                        source,
+                        need_type,
+                        need_title,
+                        id=need_id,
+                        content=need_content,
+                        jinja_content=jinja_content,
+                        full_title=full_title,
+                        fields=fields,
+                        links=links,
                     )
+                    section += need_nodes
                 except InvalidNeedException as err:
                     hint = (
                         _unconfigured_builtin_hint(service, need_type)
@@ -235,6 +298,19 @@ class NeedserviceDirective(SphinxDirective):
         """
         link_keys = set(needs_schema.iter_link_field_names())
         extra_keys = set(needs_schema.iter_extra_field_names())
+        # each option by the name it matches ignoring case, as declared, which is the
+        # name the service reads it by: docutils lowercases a reStructuredText option's
+        # name, myst-parser keeps it
+        self.options, repeated = match_option_names(
+            self.options, NEEDSERVICE_OPTIONS | extra_keys | link_keys
+        )
+        for repeat in repeated:
+            log_warning(
+                self.log,
+                repeated_option_message(repeat),
+                "directive",
+                location=self.get_location(),
+            )
         for key in list(self.options):
             value: str | None = self.options[key]
             try:

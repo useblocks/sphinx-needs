@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The "no line" sentinel: a case with line="-1" (pytest-flake8's items write it) and a
+  case with no line attribute, in a plain pytest report (0-based) and in a report the
+  ub-test-reports plugin marked (1-based). Neither is ever shifted.
+-->
+<testsuites name="pytest tests">
+  <testsuite name="pytest" errors="0" failures="0" skipped="0" tests="2" time="0.001">
+    <testcase classname="setup" name="FLAKE8" file="setup.py" line="-1" time="0.000"/>
+    <testcase classname="tests.test_a" name="test_no_line" time="0.000"/>
+  </testsuite>
+  <testsuite name="pytest" errors="0" failures="0" skipped="0" tests="2" time="0.001">
+    <properties>
+      <property name="ub_test_reports:line_base" value="1"/>
+    </properties>
+    <testcase classname="setup" name="FLAKE8" file="setup.py" line="-1" time="0.000"/>
+    <testcase classname="tests.test_a" name="test_no_line" time="0.000"/>
+  </testsuite>
+</testsuites>

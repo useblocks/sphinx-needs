@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 5
+      },
+      "end": {
+        "row": 0,
+        "column": 60
+      }
+    },
+    "tagged_scope": "fn f() {}",
+    "scope": {
+      "kind": "function_item",
+      "start": 3,
+      "end": 3,
+      "language": "rust",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Documented across a blank line",
+      "id": "IMPL_R_DOC_HDR_RS",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  }
+]

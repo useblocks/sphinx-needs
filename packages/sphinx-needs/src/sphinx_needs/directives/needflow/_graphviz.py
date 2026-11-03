@@ -24,7 +24,7 @@ from sphinx_needs.directives.utils import no_needs_found_paragraph, report_max_i
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
-from sphinx_needs.utils import remove_node_from_tree
+from sphinx_needs.utils import _ABSOLUTE_URL, remove_node_from_tree
 
 from ._model import (
     GraphEdge,
@@ -192,8 +192,9 @@ def _get_link_to_need(
     (from sphinx 7.2 onwards, see: https://github.com/sphinx-doc/sphinx/pull/11078)
     """
     if need_info["is_external"]:
-        if need_info["external_url"] and urlparse(need_info["external_url"]).scheme:
-            return need_info["external_url"]
+        url = need_info["external_url"]
+        if url and (urlparse(url).scheme or _ABSOLUTE_URL.match(url)):
+            return url
     elif need_info["docname"]:
         try:
             rel_uri = app.builder.get_relative_uri(docname, need_info["docname"])

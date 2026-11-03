@@ -14,7 +14,7 @@ is inert outside template output.
 from __future__ import annotations
 
 import contextlib
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Generator, Iterable
 from contextvars import ContextVar
 from typing import Any
 
@@ -98,7 +98,7 @@ def active_use(document: Any) -> str | None:
 
 
 @contextlib.contextmanager
-def parsing(use: str) -> Iterator[None]:
+def parsing(use: str) -> Generator[None]:
     """Mark output of ``use`` as being parsed synchronously."""
     token = ACTIVE.set(use)
     try:
@@ -108,7 +108,7 @@ def parsing(use: str) -> Iterator[None]:
 
 
 @contextlib.contextmanager
-def inert() -> Iterator[None]:
+def inert() -> Generator[None]:
     """Make every directive inert: parsed, never run, so a structural look at output
     (does it hold a heading?) has no side effect -- no need is made, no file is read."""
     token = INERT.set(True)
@@ -119,7 +119,7 @@ def inert() -> Iterator[None]:
 
 
 @contextlib.contextmanager
-def own() -> Iterator[None]:
+def own() -> Generator[None]:
     """Mark this package's own dependency notes (the backstop ignores them)."""
     token = OWN.set(True)
     try:
@@ -128,13 +128,14 @@ def own() -> Iterator[None]:
         OWN.reset(token)
 
 
-class _AnyOptions(dict[str, Callable[[str | None], Any]]):
-    """An option spec accepting every option, as raw text."""
+class _AnyOptions(dict[str, Callable[[str], Any]]):
+    """An option spec accepting every option, as raw text (docutils passes ``None`` for an
+    option written without a value, which the identity returns as is)."""
 
     def __bool__(self) -> bool:
         return True
 
-    def __getitem__(self, key: str) -> Callable[[str | None], Any]:
+    def __getitem__(self, key: str) -> Callable[[str], Any]:
         return lambda text: text
 
     def __contains__(self, key: object) -> bool:

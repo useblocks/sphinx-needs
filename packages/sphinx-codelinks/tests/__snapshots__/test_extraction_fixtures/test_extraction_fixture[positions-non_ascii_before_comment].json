@@ -12,7 +12,8 @@
         "column": 63
       }
     },
-    "tagged_scope": "void f() {}",
+    "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "After \u00e9",
       "id": "IMPL_UTF8_CODE",
@@ -22,6 +23,6 @@
       ]
     },
     "type": "need",
-    "tagged_scope_type": "function_definition"
+    "tagged_scope_type": null
   }
 ]

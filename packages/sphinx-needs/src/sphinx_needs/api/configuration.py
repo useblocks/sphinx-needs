@@ -7,7 +7,7 @@ All functions here are available under ``sphinx_needs.api``.
 from __future__ import annotations
 
 import warnings
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
 from sphinx.application import Sphinx
@@ -60,10 +60,16 @@ def add_need_type(
     """
     Adds a new need type, and registers its directive.
 
-    The given directive must not be configured in :ref:`needs_types` or added with
-    this function already, otherwise NeedsApiConfigException gets raised. The
-    configured GitHub services' ``issue``, ``pr`` and ``commit`` do not count: a type
-    added under one of those directives replaces the service's.
+    The given directive must not be added with this function already, nor be a default
+    need type that no :ref:`needs_types` entry of the project names, otherwise
+    NeedsApiConfigException gets raised. A project's entry naming the directive, with
+    or without a ``title`` and a ``prefix``, narrows the type instead, however late it
+    is added: the keys the entry gives win, the ``title``, ``prefix``, ``color`` and
+    ``style`` it leaves out are the ones given here, and its ``inherits``, ``fields``
+    and ``links`` apply
+    (see :ref:`narrowing an extension's type <needs_types_extension>`).
+    The configured GitHub services' ``issue``, ``pr`` and ``commit`` do not count:
+    a type added under one of those directives replaces the service's.
 
     The type is added to sphinx-needs' own registry, not to the :ref:`needs_types`
     configuration value, which holds only what the project configures (so Sphinx
@@ -72,9 +78,15 @@ def add_need_type(
     ``NeedsSphinxConfig(app.config).types`` for the whole entries: the configured
     types, then the added ones, then the configured GitHub services' ones.
 
-    Call it from a ``config-inited`` handler at a priority above 12, or later: before
-    that, a mapping-shaped ``needs_types`` is not yet resolved to the list the
-    duplicate check reads. Unlike a configured entry, the type is not validated.
+    Call it from a ``config-inited`` handler at a priority above 12, or later, as
+    :func:`get_need_types` reads it; an earlier call is narrowed by the project's
+    entries all the same. Unlike a configured entry, the type is not validated.
+
+    .. versionchanged:: 9.2.0
+
+       A project's ``needs_types`` entry naming the directive narrows the type, where
+       one with a ``title`` and a ``prefix`` raised NeedsApiConfigException and one
+       with neither was ignored.
 
     **Usage**::
 
@@ -90,11 +102,22 @@ def add_need_type(
     :param style: Plantuml-style for needflow representation. Default: 'node'
     :return: None
     """
-    from sphinx_needs.needs import _register_need_directive
+    from sphinx_needs.needs import _normalise_need_types, _register_need_directive
 
     configured = NeedsSphinxConfig(app.config)._types
-    if directive in _NEEDS_CONFIG.types or any(
-        need_type["directive"] == directive for need_type in configured
+    named = _NEEDS_CONFIG.type_entries
+    if named is None and isinstance(configured, list | Mapping):
+        # needs_types is not resolved yet: the list it resolves to, and what its
+        # entries name, are read the same way
+        configured, _, named, _ = _normalise_need_types(configured, defer=True)
+    if directive in _NEEDS_CONFIG.types or (
+        # a configured type no entry of the project names is a default type
+        isinstance(configured, list)
+        and directive not in (named or ())
+        and any(
+            isinstance(need_type, Mapping) and need_type.get("directive") == directive
+            for need_type in configured
+        )
     ):
         raise NeedsApiConfigException(f"{directive} already exists as need type")
 
@@ -170,7 +193,7 @@ def add_extra_option(
     parse_dynamic_functions: bool | None = None,
 ) -> None:
     """
-    Adds an extra option to the configuration. This option can then later be used inside needs or ``add_need``.
+    Adds an extra option to the configuration. This option can then later be used inside needs or ``create_need``.
 
     Same impact as using :ref:`needs_extra_options` manually.
 
@@ -220,11 +243,14 @@ def add_field(
     parse_dynamic_functions: bool | None = None,
     derive: dict[str, Any] | None = None,
     derive_by_type: dict[str, Any] | None = None,
+    types: Sequence[str] | None = None,
 ) -> None:
     """
     Adds an need field to the configured need schema.
 
-    Same impact as using :ref:`needs_fields` manually.
+    Same impact as using :ref:`needs_fields` manually, or, with ``types``, as declaring
+    the field in the :ref:`needs_types` entries of those need types alone
+    (:ref:`needs_types_fields`).
 
     **Usage**::
 
@@ -248,11 +274,36 @@ def add_field(
         A need of a type without a rule holds ``default`` (given only without
         ``derive``), else ``None``, or the empty value of the field's type when it is
         not nullable.
+    :param types: The need types (their directive names) the field is declared on
+        alone, as a field declared on need types alone (:ref:`needs_types_fields`):
+        on each of them, and on each type inheriting from one, it is this declaration;
+        on every other type it is absent, null, and a value set there is reported
+        (``needs.undeclared_for_type``) and ignored. A project's :ref:`needs_types`
+        entry naming the field on another type declares it there too; a project's
+        :ref:`needs_fields` entry of the same name is the field, on every type. A type
+        named that no configuration or extension declares by the time the schema is
+        built is one ``needs.config`` warning. ``None`` (the default): every type.
+
+    :raises NeedsApiConfigException: If ``types`` is not a sequence of at least one
+        need type name (a bare string is refused, not read letter by letter).
 
     .. versionchanged:: 9.0.0
 
        The ``derive`` and ``derive_by_type`` parameters.
+
+    .. versionchanged:: 9.2.0
+
+       The ``types`` parameter.
     """
+    if types is not None and (
+        isinstance(types, str)
+        or not types
+        or not all(isinstance(t, str) and t for t in types)
+    ):
+        raise NeedsApiConfigException(
+            f"add_field({name!r}): types must be a sequence of need type names, at "
+            f"least one, got {types!r}"
+        )
     _NEEDS_CONFIG.add_field(
         name,
         description,
@@ -265,6 +316,7 @@ def add_field(
         parse_dynamic_functions=parse_dynamic_functions,
         derive=derive,
         derive_by_type=derive_by_type,
+        types=None if types is None else tuple(dict.fromkeys(types)),
     )
 
 

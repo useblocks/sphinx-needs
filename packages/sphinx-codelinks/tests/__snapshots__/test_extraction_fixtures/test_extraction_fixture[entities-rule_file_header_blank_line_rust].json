@@ -1,0 +1,26 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 39
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "File header",
+      "id": "IMPL_R_HEADER_RS",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

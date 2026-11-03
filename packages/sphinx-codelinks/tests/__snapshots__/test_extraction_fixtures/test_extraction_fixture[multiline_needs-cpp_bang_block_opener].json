@@ -41,7 +41,17 @@
       "scope": {
         "kind": "function_definition",
         "start": 6,
-        "end": 6
+        "end": 6,
+        "language": "cpp",
+        "entity_kind": "function",
+        "qualified_name": "bang_row",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "bang_row"
+          }
+        ],
+        "mechanism": "doc_comment"
       }
     },
     "type": "multiline-need",
@@ -92,7 +102,17 @@
       "scope": {
         "kind": "function_definition",
         "start": 14,
-        "end": 14
+        "end": 14,
+        "language": "cpp",
+        "entity_kind": "function",
+        "qualified_name": "bang_open",
+        "semantic": [
+          {
+            "kind": "function",
+            "name": "bang_open"
+          }
+        ],
+        "mechanism": "doc_comment"
       }
     },
     "type": "multiline-need",

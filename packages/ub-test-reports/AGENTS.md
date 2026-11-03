@@ -51,7 +51,9 @@ uv run poe build-ub-test-reports          # sdist + wheel into dist/ub-test-repo
   each Python it names.
 - **The wire names `sphinxcontrib.test_reports:file` and `sphinxcontrib.test_reports:line`
   must not change.** They are the documented `record_property` names the plugin reserves,
-  not an import path, and reports written by older plugins carry them.
+  not an import path, and reports written by older plugins carry them. Nor may
+  `ub_test_reports:line_base`, the suite property the plugin marks its 1-based lines with
+  and the JUnit reader reads (#2381), and which ubCode's mirror of the reader is to read too.
 - **The test fixtures are this package's own copies** (`tests/fixtures/`), so that its
   suite reads nothing from another member's tree and runs from the installed wheel; some of
   them also exist under sphinx-test-reports' `tests/doc_test/utils/`, where its test

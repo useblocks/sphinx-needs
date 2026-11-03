@@ -10,9 +10,6 @@
             'external_css': 'external_link',
             'id': 'SPEC_1',
             'lineno': 4,
-            'link1': list([
-              'SPEC_1',
-            ]),
             'link1_back': list([
               'SPEC_1',
               'SPEC_2',
@@ -48,9 +45,6 @@
             'external_css': 'external_link',
             'id': 'SPEC_2',
             'lineno': 9,
-            'link1': list([
-              'SPEC_1',
-            ]),
             'link2': list([
               'SPEC_3',
             ]),
@@ -60,9 +54,6 @@
             'option_2': 'SPEC_2',
             'option_4': 'STATUS_CLOSED',
             'option_5': 'STATUS_CLOSED',
-            'parent_needs_back': list([
-              'SPEC_3',
-            ]),
             'section_name': 'GLOBAL OPTIONS',
             'sections': list([
               'GLOBAL OPTIONS',
@@ -83,20 +74,10 @@
             'hide': True,
             'id': 'SPEC_3',
             'lineno': 13,
-            'link1': list([
-              'SPEC_1',
-            ]),
-            'link2': list([
-              'SPEC_1',
-            ]),
             'link2_back': list([
               'SPEC_2',
             ]),
             'option_2': 'SPEC_3',
-            'parent_need': 'SPEC_2',
-            'parent_needs': list([
-              'SPEC_2',
-            ]),
             'section_name': 'GLOBAL OPTIONS',
             'sections': list([
               'GLOBAL OPTIONS',
@@ -311,6 +292,7 @@
             }),
             'link1': dict({
               'default': list([
+                'SPEC_1',
               ]),
               'description': 'Link field',
               'field_type': 'links',
@@ -331,6 +313,7 @@
             }),
             'link2': dict({
               'default': list([
+                'SPEC_1',
               ]),
               'description': 'Link field',
               'field_type': 'links',

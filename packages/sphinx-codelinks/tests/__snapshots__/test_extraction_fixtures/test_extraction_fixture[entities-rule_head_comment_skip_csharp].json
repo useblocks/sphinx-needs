@@ -1,0 +1,44 @@
+[
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 23
+      },
+      "end": {
+        "row": 2,
+        "column": 82
+      }
+    },
+    "tagged_scope": "[Test] /* c */ // @After an attribute and a comment, IMPL_R_HEAD_SKIP_CS, impl\n    public void M() {}",
+    "scope": {
+      "kind": "method_declaration",
+      "start": 3,
+      "end": 4,
+      "language": "csharp",
+      "entity_kind": "method",
+      "qualified_name": "A.M",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "A"
+        },
+        {
+          "kind": "method",
+          "name": "M"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "After an attribute and a comment",
+      "id": "IMPL_R_HEAD_SKIP_CS",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "method_declaration"
+  }
+]

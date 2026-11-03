@@ -44,7 +44,7 @@ class Needgantt(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsGanttType],
         ) -> None: ...
 
-        attributes: NeedsGanttType
+        attributes: NeedsGanttType  # ty: ignore[invalid-attribute-override]
 
 
 class NeedganttDirective(FilterBase, DiagramBase):
@@ -154,7 +154,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
         gantt_node = Needgantt("", **attributes)
         self.set_source_info(gantt_node)
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needgantt")
 
         return [targetnode, gantt_node]
 

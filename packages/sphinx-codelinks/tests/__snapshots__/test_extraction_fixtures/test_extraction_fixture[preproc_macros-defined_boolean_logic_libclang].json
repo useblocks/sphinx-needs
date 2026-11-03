@@ -13,6 +13,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "A or B",
       "id": "IMPL_AORB",
@@ -38,6 +39,7 @@
       }
     },
     "tagged_scope": null,
+    "scope": null,
     "need": {
       "title": "Not B",
       "id": "IMPL_NOTB",

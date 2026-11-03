@@ -13,7 +13,6 @@ from typing import (
     NoReturn,
     SupportsIndex,
     TypedDict,
-    cast,
 )
 
 from sphinx.application import Sphinx
@@ -40,6 +39,7 @@ if TYPE_CHECKING:
 
     from sphinx_needs.functions.functions import DynamicFunction
     from sphinx_needs.need_item import NeedItem
+    from sphinx_needs.variant_data import VariantDataProxy
 
 
 LOGGER = get_logger(__name__)
@@ -93,6 +93,9 @@ class NewFieldParams:
     derive_by_type: Any | None = None
     """The rules per need type computing the field, as configured (a dict of need
     type to rule), if any: each overrides ``derive`` on its need type."""
+    types: tuple[str, ...] | None = None
+    """The need types an extension declares the field on alone (``add_field``'s
+    ``types``), or ``None``: the field is declared on every need type."""
 
 
 class NeedFunctionsType(TypedDict):
@@ -102,6 +105,44 @@ class NeedFunctionsType(TypedDict):
     """What the function reads (a ``Declaration`` of ``functions.order``), from
     ``add_dynamic_function``'s ``reads`` or the function's own declaration, as its
     registration checked it."""
+
+
+@dataclass(frozen=True)
+class TypeNarrowing:
+    """A ``needs_types`` entry with neither a ``title`` nor a ``prefix`` that names no
+    default type: a narrowing of the need type an extension registers under its
+    directive, whenever the extension registers it (#2371).
+
+    It is kept from ``config-inited`` (priority 12, where ``needs_types`` is resolved)
+    to the building of the schema, where one no extension's type claims is reported.
+    """
+
+    named: str
+    """The entry as a finding names it (``needs_types['story']``)."""
+    entry: dict[str, Any]
+    """The entry, of its shape: its ``directive``, and the keys it gives."""
+
+
+@dataclass(slots=True)
+class _BuildData:
+    """What sphinx-needs derives from the configuration at the start of a build, for
+    every filter of it to read: never a configuration value, and never pickled.
+
+    Read through :class:`NeedsSphinxConfig` (``variant_data_proxy``, ``is_a_types``),
+    which cannot write it; written by the build alone.
+    """
+
+    variant_data_proxy: VariantDataProxy | None = None
+    """The ``var`` proxy over the variant data, or None when there is none: derived at
+    ``config-inited`` and again at ``env-before-read-docs`` (``prepare_env``)."""
+    is_a_types: Mapping[str, frozenset[str]] | None = None
+    """Each need type with itself and every type inheriting from it, as ``c.is_a``
+    reads them: set by ``create_schema``, None until a build has."""
+    is_a_reported: set[tuple[str, object, str]] = field(default_factory=set)
+    """The filters whose ``c.is_a`` literal naming no need type is reported, each as its
+    string, where it is written (None where no caller says) and the origin its caller
+    appends to its warnings (``(from warning filter 'x')``): once per build, emptied
+    where the types are set."""
 
 
 class _Config:
@@ -120,6 +161,9 @@ class _Config:
         self._builtin_types: dict[str, NeedType] = {}
         self._builtin_layouts: dict[str, dict[str, Any]] = {}
         self._builtin_services: list[str] = []
+        self._type_narrowings: dict[str, TypeNarrowing] = {}
+        self._type_entries: frozenset[str] | None = None
+        self._build = _BuildData()
 
     def clear(self) -> None:
         self._fields = {}
@@ -130,6 +174,15 @@ class _Config:
         self._builtin_types = {}
         self._builtin_layouts = {}
         self._builtin_services = []
+        self._type_narrowings = {}
+        self._type_entries = None
+        self._build = _BuildData()
+
+    @property
+    def build(self) -> _BuildData:
+        """What the build derives from the configuration for its filters to read, kept
+        here rather than on Sphinx's ``Config``, which holds the declared options alone."""
+        return self._build
 
     @property
     def fields(self) -> Mapping[str, NewFieldParams]:
@@ -168,6 +221,7 @@ class _Config:
         parse_dynamic_functions: bool | None = None,
         derive: Any | None = None,
         derive_by_type: Any | None = None,
+        types: tuple[str, ...] | None = None,
         override: bool = False,
     ) -> None:
         """Adds a need field to the configuration."""
@@ -202,6 +256,7 @@ class _Config:
             parse_dynamic_functions=parse_dynamic_functions,
             derive=derive,
             derive_by_type=derive_by_type,
+            types=types,
         )
 
     @property
@@ -351,6 +406,12 @@ class _Config:
         if name not in self._builtin_services:
             self._builtin_services.append(name)
 
+    @property
+    def builtin_types(self) -> Mapping[str, NeedType]:
+        """The need types sphinx-needs itself provides (the configured GitHub
+        services'), by directive (:meth:`add_builtin_need_type`)."""
+        return self._builtin_types
+
     def add_builtin_need_type(self, need_type: NeedType) -> None:
         """Adds a need type sphinx-needs itself provides (the configured GitHub
         services' ones).
@@ -366,16 +427,57 @@ class _Config:
         services' one), the lowest tier, as :meth:`add_builtin_need_type`."""
         self._builtin_layouts[name] = copy.deepcopy(layout)
 
+    @property
+    def type_narrowings(self) -> Mapping[str, TypeNarrowing]:
+        """The bare ``needs_types`` entries naming no default type, by directive: each
+        narrows the need type an extension adds under its directive, once one does
+        (:meth:`merged_types`)."""
+        return self._type_narrowings
+
+    @property
+    def type_entries(self) -> frozenset[str] | None:
+        """The directives the project's own ``needs_types`` entries name, bare ones
+        included; ``None`` until ``needs_types`` is resolved. A default type no entry
+        names is not one: an extension adding its directive is refused."""
+        return self._type_entries
+
+    def set_type_entries(
+        self, named: frozenset[str], narrowings: Mapping[str, TypeNarrowing]
+    ) -> None:
+        """Record what the resolved ``needs_types`` names, and its pending narrowings
+        (:attr:`type_entries`, :attr:`type_narrowings`)."""
+        self._type_entries = named
+        self._type_narrowings = dict(narrowings)
+
     def merged_types(self, configured: list[NeedType]) -> list[NeedType]:
         """The configured need types, then the added ones, then the built-in ones,
-        each tier without the directives an earlier one has."""
-        merged = list(configured)
-        seen = {need_type["directive"] for need_type in configured}
-        for tier in (self._types, self._builtin_types):
-            for directive, need_type in tier.items():
-                if directive not in seen:
-                    seen.add(directive)
-                    merged.append(need_type)
+        each tier without the directives an earlier one has.
+
+        A configured entry naming a type added from code narrows it: the keys the entry
+        gives win, and the ``color`` and ``style`` it leaves out are the added type's.
+        So does a pending narrowing (:attr:`type_narrowings`), at the added type's
+        position. The built-in types (the GitHub services') are not narrowed: a
+        configured type replaces one of its directive.
+        """
+        merged: list[NeedType] = []
+        seen: set[str] = set()
+        for need_type in configured:
+            directive = need_type["directive"]
+            seen.add(directive)
+            added = self._types.get(directive)
+            merged.append(need_type if added is None else {**added, **need_type})
+        for directive, need_type in self._types.items():
+            if directive in seen:
+                continue
+            seen.add(directive)
+            narrowing = self._type_narrowings.get(directive)
+            merged.append(
+                need_type if narrowing is None else {**need_type, **narrowing.entry}
+            )
+        for directive, need_type in self._builtin_types.items():
+            if directive not in seen:
+                seen.add(directive)
+                merged.append(need_type)
         return merged
 
     def merged_layouts(
@@ -394,7 +496,8 @@ _NEEDS_CONFIG = _Config()
 
 
 def type_field_names(config: _SphinxConfig) -> set[str]:
-    """The names the ``fields`` of the ``needs_types`` entries declare.
+    """The names the ``fields`` of the ``needs_types`` entries declare, the pending
+    narrowings of the types extensions add included (:attr:`_Config.type_narrowings`).
 
     The configuration readers that run before the fields schema is built read them
     beside the registered fields: a name only a need type declares is the name of a
@@ -402,14 +505,19 @@ def type_field_names(config: _SphinxConfig) -> set[str]:
     as the configuration holds it, which is the list once ``config-inited`` has
     resolved it; a configuration without ``needs_types`` declares none.
     """
-    # the configured types only, not NeedsSphinxConfig.types: a type added from code
-    # (add_need_type, the GitHub services) cannot declare fields, as it takes none
+    # the configured types and the pending narrowings of the types extensions add,
+    # not NeedsSphinxConfig.types: a type added from code (add_need_type, the GitHub
+    # services) declares no fields itself, as it takes none; an entry narrowing it
+    # does, whether or not the extension has added the type yet
     need_types = getattr(config, "needs_types", [])
     if not isinstance(need_types, list):
         return set()
+    narrowings = [
+        narrowing.entry for narrowing in _NEEDS_CONFIG.type_narrowings.values()
+    ]
     return {
         name
-        for entry in need_types
+        for entry in [*need_types, *narrowings]
         if isinstance(entry, Mapping)
         and isinstance(table := entry.get("fields"), Mapping)
         for name in table
@@ -448,10 +556,13 @@ class ExternalSource(TypedDict, total=False):
     """Override `current_version` from loaded JSON (optional)"""
 
     base_url: str
-    """Used to create the `external_url` field for each need item (required)"""
+    """Used to create the `external_url` field for each need item (required, may be ``""``);
+    not put in front of a `target_url` that renders an absolute URL"""
 
     target_url: str
-    """Used to create the `external_url` field for each need item (optional)"""
+    """Used to create the `external_url` field for each need item (optional):
+    appended to `base_url`, unless it renders an absolute URL (`scheme://…` or `//…`),
+    which is used as it is"""
 
     id_prefix: str
     """Prefix all IDs from the external source with this string (optional, uppercased)"""
@@ -504,6 +615,17 @@ class NeedLinksConfig(TypedDict, total=False):
     """Used for needflow. Default: '->'"""
     allow_dead_links: bool
     """If True, add a 'forbidden' class to dead links"""
+    summary: NotRequired[bool]
+    """Whether the link type is a summary: its links are shortcuts across the trace
+    rather than steps in it, such as a test result linked to the requirements it covers.
+
+    It works as any link type where it is named (a filter, a needtable column, a rule's
+    ``over``, a needflow's ``link_types``, a schema rule) and in a need's links and back
+    links, and is left out of every view that takes all link types (a needflow without
+    ``link_types``). A link type a ``copy`` or ``collect`` rule computes is one. Default:
+    False. On a link type declared on need types alone, the first root declaration's
+    ``summary`` sets it (the others may repeat it).
+    """
     target_types: NotRequired[list[str]]
     """
     The need types the links may point to, by directive name: a link to a need of
@@ -574,12 +696,18 @@ class NeedType(TypedDict):
     """The default node style to use in diagrams (default: "node")."""
     inherits: NotRequired[str]
     """The need type whose declarations of fields and link types this type starts from."""
+    id_regex: NotRequired[str]
+    """A regular expression the id of a need of this type matches (``re.match``), as it
+    matches ``needs_id_regex``, and the ``id_regex`` of every type it inherits from."""
     fields: NotRequired[dict[str, NeedTypeFieldDeclaration]]
     """The fields this type declares anew: field name to its declaration. A name
     nothing else declares is a field of the types that declare it alone."""
     links: NotRequired[dict[str, NeedTypeLinkDeclaration]]
     """The link types this type declares anew: link type name to its declaration. A
     name nothing else declares is a link type of the types that declare it alone."""
+    back_links: NotRequired[dict[str, NeedTypeBackLinksDeclaration]]
+    """How many links of a link type point to a need of this type: link type name to
+    the count of its back links (``<l>_back``)."""
 
 
 #: The default need types: the value of ``needs_types`` when it is not configured.
@@ -637,6 +765,7 @@ class NeedTypeFieldDeclaration(TypedDict, total=False):
     default: Any
     predicates: list[tuple[str, Any]]
     derive: dict[str, Any]
+    severity: Literal["violation", "warning", "info"]
 
 
 class NeedTypeLinkDeclaration(TypedDict, total=False):
@@ -653,6 +782,7 @@ class NeedTypeLinkDeclaration(TypedDict, total=False):
     predicates: list[tuple[str, Any]]
     derive: dict[str, Any]
     target_types: list[str]
+    severity: Literal["violation", "warning", "info"]
     incoming: str
     outgoing: str
     copy: bool
@@ -662,6 +792,17 @@ class NeedTypeLinkDeclaration(TypedDict, total=False):
     style_part: str
     style_start: str
     style_end: str
+
+
+class NeedTypeBackLinksDeclaration(TypedDict, total=False):
+    """A need type's declaration of how many links of a link type point to each of its
+    needs: a count of the link type's back links, narrowed by the types inheriting
+    from the type. Any other key refuses the declaration."""
+
+    description: str
+    schema: dict[str, int]
+    """``minItems`` and ``maxItems`` alone."""
+    severity: Literal["violation", "warning", "info"]
 
 
 class NeedFields(TypedDict):
@@ -709,11 +850,23 @@ class NeedFields(TypedDict):
     """
 
 
-class NeedField(NeedFields):
-    """Defines an extra option for needs"""
+class NeedField(TypedDict):
+    """Defines an extra option for needs (an entry of ``needs_extra_options``, deprecated:
+    use ``needs_fields`` instead).
+
+    These are the keys such an entry is read for; any other key is reported, and ignored.
+    """
 
     name: str
     """The name of the option."""
+    description: NotRequired[str]
+    """A description of the field."""
+    schema: NotRequired[FieldSchemaTypes]
+    """A JSON schema definition for the field, as a ``needs_fields`` entry takes one."""
+    derive: NotRequired[dict[str, Any]]
+    """A rule computing the field for every need, as a ``needs_fields`` entry takes one."""
+    derive_by_type: NotRequired[dict[str, Any]]
+    """Rules per need type, as a ``needs_fields`` entry takes them."""
 
 
 class StringLinkConf(TypedDict):
@@ -792,6 +945,13 @@ LAYOUTS_READ_ONLY = (
 )
 
 
+#: Why a value the build derives cannot be changed through the read
+BUILD_DATA_READ_ONLY = (
+    "NeedsSphinxConfig.{name} is read-only: sphinx-needs derives it from the "
+    "configuration at the start of each build"
+)
+
+
 def _read_only(message: str) -> NoReturn:
     from sphinx_needs.exceptions import (
         NeedsApiConfigException,  # avoid circular import
@@ -844,7 +1004,15 @@ class _ReadOnlyLayouts(dict[str, dict[str, Any]]):
 
 #: The attributes :class:`NeedsSphinxConfig` answers itself, rather than from a
 #: ``needs_*`` configuration value of the same name.
-_OWN_ATTRIBUTES = ("_config", "functions", "warnings", "types", "layouts")
+_OWN_ATTRIBUTES = (
+    "_config",
+    "functions",
+    "warnings",
+    "types",
+    "layouts",
+    "variant_data_proxy",
+    "is_a_types",
+)
 
 
 @dataclass
@@ -863,9 +1031,41 @@ class NeedsSphinxConfig:
     # each is a property reading sphinx-needs' own registry (`_NEEDS_CONFIG`), and the
     # configuration value itself is the dataclass field of the same name with a
     # leading underscore (`_types` is `needs_types`).
+    # `variant_data_proxy` and `is_a_types` are no configuration values at all: the
+    # build derives them, and they are read-only properties over the same registry.
 
     def __init__(self, config: _SphinxConfig) -> None:
         super().__setattr__("_config", config)
+
+    @property
+    def variant_data_proxy(self) -> VariantDataProxy | None:
+        """The ``var`` proxy filters read over the variant data (``needs_variant_data``,
+        merged with its file), or None when there is none. Derived at ``config-inited``,
+        and again at the start of each build, so a map written after it was resolved
+        still matches what the ``variant`` role reads.
+
+        Read-only: a write raises ``NeedsApiConfigException``.
+        """
+        return _NEEDS_CONFIG.build.variant_data_proxy
+
+    @variant_data_proxy.setter
+    def variant_data_proxy(self, _value: object) -> None:
+        _read_only(BUILD_DATA_READ_ONLY.format(name="variant_data_proxy"))
+
+    @property
+    def is_a_types(self) -> Mapping[str, frozenset[str]] | None:
+        """The need types as ``c.is_a("...")`` reads them: each with itself and every
+        type inheriting from it, from the declarations once ``inherits`` is checked.
+        Set at the start of every build, where the schema is created, so a filter of the
+        build reads the build's own declarations; None until a build has.
+
+        Read-only: a write raises ``NeedsApiConfigException``.
+        """
+        return _NEEDS_CONFIG.build.is_a_types
+
+    @is_a_types.setter
+    def is_a_types(self, _value: object) -> None:
+        _read_only(BUILD_DATA_READ_ONLY.format(name="is_a_types"))
 
     def __getattribute__(self, name: str) -> Any:
         if name.startswith("__") or name in _OWN_ATTRIBUTES:
@@ -970,7 +1170,7 @@ class NeedsSphinxConfig:
     )
     """Enable schema validation for needs."""
     schema_definitions: SchemasFileRootType = field(
-        default_factory=lambda: cast(SchemasFileRootType, {}),
+        default_factory=dict,
         metadata={"rebuild": "env", "types": (dict,)},
     )
     """Schema definitions to write complex validations based on selectors."""

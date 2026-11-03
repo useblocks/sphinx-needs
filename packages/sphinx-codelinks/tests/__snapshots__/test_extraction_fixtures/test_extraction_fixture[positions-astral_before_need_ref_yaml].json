@@ -13,6 +13,16 @@
       }
     },
     "tagged_scope": "key: \ud835\udd18",
+    "scope": {
+      "kind": "block_mapping_pair",
+      "start": 1,
+      "end": 1,
+      "language": "yaml",
+      "entity_kind": "key",
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "trailing"
+    },
     "need_ids": [
       "REQ_1"
     ],

@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 43
+      }
+    },
+    "tagged_scope": "void handler(int code);",
+    "scope": {
+      "kind": "declaration",
+      "start": 2,
+      "end": 2,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "handler",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "handler"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Extern C prototype",
+      "id": "IMPL_R_EXTERN",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  }
+]

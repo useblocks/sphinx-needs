@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "class Widget {\n    // @Owns the buffer, IMPL_CPP_CLASS, impl, [REQ_CPP_CLASS]\n    int buf_;\n}",
+    "scope": {
+      "kind": "class_specifier",
+      "start": 1,
+      "end": 4,
+      "language": "cpp",
+      "entity_kind": "class",
+      "qualified_name": "Widget",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Widget"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
     "need": {
       "title": "Owns the buffer",
       "id": "IMPL_CPP_CLASS",

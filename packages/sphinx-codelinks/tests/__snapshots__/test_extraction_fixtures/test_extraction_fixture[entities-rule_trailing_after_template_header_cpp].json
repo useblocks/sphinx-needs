@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 26
+      },
+      "end": {
+        "row": 0,
+        "column": 70
+      }
+    },
+    "tagged_scope": "T id(T x) { return x; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 2,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "id",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "id"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "After a template header",
+      "id": "IMPL_R_TT_CPP",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

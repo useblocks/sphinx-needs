@@ -1,0 +1,78 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 36
+      }
+    },
+    "tagged_scope": "namespace gfx {\n// @Inside namespace, IMPL_R_NS_IN, impl\nint counter = 0;\n}",
+    "scope": {
+      "kind": "namespace_definition",
+      "start": 2,
+      "end": 5,
+      "language": "cpp",
+      "entity_kind": "namespace",
+      "qualified_name": "gfx",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "gfx"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Namespace above",
+      "id": "IMPL_R_NS",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "namespace_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 40
+      }
+    },
+    "tagged_scope": "namespace gfx {\n// @Inside namespace, IMPL_R_NS_IN, impl\nint counter = 0;\n}",
+    "scope": {
+      "kind": "namespace_definition",
+      "start": 2,
+      "end": 5,
+      "language": "cpp",
+      "entity_kind": "namespace",
+      "qualified_name": "gfx",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "gfx"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Inside namespace",
+      "id": "IMPL_R_NS_IN",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "namespace_definition"
+  }
+]

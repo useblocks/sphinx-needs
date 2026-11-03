@@ -1,7 +1,7 @@
 import os
 from collections.abc import Callable, Collection, Mapping
-from pathlib import Path, PurePosixPath
-from typing import Any, ClassVar, cast
+from pathlib import Path, PurePath, PurePosixPath
+from typing import Any, ClassVar, Literal
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -10,6 +10,7 @@ from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
+from sphinx_codelinks.analyse.entity import scope_language
 from sphinx_codelinks.analyse.models import (
     MarkedContentType,
     MultilineNeed,
@@ -22,6 +23,7 @@ from sphinx_codelinks.config import (
     locate_src_dir,
     need_id_refs_field,
 )
+from sphinx_codelinks.source_discover.config import CommentType
 from sphinx_codelinks.sphinx_extension.debug import measure_time
 from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
 from sphinx_codelinks.sphinx_extension.project_analysis import (
@@ -42,17 +44,18 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     scope_store,
     source_pages_store,
 )
-from sphinx_needs.api import InvalidNeedException, add_need
-
-try:  # remove at the 9.0.0 floor bump: the record path is new in Sphinx-Needs 9.0.0
-    from sphinx_needs.api import ingest_need_record
-except ImportError:  # pragma: no cover - the tests stub the name instead
-    ingest_need_record = None
-# remove at the 9.0.0 floor bump: 9.0.0's public generate_need_id replaces it
-from sphinx_needs.api.need import _make_hashed_id
+from sphinx_needs.api import (
+    InvalidNeedException,
+    NeedItemSource,
+    NeedSourceHop,
+    NeedSourcePhysical,
+    NeedSourceSemantic,
+    create_need,
+    generate_need_id,
+    ingest_need_record,
+)
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.need_item import NeedItemSourceUnknown
 from sphinx_needs.utils import add_doc, coerce_to_boolean
 
 logger = logging.getLogger(__name__)
@@ -81,6 +84,101 @@ fields: a multi-line need takes these, and those fields, and nothing else."""
 
 RECORD_KEYS: frozenset[str] = frozenset({"type", "title", "content", "doctype"})
 """The keys a multi-line need's record sets itself, never from an option."""
+
+
+def _code_physical(
+    srcdir: str | os.PathLike[str],
+    path: str | os.PathLike[str],
+    start_line: int | None = None,
+    end_line: int | None = None,
+) -> NeedSourcePhysical | None:
+    """Where an analysed file is, for its ``code`` hop: under the ``"srcdir"`` root.
+
+    The path is POSIX and relative to the Sphinx source directory, with ``..`` for a file
+    outside it; ``None`` where no relative path exists (another drive, on Windows).
+
+    Sphinx-Needs' own rule for a file's location (its private ``physical_for``),
+    computed here because this package imports no private Sphinx-Needs name;
+    ``tests/test_source_hops.py`` holds the two equal.
+    """
+    try:
+        relative = os.path.relpath(os.path.abspath(path), os.path.abspath(srcdir))
+    except ValueError:
+        return None
+    return NeedSourcePhysical(
+        root="srcdir",
+        path=PurePath(relative).as_posix(),
+        start_line=start_line,
+        end_line=end_line,
+    )
+
+
+def code_hop(
+    marker: Marker,
+    filepath: Path,
+    srcdir: str | os.PathLike[str],
+    comment_type: CommentType,
+) -> NeedSourceHop:
+    """Where a need ``src-trace`` creates came from before the page: its ``code`` hop.
+
+    **Provisional**, as Sphinx-Needs' hops are: it reaches no ``needs.json``.
+
+    - ``physical``: the analysed file under the ``"srcdir"`` root
+      (:func:`_code_physical`), and the marker's 1-based lines -- a one-line need's own
+      line for both, a multi-line need's open and close lines.
+    - ``semantic``: the entity the marker is attached to (``scope.semantic``), outermost
+      first, each component's ``kind`` and ``name`` as the analysis gives them, and a Rust
+      trait impl's ``trait`` as an extra; on the last component, the entity itself, the
+      analysis' rendering of its qualified name (``scope.qualified_name``:
+      ``ns::Widget::draw``, ``<Widget as Shape>::area``, ``Shape.area.<locals>.inner``) as
+      a ``("qualified_name", ...)`` extra, after a trait: a rendering of the parts, which
+      adds no identity and which ``name_chain`` leaves out. ``None`` for a marker attached
+      to no named entity (the file, nothing, a YAML or JSONC entry). The kinds are the
+      analysis' entity kinds, read with ``language``; what identifies the entity is
+      :func:`~sphinx_codelinks.analyse.entity.name_chain`, not the kinds. The entity's
+      own lines (``scope.start``, ``scope.end``) are not recorded: they do not identify
+      it.
+    - ``language``: the file's language (``scope.language``, or
+      :func:`~sphinx_codelinks.analyse.entity.scope_language` where the marker is
+      attached to no entity, which gives the same name).
+
+    :param marker: The one-line or multi-line need.
+    :param filepath: The analysed file, absolute.
+    :param srcdir: The Sphinx source directory.
+    :param comment_type: The project's comment type.
+    """
+    if isinstance(marker, MultilineNeed):
+        start = int(marker.source["start"]["line"])
+        end = int(marker.source["end"]["line"])
+    else:
+        start = end = marker.source_map["start"]["row"] + 1
+    scope = marker.scope
+    parts = scope["semantic"] if scope is not None else None
+    qualified_name = scope["qualified_name"] if scope is not None else None
+    return NeedSourceHop(
+        kind="code",
+        physical=_code_physical(srcdir, filepath, start, end),
+        semantic=None
+        if parts is None
+        else tuple(
+            NeedSourceSemantic(
+                kind=part["kind"],
+                name=part["name"],
+                extras=(
+                    *((("trait", part["trait"]),) if "trait" in part else ()),
+                    *(
+                        (("qualified_name", qualified_name),)
+                        if index == len(parts) - 1 and qualified_name is not None
+                        else ()
+                    ),
+                ),
+            )
+            for index, part in enumerate(parts)
+        ),
+        language=scope["language"]
+        if scope is not None
+        else scope_language(comment_type, filepath),
+    )
 
 
 def from_document(docname: str, target: str) -> Path:
@@ -129,31 +227,55 @@ def generate_remote_url(
     )
 
 
-def would_be_id(app: Sphinx, need: Mapping[str, Any]) -> str | None:
-    """The id ``add_need`` will give a one-line need: its ``id`` field, else the one
-    Sphinx-Needs generates for a need without one -- ``generate_need`` calls
-    ``_make_hashed_id(<the type's prefix>, <full_title, else title>, <content>, config)``
-    (``sphinx_needs/api/need.py``, at the 9.0.0 floor), with the type, title and
-    fields :meth:`SourceTracingDirective.render_needs` passes. ``None`` when ``add_need``
+#: the marker field names ``add_need`` took as its own keywords and ``create_need``
+#: takes as arguments, rather than as fields
+_CREATION_ARGUMENTS = (
+    "content",
+    "doctype",
+    "jinja_content",
+    "full_title",
+    "allow_type_coercion",
+)
+
+
+def would_be_id(
+    app: Sphinx,
+    need: Mapping[str, Any],
+    *,
+    route: Literal["marker", "record"] = "marker",
+) -> str | None:
+    """The id a need ``src-trace`` creates is given: its ``id``, else the one
+    Sphinx-Needs generates for a need without one (``generate_need_id``), from what
+    :meth:`SourceTracingDirective.render_needs` passes. ``None`` when Sphinx-Needs
     refuses the need before any id exists (an unknown type, ``needs_id_required``).
+
+    The two routes generate it from different things, so ``route`` says which one
+    ``need`` is for:
+
+    - ``"marker"``, a one-line marker's fields, given to ``create_need``: a
+      ``full_title`` among them is its ``full_title`` argument, declared as a field or
+      not (as ``add_need`` took it), so the id is hashed from it;
+    - ``"record"``, a multi-line need's record (:func:`multiline_record`), given to
+      ``ingest_need_record``: that path passes no ``full_title`` argument -- a
+      ``full_title`` the project declares is only the field -- so the id is hashed from
+      the title, whatever ``full_title`` the record holds (#2410).
     """
     given = need.get("id")
     if given is not None:
         return given if isinstance(given, str) and given else None
-    config = NeedsSphinxConfig(app.config)
-    if config.id_required:
+    if NeedsSphinxConfig(app.config).id_required:
         return None
-    types = {need_type["directive"]: need_type for need_type in config.types}
-    need_type = types.get(str(need.get("type")))
-    if need_type is None:
+    full_title = need.get("full_title") if route == "marker" else None
+    try:
+        return generate_need_id(
+            app,
+            str(need.get("type")),
+            str(need.get("title")),
+            str(need.get("content", "")),
+            full_title=None if full_title is None else str(full_title),
+        )
+    except InvalidNeedException:  # an unknown type, which create_need refuses too
         return None
-    full_title = need.get("full_title")
-    return _make_hashed_id(
-        need_type["prefix"],
-        str(need.get("title")) if full_title is None else str(full_title),
-        str(need.get("content", "")),
-        config,
-    )
 
 
 def multiline_record(
@@ -280,6 +402,20 @@ class SourceTracingDirective(SphinxDirective):
         "file": directives.unchanged_required,
         "directory": directives.unchanged_required,
     }
+
+    def _need_source(self, hop: NeedSourceHop) -> NeedItemSource:
+        """The source of a need this directive creates: its ``code`` hop
+        (:func:`code_hop`), then the page (and an included file) the directive is
+        written on, at the directive's lines; its ``lineno`` is the line the directive is
+        written on, as a need directive's is."""
+        source = NeedItemSource.from_directive(self, first=(hop,))
+        # a body is the marker's, not the directive's content: parse it at this line
+        return NeedItemSource(
+            source.hops,
+            lineno=source.lineno,
+            lineno_content=self.lineno,
+            parser_lineno=self.lineno,
+        )
 
     @measure_time("src-trace")
     def run(self) -> list[nodes.Node]:
@@ -424,7 +560,7 @@ class SourceTracingDirective(SphinxDirective):
         marker's line (a multi-line need's open line) and remember the owner, for
         :meth:`run`.
 
-        ``need_id`` is the one ``add_need`` will use: written in the marker, or generated
+        ``need_id`` is the one sphinx-needs will use: written in the marker, or generated
         by Sphinx-Needs (:func:`would_be_id`). The first owner keeps an id -- another
         ``src-trace`` directive, a hand-written need, an imported one: codelinks never
         takes an id over. A need of a document this build has still to read is the
@@ -479,6 +615,7 @@ class SourceTracingDirective(SphinxDirective):
         *,
         need_id: str | None,
         project_template: bool,
+        hop: NeedSourceHop,
     ) -> list[nodes.Node] | None:
         """Create one multi-line need: its record, through ``ingest_need_record``.
 
@@ -500,6 +637,7 @@ class SourceTracingDirective(SphinxDirective):
         :param project_template: Whether the project gives needs a template (the
             ``template`` field's default, or a predicate): a need it may apply to counts
             as rendered through one.
+        :param hop: The need's ``code`` hop (:func:`code_hop`).
         :return: The need's nodes, or ``None`` when Sphinx-Needs refuses the need (warned
             at the open line).
         """
@@ -522,15 +660,11 @@ class SourceTracingDirective(SphinxDirective):
         unknown: set[str] = set()
 
         def ingest(markup: str | None) -> list[nodes.Node]:
-            # render_needs passes no block on without it (the guard for a Sphinx-Needs before the 9.0.0 floor)
-            assert ingest_need_record is not None
             created, _ = ingest_need_record(
                 self.env.app,
                 self.state,
                 record,
-                need_source=NeedItemSourceUnknown(
-                    docname=self.env.docname, lineno=self.lineno
-                ),
+                need_source=self._need_source(hop),
                 content_markup=markup,
                 content_source=(
                     (os.path.abspath(filepath), int(content_start["line"]))
@@ -623,17 +757,6 @@ class SourceTracingDirective(SphinxDirective):
         anchors: dict[str, tuple[str, list[tuple[int, str, str]]]] = {}
         root = src_analyse.git_root or src_analyse.analyse_config.src_dir
         multiline_needs = src_analyse.multiline_needs
-        if multiline_needs and ingest_need_record is None:
-            # remove at the 9.0.0 floor bump, with the guarded import
-            logger.warning(
-                "this sphinx-needs has no ingest_need_record; multi-line needs are "
-                f"rendered from sphinx-needs 9.0.0 on: {len(multiline_needs)} not "
-                "rendered, the one-line needs were created",
-                type="codelinks",
-                subtype="multiline_need",
-                location=self.get_location(),
-            )
-            multiline_needs = []
         markers: list[Marker] = sorted(
             [*src_analyse.oneline_needs, *multiline_needs],
             key=lambda marker: (
@@ -675,9 +798,11 @@ class SourceTracingDirective(SphinxDirective):
                             location=location(line),
                         )
                     continue
-            # the id add_need gives the need: the marker's, or the generated one (#2082)
-            need_id = would_be_id(
-                self.env.app, record if record is not None else marker.need
+            # the id sphinx-needs gives the need: the marker's, or the generated one (#2082)
+            need_id = (
+                would_be_id(self.env.app, marker.need)
+                if record is None
+                else would_be_id(self.env.app, record, route="record")
             )
             if self.defined_elsewhere(marker, need_id, filepath, root):
                 continue
@@ -700,6 +825,13 @@ class SourceTracingDirective(SphinxDirective):
                     src_analyse.git_commit_rev,
                 )
 
+            # where the need comes from: the marker in its file, then this directive
+            hop = code_hop(
+                marker,
+                filepath,
+                self.env.srcdir,
+                src_analyse.analyse_config.comment_type,
+            )
             created: list[nodes.Node] | None = None
             if isinstance(marker, MultilineNeed) and record is not None:
                 if local_url_field and local_link_name is not None:
@@ -714,33 +846,60 @@ class SourceTracingDirective(SphinxDirective):
                     location,
                     need_id=need_id,
                     project_template=project_template,
+                    hop=hop,
                 )
             elif marker.need:
                 # render needs from one-line marker
-                kwargs: dict[str, str | list[str]] = {
+                # the marker's fields but its title, type and id, which are the
+                # creation's own arguments; its link types apart, as create_need
+                # takes them
+                schema = SphinxNeedsData(self.env).get_schema()
+                link_names = frozenset(schema.iter_link_field_names())
+                values: dict[str, str | list[str]] = {
                     field_name: field_value
                     for field_name, field_value in marker.need.items()
-                    if field_name
-                    not in [
-                        "title",
-                        "type",
-                    ]  # title and type are mandatory for add_need()
+                    if field_name not in ("title", "type", "id")
                 }
-
                 if local_url_field and local_link_name is not None:
-                    kwargs[local_url_field] = local_link_name
+                    values[local_url_field] = local_link_name
                 if remote_url_field and remote_link_name is not None:
-                    kwargs[remote_url_field] = remote_link_name
+                    values[remote_url_field] = remote_link_name
+                marker_id = marker.need.get("id")
+                # the names add_need took as its own keywords and create_need takes
+                # as arguments, unless the project declares a field of the name; any
+                # other name is a field or a link, and one no field has is refused
+                declared = {
+                    *link_names,
+                    *schema.iter_core_field_names(),
+                    *schema.iter_extra_field_names(),
+                }
+                # the marker's value as written, as add_need took and recorded it
+                arguments: dict[str, Any] = {
+                    name: values.pop(name)
+                    for name in _CREATION_ARGUMENTS
+                    if name in values and name not in declared
+                }
+                # a declared full_title is the field, and still the full title the
+                # generated id is derived from, as add_need took it: the id is the
+                # one would_be_id predicts
+                if "full_title" in values:
+                    arguments["full_title"] = values["full_title"]
 
                 try:
-                    created = add_need(
-                        app=self.env.app,  # The Sphinx application object
-                        state=self.state,  # The docutils state object
-                        docname=self.env.docname,  # The current document name
-                        lineno=self.lineno,  # The line number where the directive is used
-                        need_type=str(marker.need["type"]),  # The type of the need
-                        title=str(marker.need["title"]),  # The title of the need
-                        **cast(dict[str, Any], kwargs),
+                    _, created = create_need(
+                        self.env.app,
+                        self.state,
+                        self._need_source(hop),
+                        str(marker.need["type"]),
+                        str(marker.need["title"]),
+                        id=None if marker_id is None else str(marker_id),
+                        content=arguments.get("content", ""),
+                        doctype=arguments.get("doctype"),
+                        jinja_content=arguments.get("jinja_content"),
+                        full_title=arguments.get("full_title"),
+                        allow_type_coercion=arguments.get("allow_type_coercion", True),
+                        fields={k: v for k, v in values.items() if k not in link_names},
+                        links={k: v for k, v in values.items() if k in link_names},
                     )
                 except InvalidNeedException as err:
                     # a marker that fits the style, but a need Sphinx-Needs refuses
@@ -754,7 +913,7 @@ class SourceTracingDirective(SphinxDirective):
             if created is None:
                 continue
             rendered_needs.extend(created)
-            # a need add_need refused was skipped above (no anchor), so need_id
+            # a need sphinx-needs refused was skipped above (no anchor), so need_id
             # is the need's id here
             if local_url_field and need_id is not None:
                 # the page's [docs] link back to the need, resolved when written

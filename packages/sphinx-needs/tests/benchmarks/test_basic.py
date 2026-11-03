@@ -2,13 +2,16 @@ from pathlib import Path
 
 import pytest
 
+from tests.benchmarks._builds import time_html_builds
+
 
 @pytest.mark.parametrize(
     "test_app", [{"buildername": "html", "srcdir": "doc_test/doc_basic"}], indirect=True
 )
-def test_basic_time(test_app, benchmark):
-    app = test_app
-    benchmark.pedantic(app.builder.build_all, rounds=1, iterations=1)
+def test_basic_time(test_app, make_app, benchmark):
+    # a build of a few hundredths of a second: one round is all noise, the fastest of
+    # twenty is not
+    app = time_html_builds(benchmark, make_app, Path(test_app.srcdir), rounds=20)
 
     # Check if static files got copied correctly.
     build_dir = Path(app.outdir) / "_static" / "sphinx-needs" / "libs" / "html"

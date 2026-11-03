@@ -313,3 +313,50 @@ class TestConfvalTypes:
         assert app.config.tr_file_option == "report_file"
         assert app.config.tr_rootdir == str(tmp_path / "docs")
         assert app.config.tr_case[0] == "test-case"
+
+
+class TestLineBaseBridge:
+    """``[test_reports] line_base`` is ``tr_line_base`` (#2381): ``-D`` > TOML > conf.py
+    > ``"auto"``, and a value other than ``"auto"``, ``0`` or ``1`` is refused when the
+    build starts."""
+
+    def test_the_default_is_auto(self, tmp_path):
+        app, _ = _build(_basic_doc(tmp_path))
+        assert app.config.tr_line_base == "auto"
+
+    @pytest.mark.parametrize(
+        ("source", "value"), [("0", 0), ("1", 1), ('"auto"', "auto")]
+    )
+    def test_toml_is_bridged_without_a_type_warning(self, tmp_path, source, value):
+        docs = _basic_doc(tmp_path, f"[test_reports]\nline_base = {source}\n")
+        app, warnings = _build(docs)
+        assert app.config.tr_line_base == value
+        assert "tr_line_base" not in warnings
+
+    def test_toml_beats_conf_py(self, tmp_path):
+        docs = _basic_doc(
+            tmp_path, "[test_reports]\nline_base = 1\n", conf_extra="tr_line_base = 0"
+        )
+        app, _ = _build(docs)
+        assert app.config.tr_line_base == 1
+
+    @pytest.mark.parametrize(("given", "value"), [("0", 0), ("1", 1), ("auto", "auto")])
+    def test_the_command_line_beats_toml(self, tmp_path, given, value):
+        # -D can only give text: "0" and "1" are the numbers
+        docs = _basic_doc(tmp_path, "[test_reports]\nline_base = 1\n")
+        app, warnings = _build(docs, confoverrides={"tr_line_base": given})
+        assert app.config.tr_line_base == value
+        assert "tr_line_base" not in warnings
+
+    def test_an_invalid_toml_value_aborts_the_build(self, tmp_path):
+        from sphinx_test_reports.exceptions import InvalidConfigurationError
+
+        docs = _basic_doc(tmp_path, "[test_reports]\nline_base = 2\n")
+        with pytest.raises(InvalidConfigurationError, match="line_base"):
+            _build(docs)
+
+    def test_an_invalid_command_line_value_aborts_the_build(self, tmp_path):
+        from sphinx_test_reports.exceptions import InvalidConfigurationError
+
+        with pytest.raises(InvalidConfigurationError, match="tr_line_base"):
+            _build(_basic_doc(tmp_path), confoverrides={"tr_line_base": "2"})

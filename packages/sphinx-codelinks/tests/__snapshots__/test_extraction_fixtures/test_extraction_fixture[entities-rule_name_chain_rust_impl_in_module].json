@@ -1,0 +1,279 @@
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 12
+      },
+      "end": {
+        "row": 7,
+        "column": 47
+      }
+    },
+    "tagged_scope": "pub fn new() -> G {\n            G\n        }",
+    "scope": {
+      "kind": "function_item",
+      "start": 9,
+      "end": 11,
+      "language": "rust",
+      "entity_kind": "method",
+      "qualified_name": "m::G::new",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "m"
+        },
+        {
+          "kind": "impl",
+          "name": "G"
+        },
+        {
+          "kind": "method",
+          "name": "new"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "New in a module",
+      "id": "IMPL_R_MOD_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 14,
+        "column": 12
+      },
+      "end": {
+        "row": 14,
+        "column": 48
+      }
+    },
+    "tagged_scope": "fn area(&self) -> f64 {\n            0.0\n        }",
+    "scope": {
+      "kind": "function_item",
+      "start": 16,
+      "end": 18,
+      "language": "rust",
+      "entity_kind": "method",
+      "qualified_name": "<m::G as m::Shape>::area",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "m"
+        },
+        {
+          "kind": "impl",
+          "name": "G",
+          "trait": "m::Shape"
+        },
+        {
+          "kind": "method",
+          "name": "area"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Area in a module",
+      "id": "IMPL_R_MOD_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 20,
+        "column": 8
+      },
+      "end": {
+        "row": 20,
+        "column": 53
+      }
+    },
+    "tagged_scope": "pub fn free() {}",
+    "scope": {
+      "kind": "function_item",
+      "start": 22,
+      "end": 22,
+      "language": "rust",
+      "entity_kind": "function",
+      "qualified_name": "m::free",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "m"
+        },
+        {
+          "kind": "function",
+          "name": "free"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Free function in a module",
+      "id": "IMPL_R_MOD_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 27,
+        "column": 16
+      },
+      "end": {
+        "row": 27,
+        "column": 59
+      }
+    },
+    "tagged_scope": "pub fn make() -> H {\n                H\n            }",
+    "scope": {
+      "kind": "function_item",
+      "start": 29,
+      "end": 31,
+      "language": "rust",
+      "entity_kind": "method",
+      "qualified_name": "m::n::H::make",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "m"
+        },
+        {
+          "kind": "module",
+          "name": "n"
+        },
+        {
+          "kind": "impl",
+          "name": "H"
+        },
+        {
+          "kind": "method",
+          "name": "make"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Make in a nested module",
+      "id": "IMPL_R_MOD_4",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 43,
+        "column": 12
+      },
+      "end": {
+        "row": 43,
+        "column": 56
+      }
+    },
+    "tagged_scope": "pub fn new() -> crate::x::P {\n            crate::x::P\n        }",
+    "scope": {
+      "kind": "function_item",
+      "start": 45,
+      "end": 47,
+      "language": "rust",
+      "entity_kind": "method",
+      "qualified_name": "x::P::new",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "k"
+        },
+        {
+          "kind": "impl",
+          "name": "x::P"
+        },
+        {
+          "kind": "method",
+          "name": "new"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "A type written as a path",
+      "id": "IMPL_R_MOD_5",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  },
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 50,
+        "column": 12
+      },
+      "end": {
+        "row": 50,
+        "column": 66
+      }
+    },
+    "tagged_scope": "pub fn q() {}",
+    "scope": {
+      "kind": "function_item",
+      "start": 52,
+      "end": 52,
+      "language": "rust",
+      "entity_kind": "method",
+      "qualified_name": "Q::q",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "k"
+        },
+        {
+          "kind": "impl",
+          "name": "crate::Q"
+        },
+        {
+          "kind": "method",
+          "name": "q"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "A type written from the crate root",
+      "id": "IMPL_R_MOD_6",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_item"
+  }
+]

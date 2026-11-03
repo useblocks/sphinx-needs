@@ -71,6 +71,8 @@ class EnvReportDirective(Directive):
         root_path = env.app.config.tr_rootdir
         if not os.path.isabs(json_path):
             json_path = os.path.join(root_path, json_path)
+        # the page depends on the report, read or not (as the need directives' does)
+        env.note_dependency(os.path.abspath(json_path))
 
         # Every refusal is a located `test_reports.*` warning; one that leaves nothing to
         # show is an error box in place of the sections too, and the build goes on.

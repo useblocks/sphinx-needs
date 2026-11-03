@@ -159,7 +159,7 @@ class NeedumlDirective(SphinxDirective):
             "process_time": 0,
         }
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needuml")
 
         node = Needuml(targetid)
         self.set_source_info(node)

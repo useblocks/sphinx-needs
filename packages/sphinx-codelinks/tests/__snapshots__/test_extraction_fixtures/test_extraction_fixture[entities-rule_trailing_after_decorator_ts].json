@@ -1,0 +1,82 @@
+[
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 15
+      },
+      "end": {
+        "row": 1,
+        "column": 65
+      }
+    },
+    "tagged_scope": "foo(): void {}",
+    "scope": {
+      "kind": "method_definition",
+      "start": 3,
+      "end": 3,
+      "language": "typescript",
+      "entity_kind": "method",
+      "qualified_name": "C.foo",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "C"
+        },
+        {
+          "kind": "method",
+          "name": "foo"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "After a decorator in a class",
+      "id": "IMPL_R_TD_TS_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "method_definition"
+  },
+  {
+    "filepath": "case.ts",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 18
+      },
+      "end": {
+        "row": 5,
+        "column": 63
+      }
+    },
+    "tagged_scope": "@Injectable() // @After a class decorator, IMPL_R_TD_TS_2, impl\nclass Service {}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 6,
+      "end": 7,
+      "language": "typescript",
+      "entity_kind": "class",
+      "qualified_name": "Service",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Service"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "After a class decorator",
+      "id": "IMPL_R_TD_TS_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  }
+]

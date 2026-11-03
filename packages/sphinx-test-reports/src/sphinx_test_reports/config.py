@@ -19,4 +19,5 @@ DEFAULT_OPTIONS = [
     "timestamp",
     "value_param",
     "type_param",
+    "line_base_known",
 ]

@@ -16,7 +16,8 @@ Keys fall into two groups:
   ``config-inited``. The converter reads the three field-name keys among them
   (:data:`FIELD_NAME_KEYS`) and ``extra_options``, so the needs it writes have
   the shape of the needs the build creates and carry exactly the fields the
-  build accepts;
+  build accepts, and ``line_base``, so it reads a report's lines as the build
+  does;
 * the ``[test_reports.build.needs]`` sub-table (:data:`CONVERSION_KEYS`): how test
   reports are turned into a ``needs.json``. The Sphinx bridge never applies it
   to a ``tr_*`` value, but the build validates it like every other key, so a
@@ -53,6 +54,7 @@ from ub_project import DEFAULT_FILENAME, ProjectConfigError, anchor, load_toml
 # from here. It raises nothing of its own, so it needs no wrapper.
 from ub_project import find_project_config as find_project_config
 from ub_test_reports.fields import RESERVED_NAMES
+from ub_test_reports.junitparser import is_line_base
 
 #: Default file the configuration is read from. Looked up by walking up from
 #: the ``confdir`` (Sphinx) or the working directory (a converter); see
@@ -86,6 +88,7 @@ BRIDGE_KEYS = (
     "property_link_types",
     "json_mapping",
     "deterministic_case_ids",
+    "line_base",
 )
 
 #: Keys holding a path. Relative values are anchored against the directory
@@ -178,6 +181,9 @@ _KEY_TYPES: dict[str, type[object] | None] = {
     "property_link_types": dict,
     "json_mapping": dict,
     "deterministic_case_ids": bool,
+    # "auto", 0 or 1 (`ub_test_reports.junitparser.LineBase`): checked on its own, as
+    # two types and a closed set of values
+    "line_base": object,
     "build": dict,
 }
 
@@ -276,6 +282,15 @@ def _normalise_section(
         if key in unknown:
             continue
         expected = _KEY_TYPES[key]
+        if key == "line_base":
+            if not is_line_base(value):
+                msg = (
+                    f'{path}: [{SECTION}] line_base must be "auto", 0 or 1, got '
+                    f"{type(value).__name__}: {value!r}"
+                )
+                raise TomlConfigError(msg)
+            normalised[key] = value
+            continue
         # bool first: bool is an int subclass, and for int keys a TOML
         # ``true`` must be rejected, not silently accepted.
         if expected is int and isinstance(value, bool):

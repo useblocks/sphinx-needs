@@ -18,7 +18,6 @@ import pytest
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.parallel import parallel_available
 
-from sphinx_codelinks.sphinx_extension.directives import src_trace
 from sphinx_needs_testkit import build_warnings
 
 from .test_need_id_refs import _SHOWS_WARNING_TYPES, _build, _json, _MakeApp, _project
@@ -985,6 +984,31 @@ def test_an_unclaimed_markup_is_parsed_as_the_page(
     assert _card(app, "page_k.html", "TXT_HIDDEN") is None
 
 
+def test_a_hidden_block_with_a_declared_full_title_is_not_warned_unclaimed(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A hidden block without ``:id:`` whose ``:full_title:`` the project declares, in a
+    markup no parser claims: nothing of it is parsed, so nothing is warned -- the
+    lookup that finds it hidden uses the id it is given (#2410)."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/conf.py": CONF.replace(
+                "needs_fields = {", 'needs_fields = {"full_title": {"nullable": True}, '
+            ),
+            "docs/page_h.rst": "H\n=\n\n.. src-trace::\n   :project: src\n   :file: h.c\n",
+            "src/h.c": "// @need[txt] req: Short title\n"
+            "// :full_title: A much longer title\n// :hide:\n//\n// Hidden *text*.\n"
+            "// @endneed\nvoid h() {}\n",
+        },
+        toml_extra=TXT_MARKUP,
+    )
+    app = _build(tmp_path, make_app)
+    assert _warnings(app) == []
+    assert _need(app, SHORT_TITLE_ID) is not None
+    assert _card(app, "page_h.html", SHORT_TITLE_ID) is None
+
+
 TEMPLATE = "**TPL bold** and `tlink <https://t.example>`_ then: {{content}}\n"
 TEMPLATED_BLOCK = """\
 // @need[md] req: Templated block
@@ -1039,36 +1063,6 @@ def test_a_templated_block_is_parsed_as_the_page(
     # ... and so the body is reStructuredText too: its Markdown link is text
     assert "[blink](" in html
     assert _need(app, "REQ_TPL")["doctype"] == ".md"  # type: ignore[index]
-
-
-def test_without_ingest_need_record_one_warning_per_directive(
-    tmp_path: Path, make_app: _MakeApp, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Below Sphinx-Needs 9.0.0 there is no ``ingest_need_record``: the extension still
-    imports, each directive with multi-line needs warns once, and its one-line needs are
-    created as before. (Remove at the 9.0.0 floor bump, with the guard.)"""
-    monkeypatch.setattr(src_trace, "ingest_need_record", None)
-    _blocks(tmp_path, FOUR_CELLS)
-    app = _build(tmp_path, make_app)
-
-    def floor(location: str) -> str:
-        return _multiline(
-            location,
-            "this sphinx-needs has no ingest_need_record; multi-line needs are rendered "
-            "from sphinx-needs 9.0.0 on: 1 not rendered, the one-line needs were created",
-        )
-
-    assert build_warnings(app) == [
-        floor("<srcdir>/page_md.md:3"),
-        floor("<srcdir>/page_md.md:8"),
-        floor("<srcdir>/page_rst.rst:4"),
-        floor("<srcdir>/page_rst.rst:8"),
-    ]
-    needs = _json(app)["needs"]
-    for need_id in CELLS:
-        upper = need_id.removeprefix("REQ_")
-        assert need_id not in needs
-        assert needs[f"IMPL_{upper}_ONE"]["docname"] == CELLS[need_id][1]
 
 
 def test_an_upper_case_id_is_the_id(tmp_path: Path, make_app: _MakeApp) -> None:
@@ -1139,6 +1133,100 @@ def test_full_title_does_not_move_the_predicted_id(
     assert f'href="../page_f.html#{need_id}">[docs]</a>' in page
 
 
+#: the id of a block titled ``Short title``, hashed from its title
+SHORT_TITLE_ID = "R_" + hashlib.sha1(b"Short title").hexdigest().upper()[:5]
+#: the id hashed from its ``full_title``, which a block's need is never given (#2410)
+FULL_TITLE_ID = "R_" + hashlib.sha1(b"A much longer title").hexdigest().upper()[:5]
+
+
+def _declared_full_title(
+    tmp_path: Path, make_app: _MakeApp, owner: str | None = None
+) -> SphinxTestApp:
+    """Build a block without ``:id:`` whose ``:full_title:`` the project declares as a
+    field, on ``page_f``; with ``owner``, a need of that id is written in ``owner.rst``,
+    read before ``page_f``."""
+    files = {
+        "docs/conf.py": CONF.replace(
+            "needs_fields = {", 'needs_fields = {"full_title": {"nullable": True}, '
+        ),
+        "docs/page_f.rst": "F\n=\n\n.. src-trace::\n   :project: src\n   :file: f.c\n",
+        "src/f.c": "// @need req: Short title\n// :full_title: A much longer title\n"
+        "// @endneed\nvoid f() {}\n",
+    }
+    if owner is not None:
+        files["docs/owner.rst"] = (
+            f"Owner\n=====\n\n.. req:: Written by hand\n   :id: {owner}\n"
+        )
+    _blocks(tmp_path, files)
+    return _build(tmp_path, make_app)
+
+
+def test_a_declared_full_title_is_the_field_and_the_id_is_the_title_s(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A block without ``:id:`` whose ``:full_title:`` the project declares: the field
+    holds it, the need's id is hashed from the title (the record path passes no full
+    title), and the id the duplicate check and the ``[docs]`` link use -- the one
+    :func:`would_be_id` predicts -- is that same id (#2410)."""
+    app = _declared_full_title(tmp_path, make_app)
+    needs = _json(app)["needs"]
+    on_page = [
+        need_id for need_id, need in needs.items() if need["docname"] == "page_f"
+    ]
+    assert on_page == [SHORT_TITLE_ID]
+    assert needs[SHORT_TITLE_ID]["full_title"] == "A much longer title"
+    page = Path(app.outdir, "src", "f.html").read_text(encoding="utf-8")
+    assert re.findall(r'href="([^"]*)">\[docs\]</a>', page) == [
+        f"../page_f.html#{SHORT_TITLE_ID}"
+    ]
+
+
+def test_a_declared_full_title_s_duplicate_check_names_the_need_s_id(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """The duplicate check looks up the id the block's need would get: a need that owns
+    it already is found, and the block is skipped with the duplicate warning, naming
+    that id, rather than refused by Sphinx-Needs (#2410)."""
+    app = _declared_full_title(tmp_path, make_app, owner=SHORT_TITLE_ID)
+    assert _warnings(app) == [
+        _warning(
+            "src/f.c:1",
+            f"multi-line need {SHORT_TITLE_ID!r} is already defined in document "
+            "'owner': not created again by the src-trace directive in 'page_f' "
+            "(narrow one directive's scope)",
+            "duplicate_need",
+        )
+    ]
+    assert _need(app, SHORT_TITLE_ID)["title"] == "Written by hand"  # type: ignore[index]
+
+
+def test_a_declared_full_title_s_skip_is_read_again_when_its_owner_goes(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """The skip is remembered as any duplicate's is: when the need that owned the id
+    goes, the next incremental build reads ``page_f`` again and the block's need is
+    created (#2410)."""
+    _declared_full_title(tmp_path, make_app, owner=SHORT_TITLE_ID)
+    owner = tmp_path / "docs" / "owner.rst"
+    owner.write_text("Owner\n=====\n\nNo need.\n", encoding="utf-8")
+    _touch_later(owner)
+    app = _build(tmp_path, make_app, freshenv=False)
+    assert _warnings(app) == []
+    assert _need(app, SHORT_TITLE_ID)["docname"] == "page_f"  # type: ignore[index]
+
+
+def test_a_need_of_the_full_title_s_id_does_not_skip_the_block(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A need whose id is the one hashed from the block's ``:full_title:`` is no
+    duplicate: the block's need is not given that id, so it is created (#2410)."""
+    app = _declared_full_title(tmp_path, make_app, owner=FULL_TITLE_ID)
+    assert _warnings(app) == []
+    needs = _json(app)["needs"]
+    assert needs[FULL_TITLE_ID]["title"] == "Written by hand"
+    assert needs[SHORT_TITLE_ID]["title"] == "Short title"
+
+
 def test_one_line_needs_keep_the_analysis_order(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:
@@ -1156,24 +1244,6 @@ def test_one_line_needs_keep_the_analysis_order(
     )
     app = _build(tmp_path, make_app)
     assert _card_order(app, "page_o2.html") == ["IMPL_AC_ONE", "IMPL_AB_ONE"]
-
-
-def test_without_ingest_need_record_no_blocks_no_warning(
-    tmp_path: Path, make_app: _MakeApp, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """Below Sphinx-Needs 9.0.0, a directive whose files hold no block warns nothing.
-    (Remove at the 9.0.0 floor bump, with the guard.)"""
-    monkeypatch.setattr(src_trace, "ingest_need_record", None)
-    _blocks(
-        tmp_path,
-        {
-            "src/g.c": "// @one-line only, IMPL_G_ONE, impl\n",
-            "docs/page_g.rst": "G\n=\n\n.. src-trace::\n   :project: src\n   :file: g.c\n",
-        },
-    )
-    app = _build(tmp_path, make_app)
-    assert _warnings(app) == []
-    assert "IMPL_G_ONE" in _json(app)["needs"]
 
 
 XPARSER = """\

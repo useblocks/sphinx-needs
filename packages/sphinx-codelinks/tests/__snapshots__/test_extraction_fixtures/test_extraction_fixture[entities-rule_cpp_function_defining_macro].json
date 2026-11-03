@@ -1,0 +1,101 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 47
+      }
+    },
+    "tagged_scope": "TEST(LoginTest, RateLimited) {\n    EXPECT_TRUE(true);\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 4,
+      "end": 6,
+      "language": "cpp",
+      "entity_kind": null,
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Login is rate limited",
+      "id": "TEST_R_MACRO_1",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 4
+      },
+      "end": {
+        "row": 7,
+        "column": 38
+      }
+    },
+    "tagged_scope": "TEST_F(LoginFixture, Locks) {\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 9,
+      "end": 10,
+      "language": "cpp",
+      "entity_kind": null,
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Fixture test",
+      "id": "TEST_R_MACRO_2",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 11,
+        "column": 4
+      },
+      "end": {
+        "row": 11,
+        "column": 41
+      }
+    },
+    "tagged_scope": "BOOST_AUTO_TEST_CASE(rate_limit) {\n}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 13,
+      "end": 14,
+      "language": "cpp",
+      "entity_kind": null,
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Boost test case",
+      "id": "TEST_R_MACRO_3",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

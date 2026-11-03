@@ -453,6 +453,11 @@ def test_needimport_needs_json_download(test_app, snapshot):
         k: {**v} for k, v in SphinxNeedsData(app.env).get_needs_view().items()
     }
     assert needs_all_needs == snapshot()
+    # the downloaded file is the first hop of an imported need's source, by its URL
+    source = SphinxNeedsData(app.env).get_needs_view()["IMP_TEST_101"].source
+    assert source.hops[0].physical.url == (
+        "http://my_company.com/docs/v1/remote-needs.json"
+    )
 
 
 @pytest.mark.parametrize(

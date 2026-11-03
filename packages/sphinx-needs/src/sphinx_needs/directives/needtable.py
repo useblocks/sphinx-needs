@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterator, Sequence
+from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
@@ -48,7 +48,7 @@ class Needtable(nodes.General, nodes.Element):
             **kwargs: Unpack[NeedsTableType],
         ) -> None: ...
 
-        attributes: NeedsTableType
+        attributes: NeedsTableType  # ty: ignore[invalid-attribute-override]
 
 
 #: Set on a resolved doctree that holds at least one INTERACTIVE needtable, so that
@@ -117,7 +117,7 @@ _NO_INSTANCE_STARTTAG = object()
 
 
 @contextmanager
-def _with_html_attributes(translator: Any, node: nodes.Element) -> Iterator[None]:
+def _with_html_attributes(translator: Any, node: nodes.Element) -> Generator[None]:
     """Add ``node["html_attributes"]`` to the start tag the base visitor emits.
 
     docutils' HTML writer serialises only the attributes a visitor hands to
@@ -298,7 +298,7 @@ class NeedtableDirective(FilterBase):
         node = Needtable("", **attributes)
         self.set_source_info(node)
 
-        add_doc(env, env.docname)
+        add_doc(env, env.docname, "needtable")
 
         return [targetnode, node]
 

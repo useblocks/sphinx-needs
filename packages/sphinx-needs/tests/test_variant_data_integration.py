@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 from syrupy.extensions.json import JSONSnapshotExtension
 
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 from ub_project import ProjectConfigError
@@ -169,7 +170,7 @@ def test_variant_data_resolved_at_config_inited(test_app):
     assert app.variant_data_at_config_inited == merged
     # ... and stored back onto the config, before any document has been read
     assert app.config.needs_variant_data == merged
-    assert app.config.needs_variant_data_proxy is not None
+    assert NeedsSphinxConfig(app.config).variant_data_proxy is not None
 
 
 @pytest.mark.parametrize(

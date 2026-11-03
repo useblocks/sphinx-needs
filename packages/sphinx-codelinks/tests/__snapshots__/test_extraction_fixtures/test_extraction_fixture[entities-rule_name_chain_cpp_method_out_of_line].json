@@ -1,0 +1,48 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 4
+      },
+      "end": {
+        "row": 7,
+        "column": 45
+      }
+    },
+    "tagged_scope": "void ns::W::f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 9,
+      "end": 9,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "ns::W::f",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "ns"
+        },
+        {
+          "kind": "class",
+          "name": "W"
+        },
+        {
+          "kind": "method",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Defined out of line",
+      "id": "IMPL_R_CHAIN_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

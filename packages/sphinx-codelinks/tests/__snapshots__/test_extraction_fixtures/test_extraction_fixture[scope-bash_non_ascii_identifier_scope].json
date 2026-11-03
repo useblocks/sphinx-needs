@@ -13,6 +13,21 @@
       }
     },
     "tagged_scope": "f\u00e9() { :; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 2,
+      "language": "bash",
+      "entity_kind": "function",
+      "qualified_name": "f\u00e9",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f\u00e9"
+        }
+      ],
+      "mechanism": "leading"
+    },
     "need": {
       "title": "T",
       "id": "ID_BASH_UTF8",

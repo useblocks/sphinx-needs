@@ -1,6 +1,6 @@
 """Parse one need's content in a declared markup, into the host document.
 
-``add_need(content=MarkupContent(...))`` comes here instead of the host state's own
+``create_need(content=MarkupContent(...))`` comes here instead of the host state's own
 ``nested_parse``: the content is parsed by the parser the project registers for that
 source suffix -- reStructuredText or MyST Markdown -- whatever the page's own parser is.
 
@@ -64,7 +64,7 @@ ContentRoute = Literal["rst", "myst"]
 class MarkupContent:
     """A need's content, with the markup it is written in and where it came from.
 
-    Pass it to :func:`~sphinx_needs.api.need.add_need` as ``content``: the content is
+    Pass it to :func:`~sphinx_needs.api.need.create_need` as ``content``: the content is
     then parsed by the parser the project registers for ``markup``, whatever the parser
     of the document the need is created in, and the need records ``markup`` as its
     ``doctype`` unless one is given. See :ref:`api_content_markup`.
@@ -74,7 +74,7 @@ class MarkupContent:
         one does not end it).
     :param markup: The source suffix of the markup the text is written in, such as
         ``".rst"`` or ``".md"`` -- any suffix the project's ``source_suffix`` maps to a
-        reStructuredText or MyST parser. ``add_need`` raises ``InvalidNeedException``
+        reStructuredText or MyST parser. ``create_need`` raises ``InvalidNeedException``
         (type ``content_markup``) before recording the need if it maps to neither.
     :param source: ``(path, first_line)``: the file the lines were written in, and the
         1-based line of the first of them in it. Every diagnostic raised while parsing
@@ -83,7 +83,7 @@ class MarkupContent:
         locations as absolute paths, so pass an absolute ``path``.
 
         ``None`` anchors the content in the document the need is created in, as a need
-        directive's content is: at ``add_need``'s ``lineno_content``, else ``lineno``,
+        directive's content is: at the source's ``lineno_content``, else ``lineno``,
         read as lines of the PARSER's input, as a directive's ``self.content_offset + 1``
         and ``self.lineno`` give them (they differ from the file's lines after
         ``rst_prolog`` or an ``include``, and are mapped back to them). Pass them as
@@ -98,7 +98,7 @@ class MarkupContent:
     A malformed ``markup`` (not a non-empty ``str``) or ``source`` (not a ``str`` path,
     non-empty, and an ``int`` line of at least 1) raises ``ValueError`` or ``TypeError``
     here, where the object is made; whether the project registers the markup is
-    :func:`~sphinx_needs.api.need.add_need`'s question.
+    :func:`~sphinx_needs.api.need.create_need`'s question.
 
     .. versionadded:: 9.0.0
     """

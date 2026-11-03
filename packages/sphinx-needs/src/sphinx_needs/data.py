@@ -42,11 +42,15 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 13
+ENV_DATA_VERSION: Final = 25
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
 handing a pickled doctree to code that no longer understands it.
+``tests/test_env_data_fingerprint.py`` fails when the shape changes without a bump. A
+change of what the stored values mean, or of what is rendered from them (versions 8, 10
+to 12, 15, 17, 19 and 20), leaves the shape as it was, so that test cannot see it, and
+the bump is needed all the same.
 
 Version 7 adds the resolved needflow presentation options to :class:`NeedsFlowType`.
 They are read while the diagram is rendered, i.e. from the doctree, so an unbumped
@@ -89,6 +93,102 @@ Version 13 adds the names of the derived fields to every stored need (a slot of
 one). An unbumped rebuild over an existing ``_build`` unpickles needs without it, and
 the first write into one ends with an ``AttributeError`` rather than re-reading the
 documents.
+
+Version 14 adds the hops to every ``NeedItemSource*`` class (where a need's text came
+from, :mod:`sphinx_needs._need_source`) and changes the fields those slotted dataclasses
+store. They pickle their fields by position, so an unbumped rebuild over an existing
+``_build`` unpickles every source of an unchanged document with its values in the wrong
+fields: a directive's old ``docname`` is read as its hops, and an API need's
+``dict_repr`` as its hops, leaving the need without its location keys, so the first
+``need["docname"]`` of it ends with an ``AttributeError`` rather than re-reading the
+documents.
+
+Version 15 changes what the stored values mean again: ``c.is_a('req')``, which 9.1.0
+did not know (an invalid filter, and a ``where`` refused as ``needs.derive_invalid``),
+now selects the needs of a type and of the types inheriting from it, and a derived
+field reading it computes. The configuration does not change, so without the bump an
+upgraded build would keep the empty selections and values on the pages whose sources
+did not change.
+
+Version 16 records, at read time, what an incremental build needs to re-write the pages
+that show a need which changed: the category of every view (``needtable``,
+``needflow``, ...) in the documents' categories, and the needs each document's need
+roles reference (``_needs_role_refs``). An environment pickled before it has neither,
+so its incremental builds would find no page to re-write; the bump re-reads every
+document once instead.
+
+Version 17 changes what the stored values mean again: a hidden need is located as a
+visible need in the same place is. As the first child of its container (an ``only``, a
+``note``, a parent need's content, a function's body) its ``sections``, ``signature``
+and ``parent_needs``, empty in 9.1.0, are now its place's, and after another need its
+``parent_needs`` names the need enclosing it, if any, and no longer the need before it.
+The sources do not change, so without the bump an upgraded build would keep the old
+values, and the back links built from them, on the pages whose sources did not change.
+
+Version 18 stores every need's source as one class,
+:class:`~sphinx_needs.need_item.NeedItemSource` (its hops, the given ``lineno``,
+``lineno_content``, ``parser_lineno`` and ``is_import``), where versions 14 to 17
+stored one of five ``NeedItemSource*`` classes, each with its own fields. The five names
+now resolve to factory functions, so an old environment happens to fail to unpickle
+(``NEWOBJ class argument must be a type``) and is read again; the bump makes that the
+rule rather than an accident of how the names are kept, since a slotted dataclass
+pickles its fields by position and any class found under an old name would take the
+old fields into the wrong slots.
+
+Version 19 changes what the stored values mean again: a ``copy`` or ``collect``
+declared on a link type, which 9.1.0 refused (``needs.derive_invalid``, the link type
+empty), now computes a chain's far ends as links, with back links, and ``summary`` on
+a link type's entry, a key 9.1.0 did not read, now leaves the link type out of a
+needflow without ``:link_types:``. The configuration does not change, so without the
+bump an upgraded build would keep the empty link lists and the old diagrams on the
+pages whose sources did not change.
+
+Version 20 is the same case for a link type need types alone declare: ``summary`` on a
+need type's entry of it, which version 19 ignored (a ``needs.config`` finding), now
+makes it a summary, left out of a needflow without ``:link_types:``. The configuration
+does not change, so without the bump an upgraded build would keep the old diagrams on
+the pages whose sources did not change.
+
+Version 21 changes what the stored values mean again: a need written in an include's
+slice (``:start-line:``, ``:start-after:``) records the line it is written on in its
+file as its ``lineno``, and its file hop that line where the file holds its text there,
+where version 20 stored the line in the slice and, mostly, no hop line (#2428). The
+sources do not change, so without the bump an upgraded build would keep the slice's
+lines on the pages whose sources did not change.
+
+Version 22 is the same case for a need in a docstring autodoc reads: its ``code`` hop
+records the language ``python`` and the in-file qualified name in sphinx-codelinks'
+Python kinds (``class Shape > method area``), and the file of the definition whose
+docstring holds the need, where version 21 stored the suffix ``.py``, one ``py:docstring`` entry
+with the dotted name, and, for a member inherited from another module, the documenting
+module's file. The sources do not change, so without the bump an upgraded build would
+keep the old hops on the pages whose sources did not change.
+
+Version 23 is the same case for four more facts on the hops: a need in a nested
+reStructuredText include records a ``file`` hop for each file it was included through,
+a need created on its page (``NeedItemSource.on_page``, ``add_need``) its page's file,
+an external need its sections on the other site on its ``external`` hop, and the entity
+of a docstring's ``code`` hop its qualified name (``qualified_name``), none of which
+version 22 stored. The sources do not change, so without the bump an upgraded build
+would keep the old hops on the pages whose sources did not change.
+
+Version 24 changes what stored values mean in doctrees an extension builds by hand: the
+legacy ``sections``, ``signature`` and ``parent_needs`` are written from the one walk
+that finds the placement hop's semantic location, which reads the need's real place. A
+``desc_signature`` outside any ``desc``, or one the need is placed in, gives no
+``signature``, nor does a ``desc_name`` holding an empty text node, and a need whose
+target an extension dropped keeps its ``sections`` and its nearest enclosing need as
+parent, where version 23 stored what the older walk read there. A doctree of Sphinx's or
+docutils' own gives the same values. The sources do not change, so without the bump an
+upgraded build would keep the old values on the pages whose sources did not change.
+
+Version 25 changes what the stored values mean again: a need a ``needimport`` or a
+``needservice`` creates records the line its directive is written on in its file as its
+``lineno``, and the parser's line as ``parser_lineno``, where version 24 stored the
+parser's line as its ``lineno``, shifted by ``rst_prolog`` and by every line an include
+above the directive, or the include it is written in, inserts (#1349). The sources do
+not change, so without the bump an upgraded build would keep the parser's lines on the
+pages whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
@@ -998,6 +1098,7 @@ class SphinxNeedsData:
         for uml_id in list(umls):
             if umls[uml_id]["docname"] == docname:
                 del umls[uml_id]
+        self.get_or_create_role_refs().pop(docname, None)
 
     def get_needs_mutable(self) -> NeedsMutable:
         """Get all needs, mapped by ID.
@@ -1100,6 +1201,21 @@ class SphinxNeedsData:
         except AttributeError:
             self.env.app._needs_services = ServiceManager(self.env.app)
         return self.env.app._needs_services
+
+    def get_or_create_role_refs(self) -> dict[str, set[str]]:
+        """Get the ids of the needs each document's need roles reference.
+
+        ``:need:``, ``:need_incoming:`` and ``:need_outgoing:`` record the id of their
+        target need (a part's need for a part), read time, per document; an incremental
+        build re-writes the documents referencing a need that changed.
+
+        This is lazily created and cached in the environment.
+        """
+        try:
+            return self.env._needs_role_refs
+        except AttributeError:
+            self.env._needs_role_refs = {}
+        return self.env._needs_role_refs
 
     def get_or_create_extends(self) -> dict[str, NeedsExtendType]:
         """Get all need modifications, mapped by ID.
@@ -1237,3 +1353,11 @@ def merge_data(
     _merge("_needs_all_nodes")
     _merge("_need_all_needextend")
     _merge("_needs_all_needumls")
+
+    # the need roles of the documents the worker read: the worker's copy of every other
+    # document's entry is the one this environment holds, inherited at the fork
+    role_refs = this_data.get_or_create_role_refs()
+    other_role_refs = other_data.get_or_create_role_refs()
+    for docname in docnames:
+        if docname in other_role_refs:
+            role_refs[docname] = other_role_refs[docname]
