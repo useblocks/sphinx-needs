@@ -37,10 +37,10 @@ ub-test-reports has its own version number and
    Sphinx-Needs again: they are dependencies of the extension, not an extra. A test runner
    or a build action that installed sphinx-test-reports for the command or the plugin
    installs ub-test-reports instead. The ``sphinx`` extra is accepted and ignored, and the
-   ``pytest`` extra installs ``ub-test-reports[pytest]``, until 4.0.
+   ``pytest`` extra installs ``ub-test-reports[pytest]``, until 5.0.
 
 The extension supports Sphinx 7.4 or later, docutils 0.21 or later and Sphinx-Needs 9
-(``>=9.0.0,<10``); ``pip`` resolves those as it installs it, and the extension itself
+(``>=9.2.0,<10``); ``pip`` resolves those as it installs it, and the extension itself
 refuses an older Sphinx when it loads.
 
 After that the extension must be added to the ``conf.py`` file::
@@ -52,7 +52,7 @@ After that the extension must be added to the ``conf.py`` file::
 .. versionchanged:: 3.0.0
    The extension is ``sphinx_test_reports``. Before 3.0 it was
    ``sphinxcontrib.test_reports``, and that name still loads the extension
-   until 4.0, with a warning of type ``test_reports.deprecated`` asking for
+   until 5.0, with a warning of type ``test_reports.deprecated`` asking for
    the new one. A build run with ``-W`` fails on that warning: rename the entry, or add
    ``suppress_warnings = ["test_reports.deprecated"]`` to ``conf.py`` until you
    can. See the :doc:`changelog </changelog>` for the other old names.

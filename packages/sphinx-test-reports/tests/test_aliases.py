@@ -1,6 +1,6 @@
 """The pre-3.0 import name still works where it is aliased, and nowhere else.
 
-``sphinxcontrib.test_reports`` keeps four names until 4.0: the package itself as a Sphinx
+``sphinxcontrib.test_reports`` keeps four names until 5.0: the package itself as a Sphinx
 extension, which warns through Sphinx's logger as ``[test_reports.deprecated]``, and the
 ``pytest_plugin``, ``junitparser`` and ``jsonparser`` modules, which ARE the real modules
 -- in ``ub_test_reports``, the core this extension depends on -- and raise one
@@ -125,7 +125,7 @@ def test_the_alias_warns_once_at_the_importing_line(module: str) -> None:
     assert (warning.filename, warning.lineno) == ("<caller>", 1)
     message = str(warning.message)
     assert f"{OLD}.{module} has moved to {CORE}.{module}" in message
-    assert "4.0" in message
+    assert "5.0" in message
 
 
 @pytest.mark.parametrize("module", sorted(ALIASES))
@@ -435,7 +435,7 @@ class TestExtensionAlias:
         _assert_the_deprecation_once(warnings_)
         assert f"extension {OLD}" in warnings_
         assert f"'{NEW}'" in warnings_
-        assert "4.0" in warnings_
+        assert "5.0" in warnings_
         assert "OLDNAME_TF_1" in _needs(app)
         # the real extension is registered, and its metadata is what the alias reports
         real = app.extensions[NEW]

@@ -18,9 +18,11 @@ its ‼️ entry: each field is declared on the need types that carry it, so a n
 (`#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__, under *Changed*); a pytest case's
 ``case_line`` is one more than before (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__, and
 "Upgrading" below); and a :ref:`tr_extra_options` name that is a Sphinx-Needs core field no option can set is a
-configuration error. A case with no source file, line or parameter holds ``null`` where it held ``""``, so a filter
-written ``case_line == ''`` is written ``case_line is None``. This release requires Sphinx-Needs 9.2.0
-(``>=9.2.0,<10``) and ub-test-reports 2.0.0 (``>=2.0.0,<3``).
+configuration error. The pre-3.0 ``sphinxcontrib.test_reports`` names and the ``sphinx`` / ``pytest`` extras are not
+among them: they keep working, with their warnings, until 5.0, a release later than 3.0.0 announced. A case with no
+source file, line or parameter holds ``null`` where it held ``""``, so a filter written ``case_line == ''`` is
+written ``case_line is None``. This release requires Sphinx-Needs 9.2.0 (``>=9.2.0,<10``) and ub-test-reports
+2.0.0 (``>=2.0.0,<3``).
 
 New and Improved
 ................
@@ -140,6 +142,14 @@ Fixed
 Changed
 .......
 
+- ⚠️ The four pre-3.0 names keep working, each with its warning, until **5.0**, a release later than
+  3.0.0 announced: the extension ``sphinxcontrib.test_reports``, the pytest plugin
+  ``sphinxcontrib.test_reports.pytest_plugin``, and the parser names
+  ``sphinxcontrib.test_reports.junitparser`` and ``sphinxcontrib.test_reports.jsonparser``. So do
+  the ``sphinx`` extra, accepted and ignored, and the ``pytest`` extra, a pass-through to
+  ``ub-test-reports[pytest]``. The warnings now say the old names stop working in 5.0; rename them
+  before then, as the 3.0.0 entry describes.
+
 - 🔧 The directives' needs take their location as Sphinx-Needs' one ``NeedItemSource``,
   where they used its deprecated ``NeedItemSourceUnknown``. Requires Sphinx-Needs
   9.2.0, which adds ``NeedItemSource``.
@@ -205,7 +215,7 @@ Upgrading: test-case lines from pytest reports
    A merged file that holds both plain pytest suites and suites of an earlier plugin cannot
    be read right by any one setting: regenerate it.
 4. ub-test-reports' ``JUnitParser``, which ``sphinxcontrib.test_reports.junitparser``
-   still names until 4.0, returns lines counted from 1 where it knows the report's base,
+   still names until 5.0, returns lines counted from 1 where it knows the report's base,
    and says so per test case when asked (``parse(line_base_known=True)``); a plain
    ``parse()`` gives the keys it always gave.
 

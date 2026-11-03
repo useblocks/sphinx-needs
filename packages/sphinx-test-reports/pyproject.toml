@@ -48,11 +48,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Accepted and ignored until 4.0: 2.0.0 documented `pip install "sphinx-test-reports[sphinx]"`
+# Accepted and ignored until 5.0: 2.0.0 documented `pip install "sphinx-test-reports[sphinx]"`
 # when the toolchain was an extra, and an install line that names a missing extra warns
 # under both pip and uv. The toolchain is a dependency now
 sphinx = []
-# A pass-through until 4.0: 2.0.0 documented `pip install "sphinx-test-reports[pytest]"` for
+# A pass-through until 5.0: 2.0.0 documented `pip install "sphinx-test-reports[pytest]"` for
 # the plugin, which is `ub-test-reports[pytest]` now. Kept so that line still installs
 # pytest; check (4) wants the extra's specifier spelled with the same tight floor
 pytest = ["ub-test-reports[pytest]>=2.0.0,<3"]
@@ -85,7 +85,7 @@ Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphi
 
 # hatchling rather than flit, for this member alone. The wheel ships TWO top-level
 # packages: `sphinx_test_reports`, and `sphinxcontrib/test_reports/`, the aliases that keep
-# the pre-3.0 import name working until 4.0. flit ships exactly one module and silently
+# the pre-3.0 import name working until 5.0. flit ships exactly one module and silently
 # drops the second -- no error, no warning, and every `conf.py` still naming the old
 # extension would break on the first release. The `toolchain-free` CI job builds the sdist
 # and the wheel the way the release does (the wheel FROM the sdist) and fails when either
