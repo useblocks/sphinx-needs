@@ -424,12 +424,14 @@ whichever directory holds ``conf.py`` or ``ubproject.toml``.
 A file outside the repository (a mount reached through a symbolic link, a module autodoc imports from an installed
 package) has a path that depends on where the checkout sits on the machine.
 
-A facet is ``None`` where this build does not know the answer yet, and later data only fills it,
-so a filter on it written today selects the same needs then:
+A facet is ``None`` where this build does not know the answer yet:
 ``c.source.path`` and ``c.source.line`` of an imported or an external need (its file is another project's),
 of a service's need, and of a test case, whose test file is relative to the test run's root, which the build does
 not know (sphinx-test-reports' ``case_file`` field holds it); ``c.source.paths`` of an external need is empty;
 ``c.source.symbol`` of a need written in a document, its domain object included.
+Later data only fills such a facet, so a filter on its value (``==``, ``in``, a method call) keeps selecting every
+need it selects today, and may gain those whose facet fills with a matching value, while a test for ``None``
+(``c.source.path is None``, ``not c.source.symbol``) may select fewer as the data fills.
 The kinds are open: a later producer adds one, so a negated test such as ``c.source.kind != 'page'``
 may select more needs in a later release, where ``c.source.kind in ['import', 'external']`` will not.
 ``c.source.paths`` is the exception to filling: it gains an entry wherever more of a chain is recorded --

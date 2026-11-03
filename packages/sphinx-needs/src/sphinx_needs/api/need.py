@@ -98,6 +98,27 @@ def _id_matched_by_patterns(need_id: str, /) -> str:
     return need_id
 
 
+def _warn_protocol_source(need_source: object, function: str) -> None:
+    """One ``DeprecationWarning``, at the line calling ``function``, for a
+    ``need_source`` that is not a :class:`~sphinx_needs.need_item.NeedItemSource`
+    (an object with the :class:`~sphinx_needs.need_item.NeedItemSourceProtocol`
+    interface alone): such a source is refused from 10.0, as :func:`create_need` refuses
+    it now. ``None``, the function's default source, is no such source.
+
+    Called first thing by :func:`generate_need`, :func:`add_external_need` and
+    :func:`ingest_need_record`, never by :func:`add_need`, which is deprecated whole.
+    """
+    if need_source is not None and not isinstance(need_source, NeedItemSource):
+        warnings.warn(
+            "a need_source that is not a NeedItemSource is deprecated, and is refused "
+            f"from sphinx-needs 10.0 ({function} was given a "
+            f"{type(need_source).__name__!r}): use NeedItemSource.from_directive(self) "
+            "in a directive, or NeedItemSource.on_page(docname, lineno=...)",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+
+
 def generate_need(
     needs_config: NeedsSphinxConfig,
     needs_schema: FieldsSchema,
@@ -187,7 +208,18 @@ def generate_need(
     :param pre_template: Template name to use for content added before need
     :param post_template: Template name to use for the content added after need
     :param allow_type_coercion: If true, values will be coerced to the expected type where possible.
+    :param need_source: Where the need comes from, a
+        :class:`~sphinx_needs.need_item.NeedItemSource`
+        (``NeedItemSource.on_page(docname, lineno=lineno)``); given, it wins over
+        ``docname``, ``lineno``, ``lineno_content``, ``is_import``, ``is_external`` and
+        ``external_url``.
+
+        .. deprecated:: 9.2.0
+           Any other object (one with the
+           :class:`~sphinx_needs.need_item.NeedItemSourceProtocol` interface alone) is
+           one ``DeprecationWarning`` at the calling line, and is refused from 10.0.
     """
+    _warn_protocol_source(need_source, "generate_need")
     return _generate_need(
         needs_config,
         needs_schema,
@@ -986,7 +1018,7 @@ def add_need(
 def create_need(
     app: Sphinx,
     state: RSTState | None,
-    source: NeedItemSourceProtocol,
+    source: NeedItemSource,
     need_type: str,
     title: str,
     *,
@@ -1033,16 +1065,18 @@ def create_need(
     :param app: Sphinx application object.
     :param state: The parser state of the document the need is rendered in; ``None``
         only for an external source, whose need has no nodes.
-    :param source: Where the need comes from: a
-        :class:`~sphinx_needs.need_item.NeedItemSource`, or any object with the
-        :class:`~sphinx_needs.need_item.NeedItemSourceProtocol` interface. It gives the
-        need its ``docname``, ``lineno`` and the other location fields, and says whether
-        it is imported or external. In a directive it is
+    :param source: Where the need comes from, a
+        :class:`~sphinx_needs.need_item.NeedItemSource`. It gives the need its
+        ``docname``, ``lineno`` and the other location fields, and says whether it is
+        imported or external. In a directive it is
         ``NeedItemSource.from_directive(self)``, as above; for a need on the page at
         a line the caller gives (the directive's parser line, as ``add_need`` took
         it), ``NeedItemSource.on_page(docname, lineno=lineno)``. Those two spellings
         are stable; ``NeedItemSource``'s general constructor and its keywords are
-        provisional.
+        provisional (see :ref:`api_public`). Any other object, even one with the
+        :class:`~sphinx_needs.need_item.NeedItemSourceProtocol` interface, is refused:
+        the protocol is how a need's source is read (``need.source``), not what a
+        need is created from.
     :param need_type: The need type, by the name of its directive.
     :param title: The need's title.
     :param id: The need's id. If not given, one is generated (see
@@ -1081,10 +1115,19 @@ def create_need(
         declare, or one given in the wrong place: a link type in ``fields``, a field in
         ``links``, or one of this function's own arguments (``title``, ``content``, ...)
         in either.
+    :raises TypeError: If ``source`` is not a ``NeedItemSource``, before anything is
+        recorded.
     :raises ValueError: If ``state`` is ``None`` for a source that is not external.
 
     .. versionadded:: 9.2.0
     """
+    if not isinstance(source, NeedItemSource):
+        raise TypeError(
+            "create_need takes a NeedItemSource as its source, not "
+            f"{type(source).__name__!r}: NeedItemSource.from_directive(self) in a "
+            "directive, or NeedItemSource.on_page(docname, lineno=...) for a need on "
+            "a page at a line the caller gives"
+        )
     if state is None and not source.dict_repr["is_external"]:
         raise ValueError("a parser state is required for a need that is not external")
     schema = SphinxNeedsData(app.env).get_schema()
@@ -1451,13 +1494,15 @@ def ingest_need_record(
     allow_type_coercion: bool = True,
     unknown_keys: set[str] | None = None,
 ) -> tuple[list[nodes.Node], set[str]]:
-    """Create one need from a needs.json-style record.
+    """Create one need from a record of a needs.json ``format_version`` 1.
 
     This is the path for needs that come from outside the page they are rendered on;
     :ref:`needimport <needimport>` creates each of its needs through it.
 
-    ``record`` holds the keys a need object has in ``needs.json``: ``type``, ``title``,
-    ``id``, fields and links as authored, ``content``, ``doctype``, and so on.
+    ``record`` holds the keys a need object has in a needs.json of ``format_version`` 1
+    (the format sphinx-needs writes): ``type``, ``title``, ``id``, fields and links as
+    authored, ``content``, ``doctype``, and so on. A record of a later format is not
+    read by this function.
     It is not modified. A legacy ``description`` is taken as the ``content`` when that is
     empty; keys the project does not know are dropped and returned; keys that are
     computed rather than imported (such as ``docname``, ``lineno``, ``full_title`` or
@@ -1469,9 +1514,18 @@ def ingest_need_record(
     :param app: The Sphinx application.
     :param state: The parser state of the document the need is rendered in.
     :param record: The need record.
-    :param need_source: Where the need is recorded as coming from, e.g.
-        ``NeedItemSource(hops, lineno=lineno, is_import=True)`` for a need read from a
-        file.
+    :param need_source: Where the need is recorded as coming from, a
+        :class:`~sphinx_needs.need_item.NeedItemSource`: for a need placed at a line the
+        caller gives, ``NeedItemSource.on_page(docname, lineno=lineno)``; for one placed
+        at a directive, ``NeedItemSource.from_directive(self)``. A need recorded as
+        imported (``is_import``) takes the provisional general constructor,
+        ``NeedItemSource(hops, lineno=lineno, is_import=True)``, as :ref:`needimport`
+        does: no stable constructor carries ``is_import`` yet.
+
+        .. deprecated:: 9.2.0
+           Any other object (one with the
+           :class:`~sphinx_needs.need_item.NeedItemSourceProtocol` interface alone) is
+           one ``DeprecationWarning`` at the calling line, and is refused from 10.0.
     :param content_markup: The source suffix of the markup the record's ``content`` is
         written in: given, the content is created as a
         :class:`~sphinx_needs.api.MarkupContent` with this ``markup``, and the need
@@ -1495,6 +1549,7 @@ def ingest_need_record(
 
     .. versionadded:: 9.0.0
     """
+    _warn_protocol_source(need_source, "ingest_need_record")
     params, unknown = _record_params(
         record,
         SphinxNeedsData(app.env).get_schema(),
@@ -1861,10 +1916,19 @@ def add_external_need(
     :param tags: A list of tags, or a comma separated string.
     :param constraints: constraints as single, comma separated string.
     :param external_css: CSS class name as string, which is set for the <a> tag.
+    :param need_source: Where the need comes from, a
+        :class:`~sphinx_needs.need_item.NeedItemSource`; given, it wins over
+        ``external_url``.
+
+        .. deprecated:: 9.2.0
+           Any other object (one with the
+           :class:`~sphinx_needs.need_item.NeedItemSourceProtocol` interface alone) is
+           one ``DeprecationWarning`` at the calling line, and is refused from 10.0.
 
     :raises InvalidNeedException: If the need could not be added due to a validation issue.
 
     """
+    _warn_protocol_source(need_source, "add_external_need")
     for fixed_key in ("docname", "lineno", "is_external"):
         if fixed_key in kwargs:
             kwargs.pop(fixed_key)

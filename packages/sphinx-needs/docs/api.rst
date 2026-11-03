@@ -10,6 +10,31 @@ The API allows the injection of extra configuration, but
 does not support manipulation of it (e.g remove need types),
 to keep the final configuration transparent for the Sphinx project authors.
 
+.. _api_public:
+
+What is public
+--------------
+
+A project or an extension may rely on the documented surface of Sphinx-Needs: its
+configuration, its directives and their options, the filter names (``c.*`` included), the
+``needs.json`` format, and the Python API this page documents. A change to any of it is
+deprecated first, with a ``needs.deprecated`` Sphinx warning (which ``suppress_warnings``
+silences) or a Python ``DeprecationWarning``, naming the replacement; the old spelling is
+removed only in a major release.
+
+What this page labels **provisional** follows its label. Through 9.x that is the hop types
+and ``NeedItemSource``'s general constructor with its keywords: a minor release may add an
+optional field, a hop kind or a keyword, while a rename, a removal, or a change to the
+meaning or type of an existing one waits for 10.0, because published sibling extensions
+construct them. They stay outside the stable surface until ``needs.json`` carries them.
+
+Anything else is internal, and may change in a minor release without a deprecation: a name
+this page does not document, a module or a name starting with ``_``, and whatever is reached
+through one. The extensions developed in the Sphinx-Needs repository are changed with it, in
+the same pull request. New internal modules start with ``_``, and public names live in, or
+are re-exported from, a public module with ``__all__``; existing modules are not renamed
+wholesale.
+
 .. _`api_configuration`:
 
 Configuration
@@ -97,14 +122,27 @@ parser line, as ``add_need`` took it, or the lines a directive's data names. It 
 which has no application, does not.
 ``from_directive`` and ``on_page`` are stable, as the class's name is; the hops they build,
 and ``NeedItemSource``'s general constructor with its keywords (``hops``, ``lineno``,
-``lineno_content``, ``parser_lineno``, ``is_import``), are provisional: they may change
-without a deprecation, until needs.json carries them (see the provisional note under "Data",
-below). The constructor is for sphinx-needs' own producers and advanced use.
+``lineno_content``, ``parser_lineno``, ``is_import``), are provisional until needs.json
+carries them: through 9.x a minor release only adds to them, and a rename or a removal
+waits for 10.0 (see :ref:`api_public`, and the provisional note under "Data", below). The
+constructor is for sphinx-needs' own producers and advanced use. ``create_need`` takes a
+``NeedItemSource`` and nothing else: an object with the ``NeedItemSourceProtocol``
+interface alone is refused with a ``TypeError``.
 
 A need placed on a page is created with a parser state, through ``create_need`` as through
 ``add_need``: an event handler or a role, which has none, cannot create one, and without a
 state only an external need can be created (``add_external_need``). Where ``add_need``
 refused that with an ``AssertionError``, ``create_need`` raises ``ValueError``.
+
+.. deprecated:: 9.2.0
+
+   A ``need_source`` that is not a ``NeedItemSource`` -- an object with the
+   ``NeedItemSourceProtocol`` interface alone -- given to
+   :func:`~sphinx_needs.api.need.generate_need`,
+   :func:`~sphinx_needs.api.need.add_external_need` or
+   :func:`~sphinx_needs.api.need.ingest_need_record` is one Python ``DeprecationWarning``
+   at the calling line, and the need is created as before; it is refused from 10.0, as
+   ``create_need`` refuses it now. ``add_need`` gives no second warning for it.
 
 ``add_need``'s other arguments:
 
@@ -257,7 +295,9 @@ Data
    reading a source through ``NeedItemSourceProtocol`` (``dict_repr``). **Provisional**: ``NeedItemSource``'s general
    constructor and its keywords (``hops``, ``lineno``, ``lineno_content``, ``parser_lineno``, ``is_import``), the
    stored legacy facts a later release turns into projections, for sphinx-needs' own producers and advanced use; and
-   the hops, below.
+   the hops, below. Provisional means additions only through 9.x: a minor release may add an optional field, a hop
+   kind or a keyword, and a rename, a removal, or a change to an existing one's meaning or type waits for 10.0,
+   because published sibling extensions construct them (:ref:`api_public`).
 
    **Provisional**: a :class:`~sphinx_needs.need_item.NeedItemSource` has ``hops``, where the need's text came from,
    innermost first; the hop types, ``NeedSourceHop``, ``NeedSourcePhysical`` and ``NeedSourceSemantic``, are
@@ -294,8 +334,8 @@ Data
    is POSIX and relative to its hop's root: the source directory (``"srcdir"``, with ``..`` for a file outside it),
    or, where ``root`` is ``None``, the producer's own root, which this build does not know, the path as the producer
    gives it (a test report's test file, relative to the test run's root). A hop's ``semantic`` is ``None`` where it is
-   not determined, or where nothing finer than the file is known. The shape may change in a minor release, without a
-   deprecation, until it reaches ``needs.json``; ``NeedItemSourceProtocol`` does not include it, so read it with
+   not determined, or where nothing finer than the file is known. Until the shape reaches ``needs.json``, a 9.x minor
+   release only adds to it, as above; ``NeedItemSourceProtocol`` does not include it, so read it with
    ``getattr(need.source, "hops", ())``. A filter reads it through the ``c.source`` facets (:ref:`filter_source`),
    its stable view: each facet names a position in the hops (``c.source.path`` the innermost, ``c.source.paths`` every
    one), and keeps its meaning when the hops change shape. Nothing a table or ``needs.json`` shows depends on it.

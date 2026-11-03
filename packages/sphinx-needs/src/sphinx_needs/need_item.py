@@ -88,8 +88,10 @@ class NeedItemSource:
     provisional, as every hop is), :meth:`on_page`, and reading a source through
     :class:`NeedItemSourceProtocol` (``dict_repr``). **Provisional**: the constructor
     itself and its keywords (``hops``, ``lineno``, ``lineno_content``,
-    ``parser_lineno``, ``is_import``), like the hop types (see :ref:`api`): they may
-    change without a deprecation, until ``needs.json`` carries them. They are the
+    ``parser_lineno``, ``is_import``), like the hop types, until ``needs.json`` carries
+    them: through 9.x a minor release only adds to them (a new optional keyword), and a
+    rename, a removal or a change of a keyword's meaning or type waits for 10.0, because
+    published sibling extensions construct them (see :ref:`api_public`). They are the
     stored legacy facts a later release turns into projections of the hops, and are
     for sphinx-needs' own producers and advanced use.
 
@@ -285,7 +287,7 @@ class NeedItemSource:
         self,
     ) -> tuple[type[NeedItemSource], tuple[tuple[str, object], ...]]:
         """This source with its line numbers left out, to compare where it is from: the
-        key :meth:`NeedItem.moved_only` compares, for an incremental build.
+        key :meth:`NeedItem._moved_only` compares, for an incremental build.
 
         The class, and every field of it but the line fields
         (``_SOURCE_LINE_FIELDS``: ``_lineno``, ``lineno_content``, ``parser_lineno``)
@@ -1094,7 +1096,7 @@ class NeedItem:
             return False
         return self._source == other._source and self._equal_but_source(other)
 
-    def moved_only(self, other: NeedItem) -> bool:
+    def _moved_only(self, other: NeedItem) -> bool:
         """Whether ``other`` is this need written at other lines: equal to it but for the
         line numbers of its source (``lineno``, ``lineno_content``, the parser's, and
         the lines its hops record).
