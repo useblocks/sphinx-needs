@@ -58,8 +58,9 @@ Which value wins, from highest to lowest:
 a forced value; what the use writes (for an appended option, the preset's values first);
 the preset's default; the base's own defaults (a field's ``default``, ``needs_global_options``).
 
-For a need-type base, a preset takes exactly the options the need type's directive takes,
-the fields and links declared on that type included,
+For a need-type base, a preset takes exactly the options the need type's directive matches,
+the fields and links declared on that type included
+(one declared on another type alone is matched and its value ignored, as on the directive),
 and an option's name matches as it does on the directive: exactly, else ignoring case
 (``STATUS`` is ``status``, and ``priority`` is a field declared as ``Priority``).
 A written option and a preset's option of one name are one option, whatever the case of each.

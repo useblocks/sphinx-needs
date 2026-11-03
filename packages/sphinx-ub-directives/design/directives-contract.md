@@ -249,16 +249,17 @@ sorted; the path is `….<name>.<table>.<key>`.
    `directive_preset_identity_option`. Enforced by: corpus `refused-identity-option-name`,
    `refused-identity-option-id`.
 3. A key the base does not take is `directive_preset_unknown_option`.
-   - **A need-type base** takes exactly the options its need type's directive takes: the
-     directive's own, the global fields and links, and the fields and links declared on
-     that type (inherited ones included). A key matches as that directive matches a written
-     option -- exactly first, then ignoring case -- and names the option by its DECLARED
-     name (`STATUS` is `status`; `priority` is a declared `Priority`). A key and an option
-     written at a use that name the same option are ONE option (3.4.2: a default yields to
-     the written value, a forced value replaces it and is reported); `append_options` keeps
-     its own rule (3.3.4). A field declared on another type alone is taken as the directive
-     takes it (its value ignored, as sphinx-needs ignores a written one, with its own
-     warning).
+   - **A need-type base** takes exactly the options its need type's directive MATCHES: the
+     directive's own options and every field and link of the project -- global ones, the
+     ones declared on that type (inherited ones included), and one declared on ANOTHER type
+     alone, which the directive matches and then ignores (sphinx-needs warns,
+     `needs.undeclared_for_type`), so a preset setting it is accepted and its uses make the
+     need without that value, as a hand-written use does. A key matches as the directive
+     matches a written option -- exactly first, then ignoring case -- and names the option
+     by its DECLARED name (`STATUS` is `status`; `priority` is a declared `Priority`). A key
+     and an option written at a use that name the same option are ONE option (3.4.2: a
+     default yields to the written value, a forced value replaces it and is reported);
+     `append_options` keeps its own rule (3.3.4).
    - **Any other base**: keys compare as written, so a key with capitals (`CLASS`) is no
      option of it (a docutils option name is lower case).
    Enforced by: corpus `refused-unknown-option`, `refused-unknown-need-option`,

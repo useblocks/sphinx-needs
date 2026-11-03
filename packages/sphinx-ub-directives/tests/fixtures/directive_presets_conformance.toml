@@ -3817,7 +3817,7 @@ path = "parse.directive_presets.linked.append_options.reqlink"
 
 [[case]]
 name = "need-type-own-field-on-another-type-is-taken-as-the-directive-takes-it"
-why = "a field declared on one need type alone, on a preset of another type: taken as a written option is, the need made and the value ignored (sphinx-needs' undeclared_for_type)"
+why = "a field declared on req alone, set by a preset over spec: the spec directive matches it, so the preset is accepted, and the need is made without the value, as a hand-written spec ignores it"
 config = '''
 [needs.types.req.fields.reqonly]
 schema = { type = "string" }
@@ -3839,6 +3839,8 @@ equivalent = '''
 findings = []
 [case.expect.needs.SPEC_TO6]
 title = "A"
+[case.expect.nulls]
+SPEC_TO6 = ["reqonly"]
 
 [[case]]
 name = "px-declared-field-in-capitals-by-a-lower-case-key"
