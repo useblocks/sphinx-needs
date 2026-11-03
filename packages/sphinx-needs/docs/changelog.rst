@@ -214,8 +214,9 @@ Improvements
   ``sphinx_needs.api.resolve_need_option(app, need_type, name)``
 
   It answers as the need directive matches an option it is given, against the same names -- the directive's own
-  options (``id``, ``status``, ``hide``, ...) and the need type's fields and link types, its type-local ones included
-  -- a name equal to one first, else one equal ignoring case, returned as declared (``"owner"`` and ``"OWNER"`` give a
+  options (``id``, ``status``, ``hide``, ...) and every field and link type the project declares (one another need
+  type declares alone is matched too, and the directive then reports it as not declared for this type) -- a name
+  equal to one first, else one equal ignoring case, returned as declared (``"owner"`` and ``"OWNER"`` give a
   field declared ``Owner``), and ``None`` for no such option; a need type the project does not have is a
   ``ValueError``. It is available once sphinx-needs has built the build's schema, in its own ``env-before-read-docs``
   handler: from a handler at a priority above 500, or any later event. Called earlier, it raises ``RuntimeError``,
@@ -493,7 +494,8 @@ Bug fixes
 
 - 🔧 ``ENV_DATA_VERSION`` is 25: the first build after upgrading re-reads every document, which records
   the views and need roles each document holds and where each hidden need is (:issue:`2398`), stores each need's
-  source as one class, with the hops above, computes the
+  source as one class, with the hops above, computes again the selections and derived values of a filter using
+  ``c.is_a``, which 9.1.0 refused, computes the
   links a ``copy`` or ``collect`` on a link type, refused until now, computes, leaves the summary link types
   out of a needflow without ``:link_types:``, records the file's line for a need in a sliced include
   (:issue:`2428`) and the directive's line for a need a ``needimport`` or a ``needservice`` creates, and locates

@@ -55,11 +55,18 @@ def resolve_need_option(app: Sphinx, need_type: str, name: str) -> str | None:
 
     For an extension that wraps or presets need directives: it answers as the need
     directive itself matches an option it is given, against the same names (the
-    directive's own options, such as ``id``, ``status`` or ``hide``, and the fields and
-    link types the need type has, its type-local ones included): a name equal to one
-    first, else a name equal to one ignoring case (``str.lower``, as docutils lowercases
-    a reStructuredText option), which is returned as it is declared. So for a field
-    declared ``Owner``, ``"owner"`` and ``"OWNER"`` both give ``"Owner"``.
+    directive's own options, such as ``id``, ``status`` or ``hide``, and every field and
+    link type of the project, including those another need type declares alone and
+    derived fields): a name equal to one first, else a name equal to one ignoring case
+    (``str.lower``, as docutils lowercases a reStructuredText option), which is returned
+    as it is declared. So for a field declared ``Owner``, ``"owner"`` and ``"OWNER"``
+    both give ``"Owner"``.
+
+    A match says the directive takes the option, not that ``need_type`` keeps a value
+    for it: a field or link type declared on other need types alone is matched, and the
+    directive then reports it as not declared for this type
+    (``needs.undeclared_for_type``) and ignores the value; a derived field is matched
+    and reported as ``needs.derive_authored``.
 
     **When**: once sphinx-needs has built this build's schema, in its own
     ``env-before-read-docs`` handler (priority 500): from an ``env-before-read-docs``

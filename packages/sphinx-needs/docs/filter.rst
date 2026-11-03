@@ -429,9 +429,10 @@ A facet is ``None`` where this build does not know the answer yet:
 of a service's need, and of a test case, whose test file is relative to the test run's root, which the build does
 not know (sphinx-test-reports' ``case_file`` field holds it); ``c.source.paths`` of an external need is empty;
 ``c.source.symbol`` of a need written in a document, its domain object included.
-Later data only fills such a facet, so a filter on its value (``==``, ``in``, a method call) keeps selecting every
-need it selects today, and may gain those whose facet fills with a matching value, while a test for ``None``
-(``c.source.path is None``, ``not c.source.symbol``) may select fewer as the data fills.
+Later data only fills such a facet, so a positive test of its value (``==``, ``in``, a method call) keeps selecting
+every need it selects today, and may gain those whose facet fills with a matching value, while a negated one (``!=``,
+``not in``) or a test for ``None`` (``c.source.path is None``, ``not c.source.symbol``) may select fewer as the data
+fills.
 The kinds are open: a later producer adds one, so a negated test such as ``c.source.kind != 'page'``
 may select more needs in a later release, where ``c.source.kind in ['import', 'external']`` will not.
 ``c.source.paths`` is the exception to filling: it gains an entry wherever more of a chain is recorded --

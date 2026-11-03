@@ -18,10 +18,14 @@ What is public
 A project or an extension may rely on the documented surface of Sphinx-Needs: its
 configuration, its directives and their options, the filter names (``c.*`` included), the
 ``needs.json`` format, and the Python API this page documents (``create_need`` and
-``resolve_need_option`` among it). A change to any of it is
-deprecated first, with a ``needs.deprecated`` Sphinx warning (which ``suppress_warnings``
-silences) or a Python ``DeprecationWarning``, naming the replacement; the old spelling is
-removed only in a major release.
+``resolve_need_option`` among it). A name in it -- a configuration key, a directive or an
+option, a filter name, a ``needs.json`` key, a documented function, class, argument or
+attribute -- is renamed or removed only after a deprecation: a ``needs.deprecated`` Sphinx
+warning (which ``suppress_warnings`` silences) or a Python ``DeprecationWarning``, naming the
+replacement; the old spelling is removed only in a major release. What a name does is not
+frozen: a minor release may fix what it outputs, or report with a new warning what it
+accepted in silence, and the changelog marks each such change ‼️ or **(changed output)** and
+says what to do.
 
 What this page labels **provisional** follows its label. Through 9.x that is the hop types
 and ``NeedItemSource``'s general constructor with its keywords: a minor release may add an
@@ -31,8 +35,9 @@ construct them. They stay outside the stable surface until ``needs.json`` carrie
 
 Anything else is internal, and may change in a minor release without a deprecation: a name
 this page does not document, a module or a name starting with ``_``, and whatever is reached
-through one. The extensions developed in the Sphinx-Needs repository are changed with it, in
-the same pull request. New internal modules start with ``_``, and public names live in, or
+through one. The extensions developed in the Sphinx-Needs repository are changed with it in
+the same pull request, and released with a raised minimum version of Sphinx-Needs; an older
+release of one of them may need upgrading together with Sphinx-Needs. New internal modules start with ``_``, and public names live in, or
 are re-exported from, a public module with ``__all__``; existing modules are not renamed
 wholesale.
 
@@ -159,7 +164,8 @@ refused that with an ``AssertionError``, ``create_need`` raises ``ValueError``.
    * - ``lineno_content``
      - ``from_directive`` sets it (the provisional constructor takes ``lineno_content=``)
    * - ``need_source``
-     - ``source``
+     - ``source``, a ``NeedItemSource`` (an object with the ``NeedItemSourceProtocol``
+       interface alone, which ``add_need`` took, is refused)
    * - ``status``, ``tags``, ``constraints``, ``hide``, ``collapse``, ``style``,
        ``layout``, ``template``, ``pre_template``, ``post_template``, and every field
      - ``fields={...}``
