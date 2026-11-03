@@ -24,6 +24,7 @@ codelinks.xml
 reports.xml
 ub-test-reports.xml
 ai-index.xml
+ub-directives.xml
 .ty_cache
 
 # packages/sphinx-ai-index's property-based tests: hypothesis writes its example database

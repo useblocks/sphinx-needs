@@ -23,6 +23,7 @@ body:
         - ub-project
         - ub-needs-exchange
         - sphinx-ai-index
+        - sphinx-ub-directives
         - the repository (workflows, CI, release, docker, tooling)
     validations:
       required: true

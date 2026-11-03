@@ -8,7 +8,8 @@
 'pkg: sphinx-needs':
   - '/### Package[^#]*\bsphinx-needs\b/i'
 # No two of `sphinx-needs`, `sphinx-mounts`, `sphinx-codelinks`, `sphinx-test-reports`,
-# `ub-test-reports`, `ub-project`, `ub-needs-exchange` and `sphinx-ai-index` contains another
+# `ub-test-reports`, `ub-project`, `ub-needs-exchange`, `sphinx-ai-index` and `sphinx-ub-directives`
+# contains another
 # as a \b-delimited word, so no two patterns can match one choice (`ub-test-reports` is not a
 # word inside `sphinx-test-reports`: the `-` before `test` is a boundary, but the pattern needs
 # `ub-` there; `ub-needs-exchange` holds `needs` but not `sphinx-needs`; and `sphinx-ai-index`
@@ -30,5 +31,7 @@
   - '/### Package[^#]*\bub-needs-exchange\b/i'
 'pkg: sphinx-ai-index':
   - '/### Package[^#]*\bsphinx-ai-index\b/i'
+'pkg: sphinx-ub-directives':
+  - '/### Package[^#]*\bsphinx-ub-directives\b/i'
 'pkg: workspace':
   - '/### Package[^#]*\bthe repository\b/i'

@@ -263,6 +263,23 @@ jobs:
           flags: ai-index
           files: ./ai-index.xml
           fail_ci_if_error: ${{ github.event_name == 'pull_request' }}
+      - name: "sphinx-ub-directives: pytest"
+        # Directive presets and declared template directives. Its suite builds one small
+        # Sphinx project per conformance case in the shared build directory and needs
+        # nothing this cell does not already have -- no renderer, no git, no network;
+        # myst-parser and sphinx-design come from the root `test` group. Same `if:` as the
+        # steps above
+        if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
+        run: uv run --no-sync pytest -v packages/sphinx-ub-directives/tests -n ${{ inputs.pytest-workers }} --cov=sphinx_ub_directives --cov-report=xml:ub-directives.xml --cov-report=term-missing
+      - name: "sphinx-ub-directives: upload to Codecov"
+        if: inputs.upload-coverage && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          name: sphinx-ub-directives-pytests
+          flags: ub-directives
+          files: ./ub-directives.xml
+          fail_ci_if_error: ${{ github.event_name == 'pull_request' }}
       - name: Check the suites wrote nothing into the checkout
         # What `-n` exposes is a test that writes at a fixed path inside the checkout: two
         # workers meet there, and the failure is a rare race rather than a red step. The root
@@ -292,7 +309,7 @@ jobs:
             '(.+/)?__pycache__/'      # bytecode, beside every imported module
             '\.coverage'              # pytest-cov's data file
             '\.coverage\..+'          # a worker's data file, if one is left uncombined (not measured: see above)
-            '(mounts|codelinks|reports|ub-test-reports|ai-index)\.xml'  # the `--cov-report=xml:` files
+            '(mounts|codelinks|reports|ub-test-reports|ai-index|ub-directives)\.xml'  # the `--cov-report=xml:` files
             '\.hypothesis/'           # sphinx-ai-index's example database
             'codecov(\.SHA256SUM(\.sig)?)?'  # the upload steps' CLI and its checksums (read, not measured: see above)
           )

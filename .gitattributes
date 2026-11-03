@@ -53,6 +53,13 @@ packages/sphinx-codelinks/tests/__snapshots__/** text eol=lf
 # inputs, so a CRLF checkout would change what the cases test.
 packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance.toml text eol=lf
 
+# sphinx-ub-directives' two corpora (directive presets, template directives) are the next TOML
+# corpora, and this repository is their repository of RECORD: ubCode is to vendor them
+# byte-for-byte. Their `config`, `source`, `equivalent` and `files` bodies are case inputs, and
+# an `expansions` string is compared exactly, so a CRLF checkout would change what the cases test.
+packages/sphinx-ub-directives/tests/fixtures/directive_presets_conformance.toml text eol=lf
+packages/sphinx-ub-directives/tests/fixtures/template_directives_conformance.toml text eol=lf
+
 # The committed PlantUML jar. `text=auto` at the top would otherwise ask git to classify a
 # 30 MB zip on every checkout; git's own detection gets it right, and this states it.
 vendor/plantuml/*.jar binary
