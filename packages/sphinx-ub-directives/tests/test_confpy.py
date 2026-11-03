@@ -626,12 +626,12 @@ def test_a_bad_preset_is_located_at_its_source(
 #: The line number in a test project's conf.py of the first line after the common head.
 _FIRST = CONF_PY.count("\n") + 1
 
-#: A late extension that registers ``note`` over the self-preset after ``builder-inited``.
+#: A late extension that registers ``note`` over the self-preset after the presets are.
 _LATE = (
     "from docutils.parsers.rst.directives.admonitions import Note\n"
     "class Late(Note):\n    pass\n"
-    "def _late(app):\n    app.add_directive('note', Late, override=True)\n"
-    "def setup(app):\n    app.connect('builder-inited', _late, priority=900)\n"
+    "def _late(app, *_args):\n    app.add_directive('note', Late, override=True)\n"
+    "def setup(app):\n    app.connect('env-before-read-docs', _late, priority=650)\n"
 )
 
 

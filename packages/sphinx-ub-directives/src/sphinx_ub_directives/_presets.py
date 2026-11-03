@@ -1,14 +1,18 @@
 """Directive presets: ``[parse.directive_presets.<name>]`` (contract §3).
 
-At ``builder-inited`` -- after every extension's ``config-inited``, so need types and
-sphinx-design's directives are registered, and before any document is read -- every
-entry is checked (§3.1-§3.3), every base class is snapshotted, and each accepted preset
-is registered as a subclass of its base (§3.5).
+Once per build, before any document is read, every entry is checked (§3.1-§3.3), every
+base class is snapshotted, and each accepted preset is registered as a subclass of its
+base (§3.5). With sphinx-needs loaded that is at ``env-before-read-docs``, after
+sphinx-needs has built THIS build's schema (a need type's options include the fields and
+links declared on that type); without it, at ``builder-inited``. Both come after every
+extension's ``config-inited``, so need types and sphinx-design's directives are
+registered.
 """
 
 from __future__ import annotations
 
 import re
+import weakref
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -141,18 +145,40 @@ def need_types(app: Sphinx) -> list[str]:
     return [str(t["directive"]) for t in NeedsSphinxConfig(app.config).types]
 
 
-def need_options(app: Sphinx) -> frozenset[str]:
-    """The options a need directive takes: its own, and the configured fields and links."""
-    from sphinx_needs.config import NeedsSphinxConfig
+#: The builds whose sphinx-needs schema is this build's own (see :func:`_need_option`).
+_SCHEMA_READY: weakref.WeakSet[Sphinx] = weakref.WeakSet()
 
-    config = NeedsSphinxConfig(app.config)
-    names = set(NEED_META_OPTIONS) | {"links"}
-    names.update(config.fields)
-    for option in config.extra_options:
-        names.add(option if isinstance(option, str) else str(option["name"]))
-    for link in config.extra_links:
-        names.add(str(link["option"]))
-    return frozenset(names)
+
+def _need_option(app: Sphinx, need_type: str, name: str) -> str | None:
+    """The option of need type ``need_type`` that ``name`` names, by its DECLARED name, or
+    ``None`` when the type takes no such option (§3.3.3): an exact match first, then one
+    ignoring case -- the need directive's own rule. The type's options are the directive's
+    own, the global fields and links, and the fields and links declared on the type
+    (inherited ones included).
+
+    The one place this package asks sphinx-needs about a need type's options: its body
+    becomes ``sphinx_needs.api.resolve_need_option(app, need_type, name)`` once that API
+    is released. Until then it reads sphinx-needs' schema, which is THIS build's only from
+    ``env-before-read-docs`` (priority 500) on -- before that it is missing, or on an
+    incremental build the previous build's -- so it refuses to answer earlier.
+
+    :raises RuntimeError: Before this build's schema exists.
+    """
+    if app not in _SCHEMA_READY:
+        msg = "a need type's options are known only once sphinx-needs built its schema"
+        raise RuntimeError(msg)
+    from sphinx_needs.data import SphinxNeedsData
+
+    schema = SphinxNeedsData(app.env).get_schema().for_type(need_type)
+    names = {
+        *NEED_META_OPTIONS,
+        *schema.iter_link_field_names(),
+        *schema.iter_extra_field_names(),
+    }
+    if name in names:
+        return name
+    lowered = name.lower()
+    return next((n for n in sorted(names) if n.lower() == lowered), None)
 
 
 def float_text(value: float) -> str:
@@ -189,7 +215,6 @@ class Resolver:
         self.template_names = {"ub-template"} | {
             str(n).lower() for n in resolved(app)["directive_templates"]
         }
-        self._need_options: frozenset[str] | None = None
 
     def warn(self, code: str, segments: Iterable[str], message: str) -> None:
         warn(code, render_path(tuple(segments)), message, location=self.location)
@@ -223,11 +248,6 @@ class Resolver:
         return any(t.lower() == lowered for t in self.types) or (
             lookup(self.app, lowered) is not None
         )
-
-    def need_option_names(self) -> frozenset[str]:
-        if self._need_options is None:
-            self._need_options = need_options(self.app)
-        return self._need_options
 
     def resolve(self) -> list[Preset]:
         """Every accepted preset, each failure reported once at its path."""
@@ -344,16 +364,23 @@ class Resolver:
             for key in sorted(entry.get(verb, {})):
                 value = entry[verb][key]
                 where = (*path, verb, key)
-                if key in seen:
+                # a need type's key is its option's DECLARED name (§3.3.3); any other
+                # base's key is the option as written
+                option = (
+                    _need_option(self.app, base.name, key) or key
+                    if base.need_type
+                    else key
+                )
+                if option in seen:
                     self.warn(
                         "directive_preset_option_conflict",
                         where,
-                        f"{key!r} is already in {seen[key]}",
+                        f"{key!r} is already in {seen[option]}",
                     )
                     ok = False
                     continue
-                seen[key] = verb
-                if (base.need_type and key == "id") or (
+                seen[option] = verb
+                if (base.need_type and option == "id") or (
                     not base.need_type and key == "name" and spec and "name" in spec
                 ):
                     self.warn(
@@ -405,7 +432,7 @@ class Resolver:
                         )
                         ok = False
                         continue
-                texts[verb][key] = text
+                texts[verb][option] = text
         argument = entry.get("argument")
         argument_text: str | None = None
         if argument is not None:
@@ -437,7 +464,8 @@ class Resolver:
         """The base's converter for option ``key``, or ``None`` when it takes no such
         option."""
         if base.need_type:
-            return (lambda text: text) if key in self.need_option_names() else None
+            known = _need_option(self.app, base.name, key) is not None
+            return (lambda text: text) if known else None
         spec = base.cls.option_spec
         if not spec:
             return None
@@ -508,15 +536,26 @@ def preset_class(preset: Preset) -> type[Directive]:
     def run(self: Directive) -> Any:
         if not self.arguments and preset.argument is not None:
             self.arguments = [preset.argument]
+        # each written option by the option it names: for a need type, its declared name
+        # (§3.3.3), so a written ``:priority:`` and a preset's ``Priority`` are one option
+        written: dict[str, str] = {}
+        for name in self.options:
+            option = name
+            if base.need_type:
+                app = self.state.document.settings.env.app
+                option = _need_option(app, base.name, name) or name
+            written.setdefault(option, name)
         for key in sorted({*defaults, *appends, *forced}):
             if key in defaults:
-                if key not in self.options:
+                if key not in written:
                     self.options[key] = convert(key, defaults[key])
             elif key in appends:
-                written = self.options.get(key) or []
-                self.options[key] = [*convert(key, appends[key]), *written]
+                existing = self.options.get(key) or []
+                self.options[key] = [*convert(key, appends[key]), *existing]
             else:
-                if key in self.options:
+                if key in written:
+                    # the written spelling goes, so the need directive sees one option
+                    del self.options[written[key]]
                     owner = (
                         f"the project defaults for {base.name!r} "
                         f"([parse.directive_presets.{preset.name}])"
@@ -545,8 +584,23 @@ def preset_class(preset: Preset) -> type[Directive]:
     return cls
 
 
+def register_early(app: Sphinx) -> None:
+    """``builder-inited``: register the presets now when sphinx-needs is not loaded."""
+    if "sphinx_needs" not in app.extensions:
+        register(app)
+
+
+def register_with_needs(app: Sphinx, *_args: Any) -> None:
+    """``env-before-read-docs``, after sphinx-needs' ``create_schema`` (priority 500): with
+    sphinx-needs loaded, its schema is now this build's, so register the presets."""
+    if "sphinx_needs" in app.extensions:
+        _SCHEMA_READY.add(app)
+        register(app)
+
+
 def register(app: Sphinx) -> None:
-    """``builder-inited``: check every entry and register the accepted presets."""
+    """Check every entry and register the accepted presets (before any document is read:
+    see the module docstring for when)."""
     reading = resolved(app)
     table = reading["directive_presets"]
     # process state: a build without presets must not see a previous build's (D12)
@@ -574,8 +628,8 @@ _SELF_PRESETS: list[tuple[str, type[Directive], str | None]] = []
 
 
 def check_replaced(app: Sphinx, *_args: Any) -> None:
-    """``env-before-read-docs``: warn once per self-preset whose directive another
-    extension registered over it after ``builder-inited`` (§3.4.7)."""
+    """``env-before-read-docs``, after the presets are registered: warn once per
+    self-preset whose directive another extension registered over it since (§3.4.7)."""
     registry = cast("dict[str, Any]", getattr(directives, "_directives"))  # noqa: B009
     for name, cls, file in _SELF_PRESETS:
         if registry.get(name) is not cls:

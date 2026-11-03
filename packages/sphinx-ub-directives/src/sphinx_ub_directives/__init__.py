@@ -22,10 +22,14 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
     _config.setup(app)
     _refusal.install()
-    # after every extension's `config-inited`, before any document is read (contract §2.2)
-    app.connect("builder-inited", _presets.register)
-    app.connect("env-before-read-docs", _presets.check_replaced)
-    app.connect("builder-inited", _templates.register)
+    # after every extension's `config-inited`, before any document is read (contract §2.2);
+    # with sphinx-needs, after its `create_schema` (priority 500) builds this build's schema
+    # presets before declared templates in either phase, so a preset keeps its name
+    app.connect("builder-inited", _presets.register_early)
+    app.connect("builder-inited", _templates.register_early)
+    app.connect("env-before-read-docs", _presets.register_with_needs, priority=600)
+    app.connect("env-before-read-docs", _templates.register_with_needs, priority=610)
+    app.connect("env-before-read-docs", _presets.check_replaced, priority=700)
     app.add_directive(_ub_template.NAME, _ub_template.UbTemplate)
     return {
         "version": __version__,

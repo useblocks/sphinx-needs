@@ -784,6 +784,20 @@ def declared_class(app: Sphinx, name: str, spec: Mapping[str, Any]) -> type[Dire
     return cls
 
 
+def register_early(app: Sphinx) -> None:
+    """``builder-inited``, after the presets: without sphinx-needs, register now."""
+    if "sphinx_needs" not in app.extensions:
+        register(app)
+
+
+def register_with_needs(app: Sphinx, *_args: Any) -> None:
+    """``env-before-read-docs``, right after the presets (§3.5): with sphinx-needs loaded,
+    declarations are registered in the same phase as presets, and after them, so a preset
+    keeps its name over a declaration of the same name in every build."""
+    if "sphinx_needs" in app.extensions:
+        register(app)
+
+
 def register(app: Sphinx) -> None:
     """``builder-inited``: report the context and declaration findings once (§4.7, §5.1),
     and register every usable declaration."""

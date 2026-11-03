@@ -77,9 +77,12 @@ cases (corpus: `identity-note-rst`, `host-content-continues-in-the-last-section`
    `test_confpy.py::test_no_extend_warning_from_conf_py_tables`.
 2. **When.** The tables are read at `config-inited` into the confval
    `ub_directives_resolved` (registered `rebuild="env"`), so a change to them re-reads
-   every document; presets are registered at `builder-inited`, after every extension's
-   `config-inited` (need types, sphinx-design) and before any document is read.
-   Enforced by: test `test_config.py::test_the_tables_are_a_rebuild_env_confval`.
+   every document. Presets, then declared templates, are registered after every
+   extension's `config-inited` (need types, sphinx-design) and before any document is
+   read: with sphinx-needs loaded at `env-before-read-docs`, after sphinx-needs builds that
+   build's schema (§3.5); without it at `builder-inited`.
+   Enforced by: test `test_config.py::test_the_tables_are_a_rebuild_env_confval`,
+   `test_presets.py::test_a_presets_options_follow_the_new_config_on_an_incremental_build`.
 3. **Keys.** `[parse.directive_presets.<name>]`, `[parse.directive_templates.<name>]`,
    `[parse.template_contexts.<name>]`, and the bool `[parse] ub_template_enabled`
    (default `false`). There is no top-level `[directives]` table and no alias for any
@@ -239,15 +242,33 @@ The tables are checked in the order `options`, `append_options`, `force_options`
 sorted; the path is `….<name>.<table>.<key>`.
 
 1. A key already seen in an earlier table is `directive_preset_option_conflict` (at the
-   later one). Enforced by: corpus `refused-option-in-two-verbs`.
+   later one); for a need-type base, a key naming the same option as an earlier one (3.3.3).
+   Enforced by: corpus `refused-option-in-two-verbs`,
+   `px-need-option-keys-equal-ignoring-case-conflict`.
 2. An identity option — the base's `name`, or a need's `id` — is
    `directive_preset_identity_option`. Enforced by: corpus `refused-identity-option-name`,
    `refused-identity-option-id`.
-3. A key the base does not take is `directive_preset_unknown_option`. For a need-type base
-   the options are the type's fields and links plus the need directive's own options. Keys
-   compare as written: a key with capitals (`STATUS`) is no option of any base.
+3. A key the base does not take is `directive_preset_unknown_option`.
+   - **A need-type base** takes exactly the options its need type's directive takes: the
+     directive's own, the global fields and links, and the fields and links declared on
+     that type (inherited ones included). A key matches as that directive matches a written
+     option -- exactly first, then ignoring case -- and names the option by its DECLARED
+     name (`STATUS` is `status`; `priority` is a declared `Priority`). A key and an option
+     written at a use that name the same option are ONE option (3.4.2: a default yields to
+     the written value, a forced value replaces it and is reported); `append_options` keeps
+     its own rule (3.3.4). A field declared on another type alone is taken as the directive
+     takes it (its value ignored, as sphinx-needs ignores a written one, with its own
+     warning).
+   - **Any other base**: keys compare as written, so a key with capitals (`CLASS`) is no
+     option of it (a docutils option name is lower case).
    Enforced by: corpus `refused-unknown-option`, `refused-unknown-need-option`,
-   `px-option-key-in-capitals`.
+   `px-need-option-key-in-capitals-is-the-option`, `px-option-key-in-capitals-on-a-docutils-base`,
+   `px-declared-field-in-capitals-by-a-lower-case-key`, `px-declared-field-in-capitals-by-its-own-key`,
+   `px-written-option-beats-a-default-in-another-case-rst`, `…-md`,
+   `px-forced-option-beats-a-written-one-in-another-case-rst`, `…-md`,
+   `need-type-own-field-through-options`, `need-type-own-field-forced`,
+   `need-type-own-link-through-options`, `need-type-own-link-forced`,
+   `need-type-own-link-appended`, `need-type-own-field-on-another-type-is-taken-as-the-directive-takes-it`.
 4. An `append_options` key other than `class` or `class-*` is
    `directive_preset_append_not_list`. Enforced by: corpus `refused-append-to-a-scalar`.
 5. A value the base's option rejects is `directive_preset_invalid_value`. The Sphinx half
@@ -288,12 +309,27 @@ sorted; the path is `….<name>.<table>.<key>`.
    it does not take the self-preset's values, whatever the order of registration.
    Enforced by: corpus `preset-of-a-self-preset-base-takes-the-original`.
 6. A default flag cannot be switched off by a use (there is no `:no-<option>:`).
-7. The bases are snapshotted when the presets are registered (Sphinx: `builder-inited`).
+7. The bases are snapshotted when the presets are registered (Sphinx: §2.2).
    An extension that replaces a self-preset's base AFTER that drops the self-preset; the
    Sphinx half warns once (`ub_directives.preset_base_replaced`, Sphinx only).
 
 ### 3.5 The Sphinx half (informative: how this package meets §3)
 
+- When: with sphinx-needs loaded, at `env-before-read-docs` priority 600 -- after
+  sphinx-needs' `create_schema` (priority 500), the first point at which its schema is
+  THIS build's (missing before it on a fresh build, the previous build's on an incremental
+  one) -- with the declared templates at 610 and the replaced-base check (3.4.7) at 700;
+  without sphinx-needs, at `builder-inited`. Every directive is registered before any
+  document is read.
+- A need type's options are asked of sphinx-needs through ONE private helper,
+  `_need_option(app, need_type, name) -> declared name | None`, which refuses to answer
+  before that point. It reads sphinx-needs' schema (`for_type`) and the directive's own
+  options (`NEED_META_OPTIONS`, fenced equal to sphinx-needs' `NEED_DIRECTIVE_OPTIONS`) for
+  now; its body becomes `sphinx_needs.api.resolve_need_option` once that is released.
+  `run()` resolves each written option the same way, so a written `:priority:` and a
+  preset's `Priority` are one option. Enforced by: test
+  `test_presets.py::test_a_need_type_option_is_never_read_from_an_earlier_schema`,
+  `…::test_need_meta_options_are_the_need_directives_own`.
 - Each accepted preset is a subclass of the base's class, registered with
   `app.add_directive(name, cls, override=<self-preset>)`, every base class snapshotted
   before the first registration (3.4.5).
@@ -307,8 +343,8 @@ sorted; the path is `….<name>.<table>.<key>`.
 - `run()` merges the options as §3.4 says (options are already converted there, so an
   appended class is the preset's converted tokens plus the written list), sets
   `self.name` to the base, and calls the base's `run()`.
-- The forced-option warning is located at `(env.docname, self.lineno)`: a plain docutils
-  directive has no `get_location()`.
+- The forced-option warning is located at the directive's mapped line, as
+  `get_location()` would give it (a plain docutils directive has no `get_location()`).
 - MyST drops an unknown option with a warning, and reads a flag's value leniently, where
   docutils refuses the directive: a refusal at a use is compared by code, never by "the
   directive rendered nothing".

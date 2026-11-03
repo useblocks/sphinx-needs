@@ -3350,8 +3350,8 @@ findings = []
 status = "draft"
 
 [[case]]
-name = "px-option-key-in-capitals"
-why = "a preset option key written in capitals (a docutils option name is lower case)"
+name = "px-need-option-key-in-capitals-is-the-option"
+why = "a need type's preset key matches its option ignoring case, as the need directive does: STATUS is status"
 config = '''
 [parse.directive_presets.cap]
 base = "req"
@@ -3361,11 +3361,15 @@ source = '''
 .. cap:: A
    :id: REQ_PXC2
 '''
+equivalent = '''
+.. req:: A
+   :id: REQ_PXC2
+   :status: draft
+'''
 [case.expect]
-missing = ["REQ_PXC2"]
-[[case.expect.findings]]
-code = "directive_preset_unknown_option"
-path = "parse.directive_presets.cap.options.STATUS"
+findings = []
+[case.expect.needs.REQ_PXC2]
+status = "draft"
 
 [[case]]
 name = "px-preset-named-ub-template-is-taken"
@@ -3685,3 +3689,349 @@ Body.
 '''
 [case.expect]
 findings = []
+
+[[case]]
+name = "need-type-own-field-through-options"
+why = "a field declared on the need type alone is an option of its presets, as of the need directive"
+config = '''
+[needs.types.req.fields.reqonly]
+schema = { type = "string" }
+
+[parse.directive_presets.scoped]
+base = "req"
+options = { reqonly = "preset" }
+'''
+source = '''
+.. scoped:: A
+   :id: REQ_TO1
+'''
+equivalent = '''
+.. req:: A
+   :id: REQ_TO1
+   :reqonly: preset
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_TO1]
+reqonly = "preset"
+
+[[case]]
+name = "need-type-own-field-forced"
+why = "a field declared on the need type alone can be forced: the written value is replaced and reported"
+config = '''
+[needs.types.req.fields.reqonly]
+schema = { type = "string" }
+
+[parse.directive_presets.scoped]
+base = "req"
+force_options = { reqonly = "forced" }
+'''
+source = '''
+.. scoped:: A
+   :id: REQ_TO2
+   :reqonly: written
+'''
+[case.expect]
+findings = [{ code = "preset_forced_option", directive = "scoped" }]
+[case.expect.needs.REQ_TO2]
+reqonly = "forced"
+
+[[case]]
+name = "need-type-own-link-through-options"
+why = "a link type declared on the need type alone is an option of its presets, as of the need directive"
+config = '''
+[needs.types.req.links.reqlink]
+
+[parse.directive_presets.linked]
+base = "req"
+options = { reqlink = "REQ_TL0" }
+'''
+source = '''
+.. req:: Target
+   :id: REQ_TL0
+
+.. linked:: A
+   :id: REQ_TL1
+'''
+equivalent = '''
+.. req:: Target
+   :id: REQ_TL0
+
+.. req:: A
+   :id: REQ_TL1
+   :reqlink: REQ_TL0
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_TL1]
+reqlink = ["REQ_TL0"]
+
+[[case]]
+name = "need-type-own-link-forced"
+why = "a link type declared on the need type alone can be forced: the written links are replaced and reported"
+config = '''
+[needs.types.req.links.reqlink]
+
+[parse.directive_presets.linked]
+base = "req"
+force_options = { reqlink = "REQ_TL0" }
+'''
+source = '''
+.. req:: Target
+   :id: REQ_TL0
+
+.. req:: Other
+   :id: REQ_TL2
+
+.. linked:: A
+   :id: REQ_TL3
+   :reqlink: REQ_TL2
+'''
+[case.expect]
+findings = [{ code = "preset_forced_option", directive = "linked" }]
+[case.expect.needs.REQ_TL3]
+reqlink = ["REQ_TL0"]
+
+[[case]]
+name = "need-type-own-link-appended"
+why = "a link type declared on the need type alone does not append: only class options do"
+config = '''
+[needs.types.req.links.reqlink]
+
+[parse.directive_presets.linked]
+base = "req"
+append_options = { reqlink = "REQ_TL0" }
+'''
+source = '''
+.. req:: Target
+   :id: REQ_TL0
+
+.. linked:: A
+   :id: REQ_TL5
+'''
+[case.expect]
+missing = ["REQ_TL5"]
+[[case.expect.findings]]
+code = "directive_preset_append_not_list"
+path = "parse.directive_presets.linked.append_options.reqlink"
+
+[[case]]
+name = "need-type-own-field-on-another-type-is-taken-as-the-directive-takes-it"
+why = "a field declared on one need type alone, on a preset of another type: taken as a written option is, the need made and the value ignored (sphinx-needs' undeclared_for_type)"
+config = '''
+[needs.types.req.fields.reqonly]
+schema = { type = "string" }
+
+[parse.directive_presets.spec-scoped]
+base = "spec"
+options = { reqonly = "x" }
+'''
+source = '''
+.. spec-scoped:: A
+   :id: SPEC_TO6
+'''
+equivalent = '''
+.. spec:: A
+   :id: SPEC_TO6
+   :reqonly: x
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_TO6]
+title = "A"
+
+[[case]]
+name = "px-declared-field-in-capitals-by-a-lower-case-key"
+why = "a preset key matches a declared field ignoring case and sets it by its declared name"
+config = '''
+[needs.fields.Priority]
+schema = { type = "string" }
+
+[parse.directive_presets.prio]
+base = "req"
+options = { priority = "high" }
+'''
+source = '''
+.. prio:: A
+   :id: REQ_PC1
+'''
+equivalent = '''
+.. req:: A
+   :id: REQ_PC1
+   :priority: high
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PC1]
+Priority = "high"
+
+[[case]]
+name = "px-declared-field-in-capitals-by-its-own-key"
+why = "a preset key spelled as the declared field is that field"
+config = '''
+[needs.fields.Priority]
+schema = { type = "string" }
+
+[parse.directive_presets.prio]
+base = "req"
+options = { Priority = "high" }
+'''
+source = '''
+.. prio:: A
+   :id: REQ_PC2
+'''
+equivalent = '''
+.. req:: A
+   :id: REQ_PC2
+   :priority: high
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PC2]
+Priority = "high"
+
+[[case]]
+name = "px-written-option-beats-a-default-in-another-case-rst"
+why = "a written option and a preset default of one field in two spellings are one option: the written value wins"
+config = '''
+[needs.fields.Priority]
+schema = { type = "string" }
+
+[parse.directive_presets.prio]
+base = "req"
+options = { Priority = "low" }
+'''
+source = '''
+.. prio:: A
+   :id: REQ_PC3
+   :priority: high
+'''
+equivalent = '''
+.. req:: A
+   :id: REQ_PC3
+   :priority: high
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PC3]
+Priority = "high"
+
+[[case]]
+name = "px-forced-option-beats-a-written-one-in-another-case-rst"
+why = "a forced option and a written one of one field in two spellings are one option: the forced value wins, reported"
+config = '''
+[needs.fields.Priority]
+schema = { type = "string" }
+
+[parse.directive_presets.prio]
+base = "req"
+force_options = { Priority = "low" }
+'''
+source = '''
+.. prio:: A
+   :id: REQ_PC4
+   :priority: high
+'''
+[case.expect]
+findings = [{ code = "preset_forced_option", directive = "prio" }]
+[case.expect.needs.REQ_PC4]
+Priority = "low"
+
+[[case]]
+name = "px-written-option-beats-a-default-in-another-case-md"
+why = "the same in MyST, which keeps the written case: :PRIORITY: against a default under Priority, the written value wins"
+markup = "md"
+config = '''
+[needs.fields.Priority]
+schema = { type = "string" }
+
+[parse.directive_presets.prio]
+base = "req"
+options = { Priority = "low" }
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{prio} A
+:id: REQ_PC5
+:PRIORITY: high
+```
+'''
+equivalent = '''
+```{req} A
+:id: REQ_PC5
+:PRIORITY: high
+```
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_PC5]
+Priority = "high"
+
+[[case]]
+name = "px-forced-option-beats-a-written-one-in-another-case-md"
+why = "the same in MyST: a forced Priority against a written :PRIORITY:, the forced value wins, reported"
+markup = "md"
+config = '''
+[needs.fields.Priority]
+schema = { type = "string" }
+
+[parse.directive_presets.prio]
+base = "req"
+force_options = { Priority = "low" }
+
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+'''
+source = '''
+```{prio} A
+:id: REQ_PC6
+:PRIORITY: high
+```
+'''
+[case.expect]
+findings = [{ code = "preset_forced_option", directive = "prio" }]
+[case.expect.needs.REQ_PC6]
+Priority = "low"
+
+[[case]]
+name = "px-need-option-keys-equal-ignoring-case-conflict"
+why = "two keys of one need-type preset that name one option ignoring case are a conflict, at the later one"
+config = '''
+[parse.directive_presets.twice]
+base = "req"
+options = { status = "a" }
+force_options = { STATUS = "b" }
+'''
+source = '''
+.. twice:: A
+   :id: REQ_PC7
+'''
+[case.expect]
+missing = ["REQ_PC7"]
+[[case.expect.findings]]
+code = "directive_preset_option_conflict"
+path = "parse.directive_presets.twice.force_options.STATUS"
+
+[[case]]
+name = "px-option-key-in-capitals-on-a-docutils-base"
+why = "a key with capitals is no option of a base that is not a need type: keys compare as written there"
+config = '''
+[parse.directive_presets.capnote]
+base = "note"
+options = { CLASS = "x" }
+'''
+source = '''
+.. capnote::
+
+   Body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_unknown_option"
+path = "parse.directive_presets.capnote.options.CLASS"

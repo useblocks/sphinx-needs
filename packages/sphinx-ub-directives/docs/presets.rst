@@ -58,6 +58,13 @@ Which value wins, from highest to lowest:
 a forced value; what the use writes (for an appended option, the preset's values first);
 the preset's default; the base's own defaults (a field's ``default``, ``needs_global_options``).
 
+For a need-type base, a preset takes exactly the options the need type's directive takes,
+the fields and links declared on that type included,
+and an option's name matches as it does on the directive: exactly, else ignoring case
+(``STATUS`` is ``status``, and ``priority`` is a field declared as ``Priority``).
+A written option and a preset's option of one name are one option, whatever the case of each.
+For any other base, write each option's name exactly as the directive spells it.
+
 Reference
 ---------
 
@@ -98,11 +105,12 @@ Each check runs once per build; the warning names the entry path (``[parse.direc
      - The name is already a directive other than the preset's base, or two presets' names differ only in case
        (the first in sorted order is kept).
    * - ``directive_preset_unknown_option``
-     - An option the base does not take.
+     - An option the base does not take (for a need type, matched ignoring case).
    * - ``directive_preset_invalid_value``
      - A value the base's option rejects, or an entry that is not a preset at all.
    * - ``directive_preset_option_conflict``
-     - The same option in two of ``options``, ``append_options`` and ``force_options``.
+     - The same option in two of ``options``, ``append_options`` and ``force_options``
+       (for a need type, also when spelled in two cases).
    * - ``directive_preset_append_not_list``
      - ``append_options`` for an option other than ``class`` or ``class-*``.
    * - ``directive_preset_argument_not_accepted``

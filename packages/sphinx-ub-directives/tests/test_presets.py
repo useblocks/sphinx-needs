@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from pathlib import Path
 
+import pytest
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs_testkit import build_warnings
+from sphinx_ub_directives import _presets
 
 from .corpus import CONF_PY
 
@@ -85,13 +88,14 @@ def test_a_need_preset_keeps_accepting_every_need_option(
 def test_a_self_preset_whose_base_is_replaced_later_warns(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:
-    """§3.4.7 (L6): bases are snapshotted at ``builder-inited``; an extension that registers
-    a self-preset's directive again after that drops the self-preset, and the build says so."""
+    """§3.4.7 (L6): bases are snapshotted when the presets are registered (with sphinx-needs,
+    ``env-before-read-docs`` at priority 600); an extension that registers a self-preset's
+    directive again after that drops the self-preset, and the build says so."""
     (tmp_path / "late.py").write_text(
         "from docutils.parsers.rst.directives.admonitions import Note\n"
         "class Late(Note):\n    pass\n"
-        "def _late(app):\n    app.add_directive('note', Late, override=True)\n"
-        "def setup(app):\n    app.connect('builder-inited', _late, priority=900)\n",
+        "def _late(app, *_args):\n    app.add_directive('note', Late, override=True)\n"
+        "def setup(app):\n    app.connect('env-before-read-docs', _late, priority=650)\n",
         encoding="utf-8",
     )
     conf = (
@@ -123,8 +127,8 @@ def test_a_build_without_presets_does_not_see_a_previous_builds(
     (first / "late.py").write_text(
         "from docutils.parsers.rst.directives.admonitions import Note\n"
         "class Late(Note):\n    pass\n"
-        "def _late(app):\n    app.add_directive('note', Late, override=True)\n"
-        "def setup(app):\n    app.connect('builder-inited', _late, priority=900)\n",
+        "def _late(app, *_args):\n    app.add_directive('note', Late, override=True)\n"
+        "def setup(app):\n    app.connect('env-before-read-docs', _late, priority=650)\n",
         encoding="utf-8",
     )
     conf = (
@@ -145,3 +149,81 @@ def test_a_build_without_presets_does_not_see_a_previous_builds(
     assert not [w for w in build_warnings(second) if "preset_base_replaced" in w], (
         build_warnings(second)
     )
+
+
+# --- a need type's options (§3.3.3, §3.5) ---------------------------------------------
+
+
+def test_need_meta_options_are_the_need_directives_own() -> None:
+    """Q2 fence: the need directive's own options (its options that are no field or link)
+    are copied here; a change to sphinx-needs' list is a red test in the same change. It
+    goes once ``sphinx_needs.api.resolve_need_option`` answers for both."""
+    need = pytest.importorskip("sphinx_needs.directives.need")
+    own = getattr(need, "NEED_DIRECTIVE_OPTIONS", None)
+    if own is None:
+        pytest.skip("this sphinx-needs predates NEED_DIRECTIVE_OPTIONS")
+    assert own == _presets.NEED_META_OPTIONS
+
+
+def test_a_need_type_option_is_never_read_from_an_earlier_schema(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """N4: before this build's ``create_schema`` the schema is missing (a fresh build) or
+    the previous build's (an incremental one), so the one helper refuses to answer then;
+    once the build has it, the rule is the need directive's: exact, then ignoring case,
+    answered by the DECLARED name."""
+    toml = '[needs.fields.Priority]\nschema = { type = "string" }\n'
+    root = tmp_path / "p"
+    root.mkdir()
+    (root / "conf.py").write_text(CONF_PY, encoding="utf-8", newline="")
+    (root / "ubproject.toml").write_text(toml, encoding="utf-8", newline="")
+    (root / "index.rst").write_text("Case\n====\n", encoding="utf-8", newline="")
+    app = make_app("html", srcdir=root, freshenv=True)
+    with pytest.raises(RuntimeError):
+        _presets._need_option(app, "req", "status")
+    app.build()
+    assert _presets._need_option(app, "req", "status") == "status"
+    assert _presets._need_option(app, "req", "STATUS") == "status"
+    assert _presets._need_option(app, "req", "priority") == "Priority"
+    assert _presets._need_option(app, "req", "Priority") == "Priority"
+    assert _presets._need_option(app, "req", "nope") is None
+
+
+def test_a_presets_options_follow_the_new_config_on_an_incremental_build(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """N4: on an incremental build (no ``-E``) the environment, and sphinx-needs' schema in
+    it, is the previous build's until ``create_schema`` runs; presets are judged after it,
+    so a field declared on the type since the last build is taken -- and one renamed away
+    since is refused -- by the NEW configuration."""
+    preset = (
+        '[parse.directive_presets.scoped]\nbase = "req"\noptions = { reqonly = "v" }\n'
+    )
+    field = '[needs.types.req.fields.{name}]\nschema = {{ type = "string" }}\n\n'
+    root = tmp_path / "p"
+    root.mkdir()
+    (root / "conf.py").write_text(CONF_PY, encoding="utf-8", newline="")
+    (root / "index.rst").write_text(
+        "Case\n====\n\n.. scoped:: A\n   :id: REQ_INC\n", encoding="utf-8", newline=""
+    )
+
+    def build(name: str, *, fresh: bool) -> tuple[list[str], dict[str, object]]:
+        (root / "ubproject.toml").write_text(
+            field.format(name=name) + preset, encoding="utf-8", newline=""
+        )
+        app = make_app("html", srcdir=root, freshenv=fresh)
+        app.build()
+        data = json.loads((Path(app.outdir) / "needs.json").read_text(encoding="utf-8"))
+        needs = data["versions"][data["current_version"]]["needs"]
+        refused = [
+            w for w in build_warnings(app) if "directive_preset_unknown_option" in w
+        ]
+        app.cleanup()  # as a new process would: this build's directives are gone
+        return refused, needs
+
+    refused, needs = build("other", fresh=True)
+    assert refused and "REQ_INC" not in needs
+    refused, needs = build("reqonly", fresh=False)
+    assert not refused and needs["REQ_INC"]["reqonly"] == "v"
+    refused, needs = build("renamed", fresh=False)
+    assert refused and "REQ_INC" not in needs
