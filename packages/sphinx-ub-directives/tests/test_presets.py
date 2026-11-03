@@ -233,3 +233,40 @@ def test_a_presets_options_follow_the_new_config_on_an_incremental_build(
     assert not refused and needs["REQ_INC"]["reqonly"] == "v"
     refused, needs = build("renamed", fresh=False)
     assert refused and "REQ_INC" not in needs
+
+
+@pytest.mark.parametrize(
+    ("page", "source"),
+    [
+        pytest.param(
+            "index.rst",
+            "Case\n====\n\n.. prio:: A\n   :id: REQ_PF1\n   :priority: high\n",
+            id="rst",
+        ),
+        pytest.param(
+            "index.md",
+            "# Case\n\n```{prio} A\n:id: REQ_PF1\n:PRIORITY: high\n```\n",
+            id="md",
+        ),
+    ],
+)
+def test_a_forced_option_replaces_a_written_one_in_another_case_whole(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path, page: str, source: str
+) -> None:
+    """N2: a forced ``Priority`` and a written ``:priority:`` / ``:PRIORITY:`` are one
+    option, so the written spelling goes and the need directive sees the option once --
+    not twice in two cases, which sphinx-needs reports (``needs.directive``) while still
+    keeping the forced value. The corpus compares preset codes only, so this pins it."""
+    toml = (
+        '[needs.fields.Priority]\nschema = { type = "string" }\n\n'
+        '[parse.directive_presets.prio]\nbase = "req"\nforce_options = { Priority = "low" }\n'
+    )
+    tmp_path.mkdir(exist_ok=True)
+    (tmp_path / "conf.py").write_text(CONF_PY, encoding="utf-8", newline="")
+    (tmp_path / "ubproject.toml").write_text(toml, encoding="utf-8", newline="")
+    (tmp_path / page).write_text(source, encoding="utf-8", newline="")
+    app = make_app("html", srcdir=tmp_path, freshenv=True)
+    app.build()
+    warnings = build_warnings(app)
+    assert not [w for w in warnings if "needs.directive" in w], warnings
+    assert [w for w in warnings if "preset_forced_option" in w], warnings
