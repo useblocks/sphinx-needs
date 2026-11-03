@@ -1001,6 +1001,36 @@ NeedsMutable = NewType("NeedsMutable", dict[str, "NeedItem"])
 """
 
 
+_SCHEMA_OF_THIS_BUILD: Final = "_needs_schema_of_this_build"
+"""The attribute of the application holding the schema :func:`create_schema
+<sphinx_needs.needs.create_schema>` built in this build. It is kept on the application,
+not the environment: it is this build's alone and is never pickled, so on an
+incremental build it is unset until the schema is built again, while the environment
+still holds the previous build's."""
+
+
+def _mark_schema_of_this_build(app: Sphinx, schema: FieldsSchema) -> None:
+    """Record ``schema`` as the one this build built (``create_schema`` calls it)."""
+    setattr(app, _SCHEMA_OF_THIS_BUILD, schema)
+
+
+def _forget_schema_of_this_build(app: Sphinx, _exception: Exception | None) -> None:
+    """Clear the mark at the end of the build (``build-finished``, after every other
+    handler): an application built again, as a test or an in-process tool does, keeps
+    its environment and that schema in memory, and must not answer from them before its
+    next build has built its own."""
+    setattr(app, _SCHEMA_OF_THIS_BUILD, None)
+
+
+def _schema_of_this_build(app: Sphinx) -> FieldsSchema | None:
+    """The schema this build built, or ``None`` before it is built: ``None`` too where
+    the environment's schema is still a pickled one from a previous build."""
+    schema: FieldsSchema | None = getattr(app, _SCHEMA_OF_THIS_BUILD, None)
+    if schema is None or getattr(app.env, "_needs_schema", None) is not schema:
+        return None
+    return schema
+
+
 class SphinxNeedsData:
     """Centralised access to sphinx-needs data, stored within the Sphinx environment."""
 

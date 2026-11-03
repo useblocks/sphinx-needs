@@ -30,7 +30,7 @@ from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.need_item import NeedItem, NeedItemSource, NeedLink
-from sphinx_needs.needs_schema import FieldsSchema, LinkTargetTypes
+from sphinx_needs.needs_schema import FieldsSchema, LinkTargetTypes, TypeFieldsSchema
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import (
     DummyOptionSpec,
@@ -67,6 +67,21 @@ NEED_DIRECTIVE_OPTIONS: Final = frozenset(
 )
 
 
+def _need_option_names(type_schema: TypeFieldsSchema) -> frozenset[str]:
+    """The option names a need directive of one need type takes, as declared: its own
+    (:data:`NEED_DIRECTIVE_OPTIONS`), and the type's fields and link types
+    (``schema.for_type(need_type)``). An option written matches one of them under
+    :func:`~sphinx_needs.utils.match_option_names`.
+
+    The one set :meth:`NeedDirective.run` and :func:`~sphinx_needs.api.resolve_need_option`
+    both match against, so the two cannot differ."""
+    return (
+        NEED_DIRECTIVE_OPTIONS
+        | set(type_schema.iter_extra_field_names())
+        | set(type_schema.iter_link_field_names())
+    )
+
+
 class NeedDirective(SphinxDirective):
     """Collect the specification for a requirement, validate it and store it."""
 
@@ -100,7 +115,7 @@ class NeedDirective(SphinxDirective):
         # each option by the name it matches ignoring case, as declared: docutils
         # lowercases a reStructuredText option's name, myst-parser keeps it
         options, repeated = match_option_names(
-            self.options, NEED_DIRECTIVE_OPTIONS | extra_keys | link_keys
+            self.options, _need_option_names(type_schema)
         )
         for repeat in repeated:
             self._log_warning(repeated_option_message(repeat))

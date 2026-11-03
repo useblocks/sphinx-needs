@@ -80,7 +80,6 @@ nitpick_ignore = [
     # the type variable of ``sphinx_needs.api.reads``, the decorated function's type
     ("py:class", "sphinx_needs.api.configuration._FunctionT"),
     ("py:class", "sphinx_needs.views._LazyIndexes"),
-    ("py:class", "sphinx_needs.config.NeedsSphinxConfig"),
     # the type of the built-ins' reserved ``reads`` keyword, which only the resolver passes
     ("py:class", "sphinx_needs.functions.functions.UnresolvedReads"),
     ("py:class", "AllowedTypes"),

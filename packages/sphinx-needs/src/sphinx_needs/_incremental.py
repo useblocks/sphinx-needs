@@ -278,7 +278,7 @@ def _dependents(
         new = needs.get(need_id)
         if new is not None and new == old:
             continue
-        if new is not None and old.moved_only(new):
+        if new is not None and old._moved_only(new):
             moved.add(need_id)
         else:
             changed.add(need_id)
