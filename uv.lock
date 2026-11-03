@@ -3364,6 +3364,9 @@ theme-pds = [
 theme-rtd = [
     { name = "sphinx-needs", extra = ["theme-rtd"] },
 ]
+ub-directives-needs = [
+    { name = "sphinx-ub-directives", extra = ["needs"] },
+]
 
 [package.dev-dependencies]
 benchmark = [
@@ -3485,11 +3488,12 @@ requires-dist = [
     { name = "sphinx-test-reports", extras = ["docs"], marker = "extra == 'docs-reports'", editable = "packages/sphinx-test-reports" },
     { name = "sphinx-ub-directives", editable = "packages/sphinx-ub-directives" },
     { name = "sphinx-ub-directives", extras = ["docs"], marker = "extra == 'docs-ub-directives'", editable = "packages/sphinx-ub-directives" },
+    { name = "sphinx-ub-directives", extras = ["needs"], marker = "extra == 'ub-directives-needs'", editable = "packages/sphinx-ub-directives" },
     { name = "ub-needs-exchange", editable = "packages/ub-needs-exchange" },
     { name = "ub-project", editable = "packages/ub-project" },
     { name = "ub-test-reports", editable = "packages/ub-test-reports" },
 ]
-provides-extras = ["plotting", "docs", "docs-mounts", "docs-codelinks", "docs-reports", "docs-ub-directives", "codelinks-libclang", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
+provides-extras = ["plotting", "docs", "docs-mounts", "docs-codelinks", "docs-reports", "docs-ub-directives", "ub-directives-needs", "codelinks-libclang", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
 
 [package.metadata.requires-dev]
 benchmark = [
@@ -3701,6 +3705,9 @@ docs = [
     { name = "sphinx-ai-index" },
     { name = "sphinx-design" },
 ]
+needs = [
+    { name = "sphinx-needs" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -3711,9 +3718,10 @@ requires-dist = [
     { name = "sphinx", specifier = ">=7.4,<10" },
     { name = "sphinx-ai-index", marker = "extra == 'docs'", editable = "packages/sphinx-ai-index" },
     { name = "sphinx-design", marker = "extra == 'docs'", specifier = ">=0.6.1" },
+    { name = "sphinx-needs", marker = "extra == 'needs'", editable = "packages/sphinx-needs" },
     { name = "ub-project", editable = "packages/ub-project" },
 ]
-provides-extras = ["docs"]
+provides-extras = ["docs", "needs"]
 
 [[package]]
 name = "sphinxcontrib-applehelp"

@@ -3,8 +3,19 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:0.1.0`:
+
+0.1.0
+-----
+
+:Released: 2026-11-04
+
+The first release: define your own Sphinx directives without writing Python, in
+``ubproject.toml`` or ``conf.py``. A directive preset is an existing directive under a name of
+your own, with its options preset, or project-wide defaults for an existing one; a template
+directive renders a Jinja template with its argument, options and body. With Sphinx-Needs
+installed, which is optional, a preset may be based on a need type (Sphinx-Needs 9.2.0 or later,
+which the ``needs`` extra installs) and every template sees the project's variant data as ``var``.
 
 - The first release: directive presets (``[parse.directive_presets]``),
   declared template directives (``[parse.directive_templates]``) with template contexts
@@ -16,3 +27,4 @@ Unreleased
 - A preset based on a need type needs sphinx-needs 9.2 or later: it takes exactly the options the need
   type's directive matches, read through sphinx-needs' public ``resolve_need_option``; with an older
   sphinx-needs it is refused (``directive_preset_unknown_base``).
+- A ``needs`` extra installs a sphinx-needs that need-type presets work with (9.2 or later).

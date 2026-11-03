@@ -41,7 +41,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 
-# The member's own extra. The root re-exports it as `docs-ub-directives` -- uv resolves
+# The member's own extras. The root re-exports `docs` as `docs-ub-directives` -- uv resolves
 # `--extra` against the project, which is the workspace root, so an extra that lives only
 # here is not reachable by name without that pass-through.
 [project.optional-dependencies]
@@ -51,6 +51,9 @@ docs = [
   "sphinx-ai-index>=1.0.0,<2",
   "sphinx-design>=0.6.1",
 ]
+# a sphinx-needs that need-type presets work with: `resolve_need_option` is new in 9.2.0.
+# The root re-exports it as `ub-directives-needs`
+needs = ["sphinx-needs>=9.2,<10"]
 
 [project.urls]
 Repository = "https://github.com/useblocks/sphinx-needs"

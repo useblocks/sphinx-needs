@@ -58,6 +58,8 @@ docs-codelinks = ["sphinx-codelinks[docs]"]
 docs-reports = ["sphinx-test-reports[docs]"]
 # and so does sphinx-ub-directives
 docs-ub-directives = ["sphinx-ub-directives[docs]"]
+# and its `needs` extra: a sphinx-needs that need-type presets work with
+ub-directives-needs = ["sphinx-ub-directives[needs]"]
 # sphinx-codelinks' optional preprocessor-aware C/C++ engine. CI drives it from the
 # `codelinks-libclang` GROUP below rather than through this line -- a group composes with
 # `--no-default-groups --group test --group sphinx-N` without changing the shape of the
