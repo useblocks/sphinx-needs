@@ -882,7 +882,7 @@ def _moved_pairs() -> dict[str, tuple[Any, Any]]:
 @pytest.mark.parametrize("kind", ["directive", "included", "service", "import", "api"])
 def test_a_need_that_only_moved_compares_equal_through_the_seam(kind: str):
     """``NeedItemSource._without_lines()`` is the key an incremental build compares a
-    re-read need by (``NeedItem.moved_only``): the source without its line fields and
+    re-read need by (``NeedItem._moved_only``): the source without its line fields and
     without its hops' lines -- the key ``_without_lines`` built from outside the class
     before -- so a need that only moved is the same need, and one from another file is
     not."""
@@ -905,12 +905,12 @@ def test_a_need_that_only_moved_compares_equal_through_the_seam(kind: str):
             assert hop._without_lines().physical == dataclasses.replace(
                 hop.physical, start_line=None, end_line=None
             )
-    assert _need(before).moved_only(_need(after))
-    assert not _need(before).moved_only(_need(before))
+    assert _need(before)._moved_only(_need(after))
+    assert not _need(before)._moved_only(_need(before))
     # placed elsewhere is no move
     from sphinx_needs.need_item import NeedItemSource
 
-    assert not _need(before).moved_only(_need(NeedItemSource.on_page("b", lineno=3)))
+    assert not _need(before)._moved_only(_need(NeedItemSource.on_page("b", lineno=3)))
 
 
 def _need(source: Any) -> need_item.NeedItem:
@@ -942,8 +942,8 @@ def test_a_field_added_to_the_source_is_compared_by_the_seam():
     moved = Faceted((PAGE_A,), lineno=13, facet="one")
     assert one != other
     assert one._without_lines() != other._without_lines()
-    assert not _need(one).moved_only(_need(other))
-    assert _need(one).moved_only(_need(moved))
+    assert not _need(one)._moved_only(_need(other))
+    assert _need(one)._moved_only(_need(moved))
 
 
 class _ProtocolSource:
@@ -978,7 +978,7 @@ def test_a_third_party_source_takes_the_fallback_not_the_seam():
 
     plain = _ProtocolSource(3)
     assert _without_lines(plain) is plain
-    assert not _need(plain).moved_only(_need(_ProtocolSource(13)))
+    assert not _need(plain)._moved_only(_need(_ProtocolSource(13)))
 
     def lined(start: int, path: str = "a.rst") -> NeedSourceHop:
         return dataclasses.replace(
@@ -989,8 +989,8 @@ def test_a_third_party_source_takes_the_fallback_not_the_seam():
         )
 
     before = _DataclassSource((lined(5),), 5)
-    assert _need(before).moved_only(_need(_DataclassSource((lined(15),), 15)))
-    assert not _need(before).moved_only(
+    assert _need(before)._moved_only(_need(_DataclassSource((lined(15),), 15)))
+    assert not _need(before)._moved_only(
         _need(_DataclassSource((lined(15, "b.rst"),), 15))
     )
 

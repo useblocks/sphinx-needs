@@ -129,8 +129,9 @@ Improvements
   hop carries the qualified name its analysis renders (``ns::Widget::draw``, ``<Widget as Shape>::area``). A hop records a line range only where the file, read from disk, holds the need's text there: under
   reStructuredText every line of the directive equals the file's line (whole lines), under MyST the line opens the
   directive's fence with its name and title; elsewhere it records no line (it can still be wrong only where the
-  file holds an identical copy of the need's text at the line the parser claims). It is provisional: the
-  shape may change in a minor release until it reaches ``needs.json``. Nothing a filter, a table or ``needs.json``
+  file holds an identical copy of the need's text at the line the parser claims). It is provisional until it
+  reaches ``needs.json``: through 9.x a minor release only adds to the shape, and a rename or a removal waits for
+  10.0 (:ref:`api_public`). Nothing a filter, a table or ``needs.json``
   shows changes; the first build after upgrading reads every document again. The five concrete ``NeedItemSource*``
   classes this release started with are one class now, ``NeedItemSource`` (below); ``NeedItemSourceProtocol`` is
   unchanged.
@@ -200,12 +201,27 @@ Improvements
   the need's field values as ``fields`` (the core fields such as ``status`` and ``tags``, and the project's fields)
   and its links as ``links``, kept apart from its own parameters, so any name a project gives a field can be used.
   It returns ``(need, nodes)``: the need as recorded, which an extension no longer has to look up or re-derive the
-  id of, and the nodes to insert. Its location is a ``NeedItemSource`` (below). A name
+  id of, and the nodes to insert. Its location is a ``NeedItemSource`` (below), and only one: any other object,
+  one with the ``NeedItemSourceProtocol`` interface alone included, is refused with a ``TypeError`` naming
+  ``NeedItemSource.from_directive(self)`` and ``NeedItemSource.on_page(docname, lineno=...)``. A name
   in the wrong mapping, or one of its own arguments given in a mapping (``title``, ``content``, ...), is refused,
   naming where it belongs. This package's need directives, ``list2need`` and ``needservice``, sphinx-codelinks'
   one-line needs and sphinx-test-reports' needs are created through it; ``needimport``, ``needs_external_needs``
   and sphinx-codelinks' multi-line needs through the same path, as records. ``add_need`` is deprecated in its
   favour (see Deprecations). See :func:`~sphinx_needs.api.need.create_need`.
+
+- ✨ Extensions that wrap or preset need directives can ask which option a need type's directive takes for a name:
+  ``sphinx_needs.api.resolve_need_option(app, need_type, name)``
+
+  It answers as the need directive matches an option it is given, against the same names -- the directive's own
+  options (``id``, ``status``, ``hide``, ...) and every field and link type the project declares (one another need
+  type declares alone is matched too, and the directive then reports it as not declared for this type) -- a name
+  equal to one first, else one equal ignoring case, returned as declared (``"owner"`` and ``"OWNER"`` give a
+  field declared ``Owner``), and ``None`` for no such option; a need type the project does not have is a
+  ``ValueError``. It is available once sphinx-needs has built the build's schema, in its own ``env-before-read-docs``
+  handler: from a handler at a priority above 500, or any later event. Called earlier, it raises ``RuntimeError``,
+  also on an incremental build, where the previous build's schema is still in the environment. So an extension no
+  longer keeps its own copy of the directive's options. See :func:`~sphinx_needs.api.configuration.resolve_need_option`.
 
 - ✨ ``NeedItemSource``: one class for where a need comes from, public from ``sphinx_needs.api``, with
   ``NeedItemSource.from_directive(self)`` as the source of a need an extension's directive creates and
@@ -224,10 +240,12 @@ Improvements
   stable, and so is reading a source through ``NeedItemSourceProtocol``; the general constructor and its keywords
   (``hops``, ``lineno``, ``lineno_content``, ``parser_lineno``, ``is_import``) are provisional, for sphinx-needs' own
   producers and advanced use, as ``hops`` and the hop types, ``NeedSourceHop``, ``NeedSourcePhysical`` and
-  ``NeedSourceSemantic``, now also importable from ``sphinx_needs.api``, are: they may change without a deprecation,
-  until ``needs.json`` carries them. A need's ``docname``, ``lineno`` and the other location keys are unchanged, and so is
-  ``NeedItemSourceProtocol``; the first build after upgrading reads every document again. See
-  :ref:`api_migrating_add_need`.
+  ``NeedSourceSemantic``, now also importable from ``sphinx_needs.api``, are, until ``needs.json`` carries them:
+  through 9.x a minor release may add an optional field, a hop kind or a keyword, and a rename, a removal, or a
+  change to an existing one's meaning or type waits for 10.0, because published sibling extensions construct them
+  (:ref:`api_public`). A need's ``docname``, ``lineno`` and the other location keys are unchanged, and so is
+  ``NeedItemSourceProtocol``, which is how a need's source is read; the first build after upgrading reads every
+  document again. See :ref:`api_migrating_add_need`.
 
 - 👌 A :ref:`needs_fields` entry naming a core field a need computes (``type_name``, ``docname`` and the other core
   fields that take no declaration) is reported as ignored, with a ``needs.config`` warning, where it was ignored
@@ -302,6 +320,17 @@ Deprecations
   ``NeedItemSource`` (``NeedItemSource.from_directive(self)`` in a directive), its fields and links as two
   mappings, and returns the need with its nodes; the migration section maps each of ``add_need``'s arguments.
   ``generate_need``, ``add_external_need`` and ``ingest_need_record`` are not deprecated.
+
+- ⚠️ A ``need_source`` that is not a ``NeedItemSource`` is deprecated on ``generate_need``, ``add_external_need``
+  and ``ingest_need_record``, and is refused from 10.0, as ``create_need`` refuses it now
+
+  An object with the ``NeedItemSourceProtocol`` interface alone, given to one of them, is one Python
+  ``DeprecationWarning`` at the line that calls it, naming ``NeedItemSource.from_directive(self)`` and
+  ``NeedItemSource.on_page(docname, lineno=...)``; the need is created as before. Like ``add_need``'s, it is not a
+  Sphinx warning, so a ``-W`` build is not failed by it, and ``add_need`` gives no second warning for it. Only a
+  ``NeedItemSource`` carries the hops a need's origin is read from, the ``c.source`` facets among them: a source
+  with the protocol alone gives a need none. Reading a need's source through the protocol (``need.source``) is
+  unchanged. See :ref:`api_public`.
 
 - ⚠️ The five source classes ``NeedItemSourceUnknown``, ``NeedItemSourceDirective``, ``NeedItemSourceService``,
   ``NeedItemSourceExternal`` and ``NeedItemSourceImport`` are deprecated names of ``sphinx_needs.need_item``, and
@@ -463,12 +492,14 @@ Bug fixes
   its readers finished. Needs from
   ``needs_external_needs`` are not compared (:issue:`353`). See :ref:`incremental_builds`.
 
-- 🔧 ``ENV_DATA_VERSION`` is 21: the first build after upgrading re-reads every document, which records
+- 🔧 ``ENV_DATA_VERSION`` is 25: the first build after upgrading re-reads every document, which records
   the views and need roles each document holds and where each hidden need is (:issue:`2398`), stores each need's
-  source as one class, computes the
+  source as one class, with the hops above, computes again the selections and derived values of a filter using
+  ``c.is_a``, which 9.1.0 refused, computes the
   links a ``copy`` or ``collect`` on a link type, refused until now, computes, leaves the summary link types
-  out of a needflow without ``:link_types:``, and records the file's line for a need in a sliced include
-  (:issue:`2428`)
+  out of a needflow without ``:link_types:``, records the file's line for a need in a sliced include
+  (:issue:`2428`) and the directive's line for a need a ``needimport`` or a ``needservice`` creates, and locates
+  each need in one walk of the doctree
 
 - 🐛 A need with ``:hide:`` is located as a visible need in the same place is **(changed output)** (:issue:`2398`)
 
@@ -487,6 +518,12 @@ Bug fixes
 
 Documentation
 .............
+
+- 📚 Reading the configuration through ``NeedsSphinxConfig`` is documented, and stable: an extension reads
+  ``NeedsSphinxConfig(app.config).<name>`` for the configuration value ``needs_<name>`` as resolved, ``ubproject.toml``
+  included, and for ``types``, ``layouts``, ``functions`` and ``warnings`` what extensions and services add, as the
+  9.1.0 notes recommended for ``types`` and ``layouts``. Reading only; ``variant_data_proxy`` is documented beside
+  them, and the class's other members are internal. See :ref:`api_reading_configuration`.
 
 - 📚 :ref:`needs_derive` shows how to start a list roll-up one rung up (:ref:`needs_derive_rollup_rung_up`):
   a ``copy`` of ``id`` over ``satisfies`` with ``select = "list"`` on the specification, then a ``collect`` on each

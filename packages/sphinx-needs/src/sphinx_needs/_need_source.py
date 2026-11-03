@@ -8,8 +8,10 @@ with a ``document`` is the page the need is placed on (its *placement*, a role r
 than a hop kind; an external need has none). The legacy location keys of a need -- ``docname``, ``lineno``,
 ``lineno_content``, ``is_import``, ``is_external``, ``external_url`` -- are computed from
 the hops plus a few stored legacy facts, and are unchanged. The hop types are
-re-exported from :mod:`sphinx_needs.api`; their shape may change in a minor release
-until it reaches ``needs.json``.
+re-exported from :mod:`sphinx_needs.api`. Until ``needs.json`` carries them, a 9.x
+minor release only adds to them (an optional field, a hop kind); a rename, a removal or
+a change of an existing field's meaning or type waits for 10.0, because published
+sibling extensions construct them (see :ref:`api_public`).
 
 This module holds the hop types and what the source class and the producers share:
 the placement lookup, the builders of a directive's hops, the doctree walk that finds the
@@ -70,8 +72,10 @@ _DOCSTRING_OF: Final = "docstring of "
 class NeedSourcePhysical:
     """Where a hop's text physically is: a file under a named root, or a URL.
 
-    **Provisional**: it may change without a deprecation until it reaches
-    ``needs.json``.
+    **Provisional** until it reaches ``needs.json``: additions only through 9.x (new
+    optional fields; a rename, a removal or a change of an existing field's meaning or
+    type waits for 10.0), because published sibling extensions construct it. See
+    :ref:`api_public`.
     """
 
     root: str | None = None
@@ -94,8 +98,10 @@ class NeedSourcePhysical:
 class NeedSourceSemantic:
     """One entry of a hop's semantic location: a section, a domain object, a service.
 
-    **Provisional**: it may change without a deprecation until it reaches
-    ``needs.json``.
+    **Provisional** until it reaches ``needs.json``: additions only through 9.x (new
+    optional fields; a rename, a removal or a change of an existing field's meaning or
+    type waits for 10.0), because published sibling extensions construct it. See
+    :ref:`api_public`.
     """
 
     kind: str
@@ -142,13 +148,16 @@ class NeedSourceHop:
     through it, and a need written in that file itself records no chain at all
     (docutils 0.21 logs it).
 
-    **Provisional**: it may change without a deprecation until it reaches
-    ``needs.json``.
+    **Provisional** until it reaches ``needs.json``: additions only through 9.x (new
+    optional fields; a rename, a removal or a change of an existing field's meaning or
+    type waits for 10.0), because published sibling extensions construct it. See
+    :ref:`api_public`.
     """
 
     kind: str
-    """``"page"``, ``"file"``, ``"code"``, ``"external"``, ``"generated"`` (the
-    vocabulary is open)."""
+    """``"page"``, ``"file"``, ``"code"``, ``"external"``, ``"generated"``,
+    ``"report"`` (a test report, which sphinx-test-reports records); the vocabulary is
+    open: a minor release may add a kind."""
     origin: str | None = None
     """A key into a registry of origins (a repository, a test run); ``None`` for now."""
     physical: NeedSourcePhysical | None = None

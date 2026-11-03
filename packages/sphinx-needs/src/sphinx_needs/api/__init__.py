@@ -15,6 +15,7 @@ from .configuration import (
     add_need_type,
     get_need_types,
     reads,
+    resolve_need_option,
 )
 from .need import (
     add_external_need,
@@ -49,4 +50,5 @@ __all__ = (
     "get_needs_view",
     "ingest_need_record",
     "reads",
+    "resolve_need_option",
 )

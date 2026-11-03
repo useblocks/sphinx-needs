@@ -55,6 +55,8 @@ from sphinx_needs.data import (
     CoreFieldParameters,
     NeedsCoreFields,
     SphinxNeedsData,
+    _forget_schema_of_this_build,
+    _mark_schema_of_this_build,
     merge_data,
 )
 from sphinx_needs.defaults import (
@@ -508,6 +510,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("build-finished", build_needumls_pumls)
     app.connect("build-finished", debug.process_timing)
     app.connect("build-finished", release_data_locks, priority=9999)
+    # after every handler: the next build of this application builds its schema anew
+    app.connect("build-finished", _forget_schema_of_this_build, priority=10000)
 
     # Be sure Sphinx-Needs config gets erased before any events or external API calls get executed.
     # So never but this inside an event.
@@ -2975,6 +2979,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     schema.freeze()
 
     SphinxNeedsData(env)._set_schema(schema)
+    _mark_schema_of_this_build(app, schema)
 
 
 def _copy_deprecation(where: str, name: str, schema: FieldsSchema) -> str:
