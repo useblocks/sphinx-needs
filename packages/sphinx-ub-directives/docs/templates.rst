@@ -46,7 +46,21 @@ A context cannot be named ``var``.
 Declare a template directive
 ----------------------------
 
+A template directive takes three pieces: the template, its declaration, and a page that uses it.
+
+**1. Write the template**, a file under the source directory:
+
+.. code-block:: jinja
+   :caption: _templates/req_row.rst.j2
+
+   .. req:: Owned by {{ options.owner }}
+      :id: {{ argument }}
+      :status: {{ options.status }}
+
+**2. Declare the directive**, naming that file:
+
 .. code-block:: toml
+   :caption: ubproject.toml
 
    [parse.directive_templates.req-row]
    template = "_templates/req_row.rst.j2"   # under the source directory; or body = "…"
@@ -61,20 +75,23 @@ Declare a template directive
 
 The template sees exactly ``argument`` (or ``none``), ``options`` (every declared option:
 the written value, else its default, else ``none``; a flag is ``True`` or ``False``),
-``body`` (when ``content`` is true), ``contexts`` (every context, by name) and ``var``:
+``body`` (when ``content`` is true), ``contexts`` (every context, by name) and ``var``.
 
-.. code-block:: jinja
-
-   .. req:: Owned by {{ options.owner }}
-      :id: {{ argument }}
-      :status: {{ options.status }}
-
-and a page uses it like any directive:
+**3. Use it in a page**, like any directive:
 
 .. code-block:: rst
+   :caption: index.rst
 
    .. req-row:: REQ_010
       :owner: Ada
+
+which renders as if the page held:
+
+.. code-block:: rst
+
+   .. req:: Owned by Ada
+      :id: REQ_010
+      :status: open
 
 The signature is closed: an option that is not declared, a missing required option or argument,
 a value outside ``choices``, a flag written with a value, an argument to a directive that declares none,
