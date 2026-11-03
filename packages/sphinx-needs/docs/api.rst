@@ -17,8 +17,9 @@ What is public
 
 A project or an extension may rely on the documented surface of Sphinx-Needs: its
 configuration, its directives and their options, the filter names (``c.*`` included), the
-``needs.json`` format, and the Python API this page documents (``create_need`` and
-``resolve_need_option`` among it). A name in it -- a configuration key, a directive or an
+``needs.json`` format, and the Python API this page documents (``create_need``,
+``resolve_need_option`` and reading the configuration through ``NeedsSphinxConfig`` among
+it). A name in it -- a configuration key, a directive or an
 option, a filter name, a ``needs.json`` key, a documented function, class, argument or
 attribute -- is renamed or removed only after a deprecation: a ``needs.deprecated`` Sphinx
 warning (which ``suppress_warnings`` silences) or a Python ``DeprecationWarning``, naming the
@@ -48,6 +49,38 @@ Configuration
 
 .. automodule:: sphinx_needs.api.configuration
    :members:
+
+.. _api_reading_configuration:
+
+Reading the configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:currentmodule:: sphinx_needs.config
+
+.. py:class:: NeedsSphinxConfig(config)
+
+   The project's Sphinx-Needs configuration, for an extension to read:
+   ``NeedsSphinxConfig(app.config).<name>`` is the configuration value ``needs_<name>`` as
+   resolved, with :ref:`needs_from_toml` applied, and for ``types``, ``layouts``,
+   ``functions`` and ``warnings`` with what extensions and the configured services add
+   included. Read it from a ``config-inited`` handler at a priority above 12, or later.
+
+   .. code-block:: python
+
+      from sphinx_needs.config import NeedsSphinxConfig
+
+      need_types = {t["directive"]: t for t in NeedsSphinxConfig(app.config).types}
+
+   Every attribute named after a ``needs_*`` configuration value, without the prefix, is
+   stable to read. Reading only: setting a value through it is not supported. Its other
+   members are internal, but one:
+
+   .. py:attribute:: variant_data_proxy
+
+      The ``var`` proxy that filters read over the variant data (``needs_variant_data``,
+      merged with its file), or ``None`` when there is none. Read-only.
+
+.. py:currentmodule:: None
 
 .. autoclass:: sphinx_needs.functions.functions.DynamicFunction
    :members: __name__,__call__

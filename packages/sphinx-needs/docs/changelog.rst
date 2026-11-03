@@ -519,6 +519,12 @@ Bug fixes
 Documentation
 .............
 
+- 📚 Reading the configuration through ``NeedsSphinxConfig`` is documented, and stable: an extension reads
+  ``NeedsSphinxConfig(app.config).<name>`` for the configuration value ``needs_<name>`` as resolved, ``ubproject.toml``
+  and what extensions and services add included, as the 9.1.0 notes recommended for ``types`` and ``layouts``. Reading
+  only; ``variant_data_proxy`` is documented beside them, and the class's other members are internal. See
+  :ref:`api_reading_configuration`.
+
 - 📚 :ref:`needs_derive` shows how to start a list roll-up one rung up (:ref:`needs_derive_rollup_rung_up`):
   a ``copy`` of ``id`` over ``satisfies`` with ``select = "list"`` on the specification, then a ``collect`` on each
   rung below, and why a plain ``copy`` of the requirement's own ``id`` cannot start it; and the same chain read upwards,
