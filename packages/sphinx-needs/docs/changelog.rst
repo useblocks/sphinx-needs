@@ -210,6 +210,18 @@ Improvements
   and sphinx-codelinks' multi-line needs through the same path, as records. ``add_need`` is deprecated in its
   favour (see Deprecations). See :func:`~sphinx_needs.api.need.create_need`.
 
+- ✨ Extensions that wrap or preset need directives can ask which option a need type's directive takes for a name:
+  ``sphinx_needs.api.resolve_need_option(app, need_type, name)``
+
+  It answers as the need directive matches an option it is given, against the same names -- the directive's own
+  options (``id``, ``status``, ``hide``, ...) and the need type's fields and link types, its type-local ones included
+  -- a name equal to one first, else one equal ignoring case, returned as declared (``"owner"`` and ``"OWNER"`` give a
+  field declared ``Owner``), and ``None`` for no such option; a need type the project does not have is a
+  ``ValueError``. It is available once sphinx-needs has built the build's schema, in its own ``env-before-read-docs``
+  handler: from a handler at a priority above 500, or any later event. Called earlier, it raises ``RuntimeError``,
+  also on an incremental build, where the previous build's schema is still in the environment. So an extension no
+  longer keeps its own copy of the directive's options. See :func:`~sphinx_needs.api.configuration.resolve_need_option`.
+
 - ✨ ``NeedItemSource``: one class for where a need comes from, public from ``sphinx_needs.api``, with
   ``NeedItemSource.from_directive(self)`` as the source of a need an extension's directive creates and
   ``NeedItemSource.on_page(docname, lineno=lineno)`` for a need at a line the caller gives (:issue:`2137`)

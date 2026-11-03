@@ -55,6 +55,7 @@ from sphinx_needs.data import (
     CoreFieldParameters,
     NeedsCoreFields,
     SphinxNeedsData,
+    _mark_schema_of_this_build,
     merge_data,
 )
 from sphinx_needs.defaults import (
@@ -2975,6 +2976,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     schema.freeze()
 
     SphinxNeedsData(env)._set_schema(schema)
+    _mark_schema_of_this_build(app, schema)
 
 
 def _copy_deprecation(where: str, name: str, schema: FieldsSchema) -> str:

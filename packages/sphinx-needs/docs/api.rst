@@ -17,7 +17,8 @@ What is public
 
 A project or an extension may rely on the documented surface of Sphinx-Needs: its
 configuration, its directives and their options, the filter names (``c.*`` included), the
-``needs.json`` format, and the Python API this page documents. A change to any of it is
+``needs.json`` format, and the Python API this page documents (``create_need`` and
+``resolve_need_option`` among it). A change to any of it is
 deprecated first, with a ``needs.deprecated`` Sphinx warning (which ``suppress_warnings``
 silences) or a Python ``DeprecationWarning``, naming the replacement; the old spelling is
 removed only in a major release.

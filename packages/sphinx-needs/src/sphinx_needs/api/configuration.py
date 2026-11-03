@@ -49,6 +49,66 @@ def get_need_types(app: Sphinx) -> list[str]:
     return [x["directive"] for x in needs_types]
 
 
+def resolve_need_option(app: Sphinx, need_type: str, name: str) -> str | None:
+    """The option name the directive of ``need_type`` takes for ``name``, as declared,
+    or ``None`` if it takes no such option.
+
+    For an extension that wraps or presets need directives: it answers as the need
+    directive itself matches an option it is given, against the same names (the
+    directive's own options, such as ``id``, ``status`` or ``hide``, and the fields and
+    link types the need type has, its type-local ones included): a name equal to one
+    first, else a name equal to one ignoring case (``str.lower``, as docutils lowercases
+    a reStructuredText option), which is returned as it is declared. So for a field
+    declared ``Owner``, ``"owner"`` and ``"OWNER"`` both give ``"Owner"``.
+
+    **When**: once sphinx-needs has built this build's schema, in its own
+    ``env-before-read-docs`` handler (priority 500): from an ``env-before-read-docs``
+    handler connected at a priority above 500, or at 500 by an extension set up after
+    ``sphinx_needs``, or at any later event, while documents are read included. Until
+    then, extensions and :file:`ubproject.toml` may still add need types, fields and
+    link types, so no answer would be final; and on an incremental build the
+    environment still holds the previous build's schema, which is never used here.
+
+    **Usage**::
+
+        from sphinx_needs.api import resolve_need_option
+
+        def preset(app, env, docnames):
+            option = resolve_need_option(app, "req", "owner")  # "Owner", or None
+
+        def setup(app):
+            app.connect("env-before-read-docs", preset, priority=600)
+
+    :param app: Sphinx application object.
+    :param need_type: The need type, by the name of its directive (as
+        :func:`get_need_types` lists it).
+    :param name: The option name, as an author may write it.
+    :return: The option's name as declared, or ``None``.
+    :raises ValueError: If ``need_type`` is no need type of the project.
+    :raises RuntimeError: If it is called before sphinx-needs has built this build's
+        schema (see above).
+
+    .. versionadded:: 9.2.0
+    """
+    from sphinx_needs.data import _schema_of_this_build
+    from sphinx_needs.directives.need import _need_option_names
+    from sphinx_needs.utils import match_option_names
+
+    schema = _schema_of_this_build(app)
+    if schema is None:
+        raise RuntimeError(
+            "resolve_need_option is available once sphinx-needs has built this "
+            "build's schema, in its own 'env-before-read-docs' handler (priority "
+            "500): call it from an 'env-before-read-docs' handler at a priority "
+            "above 500, or at a later event"
+        )
+    if need_type not in get_need_types(app):
+        raise ValueError(f"{need_type!r} is no need type of the project")
+    names = _need_option_names(schema.for_type(need_type))
+    ((matched, _),) = match_option_names({name: None}, names)[0].items()
+    return matched if matched in names else None
+
+
 def add_need_type(
     app: Sphinx,
     directive: str,
