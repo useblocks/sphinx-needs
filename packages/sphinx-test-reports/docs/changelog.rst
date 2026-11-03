@@ -1,8 +1,26 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:4.0.0`:
+
+4.0.0
+-----
+
+:Released: 04.11.2026
+
+Every test need now records where it comes from -- the report, its place in it, the test's file and line -- so
+Sphinx-Needs' ``c.source`` filters select the needs of one report; a test case read from a plain
+``pytest --junitxml`` report is on the test's own line, where it was one line early, and :ref:`tr_line_base` says
+what a report's lines count from; Google Test's parameters reach ``case_parameter``; and an edited report is read
+again in an incremental build. A major release, because three changes need migrating, each with its migration in
+its ‼️ entry: each field is declared on the need types that carry it, so a need type of your own that sets
+``case_name`` or ``classname`` names it in its ``needs_types`` entry
+(`#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__, under *Changed*); a pytest case's
+``case_line`` is one more than before (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__, and
+"Upgrading" below); and a :ref:`tr_extra_options` name that is a Sphinx-Needs core field no option can set is a
+configuration error. A case with no source file, line or parameter holds ``null`` where it held ``""``, so a filter
+written ``case_line == ''`` is written ``case_line is None``. This release requires Sphinx-Needs 9.2.0
+(``>=9.2.0,<10``) and ub-test-reports 2.0.0 (``>=2.0.0,<3``).
 
 New and Improved
 ................

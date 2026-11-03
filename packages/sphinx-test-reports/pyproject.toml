@@ -1,6 +1,6 @@
 [project]
 name = "sphinx-test-reports"
-version = "3.0.1"
+version = "4.0.0"
 description = "Sphinx extension for showing test results and test environment information inside sphinx documentations"
 readme = "README.rst"
 license = { text = "MIT" }
