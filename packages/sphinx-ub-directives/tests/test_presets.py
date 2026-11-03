@@ -187,6 +187,12 @@ def test_a_need_type_option_is_never_read_from_an_earlier_schema(
     assert _presets._need_option(app, "req", "priority") == "Priority"
     assert _presets._need_option(app, "req", "Priority") == "Priority"
     assert _presets._need_option(app, "req", "nope") is None
+    app.cleanup()
+    # an incremental build has the previous build's schema in its environment from the
+    # start: still no answer until this build's own is built
+    again = make_app("html", srcdir=root, freshenv=False)
+    with pytest.raises(RuntimeError):
+        _presets._need_option(again, "req", "status")
 
 
 def test_a_presets_options_follow_the_new_config_on_an_incremental_build(
