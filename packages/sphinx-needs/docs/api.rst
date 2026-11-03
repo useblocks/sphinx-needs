@@ -19,14 +19,13 @@ A project or an extension may rely on the documented surface of Sphinx-Needs: it
 configuration, its directives and their options, the filter names (``c.*`` included), the
 ``needs.json`` format, and the Python API this page documents (``create_need``,
 ``resolve_need_option`` and reading the configuration through ``NeedsSphinxConfig`` among
-it). A name in it -- a configuration key, a directive or an
-option, a filter name, a ``needs.json`` key, a documented function, class, argument or
-attribute -- is renamed or removed only after a deprecation: a ``needs.deprecated`` Sphinx
-warning (which ``suppress_warnings`` silences) or a Python ``DeprecationWarning``, naming the
-replacement; the old spelling is removed only in a major release. What a name does is not
-frozen: a minor release may fix what it outputs, or report with a new warning what it
-accepted in silence, and the changelog marks each such change ‼️ or **(changed output)** and
-says what to do.
+it). A name in it -- a configuration key, a directive or an option, a filter name, a
+``needs.json`` key, a documented function, class, argument or attribute -- is renamed or
+removed only after a deprecation: a ``needs.deprecated`` Sphinx warning (which
+``suppress_warnings`` silences) or a Python ``DeprecationWarning``, naming the replacement;
+the old spelling is removed only in a major release. What a name does is not frozen: a minor
+release may fix what it outputs, or report with a new warning what it accepted in silence,
+and the changelog says what changed and what to do.
 
 What this page labels **provisional** follows its label. Through 9.x that is the hop types
 and ``NeedItemSource``'s general constructor with its keywords: a minor release may add an
@@ -38,9 +37,9 @@ Anything else is internal, and may change in a minor release without a deprecati
 this page does not document, a module or a name starting with ``_``, and whatever is reached
 through one. The extensions developed in the Sphinx-Needs repository are changed with it in
 the same pull request, and released with a raised minimum version of Sphinx-Needs; an older
-release of one of them may need upgrading together with Sphinx-Needs. New internal modules start with ``_``, and public names live in, or
-are re-exported from, a public module with ``__all__``; existing modules are not renamed
-wholesale.
+release of one of them may need upgrading together with Sphinx-Needs. New internal modules
+start with ``_``, and public names live in, or are re-exported from, a public module with
+``__all__``; existing modules are not renamed wholesale.
 
 .. _`api_configuration`:
 
@@ -63,7 +62,10 @@ Reading the configuration
    ``NeedsSphinxConfig(app.config).<name>`` is the configuration value ``needs_<name>`` as
    resolved, with :ref:`needs_from_toml` applied, and for ``types``, ``layouts``,
    ``functions`` and ``warnings`` with what extensions and the configured services add
-   included. Read it from a ``config-inited`` handler at a priority above 12, or later.
+   included. Read it from a ``builder-inited`` handler or later; in ``config-inited``, from
+   a handler at a priority above 600, once sphinx-needs has merged its defaults and compiled
+   the card layouts (``types`` alone is complete from a priority above 12). What an
+   extension adds is included once the extension has added it.
 
    .. code-block:: python
 
@@ -71,9 +73,10 @@ Reading the configuration
 
       need_types = {t["directive"]: t for t in NeedsSphinxConfig(app.config).types}
 
-   Every attribute named after a ``needs_*`` configuration value, without the prefix, is
-   stable to read. Reading only: setting a value through it is not supported. Its other
-   members are internal, but one:
+   Every attribute named after a Sphinx-Needs configuration value (:ref:`config`),
+   without the ``needs_`` prefix, is stable to read; ``functions`` gives the dynamic
+   functions by name, a mapping, where ``needs_functions`` is a list. Reading only: setting
+   a value through it is not supported. Its other members are internal, but one:
 
    .. py:attribute:: variant_data_proxy
 

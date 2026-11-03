@@ -62,6 +62,7 @@ def setup(app):
     app.connect("env-before-read-docs", ask("env-before-read-docs@499"), priority=499)
     app.connect("env-before-read-docs", ask("env-before-read-docs@501"), priority=501)
     app.connect("env-updated", ask("env-updated"))
+    app.connect("build-finished", ask("build-finished"))
     return {"parallel_read_safe": True}
 '''
 
@@ -163,6 +164,13 @@ def test_it_answers_as_the_directive_matches(fresh: SphinxTestApp):
                 "'nosuchtype' is no need type of the project",
             ),
         }, event
+
+
+def test_it_answers_until_the_build_finishes(fresh: SphinxTestApp):
+    """In a ``build-finished`` handler at the default priority, before sphinx-needs'
+    own at 10000 ends it, the answers are those of the build."""
+    answers = fresh.resolve_answers
+    assert answers["build-finished"] == answers["env-before-read-docs@501"]
 
 
 def test_the_directive_stores_each_option_under_the_name_it_resolves_to(
