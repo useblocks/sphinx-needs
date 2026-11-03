@@ -12,7 +12,7 @@ from docutils.parsers.rst import Directive, directives
 from . import _engine, _refusal
 from ._config import resolved
 from ._engine import Root
-from ._log import warn
+from ._log import at, warn
 from ._templates import (
     app_of,
     context_value,
@@ -57,7 +57,7 @@ class UbTemplate(Directive):
 
     def run(self) -> list[nodes.Node]:
         env = self.state.document.settings.env
-        location = (env.docname, self.lineno)
+        location = at(self)
         app = app_of()
         reading = resolved(app)
         if not reading["ub_template_enabled"]:
@@ -171,8 +171,8 @@ class UbTemplate(Directive):
             source = "\n".join(self.content)
             markup = host_markup(self)
             identity, name = (
-                f"inline:{env.docname}:{self.lineno}",
-                f"{env.docname}:{self.lineno}",
+                f"inline:{location.source}:{location.line}",
+                f"{env.docname}:{location.line}",
             )
         return expand(
             self,

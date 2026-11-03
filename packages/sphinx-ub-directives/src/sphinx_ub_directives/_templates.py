@@ -5,24 +5,27 @@
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Generator, Mapping
 from importlib import import_module
 from pathlib import Path
 from typing import Any
 
 from docutils import nodes
-from docutils.parsers.rst import Directive
+from docutils.parsers.rst import Directive, roles, states
 from docutils.parsers.rst import Parser as RstParser
-from docutils.statemachine import StringList
+from docutils.statemachine import StringList, string2lines
 from docutils.utils import Reporter, new_document
 from sphinx.application import Sphinx
+from sphinx.util.docutils import LoggingReporter
+from sphinx.util.logging import suppress_logging
 
 from . import _engine, _refusal
 from ._config import resolved
 from ._engine import Failure, Root
-from ._log import warn
+from ._log import At, at, warn
 from ._presets import lookup, need_types
 
 #: Template file suffixes that declare a markup (§5.1.2).
@@ -155,7 +158,7 @@ def expand(
 ) -> list[nodes.Node]:
     """Render and splice one use; report what fails (§7)."""
     env = directive.state.document.settings.env
-    location = (env.docname, directive.lineno)
+    location = at(directive)
     breaker: dict[str, dict[str, Any]] = env.temp_data.setdefault(BREAKER, {})
     entry = breaker.setdefault(identity, {"failed": set(), "first": None})
     key = _engine.input_key(identity, source, context)
@@ -173,7 +176,7 @@ def expand(
     except Failure as failure:
         if failure.code in LIMIT_CODES:
             entry["failed"].add(key)
-            entry["first"] = entry["first"] or directive.lineno
+            entry["first"] = entry["first"] or location.line
         warn(failure.code, use, failure.message, location=location)
         return []
     finally:
@@ -191,7 +194,7 @@ def splice(
 ) -> list[nodes.Node]:
     """Join the output to the page (§7.8-§7.10)."""
     env = directive.state.document.settings.env
-    location = (env.docname, directive.lineno)
+    location = at(directive)
     host = host_markup(directive)
     if has_heading(directive, text, markup):
         warn(
@@ -216,11 +219,7 @@ def splice(
         return _splice_other(directive, use=use, text=text, markup=markup, debug=debug)
     debug_nodes: list[nodes.Node] = [nodes.literal_block(text, text)] if debug else []
     if host == "rst":
-        found_source, found_line = directive.state_machine.get_source_and_line(
-            directive.lineno
-        )
-        source = str(found_source)
-        line = int(found_line or directive.lineno)
+        source, line = location.source, location.line
         lines = text.splitlines()
         if debug:
             lines += [
@@ -238,9 +237,90 @@ def splice(
         return []
     observe(text)
     renderer: Any = getattr(directive.state, "_renderer")  # noqa: B009
-    with _refusal.parsing(use):
-        renderer.nested_render_text(text, directive.lineno)
+    with _refusal.parsing(use), _pinned(renderer, location.line):
+        renderer.nested_render_text(text, 0)
     return debug_nodes
+
+
+@contextlib.contextmanager
+def _pinned(renderer: Any, line: int) -> Generator[None]:
+    """Place everything myst renders inside at ``line`` (§1.2): the output's tokens, and
+    the content of any directive in it, which myst renders again with an offset of its own.
+
+    The renderer's parser maps every token to the line, and a nested render adds no offset.
+    Both are public attributes of the renderer (``md.parse``, ``nested_render_text``), the
+    same in every supported myst-parser; they are set on this instance only and removed
+    after, whatever happens."""
+    md = renderer.md
+    parse, nested = md.parse, renderer.nested_render_text
+
+    def pinned_parse(src: str, env: Any = None) -> list[Any]:
+        tokens = parse(src, env)
+        for token in tokens:
+            if token.map:
+                # myst reports a token's line as its map's first entry plus one
+                token.map = [line - 1, line - 1]
+        return tokens
+
+    def pinned_nested(text: str, lineno: int = 0, *args: Any, **kwargs: Any) -> None:
+        nested(text, 0, *args, **kwargs)
+
+    md.parse, renderer.nested_render_text = pinned_parse, pinned_nested
+    try:
+        yield
+    finally:
+        del md.parse, renderer.nested_render_text
+
+
+class _PinnedRstParser(RstParser):
+    """docutils' reStructuredText parser with every input line mapped to one place, the
+    directive's line (§1.2) -- what ``insert_input`` does for the reStructuredText host --
+    so a need or a problem in the output is reported there.
+
+    :meth:`parse` is docutils' own (0.21 and 0.22 alike), handed a ``StringList`` whose
+    items all name that place instead of the plain lines."""
+
+    def __init__(self, place: At) -> None:
+        super().__init__()
+        self.place = place
+
+    def parse(self, inputstring: str, document: nodes.document) -> None:
+        self.setup_parse(inputstring, document)
+        settings: Any = document.settings
+        settings.setdefault("tab_width", 8)
+        settings.setdefault("syntax_highlight", "long")
+        self.statemachine = states.RSTStateMachine(
+            state_classes=self.state_classes,
+            initial_state=self.initial_state,
+            debug=document.reporter.debug_flag,
+        )
+        lines = string2lines(
+            inputstring, tab_width=settings.tab_width, convert_whitespace=True
+        )
+        too_long = next(
+            (
+                n
+                for n, text in enumerate(lines, 1)
+                if len(text) > settings.line_length_limit
+            ),
+            None,
+        )
+        if too_long is not None:
+            document.append(
+                document.reporter.error(
+                    f"Line {too_long} exceeds the line-length-limit."
+                )
+            )
+        else:
+            item = (self.place.source, self.place.line - 1)
+            self.statemachine.run(
+                StringList(lines, items=[item] * len(lines)),
+                document,
+                inliner=self.inliner,
+            )
+        # restore the "default" default role after parsing, as docutils does
+        getattr(roles, "_roles").pop("", None)  # noqa: B009
+        self.finish_parse()
 
 
 # --- no section title in output (§7.8) -------------------------------------------------
@@ -361,8 +441,7 @@ def _construct(fragment: nodes.document) -> str | None:
 def _splice_other(
     directive: Directive, *, use: str, text: str, markup: str, debug: bool
 ) -> list[nodes.Node]:
-    env = directive.state.document.settings.env
-    location = (env.docname, directive.lineno)
+    location = at(directive)
     written = "MyST Markdown" if markup == "md" else "reStructuredText"
     # a first, inert parse looks at the structure, so a refused output makes no need
     with _refusal.inert():
@@ -398,11 +477,17 @@ def _parse_other(
     when this project cannot parse that markup. reStructuredText is parsed undecorated:
     no ``rst_prolog`` or ``rst_epilog`` (§7.9)."""
     document = directive.state.document
-    env = document.settings.env
-    fragment = new_document(document["source"], document.settings)
+    place = at(directive)
+    fragment = new_document(place.source, document.settings)
     if silent:
         _silent(fragment)
-    parser: Any
+    else:
+        # a problem in the output is a Sphinx warning at the directive's line, as it is
+        # for output in the page's own markup -- not docutils' own print to stderr
+        fragment.reporter = LoggingReporter.from_reporter(fragment.reporter)
+    # the structural pass reports nothing: myst warns through Sphinx's logger, not the
+    # document's reporter, so that is quieted too (the real parse reports, once)
+    quiet = suppress_logging() if silent else contextlib.nullcontext()
     if markup == "md":
         if "myst_parser" not in app_of().extensions:
             warn(
@@ -410,15 +495,21 @@ def _parse_other(
                 use,
                 "the template writes MyST Markdown, and this project does not load "
                 "myst_parser",
-                location=(env.docname, directive.lineno),
+                location=at(directive),
             )
             return None
-        # imported by name: myst-parser is optional, and absent from the type-check floor
-        parser = import_module("myst_parser.parsers.sphinx_").MystParser()
-    else:
-        parser = RstParser()
-    with _refusal.parsing(use):
-        parser.parse(text, fragment)
+        # imported by name: myst-parser is optional, and absent from the type-check floor;
+        # MystParser.parse, with the renderer pinned to the directive's line
+        md = import_module("myst_parser.parsers.mdit").create_md_parser(
+            document.settings.env.myst_config,
+            import_module("myst_parser.mdit_to_docutils.sphinx_").SphinxRenderer,
+        )
+        md.options["document"] = fragment
+        with quiet, _refusal.parsing(use), _pinned(md.renderer, place.line):
+            md.render(text)
+        return fragment
+    with quiet, _refusal.parsing(use):
+        _PinnedRstParser(place).parse(text, fragment)
     return fragment
 
 
@@ -589,7 +680,7 @@ def declared_class(app: Sphinx, name: str, spec: Mapping[str, Any]) -> type[Dire
 
     def run(self: Directive) -> list[nodes.Node]:
         env = self.state.document.settings.env
-        location = (env.docname, self.lineno)
+        location = at(self)
         breaches = signature(self)
         if breaches:
             for breach in breaches:

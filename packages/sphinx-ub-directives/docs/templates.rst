@@ -201,3 +201,15 @@ Every template, context file and included file a use reads is a dependency of th
 Other findings: ``template_render_error`` (the template cannot be rendered),
 ``template_context_unknown`` (no context of that name), ``template_missing`` and
 ``template_outside_root`` (a template file), ``template_option_invalid`` (``ub-template``'s options).
+
+Where findings are reported
+---------------------------
+
+In a Sphinx build, everything a use produces is reported at the line of its directive,
+in the page or in the included file that holds it:
+the needs it generates, the problems in its rendered text, and its own findings.
+A render error also names the template and the line in it;
+an inline ``ub-template`` is named after its page and line (``index:14``).
+To see the rendered text a problem is in, add ``:debug:`` to an ``ub-template``
+(for a declared template, render the same template there with ``:file:``).
+ubCode is more precise: it reports the line in a body template, and the line in the rendered text.

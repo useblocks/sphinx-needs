@@ -22,7 +22,7 @@ from ub_project.project import render_path
 
 from . import _refusal
 from ._config import resolved
-from ._log import warn
+from ._log import at, warn
 
 #: The keys an entry may have.
 ENTRY_KEYS = frozenset(
@@ -517,7 +517,6 @@ def preset_class(preset: Preset) -> type[Directive]:
                 self.options[key] = [*convert(key, appends[key]), *written]
             else:
                 if key in self.options:
-                    env = self.state.document.settings.env
                     owner = (
                         f"the project defaults for {base.name!r} "
                         f"([parse.directive_presets.{preset.name}])"
@@ -529,7 +528,7 @@ def preset_class(preset: Preset) -> type[Directive]:
                         preset.name.lower(),
                         f"the option {key!r} is fixed by {owner} to {forced[key]!r}; "
                         "the value written here is not used",
-                        location=(env.docname, self.lineno),
+                        location=at(self),
                     )
                 self.options[key] = convert(key, forced[key])
         self.name = base.name

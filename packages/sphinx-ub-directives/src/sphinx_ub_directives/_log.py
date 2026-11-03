@@ -11,6 +11,7 @@ finding at a use is attributed to -- which is what the conformance runners compa
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -57,15 +58,37 @@ def file_location(file: str, attribution: str) -> str:
     return f"{file}:1"
 
 
+@dataclass(frozen=True)
+class At:
+    """Where a use is: the source file and line its directive is written on (§1.2)."""
+
+    source: str
+    line: int
+
+
+def at(directive: Any) -> At:
+    """The directive's line as written in its source -- mapped through the state machine,
+    as Sphinx's ``get_location()`` does -- never its raw ``lineno``, which also counts
+    the lines an earlier ``include`` or template use inserted (§1.2)."""
+    source, line = directive.state_machine.get_source_and_line(directive.lineno)
+    if not source:
+        env = directive.state.document.settings.env
+        source = env.doc2path(env.docname)
+    return At(str(source), int(line or directive.lineno))
+
+
 def warn(code: str, attribution: str, message: str, location: Any = None) -> None:
     """Report one finding.
 
     :param code: The bare contract code, used as the warning subtype.
     :param attribution: The ``ubproject.toml`` path, or the directive's name.
     :param message: The human half of the message.
-    :param location: Where Sphinx should say it is (a docname and line, or a path).
+    :param location: Where Sphinx should say it is: a use's :class:`At`, or the path of
+        a configuration file.
     """
-    if isinstance(location, str):
+    if isinstance(location, At):
+        location = f"{location.source}:{location.line}"
+    elif isinstance(location, str):
         location = file_location(location, attribution)
     LOGGER.warning(
         f"[{attribution}] {message}",

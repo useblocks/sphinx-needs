@@ -23,7 +23,7 @@ from docutils.parsers.rst import Directive, directives
 from docutils.parsers.rst.states import RSTState
 from sphinx.environment import BuildEnvironment
 
-from ._log import warn
+from ._log import at, warn
 
 #: ``env.temp_data`` key: ``{(source, line): use}`` for the lines a template inserted.
 LINES = "ub_directives_lines"
@@ -232,8 +232,7 @@ def _refuser(name: str, use: str, code: str, why: str) -> type[Directive]:
         option_spec = _AnyOptions()
 
         def run(self) -> list[nodes.Node]:
-            env = self.state.document.settings.env
-            warn(code, use, why.format(name=name), location=(env.docname, self.lineno))
+            warn(code, use, why.format(name=name), location=at(self))
             return []
 
     return Refused
@@ -259,13 +258,12 @@ def _conditional(
 
     def run(self: Directive) -> list[nodes.Node]:
         if refused(self):
-            env = self.state.document.settings.env
             warn(
                 "template_output_reads_file",
                 use,
                 f"the rendered text holds a {name!r} directive that reads a file; a "
                 "template's output reads only what the template declares",
-                location=(env.docname, self.lineno),
+                location=at(self),
             )
             return []
         if real is None:

@@ -38,8 +38,15 @@ says that ubCode owes a re-vendor.
    every finding about a use at a position inside that use (the directive's first line at
    least), and a render error names the template and the line the engine reports.
    Implementations may be more precise: ubCode reports the body line, the rendered line
-   and the template line; the Sphinx half reports at the directive's line. Messages and
-   severities are not part of the contract either.
+   and the template line; the Sphinx half reports everything a use produces (its needs,
+   the problems in its rendered text, its own findings) at the directive's line as written
+   (mapped through an `include` or an earlier use), in every page and template markup, and
+   a render error's message names the template and its line. Messages and severities are
+   not part of the contract either. Sphinx half enforced by: test
+   `test_locations.py::test_a_use_reports_at_its_directive_line`,
+   `…::test_a_need_nested_in_output_is_at_the_directive_line`,
+   `…::test_own_warnings_after_an_include_carry_the_real_line`,
+   `…::test_own_warnings_after_a_template_use_carry_the_real_line`.
 3. **How findings are compared: by code and attribution.** A finding is its contract code
    (§8), plus the `ubproject.toml` path a configuration finding is reported at, or the
    directive a finding at a use is attributed to. The corpora compare findings as a
