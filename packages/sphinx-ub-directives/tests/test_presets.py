@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import warnings
 from collections.abc import Callable
 from pathlib import Path
 
@@ -372,3 +373,75 @@ def test_a_preset_replaced_by_a_later_extension_warns(
     replaced = [w for w in warnings if "ub_directives.preset_base_replaced" in w]
     assert len(replaced) == 1, warnings
     assert "this preset is not used" in replaced[0]
+
+
+def test_need_type_output_uses_no_deprecated_sphinx_api(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """V5-2: a need-type preset's use and a need in template output reach the build's
+    application without ``env.app``, which Sphinx 9 deprecates (a ``RemovedInSphinx…``
+    warning on every directive lookup in output and every preset use)."""
+    toml = (
+        '[parse.directive_presets.req-draft]\nbase = "req"\noptions = { status = "draft" }\n\n'
+        '[parse.directive_templates.emit]\nbody = ".. req:: Out\\n   :id: REQ_OUT\\n"\n'
+    )
+    page = ".. req-draft:: A\n   :id: REQ_DEP\n   :Status: open\n\n.. emit::\n"
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        app = _build(make_app, tmp_path, toml, page)
+    # this package's own use only: sphinx-needs may still read ``env.app`` itself
+    deprecated = [
+        f"{w.filename}:{w.lineno}: {w.message}"
+        for w in caught
+        if type(w.message).__name__.startswith("RemovedIn")
+        and "sphinx_ub_directives" in w.filename
+    ]
+    assert deprecated == []
+    assert not [w for w in build_warnings(app) if "ub_directives." in w], (
+        build_warnings(app)
+    )
+
+
+def test_the_same_application_built_twice_judges_its_presets_afresh(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """V5-1: building one application twice (a tool or a suite may) registers the
+    presets again, in either mode: the second build must not find its own presets of the
+    first build as taken names, nor keep their old classes, so a changed preset applies."""
+    toml = (
+        '[parse.directive_presets.callout]\nbase = "note"\noptions = { class = "first" }\n\n'
+        '[parse.directive_presets.req-draft]\nbase = "req"\noptions = { status = "draft" }\n\n'
+        '[parse.directive_presets.note]\nbase = "note"\noptions = { class = "self-first" }\n'
+    )
+    page = (
+        ".. callout::\n\n   Body.\n\n.. req-draft:: A\n   :id: REQ_TWICE\n\n"
+        ".. note::\n\n   Plain.\n"
+    )
+    app = _build(make_app, tmp_path, toml, page)
+    assert not [w for w in build_warnings(app) if "ub_directives." in w], (
+        build_warnings(app)
+    )
+    presets = app.config.ub_directives_resolved["directive_presets"]
+    presets["callout"]["options"]["class"] = "second"
+    presets["req-draft"]["options"]["status"] = "open"
+    presets["note"]["options"]["class"] = "self-second"
+    warning_stream = getattr(app, "_warning")  # noqa: B009
+    warning_stream.seek(0)
+    warning_stream.truncate(0)
+    # an outdated page, so it is read again (a build re-reads only what changed)
+    (tmp_path / "index.rst").write_text(
+        "Case\n====\n\n" + page + "\nAgain.\n", encoding="utf-8", newline=""
+    )
+    app.build()
+    assert not [w for w in build_warnings(app) if "ub_directives." in w], (
+        build_warnings(app)
+    )
+    doctree = app.env.get_doctree("index").pformat()
+    data = json.loads((Path(app.outdir) / "needs.json").read_text(encoding="utf-8"))
+    assert (
+        data["versions"][data["current_version"]]["needs"]["REQ_TWICE"]["status"]
+        == "open"
+    )
+    assert "second" in doctree and "first" not in doctree
+    # the self-preset wraps the ORIGINAL note, not the first build's preset of it
+    assert "self-second" in doctree and "self-first" not in doctree

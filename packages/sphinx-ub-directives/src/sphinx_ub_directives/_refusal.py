@@ -279,10 +279,13 @@ def _conditional(
     return cls
 
 
-def _is_need_type(name: str, env: Any) -> bool:
+def _is_need_type(name: str) -> bool:
     """Whether ``name`` (as Sphinx looks a directive up, in lower case) is a need type's
-    directive, by sphinx-needs' public ``get_need_types``."""
-    app = getattr(env, "app", None)
+    directive, by sphinx-needs' public ``get_need_types``. The build's application is the
+    one templates registered with, never the deprecated ``env.app``."""
+    from ._templates import APP
+
+    app = APP[-1] if APP else None
     if app is None or "sphinx_needs" not in app.extensions:
         return False
     from sphinx_needs.api import get_need_types
@@ -367,7 +370,7 @@ def _refusal(
             use,
             lambda d: argument or bool(d.arguments and d.arguments[0].strip()),
         )
-    if _is_need_type(lower, env):
+    if _is_need_type(lower):
         # the need directive matches its options ignoring case (MyST keeps the written
         # case), so a ``:Template:`` reads a file as ``:template:`` does
         return _conditional(

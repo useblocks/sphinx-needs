@@ -526,8 +526,10 @@ def preset_class(preset: Preset) -> type[Directive]:
         for name in self.options:
             option = name
             if base.need_type:
-                app = self.state.document.settings.env.app
-                option = _need_option(app, base.name, name) or name
+                # the build's application, never the deprecated ``env.app``
+                from ._templates import app_of
+
+                option = _need_option(app_of(), base.name, name) or name
             written.setdefault(option, name)
         for key in sorted({*defaults, *appends, *forced}):
             if key in defaults:
@@ -586,7 +588,9 @@ def register(app: Sphinx) -> None:
     see the module docstring for when)."""
     reading = resolved(app)
     table = reading["directive_presets"]
-    # process state: a build without presets must not see a previous build's (D12)
+    # process state: a build without presets must not see a previous build's (D12), and
+    # a second build of the same application judges and registers its presets afresh
+    _unregister_previous()
     _REGISTERED[:] = []
     if not table:
         return
@@ -603,6 +607,22 @@ def register(app: Sphinx) -> None:
         else:
             app.add_directive(preset.name.lower(), cls, override=preset.self_preset)
             _REGISTERED.append((preset.name.lower(), cls, source, preset.self_preset))
+
+
+def _unregister_previous() -> None:
+    """Take this package's own preset directives of a previous build out of the docutils
+    registry, where they are still registered when the same application builds again: a
+    new name is removed, so it is not taken by itself; a self-preset's base gets back the
+    original class it wrapped, so the snapshot is not of the old preset. An entry another
+    extension (or a test application's cleanup) has since replaced is left alone."""
+    registry = cast("dict[str, Any]", getattr(directives, "_directives"))  # noqa: B009
+    for name, cls, _file, self_preset in _REGISTERED:
+        if registry.get(name) is not cls:
+            continue
+        if self_preset:
+            registry[name] = cls.__mro__[1]
+        else:
+            del registry[name]
 
 
 #: The presets registered in the docutils registry this build, each with its source and
