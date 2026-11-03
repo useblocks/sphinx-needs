@@ -63,7 +63,9 @@
 #   - a case never writes an RST option name with capitals, except the cases that pin that
 #     a declared signature and the reads-a-file refusal compare RST option names
 #     case-insensitively (ubCode's RST parser compares them as written elsewhere: a
-#     registered difference); a case never writes an option twice; no case depends on the
+#     registered difference); a MyST case may write an option name with capitals (MyST keeps
+#     the case, and both tools compare a need's options, and the reads-a-file refusal of
+#     them, ignoring case); a case never writes an option twice; no case depends on the
 #     order of a TOML table defined implicitly before its own header; no case holds an
 #     integer beyond the signed 64-bit range in VARIANT data
 #   - template output never holds a section title, except to pin that it is refused
@@ -15255,3 +15257,146 @@ path = "parse.template_contexts.var"
 [[case.expect.findings]]
 code = "template_context_unknown"
 directive = "ub-template"
+
+[[case]]
+name = "rx-need-template-option-in-capitals-md"
+why = "a need in MyST output writing :Template: (MyST keeps the case, and the need directive matches it ignoring case): refused as its lower-case form is"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.emit]
+body = "```{req} T\n:id: REQ_CAPM1\n:Template: custom\n```\n\n```{req} Kept after the refused directive\n:id: REQ_KEPT\n```\n"
+markup = "md"
+'''
+source = '''
+```{emit}
+```
+'''
+[case.expect]
+expansions = [
+'''
+```{req} T
+:id: REQ_CAPM1
+:Template: custom
+```
+
+```{req} Kept after the refused directive
+:id: REQ_KEPT
+```''',
+]
+missing = ["REQ_CAPM1"]
+[case.expect.needs.REQ_KEPT]
+title = "Kept after the refused directive"
+[[case.expect.findings]]
+code = "template_output_reads_file"
+directive = "emit"
+
+[[case]]
+name = "rx-need-jinja-content-option-in-capitals-md"
+why = "a need in MyST output writing :Jinja_Content: (MyST keeps the case, and the need directive matches it ignoring case): refused as its lower-case form is"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.emit]
+body = "```{req} T\n:id: REQ_CAPM2\n:Jinja_Content: true\n```\n\n```{req} Kept after the refused directive\n:id: REQ_KEPT\n```\n"
+markup = "md"
+'''
+source = '''
+```{emit}
+```
+'''
+[case.expect]
+expansions = [
+'''
+```{req} T
+:id: REQ_CAPM2
+:Jinja_Content: true
+```
+
+```{req} Kept after the refused directive
+:id: REQ_KEPT
+```''',
+]
+missing = ["REQ_CAPM2"]
+[case.expect.needs.REQ_KEPT]
+title = "Kept after the refused directive"
+[[case.expect.findings]]
+code = "template_output_reads_file"
+directive = "emit"
+
+[[case]]
+name = "rx-need-post-template-option-in-capitals-md"
+why = "a need in MyST output writing :Post_Template: (MyST keeps the case, and the need directive matches it ignoring case): refused as its lower-case form is"
+markup = "md"
+config = '''
+[parse.parsers.rst]
+
+[parse.parsers.md]
+flavour = "myst"
+
+[parse.directive_templates.emit]
+body = "```{req} T\n:id: REQ_CAPM3\n:Post_Template: custom\n```\n\n```{req} Kept after the refused directive\n:id: REQ_KEPT\n```\n"
+markup = "md"
+'''
+source = '''
+```{emit}
+```
+'''
+[case.expect]
+expansions = [
+'''
+```{req} T
+:id: REQ_CAPM3
+:Post_Template: custom
+```
+
+```{req} Kept after the refused directive
+:id: REQ_KEPT
+```''',
+]
+missing = ["REQ_CAPM3"]
+[case.expect.needs.REQ_KEPT]
+title = "Kept after the refused directive"
+[[case.expect.findings]]
+code = "template_output_reads_file"
+directive = "emit"
+
+[[case]]
+name = "rx-need-pre-template-option-in-capitals"
+why = "a need in output writing :Pre_Template: in capitals (RST lower-cases it): refused as :pre_template: is"
+config = '''
+[parse.directive_templates.emit]
+body = "{{ body }}\n\n.. req:: Kept after the refused directive\n   :id: REQ_KEPT\n"
+content = true
+'''
+source = '''
+.. emit::
+
+   .. req:: T
+      :id: REQ_CAPP
+      :Pre_Template: custom
+'''
+[case.expect]
+expansions = [
+'''
+.. req:: T
+   :id: REQ_CAPP
+   :Pre_Template: custom
+
+.. req:: Kept after the refused directive
+   :id: REQ_KEPT''',
+]
+missing = ["REQ_CAPP"]
+[case.expect.needs.REQ_KEPT]
+title = "Kept after the refused directive"
+[[case.expect.findings]]
+code = "template_output_reads_file"
+directive = "emit"

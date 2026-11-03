@@ -682,7 +682,7 @@ that pin this rule, nor any option twice.) Enforced by: corpus
     | `include`, `literalinclude`, `needimport`, `needservice`, `src-trace` | always |
     | `needreport` | with `:template:` |
     | the sphinx-test-reports directives the project configures | always |
-    | a need directive (any need type) | with `:template:`, `:pre_template:`, `:post_template:` or `:jinja_content:` |
+    | a need directive (any need type) | with `:template:`, `:pre_template:`, `:post_template:` or `:jinja_content:`, in any case (the need directive matches its options ignoring case, and MyST keeps a written `:Template:`) |
     | `ub-template`, every declared template directive | always (`template_nested_expansion`) |
 
     **A preset is refused exactly when its base, written with the preset's merged options
@@ -697,7 +697,9 @@ that pin this rule, nor any option twice.) Enforced by: corpus
     `output-reads-file-preset-with-a-default-file`,
     `output-reads-file-need-preset-with-a-default-template`,
     `output-reads-file-test-file`, `…-test-suite`, `…-test-case`, `…-test-report`,
-    `…-test-results`, `…-test-env`.
+    `…-test-results`, `…-test-env`, `rx-need-template-option-in-capitals`,
+    `rx-need-pre-template-option-in-capitals`, `rx-need-template-option-in-capitals-md`,
+    `rx-need-jinja-content-option-in-capitals-md`, `rx-need-post-template-option-in-capitals-md`.
 
     The property behind the list: a directive that reads content the template did not
     declare. An inline diagram, an `image` and a `figure` read nothing into the page (an
