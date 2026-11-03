@@ -117,14 +117,14 @@ Fixed
   build with ``TypeError: add_need() got multiple values for keyword argument 'state'``
   (`#2392 <https://github.com/useblocks/sphinx-needs/issues/2392>`__). The directives create
   their needs through Sphinx-Needs' ``create_need``, which takes the fields and links as two
-  mappings; this requires the Sphinx-Needs release that adds it.
+  mappings; this requires Sphinx-Needs 9.2.0, which adds it.
 
 Changed
 .......
 
 - 🔧 The directives' needs take their location as Sphinx-Needs' one ``NeedItemSource``,
-  where they used its deprecated ``NeedItemSourceUnknown``. Requires the Sphinx-Needs
-  release that adds ``NeedItemSource``.
+  where they used its deprecated ``NeedItemSourceUnknown``. Requires Sphinx-Needs
+  9.2.0, which adds ``NeedItemSource``.
 
 - 🔧 The id a ``test-file``, ``test-suite`` or ``test-case`` gets without ``:id:`` is
   computed in this package, where it went through a private Sphinx-Needs helper
@@ -145,8 +145,8 @@ Changed
   ``[needs.types.test.fields.case_name]`` (or ``needs_types = {"test": {"fields": {"case_name":
   {}}}}`` in ``conf.py``); a ``needs_fields`` entry of the name is the field on every need type,
   as before. A ``needs_types`` entry naming ``testcase``, ``testsuite`` or ``testfile`` now
-  narrows that type, where a bare one was ignored and a full one stopped the build. Requires the
-  Sphinx-Needs release with ``add_field``'s ``types``. See :ref:`tr_fields_per_type`.
+  narrows that type, where a bare one was ignored and a full one stopped the build. Requires
+  Sphinx-Needs 9.2.0, the release with ``add_field``'s ``types``. See :ref:`tr_fields_per_type`.
 
 - 👌 A test case the report gives no source file or line for, or that has no parameter, holds
   ``null`` in ``case_file``, ``case_line`` and ``case_parameter`` (or the fields
