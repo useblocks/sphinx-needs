@@ -73,8 +73,9 @@ def resolve_need_option(app: Sphinx, need_type: str, name: str) -> str | None:
     handler connected at a priority above 500, or at 500 by an extension set up after
     ``sphinx_needs``, or at any later event, while documents are read included. Until
     then, extensions and :file:`ubproject.toml` may still add need types, fields and
-    link types, so no answer would be final; and on an incremental build the
-    environment still holds the previous build's schema, which is never used here.
+    link types, so no answer would be final; and on an incremental build, or in the next
+    build of the same application, the environment still holds the previous build's
+    schema, which is never used here.
 
     **Usage**::
 
@@ -108,6 +109,11 @@ def resolve_need_option(app: Sphinx, need_type: str, name: str) -> str | None:
             "build's schema, in its own 'env-before-read-docs' handler (priority "
             "500): call it from an 'env-before-read-docs' handler at a priority "
             "above 500, or at a later event"
+            + (
+                ""
+                if "sphinx_needs" in app.extensions
+                else " (is sphinx_needs in extensions?)"
+            )
         )
     if need_type not in get_need_types(app):
         raise ValueError(f"{need_type!r} is no need type of the project")

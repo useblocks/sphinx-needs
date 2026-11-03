@@ -6,12 +6,20 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
-from sphinx_needs.data import SphinxNeedsData
+import sphinx_needs.api
+from sphinx_needs.api import resolve_need_option
+from sphinx_needs.data import (
+    SphinxNeedsData,
+    _forget_schema_of_this_build,
+    _mark_schema_of_this_build,
+    _schema_of_this_build,
+)
 from sphinx_needs_testkit import build_warnings
 
 PROBE_EXT = '''\
@@ -204,3 +212,53 @@ def test_a_call_before_the_schema_is_built_raises_on_an_incremental_build(
     for event in ("builder-inited", "env-before-read-docs@499"):
         assert set(app.resolve_answers[event].values()) == {TOO_EARLY}, event
     assert app.resolve_answers["env-before-read-docs@501"]["req", "added"] == "added"
+
+
+def test_the_next_build_of_the_same_application_raises_before_its_schema(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+):
+    """An application built twice, as a test or an in-process tool does, keeps its
+    environment and its schema in memory: the second build does not answer from it
+    before it has built its own."""
+    _write(tmp_path / "src")
+    app = make_app("html", srcdir=tmp_path / "src", freshenv=True)
+    app.build()
+    assert app.resolve_answers["env-before-read-docs@501"]["req", "asil"] == "asil"
+    (tmp_path / "src" / "index.rst").write_text(INDEX + "\nMore.\n", encoding="utf-8")
+    app.build()
+    assert build_warnings(app) == []
+    assert set(app.resolve_answers["env-before-read-docs@499"].values()) == {TOO_EARLY}
+    assert app.resolve_answers["env-before-read-docs@501"]["req", "asil"] == "asil"
+
+
+def test_the_mark_is_this_build_s_schema_only():
+    """The mark answers only while the environment holds the schema it marked, and not
+    once the build has finished."""
+    schema, other = object(), object()
+    app: Any = SimpleNamespace(env=SimpleNamespace(_needs_schema=schema))
+    assert _schema_of_this_build(app) is None
+    _mark_schema_of_this_build(app, schema)  # ty: ignore[invalid-argument-type]
+    assert _schema_of_this_build(app) is schema
+    app.env._needs_schema = other
+    assert _schema_of_this_build(app) is None
+    app.env._needs_schema = schema
+    _forget_schema_of_this_build(app, None)
+    assert _schema_of_this_build(app) is None
+
+
+@pytest.mark.parametrize("loaded", [True, False])
+def test_the_error_asks_whether_sphinx_needs_is_loaded(loaded: bool):
+    """Without ``sphinx_needs`` among the extensions, the error says so."""
+    app: Any = SimpleNamespace(
+        extensions={"sphinx_needs": object()} if loaded else {},
+        env=SimpleNamespace(),
+    )
+    with pytest.raises(RuntimeError) as err:
+        resolve_need_option(app, "req", "status")
+    assert str(err.value) == TOO_EARLY[1] + (
+        "" if loaded else " (is sphinx_needs in extensions?)"
+    )
+
+
+def test_it_is_public():
+    assert "resolve_need_option" in sphinx_needs.api.__all__

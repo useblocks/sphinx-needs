@@ -1014,6 +1014,14 @@ def _mark_schema_of_this_build(app: Sphinx, schema: FieldsSchema) -> None:
     setattr(app, _SCHEMA_OF_THIS_BUILD, schema)
 
 
+def _forget_schema_of_this_build(app: Sphinx, _exception: Exception | None) -> None:
+    """Clear the mark at the end of the build (``build-finished``, after every other
+    handler): an application built again, as a test or an in-process tool does, keeps
+    its environment and that schema in memory, and must not answer from them before its
+    next build has built its own."""
+    setattr(app, _SCHEMA_OF_THIS_BUILD, None)
+
+
 def _schema_of_this_build(app: Sphinx) -> FieldsSchema | None:
     """The schema this build built, or ``None`` before it is built: ``None`` too where
     the environment's schema is still a pickled one from a previous build."""

@@ -135,6 +135,16 @@ class SourceArgument(SphinxDirective):
                     out.extend(result[1] if name == "create_need" else (
                         result[0] if name == "ingest_need_record" else result
                     ))
+        # no source at all: each function's default, which is no protocol-only source
+        rows["generate_need", "none"] = caught(
+            lambda: generate_need(config, schema, "req", "T", id="R_GEN_NONE")
+        )
+        rows["add_external_need", "none"] = caught(
+            lambda: add_external_need(
+                app, "req", "T", id="R_EXT_NONE",
+                external_url="http://example.org/z.html",
+            )
+        )
         self.env.source_argument_rows = {
             key: (
                 outcome if outcome[0] == "raised"
@@ -246,6 +256,16 @@ def test_a_need_item_source_is_not_deprecated(source_argument, entry_point):
     """A ``NeedItemSource`` gives no such warning, on any entry point."""
     rows, _, _ = source_argument
     outcome, warned = rows[entry_point, "class"]
+    assert outcome[0] == "returned"
+    assert _deprecations(warned) == []
+
+
+@pytest.mark.parametrize("entry_point", ["generate_need", "add_external_need"])
+def test_no_source_is_not_deprecated(source_argument, entry_point):
+    """``None``, the default ``need_source`` of the two that have one, gives no such
+    warning: the function builds its own ``NeedItemSource``."""
+    rows, _, _ = source_argument
+    outcome, warned = rows[entry_point, "none"]
     assert outcome[0] == "returned"
     assert _deprecations(warned) == []
 
