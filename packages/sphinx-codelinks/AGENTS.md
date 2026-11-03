@@ -121,7 +121,7 @@ tests inside. 56 is how many test cases stop running.
 `load_codelinks_table` in `config.py` is ub-project's `load_toml` + `select_table`, and both
 readers call it; `src/` imports no `tomllib`. It returns raw values: relative paths are
 anchored with ub-project's `anchor` where they are used, never in the loader. (`click` is no
-longer a dependency and `typer` is no longer capped — the changelog's `Unreleased` says why.)
+longer a dependency and `typer` is no longer capped — the changelog's 2.0.0 entry says why.)
 
 ## Documentation
 
