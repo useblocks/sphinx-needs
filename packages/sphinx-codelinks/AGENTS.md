@@ -20,7 +20,7 @@ sphinx-needs. It:
   for use outside a Sphinx build.
 
 It is the only member of this workspace whose `src/` imports `sphinx_needs`, and it
-declares it as a **runtime** dependency with a tight floor (`sphinx-needs>=9.1.0,<10`,
+declares it as a **runtime** dependency with a tight floor (`sphinx-needs>=9.2.0,<10`,
 which `check_workspace.py` check (4) enforces against the sibling's current version, and
 `propagate_floors.py` moves at each sphinx-needs release).
 

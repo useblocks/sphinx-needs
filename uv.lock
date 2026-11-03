@@ -3030,7 +3030,7 @@ wheels = [
 
 [[package]]
 name = "sphinx-codelinks"
-version = "2.0.1"
+version = "2.1.0"
 source = { editable = "packages/sphinx-codelinks" }
 dependencies = [
     { name = "comment-parser", version = "1.2.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
