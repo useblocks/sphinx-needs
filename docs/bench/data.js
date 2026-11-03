@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793640455193,
+  "lastUpdate": 1793715039569,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28602,6 +28602,48 @@ window.BENCHMARK_DATA = {
             "value": 189.022539,
             "unit": "MB",
             "extra": "Commit: a33d150dd80f9a647211084d1dc26a5170c2b71c\nBranch: master\nTime: 2026-11-02T18:25:49+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "87df5d3e836c9a435e9b5b3b991838ca74a0ca27",
+          "message": "♻️ A stable API that can grow: `create_need` takes a `NeedItemSource`, `resolve_need_option` is new, and \"what is public\" is written down (#2468)\n\nBefore 9.2.0 ships `create_need`, this settles the shape of what\nextensions build on, so later releases can add to it\nwithout breaking anyone.\n\n- **A creation API that can grow.** `create_need` takes a\n`NeedItemSource` — `NeedItemSource.from_directive(self)` in\na directive, `NeedItemSource.on_page(docname, lineno=...)` for a line\nyou choose — and refuses anything else with a\n`TypeError` naming both. Every origin feature planned (the hops, the\n`c.source` facets and what comes after them)\nreads data only a `NeedItemSource` carries, so a protocol-only source\nwould silently get none of it.\n- **A written rule for what is public.** A new \"What is public\" section\nin the API docs: a name in the configuration,\nthe directives and options, the filter names (`c.*` included),\n`needs.json` or the documented Python API is renamed\nor removed only after a deprecation; a minor release may still fix what\na name does, and the changelog says what changed and what to do;\nprovisional parts follow their label; undocumented and `_`-prefixed\nnames are internal, and the sibling extensions\nare released with a raised minimum version of Sphinx-Needs when one\nchanges.\n- **Ask the directive, don't copy it.** `resolve_need_option(app,\nneed_type, name)` says which option a need type's\ndirective takes for a name — its own options and every field and link\ntype of the project, matched as the directive\nmatches them (exact first, then ignoring case, returned as declared). A\nmatch means the directive takes the option,\nnot that the type keeps a value: another type's field is matched and\nthen reported as not declared. So an extension\nwrapping or presetting need directives keeps no copy of the directive's\noption list. It is available from sphinx-needs' own\n`env-before-read-docs` handler on (a handler above priority 500, or any\nlater event), and raises before that, also on\nan incremental build or a second build of the same application, where\nthe previous build's schema is still in the\n  environment.\n- **Configuration you can read.** Reading the configuration through\n`NeedsSphinxConfig(app.config).<name>` — the\nroute the 9.1.0 notes recommended for need types and layouts — is now\ndocumented and stable: each Sphinx-Needs\nconfiguration value as resolved, `ubproject.toml` included, and for\n`types`, `layouts`, `functions` and `warnings`\nwhat extensions and services add. Reading only; `variant_data_proxy` is\n  documented beside them.\n- **Honest filter docs.** A `c.source` facet that is `None` today only\nfills later: a positive test of a value keeps\nthe needs it selects (and may gain some), but a negated test (`!=`, `not\nin`) or `is None` / `not …` may select\n  fewer — the docs said \"the same needs\".\n\nFor extension authors:\n- `create_need(app, state, source, ...)`: `source` must be a\n`NeedItemSource`. Nothing in this repository passes\n  anything else (measured).\n- A protocol-only `need_source` given to `generate_need`,\n`add_external_need` or `ingest_need_record` is now one\n`DeprecationWarning` at your call (not a Sphinx warning, so `-W` builds\nare unaffected), and is refused in 10.0.\n  Reading `need.source` through `NeedItemSourceProtocol` is unchanged.\n- \"Provisional\" — the hop types and `NeedItemSource`'s general\nconstructor and keywords — now means **additions only\nthrough 9.x**: new optional fields, hop kinds and keywords may come in a\nminor release; renames, removals and changes\n  of meaning or type wait for 10.0.\n- `ingest_need_record` is documented as reading a needs.json\n`format_version` 1 record; an imported need\n(`is_import=True`) still takes the provisional constructor, since no\nstable one carries it yet.\n- `NeedsSphinxConfig(app.config).<name>` is documented and stable for\nreading every Sphinx-Needs configuration\nvalue (and `variant_data_proxy`), from `builder-inited` on; its other\nmembers stay internal, and so does `NeedDirective`.\n- `NeedItem.moved_only`, an incremental-build internal that the API page\nrendered by accident, is now `_moved_only`\n  (never released).\n\nAlso: the changelog's `ENV_DATA_VERSION` line says 25, and the hop kind\nlist names `report`.\n\nFor `resolve_need_option`: `tests/test_resolve_need_option.py` pins each\nkind of option (type-local field and link\ntype, global field, core options, a capitalised field in any case),\n`None` and `ValueError`, a fence that each option\nthe need directive was written with is held under the name the function\ngives, and the `RuntimeError` before the\nschema is built on fresh and incremental builds (including after a\n`conf.py` change) and in a second build of one\napplication.\n\nTests: `tests/test_need_source_argument.py` pins the `create_need`\nrefusal (nothing recorded), one warning per call on\neach of the three entry points at the caller's line, none for a\n`NeedItemSource`, and no second warning from\n`add_need`. All three extension suites also pass with the new warning\nturned into an error.",
+          "timestamp": "2026-11-03T15:08:55+01:00",
+          "tree_id": "d1d7fa251d77929d98322b356078832fbfbc493c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/87df5d3e836c9a435e9b5b3b991838ca74a0ca27"
+        },
+        "date": 1793715038724,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07418255099999982,
+            "unit": "s",
+            "extra": "Commit: 87df5d3e836c9a435e9b5b3b991838ca74a0ca27\nBranch: master\nTime: 2026-11-03T15:08:55+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 12.907548492000004,
+            "unit": "s",
+            "extra": "Commit: 87df5d3e836c9a435e9b5b3b991838ca74a0ca27\nBranch: master\nTime: 2026-11-03T15:08:55+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 191.385509,
+            "unit": "MB",
+            "extra": "Commit: 87df5d3e836c9a435e9b5b3b991838ca74a0ca27\nBranch: master\nTime: 2026-11-03T15:08:55+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
