@@ -367,3 +367,26 @@ def test_a_dot_dot_after_a_missing_component_is_missing_on_every_platform(
         assert path is not None and path not in root.missing, name
         assert root.read(path) == "ok"
     assert root.resolve("sub/../../outside.j2") is None
+
+
+def test_a_need_template_option_in_any_case_in_myst_output_is_refused(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """§7.10: the need directive matches its options ignoring case, and MyST keeps the
+    written case, so a ``:Template:`` in MyST output reads a file exactly as
+    ``:template:`` does, and is refused the same way (RST output is lower-cased by docutils
+    before it is judged; the corpus writes no RST option name with capitals)."""
+    files = {
+        "ubproject.toml": (
+            '[parse.directive_templates.emit]\ntemplate = "_templates/emit.md.j2"\n'
+        ),
+        "_templates/emit.md.j2": "```{req} R\n:id: REQ_TCAP\n:Template: custom\n```\n",
+        "index.md": "# Case\n\n```{emit}\n```\n",
+    }
+    app = _build(make_app, tmp_path, files)
+    refused = [
+        w
+        for w in build_warnings(app)
+        if "ub_directives.template_output_reads_file" in w
+    ]
+    assert len(refused) == 1, build_warnings(app)
