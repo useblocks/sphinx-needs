@@ -620,7 +620,9 @@ reports.
 is not guaranteed; join a list (``{{ tags | join(", ") }}``).
 
 **Markup.** The output is written in the markup of the page the need is on: MyST on a MyST page,
-reStructuredText on a reStructuredText page (and inside ``{eval-rst}``). The need's ``doctype`` says which.
+reStructuredText on a reStructuredText page (and for a need written in reStructuredText on a MyST page:
+inside ``{eval-rst}``, or in the reStructuredText output of a sphinx-ub-directives template). The need's
+``doctype`` says which.
 Content output is the need's content; pre and post output are placed before and after the need, and a heading
 in them opens a section there.
 

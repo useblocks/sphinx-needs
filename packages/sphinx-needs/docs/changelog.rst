@@ -411,8 +411,9 @@ Bug fixes
 - 🐛 A heading in a need's ``pre_template`` or ``post_template`` output on a MyST page opens its section where the
   output is, as on a reStructuredText page, where it landed after the need **(changed output)**
 
-- 🐛 A need written inside ``{eval-rst}`` on a MyST page has the ``doctype`` ``.rst``, the markup its content is
-  written in, where it had the page's ``.md`` **(changed output)**
+- 🐛 A need written in reStructuredText on a MyST page -- inside ``{eval-rst}``, or in the reStructuredText output
+  of a sphinx-ub-directives template -- has the ``doctype`` ``.rst``, the markup its content is written in, where it
+  had the page's ``.md`` **(changed output)**
 
 - ‼️ A directive option matches a field, link type or core field ignoring case, in reStructuredText and MyST alike,
   and its value is stored under the declared name (:ref:`option names and case <needs_option_name_case>`)
