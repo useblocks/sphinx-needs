@@ -148,6 +148,14 @@ def test_every_case_has_a_complete_expectation() -> None:
             assert tomllib.loads(case["config"])["source"]["dir"] == srcdir, name
         expect = case["expect"]
         assert "findings" in expect, name
+        if expect["findings"] and _imports(case):
+            # the needs of one needimport share its line: a finding there names its
+            # need only when the import reads one record
+            for rel, text in case.get("files", {}).items():
+                if rel.endswith(".json"):
+                    data = json.loads(text)
+                    records = data["versions"][data["current_version"]]["needs"]
+                    assert len(records) == 1, f"{name}: {rel} holds {len(records)}"
         assert set(expect) <= {"needs", "nulls", "missing", "findings"}, name
         assert expect.get("needs") or expect.get("nulls"), name
         for finding in expect["findings"]:
@@ -157,6 +165,45 @@ def test_every_case_has_a_complete_expectation() -> None:
             assert finding["code"] not in UBCODE_ONLY_CODES or case.get(
                 "ubcode_only"
             ), name
+
+
+def _imports(case: Mapping[str, Any]) -> bool:
+    """Whether a case's documents import needs."""
+    return "needimport" in case["source"] + case.get("source_md", "")
+
+
+@pytest.mark.parametrize(
+    "files",
+    [
+        {"a.json": '{"current_version": "1", "versions": {"1": {"needs": {}}}}'},
+        {
+            "a.json": '{"current_version": "1", "versions": {"1": {"needs": '
+            '{"A_1": {}, "A_2": {}}}}}'
+        },
+    ],
+    ids=["no-record", "two-records"],
+)
+def test_an_import_case_with_a_finding_must_import_one_record(
+    files: dict[str, str],
+) -> None:
+    """The shape test refuses an import case expecting a finding whose needs.json does
+    not hold exactly one record (the corpus header's rule)."""
+    case = {
+        "name": "broken-import-case",
+        "why": "w",
+        "rules": [14],
+        "config": "",
+        "source": ".. needimport:: a.json\n",
+        "files": files,
+        "expect": {"findings": [{"code": "template_missing"}], "needs": {"A_1": {}}},
+    }
+    original = CASES[:]
+    CASES[:] = [case]
+    try:
+        with pytest.raises(AssertionError, match=r"a\.json holds"):
+            test_every_case_has_a_complete_expectation()
+    finally:
+        CASES[:] = original
 
 
 def test_the_corpus_header_records_where_it_is_canonical() -> None:

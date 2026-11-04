@@ -7,7 +7,7 @@
 # Canonical path:       packages/sphinx-needs/tests/fixtures/need_templates_conformance.toml
 #
 # minijinja: 2.24.0
-# sphinx-needs: 9.1.0
+# sphinx-needs: 9.3.0
 #
 # The `minijinja:` line is the engine the cases were recorded against (both tools render
 # need templates with minijinja); each runner asserts it against the engine it runs, so a
@@ -37,8 +37,9 @@
 #       (`default`, `predicates`); `:jinja_content:` is per need only
 #    4. the render happens ONCE, when the need is created: it sees the need's id (an
 #       automatic one included), its defaults, its type's metadata, its location, and every
-#       field the need's type declares (with its empty value when unset); it sees no back
-#       links, no derived, dynamic or variant value, no needextend change and no `sections`
+#       field the need's type declares (with its empty value when unset: `None`, or `[]`
+#       for a link type); it sees no back links, no derived, dynamic or variant value, no
+#       needextend change and no `sections`
 #    5. the id of a need given none is generated BEFORE the render, from the authored body
 #    6. the output is written in the PAGE's markup, and `doctype` is that markup
 #    7. (sphinx-needs only) a heading in pre/post output opens a real section, in place;
@@ -48,14 +49,17 @@
 #       rendered text
 #    9. an undefined name renders EMPTY and is reported (`template_undefined`, once per
 #       rendered template, at the need): each tool renders strictly first and, on an
-#       undefined error, renders again leniently; `{% if x is defined %}` reports nothing
+#       undefined error, renders again leniently; `{% if x is defined %}` reports nothing.
+#       An attribute of an undefined NAME (`{{ typo.attr }}`) fails even leniently: the
+#       whole template is a `template_render` (rule 14), its output empty
 #   10. a scalar displays as Python does (`None`, `True`, `1.0`, `3`, a string); how a
 #       list, a map or a tuple displays is NOT part of the contract, and no case prints one
 #   11. a field holding a dynamic function, a variant or a derived value (where the need's
 #       type has a rule for it) is unresolved when the template is rendered: it displays
-#       as its unset value (`None`), and a template that NAMES it -- a top-level name the
-#       template reads, as minijinja's `undeclared_variables` (not nested) gives it -- is
-#       reported once per field (`template_unresolved`, at the need, naming the field)
+#       as its unset value (`None`, or `[]` for a link type), and a template that NAMES it
+#       -- a top-level name the template reads, as minijinja's `undeclared_variables` (not
+#       nested) gives it -- is reported once per field (`template_unresolved`, at the
+#       need, naming the field)
 #   14. a broken template -- a missing file, a syntax error, a render error -- keeps the
 #       need, with EMPTY output for that template, and one finding: `template_missing`,
 #       `template_syntax` or `template_render`; through `needimport` too
@@ -114,6 +118,10 @@
 #     tool's own. A finding's `need` is the need it is reported at (the need's
 #     directive; for an imported need, the need of that id). `field` is named by
 #     `template_unresolved` alone: the field the template reads
+#   - an import case that expects a finding imports ONE record (every needs.json it
+#     reads holds one need): the needs of one `needimport` share its line, so a finding
+#     at that line names its need only when there is one. The runners refuse a case
+#     that breaks this
 #   - each tool maps the codes to its own reports:
 #         sphinx-needs:  template_missing     -> needs.template_missing
 #                        template_syntax      -> needs.template_syntax
@@ -472,7 +480,7 @@ template = "wrap"
 
 [[case]]
 name = "output-is-in-the-pages-markup"
-why = "a template's output on a MyST page is MyST, and the need's doctype says so; on an RST page it is RST"
+why = "a template's output is PARSED in the page's markup, MyST on a MyST page and RST on an RST page, and the need's doctype says so: a need directive in content output is a need inside the need, one in post output a need after it"
 rules = [6, 1]
 config = '''
 [needs]
@@ -496,20 +504,45 @@ MyST body [link](https://m.example).
 '''
 files."needs_templates/wrap.need" = '''
 WRAP[{{ id }}] {{ content }}
+{% if doctype == ".md" %}
+```{spec} Nested
+:id: N_{{ id }}
+```
+{% else %}
+.. spec:: Nested
+   :id: N_{{ id }}
+{% endif %}
 '''
 files."needs_templates/post.need" = '''
 POST {{ id }} {{ doctype }}
+{% if doctype == ".md" %}
+```{spec} After
+:id: N_POST_{{ id }}
+```
+{% else %}
+.. spec:: After
+   :id: N_POST_{{ id }}
+{% endif %}
 '''
 [case.expect]
 findings = []
 [case.expect.needs.SPEC_RST]
-content = "WRAP[SPEC_RST] RST body `link <https://r.example>`_."
-post_content = "POST SPEC_RST .rst"
 doctype = ".rst"
 [case.expect.needs.SPEC_MD]
-content = "WRAP[SPEC_MD] MyST body [link](https://m.example)."
-post_content = "POST SPEC_MD .md"
 doctype = ".md"
+[case.expect.needs.N_SPEC_RST]
+parent_need = "SPEC_RST"
+doctype = ".rst"
+[case.expect.needs.N_SPEC_MD]
+parent_need = "SPEC_MD"
+doctype = ".md"
+[case.expect.needs.N_POST_SPEC_RST]
+title = "After"
+[case.expect.needs.N_POST_SPEC_MD]
+title = "After"
+[case.expect.nulls]
+N_POST_SPEC_RST = ["parent_need"]
+N_POST_SPEC_MD = ["parent_need"]
 
 # --- value display (rule 10) ---------------------------------------------------------
 
@@ -1099,7 +1132,7 @@ content = "None None -"
 
 [[case]]
 name = "hidden-need-renders-its-content-only"
-why = "a hidden need's content template is rendered (needs.json content), its pre and post templates are not (null, nothing reported even for a broken one); the names stay as provenance"
+why = "a hidden need's content template is rendered (needs.json content), its pre and post templates are not rendered at all (null; nothing reported for a missing one, or for one using an undefined name); the names stay as provenance"
 rules = [8, 16, 14]
 config = '''
 [needs]
@@ -1118,7 +1151,7 @@ files."needs_templates/wrap.need" = '''
 WRAP {{ content }}
 '''
 files."needs_templates/pre.need" = '''
-PRE {{ id }}
+PRE {{ id }} {{ typo }}
 '''
 [case.expect]
 findings = []
