@@ -953,9 +953,8 @@ content = "owner=[]"
 
 [[case]]
 name = "render-context-is-merged-over-the-need"
-why = "sphinx-needs merges needs_render_context over the need's fields: a key it gives is defined (ubCode cannot read it: rule 12)"
+why = "[needs.render_context] in ubproject.toml is merged over the need's fields: a key it gives is defined, and not reported (a conf.py-only value, such as a function, is sphinx-needs' alone: rule 12)"
 rules = [12, 9]
-python_only = true
 config = '''
 [needs.render_context]
 team = "blue"
