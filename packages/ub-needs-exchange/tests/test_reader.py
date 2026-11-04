@@ -399,11 +399,20 @@ def test_without_the_defaults_a_content_default_still_keeps_the_description():
     (bare,) = modern.records(apply_schema_defaults=False)
     assert bare.fields["description"] == "own text"
     assert "content" not in bare.fields
+    # a 3.x remove-defaults file: its schema has a ``description`` default, and none
+    # for ``content``
+    three_x = {"properties": {"description": {"type": "string", "default": ""}}}
     legacy = nx.parse(
-        json.dumps(envelope({"A": record("A", description="legacy")}))
+        json.dumps(
+            envelope(
+                {"A": record("A", description="TEST IMPORT DESCRIPTION")},
+                needs_defaults_removed=True,
+                needs_schema=three_x,
+            )
+        )
     ).select_version(None)
     (old,) = legacy.records(apply_schema_defaults=False)
-    assert old.fields["content"] == "legacy"
+    assert old.fields["content"] == "TEST IMPORT DESCRIPTION"
     assert "description" not in old.fields
 
 
