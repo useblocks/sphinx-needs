@@ -79,14 +79,14 @@ or by a declared template, and write ``is defined`` where a template relied on l
      - Strict: ``{% if x.y %}`` on a missing ``y`` is an error
      - Write ``{% if x.y is defined %}``.
    * - Jinja2 (sphinx-jinja, sphinx-jinja2 0.0.1)
-     - minijinja 2
-     - No ``{% do %}`` and no Jinja2 extensions; ``min``/``max`` compare case-sensitively.
+     - minijinja 3
+     - No ``{% do %}`` and no Jinja2 extensions.
    * - Headings in the output (sphinx-jinja2 inserts them into the page)
      - Refused (``template_heading``); write a rubric, or put the heading in the page
      - Where a heading in output may nest is the part the two tools cannot yet agree on; it is deferred.
    * - Printing a container (``{{ rows }}``, ``{{ d }}``)
-     - The engine's own form: ``{"a": 1}``, ``[1, "a"]``
-     - sphinx-jinja2 hands minijinja Python objects, which print as Python's ``repr`` (``{'a': 1}``).
+     - The engine's own form, the same as before for most data: ``{'a': 1}``, ``[1, 'a']``
+     - sphinx-jinja2 printed Python's ``repr``; a float with an exponent can differ (``1e20`` where Python writes ``1e+20``).
    * - The ``jinja`` directive
      - ``ub-template``, switched on with ``[parse] ub_template_enabled = true``
      - It is opt-in, as listing an extension is.
