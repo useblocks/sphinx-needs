@@ -197,3 +197,57 @@ def test_a_one_line_field_named_allow_type_coercion_is_the_argument(
     )
     app = _build(tmp_path, make_app)
     assert "IMPL_1" in SphinxNeedsData(app.env).get_needs_view()
+
+
+def test_a_link_type_named_full_title_is_a_link_not_the_full_title(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A LINK type named ``full_title`` is the need's link, never the full title the id
+    is hashed from (#2466): a marker without an id that sets it is built -- it ended the
+    build with ``AttributeError: 'list' object has no attribute 'encode'`` -- with the id
+    hashed from its title, the one :func:`would_be_id` predicts."""
+    _project(
+        tmp_path,
+        toml_extra=(
+            "\n[codelinks.projects.src.analyse.oneline_comment_style]\n"
+            'needs_fields = [{ name = "title" }, '
+            '{ name = "full_title", type = "list[str]", default = [] }, '
+            '{ name = "type", default = "impl" }]\n'
+        ),
+        files={"src/impl.cpp": "// @first impl, [REQ_001]\nvoid impl() {}\n"},
+        append={"docs/conf.py": 'needs_links = {"full_title": {}}\n'},
+    )
+    app = _build(tmp_path, make_app)
+    needs = _impl_needs(app)
+    expected = _hashed("I_", "first impl")
+    predicted = would_be_id(
+        app, {"type": "impl", "title": "first impl", "full_title": ["REQ_001"]}
+    )
+    assert (list(needs), predicted) == ([expected], expected)
+    assert needs[expected]["full_title"] == ["REQ_001"]
+
+
+def test_a_string_valued_link_type_named_full_title_is_a_link_too(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """The marker field of a link type named ``full_title`` may be a plain string (no
+    ``type``): it is the link all the same, and the id is hashed from the title, the one
+    :func:`would_be_id` predicts (#2466)."""
+    _project(
+        tmp_path,
+        toml_extra=(
+            "\n[codelinks.projects.src.analyse.oneline_comment_style]\n"
+            'needs_fields = [{ name = "title" }, { name = "full_title" }, '
+            '{ name = "type", default = "impl" }]\n'
+        ),
+        files={"src/impl.cpp": "// @first impl, REQ_001\nvoid impl() {}\n"},
+        append={"docs/conf.py": 'needs_links = {"full_title": {}}\n'},
+    )
+    app = _build(tmp_path, make_app)
+    needs = _impl_needs(app)
+    expected = _hashed("I_", "first impl")
+    predicted = would_be_id(
+        app, {"type": "impl", "title": "first impl", "full_title": "REQ_001"}
+    )
+    assert (list(needs), predicted) == ([expected], expected)
+    assert needs[expected]["full_title"] == ["REQ_001"]
