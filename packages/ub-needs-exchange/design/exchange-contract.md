@@ -372,8 +372,11 @@ transit:
   PROVENANCE of its own rendering: `content` is already the rendered body (with `doctype`,
   the markup it is written in, a complete and final description of it), `pre_content` and
   `post_content` the rendered decorations of the producer's page, and the four others name
-  templates that are files of the PRODUCING project. The document layer reads them as any
-  key (corpus case `producer-presentation-keys-are-read-as-data`). A consumer never applies
+  templates that are files of the PRODUCING project. They are null (`jinja_content` false) on a
+  record whose producer imported the need, as its importer does not apply a record's template
+  names: null is "not rendered by a template of the producer", never "no template ever". The
+  document layer reads them as any key (corpus case
+  `producer-presentation-keys-are-read-as-data`). A consumer never applies
   them again: it never renders `content` as a template, never applies a record's template
   names from its own template folder, and never drops a record because it has no such
   template. Which of them a consumer KEEPS is its ingest policy: sphinx-needs' `needimport`
