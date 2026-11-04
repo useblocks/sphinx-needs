@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793783195843,
+  "lastUpdate": 1793785811210,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28728,6 +28728,48 @@ window.BENCHMARK_DATA = {
             "value": 188.640202,
             "unit": "MB",
             "extra": "Commit: 2e239322b0cf22061def439f584de01b81111fda\nBranch: master\nTime: 2026-11-04T10:05:18+01:00\nCPU: INTEL(R) XEON(R) PLATINUM 8573C"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6e8d9d0cde725d47af8634e99ca009b28a4ac880",
+          "message": "🧪 sphinx-ub-directives: the release compat cell installs the released sphinx-needs and sphinx-test-reports its suite loads (#2473)\n\nThe `sphinx-ub-directives-v0.1.0` release run\n([41807861597](https://github.com/useblocks/sphinx-needs/actions/runs/41807861597))\nstopped in **Build and gate**. Nothing was published and no GitHub\nRelease was made.\n\nThe compat cell runs a member's suite against its dependencies as\npublished. It installs only what the wheel requires, plus the member's\n`compat-requirements.txt`. sphinx-ub-directives depends on sphinx-needs\nonly through its optional `needs` extra, and it had no such file. So\nevery test that loads `sphinx_needs` failed with `ModuleNotFoundError:\nNo module named 'sphinx_needs'`.\n\nThis PR adds `packages/sphinx-ub-directives/compat-requirements.txt`, as\nsphinx-mounts and sphinx-codelinks already have:\n\n```\nsphinx-needs>=9.2.0,<10\nsphinx-test-reports>=4.0.0,<5\n```\n\n- **`sphinx-needs>=9.2.0`.** The need-type presets and `var` from\nsphinx-needs' variant data need it. 9.2.0, which adds\n`resolve_need_option`, is the floor the `needs` extra declares.\n- **`sphinx-test-reports>=4.0.0`.** One test loads\n`sphinx_test_reports`, to check that the test-report directive names it\nis configured to register are refused in template output.\n\nBoth releases were published this morning, in waves 2 and 3 of the 9.2.0\ntrain.\n\n## Tests\n\nI reproduced the cell locally, step for step, against PyPI:\n- the root `test` group;\n- this file;\n- the wheel built with `--no-sources`, installed with the file as a\nconstraint;\n- the resolved packages: sphinx-needs 9.2.0, sphinx-test-reports 4.0.0,\nub-test-reports 2.0.0 and ub-project 1.2.0;\n- `import_check.py --walk sphinx_ub_directives --expect-prefix …`: 8\nmodules, OK;\n- the suite, as the workflow runs it: **814 passed, 2 skipped**. With\nsphinx-needs alone it was 813 passed and 1 failed: the\nsphinx-test-reports test.\n\n## After merge\n\nThe `sphinx-ub-directives-v0.1.0` tag sits on the release commit\n`2e239322b`, which lacks this file. The tag is unpublished (nothing on\nPyPI, no GitHub Release), so it moves to this PR's merge commit and is\npushed again, without a new version number.",
+          "timestamp": "2026-11-04T10:48:38+01:00",
+          "tree_id": "522a801a9275be8c1198852cc0db288166ddf822",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6e8d9d0cde725d47af8634e99ca009b28a4ac880"
+        },
+        "date": 1793785808008,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.05963856600000028,
+            "unit": "s",
+            "extra": "Commit: 6e8d9d0cde725d47af8634e99ca009b28a4ac880\nBranch: master\nTime: 2026-11-04T10:48:38+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 11.681305501000004,
+            "unit": "s",
+            "extra": "Commit: 6e8d9d0cde725d47af8634e99ca009b28a4ac880\nBranch: master\nTime: 2026-11-04T10:48:38+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 188.640203,
+            "unit": "MB",
+            "extra": "Commit: 6e8d9d0cde725d47af8634e99ca009b28a4ac880\nBranch: master\nTime: 2026-11-04T10:48:38+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
           }
         ]
       }
