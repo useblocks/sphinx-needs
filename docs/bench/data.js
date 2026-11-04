@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793799701136,
+  "lastUpdate": 1793803146941,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28812,6 +28812,48 @@ window.BENCHMARK_DATA = {
             "value": 187.661356,
             "unit": "MB",
             "extra": "Commit: 305f4be7fdc52f1c38e1d4303502d60ab52e8db2\nBranch: master\nTime: 2026-11-04T14:40:01+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "10ad5afe9883545c29c38d523cd8ced848b1015a",
+          "message": "✨ Read `ubproject.toml` as TOML 1.1: ub-project, sphinx-mounts and sphinx-ub-directives (#2476)\n\n### Summary\n\n`ubproject.toml` can now use TOML 1.1: an inline table may span several\nlines or end with a trailing comma, a\nstring may use the `\\e` and `\\xHH` escapes, and a time or datetime may\nleave out its seconds. Every tool of the\nfamily reads `ubproject.toml` through ub-project — now sphinx-mounts\ntoo, and sphinx-ub-directives reads its `.toml`\ncontext files the same way — so with ub-project 1.3 they all accept the\nsame file. Valid TOML 1.0 reads exactly as\nbefore, pathological nesting aside (reading contract §2.4). The editor\nexperience may lag: Taplo-based tooling can\nstill flag the new syntax, so the docs do not use it in examples.\n\n### What changes, per package\n\n- **ub-project** — one private module, `_toml`, is the package's only\nTOML import: the standard library's `tomllib`\nfrom Python 3.15 (which reads TOML 1.1), and `tomli` 2.4 or later below\nit. `load_toml` reads through it. New\npublic `loads_toml(text, source)`, the text twin of `load_toml`: invalid\nTOML is a `ProjectConfigError` naming\n`source`, with the parser's error as its cause. No TOML library name or\nexception class is part of the API. The\nimport fence now admits the standard library plus the modules of the\ndistributions the manifest declares for the\nrunning interpreter (markers evaluated), with a second test pinning that\nthe admission is the manifest's, not\nwhatever is installed. The reading contract says TOML 1.1 (§3.1), names\nthe backport (§2.3), adds `loads_toml`\n(§3.2) and drops one reader's nesting figure from §2.4 (\"nesting deeper\nthan a few hundred levels is out of\ncontract; each reader has its own limit\"). Its conformance corpus is\nunchanged.\n- **sphinx-mounts** — both readers of the file (the mounts array and the\nvariant sources) parse it with\n`ub_project.load_toml` instead of their own `tomllib`. A malformed file\nis still a `TomlConfigError` starting\n`sphinx-mounts: failed to parse TOML config <path>:`, now followed by\nub-project's `invalid TOML: …`. Fixed on the\nway: a file that is not UTF-8 is a `TomlConfigError` naming it instead\nof a raw `UnicodeDecodeError` traceback, and\nlikewise a file that exists but cannot be opened is `… cannot be read:\n…` rather than a raw `OSError` (both pinned,\n  through both readers).\n- **sphinx-ub-directives** — a `.toml` template context file is parsed\nwith `loads_toml`. A file that does not\nparse is still `template_context_invalid`, with the same wording around\nthe parser's message (`<name> is not valid\nTOML (<parser error>)`), now pinned by a build test; the parser's own\nwords can differ on some invalid input (for\n`s = \"\\x4\"`: `Unescaped '\\' in a string` before, `Invalid hex value`\nnow). The 64-level depth refusal is unchanged.\n- **sphinx-needs** — no code change (it already reads through\n`load_toml`). `configuration.rst` says the file is\nread as TOML 1.1 with ub-project 1.3 or later, with the editor caveat,\nand links the v1.1.0 spec. Two corpus\nhelpers that peek at a case's `ubproject.toml` read it through\n`loads_toml`; the corpus runners keep `tomllib` for\n  the corpus files themselves, which stay TOML 1.0.\n\n### The template corpus changes — a vendored copy owes a refresh\n\n\n`packages/sphinx-ub-directives/tests/fixtures/template_directives_conformance.toml`:\nthe four `dx-toml-1-1-*` cases\n(trailing comma, newline in an inline table, `\\e`, `\\x41`) pinned TOML\n1.0's refusal (`template_context_invalid`, no\nexpansion). They now expect their renders — `1`, `1`, `4`, `A` — and\n`findings = []`. Names, case count (545) and\nevery other byte of the file are unchanged; contract §4.3 names TOML 1.1\nand lists the four in its Enforced by.\nA vendored copy of this corpus (ubCode's) expects the refusal, so it\nre-vendors from this commit in the same change\nthat makes its own reader TOML 1.1.\n\n### The dependency\n\n`ub-project` declares `tomli>=2.4.0; python_version < '3.15'` — its\nfirst dependency, and the only one: sphinx-mounts\nand sphinx-ub-directives get TOML 1.1 through ub-project and declare\nnothing new. 2.4.0 is the first tomli that reads\nTOML 1.1; there is no upper cap (the lock takes 2.5.0). On CPython the\nwheel is mypyc-compiled and brings a top-level\nmodule with a hash-like name (`<hash>__mypyc`, a name that can change\nbetween releases) — the import fence admits it by distribution,\nnever by name. The dependency goes when 3.14 is dropped. Lock: +78 lines\n(the `tomli` entry plus ub-project's\nrequirement); `uv export` per selection shows exactly one added\nrequirement, `tomli==2.5.0 ; python_full_version < '3.15'`,\nand none for `--only-group test`. Lock with uv >= 0.13.4 (the dev\ngroup's); an older uv churns the lock.\n\nVersions are not bumped here. A release of ub-project comes first and\nre-floors its dependants; sphinx-mounts and\nsphinx-ub-directives read TOML 1.1 only from their next release\n(sphinx-mounts 0.3.1 still fails a TOML 1.1 build).\n\n### Tests\n\n- ub-project: `TestLoadsToml` — each of the six TOML 1.1 additions\ninside a realistic `ubproject.toml`, through both\n`load_toml` and `loads_toml`, with exact values and types (`time(12,\n30)`, a naive `datetime` with seconds 0,\n`\"\\x1b\"`, `\"A\"`, the two tables); malformed text names its source\n(string and `Path`) with the parser error as the\ncause. The import fence's two tests; the second pins the declared\ndistributions themselves (`{tomli}` below 3.15,\n  none from 3.15) and that every admitted module belongs to them.\n- sphinx-mounts: a build of a TOML 1.1 `ubproject.toml` with mounts,\nvariant rules and `[variants]`; malformed,\nnon-UTF-8 and unopenable files through both readers (the last two are\nred on master).\n- sphinx-ub-directives: the four flipped corpus cases; a\nmalformed-context build test pinning the finding's text.\n- sphinx-needs: a `needs_from_toml` build whose `[needs]` inline table\nends in a trailing comma; the deeply-nested\nunparseable-TOML case asserts only the warning's reader-independent\nframe, since each reader words its nesting\n  limit differently.\n- CI: the toolchain-free job asserts `tomli` is installed on 3.11, and a\nnew step runs ub-project's suite on Python\n3.15 outside the project, asserting `tomli` is NOT installed there (the\nmarker) — the only place the `tomllib`\n  branch runs.\n- Locally at the tip: lint, typecheck, check-workspace; ub-project 272,\nsphinx-mounts 966, sphinx-ub-directives\n815 (2 skipped), ub-test-reports 574, ub-needs-exchange 246,\nsphinx-needs 4525 (13 skipped); toolchain-free\nreproduced on 3.11 and the 3.15 step on 3.15.2; docs-needs, docs-mounts\nand docs-ub-directives clean under `-nW`;\n  the ub-project wheel imports with `tomli` resolved from PyPI.\n- Known limit: `poe typecheck` checks the `tomli` branch of `_toml` only\n(ty runs at Python 3.11); the three-line\n`tomllib` branch is type-clean under `ty check --python-version 3.15`\nand is run by the 3.15 CI step.",
+          "timestamp": "2026-11-04T15:37:59+01:00",
+          "tree_id": "ecf48fa1f2b05775937715b65dda5e658b9ce979",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/10ad5afe9883545c29c38d523cd8ced848b1015a"
+        },
+        "date": 1793803146067,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.041689420999997395,
+            "unit": "s",
+            "extra": "Commit: 10ad5afe9883545c29c38d523cd8ced848b1015a\nBranch: master\nTime: 2026-11-04T15:37:59+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 8.085157084000002,
+            "unit": "s",
+            "extra": "Commit: 10ad5afe9883545c29c38d523cd8ced848b1015a\nBranch: master\nTime: 2026-11-04T15:37:59+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 187.518084,
+            "unit": "MB",
+            "extra": "Commit: 10ad5afe9883545c29c38d523cd8ced848b1015a\nBranch: master\nTime: 2026-11-04T15:37:59+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
           }
         ]
       }
