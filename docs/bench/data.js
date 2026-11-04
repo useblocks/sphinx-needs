@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793785811210,
+  "lastUpdate": 1793799701136,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28770,6 +28770,48 @@ window.BENCHMARK_DATA = {
             "value": 188.640203,
             "unit": "MB",
             "extra": "Commit: 6e8d9d0cde725d47af8634e99ca009b28a4ac880\nBranch: master\nTime: 2026-11-04T10:48:38+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "305f4be7fdc52f1c38e1d4303502d60ab52e8db2",
+          "message": "⬆️ minijinja 3: `minijinja>=3.0.5,<4` in sphinx-needs and sphinx-ub-directives (changed output) (#2475)\n\nBoth packages move from `minijinja~=2.15` to `minijinja>=3.0.5,<4`, and\n`uv.lock` from 2.24.0 to 3.0.5.\nThe minijinja-py API is unchanged, so no code changes are needed.\nThe sphinx-needs suite gives the same result on 3.0.5 as on 2.24.0.\n\nThis targets **sphinx-needs 9.3** and **sphinx-ub-directives 0.2.0**,\nin lockstep with ubCode's `deps/minijinja-3`, which re-vendors the\ntemplate corpus from this branch.\n\n### What users see\n\nPython data that sphinx-needs hands to a template prints as before:\nneed fields, `needs_render_context`, and the `needreport` variables.\nWhat changes is a value a template builds itself, mostly towards\nJinja2's behaviour:\n\n- Lists and maps print with Python's quoting (`['a']`).\n- `items`, `dictsort` and `groupby` give tuples.\n- `tojson` spaces its output as `json.dumps` does.\n- `round` rounds half to even.\n- `//` and `%` follow Python, and `1 / 0` is an error.\n- `-foo.bar` works.\n- `title`, `min`, `max` and `sort` with several attributes follow\nJinja2.\n\nThe changelog entries list everything.\n\n3.0.5 also fixes three faults in 2.x:\n\n- `{{ 'abc'.count('') }}` hung the build forever.\n- One panic poisoned the environment, so every later render on it\nfailed.\n- A filter that rendered a template on its own environment deadlocked.\n\n### The template corpus\n\nThe corpus is\n`packages/sphinx-ub-directives/tests/fixtures/template_directives_conformance.toml`.\n\n- The header now records 3.0.5.\n- 22 expansions are re-recorded from 3.0.5's own renders: quoting,\ntuples, `tojson` spacing, and one `round`.\n- `dx-i64-bound-arithmetic-2` moves from a `template_render_error`\nfinding to an expansion.\n2.x parsed `-contexts.c.lo` as `(-contexts).c.lo`, an error, so the old\nexpectation pinned an engine bug.\n- The case count is unchanged at 545, and the presets corpus is\nuntouched.\n- ubCode renders all 22 moved expansions byte-identically on 3.0.5.\n- **ubCode owes a re-vendor** from commit `4b059766b`, together with its\nown engine bump.\n\n### Contract and docs\n\n- §7.1 of the contract: the dialect is minijinja 3.x.\n- §4.5 and §7.5: the \"measured on 2.24\" remarks are re-measured on\n3.0.5.\n  The `{% set %}` preamble and the post-render output check both stay.\n- §9.4: a sentence on how an engine move is made.\n  It is made here first and in lockstep, and a point release counts too.\n  The packages' range is a floor, and the corpus is held to the lock.\n- `migrating.rst`: two rows were true only of minijinja 2.\n  They covered `min`/`max` case-sensitivity and container printing,\n  which now matches the Python `repr` sphinx-jinja2 printed.\n\n### Release order\n\nsphinx-needs 9.2.0 requires `minijinja~=2.15`, and sphinx-ub-directives\n0.2.0 will require `minijinja>=3.0.5`.\nSo 0.2.0 cannot be installed beside 9.2.\nRelease sphinx-needs 9.3 first, then sphinx-ub-directives 0.2.0.\nThe release compat cell (`compat-requirements.txt`,\n`sphinx-needs>=9.2.0,<10`) can only resolve once 9.3 is on PyPI.\n\n### Verification\n\n| Check | 2.24.0 | 3.0.5 |\n|---|---|---|\n| sphinx-ub-directives suite, old corpus | 814 passed | 24 failed: the\n22 moved cases + both version fences |\n| sphinx-ub-directives suite, new corpus | 23 failed: the 22 cases + the\ninstalled-version fence | **814 passed**, 2 skipped |\n| sphinx-needs suite (`test-needs`) | 4524 passed, 13 skipped | **4524\npassed, 13 skipped** |\n| `docs-ub-directives`, `docs-needs` | | pass |\n| `poe lint` | | passes |\n\n### Follow-ups, deliberately not in this PR\n\n- Drop `_jinja.py`'s `new_env` re-entrancy workaround.\n- Drop `_engine.py`'s `_WORDWRAP_HELPER` second environment.\n\n3.0.5 makes both unnecessary.",
+          "timestamp": "2026-11-04T14:40:01+01:00",
+          "tree_id": "91102a5fa8e6c893ae9c3677a63ae8ebefaf2e9f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/305f4be7fdc52f1c38e1d4303502d60ab52e8db2"
+        },
+        "date": 1793799700344,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07448261799999756,
+            "unit": "s",
+            "extra": "Commit: 305f4be7fdc52f1c38e1d4303502d60ab52e8db2\nBranch: master\nTime: 2026-11-04T14:40:01+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.476548158,
+            "unit": "s",
+            "extra": "Commit: 305f4be7fdc52f1c38e1d4303502d60ab52e8db2\nBranch: master\nTime: 2026-11-04T14:40:01+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 187.661356,
+            "unit": "MB",
+            "extra": "Commit: 305f4be7fdc52f1c38e1d4303502d60ab52e8db2\nBranch: master\nTime: 2026-11-04T14:40:01+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
