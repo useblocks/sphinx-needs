@@ -41,9 +41,10 @@ Bug fixes
   (:issue:`2466`, :pr:`NNNN`)
 
   A needs.json written by sphinx-needs 5.0 or earlier carries a legacy ``full_title`` string on every need: in a
-  project with such a link type it is now read as that need's link targets, one ``link_outgoing`` warning per unknown
-  target, where it was dropped silently; filter those needs out with the ``needimport``'s ``:filter:``, or rename the
-  link type.
+  project with such a link type it is now read as that need's link targets, one warning per unknown target
+  (``link_outgoing``, or ``external_link_outgoing`` for an external need), where it was dropped silently; filter
+  those needs out with the ``needimport``'s ``:filter:``, or rename the link type (the only way out for external
+  needs).
 
 .. _`release:9.2.0`:
 
