@@ -204,6 +204,9 @@ Own
    :description: own text 2
 
    the body
+
+.. req:: Bare need
+   :id: OWN_3
 """
 
 
@@ -215,7 +218,8 @@ def test_a_project_s_own_needs_json_reads_back_as_written(
     """A project declaring ``description`` writes a body-less need as ``"content": ""``
     (or, with ``needs_json_remove_defaults``, leaves ``content`` to the schema default)
     beside its ``description``; read again, the field is the field and the content the
-    content."""
+    content. A bare need (no body, no ``description``) imports too: without defaults
+    its nullable field's ``null`` default is not taken as its content."""
     writer = tmp_path / "writer"
     writer.mkdir()
     (writer / "conf.py").write_text(
@@ -246,6 +250,7 @@ def test_a_project_s_own_needs_json_reads_back_as_written(
         "own text 2",
         "the body",
     )
+    assert (needs["OWN_3"]["description"], needs["OWN_3"]["content"]) == (None, "")
 
 
 @pytest.mark.parametrize("reader", READERS)
@@ -333,3 +338,80 @@ def test_a_body_less_record_is_no_doctype_fallback(
     assert _warnings(app) == []
     need = _needs(app)["DT_1"]
     assert (need["description"], need["content"]) == ("field text", "")
+
+
+INGEST_DRIVER = """\
+import json
+from pathlib import Path
+
+from sphinx.util.docutils import SphinxDirective
+
+from sphinx_needs.api import ingest_need_record
+from sphinx_needs.need_item import NeedItemSource
+
+
+class IngestRecords(SphinxDirective):
+    \"\"\"Creates a need from each record of ``records.json`` through
+    ``ingest_need_record``, as an extension building records does.\"\"\"
+
+    def run(self):
+        path = Path(self.env.srcdir, "records.json")
+        created = []
+        for record in json.loads(path.read_text(encoding="utf-8")):
+            nodes, _ = ingest_need_record(
+                self.env.app,
+                self.state,
+                record,
+                need_source=NeedItemSource.on_page(
+                    self.env.docname, lineno=self.lineno
+                ),
+            )
+            created.extend(nodes)
+        return created
+
+
+def setup(app):
+    app.add_directive("ingest-records", IngestRecords)
+    return {"parallel_read_safe": True, "parallel_write_safe": True}
+"""
+
+
+def test_ingest_need_record_takes_a_description_as_content_only_without_one(
+    tmp_path: Path, make_app: Any
+) -> None:
+    """The record path itself, with no needs.json reader before it: a record with no
+    ``content`` key has its ``description`` taken as its content, and one with a
+    ``content``, even an empty one, keeps its declared ``description`` field."""
+    srcdir = tmp_path / "ingest"
+    srcdir.mkdir()
+    (srcdir / "ingest_driver.py").write_text(INGEST_DRIVER, encoding="utf-8")
+    (srcdir / "records.json").write_text(
+        json.dumps(
+            [
+                {"id": "ING_1", "type": "req", "title": "t", "description": "x"},
+                {
+                    "id": "ING_2",
+                    "type": "req",
+                    "title": "t",
+                    "content": "",
+                    "description": "x",
+                },
+            ]
+        ),
+        encoding="utf-8",
+    )
+    (srcdir / "conf.py").write_text(
+        "import sys\nfrom pathlib import Path\n\n"
+        "sys.path.insert(0, str(Path(__file__).parent))\n"
+        + CONF.replace('["sphinx_needs"]', '["sphinx_needs", "ingest_driver"]')
+        + DECLARED,
+        encoding="utf-8",
+    )
+    (srcdir / "index.rst").write_text(
+        "Ingest\n======\n\n.. ingest-records::\n", encoding="utf-8"
+    )
+    app = _build(make_app, srcdir)
+    assert _warnings(app) == []
+    needs = _needs(app)
+    assert (needs["ING_1"]["description"], needs["ING_1"]["content"]) == (None, "x")
+    assert (needs["ING_2"]["description"], needs["ING_2"]["content"]) == ("x", "")

@@ -379,6 +379,34 @@ def test_schema_defaults_can_be_left_out():
     assert version.records()[0].fields["priority"] == "medium"
 
 
+def test_without_the_defaults_a_content_default_still_keeps_the_description():
+    """A 4.0+ writer that removed defaults left an empty ``content`` to the schema's
+    ``content`` default: read without the defaults merged, the record has no
+    ``content`` key, and its ``description`` is still a key of its own -- the mapping
+    reads it as the merge would (contract section 6.3). A file whose schema gives
+    ``content`` no default is mapped as with the merge."""
+    schema = {"properties": {"content": {"type": "string", "default": ""}}}
+    modern = nx.parse(
+        json.dumps(
+            envelope(
+                {"A": record("A", description="own text")},
+                creator={"program": "sphinx_needs", "version": "9.2.0"},
+                needs_defaults_removed=True,
+                needs_schema=schema,
+            )
+        )
+    ).select_version(None)
+    (bare,) = modern.records(apply_schema_defaults=False)
+    assert bare.fields["description"] == "own text"
+    assert "content" not in bare.fields
+    legacy = nx.parse(
+        json.dumps(envelope({"A": record("A", description="legacy")}))
+    ).select_version(None)
+    (old,) = legacy.records(apply_schema_defaults=False)
+    assert old.fields["content"] == "legacy"
+    assert "description" not in old.fields
+
+
 def test_a_summary_marker_is_passed_through():
     """A link type's ``"summary": true`` (the contract's section 7.1) decides nothing
     here: it is in the version as the file has it, and the defaults are read beside it."""
