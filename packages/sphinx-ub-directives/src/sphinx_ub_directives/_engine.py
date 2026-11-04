@@ -12,13 +12,14 @@ import hashlib
 import json
 import math
 import os
-import tomllib
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any
 
 import minijinja
+
+from ub_project import ProjectConfigError, loads_toml
 
 #: The render's fuel: one unit per instruction (§7.5; a bound, not a semantic).
 FUEL = 10_000_000
@@ -201,9 +202,10 @@ def parse_data(text: str, suffix: str, name: str) -> dict[str, Any]:
             raise ValueError(msg) from error
     elif suffix == ".toml":
         try:
-            data = tomllib.loads(text)
-        except tomllib.TOMLDecodeError as error:
-            msg = f"{name} is not valid TOML ({error})"
+            data = loads_toml(text, name)
+        except ProjectConfigError as error:
+            # the parser's own message, which is the cause ub-project wraps
+            msg = f"{name} is not valid TOML ({error.__cause__})"
             raise ValueError(msg) from error
     else:
         msg = f"{name} is not a .json or .toml file"

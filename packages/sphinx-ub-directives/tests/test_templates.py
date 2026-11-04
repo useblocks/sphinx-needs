@@ -241,6 +241,28 @@ def test_a_syntax_error_names_the_template(
     assert errors and "_t/broken.rst.j2, line 2" in errors[0], errors
 
 
+def test_a_context_file_that_is_not_toml_is_refused_with_the_parsers_words(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """§4.2/§2.3: a ``.toml`` context file that does not parse is
+    ``template_context_invalid``, and the message is the file's name and the parser's
+    own text -- no reader's wrapping in between."""
+    files = {
+        "ubproject.toml": '[parse.template_contexts.c]\nfile = "c.toml"\n\n[parse.directive_templates.d]\nbody = "{{ contexts.c.a }}"\n',
+        "c.toml": "[c\n",
+        "index.rst": "Case\n====\n\n.. d::\n",
+    }
+    app = _build(make_app, tmp_path, files)
+    found = [
+        w for w in build_warnings(app) if "ub_directives.template_context_invalid" in w
+    ]
+    assert len(found) == 1, build_warnings(app)
+    assert (
+        "the context 'c' cannot be used: c.toml is not valid TOML (Expected ']' at the"
+        " end of a table declaration (at line 1, column 3))"
+    ) in found[0], found
+
+
 def test_a_configuration_finding_is_located_in_ubproject_toml(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:

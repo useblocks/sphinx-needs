@@ -390,14 +390,16 @@ sorted; the path is `….<name>.<table>.<key>`.
    `context-refused-mixed-array`, `context-refused-int-float-array`,
    `context-refused-array-of-arrays`, `context-refused-not-a-mapping`,
    `context-array-of-tables`, `context-values-keep-their-types`.
-3. **Formats: JSON and TOML only** (by extension, `.json` and `.toml`); there are no YAML
+3. **Formats: JSON and TOML 1.1 only** (by extension, `.json` and `.toml`); there are no YAML
    contexts in v0.1, so a `.yaml` or `.yml` file is `template_context_invalid` saying so,
    and so is any other extension, a missing file, and a file that does not parse. The
    extension is read case-insensitively (`c.JSON` is JSON).
    Enforced by: corpus `context-file-extension-is-case-insensitive`,
    `context-refused-yaml-file`, `context-refused-yml-file`,
    `context-refused-other-extension`, `context-refused-missing-file`,
-   `context-refused-invalid-json`.
+   `context-refused-invalid-json`, `dx-toml-1-1-trailing-comma-in-inline-table`,
+   `dx-toml-1-1-newline-in-inline-table`, `dx-toml-1-1-escape-e`, `dx-toml-1-1-x-escape`;
+   test `test_templates.py::test_a_context_file_that_is_not_toml_is_refused_with_the_parsers_words`.
 4. **Map order is FILE order.** A mapping iterates in the order its data writes it, for a
    file and an inline table alike; a mapping a template builds keeps insertion order; only
    `dictsort` sorts. The one carve-out is `var` (§4.6), which iterates in SORTED key order,
