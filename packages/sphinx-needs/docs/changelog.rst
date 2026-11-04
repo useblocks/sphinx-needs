@@ -46,6 +46,14 @@ Bug fixes
   those needs out with the ``needimport``'s ``:filter:``, or rename the link type (the only way out for external
   needs).
 
+- 🐛 ``needimport``'s own warnings name the file and line the directive is written on, not the parser's running
+  line, under an ``rst_prolog`` or an include **(changed output)** (:issue:`2463`, :pr:`2478`)
+
+  Inside an included file they named the including page; they now name the included file and the line the needs
+  the directive imports record, also in an include sliced by ``:start-line:``. Every warning of one directive names
+  that one place, those about its records (an empty id, a need that cannot be created, unknown keys) included. A
+  ``needimport`` that another extension generates is written in no file, and is still reported at its page.
+
 .. _`release:9.2.0`:
 
 9.2.0

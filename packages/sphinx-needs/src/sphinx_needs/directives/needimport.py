@@ -82,6 +82,10 @@ class NeedimportDirective(SphinxDirective):
         need_import_path = needs_config.import_keys.get(
             self.arguments[0], self.arguments[0]
         )
+        # the file and line the directive is written on: the line every need it
+        # imports records (#1349), and where its own warnings are located (#2463)
+        written_source, resolved = directive_line(self)
+        location = self._written_location(written_source, resolved)
 
         # check if given argument is downloadable needs.json path
         url = urlparse(need_import_path)
@@ -103,7 +107,8 @@ class NeedimportDirective(SphinxDirective):
             except Exception as e:
                 return self._refuse(
                     f"Could not load needs import file {need_import_path}: "
-                    f"getting it failed: {e}"
+                    f"getting it failed: {e}",
+                    location,
                 )
             read = partial(exchange.parse, response.content)
         else:
@@ -126,7 +131,8 @@ class NeedimportDirective(SphinxDirective):
 
             if not os.path.exists(correct_need_import_path):
                 return self._refuse(
-                    f"Could not load needs import file {correct_need_import_path}"
+                    f"Could not load needs import file {correct_need_import_path}",
+                    location,
                 )
             read = partial(exchange.load, correct_need_import_path)
 
@@ -134,7 +140,8 @@ class NeedimportDirective(SphinxDirective):
             selected = read().select_version(version)
         except exchange.ExchangeError as err:
             return self._refuse(
-                f"Could not load needs import file {source_name}: {err.message}"
+                f"Could not load needs import file {source_name}: {err.message}",
+                location,
             )
         records = selected.records()
         for diagnostic in (
@@ -146,7 +153,7 @@ class NeedimportDirective(SphinxDirective):
                 f"Needs import file {source_name}: {diagnostic.message} "
                 f"(at {diagnostic.path})",
                 "needimport",
-                location=(self.env.docname, self.lineno),
+                location=location,
             )
 
         # note this is not exactly NeedsInfoType, because the export removes/adds some keys
@@ -161,7 +168,7 @@ class NeedimportDirective(SphinxDirective):
                     f"Needs import file {source_name} has no needs with the ids "
                     f"{absent!r}",
                     "needimport",
-                    location=(self.env.docname, self.lineno),
+                    location=location,
                 )
             needs_list = {key: all_needs[key] for key in id_list if key in all_needs}
 
@@ -181,7 +188,7 @@ class NeedimportDirective(SphinxDirective):
                     logger,
                     f"needimport: {filter_error}",
                     "needimport",
-                    location=(self.env.docname, self.lineno),
+                    location=location,
                 )
             needs_list = needs_list_filtered
 
@@ -246,7 +253,6 @@ class NeedimportDirective(SphinxDirective):
         # every need of the directive shares its hops: the imported file (resolved),
         # then the file and page the directive is written on
         hops = directive_hops(self, first=(imported,))
-        _, resolved = directive_line(self)
         need_nodes = []
         for need_params in needs_list.values():
             record = dict(need_params)
@@ -269,7 +275,7 @@ class NeedimportDirective(SphinxDirective):
                     logger,
                     f"Need {need_id!r} could not be imported: id is empty",
                     "import_need",
-                    location=self.get_location(),
+                    location=location,
                 )
                 continue
 
@@ -306,7 +312,7 @@ class NeedimportDirective(SphinxDirective):
                     logger,
                     f"Need {need_id!r} could not be imported: {err.message}",
                     "import_need",
-                    location=self.get_location(),
+                    location=location,
                 )
             else:
                 need_nodes.extend(need_node)
@@ -319,7 +325,7 @@ class NeedimportDirective(SphinxDirective):
                 "page's markup instead. Add the suffix to source_suffix with a "
                 "reStructuredText or MyST parser, or set :parse_by_doctype: false.",
                 "import_doctype",
-                location=self.get_location(),
+                location=location,
             )
 
         if unknown_keys:
@@ -327,21 +333,40 @@ class NeedimportDirective(SphinxDirective):
                 logger,
                 f"Unknown keys in import need source: {sorted(unknown_keys)!r}",
                 "unknown_import_keys",
-                location=self.get_location(),
+                location=location,
             )
 
         add_doc(self.env, self.env.docname)
 
         return need_nodes
 
-    def _refuse(self, message: str) -> list[nodes.Node]:
+    def _written_location(
+        self, source: str | None, line: int | None
+    ) -> str | tuple[str, int]:
+        """Where every warning of the directive is located: ``source`` and ``line``,
+        the file and line it is written on (:func:`directive_line`), the file made
+        absolute, as Sphinx makes a node's (docutils records an included file
+        relative to the working directory).
+
+        A needimport another extension generates is written in no file: its source is
+        ``<unknown>``, empty, or a name that is no file (``<generated>``). It keeps
+        the page and the parser's line, as before #2463, which at least names the
+        page that holds it.
+        """
+        if source and line and os.path.isfile(absolute := os.path.abspath(source)):
+            return f"{absolute}:{line}"
+        return (self.env.docname, self.lineno)
+
+    def _refuse(
+        self, message: str, location: str | tuple[str, int]
+    ) -> list[nodes.Node]:
         """Report a file no need can be imported from: one warning at the directive,
         and the warning node in its place."""
         log_warning(
             logger,
             message,
             "needimport",
-            location=(self.env.docname, self.lineno),
+            location=location,
         )
         warning = nodes.warning()
         warning += nodes.paragraph(text=message)
