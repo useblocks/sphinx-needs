@@ -27,6 +27,8 @@ The executable half of these rules is the shared conformance corpus,
 
 from __future__ import annotations
 
+import functools
+import inspect
 import pickle
 from collections.abc import Callable, Collection, Set
 from dataclasses import replace
@@ -217,7 +219,9 @@ def _render(
     that succeeds, an undefined value was used, and it renders empty with one
     ``needs.template_undefined`` warning; if it fails too, the template cannot be
     rendered (``needs.template_syntax`` / ``needs.template_render``). A strict render
-    that succeeds is the lenient one's output, since it used no undefined value.
+    that succeeds is the lenient one's output, since it used no undefined value. A
+    render-context function is called once per call the template makes, as before: the
+    lenient render replays what the strict one recorded (:class:`_Calls`).
 
     Each field of *unresolved* the source NAMES (a top-level name it reads,
     :func:`~sphinx_needs._jinja.undeclared_names`) is reported once
@@ -239,8 +243,11 @@ def _render(
                 "template_unresolved",
                 location,
             )
+    calls = _Calls(context)
     try:
-        return render_template_string(source, context, autoescape=False, strict=True)
+        return render_template_string(
+            source, calls.recording(), autoescape=False, strict=True
+        )
     except Exception as strict_error:
         # deliberately broad: MiniJinja raises ``TemplateError`` (its ``kind`` says which
         # error), and a render-context callable may raise anything
@@ -252,7 +259,9 @@ def _render(
             )
             return ""
         try:
-            rendered = render_template_string(source, context, autoescape=False)
+            rendered = render_template_string(
+                source, calls.replaying(), autoescape=False
+            )
         except Exception as error:
             syntax = getattr(error, "kind", None) == "SyntaxError"
             _warn(
@@ -270,6 +279,121 @@ def _render(
             location,
         )
         return rendered
+
+
+class _Calls:
+    """The calls a template makes of the functions in its context, recorded during the
+    strict render and replayed during the lenient one.
+
+    Both renders evaluate the template identically up to the expression the strict one
+    fails at, so the lenient one makes the same calls in the same order: each is
+    answered with what the strict render's call returned (or raised), until a call
+    differs, from which on the functions are called through. A function with side
+    effects (a counter) or a cost (a graph walk) therefore runs once per call the
+    template makes, as with a single render.
+
+    Only the context's own functions are wrapped (a function, a builtin, a method, a
+    ``functools.partial``): a callable reached through an object -- an attribute or a
+    method of a value of the context, or a callable object -- is not, and runs again in
+    the lenient render.
+    """
+
+    __slots__ = ("_context", "_diverged", "_log", "_position")
+
+    def __init__(self, context: dict[str, Any]) -> None:
+        self._context = context
+        # (name, arguments, keyword arguments, raised, result or exception)
+        self._log: list[tuple[str, tuple[Any, ...], dict[str, Any], bool, Any]] = []
+        self._position = 0
+        self._diverged = False
+
+    def recording(self) -> dict[str, Any]:
+        """The context, its functions recording each call."""
+        return self._wrapped(self._record)
+
+    def replaying(self) -> dict[str, Any]:
+        """The context, its functions replaying the recorded calls in order."""
+        self._position = 0
+        self._diverged = False
+        return self._wrapped(self._replay)
+
+    def _wrapped(self, call: Callable[..., Any]) -> dict[str, Any]:
+        wrapped = dict(self._context)
+        for name, value in self._context.items():
+            if _is_plain_function(value):
+                wrapped[name] = _wrap(name, value, call)
+        return wrapped
+
+    def _record(
+        self,
+        name: str,
+        function: Callable[..., Any],
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+    ) -> Any:
+        key = _call_key(function, args)
+        try:
+            result = function(*args, **kwargs)
+        except Exception as error:
+            self._log.append((name, key, dict(kwargs), True, error))
+            raise
+        self._log.append((name, key, dict(kwargs), False, result))
+        return result
+
+    def _replay(
+        self,
+        name: str,
+        function: Callable[..., Any],
+        args: tuple[Any, ...],
+        kwargs: dict[str, Any],
+    ) -> Any:
+        if not self._diverged and self._position < len(self._log):
+            logged_name, logged_args, logged_kwargs, raised, outcome = self._log[
+                self._position
+            ]
+            try:
+                same = bool(
+                    logged_name == name
+                    and logged_args == _call_key(function, args)
+                    and logged_kwargs == kwargs
+                )
+            except Exception:
+                # deliberately broad: comparing arguments may raise anything
+                same = False
+            if same:
+                self._position += 1
+                if raised:
+                    raise outcome
+                return outcome
+        self._diverged = True
+        return function(*args, **kwargs)
+
+
+def _is_plain_function(value: Any) -> bool:
+    return (
+        inspect.isfunction(value)
+        or inspect.isbuiltin(value)
+        or inspect.ismethod(value)
+        or isinstance(value, functools.partial)
+    )
+
+
+def _call_key(function: Callable[..., Any], args: tuple[Any, ...]) -> tuple[Any, ...]:
+    """The arguments a call is matched by: a function MiniJinja passes its state to
+    (``minijinja.pass_state``) gets a new state object in each render, left out."""
+    if getattr(function, "__minijinja_pass_state__", False):
+        return args[1:]
+    return args
+
+
+def _wrap(
+    name: str, function: Callable[..., Any], call: Callable[..., Any]
+) -> Callable[..., Any]:
+    @functools.wraps(function)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        return call(name, function, args, kwargs)
+
+    return wrapper
 
 
 def _undefined_expression(source: str, error: Exception) -> str:

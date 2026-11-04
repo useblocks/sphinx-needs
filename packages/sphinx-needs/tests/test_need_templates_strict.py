@@ -128,3 +128,94 @@ def test_an_attribute_of_an_undefined_name_fails_both_ways() -> None:
     strict, lenient = _both("{{ typo.attr }}")
     assert isinstance(strict, Exception)
     assert isinstance(lenient, Exception)
+
+
+COUNTER_CONF = """\
+import itertools
+
+extensions = ["sphinx_needs"]
+needs_build_json = True
+
+_counter = itertools.count(1)
+CALLS = []
+
+
+def next_number(tag=""):
+    CALLS.append(tag)
+    return next(_counter)
+
+
+def fails(tag=""):
+    CALLS.append("fails:" + tag)
+    raise ValueError("no")
+
+
+needs_render_context = {"next_number": next_number, "fails": fails}
+"""
+
+COUNTER_INDEX = """\
+Counter
+=======
+
+.. req:: A
+   :id: REQ_1
+   :template: num
+
+.. req:: B
+   :id: REQ_2
+   :template: numtypo
+
+.. req:: C
+   :id: REQ_3
+   :template: num
+
+.. req:: D
+   :id: REQ_4
+   :template: failing
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), COUNTER_CONF),
+                (Path("index.rst"), COUNTER_INDEX),
+                (Path("needs_templates", "num.need"), "No. {{ next_number(id) }}\n"),
+                (Path("needs_templates", "failing.need"), "{{ fails(id) }}\n"),
+                (
+                    Path("needs_templates", "numtypo.need"),
+                    "No. {{ next_number(id) }} {{ titel }} "
+                    "{{ next_number(id + 'b') }}\n",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_render_context_function_is_called_once_per_call(test_app: Any) -> None:
+    """A template using an undefined value is rendered twice (strictly, then
+    leniently), but a render-context function in it is called once per call the
+    template makes, as with one render: the lenient render replays the strict one's
+    results up to where it failed, then calls through. A counter numbers the needs as
+    it always did, the typo's need included; a function that raises is called once
+    too, and its template is a render error."""
+    import json
+
+    app = test_app
+    app.build()
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    needs = data["versions"][data["current_version"]]["needs"]
+    assert needs["REQ_1"]["content"] == "No. 1"
+    assert needs["REQ_2"]["content"] == "No. 2  3"
+    assert needs["REQ_3"]["content"] == "No. 4"
+    assert needs["REQ_4"]["content"] == ""
+    assert app.config.needs_render_context["next_number"].__globals__["CALLS"] == [
+        "REQ_1",
+        "REQ_2",
+        "REQ_2b",
+        "REQ_3",
+        "fails:REQ_4",
+    ]
