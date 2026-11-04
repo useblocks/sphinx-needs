@@ -95,7 +95,8 @@ needs_from_toml
 .. versionadded:: 4.1.0
 
 This configuration takes the (relative) path to a `toml file <https://toml.io>`__ which contains some or all of the needs configuration (configuration in the toml will override that in the :file:`conf.py`).
-The file is read as `TOML 1.1 <https://toml.io/en/v1.1.0>`__ (with ub-project 1.3 or later, the package every tool of the family reads it through), though Taplo-based editor tooling may still flag the syntax TOML 1.1 adds.
+The file is read as `TOML 1.1 <https://toml.io/en/v1.1.0>`__ when ub-project 1.3 or later is installed; sphinx-mounts reads it so from its release after 0.3.1.
+Taplo-based editor tooling may still flag the syntax TOML 1.1 adds.
 
 .. code-block:: python
 

@@ -87,7 +87,7 @@ sphinx-mounts, sphinx-codelinks and ub-test-reports depend on it, so each releas
 re-floors all of them (`propagate_floors.py`).
 
 **`packages/ub-needs-exchange` is the record of the needs.json format, and it depends on
-nothing either**: its reader, its contract (`design/exchange-contract.md`) and its
+nothing at all**: its reader, its contract (`design/exchange-contract.md`) and its
 conformance corpus (ubCode is to vendor it), standard library only and fenced the same way.
 CI's `toolchain-free` job runs its suite beside ub-test-reports' and ub-project's, and is
 its only cell. It reads; what a project makes of a record — the ten-field table,

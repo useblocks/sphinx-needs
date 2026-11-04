@@ -10,7 +10,7 @@ Unreleased
   read as TOML 1.1, through ub-project's ``loads_toml``, as ``ubproject.toml`` itself is: an
   inline table may span lines or end with a trailing comma, and a string may use the ``\e``
   and ``\xHH`` escapes. A file that does not parse is still ``template_context_invalid``,
-  with the same message. In the template corpus the four ``dx-toml-1-1-*`` cases, which
+  with the same wording around the parser's message. In the template corpus the four ``dx-toml-1-1-*`` cases, which
   expected TOML 1.0's refusal, now expect their renders (``1``, ``1``, ``4`` and ``A``) and no
   finding, and contract section 4.3 names TOML 1.1; a vendored copy of that corpus is due a
   refresh.

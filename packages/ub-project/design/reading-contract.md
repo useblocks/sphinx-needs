@@ -35,8 +35,10 @@ corpus and the tests change in the same commit. Every rule names the test that e
 3. The package imports **the standard library, plus the TOML 1.1 backport `tomli` below
    Python 3.15, and nothing else**: no Sphinx, no docutils, no workspace member.
    Enforced by: `tests/test_imports.py::test_no_sphinx_docutils_or_sibling_is_imported`,
-   `tests/test_imports.py::test_only_the_standard_library_is_imported`, and CI's
-   `toolchain-free` job, which runs this suite where Sphinx is not installed.
+   `tests/test_imports.py::test_only_the_standard_library_is_imported`,
+   `tests/test_imports.py::test_only_the_declared_distributions_are_admitted`, and CI's
+   `toolchain-free` job, which runs this suite where Sphinx is not installed, and again
+   on Python 3.15, where `tomli` is not.
 4. Every hard failure is an `ProjectConfigError` whose message names the file (or the dotted
    path inside the data) and the rule broken. Nothing else is raised for a problem with
    the file's bytes, syntax or values. Nesting deeper than a few hundred levels is out of

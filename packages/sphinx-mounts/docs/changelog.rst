@@ -6,7 +6,7 @@ Changelog
 Unreleased
 ----------
 
-- ✨ ``ubproject.toml`` (or the file ``mounts_from_toml`` names) is read as TOML 1.1, so it
+- ✨ ``ubproject.toml`` (or the file ``sources_from_toml`` names) is read as TOML 1.1, so it
   may break an inline table over several lines or end one with a trailing comma, use the
   ``\e`` and ``\xHH`` escapes, and write a time or a datetime without seconds. Both of the
   extension's readers of the file -- the mounts and the variant sources -- now parse it
