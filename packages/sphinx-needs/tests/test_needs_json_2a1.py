@@ -240,6 +240,24 @@ def test_an_unknown_value_warns_and_writes_v1(
         app.cleanup()
 
 
+def test_the_option_is_read_from_ubproject_toml(make_app: Any, tmp_path: Path) -> None:
+    """``[needs] json_format_version`` in ``ubproject.toml``."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\nneeds_from_toml = "ubproject.toml"\n'
+    )
+    (srcdir / "ubproject.toml").write_text('[needs]\njson_format_version = "2a1"\n')
+    (srcdir / "index.rst").write_text("T\n=\n\n.. req:: a\n   :id: REQ_001\n")
+    app = make_app("needs", srcdir=srcdir, freshenv=True)
+    try:
+        app.build()
+        assert build_warnings(app) == [BETA]
+        assert [r["id"] for r in _needs_json(app)["needs"]] == ["REQ_001"]
+    finally:
+        app.cleanup()
+
+
 @pytest.mark.parametrize(
     "test_app",
     [
