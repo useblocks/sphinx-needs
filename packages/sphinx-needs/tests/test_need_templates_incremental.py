@@ -249,16 +249,46 @@ def _shout(text: str) -> str:
     return text.upper()
 
 
-def test_a_render_context_function_never_forces_a_re_read(
-    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+class _Opaque:
+    """A picklable value without equality: its pickled copy never equals it."""
+
+
+def _shout_other(text: str) -> str:
+    return text.lower()
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["module_function", "lambda", "opaque"],
+)
+def test_a_render_context_value_that_cannot_be_compared_never_forces_a_re_read(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path, value: str
 ) -> None:
-    """A function compares unequal to itself across a pickle, so a ``rebuild = "env"``
-    would re-read every document on every build: here nothing is re-read."""
+    """The render context is compared with the one the documents were read with. A
+    module-level function pickles by reference and compares equal to itself: nothing
+    is re-read (and changing it is a change). A lambda (or closure) cannot be pickled,
+    and an object without equality never equals its pickled copy: each is left out of
+    the comparison, so it forces no re-read on every build, and no build fails
+    pickling the environment."""
+    values = {"module_function": _shout, "lambda": lambda t: t, "opaque": _Opaque()}
     srcdir = _project(tmp_path)
-    context = {"shout": _shout, "who": "alice"}
+    context = {"v": values[value], "who": "alice"}
     _build(make_app, srcdir, fresh=True, needs_render_context=context)
     read, _, _ = _build(make_app, srcdir, needs_render_context=dict(context))
     assert read == []
+    read, _, _ = _build(make_app, srcdir, needs_render_context=dict(context))
+    assert read == []
+
+
+def test_changing_a_render_context_module_function_re_reads(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A module-level function IS compared: replacing it by another re-reads the
+    templated documents."""
+    srcdir = _project(tmp_path)
+    _build(make_app, srcdir, fresh=True, needs_render_context={"v": _shout})
+    read, _, _ = _build(make_app, srcdir, needs_render_context={"v": _shout_other})
+    assert read == ["imported", "templated"]
 
 
 @pytest.mark.parametrize("folder", ["needs_templates", "elsewhere"])
