@@ -186,3 +186,35 @@ def test_creating_and_deleting_a_records_decoration_re_reads_the_import_page(
     read, needs, _ = _build(make_app, srcdir)
     assert read == ["imp"]
     assert needs["X_1"]["pre_content"] is None
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), CONF),
+                (Path("index.rst"), "Index\n=====\n\n.. needimport:: a.json\n"),
+                (
+                    Path("a.json"),
+                    _needs_json(_record("B_1", pre_template="x", post_template="x")),
+                ),
+                (Path("needs_templates", "x.need"), "X {{ id }}\n"),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_one_template_as_pre_and_post_is_two_deprecations(test_app: Any) -> None:
+    """The deprecation is once per directive, OPTION and template: a record naming one
+    template as both its pre and its post template is two."""
+    app = test_app
+    app.build()
+    needs = _needs(app)
+    assert needs["B_1"]["pre_content"] == "X B_1"
+    assert needs["B_1"]["post_content"] == "X B_1"
+    deprecated = [w for w in build_warnings(app) if "[needs.deprecated]" in w]
+    assert len(deprecated) == 2, deprecated
+    assert sum("the pre_template 'x'" in w for w in deprecated) == 1
+    assert sum("the post_template 'x'" in w for w in deprecated) == 1
