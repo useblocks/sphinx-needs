@@ -364,6 +364,27 @@ As `ub-project`'s contract says of discovery, each of these stays with each cons
   recorded (`docname`, `lineno`);
 - **whether a finding is worth a warning**, and its wording.
 
+One kind of key is decided here all the same, because getting it wrong changes a need in
+transit:
+
+- **the producer-presentation keys**: `template`, `pre_template`, `post_template`,
+  `jinja_content`, `pre_content` and `post_content`. The producer writes them as
+  PROVENANCE of its own rendering: `content` is already the rendered body (with `doctype`,
+  the markup it is written in, a complete and final description of it), `pre_content` and
+  `post_content` the rendered decorations of the producer's page, and the four others name
+  templates that are files of the PRODUCING project. They are null (`jinja_content` false) on a
+  record whose producer imported the need, as its importer does not apply a record's template
+  names: null is "not rendered by a template of the producer", never "no template ever". The
+  document layer reads them as any key (corpus case
+  `producer-presentation-keys-are-read-as-data`). A consumer never applies
+  them again: it never renders `content` as a template, never applies a record's template
+  names from its own template folder, and never drops a record because it has no such
+  template. Which of them a consumer KEEPS is its ingest policy: sphinx-needs' `needimport`
+  keeps none of `template` and `jinja_content`, keeps a record's `pre_template` /
+  `post_template` only where the importer has that template (deprecated; it stops in
+  10.0), and never imports `pre_content` / `post_content`; `needs_external_needs` keeps none
+  of the six.
+
 ## 12. Divergences from ubCode
 
 ubCode is to be held to this contract through the corpus. A behaviour ubCode diverges from

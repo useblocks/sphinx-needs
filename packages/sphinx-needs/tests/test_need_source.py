@@ -966,6 +966,16 @@ def test_an_import_and_a_service_record_their_directive_s_line(
         app.build()
         # sphinx 7 writes no ``[docutils]`` type after docutils' own messages
         warnings = [w.removesuffix(" [docutils]") for w in build_warnings(app)]
+        # applying a record's pre_template is deprecated (it stops in 10.0): one
+        # warning per needimport directive, at the directive
+        deprecated = sorted(w for w in warnings if w.endswith("[needs.deprecated]"))
+        assert [w.split(": ", 1)[0] for w in deprecated] == [
+            "<srcdir>/below.rst:6",
+            "<srcdir>/frag/inside.rst:6",
+            "<srcdir>/frag/sliced.rst:3",
+            "<srcdir>/plain.rst:4",
+        ]
+        warnings = [w for w in warnings if w not in deprecated]
         assert sorted(warnings) == [
             f'<srcdir>/{where}: ERROR: Unknown interpreted text role "{role}".'
             for where, roles in (

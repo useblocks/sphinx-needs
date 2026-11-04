@@ -4,10 +4,10 @@ import hashlib
 import os
 import re
 import warnings
-from collections.abc import Generator, Iterable, Mapping, Sequence
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from copy import copy, deepcopy
-from dataclasses import replace
+from functools import partial
 from pathlib import Path
 from typing import Any, Literal, TypedDict, TypeVar
 
@@ -18,13 +18,13 @@ from docutils.statemachine import StringList
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-from sphinx_needs._jinja import render_template_string
 from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
     with_external_sections,
     with_page_paths,
 )
+from sphinx_needs._need_templates import render_need_templates
 from sphinx_needs.config import NeedsSphinxConfig, NeedType
 from sphinx_needs.data import (
     NeedsCoreFields,
@@ -43,6 +43,7 @@ from sphinx_needs.functions.functions import DynamicFunctionParsed
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_content import (
     MarkupContent,
+    content_route,
     parse_need_content,
     resolve_content_parser,
 )
@@ -68,7 +69,6 @@ from sphinx_needs.needs_schema import (
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.services.config.github import GITHUB_FIELDS
-from sphinx_needs.utils import jinja_parse
 from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
 from sphinx_needs.views import NeedsView
@@ -311,6 +311,7 @@ def _generate_need(
     sections: Sequence[str] | None = None,
     jinja_content: bool | None = None,
     template_root: Path | None = None,
+    on_template_read: Callable[[Path], None] | None = None,
     external_css: str | None = "external_link",
     full_title: str | None = None,
     allow_type_coercion: bool = True,
@@ -683,54 +684,41 @@ def _generate_need(
     except ValueError as err:
         raise InvalidNeedException("failed_init", str(err)) from err
 
-    _template = core_values["template"]
-    _pre_template = core_values["pre_template"]
-    _post_template = core_values["post_template"]
-    if jinja_content or _template or _pre_template or _post_template:
-        # TODO ideally perform all these content alterations before creating the need item
-        if jinja_content:
-            need_content_context: dict[str, Any] = needs_info.filter_context()
-            need_content_context.update(**needs_config.filter_data)
-            need_content_context.update(**needs_config.render_context)
-            try:
-                content_info = replace(
-                    content_info,
-                    content=jinja_parse(need_content_context, needs_info["content"]),
-                )
-            except Exception as e:
-                raise InvalidNeedException(
-                    "invalid_jinja_content",
-                    f"Error while rendering content: {e}",
-                )
-
-        if _template:
-            # TODO should warn if content is not empty?
-            content_info = replace(
+    if jinja_content or any(
+        core_values[option] for option in ("template", "pre_template", "post_template")
+    ):
+        # a template that cannot be rendered costs its output, never the need: the
+        # renderer reports it at the need (``needs.template_*``)
+        needs_info.set_content(
+            render_need_templates(
+                needs_config,
+                needs_info,
                 content_info,
-                content=_prepare_template(
-                    needs_config, needs_info, _template, template_root
-                ),
+                jinja_content=bool(jinja_content),
+                template_root=template_root,
+                location=location,
+                on_read=on_template_read,
+                unresolved=_unresolved_fields(schema, need_type, dynamic_fields),
             )
-
-        if _pre_template:
-            content_info = replace(
-                content_info,
-                pre_content=_prepare_template(
-                    needs_config, needs_info, _pre_template, template_root
-                ),
-            )
-
-        if _post_template:
-            content_info = replace(
-                content_info,
-                post_content=_prepare_template(
-                    needs_config, needs_info, _post_template, template_root
-                ),
-            )
-
-        needs_info.set_content(content_info)
+        )
 
     return needs_info
+
+
+def _unresolved_fields(
+    schema: TypeFieldsSchema,
+    need_type: str,
+    dynamic_fields: Mapping[str, Any],
+) -> frozenset[str]:
+    """The fields of a need just created whose value is resolved only once every
+    document is read: those holding a dynamic function or a variant, and those a derive
+    rule computes on the need's type (a type without a rule holds its fixed value)."""
+    derived = set()
+    for name in schema.derived_names:
+        field = schema.get_extra_field(name) or schema.get_link_field(name)
+        if field is not None and field.rule_for(need_type) is not None:
+            derived.add(name)
+    return frozenset(dynamic_fields).union(derived)
 
 
 def _refuse_authored(
@@ -1256,7 +1244,9 @@ def _create_need(
         and not source.dict_repr["is_external"]
         and (_docname := source.dict_repr["docname"])
     ):
-        doctype = os.path.splitext(app.env.doc2path(_docname))[1]
+        doctype = _page_doctype(
+            app, state, os.path.splitext(app.env.doc2path(_docname))[1]
+        )
 
     needs_info = _generate_need(
         NeedsSphinxConfig(app.config),
@@ -1274,6 +1264,7 @@ def _create_need(
         sections=sections,
         jinja_content=jinja_content,
         template_root=Path(str(app.srcdir)),
+        on_template_read=partial(_note_template_dependency, app.env),
         external_css=external_css,
         full_title=full_title,
         allow_type_coercion=allow_type_coercion,
@@ -1324,6 +1315,26 @@ def _create_need(
         content_parser=content_parser,
         content_source=content_source,
     )
+
+
+def _page_doctype(app: Sphinx, state: RSTState | None, suffix: str) -> str:
+    """The markup a need created on a page is written in: the page's suffix, except
+    for a need a docutils reStructuredText state parses on a page MyST parses -- one
+    inside ``{eval-rst}`` -- which is written in reStructuredText (``".rst"``)."""
+    if not isinstance(state, RSTState):
+        return suffix
+    filetype = app.registry.source_suffix.get(suffix)
+    parser = app.registry.source_parsers.get(filetype) if filetype else None
+    if parser is not None and content_route(parser) == "myst":
+        return ".rst"
+    return suffix
+
+
+def _note_template_dependency(env: BuildEnvironment, path: Path) -> None:
+    """Record a need template file as a dependency of the document being read, if
+    one is (a need created outside the read of a document has none)."""
+    if env.temp_data.get("docname") is not None:
+        env.note_dependency(str(path))
 
 
 def _defined_where(need: NeedItem) -> str:
@@ -1648,6 +1659,37 @@ def _reset_rst_titles(state: RSTState) -> Generator[None]:
     state.memo.section_level = surrounding_section_level
 
 
+@contextmanager
+def _template_titles(state: RSTState, node: nodes.Element) -> Generator[None]:
+    """Let a heading in pre/post template output open a section IN PLACE: as a child of
+    ``node``, the element the output is parsed into, which is put where the output is
+    (before or after the need), whatever the levels of the page's own sections.
+
+    On a reStructuredText page that is :func:`_reset_rst_titles`. myst-parser instead
+    appends a new section to the page's section of the level above (its renderer's
+    ``_level_to_section``), so a pre-template heading landed after the need, as a
+    sibling of the section the need is in; every level is mapped to ``node`` for the
+    parse, so the heading's section is ``node``'s child at any level, and the levels of
+    the template's own headings nest as they say.
+    """
+    if isinstance(state, RSTState):
+        with _reset_rst_titles(state):
+            yield
+        return
+    renderer = getattr(state, "_renderer", None)
+    levels = getattr(renderer, "_level_to_section", None)
+    if not isinstance(levels, dict):
+        # not a myst-parser state this knows: parse as it parses
+        yield
+        return
+    # one more level than a heading can have: a level-n heading's parent is level n-1
+    renderer._level_to_section = dict.fromkeys(range(7), node)
+    try:
+        yield
+    finally:
+        renderer._level_to_section = levels
+
+
 def _host_content_anchor(
     state: RSTState, input_offset: int, host_source: str, need_line: int | None
 ) -> tuple[str, int]:
@@ -1780,7 +1822,7 @@ def _create_need_node(
 
     if pre_content := data.get("pre_content"):
         node = nodes.Element()
-        with _reset_rst_titles(state):
+        with _template_titles(state, node):
             state.nested_parse(
                 StringList(pre_content.splitlines(), source=source),
                 _template_parse_offset(data),
@@ -1858,7 +1900,7 @@ def _create_need_node(
 
     if post_content := data.get("post_content"):
         node = nodes.Element()
-        with _reset_rst_titles(state):
+        with _template_titles(state, node):
             state.nested_parse(
                 StringList(post_content.splitlines(), source=source),
                 _template_parse_offset(data),
@@ -2000,50 +2042,6 @@ _ADD_NEED_KEYWORDS = (
 ``**kwargs`` as keywords rather than as fields, as it did when it called
 :func:`add_need`: those it does not name itself, and that are no field of the field
 schema."""
-
-
-def _prepare_template(
-    needs_config: NeedsSphinxConfig,
-    needs_info: NeedItem,
-    template_name: str,
-    template_root: Path | None,
-) -> str:
-    template_folder = Path(needs_config.template_folder)
-    if not template_folder.is_absolute():
-        if template_root is None:
-            raise InvalidNeedException(
-                "invalid_template",
-                "Template folder is not an absolute path and no template_root is given.",
-            )
-        template_folder = template_root / template_folder
-
-    if not template_folder.is_dir():
-        raise InvalidNeedException(
-            "invalid_template", f"Template folder does not exist: {template_folder}"
-        )
-
-    template_file_name = f"{template_name}.need"
-    template_path = template_folder / template_file_name
-    if not template_path.is_file():
-        raise InvalidNeedException(
-            "invalid_template", f"Template does not exist: {template_path}"
-        )
-
-    with template_path.open() as template_file:
-        template_content = "".join(template_file.readlines())
-    try:
-        new_content = render_template_string(
-            template_content,
-            {**needs_info.filter_context(), **needs_config.render_context},
-            autoescape=False,
-        )
-    except Exception as e:
-        raise InvalidNeedException(
-            "invalid_template",
-            f"Error while rendering template {template_path}: {e}",
-        ) from e
-
-    return new_content
 
 
 def generate_need_id(

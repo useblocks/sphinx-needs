@@ -4,6 +4,7 @@ import os
 import re
 from collections.abc import Sequence
 from functools import partial
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
@@ -21,6 +22,7 @@ from sphinx_needs._need_source import (
     directive_line,
     physical_for,
 )
+from sphinx_needs._need_templates import template_path
 from sphinx_needs.api import InvalidNeedException, ingest_need_record
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
@@ -237,6 +239,16 @@ class NeedimportDirective(SphinxDirective):
         # need -- an over-approximation; which one applies is only known there), counts
         # as the need's template
         project_template = needs_schema.declares_default("template")
+        # a record's template names are the PRODUCER's: its ``content`` is already the
+        # rendered text, so its ``template`` and ``jinja_content`` are never applied
+        # again (rendering it again wrapped it twice, rendered Jinja twice, or lost the
+        # need where this project has no such template). Its ``pre_template`` and
+        # ``post_template`` are still applied where this project has the template, with
+        # a deprecation (until 10.0); the directive's own options, and this project's
+        # defaults, decorate every imported need as they always have
+        template_root = Path(str(self.env.srcdir))
+        record_decorations: dict[tuple[str, str], bool] = {}
+        deprecated_decorations: set[tuple[str, str]] = set()
         # each distinct doctype is resolved once: to ``None`` if the project parses it,
         # else to the reason it does not
         refusals: dict[str, str | None] = {}
@@ -254,6 +266,23 @@ class NeedimportDirective(SphinxDirective):
             # these are written; every override option (and ``hide``) is a field the
             # project knows and imports, so they survive the drop, as they did when
             # it happened before them here
+            if "template" not in self.options:
+                record.pop("template", None)
+            record.pop("jinja_content", None)
+            for decoration in ("pre_template", "post_template"):
+                if decoration in self.options or not (name := record.get(decoration)):
+                    continue
+                if not isinstance(name, str):
+                    continue
+                key = (decoration, name)
+                if key not in record_decorations:
+                    record_decorations[key] = self._importer_has_template(
+                        needs_config, name, template_root
+                    )
+                if record_decorations[key]:
+                    deprecated_decorations.add(key)
+                else:
+                    del record[decoration]
             for override_option in override_options:
                 if override_option in self.options:
                     record[override_option] = self.options[override_option]
@@ -283,8 +312,10 @@ class NeedimportDirective(SphinxDirective):
             )
 
             # a template is a file of the importing project, written in the page's
-            # markup: a need rendered through one is parsed as the page's, as its
-            # pre and post templates always are
+            # markup: a need rendered through one (the directive's ``:template:``, or
+            # one the project gives) is parsed as the page's, as its pre and post
+            # templates always are; a record's own ``template`` is not applied, so
+            # its content is parsed by its doctype like any other
             content_markup = None
             if parse_by_doctype and not record.get("template") and not project_template:
                 content_markup = self._content_markup(record, refusals, fallbacks)
@@ -311,6 +342,18 @@ class NeedimportDirective(SphinxDirective):
             else:
                 need_nodes.extend(need_node)
 
+        for decoration, name in sorted(deprecated_decorations):
+            log_warning(
+                logger,
+                f"Imported needs name the {decoration} {name!r} in their records, which "
+                "this project renders: applying a record's pre or post template is "
+                "deprecated, and stops in sphinx-needs 10.0. Name it on the needimport "
+                f"directive (:{decoration}: {name}), or give it as a default of "
+                f"needs_fields ({decoration}), to keep it.",
+                "deprecated",
+                location=self.get_location(),
+            )
+
         for doctype, reason in fallbacks.items():
             log_warning(
                 logger,
@@ -333,6 +376,31 @@ class NeedimportDirective(SphinxDirective):
         add_doc(self.env, self.env.docname)
 
         return need_nodes
+
+    def _importer_has_template(
+        self, needs_config: NeedsSphinxConfig, name: str, template_root: Path
+    ) -> bool:
+        """Whether this project has the need template *name*.
+
+        A template that exists is a dependency of the document, so editing or deleting
+        it re-reads the page. One that does not is NOT noted: Sphinx takes a missing
+        dependency as changed on every build, and a record naming the producer's
+        template is this project's normal state, not a fault to fix. It is recorded as
+        a probe of the document instead, which re-reads the page once the file exists
+        (:func:`~sphinx_needs._need_templates.reread_on_template_inputs_change`). (A
+        noted template folder would not do: Sphinx 9 takes a dependency that is not a
+        file as missing.)
+        """
+        path = template_path(needs_config, name, template_root)
+        if path is None:
+            return False
+        if path.is_file():
+            self.env.note_dependency(str(path))
+            return True
+        SphinxNeedsData(self.env).template_probes.setdefault(
+            self.env.docname, set()
+        ).add(str(path))
+        return False
 
     def _refuse(self, message: str) -> list[nodes.Node]:
         """Report a file no need can be imported from: one warning at the directive,

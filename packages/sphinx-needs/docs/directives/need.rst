@@ -533,7 +533,8 @@ pre_template
 .. versionadded:: 0.5.4
 
 Adds specific content from a template *before* a **need**.
-For example, you can use it to set a section name before each **need**.
+For example, you can use it to set a section name before each **need**: a heading in the output opens a section
+where the output is, on a reStructuredText page and on a MyST page alike.
 
 .. dropdown:: *Template:* ``spec_pre_template.need``
 
@@ -571,6 +572,91 @@ You can use it to show some need-specific analytics, like dependency diagrams or
       :post_template: spec_post_template
 
       This is my **specification** content.
+
+.. _need_templates_portability:
+
+How need templates are rendered
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionchanged:: 9.3.0
+
+   A template that cannot be rendered keeps its need; undefined names and unresolved fields are reported;
+   template files are dependencies of their documents; a hidden need's pre and post templates are not
+   rendered; a heading in pre/post output on a MyST page opens its section in place; ``needimport`` no longer
+   applies a record's template names.
+
+:ref:`need_template`, :ref:`need_pre_template`, :ref:`need_post_template` and
+:ref:`jinja_content` share these rules, whether a template is named on the need, on a :ref:`needimport`, by a
+need type's or :ref:`needs_fields`' ``default`` or ``predicates``, or through the API.
+
+**When.** A need's templates are rendered once, when the need is created -- while its document is read. A
+template sees the need as it is then: its ``id`` (a generated one included, which is computed from the
+authored body before the render), its ``title``, its ``type``, ``type_name`` and the type's other metadata,
+where it is (``docname``, ``lineno``, ``doctype``), its authored ``content``, the defaults it was given, and
+every field its need type declares (its empty value while unset: ``None``, or ``[]`` for a link type), with
+:ref:`needs_render_context` merged over them.
+It does not see what is resolved only once every document is read: back links (``links_back`` is empty),
+``sections`` and ``section_name``, the value a :ref:`needextend` sets (the template shows the value before
+it), and the value of a field holding a :ref:`dynamic function <dynamic_functions>`, a variant or a
+:ref:`derived value <needs_derive>`, which renders as its unset value (``None``, or ``[]`` for a link type).
+A template naming such a field is reported (``needs.template_unresolved``, naming the field). To show resolved data, write constructs that are resolved
+later into the output: a ``:need:`` role, :ref:`needtable` or :ref:`needflow` filters (``'{{id}}' in
+links_back``), an ``:ndf:`` dynamic function -- or use a :ref:`layout <layouts>`.
+
+**Undefined names** render empty, and are reported: a template is rendered strictly first and, when it uses
+an undefined value, leniently again, with one ``needs.template_undefined`` warning naming the template and the
+expression. An undefined value is an undefined name (a typo, a field another need type declares), a missing key
+or attribute (``{{ mapping.missing }}``, an attribute of an unset field, which is ``None``), or an item of an
+empty list (``{{ links|first }}``, ``{{ tags[0] }}`` where there is none), used anywhere but in an
+``is defined`` test or the ``default`` filter: testing one for truth (``{% if typo %}``) is a use. Every
+declared field is defined; test a value only some needs have with ``{% if x is defined %}`` or give it a
+``default``, which report nothing. A few uses of an undefined name are not reported, as the engine lets them
+pass: an ``is none`` or ``is string`` test of it, and ``|join`` over it. The output is the same as without the
+warning. A call of a function given directly in :ref:`needs_render_context` that returned a plain value
+(a string, a number, a boolean, ``None``) is replayed in the second render, so it is made once, as with a single
+render; any other call runs again -- one returning a list, a mapping, a generator or another object, and every
+call of a class, a callable object, or a method or function reached through a value of the render context. One
+of those with side effects may change the output. An attribute of an undefined NAME
+(``{{ typo.attr }}``) is an error even then: the whole template's output is empty, as ``needs.template_render``
+reports.
+
+**Values** display as Python prints them: ``None``, ``True``, ``3``, ``1.0``. How a list or a map displays
+is not guaranteed; join a list (``{{ tags | join(", ") }}``).
+
+**Markup.** The output is written in the markup of the page the need is on: MyST on a MyST page,
+reStructuredText on a reStructuredText page (and for a need written in reStructuredText on a MyST page:
+inside ``{eval-rst}``, or in the reStructuredText output of a sphinx-ub-directives template). The need's
+``doctype`` says which.
+Content output is the need's content; pre and post output are placed before and after the need, and a heading
+in them opens a section there.
+
+**A hidden need** (:ref:`need_hide`) shows no template output: its pre and post templates are not rendered at
+all, while its content template is, for ``needs.json``.
+
+**A template that cannot be rendered** -- a file the template folder does not hold, a syntax error, an error
+while rendering -- never costs the need: it is created with that template's output empty, and one warning is
+reported at it (``needs.template_missing``, ``needs.template_syntax`` or ``needs.template_render``).
+
+**Incremental builds.** Each template file a need reads, or tries to read, is a dependency of its document:
+editing, creating or deleting it re-reads the document. Until a missing template exists, its document is re-read
+on every build, as Sphinx re-reads a document with any missing dependency (it is reported each time, as
+``needs.template_missing``). A record's pre or post template a :ref:`needimport` looks for and does not find is
+not a dependency: the import page is re-read once the template is created, or when the template folder or the
+render context changes, and not on every build before.
+Changing :ref:`needs_template_folder`, or a value of :ref:`needs_render_context` that can be compared between
+builds, re-reads every document with a templated need. A value is compared when it survives a pickle unchanged
+-- data, and a function defined at the top of a module, which changing re-reads too; a ``lambda``, a closure or
+an object without equality is not compared, and changing it re-reads nothing. A value that differs on each build
+(a time stamp) re-reads the templated documents on each build.
+
+**needs.json** holds what the templates rendered: ``content`` is the rendered body, ``pre_content`` and
+``post_content`` the rendered decorations, and ``template``, ``pre_template``, ``post_template`` and
+``jinja_content`` name what produced them, as provenance. A reader of the file -- :ref:`needimport`,
+:ref:`needs_external_needs`, ubCode -- never applies its ``template`` or ``jinja_content`` again: ``content``
+with ``doctype`` is a complete, final description of the need's body, which ``needimport`` parses in its
+``doctype`` with :ref:`needs_import_parse_by_doctype` (:ref:`needimport_parse_by_doctype`). ``needimport``
+still applies a record's ``pre_template`` / ``post_template`` where the importing project has the template,
+deprecated, until 10.0. See :ref:`needimport_templates`.
 
 .. _need_duration:
 

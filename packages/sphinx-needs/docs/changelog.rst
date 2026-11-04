@@ -4,6 +4,87 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Need templates are fixed in place: a broken template no longer deletes its need, typos and unresolved fields
+are reported, template files are dependencies, and ``needimport`` never applies a record's template names again
+(:ref:`need_templates_portability`, :pr:`2474`).
+
+Improvements
+............
+
+- 👌 A need template's undefined names and unresolved fields are reported; the output is unchanged
+  (:ref:`need_templates_portability`, :pr:`2474`)
+
+  A name a template uses that nothing defines (a typo, a field another need type declares) still renders empty,
+  and is now one ``needs.template_undefined`` warning at the need, naming the template and the expression: each
+  template is rendered strictly first and, when that fails, leniently again, as before. A name tested with
+  ``{% if x is defined %}`` or given a ``default`` is not reported. A render-context function returning a plain
+  value is called once per call, as with one render; any other call runs again in the second render. A template
+  naming a field that holds a dynamic function, a variant or a derived value -- resolved only after every document
+  is read, so it renders as its unset value -- is one ``needs.template_unresolved`` warning naming the field. A
+  build run with ``-W`` that has such a template now fails: typically a template shared across need types that
+  reads one type's own field. Guard the name in the template (``{{ x | default('') }}``,
+  ``{% if x is defined %}``), or silence the warning with ``suppress_warnings = ["needs.template_undefined"]``.
+
+- 👌 A hidden need's ``pre_template`` and ``post_template`` are not rendered: no output of them was ever shown,
+  and its ``pre_content`` and ``post_content`` in ``needs.json`` are now null. Its content template is still
+  rendered (:pr:`2474`)
+
+Deprecations
+............
+
+- ⚠️ ``needimport`` applying a record's ``pre_template`` or ``post_template`` is deprecated, and stops in 10.0
+  (:ref:`needimport_templates`, :pr:`2474`)
+
+  Where the importing project has a template of that name it is still applied, with one ``needs.deprecated``
+  warning per directive and template naming the directive's own ``:pre_template:`` / ``:post_template:``; where it
+  has none, the name is no longer applied (and no longer loses the need, below).
+
+Bug fixes
+.........
+
+- 🐛 A need whose template cannot be rendered is created, with a warning, where it was not created at all
+  **(changed output)** (:pr:`2474`)
+
+  A template file (or template folder) that does not exist, a template that does not parse and one that fails
+  while rendering raised an error that dropped the need -- and made every link to it a dead link; through
+  :ref:`needimport`, every imported need naming a template the importer lacked was dropped. The need is now
+  created with that template's output empty, and one ``needs.template_missing``, ``needs.template_syntax`` or
+  ``needs.template_render`` warning is reported at it. ``create_need`` and ``add_need`` therefore no longer raise
+  ``InvalidNeedException`` for a template that cannot be rendered.
+
+- 🐛 :ref:`needimport` never applies a record's ``template`` or ``jinja_content`` again **(changed output)**
+  (:pr:`2474`)
+
+  A record's ``content`` is already its templates' output. It was wrapped a second time where the importer had a
+  template of the same name, a ``jinja_content`` record's content was rendered as Jinja a second time (changing
+  it in transit), and with ``:parse_by_doctype:`` a templated record was parsed in the page's markup. Now the
+  content is imported as written and parsed by its ``doctype`` like any other record, and the imported need names
+  no template; the directive's own template options and the project's defaults still decorate it. ``needs.json``
+  ``content`` with ``doctype`` is the final description of a need's body: see :ref:`need_templates_portability`.
+
+- 🐛 Need templates are dependencies of their documents: editing, creating or deleting a ``.need`` file re-reads
+  the documents rendering it, and changing :ref:`needs_template_folder`, or a comparable value of
+  :ref:`needs_render_context`, re-reads the documents with a templated need, where all of them stayed stale until a
+  full build (:pr:`2474`). A render-context value is compared when it survives a pickle unchanged (data, a
+  module-level function); a ``lambda``, a closure or an object without equality is left out, and forces no
+  re-read. A document whose template is missing is re-read on every build until the file exists; a record's pre or
+  post template a ``needimport`` does not find re-reads its page once it is created (or the template folder
+  changes), and not before.
+
+- 🐛 A heading in a need's ``pre_template`` or ``post_template`` output on a MyST page opens its section where the
+  output is, as on a reStructuredText page, where it landed after the need **(changed output)** (:pr:`2474`)
+
+- 🐛 A need written in reStructuredText on a MyST page -- inside ``{eval-rst}``, or in the reStructuredText output
+  of a sphinx-ub-directives template -- has the ``doctype`` ``.rst``, the markup its content is written in, where it
+  had the page's ``.md`` **(changed output)** (:pr:`2474`)
+
+- 🔧 ``ENV_DATA_VERSION`` is 26: the first build after upgrading re-reads every document, which records what the
+  documents' need templates were read with and the record templates a ``needimport`` did not find, and creates
+  the needs the need-template fixes above change (:pr:`2474`)
+
 .. _`release:9.2.0`:
 
 9.2.0

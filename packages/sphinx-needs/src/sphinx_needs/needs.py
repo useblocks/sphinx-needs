@@ -25,6 +25,11 @@ import sphinx_needs.debug as debug  # Need to set global var in it for timeing m
 import sphinx_needs.logging as needs_logging
 from sphinx_needs import __version__
 from sphinx_needs._incremental import get_updated_docs, stash_purged_doc
+from sphinx_needs._need_templates import (
+    merge_template_probes,
+    purge_template_probes,
+    reread_on_template_inputs_change,
+)
 from sphinx_needs._wording import joined, title_hint
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.builder import (
@@ -450,6 +455,10 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", compile_string_links, priority=551)
     app.connect("config-inited", check_configuration, priority=600)  # runs late
 
+    # a change of the template folder, or of the render context, re-reads the
+    # documents with templated needs (their template files are dependencies)
+    app.connect("env-get-outdated", reread_on_template_inputs_change)
+    app.connect("env-merge-info", merge_template_probes)
     app.connect("env-before-read-docs", prepare_env)
     # after prepare_env, which registers the services, so that the list compared is the
     # complete one, the need types added from code included, on every build
@@ -467,6 +476,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # need that changed)
     app.connect("env-purge-doc", stash_purged_doc, priority=400)
     app.connect("env-purge-doc", purge_needs)
+    app.connect("env-purge-doc", purge_template_probes)
 
     app.connect("doctree-read", analyse_need_locations)
 
