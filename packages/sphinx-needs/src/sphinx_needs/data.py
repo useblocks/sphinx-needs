@@ -1219,6 +1219,20 @@ class SphinxNeedsData:
     def builtin_services_read_with(self, value: tuple[str, ...]) -> None:
         self.env._needs_builtin_services_read_with = value
 
+    @property
+    def template_inputs_read_with(self) -> tuple[str, dict[str, Any]] | None:
+        """The need-template inputs the documents of the environment were read with:
+        the resolved template folder and the comparable ``needs_render_context``.
+
+        ``None`` for an environment that has not recorded them: a fresh one, or one
+        pickled before they were recorded.
+        """
+        return getattr(self.env, "_needs_template_inputs_read_with", None)
+
+    @template_inputs_read_with.setter
+    def template_inputs_read_with(self, value: tuple[str, dict[str, Any]]) -> None:
+        self.env._needs_template_inputs_read_with = value
+
     def get_or_create_services(self) -> ServiceManager:
         """Get information about services.
 

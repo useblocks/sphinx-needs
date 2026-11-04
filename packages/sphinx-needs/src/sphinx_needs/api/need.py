@@ -4,9 +4,10 @@ import hashlib
 import os
 import re
 import warnings
-from collections.abc import Generator, Iterable, Mapping, Sequence
+from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from copy import copy, deepcopy
+from functools import partial
 from pathlib import Path
 from typing import Any, Literal, TypedDict, TypeVar
 
@@ -309,6 +310,7 @@ def _generate_need(
     sections: Sequence[str] | None = None,
     jinja_content: bool | None = None,
     template_root: Path | None = None,
+    on_template_read: Callable[[Path], None] | None = None,
     external_css: str | None = "external_link",
     full_title: str | None = None,
     allow_type_coercion: bool = True,
@@ -694,6 +696,7 @@ def _generate_need(
                 jinja_content=bool(jinja_content),
                 template_root=template_root,
                 location=location,
+                on_read=on_template_read,
             )
         )
 
@@ -1241,6 +1244,7 @@ def _create_need(
         sections=sections,
         jinja_content=jinja_content,
         template_root=Path(str(app.srcdir)),
+        on_template_read=partial(_note_template_dependency, app.env),
         external_css=external_css,
         full_title=full_title,
         allow_type_coercion=allow_type_coercion,
@@ -1291,6 +1295,13 @@ def _create_need(
         content_parser=content_parser,
         content_source=content_source,
     )
+
+
+def _note_template_dependency(env: BuildEnvironment, path: Path) -> None:
+    """Record a need template file as a dependency of the document being read, if
+    one is (a need created outside the read of a document has none)."""
+    if env.temp_data.get("docname") is not None:
+        env.note_dependency(str(path))
 
 
 def _defined_where(need: NeedItem) -> str:

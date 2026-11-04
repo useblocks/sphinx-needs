@@ -9,22 +9,34 @@ while rendering -- never costs the need: its output is empty and one warning is
 reported at the need (``needs.template_missing``, ``needs.template_syntax``,
 ``needs.template_render``).
 
+Every template file a render reads, or tries to read, is a dependency of the document
+the need is created on (``on_read``), so creating, editing or deleting it re-reads the
+document; and a change of ``needs_template_folder`` or of the picklable part of
+``needs_render_context`` re-reads every document with a templated need
+(:func:`reread_on_template_inputs_change`).
+
 The executable half of these rules is the shared conformance corpus,
 ``tests/fixtures/need_templates_conformance.toml``.
 """
 
 from __future__ import annotations
 
+import pickle
+from collections.abc import Callable, Set
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Literal
 
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
+
 from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedsContent
 
-__all__ = ["render_need_templates"]
+__all__ = ["render_need_templates", "reread_on_template_inputs_change"]
 
 logger = get_logger(__name__)
 
@@ -43,6 +55,7 @@ def render_need_templates(
     jinja_content: bool,
     template_root: Path | None,
     location: Location,
+    on_read: Callable[[Path], None] | None = None,
 ) -> NeedsContent:
     """The need's content with its templates rendered.
 
@@ -51,6 +64,8 @@ def render_need_templates(
     :param template_root: The directory a relative ``needs_template_folder`` is
         resolved against.
     :param location: Where a template's warnings are reported (the need's directive).
+    :param on_read: Called with each template file the render reads or tries to read,
+        a missing one included: the document's dependencies.
     :return: ``content_info`` with ``content`` (``:jinja_content:``, then
         ``:template:``), ``pre_content`` and ``post_content`` replaced by the rendered
         text of each template the need names; an empty string for one that cannot be
@@ -86,6 +101,7 @@ def render_need_templates(
                 template_root,
                 option=option,
                 location=location,
+                on_read=on_read,
             )
     return replace(content_info, **rendered) if rendered else content_info
 
@@ -98,6 +114,7 @@ def _render_file(
     *,
     option: TemplateOption,
     location: Location,
+    on_read: Callable[[Path], None] | None,
 ) -> str:
     """The rendered text of the template file *name*, or ``""`` (with a warning)."""
     need_id = needs_info["id"]
@@ -114,6 +131,9 @@ def _render_file(
             return ""
         folder = template_root / folder
     path = folder / f"{name}.need"
+    if on_read is not None:
+        # a missing file too: creating it must re-read the document
+        on_read(path)
     if not path.is_file():
         _warn(
             f"The {option} {name!r} of need {need_id!r} is not rendered: "
@@ -165,3 +185,67 @@ def _warn(
     location: Location,
 ) -> None:
     log_warning(logger, message, subtype, location)
+
+
+#: What stands for a ``needs_render_context`` value that cannot be compared across
+#: builds (it does not survive a pickle round trip unchanged: a function, an object
+#: without equality): its change is not detected, rather than detected on every build.
+_UNCOMPARABLE = "<uncomparable>"
+
+
+def _template_inputs(app: Sphinx) -> tuple[str, dict[str, Any]]:
+    """The configuration a need template's output depends on: the template folder
+    (resolved as a render resolves it) and the comparable ``needs_render_context``."""
+    needs_config = NeedsSphinxConfig(app.config)
+    folder = Path(needs_config.template_folder)
+    if not folder.is_absolute():
+        folder = Path(str(app.srcdir)) / folder
+    context: dict[str, Any] = {}
+    for key, value in needs_config.render_context.items():
+        try:
+            same = pickle.loads(pickle.dumps(value)) == value
+        except Exception:
+            # deliberately broad: pickling a value, or comparing one, may raise anything
+            same = False
+        context[key] = value if same else _UNCOMPARABLE
+    return str(folder), context
+
+
+def _is_templated(need: NeedItem) -> bool:
+    return bool(
+        need["template"]
+        or need["pre_template"]
+        or need["post_template"]
+        or need["jinja_content"]
+    )
+
+
+def reread_on_template_inputs_change(
+    app: Sphinx,
+    env: BuildEnvironment,
+    added: Set[str],
+    changed: Set[str],
+    removed: Set[str],
+) -> list[str]:
+    """The documents to re-read because a need template's inputs changed (the
+    ``env-get-outdated`` event): every document with a need that names a template, or
+    renders its ``jinja_content``, when ``needs_template_folder`` or the comparable part
+    of ``needs_render_context`` differs from what the documents were read with.
+
+    Both options are ``rebuild = "html"``: a ``"env"`` would re-read EVERY document of a
+    project whose render context holds a function, on every build, as such a value never
+    compares equal to its pickled self. The template files themselves are dependencies
+    of the documents (:func:`render_need_templates`'s ``on_read``).
+    """
+    data = SphinxNeedsData(env)
+    inputs = _template_inputs(app)
+    previous = data.template_inputs_read_with
+    data.template_inputs_read_with = inputs
+    if previous is None or previous == inputs:
+        return []
+    docnames = {
+        need["docname"]
+        for need in data.get_needs_mutable().values()
+        if need["docname"] and _is_templated(need)
+    }
+    return sorted((docnames & env.found_docs) - set(removed))
