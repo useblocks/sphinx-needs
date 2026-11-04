@@ -3,6 +3,18 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- ⬆️ Templates render with minijinja 3 (``minijinja>=3.0.5,<4``, which was ``~=2.15``), the series ubCode renders
+  with; the template corpus both tools are held to is recorded against 3.0.5 **(changed output)**
+  (`#2475 <https://github.com/useblocks/sphinx-needs/pull/2475>`__)
+
+  A value a template builds itself prints differently: a list or map with Python's quoting (``['a']``),
+  ``items`` pairs as tuples, ``tojson`` spaced as ``json.dumps`` spaces it, and ``round`` half to even. Context
+  data prints as the engine prints its values, so ``{{ rows }}`` is ``[1, 'a']``, which was ``[1, "a"]``.
+  The full list is in sphinx-needs' changelog entry for the same move.
+
 .. _`release:0.1.0`:
 
 0.1.0
