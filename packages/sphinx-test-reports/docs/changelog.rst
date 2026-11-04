@@ -1,16 +1,6 @@
 Changelog
 =========
 
-Unreleased
-----------
-
-New and Improved
-................
-
-- 📚 The ``jinja_content`` extra option is deprecated by Sphinx-Needs 9.3 and removed in 10.0
-  (`#2474 <https://github.com/useblocks/sphinx-needs/pull/2474>`__); the docs say so. Write the Jinja in a template file holding ``{{ content }}`` and
-  name it with ``:template:`` instead. Nothing changes in how the option is passed.
-
 .. _`release:4.0.0`:
 
 4.0.0

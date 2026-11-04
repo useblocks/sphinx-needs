@@ -552,8 +552,7 @@ the type and title.
   ``style``, ``layout``, ``template``, ``pre_template``, ``post_template``, ``constraints``,
   ``jinja_content`` and the project's extra and link fields, converted as ``.. req::`` converts them
   -- a key lowercased (``:ID:`` is the id), links and tags split, typed fields coerced,
-  ``jinja_content`` a flag (deprecated in Sphinx-Needs 9.3 and removed in 10.0: use ``template``
-  with a template holding ``{{ content }}``). Any other key (``parts``, ``docname``, the directive's own ``delete`` and
+  ``jinja_content`` a flag. Any other key (``parts``, ``docname``, the directive's own ``delete`` and
   ``title_from_content`` …) is ignored with a warning at its line, the need kept; an empty ``:id:``
   refuses the need, as the directive does (``invalid_option``), and so does a value Sphinx-Needs
   refuses (warned at the open line). The title is the open line's, as a one-line need's is: an empty

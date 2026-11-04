@@ -325,8 +325,7 @@ and a Sphinx-Needs core field that is no field an option can set (``external_url
 ``style`` is the exception among the directives' own fields: only ``test-case`` sets it, so it is the field's value on a
 ``test-file`` or ``test-suite``, and refuses a test case's need (with a warning) rather than override its style.
 ``doctype`` and ``jinja_content`` are passed to Sphinx-Needs as the need's own arguments, as before:
-``:jinja_content:`` renders the content as a Jinja template (deprecated in Sphinx-Needs 9.3 and removed in 10.0: use
-``:template:`` with a template holding ``{{ content }}``). ``full_title`` and ``allow_type_coercion`` are fields, as
+``:jinja_content:`` renders the content as a Jinja template. ``full_title`` and ``allow_type_coercion`` are fields, as
 every other extra option is; ``full_title`` is also given to Sphinx-Needs as the need's full title, as before.
 
 You can then use these options in your directives:
