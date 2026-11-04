@@ -78,7 +78,8 @@ def render_need_templates(
     :return: ``content_info`` with ``content`` (``:jinja_content:``, then
         ``:template:``), ``pre_content`` and ``post_content`` replaced by the rendered
         text of each template the need names; an empty string for one that cannot be
-        rendered.
+        rendered. A hidden need's pre and post templates are not rendered (its
+        ``pre_content`` and ``post_content`` stay unset).
     """
     need_id = needs_info["id"]
     if jinja_content:
@@ -105,6 +106,10 @@ def render_need_templates(
         ("pre_template", "pre_content"),
         ("post_template", "post_content"),
     ):
+        if option != "template" and needs_info["hide"]:
+            # a hidden need shows no pre or post output: it is not rendered at all, so
+            # it reads no file and reports nothing (its content is, for needs.json)
+            continue
         if name := needs_info[option]:
             rendered[key] = _render_file(
                 needs_config,

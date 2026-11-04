@@ -43,7 +43,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "need_templates_conformance.t
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 31
+EXPECTED_CASE_COUNT = 32
 
 #: The codes of the need-template contract, compared as bare subcodes; every other
 #: finding (a dead link, a need that could not be imported) is each tool's own.

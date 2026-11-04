@@ -51,9 +51,11 @@
 #       undefined error, renders again leniently; `{% if x is defined %}` reports nothing
 #   10. a scalar displays as Python does (`None`, `True`, `1.0`, `3`, a string); how a
 #       list, a map or a tuple displays is NOT part of the contract, and no case prints one
-#   11. a field holding a dynamic function, a variant or a derived value is unresolved
-#       when the template is rendered: it displays `None` (as an unset field does) and is
-#       reported (`template_unresolved`, at the need, naming the field)
+#   11. a field holding a dynamic function, a variant or a derived value (where the need's
+#       type has a rule for it) is unresolved when the template is rendered: it displays
+#       as its unset value (`None`), and a template that NAMES it -- a top-level name the
+#       template reads, as minijinja's `undeclared_variables` (not nested) gives it -- is
+#       reported once per field (`template_unresolved`, at the need, naming the field)
 #   14. a broken template -- a missing file, a syntax error, a render error -- keeps the
 #       need, with EMPTY output for that template, and one finding: `template_missing`,
 #       `template_syntax` or `template_render`; through `needimport` too
@@ -1084,3 +1086,38 @@ field = "other"
 content = "id=REQ_1"
 [case.expect.needs.REQ_2]
 content = "None None -"
+
+# --- hidden needs (rule 8) -----------------------------------------------------------
+
+[[case]]
+name = "hidden-need-renders-its-content-only"
+why = "a hidden need's content template is rendered (needs.json content), its pre and post templates are not (null, nothing reported even for a broken one); the names stay as provenance"
+rules = [8, 16, 14]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Hidden
+   :id: REQ_1
+   :hide:
+   :template: wrap
+   :pre_template: pre
+   :post_template: missing
+
+   Authored body.
+'''
+files."needs_templates/wrap.need" = '''
+WRAP {{ content }}
+'''
+files."needs_templates/pre.need" = '''
+PRE {{ id }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+content = "WRAP Authored body."
+template = "wrap"
+pre_template = "pre"
+post_template = "missing"
+[case.expect.nulls]
+REQ_1 = ["pre_content", "post_content"]
