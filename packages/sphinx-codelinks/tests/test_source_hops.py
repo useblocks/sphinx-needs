@@ -6,7 +6,7 @@ marker in its source file (a ``code`` hop: the file under the Sphinx source dire
 the marker's 1-based lines, the entity it is attached to, outermost first, and the file's
 language) and the page the directive is written on. Its ``lineno`` is the line the
 directive is written on, after ``rst_prolog`` and in an included file too. The hops are
-provisional and reach no ``needs.json``.
+provisional, and reach a ``needs.json`` only in the experimental format 2a1.
 """
 
 from __future__ import annotations
@@ -585,6 +585,36 @@ def test_no_hop_reaches_needs_json(built: SphinxTestApp) -> None:
     assert "semantic" not in text
     assert "hops" not in text
     assert "shapes.py" not in text
+
+
+def test_the_code_hop_reaches_a_2a1_needs_json(
+    make_app: _MakeApp, tmp_path: Path
+) -> None:
+    """Under sphinx-needs' experimental ``needs_json_format_version = "2a1"`` the hops
+    are the record's ``source``, the code hop first."""
+    conf = CONF + 'needs_json_format_version = "2a1"\n'
+    app, _, _ = _build(make_app, _write(tmp_path, {**FILES, "docs/conf.py": conf}))
+    data = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
+    record = next(r for r in data["needs"] if r["id"] == "IMPL_PY_ONE")
+    assert record["source"][0] == {
+        "kind": "code",
+        "physical": {
+            "root": "srcdir",
+            "path": "../src/py/shapes.py",
+            "start_line": 4,
+            "end_line": 4,
+        },
+        "semantic": [
+            {"kind": "class", "name": "Shape"},
+            {
+                "kind": "method",
+                "name": "area",
+                "extras": {"qualified_name": "Shape.area"},
+            },
+        ],
+        "language": "python",
+    }
+    assert [hop["kind"] for hop in record["source"]] == ["code", "page"]
 
 
 def test_a_need_after_rst_prolog_is_at_its_line_in_the_file(
