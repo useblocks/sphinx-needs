@@ -9,7 +9,8 @@ agree -- in a ``:start-line:`` include too, where the parser's line is the slice
 The project has one placement per row, each with a ``needimport`` that imports a need and
 triggers three of the sites (a record that is not an object, an absent id in ``:ids:``, a
 ``:filter:`` that fails on one record), and one naming a missing file (the fourth, the
-refusal). A MyST page is the control: its warnings were already right.
+refusal). A MyST page is the control: its warnings were already right. The build runs
+from the source directory, where an included file's path is relative.
 """
 
 from __future__ import annotations
@@ -163,7 +164,12 @@ def built(
         warning=io.StringIO(),
     )
     try:
-        app.build()
+        # built from the source directory, as a project usually is: docutils then
+        # records an included file relative to the working directory, which the
+        # warning must make absolute again, as Sphinx does for a node's location
+        with pytest.MonkeyPatch.context() as patch:
+            patch.chdir(srcdir)
+            app.build()
         locations: dict[tuple[str, str], list[str]] = {}
         unclaimed: list[str] = []
         for warning in build_warnings(app):
