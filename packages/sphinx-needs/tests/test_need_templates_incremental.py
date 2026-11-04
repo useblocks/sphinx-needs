@@ -137,10 +137,17 @@ def _build(
     srcdir: Path,
     *,
     fresh: bool = False,
+    parallel: int = 1,
     **confoverrides: Any,
 ) -> tuple[list[str], dict[str, dict[str, Any]], list[str]]:
     """Build, and return the documents read, the needs written, and the warnings."""
-    app = make_app("needs", srcdir=srcdir, freshenv=fresh, confoverrides=confoverrides)
+    app = make_app(
+        "needs",
+        srcdir=srcdir,
+        freshenv=fresh,
+        parallel=parallel,
+        confoverrides=confoverrides,
+    )
     read: list[str] = []
     app.connect("env-before-read-docs", lambda _app, _env, docs: read.extend(docs))
     try:

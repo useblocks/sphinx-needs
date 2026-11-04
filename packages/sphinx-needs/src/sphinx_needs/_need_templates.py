@@ -346,12 +346,31 @@ def reread_on_template_inputs_change(
     renders its ``jinja_content``, when ``needs_template_folder`` or the comparable part
     of ``needs_render_context`` differs from what the documents were read with.
 
+    Also every document whose ``needimport`` looked for a template it did not find and
+    that now exists (``SphinxNeedsData.template_probes``).
+
     Both options are ``rebuild = "html"``: a ``"env"`` would re-read EVERY document of a
     project whose render context holds a function, on every build, as such a value never
     compares equal to its pickled self. The template files themselves are dependencies
     of the documents (:func:`render_need_templates`'s ``on_read``).
     """
     data = SphinxNeedsData(env)
+    # a document whose needimport looked for a template that now exists
+    probed = {
+        docname
+        for docname, paths in data.template_probes.items()
+        if any(Path(path).is_file() for path in paths)
+    }
+    return sorted(
+        ((probed | set(_reread_templated(app, env, data))) & env.found_docs)
+        - set(removed)
+    )
+
+
+def _reread_templated(
+    app: Sphinx, env: BuildEnvironment, data: SphinxNeedsData
+) -> list[str]:
+    """The documents with a templated need, when the template inputs changed."""
     inputs = _template_inputs(app)
     previous = data.template_inputs_read_with
     # recorded on every build, so that the build after one that adds a templated need
@@ -372,4 +391,20 @@ def reread_on_template_inputs_change(
         unchanged = False
     if unchanged:
         return []
-    return sorted((docnames & env.found_docs) - set(removed))
+    return sorted(docnames)
+
+
+def purge_template_probes(app: Sphinx, env: BuildEnvironment, docname: str) -> None:
+    """Forget a document's template probes when it is purged (``env-purge-doc``)."""
+    SphinxNeedsData(env).template_probes.pop(docname, None)
+
+
+def merge_template_probes(
+    app: Sphinx, env: BuildEnvironment, docnames: Set[str], other: BuildEnvironment
+) -> None:
+    """Take the template probes of the documents a parallel reader read
+    (``env-merge-info``)."""
+    probes = SphinxNeedsData(env).template_probes
+    for docname, paths in SphinxNeedsData(other).template_probes.items():
+        if docname in docnames:
+            probes[docname] = set(paths)

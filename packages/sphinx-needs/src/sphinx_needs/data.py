@@ -192,7 +192,9 @@ pages whose sources did not change.
 
 Version 26 records the need-template inputs the documents were read with
 (``_needs_template_inputs_read_with``: the template folder and the comparable render
-context), which a change re-reads the templated documents by; and it changes what the
+context), which a change re-reads the templated documents by, and the templates a
+``needimport`` looked for and did not find (``_needs_template_probes``), which re-read
+its document once they exist; and it changes what the
 stored needs mean: a need whose template cannot be rendered is stored (it was not), an
 undefined name and an unresolved field in a template are reported when it is read, a
 hidden need's pre and post output is no longer stored, an imported record's template
@@ -1243,6 +1245,18 @@ class SphinxNeedsData:
     @template_inputs_read_with.setter
     def template_inputs_read_with(self, value: tuple[str, dict[str, Any]]) -> None:
         self.env._needs_template_inputs_read_with = value
+
+    @property
+    def template_probes(self) -> dict[str, set[str]]:
+        """By document, the need-template files a ``needimport`` of it looked for and
+        did not find (a record's pre/post template this project has not): the document
+        is re-read once one of them exists. They are not noted as dependencies, which
+        Sphinx takes as changed on every build while missing."""
+        try:
+            return self.env._needs_template_probes
+        except AttributeError:
+            self.env._needs_template_probes = {}
+        return self.env._needs_template_probes
 
     def get_or_create_services(self) -> ServiceManager:
         """Get information about services.

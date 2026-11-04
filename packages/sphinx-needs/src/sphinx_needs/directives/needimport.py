@@ -380,13 +380,27 @@ class NeedimportDirective(SphinxDirective):
     def _importer_has_template(
         self, needs_config: NeedsSphinxConfig, name: str, template_root: Path
     ) -> bool:
-        """Whether this project has the need template *name*; the file is a dependency
-        of the document either way, so creating or deleting it re-reads the page."""
+        """Whether this project has the need template *name*.
+
+        A template that exists is a dependency of the document, so editing or deleting
+        it re-reads the page. One that does not is NOT noted: Sphinx takes a missing
+        dependency as changed on every build, and a record naming the producer's
+        template is this project's normal state, not a fault to fix. It is recorded as
+        a probe of the document instead, which re-reads the page once the file exists
+        (:func:`~sphinx_needs._need_templates.reread_on_template_inputs_change`). (A
+        noted template folder would not do: Sphinx 9 takes a dependency that is not a
+        file as missing.)
+        """
         path = template_path(needs_config, name, template_root)
         if path is None:
             return False
-        self.env.note_dependency(str(path))
-        return path.is_file()
+        if path.is_file():
+            self.env.note_dependency(str(path))
+            return True
+        SphinxNeedsData(self.env).template_probes.setdefault(
+            self.env.docname, set()
+        ).add(str(path))
+        return False
 
     def _refuse(self, message: str) -> list[nodes.Node]:
         """Report a file no need can be imported from: one warning at the directive,
