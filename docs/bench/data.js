@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793823394063,
+  "lastUpdate": 1793824568359,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28896,6 +28896,48 @@ window.BENCHMARK_DATA = {
             "value": 191.408101,
             "unit": "MB",
             "extra": "Commit: 12927539733abed7803362f5d59b58d79fb862b8\nBranch: master\nTime: 2026-11-04T21:14:54+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "56fa9097670f21673b3aa11668c4548f44dc509e",
+          "message": "🐛 `needimport`'s warnings name the file and line the directive is written on (#2478)\n\nEvery warning a `needimport` raises — its file cannot be fetched, found\nor read, a record is not an object, an id in `:ids:` is not in the file,\nthe `:filter:` fails, a record has an empty id, unknown keys or a\ndoctype the project cannot parse — now names the file and the line the\ndirective is written on: the same place the needs it imports record.\nUnder an `rst_prolog`, or below an `.. include::`, it named the parser's\nrunning line, shifted by the lines inserted above (the issue's\n`index.rst:22` for a directive on line 7); and inside an included file\nit named the including page, at a line that exists in neither file. It\nnow names the included file (absolute, so it reads as `<srcdir>/…` like\nevery other warning), at its own line, also in an include sliced by\n`:start-line:`. MyST pages were already right and are unchanged.\n\nA `needimport` that another extension generates (sphinx-jinja's `jinja`\ndirective, or a `nested_parse` of generated text) is written in no file,\nand is still reported at its page, as before.\n\n**(changed output)**: only the location of these warnings moves, not\ntheir text.\n\n## Tests\n\n`packages/sphinx-needs/tests/test_needimport_warning_location.py`\nbuilds, from its source directory, one project with an `rst_prolog` and\nfour placements — below a 7-line include, inside an include, inside a\n`:start-line:` include, and a MyST page. Each placement has\n`needimport`s that trigger every warning above: the reader-diagnostic,\n`:ids:`, `:filter:`, unknown-keys, empty-id, invalid-need and doctype\nwarnings while importing, and three refused files (a missing file, a URL\nthat cannot be fetched, a file that is not JSON). Each case asserts the\nwarning's `file:line` is the one the directive is written on, and the\none the imported need records. Three `needimport`s another extension\ngenerates keep their page. The reStructuredText placements fail on\nmaster; the MyST page is the control. Each warning site, reverted alone,\nturns its own rows red. Passes on the sphinx-7 cell too.\n\nCloses #2463",
+          "timestamp": "2026-11-04T21:34:25+01:00",
+          "tree_id": "740ecfe258fc3aa130fbcc6101434b5f1005cbbd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/56fa9097670f21673b3aa11668c4548f44dc509e"
+        },
+        "date": 1793824567722,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07554673199999229,
+            "unit": "s",
+            "extra": "Commit: 56fa9097670f21673b3aa11668c4548f44dc509e\nBranch: master\nTime: 2026-11-04T21:34:25+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.691066323000001,
+            "unit": "s",
+            "extra": "Commit: 56fa9097670f21673b3aa11668c4548f44dc509e\nBranch: master\nTime: 2026-11-04T21:34:25+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 188.804457,
+            "unit": "MB",
+            "extra": "Commit: 56fa9097670f21673b3aa11668c4548f44dc509e\nBranch: master\nTime: 2026-11-04T21:34:25+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
