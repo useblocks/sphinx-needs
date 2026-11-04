@@ -166,6 +166,69 @@ See also :ref:`needs_json_exclude_fields`, :ref:`needs_json_remove_defaults`, :r
         }
     }
 
+.. _needs_builder_format_2a1:
+
+needs.json format 2a1 (draft)
++++++++++++++++++++++++++++++
+
+.. versionadded:: 9.3.0
+
+.. attention:: **Experimental**: a file in this format is readable only by the release that wrote it.
+
+With :ref:`needs_json_format_version` set to ``"2a1"``, the builders write the first draft of format version 2.
+It is specified in the `needs.json 2a1 draft contract <https://github.com/useblocks/sphinx-needs/blob/master/packages/ub-needs-exchange/design/v2a1-draft.md>`__
+of the ``ub-needs-exchange`` library. In short:
+
+- the document says what it is with a ``format_version``, and has no ``versions``: one file is one snapshot of a
+  project, whose ``project`` names it and its version;
+- the needs are a list of records, in the order of their ids, each with the sections ``id``, ``type``, ``fields``
+  (the core fields a need's author sets, and every field its need type declares, with its value: a default and
+  ``null`` too, since the file carries no schema), ``links`` (a bare id, or ``{"id", "part", "condition"}`` where a
+  part or a condition is given; no back links), ``content`` (its text, ``doctype`` and parts) and ``source``;
+- ``source`` is the list of places the need's text came through, innermost first: the lines of its directive in the
+  file it is written in, each file it was included through, the needs.json it was imported from, the docstring or
+  the service it came from, and the page it is placed on, with the sections it is in. Where a hop has no ``origin``,
+  it is the writing project's;
+- nothing computed is written: no back links, no ``is_*``, ``type_*``, ``constraints_*`` or ``section_name``, and none
+  of the location keys of format 1 (``docname``, ``lineno``, ``sections``, ...), which a reader projects from the
+  source.
+
+.. code-block:: json
+
+    {
+      "format_version": "2a1",
+      "project": {"name": "up", "version": "1.0"},
+      "creator": {"program": "sphinx_needs", "version": "9.3.0"},
+      "created": "2026-11-05T21:04:13.381102",
+      "needs": [
+        {
+          "id": "REQ_2",
+          "type": "req",
+          "fields": {"title": "The second", "status": null, "tags": [], "asil": "QM"},
+          "links": {
+            "links": [{"id": "REQ_1", "part": "p1"}, {"id": "REQ_3", "condition": "status == \"open\""}],
+            "parent_needs": []
+          },
+          "content": {"text": "Links to a part and, under a condition, to a need.", "doctype": ".rst"},
+          "source": [
+            {
+              "kind": "page",
+              "physical": {"root": "srcdir", "path": "index.rst", "start_line": 22, "end_line": 26},
+              "semantic": [{"kind": "section", "name": "Up"}, {"kind": "section", "name": "Requirements"}],
+              "document": "index",
+              "language": ".rst"
+            }
+          ]
+        }
+      ]
+    }
+
+Older readers do not read it. Sphinx-Needs 9.0.0 to 9.2.0 refuse the file with one warning per reader, which names
+the file and says that it is of format version ``"2a1"`` and that the reader reads format version 1 only (with
+ub-needs-exchange 1.1.0), or that its ``'versions' is missing or not an object`` (with ub-needs-exchange 1.0.0);
+ubCode refuses it in the same way. Sphinx-Needs 8.5.0 aborts the build on it (``NeedsExternalException: No version
+defined``).
+
 .. _needumls_builder:
 
 needumls

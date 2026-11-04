@@ -31,7 +31,9 @@ What this page labels **provisional** follows its label. Through 9.x that is the
 and ``NeedItemSource``'s general constructor with its keywords: a minor release may add an
 optional field, a hop kind or a keyword, while a rename, a removal, or a change to the
 meaning or type of an existing one waits for 10.0, because published sibling extensions
-construct them. They stay outside the stable surface until ``needs.json`` carries them.
+construct them. They stay outside the stable surface until the final format version 2 of
+``needs.json`` carries them: the draft ``"2a1"`` (:ref:`needs_builder_format_2a1`), which writes them as they are,
+does not end their provisional status.
 
 Anything else is internal, and may change in a minor release without a deprecation: a name
 this page does not document, a module or a name starting with ``_``, and whatever is reached

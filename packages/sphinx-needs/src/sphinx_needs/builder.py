@@ -8,9 +8,11 @@ from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 
+from sphinx_needs._needsfile_v2a1 import FORMAT_2A1, NeedsFile2a1, json_format_version
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs.needsfile import NeedsList
 
 LOGGER = get_logger(__name__)
@@ -56,6 +58,17 @@ class NeedsBuilder(Builder):
         data = SphinxNeedsData(self.env)
         needs = data.get_needs_view()
         needs_config = NeedsSphinxConfig(self.env.config)
+        if json_format_version(needs_config) == FORMAT_2A1:
+            # the draft: no versions, so no needs_file to accumulate them from
+            self._finish_2a1(
+                filter_needs_view(
+                    needs,
+                    needs_config,
+                    needs_config.builder_filter,
+                    append_warning="(from need_builder_filter)",
+                )
+            )
+            return
         version = getattr(self.env.config, "version", "unset")
         needs_list = NeedsList(self.env, self.outdir, self.srcdir)
 
@@ -88,6 +101,15 @@ class NeedsBuilder(Builder):
 
         try:
             needs_list.write_json()
+        except Exception as e:
+            LOGGER.error(f"Error during writing json file: {e}")
+        else:
+            LOGGER.info("Needs successfully exported")
+
+    def _finish_2a1(self, needs: Iterable[NeedItem]) -> None:
+        """Write ``needs.json`` in the draft format 2a1 (experimental)."""
+        try:
+            NeedsFile2a1(self.env).write(needs, os.path.join(self.outdir, "needs.json"))
         except Exception as e:
             LOGGER.error(f"Error during writing json file: {e}")
         else:
@@ -180,6 +202,16 @@ class NeedsIdBuilder(Builder):
         needs_dir = os.path.join(self.outdir, needs_build_json_per_id_path)
         if not os.path.exists(needs_dir):
             os.makedirs(needs_dir, exist_ok=True)
+        if json_format_version(needs_config) == FORMAT_2A1:
+            # the draft: one document per need, ``needs: [record]``
+            writer = NeedsFile2a1(self.env)
+            for need in filtered_needs:
+                try:
+                    writer.write([need], os.path.join(needs_dir, f"{need['id']}.json"))
+                except Exception as e:
+                    LOGGER.error(f"Needs-ID Builder {need['id']} error: {e}")
+            LOGGER.info("Needs_id successfully exported")
+            return
         for need in filtered_needs:
             needs_list = NeedsList(self.env, self.outdir, self.srcdir, add_schema=False)
             needs_list.wipe_version(version)

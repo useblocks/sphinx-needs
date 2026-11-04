@@ -10,6 +10,24 @@ Unreleased
 Improvements
 ............
 
+- ✨ **needs.json format 2a1 (experimental draft)**: write it with :ref:`needs_json_format_version` ``= "2a1"``,
+  off by default (:pr:`XXXX`)
+
+  Each need in a 2a1 file carries its source: the lines of its directive in the file it is written in, each file it
+  was included through, the needs.json it was imported from, and the docstring or the service it came from, innermost
+  first, then the page it is placed on, with its sections. A record is ``{id, type, fields, links, content,
+  source}``: every value of the fields its need type declares (a default and ``null`` too: the file carries no
+  schema), links as a bare id or ``{id, part, condition}``, and nothing computed -- no back links, no ``is_*`` or
+  ``type_*`` keys, none of format 1's location keys. The ``needs`` builder, :ref:`needs_build_json` and the per-id
+  builder obey the option; :ref:`needs_json_exclude_fields`, :ref:`needs_builder_filter`,
+  :ref:`needs_reproducible_json` and :ref:`needs_json_include_link_conditions` apply, while
+  :ref:`needs_json_remove_defaults` and :ref:`needs_file` are ignored, each with a warning. The format is
+  :ref:`needs_builder_format_2a1`.
+
+  A 2a1 file is readable only by the release that wrote it, and each build that sets it says so in a
+  ``needs.beta`` warning. Sphinx-Needs 9.0.0 to 9.2.0 refuse it with one warning per reader, and 8.5.0 aborts the
+  build on it. At the default, ``1``, the ``needs.json`` is written exactly as before.
+
 - ⬆️ Templates render with minijinja 3: ``minijinja>=3.0.5,<4``, which was ``~=2.15`` **(changed output)** (:pr:`2475`)
 
   The data sphinx-needs hands a template prints as before: need fields, ``needs_render_context`` and the

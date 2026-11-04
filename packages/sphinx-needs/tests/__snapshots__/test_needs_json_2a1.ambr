@@ -1,0 +1,623 @@
+# serializer version: 1
+# name: test_the_needs_builder_writes_2a1[test_app0]
+  dict({
+    'format_version': '2a1',
+    'needs': list([
+      dict({
+        'content': dict({
+          'doctype': '.rst',
+          'text': 'imported body',
+        }),
+        'fields': dict({
+          'asil': 'QM',
+          'completion': None,
+          'constraints': list([
+          ]),
+          'duration': None,
+          'layout': None,
+          'status': None,
+          'style': None,
+          'tags': list([
+          ]),
+          'title': 'imported',
+        }),
+        'id': 'IMP_1',
+        'links': dict({
+          'implements': list([
+          ]),
+          'links': list([
+          ]),
+          'parent_needs': list([
+          ]),
+        }),
+        'source': list([
+          dict({
+            'kind': 'file',
+            'language': '.json',
+            'physical': dict({
+              'path': 'imp.json',
+              'root': 'srcdir',
+            }),
+          }),
+          dict({
+            'document': 'imp',
+            'kind': 'page',
+            'language': '.rst',
+            'physical': dict({
+              'end_line': 4,
+              'path': 'imp.rst',
+              'root': 'srcdir',
+              'start_line': 4,
+            }),
+            'semantic': list([
+              dict({
+                'kind': 'section',
+                'name': 'Imported',
+              }),
+            ]),
+          }),
+        ]),
+        'type': 'req',
+      }),
+      dict({
+        'content': dict({
+          'doctype': '.rst',
+          'parts': dict({
+            'p1': ' the part',
+          }),
+          'text': 'A body with :np:`(p1) the part`.',
+        }),
+        'fields': dict({
+          'asil': 'B',
+          'completion': None,
+          'constraints': list([
+          ]),
+          'duration': None,
+          'layout': None,
+          'status': 'open',
+          'style': None,
+          'tags': list([
+            'a',
+            'b',
+          ]),
+          'title': 'The first',
+        }),
+        'id': 'REQ_1',
+        'links': dict({
+          'implements': list([
+          ]),
+          'links': list([
+          ]),
+          'parent_needs': list([
+          ]),
+        }),
+        'source': list([
+          dict({
+            'document': 'index',
+            'kind': 'page',
+            'language': '.rst',
+            'physical': dict({
+              'end_line': 20,
+              'path': 'index.rst',
+              'root': 'srcdir',
+              'start_line': 14,
+            }),
+            'semantic': list([
+              dict({
+                'kind': 'section',
+                'name': 'Up',
+              }),
+              dict({
+                'kind': 'section',
+                'name': 'Requirements',
+              }),
+            ]),
+          }),
+        ]),
+        'type': 'req',
+      }),
+      dict({
+        'content': dict({
+          'doctype': '.rst',
+          'text': 'Links to a part and, under a condition, to a need.',
+        }),
+        'fields': dict({
+          'asil': 'QM',
+          'completion': None,
+          'constraints': list([
+          ]),
+          'duration': None,
+          'layout': None,
+          'status': None,
+          'style': None,
+          'tags': list([
+          ]),
+          'title': 'The second',
+        }),
+        'id': 'REQ_2',
+        'links': dict({
+          'implements': list([
+          ]),
+          'links': list([
+            dict({
+              'id': 'REQ_1',
+              'part': 'p1',
+            }),
+            dict({
+              'condition': 'status == "open"',
+              'id': 'REQ_3',
+            }),
+          ]),
+          'parent_needs': list([
+          ]),
+        }),
+        'source': list([
+          dict({
+            'document': 'index',
+            'kind': 'page',
+            'language': '.rst',
+            'physical': dict({
+              'end_line': 26,
+              'path': 'index.rst',
+              'root': 'srcdir',
+              'start_line': 22,
+            }),
+            'semantic': list([
+              dict({
+                'kind': 'section',
+                'name': 'Up',
+              }),
+              dict({
+                'kind': 'section',
+                'name': 'Requirements',
+              }),
+            ]),
+          }),
+        ]),
+        'type': 'req',
+      }),
+      dict({
+        'content': dict({
+          'doctype': '.rst',
+          'text': '''
+            .. req:: Nested
+               :id: REQ_4
+          ''',
+        }),
+        'fields': dict({
+          'asil': 'QM',
+          'completion': None,
+          'constraints': list([
+          ]),
+          'duration': None,
+          'layout': None,
+          'status': 'open',
+          'style': None,
+          'tags': list([
+          ]),
+          'title': 'The third',
+        }),
+        'id': 'REQ_3',
+        'links': dict({
+          'implements': list([
+          ]),
+          'links': list([
+          ]),
+          'parent_needs': list([
+          ]),
+        }),
+        'source': list([
+          dict({
+            'document': 'index',
+            'kind': 'page',
+            'language': '.rst',
+            'physical': dict({
+              'end_line': 33,
+              'path': 'index.rst',
+              'root': 'srcdir',
+              'start_line': 28,
+            }),
+            'semantic': list([
+              dict({
+                'kind': 'section',
+                'name': 'Up',
+              }),
+              dict({
+                'kind': 'section',
+                'name': 'Requirements',
+              }),
+            ]),
+          }),
+        ]),
+        'type': 'req',
+      }),
+      dict({
+        'content': dict({
+          'doctype': '.rst',
+          'text': '',
+        }),
+        'fields': dict({
+          'asil': 'QM',
+          'completion': None,
+          'constraints': list([
+          ]),
+          'duration': None,
+          'layout': None,
+          'status': None,
+          'style': None,
+          'tags': list([
+          ]),
+          'title': 'Nested',
+        }),
+        'id': 'REQ_4',
+        'links': dict({
+          'implements': list([
+          ]),
+          'links': list([
+          ]),
+          'parent_needs': list([
+            'REQ_3',
+          ]),
+        }),
+        'source': list([
+          dict({
+            'document': 'index',
+            'kind': 'page',
+            'language': '.rst',
+            'physical': dict({
+              'end_line': 33,
+              'path': 'index.rst',
+              'root': 'srcdir',
+              'start_line': 32,
+            }),
+            'semantic': list([
+              dict({
+                'kind': 'section',
+                'name': 'Up',
+              }),
+              dict({
+                'kind': 'section',
+                'name': 'Requirements',
+              }),
+            ]),
+          }),
+        ]),
+        'type': 'req',
+      }),
+      dict({
+        'content': dict({
+          'doctype': '.rst',
+          'text': 'Its source is the docstring.',
+        }),
+        'fields': dict({
+          'asil': 'QM',
+          'completion': None,
+          'constraints': list([
+          ]),
+          'duration': None,
+          'layout': None,
+          'status': None,
+          'style': None,
+          'tags': list([
+          ]),
+          'title': 'in a docstring',
+        }),
+        'id': 'REQ_DOC',
+        'links': dict({
+          'implements': list([
+          ]),
+          'links': list([
+          ]),
+          'parent_needs': list([
+          ]),
+        }),
+        'source': list([
+          dict({
+            'kind': 'code',
+            'language': 'python',
+            'physical': dict({
+              'path': 'json2a1_module.py',
+              'root': 'srcdir',
+            }),
+            'semantic': list([
+              dict({
+                'extras': dict({
+                  'qualified_name': 'documented',
+                }),
+                'kind': 'function',
+                'name': 'documented',
+              }),
+            ]),
+          }),
+          dict({
+            'document': 'auto',
+            'kind': 'page',
+            'language': '.rst',
+            'physical': dict({
+              'path': 'auto.rst',
+              'root': 'srcdir',
+            }),
+            'semantic': list([
+              dict({
+                'kind': 'section',
+                'name': 'Autodoc',
+              }),
+              dict({
+                'extras': dict({
+                  'id': 'json2a1_module.documented',
+                  'signature': 'documented',
+                }),
+                'kind': 'py:function',
+                'name': 'documented',
+              }),
+            ]),
+          }),
+        ]),
+        'type': 'req',
+      }),
+      dict({
+        'content': dict({
+          'doctype': '.rst',
+          'text': '',
+        }),
+        'fields': dict({
+          'asil': 'QM',
+          'completion': None,
+          'constraints': list([
+          ]),
+          'duration': None,
+          'layout': None,
+          'status': None,
+          'style': None,
+          'tags': list([
+          ]),
+          'title': 'In a nested include',
+        }),
+        'id': 'REQ_INC',
+        'links': dict({
+          'implements': list([
+          ]),
+          'links': list([
+          ]),
+          'parent_needs': list([
+          ]),
+        }),
+        'source': list([
+          dict({
+            'kind': 'file',
+            'language': '.rst',
+            'physical': dict({
+              'end_line': 2,
+              'path': 'frag/b.rst',
+              'root': 'srcdir',
+              'start_line': 1,
+            }),
+          }),
+          dict({
+            'kind': 'file',
+            'language': '.rst',
+            'physical': dict({
+              'path': 'frag/a.rst',
+              'root': 'srcdir',
+            }),
+          }),
+          dict({
+            'document': 'inc_host',
+            'kind': 'page',
+            'language': '.rst',
+            'physical': dict({
+              'path': 'inc_host.rst',
+              'root': 'srcdir',
+            }),
+            'semantic': list([
+              dict({
+                'kind': 'section',
+                'name': 'Included',
+              }),
+            ]),
+          }),
+        ]),
+        'type': 'req',
+      }),
+      dict({
+        'content': dict({
+          'doctype': '.rst',
+          'text': '',
+        }),
+        'fields': dict({
+          'asil': 'QM',
+          'completion': None,
+          'constraints': list([
+          ]),
+          'duration': None,
+          'layout': None,
+          'status': None,
+          'style': None,
+          'tags': list([
+          ]),
+          'title': 'A spec',
+          'verdict': 'pass',
+        }),
+        'id': 'SPEC_1',
+        'links': dict({
+          'implements': list([
+            'REQ_2',
+          ]),
+          'links': list([
+          ]),
+          'parent_needs': list([
+          ]),
+        }),
+        'source': list([
+          dict({
+            'document': 'index',
+            'kind': 'page',
+            'language': '.rst',
+            'physical': dict({
+              'end_line': 41,
+              'path': 'index.rst',
+              'root': 'srcdir',
+              'start_line': 38,
+            }),
+            'semantic': list([
+              dict({
+                'kind': 'section',
+                'name': 'Up',
+              }),
+              dict({
+                'kind': 'section',
+                'name': 'Specifications',
+              }),
+            ]),
+          }),
+        ]),
+        'type': 'spec',
+      }),
+      dict({
+        'content': dict({
+          'doctype': '.rst',
+          'text': '',
+        }),
+        'fields': dict({
+          'asil': 'QM',
+          'completion': None,
+          'constraints': list([
+          ]),
+          'duration': None,
+          'layout': None,
+          'status': None,
+          'style': None,
+          'tags': list([
+          ]),
+          'title': 'a generated need',
+        }),
+        'id': 'SVC_1',
+        'links': dict({
+          'implements': list([
+          ]),
+          'links': list([
+          ]),
+          'parent_needs': list([
+          ]),
+        }),
+        'source': list([
+          dict({
+            'kind': 'generated',
+            'semantic': list([
+              dict({
+                'kind': 'service',
+                'name': 'probe',
+              }),
+            ]),
+          }),
+          dict({
+            'document': 'svc',
+            'kind': 'page',
+            'language': '.rst',
+            'physical': dict({
+              'end_line': 4,
+              'path': 'svc.rst',
+              'root': 'srcdir',
+              'start_line': 4,
+            }),
+            'semantic': list([
+              dict({
+                'kind': 'section',
+                'name': 'Service',
+              }),
+            ]),
+          }),
+        ]),
+        'type': 'req',
+      }),
+    ]),
+    'project': dict({
+      'name': 'up',
+      'version': '1.0',
+    }),
+  })
+# ---
+# name: test_the_per_id_builder_writes_one_2a1_document_per_need[test_app0]
+  list([
+    'IMP_1.json',
+    'REQ_1.json',
+    'REQ_2.json',
+    'REQ_3.json',
+    'REQ_4.json',
+    'REQ_DOC.json',
+    'REQ_INC.json',
+    'SPEC_1.json',
+    'SVC_1.json',
+  ])
+# ---
+# name: test_the_per_id_builder_writes_one_2a1_document_per_need[test_app0].1
+  dict({
+    'format_version': '2a1',
+    'needs': list([
+      dict({
+        'content': dict({
+          'doctype': '.rst',
+          'text': 'Links to a part and, under a condition, to a need.',
+        }),
+        'fields': dict({
+          'asil': 'QM',
+          'completion': None,
+          'constraints': list([
+          ]),
+          'duration': None,
+          'layout': None,
+          'status': None,
+          'style': None,
+          'tags': list([
+          ]),
+          'title': 'The second',
+        }),
+        'id': 'REQ_2',
+        'links': dict({
+          'implements': list([
+          ]),
+          'links': list([
+            dict({
+              'id': 'REQ_1',
+              'part': 'p1',
+            }),
+            dict({
+              'condition': 'status == "open"',
+              'id': 'REQ_3',
+            }),
+          ]),
+          'parent_needs': list([
+          ]),
+        }),
+        'source': list([
+          dict({
+            'document': 'index',
+            'kind': 'page',
+            'language': '.rst',
+            'physical': dict({
+              'end_line': 26,
+              'path': 'index.rst',
+              'root': 'srcdir',
+              'start_line': 22,
+            }),
+            'semantic': list([
+              dict({
+                'kind': 'section',
+                'name': 'Up',
+              }),
+              dict({
+                'kind': 'section',
+                'name': 'Requirements',
+              }),
+            ]),
+          }),
+        ]),
+        'type': 'req',
+      }),
+    ]),
+    'project': dict({
+      'name': 'up',
+      'version': '1.0',
+    }),
+  })
+# ---

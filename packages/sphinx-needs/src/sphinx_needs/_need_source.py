@@ -8,7 +8,8 @@ with a ``document`` is the page the need is placed on (its *placement*, a role r
 than a hop kind; an external need has none). The legacy location keys of a need -- ``docname``, ``lineno``,
 ``lineno_content``, ``is_import``, ``is_external``, ``external_url`` -- are computed from
 the hops plus a few stored legacy facts, and are unchanged. The hop types are
-re-exported from :mod:`sphinx_needs.api`. Until ``needs.json`` carries them, a 9.x
+re-exported from :mod:`sphinx_needs.api`. Until the final ``needs.json`` format version
+2 carries them (the draft ``"2a1"`` writes them, and does not end that), a 9.x
 minor release only adds to them (an optional field, a hop kind); a rename, a removal or
 a change of an existing field's meaning or type waits for 10.0, because published
 sibling extensions construct them (see :ref:`api_public`).
@@ -72,10 +73,10 @@ _DOCSTRING_OF: Final = "docstring of "
 class NeedSourcePhysical:
     """Where a hop's text physically is: a file under a named root, or a URL.
 
-    **Provisional** until it reaches ``needs.json``: additions only through 9.x (new
-    optional fields; a rename, a removal or a change of an existing field's meaning or
-    type waits for 10.0), because published sibling extensions construct it. See
-    :ref:`api_public`.
+    **Provisional** until the final ``needs.json`` format version 2 carries it (the
+    draft ``"2a1"`` does not end that): additions only through 9.x (new optional fields;
+    a rename, a removal or a change of an existing field's meaning or type waits for
+    10.0), because published sibling extensions construct it. See :ref:`api_public`.
     """
 
     root: str | None = None
@@ -98,10 +99,10 @@ class NeedSourcePhysical:
 class NeedSourceSemantic:
     """One entry of a hop's semantic location: a section, a domain object, a service.
 
-    **Provisional** until it reaches ``needs.json``: additions only through 9.x (new
-    optional fields; a rename, a removal or a change of an existing field's meaning or
-    type waits for 10.0), because published sibling extensions construct it. See
-    :ref:`api_public`.
+    **Provisional** until the final ``needs.json`` format version 2 carries it (the
+    draft ``"2a1"`` does not end that): additions only through 9.x (new optional fields;
+    a rename, a removal or a change of an existing field's meaning or type waits for
+    10.0), because published sibling extensions construct it. See :ref:`api_public`.
     """
 
     kind: str
@@ -148,10 +149,10 @@ class NeedSourceHop:
     through it, and a need written in that file itself records no chain at all
     (docutils 0.21 logs it).
 
-    **Provisional** until it reaches ``needs.json``: additions only through 9.x (new
-    optional fields; a rename, a removal or a change of an existing field's meaning or
-    type waits for 10.0), because published sibling extensions construct it. See
-    :ref:`api_public`.
+    **Provisional** until the final ``needs.json`` format version 2 carries it (the
+    draft ``"2a1"`` does not end that): additions only through 9.x (new optional fields;
+    a rename, a removal or a change of an existing field's meaning or type waits for
+    10.0), because published sibling extensions construct it. See :ref:`api_public`.
     """
 
     kind: str

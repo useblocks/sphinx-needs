@@ -88,8 +88,8 @@ class NeedItemSource:
     provisional, as every hop is), :meth:`on_page`, and reading a source through
     :class:`NeedItemSourceProtocol` (``dict_repr``). **Provisional**: the constructor
     itself and its keywords (``hops``, ``lineno``, ``lineno_content``,
-    ``parser_lineno``, ``is_import``), like the hop types, until ``needs.json`` carries
-    them: through 9.x a minor release only adds to them (a new optional keyword), and a
+    ``parser_lineno``, ``is_import``), like the hop types, until the final ``needs.json``
+    format version 2 carries them (the draft ``"2a1"`` does not end that): through 9.x a minor release only adds to them (a new optional keyword), and a
     rename, a removal or a change of a keyword's meaning or type waits for 10.0, because
     published sibling extensions construct them (see :ref:`api_public`). They are the
     stored legacy facts a later release turns into projections of the hops, and are

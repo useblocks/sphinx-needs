@@ -3430,6 +3430,55 @@ Example:
 
    See :ref:`this section <needs_builder_format>`, for an explanation of the output format.
 
+.. _`needs_json_format_version`:
+
+needs_json_format_version
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.3.0
+
+The format the ``needs.json`` files are written in: by the :ref:`needs builder <needs_builder>`, by
+:ref:`needs_build_json`, and by the :ref:`needs_id builder <needs_id_builder>` and :ref:`needs_build_json_per_id`.
+
+- ``1`` (the default): the format described in :ref:`needs_builder_format`, unchanged.
+- ``"2a1"``: the first draft of format version 2, :ref:`needs_builder_format_2a1`. Each need carries
+  the places its text came through -- the file and the lines of its directive, the files it was
+  included through, the needs.json it was imported from, the docstring it was written in -- and
+  keeps them when another project imports it.
+
+Any other value is reported as a ``needs.config`` warning, and the file is written in format 1.
+
+.. attention:: **Experimental.**
+
+   A ``"2a1"`` file is readable only by the release of Sphinx-Needs that wrote it: the draft may
+   change, or be replaced by the next one, in any release. Each build that sets it says so in one
+   ``needs.beta`` warning (silence it with ``suppress_warnings = ["needs.beta"]``).
+   Sphinx-Needs 9.0.0 to 9.2.0 refuse such a file with a warning, as ubCode does, and
+   Sphinx-Needs 8.5.0 aborts the build on it (see :ref:`needs_builder_format_2a1`). Use it to try the format, not for a file another project relies
+   on.
+
+Of the other ``needs.json`` options, under ``"2a1"``:
+
+- :ref:`needs_json_exclude_fields` leaves out a field or a link type it names, the ``content``
+  (``doctype`` and ``parts`` its keys), and ``source``, the need's source; a key of format 1 that
+  the source carries in ``"2a1"`` (``docname``, ``lineno``, ``sections``, ``signature``, ...) is
+  reported, once, as having no key of its own;
+- :ref:`needs_builder_filter`, :ref:`needs_reproducible_json` and
+  :ref:`needs_json_include_link_conditions` work as in format 1;
+- :ref:`needs_json_remove_defaults` and :ref:`needs_file` are ignored, each with one warning: a
+  ``"2a1"`` file carries every value and no schema, and has no versions to accumulate.
+
+Default: :need_config_default:`json_format_version`
+
+.. code-block:: python
+
+   needs_json_format_version = "2a1"
+
+.. code-block:: toml
+
+   [needs]
+   json_format_version = "2a1"
+
 .. _`needs_reproducible_json`:
 
 needs_reproducible_json

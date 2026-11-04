@@ -71,6 +71,10 @@ def test_the_needs_builder_writes_2a1(test_app: Any, snapshot: Any) -> None:
     )
     for record in data["needs"]:
         assert list(record) == ["id", "type", "fields", "links", "content", "source"]
+    # a hop's keys in the order of its fields, a field the hop does not hold left out
+    code, page = _records(app)["REQ_DOC"]["source"]
+    assert list(code) == ["kind", "physical", "semantic", "language"]
+    assert list(page) == ["kind", "physical", "semantic", "document", "language"]
     assert data == snapshot(exclude=props("created", "creator"))
 
 
@@ -221,7 +225,7 @@ def test_an_unknown_value_warns_and_writes_v1(
     (srcdir / "conf.py").write_text(
         f'extensions = ["sphinx_needs"]\nneeds_json_format_version = {value!r}\n'
     )
-    (srcdir / "index.rst").write_text("T\n=\n\n.. req:: a\n   :id: R_1\n")
+    (srcdir / "index.rst").write_text("T\n=\n\n.. req:: a\n   :id: REQ_001\n")
     app = make_app("needs", srcdir=srcdir, freshenv=True)
     try:
         app.build()
@@ -231,7 +235,7 @@ def test_an_unknown_value_warns_and_writes_v1(
         ]
         data = _needs_json(app)
         assert "format_version" not in data
-        assert "R_1" in data["versions"][""]["needs"]
+        assert "REQ_001" in data["versions"][""]["needs"]
     finally:
         app.cleanup()
 
