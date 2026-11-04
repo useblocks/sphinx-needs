@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 from sphinx.errors import ExtensionError
@@ -12,8 +14,15 @@ from sphinx_mounts.config import (
     MountConfigError,
     TomlConfigError,
     load_mounts_from_toml,
+    load_variant_sources_from_toml,
     parse_mounts,
 )
+
+#: Both readers of the file: the mounts array, and the variant sources with the document.
+_TOML_READERS = [
+    pytest.param(load_mounts_from_toml, id="mounts"),
+    pytest.param(load_variant_sources_from_toml, id="variant-sources"),
+]
 
 
 class TestErrorTaxonomy:
@@ -870,3 +879,32 @@ class TestNamespacedMountsTable:
         assert len(parsed) == 1
         assert parsed[0].dir == (tmp_path / "bundle").resolve()
         assert parsed[0].mount_at == "_g/x"
+
+
+class TestTomlReading:
+    """Both readers parse the file through ub-project, and fail as a TomlConfigError."""
+
+    @pytest.mark.parametrize("read", _TOML_READERS)
+    def test_malformed_toml_names_the_file(
+        self, tmp_path: Path, read: Callable[[Path], Any]
+    ) -> None:
+        toml = tmp_path / "ubproject.toml"
+        toml.write_text("not = valid = toml\n", encoding="utf-8")
+        with pytest.raises(TomlConfigError) as info:
+            read(toml)
+        assert str(info.value).startswith(
+            f"sphinx-mounts: failed to parse TOML config {toml}: invalid TOML: "
+        )
+
+    @pytest.mark.parametrize("read", _TOML_READERS)
+    def test_a_non_utf8_file_is_a_toml_config_error(
+        self, tmp_path: Path, read: Callable[[Path], Any]
+    ) -> None:
+        """Not a raw ``UnicodeDecodeError`` traceback, as it was before ub-project read it."""
+        toml = tmp_path / "ubproject.toml"
+        toml.write_bytes('[project]\nname = "café"\n'.encode("latin-1"))
+        with pytest.raises(TomlConfigError) as info:
+            read(toml)
+        assert str(info.value).startswith(
+            f"sphinx-mounts: failed to parse TOML config {toml}: not valid UTF-8 TOML: "
+        )
