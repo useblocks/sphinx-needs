@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793803146941,
+  "lastUpdate": 1793823394063,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28854,6 +28854,48 @@ window.BENCHMARK_DATA = {
             "value": 187.518084,
             "unit": "MB",
             "extra": "Commit: 10ad5afe9883545c29c38d523cd8ced848b1015a\nBranch: master\nTime: 2026-11-04T15:37:59+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "12927539733abed7803362f5d59b58d79fb862b8",
+          "message": "🐛 Keep a link type named `full_title` on `needimport`, external needs and codelinks needs (#2477)\n\nA project with a link type named `full_title` now keeps those links on\nevery route. `needimport` and `needs_external_needs` records, and\nsphinx-codelinks multi-line needs, dropped them silently: the record\nroutes treat `full_title` as a legacy key that is computed rather than\nread, and only a *field* of that name was exempt (#2392). A\nsphinx-codelinks one-line marker that set such a link without an id\nended the build with `AttributeError: 'list' object has no attribute\n'encode'`, because the link's list was passed on as the need's full\ntitle.\n\nA needs.json written by sphinx-needs 5.0 or earlier carries a legacy\n`full_title` string on every need. In a project with a link type of that\nname, that string is now read as the need's link targets, with one\nwarning per unknown target (`link_outgoing`, or `external_link_outgoing`\nfor an external need), where it was dropped silently. The way out is the\n`needimport`'s `:filter:`, or renaming the link type (the only way out\nfor external needs).\n\n- sphinx-needs: the record routes' legacy `full_title` key is no longer\ndropped when the project has a link type of that name\n(`_import_key_sets`), as it already was not for a field.\n- sphinx-codelinks: a one-line marker passes a link type named\n`full_title` as a link only, never as the full title the id is hashed\nfrom; `would_be_id` predicts the same id, so the duplicate check and the\n`[docs]` link name the need's real id.\n\n## Tests\n\n- `packages/sphinx-needs/tests/test_link_named_full_title.py`: a need\ndirective (control), a `needimport` record and a `needs_external_needs`\nrecord each keep the `full_title` link, and the target has all three\nback links.\n- `packages/sphinx-codelinks/tests/test_multiline_needs_render.py`: a\nmulti-line block without an id keeps the link; its `[docs]` link names\nthe title-hashed id.\n-\n`packages/sphinx-codelinks/tests/test_oneline_field_named_like_a_parameter.py`:\na one-line marker without an id that sets the link builds, keeps the\nlink, and gets the id `would_be_id` predicts, also when the marker's\nvalue is a plain string.\n\nEach new test fails on master. Changelog entries in both packages.\n\nCloses #2466",
+          "timestamp": "2026-11-04T21:14:54+01:00",
+          "tree_id": "2e8aa1c6433a4a934f9932beb0d0f33cb949fa9c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/12927539733abed7803362f5d59b58d79fb862b8"
+        },
+        "date": 1793823393139,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07367954899999773,
+            "unit": "s",
+            "extra": "Commit: 12927539733abed7803362f5d59b58d79fb862b8\nBranch: master\nTime: 2026-11-04T21:14:54+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 12.703370832999994,
+            "unit": "s",
+            "extra": "Commit: 12927539733abed7803362f5d59b58d79fb862b8\nBranch: master\nTime: 2026-11-04T21:14:54+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 191.408101,
+            "unit": "MB",
+            "extra": "Commit: 12927539733abed7803362f5d59b58d79fb862b8\nBranch: master\nTime: 2026-11-04T21:14:54+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
