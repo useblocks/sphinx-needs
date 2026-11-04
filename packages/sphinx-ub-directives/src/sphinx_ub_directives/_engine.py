@@ -243,13 +243,13 @@ def preamble(context: Mapping[str, Any]) -> str:
     no template line moves (§4.4, §4.5).
 
     minijinja-py hands a Python ``dict`` or ``list`` to a template as a Python object:
-    printed, it is Python's ``repr`` (``{'a': [1, 2]}``, not ``{"a": [1, 2]}``), its
-    ``items()`` is a ``dict_items``, and ``pop``/``append`` change the caller's data. A
-    literal is a native value -- printed, iterated in its written order, and immutable
-    exactly as the engine's own data is in ubCode. The data model (:func:`check_data`)
-    is what makes every value expressible as a literal (JSON is a subset of minijinja's
-    literal syntax once null is excluded). A key that is not an identifier cannot be
-    named by a template, so it is left out."""
+    printed, it is Python's ``repr`` (a float in a map is ``1e+20``, where the engine
+    prints ``1e20``), its ``items()`` is a ``dict_items``, and ``pop``/``append`` change
+    the caller's data. A literal is a native value -- printed, iterated in its written
+    order, and immutable exactly as the engine's own data is in ubCode. The data model
+    (:func:`check_data`) is what makes every value expressible as a literal (JSON is a
+    subset of minijinja's literal syntax once null is excluded). A key that is not an
+    identifier cannot be named by a template, so it is left out."""
     statements = [
         f"{{% set {key} = {literal(value)} %}}"
         for key, value in context.items()
@@ -334,8 +334,8 @@ def render(source: str, name: str, context: Mapping[str, Any], root: Root) -> Re
     data model; it reaches the template as native values, :func:`preamble`).
 
     The output limit is checked after the render. There is deliberately no live check: a
-    minijinja-py ``finalizer`` changes how every value it sees prints (measured on 2.24:
-    ``1.0`` prints ``1`` and a list prints as Python's ``repr``), which would break the
+    minijinja-py ``finalizer`` changes how every value it sees prints (measured on 3.0.5:
+    ``1.0`` prints ``1``, and ``[1.0, 2.5]`` prints ``[1, 2.5]``), which would break the
     dialect (§7.1); fuel bounds the render instead (§7.5).
 
     :raises Failure: With the contract code of what went wrong.

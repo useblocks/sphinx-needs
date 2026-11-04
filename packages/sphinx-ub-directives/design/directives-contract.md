@@ -408,17 +408,20 @@ sorted; the path is `….<name>.<table>.<key>`.
 5. **Context data is the engine's own data.** It reaches a template as engine-native
    values: read-only (a method that would change it — `pop`, `append`, `clear` — is a
    render error, and no render changes the data another sees), iterated in file order,
-   and printed as the engine prints its values (`{{ rows }}` is `[1, "a"]`).
+   and printed as the engine prints its values (`{{ rows }}` is `[1, 'a']`).
    Enforced by: corpus `context-is-read-only`, `dialect-values-render-pythonically`,
    `context-data-prints-as-the-engine-prints`.
 
    *The Sphinx half (informative):* minijinja-py hands a Python `dict` or `list` to a
-   template as a Python object — printed as Python's `repr` (`{'a': [1, 2]}`), with
-   Python's own `items()` and `pop()` — and freezing it into a `MappingProxyType` keeps the
-   `repr` (measured on 2.24). So the context is written into the template as one line of
-   `{% set %}` statements of literals in front of it: JSON is minijinja's literal syntax
-   once null is excluded, which the data model guarantees, and one line moves no
-   template line.
+   template as a Python object — printed as Python's `repr`, with Python's own `items()`
+   (a `dict_items`), `pop()` and `append()` — and freezing it into a `MappingProxyType`
+   keeps the `repr` and guards only the top level (`pop()` is refused, a nested list's
+   `append()` is not). Measured on 3.0.5, the `repr` matches the engine's own printing
+   for most data (`{'a': [1, 2]}` both ways), but not for every value (a float in a map
+   is `1e+20` against the engine's `1e20`), and `items()` and mutation differ for all of
+   it. So the context is written into the template as one line of `{% set %}` statements
+   of literals in front of it: JSON is minijinja's literal syntax once null is excluded,
+   which the data model guarantees, and one line moves no template line.
 6. **`var`** is in every template context: the project's merged variant data (the map
    `.. if::` evaluates against — reading contract §8), read-only, by attribute or by key.
    A key it does not define is undefined, and undefined is an error (`is defined` tests
@@ -561,7 +564,7 @@ that pin this rule, nor any option twice.) Enforced by: corpus
 
 ## 7. Rendering, and joining the page (both template forms)
 
-1. **The dialect** is minijinja 2.x, configured identically on both sides — these and only
+1. **The dialect** is minijinja 3.x, configured identically on both sides — these and only
    these differences from the engine's bare defaults:
    - undefined is strict (`is defined` tests it); no autoescaping; the standard delimiters;
      one trailing newline of a template dropped;
@@ -599,8 +602,8 @@ that pin this rule, nor any option twice.) Enforced by: corpus
    (`template_output_limit`), which both sides check after the render. The Sphinx half
    bounds a render by fuel and checks the output after it; it does not bound
    intermediate values, and it has NO live output cap: a minijinja-py `finalizer` changes
-   how every value it sees prints (measured on 2.24: `1.0` prints `1`, a list prints as
-   Python's `repr`), which would break §7.1. ubCode keeps its byte budget and value limit
+   how every value it sees prints (measured on 3.0.5: `1.0` prints `1`, and `[1.0, 2.5]`
+   prints `[1, 2.5]`), which would break §7.1. ubCode keeps its byte budget and value limit
    (`template_value_limit`, `template_compute_limit`, never pinned).
    Enforced by: corpus `output-over-1-mib-is-refused`, `output-of-1-mib-is-rendered`.
 6. **The per-page breaker.** In one page, once a template has hit a limit with three
@@ -788,6 +791,12 @@ myst-parser).
    check, and the version check is `tools/check_minijinja_version.py` (and
    `tests/test_minijinja_version.py`): the monorepo's locked minijinja equals the
    version the header records. ubCode's runner records its own `Cargo.lock` version.
+   Moving the engine is therefore one lockstep change, made here first: the lock moves,
+   and the header and every expansion the new version renders differently are
+   re-recorded in the same commit; ubCode then re-vendors the corpus from that commit and
+   locks the same version. A point release counts: the 3.0 series has changed rendered
+   text in its point releases, so the packages' range (`>=3.0.5,<4`) is a floor for
+   users, and the LOCK is what the corpus is held to.
 5. **Registered general-parser differences.** These are not part of this contract, and no case
    depends on them. In each, ubCode's parser differs from docutils or myst-parser for any
    page, hand-written or generated:
