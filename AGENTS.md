@@ -78,8 +78,9 @@ belt-and-braces extra — and the manifest carries `Private :: Do Not Upload`, w
 rejects on upload, for the by-hand path.
 
 **`packages/ub-project` is a library every extension will depend on, and it depends on
-nothing**: standard library only, no Sphinx, fenced by its own `tests/test_imports.py` and
-by CI's `toolchain-free` job, which runs its suite where Sphinx is not installed. Its
+nothing but the standard library**, plus `tomli` (its TOML 1.1 backport) below Python 3.15:
+no Sphinx, fenced by its own `tests/test_imports.py` and by CI's `toolchain-free` job, which
+runs its suite where Sphinx is not installed, and again on 3.15, where `tomli` is not. Its
 contract is its conformance corpus (ubCode is to vendor it) plus `design/reading-contract.md`;
 it decides no policy — discovery, warnings and `-D` stay with each consumer. sphinx-needs,
 sphinx-mounts, sphinx-codelinks and ub-test-reports depend on it, so each release of it

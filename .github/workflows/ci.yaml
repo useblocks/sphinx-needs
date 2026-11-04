@@ -553,10 +553,12 @@ jobs:
     #
     # ub-project, the shared reader for `ubproject.toml`, is installed into the SAME
     # environment and its whole suite runs here: its contract is to import nothing outside
-    # the standard library, so that every tool reading the file -- this converter included
-    # -- can use it without the toolchain. The assertion below runs after every install, so
-    # it covers each of them. It has no other CI cell: with no Sphinx dependency, a sphinx series is
-    # not an axis it has.
+    # the standard library but its TOML 1.1 backport (`tomli`, below Python 3.15), so that
+    # every tool reading the file -- this converter included -- can use it without the
+    # toolchain. The assertion below runs after every install, so it covers each of them. It
+    # has no other CI cell: with no Sphinx dependency, a sphinx series is not an axis it has.
+    # The last step runs its suite once more on Python 3.15, where the backport is not
+    # installed and the standard library reads TOML 1.1.
     #
     # ub-needs-exchange, the record of the needs.json format and its reader, is installed
     # and run here for the same reason, and this is its ONLY cell: its contract is the
@@ -686,11 +688,13 @@ jobs:
           uv venv --python 3.11 /tmp/toolchain-free
           wheel=$(ls /tmp/core-dist/*.whl)
           uv pip install --python /tmp/toolchain-free --no-sources "${wheel}[pytest]" pytest-xdist packages/ub-project packages/ub-needs-exchange
-      - name: Assert the toolchain really is absent, and pytest-xdist present
+      - name: Assert the toolchain really is absent, and pytest-xdist and tomli present
         # the fence's fence. Without this the job would still pass with Sphinx installed,
         # and would be testing nothing it claims to test. pytest-xdist the other way round:
         # without it the plugin's three xdist tests skip on `importorskip` and the job
-        # stays green
+        # stays green. tomli too: on 3.11 ub-project's TOML 1.1 reader is the backport its
+        # manifest declares below 3.15, and this is the job that installs it from that
+        # declaration alone
         run: |
           /tmp/toolchain-free/bin/python -c "
           import importlib.util, sys
@@ -699,6 +703,8 @@ jobs:
               sys.exit(f'toolchain installed: {present}')
           if importlib.util.find_spec('xdist') is None:
               sys.exit(\"pytest-xdist is not installed: the plugin's three xdist tests would skip\")
+          if importlib.util.find_spec('tomli') is None:
+              sys.exit('tomli is not installed: ub-project declares it below Python 3.15')
           "
       - name: Run the ub-test-reports suite
         # WHOLE, with no marker and no file list: every test of the core must pass without the
@@ -718,6 +724,20 @@ jobs:
         # A step of its own, as ub-project's above and for the same reasons; the installed
         # package is what is imported, so this tests the artefact too
         run: /tmp/toolchain-free/bin/python -m pytest -q packages/ub-needs-exchange/tests
+      - name: Run the ub-project suite on Python 3.15, where tomli is not installed
+        # From 3.15 the standard library's `tomllib` reads TOML 1.1, so the manifest's marker
+        # leaves `tomli` out and the reader takes its `tomllib` branch, which no other step
+        # runs. The assertion proves the marker; the suite, the branch. An environment of its
+        # own, outside the project, as the one above
+        run: |
+          uv venv --python 3.15 /tmp/toolchain-free-3.15
+          uv pip install --python /tmp/toolchain-free-3.15 --no-sources packages/ub-project pytest
+          /tmp/toolchain-free-3.15/bin/python -c "
+          import importlib.util, sys
+          if importlib.util.find_spec('tomli') is not None:
+              sys.exit('tomli is installed on Python 3.15: ub-project declares it only below 3.15')
+          "
+          /tmp/toolchain-free-3.15/bin/python -m pytest -q packages/ub-project/tests
 
   plugin-floor:
     name: Plugin floor (pytest ${{ matrix.pytest }}, Python ${{ matrix.python }})
