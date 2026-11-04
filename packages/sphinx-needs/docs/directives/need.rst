@@ -315,13 +315,6 @@ Default: False
 jinja_content
 ~~~~~~~~~~~~~
 
-.. deprecated:: 9.3.0
-
-   ``:jinja_content:`` reports a ``needs.deprecated`` warning at each need it renders, and is removed in
-   sphinx-needs 10.0. Move the Jinja into a template file, with ``{{ content }}`` where the need's own body
-   goes, and name it with :ref:`need_template` (or give it to every need of a type as a default). A template
-   keeps the need's authored body and leaves no Jinja syntax in ``needs.json``.
-
 The option activates jinja-parsing for the content of a need.
 If the value is set to ``true``, you can specify `Jinja <https://jinja.palletsprojects.com/>`_ syntax in the content.
 
@@ -337,7 +330,30 @@ Allowed values (case-insensitive):
 
 Default: False
 
-.. code-block:: rst
+
+.. syntax-example::
+
+    .. req:: First Req Need
+       :id: JINJAID123
+       :jinja_content: false
+
+       Need with ``:jinja_content:`` equal to ``false``.
+
+       .. spec:: Nested Spec Need
+          :id: JINJAID125
+          :status: open
+          :tags: user;login
+          :links: JINJAID126
+          :jinja_content:
+
+          Nested need with ``:jinja_content:`` option set to ``true``.
+          This requirement has tags: **{{ tags | join(', ') }}**.
+
+          It links to:
+          {% for link in links %}
+          - {{ link }}
+          {% endfor %}
+
 
     .. spec:: First Spec Need
        :id: JINJAID126
@@ -346,23 +362,6 @@ Default: False
 
        Need with ``:jinja_content:`` equal to ``true``.
        This requirement has status: **{{ status }}**.
-
-renders the content ``Need with :jinja_content: equal to true. This requirement has status: open.``
-The same need through a template, ``needs_templates/status.need``:
-
-.. code-block:: jinja
-
-    {{ content }}
-    This requirement has status: **{{ status }}**.
-
-.. code-block:: rst
-
-    .. spec:: First Spec Need
-       :id: JINJAID126
-       :status: open
-       :template: status
-
-       Need with a template.
 
 .. _title_from_content:
 
@@ -586,7 +585,7 @@ How need templates are rendered
    rendered; a heading in pre/post output on a MyST page opens its section in place; ``needimport`` no longer
    applies a record's template names.
 
-:ref:`need_template`, :ref:`need_pre_template`, :ref:`need_post_template` and the deprecated
+:ref:`need_template`, :ref:`need_pre_template`, :ref:`need_post_template` and
 :ref:`jinja_content` share these rules, whether a template is named on the need, on a :ref:`needimport`, by a
 need type's or :ref:`needs_fields`' ``default`` or ``predicates``, or through the API.
 

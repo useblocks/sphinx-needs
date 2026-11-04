@@ -8,8 +8,8 @@ Unreleased
 ----------
 
 Need templates are fixed in place: a broken template no longer deletes its need, typos and unresolved fields
-are reported, template files are dependencies, ``needimport`` never applies a record's template names again,
-and ``:jinja_content:`` is deprecated (:ref:`need_templates_portability`, :pr:`2474`).
+are reported, template files are dependencies, and ``needimport`` never applies a record's template names again
+(:ref:`need_templates_portability`, :pr:`2474`).
 
 Improvements
 ............
@@ -34,14 +34,6 @@ Improvements
 
 Deprecations
 ............
-
-- ⚠️ ``:jinja_content:`` is deprecated, and is removed in 10.0: a template file holding ``{{ content }}``,
-  named with ``:template:``, replaces it (:ref:`jinja_content`, :pr:`2474`)
-
-  Each need rendered with it -- the option, the ``jinja_content`` argument of the API, a ``list2need`` item or a
-  service datum -- is one ``needs.deprecated`` warning at the need; it is rendered as before. It loses the
-  authored body (``needs.json`` holds only its output), and its output can hold Jinja syntax that a reader must
-  not render again.
 
 - ⚠️ ``needimport`` applying a record's ``pre_template`` or ``post_template`` is deprecated, and stops in 10.0
   (:ref:`needimport_templates`, :pr:`2474`)

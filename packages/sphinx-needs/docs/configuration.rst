@@ -3799,16 +3799,22 @@ The value can be any data type (string, integer, list, dict, etc.)
 The data passed via needs_render_context will be available as variable(s) when rendering Jinja templates or strings.
 You can use the data passed via needs_render_context as shown below:
 
-.. dropdown:: Template ``render_context.need``
-
-   .. literalinclude:: /needs_templates/render_context.need
-      :language: jinja
-
 .. syntax-example::
 
-   .. req:: Need rendered through a template
+   .. req:: Need with jinja_content enabled
       :id: JINJA1D8913
-      :template: render_context
+      :jinja_content: true
+
+      Need with alias {{ custom_data_1 }} and ``jinja_content`` option set to {{ custom_data_3 }}.
+
+      {{ custom_data_2 }}
+      {% for author in custom_data_4 %}
+
+      * {{ author[0] }}
+
+        + {{ author[1] }}
+
+      {% endfor %}
 
 .. _`needs_debug_measurement`:
 

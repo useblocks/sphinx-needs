@@ -29,7 +29,6 @@ from typing import Any
 
 import pytest
 
-from sphinx_needs_testkit import build_warnings
 from sphinx_needs_testkit.conformance import (
     check_values,
     inside,
@@ -56,7 +55,6 @@ SHARED_CODES = frozenset(
         "template_undefined",
         "template_unresolved",
         "template_heading",
-        "deprecated_jinja_content",
     }
 )
 
@@ -85,14 +83,6 @@ TOCTREE = "\n.. toctree::\n   :hidden:\n\n   page\n"
 
 #: The field a ``template_unresolved`` message names.
 _FIELD = re.compile(r"[Ff]ield '([^']+)'")
-
-#: A ``needs.deprecated`` record of the build: where it is, and its message. sphinx-needs
-#: reports ``deprecated_jinja_content`` as one, naming ``jinja_content``.
-_DEPRECATED = re.compile(
-    r"^<srcdir>/(?P<doc>[^:]+)\.(?:rst|md):(?P<line>\d+): WARNING: "
-    r"(?P<message>.*jinja_content.*) \[needs\.deprecated\]$",
-    re.DOTALL,
-)
 
 
 def _corpus() -> list[dict[str, Any]]:
@@ -256,24 +246,6 @@ def test_a_case_cannot_write_outside_its_directory(relative: str) -> None:
         _files({"config": "", "source": "", "files": {relative: "{}"}})
 
 
-def _deprecated_jinja_content(
-    app: Any, needs: Mapping[str, Mapping[str, Any]]
-) -> list[tuple[str | None, ...]]:
-    """The ``deprecated_jinja_content`` findings: sphinx-needs' ``needs.deprecated``
-    records naming ``jinja_content``, at the need whose directive they are reported at."""
-    at_line = {
-        (need["docname"], need["lineno"]): need_id
-        for need_id, need in needs.items()
-        if need.get("lineno") is not None
-    }
-    found: list[tuple[str | None, ...]] = []
-    for warning in build_warnings(app):
-        if match := _DEPRECATED.match(warning):
-            need = at_line.get((match["doc"], int(match["line"])))
-            found.append(("deprecated_jinja_content", need, None))
-    return found
-
-
 def _describe(code: str, message: str) -> tuple[str | None]:
     """The field a finding is about: only ``template_unresolved`` names one."""
     if code != "template_unresolved":
@@ -300,7 +272,6 @@ def test_case(test_app: Any, case: dict[str, Any]) -> None:
         shared=SHARED_CODES,
         ubcode_only=UBCODE_ONLY_CODES,
         describe=_describe,
-        readers={"deprecated_jinja_content": _deprecated_jinja_content},
     )
     problems += [f"a record naming a shared code is unreadable: {w!r}" for w in unread]
     problems += match_findings(found, expect["findings"])

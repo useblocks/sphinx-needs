@@ -38,17 +38,6 @@ from tests.util import (
     needs_by_id,
 )
 
-
-def _without_jinja_content_deprecation(warnings: list[str]) -> list[str]:
-    """The warnings but the deprecation of ``jinja_content``, which every need this
-    module creates with it reports (it is removed in sphinx-needs 10.0)."""
-    return [
-        w
-        for w in warnings
-        if not (w.endswith("[needs.deprecated]") and "jinja_content option" in w)
-    ]
-
-
 DRIVER = '''\
 """Test-only driver: creates needs through the public content-markup API."""
 
@@ -960,7 +949,7 @@ def test_rendered_content_is_parsed_in_its_markup_at_the_need(test_app: SphinxTe
     expected = (
         'ERROR: Content block expected for the "note" directive; none found. [docutils]'
     )
-    assert sorted(_without_jinja_content_deprecation(build_warnings(app))) == [
+    assert sorted(build_warnings(app)) == [
         f"<srcdir>/index.rst:{rst + note}: {expected}",
         f"<srcdir>/jinja_md.md:{md + note}: {expected}",
     ]
@@ -1222,7 +1211,7 @@ def test_content_anchored_in_the_page_behind_rst_prolog_and_an_include(
         'ERROR: Content block expected for the "note" directive; none found. [docutils]'
     )
     note = PROLOG_MD_BODY.index("```{note}")
-    assert sorted(_without_jinja_content_deprecation(build_warnings(app))) == sorted(
+    assert sorted(build_warnings(app)) == sorted(
         [
             # a need directive, and the same body as RST content: the same line
             f"<srcdir>/index.rst:{body('REQ_PROLOG') + 2}: {unknown}",

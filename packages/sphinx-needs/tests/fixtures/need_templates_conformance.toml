@@ -76,8 +76,8 @@
 #       a record that names a template included
 #   19. `doctype` is the markup the content is written in: a need inside `{eval-rst}` on
 #       a MyST page is `.rst`
-#   21. `:jinja_content:` is deprecated (`deprecated_jinja_content`, at the need), and
-#       still rendered
+#   21. `:jinja_content:` renders the need's own body as a template, against the need,
+#       under the rules above (its deprecation is withdrawn: no finding)
 #
 # Rules for every runner:
 #   - a case is one project. `config` is its `ubproject.toml` (the `[needs]` table, and
@@ -113,7 +113,7 @@
 #     subcode. Messages and severities are NOT compared. Only the codes of the
 #     need-template contract are compared --
 #         template_missing, template_syntax, template_render, template_undefined,
-#         template_unresolved, template_heading, deprecated_jinja_content
+#         template_unresolved, template_heading
 #     -- every other finding (a dead link, a need that could not be imported) is each
 #     tool's own. A finding's `need` is the need it is reported at (the need's
 #     directive; for an imported need, the need of that id). `field` is named by
@@ -128,8 +128,6 @@
 #                        template_render      -> needs.template_render
 #                        template_undefined   -> needs.template_undefined
 #                        template_unresolved  -> needs.template_unresolved
-#                        deprecated_jinja_content -> needs.deprecated, its message
-#                                                naming `jinja_content`
 #                        template_heading     -> (none: sphinx-needs opens a section)
 #         ubCode:        each code under its own prefix, `template_heading` included
 #
@@ -613,9 +611,7 @@ source = '''
    Body of {{ id }}.
 '''
 [case.expect]
-[[case.expect.findings]]
-code = "deprecated_jinja_content"
-need = "REQ_1"
+findings = []
 [case.expect.needs.REQ_1]
 content = "Body of REQ_1: Jinja."
 jinja_content = true
@@ -766,9 +762,6 @@ source = '''
 [case.expect]
 [[case.expect.findings]]
 code = "template_syntax"
-need = "REQ_1"
-[[case.expect.findings]]
-code = "deprecated_jinja_content"
 need = "REQ_1"
 [case.expect.needs.REQ_1]
 content = ""
@@ -921,9 +914,6 @@ source = '''
 [case.expect]
 [[case.expect.findings]]
 code = "template_undefined"
-need = "REQ_1"
-[[case.expect.findings]]
-code = "deprecated_jinja_content"
 need = "REQ_1"
 [case.expect.needs.REQ_1]
 content = "Hello from REQ_1."

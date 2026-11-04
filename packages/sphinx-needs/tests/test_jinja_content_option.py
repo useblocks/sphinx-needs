@@ -2,8 +2,6 @@ from pathlib import Path
 
 import pytest
 
-from sphinx_needs_testkit import build_warnings
-
 
 @pytest.mark.parametrize(
     "test_app",
@@ -14,14 +12,6 @@ def test_doc_need_jinja_content(test_app):
     app = test_app
     app.build()
     html = Path(app.outdir, "index.html").read_text()
-
-    # deprecated (removed in 10.0): one warning at each need rendering its body, none
-    # for ``:jinja_content: false``
-    deprecated = [w for w in build_warnings(app) if w.endswith("[needs.deprecated]")]
-    assert deprecated, "the jinja_content option is deprecated"
-    assert all("jinja_content option of need" in w for w in deprecated)
-    assert all("{{ content }}" in w and "10.0" in w for w in deprecated)
-    assert not any("'JINJAID123'" in w or "'JINJAID124'" in w for w in deprecated)
 
     assert "Nested Spec Need" in html
     assert "Jinja Content Not Implemented" in html
