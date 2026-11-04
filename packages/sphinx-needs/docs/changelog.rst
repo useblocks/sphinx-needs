@@ -24,7 +24,9 @@ Improvements
   value is called once per call, as with one render; any other call runs again in the second render. A template
   naming a field that holds a dynamic function, a variant or a derived value -- resolved only after every document
   is read, so it renders as its unset value -- is one ``needs.template_unresolved`` warning naming the field. A
-  build run with ``-W`` that has such a template now fails until it is fixed.
+  build run with ``-W`` that has such a template now fails: typically a template shared across need types that
+  reads one type's own field. Guard the name in the template (``{{ x | default('') }}``,
+  ``{% if x is defined %}``), or silence the warning with ``suppress_warnings = ["needs.template_undefined"]``.
 
 - 👌 A hidden need's ``pre_template`` and ``post_template`` are not rendered: no output of them was ever shown,
   and its ``pre_content`` and ``post_content`` in ``needs.json`` are now null. Its content template is still
