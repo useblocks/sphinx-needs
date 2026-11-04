@@ -33,6 +33,7 @@ from ub_needs_exchange.reader import (
     load,
     map_legacy_keys,
     parse,
+    split_id,
 )
 
 __version__ = "1.1.0"
@@ -59,4 +60,5 @@ __all__ = [
     "load",
     "map_legacy_keys",
     "parse",
+    "split_id",
 ]

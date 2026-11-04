@@ -5,7 +5,8 @@ Every rule of reading a needs exchange file (needs.json) is pinned by the corpus
 and ubCode is to vendor. A corpus case compares codes, paths and values; what it cannot
 state is tested here: the messages (sphinx-needs prints them in its warnings), bytes that
 are not UTF-8, files that cannot be read, a ``null`` default (TOML has no null), the
-``apply_schema_defaults`` option, and which objects a record shares with the document.
+``apply_schema_defaults`` option, which objects a record shares with the document, and
+``split_id`` on strings no record key carries, with its messages.
 """
 
 from __future__ import annotations
@@ -380,3 +381,108 @@ def test_a_default_is_one_object_in_every_record():
     a, b = doc.select_version(None).records()
     schema_tags = doc.data["versions"]["1.0"]["needs_schema"]["properties"]["tags"]
     assert a.fields["tags"] is b.fields["tags"] is schema_tags["default"]
+
+
+# ------------------------------------------------------------------------------------
+# namespaced ids: the marker, and the split rule (contract section 5.4)
+
+
+@pytest.mark.parametrize(
+    ("marker", "expected"),
+    [
+        pytest.param(True, True, id="true"),
+        pytest.param(False, False, id="false"),
+        pytest.param("true", False, id="string"),
+        pytest.param(1, False, id="one"),
+        pytest.param(None, False, id="null"),
+        pytest.param([True], False, id="array"),
+    ],
+)
+def test_only_true_marks_a_version(marker, expected):
+    version = nx.parse(
+        json.dumps(envelope({"a::X": record("a::X")}, namespaced_ids=marker))
+    ).select_version(None)
+    assert version.namespaced_ids is expected
+    assert version.diagnostics == ()
+    assert [(r.key, r.fields["id"]) for r in version.records()] == [("a::X", "a::X")]
+
+
+def test_a_version_built_by_hand_reads_its_own_marker():
+    assert nx.Version("1.0", {"needs": {}, "namespaced_ids": True}).namespaced_ids
+    assert not nx.Version("1.0", {"needs": {}}).namespaced_ids
+
+
+@pytest.mark.parametrize(
+    ("given", "expected"),
+    [
+        pytest.param("X", ((), "X"), id="no-namespace"),
+        pytest.param("a::X", (("a",), "X"), id="one-segment"),
+        pytest.param("a::b::X", (("a", "b"), "X"), id="split-at-the-last"),
+        pytest.param("a::b::c::X_1", (("a", "b", "c"), "X_1"), id="three-segments"),
+        pytest.param("Ab-c_9::X", (("Ab-c_9",), "X"), id="segment-charset"),
+        pytest.param("a::X-y_1", (("a",), "X-y_1"), id="local-charset"),
+        pytest.param("a::X:Y", (("a",), "X:Y"), id="one-colon-in-the-local-id"),
+        pytest.param("X.p1", ((), "X.p1"), id="no-namespace-is-returned-whole"),
+        pytest.param("", ((), ""), id="empty-is-returned-whole"),
+    ],
+)
+def test_split_id(given, expected):
+    assert nx.split_id(given) == expected
+
+
+@pytest.mark.parametrize(
+    ("given", "rule"),
+    [
+        pytest.param("::X", "its namespace is empty", id="empty-namespace"),
+        pytest.param("::", "its local id is empty", id="separator-alone"),
+        pytest.param("a::", "its local id is empty", id="empty-local-id"),
+        pytest.param(
+            "a::::X", "its namespace has an empty segment", id="empty-segment"
+        ),
+        pytest.param(
+            "::a::X", "its namespace has an empty segment", id="leading-separator"
+        ),
+        pytest.param(
+            "1a::X",
+            "its namespace segment '1a' is not a letter followed by letters, digits, "
+            "'_' or '-'",
+            id="segment-starts-with-a-digit",
+        ),
+        pytest.param(
+            "a.b::X",
+            "its namespace segment 'a.b' is not a letter followed by letters, digits, "
+            "'_' or '-'",
+            id="dot-in-a-segment",
+        ),
+        pytest.param(
+            "a:::X",
+            "its namespace segment 'a:' is not a letter followed by letters, digits, "
+            "'_' or '-'",
+            id="three-colons",
+        ),
+        pytest.param(
+            "\u00e9::X",
+            "its namespace segment '\u00e9' is not a letter followed by letters, "
+            "digits, '_' or '-'",
+            id="non-ascii-letter",
+        ),
+        pytest.param(
+            "a b::X",
+            "its namespace segment 'a b' is not a letter followed by letters, digits, "
+            "'_' or '-'",
+            id="space-in-a-segment",
+        ),
+        pytest.param(
+            "a::X.y", "its local id 'X.y' contains '.'", id="dot-in-the-local-id"
+        ),
+        pytest.param(
+            "a::X.p1",
+            "its local id 'X.p1' contains '.'",
+            id="a-link-target-with-a-part",
+        ),
+    ],
+)
+def test_split_id_refuses_what_is_not_a_namespaced_id(given, rule):
+    with pytest.raises(ValueError) as info:
+        nx.split_id(given)
+    assert str(info.value) == f"{given!r} is not a namespaced id: {rule}"

@@ -20,7 +20,7 @@ from typing import Any
 
 import pytest
 
-from ub_needs_exchange import ExchangeError, load, parse
+from ub_needs_exchange import ExchangeError, load, parse, split_id
 
 CORPUS_PATH = Path(__file__).parent / "fixtures" / "needs_json_reading_conformance.toml"
 
@@ -28,7 +28,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "needs_json_reading_conforman
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNT = 92
+EXPECTED_CASE_COUNT = 102
 
 #: The keys a case may carry, and those its ``[case.expect]`` may: the header defines
 #: each. A key outside them is a case this runner would silently not honour.
@@ -38,7 +38,17 @@ CASE_KEYS = {"name", "why", "layer", "reader", "json", "options", "divergent", "
 #: is skipped, counted, as the header's rule for every runner says.
 LAYERS = {"document", "ingest"}
 IMPLEMENTED = "document"
-EXPECT_KEYS = {"error", "diagnostics", "records", "keys", "absent", "unset"}
+EXPECT_KEYS = {
+    "error",
+    "diagnostics",
+    "records",
+    "keys",
+    "absent",
+    "unset",
+    "namespaced_ids",
+    "split",
+    "unsplittable",
+}
 
 
 def _corpus() -> list[dict[str, Any]]:
@@ -81,6 +91,9 @@ def test_every_case_is_well_formed() -> None:
             assert set(expect) == {"error"}, name
         else:
             assert "diagnostics" in expect, name
+        # the split rule is stated of a marked version's ids, and only there
+        if {"split", "unsplittable"} & set(expect):
+            assert expect.get("namespaced_ids") is True, name
 
 
 def test_the_corpus_header_records_where_it_is_canonical() -> None:
@@ -134,6 +147,15 @@ def _outcome(case: dict[str, Any], text: str | Path) -> None:
     for key, names in expect.get("unset", {}).items():
         assert key in by_key, f"no record {key!r} was read"
         assert sorted(set(names) & set(by_key[key].fields)) == []
+    if "namespaced_ids" in expect:
+        assert version.namespaced_ids is expect["namespaced_ids"]
+    for key, parts in expect.get("split", {}).items():
+        assert key in by_key, f"no record {key!r} was read"
+        assert split_id(key) == (tuple(parts["namespace"]), parts["local_id"])
+    for key in expect.get("unsplittable", []):
+        assert key in by_key, f"no record {key!r} was read"
+        with pytest.raises(ValueError, match="is not a namespaced id"):
+            split_id(key)
 
 
 def _implemented(case: dict[str, Any]) -> None:

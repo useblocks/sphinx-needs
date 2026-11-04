@@ -3,6 +3,24 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- **A version can say its ids are namespaced.** ``"namespaced_ids": true`` in a version
+  object says that each of its ids that holds ``::``, and each such link target written
+  in it, is a namespace of one or more segments and a local id, joined by ``::`` and split
+  at the last ``::``, and that an id without ``::`` has no namespace; any other value, or
+  none, says nothing, and a ``namespaced_ids`` of the envelope marks no
+  version. ``Version.namespaced_ids`` reads it, ``True`` only for the JSON ``true``, and
+  the new ``split_id`` splits an id by the rule the contract fixes --
+  ``split_id("a::b::X")`` is ``(("a", "b"), "X")``, an id with no ``::`` is
+  ``((), id)``, and an id that breaks the grammar raises ``ValueError``. Records keep
+  their ids as written, and nothing is reported for one that does not split: the
+  package reads the marker and leaves acting on it to each consumer. Nothing writes the
+  key yet. ``design/exchange-contract.md`` §5.4 states it, and the corpus has 102 cases,
+  ten of them new, with the expectation keys ``namespaced_ids``, ``split`` and
+  ``unsplittable``.
+
 .. _`release:1.1.0`:
 
 1.1.0
