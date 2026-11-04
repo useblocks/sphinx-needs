@@ -34,6 +34,12 @@ Improvements
   deadlocked. The full list is minijinja's own
   `changelog <https://github.com/mitsuhiko/minijinja/blob/main/CHANGELOG.md>`__.
 
+Bug fixes
+.........
+
+- 🐛 A link type named ``full_title`` is kept on ``needimport``, external needs and codelinks multi-line needs
+  (:issue:`2466`, :pr:`NNNN`)
+
 .. _`release:9.2.0`:
 
 9.2.0

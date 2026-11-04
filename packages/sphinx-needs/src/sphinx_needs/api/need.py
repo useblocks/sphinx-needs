@@ -1371,8 +1371,9 @@ def _import_key_sets(
         *extra_names,
     }
     omitted = {
-        # legacy, unless the project declares a field of that name (#2392)
-        *({"full_title"} - extra_names),
+        # legacy, unless the project declares a field (#2392) or a link type (#2466)
+        # of that name
+        *({"full_title"} - extra_names - {*link_names}),
         *(k for k, v in NeedsCoreFields.items() if v.get(flag)),
         *(f"{x}_back" for x in link_names),
     }
