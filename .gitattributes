@@ -52,6 +52,9 @@ packages/sphinx-codelinks/tests/__snapshots__/** text eol=lf
 # repository of RECORD: ubCode is to vendor it byte-for-byte. Its `json = '...'` bodies are case
 # inputs, so a CRLF checkout would change what the cases test.
 packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance.toml text eol=lf
+# Its draft "2a1" corpus is the package's own (experimental, not yet vendored), and protected the
+# same way: its `json = '...'` bodies are case inputs too.
+packages/ub-needs-exchange/tests/fixtures/needs_json_2a1_draft_conformance.toml text eol=lf
 
 # sphinx-ub-directives' two corpora (directive presets, template directives) are the next TOML
 # corpora, and this repository is their repository of RECORD: ubCode is to vendor them

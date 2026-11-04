@@ -29,9 +29,13 @@ tests/
 ├── test_reader.py        # what the corpus cannot state: messages, bytes, files, aliasing
 ├── test_conformance.py   # runs the corpus and pins its case count
 ├── test_imports.py       # the stdlib-only fence
-└── fixtures/needs_json_reading_conformance.toml
+├── test_2a1_draft_conformance.py   # runs the draft "2a1"'s own corpus, pins its count
+└── fixtures/
+    ├── needs_json_reading_conformance.toml    # the SHARED corpus (ubCode vendors it)
+    └── needs_json_2a1_draft_conformance.toml  # the draft's own (experimental)
 docs/changelog.rst        # the sphinx-mounts convention: an `Unreleased` section
 design/exchange-contract.md
+design/v2a1-draft.md      # the draft "2a1", read on opt-in (experimental)
 ```
 
 There is no documentation site and no command line: the package has consumers, not users.

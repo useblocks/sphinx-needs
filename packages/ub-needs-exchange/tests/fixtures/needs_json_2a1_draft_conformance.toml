@@ -1,0 +1,710 @@
+# Conformance corpus for READING a DRAFT needs.json: format version "2a1", which a reader
+# reads only when it is asked to (`Document.select_version(..., drafts=("2a1",))`).
+#
+# Repository of record: useblocks/sphinx-needs (public)
+# Canonical path:       packages/ub-needs-exchange/tests/fixtures/needs_json_2a1_draft_conformance.toml
+#
+# EXPERIMENTAL, as the draft is: "2a1" may change or be removed in any release while it is
+# a draft, and a file of it is readable only by the release that wrote it. This corpus
+# changes with it. It is NOT the shared reading corpus
+# (`needs_json_reading_conformance.toml`, which ubCode vendors, and where "2a1" stays
+# refused): it is this package's own until the shape settles, when ubCode may vendor it
+# the same way. Its prose half is `design/v2a1-draft.md`.
+#
+# Do not reformat this file. `.gitattributes` pins its line endings, and the taplo and
+# yamlfmt hooks exclude it: every `json = '''...'''` body below is the INPUT of a case, so a
+# formatter touching one silently changes what the case tests.
+#
+# One LAYER: `document` -- what the shared reader owns, with no project: parse the text,
+# check the draft's envelope, select its one version, and hand out each record projected
+# to the shape a format-1 record has, with its hops. What a reading project does with a
+# record (the `ingest` layer of the shared corpus) is not here.
+#
+# Rules for every runner:
+#   - a case's `json` is the whole file, as UTF-8 text; a runner reads it from that text
+#     (and may also write it to a file of its own and read that -- the outcome is the same)
+#   - a case is read with the drafts its `options.drafts` names, and with ["2a1"] when it
+#     names none: every case reads on opt-in unless it says otherwise
+#   - diagnostic codes are compared as the BARE code below; a `path` is the reader's dotted
+#     path of what was found, the keys (and, in an array, the index) from the top-level
+#     object down to it, joined by `.`, compared character for character
+#     (`needs.0.links.links.1` for the second link of the type `links` of the first record)
+#   - integers are within the signed 64-bit range; beyond it the behaviour is unspecified
+#
+# `packages/ub-needs-exchange/tests/test_2a1_draft_conformance.py` runs every `[[case]]`
+# against the Python reader AND asserts the case COUNT, so a truncated copy is a red test
+# rather than reduced coverage.
+#
+# Each `[[case]]` has:
+#   name         - unique, kebab-case
+#   why          - one line saying what the case pins
+#   layer        - "document"
+#   json         - the file's text
+#   [case.options]
+#     version    - optional; the version asked for. Absent: none is asked for
+#     drafts     - optional; the drafts the reader is asked to read. Absent: ["2a1"]
+#   [case.expect]
+#     error        - the code with which the reader must REFUSE the file. Every other
+#                    expectation is then absent
+#     diagnostics  - the findings, as `code` + `path` pairs, compared as a multiset: those
+#                    about the version and those about each record together. Present
+#                    (and possibly empty) whenever `error` is absent
+#     name         - optional; the selected version's name (`Version.name`)
+#     records      - optional; the records read, by key, each with the fields it must
+#                    have and their values (only those stated are compared; values as
+#                    JSON values). `null` cannot be stated in TOML (`test_reader.py` pins
+#                    a `null` value)
+#     source       - optional; by record key, the record's hops (`Record.source`), each
+#                    compared whole as a JSON value, in order
+#     keys         - optional; the key of every record read, in the order read. When
+#                    present, no other record is read
+#     absent       - optional; keys that must NOT be read as records
+#     unset        - optional; by record key, the fields that record must NOT have
+#
+# Error codes (the file is refused):
+#   format_version_unsupported - `format_version` names a draft the reader was not asked to
+#                                read, or a later format (the shared corpus's code)
+#   draft_has_versions         - the draft has a `versions` or a `current_version` key
+#   version_not_found          - a version is asked for, and it is not the draft's
+#                                `project.version`
+#   needs_missing              - the draft's `needs` is absent or not an array
+#
+# Diagnostic codes (the file is read, and this is reported):
+#   project_invalid     - `project` is absent or not an object (path `project`), or its
+#                         `name` or `version` is not a string (path `project.<key>`)
+#   record_not_object   - a value of `needs` is not an object; skipped. Path `needs.<i>`
+#   id_missing          - a record has no `id`; skipped. Path `needs.<i>`
+#   id_not_string       - a record's `id` is not a string; skipped. Path `needs.<i>.id`
+#   duplicate_id        - a record has the `id` of an earlier one; skipped, the first read.
+#                         Path `needs.<i>.id`
+#   fields_not_object   - `fields` is not an object; not read. Path `needs.<i>.fields`
+#   links_not_object    - `links` is not an object; not read. Path `needs.<i>.links`
+#   link_invalid        - a link type's value is not an array (path `needs.<i>.links.<t>`),
+#                         or an entry is neither a string nor an object of a string `id`
+#                         and a string `part` / `condition` if given
+#                         (path `needs.<i>.links.<t>.<j>`); not read
+#   content_not_object  - `content` is not an object; not read. Path `needs.<i>.content`
+#   source_not_a_list   - `source` is not an array; not read. Path `needs.<i>.source`
+#   hop_invalid         - a hop is not an object, has no string `kind`, or has a known key
+#                         of the wrong type; that hop is not read. Path `needs.<i>.source.<j>`
+
+# --- the opt-in ---------------------------------------------------------------------
+
+[[case]]
+name = "without-the-opt-in-a-draft-is-refused"
+why = "a 2a1 file read without asking for the draft is refused as any later format is, with the shared corpus's code"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req"}]}'''
+[case.options]
+drafts = []
+[case.expect]
+error = "format_version_unsupported"
+
+[[case]]
+name = "a-draft-is-read-on-opt-in"
+why = "the smallest 2a1 file is read when its draft is asked for: one version, named by project.version"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "creator": {"program": "sphinx_needs", "version": "9.3.0"}, "needs": [{"id": "A", "type": "req"}]}'''
+[case.expect]
+diagnostics = []
+name = "1.0"
+keys = ["A"]
+records = { A = { id = "A", type = "req" } }
+
+[[case]]
+name = "the-opt-in-reads-only-the-draft-it-names"
+why = "asking for 2a1 reads no other pre-release: a 2b1 file is still refused"
+layer = "document"
+json = '''{"format_version": "2b1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req"}]}'''
+[case.expect]
+error = "format_version_unsupported"
+
+[[case]]
+name = "the-opt-in-reads-no-later-integer-format"
+why = "asking for 2a1 does not read format 2, which is not a draft"
+layer = "document"
+json = '''{"format_version": 2, "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req"}]}'''
+[case.expect]
+error = "format_version_unsupported"
+
+[[case]]
+name = "a-format-1-file-is-read-as-before-on-opt-in"
+why = "the opt-in changes nothing for a format-1 file: its versions envelope is read as the shared contract says"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "description": "legacy"}}}}}'''
+[case.expect]
+diagnostics = []
+name = "1.0"
+keys = ["A"]
+records = { A = { content = "legacy" } }
+
+# --- the envelope -------------------------------------------------------------------
+
+[[case]]
+name = "a-draft-with-versions-is-refused"
+why = "a 2a1 file that kept a versions object is refused: a format-1 reader that ignores format_version would read it silently"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "versions": {"1.0": {"needs": {"A": {"id": "A"}}}}, "needs": [{"id": "A", "type": "req"}]}'''
+[case.expect]
+error = "draft_has_versions"
+
+[[case]]
+name = "a-draft-with-a-current-version-is-refused"
+why = "a 2a1 file with a current_version is refused too, whatever its value"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "current_version": null, "needs": [{"id": "A", "type": "req"}]}'''
+[case.expect]
+error = "draft_has_versions"
+
+[[case]]
+name = "versions-are-checked-before-the-draft-s-needs"
+why = "a 2a1 file with versions and no needs array is refused for its versions"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "versions": {}}'''
+[case.expect]
+error = "draft_has_versions"
+
+[[case]]
+name = "a-draft-without-needs-is-refused"
+why = "a 2a1 file with no needs is refused: no record can be read from it"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}}'''
+[case.expect]
+error = "needs_missing"
+
+[[case]]
+name = "a-draft-whose-needs-is-an-object-is-refused"
+why = "a draft's needs is an array of records: a format-1 needs object keyed by id refuses the file"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": {"A": {"id": "A", "type": "req"}}}'''
+[case.expect]
+error = "needs_missing"
+
+[[case]]
+name = "a-draft-with-empty-needs-is-read"
+why = "an empty needs array is a draft with no records"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": []}'''
+[case.expect]
+diagnostics = []
+keys = []
+
+[[case]]
+name = "a-draft-is-selected-by-its-project-version"
+why = "a version asked for by name selects the draft when it is the draft's project.version"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req"}]}'''
+[case.options]
+version = "1.0"
+[case.expect]
+diagnostics = []
+name = "1.0"
+keys = ["A"]
+
+[[case]]
+name = "a-draft-asked-for-by-another-name-is-not-found"
+why = "a version asked for that is not the draft's project.version is not found, as in format 1, rather than read silently"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req"}]}'''
+[case.options]
+version = "2.0"
+[case.expect]
+error = "version_not_found"
+
+[[case]]
+name = "the-version-asked-for-is-checked-before-the-draft-s-needs"
+why = "a version that is not the draft's is not found even when the draft has no needs array"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": {}}'''
+[case.options]
+version = "2.0"
+[case.expect]
+error = "version_not_found"
+
+[[case]]
+name = "a-draft-without-a-project-version-is-named-empty"
+why = "a project with no version names the draft's version the empty string, with no finding"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up"}, "needs": [{"id": "A", "type": "req"}]}'''
+[case.expect]
+diagnostics = []
+name = ""
+keys = ["A"]
+
+[[case]]
+name = "a-draft-without-a-project-version-has-no-version-to-ask-for"
+why = "with no project.version, no name selects the draft, the empty one included"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up"}, "needs": [{"id": "A", "type": "req"}]}'''
+[case.options]
+version = ""
+[case.expect]
+error = "version_not_found"
+
+[[case]]
+name = "a-draft-without-a-project-is-read-and-reported"
+why = "a draft with no project is read, its name and version absent, and reported"
+layer = "document"
+json = '''{"format_version": "2a1", "needs": [{"id": "A", "type": "req"}]}'''
+[case.expect]
+diagnostics = [{ code = "project_invalid", path = "project" }]
+name = ""
+keys = ["A"]
+
+[[case]]
+name = "a-draft-whose-project-is-a-string-is-read-and-reported"
+why = "project is an object in a draft: format 1's project string is read as no project, and reported"
+layer = "document"
+json = '''{"format_version": "2a1", "project": "up", "needs": [{"id": "A", "type": "req"}]}'''
+[case.expect]
+diagnostics = [{ code = "project_invalid", path = "project" }]
+name = ""
+keys = ["A"]
+
+[[case]]
+name = "a-project-name-or-version-that-is-not-a-string-is-reported"
+why = "a project name or version that is not a string is read as absent, and each is reported"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": 3, "version": 1.0}, "needs": [{"id": "A", "type": "req"}]}'''
+[case.expect]
+diagnostics = [{ code = "project_invalid", path = "project.name" }, { code = "project_invalid", path = "project.version" }]
+name = ""
+keys = ["A"]
+
+[[case]]
+name = "unknown-envelope-keys-of-a-draft-are-ignored"
+why = "a key of the draft's envelope this reader does not know, and creator and created, are ignored with no finding"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0", "url": "x"}, "creator": 5, "created": "2026-11-05", "needs_schema": {"properties": {"status": {"default": "open"}}}, "later": [1], "needs": [{"id": "A", "type": "req"}]}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+unset = { A = ["status"] }
+
+# --- the records --------------------------------------------------------------------
+
+[[case]]
+name = "a-record-is-projected-to-the-format-1-shape"
+why = "a record's id, type, fields, links, content, parts and placement read as the keys a format-1 record has"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "fields": {"title": "First", "status": "open", "tags": ["x"], "asil": "B"}, "links": {"links": ["B"], "parent_needs": []}, "content": {"text": "the text", "doctype": ".rst", "parts": {"p1": "the part"}}, "source": [{"kind": "page", "document": "index", "language": ".rst", "physical": {"root": "srcdir", "path": "index.rst", "start_line": 7, "end_line": 13}, "semantic": [{"kind": "section", "name": "Up"}, {"kind": "section", "name": "Requirements"}]}]}]}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+records = { A = { id = "A", type = "req", title = "First", status = "open", tags = ["x"], asil = "B", links = ["B"], parent_needs = [], content = "the text", doctype = ".rst", parts = { p1 = { id = "p1", content = "the part" } }, docname = "index", sections = ["Requirements", "Up"] } }
+source = { A = [{ kind = "page", document = "index", language = ".rst", physical = { root = "srcdir", path = "index.rst", start_line = 7, end_line = 13 }, semantic = [{ kind = "section", name = "Up" }, { kind = "section", name = "Requirements" }] }] }
+
+[[case]]
+name = "records-keep-the-file-order"
+why = "records are handed out in the order of the needs array"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "C", "type": "req"}, {"id": "A", "type": "req"}, {"id": "B", "type": "req"}]}'''
+[case.expect]
+diagnostics = []
+keys = ["C", "A", "B"]
+
+[[case]]
+name = "a-record-with-only-an-id-is-read"
+why = "every section but id is optional: a record of an id alone has the id and nothing else"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A"}]}'''
+[case.expect]
+diagnostics = []
+keys = ["A"]
+records = { A = { id = "A" } }
+unset = { A = ["type", "content", "doctype", "parts", "docname", "sections"] }
+
+[[case]]
+name = "the-type-is-handed-on-as-written"
+why = "type is not checked here, as a format-1 record's is not: a type that is not a string reaches the reader as written"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": 5}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { type = 5 } }
+
+[[case]]
+name = "a-record-that-is-not-an-object-is-skipped"
+why = "a value of needs that is not an object is not a record: skipped, reported, and the others read"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": ["A", 1, null, [], true, {"id": "B", "type": "req"}]}'''
+[case.expect]
+diagnostics = [{ code = "record_not_object", path = "needs.0" }, { code = "record_not_object", path = "needs.1" }, { code = "record_not_object", path = "needs.2" }, { code = "record_not_object", path = "needs.3" }, { code = "record_not_object", path = "needs.4" }]
+keys = ["B"]
+
+[[case]]
+name = "a-record-without-an-id-is-skipped"
+why = "the id is the record's key: a record with none is skipped and reported"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"type": "req", "fields": {"title": "no id"}}, {"id": "B", "type": "req"}]}'''
+[case.expect]
+diagnostics = [{ code = "id_missing", path = "needs.0" }]
+keys = ["B"]
+
+[[case]]
+name = "a-record-whose-id-is-not-a-string-is-skipped"
+why = "an id that is not a string is not a key: the record is skipped and its id reported"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": 1, "type": "req"}, {"id": null, "type": "req"}, {"id": "B", "type": "req"}]}'''
+[case.expect]
+diagnostics = [{ code = "id_not_string", path = "needs.0.id" }, { code = "id_not_string", path = "needs.1.id" }]
+keys = ["B"]
+
+[[case]]
+name = "a-duplicate-id-keeps-the-first-record"
+why = "of two records with one id the first is read and each later one skipped and reported, as sphinx-needs keeps the first of two needs"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "fields": {"title": "first"}}, {"id": "B", "type": "req"}, {"id": "A", "type": "req", "fields": {"title": "second"}}, {"id": "A", "type": "req", "fields": {"title": "third"}}]}'''
+[case.expect]
+diagnostics = [{ code = "duplicate_id", path = "needs.2.id" }, { code = "duplicate_id", path = "needs.3.id" }]
+keys = ["A", "B"]
+records = { A = { title = "first" } }
+
+[[case]]
+name = "a-field-named-id-or-type-does-not-replace-them"
+why = "the record's own id and type win over a key of fields of the same name"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "fields": {"id": "Z", "type": "spec", "title": "t"}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { id = "A", type = "req", title = "t" } }
+
+[[case]]
+name = "fields-that-are-not-an-object-are-not-read"
+why = "a fields that is not an object is reported, and the record read without it"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "fields": ["title"], "content": {"text": "kept"}}]}'''
+[case.expect]
+diagnostics = [{ code = "fields_not_object", path = "needs.0.fields" }]
+records = { A = { id = "A", content = "kept" } }
+unset = { A = ["title"] }
+
+[[case]]
+name = "the-legacy-description-is-not-the-content-in-a-draft"
+why = "format 1's description-as-content rule does not apply: a field named description is a field, and a record without content has none"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "fields": {"description": "a field"}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { description = "a field" } }
+unset = { A = ["content"] }
+
+# --- the links ----------------------------------------------------------------------
+
+[[case]]
+name = "a-bare-string-link-is-read-as-written"
+why = "a link given as a string is a bare id and is handed on as it is"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": ["B", "C"]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { links = ["B", "C"] } }
+
+[[case]]
+name = "a-link-object-of-an-id-alone-is-its-id"
+why = "a link object with only an id is spelled as the bare id"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": [{"id": "B"}]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { links = ["B"] } }
+
+[[case]]
+name = "a-link-to-a-part-is-spelled-id-dot-part"
+why = "a link object with a part is spelled ID.part, as format 1 writes a link to a part"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": [{"id": "B", "part": "p1"}]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { links = ["B.p1"] } }
+
+[[case]]
+name = "a-link-with-a-condition-is-spelled-in-brackets"
+why = "a link object with a condition is spelled ID[condition], as format 1 writes a conditional link"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": [{"id": "B", "condition": "status == 'open'"}]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { links = ["B[status == 'open']"] } }
+
+[[case]]
+name = "a-link-with-a-part-and-a-condition"
+why = "a link object with a part and a condition is spelled ID.part[condition]"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"tests": [{"id": "B", "part": "p1", "condition": "c"}]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { tests = ["B.p1[c]"] } }
+
+[[case]]
+name = "a-condition-with-brackets-is-bracketed-one-deeper"
+why = "a condition holding a run of closing brackets is wrapped in brackets one deeper than the longest run, so the string reads back as the same link"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": [{"id": "B", "condition": "tags[0] == 'x'"}, {"id": "C", "condition": "a[b[0]] == 1"}]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { links = ["B[[tags[0] == 'x']]", "C[[[a[b[0]] == 1]]]"] } }
+
+[[case]]
+name = "an-empty-part-is-no-part"
+why = "an empty part is spelled as no part, as format 1's writer spells a link whose part is empty"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": [{"id": "B", "part": ""}]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { links = ["B"] } }
+
+[[case]]
+name = "link-spellings-keep-their-order-in-one-link-type"
+why = "strings and objects mix in one link type and keep the order the file gives them"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": [{"id": "D", "part": "p"}, "B", {"id": "C"}]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { links = ["D.p", "B", "C"] } }
+
+[[case]]
+name = "unknown-keys-of-a-link-object-are-ignored"
+why = "a key of a link object this reader does not know is ignored, with no finding"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": [{"id": "B", "later": {"x": 1}}]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { links = ["B"] } }
+
+[[case]]
+name = "links-that-are-not-an-object-are-not-read"
+why = "a links that is not an object is reported, and the record read without it"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "fields": {"title": "t"}, "links": ["B"]}]}'''
+[case.expect]
+diagnostics = [{ code = "links_not_object", path = "needs.0.links" }]
+records = { A = { title = "t" } }
+unset = { A = ["links"] }
+
+[[case]]
+name = "a-link-type-that-is-not-an-array-is-not-read"
+why = "a link type whose value is not an array is reported and not read; the other link types are"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": "B", "tests": ["C"]}}]}'''
+[case.expect]
+diagnostics = [{ code = "link_invalid", path = "needs.0.links.links" }]
+records = { A = { tests = ["C"] } }
+unset = { A = ["links"] }
+
+[[case]]
+name = "an-invalid-link-entry-is-dropped"
+why = "an entry that is neither a string nor an object of a string id, and a string part and condition if given, is reported and dropped; the rest of its link type is read"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": ["B", 1, null, {"part": "p"}, {"id": 2}, {"id": "C", "part": 1}, {"id": "C", "condition": null}, ["C"], {"id": "D"}]}}]}'''
+[case.expect]
+diagnostics = [{ code = "link_invalid", path = "needs.0.links.links.1" }, { code = "link_invalid", path = "needs.0.links.links.2" }, { code = "link_invalid", path = "needs.0.links.links.3" }, { code = "link_invalid", path = "needs.0.links.links.4" }, { code = "link_invalid", path = "needs.0.links.links.5" }, { code = "link_invalid", path = "needs.0.links.links.6" }, { code = "link_invalid", path = "needs.0.links.links.7" }]
+records = { A = { links = ["B", "D"] } }
+
+# --- the content --------------------------------------------------------------------
+
+[[case]]
+name = "a-record-without-content-has-no-content-key"
+why = "with no content section the record has no content, doctype or parts key"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "fields": {"title": "t"}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { title = "t" } }
+unset = { A = ["content", "doctype", "parts"] }
+
+[[case]]
+name = "content-without-a-doctype-has-no-doctype-key"
+why = "each key of content is projected only when it is there: text alone gives content and no doctype"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "content": {"text": ""}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { content = "" } }
+unset = { A = ["doctype", "parts"] }
+
+[[case]]
+name = "parts-are-projected-as-format-1-writes-them"
+why = "content.parts maps each part's id to its text; the record's parts maps it to an object of its id and content, as format 1 writes parts"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "content": {"text": "x", "doctype": ".md", "parts": {"1": "exit()", "awesome_id": "blub()"}}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { content = "x", doctype = ".md", parts = { "1" = { id = "1", content = "exit()" }, awesome_id = { id = "awesome_id", content = "blub()" } } } }
+
+[[case]]
+name = "content-that-is-not-an-object-is-not-read"
+why = "content is an object in a draft: a string content is reported, and the record read without content"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "content": "the text"}]}'''
+[case.expect]
+diagnostics = [{ code = "content_not_object", path = "needs.0.content" }]
+keys = ["A"]
+unset = { A = ["content", "doctype", "parts"] }
+
+# --- the source: placement ----------------------------------------------------------
+
+[[case]]
+name = "a-record-without-a-placement-has-no-docname"
+why = "a record none of whose hops has a document has no docname and no sections key, and its hops are read"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "external", "physical": {"url": "http://up.example/index.html#A"}}]}]}'''
+[case.expect]
+diagnostics = []
+unset = { A = ["docname", "sections"] }
+source = { A = [{ kind = "external", physical = { url = "http://up.example/index.html#A" } }] }
+
+[[case]]
+name = "a-record-without-a-source-has-no-docname"
+why = "a record with no source has no hops, and no docname or sections key"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req"}]}'''
+[case.expect]
+diagnostics = []
+source = { A = [] }
+unset = { A = ["docname", "sections"] }
+
+[[case]]
+name = "an-include-chain-has-its-placement-last"
+why = "hops are innermost first: in an include chain the page, the last hop, is the placement, not the included file"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "file", "language": ".rst", "physical": {"root": "srcdir", "path": "frag.rst", "start_line": 1, "end_line": 5}}, {"kind": "file", "language": ".rst", "physical": {"root": "srcdir", "path": "mid.rst"}}, {"kind": "page", "document": "index", "language": ".rst", "physical": {"root": "srcdir", "path": "index.rst"}, "semantic": [{"kind": "section", "name": "Top"}]}]}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { docname = "index", sections = ["Top"] } }
+source = { A = [{ kind = "file", language = ".rst", physical = { root = "srcdir", path = "frag.rst", start_line = 1, end_line = 5 } }, { kind = "file", language = ".rst", physical = { root = "srcdir", path = "mid.rst" } }, { kind = "page", document = "index", language = ".rst", physical = { root = "srcdir", path = "index.rst" }, semantic = [{ kind = "section", name = "Top" }] }] }
+
+[[case]]
+name = "of-several-hops-with-a-document-the-last-is-the-placement"
+why = "a re-exported record carries an upstream page and the writer's own page: the docname and sections are the last hop with a document's"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "down", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "page", "origin": "up", "document": "upstream_page", "semantic": [{"kind": "section", "name": "Up"}]}, {"kind": "file", "language": ".json", "physical": {"root": "srcdir", "path": "../up/needs.json"}}, {"kind": "page", "document": "down_page", "semantic": [{"kind": "section", "name": "Down"}]}, {"kind": "generated", "semantic": [{"kind": "service", "name": "github"}]}]}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { docname = "down_page", sections = ["Down"] } }
+
+[[case]]
+name = "the-placement-s-sections-are-innermost-first"
+why = "a hop's semantic list is outermost first; sections reads its section entries innermost first, as format 1 writes them, and leaves out every other kind"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "page", "document": "api", "semantic": [{"kind": "section", "name": "API"}, {"kind": "section", "name": "Shapes"}, {"kind": "py:class", "name": "Shape", "extras": {"id": "mod.Shape"}}, {"kind": "py:method", "name": "area"}]}]}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { docname = "api", sections = ["Shapes", "API"] } }
+
+[[case]]
+name = "a-placement-without-semantic-has-no-sections"
+why = "a placement hop with no semantic list gives the docname and an empty sections"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "page", "document": "index"}]}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { docname = "index", sections = [] } }
+
+[[case]]
+name = "the-placement-replaces-a-field-of-its-name"
+why = "the placement's docname and sections win over a key of fields of the same name"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "fields": {"docname": "elsewhere", "sections": ["X"]}, "source": [{"kind": "page", "document": "index"}]}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { docname = "index", sections = [] } }
+
+# --- the source: hops ---------------------------------------------------------------
+
+[[case]]
+name = "a-hop-of-every-known-key-is-read-as-written"
+why = "a hop with every key this reader knows, each of its type, is read whole"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "code", "origin": "up", "language": "cpp", "physical": {"root": "srcdir", "path": "src/w.cpp", "url": "https://example.org/w.cpp", "start_line": 3, "end_line": 3}, "semantic": [{"kind": "class", "name": "Widget"}, {"kind": "method", "name": "draw", "extras": {"trait": "", "qualified_name": "ns::Widget::draw"}}]}]}]}'''
+[case.expect]
+diagnostics = []
+source = { A = [{ kind = "code", origin = "up", language = "cpp", physical = { root = "srcdir", path = "src/w.cpp", url = "https://example.org/w.cpp", start_line = 3, end_line = 3 }, semantic = [{ kind = "class", name = "Widget" }, { kind = "method", name = "draw", extras = { trait = "", qualified_name = "ns::Widget::draw" } }] }] }
+
+[[case]]
+name = "unknown-hop-keys-are-kept"
+why = "a key of a hop, of its physical, or of a semantic entry that this reader does not know is kept as written"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "page", "document": "index", "col": 4, "later": {"a": [1]}, "physical": {"path": "index.rst", "start_col": 2}, "semantic": [{"kind": "section", "name": "S", "later": true}]}]}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { docname = "index", sections = ["S"] } }
+source = { A = [{ kind = "page", document = "index", col = 4, later = { a = [1] }, physical = { path = "index.rst", start_col = 2 }, semantic = [{ kind = "section", name = "S", later = true }] }] }
+
+[[case]]
+name = "a-hop-kind-is-an-open-vocabulary"
+why = "any string is a hop's kind: one this reader has never seen is read"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "alm-item"}]}]}'''
+[case.expect]
+diagnostics = []
+source = { A = [{ kind = "alm-item" }] }
+
+[[case]]
+name = "a-source-that-is-not-an-array-is-not-read"
+why = "a source that is not an array is reported, and the record read with no hops"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": {"kind": "page", "document": "index"}}]}'''
+[case.expect]
+diagnostics = [{ code = "source_not_a_list", path = "needs.0.source" }]
+source = { A = [] }
+unset = { A = ["docname", "sections"] }
+
+[[case]]
+name = "a-hop-that-is-not-an-object-or-has-no-kind-is-dropped"
+why = "a hop that is not an object, or whose kind is absent or not a string, is reported and dropped; the record and its other hops are read"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": ["page", null, {"document": "x"}, {"kind": 1}, {"kind": "page", "document": "index"}]}]}'''
+[case.expect]
+diagnostics = [{ code = "hop_invalid", path = "needs.0.source.0" }, { code = "hop_invalid", path = "needs.0.source.1" }, { code = "hop_invalid", path = "needs.0.source.2" }, { code = "hop_invalid", path = "needs.0.source.3" }]
+records = { A = { docname = "index" } }
+source = { A = [{ kind = "page", document = "index" }] }
+
+[[case]]
+name = "a-hop-with-a-known-key-of-the-wrong-type-is-dropped"
+why = "a hop whose origin, document, language, physical or semantic is of the wrong type, null included, is reported and dropped"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "page", "origin": null}, {"kind": "page", "document": 1}, {"kind": "page", "language": [".rst"]}, {"kind": "page", "physical": "index.rst"}, {"kind": "page", "semantic": {"kind": "section", "name": "S"}}, {"kind": "file"}]}]}'''
+[case.expect]
+diagnostics = [{ code = "hop_invalid", path = "needs.0.source.0" }, { code = "hop_invalid", path = "needs.0.source.1" }, { code = "hop_invalid", path = "needs.0.source.2" }, { code = "hop_invalid", path = "needs.0.source.3" }, { code = "hop_invalid", path = "needs.0.source.4" }]
+source = { A = [{ kind = "file" }] }
+
+[[case]]
+name = "a-hop-with-an-invalid-physical-is-dropped"
+why = "a physical root, path or url that is not a string, a line that is not an integer of 1 or more, or an end line before the start line drops the hop"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "file", "physical": {"root": null}}, {"kind": "file", "physical": {"path": 1}}, {"kind": "file", "physical": {"url": false}}, {"kind": "file", "physical": {"start_line": 0}}, {"kind": "file", "physical": {"start_line": 1.0}}, {"kind": "file", "physical": {"end_line": true}}, {"kind": "file", "physical": {"start_line": 5, "end_line": 4}}, {"kind": "file", "physical": {"start_line": 4, "end_line": 4}}, {"kind": "file", "physical": {"end_line": 2}}]}]}'''
+[case.expect]
+diagnostics = [{ code = "hop_invalid", path = "needs.0.source.0" }, { code = "hop_invalid", path = "needs.0.source.1" }, { code = "hop_invalid", path = "needs.0.source.2" }, { code = "hop_invalid", path = "needs.0.source.3" }, { code = "hop_invalid", path = "needs.0.source.4" }, { code = "hop_invalid", path = "needs.0.source.5" }, { code = "hop_invalid", path = "needs.0.source.6" }]
+source = { A = [{ kind = "file", physical = { start_line = 4, end_line = 4 } }, { kind = "file", physical = { end_line = 2 } }] }
+
+[[case]]
+name = "a-hop-with-an-invalid-semantic-entry-is-dropped"
+why = "a semantic entry that is not an object of a string kind and name, or whose extras is not an object of strings, drops the hop"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "page", "semantic": ["S"]}, {"kind": "page", "semantic": [{"kind": "section"}]}, {"kind": "page", "semantic": [{"name": "S"}]}, {"kind": "page", "semantic": [{"kind": "section", "name": 1}]}, {"kind": "page", "semantic": [{"kind": "py:class", "name": "C", "extras": [["id", "C"]]}]}, {"kind": "page", "semantic": [{"kind": "py:class", "name": "C", "extras": {"line": 3}}]}, {"kind": "page", "semantic": []}]}]}'''
+[case.expect]
+diagnostics = [{ code = "hop_invalid", path = "needs.0.source.0" }, { code = "hop_invalid", path = "needs.0.source.1" }, { code = "hop_invalid", path = "needs.0.source.2" }, { code = "hop_invalid", path = "needs.0.source.3" }, { code = "hop_invalid", path = "needs.0.source.4" }, { code = "hop_invalid", path = "needs.0.source.5" }]
+source = { A = [{ kind = "page", semantic = [] }] }
+
+[[case]]
+name = "an-invalid-hop-is-not-the-placement"
+why = "a dropped hop is not read for the placement: a later invalid hop with a document leaves the docname of the last valid one"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "page", "document": "index"}, {"kind": "page", "document": "other", "physical": {"start_line": 0}}]}]}'''
+[case.expect]
+diagnostics = [{ code = "hop_invalid", path = "needs.0.source.1" }]
+records = { A = { docname = "index", sections = [] } }
+
+# --- every finding together ---------------------------------------------------------
+
+[[case]]
+name = "every-finding-of-a-draft-is-reported"
+why = "the findings about the draft and those about each record are reported together, and every record that can be read is"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": 1}, "needs": [7, {"type": "req"}, {"id": 2}, {"id": "A", "fields": 1, "links": 2, "content": 3, "source": 4}, {"id": "A"}, {"id": "B", "links": {"links": [null], "tests": "C"}, "source": [{"kind": 1}]}]}'''
+[case.expect]
+diagnostics = [{ code = "project_invalid", path = "project.version" }, { code = "record_not_object", path = "needs.0" }, { code = "id_missing", path = "needs.1" }, { code = "id_not_string", path = "needs.2.id" }, { code = "fields_not_object", path = "needs.3.fields" }, { code = "links_not_object", path = "needs.3.links" }, { code = "content_not_object", path = "needs.3.content" }, { code = "source_not_a_list", path = "needs.3.source" }, { code = "duplicate_id", path = "needs.4.id" }, { code = "link_invalid", path = "needs.5.links.links.0" }, { code = "link_invalid", path = "needs.5.links.tests" }, { code = "hop_invalid", path = "needs.5.source.0" }]
+name = ""
+keys = ["A", "B"]
+records = { B = { links = [] } }
