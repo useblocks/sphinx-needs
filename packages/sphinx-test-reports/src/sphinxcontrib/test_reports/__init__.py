@@ -1,4 +1,4 @@
-"""The pre-3.0 name of sphinx-test-reports, kept working until 4.0.
+"""The pre-3.0 name of sphinx-test-reports, kept working until 5.0.
 
 The extension is :mod:`sphinx_test_reports` now, and the parsers and the pytest plugin are
 :mod:`ub_test_reports`, the ``ub-test-reports`` distribution it depends on. Four old names
@@ -50,7 +50,7 @@ def _setup(app: Sphinx) -> dict[str, Any]:
     logging.getLogger(__name__).warning(
         f"the extension name {__name__!r} is deprecated: write {_NEW_NAME!r} in the "
         "extensions list of conf.py instead. The old name stops working in "
-        "sphinx-test-reports 4.0.",
+        "sphinx-test-reports 5.0.",
         type="test_reports",
         subtype="deprecated",
     )

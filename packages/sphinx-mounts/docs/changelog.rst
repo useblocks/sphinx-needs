@@ -3,8 +3,17 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:0.3.1`:
+
+0.3.1
+-----
+
+:Released: 2026-11-04
+
+A packaging release beside Sphinx-Needs 9.2.0: nothing changes in how files are mounted or
+gated. The package ships ``py.typed``, so a type checker reads its annotations, the ``docs``
+extra moves to a furo that supports Sphinx 9, and it requires ub-project 1.2.0 (``>=1.2.0,<2``),
+the release Sphinx-Needs 9.2.0 reads its variant data through.
 
 - sphinx-mounts ships a ``py.typed`` marker (:pep:`561`) and the ``Typing :: Typed``
   classifier, so a type checker reads its annotations instead of treating the package as

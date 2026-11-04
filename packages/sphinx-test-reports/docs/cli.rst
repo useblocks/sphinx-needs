@@ -126,7 +126,7 @@ To link to it:
   ``remote_url``;
 - mounted with ``needs_external_needs``, set the source's ``target_url`` to
   ``"{{need.remote_url}}"``: an absolute URL is used as it is, so ``base_url``
-  may be ``""``. This needs the next Sphinx-Needs release; before it, the
+  may be ``""``. This needs Sphinx-Needs 9.2.0 or later; before it, the
   ``base_url`` is put in front of the URL (``/https://…``). Without a
   ``target_url`` every link is ``<base_url>/__error__.html#<id>``, because a
   converted need records no page.

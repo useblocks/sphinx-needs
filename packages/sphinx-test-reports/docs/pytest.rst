@@ -33,9 +33,9 @@ documentation toolchain (see :doc:`/install`). Enable it in the pytest configura
 
 .. versionchanged:: 3.0.0
    The module is ``ub_test_reports.pytest_plugin``, in the ub-test-reports distribution;
-   ``pip install "sphinx-test-reports[pytest]"`` still installs it, until 4.0. The pre-3.0
+   ``pip install "sphinx-test-reports[pytest]"`` still installs it, until 5.0. The pre-3.0
    name, ``sphinxcontrib.test_reports.pytest_plugin``, still loads the same plugin until
-   4.0 wherever sphinx-test-reports is installed, with a ``FutureWarning`` at start-up
+   5.0 wherever sphinx-test-reports is installed, with a ``FutureWarning`` at start-up
    asking for the new one. Before pytest 9.2 that
    warning comes before pytest installs its own filters, so only Python's own
    options silence it: ``PYTHONWARNINGS=ignore::FutureWarning``, which

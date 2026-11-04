@@ -3,8 +3,19 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:1.2.0`:
+
+1.2.0
+-----
+
+:Released: 2026-11-04
+
+One addition, for a consumer's command line. A variant data file given from outside
+``ubproject.toml`` -- sphinx-needs' ``-D needs_variant_data_file`` -- now replaces the data
+file of the location read and nothing else: the location, its inline table, the refusals and
+the findings stay those of the file as written. Every existing call is unchanged. The
+reading contract gains section 6.8 and the conformance corpus twelve cases, none of them
+Python-only, so a vendored copy is due a refresh. sphinx-needs 9.2.0 requires this release.
 
 - **A data-file override swaps the file, never the table.** ``read_variants`` takes
   ``data_file_override``, a variant data file from outside the document (a consumer's

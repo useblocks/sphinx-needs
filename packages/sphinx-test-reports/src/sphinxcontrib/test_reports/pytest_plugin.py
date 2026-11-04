@@ -1,4 +1,4 @@
-"""Deprecated: the old name of :mod:`ub_test_reports.pytest_plugin`, removed in 4.0.
+"""Deprecated: the old name of :mod:`ub_test_reports.pytest_plugin`, removed in 5.0.
 
 Importing it gives the real module -- the same object, so classes and ``mock.patch``
 targets written against the old path keep working, and warning filters naming it keep
@@ -16,7 +16,7 @@ from ub_test_reports import pytest_plugin as _module
 
 warnings.warn(
     "sphinxcontrib.test_reports.pytest_plugin has moved to ub_test_reports.pytest_plugin; "
-    "import it from there. The old name stops working in sphinx-test-reports 4.0.",
+    "import it from there. The old name stops working in sphinx-test-reports 5.0.",
     FutureWarning,
     # 2 is the frame that ran the import: `warnings` skips importlib's frozen bootstrap
     # frames, so for an `import` statement that is the user's line
