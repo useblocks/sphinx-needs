@@ -30,7 +30,6 @@ from sphinx_needs.logging import log_warning
 from sphinx_needs.need_content import resolve_content_parser
 from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs.utils import (
-    _absolute_location,
     add_doc,
     coerce_to_boolean,
     import_prefix_link_edit,
@@ -276,7 +275,7 @@ class NeedimportDirective(SphinxDirective):
                     logger,
                     f"Need {need_id!r} could not be imported: id is empty",
                     "import_need",
-                    location=self.get_location(),
+                    location=location,
                 )
                 continue
 
@@ -313,7 +312,7 @@ class NeedimportDirective(SphinxDirective):
                     logger,
                     f"Need {need_id!r} could not be imported: {err.message}",
                     "import_need",
-                    location=self.get_location(),
+                    location=location,
                 )
             else:
                 need_nodes.extend(need_node)
@@ -326,7 +325,7 @@ class NeedimportDirective(SphinxDirective):
                 "page's markup instead. Add the suffix to source_suffix with a "
                 "reStructuredText or MyST parser, or set :parse_by_doctype: false.",
                 "import_doctype",
-                location=self.get_location(),
+                location=location,
             )
 
         if unknown_keys:
@@ -334,7 +333,7 @@ class NeedimportDirective(SphinxDirective):
                 logger,
                 f"Unknown keys in import need source: {sorted(unknown_keys)!r}",
                 "unknown_import_keys",
-                location=self.get_location(),
+                location=location,
             )
 
         add_doc(self.env, self.env.docname)
@@ -343,16 +342,23 @@ class NeedimportDirective(SphinxDirective):
 
     def _written_location(
         self, source: str | None, line: int | None
-    ) -> str | nodes.Node | None:
-        """Where a warning of the directive is located: ``source`` and ``line``, the
-        file and line it is written on (:func:`directive_line`), else the parser's
-        location; the file made absolute, as Sphinx makes a node's."""
-        if source and line:
-            return _absolute_location(f"{source}:{line}")
-        return _absolute_location(self.get_location())
+    ) -> str | tuple[str, int]:
+        """Where every warning of the directive is located: ``source`` and ``line``,
+        the file and line it is written on (:func:`directive_line`), the file made
+        absolute, as Sphinx makes a node's (docutils records an included file
+        relative to the working directory).
+
+        A needimport another extension generates is written in no file: its source is
+        ``<unknown>``, empty, or a name that is no file (``<generated>``). It keeps
+        the page and the parser's line, as before #2463, which at least names the
+        page that holds it.
+        """
+        if source and line and os.path.isfile(absolute := os.path.abspath(source)):
+            return f"{absolute}:{line}"
+        return (self.env.docname, self.lineno)
 
     def _refuse(
-        self, message: str, location: str | nodes.Node | None
+        self, message: str, location: str | tuple[str, int]
     ) -> list[nodes.Node]:
         """Report a file no need can be imported from: one warning at the directive,
         and the warning node in its place."""
