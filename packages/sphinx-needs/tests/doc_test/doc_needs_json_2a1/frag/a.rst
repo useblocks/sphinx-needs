@@ -1,0 +1,1 @@
+.. include:: frag/b.rst
