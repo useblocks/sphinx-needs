@@ -953,3 +953,134 @@ code = "template_render"
 need = "REQ_1"
 [case.expect.needs.REQ_1]
 content = ""
+
+# --- unresolved fields (rule 11) -----------------------------------------------------
+
+[[case]]
+name = "dynamic-function-field-is-unresolved"
+why = "a field holding a dynamic function is unresolved when the template is rendered: it renders as None and is reported, naming the field; needs.json holds the resolved value"
+rules = [11, 4]
+config = '''
+[needs.fields.copied]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Source title
+   :id: REQ_1
+   :copied: [[copy("title")]]
+   :template: show
+'''
+files."needs_templates/show.need" = '''
+copied={{ copied }}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_unresolved"
+need = "REQ_1"
+field = "copied"
+[case.expect.needs.REQ_1]
+content = "copied=None"
+copied = "Source title"
+
+[[case]]
+name = "variant-field-is-unresolved"
+why = "a field holding a variant is unresolved when the template is rendered: it renders as None and is reported"
+rules = [11]
+config = '''
+[needs.fields.level]
+schema = { type = "string" }
+parse_variants = true
+'''
+source = '''
+.. req:: Variant
+   :id: REQ_1
+   :level: <<[type == 'req']:high, low>>
+   :post_template: show
+'''
+files."needs_templates/show.need" = '''
+level={{ level }}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_unresolved"
+need = "REQ_1"
+field = "level"
+[case.expect.needs.REQ_1]
+post_content = "level=None"
+level = "high"
+
+[[case]]
+name = "derived-field-is-unresolved-where-its-type-has-a-rule"
+why = "a derived field is unresolved on a need whose type has a rule (None, reported); on a type without a rule it holds its fixed value, which is not reported"
+rules = [11, 4]
+config = '''
+[needs.fields.title_copy]
+schema = { type = "string" }
+derive_by_type = { spec = { kind = "copy", field = "title" } }
+'''
+source = '''
+.. spec:: Derived here
+   :id: SPEC_1
+   :template: show
+
+.. req:: Not derived here
+   :id: REQ_1
+   :template: show
+'''
+files."needs_templates/show.need" = '''
+copy={{ title_copy }}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_unresolved"
+need = "SPEC_1"
+field = "title_copy"
+[case.expect.needs.SPEC_1]
+content = "copy=None"
+title_copy = "Derived here"
+[case.expect.needs.REQ_1]
+content = "copy=None"
+
+[[case]]
+name = "unresolved-field-not-named-is-not-reported"
+why = "a need holding a dynamic function whose template does not name the field is not reported; one naming it in a filter is (each named field once)"
+rules = [11]
+config = '''
+[needs.fields.copied]
+schema = { type = "string" }
+
+[needs.fields.other]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Quiet
+   :id: REQ_1
+   :copied: [[copy("title")]]
+   :other: [[copy("id")]]
+   :template: quiet
+
+.. req:: Loud
+   :id: REQ_2
+   :copied: [[copy("title")]]
+   :other: [[copy("id")]]
+   :template: loud
+'''
+files."needs_templates/quiet.need" = '''
+id={{ id }}
+'''
+files."needs_templates/loud.need" = '''
+{{ copied | default("x") }} {{ copied }} {% if other %}o{% else %}-{% endif %}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_unresolved"
+need = "REQ_2"
+field = "copied"
+[[case.expect.findings]]
+code = "template_unresolved"
+need = "REQ_2"
+field = "other"
+[case.expect.needs.REQ_1]
+content = "id=REQ_1"
+[case.expect.needs.REQ_2]
+content = "None None -"

@@ -697,10 +697,27 @@ def _generate_need(
                 template_root=template_root,
                 location=location,
                 on_read=on_template_read,
+                unresolved=_unresolved_fields(schema, need_type, dynamic_fields),
             )
         )
 
     return needs_info
+
+
+def _unresolved_fields(
+    schema: TypeFieldsSchema,
+    need_type: str,
+    dynamic_fields: Mapping[str, Any],
+) -> frozenset[str]:
+    """The fields of a need just created whose value is resolved only once every
+    document is read: those holding a dynamic function or a variant, and those a derive
+    rule computes on the need's type (a type without a rule holds its fixed value)."""
+    derived = set()
+    for name in schema.derived_names:
+        field = schema.get_extra_field(name) or schema.get_link_field(name)
+        if field is not None and field.rule_for(need_type) is not None:
+            derived.add(name)
+    return frozenset(dynamic_fields).union(derived)
 
 
 def _refuse_authored(

@@ -227,3 +227,13 @@ def compile_template(
     env = _new_env(autoescape, variable_start_string, variable_end_string)
     env.add_template(CompiledTemplate._TEMPLATE_NAME, template_string)
     return CompiledTemplate(env)
+
+
+def undeclared_names(template_string: str) -> frozenset[str]:
+    """The top-level names *template_string* reads and does not set itself (MiniJinja's
+    ``undeclared_variables``, not nested): ``owner`` for ``{{ owner.name }}``.
+
+    :raises minijinja.TemplateError: If the template does not parse.
+    """
+    env = _get_cached_env(False)
+    return frozenset(env.undeclared_variables_in_str(template_string, nested=False))

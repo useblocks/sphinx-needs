@@ -9,7 +9,10 @@ while rendering -- never costs the need: its output is empty and one warning is
 reported at the need (``needs.template_missing``, ``needs.template_syntax``,
 ``needs.template_render``). An undefined name renders empty, as it always has, and is
 reported (``needs.template_undefined``): each template is rendered strictly first, and
-leniently again only when that fails (:func:`_render`).
+leniently again only when that fails (:func:`_render`). A template naming a field that
+holds a value resolved only after every document is read -- a dynamic function, a
+variant, a derived value -- sees it unset, and is reported
+(``needs.template_unresolved``, naming the field).
 
 Every template file a render reads, or tries to read, is a dependency of the document
 the need is created on (``on_read``), so creating, editing or deleting it re-reads the
@@ -24,7 +27,7 @@ The executable half of these rules is the shared conformance corpus,
 from __future__ import annotations
 
 import pickle
-from collections.abc import Callable, Set
+from collections.abc import Callable, Collection, Set
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Literal
@@ -32,7 +35,7 @@ from typing import Any, Literal
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-from sphinx_needs._jinja import render_template_string
+from sphinx_needs._jinja import render_template_string, undeclared_names
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
@@ -58,6 +61,7 @@ def render_need_templates(
     template_root: Path | None,
     location: Location,
     on_read: Callable[[Path], None] | None = None,
+    unresolved: Collection[str] = (),
 ) -> NeedsContent:
     """The need's content with its templates rendered.
 
@@ -68,6 +72,9 @@ def render_need_templates(
     :param location: Where a template's warnings are reported (the need's directive).
     :param on_read: Called with each template file the render reads or tries to read,
         a missing one included: the document's dependencies.
+    :param unresolved: The fields of the need whose value is not resolved yet (a
+        dynamic function, a variant, a derived value): a template naming one is
+        reported.
     :return: ``content_info`` with ``content`` (``:jinja_content:``, then
         ``:template:``), ``pre_content`` and ``post_content`` replaced by the rendered
         text of each template the need names; an empty string for one that cannot be
@@ -87,6 +94,9 @@ def render_need_templates(
                 name=None,
                 need_id=need_id,
                 location=location,
+                unresolved=frozenset(unresolved).difference(
+                    needs_config.filter_data, needs_config.render_context
+                ),
             ),
         )
     rendered: dict[str, str] = {}
@@ -104,6 +114,9 @@ def render_need_templates(
                 option=option,
                 location=location,
                 on_read=on_read,
+                unresolved=frozenset(unresolved).difference(
+                    needs_config.render_context
+                ),
             )
     return replace(content_info, **rendered) if rendered else content_info
 
@@ -117,6 +130,7 @@ def _render_file(
     option: TemplateOption,
     location: Location,
     on_read: Callable[[Path], None] | None,
+    unresolved: frozenset[str],
 ) -> str:
     """The rendered text of the template file *name*, or ``""`` (with a warning)."""
     need_id = needs_info["id"]
@@ -153,6 +167,7 @@ def _render_file(
         name=name,
         need_id=need_id,
         location=location,
+        unresolved=unresolved,
     )
 
 
@@ -164,6 +179,7 @@ def _render(
     name: str | None,
     need_id: str,
     location: Location,
+    unresolved: frozenset[str] = frozenset(),
 ) -> str:
     """The rendered *source*, or ``""`` (with a warning) for one that cannot be.
 
@@ -174,8 +190,27 @@ def _render(
     ``needs.template_undefined`` warning; if it fails too, the template cannot be
     rendered (``needs.template_syntax`` / ``needs.template_render``). A strict render
     that succeeds is the lenient one's output, since it used no undefined value.
+
+    Each field of *unresolved* the source NAMES (a top-level name it reads,
+    :func:`~sphinx_needs._jinja.undeclared_names`) is reported once
+    (``needs.template_unresolved``); its value is what the need holds until it is
+    resolved, unset.
     """
     what = f"The {option} {name!r}" if name is not None else "The jinja_content"
+    if unresolved:
+        try:
+            named = undeclared_names(source)
+        except Exception:
+            # a source that does not parse is reported by the render below
+            named = frozenset()
+        for field in sorted(named & unresolved):
+            _warn(
+                f"{what} of need {need_id!r} reads field {field!r}, whose value (a "
+                "dynamic function, a variant or a derived value) is resolved only "
+                "after the template is rendered: it renders as the unset value.",
+                "template_unresolved",
+                location,
+            )
     try:
         return render_template_string(source, context, autoescape=False, strict=True)
     except Exception as strict_error:
@@ -225,7 +260,11 @@ def _undefined_expression(source: str, error: Exception) -> str:
 def _warn(
     message: str,
     subtype: Literal[
-        "template_missing", "template_syntax", "template_render", "template_undefined"
+        "template_missing",
+        "template_syntax",
+        "template_render",
+        "template_undefined",
+        "template_unresolved",
     ],
     location: Location,
 ) -> None:
