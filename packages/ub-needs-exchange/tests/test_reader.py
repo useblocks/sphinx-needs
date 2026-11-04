@@ -325,9 +325,40 @@ SCHEMA = {
 
 
 def test_map_legacy_keys_in_place():
-    fields = {"description": "legacy"}
+    """A record with no ``content`` key has its ``description`` renamed to it, in
+    place (contract section 6.3)."""
+    fields = {"id": "A", "description": "legacy"}
     nx.map_legacy_keys(fields)
-    assert fields == {"content": "legacy"}
+    assert fields == {"id": "A", "content": "legacy"}
+
+
+#: every falsy JSON value a ``content`` can hold; ``null`` is the one the corpus cannot
+#: state, as TOML has no null
+FALSY_CONTENTS = ["", None, 0, False, [], {}]
+
+
+@pytest.mark.parametrize("content", FALSY_CONTENTS, ids=repr)
+def test_map_legacy_keys_keeps_a_description_beside_any_content(content: Any):
+    """A record with a ``content`` key -- whatever its value, a falsy one too -- was not
+    written before 4.0, so its ``description`` is a key of its own (contract section
+    6.3)."""
+    fields = {"content": content, "description": "a field"}
+    nx.map_legacy_keys(fields)
+    assert fields == {"content": content, "description": "a field"}
+
+
+@pytest.mark.parametrize("content", FALSY_CONTENTS, ids=repr)
+def test_a_record_with_a_falsy_content_keeps_its_description(content: Any):
+    (rec,) = (
+        nx.parse(
+            json.dumps(
+                envelope({"A": record("A", content=content, description="a field")})
+            )
+        )
+        .select_version(None)
+        .records()
+    )
+    assert (rec.fields["content"], rec.fields["description"]) == (content, "a field")
 
 
 def test_a_null_default_is_merged():
@@ -346,6 +377,43 @@ def test_schema_defaults_can_be_left_out():
     ).select_version(None)
     assert "priority" not in version.records(apply_schema_defaults=False)[0].fields
     assert version.records()[0].fields["priority"] == "medium"
+
+
+def test_without_the_defaults_a_content_default_still_keeps_the_description():
+    """A 4.0+ writer that removed defaults left an empty ``content`` to the schema's
+    ``content`` default: read without the defaults merged, the record has no
+    ``content`` key, and its ``description`` is still a key of its own -- the mapping
+    reads it as the merge would (contract section 6.3). A file whose schema gives
+    ``content`` no default is mapped as with the merge."""
+    schema = {"properties": {"content": {"type": "string", "default": ""}}}
+    modern = nx.parse(
+        json.dumps(
+            envelope(
+                {"A": record("A", description="own text")},
+                creator={"program": "sphinx_needs", "version": "9.2.0"},
+                needs_defaults_removed=True,
+                needs_schema=schema,
+            )
+        )
+    ).select_version(None)
+    (bare,) = modern.records(apply_schema_defaults=False)
+    assert bare.fields["description"] == "own text"
+    assert "content" not in bare.fields
+    # a 3.x remove-defaults file: its schema has a ``description`` default, and none
+    # for ``content``
+    three_x = {"properties": {"description": {"type": "string", "default": ""}}}
+    legacy = nx.parse(
+        json.dumps(
+            envelope(
+                {"A": record("A", description="TEST IMPORT DESCRIPTION")},
+                needs_defaults_removed=True,
+                needs_schema=three_x,
+            )
+        )
+    ).select_version(None)
+    (old,) = legacy.records(apply_schema_defaults=False)
+    assert old.fields["content"] == "TEST IMPORT DESCRIPTION"
+    assert "description" not in old.fields
 
 
 def test_a_summary_marker_is_passed_through():

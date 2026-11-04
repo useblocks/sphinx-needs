@@ -712,64 +712,58 @@ records = { A = { content = "legacy" } }
 unset = { A = ["description"] }
 
 [[case]]
-name = "description-fills-an-empty-content"
-why = "an empty content is no content: the description fills it"
+name = "an-empty-content-keeps-the-description"
+why = "a record with a content key, even an empty one, is not of the shape sphinx-needs wrote before 4.0 by default: its description is a key of its own"
 layer = "document"
 json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": "", "description": "legacy"}}}}}'''
 [case.expect]
 diagnostics = []
-records = { A = { content = "legacy" } }
-unset = { A = ["description"] }
+records = { A = { content = "", description = "legacy" } }
 
 [[case]]
-name = "description-fills-a-null-content"
-why = "a content of null is no content either"
+name = "a-null-content-keeps-the-description"
+why = "a record whose content is null still has a content key: the description is kept beside it (TOML cannot state the null; test_reader.py pins it)"
 layer = "document"
 json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": null, "description": "legacy"}}}}}'''
 [case.expect]
 diagnostics = []
-records = { A = { content = "legacy" } }
-unset = { A = ["description"] }
+records = { A = { description = "legacy" } }
 
 [[case]]
-name = "description-fills-a-false-content"
-why = "a content of false is no content, as Python treats it as false: the description fills it"
+name = "a-false-content-keeps-the-description"
+why = "a record whose content is false still has a content key: the description is kept beside it, and the content as written"
 layer = "document"
 json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": false, "description": "legacy"}}}}}'''
 [case.expect]
 diagnostics = []
-records = { A = { content = "legacy" } }
-unset = { A = ["description"] }
+records = { A = { content = false, description = "legacy" } }
 
 [[case]]
-name = "description-fills-a-zero-content"
-why = "a content of 0 is no content, as Python treats it as false: the description fills it"
+name = "a-zero-content-keeps-the-description"
+why = "a record whose content is 0 still has a content key: the description is kept beside it, and the content as written"
 layer = "document"
 json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": 0, "description": "legacy"}}}}}'''
 [case.expect]
 diagnostics = []
-records = { A = { content = "legacy" } }
-unset = { A = ["description"] }
+records = { A = { content = 0, description = "legacy" } }
 
 [[case]]
-name = "description-fills-an-empty-array-content"
-why = "a content of [] (an empty array) is no content, as Python treats it as false: the description fills it"
+name = "an-empty-array-content-keeps-the-description"
+why = "a record whose content is [] (an empty array) still has a content key: the description is kept beside it, and the content as written"
 layer = "document"
 json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": [], "description": "legacy"}}}}}'''
 [case.expect]
 diagnostics = []
-records = { A = { content = "legacy" } }
-unset = { A = ["description"] }
+records = { A = { content = [], description = "legacy" } }
 
 [[case]]
-name = "description-fills-an-empty-object-content"
-why = "a content of {} (an empty object) is no content, as Python treats it as false: the description fills it"
+name = "an-empty-object-content-keeps-the-description"
+why = "a record whose content is {} (an empty object) still has a content key: the description is kept beside it, and the content as written"
 layer = "document"
 json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": {}, "description": "legacy"}}}}}'''
 [case.expect]
 diagnostics = []
-records = { A = { content = "legacy" } }
-unset = { A = ["description"] }
+records = { A = { content = {}, description = "legacy" } }
 
 [[case]]
 name = "content-wins-over-description"
@@ -781,14 +775,22 @@ diagnostics = []
 records = { A = { content = "kept", description = "legacy" } }
 
 [[case]]
-name = "a-content-default-does-not-hide-the-description"
-why = "the legacy key is mapped after the schema defaults are merged, so an empty default content leaves the description its place"
+name = "a-content-default-keeps-the-description"
+why = "the legacy key is mapped after the schema defaults are merged: a record that left an empty content to its default (a 4.0+ writer removing defaults) has a content key, and keeps its description"
 layer = "document"
 json = '''{"current_version": "1.0", "versions": {"1.0": {"needs_schema": {"properties": {"content": {"type": "string", "default": ""}}}, "needs": {"A": {"id": "A", "type": "req", "title": "t", "description": "legacy"}}}}}'''
 [case.expect]
 diagnostics = []
-records = { A = { content = "legacy" } }
-unset = { A = ["description"] }
+records = { A = { content = "", description = "legacy" } }
+
+[[case]]
+name = "a-modern-record-keeps-an-empty-content-and-its-description"
+why = "a version with a creator (written by 4.0 or later) whose body-less need has a description field: both are read as written, so a project's own needs.json reads back as written"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"creator": {"program": "sphinx_needs", "version": "9.2.0"}, "needs": {"A": {"id": "A", "type": "req", "title": "t", "content": "", "description": "a field"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { A = { content = "", description = "a field" } }
 
 # --- schema defaults ----------------------------------------------------------------
 

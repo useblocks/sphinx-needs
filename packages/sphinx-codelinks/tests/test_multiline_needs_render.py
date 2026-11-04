@@ -1251,6 +1251,87 @@ def test_a_link_type_named_full_title_is_kept_on_a_block(
     ]
 
 
+#: a project declaring a field named ``description``
+DESCRIPTION_CONF = CONF.replace(
+    "needs_fields = {", 'needs_fields = {"description": {"nullable": True}, '
+)
+#: the id of a block with an empty title and no body: hashed from the empty content
+EMPTY_TITLE_ID = "R_" + hashlib.sha1(b"").hexdigest().upper()[:5]
+
+
+def test_a_declared_description_is_kept_on_a_body_less_block(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A block with no body whose ``:description:`` the project declares: the field
+    holds it and the content stays empty -- the legacy rename (sphinx-needs before 4.0
+    wrote the content as ``description``) is for a record with no ``content``, and a
+    block's record always has one (#2465)."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/conf.py": DESCRIPTION_CONF,
+            "docs/page_d.rst": "D\n=\n\n.. src-trace::\n   :project: src\n   :file: d.c\n",
+            "src/d.c": "// @need req: Block need\n// :id: REQ_BLK\n"
+            "// :description: block text\n// @endneed\nvoid f() {}\n",
+        },
+    )
+    app = _build(tmp_path, make_app)
+    assert _warnings(app) == []
+    need = _need(app, "REQ_BLK")
+    assert need is not None
+    assert (need["description"], need["content"]) == ("block text", "")
+
+
+def test_a_declared_description_does_not_move_the_predicted_id(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A block without ``:id:``, with an empty title and no body, whose
+    ``:description:`` the project declares: its id is hashed from the empty content,
+    the one :func:`would_be_id` predicts for the duplicate check and the ``[docs]`` link
+    -- not from the field's text taken as the content (#2465)."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/conf.py": DESCRIPTION_CONF,
+            "docs/page_d.rst": "D\n=\n\n.. src-trace::\n   :project: src\n   :file: d.c\n",
+            "src/d.c": "// @need req:\n// :description: hashed from me\n"
+            "// @endneed\nvoid f() {}\n",
+        },
+    )
+    app = _build(tmp_path, make_app)
+    needs = _json(app)["needs"]
+    on_page = [
+        need_id for need_id, need in needs.items() if need["docname"] == "page_d"
+    ]
+    assert on_page == [EMPTY_TITLE_ID]
+    assert needs[EMPTY_TITLE_ID]["description"] == "hashed from me"
+    page = Path(app.outdir, "src", "d.html").read_text(encoding="utf-8")
+    assert re.findall(r'href="([^"]*)">\[docs\]</a>', page) == [
+        f"../page_d.html#{EMPTY_TITLE_ID}"
+    ]
+
+
+def test_a_link_type_named_description_is_kept_on_a_block(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A body-less block that sets a LINK type named ``description``: the need keeps
+    the link, where the legacy rename made its text the content and lost it (#2465)."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/conf.py": CONF + 'needs_links = {"description": {}}\n',
+            "docs/page_d.rst": "D\n=\n\n.. src-trace::\n   :project: src\n   :file: d.c\n",
+            "src/d.c": "// @need req: Block need\n// :id: REQ_BLK\n"
+            "// :description: REQ_HOST\n// @endneed\nvoid f() {}\n",
+        },
+    )
+    app = _build(tmp_path, make_app)
+    assert _warnings(app) == []
+    need = _need(app, "REQ_BLK")
+    assert need is not None
+    assert (need["description"], need["content"]) == (["REQ_HOST"], "")
+
+
 def test_one_line_needs_keep_the_analysis_order(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:

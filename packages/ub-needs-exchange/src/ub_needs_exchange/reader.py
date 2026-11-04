@@ -163,9 +163,14 @@ class Version:
         of twenty thousand needs.)
 
         :param apply_schema_defaults: Merge the ``needs_schema`` defaults under each
-            record.
+            record. Without them, the legacy keys are still mapped as on the merged
+            record: where the schema gives ``content`` a default, every record has a
+            ``content`` once merged, so none has its ``description`` renamed.
         """
-        defaults = self.schema_defaults() if apply_schema_defaults else {}
+        all_defaults = self.schema_defaults()
+        defaults = all_defaults if apply_schema_defaults else {}
+        # the mapping reads the record as the merge gives it (contract section 6.3)
+        maps_legacy_keys = apply_schema_defaults or "content" not in all_defaults
         needs: Mapping[str, Any] = self.data["needs"]
         result: list[Record] = []
         for key, value in needs.items():
@@ -183,7 +188,8 @@ class Version:
                     )
                 )
             fields["id"] = key
-            map_legacy_keys(fields)
+            if maps_legacy_keys:
+                map_legacy_keys(fields)
             result.append(Record(key, fields, tuple(diagnostics)))
         return result
 
@@ -320,9 +326,12 @@ def load(path: str | Path) -> Document:
 
 def map_legacy_keys(fields: dict[str, Any]) -> None:
     """Rename a record's legacy keys in place: a ``description`` is the ``content``
-    when that is absent or empty (sphinx-needs before 4.0 wrote ``description``;
-    contract section 6.3)."""
-    if "description" in fields and not fields.get("content"):
+    when the record has no ``content`` key at all (sphinx-needs before 4.0 wrote the
+    content as ``description`` and, by default, no ``content``; every later writer
+    writes ``content``, or its schema default, unless told to leave ``content`` out --
+    a file written that way reads as a pre-4.0 one). A record with a ``content`` key,
+    whatever its value, keeps its ``description`` (contract section 6.3)."""
+    if "description" in fields and "content" not in fields:
         fields["content"] = fields.pop("description")
 
 

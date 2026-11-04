@@ -185,18 +185,37 @@ object identity). A rule marked **(not pinned)** has neither.
    Enforced by: corpus: `id-equal-to-the-key`, `id-absent-is-the-key`,
    `id-other-than-the-key`, `id-a-number`, `id-null`,
    `id-mismatch-names-the-version-it-is-in`; `test_reader.py::test_the_key_is_the_id` (the messages).
-3. **The legacy `description` is the `content`** when the record's `content` is absent,
-   or is `null`, `""`, `0`, `false`, `[]` or `{}` — any value Python treats as false
-   (sphinx-needs before 4.0 wrote `description`): the key is renamed, not copied. A record
-   with any other `content` keeps both. The mapping runs after the schema
-   defaults are merged (§7), so an empty default `content` does not hide a `description`.
-   Enforced by: corpus: `description-is-the-content`, `description-fills-an-empty-content`,
-   `description-fills-a-null-content`, `description-fills-a-false-content`,
-   `description-fills-a-zero-content`, `description-fills-an-empty-array-content`,
-   `description-fills-an-empty-object-content`,
+3. **The legacy `description` is the `content`** when the record has no `content` key at
+   all, once its schema defaults are merged (§7): the key is renamed, not copied. A record
+   with a `content` key keeps both, whatever the `content`'s value — `""`, `null`, `0`,
+   `false`, `[]` and `{}` included. The absence of the key is what identifies a record
+   written before 4.0: sphinx-needs before 4.0.0 wrote the content as `description` (§9)
+   and, unless told otherwise, no `content`; every later writer, ubCode's included, writes
+   `content` on every record, or leaves it to its `needs_schema` default, which the merge
+   restores before this rule looks — unless it is told to leave `content` out
+   (sphinx-needs' `needs_json_exclude_fields`, ubCode's `json_exclude_fields` or
+   `ubc build needs --no-content`). A record written that way has no `content` key
+   either, and reads as a pre-4.0 one: its `description`, a field of that name included,
+   is taken as its content. So a project's own field or link type named `description`
+   reads back as written, beside an empty `content` too, unless its file leaves `content`
+   out; and a hand-written record with an empty `content` and a `description` keeps both:
+   its `content` stays empty, and its `description` is a key like any other (§6.4).
+   A reader that asks for the records without the defaults
+   (`records(apply_schema_defaults=False)`, §7.2) gets the mapping the merged record
+   would get: where the version's schema gives `content` a default, no record's
+   `description` is renamed, though the record handed out has no `content` key.
+   Enforced by: corpus: `description-is-the-content`,
+   `an-empty-content-keeps-the-description`, `a-null-content-keeps-the-description`,
+   `a-false-content-keeps-the-description`, `a-zero-content-keeps-the-description`,
+   `an-empty-array-content-keeps-the-description`,
+   `an-empty-object-content-keeps-the-description`,
    `content-wins-over-description`,
-   `a-content-default-does-not-hide-the-description`;
-   `test_reader.py::test_map_legacy_keys_in_place`.
+   `a-content-default-keeps-the-description`,
+   `a-modern-record-keeps-an-empty-content-and-its-description`;
+   `test_reader.py::test_map_legacy_keys_in_place`,
+   `…::test_map_legacy_keys_keeps_a_description_beside_any_content`,
+   `…::test_a_record_with_a_falsy_content_keeps_its_description` (the `null`),
+   `…::test_without_the_defaults_a_content_default_still_keeps_the_description`.
 4. **Every other key is handed on as written**, known or not — `parts`, `links_back`,
    `type_name`, a key no project defines. Which keys a reading project takes, and what it
    checks of their values (sphinx-needs refuses `parts` that is not a mapping of mappings,
@@ -309,7 +328,12 @@ Enforced by: corpus: `every-finding-of-a-file-is-reported`.
 
 sphinx-needs' changelog dates the shapes: `needs_schema` (with the defaults it lets a
 writer remove) arrived in 3.0.0; `creator`, and `content` in place of `description`, in
-4.0.0 (#1311, #1312).
+4.0.0 (#1311, #1312). Every writer before 4.0.0 wrote the content as `description` on
+every record — by default it wrote no `content` and its `needs_schema` had no `content`
+property (3.0.0 wrote both when `needs_json_exclude_fields` was set without `content`) — so
+a record with no `content` key is read as one of those, and its `description` is its
+content (§6.3); every writer since writes `content`, or its `needs_schema` default, unless
+told to leave it out.
 
 1. **The pre-3.0 shape**, which most of sphinx-needs' own fixtures have: no `creator`, no
    `needs_schema`, no `needs_defaults_removed`, `description` where `content` is meant,

@@ -12,8 +12,9 @@ so that it is read one way:
 - **the envelope** -- the ``project``, the ``current_version``, the ``versions``, and a
   ``format_version``;
 - **selecting a version** -- the one asked for, or the file's current one;
-- **the records** -- each keyed by its id, with the legacy ``description`` read as
-  ``content`` and the version's ``needs_schema`` defaults merged under it.
+- **the records** -- each keyed by its id, with the version's ``needs_schema`` defaults
+  merged under it, and the legacy ``description`` of a record with no ``content`` (as
+  sphinx-needs wrote them before 4.0) read as its ``content``.
 
 Standard library only: no Sphinx, no docutils, no sibling distribution. A converter or a
 build action that runs without the documentation toolchain can use it.
