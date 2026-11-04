@@ -308,8 +308,38 @@ Improvements
   near name, such as a ``tag`` of one type beside ``tags``, is reported too: ``suppress_warnings =
   ["needs.type_near_name"]`` silences these alone. See :ref:`need_types_misspelt`.
 
+- 👌 A need template's undefined names and unresolved fields are reported; the output is unchanged
+  (:ref:`need_templates_portability`)
+
+  A name a template uses that nothing defines (a typo, a field another need type declares) still renders empty,
+  and is now one ``needs.template_undefined`` warning at the need, naming the template and the expression: each
+  template is rendered strictly first and, when that fails, leniently again, as before. A name tested with
+  ``{% if x is defined %}`` or given a ``default`` is not reported. A template naming a field that holds a dynamic
+  function, a variant or a derived value -- resolved only after every document is read, so it renders as
+  ``None`` -- is one ``needs.template_unresolved`` warning naming the field. A build run with ``-W`` that has
+  such a template now fails until it is fixed.
+
+- 👌 A hidden need's ``pre_template`` and ``post_template`` are not rendered: no output of them was ever shown,
+  and its ``pre_content`` and ``post_content`` in ``needs.json`` are now null. Its content template is still
+  rendered
+
 Deprecations
 ............
+
+- ⚠️ ``:jinja_content:`` is deprecated, and is removed in 10.0: a template file holding ``{{ content }}``,
+  named with ``:template:``, replaces it (:ref:`jinja_content`)
+
+  Each need rendered with it -- the option, the ``jinja_content`` argument of the API, a ``list2need`` item or a
+  service datum -- is one ``needs.deprecated`` warning at the need; it is rendered as before. It loses the
+  authored body (``needs.json`` holds only its output), and its output can hold Jinja syntax that a reader must
+  not render again.
+
+- ⚠️ ``needimport`` applying a record's ``pre_template`` or ``post_template`` is deprecated, and stops in 10.0
+  (:ref:`needimport_templates`)
+
+  Where the importing project has a template of that name it is still applied, with one ``needs.deprecated``
+  warning per directive and template naming the directive's own ``:pre_template:`` / ``:post_template:``; where it
+  has none, the name is no longer applied (and no longer loses the need, below).
 
 - ⚠️ ``add_need`` is deprecated, and is removed in 10.0: ``create_need`` replaces it (:issue:`2137`)
 
@@ -353,6 +383,36 @@ Deprecations
 
 Bug fixes
 .........
+
+- 🐛 A need whose template cannot be rendered is created, with a warning, where it was not created at all
+  **(changed output)**
+
+  A template file (or template folder) that does not exist, a template that does not parse and one that fails
+  while rendering raised an error that dropped the need -- and made every link to it a dead link; through
+  :ref:`needimport`, every imported need naming a template the importer lacked was dropped. The need is now
+  created with that template's output empty, and one ``needs.template_missing``, ``needs.template_syntax`` or
+  ``needs.template_render`` warning is reported at it.
+
+- 🐛 :ref:`needimport` never applies a record's ``template`` or ``jinja_content`` again **(changed output)**
+
+  A record's ``content`` is already its templates' output. It was wrapped a second time where the importer had a
+  template of the same name, a ``jinja_content`` record's content was rendered as Jinja a second time (changing
+  it in transit), and with ``:parse_by_doctype:`` a templated record was parsed in the page's markup. Now the
+  content is imported as written and parsed by its ``doctype`` like any other record, and the imported need names
+  no template; the directive's own template options and the project's defaults still decorate it. ``needs.json``
+  ``content`` with ``doctype`` is the final description of a need's body: see :ref:`need_templates_portability`.
+
+- 🐛 Need templates are dependencies of their documents: editing, creating or deleting a ``.need`` file re-reads
+  the documents rendering it, and changing :ref:`needs_template_folder`, or a comparable value of
+  :ref:`needs_render_context`, re-reads the documents with a templated need, where all of them stayed stale until a
+  full build. A render context holding a function forces no re-read. A document whose template is missing is
+  re-read on every build until the file exists.
+
+- 🐛 A heading in a need's ``pre_template`` or ``post_template`` output on a MyST page opens its section where the
+  output is, as on a reStructuredText page, where it landed after the need **(changed output)**
+
+- 🐛 A need written inside ``{eval-rst}`` on a MyST page has the ``doctype`` ``.rst``, the markup its content is
+  written in, where it had the page's ``.md`` **(changed output)**
 
 - ‼️ A directive option matches a field, link type or core field ignoring case, in reStructuredText and MyST alike,
   and its value is stored under the declared name (:ref:`option names and case <needs_option_name_case>`)
@@ -492,14 +552,15 @@ Bug fixes
   its readers finished. Needs from
   ``needs_external_needs`` are not compared (:issue:`353`). See :ref:`incremental_builds`.
 
-- 🔧 ``ENV_DATA_VERSION`` is 25: the first build after upgrading re-reads every document, which records
+- 🔧 ``ENV_DATA_VERSION`` is 26: the first build after upgrading re-reads every document, which records
   the views and need roles each document holds and where each hidden need is (:issue:`2398`), stores each need's
   source as one class, with the hops above, computes again the selections and derived values of a filter using
   ``c.is_a``, which 9.1.0 refused, computes the
   links a ``copy`` or ``collect`` on a link type, refused until now, computes, leaves the summary link types
   out of a needflow without ``:link_types:``, records the file's line for a need in a sliced include
-  (:issue:`2428`) and the directive's line for a need a ``needimport`` or a ``needservice`` creates, and locates
-  each need in one walk of the doctree
+  (:issue:`2428`) and the directive's line for a need a ``needimport`` or a ``needservice`` creates, locates
+  each need in one walk of the doctree, records what the documents' need templates were read with, and creates
+  the needs the need-template fixes above change
 
 - 🐛 A need with ``:hide:`` is located as a visible need in the same place is **(changed output)** (:issue:`2398`)
 
