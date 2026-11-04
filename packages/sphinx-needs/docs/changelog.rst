@@ -34,6 +34,15 @@ Improvements
   deadlocked. The full list is minijinja's own
   `changelog <https://github.com/mitsuhiko/minijinja/blob/main/CHANGELOG.md>`__.
 
+Bug fixes
+.........
+
+- 🐛 ``needimport``'s own warnings name the file and line the directive is written on, not the parser's running
+  line, under an ``rst_prolog`` or an include **(changed output)** (:issue:`2463`, :pr:`NNNN`)
+
+  Inside an included file they named the including page; they now name the included file and the line the needs
+  the directive imports record, also in an include sliced by ``:start-line:``.
+
 .. _`release:9.2.0`:
 
 9.2.0
