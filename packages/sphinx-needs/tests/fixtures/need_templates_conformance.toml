@@ -758,3 +758,198 @@ need = "B_SPEC_PLAIN"
 [case.expect.needs.B_SPEC_PLAIN]
 content = ""
 template = "nope"
+
+# --- undefined names (rules 9, 12) ---------------------------------------------------
+
+[[case]]
+name = "undefined-name-renders-empty-and-is-reported"
+why = "a name no need defines (a typo) renders empty, as it always has, and is reported once per template at the need"
+rules = [9]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Typo
+   :id: REQ_1
+   :template: typo
+
+   Body.
+'''
+files."needs_templates/typo.need" = '''
+[{{ titel }}] {{ content }}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_undefined"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "[] Body."
+
+[[case]]
+name = "guarded-undefined-is-clean"
+why = "the rule is a RUNTIME one: a name tested with `is defined`, or given a `default`, is not reported, though the template names it"
+rules = [9]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Guarded
+   :id: REQ_1
+   :template: guarded
+'''
+files."needs_templates/guarded.need" = '''
+{% if extra is defined %}has {{ extra }}{% else %}no extra{% endif %}, {{ other | default("fallback") }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+content = "no extra, fallback"
+
+[[case]]
+name = "undefined-in-a-condition-is-reported"
+why = "testing an undefined name for truth (without `is defined`) is a use of it: the false branch renders, and it is reported"
+rules = [9]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Condition
+   :id: REQ_1
+   :post_template: cond
+'''
+files."needs_templates/cond.need" = '''
+{% if maybe %}yes{% else %}no{% endif %}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_undefined"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+post_content = "no"
+
+[[case]]
+name = "undefined-is-reported-per-template"
+why = "a need whose pre and post templates both use an undefined name is reported once for each; a template that uses none is not"
+rules = [9, 1]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Two typos
+   :id: REQ_1
+   :pre_template: pre
+   :post_template: post
+   :template: clean
+
+   Body.
+'''
+files."needs_templates/pre.need" = '''
+pre {{ nope1 }}{{ nope2 }}.
+'''
+files."needs_templates/post.need" = '''
+post {{ nope3 }}.
+'''
+files."needs_templates/clean.need" = '''
+{{ content }}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_undefined"
+need = "REQ_1"
+[[case.expect.findings]]
+code = "template_undefined"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "Body."
+pre_content = "pre ."
+post_content = "post ."
+
+[[case]]
+name = "undefined-in-jinja-content-is-reported"
+why = "a :jinja_content: body using an undefined name renders it empty and is reported"
+rules = [9, 21]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Jinja typo
+   :id: REQ_1
+   :jinja_content:
+
+   Hello {{ nobody }}from {{ id }}.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_undefined"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "Hello from REQ_1."
+
+[[case]]
+name = "undefined-attribute-of-an-unset-field-is-reported"
+why = "an attribute of a declared but unset field (None) is undefined: it renders empty and is reported"
+rules = [9, 4]
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Unset owner
+   :id: REQ_1
+   :template: attr
+'''
+files."needs_templates/attr.need" = '''
+owner=[{{ owner.name }}]
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_undefined"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "owner=[]"
+
+[[case]]
+name = "render-context-is-merged-over-the-need"
+why = "sphinx-needs merges needs_render_context over the need's fields: a key it gives is defined (ubCode cannot read it: rule 12)"
+rules = [12, 9]
+python_only = true
+config = '''
+[needs.render_context]
+team = "blue"
+'''
+source = '''
+.. req:: Context
+   :id: REQ_1
+   :template: ctx
+'''
+files."needs_templates/ctx.need" = '''
+team={{ team }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+content = "team=blue"
+
+[[case]]
+name = "attribute-of-an-undefined-name-is-a-render-error"
+why = "an attribute of an undefined name fails even leniently (the engine's rule, unlike one of None): the template cannot be rendered, the need is kept"
+rules = [9, 14]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Deep typo
+   :id: REQ_1
+   :template: deep
+
+   Body.
+'''
+files."needs_templates/deep.need" = '''
+[{{ typo.attr }}]
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_render"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = ""

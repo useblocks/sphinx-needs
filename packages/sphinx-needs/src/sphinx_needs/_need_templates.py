@@ -7,7 +7,9 @@ called by ``_generate_need``), against the created need's
 A template that cannot be rendered -- its file is missing, it does not parse, it fails
 while rendering -- never costs the need: its output is empty and one warning is
 reported at the need (``needs.template_missing``, ``needs.template_syntax``,
-``needs.template_render``).
+``needs.template_render``). An undefined name renders empty, as it always has, and is
+reported (``needs.template_undefined``): each template is rendered strictly first, and
+leniently again only when that fails (:func:`_render`).
 
 Every template file a render reads, or tries to read, is a dependency of the document
 the need is created on (``on_read``), so creating, editing or deleting it re-reads the
@@ -163,25 +165,68 @@ def _render(
     need_id: str,
     location: Location,
 ) -> str:
-    """The rendered *source*, or ``""`` (with a warning) for one that cannot be."""
+    """The rendered *source*, or ``""`` (with a warning) for one that cannot be.
+
+    The render is STRICT first: an undefined value used anywhere but in an
+    ``is defined`` test or the ``default`` filter is an error. On any error the source
+    is rendered again leniently, as it always was, so the output is never changed: if
+    that succeeds, an undefined value was used, and it renders empty with one
+    ``needs.template_undefined`` warning; if it fails too, the template cannot be
+    rendered (``needs.template_syntax`` / ``needs.template_render``). A strict render
+    that succeeds is the lenient one's output, since it used no undefined value.
+    """
     what = f"The {option} {name!r}" if name is not None else "The jinja_content"
     try:
-        return render_template_string(source, context, autoescape=False)
-    except Exception as error:
+        return render_template_string(source, context, autoescape=False, strict=True)
+    except Exception as strict_error:
         # deliberately broad: MiniJinja raises ``TemplateError`` (its ``kind`` says which
         # error), and a render-context callable may raise anything
-        syntax = getattr(error, "kind", None) == "SyntaxError"
+        if getattr(strict_error, "kind", None) == "SyntaxError":
+            _warn(
+                f"{what} of need {need_id!r} is not rendered: {strict_error}",
+                "template_syntax",
+                location,
+            )
+            return ""
+        try:
+            rendered = render_template_string(source, context, autoescape=False)
+        except Exception as error:
+            syntax = getattr(error, "kind", None) == "SyntaxError"
+            _warn(
+                f"{what} of need {need_id!r} is not rendered: {error}",
+                "template_syntax" if syntax else "template_render",
+                location,
+            )
+            return ""
         _warn(
-            f"{what} of need {need_id!r} is not rendered: {error}",
-            "template_syntax" if syntax else "template_render",
+            f"{what} of need {need_id!r} uses an undefined value"
+            f"{_undefined_expression(source, strict_error)}, which renders empty. "
+            "Every field of the need's type is defined (None when unset); "
+            "a name only some needs define can be tested with `is defined`.",
+            "template_undefined",
             location,
         )
+        return rendered
+
+
+def _undefined_expression(source: str, error: Exception) -> str:
+    """The expression an undefined error is about, as `` `expr` (line n)``, or ``""``."""
+    span = getattr(error, "range", None)
+    line = getattr(error, "line", None)
+    if not (isinstance(span, tuple) and len(span) == 2):
         return ""
+    # MiniJinja's range is in bytes of the source
+    expression = source.encode()[span[0] : span[1]].decode(errors="replace").strip()
+    if not expression:
+        return ""
+    return f" `{expression}`" + (f" (line {line})" if isinstance(line, int) else "")
 
 
 def _warn(
     message: str,
-    subtype: Literal["template_missing", "template_syntax", "template_render"],
+    subtype: Literal[
+        "template_missing", "template_syntax", "template_render", "template_undefined"
+    ],
     location: Location,
 ) -> None:
     log_warning(logger, message, subtype, location)
