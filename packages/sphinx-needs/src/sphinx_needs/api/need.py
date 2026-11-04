@@ -1506,8 +1506,9 @@ def ingest_need_record(
     read by this function.
     It is not modified. A legacy ``description`` is taken as the ``content`` when that is
     empty; keys the project does not know are dropped and returned; keys that are
-    computed rather than imported (such as ``docname``, ``lineno``, ``full_title`` or
-    the ``<link>_back`` names) are dropped silently. The need is created from the rest
+    computed rather than imported (such as ``docname``, ``lineno`` or the ``<link>_back``
+    names) are dropped silently, and so is the legacy ``full_title``, unless the project
+    has a field or a link type of that name. The need is created from the rest
     through the same path as :func:`create_need`: ``type`` as its ``need_type``, and
     its fields and links as one mapping, so a record key named like an argument of
     that path is the field of its name.
