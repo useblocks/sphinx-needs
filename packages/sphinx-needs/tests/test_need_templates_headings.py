@@ -20,6 +20,7 @@ from typing import Any
 import pytest
 from docutils import nodes
 
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.nodes import Need
 
 CONF = 'extensions = ["sphinx_needs", "myst_parser"]\n'
@@ -44,6 +45,12 @@ Section A
 
 .. req:: After
    :id: AFTER_R
+
+Section B
+---------
+
+.. req:: Later
+   :id: LATER_R
 """
 
 PAGE = """\
@@ -61,6 +68,12 @@ Body.
 
 ```{req} After
 :id: AFTER_M
+```
+
+## MD later
+
+```{req} Later
+:id: LATER_M
 ```
 """
 
@@ -114,3 +127,21 @@ def test_a_pre_template_heading_opens_its_section_before_the_need(
     after = _need(doctree, "AFTER_R" if docname == "index" else "AFTER_M")
     assert after.parent is host
     assert order.index(post) < order.index(after)
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "files": FILES}], indirect=True
+)
+def test_the_pages_own_headings_after_a_templated_heading_keep_their_sections(
+    test_app: Any,
+) -> None:
+    """A page heading after a need whose template opened a section is the page's: the
+    template's sections are parsed apart from the page's, and the page's section state
+    is restored after, so the need under the later heading is in it."""
+    app = test_app
+    app.build()
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert needs["LATER_R"]["section_name"] == "Section B"
+    assert needs["LATER_R"]["sections"] == ("Section B", "Top")
+    assert needs["LATER_M"]["section_name"] == "MD later"
+    assert needs["LATER_M"]["sections"] == ("MD later", "MD page")
