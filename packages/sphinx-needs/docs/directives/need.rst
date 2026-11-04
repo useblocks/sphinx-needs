@@ -613,7 +613,10 @@ empty list (``{{ links|first }}``, ``{{ tags[0] }}`` where there is none), used 
 declared field is defined; test a value only some needs have with ``{% if x is defined %}`` or give it a
 ``default``, which report nothing. A few uses of an undefined name are not reported, as the engine lets them
 pass: an ``is none`` or ``is string`` test of it, and ``|join`` over it. The output is the same as without the
-warning, render-context functions included (each call is made once). An attribute of an undefined NAME
+warning. A function given directly in :ref:`needs_render_context` is called once per call the template makes,
+as with a single render: the second render replays the first one's results (an iterator it returns included).
+A class, a callable object, and a method or function reached through a value of the render context run again in
+the second render, so one with side effects may change the output. An attribute of an undefined NAME
 (``{{ typo.attr }}``) is an error even then: the whole template's output is empty, as ``needs.template_render``
 reports.
 
@@ -638,7 +641,8 @@ reported at it (``needs.template_missing``, ``needs.template_syntax`` or ``needs
 editing, creating or deleting it re-reads the document. Until a missing template exists, its document is re-read
 on every build, as Sphinx re-reads a document with any missing dependency (it is reported each time, as
 ``needs.template_missing``). A record's pre or post template a :ref:`needimport` looks for and does not find is
-not a dependency: the import page is re-read once the template is created, and not on every build before.
+not a dependency: the import page is re-read once the template is created, or when the template folder or the
+render context changes, and not on every build before.
 Changing :ref:`needs_template_folder`, or a value of :ref:`needs_render_context` that can be compared between
 builds, re-reads every document with a templated need. A value is compared when it survives a pickle unchanged
 -- data, and a function defined at the top of a module, which changing re-reads too; a ``lambda``, a closure or
