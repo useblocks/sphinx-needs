@@ -391,7 +391,8 @@ Bug fixes
   while rendering raised an error that dropped the need -- and made every link to it a dead link; through
   :ref:`needimport`, every imported need naming a template the importer lacked was dropped. The need is now
   created with that template's output empty, and one ``needs.template_missing``, ``needs.template_syntax`` or
-  ``needs.template_render`` warning is reported at it.
+  ``needs.template_render`` warning is reported at it. ``create_need`` and ``add_need`` therefore no longer raise
+  ``InvalidNeedException`` for a template that cannot be rendered.
 
 - 🐛 :ref:`needimport` never applies a record's ``template`` or ``jinja_content`` again **(changed output)**
 
@@ -405,8 +406,10 @@ Bug fixes
 - 🐛 Need templates are dependencies of their documents: editing, creating or deleting a ``.need`` file re-reads
   the documents rendering it, and changing :ref:`needs_template_folder`, or a comparable value of
   :ref:`needs_render_context`, re-reads the documents with a templated need, where all of them stayed stale until a
-  full build. A render context holding a function forces no re-read. A document whose template is missing is
-  re-read on every build until the file exists.
+  full build. A render-context value is compared when it survives a pickle unchanged (data, a module-level
+  function); a ``lambda``, a closure or an object without equality is left out, and forces no re-read. A
+  document whose template is missing is re-read on every build until the file exists; a record's pre or post
+  template a ``needimport`` does not find re-reads its page once it is created, and not before.
 
 - 🐛 A heading in a need's ``pre_template`` or ``post_template`` output on a MyST page opens its section where the
   output is, as on a reStructuredText page, where it landed after the need **(changed output)**

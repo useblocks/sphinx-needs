@@ -245,7 +245,7 @@ So you can decide what kind of layout or style to use during import.
 A record's templates
 ~~~~~~~~~~~~~~~~~~~~
 
-.. versionchanged:: 9.2.0
+.. versionchanged:: 9.3.0
 
 A record's ``content`` is what its need's templates rendered in the project that wrote the
 ``needs.json``, and its ``template``, ``pre_template``, ``post_template`` and

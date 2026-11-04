@@ -315,7 +315,7 @@ Default: False
 jinja_content
 ~~~~~~~~~~~~~
 
-.. deprecated:: 9.2.0
+.. deprecated:: 9.3.0
 
    ``:jinja_content:`` reports a ``needs.deprecated`` warning at each need it renders, and is removed in
    sphinx-needs 10.0. Move the Jinja into a template file, with ``{{ content }}`` where the need's own body
@@ -579,7 +579,7 @@ You can use it to show some need-specific analytics, like dependency diagrams or
 How need templates are rendered
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. versionchanged:: 9.2.0
+.. versionchanged:: 9.3.0
 
    A template that cannot be rendered keeps its need; undefined names and unresolved fields are reported;
    template files are dependencies of their documents; a hidden need's pre and post templates are not
@@ -594,12 +594,13 @@ need type's or :ref:`needs_fields`' ``default`` or ``predicates``, or through th
 template sees the need as it is then: its ``id`` (a generated one included, which is computed from the
 authored body before the render), its ``title``, its ``type``, ``type_name`` and the type's other metadata,
 where it is (``docname``, ``lineno``, ``doctype``), its authored ``content``, the defaults it was given, and
-every field its need type declares (``None`` while unset), with :ref:`needs_render_context` merged over them.
+every field its need type declares (its empty value while unset: ``None``, or ``[]`` for a link type), with
+:ref:`needs_render_context` merged over them.
 It does not see what is resolved only once every document is read: back links (``links_back`` is empty),
 ``sections`` and ``section_name``, the value a :ref:`needextend` sets (the template shows the value before
 it), and the value of a field holding a :ref:`dynamic function <dynamic_functions>`, a variant or a
-:ref:`derived value <needs_derive>`, which renders as ``None``. A template naming such a field is reported
-(``needs.template_unresolved``, naming the field). To show resolved data, write constructs that are resolved
+:ref:`derived value <needs_derive>`, which renders as its unset value (``None``, or ``[]`` for a link type).
+A template naming such a field is reported (``needs.template_unresolved``, naming the field). To show resolved data, write constructs that are resolved
 later into the output: a ``:need:`` role, :ref:`needtable` or :ref:`needflow` filters (``'{{id}}' in
 links_back``), an ``:ndf:`` dynamic function -- or use a :ref:`layout <layouts>`.
 
@@ -634,16 +635,24 @@ while rendering -- never costs the need: it is created with that template's outp
 reported at it (``needs.template_missing``, ``needs.template_syntax`` or ``needs.template_render``).
 
 **Incremental builds.** Each template file a need reads, or tries to read, is a dependency of its document:
-editing, creating or deleting it re-reads the document. Changing :ref:`needs_template_folder`, or a value of
-:ref:`needs_render_context` that can be compared between builds (not a function), re-reads every document with
-a templated need.
+editing, creating or deleting it re-reads the document. Until a missing template exists, its document is re-read
+on every build, as Sphinx re-reads a document with any missing dependency (it is reported each time, as
+``needs.template_missing``). A record's pre or post template a :ref:`needimport` looks for and does not find is
+not a dependency: the import page is re-read once the template is created, and not on every build before.
+Changing :ref:`needs_template_folder`, or a value of :ref:`needs_render_context` that can be compared between
+builds, re-reads every document with a templated need. A value is compared when it survives a pickle unchanged
+-- data, and a function defined at the top of a module, which changing re-reads too; a ``lambda``, a closure or
+an object without equality is not compared, and changing it re-reads nothing. A value that differs on each build
+(a time stamp) re-reads the templated documents on each build.
 
 **needs.json** holds what the templates rendered: ``content`` is the rendered body, ``pre_content`` and
 ``post_content`` the rendered decorations, and ``template``, ``pre_template``, ``post_template`` and
 ``jinja_content`` name what produced them, as provenance. A reader of the file -- :ref:`needimport`,
-:ref:`needs_external_needs`, ubCode -- never applies those names again: ``content`` with ``doctype`` is a
-complete, final description of the need's body, parsed in its ``doctype``
-(:ref:`needimport_parse_by_doctype`). See :ref:`needimport_templates`.
+:ref:`needs_external_needs`, ubCode -- never applies its ``template`` or ``jinja_content`` again: ``content``
+with ``doctype`` is a complete, final description of the need's body, which ``needimport`` parses in its
+``doctype`` with :ref:`needs_import_parse_by_doctype` (:ref:`needimport_parse_by_doctype`). ``needimport``
+still applies a record's ``pre_template`` / ``post_template`` where the importing project has the template,
+deprecated, until 10.0. See :ref:`needimport_templates`.
 
 .. _need_duration:
 
