@@ -605,8 +605,16 @@ links_back``), an ``:ndf:`` dynamic function -- or use a :ref:`layout <layouts>`
 
 **Undefined names** render empty, and are reported: a template is rendered strictly first and, when it uses
 an undefined value, leniently again, with one ``needs.template_undefined`` warning naming the template and the
-expression. Every declared field is defined; test a name only some needs have with ``{% if x is defined %}``
-or give it a ``default``, which report nothing. The output is the same as without the warning.
+expression. An undefined value is an undefined name (a typo, a field another need type declares), a missing key
+or attribute (``{{ mapping.missing }}``, an attribute of an unset field, which is ``None``), or an item of an
+empty list (``{{ links|first }}``, ``{{ tags[0] }}`` where there is none), used anywhere but in an
+``is defined`` test or the ``default`` filter: testing one for truth (``{% if typo %}``) is a use. Every
+declared field is defined; test a value only some needs have with ``{% if x is defined %}`` or give it a
+``default``, which report nothing. A few uses of an undefined name are not reported, as the engine lets them
+pass: an ``is none`` or ``is string`` test of it, and ``|join`` over it. The output is the same as without the
+warning, render-context functions included (each call is made once). An attribute of an undefined NAME
+(``{{ typo.attr }}``) is an error even then: the whole template's output is empty, as ``needs.template_render``
+reports.
 
 **Values** display as Python prints them: ``None``, ``True``, ``3``, ``1.0``. How a list or a map displays
 is not guaranteed; join a list (``{{ tags | join(", ") }}``).

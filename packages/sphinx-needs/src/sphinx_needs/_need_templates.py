@@ -272,9 +272,10 @@ def _render(
             return ""
         _warn(
             f"{what} of need {need_id!r} uses an undefined value"
-            f"{_undefined_expression(source, strict_error)}, which renders empty. "
-            "Every field of the need's type is defined (None when unset); "
-            "a name only some needs define can be tested with `is defined`.",
+            f"{_undefined_expression(source, strict_error)} (an undefined name, a "
+            "missing key or attribute, or an item of an empty list), which renders "
+            "empty. Every field of the need's type is defined; a value only some "
+            "needs have can be tested with `is defined` or given a `default`.",
             "template_undefined",
             location,
         )
