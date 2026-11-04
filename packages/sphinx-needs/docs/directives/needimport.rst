@@ -208,14 +208,15 @@ directive's line (:issue:`2144`).
 ``:parse_by_doctype: false`` turns it off; without the option,
 :ref:`needs_import_parse_by_doctype` decides.
 
-A need rendered through a template -- its record's ``template``, the ``:template:``
-option, or a template the project gives through :ref:`needs_fields` (a ``default``, or any
+A need rendered through a template of THIS project -- the ``:template:`` option, or a
+template the project gives through :ref:`needs_fields` (a ``default``, or any
 ``predicates``) -- is parsed in the page's markup, template and content together: the
 template is a file of the importing project, written in its pages' markup. A predicate is
 decided only when the need is created, so a project with any ``template`` predicate parses
 every imported need in the page's markup, also one that no predicate matches.
-``pre_template`` and ``post_template`` are always parsed in the page's markup. Content with
-``jinja_content`` is rendered by Jinja first, and then parsed in its ``doctype``.
+``pre_template`` and ``post_template`` are always parsed in the page's markup. A record's
+own ``template`` or ``jinja_content`` is never applied (see :ref:`needimport_templates`),
+so such a record is parsed in its ``doctype`` like any other.
 
 If this project cannot parse a ``doctype`` -- ``.md`` without myst-parser, or a suffix
 that is not in ``source_suffix`` -- the content of those needs is parsed in the page's
@@ -238,6 +239,32 @@ So you can decide what kind of layout or style to use during import.
 * template
 * pre_template
 * post_template
+
+.. _needimport_templates:
+
+A record's templates
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionchanged:: 9.2.0
+
+A record's ``content`` is what its need's templates rendered in the project that wrote the
+``needs.json``, and its ``template``, ``pre_template``, ``post_template`` and
+``jinja_content`` name templates of THAT project: they are provenance, never instructions to
+the importer (:ref:`need_templates_portability`).
+
+- A record's ``template`` and ``jinja_content`` are never applied again: its content is
+  imported as written (it used to be wrapped twice where this project had a template of the
+  same name, or rendered as Jinja a second time), and the imported need names no template. A
+  record is never lost because this project has no such template.
+- A record's ``pre_template`` or ``post_template`` is still applied where this project has a
+  template of that name, with one ``needs.deprecated`` warning per directive and template;
+  this stops in 10.0. Name the template on the directive (``:pre_template:``,
+  ``:post_template:``) or give it as a default through :ref:`needs_fields` to keep it. A
+  name this project has no template for is not applied, and not reported.
+- ``pre_content`` and ``post_content`` are never imported.
+
+The options above, and this project's own defaults, decorate the imported needs as any of
+its needs.
 
 .. _needimport-keys:
 

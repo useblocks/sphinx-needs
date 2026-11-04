@@ -2952,8 +2952,13 @@ needs_template_folder
 
 ``needs_template_folder`` allows the definition of your own **Sphinx-Needs** template folder.
 By default this is ``needs_templates/``.
+From ``conf.py`` a relative folder is relative to the source directory; from
+``ubproject.toml`` (``[needs] template_folder``) it is relative to the directory of that file,
+as every path in it is.
 
-The folder must already exist, otherwise an exception gets thrown, if a need tries to use a template.
+A template the folder does not hold is reported (``needs.template_missing``) at each need naming
+it, which is created with that template's output empty. Changing the folder re-reads the
+documents with a templated need on the next build.
 
 Read also :ref:`need_template option description <need_template>` for information of how to use templates.
 
