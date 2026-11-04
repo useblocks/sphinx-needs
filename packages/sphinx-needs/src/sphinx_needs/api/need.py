@@ -1643,6 +1643,37 @@ def _reset_rst_titles(state: RSTState) -> Generator[None]:
     state.memo.section_level = surrounding_section_level
 
 
+@contextmanager
+def _template_titles(state: RSTState, node: nodes.Element) -> Generator[None]:
+    """Let a heading in pre/post template output open a section IN PLACE: as a child of
+    ``node``, the element the output is parsed into, which is put where the output is
+    (before or after the need), whatever the levels of the page's own sections.
+
+    On a reStructuredText page that is :func:`_reset_rst_titles`. myst-parser instead
+    appends a new section to the page's section of the level above (its renderer's
+    ``_level_to_section``), so a pre-template heading landed after the need, as a
+    sibling of the section the need is in; every level is mapped to ``node`` for the
+    parse, so the heading's section is ``node``'s child at any level, and the levels of
+    the template's own headings nest as they say.
+    """
+    if isinstance(state, RSTState):
+        with _reset_rst_titles(state):
+            yield
+        return
+    renderer = getattr(state, "_renderer", None)
+    levels = getattr(renderer, "_level_to_section", None)
+    if not isinstance(levels, dict):
+        # not a myst-parser state this knows: parse as it parses
+        yield
+        return
+    # one more level than a heading can have: a level-n heading's parent is level n-1
+    renderer._level_to_section = dict.fromkeys(range(7), node)
+    try:
+        yield
+    finally:
+        renderer._level_to_section = levels
+
+
 def _host_content_anchor(
     state: RSTState, input_offset: int, host_source: str, need_line: int | None
 ) -> tuple[str, int]:
@@ -1775,7 +1806,7 @@ def _create_need_node(
 
     if pre_content := data.get("pre_content"):
         node = nodes.Element()
-        with _reset_rst_titles(state):
+        with _template_titles(state, node):
             state.nested_parse(
                 StringList(pre_content.splitlines(), source=source),
                 _template_parse_offset(data),
@@ -1853,7 +1884,7 @@ def _create_need_node(
 
     if post_content := data.get("post_content"):
         node = nodes.Element()
-        with _reset_rst_titles(state):
+        with _template_titles(state, node):
             state.nested_parse(
                 StringList(post_content.splitlines(), source=source),
                 _template_parse_offset(data),

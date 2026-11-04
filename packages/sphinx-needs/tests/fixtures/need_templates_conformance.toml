@@ -1121,3 +1121,90 @@ pre_template = "pre"
 post_template = "missing"
 [case.expect.nulls]
 REQ_1 = ["pre_content", "post_content"]
+
+# --- headings in pre/post output (rule 7) --------------------------------------------
+
+[[case]]
+name = "pre-template-heading-opens-a-section-in-place"
+why = "a heading in pre_template output opens a section where the output is, inside the page's section, whatever its level, on an RST page and on a MyST page alike (a need in the output is in that section)"
+rules = [7, 6]
+python_only = true
+config = '''
+[needs]
+'''
+source = '''
+Section A
+---------
+
+.. req:: On RST
+   :id: REQ_R
+   :pre_template: hrst
+
+   Body.
+'''
+source_md = '''
+## MD section
+
+```{req} On MyST
+:id: REQ_M
+:pre_template: hmd
+
+Body.
+```
+'''
+files."needs_templates/hrst.need" = '''
+Pre {{ id }}
+~~~~~~~~~~~~
+
+.. spec:: Inner
+   :id: IN_{{ id }}
+'''
+files."needs_templates/hmd.need" = '''
+## Pre {{ id }}
+
+```{spec} Inner
+:id: IN_{{ id }}
+```
+'''
+[case.expect]
+findings = []
+[case.expect.needs.IN_REQ_R]
+sections = ["Pre REQ_R", "Section A", "Case"]
+section_name = "Pre REQ_R"
+[case.expect.needs.IN_REQ_M]
+sections = ["Pre REQ_M", "MD section", "Page"]
+section_name = "Pre REQ_M"
+[case.expect.needs.REQ_R]
+section_name = "Section A"
+pre_content = "Pre REQ_R\n~~~~~~~~~~~~\n\n.. spec:: Inner\n   :id: IN_REQ_R"
+[case.expect.needs.REQ_M]
+section_name = "MD section"
+
+[[case]]
+name = "pre-template-heading-is-refused-by-ubcode"
+why = "ubCode cannot open a section from template output: it refuses the heading (template_heading at the need), and the need is kept"
+rules = [7]
+ubcode_only = true
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Heading
+   :id: REQ_1
+   :pre_template: heading
+
+   Body.
+'''
+files."needs_templates/heading.need" = '''
+Pre {{ id }}
+~~~~~~~~~~~~
+
+text
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_heading"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "Body."
+pre_template = "heading"
