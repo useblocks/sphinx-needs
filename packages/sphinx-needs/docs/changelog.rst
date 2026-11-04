@@ -38,7 +38,7 @@ Bug fixes
 .........
 
 - 🐛 A link type named ``full_title`` is kept on ``needimport``, external needs and codelinks multi-line needs
-  (:issue:`2466`, :pr:`NNNN`)
+  (:issue:`2466`, :pr:`2477`)
 
   A needs.json written by sphinx-needs 5.0 or earlier carries a legacy ``full_title`` string on every need: in a
   project with such a link type it is now read as that need's link targets, one warning per unknown target

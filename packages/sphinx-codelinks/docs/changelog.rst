@@ -11,7 +11,7 @@ Fixes
 
 - 🐛 A one-line marker that sets a link type named ``full_title`` no longer aborts the build
   (`#2466 <https://github.com/useblocks/sphinx-needs/issues/2466>`__,
-  `#NNNN <https://github.com/useblocks/sphinx-needs/pull/NNNN>`__): the link is the need's
+  `#2477 <https://github.com/useblocks/sphinx-needs/pull/2477>`__): the link is the need's
   link, never the full title a need without an id has its id hashed from, so the id is the
   one the duplicate check and the ``[docs]`` link name.
 
