@@ -325,9 +325,40 @@ SCHEMA = {
 
 
 def test_map_legacy_keys_in_place():
-    fields = {"description": "legacy"}
+    """A record with no ``content`` key has its ``description`` renamed to it, in
+    place (contract section 6.3)."""
+    fields = {"id": "A", "description": "legacy"}
     nx.map_legacy_keys(fields)
-    assert fields == {"content": "legacy"}
+    assert fields == {"id": "A", "content": "legacy"}
+
+
+#: every falsy JSON value a ``content`` can hold; ``null`` is the one the corpus cannot
+#: state, as TOML has no null
+FALSY_CONTENTS = ["", None, 0, False, [], {}]
+
+
+@pytest.mark.parametrize("content", FALSY_CONTENTS, ids=repr)
+def test_map_legacy_keys_keeps_a_description_beside_any_content(content: Any):
+    """A record with a ``content`` key -- whatever its value, a falsy one too -- was not
+    written before 4.0, so its ``description`` is a key of its own (contract section
+    6.3)."""
+    fields = {"content": content, "description": "a field"}
+    nx.map_legacy_keys(fields)
+    assert fields == {"content": content, "description": "a field"}
+
+
+@pytest.mark.parametrize("content", FALSY_CONTENTS, ids=repr)
+def test_a_record_with_a_falsy_content_keeps_its_description(content: Any):
+    (rec,) = (
+        nx.parse(
+            json.dumps(
+                envelope({"A": record("A", content=content, description="a field")})
+            )
+        )
+        .select_version(None)
+        .records()
+    )
+    assert (rec.fields["content"], rec.fields["description"]) == (content, "a field")
 
 
 def test_a_null_default_is_merged():
