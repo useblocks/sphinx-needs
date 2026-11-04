@@ -5,7 +5,7 @@
 #
 # Repository of record: useblocks/sphinx-needs (public)
 # Canonical path:       packages/sphinx-ub-directives/tests/fixtures/template_directives_conformance.toml
-# minijinja:            2.24.0 (the series both tools pin, and the version this corpus was
+# minijinja:            3.0.5 (the series both tools pin, and the version this corpus was
 #                       recorded against; a runner asserts the version it renders with)
 #
 # THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
@@ -1041,7 +1041,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-[1, 2] {"z": 1, "a": [True]} [["z", 1], ["a", [True]]] 1.0 {"rows": [1, 2], "m": {"z": 1, "a": [True]}, "f": 1.0}''',
+[1, 2] {'z': 1, 'a': [True]} [('z', 1), ('a', [True])] 1.0 {'rows': [1, 2], 'm': {'z': 1, 'a': [True]}, 'f': 1.0}''',
 ]
 findings = []
 
@@ -2949,7 +2949,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-X-Y ["a", "b"] z1''',
+X-Y ['a', 'b'] z1''',
 ]
 findings = []
 
@@ -2966,7 +2966,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-{"z":1,"a":[1,2]}''',
+{"z": 1, "a": [1, 2]}''',
 ]
 findings = []
 
@@ -3000,7 +3000,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-None True 1.0 [1, "a"] {"a": 1}''',
+None True 1.0 [1, 'a'] {'a': 1}''',
 ]
 findings = []
 
@@ -6002,7 +6002,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-{"a": [1, 2]}''',
+{'a': [1, 2]}''',
 ]
 findings = []
 
@@ -7047,7 +7047,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-{"z": 1, "a": {"b": [1, 2], "c": "x", "d": {"e": True}}}|{"b": [1, 2], "c": "x", "d": {"e": True}}''',
+{'z': 1, 'a': {'b': [1, 2], 'c': 'x', 'd': {'e': True}}}|{'b': [1, 2], 'c': 'x', 'd': {'e': True}}''',
 ]
 findings = []
 
@@ -7348,7 +7348,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-9007199254740993 9007199254740994 18014398509481986 {"n":9007199254740993}''',
+9007199254740993 9007199254740994 18014398509481986 {"n": 9007199254740993}''',
 ]
 findings = []
 
@@ -7402,7 +7402,7 @@ findings = []
 
 [[case]]
 name = "dx-i64-bound-arithmetic-2"
-why = "context data at the i64 bounds: -contexts.c.lo"
+why = "context data at the i64 bounds: -contexts.c.lo negates the attribute, as in Jinja2 (unary minus binds looser than the lookup), and leaves i64 like its neighbours"
 config = '''
 [parse.template_contexts.c]
 file = "c.json"
@@ -7419,10 +7419,10 @@ source = '''
 '''
 [case.expect]
 expansions = [
+'''
+9223372036854775808''',
 ]
-[[case.expect.findings]]
-code = "template_render_error"
-directive = "d"
+findings = []
 
 [[case]]
 name = "dx-i64-bound-arithmetic-3"
@@ -7775,7 +7775,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-{"s":"\u003ca href=\u0027x\u0027\u003e\u0026amp;\u003c/a\u003e","u":"é","n":{"z":[1.5,2.5],"a":true}}''',
+{"s": "\u003ca href=\u0027x\u0027\u003e\u0026amp;\u003c/a\u003e", "u": "é", "n": {"z": [1.5, 2.5], "a": true}}''',
 ]
 findings = []
 
@@ -7871,7 +7871,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-["z", "a"] [1, 2] [["z", 1], ["a", 2]] 2 9''',
+['z', 'a'] [1, 2] [('z', 1), ('a', 2)] 2 9''',
 ]
 findings = []
 
@@ -8025,7 +8025,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-True False true {"t": True, "f": False}''',
+True False true {'t': True, 'f': False}''',
 ]
 findings = []
 
@@ -8071,7 +8071,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-{"zeta": False, "alpha": "x", "mid": None}''',
+{'zeta': False, 'alpha': 'x', 'mid': None}''',
 ]
 findings = []
 
@@ -8379,7 +8379,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-{"z": 9, "a": 8} 2''',
+{'z': 9, 'a': 8} 2''',
 ]
 findings = []
 
@@ -8586,7 +8586,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-{"alpha": "a", "zeta": 1}''',
+{'alpha': 'a', 'zeta': 1}''',
 ]
 findings = []
 
@@ -8834,7 +8834,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-Hello World HI hi [x] Hello a+b+c cba 3 a,b,c ["a", "b"]''',
+Hello World HI hi [x] Hello a+b+c cba 3 a,b,c ['a', 'b']''',
 ]
 findings = []
 
@@ -8868,7 +8868,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-3 3 2.57 3.0 4.0 42 4.5 3.0 7 False 2''',
+3 3 2.57 2.0 4.0 42 4.5 3.0 7 False 2''',
 ]
 findings = []
 
@@ -8966,7 +8966,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-[0, 1, 2] [1, 3, 5] {"a": 1, "b": 2} 6''',
+[0, 1, 2] [1, 3, 5] {'a': 1, 'b': 2} 6''',
 ]
 findings = []
 
@@ -9377,7 +9377,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-["a", "b"] X [x] True A B ac 2 True ["a", "b"] True 2''',
+['a', 'b'] X [x] True A B ac 2 True ['a', 'b'] True 2''',
 ]
 findings = []
 
@@ -9593,8 +9593,8 @@ source = '''
 [case.expect]
 expansions = [
 '''
-["a", "b"] {
-    "a": [
+['a', 'b'] {
+    'a': [
         1,
         2,
     ],
@@ -9666,7 +9666,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-1 z,a z ["z", "a"]''',
+1 z,a z ['z', 'a']''',
 ]
 findings = []
 
@@ -9772,7 +9772,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-za {"z": 1, "a": 2, "b": 3} x''',
+za {'z': 1, 'a': 2, 'b': 3} x''',
 ]
 findings = []
 
@@ -13875,7 +13875,7 @@ source = '''
 [case.expect]
 expansions = [
 '''
-{"true": 1, "in": 2} 2''',
+{'true': 1, 'in': 2} 2''',
 ]
 findings = []
 
