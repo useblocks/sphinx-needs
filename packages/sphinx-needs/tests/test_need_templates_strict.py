@@ -254,3 +254,50 @@ def test_an_iterator_a_context_function_returns_is_replayed_whole(
     )
     assert rendered == expected
     assert found == ["template_undefined"]
+
+
+class _Walker:
+    """An iterator with an API of its own, as a graph walker or a csv reader has."""
+
+    total = 7
+
+    def __iter__(self) -> _Walker:
+        return self
+
+    def __next__(self) -> str:
+        raise StopIteration
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("{{ walker().total }}", "7"),
+        ("{{ reader().fieldnames|join('|') }}", "a|b"),
+    ],
+)
+def test_a_clean_template_gets_what_a_context_function_returned(
+    monkeypatch: pytest.MonkeyPatch, source: str, expected: str
+) -> None:
+    """The strict render of a template that uses no undefined value is its only
+    render: it gets each result as the function returned it, an iterator with
+    attributes of its own included, and reports nothing."""
+    import csv
+    import io
+
+    from sphinx_needs import _need_templates
+
+    found: list[str] = []
+    monkeypatch.setattr(
+        _need_templates,
+        "_warn",
+        lambda message, subtype, location: found.append(subtype),
+    )
+    context = {
+        "walker": lambda: _Walker(),
+        "reader": lambda: csv.DictReader(io.StringIO("a,b\n1,2\n")),
+    }
+    rendered = _need_templates._render(
+        source, context, option="template", name="t", need_id="N", location=None
+    )
+    assert rendered == expected
+    assert found == []

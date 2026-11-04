@@ -29,9 +29,8 @@ from __future__ import annotations
 
 import functools
 import inspect
-import itertools
 import pickle
-from collections.abc import Callable, Collection, Iterator, Set
+from collections.abc import Callable, Collection, Set
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Literal
@@ -295,12 +294,15 @@ class _Calls:
     template makes, as with a single render.
 
     Only the context's own top-level functions are wrapped (a function, a builtin, a
-    bound method, a ``functools.partial``) and replayed; an iterator one returns is
-    replayed as a copy of the same items. Everything else that is callable runs again in
-    the lenient render: a class (a constructor), a callable object, and a method or
-    function reached through a value of the context. A wrapped function passed as an
-    argument to another is a different wrapper in each render, so the call taking it
-    does not match and runs again too, and receives the wrapper.
+    bound method, a ``functools.partial``) and replayed, and the strict render always
+    gets what a function returned, unchanged. A call that returned an iterator (a
+    generator, a ``csv.DictReader``, any object that is its own iterator) is not
+    replayed: the lenient render calls the function again for it, as each call was
+    before. Everything else that is callable runs again in the lenient render too: a
+    class (a constructor), a callable object, and a method or function reached through a
+    value of the context. A wrapped function passed as an argument to another is a
+    different wrapper in each render, so the call taking it does not match and runs
+    again, and receives the wrapper.
     """
 
     __slots__ = ("_context", "_diverged", "_log", "_position")
@@ -342,12 +344,12 @@ class _Calls:
         except Exception as error:
             self._log.append((name, key, dict(kwargs), True, error))
             raise
-        kept = result
-        if isinstance(result, Iterator):
-            # a one-shot iterator (a generator) is consumed by the strict render: the
-            # replay gets a copy of the same items, not the exhausted original
-            result, kept = itertools.tee(result)
-        self._log.append((name, key, dict(kwargs), False, kept))
+        # the strict render gets the result as returned, always: a template that renders
+        # cleanly is a single render. A one-shot iterator (a generator, a csv reader)
+        # cannot be handed out twice, so it is not replayed: the lenient render calls
+        # the function again for it
+        outcome = _CALL_THROUGH if _is_iterator(result) else result
+        self._log.append((name, key, dict(kwargs), False, outcome))
         return result
 
     def _replay(
@@ -374,9 +376,25 @@ class _Calls:
                 self._position += 1
                 if raised:
                     raise outcome
+                if outcome is _CALL_THROUGH:
+                    return function(*args, **kwargs)
                 return outcome
         self._diverged = True
         return function(*args, **kwargs)
+
+
+#: What a recorded call that returned an iterator holds: the lenient render calls the
+#: function again rather than hand out a consumed iterator.
+_CALL_THROUGH = object()
+
+
+def _is_iterator(value: Any) -> bool:
+    """Whether *value* is its own iterator (one pass only)."""
+    try:
+        return iter(value) is value
+    except Exception:
+        # deliberately broad: not iterable, or an ``__iter__`` that raises
+        return False
 
 
 def _is_plain_function(value: Any) -> bool:
