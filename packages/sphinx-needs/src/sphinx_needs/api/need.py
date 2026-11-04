@@ -43,6 +43,7 @@ from sphinx_needs.functions.functions import DynamicFunctionParsed
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_content import (
     MarkupContent,
+    content_route,
     parse_need_content,
     resolve_content_parser,
 )
@@ -1243,7 +1244,9 @@ def _create_need(
         and not source.dict_repr["is_external"]
         and (_docname := source.dict_repr["docname"])
     ):
-        doctype = os.path.splitext(app.env.doc2path(_docname))[1]
+        doctype = _page_doctype(
+            app, state, os.path.splitext(app.env.doc2path(_docname))[1]
+        )
 
     needs_info = _generate_need(
         NeedsSphinxConfig(app.config),
@@ -1312,6 +1315,19 @@ def _create_need(
         content_parser=content_parser,
         content_source=content_source,
     )
+
+
+def _page_doctype(app: Sphinx, state: RSTState | None, suffix: str) -> str:
+    """The markup a need created on a page is written in: the page's suffix, except
+    for a need a docutils reStructuredText state parses on a page MyST parses -- one
+    inside ``{eval-rst}`` -- which is written in reStructuredText (``".rst"``)."""
+    if not isinstance(state, RSTState):
+        return suffix
+    filetype = app.registry.source_suffix.get(suffix)
+    parser = app.registry.source_parsers.get(filetype) if filetype else None
+    if parser is not None and content_route(parser) == "myst":
+        return ".rst"
+    return suffix
 
 
 def _note_template_dependency(env: BuildEnvironment, path: Path) -> None:

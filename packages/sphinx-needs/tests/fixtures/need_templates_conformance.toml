@@ -1363,3 +1363,42 @@ content = "WRAP[SPEC_MDTPL]\n\nMyST authored [l](https://m.example).\n\n```{spec
 doctype = ".md"
 [case.expect.needs.NESTED_1]
 title = "Nested"
+
+# --- doctype is the markup the content is written in (rule 19) -----------------------
+
+[[case]]
+name = "eval-rst-need-on-a-myst-page-is-rst"
+why = "a need inside {eval-rst} on a MyST page is written in reStructuredText: its doctype is .rst, and its template's output is RST too; a need beside it is .md"
+rules = [19, 6]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: On RST
+   :id: REQ_RST
+'''
+source_md = '''
+```{eval-rst}
+.. req:: In eval-rst
+   :id: REQ_EVAL
+   :template: wrap
+
+   RST body `link <https://r.example>`_.
+```
+
+```{req} On MyST
+:id: REQ_MD
+```
+'''
+files."needs_templates/wrap.need" = '''
+WRAP {{ doctype }}: {{ content }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_EVAL]
+doctype = ".rst"
+content = "WRAP .rst: RST body `link <https://r.example>`_."
+[case.expect.needs.REQ_MD]
+doctype = ".md"
+[case.expect.needs.REQ_RST]
+doctype = ".rst"
