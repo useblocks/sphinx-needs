@@ -12,14 +12,15 @@ and ubCode.
 It holds the parts of that file more than one tool reads, so that they are read one way:
 
 - **finding, loading and anchoring** the file -- the walk up to the repository root (or,
-  outside a repository, the distribution root), TOML read with every failure named, a dotted table selected, and relative paths anchored at
-  the file's own directory;
+  outside a repository, the distribution root), TOML 1.1 read with every failure named, a
+  dotted table selected, and relative paths anchored at the file's own directory;
 - **the** ``[variants]`` **table**, with the legacy ``[needs] variant_data*`` keys as its
   fallback;
 - **the variant-data merge** -- validate, load from JSON, deep-merge, resolve -- in one copy.
 
-Standard library only: no Sphinx, no docutils, no sibling distribution. A converter or a
-build action that runs without the documentation toolchain can use it.
+Standard library only, plus the TOML 1.1 backport ``tomli`` below Python 3.15: no Sphinx,
+no docutils, no sibling distribution. A converter or a build action that runs without the
+documentation toolchain can use it.
 
 The three calls
 ---------------

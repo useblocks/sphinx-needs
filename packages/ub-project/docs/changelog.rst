@@ -3,6 +3,23 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- **TOML 1.1.** ``load_toml`` reads ``ubproject.toml`` as TOML 1.1, so the file may break an
+  inline table over several lines or end it with a trailing comma, use the ``\e`` and
+  ``\xHH`` escapes, and write a time or a datetime without seconds; valid TOML 1.0 reads as
+  before. Below Python 3.15 that takes ``tomli`` 2.4 or later, the standard library reader's
+  TOML 1.1 backport, which the package now depends on there and only there (``tomllib`` reads
+  TOML 1.1 from 3.15, so the dependency goes when 3.14 is dropped). The reading contract
+  says TOML 1.1 (section 3.1) and no longer names one reader's nesting limit (section 2.4);
+  the conformance corpus is unchanged.
+- **The text twin of load_toml.** ``loads_toml(text, source)`` parses TOML that does not come
+  from a file of its own -- text read through a consumer's own source tree, say -- exactly as
+  ``load_toml`` parses a file: invalid TOML is a ``ProjectConfigError`` naming *source*, with
+  the parser's error as its cause. No TOML library name or exception class is part of the
+  API.
+
 .. _`release:1.2.0`:
 
 1.2.0

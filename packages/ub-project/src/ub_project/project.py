@@ -1,9 +1,10 @@
 """Find, load, select and anchor: the plumbing every reader of ``ubproject.toml`` repeats.
 
 **Nothing in this package may import Sphinx, docutils or any other distribution** -- only
-the standard library. The file describes a project to tools that run with no documentation
-toolchain installed (a converter, a build action, a CI step that only reads the file), and a
-shared reader that pulled Sphinx in would take that away from all of them at once.
+the standard library, plus the TOML 1.1 backport ``tomli`` below Python 3.15. The file
+describes a project to tools that run with no documentation toolchain installed (a
+converter, a build action, a CI step that only reads the file), and a shared reader that
+pulled Sphinx in would take that away from all of them at once.
 
 What this module deliberately does NOT decide is policy. Whether a consumer walks up to
 find the file or reads it from its ``confdir``, whether a missing file is worth a warning,
@@ -15,11 +16,13 @@ a logger.
 
 from __future__ import annotations
 
+import os
 import re
-import tomllib
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import cast
+
+from ub_project import _toml
 
 #: The file name every useblocks tool reads by default.
 DEFAULT_FILENAME = "ubproject.toml"
@@ -57,9 +60,9 @@ _TOML_ESCAPES = {
     "\r": "\\r",
 }
 
-#: ``tomllib.TOMLDecodeError`` bound through an annotation, so that the ``except`` clause
-#: below is typed as precisely as everything else in the module.
-_TOML_DECODE_ERROR: type[Exception] = tomllib.TOMLDecodeError
+#: The TOML parser's decode error bound through an annotation, so that the ``except``
+#: clauses below are typed as precisely as everything else in the module.
+_TOML_DECODE_ERROR: type[Exception] = _toml.TOMLDecodeError
 
 
 class ProjectConfigError(Exception):
@@ -151,13 +154,13 @@ def load_toml(path: Path) -> dict[str, object]:
     """
     try:
         with path.open("rb") as handle:
-            # tomllib is typed ``-> dict[str, Any]``; everything downstream is ``object``
-            data = cast("dict[str, object]", tomllib.load(handle))
+            # the parser is typed ``-> dict[str, Any]``; everything downstream is ``object``
+            data = cast("dict[str, object]", _toml.load(handle))
     except _TOML_DECODE_ERROR as error:
         msg = f"{path}: invalid TOML: {error}"
         raise ProjectConfigError(msg) from error
     except UnicodeDecodeError as error:
-        # tomllib decodes the bytes itself, and a file saved in another encoding raises
+        # the parser decodes the bytes itself, and a file saved in another encoding raises
         # neither of the two errors around it
         msg = f"{path}: not valid UTF-8 TOML: {error}"
         raise ProjectConfigError(msg) from error
@@ -165,6 +168,22 @@ def load_toml(path: Path) -> dict[str, object]:
         msg = f"{path}: cannot be read: {error}"
         raise ProjectConfigError(msg) from error
     return data
+
+
+def loads_toml(text: str, source: str | os.PathLike[str]) -> dict[str, object]:
+    """Parse *text*, the TOML read from *source*: the text twin of :func:`load_toml`.
+
+    *source* names the text in the message, as a path does for :func:`load_toml`; the
+    parser's own error is the exception's ``__cause__``.
+
+    :raises ProjectConfigError: If the text is not valid TOML.
+    """
+    try:
+        # the parser is typed ``-> dict[str, Any]``; everything downstream is ``object``
+        return cast("dict[str, object]", _toml.loads(text))
+    except _TOML_DECODE_ERROR as error:
+        msg = f"{os.fspath(source)}: invalid TOML: {error}"
+        raise ProjectConfigError(msg) from error
 
 
 def _basic_string(key: str) -> str:

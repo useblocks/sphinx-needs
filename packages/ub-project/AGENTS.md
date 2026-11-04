@@ -18,10 +18,11 @@ read it before changing behaviour.
 ## Layout
 
 ```text
-pyproject.toml            # `[project]` and `[build-system]` ONLY; `dependencies = []`
+pyproject.toml            # `[project]` and `[build-system]` ONLY; `tomli` below 3.15 alone
 README.rst · LICENSE
 src/ub_project/
 ├── __init__.py           # the public API, re-exported; `__version__`
+├── _toml.py              # the one TOML import: `tomllib` from 3.15, `tomli` below
 ├── project.py            # find / load / select / anchor, and `ProjectConfigError`
 ├── variants.py           # `read_variants`, `Diagnostic`, `VariantsResult`, the codes
 ├── variant_data.py       # validate / load / deep_merge / resolve
@@ -29,7 +30,7 @@ src/ub_project/
 tests/
 ├── test_*.py             # one module per source module, plus the two below
 ├── test_conformance.py   # runs the corpus and pins its case count
-├── test_imports.py       # the stdlib-only fence
+├── test_imports.py       # the import fence: stdlib plus what the manifest declares
 └── fixtures/ubproject_reading_conformance.toml
 docs/changelog.rst        # the sphinx-mounts convention: an `Unreleased` section
 design/reading-contract.md
@@ -47,10 +48,13 @@ uv run poe build-ub-project             # sdist + wheel into dist/ub-project
 
 ## Rules
 
-- **Standard library only.** No Sphinx, no docutils, no sibling member — not as a
-  dependency and not as an import. `tests/test_imports.py` imports every module in a
-  fresh interpreter and fails on anything outside the standard library; CI's
-  `toolchain-free` job runs this suite where Sphinx is not installed.
+- **Standard library only, plus the TOML 1.1 backport below 3.15.** No Sphinx, no
+  docutils, no sibling member — not as a dependency and not as an import; `tomli` is the
+  one dependency, read only through `_toml.py`, and goes when 3.14 is dropped.
+  `tests/test_imports.py` imports every module in a fresh interpreter and fails on anything
+  outside the standard library and the distributions the manifest declares for that
+  interpreter; CI's `toolchain-free` job runs this suite where Sphinx is not installed, and
+  on Python 3.15, where `tomli` is not.
 - **Mechanisms, not policy.** Nothing here logs, reads a Sphinx config, handles `-D` or
   `-c`, or decides discovery. Findings are returned as `Diagnostic` values and failures
   raised as `ProjectConfigError`; the consumer decides what either is worth.
