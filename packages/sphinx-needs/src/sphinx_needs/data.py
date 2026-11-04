@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 25
+ENV_DATA_VERSION: Final = 26
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -189,6 +189,17 @@ parser's line as its ``lineno``, shifted by ``rst_prolog`` and by every line an 
 above the directive, or the include it is written in, inserts (#1349). The sources do
 not change, so without the bump an upgraded build would keep the parser's lines on the
 pages whose sources did not change.
+
+Version 26 records the need-template inputs the documents were read with
+(``_needs_template_inputs_read_with``: the template folder and the comparable render
+context), which a change re-reads the templated documents by; and it changes what the
+stored needs mean: a need whose template cannot be rendered is stored (it was not), an
+undefined name and an unresolved field in a template are reported when it is read, a
+hidden need's pre and post output is no longer stored, an imported record's template
+names are not applied, and a need inside ``{eval-rst}`` on a MyST page is stored with
+the doctype ``.rst``. Every such need is created when its document is read, so without
+the bump an upgraded build would keep the old needs of the documents that did not
+change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
