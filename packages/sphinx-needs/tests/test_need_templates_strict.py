@@ -219,3 +219,38 @@ def test_a_render_context_function_is_called_once_per_call(test_app: Any) -> Non
         "REQ_3",
         "fails:REQ_4",
     ]
+
+
+def _linked(n: int) -> Any:
+    """A render-context helper returning a one-shot iterator (a generator)."""
+    return (f"L{i}" for i in range(n))
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("{% for x in linked(3) %}{{ x }},{% endfor %} {{ typo }}", "L0,L1,L2, "),
+        ("{% set g = linked(2) %}{{ g|list|join(',') }}{{ typo }}", "L0,L1"),
+        ("{% for x in ite(2) %}{{ x }},{% endfor %} {{ typo }}", "I0,I1, "),
+    ],
+)
+def test_an_iterator_a_context_function_returns_is_replayed_whole(
+    monkeypatch: pytest.MonkeyPatch, source: str, expected: str
+) -> None:
+    """The strict render consumes a one-shot iterator a render-context function returns
+    before it fails at the undefined name; the lenient render replays the call, and gets
+    the same items, not the exhausted iterator: the output is a single render's."""
+    from sphinx_needs import _need_templates
+
+    found: list[str] = []
+    monkeypatch.setattr(
+        _need_templates,
+        "_warn",
+        lambda message, subtype, location: found.append(subtype),
+    )
+    context = {"linked": _linked, "ite": lambda n: iter([f"I{i}" for i in range(n)])}
+    rendered = _need_templates._render(
+        source, context, option="template", name="t", need_id="N", location=None
+    )
+    assert rendered == expected
+    assert found == ["template_undefined"]

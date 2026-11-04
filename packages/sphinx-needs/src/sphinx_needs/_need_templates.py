@@ -29,8 +29,9 @@ from __future__ import annotations
 
 import functools
 import inspect
+import itertools
 import pickle
-from collections.abc import Callable, Collection, Set
+from collections.abc import Callable, Collection, Iterator, Set
 from dataclasses import replace
 from pathlib import Path
 from typing import Any, Literal
@@ -293,10 +294,13 @@ class _Calls:
     effects (a counter) or a cost (a graph walk) therefore runs once per call the
     template makes, as with a single render.
 
-    Only the context's own functions are wrapped (a function, a builtin, a method, a
-    ``functools.partial``): a callable reached through an object -- an attribute or a
-    method of a value of the context, or a callable object -- is not, and runs again in
-    the lenient render.
+    Only the context's own top-level functions are wrapped (a function, a builtin, a
+    bound method, a ``functools.partial``) and replayed; an iterator one returns is
+    replayed as a copy of the same items. Everything else that is callable runs again in
+    the lenient render: a class (a constructor), a callable object, and a method or
+    function reached through a value of the context. A wrapped function passed as an
+    argument to another is a different wrapper in each render, so the call taking it
+    does not match and runs again too, and receives the wrapper.
     """
 
     __slots__ = ("_context", "_diverged", "_log", "_position")
@@ -338,7 +342,12 @@ class _Calls:
         except Exception as error:
             self._log.append((name, key, dict(kwargs), True, error))
             raise
-        self._log.append((name, key, dict(kwargs), False, result))
+        kept = result
+        if isinstance(result, Iterator):
+            # a one-shot iterator (a generator) is consumed by the strict render: the
+            # replay gets a copy of the same items, not the exhausted original
+            result, kept = itertools.tee(result)
+        self._log.append((name, key, dict(kwargs), False, kept))
         return result
 
     def _replay(
