@@ -402,7 +402,7 @@ class NeedimportDirective(SphinxDirective):
                 refusals[doctype] = None
         if (reason := refusals[doctype]) is None:
             return doctype
-        content = record.get("content") or record.get("description") or ""
+        content = record.get("content") or ""
         blank = isinstance(content, str) and not content.strip()
         if not blank and not record.get("hide"):
             fallbacks.setdefault(doctype, reason)

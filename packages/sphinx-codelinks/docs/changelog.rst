@@ -14,6 +14,11 @@ Fixes
   `#2477 <https://github.com/useblocks/sphinx-needs/pull/2477>`__): the link is the need's
   link, never the full title a need without an id has its id hashed from, so the id is the
   one the duplicate check and the ``[docs]`` link name.
+- 🐛 A multi-line need with no body keeps a ``:description:`` the project declares as a
+  field or link type, where it was taken as the need's content
+  (`#2465 <https://github.com/useblocks/sphinx-needs/issues/2465>`__); without an id and
+  with an empty title, its id is then the one the duplicate check and the ``[docs]`` link
+  name. The fix is Sphinx-Needs' (its needs.json reader, ub-needs-exchange).
 
 .. _`release:2.1.0`:
 

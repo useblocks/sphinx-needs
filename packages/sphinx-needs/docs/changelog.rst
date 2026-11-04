@@ -54,6 +54,22 @@ Bug fixes
   that one place, those about its records (an empty id, a need that cannot be created, unknown keys) included. A
   ``needimport`` that another extension generates is written in no file, and is still reported at its page.
 
+- 🐛 A field or link type named ``description`` is kept on ``needimport``, external needs and codelinks multi-line
+  needs, also on a need without content, so a project's own needs.json reads back as written **(changed output)**
+  (:issue:`2465`)
+
+  sphinx-needs before 4.0 wrote a need's content as ``description``; that legacy ``description`` is now read as the
+  content only when the record has no ``content`` key, after its schema defaults are merged -- the rule of
+  ub-needs-exchange, whose next release carries it. A need without content, which sphinx-needs writes as
+  ``"content": ""`` (or, with ``needs_json_remove_defaults``, as the schema's ``content`` default), lost its
+  ``description`` field into the content, and a link type of that name was refused on ``needimport`` and external
+  needs and lost on a codelinks block. A body-less codelinks block without an id and with an empty title is given
+  the id codelinks predicts for its duplicate check and ``[docs]`` link, and a body-less imported need no longer
+  warns ``needs.import_doctype`` under ``:parse_by_doctype:``. A hand-written record with an empty ``content``
+  beside a ``description`` meant as its content now keeps the content empty, and, in a project that declares no
+  ``description``, reports that key as unknown (``needs.unknown_import_keys``): drop the ``content`` key, or move
+  the text into it.
+
 .. _`release:9.2.0`:
 
 9.2.0
