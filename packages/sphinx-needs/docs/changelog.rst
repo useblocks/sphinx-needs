@@ -41,7 +41,9 @@ Bug fixes
   line, under an ``rst_prolog`` or an include **(changed output)** (:issue:`2463`, :pr:`NNNN`)
 
   Inside an included file they named the including page; they now name the included file and the line the needs
-  the directive imports record, also in an include sliced by ``:start-line:``.
+  the directive imports record, also in an include sliced by ``:start-line:``. Every warning of one directive names
+  that one place, those about its records (an empty id, a need that cannot be created, unknown keys) included. A
+  ``needimport`` that another extension generates is written in no file, and is still reported at its page.
 
 .. _`release:9.2.0`:
 
