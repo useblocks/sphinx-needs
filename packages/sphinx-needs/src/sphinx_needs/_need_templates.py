@@ -126,6 +126,20 @@ def render_need_templates(
     return replace(content_info, **rendered) if rendered else content_info
 
 
+def template_path(
+    needs_config: NeedsSphinxConfig, name: str, template_root: Path | None
+) -> Path | None:
+    """The file of the need template *name*: ``<needs_template_folder>/<name>.need``,
+    a relative folder resolved against *template_root*; ``None`` where a relative
+    folder has no root to resolve against. The file may not exist."""
+    folder = Path(needs_config.template_folder)
+    if not folder.is_absolute():
+        if template_root is None:
+            return None
+        folder = template_root / folder
+    return folder / f"{name}.need"
+
+
 def _render_file(
     needs_config: NeedsSphinxConfig,
     needs_info: NeedItem,
@@ -139,19 +153,16 @@ def _render_file(
 ) -> str:
     """The rendered text of the template file *name*, or ``""`` (with a warning)."""
     need_id = needs_info["id"]
-    folder = Path(needs_config.template_folder)
-    if not folder.is_absolute():
-        if template_root is None:
-            _warn(
-                f"The {option} {name!r} of need {need_id!r} is not rendered: the "
-                f"template folder {str(folder)!r} is relative and no template root is "
-                "given.",
-                "template_missing",
-                location,
-            )
-            return ""
-        folder = template_root / folder
-    path = folder / f"{name}.need"
+    path = template_path(needs_config, name, template_root)
+    if path is None:
+        _warn(
+            f"The {option} {name!r} of need {need_id!r} is not rendered: the template "
+            f"folder {needs_config.template_folder!r} is relative and no template root "
+            "is given.",
+            "template_missing",
+            location,
+        )
+        return ""
     if on_read is not None:
         # a missing file too: creating it must re-read the document
         on_read(path)

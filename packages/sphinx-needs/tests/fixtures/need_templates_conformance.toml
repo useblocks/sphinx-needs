@@ -1208,3 +1208,158 @@ need = "REQ_1"
 [case.expect.needs.REQ_1]
 content = "Body."
 pre_template = "heading"
+
+# --- a reader never re-applies a record's template keys (rules 17, 18) ----------------
+
+[[case]]
+name = "import-never-re-renders-a-records-template"
+why = "an imported record's content is already its template's output: the importer's template of the same name is not applied again (no double wrap), and the imported need names no template"
+rules = [17, 16]
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: a_needs.json
+'''
+files."needs_templates/wrap.need" = '''
+IMPORTER-WRAP {{ content }}
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 1, "needs": {
+"SPEC_TPL": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "WRAP[SPEC_TPL]\n\nAuthored body.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_TPL", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 14, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": null, "post_template": null, "pre_content": null, "pre_template": null, "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": "wrap", "title": "Wrapped", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_TPL]
+content = "WRAP[SPEC_TPL]\n\nAuthored body."
+jinja_content = false
+[case.expect.nulls]
+SPEC_TPL = ["template", "pre_template", "post_template", "pre_content", "post_content"]
+
+[[case]]
+name = "import-without-the-producers-templates-keeps-every-need"
+why = "an importer without the producer's template folder imports every record whatever template names it carries, its content as written, and reports no template"
+rules = [17, 14]
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: a_needs.json
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 3, "needs": {
+"SPEC_TPL": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "WRAP[SPEC_TPL]\n\nAuthored body.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_TPL", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 14, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": null, "post_template": null, "pre_content": null, "pre_template": null, "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": "wrap", "title": "Wrapped", "type": "spec", "type_name": "Specification"},
+"SPEC_DEC": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "Decorated body.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_DEC", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 20, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": "POST SPEC_DEC", "post_template": "post", "pre_content": "PRE SPEC_DEC", "pre_template": "pre", "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": null, "title": "Decorated", "type": "spec", "type_name": "Specification"},
+"SPEC_PLAIN": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "Plain body *em*.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_PLAIN", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 9, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": null, "post_template": null, "pre_content": null, "pre_template": null, "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": null, "title": "Plain", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_TPL]
+content = "WRAP[SPEC_TPL]\n\nAuthored body."
+[case.expect.needs.SPEC_DEC]
+content = "Decorated body."
+[case.expect.needs.SPEC_PLAIN]
+content = "Plain body *em*."
+[case.expect.nulls]
+SPEC_TPL = ["template"]
+SPEC_DEC = ["pre_template", "post_template", "pre_content", "post_content"]
+
+[[case]]
+name = "import-never-re-renders-jinja-content"
+why = "an imported record whose content was rendered by jinja_content is not rendered again: Jinja syntax its output holds stays text, and the imported need is not jinja_content"
+rules = [17, 21]
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: a_needs.json
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 1, "needs": {
+"SPEC_JIN": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "Jinja SPEC_JIN literal={{ title }}", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_JIN", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": true, "layout": null, "lineno": 27, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": null, "post_template": null, "pre_content": null, "pre_template": null, "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": null, "title": "Jinja", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_JIN]
+content = "Jinja SPEC_JIN literal={{ title }}"
+jinja_content = false
+
+[[case]]
+name = "import-keeps-applying-a-records-decoration-the-importer-has"
+why = "until sphinx-needs 10.0 a record's pre or post template is applied where the importer has that template (with a deprecation, not compared), and dropped where it has not; pre_content and post_content are never imported"
+rules = [17]
+python_only = true
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: a_needs.json
+'''
+files."needs_templates/pre.need" = '''
+IMPORTER-PRE {{ id }}
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 1, "needs": {
+"SPEC_DEC": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "Decorated body.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_DEC", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 20, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": "POST SPEC_DEC", "post_template": "post", "pre_content": "PRE SPEC_DEC", "pre_template": "pre", "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": null, "title": "Decorated", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_DEC]
+content = "Decorated body."
+pre_template = "pre"
+pre_content = "IMPORTER-PRE SPEC_DEC"
+[case.expect.nulls]
+SPEC_DEC = ["post_template", "post_content"]
+
+[[case]]
+name = "import-decoration-the-importer-lacks-is-dropped"
+why = "a record's pre or post template the importer has no file for is not applied and not reported: the imported need has no pre or post output"
+rules = [17]
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: a_needs.json
+'''
+files."needs_templates/other.need" = '''
+OTHER
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 1, "needs": {
+"SPEC_DEC": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "Decorated body.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_DEC", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 20, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": "POST SPEC_DEC", "post_template": "post", "pre_content": "PRE SPEC_DEC", "pre_template": "pre", "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": null, "title": "Decorated", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_DEC]
+content = "Decorated body."
+[case.expect.nulls]
+SPEC_DEC = ["pre_template", "post_template", "pre_content", "post_content"]
+
+[[case]]
+name = "import-parses-a-templated-record-by-its-doctype"
+why = "with parse_by_doctype a record that names a template is parsed in its doctype like any other: MyST content on an RST page creates the need its MyST directive writes"
+rules = [18, 17, 6]
+config = '''
+[needs]
+import_parse_by_doctype = true
+'''
+source = '''
+.. needimport:: a_needs.json
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 1, "needs": {
+"SPEC_MDTPL": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "WRAP[SPEC_MDTPL]\n\nMyST authored [l](https://m.example).\n\n```{spec} Nested\n:id: NESTED_1\n```", "docname": "page", "doctype": ".md", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_MDTPL", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 9, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": null, "post_template": null, "pre_content": null, "pre_template": null, "section_name": "Page", "sections": ["Page"], "signature": null, "status": null, "style": null, "tags": [], "template": "wrap", "title": "MD wrapped", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_MDTPL]
+content = "WRAP[SPEC_MDTPL]\n\nMyST authored [l](https://m.example).\n\n```{spec} Nested\n:id: NESTED_1\n```"
+doctype = ".md"
+[case.expect.needs.NESTED_1]
+title = "Nested"
