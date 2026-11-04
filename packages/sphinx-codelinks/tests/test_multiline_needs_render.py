@@ -1227,6 +1227,30 @@ def test_a_need_of_the_full_title_s_id_does_not_skip_the_block(
     assert needs[SHORT_TITLE_ID]["title"] == "Short title"
 
 
+def test_a_link_type_named_full_title_is_kept_on_a_block(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """A block without ``:id:`` that sets a LINK type named ``full_title``: the need
+    keeps the link -- the record path dropped it as the legacy ``full_title`` key
+    (#2466) -- and its id is hashed from the title, the one the ``[docs]`` link names."""
+    _blocks(
+        tmp_path,
+        {
+            "docs/conf.py": CONF + 'needs_links = {"full_title": {}}\n',
+            "docs/page_f.rst": "F\n=\n\n.. src-trace::\n   :project: src\n   :file: f.c\n",
+            "src/f.c": "// @need req: Short title\n// :full_title: REQ_HOST\n"
+            "// @endneed\nvoid f() {}\n",
+        },
+    )
+    app = _build(tmp_path, make_app)
+    assert _warnings(app) == []
+    assert _need(app, SHORT_TITLE_ID)["full_title"] == ["REQ_HOST"]  # type: ignore[index]
+    page = Path(app.outdir, "src", "f.html").read_text(encoding="utf-8")
+    assert re.findall(r'href="([^"]*)">\[docs\]</a>', page) == [
+        f"../page_f.html#{SHORT_TITLE_ID}"
+    ]
+
+
 def test_one_line_needs_keep_the_analysis_order(
     tmp_path: Path, make_app: _MakeApp
 ) -> None:
