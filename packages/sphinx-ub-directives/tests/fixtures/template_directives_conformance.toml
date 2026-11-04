@@ -8168,7 +8168,7 @@ findings = []
 
 [[case]]
 name = "dx-toml-1-1-trailing-comma-in-inline-table"
-why = "a context file using TOML 1.1 syntax (a trailing comma in an inline table)"
+why = "a context file using TOML 1.1 syntax (a trailing comma in an inline table) is read"
 config = '''
 [parse.template_contexts.c]
 file = "c.toml"
@@ -8185,14 +8185,14 @@ t = { a = 1, }
 '''
 [case.expect]
 expansions = [
+'''
+1''',
 ]
-[[case.expect.findings]]
-code = "template_context_invalid"
-directive = "d"
+findings = []
 
 [[case]]
 name = "dx-toml-1-1-newline-in-inline-table"
-why = "a context file using TOML 1.1 syntax (a newline in an inline table)"
+why = "a context file using TOML 1.1 syntax (a newline in an inline table) is read"
 config = '''
 [parse.template_contexts.c]
 file = "c.toml"
@@ -8211,14 +8211,14 @@ t = {
 '''
 [case.expect]
 expansions = [
+'''
+1''',
 ]
-[[case.expect.findings]]
-code = "template_context_invalid"
-directive = "d"
+findings = []
 
 [[case]]
 name = "dx-toml-1-1-escape-e"
-why = "a context file using TOML 1.1 syntax (the \\e escape)"
+why = "a context file using TOML 1.1 syntax (the \\e escape) is read"
 config = '''
 [parse.template_contexts.c]
 file = "c.toml"
@@ -8235,14 +8235,14 @@ s = "\e[1m"
 '''
 [case.expect]
 expansions = [
+'''
+4''',
 ]
-[[case.expect.findings]]
-code = "template_context_invalid"
-directive = "d"
+findings = []
 
 [[case]]
 name = "dx-toml-1-1-x-escape"
-why = "a context file using TOML 1.1 syntax (the \\x escape)"
+why = "a context file using TOML 1.1 syntax (the \\x escape) is read"
 config = '''
 [parse.template_contexts.c]
 file = "c.toml"
@@ -8259,10 +8259,10 @@ s = "\x41"
 '''
 [case.expect]
 expansions = [
+'''
+A''',
 ]
-[[case.expect.findings]]
-code = "template_context_invalid"
-directive = "d"
+findings = []
 
 [[case]]
 name = "dx-toml-local-time-refused"

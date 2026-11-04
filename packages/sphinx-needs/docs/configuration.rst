@@ -95,6 +95,8 @@ needs_from_toml
 .. versionadded:: 4.1.0
 
 This configuration takes the (relative) path to a `toml file <https://toml.io>`__ which contains some or all of the needs configuration (configuration in the toml will override that in the :file:`conf.py`).
+The file is read as `TOML 1.1 <https://toml.io/en/v1.1.0>`__ when ub-project 1.3 or later is installed; sphinx-mounts reads it so from its release after 0.3.1.
+Taplo-based editor tooling may still flag the syntax TOML 1.1 adds.
 
 .. code-block:: python
 
@@ -117,7 +119,7 @@ For example:
 The exception is :ref:`needs_functions`, because it holds Python callables, which a toml file cannot hold:
 a ``functions`` key in the toml is ignored, with a warning.
 
-To specify a different `root table path <https://toml.io/en/v1.0.0#table>`__ to read from in the toml file, use the ``needs_from_toml_table`` option.
+To specify a different `root table path <https://toml.io/en/v1.1.0#table>`__ to read from in the toml file, use the ``needs_from_toml_table`` option.
 For example to read from a ``[tool.needs]`` table:
 
 .. code-block:: python

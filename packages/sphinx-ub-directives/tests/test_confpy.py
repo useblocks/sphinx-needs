@@ -311,11 +311,12 @@ def test_a_conf_py_context_is_checked_as_the_toml_one(
 
 
 def test_python_datetime_and_math_are_what_toml_reads() -> None:
-    """C3: the Python types the conversion accepts are the ones tomllib produces."""
-    import tomllib
+    """C3: the Python types the conversion accepts are the ones the TOML reader produces."""
+    from ub_project import loads_toml
 
-    data = tomllib.loads(
-        "d = 2024-01-02\nt = 10:00:00\ndt = 2024-01-02T10:00:00\nf = inf\n"
+    data = loads_toml(
+        "d = 2024-01-02\nt = 10:00:00\ndt = 2024-01-02T10:00:00\nf = inf\n",
+        "ubproject.toml",
     )
     assert isinstance(data["d"], datetime.date) and isinstance(data["t"], datetime.time)
     assert math.isinf(data["f"])

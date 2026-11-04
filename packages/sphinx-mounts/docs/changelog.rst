@@ -3,6 +3,20 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- ✨ ``ubproject.toml`` (or the file ``sources_from_toml`` names) is read as TOML 1.1, so it
+  may break an inline table over several lines or end one with a trailing comma, use the
+  ``\e`` and ``\xHH`` escapes, and write a time or a datetime without seconds. Both of the
+  extension's readers of the file -- the mounts and the variant sources -- now parse it
+  through ub-project's ``load_toml``, as every other tool in the family does, so the file is
+  read one way. A malformed file is still a ``TomlConfigError`` starting
+  ``sphinx-mounts: failed to parse TOML config <path>:``, now followed by ub-project's
+  ``invalid TOML:`` and the parser's message.
+- 🐛 A ``ubproject.toml`` that is not UTF-8 stops the build with a ``TomlConfigError`` naming
+  the file (``not valid UTF-8 TOML``), instead of a raw ``UnicodeDecodeError`` traceback.
+
 .. _`release:0.3.1`:
 
 0.3.1

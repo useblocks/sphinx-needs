@@ -7,7 +7,6 @@ extension, and avoids the runtime weight of a full schema library.
 
 from __future__ import annotations
 
-import tomllib
 from collections.abc import Mapping
 from dataclasses import dataclass, fields
 from pathlib import Path
@@ -17,6 +16,7 @@ from sphinx.errors import ExtensionError
 from sphinx.util import logging
 
 from sphinx_mounts.logging import log_warning
+from ub_project import ProjectConfigError, load_toml
 
 logger = logging.getLogger(__name__)
 
@@ -838,10 +838,10 @@ def load_mounts_from_toml(toml_path: Path) -> list[dict[str, Any]] | None:
     if not toml_path.is_file():
         return None
     try:
-        with toml_path.open("rb") as f:
-            data = tomllib.load(f)
-    except tomllib.TOMLDecodeError as e:
-        msg = f"sphinx-mounts: failed to parse TOML config {toml_path}: {e}"
+        data = load_toml(toml_path)
+    except ProjectConfigError as e:
+        # ub-project's message starts with the path: "<toml_path>: invalid TOML: ..."
+        msg = f"sphinx-mounts: failed to parse TOML config {e}"
         raise TomlConfigError(msg) from e
 
     extracted = _extract_toml_mounts(data, toml_path)
@@ -1051,10 +1051,10 @@ def load_variant_sources_from_toml(toml_path: Path) -> VariantSourcesConfig | No
     if not toml_path.is_file():
         return None
     try:
-        with toml_path.open("rb") as handle:
-            data = tomllib.load(handle)
-    except tomllib.TOMLDecodeError as exc:
-        msg = f"sphinx-mounts: failed to parse TOML config {toml_path}: {exc}"
+        data = load_toml(toml_path)
+    except ProjectConfigError as exc:
+        # ub-project's message starts with the path: "<toml_path>: invalid TOML: ..."
+        msg = f"sphinx-mounts: failed to parse TOML config {exc}"
         raise TomlConfigError(msg) from exc
 
     source = data.get("source")

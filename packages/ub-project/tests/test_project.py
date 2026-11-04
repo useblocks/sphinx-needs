@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import os
 import sys
+from collections.abc import Callable
+from datetime import datetime, time
 from pathlib import Path
 
 import pytest
@@ -14,6 +16,7 @@ from ub_project import (
     anchor,
     find_project_config,
     load_toml,
+    loads_toml,
     select_table,
     table_path,
 )
@@ -245,6 +248,105 @@ class TestLoadToml:
         finally:
             path.chmod(0o644)
         assert str(path) in str(info.value)
+
+
+#: A realistic ``ubproject.toml`` with one line of TOML 1.1 syntax in its ``[needs]`` table.
+_TOML_1_1_DOCUMENT = """\
+[project]
+name = "demo"
+
+[needs]
+id_required = true
+{line}
+
+[variants.data]
+edition = "pro"
+"""
+
+#: The six TOML 1.1 additions TOML 1.0 refuses: the line, its key and the value it reads as.
+_TOML_1_1_LINES = [
+    pytest.param(
+        "a = { x = 1,\n  y = 2 }", "a", {"x": 1, "y": 2}, id="newline-in-inline-table"
+    ),
+    pytest.param(
+        "a = { x = 1, y = 2, }",
+        "a",
+        {"x": 1, "y": 2},
+        id="trailing-comma-in-inline-table",
+    ),
+    pytest.param('s = "\\e"', "s", "\x1b", id="escape-e"),
+    pytest.param('s = "\\x41"', "s", "A", id="escape-x"),
+    pytest.param("t = 12:30", "t", time(12, 30), id="time-without-seconds"),
+    pytest.param(
+        "d = 2026-11-03T12:30",
+        "d",
+        datetime(2026, 11, 3, 12, 30),
+        id="datetime-without-seconds",
+    ),
+]
+
+
+def _through_load_toml(directory: Path, text: str) -> dict[str, object]:
+    return load_toml(_write(directory, text))
+
+
+def _through_loads_toml(directory: Path, text: str) -> dict[str, object]:
+    return loads_toml(text, directory / DEFAULT_FILENAME)
+
+
+class TestLoadsToml:
+    """The text twin of :func:`load_toml`, and TOML 1.1 read through both."""
+
+    @pytest.mark.parametrize(
+        "read",
+        [
+            pytest.param(_through_load_toml, id="load_toml"),
+            pytest.param(_through_loads_toml, id="loads_toml"),
+        ],
+    )
+    @pytest.mark.parametrize(("line", "key", "value"), _TOML_1_1_LINES)
+    def test_toml_1_1_is_read(
+        self,
+        tmp_path: Path,
+        read: Callable[[Path, str], dict[str, object]],
+        line: str,
+        key: str,
+        value: object,
+    ) -> None:
+        data = read(tmp_path, _TOML_1_1_DOCUMENT.format(line=line))
+        assert data == {
+            "project": {"name": "demo"},
+            "needs": {"id_required": True, key: value},
+            "variants": {"data": {"edition": "pro"}},
+        }
+        needs = data["needs"]
+        assert isinstance(needs, dict)
+        assert type(needs[key]) is type(value)
+        if isinstance(value, datetime):
+            read_value = needs[key]
+            assert isinstance(read_value, datetime)
+            assert read_value.tzinfo is None
+            assert read_value.second == 0
+
+    def test_reads_a_document(self) -> None:
+        assert loads_toml("[needs]\nid_required = true\n", "ubproject.toml") == {
+            "needs": {"id_required": True}
+        }
+
+    def test_invalid_toml_names_the_source(self) -> None:
+        with pytest.raises(ProjectConfigError, match="invalid TOML") as info:
+            loads_toml("[variants\n", "contexts/c.toml")
+        message = str(info.value)
+        assert message.startswith("contexts/c.toml: invalid TOML: ")
+        # the parser's own error is the cause, and its text is the message's tail
+        assert info.value.__cause__ is not None
+        assert message == f"contexts/c.toml: invalid TOML: {info.value.__cause__}"
+
+    def test_a_path_source_is_named_as_the_path(self, tmp_path: Path) -> None:
+        path = tmp_path / DEFAULT_FILENAME
+        with pytest.raises(ProjectConfigError, match="invalid TOML") as info:
+            loads_toml("a = \n", path)
+        assert str(info.value).startswith(f"{path}: invalid TOML: ")
 
 
 class TestSelectTable:

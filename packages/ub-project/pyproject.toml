@@ -6,12 +6,14 @@ authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 license = { file = "LICENSE" }
 readme = "README.rst"
 requires-python = ">=3.11,<4"
-# EMPTY, and that is the package's whole contract with its consumers: `tomllib` and `json`
-# are the standard library, and a dependency here -- Sphinx above all -- would reach every
-# tool that reads the file, including the ones that run with no documentation toolchain.
-# `tests/test_imports.py` fences the import graph, and the `toolchain-free` CI job runs the
-# suite in an environment with no Sphinx in it
-dependencies = []
+# The standard library, plus its TOML 1.1 backport below Python 3.15, and that is the
+# package's whole contract with its consumers: any other dependency here -- Sphinx above
+# all -- would reach every tool that reads the file, including the ones that run with no
+# documentation toolchain. `tests/test_imports.py` fences the import graph, and the
+# `toolchain-free` CI job runs the suite in an environment with no Sphinx in it
+dependencies = [
+  "tomli>=2.4.0; python_version < '3.15'", # the TOML 1.1 reader below 3.15; gone when 3.14 is dropped
+]
 keywords = [
   "ubproject.toml",
   "sphinx-needs",

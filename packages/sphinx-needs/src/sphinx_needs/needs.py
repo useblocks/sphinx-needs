@@ -613,8 +613,9 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
     try:
         toml_doc = load_toml(toml_file)
     except Exception as e:
-        # not only ProjectConfigError: tomllib can also fail with a RecursionError, for
-        # example, which ``load_toml`` does not wrap; either way the file only warns
+        # not only ProjectConfigError: the TOML parser can also fail with a
+        # RecursionError, for example, which ``load_toml`` does not wrap; either way the
+        # file only warns
         log_warning(
             LOGGER,
             f"Error loading 'needs_from_toml' file: {e}",

@@ -171,13 +171,12 @@ def test_only_a_missing_needs_table_goes_on_to_variants(build, toml, message):
 @pytest.mark.parametrize(
     ("toml", "message"),
     [
-        # the interpreter's text, and only its stable start: a RecursionError says
-        # "maximum recursion depth exceeded in comparison" when the limit trips inside
-        # a comparison rather than a call, which depends on the stack depth at that
-        # moment (it differed between a local run and a CI cell)
+        # no text: each TOML reader has its own nesting limit and words for it (the
+        # interpreter's recursion limit, or a parser's own), so only the warning's
+        # reader-independent frame is asserted
         pytest.param(
             f"x = {'[' * 3000}{']' * 3000}\n",
-            "maximum recursion depth exceeded",
+            "",
             id="deeply-nested",
         ),
         # two different exception classes, so that the catch cannot be narrowed to
@@ -190,7 +189,7 @@ def test_only_a_missing_needs_table_goes_on_to_variants(build, toml, message):
     ],
 )
 def test_an_unparseable_toml_only_warns_whatever_the_error(build, toml, message):
-    """``tomllib`` can fail with a ``RecursionError`` (deep nesting) or a ``ValueError``
+    """The TOML reader can fail with a ``RecursionError`` (deep nesting) or a ``ValueError``
     (Python's integer-conversion limit), neither of which ``load_toml`` wraps; each is a
     warning, like every other TOML that cannot be parsed."""
     app = build({"conf.py": TOML_CONF, "ubproject.toml": toml})
