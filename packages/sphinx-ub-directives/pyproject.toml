@@ -56,6 +56,8 @@ docs = [
 needs = ["sphinx-needs>=9.2,<10"]
 
 [project.urls]
+Homepage = "https://sphinx-ub-directives.readthedocs.io"
+Documentation = "https://sphinx-ub-directives.readthedocs.io"
 Repository = "https://github.com/useblocks/sphinx-needs"
 Issues = "https://github.com/useblocks/sphinx-needs/issues"
 Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphinx-ub-directives/docs/changelog.rst"
