@@ -10,7 +10,7 @@ dependencies = [
   "sphinx>=7.4,<10",
   "docutils>=0.21",
   # the template engine; the same series sphinx-needs pins, so the two co-install
-  "minijinja~=2.15",
+  "minijinja>=3.0.5,<4",
   "ub-project>=1.1.0,<2",
 ]
 keywords = [
