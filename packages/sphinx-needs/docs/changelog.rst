@@ -56,7 +56,7 @@ Bug fixes
 
 - 🐛 A field or link type named ``description`` is kept on ``needimport``, external needs and codelinks multi-line
   needs, also on a need without content, so a project's own needs.json reads back as written, unless it is written with
-  ``content`` excluded **(changed output)** (:issue:`2465`)
+  ``content`` excluded **(changed output)** (:issue:`2465`, :pr:`2481`)
 
   sphinx-needs before 4.0 wrote a need's content as ``description``; that legacy ``description`` is now read as the
   content only when the record has no ``content`` key, after its schema defaults are merged -- the rule of
