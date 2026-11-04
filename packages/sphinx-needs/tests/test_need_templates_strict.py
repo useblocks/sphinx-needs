@@ -301,3 +301,43 @@ def test_a_clean_template_gets_what_a_context_function_returned(
     )
     assert rendered == expected
     assert found == []
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        (
+            "{% set t = tup(2) %}{% for x in t[0] %}{{ x }},{% endfor %}{{ t[1] }} "
+            "{{ typo }}",
+            "L0,L1,2 ",
+        ),
+        (
+            "{% set d = dct(2) %}{% for x in d.items %}{{ x }},{% endfor %}{{ d.n }} "
+            "{{ typo }}",
+            "D0,D1,2 ",
+        ),
+    ],
+)
+def test_a_container_holding_an_iterator_is_not_replayed_used_up(
+    monkeypatch: pytest.MonkeyPatch, source: str, expected: str
+) -> None:
+    """A result that is not a plain value -- here a tuple or a mapping holding a
+    generator the strict render consumed -- is not replayed: the lenient render calls
+    the function again, and the output is a single render's."""
+    from sphinx_needs import _need_templates
+
+    found: list[str] = []
+    monkeypatch.setattr(
+        _need_templates,
+        "_warn",
+        lambda message, subtype, location: found.append(subtype),
+    )
+    context = {
+        "tup": lambda n: ((f"L{i}" for i in range(n)), n),
+        "dct": lambda n: {"items": (f"D{i}" for i in range(n)), "n": n},
+    }
+    rendered = _need_templates._render(
+        source, context, option="template", name="t", need_id="N", location=None
+    )
+    assert rendered == expected
+    assert found == ["template_undefined"]
