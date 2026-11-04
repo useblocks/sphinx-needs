@@ -16,3 +16,5 @@ Unreleased
 - A preset based on a need type needs sphinx-needs 9.2 or later: it takes exactly the options the need
   type's directive matches, read through sphinx-needs' public ``resolve_need_option``; with an older
   sphinx-needs it is refused (``directive_preset_unknown_base``).
+- Templates render with minijinja 3 (``minijinja>=3.0.5,<4``), the series ubCode renders with; the template
+  corpus both tools are held to is recorded against 3.0.5.

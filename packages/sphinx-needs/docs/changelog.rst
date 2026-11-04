@@ -308,6 +308,30 @@ Improvements
   near name, such as a ``tag`` of one type beside ``tags``, is reported too: ``suppress_warnings =
   ["needs.type_near_name"]`` silences these alone. See :ref:`need_types_misspelt`.
 
+- ⬆️ Templates render with minijinja 3: ``minijinja>=3.0.5,<4``, which was ``~=2.15`` **(changed output)**
+
+  The data sphinx-needs hands a template prints as before: need fields, ``needs_render_context`` and the
+  :ref:`needreport` variables are Python values, printed as Python prints them. What moves is a value a template
+  builds itself, mostly towards Jinja2's behaviour:
+
+  - a list or map a template writes, and every filter result, prints with Python's quoting (``{{ ['a'] }}`` is
+    ``['a']``, was ``["a"]``), and ``items``, ``dictsort`` and ``groupby`` give tuples (``[('a', 1)]``);
+  - ``tojson`` spaces its output as ``json.dumps`` does (``{"a": [1, 2]}``, was ``{"a":[1,2]}``);
+  - ``round`` rounds half to even (``2.5|round`` is ``2.0``), and a negative precision rounds (``15|round(-1)``
+    is ``20``);
+  - ``//`` and ``%`` follow Python (``7 // -2`` is ``-4``); ``1 / 0`` is an error, where it printed ``inf``;
+    ``2 ** -1`` is ``0.5``, where it was an error; ``-foo.bar`` negates the attribute, where it was an error;
+  - ``title`` keeps an apostrophe's letter (``Don't``), ``min``, ``max`` and ``sort`` on several attributes ignore
+    case, ``'%s'|format`` and ``'{}'.format`` print a float in full, ``find`` counts characters, and ``islower``
+    and its siblings answer as Python's do;
+  - ``int`` takes ``default=`` and ``base=``, and ``min``, ``max``, ``sum`` and ``join`` take ``attribute=``;
+  - a macro whose name starts with ``_`` cannot be imported from another template.
+
+  It also fixes three faults of 2.x: ``{{ 'abc'.count('') }}`` hung the build forever (it is ``4``), one panic in a
+  template broke every later render on its environment, and a filter that rendered a template on its own environment
+  deadlocked. The full list is minijinja's own
+  `changelog <https://github.com/mitsuhiko/minijinja/blob/main/CHANGELOG.md>`__.
+
 Deprecations
 ............
 
