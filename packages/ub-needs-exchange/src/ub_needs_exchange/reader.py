@@ -163,9 +163,14 @@ class Version:
         of twenty thousand needs.)
 
         :param apply_schema_defaults: Merge the ``needs_schema`` defaults under each
-            record.
+            record. Without them, the legacy keys are still mapped as on the merged
+            record: where the schema gives ``content`` a default, every record has a
+            ``content`` once merged, so none has its ``description`` renamed.
         """
-        defaults = self.schema_defaults() if apply_schema_defaults else {}
+        all_defaults = self.schema_defaults()
+        defaults = all_defaults if apply_schema_defaults else {}
+        # the mapping reads the record as the merge gives it (contract section 6.3)
+        maps_legacy_keys = apply_schema_defaults or "content" not in all_defaults
         needs: Mapping[str, Any] = self.data["needs"]
         result: list[Record] = []
         for key, value in needs.items():
@@ -183,7 +188,8 @@ class Version:
                     )
                 )
             fields["id"] = key
-            map_legacy_keys(fields)
+            if maps_legacy_keys:
+                map_legacy_keys(fields)
             result.append(Record(key, fields, tuple(diagnostics)))
         return result
 
