@@ -254,7 +254,8 @@ def would_be_id(
 
     - ``"marker"``, a one-line marker's fields, given to ``create_need``: a
       ``full_title`` among them is its ``full_title`` argument, declared as a field or
-      not (as ``add_need`` took it), so the id is hashed from it;
+      not (as ``add_need`` took it), so the id is hashed from it -- unless the project
+      has a link type of that name, which is only the link (#2466);
     - ``"record"``, a multi-line need's record (:func:`multiline_record`), given to
       ``ingest_need_record``: that path passes no ``full_title`` argument -- a
       ``full_title`` the project declares is only the field -- so the id is hashed from
@@ -266,6 +267,15 @@ def would_be_id(
     if NeedsSphinxConfig(app.config).id_required:
         return None
     full_title = need.get("full_title") if route == "marker" else None
+    if full_title is not None:
+        # a link type of that name is only the link (#2466); before the schema is
+        # built (called outside a build) no link type is known
+        try:
+            links = set(SphinxNeedsData(app.env).get_schema().iter_link_field_names())
+        except RuntimeError:
+            links = set()
+        if "full_title" in links:
+            full_title = None
     try:
         return generate_need_id(
             app,
@@ -881,8 +891,9 @@ class SourceTracingDirective(SphinxDirective):
                 }
                 # a declared full_title is the field, and still the full title the
                 # generated id is derived from, as add_need took it: the id is the
-                # one would_be_id predicts
-                if "full_title" in values:
+                # one would_be_id predicts; a link type of that name is only the
+                # link (#2466)
+                if "full_title" in values and "full_title" not in link_names:
                     arguments["full_title"] = values["full_title"]
 
                 try:

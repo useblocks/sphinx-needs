@@ -37,8 +37,17 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 A link type named ``full_title`` is kept on ``needimport``, external needs and codelinks multi-line needs
+  (:issue:`2466`, :pr:`2477`)
+
+  A needs.json written by sphinx-needs 5.0 or earlier carries a legacy ``full_title`` string on every need: in a
+  project with such a link type it is now read as that need's link targets, one warning per unknown target
+  (``link_outgoing``, or ``external_link_outgoing`` for an external need), where it was dropped silently; filter
+  those needs out with the ``needimport``'s ``:filter:``, or rename the link type (the only way out for external
+  needs).
+
 - 🐛 ``needimport``'s own warnings name the file and line the directive is written on, not the parser's running
-  line, under an ``rst_prolog`` or an include **(changed output)** (:issue:`2463`, :pr:`NNNN`)
+  line, under an ``rst_prolog`` or an include **(changed output)** (:issue:`2463`, :pr:`2478`)
 
   Inside an included file they named the including page; they now name the included file and the line the needs
   the directive imports record, also in an include sliced by ``:start-line:``. Every warning of one directive names
