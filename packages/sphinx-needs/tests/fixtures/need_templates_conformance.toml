@@ -587,3 +587,174 @@ content = "Body of {{ id }}."
 jinja_content = false
 [case.expect.nulls]
 REQ_1 = ["template", "pre_template", "post_template"]
+
+# --- a broken template keeps the need (rule 14) --------------------------------------
+
+[[case]]
+name = "missing-template-keeps-the-need"
+why = "a template file that does not exist leaves the need created, with empty output for that template and one template_missing; the need is still a link target"
+rules = [14, 16]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: No such template
+   :id: REQ_1
+   :template: nope
+
+   Authored body.
+
+.. req:: No such post template
+   :id: REQ_2
+   :post_template: nope
+
+   Authored body.
+
+.. spec:: Links it
+   :id: SPEC_1
+   :links: REQ_1, REQ_2
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_missing"
+need = "REQ_1"
+[[case.expect.findings]]
+code = "template_missing"
+need = "REQ_2"
+[case.expect.needs.REQ_1]
+content = ""
+template = "nope"
+links_back = ["SPEC_1"]
+[case.expect.needs.REQ_2]
+content = "Authored body."
+post_content = ""
+post_template = "nope"
+links_back = ["SPEC_1"]
+[case.expect.nulls]
+REQ_1 = ["pre_content", "post_content"]
+
+[[case]]
+name = "missing-template-folder-keeps-the-need"
+why = "a template folder that does not exist is a missing template, never a lost need"
+rules = [14, 2]
+config = '''
+[needs]
+template_folder = "nowhere"
+'''
+source = '''
+.. req:: No folder
+   :id: REQ_1
+   :pre_template: pre
+
+   Authored body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_missing"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "Authored body."
+pre_content = ""
+pre_template = "pre"
+
+[[case]]
+name = "template-syntax-error-keeps-the-need"
+why = "a template that does not parse leaves the need created with empty output and one template_syntax"
+rules = [14]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Broken template
+   :id: REQ_1
+   :template: broken
+
+   Authored body.
+'''
+files."needs_templates/broken.need" = '''
+before {% if %} after
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_syntax"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = ""
+template = "broken"
+
+[[case]]
+name = "template-render-error-keeps-the-need"
+why = "a template that fails while rendering (an invalid operation) leaves the need created with empty output and one template_render; the need's other templates still render"
+rules = [14]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Failing template
+   :id: REQ_1
+   :post_template: failing
+   :pre_template: pre
+
+   Authored body.
+'''
+files."needs_templates/failing.need" = '''
+{{ id + 1 }}
+'''
+files."needs_templates/pre.need" = '''
+PRE {{ id }}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_render"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "Authored body."
+pre_content = "PRE REQ_1"
+post_content = ""
+
+[[case]]
+name = "jinja-content-syntax-error-keeps-the-need"
+why = "a :jinja_content: body that does not parse leaves the need created with empty content and one template_syntax"
+rules = [14, 21]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Broken body
+   :id: REQ_1
+   :jinja_content:
+
+   Body {% if %} here.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_syntax"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = ""
+jinja_content = true
+
+[[case]]
+name = "needimport-missing-template-keeps-the-imported-need"
+why = "a template named on needimport that does not exist leaves each imported need created, with empty output and one template_missing"
+rules = [14, 3]
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: a_needs.json
+   :id_prefix: B_
+   :template: nope
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 1, "needs": {
+"SPEC_PLAIN": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "Plain body *em*.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_PLAIN", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 9, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": null, "post_template": null, "pre_content": null, "pre_template": null, "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": null, "title": "Plain", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_missing"
+need = "B_SPEC_PLAIN"
+[case.expect.needs.B_SPEC_PLAIN]
+content = ""
+template = "nope"

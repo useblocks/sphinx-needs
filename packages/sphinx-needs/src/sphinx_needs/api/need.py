@@ -7,7 +7,6 @@ import warnings
 from collections.abc import Generator, Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from copy import copy, deepcopy
-from dataclasses import replace
 from pathlib import Path
 from typing import Any, Literal, TypedDict, TypeVar
 
@@ -18,13 +17,13 @@ from docutils.statemachine import StringList
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-from sphinx_needs._jinja import render_template_string
 from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
     with_external_sections,
     with_page_paths,
 )
+from sphinx_needs._need_templates import render_need_templates
 from sphinx_needs.config import NeedsSphinxConfig, NeedType
 from sphinx_needs.data import (
     NeedsCoreFields,
@@ -68,7 +67,6 @@ from sphinx_needs.needs_schema import (
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.services.config.github import GITHUB_FIELDS
-from sphinx_needs.utils import jinja_parse
 from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
 from sphinx_needs.views import NeedsView
@@ -683,52 +681,21 @@ def _generate_need(
     except ValueError as err:
         raise InvalidNeedException("failed_init", str(err)) from err
 
-    _template = core_values["template"]
-    _pre_template = core_values["pre_template"]
-    _post_template = core_values["post_template"]
-    if jinja_content or _template or _pre_template or _post_template:
-        # TODO ideally perform all these content alterations before creating the need item
-        if jinja_content:
-            need_content_context: dict[str, Any] = needs_info.filter_context()
-            need_content_context.update(**needs_config.filter_data)
-            need_content_context.update(**needs_config.render_context)
-            try:
-                content_info = replace(
-                    content_info,
-                    content=jinja_parse(need_content_context, needs_info["content"]),
-                )
-            except Exception as e:
-                raise InvalidNeedException(
-                    "invalid_jinja_content",
-                    f"Error while rendering content: {e}",
-                )
-
-        if _template:
-            # TODO should warn if content is not empty?
-            content_info = replace(
+    if jinja_content or any(
+        core_values[option] for option in ("template", "pre_template", "post_template")
+    ):
+        # a template that cannot be rendered costs its output, never the need: the
+        # renderer reports it at the need (``needs.template_*``)
+        needs_info.set_content(
+            render_need_templates(
+                needs_config,
+                needs_info,
                 content_info,
-                content=_prepare_template(
-                    needs_config, needs_info, _template, template_root
-                ),
+                jinja_content=bool(jinja_content),
+                template_root=template_root,
+                location=location,
             )
-
-        if _pre_template:
-            content_info = replace(
-                content_info,
-                pre_content=_prepare_template(
-                    needs_config, needs_info, _pre_template, template_root
-                ),
-            )
-
-        if _post_template:
-            content_info = replace(
-                content_info,
-                post_content=_prepare_template(
-                    needs_config, needs_info, _post_template, template_root
-                ),
-            )
-
-        needs_info.set_content(content_info)
+        )
 
     return needs_info
 
@@ -2000,50 +1967,6 @@ _ADD_NEED_KEYWORDS = (
 ``**kwargs`` as keywords rather than as fields, as it did when it called
 :func:`add_need`: those it does not name itself, and that are no field of the field
 schema."""
-
-
-def _prepare_template(
-    needs_config: NeedsSphinxConfig,
-    needs_info: NeedItem,
-    template_name: str,
-    template_root: Path | None,
-) -> str:
-    template_folder = Path(needs_config.template_folder)
-    if not template_folder.is_absolute():
-        if template_root is None:
-            raise InvalidNeedException(
-                "invalid_template",
-                "Template folder is not an absolute path and no template_root is given.",
-            )
-        template_folder = template_root / template_folder
-
-    if not template_folder.is_dir():
-        raise InvalidNeedException(
-            "invalid_template", f"Template folder does not exist: {template_folder}"
-        )
-
-    template_file_name = f"{template_name}.need"
-    template_path = template_folder / template_file_name
-    if not template_path.is_file():
-        raise InvalidNeedException(
-            "invalid_template", f"Template does not exist: {template_path}"
-        )
-
-    with template_path.open() as template_file:
-        template_content = "".join(template_file.readlines())
-    try:
-        new_content = render_template_string(
-            template_content,
-            {**needs_info.filter_context(), **needs_config.render_context},
-            autoescape=False,
-        )
-    except Exception as e:
-        raise InvalidNeedException(
-            "invalid_template",
-            f"Error while rendering template {template_path}: {e}",
-        ) from e
-
-    return new_content
 
 
 def generate_need_id(
