@@ -1,0 +1,15 @@
+# The RELEASED dependencies this package's test suite needs, for the compat cell in
+# .github/workflows/release.yaml -- the one gate that runs the suite against everything as
+# PUBLISHED rather than as checked out. A plain requirements file, because `uv pip install
+# -r` does not apply `[tool.uv.sources]`: written in the root `test` group instead, the name
+# below would resolve to the workspace member and the cell would test the checkout.
+#
+# It cannot go in the wheel's `Requires-Dist`: sphinx-ub-directives depends on sphinx-needs
+# only through its optional `needs` extra. The suite loads `sphinx_needs` for the need-type
+# presets and for `var` from sphinx-needs' variant data, and `>=9.2.0` is the release that
+# adds `resolve_need_option`, the floor the `needs` extra declares. One test loads
+# `sphinx_test_reports`, to check that the test-report directive names it is CONFIGURED to
+# register are refused in template output (tests/test_templates.py); 4.0.0 is the release
+# made with this one.
+sphinx-needs>=9.2.0,<10
+sphinx-test-reports>=4.0.0,<5

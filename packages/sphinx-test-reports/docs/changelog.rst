@@ -1,8 +1,28 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:4.0.0`:
+
+4.0.0
+-----
+
+:Released: 04.11.2026
+
+Every test need now records where it comes from -- the report, its place in it, the test's file and line -- so
+Sphinx-Needs' ``c.source`` filters select the needs of one report; a test case read from a plain
+``pytest --junitxml`` report is on the test's own line, where it was one line early, and :ref:`tr_line_base` says
+what a report's lines count from; Google Test's parameters reach ``case_parameter``; and an edited report is read
+again in an incremental build. A major release, because three changes need migrating, each with its migration in
+its ‼️ entry: each field is declared on the need types that carry it, so a need type of your own that sets
+``case_name`` or ``classname`` names it in its ``needs_types`` entry
+(`#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__, under *Changed*); a pytest case's
+``case_line`` is one more than before (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__, and
+"Upgrading" below); and a :ref:`tr_extra_options` name that is a Sphinx-Needs core field no option can set is a
+configuration error. The pre-3.0 ``sphinxcontrib.test_reports`` names and the ``sphinx`` / ``pytest`` extras are not
+among them: they keep working, with their warnings, until 5.0, a release later than 3.0.0 announced. A case with no
+source file, line or parameter holds ``null`` where it held ``""``, so a filter written ``case_line == ''`` is
+written ``case_line is None``. This release requires Sphinx-Needs 9.2.0 (``>=9.2.0,<10``) and ub-test-reports
+2.0.0 (``>=2.0.0,<3``).
 
 New and Improved
 ................
@@ -117,14 +137,22 @@ Fixed
   build with ``TypeError: add_need() got multiple values for keyword argument 'state'``
   (`#2392 <https://github.com/useblocks/sphinx-needs/issues/2392>`__). The directives create
   their needs through Sphinx-Needs' ``create_need``, which takes the fields and links as two
-  mappings; this requires the Sphinx-Needs release that adds it.
+  mappings; this requires Sphinx-Needs 9.2.0, which adds it.
 
 Changed
 .......
 
+- ⚠️ The four pre-3.0 names keep working, each with its warning, until **5.0**, a release later than
+  3.0.0 announced: the extension ``sphinxcontrib.test_reports``, the pytest plugin
+  ``sphinxcontrib.test_reports.pytest_plugin``, and the parser names
+  ``sphinxcontrib.test_reports.junitparser`` and ``sphinxcontrib.test_reports.jsonparser``. So do
+  the ``sphinx`` extra, accepted and ignored, and the ``pytest`` extra, a pass-through to
+  ``ub-test-reports[pytest]``. The warnings now say the old names stop working in 5.0; rename them
+  before then, as the 3.0.0 entry describes.
+
 - 🔧 The directives' needs take their location as Sphinx-Needs' one ``NeedItemSource``,
-  where they used its deprecated ``NeedItemSourceUnknown``. Requires the Sphinx-Needs
-  release that adds ``NeedItemSource``.
+  where they used its deprecated ``NeedItemSourceUnknown``. Requires Sphinx-Needs
+  9.2.0, which adds ``NeedItemSource``.
 
 - 🔧 The id a ``test-file``, ``test-suite`` or ``test-case`` gets without ``:id:`` is
   computed in this package, where it went through a private Sphinx-Needs helper
@@ -145,8 +173,8 @@ Changed
   ``[needs.types.test.fields.case_name]`` (or ``needs_types = {"test": {"fields": {"case_name":
   {}}}}`` in ``conf.py``); a ``needs_fields`` entry of the name is the field on every need type,
   as before. A ``needs_types`` entry naming ``testcase``, ``testsuite`` or ``testfile`` now
-  narrows that type, where a bare one was ignored and a full one stopped the build. Requires the
-  Sphinx-Needs release with ``add_field``'s ``types``. See :ref:`tr_fields_per_type`.
+  narrows that type, where a bare one was ignored and a full one stopped the build. Requires
+  Sphinx-Needs 9.2.0, the release with ``add_field``'s ``types``. See :ref:`tr_fields_per_type`.
 
 - 👌 A test case the report gives no source file or line for, or that has no parameter, holds
   ``null`` in ``case_file``, ``case_line`` and ``case_parameter`` (or the fields
@@ -187,7 +215,7 @@ Upgrading: test-case lines from pytest reports
    A merged file that holds both plain pytest suites and suites of an earlier plugin cannot
    be read right by any one setting: regenerate it.
 4. ub-test-reports' ``JUnitParser``, which ``sphinxcontrib.test_reports.junitparser``
-   still names until 4.0, returns lines counted from 1 where it knows the report's base,
+   still names until 5.0, returns lines counted from 1 where it knows the report's base,
    and says so per test case when asked (``parse(line_base_known=True)``); a plain
    ``parse()`` gives the keys it always gave.
 

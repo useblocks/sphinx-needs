@@ -11,7 +11,7 @@ name = "sphinx-needs"
 # `src/sphinx_needs/__init__.py` (which is stamped into every generated `needs.json`, so it
 # cannot become an `importlib.metadata` lookup); `tools/src/sn_tools/check_workspace.py` is
 # what keeps the two equal.
-version = "9.1.0"
+version = "9.2.0"
 # `description` stays dynamic: flit_core reads the module docstring by AST, so a static
 # version alongside a dynamic description is a supported combination.
 dynamic = ["description"]
@@ -47,7 +47,7 @@ dependencies = [
   "sphinxcontrib-jquery~=4.0",   # sphinx_needs_collapse.js is still jQuery
   "typing-extensions>=4.14.0",   # for `**kwargs: Unpack[...]` (PEP 692), which typing supports from 3.12
   "minijinja~=2.15",             # lightweight jinja2-compatible template engine
-  "ub-project>=1.1.0,<2",        # reads the `[variants]` table of `needs_from_toml`
+  "ub-project>=1.2.0,<2",        # reads the `[variants]` table of `needs_from_toml`
   "ub-needs-exchange>=1.1.0,<2", # reads needs.json: `needimport`, `needs_external_needs`
 ]
 

@@ -3,8 +3,25 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:2.0.0`:
+
+2.0.0
+-----
+
+:Released: 2026-11-04
+
+A test case read from a plain ``pytest --junitxml`` report is now on the test's own line,
+where it was one line early (`#2381 <https://github.com/useblocks/sphinx-needs/issues/2381>`__),
+and a project whose reports count otherwise says so with ``line_base`` in ``[test_reports]``;
+Google Test's parameters reach ``case_parameter``, and the converter writes ``null``, not
+``""``, for a source file, line or parameter the report does not give. A major release,
+because two public APIs change: ``split_case_name`` returns ``None`` for the parameter of a
+name pytest did not parameterise
+(`#2372 <https://github.com/useblocks/sphinx-needs/issues/2372>`__, under *Changed*), and
+``JUnitParser.parse()`` returns lines counted from 1 where it knows the report's base (the
+‼️ entry under *Fixed*). What to migrate -- a filter written ``case_line == ''``, a link or a
+filter written against the old line, a report from an earlier plugin -- is in those two
+entries and in "Upgrading" below. sphinx-test-reports 4.0.0 requires this release.
 
 New and Improved
 ................
