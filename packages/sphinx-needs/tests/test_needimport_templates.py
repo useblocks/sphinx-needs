@@ -218,3 +218,24 @@ def test_one_template_as_pre_and_post_is_two_deprecations(test_app: Any) -> None
     assert len(deprecated) == 2, deprecated
     assert sum("the pre_template 'x'" in w for w in deprecated) == 1
     assert sum("the post_template 'x'" in w for w in deprecated) == 1
+
+
+def test_a_template_folder_change_re_reads_an_import_page_with_an_unfound_decoration(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A record's pre template the import page did not find in the template folder may
+    be in another: changing the folder re-reads the page, which then applies it, as a
+    fresh build does."""
+    srcdir = _write(
+        tmp_path / "src",
+        {
+            **IMPORT_FILES,
+            "needs_templates/other.need": "OTHER\n",
+            "B/producer_only.need": "B {{ id }}\n",
+        },
+    )
+    _, needs, _ = _build(make_app, srcdir, fresh=True)
+    assert needs["X_1"]["pre_content"] is None
+    read, needs, _ = _build(make_app, srcdir, needs_template_folder="B")
+    assert read == ["imp"]
+    assert needs["X_1"]["pre_content"] == "B X_1"

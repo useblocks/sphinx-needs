@@ -515,6 +515,9 @@ def _reread_templated(
         for need in data.get_needs_mutable().values()
         if need["docname"] and _is_templated(need)
     }
+    # and those whose needimport looked for a record's template it did not find: in
+    # another folder it may exist
+    docnames |= set(data.template_probes)
     if not docnames or previous is None:
         # no templated need was read: nothing to compare, nothing to re-read
         return []
