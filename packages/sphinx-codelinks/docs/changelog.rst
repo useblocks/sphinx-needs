@@ -3,8 +3,22 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:2.1.0`:
+
+2.1.0
+-----
+
+:Released: 04.11.2026
+
+A marker now knows the code it documents. The analysis names the entity each marker is attached to -- its
+language, kind and qualified name (``ns::Widget::draw``, ``Shape.area``) -- and a marker attaches only to an
+adjacent entity, where it could bind a later one: against compiler ground truth 2.0.1 bound 24 of 98 markers of a
+measured corpus to the wrong entity, and this release none. Existing markers can re-bind, which changes
+``tagged_scope`` in ``marked_content.json`` but nothing in the needs ``src-trace`` creates. Every such need records
+where it comes from, its file, lines, entity and language, so Sphinx-Needs' ``c.source`` filters select the needs
+traced from a file or a symbol; its ``lineno`` is the line its directive is written on. Needs are created through
+Sphinx-Needs' ``create_need``, so a marker field named like ``state`` is an ordinary field where it ended the build.
+This release requires Sphinx-Needs 9.2.0 (``>=9.2.0,<10``).
 
 New and Improved
 ................
@@ -12,8 +26,8 @@ New and Improved
 - 🔧 A one-line need is created through Sphinx-Needs' ``create_need``, its fields and
   links as two mappings, so a marker field named like a parameter of Sphinx-Needs'
   creation call (``state``, ``app``, ...) is an ordinary field where it ended the build
-  (`#2392 <https://github.com/useblocks/sphinx-needs/issues/2392>`__). Requires the
-  Sphinx-Needs release that adds ``create_need``.
+  (`#2392 <https://github.com/useblocks/sphinx-needs/issues/2392>`__). Requires
+  Sphinx-Needs 9.2.0, which adds ``create_need``.
 - 👌 A marker field named ``content``, ``doctype``, ``jinja_content``, ``full_title`` or
   ``allow_type_coercion`` is still the need's argument of that name, as Sphinx-Needs'
   ``add_need`` took it: ``content`` the need's content, ``jinja_content`` its Jinja switch,
@@ -27,8 +41,8 @@ New and Improved
   ``is_external`` made the need external, and the others were ignored.
 - 🔧 The needs of a ``src-trace`` directive take their location as Sphinx-Needs' one
   ``NeedItemSource``, where they used its deprecated ``NeedItemSourceUnknown`` (what they
-  now record is below: their code hop, and their ``lineno``). Requires the Sphinx-Needs
-  release that adds ``NeedItemSource``.
+  now record is below: their code hop, and their ``lineno``). Requires Sphinx-Needs
+  9.2.0, which adds ``NeedItemSource``.
 - 🔧 The id the duplicate check and the ``[docs]`` link name for a need without an id is
   derived through Sphinx-Needs' public ``generate_need_id``, where it imported the private
   ``_make_hashed_id``; every id is the one it was

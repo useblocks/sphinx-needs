@@ -1,6 +1,6 @@
 [project]
 name = "ub-test-reports"
-version = "1.1.0"
+version = "2.0.0"
 description = "Test results as needs without Sphinx: report parsers, the needs.json converter and the pytest plugin"
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 license = { file = "LICENSE" }
@@ -12,7 +12,7 @@ requires-python = ">=3.11,<4"
 # every intra-workspace edge (`check_workspace.py` check (4)); `propagate_floors.py` moves
 # the floor at each ub-project release. The `toolchain-free` CI job installs the built wheel
 # where Sphinx is absent and runs the whole suite there
-dependencies = ["lxml", "ub-project>=1.1.0,<2"]
+dependencies = ["lxml", "ub-project>=1.2.0,<2"]
 keywords = ["test-reports", "junit", "needs.json", "sphinx-needs", "pytest"]
 # NOT `Framework :: Sphinx`: nothing here depends on Sphinx
 classifiers = [

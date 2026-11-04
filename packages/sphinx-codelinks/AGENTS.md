@@ -20,7 +20,7 @@ sphinx-needs. It:
   for use outside a Sphinx build.
 
 It is the only member of this workspace whose `src/` imports `sphinx_needs`, and it
-declares it as a **runtime** dependency with a tight floor (`sphinx-needs>=9.1.0,<10`,
+declares it as a **runtime** dependency with a tight floor (`sphinx-needs>=9.2.0,<10`,
 which `check_workspace.py` check (4) enforces against the sibling's current version, and
 `propagate_floors.py` moves at each sphinx-needs release).
 
@@ -121,7 +121,7 @@ tests inside. 56 is how many test cases stop running.
 `load_codelinks_table` in `config.py` is ub-project's `load_toml` + `select_table`, and both
 readers call it; `src/` imports no `tomllib`. It returns raw values: relative paths are
 anchored with ub-project's `anchor` where they are used, never in the loader. (`click` is no
-longer a dependency and `typer` is no longer capped — the changelog's `Unreleased` says why.)
+longer a dependency and `typer` is no longer capped — the changelog's 2.0.0 entry says why.)
 
 ## Documentation
 

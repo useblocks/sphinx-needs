@@ -6,6 +6,28 @@ Changelog
 Unreleased
 ----------
 
+- ⬆️ Templates render with minijinja 3 (``minijinja>=3.0.5,<4``, which was ``~=2.15``), the series ubCode renders
+  with; the template corpus both tools are held to is recorded against 3.0.5 **(changed output)** (:pr:`2475`)
+
+  A value a template builds itself prints differently: a list or map with Python's quoting (``['a']``),
+  ``items`` pairs as tuples, ``tojson`` spaced as ``json.dumps`` spaces it, and ``round`` half to even. Context
+  data prints as the engine prints its values, so ``{{ rows }}`` is ``[1, 'a']``, which was ``[1, "a"]``.
+  The full list is in sphinx-needs' changelog entry for the same move.
+
+.. _`release:0.1.0`:
+
+0.1.0
+-----
+
+:Released: 2026-11-04
+
+The first release: define your own Sphinx directives without writing Python, in
+``ubproject.toml`` or ``conf.py``. A directive preset is an existing directive under a name of
+your own, with its options preset, or project-wide defaults for an existing one; a template
+directive renders a Jinja template with its argument, options and body. With Sphinx-Needs
+installed, which is optional, a preset may be based on a need type (Sphinx-Needs 9.2.0 or later,
+which the ``needs`` extra installs) and every template sees the project's variant data as ``var``.
+
 - The first release: directive presets (``[parse.directive_presets]``),
   declared template directives (``[parse.directive_templates]``) with template contexts
   (``[parse.template_contexts]``) and ``var``, and the ``ub-template`` directive
@@ -16,5 +38,4 @@ Unreleased
 - A preset based on a need type needs sphinx-needs 9.2 or later: it takes exactly the options the need
   type's directive matches, read through sphinx-needs' public ``resolve_need_option``; with an older
   sphinx-needs it is refused (``directive_preset_unknown_base``).
-- Templates render with minijinja 3 (``minijinja>=3.0.5,<4``), the series ubCode renders with; the template
-  corpus both tools are held to is recorded against 3.0.5.
+- A ``needs`` extra installs a sphinx-needs that need-type presets work with (9.2 or later).

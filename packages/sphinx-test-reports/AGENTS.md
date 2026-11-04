@@ -17,7 +17,7 @@ parsers, the result vocabulary, the deterministic IDs and the `[test_reports]` m
 **ub-test-reports** ([`packages/ub-test-reports/`](../ub-test-reports/AGENTS.md)), which
 runs without Sphinx and which this package depends on; a change to any of those belongs
 there. `[sphinx]` (empty) and `[pytest]` (a pass-through to `ub-test-reports[pytest]`) stay
-as extras only so that 2.0.0's install lines keep working until 4.0.
+as extras only so that 2.0.0's install lines keep working until 5.0.
 
 ## Package structure
 
@@ -29,7 +29,7 @@ pyproject.toml          # `[project]`, `[project.urls]` and the hatch build tabl
 AUTHORS · LICENSE · README.rst
 design/                 # import-commit-map.txt: old hash -> new hash for the 2026-09 import
 
-src/sphinxcontrib/test_reports/   # the pre-3.0 name: four warning aliases, removed in 4.0
+src/sphinxcontrib/test_reports/   # the pre-3.0 name: four warning aliases, removed in 5.0
 src/sphinx_test_reports/
 ├── __init__.py         # `__version__` FIRST, then the eager `setup` import -- the order is
 │                       #   load-bearing: `test_reports` imports `__version__` from here
@@ -50,7 +50,7 @@ docs/                   # conf.py sits IN the source dir; changelog.rst is stamp
 ### The old import name is four aliases, and nothing else
 
 The package was `sphinxcontrib.test_reports` until 3.0. `src/sphinxcontrib/test_reports/`
-keeps exactly four old names working until 4.0: the package as a Sphinx extension, which
+keeps exactly four old names working until 5.0: the package as a Sphinx extension, which
 warns through Sphinx's logger (type `test_reports.deprecated`) and loads the real extension
 with `app.setup_extension`, and `pytest_plugin`, `junitparser` and `jsonparser`, one file
 each, which put the REAL module -- `ub_test_reports.<name>`, in the core -- into

@@ -10,6 +10,61 @@ Unreleased
 Improvements
 ............
 
+- ⬆️ Templates render with minijinja 3: ``minijinja>=3.0.5,<4``, which was ``~=2.15`` **(changed output)** (:pr:`2475`)
+
+  The data sphinx-needs hands a template prints as before: need fields, ``needs_render_context`` and the
+  :ref:`needreport` variables are Python values, printed as Python prints them. What moves is a value a template
+  builds itself, mostly towards Jinja2's behaviour:
+
+  - a list or map a template writes, and every filter result, prints with Python's quoting (``{{ ['a'] }}`` is
+    ``['a']``, was ``["a"]``), and ``items``, ``dictsort`` and ``groupby`` give tuples (``[('a', 1)]``);
+  - ``tojson`` spaces its output as ``json.dumps`` does (``{"a": [1, 2]}``, was ``{"a":[1,2]}``);
+  - ``round`` rounds half to even (``2.5|round`` is ``2.0``), and a negative precision rounds (``15|round(-1)``
+    is ``20``);
+  - ``//`` and ``%`` follow Python (``7 // -2`` is ``-4``); ``1 / 0`` is an error, where it printed ``inf``;
+    ``2 ** -1`` is ``0.5``, where it was an error; ``-foo.bar`` negates the attribute, where it was an error;
+  - ``title`` keeps an apostrophe's letter (``Don't``), ``min``, ``max`` and ``sort`` on several attributes ignore
+    case, ``'%s'|format`` and ``'{}'.format`` print a float in full, ``find`` counts characters, and ``islower``
+    and its siblings answer as Python's do;
+  - ``int`` takes ``default=`` and ``base=``, and ``min``, ``max``, ``sum`` and ``join`` take ``attribute=``;
+  - a macro whose name starts with ``_`` cannot be imported from another template.
+
+  It also fixes three faults of 2.x: ``{{ 'abc'.count('') }}`` hung the build forever (it is ``4``), one panic in a
+  template broke every later render on its environment, and a filter that rendered a template on its own environment
+  deadlocked. The full list is minijinja's own
+  `changelog <https://github.com/mitsuhiko/minijinja/blob/main/CHANGELOG.md>`__.
+
+.. _`release:9.2.0`:
+
+9.2.0
+-----
+
+:Released: 04.11.2026
+:Full Changelog: `sphinx-needs-v9.1.0...sphinx-needs-v9.2.0 <https://github.com/useblocks/sphinx-needs/compare/sphinx-needs-v9.1.0...sphinx-needs-v9.2.0>`__
+
+Where a need comes from is the first story of this release. Each need records the places its text came through --
+the file its directive is written in, an included fragment, the needs.json it was imported from, the test report it
+was read from, the code entity a sphinx-codelinks marker is attached to -- and a filter reads them as
+:ref:`c.source <filter_source>`: ``c.source.kind``, ``path``, ``line``, ``paths`` and ``symbol`` select the needs
+traced from code under ``../src/``, the needs of one test report or those written in one fragment, answered without
+``eval``. Extensions create needs through the new :func:`~sphinx_needs.api.need.create_need`, with the fields and
+links as two mappings and one ``NeedItemSource``, and ask which option a need type's directive takes with
+``resolve_need_option``; ``add_need`` is deprecated in its favour, and a new section of the API page says
+:ref:`what is public <api_public>`. The second story carries on the per-type model of 9.1.0: a link type derives a
+chain's far ends as links, a ``summary`` link type marks a shortcut across the trace, ``c.is_a('req')`` follows
+``inherits``, a need type declares a ``severity``, the back links it must receive and the shape of its ids, an
+extension declares a field on its own need types alone (``add_field(..., types=[...])``) and a project's
+``needs_types`` entry narrows an extension's type, ``copy`` takes ``where`` and ``any`` / ``all`` take ``empty``.
+Several fixes change output: a need from a ``needimport``, a ``needservice`` or a sliced include records the line it
+is written on, a need inside a C, C++ or JavaScript domain object takes that object's name as its ``signature``, a
+hidden need is located as a visible one in its place is, and an incremental build re-writes every page showing a
+need that changed. A directive option now matches a field or link type ignoring case, and two names equal ignoring
+case are a configuration error that stops the build. The first build after upgrading reads every document again.
+This release requires ub-project 1.2.0.
+
+Improvements
+............
+
 - ✨ ``c.source`` in a filter reads where a need comes from: the needs traced from code under ``../src/``, the needs
   from one test report, the needs written in an included fragment (:ref:`filter_source`)
 
@@ -107,7 +162,7 @@ Improvements
   declared on the others. ``FieldsSchema.declaring_types(name)`` names the types declaring a field declared on need
   types alone, either way, and the needs.json schema writes such a field nullable where the extension's declaration
   is not, with a ``null`` default where it gives no literal one (so ``needs_json_remove_defaults`` leaves the key
-  out). sphinx-test-reports declares its eighteen fields this way from its next release. See
+  out). sphinx-test-reports declares its eighteen fields this way from 4.0.0. See
   :ref:`fields an extension declares on need types alone <needs_types_extension_fields>`.
 
 - ✨ Each need now records where its text came from, as a list of hops on ``need.source`` (provisional; see
@@ -308,30 +363,6 @@ Improvements
   near name, such as a ``tag`` of one type beside ``tags``, is reported too: ``suppress_warnings =
   ["needs.type_near_name"]`` silences these alone. See :ref:`need_types_misspelt`.
 
-- ⬆️ Templates render with minijinja 3: ``minijinja>=3.0.5,<4``, which was ``~=2.15`` **(changed output)**
-
-  The data sphinx-needs hands a template prints as before: need fields, ``needs_render_context`` and the
-  :ref:`needreport` variables are Python values, printed as Python prints them. What moves is a value a template
-  builds itself, mostly towards Jinja2's behaviour:
-
-  - a list or map a template writes, and every filter result, prints with Python's quoting (``{{ ['a'] }}`` is
-    ``['a']``, was ``["a"]``), and ``items``, ``dictsort`` and ``groupby`` give tuples (``[('a', 1)]``);
-  - ``tojson`` spaces its output as ``json.dumps`` does (``{"a": [1, 2]}``, was ``{"a":[1,2]}``);
-  - ``round`` rounds half to even (``2.5|round`` is ``2.0``), and a negative precision rounds (``15|round(-1)``
-    is ``20``);
-  - ``//`` and ``%`` follow Python (``7 // -2`` is ``-4``); ``1 / 0`` is an error, where it printed ``inf``;
-    ``2 ** -1`` is ``0.5``, where it was an error; ``-foo.bar`` negates the attribute, where it was an error;
-  - ``title`` keeps an apostrophe's letter (``Don't``), ``min``, ``max`` and ``sort`` on several attributes ignore
-    case, ``'%s'|format`` and ``'{}'.format`` print a float in full, ``find`` counts characters, and ``islower``
-    and its siblings answer as Python's do;
-  - ``int`` takes ``default=`` and ``base=``, and ``min``, ``max``, ``sum`` and ``join`` take ``attribute=``;
-  - a macro whose name starts with ``_`` cannot be imported from another template.
-
-  It also fixes three faults of 2.x: ``{{ 'abc'.count('') }}`` hung the build forever (it is ``4``), one panic in a
-  template broke every later render on its environment, and a filter that rendered a template on its own environment
-  deadlocked. The full list is minijinja's own
-  `changelog <https://github.com/mitsuhiko/minijinja/blob/main/CHANGELOG.md>`__.
-
 Deprecations
 ............
 
@@ -340,7 +371,9 @@ Deprecations
   Each call of :func:`~sphinx_needs.api.need.add_need` is one Python ``DeprecationWarning``, at the line that
   calls it, naming ``create_need`` and :ref:`api_migrating_add_need`; it creates the need as before. It is not a
   Sphinx warning, so a build run with ``-W`` (warnings as errors) is not failed by an extension that still calls
-  it, such as sphinx-codelinks 2.0 and sphinx-test-reports 3.0. ``create_need`` takes the need's location as one
+  it, such as sphinx-codelinks 2.0 and sphinx-test-reports 3.0. An extension whose own test suite turns warnings
+  into errors (``filterwarnings = error``) does fail there, on its first call of ``add_need``, until it moves to
+  ``create_need``. ``create_need`` takes the need's location as one
   ``NeedItemSource`` (``NeedItemSource.from_directive(self)`` in a directive), its fields and links as two
   mappings, and returns the need with its nodes; the migration section maps each of ``add_need``'s arguments.
   ``generate_need``, ``add_external_need`` and ``ingest_need_record`` are not deprecated.

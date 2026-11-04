@@ -3054,7 +3054,7 @@ wheels = [
 
 [[package]]
 name = "sphinx-codelinks"
-version = "2.0.1"
+version = "2.1.0"
 source = { editable = "packages/sphinx-codelinks" }
 dependencies = [
     { name = "comment-parser", version = "1.2.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
@@ -3201,7 +3201,7 @@ wheels = [
 
 [[package]]
 name = "sphinx-mounts"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "packages/sphinx-mounts" }
 dependencies = [
     { name = "docutils", version = "0.21.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-sphinx-8' or extra == 'group-22-sphinx-needs-workspace-typing'" },
@@ -3238,7 +3238,7 @@ provides-extras = ["docs"]
 
 [[package]]
 name = "sphinx-needs"
-version = "9.1.0"
+version = "9.2.0"
 source = { editable = "packages/sphinx-needs" }
 dependencies = [
     { name = "docutils", version = "0.21.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-sphinx-8' or extra == 'group-22-sphinx-needs-workspace-typing'" },
@@ -3388,6 +3388,9 @@ theme-pds = [
 theme-rtd = [
     { name = "sphinx-needs", extra = ["theme-rtd"] },
 ]
+ub-directives-needs = [
+    { name = "sphinx-ub-directives", extra = ["needs"] },
+]
 
 [package.dev-dependencies]
 benchmark = [
@@ -3509,11 +3512,12 @@ requires-dist = [
     { name = "sphinx-test-reports", extras = ["docs"], marker = "extra == 'docs-reports'", editable = "packages/sphinx-test-reports" },
     { name = "sphinx-ub-directives", editable = "packages/sphinx-ub-directives" },
     { name = "sphinx-ub-directives", extras = ["docs"], marker = "extra == 'docs-ub-directives'", editable = "packages/sphinx-ub-directives" },
+    { name = "sphinx-ub-directives", extras = ["needs"], marker = "extra == 'ub-directives-needs'", editable = "packages/sphinx-ub-directives" },
     { name = "ub-needs-exchange", editable = "packages/ub-needs-exchange" },
     { name = "ub-project", editable = "packages/ub-project" },
     { name = "ub-test-reports", editable = "packages/ub-test-reports" },
 ]
-provides-extras = ["plotting", "docs", "docs-mounts", "docs-codelinks", "docs-reports", "docs-ub-directives", "codelinks-libclang", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
+provides-extras = ["plotting", "docs", "docs-mounts", "docs-codelinks", "docs-reports", "docs-ub-directives", "ub-directives-needs", "codelinks-libclang", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
 
 [package.metadata.requires-dev]
 benchmark = [
@@ -3653,7 +3657,7 @@ wheels = [
 
 [[package]]
 name = "sphinx-test-reports"
-version = "3.0.1"
+version = "4.0.0"
 source = { editable = "packages/sphinx-test-reports" }
 dependencies = [
     { name = "docutils", version = "0.21.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12' or extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-sphinx-8' or extra == 'group-22-sphinx-needs-workspace-typing'" },
@@ -3725,6 +3729,9 @@ docs = [
     { name = "sphinx-ai-index" },
     { name = "sphinx-design" },
 ]
+needs = [
+    { name = "sphinx-needs" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -3735,9 +3742,10 @@ requires-dist = [
     { name = "sphinx", specifier = ">=7.4,<10" },
     { name = "sphinx-ai-index", marker = "extra == 'docs'", editable = "packages/sphinx-ai-index" },
     { name = "sphinx-design", marker = "extra == 'docs'", specifier = ">=0.6.1" },
+    { name = "sphinx-needs", marker = "extra == 'needs'", editable = "packages/sphinx-needs" },
     { name = "ub-project", editable = "packages/ub-project" },
 ]
-provides-extras = ["docs"]
+provides-extras = ["docs", "needs"]
 
 [[package]]
 name = "sphinxcontrib-applehelp"
@@ -4238,12 +4246,12 @@ source = { editable = "packages/ub-needs-exchange" }
 
 [[package]]
 name = "ub-project"
-version = "1.1.0"
+version = "1.2.0"
 source = { editable = "packages/ub-project" }
 
 [[package]]
 name = "ub-test-reports"
-version = "1.1.0"
+version = "2.0.0"
 source = { editable = "packages/ub-test-reports" }
 dependencies = [
     { name = "lxml" },
