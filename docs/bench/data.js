@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793824568359,
+  "lastUpdate": 1793833425237,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28938,6 +28938,48 @@ window.BENCHMARK_DATA = {
             "value": 188.804457,
             "unit": "MB",
             "extra": "Commit: 56fa9097670f21673b3aa11668c4548f44dc509e\nBranch: master\nTime: 2026-11-04T21:34:25+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "75267db20bf00e95d17ed226cc046df53dde520f",
+          "message": "🐛 Keep a field or link type named `description` on `needimport`, external needs and codelinks needs (#2481)\n\nA project that declares a field (or link type) named `description` now\nkeeps it on every record route — `needimport`,\n`needs_external_needs` and sphinx-codelinks multi-line needs — also on a\nneed without content. So a project's own\nneeds.json reads back as written, with the default writer and with\n`needs_json_remove_defaults`, unless it is written\nwith `content` excluded. Before, a body-less need's `description` was\nmoved into its content without a warning, a need\nwith neither content nor a (nullable) `description` was refused, a link\ntype of that name was refused on import and\nexternal needs and lost on a codelinks block, a body-less codelinks\nblock without an id and with an empty title got an\nid other than the one codelinks predicts for its duplicate check and\n`[docs]` link, and a body-less imported need warned\n`needs.import_doctype` under `:parse_by_doctype:`.\n\n**The rule, and the contract.** sphinx-needs before 4.0 wrote a need's\ncontent as `description` and, by default, never\nwrote `content`; every writer since — ubCode's included — writes\n`content`, or leaves it to the version's\n`needs_schema` default, unless told to leave `content` out.\nub-needs-exchange now reads the legacy `description` as the\ncontent only when a record has **no `content` key** once its schema\ndefaults are merged, instead of whenever `content`\nis falsy; `records(apply_schema_defaults=False)` maps a record as the\nmerge would. It needs no project knowledge, so one\nrule in the shared reader fixes every route. A genuine pre-4.0 file\nstill reads its `description` as the content, also\nin a project that declares a `description` (or `Description`) field —\nand so does a file written with `content`\nexcluded (`needs_json_exclude_fields`, ubCode's `json_exclude_fields` or\n`--no-content`), as on master.\n\nWhat changes for a hand-written record: an empty `content` beside a\n`description` meant as its content keeps the\ncontent empty, and in a project that does not declare `description` an\nimported need reports that key as unknown\n(`needs.unknown_import_keys`, or `needs.unknown_external_keys` for\nexternal needs) rather than using it; a non-string\n`content` (`null`, `0`, `false`, `[]`, `{}`) beside a `description` is\nrefused, as such a `content` already is without\none. `design/exchange-contract.md` §6.3 and §9 are restated. **The\ncorpus changes (ubCode owes a re-vendor):** the seven\ncases whose `content` is present but falsy now keep the `description`\nand are renamed to say so, and one case is new.\n\n**Release order.** ub-needs-exchange first (a minor: what a record reads\nas changes; this PR adds an `Unreleased` entry and\nbumps no version), then sphinx-needs: the release's `poe bump\nub-needs-exchange` re-floors sphinx-needs'\n`ub-needs-exchange>=` (not raised here — the tree's version is still\n1.1.0, so the workspace fence and the lock would refuse\nit). sphinx-needs 9.2.0's floor is `>=1.1.0,<2`, so a 9.2.0 user who\nupgrades ub-needs-exchange gets the rule too. In\nsphinx-needs itself only `needimport`'s doctype check changes (it no\nlonger falls back to `description`), and\n`ingest_need_record`'s docstring. #2474 also adds a corpus case:\nwhichever of the two lands second sets\n`EXPECTED_CASE_COUNT = 94`.\n\n**Tests.** `tests/test_description_field.py` (needimport and external:\nthe issue's file, the round trip with both writer\nmodes including a bare need, a link type `description`, pre-3.0 and 3.x\nfiles in projects declaring `description` and\n`Description`, the doctype check; `ingest_need_record` called directly);\nthree codelinks tests (a body-less block keeps the\nfield, its predicted id is its id, a link type `description`);\n`test_reader.py` rows for every falsy `content`, `null`\nincluded, and for the reader without defaults. Red on master, green\nhere; mutations reverting the rule, mapping before the\ndefaults merge, dropping the second pass, keeping the doctype fallback,\nor adding a project-aware gate each turn a named\npin red.\n\nCloses #2465\n\nThanks to #2467 for the diagnosis: it located both renames and the\ncodelinks path; this PR takes the record-shape rule\ninstead of a project-aware gate, which keeps pre-4.0 files and the\nlink-type twin right.",
+          "timestamp": "2026-11-05T00:02:02+01:00",
+          "tree_id": "fb8237cc961114c875327d262bec6e0e205cee70",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/75267db20bf00e95d17ed226cc046df53dde520f"
+        },
+        "date": 1793833424550,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07460106999999994,
+            "unit": "s",
+            "extra": "Commit: 75267db20bf00e95d17ed226cc046df53dde520f\nBranch: master\nTime: 2026-11-05T00:02:02+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.450015497999999,
+            "unit": "s",
+            "extra": "Commit: 75267db20bf00e95d17ed226cc046df53dde520f\nBranch: master\nTime: 2026-11-05T00:02:02+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 191.435026,
+            "unit": "MB",
+            "extra": "Commit: 75267db20bf00e95d17ed226cc046df53dde520f\nBranch: master\nTime: 2026-11-05T00:02:02+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
