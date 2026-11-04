@@ -30,6 +30,17 @@ from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs_testkit import build_warnings
 
+
+def _without_jinja_content_deprecation(warnings: list[str]) -> list[str]:
+    """The warnings but the deprecation of ``jinja_content``, which every need this
+    module creates with it reports (it is removed in sphinx-needs 10.0)."""
+    return [
+        w
+        for w in warnings
+        if not (w.endswith("[needs.deprecated]") and "jinja_content option" in w)
+    ]
+
+
 HOSTS = ("rst", "myst")
 
 CONF = """\
@@ -258,7 +269,7 @@ def test_a_need_directive_option_of_its_own_matches_ignoring_case(
         "myst",
         _directive("myst", "req", "One", [("id", "R_1"), (written, value)]),
     )
-    assert _warnings(app) == []
+    assert _without_jinja_content_deprecation(_warnings(app)) == []
     # ``hide`` and ``collapse`` do not reach needs.json: read the need as built
     need = SphinxNeedsData(app.env).get_needs_view()["R_1"]
     assert need[field] == expected

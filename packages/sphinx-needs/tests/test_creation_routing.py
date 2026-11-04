@@ -19,6 +19,17 @@ from sphinx.testing.util import SphinxTestApp
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import build_warnings
 
+
+def _without_jinja_content_deprecation(warnings: list[str]) -> list[str]:
+    """The warnings but the deprecation of ``jinja_content``, which every need this
+    module creates with it reports (it is removed in sphinx-needs 10.0)."""
+    return [
+        w
+        for w in warnings
+        if not (w.endswith("[needs.deprecated]") and "jinja_content option" in w)
+    ]
+
+
 EXT = '''\
 """A service with a Jinja datum, and an extension calling ``add_external_need``."""
 
@@ -133,7 +144,7 @@ Routing
 @pytest.fixture
 def needs(test_app: SphinxTestApp):
     test_app.build()
-    assert build_warnings(test_app) == []
+    assert _without_jinja_content_deprecation(build_warnings(test_app)) == []
     return SphinxNeedsData(test_app.env).get_needs_view()
 
 

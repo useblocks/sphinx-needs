@@ -580,7 +580,9 @@ source = '''
    Body of {{ id }}.
 '''
 [case.expect]
-findings = []
+[[case.expect.findings]]
+code = "deprecated_jinja_content"
+need = "REQ_1"
 [case.expect.needs.REQ_1]
 content = "Body of REQ_1: Jinja."
 jinja_content = true
@@ -731,6 +733,9 @@ source = '''
 [case.expect]
 [[case.expect.findings]]
 code = "template_syntax"
+need = "REQ_1"
+[[case.expect.findings]]
+code = "deprecated_jinja_content"
 need = "REQ_1"
 [case.expect.needs.REQ_1]
 content = ""
@@ -883,6 +888,9 @@ source = '''
 [case.expect]
 [[case.expect.findings]]
 code = "template_undefined"
+need = "REQ_1"
+[[case.expect.findings]]
+code = "deprecated_jinja_content"
 need = "REQ_1"
 [case.expect.needs.REQ_1]
 content = "Hello from REQ_1."

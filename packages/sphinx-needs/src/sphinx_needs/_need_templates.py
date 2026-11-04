@@ -9,7 +9,8 @@ while rendering -- never costs the need: its output is empty and one warning is
 reported at the need (``needs.template_missing``, ``needs.template_syntax``,
 ``needs.template_render``). An undefined name renders empty, as it always has, and is
 reported (``needs.template_undefined``): each template is rendered strictly first, and
-leniently again only when that fails (:func:`_render`). A template naming a field that
+leniently again only when that fails (:func:`_render`). ``:jinja_content:`` is deprecated
+(``needs.deprecated``, until it is removed in 10.0). A template naming a field that
 holds a value resolved only after every document is read -- a dynamic function, a
 variant, a derived value -- sees it unset, and is reported
 (``needs.template_unresolved``, naming the field).
@@ -83,6 +84,17 @@ def render_need_templates(
     """
     need_id = needs_info["id"]
     if jinja_content:
+        # deprecated: it loses the authored body, its output can hold Jinja syntax that
+        # a reader must not render again, and a template does what it does
+        log_warning(
+            logger,
+            f"The jinja_content option of need {need_id!r} is deprecated, and is "
+            "removed in sphinx-needs 10.0: move the Jinja into a template file, with "
+            "{{ content }} where the need's body goes, and name it with the template "
+            "option.",
+            "deprecated",
+            location,
+        )
         context: dict[str, Any] = needs_info.filter_context()
         context.update(**needs_config.filter_data)
         context.update(**needs_config.render_context)
