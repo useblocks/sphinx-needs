@@ -3,6 +3,24 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- **A record's legacy ``description`` is its ``content`` only when the record has no
+  ``content``** -- after the schema defaults are merged --, as in every needs.json
+  sphinx-needs wrote before 4.0; a record with a ``content``, even an empty one, keeps its
+  ``description`` (changed output). 1.1.0 renamed it over any ``content`` Python treats as
+  false (``""``, ``null``, ``0``, ``false``, ``[]``, ``{}``), so a field or link type named
+  ``description`` on a need without content -- which every writer since 4.0 writes as
+  ``"content": ""``, or as the schema's ``content`` default -- was read as the content.
+- **The contract and the corpus.** ``design/exchange-contract.md`` §6.3 and §9 say so, and
+  the corpus has 93 cases: the seven whose ``content`` is present but falsy keep the
+  ``description`` and are renamed to say so (``description-fills-an-empty-content`` is
+  now ``an-empty-content-keeps-the-description``,
+  ``a-content-default-does-not-hide-the-description`` is now
+  ``a-content-default-keeps-the-description``, and so on), and
+  ``a-modern-record-keeps-an-empty-content-and-its-description`` is new.
+
 .. _`release:1.1.0`:
 
 1.1.0
