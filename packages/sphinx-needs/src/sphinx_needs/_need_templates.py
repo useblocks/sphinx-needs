@@ -315,7 +315,9 @@ def _template_inputs(app: Sphinx) -> tuple[str, dict[str, Any]]:
     context: dict[str, Any] = {}
     for key, value in needs_config.render_context.items():
         try:
-            same = pickle.loads(pickle.dumps(value)) == value
+            # the truth of the comparison inside the ``try`` too: an ``==`` may return a
+            # value whose truth raises (an array, a data frame)
+            same = bool(pickle.loads(pickle.dumps(value)) == value)
         except Exception:
             # deliberately broad: pickling a value, or comparing one, may raise anything
             same = False
@@ -352,12 +354,22 @@ def reread_on_template_inputs_change(
     data = SphinxNeedsData(env)
     inputs = _template_inputs(app)
     previous = data.template_inputs_read_with
+    # recorded on every build, so that the build after one that adds a templated need
+    # compares against what that need was read with
     data.template_inputs_read_with = inputs
-    if previous is None or previous == inputs:
-        return []
     docnames = {
         need["docname"]
         for need in data.get_needs_mutable().values()
         if need["docname"] and _is_templated(need)
     }
+    if not docnames or previous is None:
+        # no templated need was read: nothing to compare, nothing to re-read
+        return []
+    try:
+        unchanged = bool(previous == inputs)
+    except Exception:
+        # deliberately broad: a stored value's comparison may raise; re-read
+        unchanged = False
+    if unchanged:
+        return []
     return sorted((docnames & env.found_docs) - set(removed))

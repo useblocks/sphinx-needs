@@ -262,3 +262,35 @@ def test_a_project_without_templated_needs_is_not_re_read(
     _build(make_app, srcdir, fresh=True)
     read, _, _ = _build(make_app, srcdir, needs_template_folder=folder)
     assert read == []
+
+
+class _Ambiguous:
+    """What an array's ``==`` gives: a value whose truth cannot be told."""
+
+    def __bool__(self) -> bool:
+        raise ValueError("the truth value of an array is ambiguous")
+
+
+class _ArrayLike:
+    """A picklable render-context value whose ``==`` is not a boolean (an array, a data
+    frame), without numpy."""
+
+    def __eq__(self, other: object) -> Any:
+        return _Ambiguous()
+
+    __hash__ = object.__hash__
+
+
+def test_a_render_context_value_with_an_ambiguous_equality_builds(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """The render context is compared on every build of every project, templated or
+    not: a value whose ``==`` cannot be told true or false (a numpy array, a pandas
+    frame) is left out of the comparison rather than failing the build."""
+    srcdir = _write(tmp_path / "src", {"conf.py": CONF, "index.rst": PLAIN})
+    _, needs, _ = _build(
+        make_app, srcdir, fresh=True, needs_render_context={"arr": _ArrayLike()}
+    )
+    assert "REQ_PLAIN" in needs
+    read, _, _ = _build(make_app, srcdir, needs_render_context={"arr": _ArrayLike()})
+    assert read == []
