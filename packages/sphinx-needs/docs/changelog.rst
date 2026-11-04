@@ -55,20 +55,26 @@ Bug fixes
   ``needimport`` that another extension generates is written in no file, and is still reported at its page.
 
 - 🐛 A field or link type named ``description`` is kept on ``needimport``, external needs and codelinks multi-line
-  needs, also on a need without content, so a project's own needs.json reads back as written **(changed output)**
-  (:issue:`2465`)
+  needs, also on a need without content, so a project's own needs.json reads back as written, unless it is written with
+  ``content`` excluded **(changed output)** (:issue:`2465`)
 
   sphinx-needs before 4.0 wrote a need's content as ``description``; that legacy ``description`` is now read as the
   content only when the record has no ``content`` key, after its schema defaults are merged -- the rule of
   ub-needs-exchange, whose next release carries it. A need without content, which sphinx-needs writes as
   ``"content": ""`` (or, with ``needs_json_remove_defaults``, as the schema's ``content`` default), lost its
-  ``description`` field into the content, and a link type of that name was refused on ``needimport`` and external
-  needs and lost on a codelinks block. A body-less codelinks block without an id and with an empty title is given
-  the id codelinks predicts for its duplicate check and ``[docs]`` link, and a body-less imported need no longer
-  warns ``needs.import_doctype`` under ``:parse_by_doctype:``. A hand-written record with an empty ``content``
-  beside a ``description`` meant as its content now keeps the content empty, and, in a project that declares no
-  ``description``, reports that key as unknown (``needs.unknown_import_keys``): drop the ``content`` key, or move
-  the text into it.
+  ``description`` field into the content, and a need with neither content nor a ``description`` (a nullable field
+  written as ``null``) was refused. A link type of that name was refused on ``needimport`` and external needs and lost
+  on a codelinks block. A body-less codelinks block without an id and with an empty title is given the id codelinks
+  predicts for its duplicate check and ``[docs]`` link, and a body-less imported need no longer warns
+  ``needs.import_doctype`` under ``:parse_by_doctype:``. A file written with ``content`` excluded
+  (``needs_json_exclude_fields``) has no ``content`` key and reads as a pre-4.0 file, as before: its ``description``
+  is taken as the content.
+
+  A hand-written record with an empty ``content`` beside a ``description`` meant as its content now keeps the content
+  empty, and, in a project that declares no ``description``, an imported need reports that key as unknown
+  (``needs.unknown_import_keys``, or ``needs.unknown_external_keys`` for external needs); move the text into the
+  ``content``. One whose ``content`` is not a string (``null``, ``0``, ``false``, ``[]``, ``{}``) beside a
+  ``description`` is refused, as such a ``content`` already is without one.
 
 .. _`release:9.2.0`:
 

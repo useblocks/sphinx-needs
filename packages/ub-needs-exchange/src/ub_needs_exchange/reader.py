@@ -327,9 +327,10 @@ def load(path: str | Path) -> Document:
 def map_legacy_keys(fields: dict[str, Any]) -> None:
     """Rename a record's legacy keys in place: a ``description`` is the ``content``
     when the record has no ``content`` key at all (sphinx-needs before 4.0 wrote the
-    content as ``description`` and wrote no ``content``; every later writer writes
-    ``content``, or its schema default). A record with a ``content`` key, whatever
-    its value, keeps its ``description`` (contract section 6.3)."""
+    content as ``description`` and, by default, no ``content``; every later writer
+    writes ``content``, or its schema default, unless told to leave ``content`` out --
+    a file written that way reads as a pre-4.0 one). A record with a ``content`` key,
+    whatever its value, keeps its ``description`` (contract section 6.3)."""
     if "description" in fields and "content" not in fields:
         fields["content"] = fields.pop("description")
 

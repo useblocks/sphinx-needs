@@ -12,9 +12,14 @@ Unreleased
   ``description`` (changed output). 1.1.0 renamed it over any ``content`` Python treats as
   false (``""``, ``null``, ``0``, ``false``, ``[]``, ``{}``), so a field or link type named
   ``description`` on a need without content -- which every writer since 4.0 writes as
-  ``"content": ""``, or as the schema's ``content`` default -- was read as the content.
-- **The contract and the corpus.** ``design/exchange-contract.md`` §6.3 and §9 say so, and
-  the corpus has 93 cases: the seven whose ``content`` is present but falsy keep the
+  ``"content": ""``, or as the schema's ``content`` default, unless told to leave
+  ``content`` out -- was read as the content. A file written with ``content`` left out
+  reads as a pre-4.0 one, as it did.
+- **Read without the defaults, the same.** ``Version.records(apply_schema_defaults=False)``
+  maps a record as the merge would: where the schema gives ``content`` a default, no
+  record's ``description`` is renamed, where 1.1.0 renamed it on the unmerged record.
+- **The contract and the corpus.** ``design/exchange-contract.md`` §6.3 and §9 say so. Of
+  the corpus, the seven cases whose ``content`` is present but falsy keep the
   ``description`` and are renamed to say so (``description-fills-an-empty-content`` is
   now ``an-empty-content-keeps-the-description``,
   ``a-content-default-does-not-hide-the-description`` is now

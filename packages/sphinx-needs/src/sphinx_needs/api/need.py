@@ -1507,8 +1507,10 @@ def ingest_need_record(
     It is not modified. A legacy ``description`` is taken as the ``content`` when the
     record has none (no ``content`` key: sphinx-needs before 4.0 wrote the content as
     ``description``); a record with a ``content``, even an empty one, keeps its
-    ``description`` as the field or link of that name. Keys the project does not know
-    are dropped and returned; keys that are
+    ``description`` as the field or link of that name. A caller that builds records
+    sets ``content``, even ``""``, for a need without one, so that a ``description`` it
+    gives is not taken as the content. Keys the project does not know are dropped and
+    returned; keys that are
     computed rather than imported (such as ``docname``, ``lineno`` or the ``<link>_back``
     names) are dropped silently, and so is the legacy ``full_title``, unless the project
     has a field or a link type of that name. The need is created from the rest

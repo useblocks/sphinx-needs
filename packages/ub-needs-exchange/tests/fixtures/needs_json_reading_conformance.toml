@@ -713,7 +713,7 @@ unset = { A = ["description"] }
 
 [[case]]
 name = "an-empty-content-keeps-the-description"
-why = "a record with a content key, even an empty one, was written by 4.0 or later: its description is a key of its own"
+why = "a record with a content key, even an empty one, is not of the shape sphinx-needs wrote before 4.0 by default: its description is a key of its own"
 layer = "document"
 json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"A": {"id": "A", "type": "req", "title": "t", "content": "", "description": "legacy"}}}}}'''
 [case.expect]
