@@ -244,7 +244,7 @@ def test_a_syntax_error_names_the_template(
 def test_a_context_file_that_is_not_toml_is_refused_with_the_parsers_words(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:
-    """§4.2/§2.3: a ``.toml`` context file that does not parse is
+    """§4.3: a ``.toml`` context file that does not parse is
     ``template_context_invalid``, and the message is the file's name and the parser's
     own text -- no reader's wrapping in between."""
     files = {

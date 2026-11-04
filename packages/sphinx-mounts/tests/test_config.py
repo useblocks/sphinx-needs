@@ -908,3 +908,27 @@ class TestTomlReading:
         assert str(info.value).startswith(
             f"sphinx-mounts: failed to parse TOML config {toml}: not valid UTF-8 TOML: "
         )
+
+    @pytest.mark.parametrize("read", _TOML_READERS)
+    def test_an_unreadable_file_is_a_toml_config_error(
+        self,
+        tmp_path: Path,
+        read: Callable[[Path], Any],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A file that is there but cannot be opened: not a raw ``OSError`` traceback."""
+        toml = tmp_path / "ubproject.toml"
+        toml.write_text("[project]\n", encoding="utf-8")
+        real_open = Path.open
+
+        def refuse(self: Path, *args: Any, **kwargs: Any) -> Any:
+            if self == toml:
+                raise PermissionError(13, "Permission denied", str(self))
+            return real_open(self, *args, **kwargs)
+
+        monkeypatch.setattr(Path, "open", refuse)
+        with pytest.raises(TomlConfigError) as info:
+            read(toml)
+        assert str(info.value).startswith(
+            f"sphinx-mounts: failed to parse TOML config {toml}: cannot be read: "
+        )

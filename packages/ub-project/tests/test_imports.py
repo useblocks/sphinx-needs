@@ -58,13 +58,19 @@ def test_no_sphinx_docutils_or_sibling_is_imported(imported: list[str]) -> None:
     assert toolchain == []
 
 
-def _declared_modules() -> set[str]:
-    """The top-level modules of every distribution the manifest declares for this interpreter."""
+def _declared_distributions() -> set[str]:
+    """The distributions the manifest declares for this interpreter, markers evaluated."""
     declared = set()
     for line in requires("ub-project") or []:
         requirement = Requirement(line)
         if requirement.marker is None or requirement.marker.evaluate({"extra": ""}):
             declared.add(canonicalize_name(requirement.name))
+    return declared
+
+
+def _declared_modules() -> set[str]:
+    """The top-level modules of every distribution the manifest declares for this interpreter."""
+    declared = _declared_distributions()
     return {
         module
         for module, distributions in packages_distributions().items()
@@ -87,7 +93,15 @@ def test_only_the_standard_library_is_imported(imported: list[str]) -> None:
 
 def test_only_the_declared_distributions_are_admitted() -> None:
     """The admission is the manifest's, not whatever this environment has installed."""
+    expected = {"tomli"} if sys.version_info < (3, 15) else set()
+    # the markers are evaluated for THIS interpreter, whatever is installed
+    assert _declared_distributions() == expected
+    # and every admitted module belongs to a declared distribution and nothing else
+    distributions = packages_distributions()
     admitted = _declared_modules()
+    assert {
+        canonicalize_name(name) for module in admitted for name in distributions[module]
+    } <= expected
     # installed wherever this suite runs, and declared by nothing in the manifest
     assert {"pytest", "_pytest", "packaging"}.isdisjoint(admitted)
     assert ("tomli" in admitted) is (sys.version_info < (3, 15))
