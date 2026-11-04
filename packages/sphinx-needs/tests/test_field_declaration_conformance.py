@@ -49,6 +49,7 @@ from sphinx_needs_testkit.conformance import (
     read_findings,
     uninstalled_extension,
 )
+from ub_project import loads_toml
 
 CORPUS_PATH = Path(__file__).parent / "fixtures" / "field_declaration_conformance.toml"
 
@@ -193,7 +194,7 @@ def test_every_case_has_a_complete_expectation() -> None:
         # bare entry (neither) in the section "an entry naming a default type", which
         # narrows a default type or is ignored, and names no `need`, a default type of
         # sphinx-needs only
-        types = tomllib.loads(case["config"])["needs"]["types"]
+        types = loads_toml(case["config"], name)["needs"]["types"]
         entries = (
             list(types.items())
             if isinstance(types, dict)

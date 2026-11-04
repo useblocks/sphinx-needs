@@ -52,6 +52,7 @@ from sphinx_needs_testkit.conformance import (
     params,
     uninstalled_extension,
 )
+from ub_project import loads_toml
 
 CORPUS_PATH = Path(__file__).parent / "fixtures" / "filter_conformance.toml"
 
@@ -182,7 +183,7 @@ def test_every_case_has_a_complete_expectation() -> None:
             # `ubproject.toml` names as its source directory, as ubCode reads it
             srcdir = case["srcdir"]
             assert srcdir and inside(srcdir) != Path(), name
-            assert tomllib.loads(case["config"])["source"]["dir"] == srcdir, name
+            assert loads_toml(case["config"], name)["source"]["dir"] == srcdir, name
         seen: set[tuple[str, bool, bool]] = set()
         for entry in case["filters"]:
             where = f"{name}: {entry.get('filter')!r}"
