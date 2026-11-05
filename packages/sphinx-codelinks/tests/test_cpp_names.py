@@ -244,6 +244,145 @@ def _functions(source: str, path: str = "src/a.cpp") -> set[str]:
             ["namespace ns", "struct A", "method m"],
             id="member_beside_a_friend",
         ),
+        # A specialisation's class name keeps its arguments, squeezed and without
+        # comments (``P<T,4>``), in the class and in an out-of-line qualifier; an
+        # out-of-line qualifier's arguments are dropped only when they are exactly the
+        # template's own parameter names (the primary's member, ``Box::get``).
+        pytest.param(
+            "template <typename T, int N> struct P {};\ntemplate <typename T> struct P<T, 4> { void fill(); };",
+            "field_declaration",
+            0,
+            "method",
+            "P<T,4>::fill",
+            ["struct P<T,4>", "method fill"],
+            id="partial_specialisation_member",
+        ),
+        pytest.param(
+            "template <typename T, int N> struct P {};\ntemplate <typename T> struct P<T, 4> { P(); };",
+            "declaration",
+            0,
+            "constructor",
+            "P<T,4>::P",
+            ["struct P<T,4>", "constructor P"],
+            id="partial_specialisation_constructor",
+        ),
+        pytest.param(
+            "template <typename T, int N> struct P {};\ntemplate <typename T> struct P<T, 4> {};",
+            "struct_specifier",
+            1,
+            "struct",
+            "P<T,4>",
+            ["struct P<T,4>"],
+            id="partial_specialisation_itself",
+        ),
+        pytest.param(
+            "template <typename T, int N> struct P {};\ntemplate <typename T> struct P<T, /* four */ 4> { void fill(); };",
+            "field_declaration",
+            0,
+            "method",
+            "P<T,4>::fill",
+            ["struct P<T,4>", "method fill"],
+            id="comment_in_arguments",
+        ),
+        pytest.param(
+            "template <typename T, int N> struct P {};\ntemplate <typename T> struct P<T, // four\n  4> { void fill(); };",
+            "field_declaration",
+            0,
+            "method",
+            "P<T,4>::fill",
+            ["struct P<T,4>", "method fill"],
+            id="line_comment_in_arguments",
+        ),
+        pytest.param(
+            "template <> struct Box<bool> { bool get(); };",
+            "field_declaration",
+            0,
+            "method",
+            "Box<bool>::get",
+            ["struct Box<bool>", "method get"],
+            id="explicit_specialisation_member",
+        ),
+        pytest.param(
+            "template <> struct Box<bool /* flag */> { bool get(); };",
+            "field_declaration",
+            0,
+            "method",
+            "Box<bool>::get",
+            ["struct Box<bool>", "method get"],
+            id="explicit_specialisation_comment",
+        ),
+        pytest.param(
+            "template <typename T> void P<T, 4>::fill() {}",
+            "function_definition",
+            0,
+            "method",
+            "P<T,4>::fill",
+            ["class P<T,4>", "method fill"],
+            id="partial_specialisation_member_out_of_line",
+        ),
+        pytest.param(
+            "template <typename T> P<T, 4>::P() {}",
+            "function_definition",
+            0,
+            "constructor",
+            "P<T,4>::P",
+            ["class P<T,4>", "constructor P"],
+            id="partial_specialisation_constructor_out_of_line",
+        ),
+        pytest.param(
+            "template <typename T> void Box<T>::get() {}",
+            "function_definition",
+            0,
+            "method",
+            "Box::get",
+            ["class Box", "method get"],
+            id="primary_member_out_of_line",
+        ),
+        pytest.param(
+            "template <typename T, int N> void P<T, N>::fill() {}",
+            "function_definition",
+            0,
+            "method",
+            "P::fill",
+            ["class P", "method fill"],
+            id="primary_member_two_parameters",
+        ),
+        pytest.param(
+            "template <typename... Ts> void V<Ts...>::f() {}",
+            "function_definition",
+            0,
+            "method",
+            "V::f",
+            ["class V", "method f"],
+            id="primary_member_of_a_pack",
+        ),
+        pytest.param(
+            "template <typename T> template <typename U> void A<T>::f(U) {}",
+            "function_definition",
+            0,
+            "method",
+            "A::f",
+            ["class A", "method f"],
+            id="member_template_of_a_class_template",
+        ),
+        pytest.param(
+            "template <> void Box<int>::get() {}",
+            "function_definition",
+            0,
+            "method",
+            "Box<int>::get",
+            ["class Box<int>", "method get"],
+            id="explicit_specialisation_member_out_of_line",
+        ),
+        pytest.param(
+            "void Box<int>::get() {}",
+            "function_definition",
+            0,
+            "method",
+            "Box<int>::get",
+            ["class Box<int>", "method get"],
+            id="explicit_specialisation_member_no_header",
+        ),
     ],
 )
 def test_cpp_names_as_clang_prints_them(
@@ -428,4 +567,150 @@ def test_a_marker_in_a_colliding_hidden_friend_keeps_its_class(tmp_path: Path) -
         "REQ_T": "ns::touch",
         "REQ_S": "ns::S",
         "REQ_E": "ns::reset",
+    }
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
+            "template <typename... Ts> struct List { int size() const; };\n"
+            "template <typename... Ts> int List<Ts...>::size() const { return 0; }\n"
+            "template <typename Head, typename... Tail> struct List<Head, Tail...> {\n"
+            "  int size() const;\n};\n"
+            "template <typename Head, typename... Tail>"
+            " int List<Head, Tail...>::size() const { return 1; }\n",
+            {"List::size() const", "List<Head,Tail...>::size() const"},
+            id="typelist",
+        ),
+        pytest.param(
+            "template <class T, class U, class V = int> struct Q { void m(); };\n"
+            "template <class T, class U, class V> void Q<T, U, V>::m() {}\n"
+            "template <class T, class U> struct Q<T, U> { void m(); };\n"
+            "template <class T, class U> void Q<T, U>::m() {}\n",
+            {"Q::m()", "Q<T,U>::m()"},
+            id="primary_with_a_default",
+        ),
+        pytest.param(
+            "template <typename T, typename U = void> struct Q { void m(); };\n"
+            "template <typename T, typename U> void Q<T, U>::m() {}\n"
+            "template <typename T> struct Q<T*, void> { void m(); };\n"
+            "template <typename T> void Q<T*, void>::m() {}\n"
+            "template <typename T> void Q<T *, void>::m();\n",
+            {"Q::m()", "Q<T*,void>::m()"},
+            id="pointer_partial_and_a_redeclaration",
+        ),
+        pytest.param(
+            "namespace std { template <class A, class B> struct pair {}; }\n"
+            "template <typename T, int N> struct P { void fill(); };\n"
+            "template <typename T> struct P<T, 4> {\n  void fill();\n"
+            "  template <typename U> void put(U);\n  void inl() {}\n};\n"
+            "template <typename T> void P<T, 4>::fill() {}\n"
+            "template <typename T> template <typename U> void P<T, 4>::put(U) {}\n"
+            "template <typename T, int N> void P<T, N>::fill() {}\n"
+            "template <typename A, typename B> struct P<std::pair<A, B>, 2>"
+            " { void fill(); };\n"
+            "template <typename A, typename B> void P<std::pair<A,B>, 2>::fill() {}\n",
+            {
+                "P::fill()",
+                "P<T,4>::fill()",
+                "P<T,4>::inl()",
+                "P<T,4>::put(U)",
+                "P<std::pair<A,B>,2>::fill()",
+            },
+            id="partial_members",
+        ),
+        pytest.param(
+            "template <typename T> struct Box { void get(); };\n"
+            "template <typename X> void Box<X>::get() {}\n"
+            "template <> void Box<int>::get() {}\n"
+            "template <typename T> struct W { struct In { void m(); }; };\n"
+            "template <typename T> void W<T>::In::m() {}\n"
+            "template <typename T, typename U> struct Pair2 { void m(); };\n"
+            "template <typename U, typename T> void Pair2<U, T>::m() {}\n"
+            "template <typename T> struct Outer"
+            " { template <typename U> struct Inner { void m(); }; };\n"
+            "template <typename T> template <typename U>"
+            " void Outer<T>::Inner<U>::m() {}\n",
+            {
+                "Box::get()",
+                "Box<int>::get()",
+                "Outer::Inner::m()",
+                "Pair2::m()",
+                "W::In::m()",
+            },
+            id="primary_members",
+        ),
+        pytest.param(
+            "template <typename T, int N> struct P {};\n"
+            "template <typename T> struct P<T, 4> {\n  void fill();\n};\n"
+            "template <typename T> void P<T, 4>::fill() {}\n",
+            {"P<T,4>::fill()"},
+            id="partial_specialisation_member",
+        ),
+        pytest.param(
+            "template <typename T> struct Box {\n  void get();\n};\n"
+            "template <typename T> void Box<T>::get() {}\n",
+            {"Box::get()"},
+            id="primary_member",
+        ),
+        pytest.param(
+            "template <typename T> struct Box {};\n"
+            "template <> struct Box<int> {\n  void get();\n};\n"
+            "void Box<int>::get() {}\n",
+            {"Box<int>::get()"},
+            id="explicit_specialisation_member",
+        ),
+        pytest.param(
+            "template <typename T, int N> struct P {};\n"
+            "template <typename T> struct P<T, 4> {\n  void fill();\n};\n"
+            "template <typename U> void P<U, 4>::fill() {}\n",
+            {"P<T,4>::fill()"},
+            id="renamed_partial_specialisation_member",
+        ),
+        pytest.param(
+            "template <typename T> struct Outer {};\n"
+            "template <> struct Outer<int> {\n"
+            "  template <typename U> struct Inner {\n    void n();\n  };\n};\n"
+            "template <typename U> void Outer<int>::Inner<U>::n() {}\n",
+            {"Outer<int>::Inner::n()"},
+            id="member_template_of_an_explicit_specialisation",
+        ),
+    ],
+)
+def test_a_specialisation_member_is_named_alike_in_and_out_of_its_class(
+    source: str, expected: set[str]
+) -> None:
+    """A member of a partial specialisation is named with its arguments in the class
+    and out of line (``P<T,4>::fill``), a primary template's member without them both
+    times (``Box::get``), an explicit specialisation's with them both times; out of
+    line, a qualifier the same as a partial specialisation of the file but for its
+    parameter names is spelled as that specialisation (renamed parameters, a typelist's
+    head and tail, a primary with a defaulted parameter); and an explicit
+    specialisation's qualifier (``Outer<int>``) takes no template header. So a
+    declaration and its definition share a name."""
+    assert _functions(source) == expected
+
+
+def test_a_marker_on_a_partial_specialisation_member(tmp_path: Path) -> None:
+    """A marker in a partial specialisation's class, and one on its out-of-line
+    definition written with other parameter names, name one member, apart from the
+    primary template's."""
+    source = (
+        "template <typename T, int N> struct P {\n  // @need-ids: REQ_P\n"
+        "  void fill();\n};\n"
+        "template <typename T> struct P<T, 4> {\n  // @need-ids: REQ_D\n"
+        "  void fill();\n};\n"
+        "// @need-ids: REQ_U\ntemplate <typename U> void P<U, 4>::fill() {}\n"
+        "template <typename... Ts> struct L { int size() const; };\n"
+        "template <typename Head, typename... Tail> struct L<Head, Tail...> {\n"
+        "  // @need-ids: REQ_S\n  int size() const;\n};\n"
+        "template <typename H, typename... T> int L<H, T...>::size() const"
+        " { return 1; }\n"
+    )
+    assert _marker_names(tmp_path, source) == {
+        "REQ_P": "P::fill",
+        "REQ_D": "P<T,4>::fill",
+        "REQ_U": "P<T,4>::fill",
+        "REQ_S": "L<Head,Tail...>::size",
     }
