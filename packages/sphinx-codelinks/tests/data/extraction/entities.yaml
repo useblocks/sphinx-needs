@@ -48,8 +48,9 @@
 # (``clang_getCursorPrettyPrinted``) with ``FullyQualifiedName`` and ``TerseOutput``,
 # which leaves an inline namespace out unless that is ambiguous; a namespace's or a
 # class's is its semantic parents' names and its own, an inline namespace left out. A
-# partial specialisation is spelled with its own parameters (clang's cursor
-# ``P<T, 4>``, where the printed name of a member reads ``P<type-parameter-0-0, 4>``),
+# partial specialisation is spelled with its own parameters, its definition's where a
+# forward declaration names others (clang's cursor ``P<T, 4>``, where the printed name
+# of a member reads ``P<type-parameter-0-0, 4>``),
 # and every name is squeezed: no whitespace but one space between two identifier
 # characters.
 
@@ -2112,3 +2113,94 @@ rule_cpp_namespace_macro_used_other_than_alone:
     LIB_NAMESPACE_BEGIN void h(); LIB_NAMESPACE_END
   truth:
     - {id: IMPL_R_NSU_1, outcome: fallback, entity_kind: "function", qualified_name: "g", start: 6, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::g() -- the macro is also used beside code (line 8), so it is not read"}
+
+rule_cpp_qualifier_through_an_inline_namespace:
+  # A function written with a qualifier through one of the file's own inline
+  # namespaces is named without it, as its declaration is, except where two
+  # definitions of the file would then share a name and parameters.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib {
+    inline namespace v1 {
+    // @Declared in an inline namespace, IMPL_R_INLQ_1, impl
+    void f(int);
+    void g();
+    }
+    inline namespace v2 {
+    void g();
+    }
+    }
+    // @Defined through the inline namespace, IMPL_R_INLQ_2, impl
+    void lib::v1::f(int) {}
+    // @One of two siblings' definitions, IMPL_R_INLQ_3, impl
+    void lib::v1::g() {}
+    // @The other's, IMPL_R_INLQ_4, impl
+    void lib::v2::g() {}
+  truth:
+    - {id: IMPL_R_INLQ_1, outcome: exact, entity_kind: "function", qualified_name: "lib::f", start: 4, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::f(int)"}
+    - {id: IMPL_R_INLQ_2, outcome: exact, entity_kind: "method", qualified_name: "lib::f", start: 12, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::f(int) (the syntax reads the namespace qualifier as a class: method)"}
+    - {id: IMPL_R_INLQ_3, outcome: exact, entity_kind: "method", qualified_name: "lib::v1::g", start: 14, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v1::g() (kept: lib::g would name two functions; the syntax reads the namespace qualifier as a class: method)"}
+    - {id: IMPL_R_INLQ_4, outcome: exact, entity_kind: "method", qualified_name: "lib::v2::g", start: 16, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v2::g() (kept: lib::g would name two functions; the syntax reads the namespace qualifier as a class: method)"}
+
+rule_cpp_pack_beside_a_plain_partial_specialisation:
+  # A pack is not a plain parameter: an out-of-line qualifier with two arguments is
+  # spelled as the two-parameter partial specialisation, never as the one with a
+  # pack.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    template <typename... Ts> struct S;
+    template <typename T, typename... Ts> struct S<T, Ts...> {
+        // @The pack's member, IMPL_R_PACK_1, impl
+        void f() {}
+    };
+    template <typename T, typename U> struct S<T, U> { void f(); };
+    // @The plain specialisation's member out of line, IMPL_R_PACK_2, impl
+    template <typename A, typename B> void S<A, B>::f() {}
+  truth:
+    - {id: IMPL_R_PACK_1, outcome: exact, entity_kind: "method", qualified_name: "S<T,Ts...>::f", start: 4, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void S<type-parameter-0-0, type-parameter-0-1...>::f(), its parent spelled S<T, Ts...>"}
+    - {id: IMPL_R_PACK_2, outcome: exact, entity_kind: "method", qualified_name: "S<T,U>::f", start: 8, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void S<type-parameter-0-0, type-parameter-0-1>::f(), its parent the partial specialisation S<T, U>"}
+
+rule_cpp_forward_declared_partial_specialisation:
+  # A forward declaration of a partial specialisation never sets the spelling: the
+  # specialisation with a body does.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    template <class T, int N> struct P {};
+    template <class T> struct P<T, 4>;
+    template <class U> struct P<U, 4> {
+        // @Declared in the specialisation, IMPL_R_FWD_1, impl
+        void fill();
+    };
+    // @Defined out of line, IMPL_R_FWD_2, impl
+    template <class V> void P<V, 4>::fill() {}
+  truth:
+    - {id: IMPL_R_FWD_1, outcome: exact, entity_kind: "method", qualified_name: "P<U,4>::fill", start: 5, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void P<type-parameter-0-0, 4>::fill(), its parent the definition P<U, 4> (line 3), not the forward declaration P<T, 4>"}
+    - {id: IMPL_R_FWD_2, outcome: exact, entity_kind: "method", qualified_name: "P<U,4>::fill", start: 8, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void P<type-parameter-0-0, 4>::fill(), its parent the definition P<U, 4> (line 3), not the forward declaration P<T, 4>"}
+
+rule_cpp_member_of_a_kept_class:
+  # A class kept apart by its inline namespace (another class of its name is in the
+  # parent) keeps its full chain for its members too, in the class and out of line.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib {
+    inline namespace v1 {
+    struct Widget {
+        // @A member of a class kept apart, IMPL_R_KEPT_1, impl
+        void draw();
+    };
+    }
+    struct Widget { void resize() {} };
+    }
+    // @Its definition out of line, IMPL_R_KEPT_2, impl
+    void lib::v1::Widget::draw() {}
+  truth:
+    - {id: IMPL_R_KEPT_1, outcome: exact, entity_kind: "method", qualified_name: "lib::v1::Widget::draw", start: 5, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v1::Widget::draw() (kept: lib::Widget would name two classes)"}
+    - {id: IMPL_R_KEPT_2, outcome: exact, entity_kind: "method", qualified_name: "lib::v1::Widget::draw", start: 11, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v1::Widget::draw() (kept: lib::Widget would name two classes)"}
