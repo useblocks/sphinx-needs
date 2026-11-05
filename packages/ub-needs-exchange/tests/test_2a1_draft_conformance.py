@@ -91,6 +91,9 @@ def test_every_case_is_well_formed() -> None:
         assert set(case.get("options", {})) <= OPTION_KEYS, name
         expect = case["expect"]
         assert set(expect) <= EXPECT_KEYS, name
+        # an empty list of names would pass whatever the record holds
+        for key in ("unset", "nulls"):
+            assert all(expect.get(key, {}).values()), f"{name}: an empty {key} list"
         if "error" in expect:
             assert set(expect) == {"error"}, name
         else:
