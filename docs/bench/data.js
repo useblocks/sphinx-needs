@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793890080791,
+  "lastUpdate": 1793900193444,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -29022,6 +29022,48 @@ window.BENCHMARK_DATA = {
             "value": 187.909734,
             "unit": "MB",
             "extra": "Commit: f63195e0776e616ede50b827f5039c1935da6c8a\nBranch: master\nTime: 2026-11-05T15:46:19+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f409068b6618c41980e4ecbd87b97879f7b9a04d",
+          "message": "✨ needs.json format 2a1 (draft): write it with `needs_json_format_version`, read it with needimport and external needs (experimental) (#2484)\n\nA need now carries where it came from across projects. With\n`needs_json_format_version = \"2a1\"`, sphinx-needs\nwrites the first draft of needs.json format 2, in which every need\nrecords its source: the lines of its directive\nin the file it is written in, each file it was included through, the\nneeds.json it was imported from, the docstring\nor service it came from, and the page and sections it is placed in.\n`needimport` and `needs_external_needs` read such\na file and keep those hops, so a project that imports the need, and one\nthat imports it from there, still knows the\nfile and line it was first written at — each hop names the project it\nbelongs to.\n\n```python\nneeds_json_format_version = \"2a1\"   # or [needs] json_format_version = \"2a1\" in ubproject.toml\n```\n\nA record is `{id, type, fields, links, content, source}`: every value of\nthe fields its need type declares, defaults\nand typed empties (`[]`, `\"\"`) included — the reading project's default\nmay differ, and the file carries no schema\n— but a field whose value is `null` is left out, and a reader reads it\nas unset (its own default applies, as to a\n`null` today); links as a bare id or `{id, part, condition}`, the\ncontent with its\nparts, and nothing computed (no back links, no `is_*` / `type_*` keys,\nnone of format 1's location keys, which a\nreader projects from the source). The `needs` builder,\n`needs_build_json` and the per-id builder obey the option;\n`needs_json_exclude_fields` (now also `source`), `needs_builder_filter`,\n`needs_reproducible_json` and\n`needs_json_include_link_conditions` apply; `needs_json_remove_defaults`\nand `needs_file` are ignored with a warning.\n\n**Experimental and off by default.** At the default, `1`, the needs.json\nis written byte for byte as before (one\ncrash becomes a warning: a `needs_file` with no `versions`, such as a\n2a1 file, is one `needs.json_load` warning\nand a new file, where it raised `KeyError`). A 2a1 file is readable only\nby the release that wrote it, and every\nbuild that writes one says so in one `needs.beta` warning; a build that\nwrites no needs.json is not warned, so\n`-W` builds of other formats are unaffected. Set the option in `conf.py`\nor `ubproject.toml` (`-D` cannot set\n`\"2a1\"`). Older readers do not read it: sphinx-needs 9.1.0 and 9.2.0\nrefuse it with one warning per reader (`the\nfile is of format version \"2a1\"; this reader reads format version 1\nonly`), 9.0.0 with `'versions' is missing or\nnot an object`, and 8.5.0 aborts the build (external needs:\n`NeedsExternalException: No version defined`;\n`needimport`: `CorruptedNeedsFile: Key 'current_version' missing or\ncorrupted`). ubCode 0.39.0 and earlier refuse it the same way.\n\nReading is not behind the option: `needimport` and external needs read a\n2a1 file whatever it says. What an\nimported or external need answers about where it is from — `docname`,\n`lineno`, `sections`, `section_name`,\n`signature`, `is_import`, `is_external`, `external_url` and `c.source`\nin filters — is what the same need read\nfrom a format-1 file answers: the other project's hops are kept\n(`NeedItemSource.upstream`, provisional), not\nread. What is read of the record itself is less than a format-1 record:\na `needimport` `:filter:` or a\n`target_url` template sees its fields, links, content (`doctype`,\n`parts`), and `docname`, `sections`,\n`section_name` and `signature` from its page, but no `lineno`, `is_*`,\n`type_name`, `external_url` or other\ncomputed key. The hop types stay provisional until the final format 2;\nthe draft does not end that (`docs/api.rst`).\n\nBuilds on the ub-needs-exchange 2a1 reader from #2483. Needs\nub-needs-exchange ≥ 1.2.0 at release.\n\n- format: `docs/builders.rst` \"needs.json format 2a1 (draft)\", and the\npackage's `design/v2a1-draft.md`\n- option: `docs/configuration.rst` `needs_json_format_version`\n- `ENV_DATA_VERSION` 25 → 26 (`NeedItemSource.upstream`)\n- tests: `tests/test_needs_json_2a1.py` (writer + option),\n`tests/test_needs_json_2a1_roundtrip.py` (up → down →\ndown2; facets vs a format-1 import; external; origin fallback; every\nlink spelling), a codelinks code-hop test",
+          "timestamp": "2026-11-05T18:34:55+01:00",
+          "tree_id": "add0c2eaea7c78c308d2ce5f3631b7b9a644f67b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f409068b6618c41980e4ecbd87b97879f7b9a04d"
+        },
+        "date": 1793900192866,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07311327000000745,
+            "unit": "s",
+            "extra": "Commit: f409068b6618c41980e4ecbd87b97879f7b9a04d\nBranch: master\nTime: 2026-11-05T18:34:55+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.787756002999998,
+            "unit": "s",
+            "extra": "Commit: f409068b6618c41980e4ecbd87b97879f7b9a04d\nBranch: master\nTime: 2026-11-05T18:34:55+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 184.510955,
+            "unit": "MB",
+            "extra": "Commit: f409068b6618c41980e4ecbd87b97879f7b9a04d\nBranch: master\nTime: 2026-11-05T18:34:55+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
