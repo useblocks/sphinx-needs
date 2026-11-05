@@ -11,7 +11,7 @@ Improvements
 ............
 
 - ✨ **needs.json format 2a1 (experimental draft)**: write it with :ref:`needs_json_format_version` ``= "2a1"``,
-  off by default (:pr:`XXXX`)
+  off by default (:pr:`2484`)
 
   Each need in a 2a1 file carries its source: the lines of its directive in the file it is written in, each file it
   was included through, the needs.json it was imported from, and the docstring or the service it came from, innermost
