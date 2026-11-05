@@ -630,6 +630,15 @@ class _CppNaming:
         ``name_end`` (``ns::`` or empty)."""
         return self.macros(name_end) if self.macros is not None else ""
 
+    def specs_at(
+        self, node: TreeSitterNode, source: bytes | None, name_end: int
+    ) -> tuple[_PartialSpecs, str] | None:
+        """The file's partial specialisations, with where the templates a name written
+        at ``node`` (ending at ``name_end``) qualifies are (:func:`_cpp_scope_of`)."""
+        if self.specs is None:
+            return None
+        return self.specs, _cpp_scope_of(node, source, self.macros_at(name_end))
+
 
 _ALONE = _CppNaming()
 
@@ -706,10 +715,10 @@ def _cpp_parameter_name(parameter: TreeSitterNode, source: bytes | None) -> str:
     return _squeeze(_cpp_text(name, source))
 
 
-def _cpp_template_arguments(part: str) -> list[str] | None:
+def _cpp_written_arguments(part: str) -> list[str] | None:
     """The arguments of ``part``'s template argument list (``P<T,4>`` is ``T`` and
-    ``4``), split at its top-level commas; a pack expansion ``Ts...`` is ``Ts``.
-    ``None`` when ``part`` has no argument list."""
+    ``4``), split at its top-level commas, a pack expansion with its ``...``
+    (``Ts...``). ``None`` when ``part`` has no argument list."""
     open_at = part.find("<")
     if open_at < 0 or not part.endswith(">") or open_at + 1 > len(part) - 1:
         return None
@@ -725,9 +734,17 @@ def _cpp_template_arguments(part: str) -> list[str] | None:
             arguments.append(inner[start:index])
             start = index + 1
     arguments.append(inner[start:])
+    return [argument.strip() for argument in arguments]
+
+
+def _cpp_template_arguments(part: str) -> list[str] | None:
+    """:func:`_cpp_written_arguments`, a pack expansion without its ``...`` (``Ts...``
+    is ``Ts``): what a header's parameter names are compared with."""
+    written = _cpp_written_arguments(part)
+    if written is None:
+        return None
     stripped = []
-    for argument in arguments:
-        argument = argument.strip()
+    for argument in written:
         while argument.endswith("..."):
             argument = argument[: -len("...")]
         stripped.append(argument)
@@ -784,19 +801,38 @@ def _cpp_canonical(arguments: list[str], parameters: list[str]) -> list[str]:
     return canonical
 
 
+@dataclass(frozen=True)
+class _PartialSpec:
+    """One partial specialisation :class:`_PartialSpecs` holds."""
+
+    spelled: str
+    """Its last name part, squeezed (``P<T,4>``)."""
+    canonical: list[str]
+    """Its arguments up to its own parameter names (:func:`_cpp_canonical`)."""
+    defined: bool
+    """Whether it has a body: a forward declaration does not."""
+
+
 class _PartialSpecs:
-    """The partial specialisations of class templates a C++ file declares, by template
-    name: each as it spells its last name part (``P<T,4>``) and its arguments up to its
-    own parameter names (:func:`_cpp_canonical`). An out-of-line qualifier the same but
-    for its parameter names is spelled as the specialisation is (:func:`_cpp_name`), so
-    the members it defines join their in-class declarations."""
+    """The partial specialisations of class templates a C++ file declares, by the
+    template's qualified name (:func:`_cpp_scope_of` and its name: ``ns1::P``, so
+    ``ns1::P<T,4>`` and ``ns2::P<U,4>`` never share one): each as it spells its last
+    name part (``P<T,4>``), its arguments up to its own parameter names, a pack's
+    ``...`` kept (:func:`_cpp_canonical`), and whether it has a body. An out-of-line
+    qualifier the same but for its parameter names as exactly one spelling of those
+    with a body is spelled as it is (:func:`_cpp_name`), so the members the
+    specialisation defines join their in-class declarations; a forward declaration
+    never sets the spelling, and where two spellings remain none does."""
 
     def __init__(self) -> None:
-        self.by_template: dict[str, list[tuple[str, list[str]]]] = {}
+        self.by_template: dict[str, list[_PartialSpec]] = {}
 
-    def add(self, node: TreeSitterNode, source: bytes | None) -> None:
+    def add(
+        self, node: TreeSitterNode, source: bytes | None, prefix: Callable[[int], str]
+    ) -> None:
         """``node``, when it is a class, struct or union named with template arguments
-        under a header with parameters (a partial specialisation)."""
+        under a header with parameters (a partial specialisation); ``prefix`` gives the
+        namespaces the file's own macros open around a name ending at a byte."""
         if (
             node.type not in ("class_specifier", "struct_specifier", "union_specifier")
             or node.parent is None
@@ -809,31 +845,49 @@ class _PartialSpecs:
         headers = _cpp_template_headers(node, source)
         if not headers or not headers[-1]:
             return
-        part = _cpp_split(_cpp_class_name(name, node, source))[-1]
-        arguments = _cpp_template_arguments(part)
+        *qualifiers, part = _cpp_split(_cpp_class_name(name, node, source))
+        arguments = _cpp_written_arguments(part)
         if arguments is None:
             return
-        self.by_template.setdefault(part.split("<", 1)[0], []).append(
-            (part, _cpp_canonical(arguments, headers[-1]))
+        template = _cpp_scope_of(node, source, prefix(name.end_byte))
+        template += "".join(f"{_strip_template_args(q)}::" for q in qualifiers)
+        template += part.split("<", 1)[0]
+        self.by_template.setdefault(template, []).append(
+            _PartialSpec(
+                part,
+                _cpp_canonical(arguments, headers[-1]),
+                node.child_by_field_name("body") is not None,
+            )
         )
 
-    def spelling(
-        self, part: str, arguments: list[str], parameters: list[str]
-    ) -> str | None:
-        """How a partial specialisation of the file spells ``part`` (a qualifier with
-        ``arguments`` under a header of ``parameters``), when one is the same but for
-        its parameter names."""
+    def spelling(self, scope: str, part: str, parameters: list[str]) -> str | None:
+        """How the partial specialisations of the file spell ``part`` (a qualifier in
+        ``scope``, :func:`_cpp_scope_of` and the qualifiers before it, under a header
+        of ``parameters``): the one spelling of those with a body that are the same but
+        for their parameter names, when there is exactly one."""
+        arguments = _cpp_written_arguments(part)
+        if arguments is None:
+            return None
         wanted = _cpp_canonical(arguments, parameters)
-        return next(
-            (
-                spelled
-                for spelled, canonical in self.by_template.get(
-                    part.split("<", 1)[0], ()
-                )
-                if canonical == wanted
-            ),
-            None,
-        )
+        spellings = {
+            spec.spelled
+            for spec in self.by_template.get(scope + part.split("<", 1)[0], ())
+            if spec.defined and spec.canonical == wanted
+        }
+        return next(iter(spellings)) if len(spellings) == 1 else None
+
+
+def _cpp_scope_of(node: TreeSitterNode, source: bytes | None, macros: str) -> str:
+    """Where the templates a name written at ``node`` qualifies are looked up:
+    ``macros`` (the namespaces the file's own macros open around it, ``ns::`` or
+    empty), then the namespaces and classes around it, an inline namespace left out
+    (:func:`_cpp_containers`), each without its arguments and followed by ``::``."""
+    segments, _ = _cpp_containers(node, source, _ALONE)
+    return macros + "".join(
+        f"{_strip_template_args(part)}::"
+        for segment in segments
+        for part in _cpp_split(segment)
+    )
 
 
 def _cpp_name(
@@ -841,19 +895,22 @@ def _cpp_name(
     headers: list[list[str]],
     *,
     strip_last: bool,
-    specs: _PartialSpecs | None,
+    specs: tuple[_PartialSpecs, str] | None,
 ) -> str:
     """A name as the naming spells it: ``text`` squeezed, without a leading ``::``.
 
     A qualifier's template argument list that names a parameter of the next
     ``template <…>`` header around the definition (``headers``, outermost first) is
     matched with that header; one that names none of them (an explicit specialisation,
-    ``Outer<int>``) is kept and takes no header. A matched list is spelled as a partial
+    ``Outer<int>``) is kept and takes no header but an empty ``template <>``
+    (``template <> template <class U> void Outer<int>::Inner<U>::n()`` matches
+    ``Inner<U>`` with ``<class U>``). A matched list is spelled as a partial
     specialisation of the file spells its arguments when the two are the same but for
-    their own parameter names (``specs``: ``template <typename U> void P<U,4>::fill()``
-    is ``P<T,4>::fill`` when the file declares ``template <typename T> struct
-    P<T,4>``). Otherwise it is the template's own when its arguments are exactly the
-    header's parameter names (the primary template's member,
+    their own parameter names (``specs``, with the scope the name is written in, ``ns::``
+    or empty: ``template <typename U> void P<U,4>::fill()`` is ``P<T,4>::fill`` when the
+    file defines ``template <typename T> struct P<T,4> {…}``; :class:`_PartialSpecs`).
+    Otherwise it is the template's own when its arguments are exactly the header's
+    parameter names (the primary template's member,
     ``template <typename T> void Box<T>::get()``), named without it (``Box::get``), and
     a specialisation's, kept, when they are not (``template <typename B> void
     W<B,4>::fill()`` is ``W<B,4>::fill``). The last part's list is stripped when
@@ -863,31 +920,37 @@ def _cpp_name(
     last = len(parts) - 1
     remaining = iter(headers)
     upcoming = next(remaining, None)
+    # where the template a qualifier names is: the scope, then the qualifiers before
+    # it, without their arguments
+    path = specs[1] if specs is not None else ""
     spelled: list[str] = []
     for index, part in enumerate(parts):
         if index == last:
             spelled.append(_strip_template_args(part) if strip_last else part)
-            continue
+            break
         arguments = _cpp_template_arguments(part)
-        if arguments is None or upcoming is None:
+        if arguments is None:
             spelled.append(part)
-            continue
-        parameters = upcoming
-        if not any(
-            word in parameters
-            for argument in arguments
-            for word in _cpp_words(argument)
+        elif upcoming is None or not any(
+            word in upcoming for argument in arguments for word in _cpp_words(argument)
         ):
+            # an explicit specialisation's empty ``template <>`` is its own
+            if upcoming == []:
+                upcoming = next(remaining, None)
             spelled.append(part)
-            continue
-        upcoming = next(remaining, None)
-        as_spec = specs.spelling(part, arguments, parameters) if specs else None
-        if as_spec is not None:
-            spelled.append(as_spec)
-        elif parameters == arguments:
-            spelled.append(_strip_template_args(part))
         else:
-            spelled.append(part)
+            parameters = upcoming
+            upcoming = next(remaining, None)
+            as_spec = (
+                specs[0].spelling(path, part, parameters) if specs is not None else None
+            )
+            if as_spec is not None:
+                spelled.append(as_spec)
+            elif parameters == arguments:
+                spelled.append(_strip_template_args(part))
+            else:
+                spelled.append(part)
+        path += f"{_strip_template_args(part)}::"
     return "::".join(spelled)
 
 
@@ -1238,7 +1301,7 @@ def _cpp_conversion(
     cast: TreeSitterNode,
     containers: tuple[list[str], list[SemanticElement]],
     source: bytes | None,
-    specs: _PartialSpecs | None,
+    naming: _CppNaming,
 ) -> EntityName:
     """A conversion operator, named ``ns::W::operator const char*``: the qualifier
     written before the ``operator_cast``, then ``operator`` and its target type as
@@ -1261,7 +1324,7 @@ def _cpp_conversion(
         head,
         _cpp_template_headers(node, source),
         strip_last=_cpp_templated(node),
-        specs=specs,
+        specs=naming.specs_at(node, source, cast.start_byte),
     )
     own = f"{qualifier}operator {_squeeze(target)}"
     spelled = cast_text[: target_end - cast.start_byte].decode("utf-8", "replace")
@@ -1283,7 +1346,7 @@ def _cpp_describe_in(
     if node.type in ("function_definition", "declaration", "field_declaration"):
         cast = _cpp_operator_cast(node)
         if cast is not None:
-            return _cpp_conversion(node, cast, (prefix, outer), source, naming.specs)
+            return _cpp_conversion(node, cast, (prefix, outer), source, naming)
         if _cpp_defined_by_macro(node):
             return None
         declarator = cpp_function_declarator(node)
@@ -1298,7 +1361,7 @@ def _cpp_describe_in(
             _cpp_text_without_comments(inner, source),
             _cpp_template_headers(node, source),
             strip_last=_cpp_templated(node),
-            specs=naming.specs,
+            specs=naming.specs_at(node, source, inner.end_byte),
         )
         last = own.rsplit("::", 1)[-1]
         qualifier = own.rsplit("::", 1)[0] if "::" in own else None
@@ -1860,7 +1923,7 @@ def cpp_renames(
         inline_here = node.type == "namespace_definition" and (
             _cpp_inline_namespace_or_part(node)
         )
-        found.specs.add(node, source)
+        found.specs.add(node, source, prefix)
         if inline_here:
             for path in _cpp_inline_paths_of(node, source, prefix):
                 found.inline_names.add(path.rsplit("::", 1)[-1])

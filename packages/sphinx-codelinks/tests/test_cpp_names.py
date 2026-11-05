@@ -828,3 +828,90 @@ def test_inline_is_a_token(source: str, inline: bool) -> None:
     namespace = parser.parse(source.encode("utf-8")).root_node.named_children[0]
     assert namespace.type == "namespace_definition"
     assert entity._cpp_inline_namespace_or_part(namespace) == inline
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
+            "template <typename... Ts> struct S;\n"
+            "template <typename T, typename... Ts> struct S<T, Ts...> { void f() {} };\n"
+            "template <typename T, typename U> struct S<T, U> { void f(); };\n"
+            "template <typename A, typename B> void S<A, B>::f() {}\n",
+            {"decl S<T,U>::f()", "def S<T,Ts...>::f()", "def S<T,U>::f()"},
+            id="a_pack_is_not_a_plain_parameter",
+        ),
+        pytest.param(
+            "template <typename... Ts> struct S;\n"
+            "template <typename... Ts> struct S<int, Ts...> { void f() {} };\n"
+            "template <typename T> struct S<int, T> { void f(); };\n"
+            "template <typename A> void S<int, A>::f() {}\n",
+            {"decl S<int,T>::f()", "def S<int,Ts...>::f()", "def S<int,T>::f()"},
+            id="a_pack_after_a_fixed_argument",
+        ),
+        pytest.param(
+            "template <class T, int N> struct P {};\n"
+            "template <class T> struct P<T, 4>;\n"
+            "template <class U> struct P<U, 4> { void fill(); };\n"
+            "template <class V> void P<V, 4>::fill() {}\n",
+            {"decl P<U,4>::fill()", "def P<U,4>::fill()"},
+            id="a_forward_declaration_with_other_names",
+        ),
+        pytest.param(
+            "template <typename T, int N> struct P {};\n"
+            "template <typename T> struct P<T, 4>;\n"
+            "template <typename U> struct P<U, 4> { void fill(); };\n"
+            "template <typename U> void P<U, 4>::fill() {}\n",
+            {"decl P<U,4>::fill()", "def P<U,4>::fill()"},
+            id="a_forward_declaration_then_the_definition",
+        ),
+        pytest.param(
+            "namespace ns1 {\ntemplate <class T, int N> struct P {};\n"
+            "template <class T> struct P<T, 4> { void fill(); };\n}\n"
+            "namespace ns2 {\ntemplate <class T, int N> struct P {};\n"
+            "template <class U> struct P<U, 4> { void fill(); };\n}\n"
+            "template <class V> void ns1::P<V, 4>::fill() {}\n"
+            "template <class V> void ns2::P<V, 4>::fill() {}\n",
+            {
+                "decl ns1::P<T,4>::fill()",
+                "decl ns2::P<U,4>::fill()",
+                "def ns1::P<T,4>::fill()",
+                "def ns2::P<U,4>::fill()",
+            },
+            id="two_namespaces",
+        ),
+        pytest.param(
+            "struct A {\n  template <class T> struct In {};\n"
+            "  template <class U> struct In<U*> { void m(); };\n};\n"
+            "struct B {\n  template <class T> struct In {};\n"
+            "  template <class W> struct In<W*> { void m(); };\n};\n"
+            "template <class X> void A::In<X*>::m() {}\n"
+            "template <class X> void B::In<X*>::m() {}\n",
+            {
+                "decl A::In<U*>::m()",
+                "decl B::In<W*>::m()",
+                "def A::In<U*>::m()",
+                "def B::In<W*>::m()",
+            },
+            id="two_classes_members",
+        ),
+        pytest.param(
+            "template <class T> struct Outer"
+            " { template <class U> struct Inner { void n(); }; };\n"
+            "template <> template <class U> void Outer<int>::Inner<U>::n() {}\n",
+            {"decl Outer::Inner::n()", "def Outer<int>::Inner::n()"},
+            id="an_explicit_specialisation_s_empty_header",
+        ),
+    ],
+)
+def test_a_qualifier_takes_one_partial_specialisation_s_spelling(
+    source: str, expected: set[str]
+) -> None:
+    """An out-of-line qualifier is spelled as a partial specialisation of the file only
+    when exactly one with a body is the same but for its parameter names, in the same
+    scope: a pack is not a plain parameter (``S<A,B>`` is ``S<T,U>``'s, never
+    ``S<T,Ts...>``'s), a forward declaration never sets the spelling, and two
+    namespaces' or two classes' specialisations of the same name never share one. An
+    explicit specialisation's empty ``template <>`` is its own, so the header after it
+    reaches the next qualifier."""
+    assert _functions(source, which=True) == expected
