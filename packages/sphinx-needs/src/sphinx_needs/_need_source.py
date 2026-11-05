@@ -163,9 +163,10 @@ class NeedSourceHop:
     """The project the hop belongs to: ``None`` for a hop of this build; on a hop read
     from a ``needs.json`` of the experimental format 2a1 (a need's ``upstream``), the name
     of the project that wrote it, as the file gives it -- or, where the file names no
-    project, the file as the reader names it (its path relative to the source directory,
-    its URL, an external source's ``json_path`` or ``json_url`` as configured). A key
-    into a registry of origins (a repository, a test run) later."""
+    project, the file as the reader names it (its path relative to the source
+    directory, a needimport's file or an external source's ``json_path`` alike, or its
+    URL as written). A key into a registry of origins (a repository, a test run)
+    later."""
     physical: NeedSourcePhysical | None = None
     semantic: tuple[NeedSourceSemantic, ...] | None = None
     """Outermost to innermost; ``None`` where it is not determined (the placement's,

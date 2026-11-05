@@ -232,8 +232,9 @@ of its need type, ``null`` where it is not set):
 ones this build adds (the needs.json it was read from, the page of the ``needimport``), and a re-export writes them
 all, in that order, so a need's source grows with each project it passes through. A hop the file gives no ``origin``
 is given the name of the project that wrote the file (its ``project.name``; where the file names none, the file as
-the reader names it: the path relative to the source directory or the URL of a ``needimport``, the ``json_path`` or
-``json_url`` of an external source); an ``origin`` the file states is kept. What an imported or external need
+the reader names it: its path relative to the source directory -- a ``needimport``'s file and an external source's
+``json_path`` alike, whatever the configuration spells -- or its URL as written); an ``origin`` the file states is
+kept. What an imported or external need
 answers about where it is from -- ``docname``, ``lineno``, ``sections``, ``section_name``, ``signature``,
 ``is_import``, ``is_external``, ``external_url`` and ``c.source`` in a filter -- is what the same need read from a
 format-1 file answers: the hops of the other project are kept, not read. An external need's ``external_url`` is
