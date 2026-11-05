@@ -68,6 +68,7 @@ declaration (or on the file): a marker would move to code its author did not mar
 
 from __future__ import annotations
 
+import bisect
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -254,50 +255,50 @@ def _left_as_written(
     the tree did not read as blocks) are: those, every pair inside one of them, and
     every pair whose opening follows the opening or the closing of one left as written
     with only whitespace and comments between (written out, that invocation would read
-    as the declaration of the next opening's block in turn), until none is added."""
-    dropped = set(unread)
-    while True:
-        before = len(dropped)
-        left = [pair for pair in pairs if pair.opening[0] in dropped]
-        for pair in pairs:
-            start = pair.opening[0]
-            if start in dropped:
-                continue
-            inside = any(
-                outer.opening[1] <= start and pair.closing[1] <= outer.closing[0]
-                for outer in left
-            )
-            follows = any(
-                end <= start
-                and _only_trivia(source[end:start].decode("utf-8", "replace"))
-                for other in left
-                for end in (other.opening[1], other.closing[1])
-            )
-            if inside or follows:
-                dropped.add(start)
-        if len(dropped) == before:
-            return dropped
+    as the declaration of the next opening's block in turn).
+
+    One pass in file order: whether a pair is left as written depends only on the pairs
+    that open before it. Only the nearest preceding invocation of a pair left as
+    written can be followed by blanks and comments alone, since any later invocation
+    is a word between them.
+    """
+    dropped: set[int] = set()
+    ends: list[int] = []  # the invocation ends of the pairs left as written, sorted
+    around: list[Pair] = []  # the pairs left as written still open, outermost first
+    for pair in sorted(pairs, key=lambda pair: pair.opening[0]):
+        start = pair.opening[0]
+        while around and around[-1].closing[0] < start:
+            around.pop()
+        nearest = bisect.bisect_right(ends, start) - 1
+        if (
+            start in unread
+            or (around and pair.closing[1] <= around[-1].closing[0])
+            or (nearest >= 0 and _only_trivia(source, ends[nearest], start))
+        ):
+            dropped.add(start)
+            around.append(pair)
+            bisect.insort(ends, pair.opening[1])
+            bisect.insort(ends, pair.closing[1])
+    return dropped
 
 
-def _only_trivia(text: str) -> bool:
-    """Whether ``text`` holds only whitespace, line splices and comments."""
-    rest = text
-    while True:
-        rest = rest.lstrip().lstrip("\\")
-        if rest[:1].isspace():
-            continue
-        if not rest:
-            return True
-        if rest.startswith("//"):
-            end = rest.find("\n", 2)
-            rest = "" if end < 0 else rest[end:]
-        elif rest.startswith("/*"):
-            end = rest.find("*/", 2)
-            if end < 0:
-                return True
-            rest = rest[end + 2 :]
-        else:
-            return False
+# What may stand between two invocations for one to follow the other: whitespace (any
+# Unicode white space, UTF-8 encoded), backslashes (line splices), ``//`` comments
+# (continued over a splice) and block comments (an unclosed one runs to the end).
+_TRIVIA = re.compile(
+    rb"(?:[ \t\n\r\x0b\x0c\\]"
+    rb"|\xc2[\x85\xa0]|\xe1\x9a\x80|\xe2\x80[\x80-\x8a\xa8\xa9\xaf]|\xe2\x81\x9f"
+    rb"|\xe3\x80\x80"
+    rb"|//(?:\\\r?\n|[^\n])*"
+    rb"|/\*[\s\S]*?(?:\*/|\Z))*"
+)
+
+
+def _only_trivia(source: bytes, start: int, end: int) -> bool:
+    """Whether ``source[start:end]`` holds only whitespace, line splices and comments
+    (read in place, never copied)."""
+    found = _TRIVIA.match(source, start, end)
+    return found is not None and found.end() == end
 
 
 def _opens_a_block(tree: Tree, pair: Pair) -> bool:

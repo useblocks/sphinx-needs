@@ -801,8 +801,16 @@ def test_what_is_left_as_written_with_an_unread_pair() -> None:
     left = cpp_macros._left_as_written(source, pairs, {starts[0]})
     # the outer pair, the one inside it, the one after its closing; not the last
     assert left == {starts[0], starts[1], starts[2]}
-    assert cpp_macros._only_trivia("  \n// a\n/* b\n c */ \\\n ")
-    assert not cpp_macros._only_trivia("\nint x;\n")
+
+    def only_trivia(text: bytes) -> bool:
+        return cpp_macros._only_trivia(b"#" + text + b"#", 1, len(text) + 1)
+
+    assert only_trivia(b"  \n// a\n/* b\n c */ \\\n ")
+    assert only_trivia(b"\xc2\xa0\n/* unclosed")
+    # a ``//`` comment continues over a backslash-newline, as C++ reads it
+    assert only_trivia(b" // end \\\ncontinued comment\n")
+    assert not only_trivia(b"\nint x;\n")
+    assert not only_trivia(b"// end\ncode\n")
 
 
 def test_an_unnamed_entity_in_a_pair_is_qualified(tmp_path: Path) -> None:
@@ -877,3 +885,41 @@ def test_a_marker_before_an_opening_is_not_moved(
         assert after == before, source
     else:
         assert after["scope"] is None, source
+
+
+def test_a_long_run_of_back_to_back_pairs_after_an_unread_one() -> None:
+    """Pairs back to back after a macro statement leave each other as written in turn:
+    the rule decides them in one pass in file order, so 400 such pairs, 4,800 functions,
+    take two parses and keep every function, read as written."""
+    lines = [
+        "#define LIB_NAMESPACE_BEGIN namespace lib {",
+        "#define LIB_NAMESPACE_END }",
+        "WARNINGS_PUSH",
+    ]
+    for block in range(400):
+        lines.append("LIB_NAMESPACE_BEGIN")
+        lines += [f"int f_{block}_{n}(int x) {{ return x; }}" for n in range(12)]
+        lines.append("LIB_NAMESPACE_END")
+    source = ("\n".join(lines) + "\n").encode("utf-8")
+    parser, _ = utils.init_tree_sitter(CommentType.cpp, Path("a.hpp"))
+    tree, macros, count = cpp_macros._parse_macros(
+        parser, source, cpp_macros._left_as_written
+    )
+    assert (count, macros.pairs, _function_definitions(tree)) == (2, (), 4800)
+
+
+def test_a_comment_continued_over_a_splice_is_trivia() -> None:
+    """A ``//`` comment continues over a backslash-newline, as C++ reads it: a pair
+    whose opening follows a dropped pair's closing and such a comment is left as written
+    with it, so the file takes two parses, not the last resort's three."""
+    source = (
+        b"#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
+        b"WARNINGS_PUSH\nLIB_NAMESPACE_BEGIN\nint f() { return 0; }\n"
+        b"LIB_NAMESPACE_END // end \\\ncontinued comment\nLIB_NAMESPACE_BEGIN\n"
+        b"int g() { return 1; }\nint h() { return 2; }\nLIB_NAMESPACE_END\n"
+    )
+    parser, _ = utils.init_tree_sitter(CommentType.cpp, Path("a.hpp"))
+    tree, macros, count = cpp_macros._parse_macros(
+        parser, source, cpp_macros._left_as_written
+    )
+    assert (count, macros.pairs, _function_definitions(tree)) == (2, (), 3)
