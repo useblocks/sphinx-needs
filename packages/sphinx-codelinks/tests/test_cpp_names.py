@@ -1053,3 +1053,40 @@ def test_a_friend_of_a_kept_class_is_named_in_its_namespace(
     it, so a friend declared in the class and defined beside it is one function (a
     hidden friend, a declared friend, the arms of an ABI version)."""
     assert _functions(source, which=True) == expected
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
+            "namespace lib { inline namespace v1 {\nvoid f(); } }\n"
+            "namespace lib { namespace v1 { void f() {} } }\n",
+            {"decl lib::f()", "def lib::f()"},
+            id="reopened_with_its_definition",
+        ),
+        pytest.param(
+            "namespace lib { inline namespace v1 { void f(); } }\n"
+            "namespace lib { namespace v1 {\nvoid g(); } }\nvoid lib::v1::g() {}\n",
+            {"decl lib::f()", "decl lib::g()", "def lib::g()"},
+            id="reopened_then_out_of_line",
+        ),
+        pytest.param(
+            "namespace lib { inline namespace v1 {\nvoid h(); } }\n"
+            "namespace lib::v1 { void h() {} }\n",
+            {"decl lib::h()", "def lib::h()"},
+            id="reopened_by_a_nested_name",
+        ),
+        pytest.param(
+            "namespace a { inline namespace v1 {\nvoid f(); } }\n"
+            "namespace b { namespace v1 { void f() {} } }\n",
+            {"decl a::f()", "def b::v1::f()"},
+            id="a_plain_namespace_of_the_same_name_elsewhere",
+        ),
+    ],
+)
+def test_a_reopened_inline_namespace_is_inline(source: str, expected: set[str]) -> None:
+    """A namespace that reopens an inline namespace of the file without ``inline`` is
+    inline too, as C++ makes it (the first declaration is the inline one): what it
+    holds is named without it, in it and out of line, a nested name too; a plain
+    namespace of the same name elsewhere is not."""
+    assert _functions(source, which=True) == expected

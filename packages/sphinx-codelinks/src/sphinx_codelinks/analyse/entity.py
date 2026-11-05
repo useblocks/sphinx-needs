@@ -674,6 +674,7 @@ class _Lookup:
 
 
 _ALONE = _CppNaming()
+_FULL = _CppNaming(full_chain=True)
 
 
 def _cpp_templated(node: TreeSitterNode) -> bool:
@@ -1124,9 +1125,7 @@ def _cpp_namespaces_around(node: TreeSitterNode, source: bytes | None) -> str:
     parent = node.parent
     while parent is not None:
         if parent.type == "namespace_definition":
-            groups.append(
-                _cpp_namespace_parts(parent, source, own=False, full_chain=True)
-            )
+            groups.append(_cpp_namespace_parts(parent, source, own=False, naming=_FULL))
         parent = parent.parent
     return "".join(f"{part}::" for group in reversed(groups) for part in group)
 
@@ -1217,7 +1216,7 @@ def _cpp_without_parts(name: str, dropped: list[int]) -> str:
 
 
 def _cpp_namespace_parts(
-    node: TreeSitterNode, source: bytes | None, *, own: bool, full_chain: bool
+    node: TreeSitterNode, source: bytes | None, *, own: bool, naming: _CppNaming
 ) -> list[str]:
     """The parts of the namespace ``node``'s name (``namespace a::b`` is ``a`` and
     ``b``) that a name qualified by it keeps.
@@ -1226,20 +1225,61 @@ def _cpp_namespace_parts(
     (``a::inline b`` keeps ``a``), as clang prints a name: ``nlohmann::basic_json``,
     not ``nlohmann::json_abi_v3_12_0::basic_json`` (the ABI tag changes with every
     release). As the entity itself (``own``), its own last part is kept, without the
-    ``inline`` (``a::inline b`` is ``a`` and ``b``). With ``full_chain``, every part is
-    kept, an inline one without its ``inline``.
+    ``inline`` (``a::inline b`` is ``a`` and ``b``). A part that reopens one of the
+    file's inline namespaces without ``inline`` is inline too, as C++ makes it
+    (:func:`_cpp_reopened_parts`, when ``naming`` knows them). With
+    ``naming.full_chain``, every part is kept, an inline one without its ``inline``.
     """
-    if not own and not full_chain and _cpp_is_inline_namespace(node):
-        return []
+    reopened = [] if naming.full_chain else _cpp_reopened_parts(node, source, naming)
     parts = _cpp_split(_cpp_namespace_name(node, source))
     last = len(parts) - 1
     kept: list[str] = []
     for index, part in enumerate(parts):
-        if not part.startswith("inline "):
-            kept.append(part)
-        elif full_chain or (own and index == last):
+        inline = part.startswith("inline ") or (
+            index == last and _cpp_is_inline_namespace(node)
+        )
+        if (
+            not (inline or index in reopened)
+            or naming.full_chain
+            or (own and index == last)
+        ):
             kept.append(part.removeprefix("inline "))
     return kept
+
+
+def _cpp_reopened_parts(
+    node: TreeSitterNode, source: bytes | None, naming: _CppNaming
+) -> list[int]:
+    """The parts of the namespace ``node``'s name that reopen one of the file's inline
+    namespaces without ``inline`` (``namespace lib { namespace v1 {…} }`` after
+    ``inline namespace v1`` in ``lib``): their paths, read as the file's inline paths
+    are, are among ``naming``'s; none when it has none."""
+    name = node.child_by_field_name("name")
+    if naming.inline is None or name is None:
+        return []
+    path = naming.macros_at(name.end_byte) + _cpp_namespaces_around(node, source)
+    reopened: list[int] = []
+    for index, part in enumerate(_cpp_split(_cpp_namespace_name(node, source))):
+        path += part.removeprefix("inline ")
+        if path in naming.inline:
+            reopened.append(index)
+        path += "::"
+    return reopened
+
+
+def _cpp_reopens_inline(
+    node: TreeSitterNode,
+    source: bytes | None,
+    prefix: Callable[[int], str],
+    paths: set[str],
+) -> bool:
+    """The namespace ``node`` reopens one of the file's inline namespaces met so far
+    without ``inline`` (a part's path is among ``paths``), which C++ makes inline too:
+    the first declaration is the inline one."""
+    if not paths:
+        return False
+    naming = _CppNaming(inline=frozenset(paths), macros=prefix)
+    return bool(_cpp_reopened_parts(node, source, naming))
 
 
 def _cpp_operator_at(text: str, index: int) -> bool:
@@ -1306,9 +1346,7 @@ def _cpp_containers(
     parent = node.parent
     while parent is not None:
         if parent.type == "namespace_definition":
-            parts = _cpp_namespace_parts(
-                parent, source, own=False, full_chain=naming.full_chain
-            )
+            parts = _cpp_namespace_parts(parent, source, own=False, naming=naming)
             if parts:
                 segments.append("::".join(parts))
                 groups.append([_element("namespace", part) for part in parts])
@@ -1524,9 +1562,7 @@ def _cpp_describe_in(
             name.end_byte,
         )
     if node.type == "namespace_definition":
-        own_parts = _cpp_namespace_parts(
-            node, source, own=True, full_chain=naming.full_chain
-        )
+        own_parts = _cpp_namespace_parts(node, source, own=True, naming=naming)
         name = node.child_by_field_name("name")
         return _named(
             "namespace",
@@ -2074,6 +2110,7 @@ def cpp_renames(
         in_inline = inside[-1]
         inline_here = node.type == "namespace_definition" and (
             _cpp_inline_namespace_or_part(node)
+            or _cpp_reopens_inline(node, source, prefix, found.inline_paths)
         )
         # a class head written through an inline namespace leaves it out, and so does
         # everything the class holds
