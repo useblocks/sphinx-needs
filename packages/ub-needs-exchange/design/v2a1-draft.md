@@ -136,9 +136,9 @@ format 1's records reads it unchanged. `Record.fields` is a new object of:
 1. **`id`** and **`type`**, as written (`type` is not checked here, as format 1's is not;
    absent, there is no `type` key).
 2. **every key of `fields`**: core and project fields in one name space — except the
-   seven keys the projection owns, `id`, `type`, `content`, `doctype`, `parts`, `docname`
-   and `sections`, which come only from the record itself, its `content` and its
-   placement: such a key of `fields` is not read, and each is reported (`field_reserved`,
+   nine keys the projection owns, `id`, `type`, `content`, `doctype`, `parts`, `docname`,
+   `sections`, `section_name` and `signature`, which come only from the record itself,
+   its `content` and its placement: such a key of `fields` is not read, and each is reported (`field_reserved`,
    path `needs.<index>.fields.<key>`). A `fields` that is not an object is not read
    (`fields_not_object`, path `needs.<index>.fields`).
 3. **every link type of `links`**, each a list of format-1 link strings (§5). A `links`
@@ -160,13 +160,27 @@ format 1's records reads it unchanged. `Record.fields` is a new object of:
    `document` and `sections` = the `name` of each of its `semantic` entries of kind
    `section`, **innermost first**: a hop's `semantic` is outermost first, and format 1's
    `sections` innermost first (sphinx-needs' `project_legacy` in `_need_source.py`, the
-   rule that writes format 1's `sections` from the same list). A placement with no
-   `semantic` has `sections` `[]`; a record with no placement has neither key.
+   rule that writes format 1's `sections` from the same list). From the same list, as
+   format 1 writes them: `section_name` = the first of those `sections` (the innermost),
+   or `null` when there is none (sphinx-needs' `NeedItem`, whose `section_name` is
+   `sections[0]` or `None`), and `signature` = the `signature` extra of the innermost
+   `semantic` entry whose `kind` is not `section` and whose `signature` is not empty, or
+   `null` when there is none (`project_legacy`, `_need_source.py` lines 1263–1280 at
+   `75267db20`). A placement with no `semantic` has `sections` `[]` and a `null`
+   `section_name` and `signature`; a record with no placement has none of the four keys.
+   Only the placement gives them: a domain object on another hop (an upstream page)
+   gives no `signature`.
 
 What a draft's record does not get: format 1's legacy `description`-as-content rule
 (shared contract §6.3) — a field named `description` is a field, and a record with no
-`content` has none —, schema defaults, and any key a format-1 record computes (`section_name`,
-`signature`, back links, `is_external`, `lineno`, …).
+`content` has none —, and schema defaults. **Nor does it get any other key a format-1
+record carries**: `lineno`, `lineno_content`, `is_import`, `is_external`,
+`external_url`, the config-derived keys (`type_name`, `type_prefix`, `type_color`,
+`type_style`, `external_css`, …), the back links (`<link type>_back`) and every other
+computed key (`is_need`, `is_part`, `parent_need`, `id_parent`, `id_complete`,
+`is_modified`, `modifications`, `constraints_*`, `has_dead_links`, …). A reader that
+filters or renders over a record's keys (sphinx-needs' `needimport` `:filter:`, an
+external source's `target_url`) finds them absent in a draft's record.
 
 Each record's `fields` is a new object; its values are the document's own (the shared
 contract's §6.6), except the link lists and `parts`, which the projection builds.
@@ -183,6 +197,9 @@ Enforced by: corpus: `a-record-is-projected-to-the-format-1-shape`,
 `an-include-chain-has-its-placement-last`,
 `of-several-hops-with-a-document-the-last-is-the-placement`,
 `the-placement-s-sections-are-innermost-first`, `a-placement-without-semantic-has-no-sections`,
+`the-section-name-is-the-innermost-section`, `a-domain-object-of-the-placement-gives-the-signature`,
+`the-signature-skips-an-entry-without-one`, `a-signature-extra-on-a-section-is-not-the-signature`,
+`only-the-placement-gives-the-signature`,
 `the-placement-s-keys-are-not-read-from-fields`;
 `test_reader.py::test_a_null_value_of_a_draft_is_read`,
 `…::test_a_draft_s_records_do_not_alter_the_document`.
@@ -211,7 +228,10 @@ One place the need's text passed through, as sphinx-needs' `NeedSourceHop` recor
 `None` value left out. Innermost first: `source[0]` is where the text is written, the
 last hop with a `document` the page the need is placed on. A writer that re-exports a
 need it read appends its own hops after the ones it read, and copies those as it holds
-them.
+them — so what survives a re-export is what that writer holds: sphinx-needs holds a hop
+as its `NeedSourceHop`, and a re-export by it writes only the keys the table below
+names, so a hop key another writer added (§4.2) does not survive a sphinx-needs
+re-export (in 2a1).
 
 | key | shape |
 |---|---|
