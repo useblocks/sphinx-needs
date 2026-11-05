@@ -52,6 +52,14 @@ Requirements
    :links: REQ_1.p1
 
 .. include:: mid.rst
+
+Functions
+---------
+
+.. py:function:: sigfunc()
+
+   .. req:: In a function
+      :id: REQ_SIG
 """
 
 UP_FILES = {
@@ -132,6 +140,8 @@ def _facts(need: Any) -> dict[str, Any]:
         "is_import": need["is_import"],
         "external_url": need["external_url"],
         "sections": list(need["sections"]),
+        "section_name": need["section_name"],
+        "signature": need["signature"],
         "kind": facets.kind_of(source),
         "path": facets.path_of(source),
         "line": facets.line_of(source),
@@ -168,6 +178,8 @@ def chain(make_app: Any, tmp_path: Path) -> dict[str, Any]:
     shutil.copy(down_json, down2_src / "down.json")
     down2, down2_json = _build(make_app, down2_src)
     return {
+        "up_json": up_json,
+        "up_v1_json": up_v1_json,
         "up": _records(up_json),
         "down_app": down,
         "down": _records(down_json),
@@ -218,17 +230,24 @@ def test_an_imported_need_keeps_its_upstream_beside_its_hops(
 
 
 @pytest.mark.parametrize(
-    "need_id", ["D_REQ_1", "D_REQ_2", "D_REQ_INC", "X_REQ_1", "X_REQ_2", "X_REQ_INC"]
+    "need_id",
+    [
+        *("D_REQ_1", "D_REQ_2", "D_REQ_INC", "D_REQ_SIG"),
+        *("X_REQ_1", "X_REQ_2", "X_REQ_INC", "X_REQ_SIG"),
+    ],
 )
 def test_what_a_need_answers_is_a_format_1_import_s(
     chain: dict[str, Any], need_id: str
 ) -> None:
-    """The legacy keys and the ``c.source`` facets of an imported and an external need
-    are those of the same need read from the format-1 file: the upstream hops are kept,
-    not read."""
+    """The legacy keys (``section_name`` and ``signature`` among them: ``X_REQ_SIG``'s is
+    its upstream page's ``py:function``) and the ``c.source`` facets of an imported and
+    an external need are those of the same need read from the format-1 file: the
+    upstream hops are kept, not read."""
     read = SphinxNeedsData(chain["down_app"].env).get_needs_view()[need_id]
     v1 = SphinxNeedsData(chain["down_v1_app"].env).get_needs_view()[need_id]
     assert _facts(read) == _facts(v1)
+    if need_id == "X_REQ_SIG":
+        assert (read["signature"], read["section_name"]) == ("sigfunc", "Functions")
 
 
 def test_an_external_need_of_a_2a1_file(chain: dict[str, Any]) -> None:
@@ -507,3 +526,27 @@ def test_an_unnamed_writer_is_named_by_its_file_downstream(
     source = SphinxNeedsData(down.env).get_needs_view()["REQ_001"].source
     assert isinstance(source, NeedItemSource)
     assert [hop.origin for hop in source.upstream] == ["up.json"]
+
+
+@pytest.mark.parametrize("file", ["up_json", "up_v1_json"])
+def test_a_filter_over_section_name_imports_alike(
+    chain: dict[str, Any], file: str, make_app: Any, tmp_path: Path
+) -> None:
+    """A ``needimport`` ``:filter:`` over ``section_name`` (which a 2a1 record's
+    projection gives from its placement) imports the same needs from either file."""
+    srcdir = _write(
+        tmp_path / "filtered",
+        {
+            "conf.py": 'extensions = ["sphinx_needs"]\n',
+            "index.rst": "F\n=\n\n.. needimport:: up.json\n"
+            '   :filter: section_name == "Requirements"\n',
+        },
+    )
+    shutil.copy(chain[file], srcdir / "up.json")
+    app, _ = _build(make_app, srcdir)
+    assert build_warnings(app) == []
+    assert sorted(SphinxNeedsData(app.env).get_needs_view()) == [
+        "REQ_1",
+        "REQ_2",
+        "REQ_INC",
+    ]
