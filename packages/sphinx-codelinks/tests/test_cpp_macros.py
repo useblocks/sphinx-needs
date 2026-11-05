@@ -809,6 +809,7 @@ def test_what_is_left_as_written_with_an_unread_pair() -> None:
     assert only_trivia(b"\xc2\xa0\n/* unclosed")
     # a ``//`` comment continues over a backslash-newline, as C++ reads it
     assert only_trivia(b" // end \\\ncontinued comment\n")
+    assert only_trivia(b"\n// end \\\r\ncontinued\n")
     assert not only_trivia(b"\nint x;\n")
     assert not only_trivia(b"// end\ncode\n")
 
@@ -956,3 +957,63 @@ def test_a_byte_order_mark_is_no_token(tmp_path: Path) -> None:
     assert _opened(source) == [["lib"]]
     assert _defined(source) == ["lib::f"]
     assert _attached(_analysed(tmp_path, source, "a.hpp")) == [("REQ_1", "lib::f")]
+    # the parsed copy keeps the mark, the buffer's length and every byte outside the
+    # invocations; without the mark, the same file reads the same
+    written = source.encode("utf-8")
+    prepared = prepare(written)
+    assert len(prepared.parse_text) == len(written)
+    assert prepared.parse_text.startswith("\ufeff".encode("utf-8"))
+    assert _opened(source.removeprefix("\ufeff")) == _opened(source)
+
+
+@pytest.mark.parametrize(
+    "between",
+    [
+        pytest.param(
+            "LIB_NAMESPACE_END // end \\\ncontinued comment\n",
+            id="on_the_closing_s_line",
+        ),
+        pytest.param("LIB_NAMESPACE_END\n// end \\\ncontinued\n", id="on_its_own_line"),
+    ],
+)
+def test_a_continued_comment_between_pairs_is_trivia(between: str) -> None:
+    """A ``//`` comment continued by a backslash between a pair left as written and the
+    next one is a comment, as C++ reads it, whether on the closing's line or on its
+    own: the next pair is left as written too, and the file takes two parses."""
+    source = (
+        "#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
+        "WARNINGS_PUSH\nLIB_NAMESPACE_BEGIN\nint f() { return 0; }\n"
+        f"{between}LIB_NAMESPACE_BEGIN\nint h() {{ return 2; }}\n"
+        "int k() { return 3; }\nLIB_NAMESPACE_END\n"
+    ).encode()
+    parser, _ = utils.init_tree_sitter(CommentType.cpp, Path("a.hpp"))
+    _, macros, count = cpp_macros._parse_macros(
+        parser, source, cpp_macros._left_as_written
+    )
+    assert (count, macros.pairs) == (2, ())
+
+
+def test_a_run_of_back_to_back_pairs_is_left_as_written_in_one_pass() -> None:
+    """A run of back-to-back pairs after an unread one is left as written whole: 400 of
+    them, each opening right after the closing before it; a pair after code is not, so
+    the run stops there."""
+    lines = [
+        "#define LIB_NAMESPACE_BEGIN namespace lib {",
+        "#define LIB_NAMESPACE_END }",
+        "WARNINGS_PUSH",
+    ]
+    for block in range(400):
+        lines.append("LIB_NAMESPACE_BEGIN")
+        lines += [f"int f_{block}_{n}(int x) {{ return x; }}" for n in range(12)]
+        lines.append("LIB_NAMESPACE_END")
+    source = ("\n".join(lines) + "\n").encode("utf-8")
+    pairs = prepare(source).scopes.pairs
+    assert len(pairs) == 400
+    first = pairs[0].opening[0]
+    assert cpp_macros._left_as_written(source, pairs, {first}) == {
+        pair.opening[0] for pair in pairs
+    }
+    cut = pairs[200].opening[0]
+    separated = source[:cut] + b"int sep = 0;\n" + source[cut:]
+    pairs = prepare(separated).scopes.pairs
+    assert len(cpp_macros._left_as_written(separated, pairs, {first})) == 200
