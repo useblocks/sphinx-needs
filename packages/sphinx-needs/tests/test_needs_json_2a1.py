@@ -81,8 +81,9 @@ def test_the_needs_builder_writes_2a1(test_app: Any, snapshot: Any) -> None:
     first = _records(app)["REQ_1"]
     assert list(first["fields"]) == [
         # the authored core fields, in their order, then the extras in the schema's
-        *("title", "status", "tags", "layout", "style", "constraints"),
-        *("asil", "duration", "completion"),
+        # (``layout``, ``style``, ``duration`` and ``completion`` are ``null``: left out)
+        *("title", "status", "tags", "constraints"),
+        "asil",
     ]
     assert list(first["source"][0]["physical"]) == [
         "root",
@@ -184,18 +185,36 @@ def test_what_a_record_leaves_out(test_app: Any) -> None:
 )
 def test_a_field_a_need_type_lacks_is_left_out(test_app: Any) -> None:
     """``verdict`` is declared on ``spec`` alone; a ``req`` record has no such key,
-    where v1 writes it ``null`` on every need. A field with a default is written
-    where the need holds the default (``asil``: ``QM``), and a null value is
-    written ``null``: a 2a1 file carries no schema to restore either from."""
+    where v1 writes it ``null`` on every need."""
     app = test_app
     app.build()
 
     records = _records(app)
     assert records["SPEC_1"]["fields"]["verdict"] == "pass"
     assert "verdict" not in records["REQ_1"]["fields"]
-    assert records["REQ_1"]["fields"]["asil"] == "B"
-    assert records["REQ_2"]["fields"]["asil"] == "QM"
-    assert records["REQ_2"]["fields"]["status"] is None
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "needs", "srcdir": PROJECT}], indirect=True
+)
+def test_a_null_value_is_left_out(test_app: Any) -> None:
+    """A field whose value is ``null`` is left out of ``fields``, which a reader reads
+    as unset (its own default applies). Every other value is written: a default, which
+    the reading project's may differ from (``asil``: ``QM``), and a typed empty
+    (``tags``, ``constraints``: ``[]``); a link type without links is ``[]`` too."""
+    app = test_app
+    app.build()
+
+    fields = _records(app)["REQ_2"]["fields"]
+    assert fields == {
+        "title": "The second",
+        "tags": [],
+        "constraints": [],
+        "asil": "QM",
+    }
+    for record in _records(app).values():
+        assert None not in record["fields"].values(), record["id"]
+    assert _records(app)["REQ_2"]["links"]["parent_needs"] == []
 
 
 @pytest.mark.parametrize(

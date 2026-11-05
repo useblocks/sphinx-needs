@@ -20,7 +20,7 @@ from typing import Any
 import pytest
 
 from sphinx_needs import _source_facets as facets
-from sphinx_needs._needsfile_v2a1 import hop_to_json
+from sphinx_needs._needsfile_v2a1 import AUTHORED_CORE, hop_to_json
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.need_item import NeedItemSource
 from sphinx_needs_testkit import build_warnings
@@ -33,6 +33,7 @@ version = "1.0"
 extensions = ["sphinx_needs"]
 exclude_patterns = ["_build", "mid.rst", "frag.rst"]
 needs_json_format_version = {format!r}
+needs_fields = {{"asil": {{"nullable": True}}}}
 """
 
 UP_INDEX = """\
@@ -44,6 +45,7 @@ Requirements
 
 .. req:: First
    :id: REQ_1
+   :asil: B
 
    Body with :np:`(p1) a part`.
 
@@ -74,6 +76,8 @@ version = "2.0"
 extensions = ["sphinx_needs"]
 exclude_patterns = ["_build"]
 needs_json_format_version = "2a1"
+# a default of its own: a value the upstream leaves unset reads as it
+needs_fields = {"asil": {"nullable": True, "default": "QM"}}
 needs_external_needs = [
     {"base_url": "http://up.example", "json_path": "up.json", "id_prefix": "X_"}
 ]
@@ -92,6 +96,7 @@ project = "down2"
 extensions = ["sphinx_needs"]
 exclude_patterns = ["_build"]
 needs_json_format_version = "2a1"
+needs_fields = {"asil": {"nullable": True}}
 """
 
 DOWN2_INDEX = """\
@@ -148,6 +153,12 @@ def _facts(need: Any) -> dict[str, Any]:
         "paths": list(facets.paths_of(source)),
         "symbol": facets.symbol_of(source),
         "hops": [hop_to_json(hop) for hop in source.hops],
+        # every field value, a field the upstream left unset (``null`` in format 1,
+        # absent in 2a1) read as this project's default alike
+        "fields": {
+            **{name: need[name] for name in AUTHORED_CORE},
+            **dict(need.iter_extra_items()),
+        },
     }
 
 
@@ -248,6 +259,8 @@ def test_what_a_need_answers_is_a_format_1_import_s(
     assert _facts(read) == _facts(v1)
     if need_id == "X_REQ_SIG":
         assert (read["signature"], read["section_name"]) == ("sigfunc", "Functions")
+    # set upstream, or left unset there and given this project's default
+    assert read["asil"] == ("B" if need_id.endswith("_REQ_1") else "QM")
 
 
 def test_an_external_need_of_a_2a1_file(chain: dict[str, Any]) -> None:
@@ -538,7 +551,8 @@ def test_a_filter_over_section_name_imports_alike(
     srcdir = _write(
         tmp_path / "filtered",
         {
-            "conf.py": 'extensions = ["sphinx_needs"]\n',
+            "conf.py": 'extensions = ["sphinx_needs"]\n'
+            'needs_fields = {"asil": {"nullable": True}}\n',
             "index.rst": "F\n=\n\n.. needimport:: up.json\n"
             '   :filter: section_name == "Requirements"\n',
         },
