@@ -16,8 +16,9 @@ Improvements
   Each need in a 2a1 file carries its source: the lines of its directive in the file it is written in, each file it
   was included through, the needs.json it was imported from, and the docstring or the service it came from, innermost
   first, then the page it is placed on, with its sections. A record is ``{id, type, fields, links, content,
-  source}``: every value of the fields its need type declares (a default and ``null`` too: the file carries no
-  schema), links as a bare id or ``{id, part, condition}``, and nothing computed -- no back links, no ``is_*`` or
+  source}``: every value of the fields its need type declares (a default and a typed empty too: the file carries no
+  schema), but for a ``null``, which is left out and read as unset, links as a bare id or ``{id, part, condition}``,
+  and nothing computed -- no back links, no ``is_*`` or
   ``type_*`` keys, none of format 1's location keys. The ``needs`` builder, :ref:`needs_build_json` and the per-id
   builder obey the option; :ref:`needs_json_exclude_fields`, :ref:`needs_builder_filter`,
   :ref:`needs_reproducible_json` and :ref:`needs_json_include_link_conditions` apply, while

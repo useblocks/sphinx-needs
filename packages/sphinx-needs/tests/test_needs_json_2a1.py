@@ -364,8 +364,8 @@ def test_remove_defaults_is_ignored_with_a_warning(test_app: Any) -> None:
 
     assert _config_warnings(app) == [
         "WARNING: needs_json_remove_defaults is ignored under "
-        'needs_json_format_version "2a1": a 2a1 file carries every value, and no '
-        "schema to restore one from [needs.config]"
+        'needs_json_format_version "2a1": a 2a1 file writes every default, and '
+        "carries no schema to restore one from [needs.config]"
     ]
     records = _records(app)
     assert records["REQ_2"]["fields"]["asil"] == "QM"

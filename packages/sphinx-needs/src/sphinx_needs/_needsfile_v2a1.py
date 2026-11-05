@@ -10,9 +10,12 @@ created?, needs: [record, ...]}``, and has no ``versions``: a reader that takes 
 ``versions`` envelope for v1 would read a 2a1 file that kept one as v1, silently. A
 record is ``{id, type, fields, links, content, source}``:
 
-- ``fields``: the authored core fields and every field the need's type declares, each
-  with its value, a default or ``null`` too (a 2a1 file carries no schema to restore an
-  omitted value from); a field another need type declares alone is left out;
+- ``fields``: the authored core fields and every field the need's type declares whose
+  value is not ``null``, a default and a typed empty (``[]``, ``""``) included: the
+  reading project's default may differ, and a 2a1 file carries no schema to restore an
+  omitted value from. A field whose value is ``null`` is left out, which a reader reads
+  as unset (its own default applies, as to a ``null``); a field another need type
+  declares alone is left out too;
 - ``links``: each link type the need's type declares, a list of a bare id, or of
   ``{id, part?, condition?}`` where a part or a condition is given; no back links;
 - ``content``: ``{text, doctype, parts?}``, ``parts`` a map of part id to its text;
@@ -135,8 +138,8 @@ def warn_on_write(app: Sphinx, env: BuildEnvironment) -> None:
     if needs_config.json_remove_defaults:
         log_warning(
             LOGGER,
-            f"needs_json_remove_defaults is ignored {under}: a 2a1 file carries every "
-            "value, and no schema to restore one from",
+            f"needs_json_remove_defaults is ignored {under}: a 2a1 file writes every "
+            "default, and carries no schema to restore one from",
             "config",
             None,
         )
@@ -254,13 +257,16 @@ class NeedsFile2a1:
         """The 2a1 record of ``need``."""
         exclude = self._exclude
         declared = self._schema.for_type(need["type"])
+        # a null value is left out: a reader reads a missing field as unset
         fields: dict[str, Any] = {
-            name: need[name] for name in AUTHORED_CORE if name not in exclude
+            name: value
+            for name in AUTHORED_CORE
+            if name not in exclude and (value := need[name]) is not None
         }
         fields.update(
             (name, value)
             for name, value in need.iter_extra_items()
-            if name not in exclude and declared.declares(name)
+            if name not in exclude and declared.declares(name) and value is not None
         )
         links = {
             name: [_link_to_json(link, conditions=self._conditions) for link in items]

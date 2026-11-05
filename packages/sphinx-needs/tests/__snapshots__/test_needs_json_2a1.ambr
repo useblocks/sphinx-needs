@@ -10,13 +10,8 @@
         }),
         'fields': dict({
           'asil': 'QM',
-          'completion': None,
           'constraints': list([
           ]),
-          'duration': None,
-          'layout': None,
-          'status': None,
-          'style': None,
           'tags': list([
           ]),
           'title': 'imported',
@@ -69,13 +64,9 @@
         }),
         'fields': dict({
           'asil': 'B',
-          'completion': None,
           'constraints': list([
           ]),
-          'duration': None,
-          'layout': None,
           'status': 'open',
-          'style': None,
           'tags': list([
             'a',
             'b',
@@ -123,13 +114,8 @@
         }),
         'fields': dict({
           'asil': 'QM',
-          'completion': None,
           'constraints': list([
           ]),
-          'duration': None,
-          'layout': None,
-          'status': None,
-          'style': None,
           'tags': list([
           ]),
           'title': 'The second',
@@ -186,13 +172,9 @@
         }),
         'fields': dict({
           'asil': 'QM',
-          'completion': None,
           'constraints': list([
           ]),
-          'duration': None,
-          'layout': None,
           'status': 'open',
-          'style': None,
           'tags': list([
           ]),
           'title': 'The third',
@@ -238,13 +220,8 @@
         }),
         'fields': dict({
           'asil': 'QM',
-          'completion': None,
           'constraints': list([
           ]),
-          'duration': None,
-          'layout': None,
-          'status': None,
-          'style': None,
           'tags': list([
           ]),
           'title': 'Nested',
@@ -291,13 +268,8 @@
         }),
         'fields': dict({
           'asil': 'QM',
-          'completion': None,
           'constraints': list([
           ]),
-          'duration': None,
-          'layout': None,
-          'status': None,
-          'style': None,
           'tags': list([
           ]),
           'title': 'in a docstring',
@@ -362,13 +334,8 @@
         }),
         'fields': dict({
           'asil': 'QM',
-          'completion': None,
           'constraints': list([
           ]),
-          'duration': None,
-          'layout': None,
-          'status': None,
-          'style': None,
           'tags': list([
           ]),
           'title': 'In a nested include',
@@ -426,13 +393,8 @@
         }),
         'fields': dict({
           'asil': 'QM',
-          'completion': None,
           'constraints': list([
           ]),
-          'duration': None,
-          'layout': None,
-          'status': None,
-          'style': None,
           'tags': list([
           ]),
           'title': 'A spec',
@@ -480,13 +442,8 @@
         }),
         'fields': dict({
           'asil': 'QM',
-          'completion': None,
           'constraints': list([
           ]),
-          'duration': None,
-          'layout': None,
-          'status': None,
-          'style': None,
           'tags': list([
           ]),
           'title': 'a generated need',
@@ -561,13 +518,8 @@
         }),
         'fields': dict({
           'asil': 'QM',
-          'completion': None,
           'constraints': list([
           ]),
-          'duration': None,
-          'layout': None,
-          'status': None,
-          'style': None,
           'tags': list([
           ]),
           'title': 'The second',

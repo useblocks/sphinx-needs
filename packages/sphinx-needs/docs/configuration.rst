@@ -3470,7 +3470,8 @@ Of the other ``needs.json`` options, under ``"2a1"``:
 - :ref:`needs_builder_filter`, :ref:`needs_reproducible_json` and
   :ref:`needs_json_include_link_conditions` work as in format 1;
 - :ref:`needs_json_remove_defaults` and :ref:`needs_file` are ignored, each with one warning: a
-  ``"2a1"`` file carries every value and no schema, and has no versions to accumulate.
+  ``"2a1"`` file writes every default (and leaves out a ``null``) and carries no schema, and has no
+  versions to accumulate.
 
 Default: :need_config_default:`json_format_version`
 

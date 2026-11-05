@@ -183,8 +183,10 @@ of the ``ub-needs-exchange`` library. In short:
 - the document says what it is with a ``format_version``, and has no ``versions``: one file is one snapshot of a
   project, whose ``project`` names it and its version;
 - the needs are a list of records, in the order of their ids, each with the sections ``id``, ``type``, ``fields``
-  (the core fields a need's author sets, and every field its need type declares, with its value: a default and
-  ``null`` too, since the file carries no schema), ``links`` (a bare id, or ``{"id", "part", "condition"}`` where a
+  (the core fields a need's author sets, and every field its need type declares, with its value -- a default and a
+  typed empty such as ``[]`` too, since the reading project's default may differ and the file carries no schema --
+  but for a field whose value is ``null``, which is left out: a reader reads a missing field as unset, and applies
+  its own default, as it does to a ``null``), ``links`` (a bare id, or ``{"id", "part", "condition"}`` where a
   part or a condition is given; no back links), ``content`` (its text, ``doctype`` and parts) and ``source``;
 - ``source`` is the list of places the need's text came through, innermost first: the lines of its directive in the
   file it is written in, each file it was included through, the needs.json it was imported from, the docstring or
@@ -194,8 +196,8 @@ of the ``ub-needs-exchange`` library. In short:
   of the location keys of format 1 (``docname``, ``lineno``, ``sections``, ...), which a reader projects from the
   source.
 
-An abridged example (the real record also carries ``layout``, ``style`` and ``constraints``, and every other field
-of its need type, ``null`` where it is not set):
+An abridged example (a real record carries every link type of its need type, ``[]`` where it has no links; its
+``layout``, ``style`` and ``status`` are left out here because they are ``null``):
 
 .. code-block:: json
 
@@ -208,7 +210,7 @@ of its need type, ``null`` where it is not set):
         {
           "id": "REQ_2",
           "type": "req",
-          "fields": {"title": "The second", "status": null, "tags": [], "asil": "QM"},
+          "fields": {"title": "The second", "tags": [], "constraints": [], "asil": "QM"},
           "links": {
             "links": [{"id": "REQ_1", "part": "p1"}, {"id": "REQ_3", "condition": "status == \"open\""}],
             "parent_needs": []
