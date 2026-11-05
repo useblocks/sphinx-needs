@@ -923,3 +923,23 @@ def test_a_comment_continued_over_a_splice_is_trivia() -> None:
         parser, source, cpp_macros._left_as_written
     )
     assert (count, macros.pairs, _function_definitions(tree)) == (2, (), 3)
+
+
+def test_a_pair_knows_its_lines() -> None:
+    """Each pair records the 1-based lines of its opening and its closing, by which an
+    entity with no name between them is placed: the sample's on lines 12 and 24, and a
+    nested pair's inside its outer one's."""
+    assert [pair.lines for pair in prepare(SAMPLE.encode("utf-8")).scopes.pairs] == [
+        (12, 24)
+    ]
+    source = (
+        "#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
+        "#define DETAIL_NAMESPACE_BEGIN namespace detail {\n"
+        "#define DETAIL_NAMESPACE_END }\n"
+        "LIB_NAMESPACE_BEGIN\n\nDETAIL_NAMESPACE_BEGIN\nvoid f();\n"
+        "DETAIL_NAMESPACE_END\nLIB_NAMESPACE_END\n"
+    )
+    assert [pair.lines for pair in prepare(source.encode("utf-8")).scopes.pairs] == [
+        (5, 10),
+        (7, 9),
+    ]

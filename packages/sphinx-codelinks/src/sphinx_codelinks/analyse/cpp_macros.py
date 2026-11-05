@@ -594,6 +594,15 @@ def _is_namespace_name(word: str) -> bool:
     )
 
 
+_NEWLINE = re.compile(rb"\n")
+
+
+def _line_of(breaks: list[int], at: int) -> int:
+    """The 1-based line of the byte ``at``, from the offsets of the buffer's line
+    breaks, in order."""
+    return bisect.bisect_left(breaks, at) + 1
+
+
 def _pairs(scan: _Scan, source: bytes) -> list[Pair] | None:
     """The pairs of invocations the rules accept (F3, F4, F6), in file order of their
     openings; ``None`` when the file is to be left unchanged (F6)."""
@@ -620,6 +629,7 @@ def _pairs(scan: _Scan, source: bytes) -> list[Pair] | None:
     if not bodies:
         return None
     # F6
+    breaks = [newline.start() for newline in _NEWLINE.finditer(source)]
     open_: list[tuple[tuple[int, int], _Opening]] = []
     found: list[Pair] = []
     for invocation, word in scan.alone:
@@ -637,8 +647,8 @@ def _pairs(scan: _Scan, source: bytes) -> list[Pair] | None:
                     opening=opening,
                     closing=invocation,
                     lines=(
-                        source.count(b"\n", 0, opening[0]) + 1,
-                        source.count(b"\n", 0, invocation[0]) + 1,
+                        _line_of(breaks, opening[0]),
+                        _line_of(breaks, invocation[0]),
                     ),
                     namespaces=opened.named,
                 )
