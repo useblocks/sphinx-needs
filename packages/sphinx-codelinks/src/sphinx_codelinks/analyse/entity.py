@@ -638,13 +638,39 @@ class _CppNaming:
         return self.macros(name_end) if self.macros is not None else ""
 
     def specs_at(
-        self, node: TreeSitterNode, source: bytes | None, name_end: int
-    ) -> tuple[_PartialSpecs, str] | None:
-        """The file's partial specialisations, with where the templates a name written
-        at ``node`` (ending at ``name_end``) qualifies are (:func:`_cpp_scope_of`)."""
+        self, node: TreeSitterNode, source: bytes | None, name_end: int, written: str
+    ) -> _Lookup | None:
+        """Where the templates the name ``written`` at ``node`` (ending at
+        ``name_end``) qualifies are looked up among the file's partial specialisations
+        (:class:`_Lookup`), when it has any."""
         if self.specs is None:
             return None
-        return self.specs, _cpp_scope_of(node, source, self.macros_at(name_end))
+        macros = self.macros_at(name_end)
+        inline_parts = (
+            _cpp_inline_segments(
+                self.inline, macros, node, source, _squeeze(written).lstrip(":")
+            )
+            if self.inline is not None
+            else []
+        )
+        return _Lookup(
+            self.specs, _cpp_scope_of(node, source, self, macros), inline_parts
+        )
+
+
+@dataclass(frozen=True)
+class _Lookup:
+    """Where the templates an out-of-line qualifier names are looked up among the
+    file's partial specialisations (:func:`_cpp_name`)."""
+
+    specs: _PartialSpecs
+    """The file's partial specialisations."""
+    scope: str
+    """Where the name is written (:func:`_cpp_scope_of`)."""
+    inline_parts: list[int]
+    """The parts of the written name that name an inline namespace of the file
+    (:func:`_cpp_inline_segments`): left out of the path, as the specialisations' own
+    keys leave them out."""
 
 
 _ALONE = _CppNaming()
@@ -834,17 +860,24 @@ class _PartialSpecs:
     def __init__(self) -> None:
         self.by_template: dict[str, list[_PartialSpec]] = {}
 
+    @classmethod
+    def of(
+        cls, nodes: list[TreeSitterNode], source: bytes | None, naming: _CppNaming
+    ) -> _PartialSpecs:
+        """The partial specialisations among ``nodes`` (:meth:`add`)."""
+        specs = cls()
+        for node in nodes:
+            specs.add(node, source, naming)
+        return specs
+
     def add(
-        self, node: TreeSitterNode, source: bytes | None, prefix: Callable[[int], str]
+        self, node: TreeSitterNode, source: bytes | None, naming: _CppNaming
     ) -> None:
         """``node``, when it is a class, struct or union named with template arguments
-        under a header with parameters (a partial specialisation); ``prefix`` gives the
-        namespaces the file's own macros open around a name ending at a byte."""
-        if (
-            node.type not in ("class_specifier", "struct_specifier", "union_specifier")
-            or node.parent is None
-            or node.parent.type != "template_declaration"
-        ):
+        under a header with parameters (a partial specialisation), keyed as ``naming``
+        reads where it is (the file's own macros and its inline namespaces,
+        :func:`_cpp_scope_of`)."""
+        if not _cpp_templated_class(node):
             return
         name = node.child_by_field_name("name")
         if name is None:
@@ -852,12 +885,23 @@ class _PartialSpecs:
         headers = _cpp_template_headers(node, source)
         if not headers or not headers[-1]:
             return
-        *qualifiers, part = _cpp_split(_cpp_class_name(name, node, source))
+        spelled = _cpp_class_name(name, node, source)
+        *qualifiers, part = _cpp_split(spelled)
         arguments = _cpp_written_arguments(part)
         if arguments is None:
             return
-        template = _cpp_scope_of(node, source, prefix(name.end_byte))
-        template += "".join(f"{_strip_template_args(q)}::" for q in qualifiers)
+        macros = naming.macros_at(name.end_byte)
+        inline_parts = (
+            _cpp_inline_segments(naming.inline, macros, node, source, spelled)
+            if naming.inline is not None
+            else []
+        )
+        template = _cpp_scope_of(node, source, naming, macros)
+        template += "".join(
+            f"{_strip_template_args(qualifier)}::"
+            for index, qualifier in enumerate(qualifiers)
+            if index not in inline_parts
+        )
         template += part.split("<", 1)[0]
         self.by_template.setdefault(template, []).append(
             _PartialSpec(
@@ -884,12 +928,27 @@ class _PartialSpecs:
         return next(iter(spellings)) if len(spellings) == 1 else None
 
 
-def _cpp_scope_of(node: TreeSitterNode, source: bytes | None, macros: str) -> str:
+def _cpp_templated_class(node: TreeSitterNode) -> bool:
+    """``node`` is a class, struct or union under a template header: a partial
+    specialisation when it is named with arguments under a header with parameters
+    (:meth:`_PartialSpecs.add`)."""
+    return (
+        node.type in ("class_specifier", "struct_specifier", "union_specifier")
+        and node.parent is not None
+        and node.parent.type == "template_declaration"
+    )
+
+
+def _cpp_scope_of(
+    node: TreeSitterNode, source: bytes | None, naming: _CppNaming, macros: str
+) -> str:
     """Where the templates a name written at ``node`` qualifies are looked up:
     ``macros`` (the namespaces the file's own macros open around it, ``ns::`` or
-    empty), then the namespaces and classes around it, an inline namespace left out
-    (:func:`_cpp_containers`), each without its arguments and followed by ``::``."""
-    segments, _ = _cpp_containers(node, source, _ALONE)
+    empty), then the namespaces and classes around it as ``naming`` names them with
+    every inline namespace left out (:func:`_cpp_containers`), each without its
+    arguments and followed by ``::``."""
+    around = replace(naming, full_chain=False, specs=None)
+    segments, _ = _cpp_containers(node, source, around)
     return macros + "".join(
         f"{_strip_template_args(part)}::"
         for segment in segments
@@ -902,7 +961,7 @@ def _cpp_name(
     headers: list[list[str]],
     *,
     strip_last: bool,
-    specs: tuple[_PartialSpecs, str] | None,
+    lookup: _Lookup | None,
 ) -> str:
     """A name as the naming spells it: ``text`` squeezed, without a leading ``::``.
 
@@ -913,9 +972,10 @@ def _cpp_name(
     (``template <> template <class U> void Outer<int>::Inner<U>::n()`` matches
     ``Inner<U>`` with ``<class U>``). A matched list is spelled as a partial
     specialisation of the file spells its arguments when the two are the same but for
-    their own parameter names (``specs``, with the scope the name is written in, ``ns::``
-    or empty: ``template <typename U> void P<U,4>::fill()`` is ``P<T,4>::fill`` when the
-    file defines ``template <typename T> struct P<T,4> {…}``; :class:`_PartialSpecs`).
+    their own parameter names (``lookup``, with the scope the name is written in,
+    ``ns::`` or empty: ``template <typename U> void P<U,4>::fill()`` is ``P<T,4>::fill``
+    when the file defines ``template <typename T> struct P<T,4> {…}``;
+    :class:`_PartialSpecs`, :class:`_Lookup`).
     Otherwise it is the template's own when its arguments are exactly the header's
     parameter names (the primary template's member,
     ``template <typename T> void Box<T>::get()``), named without it (``Box::get``), and
@@ -928,8 +988,9 @@ def _cpp_name(
     remaining = iter(headers)
     upcoming = next(remaining, None)
     # where the template a qualifier names is: the scope, then the qualifiers before
-    # it, without their arguments
-    path = specs[1] if specs is not None else ""
+    # it, without their arguments and without those that name an inline namespace of
+    # the file
+    path = lookup.scope if lookup is not None else ""
     spelled: list[str] = []
     for index, part in enumerate(parts):
         if index == last:
@@ -949,7 +1010,9 @@ def _cpp_name(
             parameters = upcoming
             upcoming = next(remaining, None)
             as_spec = (
-                specs[0].spelling(path, part, parameters) if specs is not None else None
+                lookup.specs.spelling(path, part, parameters)
+                if lookup is not None
+                else None
             )
             if as_spec is not None:
                 spelled.append(as_spec)
@@ -957,7 +1020,8 @@ def _cpp_name(
                 spelled.append(_strip_template_args(part))
             else:
                 spelled.append(part)
-        path += f"{_strip_template_args(part)}::"
+        if lookup is None or index not in lookup.inline_parts:
+            path += f"{_strip_template_args(part)}::"
     return "::".join(spelled)
 
 
@@ -995,8 +1059,26 @@ def _cpp_class_name(
         _cpp_text_without_comments(name, source),
         _cpp_template_headers(class_node, source),
         strip_last=False,
-        specs=None,
+        lookup=None,
     )
+
+
+def _cpp_class_name_in(
+    name: TreeSitterNode,
+    class_node: TreeSitterNode,
+    source: bytes | None,
+    naming: _CppNaming,
+) -> str:
+    """:func:`_cpp_class_name`, without the parts of a written qualifier that name an
+    inline namespace of the file (``struct lib::v2::X {…}`` is ``lib::X``, so its
+    members are named in it), unless ``naming`` keeps every container."""
+    own = _cpp_class_name(name, class_node, source)
+    if naming.inline is None or naming.full_chain:
+        return own
+    dropped = _cpp_inline_segments(
+        naming.inline, naming.macros_at(name.end_byte), class_node, source, own
+    )
+    return _cpp_without_parts(own, dropped) if dropped else own
 
 
 def _cpp_namespace_name(node: TreeSitterNode, source: bytes | None) -> str:
@@ -1090,26 +1172,48 @@ def _cpp_without_inline_parts(
     ``inline namespace v2`` in ``lib``); unchanged with every container kept."""
     if naming.inline is None or naming.full_chain:
         return own, semantic
-    *qualifier, _ = parts = _cpp_split(own)
-    if not qualifier:
-        return own, semantic
-    path = naming.macros_at(name_end) + _cpp_namespaces_around(node, source)
-    dropped: list[int] = []
-    for index, part in enumerate(qualifier):
-        path += part
-        if path in naming.inline:
-            dropped.append(index)
-        path += "::"
+    dropped = _cpp_inline_segments(
+        naming.inline, naming.macros_at(name_end), node, source, own
+    )
     if not dropped:
         return own, semantic
-    first = max(len(semantic) - len(parts), 0)
+    first = max(len(semantic) - len(_cpp_split(own)), 0)
     kept_semantic = [
         element
         for position, element in enumerate(semantic)
         if position - first not in dropped
     ]
-    kept = [part for index, part in enumerate(parts) if index not in dropped]
-    return "::".join(kept), kept_semantic
+    return _cpp_without_parts(own, dropped), kept_semantic
+
+
+def _cpp_inline_segments(
+    paths: frozenset[str],
+    macros: str,
+    node: TreeSitterNode,
+    source: bytes | None,
+    own: str,
+) -> list[int]:
+    """The parts of ``own``, the name written at ``node``, that name one of the file's
+    inline namespaces (``paths``): indexes into its qualifier's parts, read from
+    ``macros`` (the namespaces the file's own macros open around it) and the
+    namespaces around ``node`` (``void lib::v2::g() {}`` is ``lib``, ``v2``, ``g``, and
+    ``v2`` is one when the file declares ``inline namespace v2`` in ``lib``)."""
+    *qualifier, _ = _cpp_split(own)
+    path = macros + _cpp_namespaces_around(node, source)
+    dropped: list[int] = []
+    for index, part in enumerate(qualifier):
+        path += part
+        if path in paths:
+            dropped.append(index)
+        path += "::"
+    return dropped
+
+
+def _cpp_without_parts(name: str, dropped: list[int]) -> str:
+    """``name`` without the parts at ``dropped``."""
+    return "::".join(
+        part for index, part in enumerate(_cpp_split(name)) if index not in dropped
+    )
 
 
 def _cpp_namespace_parts(
@@ -1215,7 +1319,7 @@ def _cpp_containers(
         ):
             name = parent.child_by_field_name("name")
             if name is not None:
-                container = _cpp_class_name(name, parent, source)
+                container = _cpp_class_name_in(name, parent, source, naming)
                 segments.append(container)
                 groups.append(
                     _cpp_qualified(
@@ -1331,15 +1435,23 @@ def _cpp_conversion(
         head,
         _cpp_template_headers(node, source),
         strip_last=_cpp_templated(node),
-        specs=naming.specs_at(node, source, cast.start_byte),
+        lookup=naming.specs_at(node, source, cast.start_byte, head),
     )
     own = f"{qualifier}operator {_squeeze(target)}"
     spelled = cast_text[: target_end - cast.start_byte].decode("utf-8", "replace")
     # a conversion operator is always a member: its qualifier is its class
+    own, semantic = _cpp_without_inline_parts(
+        naming,
+        node,
+        source,
+        own,
+        cast.start_byte,
+        [*outer, *_cpp_qualified(own, "operator", member=True)],
+    )
     return _named(
         "operator",
         "::".join([*prefix, own]),
-        [*outer, *_cpp_qualified(own, "operator", member=True)],
+        semantic,
         cast.start_byte + len(spelled.rstrip().encode("utf-8")),
     )
 
@@ -1364,11 +1476,12 @@ def _cpp_describe_in(
         )
         if inner is None:
             return None
+        written = _cpp_text_without_comments(inner, source)
         own = _cpp_name(
-            _cpp_text_without_comments(inner, source),
+            written,
             _cpp_template_headers(node, source),
             strip_last=_cpp_templated(node),
-            specs=naming.specs_at(node, source, inner.end_byte),
+            lookup=naming.specs_at(node, source, inner.end_byte, written),
         )
         last = own.rsplit("::", 1)[-1]
         qualifier = own.rsplit("::", 1)[0] if "::" in own else None
@@ -1403,7 +1516,7 @@ def _cpp_describe_in(
         name = node.child_by_field_name("name")
         if name is None:
             return EntityName(class_kind, None, None)
-        own_name = _cpp_class_name(name, node, source)
+        own_name = _cpp_class_name_in(name, node, source, naming)
         return _named(
             class_kind,
             "::".join([*prefix, own_name]),
@@ -1866,8 +1979,9 @@ class _Seen:
 class _Found:
     """What the one walk of :func:`cpp_renames` finds."""
 
-    specs: _PartialSpecs = field(default_factory=lambda: _PartialSpecs())
-    """The file's partial specialisations."""
+    spec_nodes: list[TreeSitterNode] = field(default_factory=list)
+    """The classes that may be partial specialisations (:func:`_cpp_templated_class`),
+    read once the inline namespaces are known."""
     inline_paths: set[str] = field(default_factory=set)
     """The paths of its inline namespaces (:func:`_cpp_inline_paths_of`)."""
     inline_names: set[str] = field(default_factory=set)
@@ -1879,19 +1993,45 @@ class _Found:
     qualified: list[TreeSitterNode] = field(default_factory=list)
     """The other functions qualified with arguments."""
     through: list[TreeSitterNode] = field(default_factory=list)
-    """The functions named through a written qualifier (:func:`_cpp_qualified_head`)."""
+    """The functions named through a written qualifier
+    (:func:`_cpp_written_qualifier`)."""
 
 
-def _cpp_qualified_head(node: TreeSitterNode) -> TreeSitterNode | None:
+def _cpp_written_qualifier(node: TreeSitterNode, source: bytes | None) -> str | None:
     """The written qualified name of the function ``node`` (``lib::v2::g`` of
-    ``void lib::v2::g() {}``), when it has one."""
+    ``void lib::v2::g() {}``, ``lib::v1::W::`` of a conversion operator
+    ``lib::v1::W::operator int()``), when it has one."""
     if node.type not in ("function_definition", "declaration", "field_declaration"):
         return None
-    if _cpp_operator_cast(node) is not None:
-        return None
+    cast = _cpp_operator_cast(node)
+    if cast is not None:
+        declarator = node.child_by_field_name("declarator")
+        if declarator is None:
+            return None
+        head = _cpp_bytes(declarator, source)[: cast.start_byte - declarator.start_byte]
+        return head.decode("utf-8", "replace") if b"::" in head else None
     declarator = cpp_function_declarator(node)
     inner = declarator.child_by_field_name("declarator") if declarator else None
-    return inner if inner is not None and inner.type == "qualified_identifier" else None
+    if inner is None or inner.type != "qualified_identifier":
+        return None
+    return _cpp_text(inner, source)
+
+
+def _cpp_class_through_inline(
+    node: TreeSitterNode, source: bytes | None, inline_names: set[str]
+) -> bool:
+    """The class ``node``'s head is written through a qualifier that holds the name of
+    an inline namespace of the file met so far (``struct lib::v2::X {…}``, one of
+    ``inline_names``)."""
+    if node.type not in _CPP_CLASS_KINDS:
+        return False
+    name = node.child_by_field_name("name")
+    # tree-sitter-cpp reads a qualified class name as this kind
+    return (
+        name is not None
+        and name.type == "qualified_identifier"
+        and any(word in inline_names for word in _cpp_words(_cpp_text(name, source)))
+    )
 
 
 def cpp_renames(
@@ -1935,15 +2075,21 @@ def cpp_renames(
         inline_here = node.type == "namespace_definition" and (
             _cpp_inline_namespace_or_part(node)
         )
-        found.specs.add(node, source, prefix)
+        # a class head written through an inline namespace leaves it out, and so does
+        # everything the class holds
+        through_here = not inline_here and _cpp_class_through_inline(
+            node, source, found.inline_names
+        )
+        if _cpp_templated_class(node):
+            found.spec_nodes.append(node)
         if inline_here:
             for path in _cpp_inline_paths_of(node, source, prefix):
                 found.inline_names.add(path.rsplit("::", 1)[-1])
                 found.inline_paths.add(path)
         if is_entity(node, CommentType.cpp):
-            if _cpp_qualified_head(node) is not None:
+            if _cpp_written_qualifier(node, source) is not None:
                 found.through.append(node)
-            if in_inline or inline_here or _cpp_is_friend(node):
+            if in_inline or inline_here or through_here or _cpp_is_friend(node):
                 found.left_out.append(node)
             else:
                 if _cpp_has_body_entity(node):
@@ -1953,7 +2099,7 @@ def cpp_renames(
         # nothing a function's body holds is a friend, an inline namespace or a
         # partial specialisation, or names one
         if node.type != "function_definition" and cursor.goto_first_child():
-            inside.append(in_inline or inline_here)
+            inside.append(in_inline or inline_here or through_here)
             continue
         while not cursor.goto_next_sibling():
             if not cursor.goto_parent():
@@ -1963,23 +2109,20 @@ def cpp_renames(
 
 def _cpp_leave_out_through_inline(
     source: bytes | None, naming: _CppNaming, found: _Found
-) -> tuple[set[int], set[int]]:
+) -> set[int]:
     """The functions of ``found.through`` whose written qualifier may name an inline
-    namespace of the file (one of its inline names is among its words), by node id;
-    and those of them ``naming`` names otherwise than as written that are not in
-    ``found.left_out``, moved there from ``found.bodies``: they leave a container out,
-    their full chain the qualifier as written."""
+    namespace of the file (one of its inline names is among its words) that ``naming``
+    names otherwise than as written and that are not in ``found.left_out``, moved there
+    from ``found.bodies``, by node id: they leave a container out, their full chain the
+    qualifier as written."""
     if naming.inline is None:
-        return set(), set()
+        return set()
     through = [
         node
         for node in found.through
-        if (head := _cpp_qualified_head(node)) is not None
-        and any(
-            word in found.inline_names for word in _cpp_words(_cpp_text(head, source))
-        )
+        if (head := _cpp_written_qualifier(node, source)) is not None
+        and any(word in found.inline_names for word in _cpp_words(head))
     ]
-    ids = {node.id for node in through}
     left = {node.id for node in found.left_out}
     as_written = replace(naming, inline=None)
     moved: set[int] = set()
@@ -1992,7 +2135,7 @@ def _cpp_leave_out_through_inline(
             moved.add(node.id)
             found.left_out.append(node)
     found.bodies = [node for node in found.bodies if node.id not in moved]
-    return ids, moved
+    return moved
 
 
 def _cpp_renamed(
@@ -2000,22 +2143,23 @@ def _cpp_renamed(
 ) -> dict[int, EntityName]:
     """:func:`cpp_renames`, once its walk has found what it looks for
     (:class:`_Found`)."""
-    with_specs = _CppNaming(
-        specs=found.specs if found.specs.by_template else None,
+    base = _CppNaming(
         inline=frozenset(found.inline_paths) if found.inline_paths else None,
         macros=prefix,
     )
+    specs = _PartialSpecs.of(found.spec_nodes, source, base)
+    with_specs = replace(base, specs=specs if specs.by_template else None)
     full_chain = replace(with_specs, full_chain=True)
-    through_ids, moved = _cpp_leave_out_through_inline(source, with_specs, found)
+    moved = _cpp_leave_out_through_inline(source, with_specs, found)
 
     def named_alone(node: TreeSitterNode) -> tuple[EntityName, EntityName] | None:
         alone = _cpp_describe_in(node, source, _ALONE)
         if alone is None or alone.qualified_name is None or alone.name_end is None:
             return None
         named = alone
-        if (
+        if with_specs.inline is not None or (
             with_specs.specs is not None and _cpp_qualified_with_arguments(node, source)
-        ) or node.id in through_ids:
+        ):
             named = _cpp_describe_in(node, source, with_specs) or alone
         return alone, named
 

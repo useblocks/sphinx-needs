@@ -792,6 +792,66 @@ def test_a_marker_on_a_partial_specialisation_member(tmp_path: Path) -> None:
             },
             id="a_member_of_a_kept_class_out_of_line",
         ),
+        pytest.param(
+            "namespace lib { inline namespace v2 { struct X; } }\n"
+            "struct lib::v2::X {\n  void m();\n};\nvoid lib::v2::X::m() {}\n",
+            {"decl lib::X::m()", "def lib::X::m()"},
+            id="a_class_head",
+        ),
+        pytest.param(
+            "namespace lib { inline namespace v1 { struct X {\n  void m() {} }; }\n"
+            "inline namespace v2 { struct X; } }\nstruct lib::v2::X {\n  void m();\n};\n"
+            "void lib::v2::X::m() {}\n",
+            {"decl lib::v2::X::m()", "def lib::v1::X::m()", "def lib::v2::X::m()"},
+            id="a_class_head_beside_a_colliding_sibling",
+        ),
+        pytest.param(
+            "namespace lib { inline namespace v1 { struct Widget { struct Impl;\n"
+            "  void draw(); }; } }\n"
+            "struct lib::v1::Widget::Impl {\n  void run();\n};\n"
+            "void lib::v1::Widget::Impl::run() {}\nvoid lib::v1::Widget::draw() {}\n",
+            {
+                "decl lib::Widget::Impl::run()",
+                "decl lib::Widget::draw()",
+                "def lib::Widget::Impl::run()",
+                "def lib::Widget::draw()",
+            },
+            id="a_pimpl_class_head",
+        ),
+        pytest.param(
+            "namespace lib { inline namespace v1 { struct W {\n"
+            "  operator int() const; }; } }\n"
+            "lib::v1::W::operator int() const { return 0; }\n",
+            {
+                "decl lib::W::operator int() const",
+                "def lib::W::operator int() const",
+            },
+            id="a_conversion_operator",
+        ),
+        pytest.param(
+            "namespace lib { inline namespace v1 {\n"
+            "template <class T, int N> struct P { void fill(); };\n"
+            "template <class T> struct P<T, 4> {\n  void fill(); }; } }\n"
+            "template <class U> void lib::v1::P<U, 4>::fill() {}\n",
+            {
+                "decl lib::P::fill()",
+                "decl lib::P<T,4>::fill()",
+                "def lib::P<T,4>::fill()",
+            },
+            id="a_partial_specialisation_with_other_names",
+        ),
+        pytest.param(
+            "namespace lib { inline namespace v1 {\n"
+            "template <class T, int N> struct P { void fill(); };\n"
+            "template <class T> struct P<T, 4> {\n  void fill(); }; } }\n"
+            "template <class T> void lib::v1::P<T, 4>::fill() {}\n",
+            {
+                "decl lib::P::fill()",
+                "decl lib::P<T,4>::fill()",
+                "def lib::P<T,4>::fill()",
+            },
+            id="a_partial_specialisation_with_the_same_names",
+        ),
     ],
 )
 def test_a_qualifier_through_an_inline_namespace_leaves_it_out(
@@ -804,7 +864,9 @@ def test_a_qualifier_through_an_inline_namespace_leaves_it_out(
     written, so a declaration never names another definition (the ``#if``/``#else``
     arms of an ABI version with the definition out of line, two inline siblings, an
     inline namespace beside its parent), and a member of a class that keeps its full
-    chain keeps it out of line too."""
+    chain keeps it out of line too. Every written qualifier does so: a class head (its
+    members follow it; the pimpl's ``Impl`` too), a conversion operator's, and the
+    path a partial specialisation is looked up by."""
     assert _functions(source, which=True) == expected
 
 
