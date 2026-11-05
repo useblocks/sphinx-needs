@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793833425237,
+  "lastUpdate": 1793890080791,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -28980,6 +28980,48 @@ window.BENCHMARK_DATA = {
             "value": 191.435026,
             "unit": "MB",
             "extra": "Commit: 75267db20bf00e95d17ed226cc046df53dde520f\nBranch: master\nTime: 2026-11-05T00:02:02+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f63195e0776e616ede50b827f5039c1935da6c8a",
+          "message": "✨ ub-needs-exchange: read a draft needs.json \"2a1\" on opt-in (experimental) (#2483)\n\nA caller can now read a needs.json written in the first draft of the\nnext format, `\"2a1\"`, by asking for it:\n\n```python\nversion = ub_needs_exchange.load(\"needs.json\").select_version(None, drafts=(\"2a1\",))\nfor record in version.records():\n    record.fields   # the record, in the shape a format-1 record has\n    record.source   # where its text came from: the hops, innermost first\n```\n\nEach record of a `\"2a1\"` file is handed out as a format-1 reader already\nreads one:\n- its fields;\n- its links in format 1's spelling: a link object becomes `B`, `B.p1`,\n`B[cond]` or `B.p1[cond]`, and a string link\n  is kept as written;\n- `content`, `doctype` and `parts`;\n- from the page the need is placed on, `docname`, `sections`,\n`section_name` and `signature`, by the rule\n  sphinx-needs writes them in format 1.\n\nIts source hops come through in the new `Record.source`, validated and\nas the file has them.\n\n**What a draft record does not have.** It carries none of the other keys\na format-1 record carries:\n- `lineno`;\n- `is_import`, `is_external` and `external_url`;\n- `type_name` and the other keys derived from the configuration;\n- back links and computed keys.\n\nA filter or template over record keys finds them absent.\n\n**Opt-in, and experimental.**\n- Without `drafts=(\"2a1\",)`, a `\"2a1\"` file is refused exactly as\nbefore, with the same code and the same message.\n- `drafts` naming any other draft is a `ValueError`.\n- While `\"2a1\"` is a draft, the format and the parameter may change or\nbe removed in any release, and a file of it is\n  readable only by the release that wrote it.\n- Nothing in the workspace opts in yet.\n\n**The draft has rules of its own:**\n- a `\"2a1\"` file that keeps `versions` or `current_version` is refused\n(`draft_has_versions`);\n- a version asked for must be the file's `project.version`;\n- of two records with one id, the first is read and the second reported\n(`duplicate_id`);\n- a key the projection owns is never taken from `fields`\n(`field_reserved`);\n- a malformed record section, link or hop is dropped with a finding\n(`fields_not_object`, `link_invalid`,\n  `hop_invalid`, …), and the rest of the record is read;\n- a string link is kept as written and read in format 1's grammar, so a\nwriter writes a part or a condition only as\n  a link object.\n\nThe new `design/v2a1-draft.md` writes these rules down, including that a\nhop key another writer added does not\nsurvive a sphinx-needs re-export. The package's own corpus pins them:\n`tests/fixtures/needs_json_2a1_draft_conformance.toml`, 75 cases, with\nits own runner and count.\n\n**The shared reading corpus is untouched**, byte for byte, and still\npins `\"2a1\"` as refused. The shared contract\ngains one pointer line, in §3.1.\n\n- **Standard library only**, as before: the import fence is unchanged\nand green.\n- **Additive:** `Record.source` (default `()`) and\n`Version.format_version` (default `1`).\n- **Where the spelling checks run.** Two tests check the link spelling\nagainst sphinx-needs' own `NeedLink`:\n\n`test_reader.py::test_a_link_object_is_spelled_as_sphinx_needs_writes_it`\nand `…_reads_back_as_the_same_link`. They\nrun only where sphinx-needs is installed, so locally. CI runs this\npackage's suite in the toolchain-free job, where\nthey skip. The follow-up pull request that wires the draft into\nsphinx-needs adds round-trip tests to sphinx-needs'\n  own suite, which cover the spelling in every CI cell.\n- **Changelog:** an Unreleased bullet in\n`packages/ub-needs-exchange/docs/changelog.rst`.\n\nTests:\n- `poe test-ub-needs-exchange` (450 passed);\n- `poe lint`;\n- `poe typecheck`;\n- `poe import-check-ub-needs-exchange`;\n- `poe test-needs -k \"needimport or external\"`: 215 passed at the first\ncommit, so sphinx-needs is unaffected.",
+          "timestamp": "2026-11-05T15:46:19+01:00",
+          "tree_id": "36e93a50b0e532b124c5023b4dff44b7c990272c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f63195e0776e616ede50b827f5039c1935da6c8a"
+        },
+        "date": 1793890080216,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07662244299999799,
+            "unit": "s",
+            "extra": "Commit: f63195e0776e616ede50b827f5039c1935da6c8a\nBranch: master\nTime: 2026-11-05T15:46:19+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.749685280999998,
+            "unit": "s",
+            "extra": "Commit: f63195e0776e616ede50b827f5039c1935da6c8a\nBranch: master\nTime: 2026-11-05T15:46:19+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 187.909734,
+            "unit": "MB",
+            "extra": "Commit: f63195e0776e616ede50b827f5039c1935da6c8a\nBranch: master\nTime: 2026-11-05T15:46:19+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
