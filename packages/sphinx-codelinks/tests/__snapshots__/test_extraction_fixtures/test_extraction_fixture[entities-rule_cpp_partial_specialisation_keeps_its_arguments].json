@@ -1,0 +1,124 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 8
+      },
+      "end": {
+        "row": 1,
+        "column": 47
+      }
+    },
+    "tagged_scope": "void fill();",
+    "scope": {
+      "kind": "field_declaration",
+      "start": 3,
+      "end": 3,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "P::fill",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "P"
+        },
+        {
+          "kind": "method",
+          "name": "fill"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "The primary's member",
+      "id": "IMPL_R_PS_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "field_declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 4
+      },
+      "end": {
+        "row": 4,
+        "column": 49
+      }
+    },
+    "tagged_scope": "struct P<T, /* four */ 4> {\n    // @Its member, IMPL_R_PS_3, impl\n    void fill();\n}",
+    "scope": {
+      "kind": "struct_specifier",
+      "start": 6,
+      "end": 9,
+      "language": "cpp",
+      "entity_kind": "struct",
+      "qualified_name": "P<T,4>",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "P<T,4>"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "The partial specialisation",
+      "id": "IMPL_R_PS_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "struct_specifier"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 8
+      },
+      "end": {
+        "row": 6,
+        "column": 37
+      }
+    },
+    "tagged_scope": "void fill();",
+    "scope": {
+      "kind": "field_declaration",
+      "start": 8,
+      "end": 8,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "P<T,4>::fill",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "P<T,4>"
+        },
+        {
+          "kind": "method",
+          "name": "fill"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Its member",
+      "id": "IMPL_R_PS_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "field_declaration"
+  }
+]

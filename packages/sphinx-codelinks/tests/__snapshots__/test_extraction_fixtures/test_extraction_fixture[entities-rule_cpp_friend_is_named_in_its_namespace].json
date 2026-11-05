@@ -1,0 +1,86 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 12
+      },
+      "end": {
+        "row": 3,
+        "column": 53
+      }
+    },
+    "tagged_scope": "void touch(A&) {\n        // @Inside a hidden friend, IMPL_R_FR_1, impl\n    }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 3,
+      "end": 5,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "ns::touch",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "function",
+          "name": "touch"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Inside a hidden friend",
+      "id": "IMPL_R_FR_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 4
+      },
+      "end": {
+        "row": 7,
+        "column": 46
+      }
+    },
+    "tagged_scope": "bool operator==(const A&, const A&) { return true; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 9,
+      "end": 9,
+      "language": "cpp",
+      "entity_kind": "operator",
+      "qualified_name": "ns::operator==",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "operator",
+          "name": "operator=="
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "The friend's definition",
+      "id": "IMPL_R_FR_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

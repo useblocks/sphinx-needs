@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 4
+      },
+      "end": {
+        "row": 4,
+        "column": 76
+      }
+    },
+    "tagged_scope": "void g() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 6,
+      "end": 6,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "g",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "g"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Between invocations of a macro also used beside code",
+      "id": "IMPL_R_NSU_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]
