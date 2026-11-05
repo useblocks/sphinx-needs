@@ -78,6 +78,9 @@
 #   duplicate_id        - a record has the `id` of an earlier one; skipped, the first read.
 #                         Path `needs.<i>.id`
 #   fields_not_object   - `fields` is not an object; not read. Path `needs.<i>.fields`
+#   field_reserved      - a key of `fields` the projection owns (`id`, `type`, `content`,
+#                         `doctype`, `parts`, `docname`, `sections`); not read.
+#                         Path `needs.<i>.fields.<key>`
 #   links_not_object    - `links` is not an object; not read. Path `needs.<i>.links`
 #   link_invalid        - a link type's value is not an array (path `needs.<i>.links.<t>`),
 #                         or an entry is neither a string nor an object of a string `id`
@@ -362,12 +365,31 @@ records = { A = { title = "first" } }
 
 [[case]]
 name = "a-field-named-id-or-type-does-not-replace-them"
-why = "the record's own id and type win over a key of fields of the same name"
+why = "the record's own id and type win over a key of fields of the same name, which is reported and not read"
 layer = "document"
 json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "fields": {"id": "Z", "type": "spec", "title": "t"}}]}'''
 [case.expect]
-diagnostics = []
+diagnostics = [{ code = "field_reserved", path = "needs.0.fields.id" }, { code = "field_reserved", path = "needs.0.fields.type" }]
 records = { A = { id = "A", type = "req", title = "t" } }
+
+[[case]]
+name = "no-key-the-projection-owns-is-read-from-fields"
+why = "id, type, content, doctype, parts, docname and sections never come from fields: a record without them has none of them, and each is reported"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "fields": {"title": "t", "id": "Z", "type": "spec", "content": "x", "doctype": ".md", "parts": {"p": "y"}, "docname": "elsewhere", "sections": ["S"]}, "source": [{"kind": "code"}]}]}'''
+[case.expect]
+diagnostics = [{ code = "field_reserved", path = "needs.0.fields.id" }, { code = "field_reserved", path = "needs.0.fields.type" }, { code = "field_reserved", path = "needs.0.fields.content" }, { code = "field_reserved", path = "needs.0.fields.doctype" }, { code = "field_reserved", path = "needs.0.fields.parts" }, { code = "field_reserved", path = "needs.0.fields.docname" }, { code = "field_reserved", path = "needs.0.fields.sections" }]
+records = { A = { id = "A", title = "t" } }
+unset = { A = ["type", "content", "doctype", "parts", "docname", "sections"] }
+
+[[case]]
+name = "a-link-type-replaces-a-field-of-its-name"
+why = "a link type and a field of one name: the link type is read"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "fields": {"links": "a field"}, "links": {"links": ["B"]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { links = ["B"] } }
 
 [[case]]
 name = "fields-that-are-not-an-object-are-not-read"
@@ -393,12 +415,30 @@ unset = { A = ["content"] }
 
 [[case]]
 name = "a-bare-string-link-is-read-as-written"
-why = "a link given as a string is a bare id and is handed on as it is"
+why = "a link given as a string, with no dot or bracket in it, is a bare id and is handed on as it is"
 layer = "document"
 json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": ["B", "C"]}}]}'''
 [case.expect]
 diagnostics = []
 records = { A = { links = ["B", "C"] } }
+
+[[case]]
+name = "a-bare-string-is-handed-on-in-format-1-s-grammar"
+why = "a string link is handed on as written, a dot in it included: the reading project reads it in format 1's grammar, as a link to a part (a writer writes a part only as an object)"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": ["B.p1"]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { links = ["B.p1"] } }
+
+[[case]]
+name = "a-bare-string-with-brackets-is-handed-on-in-format-1-s-grammar"
+why = "a string link with brackets is handed on as written: the reading project reads it in format 1's grammar, as a condition where its link type parses them (a writer writes a condition only as an object)"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": ["B[x]"]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { links = ["B[x]"] } }
 
 [[case]]
 name = "a-link-object-of-an-id-alone-is-its-id"
@@ -524,6 +564,25 @@ records = { A = { content = "" } }
 unset = { A = ["doctype", "parts"] }
 
 [[case]]
+name = "a-content-object-without-text-has-no-content-key"
+why = "a content object with no text gives no content key, though its doctype is read"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "content": {"doctype": ".rst"}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { doctype = ".rst" } }
+unset = { A = ["content", "parts"] }
+
+[[case]]
+name = "parts-that-are-not-an-object-are-handed-on-as-they-are"
+why = "a content.parts that is not an object cannot be reshaped: it is handed on as written, for the reading project to refuse as it refuses a format-1 record's parts"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "content": {"text": "x", "parts": ["p1", "the part"]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { content = "x", parts = ["p1", "the part"] } }
+
+[[case]]
 name = "parts-are-projected-as-format-1-writes-them"
 why = "content.parts maps each part's id to its text; the record's parts maps it to an object of its id and content, as format 1 writes parts"
 layer = "document"
@@ -602,12 +661,12 @@ diagnostics = []
 records = { A = { docname = "index", sections = [] } }
 
 [[case]]
-name = "the-placement-replaces-a-field-of-its-name"
-why = "the placement's docname and sections win over a key of fields of the same name"
+name = "the-placement-s-keys-are-not-read-from-fields"
+why = "a field named docname or sections is reported and not read: the placement gives both"
 layer = "document"
 json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "fields": {"docname": "elsewhere", "sections": ["X"]}, "source": [{"kind": "page", "document": "index"}]}]}'''
 [case.expect]
-diagnostics = []
+diagnostics = [{ code = "field_reserved", path = "needs.0.fields.docname" }, { code = "field_reserved", path = "needs.0.fields.sections" }]
 records = { A = { docname = "index", sections = [] } }
 
 # --- the source: hops ---------------------------------------------------------------
@@ -702,9 +761,9 @@ records = { A = { docname = "index", sections = [] } }
 name = "every-finding-of-a-draft-is-reported"
 why = "the findings about the draft and those about each record are reported together, and every record that can be read is"
 layer = "document"
-json = '''{"format_version": "2a1", "project": {"name": "up", "version": 1}, "needs": [7, {"type": "req"}, {"id": 2}, {"id": "A", "fields": 1, "links": 2, "content": 3, "source": 4}, {"id": "A"}, {"id": "B", "links": {"links": [null], "tests": "C"}, "source": [{"kind": 1}]}]}'''
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": 1}, "needs": [7, {"type": "req"}, {"id": 2}, {"id": "A", "fields": 1, "links": 2, "content": 3, "source": 4}, {"id": "A"}, {"id": "B", "fields": {"id": "X"}, "links": {"links": [null], "tests": "C"}, "source": [{"kind": 1}]}]}'''
 [case.expect]
-diagnostics = [{ code = "project_invalid", path = "project.version" }, { code = "record_not_object", path = "needs.0" }, { code = "id_missing", path = "needs.1" }, { code = "id_not_string", path = "needs.2.id" }, { code = "fields_not_object", path = "needs.3.fields" }, { code = "links_not_object", path = "needs.3.links" }, { code = "content_not_object", path = "needs.3.content" }, { code = "source_not_a_list", path = "needs.3.source" }, { code = "duplicate_id", path = "needs.4.id" }, { code = "link_invalid", path = "needs.5.links.links.0" }, { code = "link_invalid", path = "needs.5.links.tests" }, { code = "hop_invalid", path = "needs.5.source.0" }]
+diagnostics = [{ code = "project_invalid", path = "project.version" }, { code = "record_not_object", path = "needs.0" }, { code = "id_missing", path = "needs.1" }, { code = "id_not_string", path = "needs.2.id" }, { code = "fields_not_object", path = "needs.3.fields" }, { code = "links_not_object", path = "needs.3.links" }, { code = "content_not_object", path = "needs.3.content" }, { code = "source_not_a_list", path = "needs.3.source" }, { code = "duplicate_id", path = "needs.4.id" }, { code = "field_reserved", path = "needs.5.fields.id" }, { code = "link_invalid", path = "needs.5.links.links.0" }, { code = "link_invalid", path = "needs.5.links.tests" }, { code = "hop_invalid", path = "needs.5.source.0" }]
 name = ""
 keys = ["A", "B"]
 records = { B = { links = [] } }

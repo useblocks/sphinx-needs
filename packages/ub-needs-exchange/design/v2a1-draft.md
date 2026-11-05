@@ -69,7 +69,7 @@ Status: describes the implementation as it is (ub-needs-exchange, unreleased).
 3. **`project`**, an object of a `name` and a `version`, each a string. The version is
    the document's: `Version.name` is `project.version`, or `""` without one. `project`
    absent or not an object (format 1's `project` string included), or a `name` or
-   `version` that is not a string, is read as absent and reported (`project_invalid`,
+   `version` that is present and not a string, is read as absent and reported (`project_invalid`,
    path `project`, `project.name` or `project.version`) — a finding, not a refusal.
    Enforced by: corpus: `a-draft-without-a-project-version-is-named-empty`,
    `a-draft-without-a-project-is-read-and-reported`,
@@ -134,15 +134,20 @@ A draft's record is handed out in the shape a format-1 record has, so that a rea
 format 1's records reads it unchanged. `Record.fields` is a new object of:
 
 1. **`id`** and **`type`**, as written (`type` is not checked here, as format 1's is not;
-   absent, there is no `type` key). Of the keys below, none replaces these two.
-2. **every key of `fields`**: core and project fields in one name space. A `fields` that is
-   not an object is not read (`fields_not_object`, path `needs.<index>.fields`).
+   absent, there is no `type` key).
+2. **every key of `fields`**: core and project fields in one name space — except the
+   seven keys the projection owns, `id`, `type`, `content`, `doctype`, `parts`, `docname`
+   and `sections`, which come only from the record itself, its `content` and its
+   placement: such a key of `fields` is not read, and each is reported (`field_reserved`,
+   path `needs.<index>.fields.<key>`). A `fields` that is not an object is not read
+   (`fields_not_object`, path `needs.<index>.fields`).
 3. **every link type of `links`**, each a list of format-1 link strings (§5). A `links`
    that is not an object is not read (`links_not_object`, path `needs.<index>.links`).
    A link type replaces a field of its name.
 4. from **`content`**, an object: `content` = its `text`, `doctype` = its `doctype`, and
    `parts` = `{<part id>: {"id": <part id>, "content": <text>}}` from its `parts` (a
-   `{<part id>: <text>}` object) — each only where the key is there. A `content` that is
+   `{<part id>: <text>}` object) — each only where the key is there, so a `content`
+   without `text` gives no `content` key. A `content` that is
    not an object is not read (`content_not_object`, path `needs.<index>.content`). The
    values are not checked here (as format 1's are not), and a `parts` that is not an
    object is handed on as it is, for the reading project to refuse as it refuses a
@@ -156,8 +161,7 @@ format 1's records reads it unchanged. `Record.fields` is a new object of:
    `section`, **innermost first**: a hop's `semantic` is outermost first, and format 1's
    `sections` innermost first (sphinx-needs' `project_legacy` in `_need_source.py`, the
    rule that writes format 1's `sections` from the same list). A placement with no
-   `semantic` has `sections` `[]`; a record with no placement has neither key. The
-   placement replaces a field of either name.
+   `semantic` has `sections` `[]`; a record with no placement has neither key.
 
 What a draft's record does not get: format 1's legacy `description`-as-content rule
 (shared contract §6.3) — a field named `description` is a field, and a record with no
@@ -169,15 +173,17 @@ contract's §6.6), except the link lists and `parts`, which the projection build
 
 Enforced by: corpus: `a-record-is-projected-to-the-format-1-shape`,
 `a-record-with-only-an-id-is-read`, `the-type-is-handed-on-as-written`,
-`a-field-named-id-or-type-does-not-replace-them`, `fields-that-are-not-an-object-are-not-read`,
+`a-field-named-id-or-type-does-not-replace-them`, `no-key-the-projection-owns-is-read-from-fields`,
+`fields-that-are-not-an-object-are-not-read`, `a-link-type-replaces-a-field-of-its-name`,
 `links-that-are-not-an-object-are-not-read`, `a-record-without-content-has-no-content-key`,
-`content-without-a-doctype-has-no-doctype-key`, `parts-are-projected-as-format-1-writes-them`,
+`content-without-a-doctype-has-no-doctype-key`, `a-content-object-without-text-has-no-content-key`,
+`parts-are-projected-as-format-1-writes-them`, `parts-that-are-not-an-object-are-handed-on-as-they-are`,
 `content-that-is-not-an-object-is-not-read`, `the-legacy-description-is-not-the-content-in-a-draft`,
 `a-record-without-a-placement-has-no-docname`, `a-record-without-a-source-has-no-docname`,
 `an-include-chain-has-its-placement-last`,
 `of-several-hops-with-a-document-the-last-is-the-placement`,
 `the-placement-s-sections-are-innermost-first`, `a-placement-without-semantic-has-no-sections`,
-`the-placement-replaces-a-field-of-its-name`;
+`the-placement-s-keys-are-not-read-from-fields`;
 `test_reader.py::test_a_null_value_of_a_draft_is_read`,
 `…::test_a_draft_s_records_do_not_alter_the_document`.
 
@@ -231,17 +237,24 @@ them.
 
 ## 5. A link
 
-`links` maps each link type to an array. An entry is either **a string, a bare id**, or
-**an object `{"id", "part"?, "condition"?}`**, each a string — the link to a part, or with
-a condition. There are no back links, and no `ID.part[condition]` grammar in the file.
+`links` maps each link type to an array. An entry is either **a string** or **an object
+`{"id", "part"?, "condition"?}`**, each a string — the link to a part, or with a
+condition. There are no back links. **A string is handed on as written, and the reading
+project reads it in format 1's grammar**: a `.` in it is read as a part and a `[` as the
+start of a condition (where its link type parses conditions; with sphinx-needs'
+`parse_conditions: False` the `[` stays in the id, as in format 1). So a writer writes a
+part or a condition only as an object, and a string is a bare id only when it has
+neither character.
 
 1. The projection spells each entry as format 1 writes a link (sphinx-needs'
-   `NeedLink.to_link_string`): a string as it is; an object as its `id`, then `.part` when
+   `NeedLink.to_link_string`): a string as it is written, unchanged; an object as its `id`, then `.part` when
    the part is not empty, then the condition, when there is one, in brackets one deeper
    than the longest run of `]` in it — `B`, `B.p1`, `B[c]`, `B.p1[c]`, `B[[tags[0] == 'x']]`.
    That string reads back as the same link in sphinx-needs, with one exception format 1
    has too: a condition that ends in `]` does not.
    Enforced by: corpus: `a-bare-string-link-is-read-as-written`,
+   `a-bare-string-is-handed-on-in-format-1-s-grammar`,
+   `a-bare-string-with-brackets-is-handed-on-in-format-1-s-grammar`,
    `a-link-object-of-an-id-alone-is-its-id`, `a-link-to-a-part-is-spelled-id-dot-part`,
    `a-link-with-a-condition-is-spelled-in-brackets`, `a-link-with-a-part-and-a-condition`,
    `a-condition-with-brackets-is-bracketed-one-deeper`, `an-empty-part-is-no-part`,
@@ -279,6 +292,7 @@ The findings (`Diagnostic.code`):
 | `id_not_string` | `needs.<i>.id` | the version | §3.1 |
 | `duplicate_id` | `needs.<i>.id` | the version | §3.1 |
 | `fields_not_object` | `needs.<i>.fields` | the record | §3.2 |
+| `field_reserved` | `needs.<i>.fields.<key>` | the record | §3.2 |
 | `links_not_object` | `needs.<i>.links` | the record | §3.2 |
 | `link_invalid` | `needs.<i>.links.<t>`, `needs.<i>.links.<t>.<j>` | the record | §5.2 |
 | `content_not_object` | `needs.<i>.content` | the record | §3.2 |

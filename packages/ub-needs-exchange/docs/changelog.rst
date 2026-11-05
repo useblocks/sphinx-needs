@@ -36,7 +36,8 @@ Unreleased
   file has them, in the new ``Record.source`` (``()`` for a format-1 record);
   ``Version.format_version`` says which format a version is read as. The draft's
   findings and refusals have codes of their own (``draft_has_versions``,
-  ``duplicate_id`` -- the first record of an id is read --, ``hop_invalid``, ...), and
+  ``duplicate_id`` -- the first record of an id is read --, ``field_reserved``,
+  ``hop_invalid``, ...), and
   an unknown name in ``drafts`` is a ``ValueError``. The draft may change or be removed
   in any release while it is one, and a file of it is readable only by the release that
   wrote it. Its contract is ``design/v2a1-draft.md`` and its corpus
