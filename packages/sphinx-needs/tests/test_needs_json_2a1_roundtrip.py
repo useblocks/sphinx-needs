@@ -289,8 +289,9 @@ def test_without_a_project_name_the_origin_is_the_source(
     make_app: Any, tmp_path: Path
 ) -> None:
     """A file whose envelope names no project: an absent origin is the file as the
-    reader names it -- the needimport's path relative to the source directory, an
-    external source's ``json_path`` as written (``./data/anon.json``). A stated origin is kept."""
+    reader names it -- its path relative to the source directory, for a needimport and
+    for an external source's ``json_path`` alike (``./data/anon.json`` is
+    ``data/anon.json``). A stated origin is kept."""
     srcdir = _write(
         tmp_path / "anon",
         {
@@ -307,7 +308,7 @@ def test_without_a_project_name_the_origin_is_the_source(
     needs = SphinxNeedsData(app.env).get_needs_view()
     for need_id, origin in (
         ("ANON_1", "data/anon.json"),
-        ("X_ANON_1", "./data/anon.json"),
+        ("X_ANON_1", "data/anon.json"),
     ):
         source = needs[need_id].source
         assert isinstance(source, NeedItemSource)
@@ -550,3 +551,39 @@ def test_a_filter_over_section_name_imports_alike(
         "REQ_2",
         "REQ_INC",
     ]
+
+
+@pytest.mark.parametrize(
+    ("json_path", "origin"),
+    [
+        ("./data/anon.json", "data/anon.json"),
+        ("data/../data/anon.json", "data/anon.json"),
+        ("../shared/./anon.json", "../shared/anon.json"),
+        ("<absolute>", "data/anon.json"),
+    ],
+)
+def test_an_external_file_is_named_as_a_needimport_names_it(
+    json_path: str, origin: str, make_app: Any, tmp_path: Path
+) -> None:
+    """Where the file names no project, an external source's ``json_path`` names the
+    hops as a needimport names its file: resolved against the configuration directory,
+    then relative to the source directory (POSIX, ``..`` outside it), whatever the
+    configuration spells."""
+    srcdir = tmp_path / "anon"
+    (srcdir / "data").mkdir(parents=True)
+    (tmp_path / "shared").mkdir()
+    for folder in (srcdir / "data", tmp_path / "shared"):
+        (folder / "anon.json").write_text(json.dumps(ANONYMOUS))
+    if json_path == "<absolute>":
+        json_path = str(srcdir / "data" / "anon.json")
+    (srcdir / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\n'
+        "needs_external_needs = [\n"
+        f'    {{"base_url": "http://x", "json_path": {json_path!r}, "id_prefix": "X_"}}\n'
+        "]\n"
+    )
+    (srcdir / "index.rst").write_text("Anon\n====\n")
+    app, _ = _build(make_app, srcdir)
+    source = SphinxNeedsData(app.env).get_needs_view()["X_ANON_1"].source
+    assert isinstance(source, NeedItemSource)
+    assert [hop.origin for hop in source.upstream] == [origin, "named"]
