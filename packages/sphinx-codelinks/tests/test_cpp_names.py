@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from tree_sitter import Node as TreeSitterNode
 
-from sphinx_codelinks.analyse import utils
+from sphinx_codelinks.analyse import entity, utils
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.analyse.entity import (
     CppNames,
@@ -48,9 +48,12 @@ def _nodes_of(root: TreeSitterNode, kind: str) -> list[TreeSitterNode]:
     return found
 
 
-def _functions(source: str, path: str = "src/a.cpp") -> set[str]:
+def _functions(
+    source: str, path: str = "src/a.cpp", *, which: bool = False
+) -> set[str]:
     """Every function of ``source`` (definition or declaration) as the file names it,
-    with its normalised parameters: what tells two of them apart."""
+    with its normalised parameters: what tells two of them apart; after ``def `` or
+    ``decl `` when ``which``."""
     root, names = _parsed(source, path)
     found = set()
     stack = [root]
@@ -66,7 +69,11 @@ def _functions(source: str, path: str = "src/a.cpp") -> set[str]:
         name = describe_entity(node, CommentType.cpp, source=names.source)
         assert name is not None
         named = names.qualify(name, node.start_point.row + 1)
-        found.add(f"{named.qualified_name}{cpp_signature(node, names.source)}")
+        spelled = f"{named.qualified_name}{cpp_signature(node, names.source)}"
+        if which:
+            kind = "def" if node.type == "function_definition" else "decl"
+            spelled = f"{kind} {spelled}"
+        found.add(spelled)
     return found
 
 
@@ -481,6 +488,18 @@ def test_cpp_names_as_clang_prints_them(
             {"ns::operator==(const A&, const A&)"},
             id="friend_declared_in_its_class",
         ),
+        pytest.param(
+            "namespace lib {\ninline namespace v1 {\nstruct Widget { void draw() {} };\n}\n"
+            "struct Widget { void resize() {} };\n}\n",
+            {"lib::Widget::resize()", "lib::v1::Widget::draw()"},
+            id="a_kept_class_keeps_its_members",
+        ),
+        pytest.param(
+            "namespace lib {\ninline namespace v1 {\nnamespace detail { void a() {} }\n}\n"
+            "inline namespace v2 {\nnamespace detail { void b() {} }\n}\n}\n",
+            {"lib::v1::detail::a()", "lib::v2::detail::b()"},
+            id="a_kept_namespace_keeps_its_members",
+        ),
     ],
 )
 def test_names_that_would_collide_keep_their_full_chain(
@@ -492,7 +511,8 @@ def test_names_that_would_collide_keep_their_full_chain(
     two classes, ``Self`` aliases, two inline siblings, an inline namespace beside its
     parent, the ``#if``/``#else`` arms of an ABI version, a declaration with its
     group); where it would not, the name is clang's (a friend declared in its class and
-    defined in its namespace is one function)."""
+    defined in its namespace is one function). Everything a class or namespace that
+    keeps its full chain holds keeps it too."""
     assert _functions(source) == expected
 
 
@@ -714,3 +734,97 @@ def test_a_marker_on_a_partial_specialisation_member(tmp_path: Path) -> None:
         "REQ_U": "P<T,4>::fill",
         "REQ_S": "L<Head,Tail...>::size",
     }
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
+            "namespace lib {\ninline namespace v1 {\nvoid f(int);\n}\n}\n"
+            "void lib::v1::f(int) {}\n",
+            {"decl lib::f(int)", "def lib::f(int)"},
+            id="one_definition",
+        ),
+        pytest.param(
+            "namespace lib::inline v3 {\nvoid z(int);\n}\nvoid lib::v3::z(int) {}\n",
+            {"decl lib::z(int)", "def lib::z(int)"},
+            id="a_nested_inline_part",
+        ),
+        pytest.param(
+            "#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
+            "LIB_NAMESPACE_BEGIN\ninline namespace v1 {\nvoid f(int);\n}\n"
+            "LIB_NAMESPACE_END\nvoid lib::v1::f(int) {}\n",
+            {"decl lib::f(int)", "def lib::f(int)"},
+            id="in_a_namespace_the_file_s_macro_opens",
+        ),
+        pytest.param(
+            "namespace lib {\n#if LIB_V2\ninline namespace v2 { void g(); }\n#else\n"
+            "inline namespace v1 { void g() {} }\n#endif\n}\n"
+            "#if LIB_V2\nvoid lib::v2::g() {}\n#endif\n",
+            {"decl lib::v2::g()", "def lib::v1::g()", "def lib::v2::g()"},
+            id="abi_version_arms_out_of_line",
+        ),
+        pytest.param(
+            "namespace lib {\ninline namespace v1 { void g(); }\n"
+            "inline namespace v2 { void g(); }\n}\n"
+            "void lib::v1::g() {}\nvoid lib::v2::g() {}\n",
+            {
+                "decl lib::v1::g()",
+                "decl lib::v2::g()",
+                "def lib::v1::g()",
+                "def lib::v2::g()",
+            },
+            id="two_inline_siblings_out_of_line",
+        ),
+        pytest.param(
+            "namespace lib {\nvoid g() {}\ninline namespace v1 { void g(); }\n}\n"
+            "void lib::v1::g() {}\n",
+            {"decl lib::v1::g()", "def lib::g()", "def lib::v1::g()"},
+            id="inline_beside_its_parent_out_of_line",
+        ),
+        pytest.param(
+            "namespace lib {\ninline namespace v1 {\nstruct Widget { void draw(); };\n}\n"
+            "struct Widget { void resize() {} };\n}\nvoid lib::v1::Widget::draw() {}\n",
+            {
+                "decl lib::v1::Widget::draw()",
+                "def lib::Widget::resize()",
+                "def lib::v1::Widget::draw()",
+            },
+            id="a_member_of_a_kept_class_out_of_line",
+        ),
+    ],
+)
+def test_a_qualifier_through_an_inline_namespace_leaves_it_out(
+    source: str, expected: set[str]
+) -> None:
+    """A qualifier written through an inline namespace of the file leaves it out, as
+    clang names the function (``void lib::v1::f(int) {}`` is ``lib::f``, named as its
+    declaration is), and the function is one that leaves a container out: where that
+    would give two definitions one name and parameters, it keeps the qualifier as
+    written, so a declaration never names another definition (the ``#if``/``#else``
+    arms of an ABI version with the definition out of line, two inline siblings, an
+    inline namespace beside its parent), and a member of a class that keeps its full
+    chain keeps it out of line too."""
+    assert _functions(source, which=True) == expected
+
+
+@pytest.mark.parametrize(
+    ("source", "inline"),
+    [
+        pytest.param("inline namespace v1 {}", True, id="inline"),
+        pytest.param("namespace a::inline b {}", True, id="inline_part"),
+        pytest.param("namespace a::inline b::c {}", True, id="inline_middle_part"),
+        pytest.param("namespace lib {}", False, id="plain"),
+        pytest.param("namespace pipeline {}", False, id="pipeline"),
+        pytest.param("namespace inliner {}", False, id="inliner"),
+        pytest.param("namespace baseline::inliner {}", False, id="nested_letters"),
+    ],
+)
+def test_inline_is_a_token(source: str, inline: bool) -> None:
+    """A namespace is inline, or has an inline part, by an ``inline`` token, as the
+    parser reads it: a name that merely holds the letters (``inliner``) is neither, so
+    nothing under it is named a second time."""
+    parser, _ = utils.init_tree_sitter(CommentType.cpp, Path("a.cpp"))
+    namespace = parser.parse(source.encode("utf-8")).root_node.named_children[0]
+    assert namespace.type == "namespace_definition"
+    assert entity._cpp_inline_namespace_or_part(namespace) == inline

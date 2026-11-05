@@ -617,6 +617,18 @@ class _CppNaming:
     specs: _PartialSpecs | None = None
     """The file's partial specialisations, which an out-of-line qualifier is spelled
     as (:func:`_cpp_name`)."""
+    inline: frozenset[str] | None = None
+    """The paths of the file's inline namespaces as the full chain spells them
+    (``lib::v2``), which a written qualifier leaves out
+    (:func:`_cpp_without_inline_parts`)."""
+    macros: Callable[[int], str] | None = None
+    """The namespaces the file's own macros open around a name ending at a byte, each
+    followed by ``::``."""
+
+    def macros_at(self, name_end: int) -> str:
+        """The namespaces the file's own macros open around a name ending at
+        ``name_end`` (``ns::`` or empty)."""
+        return self.macros(name_end) if self.macros is not None else ""
 
 
 _ALONE = _CppNaming()
@@ -934,13 +946,100 @@ def _cpp_is_inline_namespace(node: TreeSitterNode) -> bool:
     return False
 
 
-def _cpp_inline_namespace_or_part(node: TreeSitterNode, source: bytes | None) -> bool:
+def _cpp_inline_namespace_or_part(node: TreeSitterNode) -> bool:
     """The namespace ``node`` is inline, or holds an inline part in its nested name
-    (``namespace a::inline b``)."""
+    (``namespace a::inline b``): an ``inline`` token, as
+    :func:`_cpp_is_inline_namespace` reads one (``namespace pipeline`` has none)."""
     if _cpp_is_inline_namespace(node):
         return True
     name = node.child_by_field_name("name")
-    return name is not None and "inline" in _cpp_text(name, source)
+    return name is not None and _cpp_has_inline_part(name)
+
+
+def _cpp_has_inline_part(name: TreeSitterNode) -> bool:
+    """The nested namespace specifier ``name`` holds an ``inline`` token."""
+    if name.type != "nested_namespace_specifier":
+        return False
+    return any(
+        child.type == "inline" or _cpp_has_inline_part(child) for child in name.children
+    )
+
+
+def _cpp_namespaces_around(node: TreeSitterNode, source: bytes | None) -> str:
+    """The namespaces around ``node`` with every part kept (an inline one too),
+    outermost first, each followed by ``::`` (``lib::v1::``)."""
+    groups: list[list[str]] = []
+    parent = node.parent
+    while parent is not None:
+        if parent.type == "namespace_definition":
+            groups.append(
+                _cpp_namespace_parts(parent, source, own=False, full_chain=True)
+            )
+        parent = parent.parent
+    return "".join(f"{part}::" for group in reversed(groups) for part in group)
+
+
+def _cpp_inline_paths_of(
+    node: TreeSitterNode, source: bytes | None, prefix: Callable[[int], str]
+) -> list[str]:
+    """The paths of the inline parts of the namespace ``node`` (an inline namespace, or
+    one with an inline part in its nested name), as the full chain spells them, after
+    the namespaces the file's own macros open (``lib::v2``); none for an unnamed one,
+    which no qualifier can name."""
+    name = node.child_by_field_name("name")
+    if name is None:
+        return []
+    parts = _cpp_split(_cpp_namespace_name(node, source))
+    last = len(parts) - 1
+    path = prefix(name.end_byte) + _cpp_namespaces_around(node, source)
+    paths: list[str] = []
+    for index, part in enumerate(parts):
+        inline = part.startswith("inline ")
+        bare = part.removeprefix("inline ")
+        if not inline:
+            inline = index == last and _cpp_is_inline_namespace(node)
+        path += bare
+        if inline:
+            paths.append(path)
+        path += "::"
+    return paths
+
+
+def _cpp_without_inline_parts(
+    naming: _CppNaming,
+    node: TreeSitterNode,
+    source: bytes | None,
+    own: str,
+    name_end: int,
+    semantic: list[SemanticElement],
+) -> tuple[str, list[SemanticElement]]:
+    """``own``, the name written at ``node`` (its name ending at ``name_end``), and its
+    components ``semantic`` (which end with ``own``'s), without the parts of its
+    qualifier that name an inline namespace of the file, as the namespaces around a
+    node leave one out (``void lib::v2::g() {}`` is ``lib::g`` when the file declares
+    ``inline namespace v2`` in ``lib``); unchanged with every container kept."""
+    if naming.inline is None or naming.full_chain:
+        return own, semantic
+    *qualifier, _ = parts = _cpp_split(own)
+    if not qualifier:
+        return own, semantic
+    path = naming.macros_at(name_end) + _cpp_namespaces_around(node, source)
+    dropped: list[int] = []
+    for index, part in enumerate(qualifier):
+        path += part
+        if path in naming.inline:
+            dropped.append(index)
+        path += "::"
+    if not dropped:
+        return own, semantic
+    first = max(len(semantic) - len(parts), 0)
+    kept_semantic = [
+        element
+        for position, element in enumerate(semantic)
+        if position - first not in dropped
+    ]
+    kept = [part for index, part in enumerate(parts) if index not in dropped]
+    return "::".join(kept), kept_semantic
 
 
 def _cpp_namespace_parts(
@@ -1220,12 +1319,15 @@ def _cpp_describe_in(
             kind = "method"
         else:
             kind = "function"
-        return _named(
-            kind,
-            "::".join([*prefix, own]),
-            [*outer, *_cpp_qualified(own, kind, member=kind in _CPP_MEMBER_KINDS)],
+        own, semantic = _cpp_without_inline_parts(
+            naming,
+            node,
+            source,
+            own,
             inner.end_byte,
+            [*outer, *_cpp_qualified(own, kind, member=kind in _CPP_MEMBER_KINDS)],
         )
+        return _named(kind, "::".join([*prefix, own]), semantic, inner.end_byte)
     if node.type in _CPP_CLASS_KINDS:
         class_kind = _CPP_CLASS_KINDS[node.type]
         name = node.child_by_field_name("name")
@@ -1685,6 +1787,38 @@ class _Seen:
     """Its name with every container kept, when one is left out."""
 
 
+@dataclass
+class _Found:
+    """What the one walk of :func:`cpp_renames` finds."""
+
+    specs: _PartialSpecs = field(default_factory=lambda: _PartialSpecs())
+    """The file's partial specialisations."""
+    inline_paths: set[str] = field(default_factory=set)
+    """The paths of its inline namespaces (:func:`_cpp_inline_paths_of`)."""
+    inline_names: set[str] = field(default_factory=set)
+    """Their own names (``v2``), one of which a qualifier through one holds."""
+    left_out: list[TreeSitterNode] = field(default_factory=list)
+    """The entities that leave a container out."""
+    bodies: list[TreeSitterNode] = field(default_factory=list)
+    """The other definitions."""
+    qualified: list[TreeSitterNode] = field(default_factory=list)
+    """The other functions qualified with arguments."""
+    through: list[TreeSitterNode] = field(default_factory=list)
+    """The functions named through a written qualifier (:func:`_cpp_qualified_head`)."""
+
+
+def _cpp_qualified_head(node: TreeSitterNode) -> TreeSitterNode | None:
+    """The written qualified name of the function ``node`` (``lib::v2::g`` of
+    ``void lib::v2::g() {}``), when it has one."""
+    if node.type not in ("function_definition", "declaration", "field_declaration"):
+        return None
+    if _cpp_operator_cast(node) is not None:
+        return None
+    declarator = cpp_function_declarator(node)
+    inner = declarator.child_by_field_name("declarator") if declarator else None
+    return inner if inner is not None and inner.type == "qualified_identifier" else None
+
+
 def cpp_renames(
     root: TreeSitterNode, source: bytes | None, prefix: Callable[[int], str]
 ) -> dict[int, EntityName]:
@@ -1695,45 +1829,52 @@ def cpp_renames(
     its parameter names is spelled as that specialisation (:class:`_PartialSpecs`).
 
     An inline namespace and a friend's classes are left out of a name
-    (:func:`_cpp_containers`), except where that makes two definitions with a body
-    share a name and parameters that the full chain kept apart: then every entity of
-    that name and parameters (its declarations too) keeps the full chain, so no marker
-    credits another definition. A declaration and one definition do not collide (a
-    friend declared in its class and defined in its namespace stays one entity). The
-    name compared is ``prefix`` (the namespaces the file's own macros open around a
-    name ending at a byte) and the name, and the parameters are the normalised
-    signature (:func:`cpp_signature`).
+    (:func:`_cpp_containers`), and so is an inline namespace of the file a written
+    qualifier names (``void lib::v2::g() {}`` is ``lib::g``, its full chain
+    ``lib::v2::g``: :func:`_cpp_without_inline_parts`), except where that makes two
+    definitions with a body share a name and parameters that the full chain kept
+    apart: then every entity of that name and parameters that leaves a container out
+    (its declarations too) keeps the full chain, so no marker credits another
+    definition, and so does everything a class or namespace that keeps it holds. A
+    declaration and one definition do not collide (a friend declared in its class and
+    defined in its namespace stays one entity). The name compared is ``prefix`` (the
+    namespaces the file's own macros open around a name ending at a byte) and the
+    name, and the parameters are the normalised signature (:func:`cpp_signature`).
 
     Only the entities that leave a container out, and the definitions whose name ends
     as one of theirs does, are named here: a file with neither friends nor inline
     namespaces costs one walk of its tree, which skips every function body.
     """
-    # one walk: the partial specialisations, what leaves a container out, the other
-    # definitions, and the functions a specialisation may spell
-    specs = _PartialSpecs()
-    left_out: list[TreeSitterNode] = []
-    bodies: list[TreeSitterNode] = []
-    qualified: list[TreeSitterNode] = []
+    # one walk: the partial specialisations, the inline namespaces, what leaves a
+    # container out, the other definitions, the functions a specialisation may spell,
+    # and those named through a written qualifier
+    found = _Found()
     cursor = root.walk()
     # whether an inline namespace is around the cursor's node, per depth
     inside = [False]
     while True:
         node = cursor.node
         if node is None:  # a cursor always stands on a node
-            return _cpp_renamed(source, prefix, specs, (left_out, bodies, qualified))
+            return _cpp_renamed(source, prefix, found)
         in_inline = inside[-1]
         inline_here = node.type == "namespace_definition" and (
-            _cpp_inline_namespace_or_part(node, source)
+            _cpp_inline_namespace_or_part(node)
         )
-        specs.add(node, source)
+        found.specs.add(node, source)
+        if inline_here:
+            for path in _cpp_inline_paths_of(node, source, prefix):
+                found.inline_names.add(path.rsplit("::", 1)[-1])
+                found.inline_paths.add(path)
         if is_entity(node, CommentType.cpp):
+            if _cpp_qualified_head(node) is not None:
+                found.through.append(node)
             if in_inline or inline_here or _cpp_is_friend(node):
-                left_out.append(node)
+                found.left_out.append(node)
             else:
                 if _cpp_has_body_entity(node):
-                    bodies.append(node)
+                    found.bodies.append(node)
                 if _cpp_qualified_with_arguments(node, source):
-                    qualified.append(node)
+                    found.qualified.append(node)
         # nothing a function's body holds is a friend, an inline namespace or a
         # partial specialisation, or names one
         if node.type != "function_definition" and cursor.goto_first_child():
@@ -1741,36 +1882,72 @@ def cpp_renames(
             continue
         while not cursor.goto_next_sibling():
             if not cursor.goto_parent():
-                return _cpp_renamed(
-                    source, prefix, specs, (left_out, bodies, qualified)
-                )
+                return _cpp_renamed(source, prefix, found)
             inside.pop()
 
 
+def _cpp_leave_out_through_inline(
+    source: bytes | None, naming: _CppNaming, found: _Found
+) -> tuple[set[int], set[int]]:
+    """The functions of ``found.through`` whose written qualifier may name an inline
+    namespace of the file (one of its inline names is among its words), by node id;
+    and those of them ``naming`` names otherwise than as written that are not in
+    ``found.left_out``, moved there from ``found.bodies``: they leave a container out,
+    their full chain the qualifier as written."""
+    if naming.inline is None:
+        return set(), set()
+    through = [
+        node
+        for node in found.through
+        if (head := _cpp_qualified_head(node)) is not None
+        and any(
+            word in found.inline_names for word in _cpp_words(_cpp_text(head, source))
+        )
+    ]
+    ids = {node.id for node in through}
+    left = {node.id for node in found.left_out}
+    as_written = replace(naming, inline=None)
+    moved: set[int] = set()
+    for node in through:
+        if node.id in left:
+            continue
+        named = _cpp_describe_in(node, source, naming)
+        written = _cpp_describe_in(node, source, as_written)
+        if (named and named.qualified_name) != (written and written.qualified_name):
+            moved.add(node.id)
+            found.left_out.append(node)
+    found.bodies = [node for node in found.bodies if node.id not in moved]
+    return ids, moved
+
+
 def _cpp_renamed(
-    source: bytes | None,
-    prefix: Callable[[int], str],
-    specs: _PartialSpecs,
-    found: tuple[list[TreeSitterNode], list[TreeSitterNode], list[TreeSitterNode]],
+    source: bytes | None, prefix: Callable[[int], str], found: _Found
 ) -> dict[int, EntityName]:
-    """:func:`cpp_renames`, once its walk has found the partial specialisations
-    ``specs``, and the entities that leave a container out, the other definitions, and
-    the functions qualified with arguments."""
-    left_out, bodies, qualified = found
-    with_specs = _CppNaming(specs=specs if specs.by_template else None)
-    full_chain = _CppNaming(full_chain=True, specs=with_specs.specs)
+    """:func:`cpp_renames`, once its walk has found what it looks for
+    (:class:`_Found`)."""
+    with_specs = _CppNaming(
+        specs=found.specs if found.specs.by_template else None,
+        inline=frozenset(found.inline_paths) if found.inline_paths else None,
+        macros=prefix,
+    )
+    full_chain = replace(with_specs, full_chain=True)
+    through_ids, moved = _cpp_leave_out_through_inline(source, with_specs, found)
 
     def named_alone(node: TreeSitterNode) -> tuple[EntityName, EntityName] | None:
         alone = _cpp_describe_in(node, source, _ALONE)
         if alone is None or alone.qualified_name is None or alone.name_end is None:
             return None
         named = alone
-        if with_specs.specs is not None and _cpp_qualified_with_arguments(node, source):
+        if (
+            with_specs.specs is not None and _cpp_qualified_with_arguments(node, source)
+        ) or node.id in through_ids:
             named = _cpp_describe_in(node, source, with_specs) or alone
         return alone, named
 
     out: dict[int, EntityName] = {}
-    for node in qualified if with_specs.specs is not None else ():
+    for node in found.qualified if with_specs.specs is not None else ():
+        if node.id in moved:
+            continue
         names = named_alone(node)
         if names is None:
             continue
@@ -1779,7 +1956,7 @@ def _cpp_renamed(
             out[named.name_end] = named
     # the entities that leave a container out, named both ways
     seen: list[_Seen] = []
-    for node in left_out:
+    for node in found.left_out:
         names = named_alone(node)
         if names is None:
             continue
@@ -1802,13 +1979,29 @@ def _cpp_renamed(
     if not leaves:
         return out
     # the other definitions that could share a name with one of them
-    for node in bodies:
+    for node in found.bodies:
         if _cpp_written_leaf(node, source) in leaves:
             names = named_alone(node)
             if names is not None:
                 seen.append(_Seen(node, *names, None))
     _cpp_keep_full_chains_where_names_collide(seen, source, prefix, out)
     return out
+
+
+def _cpp_chain_of(name: EntityName, prefix: Callable[[int], str]) -> str:
+    """``name`` after the namespaces the file's macros open around it: what two full
+    chains are compared by."""
+    at = prefix(name.name_end) if name.name_end is not None else ""
+    return at + (name.qualified_name or "")
+
+
+def _cpp_held_by(chain: str, containers: set[str]) -> bool:
+    """The chain ``chain`` is inside one of ``containers`` (one of them is a leading
+    part of it, ``lib::v1::Widget`` of ``lib::v1::Widget::draw``)."""
+    parts = _cpp_split(chain)
+    return any(
+        "::".join(parts[: count + 1]) in containers for count in range(len(parts) - 1)
+    )
 
 
 def _cpp_keep_full_chains_where_names_collide(
@@ -1819,27 +2012,38 @@ def _cpp_keep_full_chains_where_names_collide(
 ) -> None:
     """The names of ``seen`` into ``out`` where they differ from the names alone: each
     one that leaves a container out keeps its full chain where its name and
-    parameters are those of two definitions whose full chains differ."""
-
-    def at(name: EntityName) -> str:
-        return prefix(name.name_end) if name.name_end is not None else ""
-
+    parameters are those of two definitions whose full chains differ, and so does
+    everything a class or namespace that keeps its full chain holds (its members are
+    named in it)."""
     keys = [
-        (
-            at(entity.named) + (entity.named.qualified_name or ""),
-            cpp_signature(entity.node, source),
-        )
+        (_cpp_chain_of(entity.named, prefix), cpp_signature(entity.node, source))
         for entity in seen
     ]
     chains: dict[tuple[str, str | None], set[str]] = {}
     for entity, key in zip(seen, keys, strict=True):
         if _cpp_has_body_entity(entity.node):
             full = entity.full or entity.named
-            chains.setdefault(key, set()).add(at(full) + (full.qualified_name or ""))
-    for entity, key in zip(seen, keys, strict=True):
+            chains.setdefault(key, set()).add(_cpp_chain_of(full, prefix))
+    collides = [
+        entity.full is not None and len(chains.get(key, ())) > 1
+        for entity, key in zip(seen, keys, strict=True)
+    ]
+    # the classes and namespaces that keep their full chain
+    kept = {
+        _cpp_chain_of(entity.full, prefix)
+        for entity, collide in zip(seen, collides, strict=True)
+        if collide
+        and entity.full is not None
+        and _cpp_has_body_entity(entity.node)
+        and entity.node.type != "function_definition"
+    }
+    for entity, collide in zip(seen, collides, strict=True):
         if entity.full is None:
             continue
-        name = entity.full if len(chains.get(key, ())) > 1 else entity.named
+        keeps = collide or (
+            bool(kept) and _cpp_held_by(_cpp_chain_of(entity.full, prefix), kept)
+        )
+        name = entity.full if keeps else entity.named
         if (
             name.qualified_name != entity.alone.qualified_name
             and name.name_end is not None
