@@ -79,8 +79,11 @@ For format 2 as a whole; §§1–7 are how far the first draft goes.
 
 - **Id namespaces** (a record's `ns`).
 - **A schema block per need type**, and with it defaults left out of records: until then
-  a writer writes every value of the fields the need's type declares, `null` included,
-  so a record reads the same without a schema.
+  a writer writes every value of the fields the need's type declares that is not `null`,
+  defaults and typed empties (`[]`, `""`) included, so a record reads the same without a
+  schema. A field whose value is `null` is left out, and a reader reads it as unset (§3).
+  Whether a type declares a field a record leaves unset is schema information, and
+  returns with that block.
 - **An origins table** in the envelope (each upstream project's name, URL patterns,
   revision and roots), so URLs are composed on read rather than stored per need.
 - **Extend records** (what a `needextend` changed, with its own source), **columns** in a
@@ -153,7 +156,8 @@ For format 2 as a whole; §§1–7 are how far the first draft goes.
    key of the envelope is ignored, with no finding. A draft has **no schema**: a
    `needs_schema` key is one of those, `Version.schema_defaults()` is `{}`, and
    `records(apply_schema_defaults=...)` gives the same records either way. A writer of
-   the draft writes every value, defaults included.
+   the draft writes every field value that is not `null`, defaults included, and leaves
+   out a field whose value is `null` (§3).
    Enforced by: corpus: `unknown-envelope-keys-of-a-draft-are-ignored`;
    `test_reader.py::test_a_draft_has_no_schema_defaults`.
 6. The refusals are checked in the order `format_version` (the shared contract's),
@@ -176,6 +180,14 @@ For format 2 as a whole; §§1–7 are how far the first draft goes.
   "source": [{"kind": "page", "document": "index", "semantic": [{"kind": "section", "name": "Up"}]}]
 }
 ```
+
+**A `null` field value is left out.** A writer leaves out a field whose value is `null`
+(and writes every other value, a default or a typed empty such as `[]` or `""`
+included); a reader reads a missing field as unset — the projection has no key for it,
+and the reading project applies its own default, as it does to a `null`. A reader still
+reads a `null` a writer did not leave out, as `null`.
+Enforced by: corpus: `a-field-left-out-is-unset-and-a-null-is-read-as-null`;
+`test_reader.py::test_a_null_value_of_a_draft_is_read`.
 
 ### 3.1 Which records are read
 
