@@ -943,3 +943,16 @@ def test_a_pair_knows_its_lines() -> None:
         (5, 10),
         (7, 9),
     ]
+
+
+def test_a_byte_order_mark_is_no_token(tmp_path: Path) -> None:
+    """A UTF-8 byte order mark at the start of the file is no token: a ``#define`` on
+    the first line behind one is a directive, and its macro is read."""
+    source = (
+        "﻿#define LIB_NAMESPACE_BEGIN namespace lib {\n"
+        "#define LIB_NAMESPACE_END }\nLIB_NAMESPACE_BEGIN\n// @need-ids: REQ_1\n"
+        "void f() {}\nLIB_NAMESPACE_END\n"
+    )
+    assert _opened(source) == [["lib"]]
+    assert _defined(source) == ["lib::f"]
+    assert _attached(_analysed(tmp_path, source, "a.hpp")) == [("REQ_1", "lib::f")]

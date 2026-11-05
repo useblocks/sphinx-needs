@@ -358,12 +358,17 @@ def _rewrite(source: bytes, pairs: list[Pair]) -> Prepared:
     return Prepared(parse_text, MacroScopes(tuple(pairs)))
 
 
-_DEFINE_LINE = re.compile(rb"(?m)^[ \t\r\x0b\x0c]*#[^\n]*define")
+_DEFINE_LINE = re.compile(rb"(?m)(?:^|\A\xef\xbb\xbf)[ \t\r\x0b\x0c]*#[^\n]*define")
+
+
+_BOM = b"\xef\xbb\xbf"
+"""A UTF-8 byte order mark, which a file may start with: no token."""
 
 
 def _worth_lexing(source: bytes) -> bool:
     """F9: a buffer with no ``namespace``, or no line starting with ``#`` that holds
-    ``define``, has no namespace macro."""
+    ``define`` (a byte order mark before the first one aside), has no namespace
+    macro."""
     return b"namespace" in source and _DEFINE_LINE.search(source) is not None
 
 
@@ -425,10 +430,11 @@ def _raw_string(source: bytes, at: int) -> int:
 def _logical_lines(source: bytes) -> list[list[_Token]]:
     """The logical lines of ``source``: lines joined at their ``\\``-newline splices,
     each as its tokens; comments are left out, and a block comment or a raw string
-    spanning lines joins them (no line break is inside one)."""
+    spanning lines joins them (no line break is inside one). A byte order mark the file
+    starts with is no token."""
     lines: list[list[_Token]] = []
     line: list[_Token] = []
-    at = 0
+    at = len(_BOM) if source.startswith(_BOM) else 0
     size = len(source)
     while at < size:
         token = _TOKEN.match(source, at)
