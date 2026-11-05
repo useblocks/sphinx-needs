@@ -902,6 +902,14 @@ def test_inline_is_a_token(source: str, inline: bool) -> None:
             {"decl Outer::Inner::n()", "def Outer<int>::Inner::n()"},
             id="an_explicit_specialisation_s_empty_header",
         ),
+        pytest.param(
+            "template <class T, int N> struct P {};\n#if A\n"
+            "template <class T> struct P<T, 4> { void fill(); };\n#else\n"
+            "template <class U> struct P<U, 4> { void fill(); };\n#endif\n"
+            "template <class V> void P<V, 4>::fill() {}\n",
+            {"decl P<T,4>::fill()", "decl P<U,4>::fill()", "def P<V,4>::fill()"},
+            id="two_spellings_in_two_arms_spell_nothing",
+        ),
     ],
 )
 def test_a_qualifier_takes_one_partial_specialisation_s_spelling(
@@ -911,7 +919,8 @@ def test_a_qualifier_takes_one_partial_specialisation_s_spelling(
     when exactly one with a body is the same but for its parameter names, in the same
     scope: a pack is not a plain parameter (``S<A,B>`` is ``S<T,U>``'s, never
     ``S<T,Ts...>``'s), a forward declaration never sets the spelling, and two
-    namespaces' or two classes' specialisations of the same name never share one. An
-    explicit specialisation's empty ``template <>`` is its own, so the header after it
-    reaches the next qualifier."""
+    namespaces' or two classes' specialisations of the same name never share one; where
+    the matching ones with a body spell it two ways (the arms of an ``#if``), none does
+    and the qualifier keeps its own arguments. An explicit specialisation's empty
+    ``template <>`` is its own, so the header after it reaches the next qualifier."""
     assert _functions(source, which=True) == expected
