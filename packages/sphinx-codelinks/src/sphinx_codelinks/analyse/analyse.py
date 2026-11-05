@@ -233,9 +233,10 @@ class SourceAnalyse:
                 parser_cache[cache_key] = utils.init_tree_sitter(comment_type, src_path)
             parser, query = parser_cache[cache_key]
 
-            comments: list[TreeSitterNode] | None = utils.extract_comments(
-                src_string, parser, query
+            tree, cpp_names = utils.parse_source(
+                src_string, parser, comment_type, src_path
             )
+            comments: list[TreeSitterNode] | None = utils.captured_comments(tree, query)
             if not comments:
                 continue
             src_comments: list[SourceComment] = [
@@ -244,6 +245,7 @@ class SourceAnalyse:
             ]
 
             src_file = SourceFile(src_path.absolute())
+            src_file.cpp_names = cpp_names
             src_file.add_comments(src_comments)
             if self.analyse_config.get_multiline_needs:
                 src_file.lines = src_string.decode("utf-8").split(UNIX_NEWLINE)
@@ -758,8 +760,12 @@ class SourceAnalyse:
         association = utils.associate(src_comment.node, comment_type)
         if association is None or not association.node.text:
             return None, None
+        source_file = src_comment.source_file
         return association.node, code_scope(
-            association, comment_type, scope_language(comment_type, filepath)
+            association,
+            comment_type,
+            scope_language(comment_type, filepath),
+            source_file.cpp_names if source_file is not None else None,
         )
 
     def extract_marked_content(self) -> None:

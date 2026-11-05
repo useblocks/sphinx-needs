@@ -5,7 +5,7 @@ from typing import Any, TypedDict
 
 from tree_sitter import Node as TreeSitterNode
 
-from sphinx_codelinks.analyse.entity import CodeScope
+from sphinx_codelinks.analyse.entity import CodeScope, CppNames
 
 
 class MarkedContentType(str, Enum):  # noqa: UP042  # StrEnum changes str(member), which reaches CLI warnings and error messages
@@ -60,6 +60,9 @@ class SourceFile:
         self.lines: list[str] | None = None
         """The file's text split into rows (LF-normalised), when an extractor needs the
         rows themselves: multi-line needs read what precedes a comment on its row."""
+        self.cpp_names: CppNames | None = None
+        """What the whole C++ file decides about the names of its entities, for a C++
+        file the analysis parsed (``utils.parse_source``)."""
 
     def add_comment(self, comment: SourceComment) -> None:
         self.src_comments.append(comment)

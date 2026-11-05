@@ -4,7 +4,7 @@ from pathlib import Path
 from urllib.request import pathname2url
 
 from giturlparse import parse
-from tree_sitter import Language, Parser, Query, QueryCursor
+from tree_sitter import Language, Parser, Query, QueryCursor, Tree
 from tree_sitter import Node as TreeSitterNode
 
 # The entity tables live with the naming in ``entity``; they stay importable from
@@ -13,6 +13,7 @@ from sphinx_codelinks.analyse.entity import (
     COMMENT_TYPES,
     ENTITY_HEAD_TYPES,
     Association,
+    CppNames,
     Mechanism,
     is_doc_comment,
     is_entity,
@@ -196,11 +197,15 @@ def init_tree_sitter(
     return parser, query
 
 
-# @Comment extraction from source code using tree-sitter, IMPL_EXTR_1, impl, [FE_DEF]
-def extract_comments(
-    src_string: bytes, parser: Parser, query: Query
-) -> list[TreeSitterNode] | None:
-    """Get all comments from source files by tree-sitter.
+def parse_source(
+    src_string: bytes, parser: Parser, comment_type: CommentType, src_path: Path
+) -> tuple[Tree, CppNames | None]:
+    """The one parse of a source file the analysis reads, and, for a C++ file, what the
+    whole file decides about the names of its entities (:class:`CppNames`).
+
+    Every analysis of a file's markers parses it here, so that every C++ name is made
+    the one way. A ``.c`` file is C: it is parsed as written, and gets no file-level
+    names.
 
     The whole buffer is parsed in one piece: read one byte at a time, a multi-byte
     UTF-8 character inside a token (a YAML scalar, an identifier, a Rust, Go or C#
@@ -211,10 +216,28 @@ def extract_comments(
     does not).
     """
     tree = parser.parse(src_string)
+    if comment_type != CommentType.cpp or src_path.suffix == ".c":
+        return tree, None
+    return tree, CppNames(src_string, tree.root_node)
+
+
+def captured_comments(tree: Tree, query: Query) -> list[TreeSitterNode] | None:
+    """The comment nodes ``query`` captures in ``tree``."""
     query_cursor = QueryCursor(query)
     captures: dict[str, list[TreeSitterNode]] = query_cursor.captures(tree.root_node)
-
     return captures.get("comment")
+
+
+# @Comment extraction from source code using tree-sitter, IMPL_EXTR_1, impl, [FE_DEF]
+def extract_comments(
+    src_string: bytes, parser: Parser, query: Query
+) -> list[TreeSitterNode] | None:
+    """Get all comments from source files by tree-sitter.
+
+    The buffer is parsed whole, as :func:`parse_source` explains; the analysis parses
+    through :func:`parse_source`, and this is its comment capture alone.
+    """
+    return captured_comments(parser.parse(src_string), query)
 
 
 def find_enclosing_scope(
