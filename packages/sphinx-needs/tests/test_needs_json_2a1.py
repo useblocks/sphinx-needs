@@ -19,6 +19,7 @@ from syrupy.filters import props
 
 import ub_needs_exchange as exchange
 from sphinx_needs import __version__
+from sphinx_needs._needsfile_v2a1 import hop_to_json
 from sphinx_needs_testkit import build_warnings
 
 PROJECT = "doc_test/doc_needs_json_2a1"
@@ -76,6 +77,19 @@ def test_the_needs_builder_writes_2a1(test_app: Any, snapshot: Any) -> None:
     code, page = _records(app)["REQ_DOC"]["source"]
     assert list(code) == ["kind", "physical", "semantic", "language"]
     assert list(page) == ["kind", "physical", "semantic", "document", "language"]
+    # syrupy sorts the keys it prints: the orders inside a record are pinned here
+    first = _records(app)["REQ_1"]
+    assert list(first["fields"]) == [
+        # the authored core fields, in their order, then the extras in the schema's
+        *("title", "status", "tags", "layout", "style", "constraints"),
+        *("asil", "duration", "completion"),
+    ]
+    assert list(first["source"][0]["physical"]) == [
+        "root",
+        "path",
+        "start_line",
+        "end_line",
+    ]
     assert data == snapshot(exclude=props("created", "creator"))
 
 
@@ -353,7 +367,13 @@ def test_remove_defaults_is_ignored_with_a_warning(test_app: Any) -> None:
                     "content",
                     "source",
                     "docname",
+                    "lineno",
                     "sections",
+                    "section_name",
+                    "signature",
+                    "external_url",
+                    "is_import",
+                    "is_external",
                     "lineno_content",
                 ]
             },
@@ -370,7 +390,8 @@ def test_exclude_fields_is_honoured(test_app: Any) -> None:
     app.build()
 
     assert _config_warnings(app) == [
-        "WARNING: needs_json_exclude_fields names 'docname', 'sections', which "
+        "WARNING: needs_json_exclude_fields names 'docname', 'lineno', 'sections', "
+        "'section_name', 'signature', 'external_url', 'is_import', 'is_external', which "
         'have no key under needs_json_format_version "2a1": they are read from the '
         "need's source; exclude 'source' to leave the source out [needs.config]"
     ]
@@ -507,3 +528,127 @@ def test_needs_file_is_ignored_with_a_warning(test_app: Any) -> None:
     data = _needs_json(app)
     assert "versions" not in data
     assert "OLD_1" not in _records(app)
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "html", "srcdir": PROJECT}], indirect=True
+)
+def test_a_build_that_writes_no_2a1_file_is_not_warned(test_app: Any) -> None:
+    """The option set, and no needs.json written: no warning, so a ``-W`` build of
+    another format passes."""
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == []
+    assert not Path(app.outdir, "needs.json").exists()
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs_id",
+            "srcdir": PROJECT,
+            "confoverrides": {"needs_builder_filter": 'type == "spec"'},
+        }
+    ],
+    indirect=True,
+)
+def test_the_per_id_builder_honours_the_builder_filter(test_app: Any) -> None:
+    app = test_app
+    app.build()
+
+    assert sorted(p.name for p in Path(app.outdir, "needs_id").iterdir()) == [
+        "SPEC_1.json"
+    ]
+
+
+def test_an_empty_semantic_location_is_written_empty() -> None:
+    """A hop whose semantic location is determined and empty writes ``[]``; one where
+    it is not determined (``None``) writes none."""
+    from sphinx_needs._need_source import NeedSourceHop
+
+    assert hop_to_json(NeedSourceHop(kind="page", semantic=())) == {
+        "kind": "page",
+        "semantic": [],
+    }
+    assert hop_to_json(NeedSourceHop(kind="page")) == {"kind": "page"}
+
+
+def test_an_unnamed_project_writes_no_name(make_app: Any, tmp_path: Path) -> None:
+    """A project that sets no ``project`` writes no ``project.name``, not Sphinx's
+    placeholder, so that a reader names the file instead of every unnamed project
+    alike."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\nneeds_json_format_version = "2a1"\n'
+    )
+    (srcdir / "index.rst").write_text("T\n=\n\n.. req:: a\n   :id: REQ_001\n")
+    app = make_app("needs", srcdir=srcdir, freshenv=True)
+    try:
+        app.build()
+        assert _needs_json(app)["project"] == {"version": ""}
+    finally:
+        app.cleanup()
+
+
+def test_a_needs_file_without_versions_is_one_warning(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """Under format 1, a ``needs_file`` with no ``versions`` -- a 2a1 file, or no
+    needs.json at all -- is one warning, and a new file is written (it raised a
+    ``KeyError``)."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\nversion = "1.0"\nneeds_file = "old.json"\n'
+    )
+    (srcdir / "index.rst").write_text("T\n=\n\n.. req:: a\n   :id: REQ_001\n")
+    (srcdir / "old.json").write_text(
+        json.dumps({"format_version": "2a1", "project": {"name": "x"}, "needs": []})
+    )
+    app = make_app("needs", srcdir=srcdir, freshenv=True)
+    try:
+        app.build()
+        assert [w for w in build_warnings(app) if "[needs.json_load]" in w] == [
+            "WARNING: needs_file <srcdir>/old.json has no versions to add the "
+            "current one to (is it a needs.json of format 1?); a new file is written "
+            "[needs.json_load]"
+        ]
+        data = _needs_json(app)
+        assert list(data["versions"]) == ["1.0"]
+        assert "REQ_001" in data["versions"]["1.0"]["needs"]
+    finally:
+        app.cleanup()
+
+
+def test_excluding_a_field_named_source_says_the_source_goes_too(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """``source`` in ``needs_json_exclude_fields`` names both a field the project
+    declares and the hop list: both are left out, and one warning says so."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\n'
+        'needs_json_format_version = "2a1"\n'
+        'needs_fields = {"source": {"nullable": True}}\n'
+        'needs_json_exclude_fields = ["source"]\n'
+    )
+    (srcdir / "index.rst").write_text(
+        "T\n=\n\n.. req:: a\n   :id: REQ_001\n   :source: mine\n"
+    )
+    app = make_app("needs", srcdir=srcdir, freshenv=True)
+    try:
+        app.build()
+        assert _config_warnings(app) == [
+            "WARNING: needs_json_exclude_fields names 'source', which is both a field "
+            'of the project and, under needs_json_format_version "2a1", the need\'s '
+            "source: both are left out [needs.config]"
+        ]
+        (record,) = _needs_json(app)["needs"]
+        assert "source" not in record
+        assert "source" not in record["fields"]
+    finally:
+        app.cleanup()

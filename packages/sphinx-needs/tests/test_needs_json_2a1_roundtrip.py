@@ -398,3 +398,112 @@ def test_every_link_spelling_round_trips(make_app: Any, tmp_path: Path) -> None:
             for link in need.get_links("refs", as_str=False)
         ] == [(f"{prefix}REQ_A", "p1", None), (f"{prefix}REQ_B", None, None)], prefix
         assert need["has_dead_links"] is False
+
+
+def _import_one(
+    make_app: Any, srcdir: Path, document: dict[str, Any], argument: str | None = None
+) -> tuple[Any, NeedItemSource]:
+    """``needimport`` the 2a1 ``document`` (``data/anon.json``, or ``argument``) and
+    return the app and the one need's source."""
+    (srcdir / "data").mkdir(parents=True)
+    (srcdir / "data" / "anon.json").write_text(json.dumps(document))
+    (srcdir / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\nneeds_json_format_version = "2a1"\n'
+    )
+    (srcdir / "index.rst").write_text(
+        f"Anon\n====\n\n.. needimport:: {argument or 'data/anon.json'}\n"
+    )
+    app, _ = _build(make_app, srcdir)
+    (need,) = SphinxNeedsData(app.env).get_needs_view().values()
+    assert isinstance(need.source, NeedItemSource)
+    return app, need.source
+
+
+def test_a_url_is_the_origin_as_written(make_app: Any, tmp_path: Path) -> None:
+    """Without a project name, a needimport from a URL names its hops by the URL as
+    the directive writes it."""
+    srcdir = tmp_path / "url"
+    url = (srcdir / "data" / "anon.json").as_uri()
+    _, source = _import_one(make_app, srcdir, ANONYMOUS, url)
+    assert [hop.origin for hop in source.upstream] == [url, "named"]
+
+
+def test_a_project_name_that_is_not_a_string_is_no_name(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A ``project.name`` that is not a string is reported, and the file names the
+    hops."""
+    app, source = _import_one(
+        make_app, tmp_path / "num", {**ANONYMOUS, "project": {"name": 5}}
+    )
+    assert [hop.origin for hop in source.upstream] == ["data/anon.json", "named"]
+    assert [w for w in build_warnings(app) if "(at project.name)" in w] != []
+
+
+def test_hop_keys_this_build_does_not_know_are_dropped_on_re_export(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A key of a hop, of its ``physical`` or of a ``semantic`` entry that sphinx-needs
+    does not model is read without error, and not written again."""
+    document = {
+        "format_version": "2a1",
+        "project": {"name": "other"},
+        "needs": [
+            {
+                "id": "ANON_1",
+                "type": "req",
+                "fields": {"title": "anonymous"},
+                "source": [
+                    {
+                        "kind": "code",
+                        "col": 3,
+                        "future": {"x": 1},
+                        "physical": {"path": "a.c", "start_line": 2, "start_col": 4},
+                        "semantic": [
+                            {"kind": "function", "name": "f", "extra_key": "y"}
+                        ],
+                    },
+                    {"kind": "page", "document": "there"},
+                ],
+            }
+        ],
+    }
+    app, _ = _import_one(make_app, tmp_path / "unknown", document)
+    written = _records(Path(app.outdir, "needs.json"))["ANON_1"]["source"]
+    assert written[:2] == [
+        {
+            "kind": "code",
+            "origin": "other",
+            "physical": {"path": "a.c", "start_line": 2},
+            "semantic": [{"kind": "function", "name": "f"}],
+        },
+        {"kind": "page", "origin": "other", "document": "there"},
+    ]
+
+
+def test_an_unnamed_writer_is_named_by_its_file_downstream(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A project that sets no ``project`` writes no name, so a reader names its hops by
+    the file, not by Sphinx's placeholder."""
+    up_src = _write(
+        tmp_path / "unnamed",
+        {
+            "conf.py": 'extensions = ["sphinx_needs"]\n'
+            'needs_json_format_version = "2a1"\n',
+            "index.rst": "Up\n==\n\n.. req:: a\n   :id: REQ_001\n",
+        },
+    )
+    _, up_json = _build(make_app, up_src)
+    down_src = _write(
+        tmp_path / "down",
+        {
+            "conf.py": 'extensions = ["sphinx_needs"]\n',
+            "index.rst": "Down\n====\n\n.. needimport:: up.json\n",
+        },
+    )
+    shutil.copy(up_json, down_src / "up.json")
+    down, _ = _build(make_app, down_src)
+    source = SphinxNeedsData(down.env).get_needs_view()["REQ_001"].source
+    assert isinstance(source, NeedItemSource)
+    assert [hop.origin for hop in source.upstream] == ["up.json"]

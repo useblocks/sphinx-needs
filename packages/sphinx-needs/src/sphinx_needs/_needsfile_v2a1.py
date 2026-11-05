@@ -34,6 +34,8 @@ from collections.abc import Iterable
 from datetime import datetime
 from typing import Any, Final, Literal
 
+from sphinx.application import Sphinx
+from sphinx.config import Config
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs._need_source import NeedSourceHop
@@ -95,9 +97,9 @@ def _known(value: object) -> bool:
 
 
 def check_json_format_config(needs_config: NeedsSphinxConfig) -> None:
-    """Report, once per build, what ``needs_json_format_version`` does: an unknown
-    value (written as 1), the experimental 2a1, and each v1 option 2a1 does not
-    obey."""
+    """Report an unknown ``needs_json_format_version`` (written as 1), at
+    ``config-inited``. What the experimental 2a1 does is reported where a 2a1 file is
+    written (:func:`warn_on_write`), so that a build that writes none is not warned."""
     value = needs_config.json_format_version
     if not _known(value):
         log_warning(
@@ -107,9 +109,21 @@ def check_json_format_config(needs_config: NeedsSphinxConfig) -> None:
             "config",
             None,
         )
+
+
+_WARNED: Final = "_sphinx_needs_2a1_warned"
+"""The attribute of the ``Sphinx`` application that says its build has said what a 2a1
+file is (never of the environment, which is pickled)."""
+
+
+def warn_on_write(app: Sphinx, env: BuildEnvironment) -> None:
+    """Say, once per build (per application), what writing a 2a1 file means: that the
+    format is experimental, and each v1 option it does not obey. Called by each writer
+    of a 2a1 file, the ``needs`` and the per-id builder alike."""
+    if getattr(app, _WARNED, False):
         return
-    if json_format_version(needs_config) != FORMAT_2A1:
-        return
+    setattr(app, _WARNED, True)
+    needs_config = NeedsSphinxConfig(env.config)
     log_warning(
         LOGGER,
         f'needs.json format "{FORMAT_2A1}" is experimental: a file written in it may '
@@ -144,6 +158,26 @@ def check_json_format_config(needs_config: NeedsSphinxConfig) -> None:
             "config",
             None,
         )
+    if "source" in excluded and (
+        SphinxNeedsData(env).get_schema().get_any_field("source") is not None
+    ):
+        log_warning(
+            LOGGER,
+            "needs_json_exclude_fields names 'source', which is both a field of the "
+            f"project and, {under}, the need's source: both are left out",
+            "config",
+            None,
+        )
+
+
+def _project_name_placeholder() -> str | None:
+    """Sphinx's default of ``project``, which names no project."""
+    option = Config.config_values.get("project")
+    default = getattr(option, "default", None)
+    if default is None and isinstance(option, tuple):
+        # Sphinx 7: a plain tuple, the default first
+        default = option[0]
+    return default if isinstance(default, str) else None
 
 
 def hop_to_json(hop: NeedSourceHop, /) -> dict[str, Any]:
@@ -197,7 +231,9 @@ def source_hops(need: NeedItem, /) -> tuple[NeedSourceHop, ...]:
     """The hops a 2a1 record writes for ``need``, innermost first: the ``upstream`` hops
     it was read with, as it holds them (their origins filled on read), then this
     build's; none for a source that is not a
-    :class:`~sphinx_needs.need_item.NeedItemSource`."""
+    :class:`~sphinx_needs.need_item.NeedItemSource` (a third party's, which obeys
+    :class:`~sphinx_needs.need_item.NeedItemSourceProtocol` alone: its record has no
+    placement, so a reader gets no ``docname`` for it)."""
     source = need.source
     if not isinstance(source, NeedItemSource):
         return ()
@@ -252,9 +288,17 @@ class NeedsFile2a1:
         """The 2a1 document of ``needs``, its records in the order of their ids."""
         from sphinx_needs import __version__
 
+        # a project left unnamed writes no name: Sphinx's placeholder would name every
+        # such project alike, where a reader names the file instead
+        name = self._config.project
+        project = (
+            {"version": self._config.version}
+            if not isinstance(name, str) or name == _project_name_placeholder()
+            else {"name": name, "version": self._config.version}
+        )
         document: dict[str, Any] = {
             "format_version": FORMAT_2A1,
-            "project": {"name": self._config.project, "version": self._config.version},
+            "project": project,
             "creator": {"program": "sphinx_needs", "version": __version__},
         }
         if not self._needs_config.reproducible_json:

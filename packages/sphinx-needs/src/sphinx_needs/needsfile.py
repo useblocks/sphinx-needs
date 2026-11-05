@@ -382,6 +382,20 @@ class NeedsList:
                         None,
                     )
                 else:
+                    if not isinstance(needs_list, dict) or not isinstance(
+                        needs_list.get("versions"), dict
+                    ):
+                        # a file of another format (a needs.json of the draft 2a1 has
+                        # no versions) or none: there is nothing to accumulate
+                        log_warning(
+                            self.log,
+                            f"needs_file {file} has no versions to add the current "
+                            "one to (is it a needs.json of format 1?); a new file is "
+                            "written",
+                            "json_load",
+                            None,
+                        )
+                        return
                     # JSON from disk is `Any`: it is taken as a `NeedsJsonType` unchecked,
                     # since the schema errors above are only logged
                     self.needs_list = needs_list

@@ -176,6 +176,7 @@ needs.json format 2a1 (draft)
 .. attention:: **Experimental**: a file in this format is readable only by the release that wrote it.
 
 With :ref:`needs_json_format_version` set to ``"2a1"``, the builders write the first draft of format version 2.
+Each build that writes one says, in one ``needs.beta`` warning, that the format is experimental.
 It is specified in the `needs.json 2a1 draft contract <https://github.com/useblocks/sphinx-needs/blob/master/packages/ub-needs-exchange/design/v2a1-draft.md>`__
 of the ``ub-needs-exchange`` library. In short:
 
@@ -192,6 +193,9 @@ of the ``ub-needs-exchange`` library. In short:
 - nothing computed is written: no back links, no ``is_*``, ``type_*``, ``constraints_*`` or ``section_name``, and none
   of the location keys of format 1 (``docname``, ``lineno``, ``sections``, ...), which a reader projects from the
   source.
+
+An abridged example (the real record also carries ``layout``, ``style`` and ``constraints``, and every other field
+of its need type, ``null`` where it is not set):
 
 .. code-block:: json
 
@@ -234,11 +238,12 @@ from -- ``docname``, ``lineno``, ``sections``, ``is_import``, ``is_external``, `
 in a filter -- is what the same need read from a format-1 file answers: the hops of the other project are kept,
 not read. An external need's ``external_url`` is built from the page its record places it on.
 
-Older readers do not read it. Sphinx-Needs 9.0.0 to 9.2.0 refuse the file with one warning per reader, which names
-the file and says that it is of format version ``"2a1"`` and that the reader reads format version 1 only (with
-ub-needs-exchange 1.1.0), or that its ``'versions' is missing or not an object`` (with ub-needs-exchange 1.0.0);
-ubCode refuses it in the same way. Sphinx-Needs 8.5.0 aborts the build on it (``NeedsExternalException: No version
-defined``).
+Older readers do not read it. Sphinx-Needs 9.1.0 and 9.2.0 refuse the file with one warning per reader, which names
+the file and says that it is of format version ``"2a1"`` and that the reader reads format version 1 only;
+Sphinx-Needs 9.0.0 refuses it with one warning per reader that its ``'versions' is missing or not an object``; ubCode
+refuses it in the same way. Sphinx-Needs 8.5.0 aborts the build on it: external needs with
+``NeedsExternalException: No version defined``, a ``needimport`` with ``CorruptedNeedsFile: Key 'current_version'
+missing or corrupted``.
 
 .. _needumls_builder:
 

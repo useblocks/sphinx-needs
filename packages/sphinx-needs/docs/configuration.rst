@@ -3447,15 +3447,18 @@ The format the ``needs.json`` files are written in: by the :ref:`needs builder <
   keeps them when another project imports it.
 
 Any other value is reported as a ``needs.config`` warning, and the file is written in format 1.
+Set it in ``conf.py`` or in ``ubproject.toml``: ``-D needs_json_format_version=2a1`` cannot set it, because
+Sphinx converts a ``-D`` value to the type of the default, an integer.
 
 .. attention:: **Experimental.**
 
    A ``"2a1"`` file is readable only by the release of Sphinx-Needs that wrote it: the draft may
-   change, or be replaced by the next one, in any release. Each build that sets it says so in one
-   ``needs.beta`` warning (silence it with ``suppress_warnings = ["needs.beta"]``).
-   Sphinx-Needs 9.0.0 to 9.2.0 refuse such a file with a warning, as ubCode does, and
-   Sphinx-Needs 8.5.0 aborts the build on it (see :ref:`needs_builder_format_2a1`). Use it to try the format, not for a file another project relies
-   on.
+   change, or be replaced by the next one, in any release. Each build that writes such a file says
+   so in one ``needs.beta`` warning (silence it with ``suppress_warnings = ["needs.beta"]``); a build
+   that writes no ``needs.json`` is not warned. Sphinx-Needs 9.0.0 to 9.2.0 refuse such a file with
+   a warning, as ubCode does, and Sphinx-Needs 8.5.0 aborts the build on it (see
+   :ref:`needs_builder_format_2a1`). Use it to try the format, not for a file another project
+   relies on.
 
 Of the other ``needs.json`` options, under ``"2a1"``:
 

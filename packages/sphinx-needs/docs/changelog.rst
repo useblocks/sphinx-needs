@@ -29,9 +29,12 @@ Improvements
   with a need from project to project. Each such hop names the project it belongs to (``origin``). What the need
   answers about where it is from (``docname``, ``lineno``, ``sections``, ``c.source``, ...) is unchanged.
 
-  A 2a1 file is readable only by the release that wrote it, and each build that sets it says so in a
-  ``needs.beta`` warning. Sphinx-Needs 9.0.0 to 9.2.0 refuse it with one warning per reader, and 8.5.0 aborts the
-  build on it. At the default, ``1``, the ``needs.json`` is written exactly as before.
+  A 2a1 file is readable only by the release that wrote it, and each build that writes one says so in a
+  ``needs.beta`` warning (a build that writes no ``needs.json`` is not warned). Sphinx-Needs 9.1.0 and 9.2.0 refuse
+  it with one warning per reader that names its format version, 9.0.0 with one that its ``'versions' is missing``,
+  and 8.5.0 aborts the build on it. At the default, ``1``, the ``needs.json`` is written exactly as before, but for
+  one case that crashed: a :ref:`needs_file` with no ``versions`` (a 2a1 file, say) is one ``needs.json_load``
+  warning and a new file, where the build stopped with a ``KeyError``.
 
 - ⬆️ Templates render with minijinja 3: ``minijinja>=3.0.5,<4``, which was ``~=2.15`` **(changed output)** (:pr:`2475`)
 

@@ -8,7 +8,12 @@ from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 
-from sphinx_needs._needsfile_v2a1 import FORMAT_2A1, NeedsFile2a1, json_format_version
+from sphinx_needs._needsfile_v2a1 import (
+    FORMAT_2A1,
+    NeedsFile2a1,
+    json_format_version,
+    warn_on_write,
+)
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger
@@ -108,6 +113,7 @@ class NeedsBuilder(Builder):
 
     def _finish_2a1(self, needs: Iterable[NeedItem]) -> None:
         """Write ``needs.json`` in the draft format 2a1 (experimental)."""
+        warn_on_write(_app_of(self), self.env)
         try:
             NeedsFile2a1(self.env).write(needs, os.path.join(self.outdir, "needs.json"))
         except Exception as e:
@@ -134,6 +140,12 @@ class NeedsBuilder(Builder):
     def cleanup(self) -> None:
         # only needed if the write phase is run
         pass
+
+
+def _app_of(builder: Builder) -> Sphinx:
+    """The application of ``builder`` (``_app`` from Sphinx 8.1, ``app`` before)."""
+    app = getattr(builder, "_app", None)
+    return app if app is not None else builder.app
 
 
 def build_needs_json(app: Sphinx, exception: Exception | None) -> None:
@@ -204,6 +216,7 @@ class NeedsIdBuilder(Builder):
             os.makedirs(needs_dir, exist_ok=True)
         if json_format_version(needs_config) == FORMAT_2A1:
             # the draft: one document per need, ``needs: [record]``
+            warn_on_write(_app_of(self), self.env)
             writer = NeedsFile2a1(self.env)
             for need in filtered_needs:
                 try:
