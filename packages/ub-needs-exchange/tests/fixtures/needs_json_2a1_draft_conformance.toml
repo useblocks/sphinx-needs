@@ -395,6 +395,18 @@ diagnostics = []
 records = { A = { links = ["B"] } }
 
 [[case]]
+name = "a-field-left-out-is-unset-and-a-null-is-read-as-null"
+why = "a writer leaves out a field whose value is null: a record without the field projects no key for it; a record that states null anyway projects null"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "fields": {"title": "left out", "tags": [], "status": ""}}, {"id": "B", "type": "req", "fields": {"title": "stated", "asil": null}}]}'''
+[case.expect]
+diagnostics = []
+keys = ["A", "B"]
+records = { A = { title = "left out", tags = [], status = "" }, B = { title = "stated" } }
+unset = { A = ["asil"] }
+nulls = { B = ["asil"] }
+
+[[case]]
 name = "fields-that-are-not-an-object-are-not-read"
 why = "a fields that is not an object is reported, and the record read without it"
 layer = "document"
