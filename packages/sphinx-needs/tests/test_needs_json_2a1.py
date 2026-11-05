@@ -17,6 +17,7 @@ from typing import Any
 import pytest
 from syrupy.filters import props
 
+import ub_needs_exchange as exchange
 from sphinx_needs import __version__
 from sphinx_needs_testkit import build_warnings
 
@@ -76,6 +77,28 @@ def test_the_needs_builder_writes_2a1(test_app: Any, snapshot: Any) -> None:
     assert list(code) == ["kind", "physical", "semantic", "language"]
     assert list(page) == ["kind", "physical", "semantic", "document", "language"]
     assert data == snapshot(exclude=props("created", "creator"))
+
+
+@pytest.mark.parametrize(
+    "test_app", [{"buildername": "needs", "srcdir": PROJECT}], indirect=True
+)
+def test_the_file_reads_back_without_a_finding(test_app: Any) -> None:
+    """ub-needs-exchange reads the file the writer writes with no finding: no
+    ``field_reserved`` (no key the projection owns inside ``fields``), no invalid hop or
+    link, every record kept."""
+    app = test_app
+    app.build()
+
+    version = exchange.load(Path(app.outdir, "needs.json")).select_version(
+        None, drafts=("2a1",)
+    )
+    assert version.format_version == "2a1"
+    assert version.name == "1.0"
+    assert list(version.diagnostics) == []
+    records = version.records()
+    assert [r.key for r in records] == list(_records(app))
+    assert [(r.key, list(r.diagnostics)) for r in records if r.diagnostics] == []
+    assert exchange.FIELD_RESERVED == "field_reserved"
 
 
 @pytest.mark.parametrize(
