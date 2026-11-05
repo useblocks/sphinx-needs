@@ -65,7 +65,7 @@ def _functions(source: str, path: str = "src/a.cpp") -> set[str]:
             continue
         name = describe_entity(node, CommentType.cpp, source=names.source)
         assert name is not None
-        named = names.qualify(name)
+        named = names.qualify(name, node.start_point.row + 1)
         found.add(f"{named.qualified_name}{cpp_signature(node, names.source)}")
     return found
 

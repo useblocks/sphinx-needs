@@ -7,6 +7,8 @@ from giturlparse import parse
 from tree_sitter import Language, Parser, Query, QueryCursor, Tree
 from tree_sitter import Node as TreeSitterNode
 
+from sphinx_codelinks.analyse import cpp_macros
+
 # The entity tables live with the naming in ``entity``; they stay importable from
 # here, where they were.
 from sphinx_codelinks.analyse.entity import (
@@ -204,8 +206,11 @@ def parse_source(
     whole file decides about the names of its entities (:class:`CppNames`).
 
     Every analysis of a file's markers parses it here, so that every C++ name is made
-    the one way. A ``.c`` file is C: it is parsed as written, and gets no file-level
-    names.
+    the one way. A C++ file is parsed from a copy with the namespace macros it defines
+    itself rewritten (:mod:`sphinx_codelinks.analyse.cpp_macros`): the tree's offsets
+    are the file's, and every name, tagged scope and excerpt is read from
+    ``src_string``, through :class:`CppNames` and ``SourceFile.node_text``, never from
+    the copy. A ``.c`` file is C: it is parsed as written, and gets no file-level names.
 
     The whole buffer is parsed in one piece: read one byte at a time, a multi-byte
     UTF-8 character inside a token (a YAML scalar, an identifier, a Rust, Go or C#
@@ -215,10 +220,10 @@ def parse_source(
     from-offset chunk of four bytes or more happens to work; a block-aligned one
     does not).
     """
-    tree = parser.parse(src_string)
-    if comment_type != CommentType.cpp or src_path.suffix == ".c":
-        return tree, None
-    return tree, CppNames(src_string, tree.root_node)
+    if comment_type != CommentType.cpp or not cpp_macros.applies(src_path):
+        return parser.parse(src_string), None
+    tree, macros = cpp_macros.parse(parser, src_string)
+    return tree, CppNames(src_string, tree.root_node, macros)
 
 
 def captured_comments(tree: Tree, query: Query) -> list[TreeSitterNode] | None:

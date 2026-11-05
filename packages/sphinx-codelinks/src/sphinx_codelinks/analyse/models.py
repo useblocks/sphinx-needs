@@ -64,6 +64,17 @@ class SourceFile:
         """What the whole C++ file decides about the names of its entities, for a C++
         file the analysis parsed (``utils.parse_source``)."""
 
+    def node_text(self, node: TreeSitterNode) -> bytes:
+        """The text of ``node`` as the file writes it.
+
+        A C++ tree may be parsed from a prepared copy of the file
+        (:mod:`sphinx_codelinks.analyse.cpp_macros`), whose ``node.text`` is the copy's:
+        the file as written is read instead.
+        """
+        if self.cpp_names is not None:
+            return self.cpp_names.source[node.start_byte : node.end_byte]
+        return node.text or b""
+
     def add_comment(self, comment: SourceComment) -> None:
         self.src_comments.append(comment)
         comment.source_file = self
@@ -105,16 +116,23 @@ class Metadata:
                 continue
             obj[key] = value
             if key == "tagged_scope":
-                obj[key] = (
-                    str(self.tagged_scope.text.decode("utf-8"))
-                    if self.tagged_scope and self.tagged_scope.text
-                    else None
-                )
+                written = self.tagged_scope_text()
+                obj[key] = written.decode("utf-8") if written else None
                 if self.type != MarkedContentType.multiline_need:
                     obj["scope"] = self.scope
         obj["filepath"] = str(self.filepath)
         obj["type"] = self.type.value
         return obj
+
+    def tagged_scope_text(self) -> bytes | None:
+        """The text of ``tagged_scope`` as the file writes it (``SourceFile.node_text``),
+        ``None`` without one."""
+        if self.tagged_scope is None:
+            return None
+        source_file = self.source_comment.source_file if self.source_comment else None
+        if source_file is None:
+            return self.tagged_scope.text
+        return source_file.node_text(self.tagged_scope)
 
     def add_src_comment(self, src_comment: SourceComment) -> None:
         self.source_comment = src_comment

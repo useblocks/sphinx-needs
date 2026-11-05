@@ -25,6 +25,7 @@ from typing import Literal, NotRequired, TypedDict
 
 from tree_sitter import Node as TreeSitterNode
 
+from sphinx_codelinks.analyse.cpp_macros import MacroScopes
 from sphinx_codelinks.source_discover.config import CommentType
 
 EntityKind = Literal[
@@ -1848,38 +1849,63 @@ def _cpp_keep_full_chains_where_names_collide(
 
 class CppNames:
     """What the names of a C++ file's entities take from the whole file, beyond what
-    one node shows: the entities named otherwise than one node names them
-    (:func:`cpp_renames`).
+    one node shows: the namespaces the file's own macros open
+    (:class:`~sphinx_codelinks.analyse.cpp_macros.MacroScopes`), and the entities named
+    otherwise than one node names them (:func:`cpp_renames`: a name spelled as the
+    file's partial specialisation spells it; an inline namespace or a friend's classes
+    kept where leaving them out would give two definitions one name).
 
     Made once per parse, by :func:`sphinx_codelinks.analyse.utils.parse_source`; the
     renames are worked out when a marker of the file first asks for a name, so a file
     without markers costs nothing.
     """
 
-    def __init__(self, source: bytes, root: TreeSitterNode) -> None:
+    def __init__(
+        self, source: bytes, root: TreeSitterNode, macros: MacroScopes | None = None
+    ) -> None:
         self.source = source
         """The file as written: what every name is read from."""
+        self.macros = macros if macros is not None else MacroScopes()
+        """The namespaces the file's own macros open."""
         self._root = root
         self._renamed: dict[int, EntityName] | None = None
 
     @property
     def renamed(self) -> dict[int, EntityName]:
-        """The entities named otherwise, by the end of their name."""
+        """The entities named otherwise, by the end of their name: the name and its
+        parts, before the macros' namespaces."""
         if self._renamed is None:
-            self._renamed = cpp_renames(self._root, self.source, lambda _end: "")
+            self._renamed = cpp_renames(self._root, self.source, self._prefix)
         return self._renamed
 
-    def qualify(self, name: EntityName) -> EntityName:
+    def _prefix(self, name_end: int) -> str:
+        """The namespaces the file's macros open around a name ending at ``name_end``,
+        each followed by ``::``."""
+        return "".join(f"{n}::" for n in self.macros.namespaces_at(name_end))
+
+    def qualify(self, name: EntityName, start_line: int) -> EntityName:
         """``name``, an entity's name as its node alone gives it, as the whole file
-        names it."""
-        if name.name_end is None:
-            return name
-        renamed = self.renamed.get(name.name_end)
-        if renamed is None:
-            return name
-        return replace(
-            name, qualified_name=renamed.qualified_name, semantic=renamed.semantic
-        )
+        names it: renamed where the file decides so, then prefixed with the namespaces
+        the file's macros open around the name's end, or, for an entity with no name
+        node (an anonymous namespace), around ``start_line``, its 1-based first
+        line."""
+        qualified_name, semantic = name.qualified_name, name.semantic
+        if name.name_end is not None:
+            renamed = self.renamed.get(name.name_end)
+            if renamed is not None:
+                qualified_name, semantic = renamed.qualified_name, renamed.semantic
+            namespaces = self.macros.namespaces_at(name.name_end)
+        else:
+            namespaces = self.macros.namespaces_at_line(start_line)
+        if namespaces:
+            if qualified_name is not None:
+                qualified_name = "::".join([*namespaces, qualified_name])
+            if semantic is not None:
+                semantic = (
+                    *(_element("namespace", namespace) for namespace in namespaces),
+                    *semantic,
+                )
+        return replace(name, qualified_name=qualified_name, semantic=semantic)
 
 
 # --- Python ------------------------------------------------------------------
@@ -2667,7 +2693,7 @@ def code_scope(
     else:
         name = describe_entity(node, comment_type, source=names.source)
         if name is not None:
-            name = names.qualify(name)
+            name = names.qualify(name, node.start_point.row + 1)
     return {
         "kind": node.type,
         "start": node.start_point.row + 1,
