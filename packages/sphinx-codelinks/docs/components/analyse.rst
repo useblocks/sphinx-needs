@@ -279,6 +279,9 @@ What the inline-namespace rule does not see:
 - A declaration in an inline namespace beside a definition of the same name and parameters in its parent
   (``namespace lib { void g() {} inline namespace v1 { void g(); } }``) is named as that definition (``lib::g``):
   only definitions decide what is kept apart.
+- A ``friend`` of a class defined out of line through a qualifier
+  (``struct lib::v2::X { friend void swap(X&, X&) {} };``) is named in the namespace around that definition,
+  not the qualifier's (``swap``, where clang prints ``lib::swap``).
 
 The rules
 ~~~~~~~~~
