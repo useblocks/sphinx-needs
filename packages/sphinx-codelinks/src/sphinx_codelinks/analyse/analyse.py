@@ -65,7 +65,7 @@ def _count(n: int, noun: str) -> str:
 def _row_count(src_comment: SourceComment) -> int:
     """The rows a comment covers: a Rust ``///`` node's text ends with its newline, which
     starts no row of its own."""
-    return (src_comment.node.text or b"").rstrip(b"\n").count(b"\n") + 1
+    return src_comment.text.rstrip(b"\n").count(b"\n") + 1
 
 
 #: How a tag warning names the tag it found.
@@ -75,10 +75,9 @@ _TAG_NAMES = {
 }
 
 
-def _is_jsdoc(node: TreeSitterNode) -> bool:
-    """A JSDoc comment: a block comment opened by exactly ``/**``, as JSDoc reads one
-    (``/***`` and the empty ``/**/`` are not)."""
-    text = node.text or b""
+def _is_jsdoc(text: bytes) -> bool:
+    """Whether the comment ``text`` is a JSDoc comment: a block comment opened by
+    exactly ``/**``, as JSDoc reads one (``/***`` and the empty ``/**/`` are not)."""
     return (
         text.startswith(b"/**")
         and not text.startswith(b"/***")
@@ -87,14 +86,14 @@ def _is_jsdoc(node: TreeSitterNode) -> bool:
 
 
 def _docstring_contents(
-    node: TreeSitterNode, column: int
+    node: TreeSitterNode, raw: bytes, column: int
 ) -> list[tuple[str, int, int]]:
     """The content of each string of a docstring statement, between its quotes.
 
     Each with its 0-based row and its column, in characters: the quotes' column plus
-    the prefix letters' and the delimiter's length. ``column`` is the statement's.
+    the prefix letters' and the delimiter's length. ``raw`` is the statement's text as
+    the file writes it, ``column`` its column.
     """
-    raw = node.text or b""
     contents = []
     for string in node.named_children:
         if string.type != "string":
@@ -134,9 +133,9 @@ def _scanned_texts(
     """
     node = src_comment.node
     if getattr(node, "type", None) == CommentCategory.docstring:
-        texts = _docstring_contents(node, src_comment.column)
+        texts = _docstring_contents(node, src_comment.text, src_comment.column)
     else:
-        text = node.text.decode("utf-8") if node.text else ""
+        text = src_comment.text.decode("utf-8")
         if text.startswith("/*") and text.endswith("*/"):
             text = text[:-2]
         elif text.startswith("<!--") and text.endswith("-->"):
@@ -518,7 +517,7 @@ class SourceAnalyse:
         )
         # Only a TypeScript or JavaScript JSDoc comment can hold JSDoc tags.
         in_jsdoc = self.analyse_config.comment_type == CommentType.ts and _is_jsdoc(
-            src_comment.node
+            src_comment.text
         )
         for line in lines:
             if self._is_need_id_refs_line(line):
@@ -757,10 +756,19 @@ class SourceAnalyse:
         if getattr(src_comment.node, "is_libclang", False):
             return None, None
         comment_type = self.analyse_config.comment_type
-        association = utils.associate(src_comment.node, comment_type)
-        if association is None or not association.node.text:
+        association = utils.associate(
+            src_comment.node, comment_type, text=src_comment.text
+        )
+        if association is None:
             return None, None
         source_file = src_comment.source_file
+        written = (
+            source_file.node_text(association.node)
+            if source_file is not None
+            else association.node.text
+        )
+        if not written:
+            return None, None
         return association.node, code_scope(
             association,
             comment_type,
@@ -773,7 +781,7 @@ class SourceAnalyse:
         if self.analyse_config.get_multiline_needs:
             claimed = self.extract_multiline_needs()
         for src_comment in self.src_comments:
-            if not src_comment.node.text:
+            if not src_comment.text:
                 continue
             filepath = (
                 src_comment.source_file.filepath if src_comment.source_file else None

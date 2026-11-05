@@ -10,12 +10,15 @@ finds those macros and their invocations in the text alone, and gives the parse 
 of the buffer in which each opening invocation is overwritten by ``extern"C++"{``
 padded with spaces to its exact length, and each closing one by ``}`` and spaces: a
 name-neutral block, so the tree parses and names nothing after it. Only the PARSE
-reads that copy. Every read of the tree (names, tagged scopes, excerpts) reads the
-file as written: the copy has the same length and the same bytes outside the
-invocations, so every offset, line, marker and name end stays valid, and a comment,
-which no invocation is inside, has the same bytes in both. The namespaces each pair
-opens are a byte range (:class:`MacroScopes`); an entity whose name ends inside one is
-named in them, outermost first.
+reads that copy. Every read of the tree (comments, names, tagged scopes, excerpts)
+reads the file as written, by byte range (``SourceFile.node_text``,
+:class:`~sphinx_codelinks.analyse.entity.CppNames`): the copy has the same length and
+the same bytes outside the invocations, so every offset, line, marker and name end
+stays valid. A comment can hold an invocation: tree-sitter ends a directive's argument
+at ``/*`` even inside a string (``#define OPEN "/*"``), where this lexer reads a string,
+so ``node.text`` of such a comment is the copy's. The namespaces each pair opens are a
+byte range (:class:`MacroScopes`); an entity whose name ends inside one is named in
+them, outermost first.
 
 The rules fail closed: whatever does not fit them leaves the file as it is (F7 alone
 keeps the rewrite and drops only the names).

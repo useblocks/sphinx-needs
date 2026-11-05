@@ -477,19 +477,26 @@ _DOC_BLOCK_OPENINGS: dict[CommentType, tuple[str, ...]] = {
 }
 
 
-def is_doc_comment(node: TreeSitterNode, comment_type: CommentType) -> bool:
+def is_doc_comment(
+    node: TreeSitterNode, comment_type: CommentType, *, text: bytes | None = None
+) -> bool:
     """Whether the comment ``node`` is a documentation comment of its language.
 
     A Python docstring is one too, but it is a string, not a comment: the caller knows
     it by its capture.
+
+    :param text: The comment's text as the file writes it (``SourceComment.text``);
+        ``node.text`` when not given.
     """
-    text = (node.text or b"").decode("utf-8", "replace")
+    written = ((node.text or b"") if text is None else text).decode("utf-8", "replace")
     for opening in _DOC_LINE_OPENINGS.get(comment_type, ()):
-        if text.startswith(opening):
-            return not (opening == "///" and text.startswith("////"))
+        if written.startswith(opening):
+            return not (opening == "///" and written.startswith("////"))
     for opening in _DOC_BLOCK_OPENINGS.get(comment_type, ()):
-        if text.startswith(opening):
-            return opening == "/*!" or not text[len(opening) :].startswith(("*", "/"))
+        if written.startswith(opening):
+            return opening == "/*!" or not written[len(opening) :].startswith(
+                ("*", "/")
+            )
     return False
 
 

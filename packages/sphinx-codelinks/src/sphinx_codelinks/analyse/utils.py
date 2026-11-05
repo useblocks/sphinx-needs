@@ -208,7 +208,7 @@ def parse_source(
     Every analysis of a file's markers parses it here, so that every C++ name is made
     the one way. A C++ file is parsed from a copy with the namespace macros it defines
     itself rewritten (:mod:`sphinx_codelinks.analyse.cpp_macros`): the tree's offsets
-    are the file's, and every name, tagged scope and excerpt is read from
+    are the file's, and every comment, name, tagged scope and excerpt is read from
     ``src_string``, through :class:`CppNames` and ``SourceFile.node_text``, never from
     the copy. A ``.c`` file is C: it is parsed as written, and gets no file-level names.
 
@@ -394,11 +394,12 @@ def _in_head_of(
     return wrapped is not None and wrapped.id == entity.id
 
 
-def _is_inner_doc(node: TreeSitterNode, comment_type: CommentType) -> bool:
-    """A Rust inner doc comment (``//!``, ``/*!``): it documents what it is inside."""
+def _is_inner_doc(text: bytes, comment_type: CommentType) -> bool:
+    """Whether the comment ``text`` is a Rust inner doc comment (``//!``, ``/*!``): it
+    documents what it is inside."""
     if comment_type != CommentType.rust:
         return False
-    return (node.text or b"").startswith((b"//!", b"/*!"))
+    return text.startswith((b"//!", b"/*!"))
 
 
 def _find_yaml_structure_in_block_node(
@@ -530,7 +531,10 @@ def find_jsonc_associated_structure(node: TreeSitterNode) -> TreeSitterNode | No
 
 # @Attach a marker to the adjacent code entity, IMPL_ENTITY_1, impl, [FE_DEF]
 def associate(
-    node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
+    node: TreeSitterNode,
+    comment_type: CommentType = CommentType.cpp,
+    *,
+    text: bytes | None = None,
 ) -> Association | None:
     """The entity a comment is attached to, and how (see :data:`Mechanism`).
 
@@ -559,6 +563,8 @@ def associate(
 
     :param node: The comment node, or a Python docstring's ``expression_statement``.
     :param comment_type: The language of the file ``node`` was parsed from.
+    :param text: The comment's text as the file writes it (``SourceComment.text``),
+        where a C++ tree is parsed from a prepared copy; ``node.text`` when not given.
     :return: The association, or ``None`` when the comment is attached to no entity
         (file level).
     """
@@ -570,11 +576,12 @@ def associate(
         # JSONC uses data-aware structure association logic
         return _jsonc_associate(node)
 
+    written = (node.text or b"") if text is None else text
     declared: Mechanism = "doc_comment"
-    if node.type == CommentCategory.docstring or _is_inner_doc(node, comment_type):
+    if node.type == CommentCategory.docstring or _is_inner_doc(written, comment_type):
         scope = find_enclosing_scope(node, comment_type)
         return Association(scope, declared) if scope is not None else None
-    is_doc = is_doc_comment(node, comment_type)
+    is_doc = is_doc_comment(node, comment_type, text=written)
 
     def enclosing(trailing: bool = False) -> Association | None:
         scope = find_enclosing_scope(node, comment_type)
@@ -592,7 +599,7 @@ def associate(
             return enclosing(trailing=True)
         return Association(entity, declared if is_doc else "trailing")
     if _is_file_header(node) and (
-        not is_doc or documents_file((node.text or b"").decode("utf-8", "replace"))
+        not is_doc or documents_file(written.decode("utf-8", "replace"))
     ):
         return None
     entity = find_next_scope(node, comment_type)

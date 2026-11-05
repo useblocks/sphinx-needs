@@ -550,7 +550,7 @@ def test_markers_are_named_in_the_macro_namespace(tmp_path: Path) -> None:
 def test_every_read_is_from_the_file_as_written(tmp_path: Path) -> None:
     """A marker on a namespace that holds a pair (which F7 leaves unnamed, its rewrite
     kept) carries the namespace's text as written, macro and all, as its tagged scope
-    and its excerpt; and every comment of a rewritten file has its bytes as written."""
+    and its excerpt; and every comment is read as written too."""
     source = (
         "#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
         "// @need-ids: REQ_O\nnamespace outer {\nLIB_NAMESPACE_BEGIN\n"
@@ -568,8 +568,40 @@ def test_every_read_is_from_the_file_as_written(tmp_path: Path) -> None:
     assert record.scope == "namespace outer {"
     for comment in analyse.src_comments:
         node = comment.node
-        assert node.text == source.encode("utf-8")[node.start_byte : node.end_byte]
+        assert comment.text == source.encode("utf-8")[node.start_byte : node.end_byte]
     assert _defined(source) == ["outer::h"]
+
+
+def test_a_comment_holding_an_invocation_is_read_as_written(tmp_path: Path) -> None:
+    """The lexer reads ``"/*"`` in a directive as a string, so the invocation after it
+    is rewritten; tree-sitter's directive argument stops at ``/*``, so its comment runs
+    to the next ``*/`` across that invocation. With the pair's rewrite kept (F7: inside
+    a real namespace), the comment in the parsed copy holds ``}`` where the file says
+    ``LIB_NAMESPACE_END``: every reader of a comment reads the file as written."""
+    source = (
+        "#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
+        'namespace outer {\nLIB_NAMESPACE_BEGIN\n#define OPEN_COMMENT "/*"\n#if 0\n'
+        "@need req: A block need\n:id: REQ_9\n\n#endif\nLIB_NAMESPACE_END\n#if 0\n"
+        "@endneed */\n#endif\nvoid g() {}\n}\n"
+    )
+    path = tmp_path / "a.cpp"
+    path.write_bytes(source.encode("utf-8"))
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[path],
+            src_dir=tmp_path,
+            comment_type=CommentType.cpp,
+            get_multiline_needs=True,
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run()
+    [need] = analyse.multiline_needs
+    assert need.need["id"] == "REQ_9"
+    assert need.need["content"] == "#endif\nLIB_NAMESPACE_END\n#if 0"
+    # the parsed copy differs inside that comment; the analysis read the file
+    assert any(comment.node.text != comment.text for comment in analyse.src_comments)
 
 
 def _name_of(node: TreeSitterNode, names: CppNames) -> str | None:

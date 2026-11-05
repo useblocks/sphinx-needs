@@ -52,6 +52,15 @@ class SourceComment:
         self.column: int = column
         self.source_file: SourceFile | None = None
 
+    @property
+    def text(self) -> bytes:
+        """The comment's text as the file writes it (``SourceFile.node_text``): every
+        reader of a comment reads it here, never ``node.text``, which in a C++ tree
+        parsed from a prepared copy is the copy's."""
+        if self.source_file is None:
+            return self.node.text or b""
+        return self.source_file.node_text(self.node)
+
 
 class SourceFile:
     def __init__(self, filepath: Path) -> None:
