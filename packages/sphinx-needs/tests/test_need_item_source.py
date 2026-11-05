@@ -243,6 +243,7 @@ def test_the_one_class():
         ("lineno_content", inspect.Parameter.KEYWORD_ONLY, None),
         ("parser_lineno", inspect.Parameter.KEYWORD_ONLY, None),
         ("is_import", inspect.Parameter.KEYWORD_ONLY, False),
+        ("upstream", inspect.Parameter.KEYWORD_ONLY, ()),
     ]
     source = NeedItemSource([LINED_A], lineno=3, lineno_content=4, parser_lineno=9)
     assert source.hops == (LINED_A,)
@@ -898,6 +899,9 @@ def test_a_need_that_only_moved_compares_equal_through_the_seam(kind: str):
         (
             ("hops", tuple(hop._without_lines() for hop in before.hops)),
             ("is_import", before.is_import),
+            # compared as they are: a hop of another project that moved is a changed
+            # record, which this build reads again
+            ("upstream", before.upstream),
         ),
     )
     for hop in before.hops:
