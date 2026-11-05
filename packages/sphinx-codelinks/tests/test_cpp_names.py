@@ -924,3 +924,22 @@ def test_a_qualifier_takes_one_partial_specialisation_s_spelling(
     and the qualifier keeps its own arguments. An explicit specialisation's empty
     ``template <>`` is its own, so the header after it reaches the next qualifier."""
     assert _functions(source, which=True) == expected
+
+
+def test_a_deeply_nested_parameter_type_is_named() -> None:
+    """A parameter type nested 400 deep (``A<A<…<int>…>>``) in two functions that
+    would share a name and parameters: their signatures are worked out without
+    exhausting Python's recursion limit, and the two keep their inline namespaces."""
+    nested = "A<" * 400 + "int" + " >" * 400
+    source = (
+        f"template <class T> struct A {{}};\nnamespace lib {{\n"
+        f"inline namespace v1 {{ void h({nested} x) {{}} }}\n"
+        f"inline namespace v2 {{ void h({nested} x) {{}} }}\n}}\n"
+    )
+    root, names = _parsed(source)
+    named = []
+    for node in _nodes_of(root, "function_definition"):
+        name = describe_entity(node, CommentType.cpp, source=names.source)
+        assert name is not None
+        named.append(names.qualify(name, node.start_point.row + 1).qualified_name)
+    assert named == ["lib::v1::h", "lib::v2::h"]

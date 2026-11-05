@@ -1493,15 +1493,20 @@ def _cpp_noise_edits(
 ) -> None:
     """The edits that clean a parameter's text: every comment and attribute in
     ``node`` dropped, and every nested parameter list (a function pointer's) replaced
-    by its normalised form."""
-    for child in node.children:
-        if child.type in _CPP_PARAMETER_NOISE:
-            edits.append((child.start_byte, child.end_byte, " "))
-        elif child.type == "parameter_list":
-            types = _cpp_parameter_types(child, source)
-            edits.append((child.start_byte, child.end_byte, f"({', '.join(types)})"))
-        else:
-            _cpp_noise_edits(child, source, edits)
+    by its normalised form. Walked with a stack, not by recursion, so a type nested
+    hundreds deep (``A<A<…<int>…>>``) cannot exhaust Python's recursion limit."""
+    stack = [node]
+    while stack:
+        for child in stack.pop().children:
+            if child.type in _CPP_PARAMETER_NOISE:
+                edits.append((child.start_byte, child.end_byte, " "))
+            elif child.type == "parameter_list":
+                types = _cpp_parameter_types(child, source)
+                edits.append(
+                    (child.start_byte, child.end_byte, f"({', '.join(types)})")
+                )
+            else:
+                stack.append(child)
 
 
 def _cpp_apply_edits(
