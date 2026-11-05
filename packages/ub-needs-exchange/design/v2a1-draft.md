@@ -184,8 +184,8 @@ For format 2 as a whole; §§1–7 are how far the first draft goes.
 **A `null` field value is left out.** A writer leaves out a field whose value is `null`
 (and writes every other value, a default or a typed empty such as `[]` or `""`
 included); a reader reads a missing field as unset — the projection has no key for it,
-and the reading project applies its own default, as it does to a `null`. A reader still
-reads a `null` a writer did not leave out, as `null`.
+and the reading project applies its own default (sphinx-needs reads a `null` that way
+too). A reader still reads a `null` a writer did not leave out, as `null`.
 Enforced by: corpus: `a-field-left-out-is-unset-and-a-null-is-read-as-null`;
 `test_reader.py::test_a_null_value_of_a_draft_is_read`.
 
