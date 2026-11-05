@@ -167,6 +167,83 @@ def _functions(source: str, path: str = "src/a.cpp") -> set[str]:
             ["namespace a", "namespace b"],
             id="nested_name_inline_qualifier",
         ),
+        # A function a ``friend`` declaration declares or defines is named in its
+        # innermost enclosing namespace, not in the class (a qualified friend by its
+        # qualifier); every other member keeps its class.
+        pytest.param(
+            "namespace ns { struct A { friend void f(A) {} }; }",
+            "function_definition",
+            0,
+            "function",
+            "ns::f",
+            ["namespace ns", "function f"],
+            id="friend_definition",
+        ),
+        pytest.param(
+            "namespace ns { struct A { friend bool operator==(const A&, const A&)"
+            " { return true; } }; }",
+            "function_definition",
+            0,
+            "operator",
+            "ns::operator==",
+            ["namespace ns", "operator operator=="],
+            id="friend_operator",
+        ),
+        pytest.param(
+            "namespace ns { struct A { template <typename T> friend void g(T) {} }; }",
+            "function_definition",
+            0,
+            "function",
+            "ns::g",
+            ["namespace ns", "function g"],
+            id="friend_template",
+        ),
+        pytest.param(
+            "namespace ns { struct A { friend void h(A); }; }",
+            "declaration",
+            0,
+            "function",
+            "ns::h",
+            ["namespace ns", "function h"],
+            id="friend_declaration",
+        ),
+        pytest.param(
+            "namespace ns { struct O { struct I { friend void f(I) {} }; }; }",
+            "function_definition",
+            0,
+            "function",
+            "ns::f",
+            ["namespace ns", "function f"],
+            id="friend_in_nested_class",
+        ),
+        pytest.param(
+            "struct A { friend void f(A) {} };",
+            "function_definition",
+            0,
+            "function",
+            "f",
+            ["function f"],
+            id="friend_of_a_global_class",
+        ),
+        pytest.param(
+            "namespace ns { struct Other { void h(); }; "
+            "struct A { friend void Other::h(); }; }",
+            "declaration",
+            0,
+            "method",
+            "ns::Other::h",
+            ["namespace ns", "class Other", "method h"],
+            id="qualified_friend",
+        ),
+        pytest.param(
+            "namespace ns { struct A { void m() {} friend void f(A) {} }; }",
+            "function_definition",
+            0,
+            "method",
+            "ns::A::m",
+            ["namespace ns", "struct A", "method m"],
+            id="member_beside_a_friend",
+        ),
     ],
 )
 def test_cpp_names_as_clang_prints_them(
@@ -192,6 +269,38 @@ def test_cpp_names_as_clang_prints_them(
 @pytest.mark.parametrize(
     ("source", "expected"),
     [
+        pytest.param(
+            "namespace ns {\nclass List { public: class iterator {\n"
+            "  friend bool operator==(const iterator& a, const iterator& b)"
+            " { return true; } }; };\n"
+            "class Map { public: class iterator {\n"
+            "  friend bool operator==(const iterator& a, const iterator& b)"
+            " { return false; } }; };\n}\n",
+            {
+                "ns::List::iterator::operator==(const iterator&, const iterator&)",
+                "ns::Map::iterator::operator==(const iterator&, const iterator&)",
+            },
+            id="hidden_friends_of_two_classes",
+        ),
+        pytest.param(
+            "namespace lib {\nstruct Vec  { struct iterator { friend bool operator==("
+            "const iterator&, const iterator&) { return true; } }; };\n"
+            "struct List { struct iterator { friend bool operator==("
+            "const iterator&, const iterator&) { return true; } }; };\n}\n",
+            {
+                "lib::List::iterator::operator==(const iterator&, const iterator&)",
+                "lib::Vec::iterator::operator==(const iterator&, const iterator&)",
+            },
+            id="hidden_friends_of_two_structs",
+        ),
+        pytest.param(
+            "namespace ns {\ntemplate <typename T> struct A {\n  using Self = A;\n"
+            "  friend void swap(Self& a, Self& b) {}\n};\n"
+            "template <typename T> struct B {\n  using Self = B;\n"
+            "  friend void swap(Self& a, Self& b) {}\n};\n}\n",
+            {"ns::A::swap(Self&, Self&)", "ns::B::swap(Self&, Self&)"},
+            id="self_aliases",
+        ),
         pytest.param(
             "namespace lib {\ninline namespace v1 {\nvoid h(int) {}\n}\n"
             "inline namespace v2 {\nvoid h(int) {}\n}\n}\n",
@@ -221,16 +330,30 @@ def test_cpp_names_as_clang_prints_them(
             {"lib::f()"},
             id="one_inline_namespace",
         ),
+        pytest.param(
+            "namespace ns {\nstruct S {\n  friend void reset(S& s);\n};\n"
+            "void reset(S& s) {}\n}\n",
+            {"ns::reset(S&)"},
+            id="friend_declaration_and_definition",
+        ),
+        pytest.param(
+            "namespace ns {\nstruct A {\n  friend bool operator==(const A&, const A&);\n"
+            "};\nbool operator==(const A&, const A&) { return true; }\n}\n",
+            {"ns::operator==(const A&, const A&)"},
+            id="friend_declared_in_its_class",
+        ),
     ],
 )
 def test_names_that_would_collide_keep_their_full_chain(
     source: str, expected: set[str]
 ) -> None:
-    """Leaving an inline namespace out of a name never makes two definitions of a file
-    share one: where it would, every entity of that name and parameters keeps its full
-    chain, as before it was left out (two inline siblings, an inline namespace beside
-    its parent, the ``#if``/``#else`` arms of an ABI version, a declaration with its
-    group); where it would not, the name is clang's."""
+    """Leaving an inline namespace or a friend's classes out of a name never makes two
+    definitions of a file share one: where it would, every entity of that name and
+    parameters keeps its full chain, as before they were left out (hidden friends of
+    two classes, ``Self`` aliases, two inline siblings, an inline namespace beside its
+    parent, the ``#if``/``#else`` arms of an ABI version, a declaration with its
+    group); where it would not, the name is clang's (a friend declared in its class and
+    defined in its namespace is one function)."""
     assert _functions(source) == expected
 
 
@@ -280,4 +403,29 @@ def test_markers_are_named_as_the_file_names_them(tmp_path: Path) -> None:
         "REQ_A": "lib::f",
         "REQ_B": "lib::v1::h",
         "REQ_C": "lib::v2::h",
+    }
+
+
+def test_a_marker_in_a_colliding_hidden_friend_keeps_its_class(tmp_path: Path) -> None:
+    """A marker in one of two classes' hidden friends of one name and parameters is
+    named with its class, so it never credits the other class's function; a hidden
+    friend of one class alone, and a friend declared in its class and defined in its
+    namespace, are named in the namespace. (A marker before a ``friend`` declaration
+    is attached to its class: the attachment does not look into one.)"""
+    source = (
+        "namespace ns {\nclass List { public: class iterator {\n"
+        "friend bool operator==(const iterator& a, const iterator& b) { return true; }"
+        " }; };\n"
+        "class Map { public: class iterator {\n"
+        "friend bool operator==(const iterator& a, const iterator& b) {\n"
+        "// @need-ids: REQ_M\n    return false;\n  } }; };\n"
+        "struct T {\n  friend void touch(T& t) {\n    // @need-ids: REQ_T\n  }\n};\n"
+        "struct S {\n  // @need-ids: REQ_S\n  friend void reset(S& s);\n};\n"
+        "// @need-ids: REQ_E\nvoid reset(S& s) {}\n}\n"
+    )
+    assert _marker_names(tmp_path, source) == {
+        "REQ_M": "ns::Map::iterator::operator==",
+        "REQ_T": "ns::touch",
+        "REQ_S": "ns::S",
+        "REQ_E": "ns::reset",
     }

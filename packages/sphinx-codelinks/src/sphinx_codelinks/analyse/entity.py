@@ -611,8 +611,8 @@ class _CppNaming:
     """How the names of a C++ tree's entities are made beyond one node."""
 
     full_chain: bool = False
-    """Keep every container, an inline namespace included, as the names were made
-    before it was left out (see :func:`cpp_renames`)."""
+    """Keep every container, an inline namespace and a friend's classes included, as
+    the names were made before they were left out (see :func:`cpp_renames`)."""
 
 
 _ALONE = _CppNaming()
@@ -729,12 +729,22 @@ def _cpp_qualified(text: str, kind: str, *, member: bool) -> list[SemanticElemen
     return [*elements, _element(kind, own)]
 
 
+def _cpp_is_friend(node: TreeSitterNode) -> bool:
+    """``node`` is what a ``friend`` declaration declares or defines
+    (``friend bool operator==(const A&, const A&) {…}``, a friend template's too): a
+    function of the innermost enclosing namespace, not of the class."""
+    return node.parent is not None and node.parent.type == "friend_declaration"
+
+
 def _cpp_containers(
     node: TreeSitterNode, source: bytes | None, naming: _CppNaming
 ) -> tuple[list[str], list[SemanticElement]]:
     """The namespaces and classes around ``node``, outermost first: their names, and
     their components (``namespace a::b`` is two namespaces). An inline namespace adds
-    nothing (:func:`_cpp_namespace_parts`)."""
+    nothing (:func:`_cpp_namespace_parts`), and a function a ``friend`` declaration
+    declares or defines is named in its innermost enclosing namespace, as clang names
+    it: the classes around it add nothing."""
+    friend = not naming.full_chain and _cpp_is_friend(node)
     segments: list[str] = []
     groups: list[list[SemanticElement]] = []
     parent = node.parent
@@ -746,7 +756,11 @@ def _cpp_containers(
             if parts:
                 segments.append("::".join(parts))
                 groups.append([_element("namespace", part) for part in parts])
-        elif parent.type in ("class_specifier", "struct_specifier", "union_specifier"):
+        elif not friend and parent.type in (
+            "class_specifier",
+            "struct_specifier",
+            "union_specifier",
+        ):
             name = parent.child_by_field_name("name")
             if name is not None:
                 container = _cpp_name(_cpp_text(name, source), _cpp_templated(parent))
@@ -1360,17 +1374,19 @@ def cpp_renames(
     """The C++ entities under ``root`` named otherwise than the node alone names them,
     by the end of their name, with that name.
 
-    An inline namespace is left out of a name (:func:`_cpp_containers`), except where
-    that makes two definitions with a body share a name and parameters that the full
-    chain kept apart: then every entity of that name and parameters (its declarations
-    too) keeps the full chain, so no marker credits another definition. A declaration
-    and one definition do not collide. The name compared is ``prefix`` (the namespaces
-    the file's own macros open around a name ending at a byte) and the name, and the
-    parameters are the normalised signature (:func:`cpp_signature`).
+    An inline namespace and a friend's classes are left out of a name
+    (:func:`_cpp_containers`), except where that makes two definitions with a body
+    share a name and parameters that the full chain kept apart: then every entity of
+    that name and parameters (its declarations too) keeps the full chain, so no marker
+    credits another definition. A declaration and one definition do not collide (a
+    friend declared in its class and defined in its namespace stays one entity). The
+    name compared is ``prefix`` (the namespaces the file's own macros open around a
+    name ending at a byte) and the name, and the parameters are the normalised
+    signature (:func:`cpp_signature`).
 
     Only the entities that leave a container out, and the definitions whose name ends
-    as one of theirs does, are named here: a file with no inline namespace costs one
-    walk of its tree, which skips every function body.
+    as one of theirs does, are named here: a file with neither friends nor inline
+    namespaces costs one walk of its tree, which skips every function body.
     """
     left_out: list[TreeSitterNode] = []
     bodies: list[TreeSitterNode] = []
@@ -1386,11 +1402,12 @@ def cpp_renames(
             _cpp_inline_namespace_or_part(node, source)
         )
         if is_entity(node, CommentType.cpp):
-            if in_inline or inline_here:
+            if in_inline or inline_here or _cpp_is_friend(node):
                 left_out.append(node)
             elif _cpp_has_body_entity(node):
                 bodies.append(node)
-        # nothing a function's body holds is an inline namespace, or names one
+        # nothing a function's body holds is a friend or an inline namespace, or
+        # names one
         if node.type != "function_definition" and cursor.goto_first_child():
             inside.append(in_inline or inline_here)
             continue
