@@ -3464,8 +3464,9 @@ Of the other ``needs.json`` options, under ``"2a1"``:
 
 - :ref:`needs_json_exclude_fields` leaves out a field or a link type it names, the ``content``
   (``doctype`` and ``parts`` its keys), and ``source``, the need's source; a key of format 1 that
-  the source carries in ``"2a1"`` (``docname``, ``lineno``, ``sections``, ``signature``, ...) is
-  reported, once, as having no key of its own;
+  the source carries in ``"2a1"`` -- ``docname``, ``lineno``, ``sections``, ``section_name``,
+  ``signature``, ``external_url``, ``is_import``, ``is_external`` -- is reported, once, as having
+  no key of its own (exclude ``source`` instead);
 - :ref:`needs_builder_filter`, :ref:`needs_reproducible_json` and
   :ref:`needs_json_include_link_conditions` work as in format 1;
 - :ref:`needs_json_remove_defaults` and :ref:`needs_file` are ignored, each with one warning: a

@@ -233,10 +233,19 @@ ones this build adds (the needs.json it was read from, the page of the ``needimp
 all, in that order, so a need's source grows with each project it passes through. A hop the file gives no ``origin``
 is given the name of the project that wrote the file (its ``project.name``; where the file names none, the file as
 the reader names it: the path relative to the source directory or the URL of a ``needimport``, the ``json_path`` or
-``json_url`` of an external source); an ``origin`` the file states is kept. What a need answers about where it is
-from -- ``docname``, ``lineno``, ``sections``, ``is_import``, ``is_external``, ``external_url`` and ``c.source``
-in a filter -- is what the same need read from a format-1 file answers: the hops of the other project are kept,
-not read. An external need's ``external_url`` is built from the page its record places it on.
+``json_url`` of an external source); an ``origin`` the file states is kept. What an imported or external need
+answers about where it is from -- ``docname``, ``lineno``, ``sections``, ``section_name``, ``signature``,
+``is_import``, ``is_external``, ``external_url`` and ``c.source`` in a filter -- is what the same need read from a
+format-1 file answers: the hops of the other project are kept, not read. An external need's ``external_url`` is
+built from the page its record places it on.
+
+A record of a 2a1 file is not a record of format 1, though, and what is read of the record itself differs: a
+``needimport`` ``:filter:`` and an external source's ``target_url`` template see its ``id``, ``type``, every
+field and link type, ``content``, ``doctype`` and ``parts``, and, from the page it is placed on, ``docname``,
+``sections``, ``section_name`` and ``signature``. They do not see ``lineno``, ``lineno_content``,
+``is_import``, ``is_external``, ``external_url``, ``type_name`` or any other key the configuration derives, the
+back links, or any other computed key (``is_need``, ``parent_need``, ``constraints_passed``, ...): a filter over
+one of them fails, and a template renders it empty.
 
 Older readers do not read it. Sphinx-Needs 9.1.0 and 9.2.0 refuse the file with one warning per reader, which names
 the file and says that it is of format version ``"2a1"`` and that the reader reads format version 1 only;

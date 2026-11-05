@@ -27,7 +27,11 @@ Improvements
   :ref:`needimport` and :ref:`needs_external_needs` read a 2a1 file, and an imported or external need keeps the
   source its record carries before the hops of this build, so re-exporting it writes them all: the source travels
   with a need from project to project. Each such hop names the project it belongs to (``origin``). What the need
-  answers about where it is from (``docname``, ``lineno``, ``sections``, ``c.source``, ...) is unchanged.
+  answers about where it is from (``docname``, ``lineno``, ``sections``, ``section_name``, ``signature``,
+  ``is_external``, ``external_url``, ``c.source``) is what it answers read from a format-1 file. A ``needimport``
+  ``:filter:`` or a ``target_url`` template over the record itself sees less: its fields, links and content, and
+  ``docname``, ``sections``, ``section_name`` and ``signature``, but no ``lineno``, ``is_*``, ``type_name``,
+  ``external_url`` or other computed key.
 
   A 2a1 file is readable only by the release that wrote it, and each build that writes one says so in a
   ``needs.beta`` warning (a build that writes no ``needs.json`` is not warned). Sphinx-Needs 9.1.0 and 9.2.0 refuse
