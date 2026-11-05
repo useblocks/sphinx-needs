@@ -2233,7 +2233,7 @@ def _cpp_keep_full_chains_where_names_collide(
     one that leaves a container out keeps its full chain where its name and
     parameters are those of two definitions whose full chains differ, and so does
     everything a class or namespace that keeps its full chain holds (its members are
-    named in it)."""
+    named in it), but a friend, which is named in its namespace."""
     keys = [
         (_cpp_chain_of(entity.named, prefix), cpp_signature(entity.node, source))
         for entity in seen
@@ -2259,8 +2259,11 @@ def _cpp_keep_full_chains_where_names_collide(
     for entity, collide in zip(seen, collides, strict=True):
         if entity.full is None:
             continue
+        # a friend is named in its namespace, never in its class
         keeps = collide or (
-            bool(kept) and _cpp_held_by(_cpp_chain_of(entity.full, prefix), kept)
+            bool(kept)
+            and not _cpp_is_friend(entity.node)
+            and _cpp_held_by(_cpp_chain_of(entity.full, prefix), kept)
         )
         name = entity.full if keeps else entity.named
         if (

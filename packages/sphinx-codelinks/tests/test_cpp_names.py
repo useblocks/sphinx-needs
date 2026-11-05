@@ -1005,3 +1005,51 @@ def test_a_deeply_nested_parameter_type_is_named() -> None:
         assert name is not None
         named.append(names.qualify(name, node.start_point.row + 1).qualified_name)
     assert named == ["lib::v1::h", "lib::v2::h"]
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
+            "namespace lib {\ninline namespace v1 { struct Widget {\n"
+            "  friend void swap(Widget&, Widget&) {} }; }\n"
+            "struct Widget { void resize() {} };\n}\n",
+            {"def lib::Widget::resize()", "def lib::swap(Widget&, Widget&)"},
+            id="a_hidden_friend",
+        ),
+        pytest.param(
+            "namespace lib {\ninline namespace v1 {\nstruct Widget {\n"
+            "  friend void swap(Widget& a, Widget& b);\n};\n"
+            "void swap(Widget& a, Widget& b) {}\n}\n"
+            "struct Widget { void resize() {} };\n}\n",
+            {
+                "decl lib::swap(Widget&, Widget&)",
+                "def lib::Widget::resize()",
+                "def lib::swap(Widget&, Widget&)",
+            },
+            id="declared_in_the_class_defined_beside_it",
+        ),
+        pytest.param(
+            "namespace lib {\n#if V2\ninline namespace v2 { struct Widget {\n"
+            "  friend bool operator<(const Widget&, const Widget&);\n"
+            "  void draw() {} };\n"
+            "bool operator<(const Widget&, const Widget&) { return true; } }\n#else\n"
+            "inline namespace v1 { struct Widget { void draw() {} }; }\n#endif\n}\n",
+            {
+                "decl lib::operator<(const Widget&, const Widget&)",
+                "def lib::operator<(const Widget&, const Widget&)",
+                "def lib::v1::Widget::draw()",
+                "def lib::v2::Widget::draw()",
+            },
+            id="abi_version_arms",
+        ),
+    ],
+)
+def test_a_friend_of_a_kept_class_is_named_in_its_namespace(
+    source: str, expected: set[str]
+) -> None:
+    """A friend declared or defined in a class that keeps its full chain is still named
+    in its namespace, as the compiler names it: the class does not pass its chain to
+    it, so a friend declared in the class and defined beside it is one function (a
+    hidden friend, a declared friend, the arms of an ABI version)."""
+    assert _functions(source, which=True) == expected
