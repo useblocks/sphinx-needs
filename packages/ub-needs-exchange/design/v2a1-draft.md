@@ -86,6 +86,9 @@ For format 2 as a whole; §§1–7 are how far the first draft goes.
   returns with that block.
 - **An origins table** in the envelope (each upstream project's name, URL patterns,
   revision and roots), so URLs are composed on read rather than stored per need.
+- **Parts**: where they live (here they are `content.parts`, a map of part id to text, as
+  format 1 has them less the back links), where each came from (a span of the content, or
+  stated by the record), and how a reader treats a part its content does not mark.
 - **Extend records** (what a `needextend` changed, with its own source), **columns** in a
   hop's region, and **hops for items of other systems** (an issue tracker, a
   requirements tool).
@@ -367,8 +370,10 @@ neither character.
    `NeedLink.to_link_string`): a string as it is written, unchanged; an object as its `id`, then `.part` when
    the part is not empty, then the condition, when there is one, in brackets one deeper
    than the longest run of `]` in it — `B`, `B.p1`, `B[c]`, `B.p1[c]`, `B[[tags[0] == 'x']]`.
-   That string reads back as the same link in sphinx-needs, with one exception format 1
-   has too: a condition that ends in `]` does not.
+   That string reads back as the same link in sphinx-needs, with two exceptions format 1
+   has too: a condition that ends in `]` does not, and nor does an object whose `id`
+   contains `.` or `[` (the string grammar has no escape, so the reader reads that `.` as
+   a part and that `[` as a condition).
    Enforced by: corpus: `a-bare-string-link-is-read-as-written`,
    `a-bare-string-is-handed-on-in-format-1-s-grammar`,
    `a-bare-string-with-brackets-is-handed-on-in-format-1-s-grammar`,
