@@ -494,6 +494,16 @@ def test_drafts_is_any_collection(drafts):
     assert [r.key for r in doc.select_version(None, drafts=drafts).records()] == ["A"]
 
 
+@pytest.mark.parametrize("stated", [[], {}], ids=["array", "object"])
+def test_an_unhashable_format_version_is_invalid_whatever_the_drafts(stated):
+    """A ``format_version`` that is neither a number nor a string is
+    ``format_version_invalid`` under a hashing ``drafts`` too, never a ``TypeError``."""
+    data = {"format_version": stated, **envelope({"A": record("A")})}
+    with pytest.raises(nx.ExchangeError) as info:
+        nx.parse(json.dumps(data)).select_version(None, drafts=frozenset({"2a1"}))
+    assert info.value.code == "format_version_invalid"
+
+
 @pytest.mark.parametrize(
     "drafts",
     [

@@ -40,6 +40,7 @@ __all__ = (
     "DRAFT_HAS_VERSIONS",
     "DUPLICATE_ID",
     "FIELDS_NOT_OBJECT",
+    "FIELD_RESERVED",
     "FORMAT_VERSION",
     "FORMAT_VERSION_INVALID",
     "FORMAT_VERSION_UNSUPPORTED",
@@ -123,6 +124,9 @@ DUPLICATE_ID = "duplicate_id"
 skipped."""
 FIELDS_NOT_OBJECT = "fields_not_object"
 """A draft's record has a ``fields`` that is not an object; its fields are not read."""
+FIELD_RESERVED = "field_reserved"
+"""A key of a draft's record's ``fields`` is one the projection owns (``id``, ``type``,
+``content``, ``doctype``, ``parts``, ``docname``, ``sections``); it is not read."""
 LINKS_NOT_OBJECT = "links_not_object"
 """A draft's record has a ``links`` that is not an object; its links are not read."""
 LINK_INVALID = "link_invalid"
@@ -139,6 +143,12 @@ key of the wrong type; that hop is not read."""
 
 #: The drafts of a later format this reader reads, each only when asked to.
 _DRAFTS = frozenset({"2a1"})
+
+#: The keys of a draft's projected record that come from the record itself, its
+#: ``content`` or its placement, and never from its ``fields``.
+_RESERVED_FIELDS = frozenset(
+    {"id", "type", "content", "doctype", "parts", "docname", "sections"}
+)
 
 
 class ExchangeError(Exception):
@@ -467,7 +477,19 @@ def _draft_record(index: int, need_id: str, value: Mapping[str, Any]) -> Record:
     projected: dict[str, Any] = {}
     if "fields" in value:
         if isinstance(value["fields"], Mapping):
-            projected.update(value["fields"])
+            for name, field_value in value["fields"].items():
+                if name in _RESERVED_FIELDS:
+                    diagnostics.append(
+                        Diagnostic(
+                            FIELD_RESERVED,
+                            _path(where, "fields", name),
+                            f"{name!r} is not a field of a record: it is the record's "
+                            "own, or projected from its content or source; it is not "
+                            "read",
+                        )
+                    )
+                else:
+                    projected[name] = field_value
         else:
             diagnostics.append(
                 Diagnostic(
@@ -543,7 +565,9 @@ def _draft_links(
     links: Mapping[str, Any], where: str, diagnostics: list[Diagnostic]
 ) -> dict[str, list[Any]]:
     """Each link type's links, as format 1 spells them: ``ID``, ``ID.part``,
-    ``ID[condition]`` or ``ID.part[condition]``."""
+    ``ID[condition]`` or ``ID.part[condition]``. A string is handed on as written, so
+    the reading project reads it in format 1's grammar too: a ``.`` or ``[`` in it is
+    read as a part or a condition there."""
     projected: dict[str, list[Any]] = {}
     for link_type, entries in links.items():
         at = _path(where, "links", link_type)
