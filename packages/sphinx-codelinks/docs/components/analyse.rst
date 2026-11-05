@@ -199,7 +199,7 @@ so that it can be joined with what a compiler reports, and so that two spellings
   rather than ``nlohmann::json_abi_v3_12_0::basic_json`` (a library's ABI namespace changes with every release).
   The inline namespace itself keeps its own name (``lib::v1``), and so does the ``inline`` part of a C++20 nested
   name (``namespace a::inline v1`` is ``a::v1``, the ``f`` in it ``a::f``).
-  A qualifier written through an inline namespace the file declares leaves it out too
+  A function's qualifier written through an inline namespace the file declares leaves it out too
   (``void lib::v1::f(int) {}`` is ``lib::f``, as its declaration in ``inline namespace v1`` is).
 - **A friend is named in its namespace.** A function a ``friend`` declaration declares or defines is named in its
   innermost enclosing namespace, not in the class (``ns::operator==``, a hidden friend's ``ns::touch``),
@@ -267,6 +267,11 @@ What the inline-namespace rule does not see:
 
 - An inline namespace only another file declares: a qualifier written through it keeps it
   (``void lib::v1::f() {}`` is ``lib::v1::f``).
+- Any qualifier but a function's: a class defined through an inline namespace (``struct lib::v2::X {…}``)
+  and a conversion operator defined through one (``lib::v1::W::operator int() const {…}``) keep it,
+  so a member declared in such a class (``lib::v2::X::m``) and its definition out of line (``lib::X::m``),
+  or a conversion operator's declaration and its definition, are named apart.
+- A namespace reopened without ``inline`` (``namespace lib { namespace v1 {…} }``) is read as a plain one.
 - A class defined inside a function in an inline namespace is named without both (``lib::Local``),
   so two such classes of one name in two functions share their members' names.
 - An inline namespace a namespace macro opens is left out of every name,

@@ -12,8 +12,8 @@ New and Improved
 - 👌 A C++ marker's entity is named as clang names it in five more shapes, so that its name
   can be joined with what a compiler reports, and two spellings of one function meet
   (:ref:`cpp_names`): an inline namespace adds nothing to the names of what it holds
-  (``lib::f``, not ``lib::v1::f``), nor to a qualifier written through one the file
-  declares; a ``friend`` function is named in its namespace (``ns::operator==``, not
+  (``lib::f``, not ``lib::v1::f``), nor to a function's qualifier written through one the
+  file declares; a ``friend`` function is named in its namespace (``ns::operator==``, not
   ``ns::A::operator==``); a partial specialisation keeps its arguments
   (``P<T,4>::fill``, not ``P::fill``), in its class and out of line, where a qualifier is
   spelled as the one specialisation with a body the file defines for it; and a namespace
