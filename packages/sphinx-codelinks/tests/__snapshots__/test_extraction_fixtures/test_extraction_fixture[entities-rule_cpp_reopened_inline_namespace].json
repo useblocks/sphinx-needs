@@ -1,0 +1,86 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 66
+      }
+    },
+    "tagged_scope": "void g();",
+    "scope": {
+      "kind": "declaration",
+      "start": 4,
+      "end": 4,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "lib::g",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "function",
+          "name": "g"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Declared in the reopened inline namespace",
+      "id": "IMPL_R_REOP_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 4
+      },
+      "end": {
+        "row": 5,
+        "column": 43
+      }
+    },
+    "tagged_scope": "void lib::v1::g() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 7,
+      "end": 7,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "lib::g",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "lib"
+        },
+        {
+          "kind": "method",
+          "name": "g"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Defined through it",
+      "id": "IMPL_R_REOP_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

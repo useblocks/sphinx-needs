@@ -2204,3 +2204,101 @@ rule_cpp_member_of_a_kept_class:
   truth:
     - {id: IMPL_R_KEPT_1, outcome: exact, entity_kind: "method", qualified_name: "lib::v1::Widget::draw", start: 5, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v1::Widget::draw() (kept: lib::Widget would name two classes)"}
     - {id: IMPL_R_KEPT_2, outcome: exact, entity_kind: "method", qualified_name: "lib::v1::Widget::draw", start: 11, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v1::Widget::draw() (kept: lib::Widget would name two classes)"}
+
+rule_cpp_class_head_through_an_inline_namespace:
+  # A class head written through one of the file's inline namespaces leaves it out,
+  # and so do its members, in the class and out of line.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib { inline namespace v2 { struct X; } }
+    // @The class defined through the inline namespace, IMPL_R_CLS_1, impl
+    struct lib::v2::X {
+        // @Its member, IMPL_R_CLS_2, impl
+        void m();
+    };
+    // @The member's definition, IMPL_R_CLS_3, impl
+    void lib::v2::X::m() {}
+  truth:
+    - {id: IMPL_R_CLS_1, outcome: exact, entity_kind: "struct", qualified_name: "lib::X", start: 3, mechanism: leading, compiler: "clang.cindex 18.1.1: STRUCT_DECL X, its semantic parents inline NAMESPACE v2 and NAMESPACE lib (the inline one left out)"}
+    - {id: IMPL_R_CLS_2, outcome: exact, entity_kind: "method", qualified_name: "lib::X::m", start: 5, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::X::m()"}
+    - {id: IMPL_R_CLS_3, outcome: exact, entity_kind: "method", qualified_name: "lib::X::m", start: 8, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::X::m()"}
+
+rule_cpp_pimpl_through_an_inline_namespace:
+  # A nested class defined out of its class through an inline namespace (a pimpl)
+  # leaves it out too.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib { inline namespace v1 { struct Widget { struct Impl; void draw(); }; } }
+    struct lib::v1::Widget::Impl {
+        // @The implementation's member, IMPL_R_PIMPL_1, impl
+        void run();
+    };
+    // @Its definition, IMPL_R_PIMPL_2, impl
+    void lib::v1::Widget::Impl::run() {}
+    // @The outer class's member defined through the inline namespace, IMPL_R_PIMPL_3, impl
+    void lib::v1::Widget::draw() {}
+  truth:
+    - {id: IMPL_R_PIMPL_1, outcome: exact, entity_kind: "method", qualified_name: "lib::Widget::Impl::run", start: 4, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::Widget::Impl::run()"}
+    - {id: IMPL_R_PIMPL_2, outcome: exact, entity_kind: "method", qualified_name: "lib::Widget::Impl::run", start: 7, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::Widget::Impl::run()"}
+    - {id: IMPL_R_PIMPL_3, outcome: exact, entity_kind: "method", qualified_name: "lib::Widget::draw", start: 9, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::Widget::draw()"}
+
+rule_cpp_conversion_operator_through_an_inline_namespace:
+  # A conversion operator's qualifier through one of the file's inline namespaces
+  # leaves it out, as its declaration in the class does.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib { inline namespace v1 { struct W {
+        // @Declared in the class, IMPL_R_CONVI_1, impl
+        operator int() const;
+    }; } }
+    // @Defined through the inline namespace, IMPL_R_CONVI_2, impl
+    lib::v1::W::operator int() const { return 0; }
+  truth:
+    - {id: IMPL_R_CONVI_1, outcome: exact, entity_kind: "operator", qualified_name: "lib::W::operator int", start: 3, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: lib::W::operator int() const"}
+    - {id: IMPL_R_CONVI_2, outcome: exact, entity_kind: "operator", qualified_name: "lib::W::operator int", start: 6, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: lib::W::operator int() const"}
+
+rule_cpp_friend_of_a_kept_class:
+  # A class kept apart by its inline namespace keeps its full chain for its members,
+  # but not for a friend: a friend is named in its namespace.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib {
+    inline namespace v1 { struct Widget {
+        friend void swap(Widget&, Widget&) {
+            // @Inside a kept class's hidden friend, IMPL_R_FRK_1, impl
+        }
+        void draw() {
+            // @Inside a kept class's member, IMPL_R_FRK_2, impl
+        }
+    }; }
+    struct Widget { void resize() {} };
+    }
+  truth:
+    - {id: IMPL_R_FRK_1, outcome: exact, entity_kind: "function", qualified_name: "lib::swap", start: 3, mechanism: enclosing, compiler: "clang.cindex 18.1.1, fully qualified: void lib::swap(Widget &, Widget &)"}
+    - {id: IMPL_R_FRK_2, outcome: exact, entity_kind: "method", qualified_name: "lib::v1::Widget::draw", start: 6, mechanism: enclosing, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v1::Widget::draw() (kept: lib::Widget would name two classes)"}
+
+rule_cpp_reopened_inline_namespace:
+  # A namespace that reopens one of the file's inline namespaces without inline is
+  # inline too: what it holds, and a definition written through it, leave it out.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib { inline namespace v1 { void f(); } }
+    namespace lib { namespace v1 {
+    // @Declared in the reopened inline namespace, IMPL_R_REOP_1, impl
+    void g();
+    } }
+    // @Defined through it, IMPL_R_REOP_2, impl
+    void lib::v1::g() {}
+  truth:
+    - {id: IMPL_R_REOP_1, outcome: exact, entity_kind: "function", qualified_name: "lib::g", start: 4, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::g() (warning: inline namespace reopened as a non-inline namespace)"}
+    - {id: IMPL_R_REOP_2, outcome: exact, entity_kind: "method", qualified_name: "lib::g", start: 7, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::g() (the syntax reads the namespace qualifier as a class: method)"}
