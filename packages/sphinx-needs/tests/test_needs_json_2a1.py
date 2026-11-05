@@ -133,7 +133,10 @@ def test_what_a_record_leaves_out(test_app: Any) -> None:
         "collapse",
         "hide",
     }
+    # the names a reader reserves in ``fields``: the record's own keys and the projection's
+    reserved = {"id", "type", "content", "doctype", "parts", "docname", "sections"}
     for record in _records(app).values():
+        assert not reserved & set(record["fields"]), record["id"]
         assert not left_out & set(record["fields"]), record["id"]
         assert not left_out & set(record["links"]), record["id"]
         assert not left_out & set(record), record["id"]

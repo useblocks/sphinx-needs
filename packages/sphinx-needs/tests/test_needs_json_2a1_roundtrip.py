@@ -293,3 +293,108 @@ def test_without_a_project_name_the_origin_is_the_source(
         source = needs[need_id].source
         assert isinstance(source, NeedItemSource)
         assert [hop.origin for hop in source.upstream] == [origin, "named"]
+
+
+LINKS_CONF = """\
+project = "{project}"
+extensions = ["sphinx_needs"]
+exclude_patterns = ["_build"]
+needs_json_format_version = "2a1"
+needs_links = {{
+    "refs": {{"incoming": "is referenced by", "outgoing": "refs", "parse_conditions": False}}
+}}
+"""
+
+LINKS_INDEX = """\
+Links
+=====
+
+.. req:: A
+   :id: REQ_A
+   :status: open
+
+   With :np:`(p1) a part`.
+
+.. req:: B
+   :id: REQ_B
+   :status: open
+
+.. req:: Linking
+   :id: REQ_L
+   :links: REQ_B, REQ_A.p1, REQ_B[status == "open"], REQ_A.p1[status == "open"]
+   :refs: REQ_B, REQ_A.p1
+"""
+
+#: REQ_L's links as a 2a1 record spells them: a bare id only for a link with neither a
+#: part nor a condition
+SPELLED = {
+    "links": [
+        {"id": "REQ_A", "part": "p1"},
+        {"id": "REQ_A", "part": "p1", "condition": 'status == "open"'},
+        "REQ_B",
+        {"id": "REQ_B", "condition": 'status == "open"'},
+    ],
+    "refs": [{"id": "REQ_A", "part": "p1"}, "REQ_B"],
+    "parent_needs": [],
+}
+
+
+def _prefixed(links: dict[str, list[Any]], prefix: str) -> dict[str, list[Any]]:
+    return {
+        name: [
+            prefix + link
+            if isinstance(link, str)
+            else {**link, "id": prefix + link["id"]}
+            for link in items
+        ]
+        for name, items in links.items()
+    }
+
+
+def test_every_link_spelling_round_trips(make_app: Any, tmp_path: Path) -> None:
+    """A bare id, a part, a condition, a part and a condition, and a link type that does
+    not parse conditions: written by ``up``, read by ``down``'s ``needimport`` and its
+    external needs, and written again by ``down``, each link is the same link -- its
+    id prefixed, its part and condition kept, every condition evaluated and passing."""
+    up, up_json = _build(
+        make_app,
+        _write(
+            tmp_path / "up",
+            {"conf.py": LINKS_CONF.format(project="up"), "index.rst": LINKS_INDEX},
+        ),
+    )
+    assert [w for w in build_warnings(up) if BETA not in w] == []
+    assert _records(up_json)["REQ_L"]["links"] == SPELLED
+
+    down_src = _write(
+        tmp_path / "down",
+        {
+            "conf.py": LINKS_CONF.format(project="down") + "needs_external_needs = [\n"
+            '    {"base_url": "http://up.example", "json_path": "up.json", '
+            '"id_prefix": "X_"}\n'
+            "]\n",
+            "index.rst": "Down\n====\n\n.. needimport:: up.json\n   :id_prefix: D_\n",
+        },
+    )
+    shutil.copy(up_json, down_src / "up.json")
+    down, down_json = _build(make_app, down_src)
+    assert [w for w in build_warnings(down) if BETA not in w] == []
+    assert _records(down_json)["D_REQ_L"]["links"] == _prefixed(SPELLED, "D_")
+
+    needs = SphinxNeedsData(down.env).get_needs_view()
+    for prefix in ("D_", "X_"):
+        need = needs[f"{prefix}REQ_L"]
+        assert [
+            (link.id, link.part, link.condition)
+            for link in need.get_links("links", as_str=False)
+        ] == [
+            (f"{prefix}REQ_A", "p1", None),
+            (f"{prefix}REQ_A", "p1", 'status == "open"'),
+            (f"{prefix}REQ_B", None, None),
+            (f"{prefix}REQ_B", None, 'status == "open"'),
+        ], prefix
+        assert [
+            (link.id, link.part, link.condition)
+            for link in need.get_links("refs", as_str=False)
+        ] == [(f"{prefix}REQ_A", "p1", None), (f"{prefix}REQ_B", None, None)], prefix
+        assert need["has_dead_links"] is False
