@@ -12,8 +12,9 @@ New and Improved
 - 👌 A C++ marker's entity is named as clang names it in five more shapes, so that its name
   can be joined with what a compiler reports, and two spellings of one function meet
   (:ref:`cpp_names`): an inline namespace adds nothing to the names of what it holds
-  (``lib::f``, not ``lib::v1::f``), nor to a function's qualifier written through one the
-  file declares; a ``friend`` function is named in its namespace (``ns::operator==``, not
+  (``lib::f``, not ``lib::v1::f``), nor to a reopening of it without ``inline``, nor to a
+  function, a class or a conversion operator written out of line through one the file
+  declares; a ``friend`` function is named in its namespace (``ns::operator==``, not
   ``ns::A::operator==``); a partial specialisation keeps its arguments
   (``P<T,4>::fill``, not ``P::fill``), in its class and out of line, where a qualifier is
   spelled as the one specialisation with a body the file defines for it; and a namespace
@@ -21,9 +22,9 @@ New and Improved
   where the error recovery around the macro could lose every namespace and class of the
   file. Where leaving an inline namespace or a friend's classes out would give two
   definitions of a file one name and parameters, each keeps its full chain, and so does
-  everything a class or namespace kept that way holds. The names of these shapes change, in
-  ``marked_content.json`` and on the needs' source: a ``c.source.symbol`` filter, or a name
-  stored elsewhere, that selects one of them needs updating once.
+  everything but a friend that a class or namespace kept that way holds. The names of these
+  shapes change, in ``marked_content.json`` and on the needs' source: a ``c.source.symbol``
+  filter, or a name stored elsewhere, that selects one of them needs updating once.
 
 Fixes
 .....

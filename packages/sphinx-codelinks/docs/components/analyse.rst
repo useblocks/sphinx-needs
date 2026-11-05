@@ -199,8 +199,10 @@ so that it can be joined with what a compiler reports, and so that two spellings
   rather than ``nlohmann::json_abi_v3_12_0::basic_json`` (a library's ABI namespace changes with every release).
   The inline namespace itself keeps its own name (``lib::v1``), and so does the ``inline`` part of a C++20 nested
   name (``namespace a::inline v1`` is ``a::v1``, the ``f`` in it ``a::f``).
-  A function's qualifier written through an inline namespace the file declares leaves it out too
-  (``void lib::v1::f(int) {}`` is ``lib::f``, as its declaration in ``inline namespace v1`` is).
+  It adds nothing either to a name in a reopening of it without ``inline`` (C++ makes the reopening inline),
+  or to a name written out of line through it in the same file: a function (``void lib::v1::f(int) {}`` is ``lib::f``,
+  as its declaration in ``inline namespace v1`` is), a class (``struct lib::v1::X {…}`` is ``lib::X``, and so are
+  its members' names) or a conversion operator.
 - **A friend is named in its namespace.** A function a ``friend`` declaration declares or defines is named in its
   innermost enclosing namespace, not in the class (``ns::operator==``, a hidden friend's ``ns::touch``),
   so a friend declared in its class and defined in its namespace has one name;
@@ -210,8 +212,9 @@ so that it can be joined with what a compiler reports, and so that two spellings
   the ``#if`` and ``#else`` arms of an ABI version (``inline namespace v1`` and ``v2``).
   Then every entity of that name and parameters that leaves a container out keeps its full chain, declarations
   included (``ns::List::iterator::operator==``, ``lib::v1::g`` and ``lib::v2::g``),
-  and so does everything a class or namespace that keeps its full chain holds
-  (``lib::v1::Widget::draw`` beside another ``Widget`` in ``lib``), so a marker never names another definition.
+  and so does everything but a friend that a class or namespace that keeps its full chain holds
+  (``lib::v1::Widget::draw`` beside another ``Widget`` in ``lib``; a friend there is still ``lib::swap``),
+  so a marker never names another definition.
   clang keeps an inline namespace wherever the name alone would be ambiguous;
   this decides by the name and parameters among the file's definitions,
   and for friends, and for the arms of an ``#if`` (a compiler sees one of them), keeping the chain is a choice to fail
@@ -266,12 +269,9 @@ What the macro rule does not read:
 What the inline-namespace rule does not see:
 
 - An inline namespace only another file declares: a qualifier written through it keeps it
-  (``void lib::v1::f() {}`` is ``lib::v1::f``).
-- Any qualifier but a function's: a class defined through an inline namespace (``struct lib::v2::X {…}``)
-  and a conversion operator defined through one (``lib::v1::W::operator int() const {…}``) keep it,
-  so a member declared in such a class (``lib::v2::X::m``) and its definition out of line (``lib::X::m``),
-  or a conversion operator's declaration and its definition, are named apart.
-- A namespace reopened without ``inline`` (``namespace lib { namespace v1 {…} }``) is read as a plain one.
+  (``void lib::v1::f() {}`` is ``lib::v1::f``), and a reopening of it without ``inline`` is read as a plain one.
+- A qualifier that skips an outer inline namespace keeps the inner one
+  (``void lib::abi::f() {}`` is ``lib::abi::f`` where ``abi`` is declared inside ``inline namespace v1``, both inline).
 - A class defined inside a function in an inline namespace is named without both (``lib::Local``),
   so two such classes of one name in two functions share their members' names.
 - An inline namespace a namespace macro opens is left out of every name,
