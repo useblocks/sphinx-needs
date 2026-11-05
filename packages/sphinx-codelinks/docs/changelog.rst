@@ -6,6 +6,23 @@ Changelog
 Unreleased
 ----------
 
+New and Improved
+................
+
+- 👌 A C++ marker's entity is named as clang names it in five more shapes, so that its name
+  can be joined with what a compiler reports, and two spellings of one function meet
+  (:ref:`cpp_names`): an inline namespace adds nothing to the names of what it holds
+  (``lib::f``, not ``lib::v1::f``); a ``friend`` function is named in its namespace
+  (``ns::operator==``, not ``ns::A::operator==``); a partial specialisation keeps its
+  arguments (``P<T,4>::fill``, not ``P::fill``), in its class and out of line, where a
+  qualifier is spelled as the file's specialisation spells it; and a namespace macro the
+  file defines itself is read (``json.hpp``'s ``NLOHMANN_JSON_NAMESPACE_BEGIN``), where the
+  error recovery around the macro could lose every namespace and class of the file. Where
+  leaving an inline namespace or a friend's classes out would give two definitions of a
+  file one name, each keeps its full chain. The names of these shapes change, in
+  ``marked_content.json`` and on the needs' source: a ``c.source.symbol`` filter, or a name
+  stored elsewhere, that selects one of them needs updating once.
+
 Fixes
 .....
 
