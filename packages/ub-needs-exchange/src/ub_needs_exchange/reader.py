@@ -126,7 +126,8 @@ FIELDS_NOT_OBJECT = "fields_not_object"
 """A draft's record has a ``fields`` that is not an object; its fields are not read."""
 FIELD_RESERVED = "field_reserved"
 """A key of a draft's record's ``fields`` is one the projection owns (``id``, ``type``,
-``content``, ``doctype``, ``parts``, ``docname``, ``sections``); it is not read."""
+``content``, ``doctype``, ``parts``, ``docname``, ``sections``, ``section_name``,
+``signature``); it is not read."""
 LINKS_NOT_OBJECT = "links_not_object"
 """A draft's record has a ``links`` that is not an object; its links are not read."""
 LINK_INVALID = "link_invalid"
@@ -147,7 +148,17 @@ _DRAFTS = frozenset({"2a1"})
 #: The keys of a draft's projected record that come from the record itself, its
 #: ``content`` or its placement, and never from its ``fields``.
 _RESERVED_FIELDS = frozenset(
-    {"id", "type", "content", "doctype", "parts", "docname", "sections"}
+    {
+        "id",
+        "type",
+        "content",
+        "doctype",
+        "parts",
+        "docname",
+        "sections",
+        "section_name",
+        "signature",
+    }
 )
 
 
@@ -548,17 +559,37 @@ def _draft_record(index: int, need_id: str, value: Mapping[str, Any]) -> Record:
             )
     placement = next((hop for hop in reversed(hops) if "document" in hop), None)
     if placement is not None:
-        projected["docname"] = placement["document"]
-        # outermost first in the hop; innermost first in format 1's ``sections``
-        projected["sections"] = [
-            entry["name"]
-            for entry in reversed(placement.get("semantic", ()))
-            if entry["kind"] == "section"
-        ]
+        projected.update(_placement_keys(placement))
     if "type" in value:
         projected["type"] = value["type"]
     projected["id"] = need_id
     return Record(need_id, projected, tuple(diagnostics), hops)
+
+
+def _placement_keys(placement: Mapping[str, Any]) -> dict[str, Any]:
+    """The format-1 keys a placement hop gives: ``docname``, and ``sections``,
+    ``section_name`` and ``signature`` by sphinx-needs' rule for them (its
+    ``project_legacy`` and ``NeedItem``'s ``section_name``): the section entries
+    innermost first, the innermost of them or ``None``, and the ``signature`` extra of
+    the innermost entry of another kind that has a non-empty one, or ``None``."""
+    # outermost first in the hop; innermost first in format 1's ``sections``
+    inner_first = list(reversed(placement.get("semantic", ())))
+    sections = [entry["name"] for entry in inner_first if entry["kind"] == "section"]
+    signature = next(
+        (
+            value
+            for entry in inner_first
+            if entry["kind"] != "section"
+            and (value := entry.get("extras", {}).get("signature"))
+        ),
+        None,
+    )
+    return {
+        "docname": placement["document"],
+        "sections": sections,
+        "section_name": sections[0] if sections else None,
+        "signature": signature,
+    }
 
 
 def _draft_links(

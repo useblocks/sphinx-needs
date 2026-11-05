@@ -36,7 +36,7 @@ CORPUS_PATH = (
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message.
-EXPECTED_CASE_COUNT = 70
+EXPECTED_CASE_COUNT = 75
 
 #: The keys a case may carry, and those its ``[case.options]`` and ``[case.expect]``
 #: may: the header defines each. A key outside them is a case this runner would
@@ -52,6 +52,7 @@ EXPECT_KEYS = {
     "keys",
     "absent",
     "unset",
+    "nulls",
 }
 
 #: The drafts a case is read with when its ``options`` name none.
@@ -166,6 +167,12 @@ def _outcome(case: dict[str, Any], text: str | Path) -> None:
     for key, names in expect.get("unset", {}).items():
         assert key in by_key, f"no record {key!r} was read"
         assert sorted(set(names) & set(by_key[key].fields)) == []
+    for key, names in expect.get("nulls", {}).items():
+        assert key in by_key, f"no record {key!r} was read"
+        fields = by_key[key].fields
+        assert {
+            name: name in fields and fields[name] is None for name in names
+        } == dict.fromkeys(names, True)
 
 
 @pytest.mark.parametrize("case", CASES, ids=[case["name"] for case in CASES])

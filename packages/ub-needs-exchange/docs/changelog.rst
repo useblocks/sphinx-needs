@@ -32,7 +32,8 @@ Unreleased
   ``links``, ``content`` and ``source`` --; without ``drafts`` such a file is refused
   exactly as before. Each record is handed out in the shape a format-1 record has (its
   fields, its links spelled as format 1 writes them, ``content``, ``doctype``, ``parts``,
-  and ``docname`` and ``sections`` from the page it is placed on), and its hops, as the
+  and ``docname``, ``sections``, ``section_name`` and ``signature`` from the page it is
+  placed on), and its hops, as the
   file has them, in the new ``Record.source`` (``()`` for a format-1 record);
   ``Version.format_version`` says which format a version is read as. The draft's
   findings and refusals have codes of their own (``draft_has_versions``,

@@ -60,6 +60,8 @@
 #                    present, no other record is read
 #     absent       - optional; keys that must NOT be read as records
 #     unset        - optional; by record key, the fields that record must NOT have
+#     nulls        - optional; by record key, the fields that record must have, each
+#                    with the value `null` (which TOML cannot state as a value)
 #
 # Error codes (the file is refused):
 #   format_version_unsupported - `format_version` names a draft the reader was not asked to
@@ -79,7 +81,8 @@
 #                         Path `needs.<i>.id`
 #   fields_not_object   - `fields` is not an object; not read. Path `needs.<i>.fields`
 #   field_reserved      - a key of `fields` the projection owns (`id`, `type`, `content`,
-#                         `doctype`, `parts`, `docname`, `sections`); not read.
+#                         `doctype`, `parts`, `docname`, `sections`, `section_name`,
+#                         `signature`); not read.
 #                         Path `needs.<i>.fields.<key>`
 #   links_not_object    - `links` is not an object; not read. Path `needs.<i>.links`
 #   link_invalid        - a link type's value is not an array (path `needs.<i>.links.<t>`),
@@ -294,7 +297,7 @@ json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"},
 [case.expect]
 diagnostics = []
 keys = ["A"]
-records = { A = { id = "A", type = "req", title = "First", status = "open", tags = ["x"], asil = "B", links = ["B"], parent_needs = [], content = "the text", doctype = ".rst", parts = { p1 = { id = "p1", content = "the part" } }, docname = "index", sections = ["Requirements", "Up"] } }
+records = { A = { id = "A", type = "req", title = "First", status = "open", tags = ["x"], asil = "B", links = ["B"], parent_needs = [], content = "the text", doctype = ".rst", parts = { p1 = { id = "p1", content = "the part" } }, docname = "index", sections = ["Requirements", "Up"], section_name = "Requirements" } }
 source = { A = [{ kind = "page", document = "index", language = ".rst", physical = { root = "srcdir", path = "index.rst", start_line = 7, end_line = 13 }, semantic = [{ kind = "section", name = "Up" }, { kind = "section", name = "Requirements" }] }] }
 
 [[case]]
@@ -315,7 +318,7 @@ json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"},
 diagnostics = []
 keys = ["A"]
 records = { A = { id = "A" } }
-unset = { A = ["type", "content", "doctype", "parts", "docname", "sections"] }
+unset = { A = ["type", "content", "doctype", "parts", "docname", "sections", "section_name", "signature"] }
 
 [[case]]
 name = "the-type-is-handed-on-as-written"
@@ -374,13 +377,13 @@ records = { A = { id = "A", type = "req", title = "t" } }
 
 [[case]]
 name = "no-key-the-projection-owns-is-read-from-fields"
-why = "id, type, content, doctype, parts, docname and sections never come from fields: a record without them has none of them, and each is reported"
+why = "id, type, content, doctype, parts, docname, sections, section_name and signature never come from fields: a record without them has none of them, and each is reported"
 layer = "document"
-json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "fields": {"title": "t", "id": "Z", "type": "spec", "content": "x", "doctype": ".md", "parts": {"p": "y"}, "docname": "elsewhere", "sections": ["S"]}, "source": [{"kind": "code"}]}]}'''
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "fields": {"title": "t", "id": "Z", "type": "spec", "content": "x", "doctype": ".md", "parts": {"p": "y"}, "docname": "elsewhere", "sections": ["S"], "section_name": "S", "signature": "f"}, "source": [{"kind": "code"}]}]}'''
 [case.expect]
-diagnostics = [{ code = "field_reserved", path = "needs.0.fields.id" }, { code = "field_reserved", path = "needs.0.fields.type" }, { code = "field_reserved", path = "needs.0.fields.content" }, { code = "field_reserved", path = "needs.0.fields.doctype" }, { code = "field_reserved", path = "needs.0.fields.parts" }, { code = "field_reserved", path = "needs.0.fields.docname" }, { code = "field_reserved", path = "needs.0.fields.sections" }]
+diagnostics = [{ code = "field_reserved", path = "needs.0.fields.id" }, { code = "field_reserved", path = "needs.0.fields.type" }, { code = "field_reserved", path = "needs.0.fields.content" }, { code = "field_reserved", path = "needs.0.fields.doctype" }, { code = "field_reserved", path = "needs.0.fields.parts" }, { code = "field_reserved", path = "needs.0.fields.docname" }, { code = "field_reserved", path = "needs.0.fields.sections" }, { code = "field_reserved", path = "needs.0.fields.section_name" }, { code = "field_reserved", path = "needs.0.fields.signature" }]
 records = { A = { id = "A", title = "t" } }
-unset = { A = ["type", "content", "doctype", "parts", "docname", "sections"] }
+unset = { A = ["type", "content", "doctype", "parts", "docname", "sections", "section_name", "signature"] }
 
 [[case]]
 name = "a-link-type-replaces-a-field-of-its-name"
@@ -610,7 +613,7 @@ layer = "document"
 json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "external", "physical": {"url": "http://up.example/index.html#A"}}]}]}'''
 [case.expect]
 diagnostics = []
-unset = { A = ["docname", "sections"] }
+unset = { A = ["docname", "sections", "section_name", "signature"] }
 source = { A = [{ kind = "external", physical = { url = "http://up.example/index.html#A" } }] }
 
 [[case]]
@@ -621,7 +624,7 @@ json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"},
 [case.expect]
 diagnostics = []
 source = { A = [] }
-unset = { A = ["docname", "sections"] }
+unset = { A = ["docname", "sections", "section_name", "signature"] }
 
 [[case]]
 name = "an-include-chain-has-its-placement-last"
@@ -653,12 +656,62 @@ records = { A = { docname = "api", sections = ["Shapes", "API"] } }
 
 [[case]]
 name = "a-placement-without-semantic-has-no-sections"
-why = "a placement hop with no semantic list gives the docname and an empty sections"
+why = "a placement hop with no semantic list gives the docname, an empty sections, and a null section_name and signature, as format 1 writes a need outside every section"
 layer = "document"
 json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "page", "document": "index"}]}]}'''
 [case.expect]
 diagnostics = []
 records = { A = { docname = "index", sections = [] } }
+nulls = { A = ["section_name", "signature"] }
+
+[[case]]
+name = "the-section-name-is-the-innermost-section"
+why = "section_name is the innermost section of the placement, as format 1 writes it, and a placement of sections alone has a null signature"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "page", "document": "index", "semantic": [{"kind": "section", "name": "Up"}, {"kind": "section", "name": "Requirements"}, {"kind": "section", "name": "Deep"}]}]}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { sections = ["Deep", "Requirements", "Up"], section_name = "Deep" } }
+nulls = { A = ["signature"] }
+
+[[case]]
+name = "a-domain-object-of-the-placement-gives-the-signature"
+why = "signature is the signature extra of the innermost entry of the placement that is not a section and has one, as format 1 writes it"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "page", "document": "api", "semantic": [{"kind": "section", "name": "API"}, {"kind": "py:class", "name": "Shape", "extras": {"id": "mod.Shape", "signature": "Shape"}}, {"kind": "py:method", "name": "area", "extras": {"id": "mod.Shape.area", "signature": "area"}}]}]}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { docname = "api", sections = ["API"], section_name = "API", signature = "area" } }
+
+[[case]]
+name = "the-signature-skips-an-entry-without-one"
+why = "an inner domain object with no signature extra, or an empty one, is passed over for the next one out that has one"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "page", "document": "api", "semantic": [{"kind": "cpp:function", "name": "f", "extras": {"signature": "f"}}, {"kind": "py:class", "name": "C"}, {"kind": "py:method", "name": "m", "extras": {"signature": ""}}]}]}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { sections = [], signature = "f" } }
+nulls = { A = ["section_name"] }
+
+[[case]]
+name = "a-signature-extra-on-a-section-is-not-the-signature"
+why = "only an entry that is not a section gives the signature: one on a section entry is not read as it"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "page", "document": "index", "semantic": [{"kind": "section", "name": "S", "extras": {"signature": "x"}}]}]}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { section_name = "S" } }
+nulls = { A = ["signature"] }
+
+[[case]]
+name = "only-the-placement-gives-the-signature"
+why = "a domain object of a hop that is not the placement (an upstream page) gives no signature"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "down", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "source": [{"kind": "page", "origin": "up", "document": "upstream", "semantic": [{"kind": "py:function", "name": "g", "extras": {"signature": "g"}}]}, {"kind": "page", "document": "down", "semantic": [{"kind": "section", "name": "Down"}]}]}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { docname = "down", section_name = "Down" } }
+nulls = { A = ["signature"] }
 
 [[case]]
 name = "the-placement-s-keys-are-not-read-from-fields"
@@ -707,7 +760,7 @@ json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"},
 [case.expect]
 diagnostics = [{ code = "source_not_a_list", path = "needs.0.source" }]
 source = { A = [] }
-unset = { A = ["docname", "sections"] }
+unset = { A = ["docname", "sections", "section_name", "signature"] }
 
 [[case]]
 name = "a-hop-that-is-not-an-object-or-has-no-kind-is-dropped"
