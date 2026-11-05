@@ -174,13 +174,25 @@ format 1's records reads it unchanged. `Record.fields` is a new object of:
 What a draft's record does not get: format 1's legacy `description`-as-content rule
 (shared contract §6.3) — a field named `description` is a field, and a record with no
 `content` has none —, and schema defaults. **Nor does it get any other key a format-1
-record carries**: `lineno`, `lineno_content`, `is_import`, `is_external`,
-`external_url`, the config-derived keys (`type_name`, `type_prefix`, `type_color`,
-`type_style`, `external_css`, …), the back links (`<link type>_back`) and every other
-computed key (`is_need`, `is_part`, `parent_need`, `id_parent`, `id_complete`,
-`is_modified`, `modifications`, `constraints_*`, `has_dead_links`, …). A reader that
-filters or renders over a record's keys (sphinx-needs' `needimport` `:filter:`, an
-external source's `target_url`) finds them absent in a draft's record.
+record can carry**, in two groups:
+
+- the keys **a default format-1 file writes** on every record, which the projection does
+  not give: `lineno`, `is_import`, `is_external`, `external_url`, `type_name`,
+  `external_css`, the back links (`<link type>_back`), `parent_need`, `is_modified`,
+  `modifications`, `constraints_passed`, `constraints_results`, `constraints_error`,
+  `has_dead_links`, `has_forbidden_dead_links` and `arch`; and `template`,
+  `pre_template`, `post_template`, `pre_content`, `post_content` and `jinja_content`,
+  which a draft's writer leaves out (they are read from `fields` only where a writer
+  puts them there);
+- the keys **a default format-1 file leaves out** (sphinx-needs'
+  `needs_json_exclude_fields` default, the core fields marked `exclude_json`), which a
+  format-1 file carries only when a project changes that option: `lineno_content`,
+  `type_prefix`, `type_color`, `type_style`, `is_need`, `is_part`, `id_parent` and
+  `id_complete` — and `collapse` and `hide`, which are fields, and are in a draft's
+  `fields` where its writer writes them.
+
+A reader that filters or renders over a record's keys (sphinx-needs' `needimport`
+`:filter:`, an external source's `target_url`) finds them absent in a draft's record.
 
 Each record's `fields` is a new object; its values are the document's own (the shared
 contract's §6.6), except the link lists and `parts`, which the projection builds.
