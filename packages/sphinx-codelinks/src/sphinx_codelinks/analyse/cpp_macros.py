@@ -44,9 +44,12 @@ keeps the rewrite and drops only the names).
 - F7b. A pair whose opening the tree does not read as the block it was rewritten to
   (the ``extern`` of a ``linkage_specification`` starting there: a macro statement on
   the line before, ``WARNINGS_PUSH``, makes ``WARNINGS_PUSH extern"C++"{`` one
-  declaration) is left as written: the copy is made again without it and parsed once
-  more (:func:`parse`, at most once); one that still does not read so after that is
-  not used for names.
+  declaration) is left as written, with every pair inside it and every pair whose
+  opening follows one of its invocations with only blanks and comments between
+  (written out, that invocation would break the next block in turn); the copy is made
+  again without them and parsed once more. If a pair still does not read as its block,
+  the file is parsed as written, with no macro namespace (:func:`parse`: at most three
+  parses, never a function lost).
 - F8. C++ files only: a ``.c`` file is never rewritten (:func:`applies`).
 - F9. Nothing is lexed unless a line starting with ``#`` holds ``define`` and the
   buffer holds ``namespace``.
@@ -63,6 +66,7 @@ declaration (or on the file): a marker would move to code its author did not mar
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import PurePath
 
@@ -202,24 +206,95 @@ def parse(parser: Parser, source: bytes) -> tuple[Tree, MacroScopes]:
     Every reader of the tree reads ``source``, never the copy. An opening the tree does
     not read as the block it was rewritten to (a macro statement on the line before it,
     ``WARNINGS_PUSH``, makes tree-sitter read ``WARNINGS_PUSH extern"C++"{`` as one
-    declaration, and the first function inside is lost) is left as written: the copy is
-    made again without its pair and parsed once more, never more than once.
+    declaration, and the first function inside is lost) is left as written, and so is
+    every pair the parse would then break in turn (:func:`_left_as_written`): the copy
+    is made again without them and parsed once more. If a pair still does not read as
+    its block, the file is parsed as written, with no macro namespace: at most three
+    parses, never a function lost.
     """
+    tree, scopes, _ = _parse_macros(parser, source, _left_as_written)
+    return tree, scopes
+
+
+def _parse_macros(
+    parser: Parser,
+    source: bytes,
+    leave: Callable[[bytes, tuple[Pair, ...], set[int]], set[int]],
+) -> tuple[Tree, MacroScopes, int]:
+    """:func:`parse`'s tree and macro namespaces, and how many parses it took (1, 2,
+    or 3 when the file is parsed as written in the end); ``leave`` picks the pairs to
+    leave as written once some do not read as blocks (:func:`_left_as_written`)."""
     prepared = prepare(source)
     tree = parser.parse(prepared.parse_text)
     scopes = prepared.scopes
     if not scopes.pairs:
-        return tree, scopes
+        return tree, scopes, 1
     unread = {
         pair.opening[0] for pair in scopes.pairs if not _opens_a_block(tree, pair)
     }
-    if unread:
-        prepared = _rewrite(
-            source, [pair for pair in scopes.pairs if pair.opening[0] not in unread]
-        )
-        tree = parser.parse(prepared.parse_text)
-        scopes = prepared.scopes
-    return tree, scopes.validate(tree)
+    if not unread:
+        return tree, scopes.validate(tree), 1
+    dropped = leave(source, scopes.pairs, unread)
+    prepared = _rewrite(
+        source, [pair for pair in scopes.pairs if pair.opening[0] not in dropped]
+    )
+    tree = parser.parse(prepared.parse_text)
+    if any(not _opens_a_block(tree, pair) for pair in prepared.scopes.pairs):
+        return parser.parse(source), MacroScopes(), 3
+    return tree, prepared.scopes.validate(tree), 2
+
+
+def _left_as_written(
+    source: bytes, pairs: tuple[Pair, ...], unread: set[int]
+) -> set[int]:
+    """The openings of ``pairs`` to leave as written once those in ``unread`` (which
+    the tree did not read as blocks) are: those, every pair inside one of them, and
+    every pair whose opening follows the opening or the closing of one left as written
+    with only whitespace and comments between (written out, that invocation would read
+    as the declaration of the next opening's block in turn), until none is added."""
+    dropped = set(unread)
+    while True:
+        before = len(dropped)
+        left = [pair for pair in pairs if pair.opening[0] in dropped]
+        for pair in pairs:
+            start = pair.opening[0]
+            if start in dropped:
+                continue
+            inside = any(
+                outer.opening[1] <= start and pair.closing[1] <= outer.closing[0]
+                for outer in left
+            )
+            follows = any(
+                end <= start
+                and _only_trivia(source[end:start].decode("utf-8", "replace"))
+                for other in left
+                for end in (other.opening[1], other.closing[1])
+            )
+            if inside or follows:
+                dropped.add(start)
+        if len(dropped) == before:
+            return dropped
+
+
+def _only_trivia(text: str) -> bool:
+    """Whether ``text`` holds only whitespace, line splices and comments."""
+    rest = text
+    while True:
+        rest = rest.lstrip().lstrip("\\")
+        if rest[:1].isspace():
+            continue
+        if not rest:
+            return True
+        if rest.startswith("//"):
+            end = rest.find("\n", 2)
+            rest = "" if end < 0 else rest[end:]
+        elif rest.startswith("/*"):
+            end = rest.find("*/", 2)
+            if end < 0:
+                return True
+            rest = rest[end + 2 :]
+        else:
+            return False
 
 
 def _opens_a_block(tree: Tree, pair: Pair) -> bool:

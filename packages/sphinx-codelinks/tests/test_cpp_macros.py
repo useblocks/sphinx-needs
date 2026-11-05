@@ -11,6 +11,7 @@ from typing import Any
 
 import pytest
 from tree_sitter import Node as TreeSitterNode
+from tree_sitter import Tree
 
 from sphinx_codelinks.analyse import cpp_macros, utils
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
@@ -626,6 +627,75 @@ def test_a_c_file_is_not_read(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -
         ),
         pytest.param(
             "#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
+            "WARNINGS_PUSH\nLIB_NAMESPACE_BEGIN\nint f() { return 0; }\nLIB_NAMESPACE_END\n"
+            "LIB_NAMESPACE_BEGIN\nint h() { return 2; }\nint k() { return 3; }\n"
+            "LIB_NAMESPACE_END\n",
+            ["f", "h", "k"],
+            id="a_pair_right_after_an_unread_one",
+        ),
+        pytest.param(
+            "#define MYLIB_NAMESPACE_BEGIN namespace lib {\n"
+            "#define MYLIB_NAMESPACE_END }\nWARNINGS_PUSH\n"
+            "MYLIB_NAMESPACE_BEGIN\nint f() { return 0; }\nMYLIB_NAMESPACE_END\n"
+            "MYLIB_NAMESPACE_BEGIN\nint g() { return 1; }\nint h() { return 2; }\n"
+            "MYLIB_NAMESPACE_END\n",
+            ["f", "g", "h"],
+            id="b_cascade",
+        ),
+        pytest.param(
+            "#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
+            "WARNINGS_PUSH\nLIB_NAMESPACE_BEGIN\nint f() { return 0; }\nLIB_NAMESPACE_END\n"
+            "// next part\nLIB_NAMESPACE_BEGIN\nint g() { return 1; }\n"
+            "int h() { return 2; }\nLIB_NAMESPACE_END\n",
+            ["f", "g", "h"],
+            id="a_comment_between",
+        ),
+        pytest.param(
+            "#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
+            "WARNINGS_PUSH\nLIB_NAMESPACE_BEGIN\nint f() { return 0; }\nLIB_NAMESPACE_END\n"
+            "LIB_NAMESPACE_BEGIN\nint g() { return 1; }\nLIB_NAMESPACE_END\n"
+            "LIB_NAMESPACE_BEGIN\nint h() { return 2; }\nLIB_NAMESPACE_END\n",
+            ["f", "g", "h"],
+            id="three_pairs",
+        ),
+        pytest.param(
+            "#define OUTER_NAMESPACE_BEGIN namespace outer {\n#define OUTER_NAMESPACE_END }\n"
+            "#define INNER_NAMESPACE_BEGIN namespace inner {\n#define INNER_NAMESPACE_END }\n"
+            "WARNINGS_PUSH\nOUTER_NAMESPACE_BEGIN\nint f() { return 0; }\n"
+            "OUTER_NAMESPACE_END\n\nINNER_NAMESPACE_BEGIN\nint g() { return 1; }\n"
+            "int h() { return 2; }\nINNER_NAMESPACE_END\n",
+            ["f", "g", "h"],
+            id="two_macros_after_a_blank_line",
+        ),
+        pytest.param(
+            "#define OUTER_NAMESPACE_BEGIN namespace outer {\n#define OUTER_NAMESPACE_END }\n"
+            "#define INNER_NAMESPACE_BEGIN namespace inner {\n#define INNER_NAMESPACE_END }\n"
+            "WARNINGS_PUSH\nOUTER_NAMESPACE_BEGIN\nint e() { return 9; }\n"
+            "INNER_NAMESPACE_BEGIN\nint f() { return 0; }\nint g() { return 1; }\n"
+            "INNER_NAMESPACE_END\nOUTER_NAMESPACE_END\n",
+            ["e", "f", "g"],
+            id="nested_in_an_unread_pair",
+        ),
+        pytest.param(
+            "#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
+            "#define OUTER_NAMESPACE_BEGIN namespace outer {\n#define OUTER_NAMESPACE_END }\n"
+            "WARNINGS_PUSH\nLIB_NAMESPACE_BEGIN\nint f() { return 0; }\nLIB_NAMESPACE_END\n"
+            "LIB_NAMESPACE_BEGIN\nint g() { return 1; }\nLIB_NAMESPACE_END\n"
+            "int sep = 0;\nOUTER_NAMESPACE_BEGIN\nint h() { return 2; }\n"
+            "OUTER_NAMESPACE_END\n",
+            ["f", "g", "outer::h"],
+            id="a_pair_after_code_is_read",
+        ),
+        pytest.param(
+            "#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
+            "LIB_NAMESPACE_BEGIN\nint f() { return 0; }\nLIB_NAMESPACE_END\n\n"
+            "// next part\nLIB_NAMESPACE_BEGIN\nint g() { return 1; }\n"
+            "LIB_NAMESPACE_END\n",
+            ["lib::f", "lib::g"],
+            id="control_blank_and_comment_between_read_pairs",
+        ),
+        pytest.param(
+            "#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
             "WARNINGS_PUSH;\nLIB_NAMESPACE_BEGIN\nint f() { return 0; }\n"
             "int g() { return 1; }\nLIB_NAMESPACE_END\n",
             ["lib::f", "lib::g"],
@@ -640,8 +710,67 @@ def test_an_opening_the_tree_does_not_read_is_left_as_written(
     statement on the line before it (``WARNINGS_PUSH``) would make
     ``WARNINGS_PUSH extern"C++"{`` one declaration and lose ``f``. Both ``f`` and ``g``
     stay definitions, named without the macro's namespace. The same for a long pair
-    inside a short one (left as written)."""
+    inside a short one (left as written), and for every pair inside one left as written
+    or right after one of its invocations (with only blanks and comments between),
+    which written out would break in turn: no function is lost. A pair after code is
+    read, and so are two pairs a blank line and a comment apart when neither is left as
+    written."""
     assert _defined(source) == expected, source
+
+
+def _function_definitions(tree: Tree) -> int:
+    count = 0
+    stack = [tree.root_node]
+    while stack:
+        node = stack.pop()
+        count += node.type == "function_definition"
+        stack.extend(node.children)
+    return count
+
+
+def test_a_pair_broken_after_the_re_parse_leaves_the_file_as_written() -> None:
+    """The last resort: when a pair still does not read as its block after the
+    re-parse, the file is parsed as written, with no macro namespace, so no function is
+    lost. Driven here by leaving only the unread pairs as written (no adjacent or nested
+    one): pair 2's opening then follows pair 1's closing, written out, and breaks; the
+    third parse keeps ``f``, ``g`` and ``h``. With the rule in place the same file takes
+    two parses."""
+    source = (
+        b"#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
+        b"WARNINGS_PUSH\nLIB_NAMESPACE_BEGIN\nint f() { return 0; }\nLIB_NAMESPACE_END\n"
+        b"LIB_NAMESPACE_BEGIN\nint g() { return 1; }\nint h() { return 2; }\n"
+        b"LIB_NAMESPACE_END\n"
+    )
+    parser, _ = utils.init_tree_sitter(CommentType.cpp, Path("a.cpp"))
+    tree, macros, count = cpp_macros._parse_macros(
+        parser, source, lambda _source, _pairs, unread: unread
+    )
+    assert (count, macros.pairs, _function_definitions(tree)) == (3, (), 3)
+    tree, macros, count = cpp_macros._parse_macros(
+        parser, source, cpp_macros._left_as_written
+    )
+    assert (count, macros.pairs, _function_definitions(tree)) == (2, (), 3)
+
+
+def test_what_is_left_as_written_with_an_unread_pair() -> None:
+    """Leaving a pair as written leaves with it every pair inside it and every pair
+    whose opening follows one of its invocations with only blanks and comments between;
+    one separated by code stays read."""
+    source = (
+        b"#define LIB_NAMESPACE_BEGIN namespace lib {\n#define LIB_NAMESPACE_END }\n"
+        b"#define OUTER_NAMESPACE_BEGIN namespace outer {\n#define OUTER_NAMESPACE_END }\n"
+        b"LIB_NAMESPACE_BEGIN\nOUTER_NAMESPACE_BEGIN\nint f();\nOUTER_NAMESPACE_END\n"
+        b"LIB_NAMESPACE_END\n\n// next\nOUTER_NAMESPACE_BEGIN\nint g();\n"
+        b"OUTER_NAMESPACE_END\nint sep;\nLIB_NAMESPACE_BEGIN\nint h();\nLIB_NAMESPACE_END\n"
+    )
+    pairs = prepare(source).scopes.pairs
+    assert len(pairs) == 4
+    starts = [pair.opening[0] for pair in pairs]
+    left = cpp_macros._left_as_written(source, pairs, {starts[0]})
+    # the outer pair, the one inside it, the one after its closing; not the last
+    assert left == {starts[0], starts[1], starts[2]}
+    assert cpp_macros._only_trivia("  \n// a\n/* b\n c */ \\\n ")
+    assert not cpp_macros._only_trivia("\nint x;\n")
 
 
 def test_an_unnamed_entity_in_a_pair_is_qualified(tmp_path: Path) -> None:
