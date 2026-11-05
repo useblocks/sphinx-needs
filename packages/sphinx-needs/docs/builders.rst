@@ -223,6 +223,17 @@ of the ``ub-needs-exchange`` library. In short:
       ]
     }
 
+:ref:`needimport` and :ref:`needs_external_needs` read a 2a1 file as they read a file of format 1, whatever
+:ref:`needs_json_format_version` says, and keep each need's source: the hops its record carries come before the
+ones this build adds (the needs.json it was read from, the page of the ``needimport``), and a re-export writes them
+all, in that order, so a need's source grows with each project it passes through. A hop the file gives no ``origin``
+is given the name of the project that wrote the file (its ``project.name``; where the file names none, the file as
+the reader names it: the path relative to the source directory or the URL of a ``needimport``, the ``json_path`` or
+``json_url`` of an external source); an ``origin`` the file states is kept. What a need answers about where it is
+from -- ``docname``, ``lineno``, ``sections``, ``is_import``, ``is_external``, ``external_url`` and ``c.source``
+in a filter -- is what the same need read from a format-1 file answers: the hops of the other project are kept,
+not read. An external need's ``external_url`` is built from the page its record places it on.
+
 Older readers do not read it. Sphinx-Needs 9.0.0 to 9.2.0 refuse the file with one warning per reader, which names
 the file and says that it is of format version ``"2a1"`` and that the reader reads format version 1 only (with
 ub-needs-exchange 1.1.0), or that its ``'versions' is missing or not an object`` (with ub-needs-exchange 1.0.0);

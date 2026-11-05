@@ -1,5 +1,5 @@
 {
-  "ENV_DATA_VERSION": 25,
+  "ENV_DATA_VERSION": 26,
   "env": {
     "_need_all_needextend": "dict[str, NeedsExtendType]",
     "_needs_all_docs": "dict[str, list[str]]",
@@ -545,6 +545,7 @@
         "lineno_content: int | None",
         "parser_lineno: int | None",
         "is_import: bool",
+        "upstream: tuple[NeedSourceHop, ...]",
         "dict_repr: NeedsSourceInfoType"
       ]
     },

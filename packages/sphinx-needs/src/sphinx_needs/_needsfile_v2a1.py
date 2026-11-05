@@ -16,8 +16,9 @@ record is ``{id, type, fields, links, content, source}``:
 - ``links``: each link type the need's type declares, a list of a bare id, or of
   ``{id, part?, condition?}`` where a part or a condition is given; no back links;
 - ``content``: ``{text, doctype, parts?}``, ``parts`` a map of part id to its text;
-- ``source``: the need's hops, innermost first, each as
-  :class:`~sphinx_needs._need_source.NeedSourceHop` holds it, with ``None`` left out
+- ``source``: the need's hops, innermost first -- those it was read with from another
+  project's 2a1 file (its ``upstream``, their origins filled), then this build's -- each
+  as :class:`~sphinx_needs._need_source.NeedSourceHop` holds it, with ``None`` left out
   (an absent ``origin`` is the writing project).
 
 The keys are written in that order and the records in the order of their ids (as v1's
@@ -45,6 +46,11 @@ LOGGER = get_logger(__name__)
 
 FORMAT_2A1: Final = "2a1"
 """The draft's ``format_version``."""
+
+READ_DRAFTS: Final = (FORMAT_2A1,)
+"""The drafts ``needimport`` and external needs read (``select_version``'s ``drafts``),
+whatever ``needs_json_format_version`` says: reading one is harmless, writing one is the
+option's."""
 
 _RENDERING: Final = frozenset({"template", "pre_template", "post_template"})
 """Authored core fields that are rendering instructions: the written text is already
@@ -188,12 +194,14 @@ def _link_to_json(link: NeedLink, /, *, conditions: bool) -> str | dict[str, str
 
 
 def source_hops(need: NeedItem, /) -> tuple[NeedSourceHop, ...]:
-    """The hops a 2a1 record writes for ``need``, innermost first: none for a source
-    that is not a :class:`~sphinx_needs.need_item.NeedItemSource`."""
+    """The hops a 2a1 record writes for ``need``, innermost first: the ``upstream`` hops
+    it was read with, as it holds them (their origins filled on read), then this
+    build's; none for a source that is not a
+    :class:`~sphinx_needs.need_item.NeedItemSource`."""
     source = need.source
     if not isinstance(source, NeedItemSource):
         return ()
-    return source.hops
+    return (*source.upstream, *source.hops)
 
 
 class NeedsFile2a1:

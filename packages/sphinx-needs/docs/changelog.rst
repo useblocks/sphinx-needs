@@ -24,6 +24,11 @@ Improvements
   :ref:`needs_json_remove_defaults` and :ref:`needs_file` are ignored, each with a warning. The format is
   :ref:`needs_builder_format_2a1`.
 
+  :ref:`needimport` and :ref:`needs_external_needs` read a 2a1 file, and an imported or external need keeps the
+  source its record carries before the hops of this build, so re-exporting it writes them all: the source travels
+  with a need from project to project. Each such hop names the project it belongs to (``origin``). What the need
+  answers about where it is from (``docname``, ``lineno``, ``sections``, ``c.source``, ...) is unchanged.
+
   A 2a1 file is readable only by the release that wrote it, and each build that sets it says so in a
   ``needs.beta`` warning. Sphinx-Needs 9.0.0 to 9.2.0 refuse it with one warning per reader, and 8.5.0 aborts the
   build on it. At the default, ``1``, the ``needs.json`` is written exactly as before.

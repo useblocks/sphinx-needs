@@ -239,7 +239,7 @@ def test_an_external_need_of_a_2a1_file(chain: dict[str, Any]) -> None:
     assert first["is_external"] is True
     assert first["docname"] is None
     assert first["external_url"] == "http://up.example/index.html#REQ_1"
-    assert first["sections"] == ["Requirements", "Up"]
+    assert list(first["sections"]) == ["Requirements", "Up"]
     assert list(first["parts"]) == ["p1"]
     assert second["links"] == ["X_REQ_1.p1"]
     assert second["has_dead_links"] is False

@@ -166,7 +166,7 @@ parser line, as ``add_need`` took it, or the lines a directive's data names. It 
 which has no application, does not.
 ``from_directive`` and ``on_page`` are stable, as the class's name is; the hops they build,
 and ``NeedItemSource``'s general constructor with its keywords (``hops``, ``lineno``,
-``lineno_content``, ``parser_lineno``, ``is_import``), are provisional until the final
+``lineno_content``, ``parser_lineno``, ``is_import``, ``upstream``), are provisional until the final
 needs.json format version 2 carries them (the draft ``"2a1"`` does not end that): through 9.x a minor release only adds to them, and a rename or a removal
 waits for 10.0 (see :ref:`api_public`, and the provisional note under "Data", below). The
 constructor is for sphinx-needs' own producers and advanced use. ``create_need`` takes a
@@ -338,9 +338,11 @@ Data
 
    **Stable**: ``NeedItemSource``'s name, ``NeedItemSource.from_directive`` and ``NeedItemSource.on_page``, and
    reading a source through ``NeedItemSourceProtocol`` (``dict_repr``). **Provisional**: ``NeedItemSource``'s general
-   constructor and its keywords (``hops``, ``lineno``, ``lineno_content``, ``parser_lineno``, ``is_import``), the
-   stored legacy facts a later release turns into projections, for sphinx-needs' own producers and advanced use; and
-   the hops, below. Provisional means additions only through 9.x: a minor release may add an optional field, a hop
+   constructor and its keywords (``hops``, ``lineno``, ``lineno_content``, ``parser_lineno``, ``is_import``,
+   ``upstream``), the stored legacy facts a later release turns into projections, for sphinx-needs' own producers and
+   advanced use; and the hops, below. ``upstream`` holds the hops a need read from a needs.json of the draft format
+   ``"2a1"`` was recorded with in the project that wrote it (:ref:`needs_builder_format_2a1`); no legacy key and no
+   ``c.source`` facet reads them. Provisional means additions only through 9.x: a minor release may add an optional field, a hop
    kind or a keyword, and a rename, a removal, or a change to an existing one's meaning or type waits for 10.0,
    because published sibling extensions construct them (:ref:`api_public`).
 

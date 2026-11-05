@@ -40,10 +40,10 @@ import os
 import re
 import sys
 import warnings
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import PurePath
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import docutils
 from docutils import nodes
@@ -160,7 +160,10 @@ class NeedSourceHop:
     ``"report"`` (a test report, which sphinx-test-reports records); the vocabulary is
     open: a minor release may add a kind."""
     origin: str | None = None
-    """A key into a registry of origins (a repository, a test run); ``None`` for now."""
+    """The project the hop belongs to: ``None`` for a hop of this build; on a hop read
+    from a ``needs.json`` of the experimental format 2a1 (a need's ``upstream``), the name
+    of the project that wrote it, as the file gives it. A key into a registry of origins
+    (a repository, a test run) later."""
     physical: NeedSourcePhysical | None = None
     semantic: tuple[NeedSourceSemantic, ...] | None = None
     """Outermost to innermost; ``None`` where it is not determined (the placement's,
@@ -188,6 +191,61 @@ class NeedSourceHop:
             self,
             physical=dataclasses.replace(self.physical, start_line=None, end_line=None),
         )
+
+
+def upstream_hops(
+    hops: Iterable[Mapping[str, Any]], *, origin: str
+) -> tuple[NeedSourceHop, ...]:
+    """The hops of a record of a ``needs.json`` of the draft format 2a1 (its ``source``,
+    as ub-needs-exchange hands it on: plain objects, their shape validated), as the
+    need's ``upstream``, innermost first.
+
+    Each is built from the keys a :class:`NeedSourceHop` has; a key this build does not
+    know is not kept. A hop without an ``origin`` is the project's that wrote the file,
+    and is given ``origin``; an origin the file states is never changed.
+
+    :param origin: The project that wrote the file: its envelope's ``project.name``, or,
+        where it names none, the file as the reader names it.
+    """
+    return tuple(_upstream_hop(hop, origin) for hop in hops)
+
+
+def _upstream_hop(hop: Mapping[str, Any], origin: str) -> NeedSourceHop:
+    physical = hop.get("physical")
+    semantic = hop.get("semantic")
+    return NeedSourceHop(
+        kind=hop["kind"],
+        origin=hop.get("origin", origin),
+        physical=None
+        if physical is None
+        else NeedSourcePhysical(
+            root=physical.get("root"),
+            path=physical.get("path"),
+            url=physical.get("url"),
+            start_line=physical.get("start_line"),
+            end_line=physical.get("end_line"),
+        ),
+        semantic=None
+        if semantic is None
+        else tuple(
+            NeedSourceSemantic(
+                kind=entry["kind"],
+                name=entry["name"],
+                extras=tuple(entry.get("extras", {}).items()),
+            )
+            for entry in semantic
+        ),
+        document=hop.get("document"),
+        language=hop.get("language"),
+    )
+
+
+def writing_project(document: Mapping[str, Any]) -> str | None:
+    """The name of the project that wrote a ``needs.json`` of the draft format 2a1, from
+    its envelope (``project.name``), or ``None`` where it names none."""
+    project = document.get("project")
+    name = project.get("name") if isinstance(project, Mapping) else None
+    return name if isinstance(name, str) else None
 
 
 def placement_index(hops: tuple[NeedSourceHop, ...]) -> int | None:

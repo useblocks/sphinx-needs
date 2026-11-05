@@ -9,7 +9,13 @@ from sphinx.environment import BuildEnvironment
 
 import ub_needs_exchange as exchange
 from sphinx_needs._jinja import compile_template
-from sphinx_needs._need_source import NeedSourceHop, NeedSourcePhysical
+from sphinx_needs._need_source import (
+    NeedSourceHop,
+    NeedSourcePhysical,
+    upstream_hops,
+    writing_project,
+)
+from sphinx_needs._needsfile_v2a1 import READ_DRAFTS
 from sphinx_needs.api import InvalidNeedException, del_need
 from sphinx_needs.api.need import _create_from_record, _record_params
 from sphinx_needs.config import ExternalSource, NeedsSphinxConfig
@@ -59,7 +65,11 @@ def load_external_needs(
         source_str = source.get("json_url", "") or source.get("json_path", "")
         try:
             document = _read_source(app, source)
-            selected = document.select_version(source.get("version") or None)
+            # a draft 2a1 file is read too: reading it is harmless, only writing one is
+            # behind needs_json_format_version
+            selected = document.select_version(
+                source.get("version") or None, drafts=READ_DRAFTS
+            )
         except (exchange.ExchangeError, _UnreadableSource) as err:
             # a source no need can be read from: one warning, and the build goes on
             log_warning(
@@ -93,6 +103,10 @@ def load_external_needs(
         # file's needs
         id_prefix = source.get("id_prefix", "")
         needs = {r.key: r.fields for r in records}
+        # a 2a1 record's hops, the need's upstream: a hop with no origin is the writing
+        # project's, else the source's as it is configured
+        origin = writing_project(selected.data) or source_str
+        upstream = {r.key: r.source for r in records}
         import_prefix_link_edit(needs, id_prefix, needs_schema.iter_link_field_names())
 
         # Pre-compile target_url template once (avoids re-parsing per need)
@@ -168,7 +182,8 @@ def load_external_needs(
                                 kind="external",
                                 physical=NeedSourcePhysical(url=external_url),
                             ),
-                        )
+                        ),
+                        upstream=upstream_hops(upstream[key], origin=origin),
                     ),
                     allow_type_coercion=source.get("allow_type_coercion", True),
                 )
