@@ -20,6 +20,73 @@ vendors: it becomes one ubCode can vendor once the shape settles.
 
 Status: describes the implementation as it is (ub-needs-exchange, unreleased).
 
+## Why a format 2
+
+A needs.json is no longer only a project writing its needs and reading them back. It is
+the file other programs hand needs to sphinx-needs in (code traced by sphinx-codelinks,
+test results converted by ub-test-reports, requirements exported from other tools), the
+file one project imports another's needs from (`needimport`, `needs_external_needs`), and
+a build artefact passed between build steps and kept as a baseline. Format 1 was designed
+for the first of these, and falls short of the others:
+
+1. **Where a need came from is two keys.** A record says where it is placed (`docname`,
+   `lineno`, `sections`), not where its text was written: the file it is written in when
+   that is an included fragment, the files it was included through, the code entity a
+   marker is attached to, the project that wrote it. A need imported and written again
+   by the importing project names the importing page and the `needimport` line, so the
+   place it was first written is lost one hop later.
+2. **Authored values are mixed with computed ones.** Beside the fields a need was given,
+   a default record carries values a reader must know to ignore or recompute: back links
+   (`<link type>_back`), `is_import` and `is_external`, the type's configured
+   `type_name`, `external_css`, `parent_need`, `is_modified`, `modifications`,
+   `constraints_passed` and the other `constraints_*` results, and `has_dead_links`.
+3. **Links are strings with a grammar.** A link to a part, or under a condition, is
+   written `ID.part[condition]` and parsed back by the reader. The grammar has no escape,
+   so an id containing `.` or `[` cannot be written unambiguously.
+4. **The file says little about itself.** No format-1 writer writes `format_version`;
+   values equal to their default can be left out (`needs_json_remove_defaults`) and are
+   restored from the version's one `needs_schema`, not per need type; and
+   `versions` holds several snapshots in one file, so every reader has to pick one.
+
+## Design goals
+
+For format 2 as a whole; §§1–7 are how far the first draft goes.
+
+1. **Provenance across hops.** Every need records where its text came from, as a list of
+   hops, innermost first: the place it is written, each file it was included through,
+   the needs.json it was read from, the page it is placed on. A reader appends its own
+   hops and never rewrites another project's, so a need passed through several projects
+   still names where it was first written, and which project each hop belongs to (§4).
+2. **Authored data only.** A record holds what was authored: fields, links, content, and
+   its source. Everything a reader can derive is left out: `docname`, `sections`,
+   `section_name` and `signature` are derived from the hop a need is placed by (§3.2).
+3. **Unambiguous values.** A link with a part or a condition is an object, not a spelling
+   to parse (§5); the content is an object, so the markup it is written in can be named
+   beside it later.
+4. **Self-describing.** The file names its format (`format_version`), the project that
+   wrote it and the program; one file is one snapshot of one project version.
+5. **Room to grow by adding keys.** Records are an array of objects that each carry their
+   `id`, so an id namespace is a key added later, not a reshape; the same holds for the
+   pieces left out below.
+6. **One contract, read the same everywhere.** Every tool reads the format by this
+   specification and its corpus. A reader of format 1 refuses a later format with its own
+   message rather than read it wrongly ([`exchange-contract.md`](exchange-contract.md)
+   §3.1).
+7. **Drafts before a promise.** The format evolves through drafts (`"2a1"`, `"2b1"`, …)
+   readable only by the release that wrote them, then a final `2` that is kept readable.
+
+### What this draft leaves for later ones
+
+- **Id namespaces** (a record's `ns`).
+- **A schema block per need type**, and with it defaults left out of records: until then
+  a writer writes every value of the fields the need's type declares, `null` included,
+  so a record reads the same without a schema.
+- **An origins table** in the envelope (each upstream project's name, URL patterns,
+  revision and roots), so URLs are composed on read rather than stored per need.
+- **Extend records** (what a `needextend` changed, with its own source), **columns** in a
+  hop's region, and **hops for items of other systems** (an issue tracker, a
+  requirements tool).
+
 ## 1. The opt-in — `Document.select_version(requested, *, drafts=())`
 
 1. `drafts` names the drafts the call reads, besides format 1. There is one: `"2a1"`. A
