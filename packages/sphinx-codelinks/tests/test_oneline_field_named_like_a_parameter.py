@@ -251,3 +251,36 @@ def test_a_string_valued_link_type_named_full_title_is_a_link_too(
     )
     assert (list(needs), predicted) == ([expected], expected)
     assert needs[expected]["full_title"] == ["REQ_001"]
+
+
+def test_an_array_field_named_full_title_refuses_the_need_with_a_warning(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """An array FIELD named ``full_title`` with a ``list[str]`` marker field reaches
+    ``create_need(full_title=[...])`` and is refused with ``codelinks.oneline`` rather
+    than ending the build with ``AttributeError`` (#2479); :func:`would_be_id` returns
+    ``None``."""
+    _project(
+        tmp_path,
+        toml_extra=(
+            "\n[codelinks.projects.src.analyse.oneline_comment_style]\n"
+            'needs_fields = [{ name = "title" }, '
+            '{ name = "full_title", type = "list[str]", default = [] }, '
+            '{ name = "type", default = "impl" }]\n'
+        ),
+        files={"src/impl.cpp": "// @first impl, [one, two]\nvoid impl() {}\n"},
+        append={"docs/conf.py": 'needs_fields = {"full_title": {"type": "array"}}\n'},
+    )
+    app = _build(tmp_path, make_app)
+    assert _impl_needs(app) == {}
+    assert (
+        would_be_id(
+            app, {"type": "impl", "title": "first impl", "full_title": ["one", "two"]}
+        )
+        is None
+    )
+    assert any(
+        "invalid_value: one-line need could not be created: full_title must be a string, not list"
+        in warning
+        for warning in build_warnings(app)
+    )

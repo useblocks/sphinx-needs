@@ -325,6 +325,11 @@ def _generate_need(
         ``invalid_kwargs``) if ``values`` names no field or link type of the need's
         type.
     """
+    if full_title is not None and not isinstance(full_title, str):
+        raise InvalidNeedException(
+            "invalid_value",
+            f"full_title must be a string, not {type(full_title).__name__}",
+        )
     # location is used to provide source mapped warnings
     location = (
         (source.dict_repr["docname"], source.dict_repr["lineno"])
@@ -1130,6 +1135,11 @@ def create_need(
         )
     if state is None and not source.dict_repr["is_external"]:
         raise ValueError("a parser state is required for a need that is not external")
+    if full_title is not None and not isinstance(full_title, str):
+        raise InvalidNeedException(
+            "invalid_value",
+            f"full_title must be a string, not {type(full_title).__name__}",
+        )
     schema = SphinxNeedsData(app.env).get_schema()
     fields = fields or {}
     links = links or {}
@@ -1233,6 +1243,11 @@ def _create_need(
     ``signature``, ``sections`` and ``external_css`` are computed for a need placed on
     a page, so only the record paths and :func:`add_need` give them.
     """
+    if full_title is not None and not isinstance(full_title, str):
+        raise InvalidNeedException(
+            "invalid_value",
+            f"full_title must be a string, not {type(full_title).__name__}",
+        )
     if isinstance(source, NeedItemSource):
         # what the source's own producer could not record: the file of a page given
         # with no path (``NeedItemSource.on_page``, ``add_need``'s default source),
@@ -2085,6 +2100,11 @@ def generate_need_id(
     :raises InvalidNeedException: If ``need_type`` is not a configured need type
         (type ``invalid_type``, as :func:`create_need` raises it).
     """
+    if full_title is not None and not isinstance(full_title, str):
+        raise InvalidNeedException(
+            "invalid_value",
+            f"full_title must be a string, not {type(full_title).__name__}",
+        )
     needs_config = NeedsSphinxConfig(app.config)
     return _generate_need_id(
         needs_config,

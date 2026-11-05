@@ -9,6 +9,10 @@ Unreleased
 Fixes
 .....
 
+- 🐛 A one-line marker whose ``full_title`` is not a string (such as a ``list[str]`` marker
+  field for an array ``needs_fields`` entry) now refuses the need with the
+  ``codelinks.oneline`` warning rather than aborting the build with ``AttributeError``
+  (`#2479 <https://github.com/useblocks/sphinx-needs/issues/2479>`__).
 - 🐛 A one-line marker that sets a link type named ``full_title`` no longer aborts the build
   (`#2466 <https://github.com/useblocks/sphinx-needs/issues/2466>`__,
   `#2477 <https://github.com/useblocks/sphinx-needs/pull/2477>`__): the link is the need's

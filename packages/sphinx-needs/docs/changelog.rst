@@ -37,6 +37,13 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 ``create_need`` refuses a non-string ``full_title``, and ``needservice`` ignores one (:issue:`2479`)
+
+  ``create_need`` (and the private ``_create_need``, ``_generate_need``, and ``generate_need_id``) refuses a
+  non-string ``full_title`` with an ``InvalidNeedException`` instead of ending with an ``AttributeError`` in
+  ``_make_hashed_id``. ``needservice`` passes ``full_title`` only when it is a string and not a link type of the
+  project, as the codelinks marker route does.
+
 - 🐛 A link type named ``full_title`` is kept on ``needimport``, external needs and codelinks multi-line needs
   (:issue:`2466`, :pr:`2477`)
 

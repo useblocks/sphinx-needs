@@ -480,3 +480,34 @@ def test_only_the_need_s_own_values_are_named_as_arguments(make_app, tmp_path):
         "title=, not in 'fields'.",
         "{'state'} not in 'needs_fields' or 'needs_links'.",
     ]
+
+
+def test_create_need_refuses_non_string_full_title(make_app, tmp_path):
+    """create_need and generate_need_id refuse a non-str full_title with an
+    InvalidNeedException naming it (#2479)."""
+    from sphinx_needs.api import generate_need_id
+
+    (tmp_path / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\n', encoding="utf-8"
+    )
+    (tmp_path / "index.rst").write_text("Title\n=====\n", encoding="utf-8")
+    app = make_app("html", srcdir=tmp_path, freshenv=True)
+    app.build()
+    source = NeedItemSourceExternal(url="http://example.org/x.html")
+
+    for non_str in (["not", "a", "string"], {"dict": "val"}, 123):
+        with pytest.raises(InvalidNeedException) as err:
+            create_need(app, None, source, "req", "T", full_title=non_str)
+        assert err.value.type == "invalid_value"
+        assert (
+            err.value.message
+            == f"full_title must be a string, not {type(non_str).__name__}"
+        )
+
+        with pytest.raises(InvalidNeedException) as err:
+            generate_need_id(app, "req", "T", full_title=non_str)
+        assert err.value.type == "invalid_value"
+        assert (
+            err.value.message
+            == f"full_title must be a string, not {type(non_str).__name__}"
+        )

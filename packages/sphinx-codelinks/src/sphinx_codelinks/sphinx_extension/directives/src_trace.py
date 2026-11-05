@@ -276,13 +276,15 @@ def would_be_id(
             links = set()
         if "full_title" in links:
             full_title = None
+        elif not isinstance(full_title, str):
+            return None
     try:
         return generate_need_id(
             app,
             str(need.get("type")),
             str(need.get("title")),
             str(need.get("content", "")),
-            full_title=None if full_title is None else str(full_title),
+            full_title=full_title,
         )
     except InvalidNeedException:  # an unknown type, which create_need refuses too
         return None

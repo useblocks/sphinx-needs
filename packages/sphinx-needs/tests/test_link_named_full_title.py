@@ -1,10 +1,10 @@
-"""A link type named ``full_title`` is kept on the record routes (#2466).
+"""A link type named ``full_title`` is kept on the record and service routes (#2466, #2479).
 
 ``full_title`` is a legacy key of a needs.json record, computed rather than read, so the
 record routes dropped it -- unless the project declares a FIELD of that name (#2392). A
 LINK type of that name was dropped too, silently: a ``needimport`` or
 ``needs_external_needs`` record lost its links of that type, while a need directive kept
-them.
+them. A service returning a list under that key now also treats it as the link (#2479).
 """
 
 from __future__ import annotations
@@ -19,9 +19,27 @@ from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import build_warnings
 
 CONF = """\
+from sphinx_needs.services.base import BaseService
+
+class TestService(BaseService):
+    options = []
+    def __init__(self, _app, _name, config, **kwargs):
+        super().__init__()
+    def request(self, _options):
+        return [
+            {
+                "title": "a service need",
+                "id": "R_SVC",
+                "type": "req",
+                "full_title": ["REQ_T"],
+            }
+        ]
+
 extensions = ["sphinx_needs"]
 needs_links = {"full_title": {}}
+needs_services = {"test_svc": {"class": TestService, "class_init": {}}}
 needs_external_needs = [{"base_url": "http://example.org", "json_path": "ext.json"}]
+suppress_warnings = ["config.cache"]
 """
 
 INDEX = """\
@@ -36,6 +54,8 @@ A link type named full_title
    :full_title: REQ_T
 
 .. needimport:: imp.json
+
+.. needservice:: test_svc
 """
 
 
@@ -67,13 +87,24 @@ def _needs_json(need_id: str) -> str:
     indirect=True,
 )
 def test_a_link_type_named_full_title_is_kept_on_every_route(test_app: SphinxTestApp):
-    """The directive need (the control), the imported and the external need each keep
-    their ``full_title`` link, and the target has all three as back links."""
+    """The directive need (the control), the imported, the external and the service need
+    each keep their ``full_title`` link, and the target has all four as back links."""
     app = test_app
     app.build()
     assert build_warnings(app) == []
     needs = SphinxNeedsData(app.env).get_needs_view()
     assert {
-        need_id: needs[need_id]["full_title"] for need_id in ("R_DIR", "R_IMP", "R_EXT")
-    } == {"R_DIR": ["REQ_T"], "R_IMP": ["REQ_T"], "R_EXT": ["REQ_T"]}
-    assert sorted(needs["REQ_T"]["full_title_back"]) == ["R_DIR", "R_EXT", "R_IMP"]
+        need_id: needs[need_id]["full_title"]
+        for need_id in ("R_DIR", "R_IMP", "R_EXT", "R_SVC")
+    } == {
+        "R_DIR": ["REQ_T"],
+        "R_IMP": ["REQ_T"],
+        "R_EXT": ["REQ_T"],
+        "R_SVC": ["REQ_T"],
+    }
+    assert sorted(needs["REQ_T"]["full_title_back"]) == [
+        "R_DIR",
+        "R_EXT",
+        "R_IMP",
+        "R_SVC",
+    ]
