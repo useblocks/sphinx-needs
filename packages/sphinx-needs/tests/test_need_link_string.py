@@ -20,7 +20,7 @@ from __future__ import annotations
 import itertools
 
 import pytest
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from sphinx_needs.need_item import NeedLink
@@ -102,6 +102,7 @@ ENDS_IN_A_BRACKET = [
 ALREADY_ROUND_TRIPPED = [
     ("x", "[x]"),
     ("x]]y", "[[[x]]y]]]"),
+    ("a]]]b", "[[[[a]]]b]]]]"),
     ("]a", "[[]a]]"),
     ("a[", "[a[]"),
     ("x ] ", "[[x ] ]]"),
@@ -137,7 +138,9 @@ def test_a_condition_is_spelled_and_read_back(
     condition: str, spelled: str, part: str | None
 ) -> None:
     """The writer's spelling of each condition, with and without a part, and the reader
-    reading that spelling back as the same link, with no warning."""
+    reading that spelling back as the same link, with no warning. The spelling is pinned
+    for itself: this reader would read a shallower one too, but a reader of an earlier
+    release, or another tool, reads the depth the writer chose."""
     link = NeedLink(id="B", part=part, condition=condition)
     base = "B.p1" if part else "B"
     assert link.to_link_string() == base + spelled
@@ -232,7 +235,23 @@ def test_every_clean_string_reads_as_before_exhaustively() -> None:
         _assert_reads_as_before(written)
 
 
-@given(written=st.text(alphabet="B.[] x=a", max_size=40))
+@st.composite
+def _shaped_like_a_link(draw: st.DrawFn) -> str:
+    """An address, a run of ``[``, a body, a run of ``]`` (as long as the opening one,
+    more often than not) and a tail: random text seldom opens four brackets and closes
+    as many, which is where a deeper link lives."""
+    address = draw(st.text(alphabet="B.x", min_size=1, max_size=4))
+    opened = draw(st.integers(min_value=1, max_value=6))
+    body = draw(st.text(alphabet="[] x=a", max_size=20))
+    closed = draw(st.one_of(st.just(opened), st.integers(min_value=0, max_value=7)))
+    tail = draw(st.sampled_from(["", "", "", "x", "]", " ", "[x]"]))
+    return address + "[" * opened + body + "]" * closed + tail
+
+
+@settings(max_examples=1000)
+@given(
+    written=st.one_of(st.text(alphabet="B.[] x=a", max_size=40), _shaped_like_a_link())
+)
 def test_every_clean_string_reads_as_before(written: str) -> None:
     """The same over longer strings, where deeper brackets and longer runs live."""
     _assert_reads_as_before(written)
