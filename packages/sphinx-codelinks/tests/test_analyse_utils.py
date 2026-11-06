@@ -224,6 +224,38 @@ def test_marker_directly_above_a_conditional_is_on_nothing(
 
 
 @pytest.mark.parametrize(
+    "source",
+    [
+        pytest.param(
+            "struct S {\n// marker\n" + CONDITIONAL_ARMS["one-arm"] + "};\n",
+            id="struct",
+        ),
+        pytest.param(
+            "union U {\n// marker\n#if FEATURE_B\nint a;\n#endif\nfloat b;\n};\n",
+            id="union",
+        ),
+        pytest.param(
+            "enum E {\n// marker\n#if FEATURE_B\nA,\n#endif\nB,\n};\n", id="enum"
+        ),
+        pytest.param(
+            'namespace lib {\nextern "C" {\n// marker\n'
+            + CONDITIONAL_ARMS["declaration-only"]
+            + "}\n}\n",
+            id="extern-c-block-in-a-namespace",
+        ),
+    ],
+)
+def test_marker_directly_above_a_conditional_is_on_nothing_in_any_body(
+    source: str, init_cpp_tree_sitter: tuple[Parser, Query]
+) -> None:
+    """Not only in a namespace or class body: anywhere outside a function's body, a
+    struct, union or enum body and an ``extern "C"`` block included, a marker directly
+    above a conditional is attached to nothing, where the struct, union or enum, or
+    the namespace around the block, held it."""
+    assert _attached_to(source, *init_cpp_tree_sitter) is None
+
+
+@pytest.mark.parametrize(
     ("source", "expected"),
     [
         pytest.param(
@@ -294,6 +326,35 @@ def test_marker_directly_above_a_conditional_is_on_nothing(
             ("function_definition", "void active() {}", "leading"),
             id="inside-the-arm",
         ),
+        pytest.param(
+            "void outer() {\nstruct L {\n// marker\n"
+            + CONDITIONAL_ARMS["one-arm"]
+            + "};\n}\n",
+            ("struct_specifier", "struct L {", "enclosing"),
+            id="class-local-to-a-function",
+        ),
+        pytest.param(
+            "namespace lib {\nauto l = []() {\n// marker\n#if FEATURE_B\nactive();\n"
+            "#endif\n};\nvoid after() {}\n}\n",
+            ("namespace_definition", "namespace lib {", "enclosing"),
+            id="lambda-in-a-namespace",
+        ),
+        pytest.param(
+            "namespace lib {\n// marker\n%:if FEATURE_B\nvoid active() {}\n%:endif\n}\n",
+            ("namespace_definition", "namespace lib {", "enclosing"),
+            id="digraph-if",
+        ),
+        pytest.param(
+            "namespace lib {\n#if FEATURE_B\nvoid active() {}\n// marker\n%:endif\n}\n",
+            ("namespace_definition", "namespace lib {", "enclosing"),
+            id="digraph-endif",
+        ),
+        pytest.param(
+            "namespace lib {\n#define F(x) \\\n  /* marker */ \\\n  # if x\n"
+            "void active() {}\n}\n",
+            ("namespace_definition", "namespace lib {", "enclosing"),
+            id="define-continuation",
+        ),
     ],
 )
 def test_marker_near_a_conditional_keeps_its_attachment(
@@ -306,7 +367,11 @@ def test_marker_near_a_conditional_keeps_its_attachment(
     function's; a trailing marker is its row's entity's; a blank line between makes it
     a comment on the namespace or class as a whole; any other directive (``#define``,
     ``#include``, ``#pragma``) breaks the attachment to the next entity as any code
-    does; and inside the arm, the marker leads the definition, which is the remedy."""
+    does; and inside the arm, the marker leads the definition, which is the remedy.
+
+    A lambda's body and a class defined in a function are a function's body too. And
+    the directive is read as the grammar reads it: a digraph (``%:if``) is no
+    conditional to it, nor is a ``# if`` line that continues a ``#define``."""
     assert _attached_to(source, *init_cpp_tree_sitter) == expected
 
 
