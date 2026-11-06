@@ -1,5 +1,6 @@
 import configparser
 import re
+from enum import Enum
 from pathlib import Path
 from urllib.request import pathname2url
 
@@ -389,6 +390,15 @@ def _directly_above_a_conditional(node: TreeSitterNode) -> bool:
     return following.type in _CONDITIONAL_DIRECTIVES
 
 
+class Unattached(Enum):
+    """Why :func:`associate` attached a comment to no entity, where the analysis
+    warns about it; every other comment on nothing is ``None``."""
+
+    above_conditional = "above_conditional"
+    """Rule 7: a C or C++ comment directly above a preprocessor conditional's line,
+    outside a function's body."""
+
+
 # A Doxygen or JSDoc tag saying a documentation comment documents the file, not the
 # item after it: at the start of the text or after ASCII whitespace, ``*``, ``/`` or
 # ``!``, and ending the word, which is ASCII (as Doxygen and JSDoc commands are).
@@ -574,7 +584,7 @@ def associate(
     comment_type: CommentType = CommentType.cpp,
     *,
     text: bytes | None = None,
-) -> Association | None:
+) -> Association | Unattached | None:
     """The entity a comment is attached to, and how (see :data:`Mechanism`).
 
     The rules, in order:
@@ -613,8 +623,9 @@ def associate(
     :param comment_type: The language of the file ``node`` was parsed from.
     :param text: The comment's text as the file writes it (``SourceComment.text``),
         where a C++ tree is parsed from a prepared copy; ``node.text`` when not given.
-    :return: The association, or ``None`` when the comment is attached to no entity
-        (file level).
+    :return: The association; :attr:`Unattached.above_conditional` when rule 7
+        attaches the comment to no entity, and ``None`` when another rule does (file
+        level).
     """
     if comment_type == CommentType.yaml:
         # YAML uses different structure association logic
@@ -657,7 +668,7 @@ def associate(
             and not in_function_body(node)
             and _directly_above_a_conditional(node)
         ):
-            return None
+            return Unattached.above_conditional
         return enclosing()
     return Association(entity, declared if is_doc else "leading")
 
@@ -667,7 +678,7 @@ def find_associated_scope(
 ) -> TreeSitterNode | None:
     """Find the associated scope of a comment: the node :func:`associate` binds."""
     association = associate(node, comment_type)
-    return association.node if association is not None else None
+    return association.node if isinstance(association, Association) else None
 
 
 def _git_dir(path: Path) -> Path | None:

@@ -1,6 +1,6 @@
 import json
 import os
-from collections.abc import Generator
+from collections.abc import Generator, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
@@ -67,6 +67,12 @@ def _row_count(src_comment: SourceComment) -> int:
     starts no row of its own."""
     return src_comment.text.rstrip(b"\n").count(b"\n") + 1
 
+
+#: The message of a ``marker_above_conditional`` warning.
+ABOVE_CONDITIONAL_MSG = (
+    "directly above a preprocessor conditional, so attached to no entity: "
+    "put the marker inside the arm, above the definition"
+)
 
 #: How a tag warning names the tag it found.
 _TAG_NAMES = {
@@ -702,7 +708,7 @@ class SourceAnalyse:
             ),
             run.comments[0],
         )
-        tagged_scope, scope = self._associate(src_comment, filepath)
+        tagged_scope, scope, unattached = self._associate(src_comment, filepath)
         lineno = block.open_row + 1
         remote_url = self.git_remote_url
         if self.git_remote_url and self.git_commit_rev:
@@ -733,7 +739,7 @@ class SourceAnalyse:
             "option_lines": dict(block.option_rows),
             "scope": scope,
         }
-        return MultilineNeed(
+        need = MultilineNeed(
             filepath,
             remote_url,
             source_map,
@@ -744,23 +750,28 @@ class SourceAnalyse:
             source,
             scope=scope,
         )
+        self._warn_unattached(unattached, [need])
+        return need
 
     def _associate(
         self, src_comment: SourceComment, filepath: Path
-    ) -> tuple[TreeSitterNode | None, CodeScope | None]:
+    ) -> tuple[TreeSitterNode | None, CodeScope | None, utils.Unattached | None]:
         """The entity a comment of ``filepath`` is attached to: its node and its
-        ``scope`` object.
+        ``scope`` object, and why it is attached to none where the analysis warns
+        about that (:class:`~sphinx_codelinks.analyse.utils.Unattached`).
 
         A libclang comment has no tree-sitter node, so it is attached to nothing.
         """
         if getattr(src_comment.node, "is_libclang", False):
-            return None, None
+            return None, None, None
         comment_type = self.analyse_config.comment_type
         association = utils.associate(
             src_comment.node, comment_type, text=src_comment.text
         )
         if association is None:
-            return None, None
+            return None, None, None
+        if isinstance(association, utils.Unattached):
+            return None, None, association
         source_file = src_comment.source_file
         written = (
             source_file.node_text(association.node)
@@ -768,13 +779,37 @@ class SourceAnalyse:
             else association.node.text
         )
         if not written:
-            return None, None
-        return association.node, code_scope(
-            association,
-            comment_type,
-            scope_language(comment_type, filepath),
-            source_file.cpp_names if source_file is not None else None,
+            return None, None, None
+        return (
+            association.node,
+            code_scope(
+                association,
+                comment_type,
+                scope_language(comment_type, filepath),
+                source_file.cpp_names if source_file is not None else None,
+            ),
+            None,
         )
+
+    def _warn_unattached(
+        self,
+        unattached: utils.Unattached | None,
+        records: Iterable[NeedIdRefs | OneLineNeed | MultilineNeed],
+    ) -> None:
+        """Warn about each marker in ``records`` that rule 7 attached to no entity, at
+        its line (a multi-line need's open line)."""
+        if unattached is not utils.Unattached.above_conditional:
+            return
+        for record in records:
+            self.warnings.append(
+                AnalyseWarning(
+                    str(record.filepath),
+                    record.source_map["start"]["row"] + 1,
+                    ABOVE_CONDITIONAL_MSG,
+                    record.type,
+                    WarningSubTypeEnum.marker_above_conditional.value,
+                )
+            )
 
     def extract_marked_content(self) -> None:
         claimed: dict[int, set[int]] = {}
@@ -788,35 +823,35 @@ class SourceAnalyse:
             )
             if not filepath:
                 continue
-            tagged_scope, scope = self._associate(src_comment, filepath)
+            tagged_scope, scope, unattached = self._associate(src_comment, filepath)
             for text, first_row, first_column in _scanned_texts(
                 src_comment, claimed.get(id(src_comment))
             ):
                 if self.analyse_config.get_need_id_refs:
-                    self.need_id_refs.extend(
-                        self.extract_anchors(
-                            text,
-                            filepath,
-                            tagged_scope,
-                            src_comment,
-                            first_row,
-                            first_column,
-                            scope=scope,
-                        )
+                    anchors = self.extract_anchors(
+                        text,
+                        filepath,
+                        tagged_scope,
+                        src_comment,
+                        first_row,
+                        first_column,
+                        scope=scope,
                     )
+                    self._warn_unattached(unattached, anchors)
+                    self.need_id_refs.extend(anchors)
                 if self.analyse_config.get_oneline_needs:
-                    self.oneline_needs.extend(
-                        self.extract_oneline_needs(
-                            text,
-                            filepath,
-                            tagged_scope,
-                            src_comment,
-                            self.analyse_config.oneline_comment_style,
-                            first_row,
-                            first_column,
-                            scope=scope,
-                        )
+                    oneline_needs = self.extract_oneline_needs(
+                        text,
+                        filepath,
+                        tagged_scope,
+                        src_comment,
+                        self.analyse_config.oneline_comment_style,
+                        first_row,
+                        first_column,
+                        scope=scope,
                     )
+                    self._warn_unattached(unattached, oneline_needs)
+                    self.oneline_needs.extend(oneline_needs)
 
     def merge_marked_content(self) -> None:
         """List the marked content in source order: by file, row and column (#2150).

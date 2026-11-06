@@ -132,16 +132,21 @@ def test_find_associated_scope_cpp(code, result, init_cpp_tree_sitter):
     assert result in func_def
 
 
+#: What :func:`_attached_to` gives for a marker rule 7 attaches to nothing
+ABOVE_CONDITIONAL = utils.Unattached.above_conditional
+
+
 def _attached_to(
     source: str, parser: Parser, query: Query
-) -> tuple[str, str, str] | None:
+) -> tuple[str, str, str] | utils.Unattached | None:
     """What the comment holding ``marker`` in the C++ ``source`` is attached to: the
-    entity's node kind, its first line and the mechanism; ``None`` for nothing."""
+    entity's node kind, its first line and the mechanism; :data:`ABOVE_CONDITIONAL`
+    for nothing by rule 7, ``None`` for nothing by any other rule."""
     comments = utils.extract_comments(source.encode(), parser, query) or []
     marker = next(c for c in comments if b"marker" in (c.text or b""))
     association = utils.associate(marker, CommentType.cpp)
-    if association is None:
-        return None
+    if association is None or isinstance(association, utils.Unattached):
+        return association
     first_line = (association.node.text or b"").decode().splitlines()[0]
     return association.node.type, first_line, association.mechanism
 
@@ -220,7 +225,7 @@ def test_marker_directly_above_a_conditional_is_on_nothing(
     when no blank line does."""
     head, tail = CONTAINERS[container]
 
-    assert _attached_to(head + body + tail, *init_cpp_tree_sitter) is None
+    assert _attached_to(head + body + tail, *init_cpp_tree_sitter) is ABOVE_CONDITIONAL
 
 
 @pytest.mark.parametrize(
@@ -252,20 +257,26 @@ def test_marker_directly_above_a_conditional_is_on_nothing_in_any_body(
     struct, union or enum body and an ``extern "C"`` block included, a marker directly
     above a conditional is attached to nothing, where the struct, union or enum, or
     the namespace around the block, held it."""
-    assert _attached_to(source, *init_cpp_tree_sitter) is None
+    assert _attached_to(source, *init_cpp_tree_sitter) is ABOVE_CONDITIONAL
 
 
 @pytest.mark.parametrize(
     ("source", "expected"),
     [
         pytest.param(
-            "// marker\n" + CONDITIONAL_ARMS["one-arm"], None, id="file-level-first"
+            "// marker\n" + CONDITIONAL_ARMS["one-arm"],
+            ABOVE_CONDITIONAL,
+            id="file-level-first",
         ),
         pytest.param(
             "void first() {}\n// marker\n" + CONDITIONAL_ARMS["one-arm"],
-            None,
+            ABOVE_CONDITIONAL,
             id="file-level-after-an-item",
         ),
+        pytest.param(
+            "// marker\n\n" + CONDITIONAL_ARMS["one-arm"], None, id="file-header"
+        ),
+        pytest.param("void first() {}\n// marker\n", None, id="file-level-at-the-end"),
         pytest.param(
             "void outer() {\n// marker\n#if FEATURE_B\nfast();\n#endif\n}\n",
             ("function_definition", "void outer() {", "enclosing"),
@@ -359,11 +370,12 @@ def test_marker_directly_above_a_conditional_is_on_nothing_in_any_body(
 )
 def test_marker_near_a_conditional_keeps_its_attachment(
     source: str,
-    expected: tuple[str, str, str] | None,
+    expected: tuple[str, str, str] | utils.Unattached | None,
     init_cpp_tree_sitter: tuple[Parser, Query],
 ) -> None:
     """Around a preprocessor conditional, every other marker keeps the attachment it
-    has: at file level it is on nothing anyway; in a function's body it is the
+    has: at file level it is on nothing anyway, by rule 7 when directly above the
+    conditional and by another rule (a file header, nothing after it) otherwise; in a function's body it is the
     function's; a trailing marker is its row's entity's; a blank line between makes it
     a comment on the namespace or class as a whole; any other directive (``#define``,
     ``#include``, ``#pragma``) breaks the attachment to the next entity as any code

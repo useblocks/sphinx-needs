@@ -41,6 +41,9 @@ class WarningSubTypeEnum(str, Enum):  # noqa: UP042  # StrEnum changes str(membe
     """An option key is given twice, or names a key the record sets itself."""
     multiline_need_nested_open = "multiline_need_nested_open"
     """The open word starts a line of a block's body."""
+    marker_above_conditional = "marker_above_conditional"
+    """A C or C++ marker directly above a preprocessor conditional's line, outside a
+    function's body, which is attached to no entity."""
 
 
 class SourceComment:

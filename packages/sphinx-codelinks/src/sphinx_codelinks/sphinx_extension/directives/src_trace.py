@@ -15,6 +15,7 @@ from sphinx_codelinks.analyse.models import (
     MarkedContentType,
     MultilineNeed,
     OneLineNeed,
+    WarningSubTypeEnum,
 )
 from sphinx_codelinks.analyse.references import _relative_posix
 from sphinx_codelinks.config import (
@@ -375,19 +376,25 @@ def report_oneline_warnings(src_analyse: SourceAnalyse, root: Path) -> None:
     One type per kind of marker, so one ``suppress_warnings`` entry silences each:
     ``codelinks.oneline`` for malformed one-line markers, ``codelinks.multiline_need``
     for multi-line needs (as for every other warning about them in the build); the
-    kind leads the message.
+    kind leads the message. A marker attached to no entity because it stands directly
+    above a preprocessor conditional is ``codelinks.marker_above_conditional``,
+    whatever kind of marker it is.
 
     :param src_analyse: An analysis that has run.
     :param root: The root the locations are relative to, as for the other warnings at a
         source line.
     """
-    for warning in src_analyse.oneline_warnings:
+    for warning in src_analyse.warnings:
+        if warning.sub_type == WarningSubTypeEnum.marker_above_conditional:
+            subtype = WarningSubTypeEnum.marker_above_conditional.value
+        elif warning.type == MarkedContentType.multiline_need:
+            subtype = "multiline_need"
+        else:
+            subtype = "oneline"
         logger.warning(
             f"{warning.sub_type}: {warning.msg}",
             type="codelinks",
-            subtype="multiline_need"
-            if warning.type == MarkedContentType.multiline_need
-            else "oneline",
+            subtype=subtype,
             location=f"{_relative_posix(Path(warning.file_path), root)}:"
             f"{warning.lineno}",
         )
