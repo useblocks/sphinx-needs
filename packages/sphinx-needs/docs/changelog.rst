@@ -69,9 +69,9 @@ Bug fixes
 .........
 
 - 🐛 A part id repeated in one need is reported once, as ``needs.duplicate_part_id``, and no longer also as a part
-  "not associated with a need" (``needs.part``); the first part of the id is still the one kept (:issue:`2485`)
+  "not associated with a need" (``needs.part``); the first part of the id is still the one kept (:issue:`2485`, :pr:`2492`)
 
-- 🐛 ``add_need`` warns, once per need, of the ``parts`` it was given that a need on a page drops (:issue:`2486`)
+- 🐛 ``add_need`` warns, once per need, of the ``parts`` it was given that a need on a page drops (:issue:`2486`, :pr:`2492`)
 
   A need on a page takes its parts from its content (its :ref:`need_part` roles), which replaced the given ones
   silently. The result is unchanged: a given part whose id the content marks takes the content's text, and an
