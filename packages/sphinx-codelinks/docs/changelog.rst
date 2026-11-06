@@ -31,7 +31,8 @@ Fixes
 
 - 🐛 A one-line marker whose ``full_title`` is not a string (a ``list[str]`` marker field)
   no longer aborts the build
-  (`#2479 <https://github.com/useblocks/sphinx-needs/issues/2479>`__): it is no full
+  (`#2479 <https://github.com/useblocks/sphinx-needs/issues/2479>`__,
+  `#2491 <https://github.com/useblocks/sphinx-needs/pull/2491>`__): it is no full
   title, so the need is created with the id of its title, the one the duplicate check and
   the ``[docs]`` link name; a field the project declares as an array holds the list, and a ``full_title`` the
   project does not declare is dropped, without a warning.

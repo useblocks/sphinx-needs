@@ -69,7 +69,7 @@ Bug fixes
 .........
 
 - 🐛 A ``full_title`` that is not a string no longer aborts the build: ``create_need`` refuses it with a warning,
-  and a ``needservice`` need takes no full title from a link type or a value that is not a string (:issue:`2479`)
+  and a ``needservice`` need takes no full title from a link type or a value that is not a string (:issue:`2479`, :pr:`2491`)
 
   ``create_need``, ``add_need``, ``generate_need`` and ``generate_need_id`` raise ``InvalidNeedException``
   (``invalid_value``, "full_title must be a string, not list") for a ``full_title`` that is neither ``None`` nor a
