@@ -39,6 +39,34 @@ def test_skipped_ranges_on_simple_ifdef(tmp_path: Path):
     )
 
 
+def test_skipped_ranges_tell_the_main_files_own_pass(tmp_path: Path):
+    """A file that includes itself is skipped by two passes, told apart by where
+    each range starts: its own ``#if 0`` is the main file's pass, and the second
+    pass, which skips the whole guarded body, is not, although both share a path."""
+    import clang.cindex as cx
+
+    src = tmp_path / "self.cpp"
+    src.write_text(
+        "#ifndef SELF_CPP\n"
+        "#define SELF_CPP\n"
+        '#include "self.cpp"\n'
+        "#if 0\n"
+        "// inactive in the file's own pass\n"
+        "#endif\n"
+        "// active in the file's own pass\n"
+        "#endif\n"
+    )
+    idx = cx.Index.create()
+    tu = idx.parse(
+        str(src), args=["-x", "c++", "-std=c++17"], options=loader.PARSE_OPTIONS
+    )
+    skipped = loader.get_all_skipped_ranges(tu)
+
+    assert {
+        (sr.file, sr.start_line, sr.end_line, sr.from_main_file) for sr in skipped
+    } == {(src, 4, 6, True), (src, 1, 8, False)}
+
+
 FIXTURE = Path(__file__).parent / "data" / "preproc" / "variants_branching.cpp"
 
 

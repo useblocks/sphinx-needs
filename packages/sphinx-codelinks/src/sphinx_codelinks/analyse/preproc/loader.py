@@ -2,7 +2,9 @@
 
 clang.cindex (shipped by the PyPI ``libclang`` wheel, which bundles the native
 library — no compiler required) does not expose clang_getAllSkippedRanges, so
-we bind it via ctypes, exactly as the design concept's _common.py did.
+we bind it via ctypes, exactly as the design concept's _common.py did. Nor do
+the 16.0 and 18.1 bindings expose clang_Location_isFromMainFile, which both
+wheels' native libraries export: it is bound the same way.
 """
 
 from __future__ import annotations
@@ -48,6 +50,10 @@ class SkippedRange(NamedTuple):
     start_col: int
     end_line: int
     end_col: int
+    from_main_file: bool
+    """Whether the range starts in the translation unit's main file, in the main
+    file's own pass: a later inclusion of the same path is a pass of its own, and
+    reports ``False`` here (``clang_Location_isFromMainFile``)."""
 
 
 class _CXSourceRangeList(ctypes.Structure):
@@ -71,6 +77,10 @@ def _bind() -> None:
     lib.clang_getAllSkippedRanges.restype = ctypes.POINTER(_CXSourceRangeList)
     lib.clang_disposeSourceRangeList.argtypes = [ctypes.POINTER(_CXSourceRangeList)]
     lib.clang_disposeSourceRangeList.restype = None
+    # Registered as cindex registers clang_Location_isInSystemHeader, but with a
+    # ctypes restype rather than ``bool`` (a non-ctypes restype is deprecated).
+    lib.clang_Location_isFromMainFile.argtypes = [cx.SourceLocation]
+    lib.clang_Location_isFromMainFile.restype = ctypes.c_int
     _BOUND = True
 
 
@@ -89,7 +99,12 @@ def get_all_skipped_ranges(tu: Any) -> list[SkippedRange]:
             start = r.start
             end = r.end
             f = Path(start.file.name) if start.file else None
-            out.append(SkippedRange(f, start.line, start.column, end.line, end.column))
+            from_main = bool(cx.conf.lib.clang_Location_isFromMainFile(start))
+            out.append(
+                SkippedRange(
+                    f, start.line, start.column, end.line, end.column, from_main
+                )
+            )
         return out
     finally:
         cx.conf.lib.clang_disposeSourceRangeList(ptr)

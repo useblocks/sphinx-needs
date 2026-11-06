@@ -46,6 +46,12 @@ Fixes
   (`#2465 <https://github.com/useblocks/sphinx-needs/issues/2465>`__); without an id and
   with an empty title, its id is then the one the duplicate check and the ``[docs]`` link
   name. The fix is Sphinx-Needs' (its needs.json reader, ub-needs-exchange).
+- 🐛 The libclang engine no longer drops the markers of a file its own includes enter
+  again: a guarded header whose includes include it back, parsed standalone as every
+  header absent from a compilation database is, or a guarded file that includes itself.
+  The second pass through the preprocessor skips the guarded body, and the engine dropped
+  every comment of the file inside what either pass skipped, so it extracted none; only
+  the file's own pass decides now.
 
 .. _`release:2.1.0`:
 

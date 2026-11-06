@@ -800,6 +800,12 @@ is ``"cpp"``, each file is parsed as a real translation unit and **comments insi
 preprocessor branches are dropped**. Active needs keep their original line numbers — no
 source transformation is performed.
 
+A branch is inactive when the file's own pass through the preprocessor skips it.
+A file its own includes enter again -- a guarded header whose includes include it back, or a
+file that includes itself -- passes through the preprocessor a second time, and that pass
+finds the guard defined and skips the whole guarded body: its comments are kept all the
+same, since the file's own pass compiled them.
+
 .. important:: The libclang engine requires an optional dependency:
    ``pip install 'sphinx-codelinks[libclang]'``. The wheel bundles the native library, so
    no compiler is required on the user's machine.
@@ -863,7 +869,8 @@ Example
 With ``defines = ["VARIANT_A"]`` both ``IMPL_BASE`` and ``IMPL_VAR_A`` are extracted.
 With ``defines = []`` only ``IMPL_BASE`` is extracted — the ``#ifdef VARIANT_A`` block is
 inactive, so its need is dropped. The include guard (``#ifndef FEATURE_HPP``) is always
-active when the header is parsed on its own, so ``IMPL_BASE`` is never suppressed by it.
+active when the header is parsed on its own, so ``IMPL_BASE`` is never suppressed by it,
+even when one of the header's own includes includes it back.
 
 Variant handling is the caller's job
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

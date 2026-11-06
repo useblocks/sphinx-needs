@@ -405,3 +405,200 @@ def test_libclang_columns_are_the_tree_sitter_columns(tmp_path, newline):
         ("need", span(7, 4, 27), "impl"),
         ("need-id-refs", span(8, 24, 27), ["FF1"]),
     ]
+
+
+def _analyse_written(
+    root: Path, files: dict[str, str], analysed: list[str]
+) -> SourceAnalyse:
+    """Write ``files`` into ``root`` and run the libclang engine over ``analysed``.
+
+    No compilation database and no defines: a header is parsed standalone, as every
+    header absent from a database is, and a source with the configured defines.
+    """
+    for name, text in files.items():
+        (root / name).write_text(text, encoding="utf-8")
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[root / name for name in analysed],
+            src_dir=root,
+            get_need_id_refs=False,
+            get_oneline_needs=True,
+            get_multiline_needs=False,
+            preprocessor=PreprocessorConfig(defines=[]),
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run(log_summary=False)
+    return analyse
+
+
+def _needs(analyse: SourceAnalyse) -> set[tuple[str, str, int]]:
+    """Each one-line need as (file name, id, 0-based row)."""
+    return {
+        (Path(n.filepath).name, str(n.need["id"]), n.source_map["start"]["row"])
+        for n in analyse.oneline_needs
+    }
+
+
+#: A guarded header whose include includes it back. Analysed standalone, each is the
+#: translation unit's main file, and its include enters it a second time: that pass finds
+#: the guard defined and skips the whole guarded body, which the file's own pass compiled.
+GUARDED_PAIR = {
+    "a.h": (
+        "#ifndef A_H\n"
+        "#define A_H\n"
+        '#include "b.h"\n'
+        "\n"
+        "// @Function in a, IMPL_A, impl\n"
+        "int a_function(void);\n"
+        "\n"
+        "#endif\n"
+    ),
+    "b.h": (
+        "#ifndef B_H\n"
+        "#define B_H\n"
+        '#include "a.h"\n'
+        "\n"
+        "// @Function in b, IMPL_B, impl\n"
+        "int b_function(void);\n"
+        "\n"
+        "#endif\n"
+    ),
+}
+
+#: A guarded source that includes itself: the same second pass, without a second file.
+SELF_INCLUDING = {
+    "self.cpp": (
+        "#ifndef SELF_CPP\n"
+        "#define SELF_CPP\n"
+        '#include "self.cpp"\n'
+        "\n"
+        "// @Function in self, IMPL_SELF, impl\n"
+        "int self_function();\n"
+        "\n"
+        "#endif\n"
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    ("files", "expected"),
+    [
+        pytest.param(
+            GUARDED_PAIR,
+            {("a.h", "IMPL_A", 4), ("b.h", "IMPL_B", 4)},
+            id="guarded-pair-standalone",
+        ),
+        pytest.param(
+            SELF_INCLUDING, {("self.cpp", "IMPL_SELF", 4)}, id="self-including"
+        ),
+    ],
+)
+def test_libclang_keeps_markers_of_a_file_its_includes_enter_again(
+    tmp_path: Path, files: dict[str, str], expected: set[tuple[str, str, int]]
+) -> None:
+    """A file its own includes enter again keeps the markers its own pass compiled.
+
+    The second pass skips the guarded body, function and marker included. Only the
+    analysed file's own pass decides what is skipped in it, so the marker above the
+    function is extracted on its own row, attached to the file and to no entity, as
+    the libclang engine attaches every marker. Before the fix the second pass's
+    skipped range covered the whole file and the engine extracted nothing from it.
+    """
+    analyse = _analyse_written(tmp_path, files, list(files))
+
+    assert _needs(analyse) == expected
+    for need in analyse.oneline_needs:
+        assert need.tagged_scope is None
+        assert need.scope is None
+
+
+#: A genuine ``#if 0`` block in the file's own pass, in a plain file and in a file that
+#: includes itself, above the guarded body the second pass skips
+IF0_PLAIN = {
+    "plain.cpp": (
+        "#if 0\n"
+        "// @Never compiled, IMPL_OFF, impl\n"
+        "int never_compiled();\n"
+        "#endif\n"
+        "\n"
+        "// @Compiled, IMPL_ON, impl\n"
+        "int compiled();\n"
+    ),
+}
+IF0_SELF_INCLUDING = {
+    "self.cpp": (
+        "#ifndef SELF_CPP\n"
+        "#define SELF_CPP\n"
+        '#include "self.cpp"\n'
+        "\n"
+        "#if 0\n"
+        "// @Never compiled, IMPL_OFF, impl\n"
+        "int never_compiled();\n"
+        "#endif\n"
+        "\n"
+        "// @Function in self, IMPL_SELF, impl\n"
+        "int self_function();\n"
+        "\n"
+        "#endif\n"
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    ("files", "expected"),
+    [
+        pytest.param(IF0_PLAIN, {("plain.cpp", "IMPL_ON", 5)}, id="plain"),
+        pytest.param(
+            IF0_SELF_INCLUDING, {("self.cpp", "IMPL_SELF", 9)}, id="self-including"
+        ),
+    ],
+)
+def test_libclang_drops_a_marker_its_own_pass_skips(
+    tmp_path: Path, files: dict[str, str], expected: set[tuple[str, str, int]]
+) -> None:
+    """A marker inside a branch the file's own pass skips is still dropped.
+
+    Keeping only the main file's own skipped ranges must not keep a marker the file's
+    own pass never compiled, whether or not a later pass enters the file again.
+    """
+    analyse = _analyse_written(tmp_path, files, list(files))
+
+    assert _needs(analyse) == expected
+
+
+#: An unguarded header a source includes twice, with markers before, between and after
+#: the two inclusions
+INCLUDED_TWICE = {
+    "twice.h": (
+        "// @Declared in the header, IMPL_HDR, impl\nextern int from_header;\n"
+    ),
+    "main.cpp": (
+        "// @Before the includes, IMPL_BEFORE, impl\n"
+        '#include "twice.h"\n'
+        "// @Between the includes, IMPL_BETWEEN, impl\n"
+        '#include "twice.h"\n'
+        "\n"
+        "// @Main function, IMPL_MAIN, impl\n"
+        "int main_function();\n"
+    ),
+}
+
+
+def test_libclang_unguarded_header_included_twice(tmp_path: Path) -> None:
+    """An unguarded header a source includes twice changes nothing in either file.
+
+    Analysed as its translation unit's main file, the source keeps all three of its
+    markers; the header's two inclusions are not the source's own text, so its marker
+    is not the source's. The header, analysed on its own, gives its marker once.
+    """
+    analyse = _analyse_written(tmp_path, INCLUDED_TWICE, ["main.cpp", "twice.h"])
+
+    assert _needs(analyse) == {
+        ("main.cpp", "IMPL_BEFORE", 0),
+        ("main.cpp", "IMPL_BETWEEN", 2),
+        ("main.cpp", "IMPL_MAIN", 5),
+        ("twice.h", "IMPL_HDR", 0),
+    }
+    assert len(analyse.oneline_needs) == 4
