@@ -43,8 +43,11 @@ The possible variables are listed in the configuration documentation for :ref:`n
 
 .. warning::
 
-   If you refer to an :ref:`external need <needs_external_needs>`, the algorithm is different
+   If you refer to a whole :ref:`external need <needs_external_needs>`, the algorithm is different
    and you will only get the need id as link text.
+   A reference to a part of an external need, ``:need:`EXT_ID.part```, is written as one to a part of a
+   need of the project, with the part's text and ``EXT_ID.part`` (or the text given in the role),
+   and links the part's anchor on the external page.
 
 
 .. _role_need_outgoing:
