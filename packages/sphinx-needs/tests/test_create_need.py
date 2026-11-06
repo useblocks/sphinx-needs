@@ -8,7 +8,8 @@ from pathlib import Path
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
-from sphinx_needs.api import add_need, create_need
+from sphinx_needs.api import add_need, create_need, generate_need
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import InvalidNeedException
 from sphinx_needs.need_item import NeedItemSourceExternal, NeedItemSourceUnknown
@@ -480,3 +481,73 @@ def test_only_the_need_s_own_values_are_named_as_arguments(make_app, tmp_path):
         "title=, not in 'fields'.",
         "{'state'} not in 'needs_fields' or 'needs_links'.",
     ]
+
+
+def _deprecated(call):
+    """``call``, expecting the ``DeprecationWarning`` of ``add_need``."""
+
+    def _call():
+        with pytest.warns(DeprecationWarning, match="add_need is deprecated"):
+            return call()
+
+    return _call
+
+
+@pytest.mark.parametrize(
+    "full_title", [["REQ_T"], {"a": 1}, 1], ids=["list", "dict", "int"]
+)
+@pytest.mark.parametrize("need_id", [None, "R_GIVEN"], ids=["no-id", "id"])
+def test_a_full_title_that_is_not_a_string_is_refused(
+    make_app, tmp_path, full_title, need_id
+):
+    """A ``full_title`` is the text a generated id is hashed from; any other value is
+    refused, by each door of the creation path, before anything is recorded -- it
+    ended the build with ``AttributeError: 'list' object has no attribute 'encode'``
+    (#2479). It is refused whether or not an ``id`` is given, which leaves it unread."""
+    (tmp_path / "conf.py").write_text(
+        'extensions = ["sphinx_needs"]\n', encoding="utf-8"
+    )
+    (tmp_path / "index.rst").write_text("Full title\n==========\n", encoding="utf-8")
+    app = make_app("html", srcdir=tmp_path, freshenv=True)
+    app.build()
+    data = SphinxNeedsData(app.env)
+    url = "http://example.org/x.html"
+    doors = {
+        "create_need": lambda: create_need(
+            app,
+            None,
+            NeedItemSourceExternal(url=url),
+            "req",
+            "T",
+            id=need_id,
+            full_title=full_title,
+        ),
+        "add_need": _deprecated(
+            lambda: add_need(
+                app,
+                None,
+                need_type="req",
+                title="T",
+                id=need_id,
+                is_external=True,
+                external_url=url,
+                full_title=full_title,
+            )
+        ),
+        "generate_need": lambda: generate_need(
+            NeedsSphinxConfig(app.config),
+            data.get_schema(),
+            "req",
+            "T",
+            id=need_id,
+            full_title=full_title,
+        ),
+    }
+    refusals = {}
+    for door, call in doors.items():
+        with pytest.raises(InvalidNeedException) as err:
+            call()
+        refusals[door] = (err.value.type, err.value.message)
+    message = f"full_title must be a string, not {type(full_title).__name__}"
+    assert refusals == dict.fromkeys(doors, ("invalid_value", message))
+    assert dict(data.get_needs_mutable()) == {}

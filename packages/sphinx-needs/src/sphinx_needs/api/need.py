@@ -164,7 +164,8 @@ def generate_need(
 
         It will also not validate that the ID is not already in use within the project.
 
-    :raises InvalidNeedException: If the data fails any validation issue.
+    :raises InvalidNeedException: If the data fails any validation issue, such as a
+        ``full_title`` that is not a string (type ``invalid_value``).
 
     ``kwargs`` can contain options defined in ``needs_fields`` and ``needs_links``.
     If an entry is found in ``kwargs``, which *is not* specified in the configuration or registered e.g. via
@@ -190,7 +191,7 @@ def generate_need(
     :param need_type: Name of the need type to create.
     :param title: String as title.
     :param full_title: This is given, if an auto-generated title was trimmed.
-        It is used to auto-generate the ID, if required.
+        It is used to auto-generate the ID, if required. A string.
     :param id: ID as string. If not given, an id will get generated.
     :param content: Content of the need
     :param status: Status as string.
@@ -294,6 +295,20 @@ def _legacy_source(
     )
 
 
+def _check_full_title(full_title: object) -> None:
+    """Refuse a ``full_title`` that is given but is not a string: it is the text a
+    generated id is hashed from (#2479).
+
+    :raises InvalidNeedException: (type ``invalid_value``) If ``full_title`` is neither
+        ``None`` nor a string.
+    """
+    if full_title is not None and not isinstance(full_title, str):
+        raise InvalidNeedException(
+            "invalid_value",
+            f"full_title must be a string, not {type(full_title).__name__}",
+        )
+
+
 def _generate_need(
     needs_config: NeedsSphinxConfig,
     needs_schema: FieldsSchema,
@@ -323,8 +338,10 @@ def _generate_need(
         keyword arguments, so that no field name meets a parameter (#2392).
     :raises InvalidNeedException: If the data fails any validation issue; (type
         ``invalid_kwargs``) if ``values`` names no field or link type of the need's
-        type.
+        type; (type ``invalid_value``) for a ``full_title`` that is not a string,
+        whether or not an ``id`` is given.
     """
+    _check_full_title(full_title)
     # location is used to provide source mapped warnings
     location = (
         (source.dict_repr["docname"], source.dict_repr["lineno"])
@@ -902,7 +919,8 @@ def add_need(
     Instead, the need is referencing an external url.
     Used mostly for :ref:`needs_external_needs` to integrate and reference needs from external documentation.
 
-    :raises InvalidNeedException: If the need could not be added due to a validation issue;
+    :raises InvalidNeedException: If the need could not be added due to a validation issue,
+        such as a ``full_title`` that is not a string (type ``invalid_value``);
         also, before the need is recorded, if a ``MarkupContent``'s ``markup`` names no
         reStructuredText or MyST parser of the project.
 
@@ -926,7 +944,7 @@ def add_need(
     :param need_type: Name of the need type to create.
     :param title: String as title.
     :param full_title: This is given, if an auto-generated title was trimmed.
-        It is used to auto-generate the ID, if required.
+        It is used to auto-generate the ID, if required. A string.
     :param id: ID as string. If not given, an id will get generated.
     :param content: Content of the need, either as a ``str``
         or a ``StringList`` (a string with mapping to the source text), parsed by the
@@ -1097,7 +1115,7 @@ def create_need(
         else the suffix of the document the need is created in.
     :param jinja_content: If true, the content is rendered as a Jinja template first.
     :param full_title: The title before it was trimmed, if it was: the generated id is
-        derived from it.
+        derived from it. A string; any other value is refused.
     :param allow_type_coercion: If true, values are coerced to the type of their field
         where possible.
     :return: The need, as it is recorded in the project (the object, not a copy), and
@@ -1110,7 +1128,8 @@ def create_need(
         taken, a ``MarkupContent`` whose ``markup`` names no reStructuredText or MyST
         parser of the project, and any other validation the need fails, such as an
         unknown need type, a constraint not in :ref:`needs_constraints`, a template that
-        does not exist, or Jinja content that does not render; (type
+        does not exist, or Jinja content that does not render; (type ``invalid_value``)
+        for a ``full_title`` that is not a string, whether or not an ``id`` is given; (type
         ``invalid_kwargs``) for a name in ``fields`` or ``links`` the project does not
         declare, or one given in the wrong place: a link type in ``fields``, a field in
         ``links``, or one of this function's own arguments (``title``, ``content``, ...)
@@ -2080,11 +2099,13 @@ def generate_need_id(
     :param title: Title of the need.
     :param content: Content of the need, either as a ``str``
         or a ``StringList``, as :func:`create_need` takes it.
-    :param full_title: The untrimmed title, if ``title`` was trimmed.
+    :param full_title: The untrimmed title, if ``title`` was trimmed: a string.
     :return: The generated id.
     :raises InvalidNeedException: If ``need_type`` is not a configured need type
-        (type ``invalid_type``, as :func:`create_need` raises it).
+        (type ``invalid_type``), or ``full_title`` is not a string (type
+        ``invalid_value``), as :func:`create_need` raises it.
     """
+    _check_full_title(full_title)
     needs_config = NeedsSphinxConfig(app.config)
     return _generate_need_id(
         needs_config,

@@ -147,3 +147,23 @@ def test_generate_need_id_of_an_unknown_type_raises_as_add_need_does(probe):
     assert isinstance(added, InvalidNeedException)
     assert generated.type == added.type == "invalid_type"
     assert str(generated) == str(added) == "Unknown need type 'nope'. [invalid_type]"
+
+
+@pytest.mark.parametrize(
+    "full_title", [["SP_T"], {"a": 1}, 1], ids=["list", "dict", "int"]
+)
+def test_generate_need_id_refuses_a_full_title_that_is_not_a_string(probe, full_title):
+    """A ``full_title`` that is not a string is refused by both, with the same
+    exception, where both ended the build with ``AttributeError`` (#2479); no need is
+    created."""
+    app, record = probe({"need_type": "spec", "title": "T", "full_title": full_title})
+    generated, added = record["generated"], record["added"]
+    assert isinstance(generated, InvalidNeedException)
+    assert isinstance(added, InvalidNeedException)
+    assert generated.type == added.type == "invalid_value"
+    assert (
+        generated.message
+        == added.message
+        == f"full_title must be a string, not {type(full_title).__name__}"
+    )
+    assert list(get_needs_view(app)) == []
