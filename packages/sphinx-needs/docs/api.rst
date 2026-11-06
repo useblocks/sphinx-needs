@@ -224,7 +224,8 @@ refused that with an ``AssertionError``, ``create_need`` raises ``ValueError``.
        record's ``parts`` and ``arch`` through
        :func:`~sphinx_needs.api.need.ingest_need_record`); an external need ``add_need``
        made kept them as given, which neither ``create_need`` nor ``add_external_need``
-       takes
+       takes (``add_need`` warns, once per need on a page, of the given ``parts`` its
+       content drops)
    * - the deprecated ``links_string``, ``hide_tags``, ``hide_status``, ``delete``,
        ``constraints_passed``
      - none (``add_need`` drops them, with a warning)

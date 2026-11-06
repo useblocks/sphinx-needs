@@ -961,6 +961,11 @@ def add_need(
     :param status: Status as string.
     :param tags: A list of tags, or a comma separated string.
     :param constraints: Constraints as single, comma separated, string.
+    :param parts: The need's parts, keyed by part id. Kept as given only for an external
+        or a hidden need: a need on a page takes its parts from its content (its
+        :ref:`need_part` roles), a given part whose id the content marks takes the
+        content's text, and the given part ids the content does not mark are dropped,
+        with one ``needs.part`` warning per need naming them.
     :param constraints_passed: Contains bool describing if all constraints have passed
     :param hide: If True then the need is not rendered.
         ``None`` means that the value can be overriden by global defaults, else it is set to False.
@@ -991,7 +996,7 @@ def add_need(
         )
         kwargs = {k: v for k, v in kwargs.items() if k not in _deprecated_kwargs}
 
-    _, need_nodes = _create_need(
+    need, need_nodes = _create_need(
         app,
         state,
         _legacy_source(
@@ -1030,6 +1035,16 @@ def add_need(
         sections=sections,
         external_css=external_css,
     )
+    # a need on a page takes its parts from its content, which replaces the given ones;
+    # an external or a hidden need keeps them, so it drops none
+    if parts and (dropped := sorted(parts.keys() - need["parts"].keys())):
+        log_warning(
+            logger,
+            f"Need {need['id']!r}: the parts {dropped} given to add_need are dropped: "
+            "a need on a page takes its parts from its content",
+            "part",
+            location=(need["docname"], need["lineno"]) if need["docname"] else None,
+        )
     return need_nodes
 
 
