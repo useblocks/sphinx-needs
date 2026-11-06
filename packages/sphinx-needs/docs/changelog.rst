@@ -68,6 +68,20 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 A ``full_title`` that is not a string refuses the need with a warning, where the build aborted; a
+  ``needservice`` need takes no full title from a link type or a value that is not a string (:issue:`2479`)
+
+  ``create_need``, ``add_need``, ``generate_need`` and ``generate_need_id`` raise ``InvalidNeedException``
+  (``invalid_value``, "full_title must be a string, not list") for a ``full_title`` that is neither ``None`` nor a
+  string, which a producer reports as it reports any refused need. That holds whether or not an ``id`` is given:
+  without one they raised ``AttributeError: 'list' object has no attribute 'encode'``, which ended the build, and
+  with one the value was ignored. A ``needservice`` datum's ``full_title`` is the full
+  title a need without an id has its id hashed from only when it is a string and the project has no link type of
+  that name, as for a sphinx-codelinks one-line marker; it is still the need's link or field. So a service need
+  whose ``full_title`` is a list (a link type, or a field declared as an array) is created, with the id of its
+  title, and one whose ``full_title`` is a link given as a string now has the id of its title, where it had the
+  id of the link's value **(changed output)**.
+
 - 🐛 A link type named ``full_title`` is kept on ``needimport``, external needs and codelinks multi-line needs
   (:issue:`2466`, :pr:`2477`)
 
