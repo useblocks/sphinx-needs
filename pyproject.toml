@@ -155,10 +155,10 @@ test = [
   # dependency there rather than a docs one. It costs nothing in the lock -- it is already
   # here through `sphinx-needs[theme-furo]` -- only in what the `test` group installs
   "furo>=2025.12.19",
-  # sphinx-ai-index: its property-based tests need it. It was in that package's own
-  # `testing` group, which this group replaces; being HERE is also what carries it into the
-  # release workflow's compat cell, which builds its environment from
-  # `uv export --only-group test`
+  # the property-based tests: sphinx-ai-index's, and sphinx-needs' of a link's string form
+  # (`tests/test_need_link_string.py`). It was in sphinx-ai-index's own `testing` group,
+  # which this group replaces; being HERE is also what carries it into the release
+  # workflow's compat cell, which builds its environment from `uv export --only-group test`
   "hypothesis>=6.0",
 ]
 # sphinx-codelinks' optional libclang engine, in a group of its own because only the job

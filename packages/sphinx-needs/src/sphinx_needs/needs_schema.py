@@ -2224,9 +2224,11 @@ def _split_link_list(
     5. Otherwise → accumulate character
 
     Plain link items support the format ``ID``, ``ID.part``,
-    ``ID[condition]``, or ``ID.part[condition]``.
-    The condition uses matched bracket depth,
-    so ``ID[[x>1]]`` parses the condition as ``[x>1]``.
+    ``ID[condition]``, or ``ID.part[condition]``, read by
+    :meth:`NeedLink.from_string_with_warnings`: the condition runs to as many closing
+    brackets as it opened with, at the end of the item, so ``ID[[x>1]]`` parses the
+    condition as ``x>1`` and ``ID[x == a[0]]`` as ``x == a[0]``. A ``;|,`` ends an item
+    even within the brackets of a condition.
 
     :param text: The string to split.
     :param parse_dynamic_functions: Whether to parse ``[[...]]`` dynamic functions.

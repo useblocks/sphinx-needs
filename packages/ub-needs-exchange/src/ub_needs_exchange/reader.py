@@ -645,13 +645,16 @@ def _link_string(need_id: str, part: str | None, condition: str | None) -> str:
     """A link as format 1 writes it: sphinx-needs' ``NeedLink.to_link_string``.
 
     The part follows a ``.`` when it is not empty, and the condition is in brackets one
-    deeper than the longest run of ``]`` in it, so that the string reads back as the
+    deeper than the longest run of ``]`` in it, after one space when it starts with
+    ``[`` (after any spaces) and ends with ``]``, so that the string reads back as the
     same link.
     """
     base = f"{need_id}.{part}" if part else need_id
     if condition is None:
         return base
     depth = 1 + max((len(run) for run in re.findall(r"\]+", condition)), default=0)
+    if condition.endswith("]") and re.match(r" *\[", condition):
+        condition = " " + condition
     return f"{base}{'[' * depth}{condition}{']' * depth}"
 
 

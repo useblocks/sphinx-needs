@@ -370,16 +370,20 @@ neither character.
    `NeedLink.to_link_string`): a string as it is written, unchanged; an object as its `id`, then `.part` when
    the part is not empty, then the condition, when there is one, in brackets one deeper
    than the longest run of `]` in it — `B`, `B.p1`, `B[c]`, `B.p1[c]`, `B[[tags[0] == 'x']]`.
-   That string reads back as the same link in sphinx-needs, with two exceptions format 1
-   has too: a condition that ends in `]` does not, and nor does an object whose `id`
-   contains `.` or `[` (the string grammar has no escape, so the reader reads that `.` as
-   a part and that `[` as a condition).
+   A condition that starts with `[` (after any spaces) and ends with `]` is spelled with
+   one space after the opening brackets, which the reader drops — `B[[ [x] == a[0]]]`.
+   That string reads back as the same link in sphinx-needs, with one exception format 1
+   has too: an object whose `id` contains `.` or `[` does not (the string grammar has no
+   escape, so the reader reads that `.` as a part and that `[` as a condition). An empty
+   condition is spelled `B[]`, which reads as no condition.
    Enforced by: corpus: `a-bare-string-link-is-read-as-written`,
    `a-bare-string-is-handed-on-in-format-1-s-grammar`,
    `a-bare-string-with-brackets-is-handed-on-in-format-1-s-grammar`,
    `a-link-object-of-an-id-alone-is-its-id`, `a-link-to-a-part-is-spelled-id-dot-part`,
    `a-link-with-a-condition-is-spelled-in-brackets`, `a-link-with-a-part-and-a-condition`,
-   `a-condition-with-brackets-is-bracketed-one-deeper`, `an-empty-part-is-no-part`,
+   `a-condition-with-brackets-is-bracketed-one-deeper`, `a-condition-that-ends-in-a-bracket`,
+   `a-condition-that-starts-and-ends-with-a-bracket-is-spelled-with-a-space`,
+   `an-empty-part-is-no-part`,
    `link-spellings-keep-their-order-in-one-link-type`;
    `test_reader.py::test_a_link_object_is_spelled_as_sphinx_needs_writes_it`,
    `…::test_a_link_object_reads_back_as_the_same_link` (both where sphinx-needs is
