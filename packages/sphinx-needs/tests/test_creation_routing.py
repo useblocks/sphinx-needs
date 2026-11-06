@@ -246,3 +246,98 @@ def test_a_service_s_declared_full_title_keeps_its_generated_id(test_app):
     expected = "R_" + hashlib.sha1(b"A much longer title").hexdigest().upper()[:5]
     assert list(needs) == [expected]
     assert needs[expected]["full_title"] == "A much longer title"
+
+
+SERVICE_GIVEN_FULL_TITLE = """\
+from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.services.base import BaseService
+
+
+class FullTitleService(BaseService):
+    options = []
+
+    def __init__(self, app, name, config, **kwargs):
+        super().__init__()
+
+    def request(self, options):
+        return [{{"title": "short", "type": "req", "full_title": {full_title!r}}}]
+
+    def debug(self, options):
+        return {{}}
+
+
+def _register(app, env, docnames):
+    services = SphinxNeedsData(env).get_or_create_services()
+    if "full" not in services.services:
+        services.register("full", FullTitleService)
+
+
+def setup(app):
+    app.connect("env-before-read-docs", _register)
+    return {{"parallel_read_safe": True}}
+"""
+
+
+def _service_full_title_project(declaration: str, full_title: object) -> dict:
+    return {
+        "buildername": "html",
+        "files": [
+            (
+                Path("conf.py"),
+                "import sys\nfrom pathlib import Path\n\n"
+                "sys.path.insert(0, str(Path(__file__).parent))\n"
+                'sys.modules.pop("given_full_title_service", None)\n'
+                'extensions = ["sphinx_needs", "given_full_title_service"]\n'
+                f"{declaration}\n",
+            ),
+            (
+                Path("given_full_title_service.py"),
+                SERVICE_GIVEN_FULL_TITLE.format(full_title=full_title),
+            ),
+            (
+                Path("index.rst"),
+                "Ids\n===\n\n.. req:: target\n   :id: REQ_T\n\n.. needservice:: full\n",
+            ),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    ("test_app", "kept"),
+    [
+        pytest.param(
+            _service_full_title_project('needs_links = {"full_title": {}}', ["REQ_T"]),
+            ["REQ_T"],
+            id="link-type-list",
+        ),
+        pytest.param(
+            _service_full_title_project('needs_links = {"full_title": {}}', "REQ_T"),
+            ["REQ_T"],
+            id="link-type-string",
+        ),
+        pytest.param(
+            _service_full_title_project(
+                'needs_fields = {"full_title": {"schema": {"type": "array", '
+                '"items": {"type": "string"}}}}',
+                ["a", "b"],
+            ),
+            ["a", "b"],
+            id="array-field",
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_a_service_s_full_title_is_the_id_s_only_when_a_string_and_no_link(
+    test_app, kept
+):
+    """A service datum without an id whose ``full_title`` is a link type of the project,
+    or a field that is not a string, is the link or the field alone: the need is
+    created, with the id of its title. A list ended the build with ``AttributeError:
+    'list' object has no attribute 'encode'``, and a string link gave the id of the
+    link's value (#2479)."""
+    test_app.build()
+    assert build_warnings(test_app) == []
+    needs = SphinxNeedsData(test_app.env).get_needs_view()
+    expected = "R_" + hashlib.sha1(b"short").hexdigest().upper()[:5]
+    assert sorted(needs) == sorted(["REQ_T", expected])
+    assert needs[expected]["full_title"] == kept
