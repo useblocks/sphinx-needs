@@ -192,6 +192,12 @@ too). A reader still reads a `null` a writer did not leave out, as `null`.
 Enforced by: corpus: `a-field-left-out-is-unset-and-a-null-is-read-as-null`;
 `test_reader.py::test_a_null_value_of_a_draft_is_read`.
 
+Besides which of two records with one id is read (§3.1), the order of the records and of
+keys carries no meaning. sphinx-needs writes the records in the order of their ids, the
+envelope's keys and a record's in the order of the examples above, and a hop's in the
+order of its `NeedSourceHop` fields (`kind`, `origin`, `physical`, `semantic`,
+`document`, `language`), so that a file reads the same from build to build.
+
 ### 3.1 Which records are read
 
 1. A value of `needs` that is not an object is skipped (`record_not_object`, path

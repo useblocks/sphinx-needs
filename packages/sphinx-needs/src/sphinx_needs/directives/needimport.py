@@ -20,7 +20,10 @@ from sphinx_needs._need_source import (
     directive_hops,
     directive_line,
     physical_for,
+    upstream_hops,
+    writing_project,
 )
+from sphinx_needs._needsfile_v2a1 import READ_DRAFTS
 from sphinx_needs.api import InvalidNeedException, ingest_need_record
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
@@ -93,7 +96,7 @@ class NeedimportDirective(SphinxDirective):
         if url.scheme and (url.netloc or url.scheme == "file"):
             # download needs.json
             logger.info(f"Downloading needs.json from url {need_import_path}")
-            source_name = need_import_path
+            source_name = source_label = need_import_path
             imported = NeedSourceHop(
                 kind="file",
                 physical=NeedSourcePhysical(url=need_import_path),
@@ -123,6 +126,12 @@ class NeedimportDirective(SphinxDirective):
                 physical=physical_for(self.env.srcdir, correct_need_import_path),
                 language=os.path.splitext(correct_need_import_path)[1] or None,
             )
+            # the file relative to the source directory, as its hop records it
+            source_label = (
+                imported.physical.path
+                if imported.physical is not None and imported.physical.path is not None
+                else correct_need_import_path
+            )
 
             # noted before the file is looked for, so that a file that is missing or
             # cannot be read now is read again once it exists or changes (Sphinx takes
@@ -137,7 +146,9 @@ class NeedimportDirective(SphinxDirective):
             read = partial(exchange.load, correct_need_import_path)
 
         try:
-            selected = read().select_version(version)
+            # a draft 2a1 file is read too: reading it is harmless, only writing one is
+            # behind needs_json_format_version
+            selected = read().select_version(version, drafts=READ_DRAFTS)
         except exchange.ExchangeError as err:
             return self._refuse(
                 f"Could not load needs import file {source_name}: {err.message}",
@@ -158,6 +169,10 @@ class NeedimportDirective(SphinxDirective):
 
         # note this is not exactly NeedsInfoType, because the export removes/adds some keys
         all_needs: dict[str, dict[str, Any]] = {r.key: r.fields for r in records}
+        # a 2a1 record's hops, the need's upstream: a hop with no origin is the writing
+        # project's, else the file's as this directive names it
+        origin = writing_project(selected.data) or source_label
+        upstream = {r.key: r.source for r in records}
         needs_list = all_needs
 
         if ids := self.options.get("ids"):
@@ -254,7 +269,7 @@ class NeedimportDirective(SphinxDirective):
         # then the file and page the directive is written on
         hops = directive_hops(self, first=(imported,))
         need_nodes = []
-        for need_params in needs_list.values():
+        for key, need_params in needs_list.items():
             record = dict(need_params)
             # ``ingest_need_record`` drops the keys the project does not know AFTER
             # these are written; every override option (and ``hide``) is a field the
@@ -286,6 +301,7 @@ class NeedimportDirective(SphinxDirective):
                 lineno=resolved or self.lineno,
                 parser_lineno=self.lineno,
                 is_import=True,
+                upstream=upstream_hops(upstream[key], origin=origin),
             )
 
             # a template is a file of the importing project, written in the page's

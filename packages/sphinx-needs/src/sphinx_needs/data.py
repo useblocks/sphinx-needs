@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 25
+ENV_DATA_VERSION: Final = 26
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -189,6 +189,11 @@ parser's line as its ``lineno``, shifted by ``rst_prolog`` and by every line an 
 above the directive, or the include it is written in, inserts (#1349). The sources do
 not change, so without the bump an upgraded build would keep the parser's lines on the
 pages whose sources did not change.
+
+Version 26 adds a field to every stored need source: ``NeedItemSource.upstream``, the hops
+a need read from a ``needs.json`` of the experimental format 2a1 was recorded with in the
+project that wrote it (empty for every other need). A source pickled by version 25 has no
+such field.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

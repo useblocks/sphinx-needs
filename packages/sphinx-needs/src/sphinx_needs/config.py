@@ -1659,6 +1659,11 @@ class NeedsSphinxConfig:
     If False, link conditions are stripped and only the target ID is written (e.g. 'NEED-1').
     Backlink fields are unaffected as they never carry conditions.
     """
+    json_format_version: int | str = field(
+        default=1, metadata={"rebuild": "html", "types": (int, str)}
+    )
+    """The format version of the ``needs.json`` the needs builders write: ``1`` (the
+    default), or ``"2a1"``, the experimental draft of version 2."""
     build_needumls: str = field(
         default="", metadata={"rebuild": "html", "types": (str,)}
     )

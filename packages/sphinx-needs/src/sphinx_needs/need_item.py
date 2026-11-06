@@ -88,8 +88,9 @@ class NeedItemSource:
     provisional, as every hop is), :meth:`on_page`, and reading a source through
     :class:`NeedItemSourceProtocol` (``dict_repr``). **Provisional**: the constructor
     itself and its keywords (``hops``, ``lineno``, ``lineno_content``,
-    ``parser_lineno``, ``is_import``), like the hop types, until ``needs.json`` carries
-    them: through 9.x a minor release only adds to them (a new optional keyword), and a
+    ``parser_lineno``, ``is_import``, ``upstream``), like the hop types, until the final
+    ``needs.json`` format version 2 carries them (the draft ``"2a1"`` does not end that):
+    through 9.x a minor release only adds to them (a new optional keyword), and a
     rename, a removal or a change of a keyword's meaning or type waits for 10.0, because
     published sibling extensions construct them (see :ref:`api_public`). They are the
     stored legacy facts a later release turns into projections of the hops, and are
@@ -135,6 +136,12 @@ class NeedItemSource:
     """
     is_import: bool
     """Whether :ref:`needimport` read the need from a ``needs.json``."""
+    upstream: tuple[NeedSourceHop, ...]
+    """The hops the need's text came through before this build read it, innermost
+    first: those a ``needs.json`` of the experimental format 2a1 records for it, read by
+    :ref:`needimport` or :ref:`needs_external_needs`, each with the ``origin`` of the
+    project it belongs to (**provisional**). They come before ``hops``, which are this
+    build's; no legacy key and no ``c.source`` facet reads them."""
     dict_repr: NeedsSourceInfoType = field(init=False)
 
     def __init__(
@@ -145,6 +152,7 @@ class NeedItemSource:
         lineno_content: int | None = None,
         parser_lineno: int | None = None,
         is_import: bool = False,
+        upstream: Iterable[NeedSourceHop] = (),
     ) -> None:
         hops = checked_hops(hops)
         _set(
@@ -154,6 +162,7 @@ class NeedItemSource:
             lineno_content=lineno_content,
             parser_lineno=parser_lineno,
             is_import=is_import,
+            upstream=checked_hops(upstream),
             dict_repr=_legacy_keys(hops, lineno, lineno_content, is_import),
         )
 
