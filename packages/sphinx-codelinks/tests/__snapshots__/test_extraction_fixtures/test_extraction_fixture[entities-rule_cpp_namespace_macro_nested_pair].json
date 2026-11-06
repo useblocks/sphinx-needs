@@ -1,0 +1,90 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 4
+      },
+      "end": {
+        "row": 5,
+        "column": 41
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 7,
+      "end": 7,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "lib::f",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "In the outer pair",
+      "id": "IMPL_R_NSN_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 4
+      },
+      "end": {
+        "row": 8,
+        "column": 42
+      }
+    },
+    "tagged_scope": "void g() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 10,
+      "end": 10,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "lib::detail::g",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "namespace",
+          "name": "detail"
+        },
+        {
+          "kind": "function",
+          "name": "g"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "In the nested pair",
+      "id": "IMPL_R_NSN_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

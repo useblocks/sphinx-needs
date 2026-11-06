@@ -1,0 +1,90 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 4
+      },
+      "end": {
+        "row": 5,
+        "column": 48
+      }
+    },
+    "tagged_scope": "int f(int x) { return x; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 7,
+      "end": 7,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "lib::detail::f",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "namespace",
+          "name": "detail"
+        },
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "In the macro's namespace",
+      "id": "IMPL_R_NSM_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 4
+      },
+      "end": {
+        "row": 8,
+        "column": 52
+      }
+    },
+    "tagged_scope": "namespace {\nvoid g() {}\n}",
+    "scope": {
+      "kind": "namespace_definition",
+      "start": 10,
+      "end": 12,
+      "language": "cpp",
+      "entity_kind": "namespace",
+      "qualified_name": "lib::(anonymous namespace)",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "namespace",
+          "name": "(anonymous namespace)"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "An anonymous namespace there",
+      "id": "IMPL_R_NSM_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "namespace_definition"
+  }
+]

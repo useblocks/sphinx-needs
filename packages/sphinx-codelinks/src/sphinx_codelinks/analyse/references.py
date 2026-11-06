@@ -166,8 +166,9 @@ def need_id_ref_records(
         scope_rows: tuple[int, int] | None = None
         node = ref.tagged_scope
         if node is not None:
-            if node.text:
-                lines = node.text.decode("utf-8").splitlines()
+            written = ref.tagged_scope_text()
+            if written:
+                lines = written.decode("utf-8").splitlines()
                 scope = lines[0].strip() if lines else None
             scope_rows = (node.start_point.row + 1, node.end_point.row + 1)
         template = NeedIdRef(

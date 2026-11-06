@@ -40,6 +40,19 @@
 # Rust names follow the compiler's v0 form for trait impls (``<Widget as Shape>::area``)
 # and the path form for inherent methods (``Widget::new``); a generic function or impl
 # keeps its parameters as written. The ``rule_*`` cases pin one attachment rule each.
+#
+# The C++ naming cases at the end of the file (inline namespaces, friends, partial
+# specialisations, in-file namespace macros) were measured with clang.cindex from the
+# libclang 18.1.1 wheel (the root ``codelinks-libclang`` group), each source parsed with
+# ``-x c++ -std=c++20``. A function's name is clang's own: the cursor pretty-printed
+# (``clang_getCursorPrettyPrinted``) with ``FullyQualifiedName`` and ``TerseOutput``,
+# which leaves an inline namespace out unless that is ambiguous; a namespace's or a
+# class's is its semantic parents' names and its own, an inline namespace left out. A
+# partial specialisation is spelled with its own parameters, its definition's where a
+# forward declaration names others (clang's cursor ``P<T, 4>``, where the printed name
+# of a member reads ``P<type-parameter-0-0, 4>``),
+# and every name is squeezed: no whitespace but one space between two identifier
+# characters.
 
 corpus_cpp:
   # p2 widget.cpp: 31 markers.
@@ -1821,3 +1834,471 @@ rule_name_chain_rust_impl_in_module:
     - {id: IMPL_R_MOD_4, outcome: exact, entity_kind: "method", qualified_name: "m::n::H::make", start: 29, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::m::n::H>::make"}
     - {id: IMPL_R_MOD_5, outcome: exact, entity_kind: "method", qualified_name: "x::P::new", start: 45, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::x::P>::new"}
     - {id: IMPL_R_MOD_6, outcome: exact, entity_kind: "method", qualified_name: "Q::q", start: 52, mechanism: leading, compiler: "rustc 1.97 v0, nm -C: <t::Q>::q"}
+
+rule_cpp_inline_namespace_is_left_out:
+  # An inline namespace adds nothing to the names of what it holds, as clang prints a
+  # name; the inline namespace itself keeps its own name, and so does the inline part
+  # of a C++20 nested namespace name.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib {
+    inline namespace v1 {
+    // @A function in an inline namespace, IMPL_R_INL_1, impl
+    void f() {}
+    }
+    // @The inline namespace itself, IMPL_R_INL_2, impl
+    inline namespace v2 {
+    void g() {}
+    }
+    }
+    namespace lib::inline v3 {
+    // @A function in an inline part of a nested name, IMPL_R_INL_3, impl
+    void z() {}
+    }
+  truth:
+    - {id: IMPL_R_INL_1, outcome: exact, entity_kind: "function", qualified_name: "lib::f", start: 4, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::f()"}
+    - {id: IMPL_R_INL_2, outcome: exact, entity_kind: "namespace", qualified_name: "lib::v2", start: 7, mechanism: leading, compiler: "clang.cindex 18.1.1: inline NAMESPACE v2, its semantic parent NAMESPACE lib (its own name kept)"}
+    - {id: IMPL_R_INL_3, outcome: exact, entity_kind: "function", qualified_name: "lib::z", start: 13, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::z()"}
+
+rule_cpp_inline_namespace_kept_where_names_collide:
+  # Where leaving an inline namespace out would give two definitions of the file one
+  # name and parameters, each keeps it, as clang does.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib {
+    inline namespace v1 {
+    // @One of two, IMPL_R_INLC_1, impl
+    void h(int) {}
+    }
+    inline namespace v2 {
+    // @The other, IMPL_R_INLC_2, impl
+    void h(int) {}
+    }
+    }
+  truth:
+    - {id: IMPL_R_INLC_1, outcome: exact, entity_kind: "function", qualified_name: "lib::v1::h", start: 4, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v1::h(int) (kept: lib::h would name two functions)"}
+    - {id: IMPL_R_INLC_2, outcome: exact, entity_kind: "function", qualified_name: "lib::v2::h", start: 8, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v2::h(int) (kept: lib::h would name two functions)"}
+
+rule_cpp_friend_is_named_in_its_namespace:
+  # A function a friend declaration declares or defines is named in its innermost
+  # enclosing namespace, not in the class.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace ns {
+    struct A {
+        friend void touch(A&) {
+            // @Inside a hidden friend, IMPL_R_FR_1, impl
+        }
+        friend bool operator==(const A&, const A&);
+    };
+    // @The friend's definition, IMPL_R_FR_2, impl
+    bool operator==(const A&, const A&) { return true; }
+    }
+  truth:
+    - {id: IMPL_R_FR_1, outcome: exact, entity_kind: "function", qualified_name: "ns::touch", start: 3, mechanism: enclosing, compiler: "clang.cindex 18.1.1, fully qualified: void ns::touch(A &)"}
+    - {id: IMPL_R_FR_2, outcome: exact, entity_kind: "operator", qualified_name: "ns::operator==", start: 9, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: bool ns::operator==(const A &, const A &), declared a friend on line 6"}
+
+rule_cpp_friends_keep_their_class_where_names_collide:
+  # Two classes' hidden friends of one name and parameters: clang names both in the
+  # namespace, one name for two definitions, so each keeps its classes (fail closed: a
+  # marker never credits another class's function).
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace ns {
+    struct List { struct iterator {
+        friend bool operator==(const iterator&, const iterator&) {
+            // @List's, IMPL_R_FRC_1, impl
+            return true;
+        }
+    }; };
+    struct Map { struct iterator {
+        friend bool operator==(const iterator&, const iterator&) {
+            // @Map's, IMPL_R_FRC_2, impl
+            return false;
+        }
+    }; };
+    }
+  truth:
+    - {id: IMPL_R_FRC_1, outcome: fallback, entity_kind: "operator", qualified_name: "ns::List::iterator::operator==", start: 3, mechanism: enclosing, compiler: "clang.cindex 18.1.1, fully qualified: bool ns::operator==(const iterator &, const iterator &) for both hidden friends -- one name for two definitions, so each keeps its classes"}
+    - {id: IMPL_R_FRC_2, outcome: fallback, entity_kind: "operator", qualified_name: "ns::Map::iterator::operator==", start: 9, mechanism: enclosing, compiler: "clang.cindex 18.1.1, fully qualified: bool ns::operator==(const iterator &, const iterator &) for both hidden friends -- one name for two definitions, so each keeps its classes"}
+
+rule_cpp_partial_specialisation_keeps_its_arguments:
+  # A partial specialisation's class name keeps its arguments, squeezed and without the
+  # comments inside the list, as an explicit specialisation's does.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    template <typename T, int N> struct P {
+        // @The primary's member, IMPL_R_PS_1, impl
+        void fill();
+    };
+    // @The partial specialisation, IMPL_R_PS_2, impl
+    template <typename T> struct P<T, /* four */ 4> {
+        // @Its member, IMPL_R_PS_3, impl
+        void fill();
+    };
+  truth:
+    - {id: IMPL_R_PS_1, outcome: exact, entity_kind: "method", qualified_name: "P::fill", start: 3, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void P::fill()"}
+    - {id: IMPL_R_PS_2, outcome: exact, entity_kind: "struct", qualified_name: "P<T,4>", start: 6, mechanism: leading, compiler: "clang.cindex 18.1.1: CLASS_TEMPLATE_PARTIAL_SPECIALIZATION P<T, 4>"}
+    - {id: IMPL_R_PS_3, outcome: exact, entity_kind: "method", qualified_name: "P<T,4>::fill", start: 8, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void P<type-parameter-0-0, 4>::fill(), its parent spelled P<T, 4>"}
+
+rule_cpp_out_of_line_qualifier:
+  # Out of line, a qualifier keeps its arguments unless they are exactly the template
+  # header's parameter names; one the same as a partial specialisation of the file but
+  # for its parameter names is spelled as that one; one that names none of the
+  # header's parameters takes no header.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    template <typename T, int N> struct P { void fill(); };
+    template <typename T> struct P<T, 4> { void fill(); };
+    template <typename T> struct Box { void get(); };
+    template <> struct Box<int> { void get(); };
+    template <typename T> struct Outer {};
+    template <> struct Outer<int> { template <typename U> struct Inner { void n(); }; };
+    // @A partial specialisation's member with its parameter renamed, IMPL_R_OOL_1, impl
+    template <typename U> void P<U, 4>::fill() {}
+    // @The primary's member, IMPL_R_OOL_2, impl
+    template <typename T, int N> void P<T, N>::fill() {}
+    // @A primary template's member, IMPL_R_OOL_3, impl
+    template <typename X> void Box<X>::get() {}
+    // @An explicit specialisation's member, IMPL_R_OOL_4, impl
+    void Box<int>::get() {}
+    // @A member template of an explicit specialisation, IMPL_R_OOL_5, impl
+    template <typename U> void Outer<int>::Inner<U>::n() {}
+  truth:
+    - {id: IMPL_R_OOL_1, outcome: exact, entity_kind: "method", qualified_name: "P<T,4>::fill", start: 8, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void P<type-parameter-0-0, 4>::fill(), its parent the partial specialisation P<T, 4>"}
+    - {id: IMPL_R_OOL_2, outcome: exact, entity_kind: "method", qualified_name: "P::fill", start: 10, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void P::fill()"}
+    - {id: IMPL_R_OOL_3, outcome: exact, entity_kind: "method", qualified_name: "Box::get", start: 12, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void Box::get()"}
+    - {id: IMPL_R_OOL_4, outcome: exact, entity_kind: "method", qualified_name: "Box<int>::get", start: 14, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void Box<int>::get()"}
+    - {id: IMPL_R_OOL_5, outcome: exact, entity_kind: "method", qualified_name: "Outer<int>::Inner::n", start: 16, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void Outer<int>::Inner::n()"}
+
+rule_cpp_namespace_macro:
+  # A namespace macro the file defines itself is read: what lies between its
+  # invocations is named in the namespaces it opens (an inline one left out), an
+  # anonymous namespace there too.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #define LIB_NAMESPACE_BEGIN namespace lib { inline namespace v3 {
+    #define LIB_NAMESPACE_END }}
+
+    LIB_NAMESPACE_BEGIN
+    namespace detail {
+    // @In the macro's namespace, IMPL_R_NSM_1, impl
+    int f(int x) { return x; }
+    }
+    // @An anonymous namespace there, IMPL_R_NSM_2, impl
+    namespace {
+    void g() {}
+    }
+    LIB_NAMESPACE_END
+  truth:
+    - {id: IMPL_R_NSM_1, outcome: exact, entity_kind: "function", qualified_name: "lib::detail::f", start: 7, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: int lib::detail::f(int x)"}
+    - {id: IMPL_R_NSM_2, outcome: exact, entity_kind: "namespace", qualified_name: "lib::(anonymous namespace)", start: 10, mechanism: leading, compiler: "clang.cindex 18.1.1: an anonymous NAMESPACE, its semantic parents inline NAMESPACE v3 and NAMESPACE lib (the inline one left out)"}
+
+rule_cpp_namespace_macro_nested_pair:
+  # A pair inside another is named in both, the outer one's namespaces first.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #define LIB_NAMESPACE_BEGIN namespace lib {
+    #define LIB_NAMESPACE_END }
+    #define DETAIL_NAMESPACE_BEGIN namespace detail {
+    #define DETAIL_NAMESPACE_END }
+    LIB_NAMESPACE_BEGIN
+    // @In the outer pair, IMPL_R_NSN_1, impl
+    void f() {}
+    DETAIL_NAMESPACE_BEGIN
+    // @In the nested pair, IMPL_R_NSN_2, impl
+    void g() {}
+    DETAIL_NAMESPACE_END
+    LIB_NAMESPACE_END
+  truth:
+    - {id: IMPL_R_NSN_1, outcome: exact, entity_kind: "function", qualified_name: "lib::f", start: 7, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::f()"}
+    - {id: IMPL_R_NSN_2, outcome: exact, entity_kind: "function", qualified_name: "lib::detail::g", start: 10, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::detail::g()"}
+
+rule_cpp_namespace_macro_short_opening:
+  # An opening shorter than 12 characters is left as written, so a marker above it is
+  # attached as before (to no entity here), and what lies inside is named without its
+  # namespace.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #define NS_OPEN namespace lib {
+    #define NS_SHUT }
+    int x;
+    // @Before a short opening, IMPL_R_NSS_1, impl
+    NS_OPEN
+    struct S {};
+    // @Inside a short pair, IMPL_R_NSS_2, impl
+    void f() {}
+    NS_SHUT
+  truth:
+    - {id: IMPL_R_NSS_1, outcome: fallback, entity_kind: null, qualified_name: null, start: null, compiler: "clang.cindex 18.1.1: the comment is before NAMESPACE lib, which no entity stands for -- the opening is shorter than 12 characters, left as written, and the marker attached as before"}
+    - {id: IMPL_R_NSS_2, outcome: fallback, entity_kind: "function", qualified_name: "f", start: 8, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::f() -- the opening is shorter than 12 characters and left as written, so the name lacks lib"}
+
+rule_cpp_namespace_macro_pair_inside_a_scope:
+  # A pair inside a namespace or a class names nothing: what lies inside is named
+  # without the macro's namespace.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #define LIB_NAMESPACE_BEGIN namespace lib {
+    #define LIB_NAMESPACE_END }
+    namespace outer {
+    LIB_NAMESPACE_BEGIN
+    // @Between a pair inside a namespace, IMPL_R_NSI_1, impl
+    void h();
+    LIB_NAMESPACE_END
+    }
+    struct S {
+    LIB_NAMESPACE_BEGIN
+        void m();
+        // @Between a pair inside a class, IMPL_R_NSI_2, impl
+        void n();
+    LIB_NAMESPACE_END
+    };
+  truth:
+    - {id: IMPL_R_NSI_1, outcome: fallback, entity_kind: "function", qualified_name: "outer::h", start: 6, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void outer::lib::h() -- a pair inside a namespace names nothing"}
+    - {id: IMPL_R_NSI_2, outcome: fallback, entity_kind: "method", qualified_name: "S::n", start: 13, mechanism: leading, compiler: "clang.cindex 18.1.1: error, a namespace cannot be defined in a class (recovered as void lib::n()) -- a pair inside a class names nothing"}
+
+rule_cpp_namespace_macro_not_read_as_a_block:
+  # An opening the tree does not read as the block it is rewritten to (a macro
+  # statement on the line before) is left as written: the functions inside are still
+  # definitions, named without the macro's namespace.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #define LIB_NAMESPACE_BEGIN namespace lib {
+    #define LIB_NAMESPACE_END }
+    #define WARNINGS_PUSH
+    WARNINGS_PUSH
+    LIB_NAMESPACE_BEGIN
+    int f() { return 0; }
+    // @After a macro statement, IMPL_R_NSX_1, impl
+    int g() { return 1; }
+    LIB_NAMESPACE_END
+  truth:
+    - {id: IMPL_R_NSX_1, outcome: fallback, entity_kind: "function", qualified_name: "g", start: 8, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: int lib::g() -- the opening is not read as a block (a macro statement before it), so the file is read as written"}
+
+rule_cpp_namespace_macro_used_other_than_alone:
+  # A macro the code also uses beside other code is not read.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    #define LIB_NAMESPACE_BEGIN namespace lib {
+    #define LIB_NAMESPACE_END }
+    LIB_NAMESPACE_BEGIN
+    void f() {}
+    // @Between invocations of a macro also used beside code, IMPL_R_NSU_1, impl
+    void g() {}
+    LIB_NAMESPACE_END
+    LIB_NAMESPACE_BEGIN void h(); LIB_NAMESPACE_END
+  truth:
+    - {id: IMPL_R_NSU_1, outcome: fallback, entity_kind: "function", qualified_name: "g", start: 6, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::g() -- the macro is also used beside code (line 8), so it is not read"}
+
+rule_cpp_qualifier_through_an_inline_namespace:
+  # A function written with a qualifier through one of the file's own inline
+  # namespaces is named without it, as its declaration is, except where two
+  # definitions of the file would then share a name and parameters.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib {
+    inline namespace v1 {
+    // @Declared in an inline namespace, IMPL_R_INLQ_1, impl
+    void f(int);
+    void g();
+    }
+    inline namespace v2 {
+    void g();
+    }
+    }
+    // @Defined through the inline namespace, IMPL_R_INLQ_2, impl
+    void lib::v1::f(int) {}
+    // @One of two siblings' definitions, IMPL_R_INLQ_3, impl
+    void lib::v1::g() {}
+    // @The other's, IMPL_R_INLQ_4, impl
+    void lib::v2::g() {}
+  truth:
+    - {id: IMPL_R_INLQ_1, outcome: exact, entity_kind: "function", qualified_name: "lib::f", start: 4, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::f(int)"}
+    - {id: IMPL_R_INLQ_2, outcome: exact, entity_kind: "method", qualified_name: "lib::f", start: 12, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::f(int) (the syntax reads the namespace qualifier as a class: method)"}
+    - {id: IMPL_R_INLQ_3, outcome: exact, entity_kind: "method", qualified_name: "lib::v1::g", start: 14, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v1::g() (kept: lib::g would name two functions; the syntax reads the namespace qualifier as a class: method)"}
+    - {id: IMPL_R_INLQ_4, outcome: exact, entity_kind: "method", qualified_name: "lib::v2::g", start: 16, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v2::g() (kept: lib::g would name two functions; the syntax reads the namespace qualifier as a class: method)"}
+
+rule_cpp_pack_beside_a_plain_partial_specialisation:
+  # A pack is not a plain parameter: an out-of-line qualifier with two arguments is
+  # spelled as the two-parameter partial specialisation, never as the one with a
+  # pack.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    template <typename... Ts> struct S;
+    template <typename T, typename... Ts> struct S<T, Ts...> {
+        // @The pack's member, IMPL_R_PACK_1, impl
+        void f() {}
+    };
+    template <typename T, typename U> struct S<T, U> { void f(); };
+    // @The plain specialisation's member out of line, IMPL_R_PACK_2, impl
+    template <typename A, typename B> void S<A, B>::f() {}
+  truth:
+    - {id: IMPL_R_PACK_1, outcome: exact, entity_kind: "method", qualified_name: "S<T,Ts...>::f", start: 4, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void S<type-parameter-0-0, type-parameter-0-1...>::f(), its parent spelled S<T, Ts...>"}
+    - {id: IMPL_R_PACK_2, outcome: exact, entity_kind: "method", qualified_name: "S<T,U>::f", start: 8, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void S<type-parameter-0-0, type-parameter-0-1>::f(), its parent the partial specialisation S<T, U>"}
+
+rule_cpp_forward_declared_partial_specialisation:
+  # A forward declaration of a partial specialisation never sets the spelling: the
+  # specialisation with a body does.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    template <class T, int N> struct P {};
+    template <class T> struct P<T, 4>;
+    template <class U> struct P<U, 4> {
+        // @Declared in the specialisation, IMPL_R_FWD_1, impl
+        void fill();
+    };
+    // @Defined out of line, IMPL_R_FWD_2, impl
+    template <class V> void P<V, 4>::fill() {}
+  truth:
+    - {id: IMPL_R_FWD_1, outcome: exact, entity_kind: "method", qualified_name: "P<U,4>::fill", start: 5, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void P<type-parameter-0-0, 4>::fill(), its parent the definition P<U, 4> (line 3), not the forward declaration P<T, 4>"}
+    - {id: IMPL_R_FWD_2, outcome: exact, entity_kind: "method", qualified_name: "P<U,4>::fill", start: 8, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void P<type-parameter-0-0, 4>::fill(), its parent the definition P<U, 4> (line 3), not the forward declaration P<T, 4>"}
+
+rule_cpp_member_of_a_kept_class:
+  # A class kept apart by its inline namespace (another class of its name is in the
+  # parent) keeps its full chain for its members too, in the class and out of line.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib {
+    inline namespace v1 {
+    struct Widget {
+        // @A member of a class kept apart, IMPL_R_KEPT_1, impl
+        void draw();
+    };
+    }
+    struct Widget { void resize() {} };
+    }
+    // @Its definition out of line, IMPL_R_KEPT_2, impl
+    void lib::v1::Widget::draw() {}
+  truth:
+    - {id: IMPL_R_KEPT_1, outcome: exact, entity_kind: "method", qualified_name: "lib::v1::Widget::draw", start: 5, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v1::Widget::draw() (kept: lib::Widget would name two classes)"}
+    - {id: IMPL_R_KEPT_2, outcome: exact, entity_kind: "method", qualified_name: "lib::v1::Widget::draw", start: 11, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v1::Widget::draw() (kept: lib::Widget would name two classes)"}
+
+rule_cpp_class_head_through_an_inline_namespace:
+  # A class head written through one of the file's inline namespaces leaves it out,
+  # and so do its members, in the class and out of line.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib { inline namespace v2 { struct X; } }
+    // @The class defined through the inline namespace, IMPL_R_CLS_1, impl
+    struct lib::v2::X {
+        // @Its member, IMPL_R_CLS_2, impl
+        void m();
+    };
+    // @The member's definition, IMPL_R_CLS_3, impl
+    void lib::v2::X::m() {}
+  truth:
+    - {id: IMPL_R_CLS_1, outcome: exact, entity_kind: "struct", qualified_name: "lib::X", start: 3, mechanism: leading, compiler: "clang.cindex 18.1.1: STRUCT_DECL X, its semantic parents inline NAMESPACE v2 and NAMESPACE lib (the inline one left out)"}
+    - {id: IMPL_R_CLS_2, outcome: exact, entity_kind: "method", qualified_name: "lib::X::m", start: 5, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::X::m()"}
+    - {id: IMPL_R_CLS_3, outcome: exact, entity_kind: "method", qualified_name: "lib::X::m", start: 8, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::X::m()"}
+
+rule_cpp_pimpl_through_an_inline_namespace:
+  # A nested class defined out of its class through an inline namespace (a pimpl)
+  # leaves it out too.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib { inline namespace v1 { struct Widget { struct Impl; void draw(); }; } }
+    struct lib::v1::Widget::Impl {
+        // @The implementation's member, IMPL_R_PIMPL_1, impl
+        void run();
+    };
+    // @Its definition, IMPL_R_PIMPL_2, impl
+    void lib::v1::Widget::Impl::run() {}
+    // @The outer class's member defined through the inline namespace, IMPL_R_PIMPL_3, impl
+    void lib::v1::Widget::draw() {}
+  truth:
+    - {id: IMPL_R_PIMPL_1, outcome: exact, entity_kind: "method", qualified_name: "lib::Widget::Impl::run", start: 4, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::Widget::Impl::run()"}
+    - {id: IMPL_R_PIMPL_2, outcome: exact, entity_kind: "method", qualified_name: "lib::Widget::Impl::run", start: 7, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::Widget::Impl::run()"}
+    - {id: IMPL_R_PIMPL_3, outcome: exact, entity_kind: "method", qualified_name: "lib::Widget::draw", start: 9, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::Widget::draw()"}
+
+rule_cpp_conversion_operator_through_an_inline_namespace:
+  # A conversion operator's qualifier through one of the file's inline namespaces
+  # leaves it out, as its declaration in the class does.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib { inline namespace v1 { struct W {
+        // @Declared in the class, IMPL_R_CONVI_1, impl
+        operator int() const;
+    }; } }
+    // @Defined through the inline namespace, IMPL_R_CONVI_2, impl
+    lib::v1::W::operator int() const { return 0; }
+  truth:
+    - {id: IMPL_R_CONVI_1, outcome: exact, entity_kind: "operator", qualified_name: "lib::W::operator int", start: 3, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: lib::W::operator int() const"}
+    - {id: IMPL_R_CONVI_2, outcome: exact, entity_kind: "operator", qualified_name: "lib::W::operator int", start: 6, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: lib::W::operator int() const"}
+
+rule_cpp_friend_of_a_kept_class:
+  # A class kept apart by its inline namespace keeps its full chain for its members,
+  # but not for a friend: a friend is named in its namespace.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib {
+    inline namespace v1 { struct Widget {
+        friend void swap(Widget&, Widget&) {
+            // @Inside a kept class's hidden friend, IMPL_R_FRK_1, impl
+        }
+        void draw() {
+            // @Inside a kept class's member, IMPL_R_FRK_2, impl
+        }
+    }; }
+    struct Widget { void resize() {} };
+    }
+  truth:
+    - {id: IMPL_R_FRK_1, outcome: exact, entity_kind: "function", qualified_name: "lib::swap", start: 3, mechanism: enclosing, compiler: "clang.cindex 18.1.1, fully qualified: void lib::swap(Widget &, Widget &)"}
+    - {id: IMPL_R_FRK_2, outcome: exact, entity_kind: "method", qualified_name: "lib::v1::Widget::draw", start: 6, mechanism: enclosing, compiler: "clang.cindex 18.1.1, fully qualified: void lib::v1::Widget::draw() (kept: lib::Widget would name two classes)"}
+
+rule_cpp_reopened_inline_namespace:
+  # A namespace that reopens one of the file's inline namespaces without inline is
+  # inline too: what it holds, and a definition written through it, leave it out.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    namespace lib { inline namespace v1 { void f(); } }
+    namespace lib { namespace v1 {
+    // @Declared in the reopened inline namespace, IMPL_R_REOP_1, impl
+    void g();
+    } }
+    // @Defined through it, IMPL_R_REOP_2, impl
+    void lib::v1::g() {}
+  truth:
+    - {id: IMPL_R_REOP_1, outcome: exact, entity_kind: "function", qualified_name: "lib::g", start: 4, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::g() (warning: inline namespace reopened as a non-inline namespace)"}
+    - {id: IMPL_R_REOP_2, outcome: exact, entity_kind: "method", qualified_name: "lib::g", start: 7, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::g() (the syntax reads the namespace qualifier as a class: method)"}

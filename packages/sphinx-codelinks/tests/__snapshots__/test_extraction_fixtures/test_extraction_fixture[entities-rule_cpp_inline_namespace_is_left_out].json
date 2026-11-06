@@ -1,0 +1,128 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 57
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 4,
+      "end": 4,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "lib::f",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "A function in an inline namespace",
+      "id": "IMPL_R_INL_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 4
+      },
+      "end": {
+        "row": 5,
+        "column": 51
+      }
+    },
+    "tagged_scope": "inline namespace v2 {\nvoid g() {}\n}",
+    "scope": {
+      "kind": "namespace_definition",
+      "start": 7,
+      "end": 9,
+      "language": "cpp",
+      "entity_kind": "namespace",
+      "qualified_name": "lib::v2",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "namespace",
+          "name": "v2"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "The inline namespace itself",
+      "id": "IMPL_R_INL_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "namespace_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 11,
+        "column": 4
+      },
+      "end": {
+        "row": 11,
+        "column": 69
+      }
+    },
+    "tagged_scope": "void z() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 13,
+      "end": 13,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "lib::z",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "function",
+          "name": "z"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "A function in an inline part of a nested name",
+      "id": "IMPL_R_INL_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]
