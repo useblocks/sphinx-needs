@@ -253,17 +253,29 @@ def test_the_build_warns_at_the_marker_s_line(
     assert "IMPL_ABOVE" in _json(app)["needs"]
 
 
-def test_suppress_warnings_silences_it(tmp_path: Path, make_app: _MakeApp) -> None:
-    """Its own ``suppress_warnings`` entry silences it, and ``codelinks.oneline`` does
-    not: the two are separate sub-types."""
+@pytest.mark.parametrize(
+    ("suppressed", "silenced"),
+    [
+        pytest.param(["codelinks.marker_above_conditional"], True, id="its-own"),
+        pytest.param(["codelinks.oneline"], False, id="oneline"),
+        pytest.param(["codelinks.multiline_need"], False, id="multiline-need"),
+    ],
+)
+def test_suppress_warnings_silences_it(
+    tmp_path: Path, make_app: _MakeApp, suppressed: list[str], silenced: bool
+) -> None:
+    """Its own ``suppress_warnings`` entry silences it, and ``codelinks.oneline`` and
+    ``codelinks.multiline_need`` do not: they are separate sub-types."""
     _project(tmp_path, files={**REFS, **ABOVE})
-    app = _build(
-        tmp_path,
-        make_app,
-        confoverrides={"suppress_warnings": ["codelinks.marker_above_conditional"]},
-    )
+    app = _build(tmp_path, make_app, confoverrides={"suppress_warnings": suppressed})
 
-    assert_no_warnings(app)
+    if silenced:
+        assert_no_warnings(app)
+    else:
+        suffix = " [codelinks.marker_above_conditional]" if _SHOWS_WARNING_TYPES else ""
+        assert build_warnings(app) == [
+            f"src/x.cpp:2: WARNING: {SUB_TYPE}: {MSG}{suffix}"
+        ]
     assert "IMPL_ABOVE" in _json(app)["needs"]
 
 
