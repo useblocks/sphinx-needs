@@ -667,6 +667,11 @@ class NeedLink:
         Supports formats: ``ID``, ``ID.part``, ``ID[condition]``,
         ``ID.part[condition]``, ``ID[[nested_condition]]``.
 
+        The condition opens with the run of ``[`` after the address, and runs to the
+        same number of ``]`` that end the string, so it may itself hold and end in
+        ``]``: ``ID[x == a[0]]`` and ``ID[[x == a[0]]]`` are the condition
+        ``x == a[0]``. An empty condition is no condition.
+
         On malformed brackets (unclosed, trailing text), falls back to
         parsing without a condition. Use :meth:`from_string_with_warnings`
         if you need to detect malformed input.
@@ -708,7 +713,9 @@ class NeedLink:
         while depth < len(rest) and rest[depth] == "[":
             depth += 1
 
-        # Find the matching closing brackets
+        # The condition runs to the closing brackets that end the link, so that it may
+        # itself end in `]` (`REQ[x == a[0]]`). Where the link ends otherwise, the first
+        # closing run is the end of the condition, and the text after it is malformed.
         closing = "]" * depth
         inner = rest[depth:]
         close_pos = inner.find(closing)
@@ -719,8 +726,10 @@ class NeedLink:
             )
             return NeedLink.parse_address(link_str), warnings
 
-        trailing = inner[close_pos + depth :]
-        if trailing:
+        if inner.endswith(closing):
+            close_pos = len(inner) - depth
+        else:
+            trailing = inner[close_pos + depth :]
             warnings.append(
                 f"Unexpected text after closing condition bracket "
                 f"in link {link_str!r}: {trailing!r}."
@@ -752,8 +761,9 @@ class NeedLink:
         """Serialize the link including the condition, e.g. 'NEED-1[cond]' or 'NEED-1.part[cond]'.
 
         Uses bracket depth one greater than the longest consecutive run of
-        ``]`` in the condition, so the result always round-trips through
-        :meth:`from_string`.
+        ``]`` in the condition, so the result reads back through
+        :meth:`from_string` as the same link, unless the condition starts with ``[``.
+        An empty condition is written ``ID[]``, which reads as no condition.
         """
         base = f"{self.id}.{self.part}" if self.part else self.id
         if self.condition is None:
