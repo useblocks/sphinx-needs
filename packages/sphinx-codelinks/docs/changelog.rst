@@ -39,6 +39,9 @@ Fixes
   ``#else`` and ``#endif``, with only comments and no blank line between it and the
   marker. Such a marker's record loses its ``tagged_scope`` and ``scope`` in
   ``marked_content.json``, and the need ``src-trace`` creates from it records no entity.
+  Each such marker now warns at its line (``codelinks.marker_above_conditional``), so a
+  ``-W`` build fails on it until the marker moves or
+  ``suppress_warnings = ["codelinks.marker_above_conditional"]`` is set.
   To trace one arm's definition, move the marker into the arm, directly above the
   definition; to keep the namespace or class, leave a blank line between the marker and
   the directive. A marker in a function's body, a trailing marker and a marker above any
