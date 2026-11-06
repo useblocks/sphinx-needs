@@ -300,7 +300,15 @@ DELEGATION_FILES = [
 @pytest.fixture
 def delegation_rows(test_app: SphinxTestApp) -> list[tuple]:
     test_app.build()
-    assert build_warnings(test_app) == []
+    # the one case ``add_need`` warns of and the private core does not: the ``parts`` it
+    # is given for a need on a page, which takes its parts from its content (#2486);
+    # the external source keeps them
+    assert build_warnings(test_app) == [
+        f"<srcdir>/index.rst:7: WARNING: Need 'FN_{source}_RECORD_ONLY': the parts ['p1'] "
+        "given to add_need are dropped: a need on a page takes its parts from its content "
+        "[needs.part]"
+        for source in ("UNKNOWN", "DIRECTIVE", "SERVICE", "IMPORT")
+    ]
     return test_app.env.delegation_rows
 
 
