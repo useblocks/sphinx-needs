@@ -133,6 +133,11 @@ def process_need_ref(
                 location=None,
             )
 
+    # the prefix each external source puts before the ids of its file (external_needs.py)
+    external_id_prefixes = {
+        source.get("id_prefix", "") for source in needs_config.external_needs
+    }
+
     # for node_need_ref in doctree.findall(NeedRef):
     for node_need_ref in found_nodes:
         # Let's create a dummy node, for the case we will not be able to create a real reference
@@ -297,7 +302,10 @@ def process_need_ref(
                             "", "", node_need_ref[0].deepcopy()
                         )
                         external_url = external_part_url(
-                            external_url, target_need["id"], need_id_part
+                            external_url,
+                            target_need["id"],
+                            need_id_part,
+                            id_prefixes=external_id_prefixes,
                         )
                     new_node_ref["refuri"] = check_and_calc_base_url_rel_path(
                         external_url, fromdocname
