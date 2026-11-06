@@ -14,6 +14,7 @@ from sphinx_codelinks.analyse.entity import (
     ENTITY_HEAD_TYPES,
     Association,
     Mechanism,
+    in_function_body,
     is_doc_comment,
     is_entity,
     is_trivia,
@@ -314,12 +315,50 @@ def _is_file_header(node: TreeSitterNode) -> bool:
         index += 1
     if not in_block or last_comment is None or index >= len(siblings):
         return in_block
-    end_row = last_comment.end_point.row
-    if last_comment.end_point.column == 0:
+    return siblings[index].start_point.row - _last_row(last_comment) > 1
+
+
+def _last_row(comment: TreeSitterNode) -> int:
+    """The last row the ``comment`` node is written on."""
+    if comment.end_point.column == 0:
         # a Rust doc line comment (``///``) takes its line break in its ``doc_comment``
         # child, so its node ends at column 0 of the next row
-        end_row -= 1
-    return siblings[index].start_point.row - end_row > 1
+        return comment.end_point.row - 1
+    return comment.end_point.row
+
+
+# The tokens that open the line of a C or C++ preprocessor conditional, as the grammar
+# names them (``# if`` is ``#if`` too).
+_CONDITIONAL_DIRECTIVES = frozenset(
+    {"#if", "#ifdef", "#ifndef", "#elif", "#elifdef", "#elifndef", "#else", "#endif"}
+)
+
+
+def _directly_above_a_conditional(node: TreeSitterNode) -> bool:
+    """Whether the line of a preprocessor conditional (``#if`` ... ``#endif``) comes
+    right after the comment ``node``: past other comments only, and with no blank line
+    between.
+
+    When ``node`` ends a conditional's arm, what comes next is the arm's parent's: the
+    next ``#elif`` or ``#else``, or the ``#endif``.
+    """
+    last_row = _last_row(node)
+    current = node
+    while True:
+        following = current.next_sibling
+        outer = current
+        while following is None and outer.parent is not None:
+            outer = outer.parent
+            following = outer.next_sibling
+        if following is None or following.start_point.row - last_row > 1:
+            return False
+        if following.type not in COMMENT_TYPES:
+            break
+        last_row = _last_row(following)
+        current = following
+    while following.child_count:
+        following = following.children[0]
+    return following.type in _CONDITIONAL_DIRECTIVES
 
 
 # A Doxygen or JSDoc tag saying a documentation comment documents the file, not the
@@ -522,9 +561,15 @@ def associate(
     6. A leading comment belongs to the entity right after it, when only trivia
        stands between (comments, blank lines, attributes, decorators), through its
        wrappers; never across other code.
-    7. Otherwise, the enclosing entity, if any.
+    7. A C or C++ comment outside a function's body, directly above the line of a
+       preprocessor conditional (``#if``, ``#ifdef``, ``#ifndef``, ``#elif``,
+       ``#elifdef``, ``#elifndef``, ``#else``, ``#endif``) -- past other comments,
+       with no blank line between -- belongs to no entity, at file level and in a
+       namespace or class body alike: clang attaches a comment to no declaration
+       across a ``#`` line. With a blank line between, rule 8 holds.
+    8. Otherwise, the enclosing entity, if any.
 
-    A documentation comment attached by rule 4 or 6 is a ``doc_comment``. By rule 7, a
+    A documentation comment attached by rule 4 or 6 is a ``doc_comment``. By rule 8, a
     comment in the entity's head (after an attribute, a decorator or a template header
     the entity owns) leads it, and a trailing comment whose entity starts on its row
     (``def f():  # c``) is ``trailing``; any other is ``enclosing``.
@@ -569,6 +614,12 @@ def associate(
         return None
     entity = find_next_scope(node, comment_type)
     if entity is None:
+        if (
+            comment_type == CommentType.cpp
+            and not in_function_body(node)
+            and _directly_above_a_conditional(node)
+        ):
+            return None
         return enclosing()
     return Association(entity, declared if is_doc else "leading")
 

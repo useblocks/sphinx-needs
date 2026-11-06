@@ -132,6 +132,184 @@ def test_find_associated_scope_cpp(code, result, init_cpp_tree_sitter):
     assert result in func_def
 
 
+def _attached_to(
+    source: str, parser: Parser, query: Query
+) -> tuple[str, str, str] | None:
+    """What the comment holding ``marker`` in the C++ ``source`` is attached to: the
+    entity's node kind, its first line and the mechanism; ``None`` for nothing."""
+    comments = utils.extract_comments(source.encode(), parser, query) or []
+    marker = next(c for c in comments if b"marker" in (c.text or b""))
+    association = utils.associate(marker, CommentType.cpp)
+    if association is None:
+        return None
+    first_line = (association.node.text or b"").decode().splitlines()[0]
+    return association.node.type, first_line, association.mechanism
+
+
+#: The conditionals a marker can stand directly above, each the body of a namespace or a
+#: class with the marker as its first line
+CONDITIONAL_ARMS = {
+    "one-arm": "#if FEATURE_B\nvoid active() {}\n#endif\n",
+    "ifdef": "#ifdef FEATURE_B\nvoid active() {}\n#endif\n",
+    "ifndef": "#ifndef FEATURE_B\nvoid active() {}\n#endif\n",
+    "else-different-functions": (
+        "#if FEATURE_B\nvoid active() {}\n#else\nvoid fallback() {}\n#endif\n"
+    ),
+    "else-same-function": (
+        "#if FEATURE_B\nvoid active() { fast(); }\n"
+        "#else\nvoid active() { slow(); }\n#endif\n"
+    ),
+    "elif": (
+        "#if FEATURE_A\nvoid a() {}\n#elif FEATURE_B\nvoid b() {}\n"
+        "#else\nvoid c() {}\n#endif\n"
+    ),
+    "declaration-only": "#if FEATURE_B\nvoid declared();\n#endif\n",
+}
+
+#: The marker as the last line of an arm, directly above the next directive of the
+#: same conditional
+ARM_ENDINGS = {
+    "above-else": (
+        "#if FEATURE_B\nvoid active() {}\n// marker\n#else\nvoid fallback() {}\n#endif\n"
+    ),
+    "above-elif": (
+        "#if FEATURE_A\nvoid a() {}\n// marker\n#elif FEATURE_B\nvoid b() {}\n#endif\n"
+    ),
+    "above-elifdef": (
+        "#ifdef FEATURE_A\nvoid a() {}\n// marker\n#elifdef FEATURE_B\nvoid b() {}\n"
+        "#endif\n"
+    ),
+    "above-endif": "#if FEATURE_B\nvoid active() {}\n// marker\n#endif\n",
+    "above-endif-after-else": (
+        "#if FEATURE_B\nvoid a() {}\n#else\nvoid b() {}\n// marker\n#endif\n"
+    ),
+}
+
+CONTAINERS = {
+    "namespace": ("namespace lib {\n", "}\n"),
+    "class": ("class Widget {\n", "};\n"),
+}
+
+
+@pytest.mark.parametrize("container", list(CONTAINERS))
+@pytest.mark.parametrize(
+    "body",
+    [
+        *(
+            pytest.param(f"// marker\n{arms}", id=name)
+            for name, arms in CONDITIONAL_ARMS.items()
+        ),
+        *(pytest.param(body, id=name) for name, body in ARM_ENDINGS.items()),
+        pytest.param("/// marker\n" + CONDITIONAL_ARMS["one-arm"], id="doc-comment"),
+        pytest.param(
+            "// marker\n// and its second line\n" + CONDITIONAL_ARMS["one-arm"],
+            id="comment-run",
+        ),
+        pytest.param(
+            "/* marker\n */\n" + CONDITIONAL_ARMS["one-arm"], id="block-comment"
+        ),
+    ],
+)
+def test_marker_directly_above_a_conditional_is_on_nothing(
+    container: str, body: str, init_cpp_tree_sitter: tuple[Parser, Query]
+) -> None:
+    """A marker directly above a preprocessor conditional's line, in a namespace or a
+    class body, is attached to nothing, as clang attaches it: it would otherwise trace
+    every unit of the container, whichever arm is compiled. ``#elif``, ``#else`` and
+    ``#endif`` count as the opening directives do, and other comments may stand between
+    when no blank line does."""
+    head, tail = CONTAINERS[container]
+
+    assert _attached_to(head + body + tail, *init_cpp_tree_sitter) is None
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
+            "// marker\n" + CONDITIONAL_ARMS["one-arm"], None, id="file-level-first"
+        ),
+        pytest.param(
+            "void first() {}\n// marker\n" + CONDITIONAL_ARMS["one-arm"],
+            None,
+            id="file-level-after-an-item",
+        ),
+        pytest.param(
+            "void outer() {\n// marker\n#if FEATURE_B\nfast();\n#endif\n}\n",
+            ("function_definition", "void outer() {", "enclosing"),
+            id="function-body",
+        ),
+        pytest.param(
+            "namespace lib {\nvoid outer() {\n// marker\n#ifdef FEATURE_B\nfast();\n"
+            "#endif\n}\n}\n",
+            ("function_definition", "void outer() {", "enclosing"),
+            id="function-body-in-a-namespace",
+        ),
+        pytest.param(
+            "namespace lib {\nvoid first() {} // marker\n"
+            + CONDITIONAL_ARMS["one-arm"]
+            + "}\n",
+            ("function_definition", "void first() {}", "trailing"),
+            id="trailing",
+        ),
+        pytest.param(
+            "namespace lib {\n// marker\n\n" + CONDITIONAL_ARMS["one-arm"] + "}\n",
+            ("namespace_definition", "namespace lib {", "enclosing"),
+            id="blank-line-namespace",
+        ),
+        pytest.param(
+            "class Widget {\n// marker\n\n" + CONDITIONAL_ARMS["one-arm"] + "};\n",
+            ("class_specifier", "class Widget {", "enclosing"),
+            id="blank-line-class",
+        ),
+        pytest.param(
+            "namespace lib {\n// marker\n// and its second line\n\n"
+            + CONDITIONAL_ARMS["one-arm"]
+            + "}\n",
+            ("namespace_definition", "namespace lib {", "enclosing"),
+            id="blank-line-after-a-comment-run",
+        ),
+        pytest.param(
+            "namespace lib {\n#if FEATURE_B\nvoid active() {}\n// marker\n\n#endif\n}\n",
+            ("namespace_definition", "namespace lib {", "enclosing"),
+            id="blank-line-above-endif",
+        ),
+        pytest.param(
+            "namespace lib {\n// marker\n#define FAST 1\nvoid active() {}\n}\n",
+            ("namespace_definition", "namespace lib {", "enclosing"),
+            id="above-define",
+        ),
+        pytest.param(
+            'namespace lib {\n// marker\n#include "fast.h"\nvoid active() {}\n}\n',
+            ("namespace_definition", "namespace lib {", "enclosing"),
+            id="above-include",
+        ),
+        pytest.param(
+            "class Widget {\n// marker\n#pragma pack(1)\nvoid active() {}\n};\n",
+            ("class_specifier", "class Widget {", "enclosing"),
+            id="above-pragma",
+        ),
+        pytest.param(
+            "namespace lib {\n#if FEATURE_B\n// marker\nvoid active() {}\n#endif\n}\n",
+            ("function_definition", "void active() {}", "leading"),
+            id="inside-the-arm",
+        ),
+    ],
+)
+def test_marker_near_a_conditional_keeps_its_attachment(
+    source: str,
+    expected: tuple[str, str, str] | None,
+    init_cpp_tree_sitter: tuple[Parser, Query],
+) -> None:
+    """Around a preprocessor conditional, every other marker keeps the attachment it
+    has: at file level it is on nothing anyway; in a function's body it is the
+    function's; a trailing marker is its row's entity's; a blank line between makes it
+    a comment on the namespace or class as a whole; any other directive (``#define``,
+    ``#include``, ``#pragma``) breaks the attachment to the next entity as any code
+    does; and inside the arm, the marker leads the definition, which is the remedy."""
+    assert _attached_to(source, *init_cpp_tree_sitter) == expected
+
+
 @pytest.mark.parametrize(
     ("code", "result"),
     [

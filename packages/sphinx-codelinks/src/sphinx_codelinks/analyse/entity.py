@@ -330,17 +330,21 @@ def _cpp_declares_function(node: TreeSitterNode) -> bool:
     return False
 
 
-def _cpp_prototype(node: TreeSitterNode) -> bool:
-    """A function prototype outside a function body: inside one, ``SDLoc dl(Op);`` is a
-    local variable that merely parses like a prototype."""
-    if not _cpp_declares_function(node):
-        return False
+def in_function_body(node: TreeSitterNode) -> bool:
+    """Whether the C or C++ ``node`` is inside a function's body (a compound statement,
+    a lambda's included)."""
     parent = node.parent
     while parent is not None:
         if parent.type == "compound_statement":
-            return False
+            return True
         parent = parent.parent
-    return True
+    return False
+
+
+def _cpp_prototype(node: TreeSitterNode) -> bool:
+    """A function prototype outside a function body: inside one, ``SDLoc dl(Op);`` is a
+    local variable that merely parses like a prototype."""
+    return _cpp_declares_function(node) and not in_function_body(node)
 
 
 def _cpp_has_body(node: TreeSitterNode) -> bool:
