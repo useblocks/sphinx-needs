@@ -213,12 +213,16 @@ In this order:
    first line's entity, if it is one.
 7. **A marker directly above a preprocessor conditional**, in C and C++ -- with only other comments, and no blank line,
    between it and an ``#if``, ``#ifdef``, ``#ifndef``, ``#elif``, ``#elifdef``, ``#elifndef``, ``#else`` or
-   ``#endif`` line -- belongs to the file, outside a function's body: in a namespace or class body too, where the
-   namespace or class would otherwise hold it and so trace every function inside, whichever arm is compiled.
+   ``#endif`` line -- belongs to the file anywhere outside a function's body (at file level, in a namespace, class,
+   struct, union or enum body, or in an ``extern "C"`` block), where the namespace, class, struct, union or enum around
+   it would otherwise hold it, and a namespace or class would then trace every function inside, whichever arm is
+   compiled.
    clang reads it so: a comment documents no declaration across a ``#`` line.
+   The directive is read as the grammar reads it, so a spelling the grammar does not read as one, such as a digraph
+   (``%:if``), is no conditional to this rule, though it is to a compiler.
    To trace an arm's definition, write the marker inside the arm, directly above the definition (rule 6); to mean the
    namespace or class as a whole, leave a blank line between the marker and the directive (rule 8).
-   In a function's body, the function holds it (rule 8).
+   In a function's body (a lambda's, or a class defined in one, included), rule 8 holds.
 8. **Otherwise**, the entity the marker is inside, if any: ``leading`` when the marker is directly inside, or right
    after, an attribute, a decorator or a template header the entity owns (its head; a comment nested deeper, in such a
    head's argument list, is not), ``trailing`` when it trails code on the entity's first line, ``enclosing``

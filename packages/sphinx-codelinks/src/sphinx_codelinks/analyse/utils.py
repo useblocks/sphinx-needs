@@ -561,12 +561,15 @@ def associate(
     6. A leading comment belongs to the entity right after it, when only trivia
        stands between (comments, blank lines, attributes, decorators), through its
        wrappers; never across other code.
-    7. A C or C++ comment outside a function's body, directly above the line of a
-       preprocessor conditional (``#if``, ``#ifdef``, ``#ifndef``, ``#elif``,
-       ``#elifdef``, ``#elifndef``, ``#else``, ``#endif``) -- past other comments,
-       with no blank line between -- belongs to no entity, at file level and in a
-       namespace or class body alike: clang attaches a comment to no declaration
-       across a ``#`` line. With a blank line between, rule 8 holds.
+    7. A C or C++ comment directly above the line of a preprocessor conditional
+       (``#if``, ``#ifdef``, ``#ifndef``, ``#elif``, ``#elifdef``, ``#elifndef``,
+       ``#else``, ``#endif``, as the grammar reads them) -- past other comments,
+       with no blank line between -- belongs to no entity anywhere outside a
+       function's body (at file level, in a namespace, class, struct, union or enum
+       body, or in an ``extern "C"`` block): clang attaches a comment to no
+       declaration across a ``#`` line. With a blank line between, or in a
+       function's body (a lambda's, or a class defined in one, included), rule 8
+       holds.
     8. Otherwise, the enclosing entity, if any.
 
     A documentation comment attached by rule 4 or 6 is a ``doc_comment``. By rule 8, a
