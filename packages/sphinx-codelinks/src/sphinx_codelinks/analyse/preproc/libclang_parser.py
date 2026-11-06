@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -32,42 +31,41 @@ class LibclangComment:
         self.column: int = column
 
 
-def _group_skipped(skipped: list[SkippedRange]) -> dict[str, list[tuple[int, int]]]:
-    """Group skipped ranges by normalised file path, built once per TU.
+def _main_file_skipped(skipped: list[SkippedRange]) -> list[tuple[int, int]]:
+    """The line spans the main file's own pass through the preprocessor skipped.
 
-    A per-comment membership test then scans only its own file's ranges instead
-    of every range in the translation unit (headers included). Normalising the
-    key (``os.path.normpath``) also fixes clang spelling the same file two ways
-    (``./x`` vs ``x``, ``a/../b``), which a naive compare would miss.
+    The translation unit's skipped ranges are every pass's, and a file its own
+    include chain enters again (a guarded header whose includes include it back,
+    a file that includes itself) passes through a second time, which skips the
+    guarded body the first pass compiled: the union of both covers the whole
+    file. So only the main file's own pass decides, selected by where a range
+    starts (``clang_Location_isFromMainFile``), never by its path, which a later
+    inclusion of the main file shares. The ranges of every other file go too:
+    only the main file's comments are read.
+
+    The analysed file is always its translation unit's main file. Analysing a
+    file through a translation unit that includes it would have to select that
+    file's own first inclusion instead.
     """
-    grouped: dict[str, list[tuple[int, int]]] = {}
-    for sr in skipped:
-        if sr.file is not None:
-            grouped.setdefault(os.path.normpath(str(sr.file)), []).append(
-                (sr.start_line, sr.end_line)
-            )
-    return grouped
+    return [(sr.start_line, sr.end_line) for sr in skipped if sr.from_main_file]
 
 
-def _is_in_skipped(
-    file_path: str, line: int, grouped: dict[str, list[tuple[int, int]]]
-) -> bool:
-    return any(
-        start <= line <= end
-        for start, end in grouped.get(os.path.normpath(file_path), ())
-    )
+def _is_in_skipped(line: int, skipped: list[tuple[int, int]]) -> bool:
+    return any(start <= line <= end for start, end in skipped)
 
 
 # @Drop comments inside inactive preprocessor branches, IMPL_PREPROC_2, impl, [FE_PREPROC]
 def extract_active_comments(file_path: Path, args: list[str]) -> list[LibclangComment]:
     """Return one LibclangComment per ACTIVE comment token in ``file_path``.
 
-    Comments inside preprocessor-skipped (inactive) ranges are dropped.
+    Comments inside the ranges the file's own pass through the preprocessor
+    skipped (its inactive branches) are dropped; what a later pass through the
+    same file skips is not (see :func:`_main_file_skipped`).
     """
     cx = loader.load_clang_cindex()
     index = cx.Index.create()
     tu = index.parse(str(file_path), args=args, options=loader.PARSE_OPTIONS)
-    skipped = _group_skipped(loader.get_all_skipped_ranges(tu))
+    skipped = _main_file_skipped(loader.get_all_skipped_ranges(tu))
 
     # Read the raw source bytes once. We derive the token extent from them
     # (lossily, so a non-UTF-8 byte can't raise and abort the run) AND slice each
@@ -89,8 +87,8 @@ def extract_active_comments(file_path: Path, args: list[str]) -> list[LibclangCo
         loc = tok.location
         if loc.file is None:
             continue
-        if _is_in_skipped(str(loc.file.name), loc.line, skipped):
-            continue  # inactive branch -> excluded
+        if _is_in_skipped(loc.line, skipped):
+            continue  # inactive branch of the file's own pass -> excluded
         # Slice the comment text from the raw bytes by offset and decode lossily
         # (not via tok.spelling, which raises on a non-UTF-8 byte in the comment).
         # Then normalize CRLF/CR -> LF, matching get_src_strings on the tree-sitter

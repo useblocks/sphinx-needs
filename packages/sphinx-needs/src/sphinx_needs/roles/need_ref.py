@@ -15,7 +15,7 @@ from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedLink
-from sphinx_needs.utils import check_and_calc_base_url_rel_path
+from sphinx_needs.utils import check_and_calc_base_url_rel_path, external_part_url
 
 log = get_logger(__name__)
 
@@ -132,6 +132,11 @@ def process_need_ref(
                 "link_text",
                 location=None,
             )
+
+    # the prefix each external source puts before the ids of its file (external_needs.py)
+    external_id_prefixes = {
+        source.get("id_prefix", "") for source in needs_config.external_needs
+    }
 
     # for node_need_ref in doctree.findall(NeedRef):
     for node_need_ref in found_nodes:
@@ -284,9 +289,26 @@ def process_need_ref(
                     assert target_need["external_url"] is not None, (
                         "external_url must be set for external needs"
                     )
-                    new_node_ref = nodes.reference(target_need["id"], target_need["id"])
+                    external_url = target_need["external_url"]
+                    if need_id_part is None:
+                        # a whole external need: its id, as documented (roles.rst)
+                        new_node_ref = nodes.reference(
+                            target_need["id"], target_need["id"]
+                        )
+                    else:
+                        # a part: the text computed above, in the role's inner node,
+                        # as the internal branch writes it, linked to the part's anchor
+                        new_node_ref = nodes.reference(
+                            "", "", node_need_ref[0].deepcopy()
+                        )
+                        external_url = external_part_url(
+                            external_url,
+                            target_need["id"],
+                            need_id_part,
+                            id_prefixes=external_id_prefixes,
+                        )
                     new_node_ref["refuri"] = check_and_calc_base_url_rel_path(
-                        target_need["external_url"], fromdocname
+                        external_url, fromdocname
                     )
                     new_node_ref["classes"].append(target_need["external_css"])
                 else:

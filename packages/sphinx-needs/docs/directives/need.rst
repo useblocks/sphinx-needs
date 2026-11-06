@@ -173,9 +173,15 @@ Links without conditions continue to work as before:
 .. note::
 
    Any number of opening ``[`` brackets can be used to start the condition,
-   as long as the same number of closing ``]`` brackets are used to end it.
-   This is useful when the condition itself contains square brackets (e.g. for list indexing):
-   ``REQ_001[[tags[0]=="important"]]``.
+   as long as the same number of closing ``]`` brackets end the link.
+   The condition runs to those closing brackets, so it may itself contain square brackets (e.g. for list indexing),
+   and end with one: ``REQ_001[[tags[0]=="important"]]``, ``REQ_001["important" == tags[0]]`` and
+   ``REQ_001[status in ["open"]]`` are each the condition within the outermost brackets.
+
+   A condition that starts with ``[`` and ends with ``]`` is written with one space after the opening brackets,
+   which is not part of the condition: ``REQ_001[ ["important"] == tags[:1]]`` is the condition
+   ``["important"] == tags[:1]``.
+   The ``needs.json`` writer spells conditions the same way, so every condition reads back as it was written.
 
 .. note::
 

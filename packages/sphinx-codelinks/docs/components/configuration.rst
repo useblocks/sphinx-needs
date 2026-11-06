@@ -670,7 +670,8 @@ analyse.preprocessor
 Opts in to the **preprocessor-aware C/C++ engine** (powered by libclang). When this
 table is present and ``comment_type`` is ``"cpp"``, **Sphinx-CodeLinks** parses each
 C/C++ file as a real translation unit and **drops comments that fall inside inactive
-preprocessor branches** (``#if`` / ``#ifdef`` / ``#else`` …). Without this table, the
+preprocessor branches** (``#if`` / ``#ifdef`` / ``#else`` …), the ones the file's own pass
+through the preprocessor skips. Without this table, the
 default tree-sitter engine is used, which extracts every comment regardless of
 preprocessor conditions.
 

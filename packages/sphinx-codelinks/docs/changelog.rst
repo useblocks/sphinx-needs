@@ -43,6 +43,13 @@ Fixes
   definition; to keep the namespace or class, leave a blank line between the marker and
   the directive. A marker in a function's body, a trailing marker and a marker above any
   other directive (``#define``, ``#include``, ``#pragma``) keep their entity.
+- 🐛 A one-line marker whose ``full_title`` is not a string (a ``list[str]`` marker field)
+  no longer aborts the build
+  (`#2479 <https://github.com/useblocks/sphinx-needs/issues/2479>`__,
+  `#2491 <https://github.com/useblocks/sphinx-needs/pull/2491>`__): it is no full
+  title, so the need is created with the id of its title, the one the duplicate check and
+  the ``[docs]`` link name; a field the project declares as an array holds the list, and a ``full_title`` the
+  project does not declare is dropped, without a warning.
 - 🐛 A one-line marker that sets a link type named ``full_title`` no longer aborts the build
   (`#2466 <https://github.com/useblocks/sphinx-needs/issues/2466>`__,
   `#2477 <https://github.com/useblocks/sphinx-needs/pull/2477>`__): the link is the need's
@@ -53,6 +60,12 @@ Fixes
   (`#2465 <https://github.com/useblocks/sphinx-needs/issues/2465>`__); without an id and
   with an empty title, its id is then the one the duplicate check and the ``[docs]`` link
   name. The fix is Sphinx-Needs' (its needs.json reader, ub-needs-exchange).
+- 🐛 The libclang engine no longer drops the markers of a file its own includes enter
+  again: a guarded header whose includes include it back, parsed standalone as every
+  header absent from a compilation database is, or a guarded file that includes itself.
+  The second pass through the preprocessor skips the guarded body, and the engine dropped
+  every comment of the file inside what either pass skipped, so it extracted none; only
+  the file's own pass decides now.
 
 .. _`release:2.1.0`:
 

@@ -6,6 +6,14 @@ Changelog
 Unreleased
 ----------
 
+- **A draft "2a1" link object whose condition starts with ``[`` and ends with ``]`` is
+  spelled with one space after its opening brackets** (``{"id": "B", "condition": "[x]
+  == a[0]"}`` is ``B[[ [x] == a[0]]]``, was ``B[[[x] == a[0]]]``), as sphinx-needs'
+  format-1 writer now spells it, so that sphinx-needs reads it back as the same link
+  (changed output). ``design/v2a1-draft.md`` §5.1 drops the condition exception to the
+  round trip, and the draft's corpus has two new cases,
+  ``a-condition-that-ends-in-a-bracket`` and
+  ``a-condition-that-starts-and-ends-with-a-bracket-is-spelled-with-a-space``.
 - **A record's legacy ``description`` is its ``content`` only when the record has no
   ``content``** -- after the schema defaults are merged --, as in every needs.json
   sphinx-needs wrote before 4.0; a record with a ``content``, even an empty one, keeps its

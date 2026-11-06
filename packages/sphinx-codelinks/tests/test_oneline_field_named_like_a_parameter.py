@@ -9,6 +9,8 @@ add_need() got multiple values for keyword argument 'state'``. They now go to
 import hashlib
 from pathlib import Path
 
+import pytest
+
 from sphinx_codelinks.sphinx_extension.directives.src_trace import would_be_id
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import build_warnings
@@ -251,3 +253,46 @@ def test_a_string_valued_link_type_named_full_title_is_a_link_too(
     )
     assert (list(needs), predicted) == ([expected], expected)
     assert needs[expected]["full_title"] == ["REQ_001"]
+
+
+@pytest.mark.parametrize(
+    "declaration",
+    [
+        pytest.param(
+            'needs_fields = {"full_title": {"schema": {"type": "array", '
+            '"items": {"type": "string"}}}}\n',
+            id="array-field",
+        ),
+        pytest.param("", id="undeclared"),
+    ],
+)
+def test_a_full_title_that_is_not_a_string_is_not_the_id_s_full_title(
+    tmp_path: Path, make_app: _MakeApp, declaration: str
+) -> None:
+    """A ``list[str]`` marker field ``full_title`` is not a full title: the need is
+    created, with the id hashed from its title, the one :func:`would_be_id` predicts,
+    and a declared array field holds the list. It ended the build with
+    ``AttributeError: 'list' object has no attribute 'encode'`` (#2479)."""
+    _project(
+        tmp_path,
+        toml_extra=(
+            "\n[codelinks.projects.src.analyse.oneline_comment_style]\n"
+            'needs_fields = [{ name = "title" }, '
+            '{ name = "full_title", type = "list[str]", default = [] }, '
+            '{ name = "type", default = "impl" }]\n'
+        ),
+        files={"src/impl.cpp": "// @first impl, [one, two]\nvoid impl() {}\n"},
+        append={"docs/conf.py": declaration},
+    )
+    app = _build(tmp_path, make_app)
+    needs = _impl_needs(app)
+    expected = _hashed("I_", "first impl")
+    predicted = would_be_id(
+        app, {"type": "impl", "title": "first impl", "full_title": ["one", "two"]}
+    )
+    assert (list(needs), predicted) == ([expected], expected)
+    assert needs[expected].get("full_title") == (
+        ["one", "two"] if declaration else None
+    )
+    # the fixture's own @need-ids references to unknown needs warn, in src/refs.cpp
+    assert [w for w in build_warnings(app) if not w.startswith("src/refs.cpp:")] == []

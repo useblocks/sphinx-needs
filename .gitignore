@@ -27,11 +27,12 @@ ai-index.xml
 ub-directives.xml
 .ty_cache
 
-# packages/sphinx-ai-index's property-based tests: hypothesis writes its example database
-# into the working directory -- the package under `poe test-ai-index`, the repository root
-# under CI's root-relative run. It was in that repository's own .gitignore, which retired
-# at the import (newer hypothesis releases write a self-ignoring `.gitignore` into it; the
-# `test` group allows older ones that do not)
+# the property-based tests (packages/sphinx-ai-index's, and sphinx-needs'
+# `tests/test_need_link_string.py`): hypothesis writes its example database into the
+# working directory -- the package under `poe test-ai-index` and `poe test-needs`, the
+# repository root under CI's root-relative run. It was in sphinx-ai-index's own
+# .gitignore, which retired at the import (newer hypothesis releases write a self-ignoring
+# `.gitignore` into it; the `test` group allows older ones that do not)
 .hypothesis/
 
 # `codelinks analyse` writes `output/` in the CWD unless told otherwise: `outdir` defaults

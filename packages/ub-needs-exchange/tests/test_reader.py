@@ -657,19 +657,14 @@ LINKS = [
     {"id": "B", "part": "p1", "condition": "c"},
     {"id": "B", "condition": "tags[0] == 'x'"},
     {"id": "B", "part": "p", "condition": "a[b[0]] == 1"},
+    {"id": "B", "condition": "x == a[0]"},
+    {"id": "B", "part": "p", "condition": "status in ['open']"},
+    {"id": "B", "condition": "[1] == y"},
+    {"id": "B", "part": "p", "condition": "[x] == a[0]"},
 ]
 
-#: A condition that ends in ``]``: sphinx-needs' own writer spells it so that its reader
-#: reads it back without the condition (a limit of format 1's grammar, which the draft's
-#: link object does not have). The projection spells it as that writer does all the same.
-NOT_ROUND_TRIPPED = {"id": "B", "condition": "x == a[0]"}
 
-
-@pytest.mark.parametrize(
-    "link",
-    [*LINKS, NOT_ROUND_TRIPPED],
-    ids=[json.dumps(link) for link in [*LINKS, NOT_ROUND_TRIPPED]],
-)
+@pytest.mark.parametrize("link", LINKS, ids=[json.dumps(link) for link in LINKS])
 def test_a_link_object_is_spelled_as_sphinx_needs_writes_it(link):
     """A link object reads as the string sphinx-needs' format-1 writer writes for the
     same link (``NeedLink.to_link_string``). Run where sphinx-needs is installed (the
@@ -679,6 +674,21 @@ def test_a_link_object_is_spelled_as_sphinx_needs_writes_it(link):
     version = read_draft(draft([{"id": "A", "type": "req", "links": {"l": [link]}}]))
     (spelled,) = version.records()[0].fields["l"]
     assert spelled == need_item.NeedLink(**link).to_link_string()
+
+
+def test_an_empty_condition_is_spelled_as_no_condition():
+    """An empty condition is spelled ``B[]``, as sphinx-needs' writer spells it, which
+    sphinx-needs reads as no condition: the one condition that does not read back as
+    itself, by design (``design/v2a1-draft.md`` §5.1)."""
+    version = read_draft(
+        draft(
+            [{"id": "A", "type": "req", "links": {"l": [{"id": "B", "condition": ""}]}}]
+        )
+    )
+    (spelled,) = version.records()[0].fields["l"]
+    assert spelled == "B[]"
+    need_item = pytest.importorskip("sphinx_needs.need_item")
+    assert need_item.NeedLink.from_string(spelled) == need_item.NeedLink(id="B")
 
 
 @pytest.mark.parametrize("link", LINKS, ids=[json.dumps(link) for link in LINKS])

@@ -499,6 +499,35 @@ def check_and_calc_base_url_rel_path(external_url: str, fromdocname: str) -> str
     return ref_uri
 
 
+def external_part_url(
+    external_url: str, need_id: str, part_id: str, /, *, id_prefixes: Collection[str]
+) -> str:
+    """The URL of a part of an external need, from the URL of the need.
+
+    A sphinx-needs page anchors each part of a need at ``<need id>.<part id>``.
+    The default URL of an external need, ``{base_url}/{docname}.html#{id}``, ends in the
+    id its source wrote, and the need's id in this project is that id after the source's
+    ``id_prefix``: so when the URL's fragment is the need's id, alone or after one of
+    ``id_prefixes``, the part's URL is that fragment followed by ``.<part id>``. Any other
+    URL (no fragment, an empty one, or one a ``target_url`` gave another shape) names no
+    anchor of the part, and is returned unchanged.
+
+    :param external_url: The external need's URL (its ``external_url``).
+    :param need_id: The external need's id in this project, prefix included.
+    :param part_id: The id of the part.
+    :param id_prefixes: The ``id_prefix`` of each external source of the project. A need
+        added by :func:`~sphinx_needs.api.need.add_external_need` with a prefix of its
+        caller's own takes the part's anchor only when a source uses the same prefix.
+    :return: The URL to link the part to.
+    """
+    base, sep, fragment = external_url.partition("#")
+    if sep and fragment and need_id.endswith(fragment):
+        prefix = need_id[: len(need_id) - len(fragment)]
+        if not prefix or prefix in id_prefixes:
+            return f"{base}#{fragment}.{part_id}"
+    return external_url
+
+
 class FilterFunc(Protocol):
     def __call__(
         self,

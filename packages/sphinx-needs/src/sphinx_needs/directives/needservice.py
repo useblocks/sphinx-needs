@@ -125,6 +125,8 @@ class NeedserviceDirective(SphinxDirective):
         needs_config = NeedsSphinxConfig(self.env.config)
         needs_schema = SphinxNeedsData(self.env).get_schema()
         needs_services = SphinxNeedsData(self.env).get_or_create_services()
+        # a datum's `full_title` of one of these names is a link, never a full title
+        link_names = frozenset(needs_schema.iter_link_field_names())
 
         # the service first, before its options: a built-in service's control options
         # are fields only once a service registered them, so an unconfigured built-in
@@ -246,8 +248,13 @@ class NeedserviceDirective(SphinxDirective):
                 need_content = datum.pop("content", "")
                 jinja_content = datum.pop("jinja_content", None)
                 # a field the project declares as full_title: the field, and the full
-                # title the generated id is derived from, as add_need took it
+                # title the generated id is derived from, as add_need took it -- when it
+                # is a string; any other value, and a link type of that name, is only
+                # the field or the link, as for a sphinx-codelinks one-line marker
+                # (#2479)
                 full_title = datum.get("full_title")
+                if not isinstance(full_title, str) or "full_title" in link_names:
+                    full_title = None
                 fields, links = _split_values(needs_schema, datum)
                 try:
                     _, need_nodes = create_need(

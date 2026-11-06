@@ -68,6 +68,55 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
+  ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
+  **(changed output)** (:issue:`2489`, :pr:`2494`)
+
+  A condition runs to the closing brackets that end the link, as many ``]`` as it was opened with:
+  ``REQ_001[status in ["open"]]`` and ``REQ_001[[x == a[0]]]`` are the conditions ``status in ["open"]`` and
+  ``x == a[0]``. A need directive with such a link was refused (``needs.create_need``), and ``needimport`` and
+  external needs dropped its condition without a warning, also from a needs.json sphinx-needs wrote itself. A
+  condition that starts with ``[`` read back as another condition, or not at all: one that also ends with ``]`` is
+  now written with one space after the opening brackets (``REQ_001[[ [x] == a[0]]]``), which the reader drops, and
+  one that does not is read where the link closes with fewer brackets than it opened with (``REQ_001[[1] == y]``).
+  Every link that was read without a warning is read as before; a link that was malformed may now read as a link
+  with a condition.
+
+- 🐛 A ``:need:`` reference to a part of an :ref:`external need <needs_external_needs>` names the part and links
+  its anchor **(changed output)** (:issue:`2487`, :pr:`2493`)
+
+  It rendered the external need's bare id and linked the need, so the part was lost, and so was a text given in the
+  role. It is now written as a reference to a part of a need of the project: the part's text and the full
+  ``ID.part`` (``first part text (UP_001.p1)``), or the role's text, keeping the external need's css class. The link
+  goes to the part's anchor, ``#UP_001.p1``, when the fragment of the external need's URL is the need's id, alone or
+  after the ``id_prefix`` of one of the project's external sources, as on the default ``…/<docname>.html#<id>``.
+  A ``target_url`` of another shape is linked as it is.
+  A reference to a whole external need still renders its id, also with a text given in the role.
+
+- 🐛 A part id repeated in one need is reported once, as ``needs.duplicate_part_id``, and no longer also as a part
+  "not associated with a need" (``needs.part``); the first part of the id is still the one kept (:issue:`2485`, :pr:`2492`)
+
+- 🐛 ``add_need`` warns, once per need, of the ``parts`` it was given that a need on a page drops (:issue:`2486`, :pr:`2492`)
+
+  A need on a page takes its parts from its content (its :ref:`need_part` roles), which replaced the given ones
+  silently. The result is unchanged: a given part whose id the content marks takes the content's text, and an
+  external or a hidden need keeps the parts as given. Now each other given part id is named in one ``needs.part``
+  warning.
+
+- 🐛 A ``full_title`` that is not a string no longer aborts the build: ``create_need`` refuses it with a warning,
+  and a ``needservice`` need takes no full title from a link type or a value that is not a string (:issue:`2479`, :pr:`2491`)
+
+  ``create_need``, ``add_need``, ``generate_need`` and ``generate_need_id`` raise ``InvalidNeedException``
+  (``invalid_value``, "full_title must be a string, not list") for a ``full_title`` that is neither ``None`` nor a
+  string, which a producer reports as it reports any refused need. That holds whether or not an ``id`` is given:
+  without one they raised ``AttributeError: 'list' object has no attribute 'encode'``, which ended the build, and
+  with one the value was ignored. A ``needservice`` datum's ``full_title`` is the full
+  title a need without an id has its id hashed from only when it is a string and the project has no link type of
+  that name, as for a sphinx-codelinks one-line marker; it is still the need's link or field. So a service need
+  whose ``full_title`` is a list (a link type, or a field declared as an array) is created, with the id of its
+  title, and one whose ``full_title`` is a link given as a string now has the id of its title, where it had the
+  id of the link's value **(changed output)**.
+
 - 🐛 A link type named ``full_title`` is kept on ``needimport``, external needs and codelinks multi-line needs
   (:issue:`2466`, :pr:`2477`)
 
