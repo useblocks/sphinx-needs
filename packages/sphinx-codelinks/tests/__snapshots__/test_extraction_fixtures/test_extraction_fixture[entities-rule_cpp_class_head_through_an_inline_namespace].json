@@ -1,0 +1,136 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 70
+      }
+    },
+    "tagged_scope": "struct lib::v2::X {\n    // @Its member, IMPL_R_CLS_2, impl\n    void m();\n}",
+    "scope": {
+      "kind": "struct_specifier",
+      "start": 3,
+      "end": 6,
+      "language": "cpp",
+      "entity_kind": "struct",
+      "qualified_name": "lib::X",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "lib"
+        },
+        {
+          "kind": "struct",
+          "name": "X"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "The class defined through the inline namespace",
+      "id": "IMPL_R_CLS_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "struct_specifier"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 38
+      }
+    },
+    "tagged_scope": "void m();",
+    "scope": {
+      "kind": "field_declaration",
+      "start": 5,
+      "end": 5,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "lib::X::m",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "lib"
+        },
+        {
+          "kind": "struct",
+          "name": "X"
+        },
+        {
+          "kind": "method",
+          "name": "m"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Its member",
+      "id": "IMPL_R_CLS_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "field_declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 4
+      },
+      "end": {
+        "row": 6,
+        "column": 47
+      }
+    },
+    "tagged_scope": "void lib::v2::X::m() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 8,
+      "end": 8,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "lib::X::m",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "lib"
+        },
+        {
+          "kind": "class",
+          "name": "X"
+        },
+        {
+          "kind": "method",
+          "name": "m"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "The member's definition",
+      "id": "IMPL_R_CLS_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

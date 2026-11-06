@@ -1,0 +1,86 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 8
+      },
+      "end": {
+        "row": 2,
+        "column": 46
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 4,
+      "end": 4,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "S<T,Ts...>::f",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "S<T,Ts...>"
+        },
+        {
+          "kind": "method",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "The pack's member",
+      "id": "IMPL_R_PACK_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 4
+      },
+      "end": {
+        "row": 6,
+        "column": 70
+      }
+    },
+    "tagged_scope": "void S<A, B>::f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 8,
+      "end": 8,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "S<T,U>::f",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "S<T,U>"
+        },
+        {
+          "kind": "method",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "The plain specialisation's member out of line",
+      "id": "IMPL_R_PACK_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

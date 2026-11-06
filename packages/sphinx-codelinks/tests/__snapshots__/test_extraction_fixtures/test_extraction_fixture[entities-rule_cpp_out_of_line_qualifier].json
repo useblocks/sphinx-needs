@@ -1,0 +1,216 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 4
+      },
+      "end": {
+        "row": 6,
+        "column": 84
+      }
+    },
+    "tagged_scope": "void P<U, 4>::fill() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 8,
+      "end": 8,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "P<T,4>::fill",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "P<T,4>"
+        },
+        {
+          "kind": "method",
+          "name": "fill"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "A partial specialisation's member with its parameter renamed",
+      "id": "IMPL_R_OOL_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 4
+      },
+      "end": {
+        "row": 8,
+        "column": 44
+      }
+    },
+    "tagged_scope": "void P<T, N>::fill() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 10,
+      "end": 10,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "P::fill",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "P"
+        },
+        {
+          "kind": "method",
+          "name": "fill"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "The primary's member",
+      "id": "IMPL_R_OOL_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 10,
+        "column": 4
+      },
+      "end": {
+        "row": 10,
+        "column": 51
+      }
+    },
+    "tagged_scope": "void Box<X>::get() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 12,
+      "end": 12,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "Box::get",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Box"
+        },
+        {
+          "kind": "method",
+          "name": "get"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "A primary template's member",
+      "id": "IMPL_R_OOL_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 12,
+        "column": 4
+      },
+      "end": {
+        "row": 12,
+        "column": 59
+      }
+    },
+    "tagged_scope": "void Box<int>::get() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 14,
+      "end": 14,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "Box<int>::get",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Box<int>"
+        },
+        {
+          "kind": "method",
+          "name": "get"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "An explicit specialisation's member",
+      "id": "IMPL_R_OOL_4",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 14,
+        "column": 4
+      },
+      "end": {
+        "row": 14,
+        "column": 71
+      }
+    },
+    "tagged_scope": "void Outer<int>::Inner<U>::n() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 16,
+      "end": 16,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "Outer<int>::Inner::n",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "Outer<int>"
+        },
+        {
+          "kind": "class",
+          "name": "Inner"
+        },
+        {
+          "kind": "method",
+          "name": "n"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "A member template of an explicit specialisation",
+      "id": "IMPL_R_OOL_5",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]
