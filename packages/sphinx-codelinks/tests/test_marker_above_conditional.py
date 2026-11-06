@@ -249,9 +249,7 @@ def test_the_build_warns_at_the_marker_s_line(
 
     suffix = " [codelinks.marker_above_conditional]" if _SHOWS_WARNING_TYPES else ""
     assert app.statuscode == 0
-    assert build_warnings(app) == [
-        f"src/x.cpp:2: WARNING: {SUB_TYPE}: {MSG}{suffix}"
-    ]
+    assert build_warnings(app) == [f"src/x.cpp:2: WARNING: {SUB_TYPE}: {MSG}{suffix}"]
     assert "IMPL_ABOVE" in _json(app)["needs"]
 
 
