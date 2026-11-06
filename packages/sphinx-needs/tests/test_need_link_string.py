@@ -20,7 +20,7 @@ from __future__ import annotations
 import itertools
 
 import pytest
-from hypothesis import assume, given
+from hypothesis import given
 from hypothesis import strategies as st
 
 from sphinx_needs.need_item import NeedLink
@@ -108,7 +108,25 @@ ALREADY_ROUND_TRIPPED = [
     ("tags[0] == 'x'", "[[tags[0] == 'x']]"),
 ]
 
-CASES = ENDS_IN_A_BRACKET + ALREADY_ROUND_TRIPPED
+#: (condition, its spelling): conditions that START with ``[`` (after any spaces), which
+#: the reader of 9.2.0 read as another link or with a warning. One that also ends in
+#: ``]`` is written with one space after the opening brackets, which the reader drops;
+#: one that does not is written as any other, and read where the closing brackets that
+#: end the link are fewer than the opening ones.
+STARTS_WITH_A_BRACKET = [
+    ("[x]", "[[ [x]]]"),
+    ("[x] == a[0]", "[[ [x] == a[0]]]"),
+    ("[]", "[[ []]]"),
+    (" [x]", "[[  [x]]]"),
+    ("  [x]", "[[   [x]]]"),
+    ("[1] == y", "[[[1] == y]]"),
+    ("[x", "[[x]"),
+    ("[", "[[]"),
+    ("[[", "[[[]"),
+    ("[[x]] y", "[[[[[x]] y]]]"),
+]
+
+CASES = ENDS_IN_A_BRACKET + STARTS_WITH_A_BRACKET + ALREADY_ROUND_TRIPPED
 
 
 @pytest.mark.parametrize("part", [None, "p1"], ids=["no-part", "part"])
@@ -134,6 +152,12 @@ def test_a_condition_is_spelled_and_read_back(
         ("REQ_1[status in ['open']]", "status in ['open']"),
         ("REQ_1.p1[x == a[0]]", "x == a[0]"),
         ("REQ_1[a]b]", "a]b"),
+        # a condition that starts with `[` and ends with `]`: one space after the
+        # opening brackets, at any depth
+        ("REQ_1[ ['open'] == tags[:1]]", "['open'] == tags[:1]"),
+        ("REQ_1[[ [x]]]", "[x]"),
+        # one that starts with `[` and does not end with `]`
+        ("REQ_1[[1] == y]", "[1] == y"),
     ],
 )
 def test_the_condition_ends_at_the_closing_brackets_that_end_the_link(
@@ -178,7 +202,6 @@ _PARTS = st.sampled_from([None, "p1"])
 def test_every_condition_round_trips(condition: str, part: str | None) -> None:
     """The property behind the cases above, over conditions holding ``[`` and ``]`` at
     any position, the end included."""
-    assume(not condition.startswith("["))
     link = NeedLink(id="B", part=part, condition=condition)
     assert NeedLink.from_string_with_warnings(link.to_link_string()) == (link, [])
 

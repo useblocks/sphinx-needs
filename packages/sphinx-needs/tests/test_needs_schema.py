@@ -1059,24 +1059,28 @@ def test_split_string(text, expected):
             ],
         ),
         (
-            "REQ[[unclosed]",
+            "REQ[[unclosed",
             True,
             True,
             [
                 LinkSplitWarning(
-                    "Unclosed condition brackets in link 'REQ[[unclosed]': expected 2 closing ']' characters."
+                    "Unclosed condition brackets in link 'REQ[[unclosed': expected 2 closing ']' characters."
                 )
             ],
+        ),
+        # Closed by fewer brackets than opened: a condition that starts with `[`
+        # (warned "Unclosed condition brackets" until #2489)
+        (
+            "REQ[[unclosed]",
+            True,
+            True,
+            [NeedLink(id="REQ", condition="[unclosed")],
         ),
         (
             "REQ[[[x]]",
             True,
             True,
-            [
-                LinkSplitWarning(
-                    "Unclosed condition brackets in link 'REQ[[[x]]': expected 3 closing ']' characters."
-                )
-            ],
+            [NeedLink(id="REQ", condition="[x")],
         ),
         # Bare opening bracket with no closing
         (

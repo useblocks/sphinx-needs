@@ -510,6 +510,15 @@ diagnostics = []
 records = { A = { links = ["B[[x == a[0]]]", "C.p[[[a]]]]]"] } }
 
 [[case]]
+name = "a-condition-that-starts-and-ends-with-a-bracket-is-spelled-with-a-space"
+why = "a condition that starts with an opening bracket (after any spaces) and ends with a closing one is spelled with one space after the opening brackets, which the reading project drops; one that starts with an opening bracket and does not end with a closing one is spelled as any other"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": [{"id": "B", "condition": "[x] == a[0]"}, {"id": "C", "part": "p", "condition": " [x]"}, {"id": "D", "condition": "[1] == y"}]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { links = ["B[[ [x] == a[0]]]", "C.p[[  [x]]]", "D[[[1] == y]]"] } }
+
+[[case]]
 name = "an-empty-part-is-no-part"
 why = "an empty part is spelled as no part, as format 1's writer spells a link whose part is empty"
 layer = "document"

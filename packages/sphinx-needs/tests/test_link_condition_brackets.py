@@ -33,6 +33,13 @@ needs_json_include_link_conditions = True
 LINKS = [
     ('REQ_B["x" == tags[0]]', ("REQ_B", None, '"x" == tags[0]')),
     ('REQ_A.p1[[status in ["open"]]]', ("REQ_A", "p1", 'status in ["open"]')),
+    # a condition that starts with `[` and ends with `]`: a space after the brackets
+    ('REQ_B[ ["x"] == tags[:1]]', ("REQ_B", None, '["x"] == tags[:1]')),
+    # one that starts with `[` and does not end with `]`
+    (
+        'REQ_B[["x"] == tags[:1] and True]',
+        ("REQ_B", None, '["x"] == tags[:1] and True'),
+    ),
 ]
 
 INDEX = """\
