@@ -112,6 +112,13 @@ PREFIXES = ("", "EXT_", "REQ_")
             id="empty-fragment",
         ),
         pytest.param(
+            "https://up.example.org/docs/page.html#",
+            "EXT_",
+            PREFIXES,
+            "https://up.example.org/docs/page.html#",
+            id="empty-fragment-id-a-configured-prefix",
+        ),
+        pytest.param(
             "https://up.example.org/docs/page.html#req-UP_001",
             "UP_001",
             PREFIXES,
