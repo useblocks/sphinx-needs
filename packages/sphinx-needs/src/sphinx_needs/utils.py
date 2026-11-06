@@ -499,6 +499,27 @@ def check_and_calc_base_url_rel_path(external_url: str, fromdocname: str) -> str
     return ref_uri
 
 
+def external_part_url(external_url: str, need_id: str, part_id: str, /) -> str:
+    """The URL of a part of an external need, from the URL of the need.
+
+    A sphinx-needs page anchors each part of a need at ``<need id>.<part id>``.
+    The default URL of an external need, ``{base_url}/{docname}.html#{id}``, ends in the
+    id its source wrote, which an ``id_prefix`` only prepends to: so when the URL has a
+    fragment the need's id ends with, the part's URL is that fragment followed by
+    ``.<part id>``. Any other URL (no fragment, an empty one, or one a ``target_url``
+    gave another shape) names no anchor of the part, and is returned unchanged.
+
+    :param external_url: The external need's URL (its ``external_url``).
+    :param need_id: The external need's id in this project, prefix included.
+    :param part_id: The id of the part.
+    :return: The URL to link the part to.
+    """
+    base, sep, fragment = external_url.partition("#")
+    if sep and fragment and need_id.endswith(fragment):
+        return f"{base}#{fragment}.{part_id}"
+    return external_url
+
+
 class FilterFunc(Protocol):
     def __call__(
         self,
