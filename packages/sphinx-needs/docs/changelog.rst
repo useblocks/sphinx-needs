@@ -68,6 +68,20 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
+  ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
+  **(changed output)** (:issue:`2489`)
+
+  A condition runs to the closing brackets that end the link, as many ``]`` as it was opened with:
+  ``REQ_001[status in ["open"]]`` and ``REQ_001[[x == a[0]]]`` are the conditions ``status in ["open"]`` and
+  ``x == a[0]``. A need directive with such a link was refused (``needs.create_need``), and ``needimport`` and
+  external needs dropped its condition without a warning, also from a needs.json sphinx-needs wrote itself. A
+  condition that starts with ``[`` read back as another condition, or not at all: one that also ends with ``]`` is
+  now written with one space after the opening brackets (``REQ_001[[ [x] == a[0]]]``), which the reader drops, and
+  one that does not is read where the link closes with fewer brackets than it opened with (``REQ_001[[1] == y]``).
+  Every link that was read without a warning is read as before; a link that was malformed may now read as a link
+  with a condition.
+
 - 🐛 A ``:need:`` reference to a part of an :ref:`external need <needs_external_needs>` names the part and links
   its anchor **(changed output)** (:issue:`2487`, :pr:`2493`)
 
