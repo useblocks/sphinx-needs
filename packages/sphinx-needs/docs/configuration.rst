@@ -3159,8 +3159,9 @@ keys:
   ``https://github.com/…``), which is used as it is; ``base_url`` may then be ``""``. A render with a scheme but no
   ``//``, such as ``req:REQ_1``, is appended as before.
   If no ``target_url`` is given, the external need url uses the default calculated ``base_url``.
-  A ``:need:`` reference to a part of an external need links the part's anchor, ``#<id>.<part>``, on the default url;
-  a ``target_url`` url is linked as it is, unless its fragment is the end of the need's id (``…#{{need['id']}}``).
+  A ``:need:`` reference to a part of an external need links the part's anchor, ``#<id>.<part>``, on the default url,
+  where ``<id>`` is the id in the ``needs.json``, without the ``id_prefix``; a ``target_url`` url is linked as it is,
+  unless its fragment is that id (``…#{{need['id']}}``).
   |br| The ``target_url`` supports Jinja context ``{{need[]}}``, ``need option`` used as key, e.g ``{{need['id']}}`` or ``{{need['type']}}``.
 :json_url: An url, which can be used to download the ``needs.json`` (or similar) file.
 :json_path: The path to a ``needs.json`` file located inside your documentation project. Can not be used together with
