@@ -515,7 +515,9 @@ def external_part_url(
     :param external_url: The external need's URL (its ``external_url``).
     :param need_id: The external need's id in this project, prefix included.
     :param part_id: The id of the part.
-    :param id_prefixes: The ``id_prefix`` of each external source of the project.
+    :param id_prefixes: The ``id_prefix`` of each external source of the project. A need
+        added by :func:`~sphinx_needs.api.need.add_external_need` with a prefix of its
+        caller's own takes the part's anchor only when a source uses the same prefix.
     :return: The URL to link the part to.
     """
     base, sep, fragment = external_url.partition("#")
