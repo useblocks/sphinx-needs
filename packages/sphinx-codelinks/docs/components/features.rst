@@ -324,7 +324,8 @@ Features
    compilation, so a project using ``#ifdef`` variants yields traceability objects from
    *all* branches — including branches that are never built. The optional libclang engine
    parses each file as a real translation unit, evaluates the preprocessor, and drops
-   comments inside inactive regions. Objects in active branches keep their original line
+   comments inside the regions the file's own pass through the preprocessor leaves
+   inactive. Objects in active branches keep their original line
    numbers, so source links stay accurate without any source transformation.
 
    Key capabilities:
