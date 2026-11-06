@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1793962298122,
+  "lastUpdate": 1793972489643,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -29106,6 +29106,48 @@ window.BENCHMARK_DATA = {
             "value": 184.511019,
             "unit": "MB",
             "extra": "Commit: 13ede5320fc5a039d9a04c459995871a24210974\nBranch: master\nTime: 2026-11-06T11:49:56+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e8a3e0529a44b3fa89d4edc11a5f99b743036115",
+          "message": "🐛 Every link condition reads back as it was written (#2494)\n\n`NeedLink.to_link_string` promised that its output reads back through\n`NeedLink.from_string`. It did not for two classes of condition:\n\n- **A condition that ends in `]`** (`x == a[0]`, `status in ['open']`)\nwas written `B[[x == a[0]]]` and read back as `B`, with an \"Unexpected\ntext after closing condition bracket\" warning.\n  An authored need with such a link was refused (`needs.create_need`).\n`needimport` and external needs dropped the condition without a word,\neven from a needs.json sphinx-needs wrote itself (format 1 with\n`needs_json_include_link_conditions`, and the draft 2a1).\n- **A condition that starts with `[`** (`[1] == y`, `[x]`) read back as\nanother condition (`B[[[x]]]` is `x`), or as an unclosed link with a\ndead id.\n\nThe rule now:\n\n1. The condition runs to the closing brackets that END the link, as many\n`]` as it opened with (`REQ[status in ['open']]`, `REQ[[x == a[0]]]`).\nWhere the link ends otherwise, the first closing run ends the condition\nand the rest is malformed, as before.\n2. A condition that starts with `[` (after any spaces) and ends with `]`\nis written with one space after the opening brackets (`B[[ [x] ==\na[0]]]`), and the reader drops that space.\n3. A condition that starts with `[` and does not end with `]` is read\nwhere the link closes with fewer brackets than it opened with (`B[[1] ==\ny]` is `[1] == y`).\n\nSo every non-empty condition round-trips. `\"\"` is written `B[]`, which\nreads as no condition, as before.\n**Every string that was read without a warning is read exactly as\nbefore**, pinned three ways against a frozen copy of the 9.2.0 reader:\n\n- every string over `B.[] x` up to length 7 (335,923);\n- a hypothesis test over longer and link-shaped strings;\n- `parse_conditions=False` unchanged.\n\nMeasured beyond the suite, over `B.[]x` up to length 9: 959,426 clean\nstrings, 0 changed; 179,736 of the 1,481,980 malformed ones now read as\na link with a condition.\n\nWhat moves is confined to strings that warned before:\n\n- `REQ[[unclosed]` and `REQ[[[x]]`, pinned in `test_split_link_list` as\n\"Unclosed condition brackets\", now read as the conditions `[unclosed`\nand `[x`;\n- a link with no closing bracket at all (`REQ[[unclosed`) still warns;\n- a typo such as a missing comma between two conditioned links used to\nrefuse the need.\nIt now creates the need, with the second link folded into the first\nlink's condition, and still warns, as `needs.link_condition_invalid`.\n\n**Older readers.** A reader without this change (sphinx-needs up to\n9.2.0) drops a condition written with the new space marker (`B[[ [x]]]`)\nwithout a warning.\nBefore, it read a wrong condition there, or an invalid one. Conditions\nthat do not start with `[` are written as before.\n\n**Commit structure.** Rules 2 and 3 are their own pair of commits\n(`0afe9ba` pins, `5e341ab` fix), after rule 1's pair, so they can be\ndropped on review.\nWithout them, everything but a condition starting with `[` round-trips.\nDropping them takes:\n\n- one line in the last test commit (`from hypothesis import assume,\ngiven, settings`);\n- rewording, not just trimming, ub-needs-exchange's design §5.1 and its\nchangelog entry;\n- removing the docs commit's sentences on the space marker.\n\n**ub-needs-exchange.** Its 2a1 projection spells a link object exactly\nas `to_link_string` does, and its test pins that equality, so it gains\nthe same space.\n\n- Its `NOT_ROUND_TRIPPED` case moves into the round-tripped links.\n- Design §5.1 drops the condition exception.\n- The draft corpus gains `a-condition-that-ends-in-a-bracket` and\n`a-condition-that-starts-and-ends-with-a-bracket-is-spelled-with-a-space`,\nadded lines only.\n\nChangelogs: `packages/sphinx-needs/docs/changelog.rst` (Bug fixes,\n**changed output**) and `packages/ub-needs-exchange/docs/changelog.rst`.\n\nCloses #2489\n\n### ubCode\n\nIt carries the same reader, writer and 2a1 projection, and loses the\nsame conditions (measured).\nThe matching change, including a re-vendor of the 2a1 draft corpus, is\ntracked in useblocks/ubcode#4623.",
+          "timestamp": "2026-11-06T14:40:08+01:00",
+          "tree_id": "bf23e1eb0276df596440b49957943d1715775c9a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e8a3e0529a44b3fa89d4edc11a5f99b743036115"
+        },
+        "date": 1793972488618,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.043104297999999375,
+            "unit": "s",
+            "extra": "Commit: e8a3e0529a44b3fa89d4edc11a5f99b743036115\nBranch: master\nTime: 2026-11-06T14:40:08+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 9.606698893,
+            "unit": "s",
+            "extra": "Commit: e8a3e0529a44b3fa89d4edc11a5f99b743036115\nBranch: master\nTime: 2026-11-06T14:40:08+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 184.837855,
+            "unit": "MB",
+            "extra": "Commit: e8a3e0529a44b3fa89d4edc11a5f99b743036115\nBranch: master\nTime: 2026-11-06T14:40:08+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
           }
         ]
       }
