@@ -105,6 +105,9 @@ def update_need_with_parts(
                 "duplicate_part_id",
                 part_node,
             )
+            # the first part of an id is kept and this one is dropped, but it is in
+            # the need: recorded so, it is not also reported as outside every need
+            part_node.need_id = need["id"]
             continue
 
         parts[part_id] = NeedPartData(
