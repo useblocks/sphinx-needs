@@ -676,6 +676,21 @@ def test_a_link_object_is_spelled_as_sphinx_needs_writes_it(link):
     assert spelled == need_item.NeedLink(**link).to_link_string()
 
 
+def test_an_empty_condition_is_spelled_as_no_condition():
+    """An empty condition is spelled ``B[]``, as sphinx-needs' writer spells it, which
+    sphinx-needs reads as no condition: the one condition that does not read back as
+    itself, by design (``design/v2a1-draft.md`` §5.1)."""
+    version = read_draft(
+        draft(
+            [{"id": "A", "type": "req", "links": {"l": [{"id": "B", "condition": ""}]}}]
+        )
+    )
+    (spelled,) = version.records()[0].fields["l"]
+    assert spelled == "B[]"
+    need_item = pytest.importorskip("sphinx_needs.need_item")
+    assert need_item.NeedLink.from_string(spelled) == need_item.NeedLink(id="B")
+
+
 @pytest.mark.parametrize("link", LINKS, ids=[json.dumps(link) for link in LINKS])
 def test_a_link_object_reads_back_as_the_same_link(link):
     """The round trip the projection exists for: sphinx-needs reads the spelled link
