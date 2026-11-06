@@ -5,6 +5,7 @@ page whose need ``UP_001`` has the parts ``p1`` and ``p2``; that page's HTML giv
 part the anchor ``UP_001.<part>`` (``test_need_parts.py`` pins the anchor a part gets).
 """
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -74,6 +75,57 @@ def test_external_need_part_reference(test_app: Sphinx):
         "Anchored target URL part": (
             f'<a class="external_link reference external" href="{url}/page.html#req-UP_001">'
             '<em class="xref need">second part text (ANC_UP_001.p2)</em></a>'
+        ),
+        # a whole external need with a text given in the role: still its id
+        "Named need": (
+            f'<a class="external_link reference external" href="{url}/index.html#UP_001">'
+            "UP_001</a>"
+        ),
+        # a fragment that ends the id (``#1`` of ``NUM_UP_001``) but is not the id after
+        # the source's prefix: the URL as given
+        "Suffix target URL part": (
+            f'<a class="external_link reference external" href="{url}/page.html#1">'
+            '<em class="xref need">first part text (NUM_UP_001.p1)</em></a>'
+        ),
+    }
+    wrong = [
+        label
+        for label, anchor in expected.items()
+        if f"<p>{label}: {anchor}</p>" not in html
+    ]
+    assert wrong == []
+
+
+# check_and_calc_base_url_rel_path splits a docname on os.path.sep, which a docname never
+# holds on Windows, so no relative URL is rewritten there; test_needs_external_needs_build
+# skips its nested relative-path asserts for the same reason
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="relative base_url not rewritten on Windows"
+)
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_external_need_parts"}],
+    indirect=True,
+)
+def test_external_need_part_reference_relative_base_url(test_app: Sphinx):
+    """A part link over a relative ``base_url`` is relative to the page it is on.
+
+    From ``sub/page``, one directory down, the source's ``../up`` becomes ``../../up``
+    for a part as for a whole need, and the part's fragment survives the rewrite.
+    """
+    app = test_app
+    app.build()
+
+    html = Path(app.outdir, "sub", "page.html").read_text()
+    expected = {
+        "Relative part": (
+            '<a class="external_link reference external" '
+            'href="../../up/index.html#UP_001.p1">'
+            '<em class="xref need">first part text (REL_UP_001.p1)</em></a>'
+        ),
+        "Relative need": (
+            '<a class="external_link reference external" '
+            'href="../../up/index.html#UP_001">REL_UP_001</a>'
         ),
     }
     wrong = [
