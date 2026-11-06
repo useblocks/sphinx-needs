@@ -70,7 +70,7 @@ Bug fixes
 
 - 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
   ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
-  **(changed output)** (:issue:`2489`)
+  **(changed output)** (:issue:`2489`, :pr:`2494`)
 
   A condition runs to the closing brackets that end the link, as many ``]`` as it was opened with:
   ``REQ_001[status in ["open"]]`` and ``REQ_001[[x == a[0]]]`` are the conditions ``status in ["open"]`` and
