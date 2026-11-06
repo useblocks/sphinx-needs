@@ -69,7 +69,7 @@ Bug fixes
 .........
 
 - 🐛 A ``:need:`` reference to a part of an :ref:`external need <needs_external_needs>` names the part and links
-  its anchor **(changed output)** (:issue:`2487`)
+  its anchor **(changed output)** (:issue:`2487`, :pr:`2493`)
 
   It rendered the external need's bare id and linked the need, so the part was lost, and so was a text given in the
   role. It is now written as a reference to a part of a need of the project: the part's text and the full
