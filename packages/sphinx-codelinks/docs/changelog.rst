@@ -9,6 +9,19 @@ Unreleased
 Fixes
 .....
 
+- 🐛 A C or C++ marker directly above the line of a preprocessor conditional belongs to
+  no entity outside a function's body, as clang reads it (:ref:`attachment`). In a
+  namespace or class body it belonged to the namespace or class, so one marker above an
+  ``#if`` traced every function of the container, whichever arm was compiled; at file
+  level it already belonged to none. The line is any of ``#if``, ``#ifdef``, ``#ifndef``,
+  ``#elif``, ``#elifdef``, ``#elifndef``, ``#else`` and ``#endif``, with only comments and
+  no blank line between it and the marker. Such a marker's record loses its
+  ``tagged_scope`` and ``scope`` in ``marked_content.json``, and the need ``src-trace``
+  creates from it records no entity. To trace one arm's definition, move the marker into
+  the arm, directly above the definition; to keep the namespace or class, leave a blank
+  line between the marker and the directive. A marker in a function's body, a trailing
+  marker and a marker above any other directive (``#define``, ``#include``, ``#pragma``)
+  keep their entity.
 - 🐛 A one-line marker that sets a link type named ``full_title`` no longer aborts the build
   (`#2466 <https://github.com/useblocks/sphinx-needs/issues/2466>`__,
   `#2477 <https://github.com/useblocks/sphinx-needs/pull/2477>`__): the link is the need's

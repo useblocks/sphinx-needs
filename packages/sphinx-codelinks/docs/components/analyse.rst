@@ -211,14 +211,23 @@ In this order:
    through what wraps it: a Python decorator, a C++ ``template <...>`` header or ``extern "C"``, a TypeScript
    ``export`` or ``declare``. In Python, a comment between ``def f():`` and the first line of its body belongs to that
    first line's entity, if it is one.
-7. **Otherwise**, the entity the marker is inside, if any: ``leading`` when the marker is directly inside, or right
+7. **A marker directly above a preprocessor conditional**, in C and C++ -- with only other comments, and no blank line,
+   between it and an ``#if``, ``#ifdef``, ``#ifndef``, ``#elif``, ``#elifdef``, ``#elifndef``, ``#else`` or
+   ``#endif`` line -- belongs to the file, outside a function's body: in a namespace or class body too, where the
+   namespace or class would otherwise hold it and so trace every function inside, whichever arm is compiled.
+   clang reads it so: a comment documents no declaration across a ``#`` line.
+   To trace an arm's definition, write the marker inside the arm, directly above the definition (rule 6); to mean the
+   namespace or class as a whole, leave a blank line between the marker and the directive (rule 8).
+   In a function's body, the function holds it (rule 8).
+8. **Otherwise**, the entity the marker is inside, if any: ``leading`` when the marker is directly inside, or right
    after, an attribute, a decorator or a template header the entity owns (its head; a comment nested deeper, in such a
    head's argument list, is not), ``trailing`` when it trails code on the entity's first line, ``enclosing``
    otherwise.
 
 Anything else between a leading marker and an entity -- a statement, a variable, a macro call,
 a preprocessor directive (``#include``, ``#define``, ``#pragma``, ``#if``) -- breaks the attachment:
-the marker belongs to the entity it is inside, or to the file. A marker is never attached across code.
+the marker belongs to the entity it is inside, or to the file, and always to the file directly above a conditional
+outside a function's body (rule 7). A marker is never attached across code.
 
 What counts as an entity
 ~~~~~~~~~~~~~~~~~~~~~~~~
