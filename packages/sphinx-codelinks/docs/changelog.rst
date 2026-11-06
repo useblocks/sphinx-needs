@@ -33,7 +33,8 @@ Fixes
   no longer aborts the build
   (`#2479 <https://github.com/useblocks/sphinx-needs/issues/2479>`__): it is no full
   title, so the need is created with the id of its title, the one the duplicate check and
-  the ``[docs]`` link name, and a field the project declares as an array holds the list.
+  the ``[docs]`` link name; a field the project declares as an array holds the list, and a ``full_title`` the
+  project does not declare is dropped, without a warning.
 - 🐛 A one-line marker that sets a link type named ``full_title`` no longer aborts the build
   (`#2466 <https://github.com/useblocks/sphinx-needs/issues/2466>`__,
   `#2477 <https://github.com/useblocks/sphinx-needs/pull/2477>`__): the link is the need's

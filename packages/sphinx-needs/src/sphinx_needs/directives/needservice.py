@@ -125,7 +125,7 @@ class NeedserviceDirective(SphinxDirective):
         needs_config = NeedsSphinxConfig(self.env.config)
         needs_schema = SphinxNeedsData(self.env).get_schema()
         needs_services = SphinxNeedsData(self.env).get_or_create_services()
-        #: a datum's ``full_title`` of one of these names is a link, never a full title
+        # a datum's `full_title` of one of these names is a link, never a full title
         link_names = frozenset(needs_schema.iter_link_field_names())
 
         # the service first, before its options: a built-in service's control options
