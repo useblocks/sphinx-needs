@@ -68,6 +68,17 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 A ``:need:`` reference to a part of an :ref:`external need <needs_external_needs>` names the part and links
+  its anchor **(changed output)** (:issue:`2487`, :pr:`2493`)
+
+  It rendered the external need's bare id and linked the need, so the part was lost, and so was a text given in the
+  role. It is now written as a reference to a part of a need of the project: the part's text and the full
+  ``ID.part`` (``first part text (UP_001.p1)``), or the role's text, keeping the external need's css class. The link
+  goes to the part's anchor, ``#UP_001.p1``, when the fragment of the external need's URL is the need's id, alone or
+  after the ``id_prefix`` of one of the project's external sources, as on the default ``…/<docname>.html#<id>``.
+  A ``target_url`` of another shape is linked as it is.
+  A reference to a whole external need still renders its id, also with a text given in the role.
+
 - 🐛 A part id repeated in one need is reported once, as ``needs.duplicate_part_id``, and no longer also as a part
   "not associated with a need" (``needs.part``); the first part of the id is still the one kept (:issue:`2485`, :pr:`2492`)
 
