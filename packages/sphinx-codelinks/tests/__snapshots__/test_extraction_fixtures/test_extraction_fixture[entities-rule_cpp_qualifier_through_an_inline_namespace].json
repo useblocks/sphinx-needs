@@ -1,0 +1,178 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 56
+      }
+    },
+    "tagged_scope": "void f(int);",
+    "scope": {
+      "kind": "declaration",
+      "start": 4,
+      "end": 4,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "lib::f",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Declared in an inline namespace",
+      "id": "IMPL_R_INLQ_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 10,
+        "column": 4
+      },
+      "end": {
+        "row": 10,
+        "column": 61
+      }
+    },
+    "tagged_scope": "void lib::v1::f(int) {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 12,
+      "end": 12,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "lib::f",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "lib"
+        },
+        {
+          "kind": "method",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Defined through the inline namespace",
+      "id": "IMPL_R_INLQ_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 12,
+        "column": 4
+      },
+      "end": {
+        "row": 12,
+        "column": 57
+      }
+    },
+    "tagged_scope": "void lib::v1::g() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 14,
+      "end": 14,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "lib::v1::g",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "lib"
+        },
+        {
+          "kind": "class",
+          "name": "v1"
+        },
+        {
+          "kind": "method",
+          "name": "g"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "One of two siblings' definitions",
+      "id": "IMPL_R_INLQ_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 14,
+        "column": 4
+      },
+      "end": {
+        "row": 14,
+        "column": 36
+      }
+    },
+    "tagged_scope": "void lib::v2::g() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 16,
+      "end": 16,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "lib::v2::g",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "lib"
+        },
+        {
+          "kind": "class",
+          "name": "v2"
+        },
+        {
+          "kind": "method",
+          "name": "g"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "The other's",
+      "id": "IMPL_R_INLQ_4",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

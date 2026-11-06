@@ -1,0 +1,94 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 35
+      }
+    },
+    "tagged_scope": "void h(int) {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 4,
+      "end": 4,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "lib::v1::h",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "namespace",
+          "name": "v1"
+        },
+        {
+          "kind": "function",
+          "name": "h"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "One of two",
+      "id": "IMPL_R_INLC_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 4
+      },
+      "end": {
+        "row": 6,
+        "column": 34
+      }
+    },
+    "tagged_scope": "void h(int) {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 8,
+      "end": 8,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "lib::v2::h",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "namespace",
+          "name": "v2"
+        },
+        {
+          "kind": "function",
+          "name": "h"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "The other",
+      "id": "IMPL_R_INLC_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

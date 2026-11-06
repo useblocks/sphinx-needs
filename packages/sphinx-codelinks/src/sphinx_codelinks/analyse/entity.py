@@ -19,12 +19,13 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable, Iterable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from pathlib import PurePath
 from typing import Literal, NotRequired, TypedDict
 
 from tree_sitter import Node as TreeSitterNode
 
+from sphinx_codelinks.analyse.cpp_macros import MacroScopes
 from sphinx_codelinks.source_discover.config import CommentType
 
 EntityKind = Literal[
@@ -94,6 +95,10 @@ class EntityName:
     """``qualified_name`` as its components, outermost first and the entity last
     (``namespace ns``, ``class Widget``, ``method draw``); ``None`` exactly when
     ``qualified_name`` is. :func:`render_semantic` spells them back."""
+    name_end: int | None = field(default=None, compare=False, repr=False)
+    """The byte offset where the node's own name ends in the file (C and C++ only),
+    ``None`` when it has no name node: what the names a whole C++ file decides are
+    keyed by (:class:`CppNames`). Not part of the analysis output."""
 
 
 @dataclass(frozen=True)
@@ -476,19 +481,26 @@ _DOC_BLOCK_OPENINGS: dict[CommentType, tuple[str, ...]] = {
 }
 
 
-def is_doc_comment(node: TreeSitterNode, comment_type: CommentType) -> bool:
+def is_doc_comment(
+    node: TreeSitterNode, comment_type: CommentType, *, text: bytes | None = None
+) -> bool:
     """Whether the comment ``node`` is a documentation comment of its language.
 
     A Python docstring is one too, but it is a string, not a comment: the caller knows
     it by its capture.
+
+    :param text: The comment's text as the file writes it (``SourceComment.text``);
+        ``node.text`` when not given.
     """
-    text = (node.text or b"").decode("utf-8", "replace")
+    written = ((node.text or b"") if text is None else text).decode("utf-8", "replace")
     for opening in _DOC_LINE_OPENINGS.get(comment_type, ()):
-        if text.startswith(opening):
-            return not (opening == "///" and text.startswith("////"))
+        if written.startswith(opening):
+            return not (opening == "///" and written.startswith("////"))
     for opening in _DOC_BLOCK_OPENINGS.get(comment_type, ()):
-        if text.startswith(opening):
-            return opening == "/*!" or not text[len(opening) :].startswith(("*", "/"))
+        if written.startswith(opening):
+            return opening == "/*!" or not written[len(opening) :].startswith(
+                ("*", "/")
+            )
     return False
 
 
@@ -563,12 +575,15 @@ def _element(kind: str, name: str) -> SemanticElement:
 
 
 def _named(
-    kind: EntityKind, qualified_name: str | None, semantic: Iterable[SemanticElement]
+    kind: EntityKind,
+    qualified_name: str | None,
+    semantic: Iterable[SemanticElement],
+    name_end: int | None = None,
 ) -> EntityName:
     """An entity's name and its components; no components when it has no name."""
     if qualified_name is None:
-        return EntityName(kind, None, None)
-    return EntityName(kind, qualified_name, tuple(semantic))
+        return EntityName(kind, None, None, name_end)
+    return EntityName(kind, qualified_name, tuple(semantic), name_end)
 
 
 # --- C and C++ ---------------------------------------------------------------
@@ -584,6 +599,88 @@ _CPP_CLASS_KINDS: dict[str, EntityKind] = {
 _CPP_MEMBER_KINDS = frozenset({"method", "constructor", "destructor"})
 
 
+def _cpp_text(node: TreeSitterNode | None, source: bytes | None) -> str:
+    """The text of ``node``, read from ``source`` when given.
+
+    ``source`` is the file as written: a C++ tree may be parsed from a prepared copy of
+    it (:mod:`sphinx_codelinks.analyse.cpp_macros`), and every name is read from the
+    file, never from that copy. Without it, the tree's own text is read.
+    """
+    return _cpp_bytes(node, source).decode("utf-8", "replace")
+
+
+def _cpp_bytes(node: TreeSitterNode | None, source: bytes | None) -> bytes:
+    """The bytes of ``node``, read from ``source`` when given (see :func:`_cpp_text`)."""
+    if node is None:
+        return b""
+    if source is None:
+        return node.text or b""
+    return source[node.start_byte : node.end_byte]
+
+
+@dataclass(frozen=True)
+class _CppNaming:
+    """How the names of a C++ tree's entities are made beyond one node."""
+
+    full_chain: bool = False
+    """Keep every container, an inline namespace and a friend's classes included, as
+    the names were made before they were left out (see :func:`cpp_renames`)."""
+    specs: _PartialSpecs | None = None
+    """The file's partial specialisations, which an out-of-line qualifier is spelled
+    as (:func:`_cpp_name`)."""
+    inline: frozenset[str] | None = None
+    """The paths of the file's inline namespaces as the full chain spells them
+    (``lib::v2``), which a written qualifier leaves out
+    (:func:`_cpp_without_inline_parts`)."""
+    macros: Callable[[int], str] | None = None
+    """The namespaces the file's own macros open around a name ending at a byte, each
+    followed by ``::``."""
+
+    def macros_at(self, name_end: int) -> str:
+        """The namespaces the file's own macros open around a name ending at
+        ``name_end`` (``ns::`` or empty)."""
+        return self.macros(name_end) if self.macros is not None else ""
+
+    def specs_at(
+        self, node: TreeSitterNode, source: bytes | None, name_end: int, written: str
+    ) -> _Lookup | None:
+        """Where the templates the name ``written`` at ``node`` (ending at
+        ``name_end``) qualifies are looked up among the file's partial specialisations
+        (:class:`_Lookup`), when it has any."""
+        if self.specs is None:
+            return None
+        macros = self.macros_at(name_end)
+        inline_parts = (
+            _cpp_inline_segments(
+                self.inline, macros, node, source, _squeeze(written).lstrip(":")
+            )
+            if self.inline is not None
+            else []
+        )
+        return _Lookup(
+            self.specs, _cpp_scope_of(node, source, self, macros), inline_parts
+        )
+
+
+@dataclass(frozen=True)
+class _Lookup:
+    """Where the templates an out-of-line qualifier names are looked up among the
+    file's partial specialisations (:func:`_cpp_name`)."""
+
+    specs: _PartialSpecs
+    """The file's partial specialisations."""
+    scope: str
+    """Where the name is written (:func:`_cpp_scope_of`)."""
+    inline_parts: list[int]
+    """The parts of the written name that name an inline namespace of the file
+    (:func:`_cpp_inline_segments`): left out of the path, as the specialisations' own
+    keys leave them out."""
+
+
+_ALONE = _CppNaming()
+_FULL = _CppNaming(full_chain=True)
+
+
 def _cpp_templated(node: TreeSitterNode) -> bool:
     """Under a ``template`` with parameters (not an explicit specialisation)."""
     parent = node.parent
@@ -595,14 +692,598 @@ def _cpp_templated(node: TreeSitterNode) -> bool:
     return False
 
 
-def _cpp_name(text: str, templated: bool) -> str:
-    name = _squeeze(text).lstrip(":")
-    return _strip_template_args(name) if templated else name
+def _cpp_template_headers(
+    node: TreeSitterNode, source: bytes | None
+) -> list[list[str]]:
+    """The parameter names of each ``template <…>`` header around ``node``, outermost
+    first (``template <typename T> template <typename U>`` is ``[T]``, ``[U]``;
+    ``template <>`` is ``[]``; a pack ``typename... Ts`` is ``Ts``)."""
+    headers: list[list[str]] = []
+    parent = node.parent
+    while parent is not None and parent.type == "template_declaration":
+        parameters = parent.child_by_field_name("parameters")
+        headers.append(
+            [
+                _cpp_parameter_name(parameter, source)
+                for parameter in parameters.named_children
+                if parameter.type != "comment"
+            ]
+            if parameters is not None
+            else []
+        )
+        parent = parent.parent
+    headers.reverse()
+    return headers
 
 
-def _cpp_namespace_name(node: TreeSitterNode) -> str:
+def _cpp_parameter_name(parameter: TreeSitterNode, source: bytes | None) -> str:
+    """The name a template parameter declares (``T`` of ``typename T = int``, ``N`` of
+    ``int N``, ``Ts`` of ``typename... Ts``, ``TT`` of
+    ``template <class> class TT``); empty for an unnamed one."""
+    if parameter.type in (
+        "type_parameter_declaration",
+        "variadic_type_parameter_declaration",
+    ):
+        name = next(
+            (c for c in parameter.named_children if c.type == "type_identifier"), None
+        )
+    elif parameter.type == "optional_type_parameter_declaration":
+        name = parameter.child_by_field_name("name")
+    elif parameter.type == "template_template_parameter_declaration":
+        inner = next(
+            (
+                c
+                for c in reversed(parameter.named_children)
+                if c.type.endswith("type_parameter_declaration")
+            ),
+            None,
+        )
+        return _cpp_parameter_name(inner, source) if inner is not None else ""
+    else:
+        # a non-type parameter: the identifier its declarator ends in
+        declarator = parameter.child_by_field_name("declarator")
+        stack = [declarator] if declarator is not None else []
+        name = None
+        while stack:
+            current = stack.pop()
+            if current.type == "identifier":
+                name = current
+                break
+            stack.extend(reversed(current.named_children))
+    return _squeeze(_cpp_text(name, source))
+
+
+def _cpp_written_arguments(part: str) -> list[str] | None:
+    """The arguments of ``part``'s template argument list (``P<T,4>`` is ``T`` and
+    ``4``), split at its top-level commas, a pack expansion with its ``...``
+    (``Ts...``). ``None`` when ``part`` has no argument list."""
+    open_at = part.find("<")
+    if open_at < 0 or not part.endswith(">") or open_at + 1 > len(part) - 1:
+        return None
+    inner = part[open_at + 1 : -1]
+    arguments: list[str] = []
+    depth = start = 0
+    for index, char in enumerate(inner):
+        if char in "<([":
+            depth += 1
+        elif char in ">)]":
+            depth = max(depth - 1, 0)
+        elif char == "," and depth == 0:
+            arguments.append(inner[start:index])
+            start = index + 1
+    arguments.append(inner[start:])
+    return [argument.strip() for argument in arguments]
+
+
+def _cpp_template_arguments(part: str) -> list[str] | None:
+    """:func:`_cpp_written_arguments`, a pack expansion without its ``...`` (``Ts...``
+    is ``Ts``): what a header's parameter names are compared with."""
+    written = _cpp_written_arguments(part)
+    if written is None:
+        return None
+    stripped = []
+    for argument in written:
+        while argument.endswith("..."):
+            argument = argument[: -len("...")]
+        stripped.append(argument)
+    return stripped
+
+
+def _cpp_words(text: str) -> list[str]:
+    """The identifiers of ``text``, in order."""
+    words: list[str] = []
+    start: int | None = None
+    for index, char in enumerate(text):
+        if _is_ident_char(char):
+            if start is None:
+                start = index
+        elif start is not None:
+            words.append(text[start:index])
+            start = None
+    if start is not None:
+        words.append(text[start:])
+    return words
+
+
+def _cpp_canonical(arguments: list[str], parameters: list[str]) -> list[str]:
+    """``arguments`` with every name in ``parameters`` replaced by its place among the
+    parameters named so far (``$0``, ``$1``, …): two argument lists that are the same
+    but for their own template parameter names (``<T,4>`` under
+    ``template <typename T>``, ``<U,4>`` under ``template <typename U>``) give the same
+    list."""
+    seen: list[str] = []
+
+    def spelled(word: str) -> str:
+        if word not in parameters:
+            return word
+        if word not in seen:
+            seen.append(word)
+        return f"${seen.index(word)}"
+
+    canonical: list[str] = []
+    for argument in arguments:
+        out: list[str] = []
+        start: int | None = None
+        for index, char in enumerate(argument):
+            if _is_ident_char(char):
+                if start is None:
+                    start = index
+                continue
+            if start is not None:
+                out.append(spelled(argument[start:index]))
+                start = None
+            out.append(char)
+        if start is not None:
+            out.append(spelled(argument[start:]))
+        canonical.append("".join(out))
+    return canonical
+
+
+@dataclass(frozen=True)
+class _PartialSpec:
+    """One partial specialisation :class:`_PartialSpecs` holds."""
+
+    spelled: str
+    """Its last name part, squeezed (``P<T,4>``)."""
+    canonical: list[str]
+    """Its arguments up to its own parameter names (:func:`_cpp_canonical`)."""
+    defined: bool
+    """Whether it has a body: a forward declaration does not."""
+
+
+class _PartialSpecs:
+    """The partial specialisations of class templates a C++ file declares, by the
+    template's qualified name (:func:`_cpp_scope_of` and its name: ``ns1::P``, so
+    ``ns1::P<T,4>`` and ``ns2::P<U,4>`` never share one): each as it spells its last
+    name part (``P<T,4>``), its arguments up to its own parameter names, a pack's
+    ``...`` kept (:func:`_cpp_canonical`), and whether it has a body. An out-of-line
+    qualifier the same but for its parameter names as exactly one spelling of those
+    with a body is spelled as it is (:func:`_cpp_name`), so the members the
+    specialisation defines join their in-class declarations; a forward declaration
+    never sets the spelling, and where two spellings remain none does."""
+
+    def __init__(self) -> None:
+        self.by_template: dict[str, list[_PartialSpec]] = {}
+
+    @classmethod
+    def of(
+        cls, nodes: list[TreeSitterNode], source: bytes | None, naming: _CppNaming
+    ) -> _PartialSpecs:
+        """The partial specialisations among ``nodes`` (:meth:`add`)."""
+        specs = cls()
+        for node in nodes:
+            specs.add(node, source, naming)
+        return specs
+
+    def add(
+        self, node: TreeSitterNode, source: bytes | None, naming: _CppNaming
+    ) -> None:
+        """``node``, when it is a class, struct or union named with template arguments
+        under a header with parameters (a partial specialisation), keyed as ``naming``
+        reads where it is (the file's own macros and its inline namespaces,
+        :func:`_cpp_scope_of`)."""
+        if not _cpp_templated_class(node):
+            return
+        name = node.child_by_field_name("name")
+        if name is None:
+            return
+        headers = _cpp_template_headers(node, source)
+        if not headers or not headers[-1]:
+            return
+        spelled = _cpp_class_name(name, node, source)
+        *qualifiers, part = _cpp_split(spelled)
+        arguments = _cpp_written_arguments(part)
+        if arguments is None:
+            return
+        macros = naming.macros_at(name.end_byte)
+        inline_parts = (
+            _cpp_inline_segments(naming.inline, macros, node, source, spelled)
+            if naming.inline is not None
+            else []
+        )
+        template = _cpp_scope_of(node, source, naming, macros)
+        template += "".join(
+            f"{_strip_template_args(qualifier)}::"
+            for index, qualifier in enumerate(qualifiers)
+            if index not in inline_parts
+        )
+        template += part.split("<", 1)[0]
+        self.by_template.setdefault(template, []).append(
+            _PartialSpec(
+                part,
+                _cpp_canonical(arguments, headers[-1]),
+                node.child_by_field_name("body") is not None,
+            )
+        )
+
+    def spelling(self, scope: str, part: str, parameters: list[str]) -> str | None:
+        """How the partial specialisations of the file spell ``part`` (a qualifier in
+        ``scope``, :func:`_cpp_scope_of` and the qualifiers before it, under a header
+        of ``parameters``): the one spelling of those with a body that are the same but
+        for their parameter names, when there is exactly one."""
+        arguments = _cpp_written_arguments(part)
+        if arguments is None:
+            return None
+        wanted = _cpp_canonical(arguments, parameters)
+        spellings = {
+            spec.spelled
+            for spec in self.by_template.get(scope + part.split("<", 1)[0], ())
+            if spec.defined and spec.canonical == wanted
+        }
+        return next(iter(spellings)) if len(spellings) == 1 else None
+
+
+def _cpp_templated_class(node: TreeSitterNode) -> bool:
+    """``node`` is a class, struct or union under a template header: a partial
+    specialisation when it is named with arguments under a header with parameters
+    (:meth:`_PartialSpecs.add`)."""
+    return (
+        node.type in ("class_specifier", "struct_specifier", "union_specifier")
+        and node.parent is not None
+        and node.parent.type == "template_declaration"
+    )
+
+
+def _cpp_scope_of(
+    node: TreeSitterNode, source: bytes | None, naming: _CppNaming, macros: str
+) -> str:
+    """Where the templates a name written at ``node`` qualifies are looked up:
+    ``macros`` (the namespaces the file's own macros open around it, ``ns::`` or
+    empty), then the namespaces and classes around it as ``naming`` names them with
+    every inline namespace left out (:func:`_cpp_containers`), each without its
+    arguments and followed by ``::``."""
+    around = replace(naming, full_chain=False, specs=None)
+    segments, _ = _cpp_containers(node, source, around)
+    return macros + "".join(
+        f"{_strip_template_args(part)}::"
+        for segment in segments
+        for part in _cpp_split(segment)
+    )
+
+
+def _cpp_name(
+    text: str,
+    headers: list[list[str]],
+    *,
+    strip_last: bool,
+    lookup: _Lookup | None,
+) -> str:
+    """A name as the naming spells it: ``text`` squeezed, without a leading ``::``.
+
+    A qualifier's template argument list that names a parameter of the next
+    ``template <…>`` header around the definition (``headers``, outermost first) is
+    matched with that header; one that names none of them (an explicit specialisation,
+    ``Outer<int>``) is kept and takes no header but an empty ``template <>``
+    (``template <> template <class U> void Outer<int>::Inner<U>::n()`` matches
+    ``Inner<U>`` with ``<class U>``). A matched list is spelled as a partial
+    specialisation of the file spells its arguments when the two are the same but for
+    their own parameter names (``lookup``, with the scope the name is written in,
+    ``ns::`` or empty: ``template <typename U> void P<U,4>::fill()`` is ``P<T,4>::fill``
+    when the file defines ``template <typename T> struct P<T,4> {…}``;
+    :class:`_PartialSpecs`, :class:`_Lookup`).
+    Otherwise it is the template's own when its arguments are exactly the header's
+    parameter names (the primary template's member,
+    ``template <typename T> void Box<T>::get()``), named without it (``Box::get``), and
+    a specialisation's, kept, when they are not (``template <typename B> void
+    W<B,4>::fill()`` is ``W<B,4>::fill``). The last part's list is stripped when
+    ``strip_last`` (a function under a header with parameters).
+    """
+    parts = _cpp_split(_squeeze(text).lstrip(":"))
+    last = len(parts) - 1
+    remaining = iter(headers)
+    upcoming = next(remaining, None)
+    # where the template a qualifier names is: the scope, then the qualifiers before
+    # it, without their arguments and without those that name an inline namespace of
+    # the file
+    path = lookup.scope if lookup is not None else ""
+    spelled: list[str] = []
+    for index, part in enumerate(parts):
+        if index == last:
+            spelled.append(_strip_template_args(part) if strip_last else part)
+            break
+        arguments = _cpp_template_arguments(part)
+        if arguments is None:
+            spelled.append(part)
+        elif upcoming is None or not any(
+            word in upcoming for argument in arguments for word in _cpp_words(argument)
+        ):
+            # an explicit specialisation's empty ``template <>`` is its own
+            if upcoming == []:
+                upcoming = next(remaining, None)
+            spelled.append(part)
+        else:
+            parameters = upcoming
+            upcoming = next(remaining, None)
+            as_spec = (
+                lookup.specs.spelling(path, part, parameters)
+                if lookup is not None
+                else None
+            )
+            if as_spec is not None:
+                spelled.append(as_spec)
+            elif parameters == arguments:
+                spelled.append(_strip_template_args(part))
+            else:
+                spelled.append(part)
+        if lookup is None or index not in lookup.inline_parts:
+            path += f"{_strip_template_args(part)}::"
+    return "::".join(spelled)
+
+
+def _cpp_text_without_comments(node: TreeSitterNode, source: bytes | None) -> str:
+    """The text of ``node`` with every comment inside it left out (``json.hpp`` writes
+    ``//`` comments between a specialisation's template arguments)."""
+    comments: list[tuple[int, int]] = []
+    stack = [node]
+    while stack:
+        current = stack.pop()
+        if current.type == "comment":
+            comments.append((current.start_byte, current.end_byte))
+        else:
+            stack.extend(current.children)
+    written = _cpp_bytes(node, source)
+    if not comments:
+        return written.decode("utf-8", "replace")
+    out: list[bytes] = []
+    position = node.start_byte
+    for start, end in sorted(comments):
+        out.append(written[position - node.start_byte : start - node.start_byte])
+        out.append(b" ")
+        position = end
+    out.append(written[position - node.start_byte :])
+    return b"".join(out).decode("utf-8", "replace")
+
+
+def _cpp_class_name(
+    name: TreeSitterNode, class_node: TreeSitterNode, source: bytes | None
+) -> str:
+    """A class's name: a specialisation's arguments kept, squeezed and without comments
+    (``P<T,4>``, explicit or partial), as clang names it; a primary template's name has
+    none to strip."""
+    return _cpp_name(
+        _cpp_text_without_comments(name, source),
+        _cpp_template_headers(class_node, source),
+        strip_last=False,
+        lookup=None,
+    )
+
+
+def _cpp_class_name_in(
+    name: TreeSitterNode,
+    class_node: TreeSitterNode,
+    source: bytes | None,
+    naming: _CppNaming,
+) -> str:
+    """:func:`_cpp_class_name`, without the parts of a written qualifier that name an
+    inline namespace of the file (``struct lib::v2::X {…}`` is ``lib::X``, so its
+    members are named in it), unless ``naming`` keeps every container."""
+    own = _cpp_class_name(name, class_node, source)
+    if naming.inline is None or naming.full_chain:
+        return own
+    dropped = _cpp_inline_segments(
+        naming.inline, naming.macros_at(name.end_byte), class_node, source, own
+    )
+    return _cpp_without_parts(own, dropped) if dropped else own
+
+
+def _cpp_namespace_name(node: TreeSitterNode, source: bytes | None) -> str:
     name = node.child_by_field_name("name")
-    return _squeeze(_text(name)) if name is not None else "(anonymous namespace)"
+    if name is None:
+        return "(anonymous namespace)"
+    return _squeeze(_cpp_text(name, source))
+
+
+def _cpp_is_inline_namespace(node: TreeSitterNode) -> bool:
+    """The namespace ``node`` is declared ``inline`` (``inline namespace v1``)."""
+    for child in node.children:
+        if child.type == "namespace":
+            return False
+        if child.type == "inline":
+            return True
+    return False
+
+
+def _cpp_inline_namespace_or_part(node: TreeSitterNode) -> bool:
+    """The namespace ``node`` is inline, or holds an inline part in its nested name
+    (``namespace a::inline b``): an ``inline`` token, as
+    :func:`_cpp_is_inline_namespace` reads one (``namespace pipeline`` has none)."""
+    if _cpp_is_inline_namespace(node):
+        return True
+    name = node.child_by_field_name("name")
+    return name is not None and _cpp_has_inline_part(name)
+
+
+def _cpp_has_inline_part(name: TreeSitterNode) -> bool:
+    """The nested namespace specifier ``name`` holds an ``inline`` token."""
+    if name.type != "nested_namespace_specifier":
+        return False
+    return any(
+        child.type == "inline" or _cpp_has_inline_part(child) for child in name.children
+    )
+
+
+def _cpp_namespaces_around(node: TreeSitterNode, source: bytes | None) -> str:
+    """The namespaces around ``node`` with every part kept (an inline one too),
+    outermost first, each followed by ``::`` (``lib::v1::``)."""
+    groups: list[list[str]] = []
+    parent = node.parent
+    while parent is not None:
+        if parent.type == "namespace_definition":
+            groups.append(_cpp_namespace_parts(parent, source, own=False, naming=_FULL))
+        parent = parent.parent
+    return "".join(f"{part}::" for group in reversed(groups) for part in group)
+
+
+def _cpp_inline_paths_of(
+    node: TreeSitterNode, source: bytes | None, prefix: Callable[[int], str]
+) -> list[str]:
+    """The paths of the inline parts of the namespace ``node`` (an inline namespace, or
+    one with an inline part in its nested name), as the full chain spells them, after
+    the namespaces the file's own macros open (``lib::v2``); none for an unnamed one,
+    which no qualifier can name."""
+    name = node.child_by_field_name("name")
+    if name is None:
+        return []
+    parts = _cpp_split(_cpp_namespace_name(node, source))
+    last = len(parts) - 1
+    path = prefix(name.end_byte) + _cpp_namespaces_around(node, source)
+    paths: list[str] = []
+    for index, part in enumerate(parts):
+        inline = part.startswith("inline ")
+        bare = part.removeprefix("inline ")
+        if not inline:
+            inline = index == last and _cpp_is_inline_namespace(node)
+        path += bare
+        if inline:
+            paths.append(path)
+        path += "::"
+    return paths
+
+
+def _cpp_without_inline_parts(
+    naming: _CppNaming,
+    node: TreeSitterNode,
+    source: bytes | None,
+    own: str,
+    name_end: int,
+    semantic: list[SemanticElement],
+) -> tuple[str, list[SemanticElement]]:
+    """``own``, the name written at ``node`` (its name ending at ``name_end``), and its
+    components ``semantic`` (which end with ``own``'s), without the parts of its
+    qualifier that name an inline namespace of the file, as the namespaces around a
+    node leave one out (``void lib::v2::g() {}`` is ``lib::g`` when the file declares
+    ``inline namespace v2`` in ``lib``); unchanged with every container kept."""
+    if naming.inline is None or naming.full_chain:
+        return own, semantic
+    dropped = _cpp_inline_segments(
+        naming.inline, naming.macros_at(name_end), node, source, own
+    )
+    if not dropped:
+        return own, semantic
+    first = max(len(semantic) - len(_cpp_split(own)), 0)
+    kept_semantic = [
+        element
+        for position, element in enumerate(semantic)
+        if position - first not in dropped
+    ]
+    return _cpp_without_parts(own, dropped), kept_semantic
+
+
+def _cpp_inline_segments(
+    paths: frozenset[str],
+    macros: str,
+    node: TreeSitterNode,
+    source: bytes | None,
+    own: str,
+) -> list[int]:
+    """The parts of ``own``, the name written at ``node``, that name one of the file's
+    inline namespaces (``paths``): indexes into its qualifier's parts, read from
+    ``macros`` (the namespaces the file's own macros open around it) and the
+    namespaces around ``node`` (``void lib::v2::g() {}`` is ``lib``, ``v2``, ``g``, and
+    ``v2`` is one when the file declares ``inline namespace v2`` in ``lib``)."""
+    *qualifier, _ = _cpp_split(own)
+    path = macros + _cpp_namespaces_around(node, source)
+    dropped: list[int] = []
+    for index, part in enumerate(qualifier):
+        path += part
+        if path in paths:
+            dropped.append(index)
+        path += "::"
+    return dropped
+
+
+def _cpp_without_parts(name: str, dropped: list[int]) -> str:
+    """``name`` without the parts at ``dropped``."""
+    return "::".join(
+        part for index, part in enumerate(_cpp_split(name)) if index not in dropped
+    )
+
+
+def _cpp_namespace_parts(
+    node: TreeSitterNode, source: bytes | None, *, own: bool, naming: _CppNaming
+) -> list[str]:
+    """The parts of the namespace ``node``'s name (``namespace a::b`` is ``a`` and
+    ``b``) that a name qualified by it keeps.
+
+    None for an inline namespace, and none for an inline part of a nested name
+    (``a::inline b`` keeps ``a``), as clang prints a name: ``nlohmann::basic_json``,
+    not ``nlohmann::json_abi_v3_12_0::basic_json`` (the ABI tag changes with every
+    release). As the entity itself (``own``), its own last part is kept, without the
+    ``inline`` (``a::inline b`` is ``a`` and ``b``). A part that reopens one of the
+    file's inline namespaces without ``inline`` is inline too, as C++ makes it
+    (:func:`_cpp_reopened_parts`, when ``naming`` knows them). With
+    ``naming.full_chain``, every part is kept, an inline one without its ``inline``.
+    """
+    reopened = [] if naming.full_chain else _cpp_reopened_parts(node, source, naming)
+    parts = _cpp_split(_cpp_namespace_name(node, source))
+    last = len(parts) - 1
+    kept: list[str] = []
+    for index, part in enumerate(parts):
+        inline = part.startswith("inline ") or (
+            index == last and _cpp_is_inline_namespace(node)
+        )
+        if (
+            not (inline or index in reopened)
+            or naming.full_chain
+            or (own and index == last)
+        ):
+            kept.append(part.removeprefix("inline "))
+    return kept
+
+
+def _cpp_reopened_parts(
+    node: TreeSitterNode, source: bytes | None, naming: _CppNaming
+) -> list[int]:
+    """The parts of the namespace ``node``'s name that reopen one of the file's inline
+    namespaces without ``inline`` (``namespace lib { namespace v1 {…} }`` after
+    ``inline namespace v1`` in ``lib``): their paths, read as the file's inline paths
+    are, are among ``naming``'s; none when it has none."""
+    name = node.child_by_field_name("name")
+    if naming.inline is None or name is None:
+        return []
+    path = naming.macros_at(name.end_byte) + _cpp_namespaces_around(node, source)
+    reopened: list[int] = []
+    for index, part in enumerate(_cpp_split(_cpp_namespace_name(node, source))):
+        path += part.removeprefix("inline ")
+        if path in naming.inline:
+            reopened.append(index)
+        path += "::"
+    return reopened
+
+
+def _cpp_reopens_inline(
+    node: TreeSitterNode,
+    source: bytes | None,
+    prefix: Callable[[int], str],
+    paths: set[str],
+) -> bool:
+    """The namespace ``node`` reopens one of the file's inline namespaces met so far
+    without ``inline`` (a part's path is among ``paths``), which C++ makes inline too:
+    the first declaration is the inline one."""
+    if not paths:
+        return False
+    naming = _CppNaming(inline=frozenset(paths), macros=prefix)
+    return bool(_cpp_reopened_parts(node, source, naming))
 
 
 def _cpp_operator_at(text: str, index: int) -> bool:
@@ -648,21 +1329,39 @@ def _cpp_qualified(text: str, kind: str, *, member: bool) -> list[SemanticElemen
     return [*elements, _element(kind, own)]
 
 
-def _cpp_containers(node: TreeSitterNode) -> tuple[list[str], list[SemanticElement]]:
+def _cpp_is_friend(node: TreeSitterNode) -> bool:
+    """``node`` is what a ``friend`` declaration declares or defines
+    (``friend bool operator==(const A&, const A&) {…}``, a friend template's too): a
+    function of the innermost enclosing namespace, not of the class."""
+    return node.parent is not None and node.parent.type == "friend_declaration"
+
+
+def _cpp_containers(
+    node: TreeSitterNode, source: bytes | None, naming: _CppNaming
+) -> tuple[list[str], list[SemanticElement]]:
     """The namespaces and classes around ``node``, outermost first: their names, and
-    their components (``namespace a::b`` is two namespaces)."""
+    their components (``namespace a::b`` is two namespaces). An inline namespace adds
+    nothing (:func:`_cpp_namespace_parts`), and a function a ``friend`` declaration
+    declares or defines is named in its innermost enclosing namespace, as clang names
+    it: the classes around it add nothing."""
+    friend = not naming.full_chain and _cpp_is_friend(node)
     segments: list[str] = []
     groups: list[list[SemanticElement]] = []
     parent = node.parent
     while parent is not None:
         if parent.type == "namespace_definition":
-            namespace = _cpp_namespace_name(parent)
-            segments.append(namespace)
-            groups.append([_element("namespace", p) for p in _cpp_split(namespace)])
-        elif parent.type in ("class_specifier", "struct_specifier", "union_specifier"):
+            parts = _cpp_namespace_parts(parent, source, own=False, naming=naming)
+            if parts:
+                segments.append("::".join(parts))
+                groups.append([_element("namespace", part) for part in parts])
+        elif not friend and parent.type in (
+            "class_specifier",
+            "struct_specifier",
+            "union_specifier",
+        ):
             name = parent.child_by_field_name("name")
             if name is not None:
-                container = _cpp_name(_text(name), _cpp_templated(parent))
+                container = _cpp_class_name_in(name, parent, source, naming)
                 segments.append(container)
                 groups.append(
                     _cpp_qualified(
@@ -728,50 +1427,87 @@ def _cpp_defined_by_macro(node: TreeSitterNode) -> bool:
     return inner is not None and inner.type == "identifier"
 
 
-def _cpp_conversion_target_end(cast: TreeSitterNode) -> int:
-    """Where a conversion operator's target type ends: at its own parameter list
-    (``operator const char*() const``), past any pointer or reference. The search
-    starts at the cast's declarator, so a parameter list inside the target type
+def _cpp_conversion_parameters(cast: TreeSitterNode) -> TreeSitterNode | None:
+    """A conversion operator's own parameter list: the first one under the cast's
+    declarator, past any pointer or reference. The search starts at the cast's
+    declarator, so a parameter list inside the target type
     (``operator std::function<void(int)>()``) is not it."""
     declarator = cast.child_by_field_name("declarator")
     stack = [declarator] if declarator is not None else []
     while stack:
         node = stack.pop()
         if node.type == "parameter_list":
-            return node.start_byte
+            return node
         stack.extend(reversed(node.children))
-    return cast.end_byte
+    return None
 
 
-def _cpp_conversion_name(node: TreeSitterNode, cast: TreeSitterNode) -> str:
-    """``ns::W::operator const char*``: the qualifier written before the
-    ``operator_cast``, then ``operator`` and its target type as written, up to the
-    parameter list."""
+def _cpp_conversion_target_end(cast: TreeSitterNode) -> int:
+    """Where a conversion operator's target type ends: at its own parameter list
+    (``operator const char*() const``), past any pointer or reference."""
+    parameters = _cpp_conversion_parameters(cast)
+    return parameters.start_byte if parameters is not None else cast.end_byte
+
+
+def _cpp_conversion(
+    node: TreeSitterNode,
+    cast: TreeSitterNode,
+    containers: tuple[list[str], list[SemanticElement]],
+    source: bytes | None,
+    naming: _CppNaming,
+) -> EntityName:
+    """A conversion operator, named ``ns::W::operator const char*``: the qualifier
+    written before the ``operator_cast``, then ``operator`` and its target type as
+    written, up to the parameter list. Its name ends where the target type does."""
+    prefix, outer = containers
     declarator = node.child_by_field_name("declarator")
-    head = ""
-    if declarator is not None and declarator.text:
-        written = declarator.text[: cast.start_byte - declarator.start_byte]
-        head = written.decode("utf-8", errors="replace")
+    written = _cpp_bytes(declarator, source)
+    head = (
+        written[: cast.start_byte - declarator.start_byte].decode("utf-8", "replace")
+        if declarator is not None
+        else ""
+    )
     keyword = cast.children[0] if cast.children else cast
-    target = (cast.text or b"")[
-        keyword.end_byte - cast.start_byte : _cpp_conversion_target_end(cast)
-        - cast.start_byte
-    ].decode("utf-8", errors="replace")
-    return _cpp_name(head, _cpp_templated(node)) + "operator " + _squeeze(target)
+    target_end = _cpp_conversion_target_end(cast)
+    cast_text = _cpp_bytes(cast, source)
+    target = cast_text[
+        keyword.end_byte - cast.start_byte : target_end - cast.start_byte
+    ].decode("utf-8", "replace")
+    qualifier = _cpp_name(
+        head,
+        _cpp_template_headers(node, source),
+        strip_last=_cpp_templated(node),
+        lookup=naming.specs_at(node, source, cast.start_byte, head),
+    )
+    own = f"{qualifier}operator {_squeeze(target)}"
+    spelled = cast_text[: target_end - cast.start_byte].decode("utf-8", "replace")
+    # a conversion operator is always a member: its qualifier is its class
+    own, semantic = _cpp_without_inline_parts(
+        naming,
+        node,
+        source,
+        own,
+        cast.start_byte,
+        [*outer, *_cpp_qualified(own, "operator", member=True)],
+    )
+    return _named(
+        "operator",
+        "::".join([*prefix, own]),
+        semantic,
+        cast.start_byte + len(spelled.rstrip().encode("utf-8")),
+    )
 
 
-def _cpp_describe(node: TreeSitterNode) -> EntityName | None:
-    prefix, outer = _cpp_containers(node)
+def _cpp_describe_in(
+    node: TreeSitterNode, source: bytes | None, naming: _CppNaming
+) -> EntityName | None:
+    """Name the C or C++ entity ``node``, read from ``source`` (see :func:`_cpp_text`),
+    its containers kept as ``naming`` says."""
+    prefix, outer = _cpp_containers(node, source, naming)
     if node.type in ("function_definition", "declaration", "field_declaration"):
         cast = _cpp_operator_cast(node)
         if cast is not None:
-            conversion = _cpp_conversion_name(node, cast)
-            # a conversion operator is always a member: its qualifier is its class
-            return _named(
-                "operator",
-                "::".join([*prefix, conversion]),
-                [*outer, *_cpp_qualified(conversion, "operator", member=True)],
-            )
+            return _cpp_conversion(node, cast, (prefix, outer), source, naming)
         if _cpp_defined_by_macro(node):
             return None
         declarator = cpp_function_declarator(node)
@@ -782,7 +1518,13 @@ def _cpp_describe(node: TreeSitterNode) -> EntityName | None:
         )
         if inner is None:
             return None
-        own = _cpp_name(_text(inner), _cpp_templated(node))
+        written = _cpp_text_without_comments(inner, source)
+        own = _cpp_name(
+            written,
+            _cpp_template_headers(node, source),
+            strip_last=_cpp_templated(node),
+            lookup=naming.specs_at(node, source, inner.end_byte, written),
+        )
         last = own.rsplit("::", 1)[-1]
         qualifier = own.rsplit("::", 1)[0] if "::" in own else None
         if qualifier is not None:
@@ -802,30 +1544,835 @@ def _cpp_describe(node: TreeSitterNode) -> EntityName | None:
             kind = "method"
         else:
             kind = "function"
-        return _named(
-            kind,
-            "::".join([*prefix, own]),
+        own, semantic = _cpp_without_inline_parts(
+            naming,
+            node,
+            source,
+            own,
+            inner.end_byte,
             [*outer, *_cpp_qualified(own, kind, member=kind in _CPP_MEMBER_KINDS)],
         )
+        return _named(kind, "::".join([*prefix, own]), semantic, inner.end_byte)
     if node.type in _CPP_CLASS_KINDS:
         class_kind = _CPP_CLASS_KINDS[node.type]
         name = node.child_by_field_name("name")
         if name is None:
             return EntityName(class_kind, None, None)
-        own_name = _cpp_name(_text(name), _cpp_templated(node))
+        own_name = _cpp_class_name_in(name, node, source, naming)
         return _named(
             class_kind,
             "::".join([*prefix, own_name]),
             [*outer, *_cpp_qualified(own_name, class_kind, member=False)],
+            name.end_byte,
         )
     if node.type == "namespace_definition":
-        namespace = _cpp_namespace_name(node)
+        own_parts = _cpp_namespace_parts(node, source, own=True, naming=naming)
+        name = node.child_by_field_name("name")
         return _named(
             "namespace",
-            "::".join([*prefix, namespace]),
-            [*outer, *(_element("namespace", p) for p in _cpp_split(namespace))],
+            "::".join([*prefix, "::".join(own_parts)]),
+            [*outer, *(_element("namespace", part) for part in own_parts)],
+            name.end_byte if name is not None else None,
         )
     return None
+
+
+def _cpp_describe(node: TreeSitterNode) -> EntityName | None:
+    return _cpp_describe_in(node, None, _ALONE)
+
+
+# --- C and C++: what tells a function's overloads apart -------------------------
+#
+# The parameter-type rules follow codebase-memory-mcp's callable signatures
+# (``internal/cbm/callable_sig.c``, MIT): ``(void)`` is ``()``, top-level cv-qualifiers
+# are dropped, arrays and function types decay to pointers, and ``struct X`` is ``X``.
+# They are re-implemented here on the syntax tree; no code is taken. Leaving out
+# comments, attributes and the parameter's name wherever they sit is ours.
+
+# What a parameter's type leaves out wherever it sits: a comment, a C++ ``[[...]]``
+# attribute, a GNU ``__attribute__((...))``.
+_CPP_PARAMETER_NOISE = frozenset(
+    {"comment", "attribute_declaration", "attribute_specifier"}
+)
+
+# The declarators that hold their inner declarator without a ``declarator`` field: it
+# is their first named child that is no noise.
+_CPP_UNFIELDED_DECLARATORS = frozenset(
+    {
+        "attributed_declarator",
+        "reference_declarator",
+        "abstract_reference_declarator",
+        "parenthesized_declarator",
+        "abstract_parenthesized_declarator",
+        "variadic_declarator",
+    }
+)
+
+# The cv-qualifiers a parameter's top level may carry, which do not make it another
+# type (``const int`` is ``int``, ``int* const`` is ``int*``).
+_CPP_TOP_LEVEL_QUALIFIERS = frozenset(
+    {"const", "volatile", "restrict", "__restrict", "__restrict__"}
+)
+
+# One edit of a parameter's text: the byte range it replaces, and its replacement.
+_Edit = tuple[int, int, str]
+
+
+def _cpp_inner_declarator(node: TreeSitterNode) -> TreeSitterNode | None:
+    """The declarator ``node`` wraps; ``None`` at the name."""
+    if node.type in ("identifier", "field_identifier"):
+        return None
+    if node.type in _CPP_UNFIELDED_DECLARATORS:
+        return next(
+            (c for c in node.named_children if c.type not in _CPP_PARAMETER_NOISE),
+            None,
+        )
+    return node.child_by_field_name("declarator")
+
+
+def _cpp_declarator_chain(parameter: TreeSitterNode) -> list[TreeSitterNode]:
+    """A parameter's declarators, from the outermost to its name (or to the innermost
+    one of an unnamed parameter)."""
+    chain: list[TreeSitterNode] = []
+    current = parameter.child_by_field_name("declarator")
+    while current is not None and len(chain) < 16:
+        chain.append(current)
+        current = _cpp_inner_declarator(current)
+    return chain
+
+
+def _cpp_noise_edits(
+    node: TreeSitterNode, source: bytes | None, edits: list[_Edit]
+) -> None:
+    """The edits that clean a parameter's text: every comment and attribute in
+    ``node`` dropped, and every nested parameter list (a function pointer's) replaced
+    by its normalised form. Walked with a stack, not by recursion, so a type nested
+    hundreds deep (``A<A<…<int>…>>``) cannot exhaust Python's recursion limit."""
+    stack = [node]
+    while stack:
+        for child in stack.pop().children:
+            if child.type in _CPP_PARAMETER_NOISE:
+                edits.append((child.start_byte, child.end_byte, " "))
+            elif child.type == "parameter_list":
+                types = _cpp_parameter_types(child, source)
+                edits.append(
+                    (child.start_byte, child.end_byte, f"({', '.join(types)})")
+                )
+            else:
+                stack.append(child)
+
+
+def _cpp_apply_edits(
+    node: TreeSitterNode, source: bytes | None, end: int, edits: list[_Edit]
+) -> str:
+    """The text of ``node`` up to the byte ``end``, with ``edits`` applied (an edit
+    inside an earlier one is dropped: the earlier one rewrote that text already)."""
+    written = _cpp_bytes(node, source)
+    start = node.start_byte
+    kept = sorted(
+        (edit for edit in edits if start <= edit[0] and edit[1] <= end),
+        # at one position an insertion comes first, then the longest replacement
+        key=lambda edit: (edit[0], edit[0] < edit[1], -edit[1]),
+    )
+    out: list[str] = []
+    position = start
+    for edit_start, edit_end, text in kept:
+        if edit_start < position:
+            continue
+        out.append(
+            written[position - start : edit_start - start].decode("utf-8", "replace")
+        )
+        out.append(text)
+        position = edit_end
+    out.append(written[position - start : end - start].decode("utf-8", "replace"))
+    return "".join(out)
+
+
+def _cpp_decay_edits(
+    chain: list[TreeSitterNode], holder: int | None, named: bool, edits: list[_Edit]
+) -> str:
+    """The edits that decay the declarator holding a parameter's name (``holder`` in
+    ``chain``) to a pointer when it is an array or a function: ``[...]`` is ``*``, or
+    ``(*)`` when another array applies to it from outside (``int[3][4]`` is
+    ``int (*)[4]``); an unnamed function type gains ``(*)``. What the name itself
+    becomes: ``(*)`` for a named function type, else nothing."""
+    if holder is None:
+        return ""
+    node = chain[holder]
+    arrays = ("array_declarator", "abstract_array_declarator")
+    if node.type in arrays:
+        suffix_outside = any(outer.type in arrays for outer in chain[:holder])
+        bracket = next((c for c in node.children if c.type == "["), None)
+        start = bracket.start_byte if bracket is not None else node.start_byte
+        edits.append((start, node.end_byte, "(*)" if suffix_outside else "*"))
+    elif node.type == "function_declarator" and named:
+        return "(*)"
+    elif node.type == "abstract_function_declarator":
+        edits.append((node.start_byte, node.start_byte, "(*)"))
+    return ""
+
+
+def _cpp_cv_edits(
+    parameter: TreeSitterNode,
+    holder: TreeSitterNode | None,
+    source: bytes | None,
+    edits: list[_Edit],
+) -> bool:
+    """The edits that drop the cv-qualifiers of the parameter itself: those of the
+    pointer that holds its name (``int* const p``, not the ``const`` of
+    ``int* const* p``, which is its pointee's), or its own specifiers' when no
+    declarator holds the name (``const int x``); a reference, an array or a function
+    there has none of its own. Whether the specifiers' were the ones."""
+    if holder is None:
+        qualified = parameter
+    elif holder.type in ("pointer_declarator", "abstract_pointer_declarator"):
+        qualified = holder
+    else:
+        return False
+    for child in qualified.children:
+        if (
+            child.type == "type_qualifier"
+            and _cpp_text(child, source) in _CPP_TOP_LEVEL_QUALIFIERS
+        ):
+            edits.append((child.start_byte, child.end_byte, ""))
+    return holder is None
+
+
+def _cpp_base_type_edits(
+    parameter: TreeSitterNode,
+    base: TreeSitterNode,
+    *,
+    reorder: bool,
+    source: bytes | None,
+    edits: list[_Edit],
+) -> None:
+    """The edits on a parameter's base type ``base``: the specifiers' ``const`` and
+    ``volatile`` (when ``reorder``: they qualify a pointee, ``int const*``) written
+    once, in that order, before the type; an elaborated ``struct S`` as ``S``; an
+    integer type as the compiler spells it (``unsigned`` is ``unsigned int``)."""
+    if reorder:
+        specifiers = list(parameter.named_children)
+        if base.type == "sized_type_specifier":
+            specifiers.extend(base.named_children)
+        present = {"const": False, "volatile": False}
+        for qualifier in specifiers:
+            if qualifier.type != "type_qualifier":
+                continue
+            written = _cpp_text(qualifier, source)
+            if written not in present:
+                continue
+            present[written] = True
+            edits.append((qualifier.start_byte, qualifier.end_byte, ""))
+        prefix = "".join(f"{word} " for word, here in present.items() if here)
+        if prefix:
+            edits.append((base.start_byte, base.start_byte, prefix))
+    if base.type in _CPP_CLASS_KINDS and base.child_by_field_name("body") is None:
+        keyword = base.children[0] if base.children else None
+        if keyword is not None and keyword.type in ("struct", "class", "union", "enum"):
+            edits.append((keyword.start_byte, keyword.end_byte, ""))
+    elif base.type == "sized_type_specifier":
+        spelled = _cpp_sized_type(base, source)
+        if spelled is not None:
+            edits.append((base.start_byte, base.end_byte, spelled))
+
+
+def _cpp_parameter_type(parameter: TreeSitterNode, source: bytes | None) -> str:
+    """One parameter's type, normalised on the syntax tree so that every spelling the
+    compiler reads as one type is one string: its comments, attributes, name and
+    default value left out; its top-level cv-qualifiers dropped (inner ones, as in
+    ``const int*``, kept); an array or a function type decayed to a pointer
+    (``int[3]`` is ``int*``, ``int (int)`` is ``int (*)(int)``); ``struct X`` as
+    ``X``; a function pointer's own parameters normalised alike; whitespace
+    collapsed, ``&`` and ``*`` against the type (``const T&``)."""
+    default = parameter.child_by_field_name("default_value")
+    end = default.start_byte if default is not None else parameter.end_byte
+    edits: list[_Edit] = []
+    _cpp_noise_edits(parameter, source, edits)
+
+    chain = _cpp_declarator_chain(parameter)
+    name = (
+        chain[-1]
+        if chain and chain[-1].type in ("identifier", "field_identifier")
+        else None
+    )
+    # the declarator that holds the name (or the innermost of an unnamed parameter)
+    holder = next(
+        (
+            index
+            for index in range(len(chain) - 1, -1, -1)
+            if chain[index] != name
+            and chain[index].type
+            not in (
+                "attributed_declarator",
+                "parenthesized_declarator",
+                "abstract_parenthesized_declarator",
+            )
+        ),
+        None,
+    )
+    name_becomes = _cpp_decay_edits(chain, holder, name is not None, edits)
+    if name is not None:
+        edits.append((name.start_byte, name.end_byte, name_becomes))
+    top_level = _cpp_cv_edits(
+        parameter, chain[holder] if holder is not None else None, source, edits
+    )
+    base = parameter.child_by_field_name("type")
+    if base is not None:
+        _cpp_base_type_edits(
+            parameter, base, reorder=not top_level, source=source, edits=edits
+        )
+
+    written = _cpp_apply_edits(parameter, source, end, edits).rstrip().rstrip("=")
+    return _cpp_spaced_pointer_groups(
+        _collapse(written)
+        .replace(" &", "&")
+        .replace(" *", "*")
+        .replace("( ", "(")
+        .replace(" )", ")")
+    )
+
+
+def _cpp_sized_type(node: TreeSitterNode, source: bytes | None) -> str | None:
+    """A ``sized_type_specifier`` (``unsigned``, ``long int``, ``signed char``) spelled
+    as the compiler spells its type: ``unsigned int``, ``long``, ``signed char``,
+    ``long double``; ``signed`` and a redundant ``int`` dropped, ``char``'s sign kept
+    (``char``, ``signed char`` and ``unsigned char`` are three types). ``None`` for a
+    shape this does not know, which is then compared as written."""
+    unsigned = short = signed = False
+    longs = 0
+    base: str | None = None
+    for child in node.children:
+        if child.type == "unsigned":
+            unsigned = True
+        elif child.type == "signed":
+            signed = True
+        elif child.type == "short":
+            short = True
+        elif child.type == "long":
+            longs += 1
+        elif child.type == "primitive_type":
+            base = _cpp_text(child, source)
+        elif child.type not in ("type_qualifier", "comment"):
+            return None
+    sign = "unsigned " if unsigned else ""
+    if base == "char" and not short and longs == 0:
+        return "unsigned char" if unsigned else "signed char" if signed else "char"
+    if base == "double" and not short and longs == 1 and not unsigned and not signed:
+        return "long double"
+    if base not in (None, "int"):
+        return None
+    if short and longs == 0:
+        return f"{sign}short"
+    if not short and longs in (0, 1, 2):
+        return f"{sign}{('int', 'long', 'long long')[longs]}"
+    return None
+
+
+def _cpp_spaced_pointer_groups(written: str) -> str:
+    """``written`` with one space before each parenthesised pointer ``(*`` that follows
+    a word, as ``int (*)(int)`` is spelled however it was written."""
+    out: list[str] = []
+    previous: str | None = None
+    for index, char in enumerate(written):
+        if (
+            char == "("
+            and written.startswith("*", index + 1)
+            and previous is not None
+            and previous not in " ("
+        ):
+            out.append(" ")
+        out.append(char)
+        previous = char
+    return "".join(out)
+
+
+def _cpp_parameter_types(parameters: TreeSitterNode, source: bytes | None) -> list[str]:
+    """The normalised types of a parameter list's parameters (``...`` for C varargs);
+    none for ``(void)``."""
+    types: list[str] = []
+    for parameter in parameters.children:
+        if parameter.type in (
+            "parameter_declaration",
+            "optional_parameter_declaration",
+            "variadic_parameter_declaration",
+        ):
+            types.append(_cpp_parameter_type(parameter, source))
+        elif parameter.type in ("variadic_parameter", "..."):
+            types.append("...")
+    return [] if types == ["void"] else types
+
+
+def cpp_signature(node: TreeSitterNode, source: bytes | None) -> str | None:
+    """What tells a function's overloads apart: its normalised parameter types,
+    ``, ``-joined in parentheses, then the cv- and ref-qualifiers of a member function
+    as written (``(int) const``, ``() &&``). ``noexcept``, ``override`` and a trailing
+    return type are left out: no overload differs by them alone."""
+    cast = _cpp_operator_cast(node)
+    if cast is not None:
+        # a conversion operator's parameters and qualifiers are its cast's
+        # (``operator bool() const``), not those of a list inside the target type
+        parameters = _cpp_conversion_parameters(cast)
+        declarator = parameters.parent if parameters is not None else None
+    else:
+        declarator = cpp_function_declarator(node)
+        parameters = (
+            declarator.child_by_field_name("parameters")
+            if declarator is not None
+            else None
+        )
+    if declarator is None or parameters is None:
+        return None
+    signature = f"({', '.join(_cpp_parameter_types(parameters, source))})"
+    for child in declarator.children:
+        if child.type == "type_qualifier":
+            qualifier = _cpp_text(child, source)
+            if qualifier not in ("const", "volatile"):
+                continue
+        elif child.type == "ref_qualifier":
+            qualifier = _cpp_text(child, source)
+        else:
+            continue
+        signature += f" {qualifier}"
+    return signature
+
+
+# --- C and C++: the names a whole file decides ---------------------------------
+
+
+def _cpp_qualified_with_arguments(node: TreeSitterNode, source: bytes | None) -> bool:
+    """``node`` may be named otherwise by the file's partial specialisations
+    (:class:`_PartialSpecs`): a function whose name is qualified with a template
+    argument list."""
+    if node.type not in ("function_definition", "declaration", "field_declaration"):
+        return False
+    cast = _cpp_operator_cast(node)
+    if cast is not None:
+        declarator = node.child_by_field_name("declarator")
+        if declarator is None:
+            return False
+        head = _cpp_bytes(declarator, source)[: cast.start_byte - declarator.start_byte]
+        return b"<" in head
+    declarator = cpp_function_declarator(node)
+    inner = declarator.child_by_field_name("declarator") if declarator else None
+    return (
+        inner is not None
+        and inner.type == "qualified_identifier"
+        and b"<" in _cpp_bytes(inner, source)
+    )
+
+
+def _cpp_has_body_entity(node: TreeSitterNode) -> bool:
+    """``node`` is a definition with a body, which a name must tell apart from every
+    other: a function, a class, struct, union or enum with its body, a namespace."""
+    if node.type in ("function_definition", "namespace_definition"):
+        return True
+    return node.type in _CPP_CLASS_KINDS and _cpp_has_body(node)
+
+
+def _cpp_leaf_key(name: str) -> str:
+    """What two names that could be the same end in: the last part of ``name`` without
+    its argument list, every conversion operator as ``operator `` (it only picks which
+    entities :func:`cpp_renames` compares)."""
+    last = _cpp_split(name)[-1]
+    if _cpp_operator_at(last, 0):
+        return "operator " if last[len("operator") :].startswith(" ") else last
+    return _strip_template_args(last)
+
+
+def _cpp_written_leaf(node: TreeSitterNode, source: bytes | None) -> str | None:
+    """:func:`_cpp_leaf_key` of ``node``'s name, read from its name node without naming
+    it."""
+    if _cpp_operator_cast(node) is not None:
+        return "operator "
+    if node.type in ("function_definition", "declaration", "field_declaration"):
+        declarator = cpp_function_declarator(node)
+        name = (
+            declarator.child_by_field_name("declarator")
+            if declarator is not None
+            else None
+        )
+    elif node.type == "namespace_definition":
+        name = node.child_by_field_name("name")
+        if name is None:
+            return "(anonymous namespace)"
+    else:
+        name = node.child_by_field_name("name")
+    if name is None:
+        return None
+    return _cpp_leaf_key(_squeeze(_cpp_text_without_comments(name, source)))
+
+
+@dataclass(frozen=True)
+class _Seen:
+    """One entity :func:`cpp_renames` compares."""
+
+    node: TreeSitterNode
+    alone: EntityName
+    """Its name as the node alone gives it."""
+    named: EntityName
+    """Its name with what the file adds to one node."""
+    full: EntityName | None
+    """Its name with every container kept, when one is left out."""
+
+
+@dataclass
+class _Found:
+    """What the one walk of :func:`cpp_renames` finds."""
+
+    spec_nodes: list[TreeSitterNode] = field(default_factory=list)
+    """The classes that may be partial specialisations (:func:`_cpp_templated_class`),
+    read once the inline namespaces are known."""
+    inline_paths: set[str] = field(default_factory=set)
+    """The paths of its inline namespaces (:func:`_cpp_inline_paths_of`)."""
+    inline_names: set[str] = field(default_factory=set)
+    """Their own names (``v2``), one of which a qualifier through one holds."""
+    left_out: list[TreeSitterNode] = field(default_factory=list)
+    """The entities that leave a container out."""
+    bodies: list[TreeSitterNode] = field(default_factory=list)
+    """The other definitions."""
+    qualified: list[TreeSitterNode] = field(default_factory=list)
+    """The other functions qualified with arguments."""
+    through: list[TreeSitterNode] = field(default_factory=list)
+    """The functions named through a written qualifier
+    (:func:`_cpp_written_qualifier`)."""
+
+
+def _cpp_written_qualifier(node: TreeSitterNode, source: bytes | None) -> str | None:
+    """The written qualified name of the function ``node`` (``lib::v2::g`` of
+    ``void lib::v2::g() {}``, ``lib::v1::W::`` of a conversion operator
+    ``lib::v1::W::operator int()``), when it has one."""
+    if node.type not in ("function_definition", "declaration", "field_declaration"):
+        return None
+    cast = _cpp_operator_cast(node)
+    if cast is not None:
+        declarator = node.child_by_field_name("declarator")
+        if declarator is None:
+            return None
+        head = _cpp_bytes(declarator, source)[: cast.start_byte - declarator.start_byte]
+        return head.decode("utf-8", "replace") if b"::" in head else None
+    declarator = cpp_function_declarator(node)
+    inner = declarator.child_by_field_name("declarator") if declarator else None
+    if inner is None or inner.type != "qualified_identifier":
+        return None
+    return _cpp_text(inner, source)
+
+
+def _cpp_class_through_inline(
+    node: TreeSitterNode, source: bytes | None, inline_names: set[str]
+) -> bool:
+    """The class ``node``'s head is written through a qualifier that holds the name of
+    an inline namespace of the file met so far (``struct lib::v2::X {…}``, one of
+    ``inline_names``)."""
+    if node.type not in _CPP_CLASS_KINDS:
+        return False
+    name = node.child_by_field_name("name")
+    # tree-sitter-cpp reads a qualified class name as this kind
+    return (
+        name is not None
+        and name.type == "qualified_identifier"
+        and any(word in inline_names for word in _cpp_words(_cpp_text(name, source)))
+    )
+
+
+def cpp_renames(
+    root: TreeSitterNode, source: bytes | None, prefix: Callable[[int], str]
+) -> dict[int, EntityName]:
+    """The C++ entities under ``root`` named otherwise than the node alone names them,
+    by the end of their name, with that name.
+
+    An out-of-line qualifier the same as a partial specialisation of the file but for
+    its parameter names is spelled as that specialisation (:class:`_PartialSpecs`).
+
+    An inline namespace and a friend's classes are left out of a name
+    (:func:`_cpp_containers`), and so is an inline namespace of the file a written
+    qualifier names (``void lib::v2::g() {}`` is ``lib::g``, its full chain
+    ``lib::v2::g``: :func:`_cpp_without_inline_parts`), except where that makes two
+    definitions with a body share a name and parameters that the full chain kept
+    apart: then every entity of that name and parameters that leaves a container out
+    (its declarations too) keeps the full chain, so no marker credits another
+    definition, and so does everything a class or namespace that keeps it holds. A
+    declaration and one definition do not collide (a friend declared in its class and
+    defined in its namespace stays one entity). The name compared is ``prefix`` (the
+    namespaces the file's own macros open around a name ending at a byte) and the
+    name, and the parameters are the normalised signature (:func:`cpp_signature`).
+
+    Only the entities that leave a container out, and the definitions whose name ends
+    as one of theirs does, are named here: a file with neither friends nor inline
+    namespaces costs one walk of its tree, which skips every function body.
+    """
+    # one walk: the partial specialisations, the inline namespaces, what leaves a
+    # container out, the other definitions, the functions a specialisation may spell,
+    # and those named through a written qualifier
+    found = _Found()
+    cursor = root.walk()
+    # whether an inline namespace is around the cursor's node, per depth
+    inside = [False]
+    while True:
+        node = cursor.node
+        if node is None:  # a cursor always stands on a node
+            return _cpp_renamed(source, prefix, found)
+        in_inline = inside[-1]
+        inline_here = node.type == "namespace_definition" and (
+            _cpp_inline_namespace_or_part(node)
+            or _cpp_reopens_inline(node, source, prefix, found.inline_paths)
+        )
+        # a class head written through an inline namespace leaves it out, and so does
+        # everything the class holds
+        through_here = not inline_here and _cpp_class_through_inline(
+            node, source, found.inline_names
+        )
+        if _cpp_templated_class(node):
+            found.spec_nodes.append(node)
+        if inline_here:
+            for path in _cpp_inline_paths_of(node, source, prefix):
+                found.inline_names.add(path.rsplit("::", 1)[-1])
+                found.inline_paths.add(path)
+        if is_entity(node, CommentType.cpp):
+            if _cpp_written_qualifier(node, source) is not None:
+                found.through.append(node)
+            if in_inline or inline_here or through_here or _cpp_is_friend(node):
+                found.left_out.append(node)
+            else:
+                if _cpp_has_body_entity(node):
+                    found.bodies.append(node)
+                if _cpp_qualified_with_arguments(node, source):
+                    found.qualified.append(node)
+        # nothing a function's body holds is a friend, an inline namespace or a
+        # partial specialisation, or names one
+        if node.type != "function_definition" and cursor.goto_first_child():
+            inside.append(in_inline or inline_here or through_here)
+            continue
+        while not cursor.goto_next_sibling():
+            if not cursor.goto_parent():
+                return _cpp_renamed(source, prefix, found)
+            inside.pop()
+
+
+def _cpp_leave_out_through_inline(
+    source: bytes | None, naming: _CppNaming, found: _Found
+) -> set[int]:
+    """The functions of ``found.through`` whose written qualifier may name an inline
+    namespace of the file (one of its inline names is among its words) that ``naming``
+    names otherwise than as written and that are not in ``found.left_out``, moved there
+    from ``found.bodies``, by node id: they leave a container out, their full chain the
+    qualifier as written."""
+    if naming.inline is None:
+        return set()
+    through = [
+        node
+        for node in found.through
+        if (head := _cpp_written_qualifier(node, source)) is not None
+        and any(word in found.inline_names for word in _cpp_words(head))
+    ]
+    left = {node.id for node in found.left_out}
+    as_written = replace(naming, inline=None)
+    moved: set[int] = set()
+    for node in through:
+        if node.id in left:
+            continue
+        named = _cpp_describe_in(node, source, naming)
+        written = _cpp_describe_in(node, source, as_written)
+        if (named and named.qualified_name) != (written and written.qualified_name):
+            moved.add(node.id)
+            found.left_out.append(node)
+    found.bodies = [node for node in found.bodies if node.id not in moved]
+    return moved
+
+
+def _cpp_renamed(
+    source: bytes | None, prefix: Callable[[int], str], found: _Found
+) -> dict[int, EntityName]:
+    """:func:`cpp_renames`, once its walk has found what it looks for
+    (:class:`_Found`)."""
+    base = _CppNaming(
+        inline=frozenset(found.inline_paths) if found.inline_paths else None,
+        macros=prefix,
+    )
+    specs = _PartialSpecs.of(found.spec_nodes, source, base)
+    with_specs = replace(base, specs=specs if specs.by_template else None)
+    full_chain = replace(with_specs, full_chain=True)
+    moved = _cpp_leave_out_through_inline(source, with_specs, found)
+
+    def named_alone(node: TreeSitterNode) -> tuple[EntityName, EntityName] | None:
+        alone = _cpp_describe_in(node, source, _ALONE)
+        if alone is None or alone.qualified_name is None or alone.name_end is None:
+            return None
+        named = alone
+        if with_specs.inline is not None or (
+            with_specs.specs is not None and _cpp_qualified_with_arguments(node, source)
+        ):
+            named = _cpp_describe_in(node, source, with_specs) or alone
+        return alone, named
+
+    out: dict[int, EntityName] = {}
+    for node in found.qualified if with_specs.specs is not None else ():
+        if node.id in moved:
+            continue
+        names = named_alone(node)
+        if names is None:
+            continue
+        alone, named = names
+        if named.qualified_name != alone.qualified_name and named.name_end is not None:
+            out[named.name_end] = named
+    # the entities that leave a container out, named both ways
+    seen: list[_Seen] = []
+    for node in found.left_out:
+        names = named_alone(node)
+        if names is None:
+            continue
+        alone, named = names
+        full = _cpp_describe_in(node, source, full_chain)
+        if full is not None and full.qualified_name == named.qualified_name:
+            full = None
+        if (
+            full is None
+            and named.qualified_name != alone.qualified_name
+            and named.name_end is not None
+        ):
+            out[named.name_end] = named
+        seen.append(_Seen(node, alone, named, full))
+    leaves = {
+        _cpp_leaf_key(entity.named.qualified_name)
+        for entity in seen
+        if entity.full is not None and entity.named.qualified_name is not None
+    }
+    if not leaves:
+        return out
+    # the other definitions that could share a name with one of them
+    for node in found.bodies:
+        if _cpp_written_leaf(node, source) in leaves:
+            names = named_alone(node)
+            if names is not None:
+                seen.append(_Seen(node, *names, None))
+    _cpp_keep_full_chains_where_names_collide(seen, source, prefix, out)
+    return out
+
+
+def _cpp_chain_of(name: EntityName, prefix: Callable[[int], str]) -> str:
+    """``name`` after the namespaces the file's macros open around it: what two full
+    chains are compared by."""
+    at = prefix(name.name_end) if name.name_end is not None else ""
+    return at + (name.qualified_name or "")
+
+
+def _cpp_held_by(chain: str, containers: set[str]) -> bool:
+    """The chain ``chain`` is inside one of ``containers`` (one of them is a leading
+    part of it, ``lib::v1::Widget`` of ``lib::v1::Widget::draw``)."""
+    parts = _cpp_split(chain)
+    return any(
+        "::".join(parts[: count + 1]) in containers for count in range(len(parts) - 1)
+    )
+
+
+def _cpp_keep_full_chains_where_names_collide(
+    seen: list[_Seen],
+    source: bytes | None,
+    prefix: Callable[[int], str],
+    out: dict[int, EntityName],
+) -> None:
+    """The names of ``seen`` into ``out`` where they differ from the names alone: each
+    one that leaves a container out keeps its full chain where its name and
+    parameters are those of two definitions whose full chains differ, and so does
+    everything a class or namespace that keeps its full chain holds (its members are
+    named in it), but a friend, which is named in its namespace."""
+    keys = [
+        (_cpp_chain_of(entity.named, prefix), cpp_signature(entity.node, source))
+        for entity in seen
+    ]
+    chains: dict[tuple[str, str | None], set[str]] = {}
+    for entity, key in zip(seen, keys, strict=True):
+        if _cpp_has_body_entity(entity.node):
+            full = entity.full or entity.named
+            chains.setdefault(key, set()).add(_cpp_chain_of(full, prefix))
+    collides = [
+        entity.full is not None and len(chains.get(key, ())) > 1
+        for entity, key in zip(seen, keys, strict=True)
+    ]
+    # the classes and namespaces that keep their full chain
+    kept = {
+        _cpp_chain_of(entity.full, prefix)
+        for entity, collide in zip(seen, collides, strict=True)
+        if collide
+        and entity.full is not None
+        and _cpp_has_body_entity(entity.node)
+        and entity.node.type != "function_definition"
+    }
+    for entity, collide in zip(seen, collides, strict=True):
+        if entity.full is None:
+            continue
+        # a friend is named in its namespace, never in its class
+        keeps = collide or (
+            bool(kept)
+            and not _cpp_is_friend(entity.node)
+            and _cpp_held_by(_cpp_chain_of(entity.full, prefix), kept)
+        )
+        name = entity.full if keeps else entity.named
+        if (
+            name.qualified_name != entity.alone.qualified_name
+            and name.name_end is not None
+        ):
+            out[name.name_end] = name
+
+
+class CppNames:
+    """What the names of a C++ file's entities take from the whole file, beyond what
+    one node shows: the namespaces the file's own macros open
+    (:class:`~sphinx_codelinks.analyse.cpp_macros.MacroScopes`), and the entities named
+    otherwise than one node names them (:func:`cpp_renames`: a name spelled as the
+    file's partial specialisation spells it; an inline namespace or a friend's classes
+    kept where leaving them out would give two definitions one name).
+
+    Made once per parse, by :func:`sphinx_codelinks.analyse.utils.parse_source`; the
+    renames are worked out when a marker of the file first asks for a name, so a file
+    without markers costs nothing.
+    """
+
+    def __init__(
+        self, source: bytes, root: TreeSitterNode, macros: MacroScopes | None = None
+    ) -> None:
+        self.source = source
+        """The file as written: what every name is read from."""
+        self.macros = macros if macros is not None else MacroScopes()
+        """The namespaces the file's own macros open."""
+        self._root = root
+        self._renamed: dict[int, EntityName] | None = None
+
+    @property
+    def renamed(self) -> dict[int, EntityName]:
+        """The entities named otherwise, by the end of their name: the name and its
+        parts, before the macros' namespaces."""
+        if self._renamed is None:
+            self._renamed = cpp_renames(self._root, self.source, self._prefix)
+        return self._renamed
+
+    def _prefix(self, name_end: int) -> str:
+        """The namespaces the file's macros open around a name ending at ``name_end``,
+        each followed by ``::``."""
+        return "".join(f"{n}::" for n in self.macros.namespaces_at(name_end))
+
+    def qualify(self, name: EntityName, start_line: int) -> EntityName:
+        """``name``, an entity's name as its node alone gives it, as the whole file
+        names it: renamed where the file decides so, then prefixed with the namespaces
+        the file's macros open around the name's end, or, for an entity with no name
+        node (an anonymous namespace), around ``start_line``, its 1-based first
+        line."""
+        qualified_name, semantic = name.qualified_name, name.semantic
+        if name.name_end is not None:
+            renamed = self.renamed.get(name.name_end)
+            if renamed is not None:
+                qualified_name, semantic = renamed.qualified_name, renamed.semantic
+            namespaces = self.macros.namespaces_at(name.name_end)
+        else:
+            namespaces = self.macros.namespaces_at_line(start_line)
+        if namespaces:
+            if qualified_name is not None:
+                qualified_name = "::".join([*namespaces, qualified_name])
+            if semantic is not None:
+                semantic = (
+                    *(_element("namespace", namespace) for namespace in namespaces),
+                    *semantic,
+                )
+        return replace(name, qualified_name=qualified_name, semantic=semantic)
 
 
 # --- Python ------------------------------------------------------------------
@@ -1368,7 +2915,7 @@ _DESCRIBERS: dict[CommentType, Callable[[TreeSitterNode], EntityName | None]] = 
 
 
 def describe_entity(
-    node: TreeSitterNode, comment_type: CommentType
+    node: TreeSitterNode, comment_type: CommentType, *, source: bytes | None = None
 ) -> EntityName | None:
     """Name the definition ``node``: its kind, its in-file qualified name, and the
     components of that name.
@@ -1378,8 +2925,12 @@ def describe_entity(
 
     :param node: A definition node, as association binds it.
     :param comment_type: The language of the file ``node`` was parsed from.
+    :param source: The file as written, which a C or C++ name is read from when given
+        (its tree may be parsed from a prepared copy); else the tree's own text.
     :return: The name, or ``None`` if ``node`` is no entity this function can name.
     """
+    if comment_type == CommentType.cpp:
+        return _cpp_describe_in(node, source, _ALONE)
     describer = _DESCRIBERS.get(comment_type)
     return describer(node) if describer is not None else None
 
@@ -1592,12 +3143,24 @@ def scope_language(comment_type: CommentType, path: PurePath) -> str:
 
 
 def code_scope(
-    association: Association, comment_type: CommentType, language: str
+    association: Association,
+    comment_type: CommentType,
+    language: str,
+    names: CppNames | None = None,
 ) -> CodeScope:
     """The ``scope`` object of an analysis record, for ``association`` in a file of
-    ``language`` (:func:`scope_language`)."""
+    ``language`` (:func:`scope_language`).
+
+    ``names`` is what the whole C++ file decides about its names (:class:`CppNames`),
+    for a C++ file the analysis parsed; the entity is named as the file names it.
+    """
     node = association.node
-    name = describe_entity(node, comment_type)
+    if names is None:
+        name = describe_entity(node, comment_type)
+    else:
+        name = describe_entity(node, comment_type, source=names.source)
+        if name is not None:
+            name = names.qualify(name, node.start_point.row + 1)
     return {
         "kind": node.type,
         "start": node.start_point.row + 1,

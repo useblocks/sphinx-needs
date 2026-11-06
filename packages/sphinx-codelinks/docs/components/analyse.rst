@@ -146,8 +146,9 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   ``impl G``), and a path from the crate root keeps its ``crate::`` where that decides what it names
   (``crate::Q`` in ``mod k``); nested Python functions are consecutive ``function`` parts (``<locals>`` is no part); a
   name that is an expression, the left-hand side of a JavaScript assignment (``module.exports.f``), is one part; and a
-  C++ name keeps the arguments of an explicit specialisation (``Box<bool>``) and drops a class template's parameters
-  (``Box::get``), as ``qualified_name`` does. Joined by the rule of the ``language`` -- ``::`` for C, C++ and Rust
+  C++ name keeps the arguments of a specialisation, explicit or partial (``Box<bool>``, ``P<T,4>``), and drops a class
+  template's own parameters (``Box::get``), as ``qualified_name`` does (see :ref:`cpp_names` below).
+  Joined by the rule of the ``language`` -- ``::`` for C, C++ and Rust
   (with ``<Widget as Shape>`` from a ``trait``, ``<dyn Shape>`` for a self type that is no path, and the modules before
   an impl folded into a self type written bare, ``m::G``, but not into a path, a primitive or a type that is no path),
   ``.`` for Python (with ``<locals>`` after a function or a method another part follows) and every other language --
@@ -161,8 +162,8 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   ``<Widget as Other>::area`` differ by their ``trait`` alone) and Python's ``<locals>`` boundaries (``A.f.g``, the
   method of a nested class, is not ``A.f.<locals>.g``, a function in a method) -- never by their kinds. So a Rust
   impl's methods are inside the module the impl is written in, as its free functions are. A name chain cannot tell
-  apart what the qualified name cannot: overloads, a C ``struct stat`` and a function ``stat()``, a C++ partial
-  specialisation and its primary template (``Box``), C# classes that differ in their number of type parameters;
+  apart what the qualified name cannot: overloads, a C ``struct stat`` and a function ``stat()``, C# classes that
+  differ in their number of type parameters;
 - ``mechanism`` -- how the marker was attached: ``doc_comment`` (a documentation comment -- ``///``, ``//!``, ``/**``,
   ``/*!``, a C# ``///``, a JSDoc ``/**`` -- or a Python docstring),
   ``leading`` (a comment on the lines before the entity, or directly inside or right after an attribute, a decorator
@@ -179,10 +180,108 @@ since the compiler's function is the macro's expansion
 (a macro whose arguments are not names, such as Catch2's ``TEST_CASE("…")``, may not be bound at all).
 A class declared with an export macro (``class EXPORT_API Widget``) is misread by the grammar:
 it is bound without a name, or not at all.
+A ``friend`` declaration is no entity a marker before it can bind: such a marker is attached to the class.
 In Rust, an ``impl`` inside a function is named without the function's path,
 and an ``impl W`` for a ``W`` brought in with ``use`` is named in the module the ``impl`` is written in.
 The needs ``src-trace`` creates carry no field for the entity: it is recorded here, in the analysis output,
 and will be exposed on the need together with the need's source record.
+
+.. _cpp_names:
+
+C++ names
+~~~~~~~~~
+
+A C++ name follows the one clang prints for the entity, where that differs from what one node of the syntax shows,
+so that it can be joined with what a compiler reports, and so that two spellings of one function meet:
+
+- **An inline namespace adds nothing** to the names of what it holds:
+  an ``f`` in ``inline namespace v1`` inside ``lib`` is ``lib::f``, as clang prints ``nlohmann::basic_json``
+  rather than ``nlohmann::json_abi_v3_12_0::basic_json`` (a library's ABI namespace changes with every release).
+  The inline namespace itself keeps its own name (``lib::v1``), and so does the ``inline`` part of a C++20 nested
+  name (``namespace a::inline v1`` is ``a::v1``, the ``f`` in it ``a::f``).
+  It adds nothing either to a name in a reopening of it without ``inline`` (C++ makes the reopening inline),
+  or to a name written out of line through it in the same file: a function (``void lib::v1::f(int) {}`` is ``lib::f``,
+  as its declaration in ``inline namespace v1`` is), a class (``struct lib::v1::X {…}`` is ``lib::X``, and so are
+  its members' names) or a conversion operator.
+- **A friend is named in its namespace.** A function a ``friend`` declaration declares or defines is named in its
+  innermost enclosing namespace, not in the class (``ns::operator==``, a hidden friend's ``ns::touch``),
+  so a friend declared in its class and defined in its namespace has one name;
+  a qualified friend keeps its qualifier (``friend void Other::h();`` is ``ns::Other::h``).
+- Both are left out **except where two definitions of the file would then share a name and parameters**:
+  two classes' hidden ``operator==``, one function in two inline namespaces,
+  the ``#if`` and ``#else`` arms of an ABI version (``inline namespace v1`` and ``v2``).
+  Then every entity of that name and parameters that leaves a container out keeps its full chain, declarations
+  included (``ns::List::iterator::operator==``, ``lib::v1::g`` and ``lib::v2::g``),
+  and so does everything but a friend that a class or namespace that keeps its full chain holds
+  (``lib::v1::Widget::draw`` beside another ``Widget`` in ``lib``; a friend there is still ``lib::swap``),
+  so a marker never names another definition.
+  clang keeps an inline namespace wherever the name alone would be ambiguous;
+  this decides by the name and parameters among the file's definitions,
+  and for friends, and for the arms of an ``#if`` (a compiler sees one of them), keeping the chain is a choice to fail
+  safe.
+- **A partial specialisation keeps its arguments**, as an explicit specialisation does,
+  spelled as the name is everywhere: whitespace squeezed (a space only between two words)
+  and comments inside the list left out (``template <typename T> struct P<T, /* four */ 4>`` is ``P<T,4>``,
+  its members ``P<T,4>::fill``, apart from the primary template's ``P::fill``).
+- **Out of line, a qualifier's arguments are dropped only when they are the template's own parameters**:
+  exactly the parameter names of the template header around the definition, in order
+  (``template <typename T> void Box<T>::get()`` is ``Box::get``, the primary template's member).
+  A qualifier the same as a partial specialisation the file defines, but for its parameter names,
+  is spelled as that specialisation spells it
+  (``template <typename U> void P<U, 4>::fill()`` is ``P<T,4>::fill`` beside ``template <typename T> struct P<T, 4> {…}``)
+  when exactly one specialisation with a body in that scope matches:
+  a pack is not a plain parameter (``S<A, B>`` is spelled as ``S<T, U>``, never as ``S<T, Ts...>``),
+  a forward declaration never sets the spelling,
+  and specialisations of one template name in two namespaces or two classes never share one.
+  A qualifier that names none of the header's parameters is kept, and takes no header but an empty ``template <>``
+  (``template <> template <class U> void Outer<int>::Inner<U>::n()`` is ``Outer<int>::Inner::n``).
+  So a member's declaration in its class and its definition out of line share a name.
+- **A namespace macro the file defines itself is read**:
+  what lies between its invocations is named in the namespaces it opens (``json.hpp``'s
+  ``NLOHMANN_JSON_NAMESPACE_BEGIN`` opens ``nlohmann``, its inline ABI namespace left out),
+  an anonymous namespace there too.
+  It is read when it is an object-like macro the file defines (one way, or identically),
+  whose body is only ``namespace … {`` (not an all-capitals name) or ``inline namespace … {``,
+  invoked alone on its line, in code, its openings and closings balanced.
+  The file is parsed from a copy with each opening invocation written as ``extern"C++"{``
+  and each closing one as ``}``, padded to their length: every line, column, name and tagged scope
+  is the file's as written.
+  An opening the parse does not read as that block (a macro statement on the line before it) is left as written,
+  and so is every pair inside it or right after one of its invocations;
+  if a pair still does not read as its block, the whole file is read as written: no function is lost.
+
+What the macro rule does not read:
+
+- A macro defined in another header, as fmt's ``FMT_BEGIN_NAMESPACE`` is, is not seen:
+  the names inside it lack its namespace.
+- An opening shorter than 12 characters (``NS_OPEN``) is left as written, and so is any pair inside it:
+  the markers around it are attached as before, and the names inside it lack its namespace.
+- A function-like macro (``PYBIND11_NAMESPACE_BEGIN(name)``) is not read, nor a macro the code also uses beside
+  other code on a line; an invocation written ``NAME;`` leaves the whole file unread when the pair's other invocation
+  is written alone, and only that macro when both are written ``NAME;``.
+- A pair inside a namespace, a class or an ``extern "C"`` block is named without the macro's namespace.
+- A marker right before an opening or a closing invocation, or on its line, is attached to no entity,
+  as one before an ``extern "C++" {`` block is
+  (clang gives a documentation comment there to the namespace, which no entity stands for);
+  before an opening shorter than 12 characters, it is attached as before.
+- A ``.c`` file is C: its macros are never read.
+
+What the inline-namespace rule does not see:
+
+- An inline namespace only another file declares: a qualifier written through it keeps it
+  (``void lib::v1::f() {}`` is ``lib::v1::f``), and a reopening of it without ``inline`` is read as a plain one.
+- A qualifier that skips an outer inline namespace keeps the inner one
+  (``void lib::abi::f() {}`` is ``lib::abi::f`` where ``abi`` is declared inside ``inline namespace v1``, both inline).
+- A class defined inside a function in an inline namespace is named without both (``lib::Local``),
+  so two such classes of one name in two functions share their members' names.
+- An inline namespace a namespace macro opens is left out of every name,
+  even where two definitions then share a name and parameters.
+- A declaration in an inline namespace beside a definition of the same name and parameters in its parent
+  (``namespace lib { void g() {} inline namespace v1 { void g(); } }``) is named as that definition (``lib::g``):
+  only definitions decide what is kept apart.
+- A ``friend`` of a class defined out of line through a qualifier
+  (``struct lib::v2::X { friend void swap(X&, X&) {} };``) is named in the namespace around that definition,
+  not the qualifier's (``swap``, where clang prints ``lib::swap``).
 
 The rules
 ~~~~~~~~~

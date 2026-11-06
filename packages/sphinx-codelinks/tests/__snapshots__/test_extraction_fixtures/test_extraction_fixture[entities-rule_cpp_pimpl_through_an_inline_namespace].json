@@ -1,0 +1,148 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 8
+      },
+      "end": {
+        "row": 2,
+        "column": 57
+      }
+    },
+    "tagged_scope": "void run();",
+    "scope": {
+      "kind": "field_declaration",
+      "start": 4,
+      "end": 4,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "lib::Widget::Impl::run",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "lib"
+        },
+        {
+          "kind": "scope",
+          "name": "Widget"
+        },
+        {
+          "kind": "struct",
+          "name": "Impl"
+        },
+        {
+          "kind": "method",
+          "name": "run"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "The implementation's member",
+      "id": "IMPL_R_PIMPL_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "field_declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 4
+      },
+      "end": {
+        "row": 5,
+        "column": 40
+      }
+    },
+    "tagged_scope": "void lib::v1::Widget::Impl::run() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 7,
+      "end": 7,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "lib::Widget::Impl::run",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "lib"
+        },
+        {
+          "kind": "scope",
+          "name": "Widget"
+        },
+        {
+          "kind": "class",
+          "name": "Impl"
+        },
+        {
+          "kind": "method",
+          "name": "run"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Its definition",
+      "id": "IMPL_R_PIMPL_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 4
+      },
+      "end": {
+        "row": 7,
+        "column": 87
+      }
+    },
+    "tagged_scope": "void lib::v1::Widget::draw() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 9,
+      "end": 9,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "lib::Widget::draw",
+      "semantic": [
+        {
+          "kind": "scope",
+          "name": "lib"
+        },
+        {
+          "kind": "class",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "draw"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "The outer class's member defined through the inline namespace",
+      "id": "IMPL_R_PIMPL_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

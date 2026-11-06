@@ -4,8 +4,10 @@ from pathlib import Path
 from urllib.request import pathname2url
 
 from giturlparse import parse
-from tree_sitter import Language, Parser, Query, QueryCursor
+from tree_sitter import Language, Parser, Query, QueryCursor, Tree
 from tree_sitter import Node as TreeSitterNode
+
+from sphinx_codelinks.analyse import cpp_macros
 
 # The entity tables live with the naming in ``entity``; they stay importable from
 # here, where they were.
@@ -13,6 +15,7 @@ from sphinx_codelinks.analyse.entity import (
     COMMENT_TYPES,
     ENTITY_HEAD_TYPES,
     Association,
+    CppNames,
     Mechanism,
     in_function_body,
     is_doc_comment,
@@ -197,11 +200,18 @@ def init_tree_sitter(
     return parser, query
 
 
-# @Comment extraction from source code using tree-sitter, IMPL_EXTR_1, impl, [FE_DEF]
-def extract_comments(
-    src_string: bytes, parser: Parser, query: Query
-) -> list[TreeSitterNode] | None:
-    """Get all comments from source files by tree-sitter.
+def parse_source(
+    src_string: bytes, parser: Parser, comment_type: CommentType, src_path: Path
+) -> tuple[Tree, CppNames | None]:
+    """The one parse of a source file the analysis reads, and, for a C++ file, what the
+    whole file decides about the names of its entities (:class:`CppNames`).
+
+    Every analysis of a file's markers parses it here, so that every C++ name is made
+    the one way. A C++ file is parsed from a copy with the namespace macros it defines
+    itself rewritten (:mod:`sphinx_codelinks.analyse.cpp_macros`): the tree's offsets
+    are the file's, and every comment, name, tagged scope and excerpt is read from
+    ``src_string``, through :class:`CppNames` and ``SourceFile.node_text``, never from
+    the copy. A ``.c`` file is C: it is parsed as written, and gets no file-level names.
 
     The whole buffer is parsed in one piece: read one byte at a time, a multi-byte
     UTF-8 character inside a token (a YAML scalar, an identifier, a Rust, Go or C#
@@ -211,11 +221,29 @@ def extract_comments(
     from-offset chunk of four bytes or more happens to work; a block-aligned one
     does not).
     """
-    tree = parser.parse(src_string)
+    if comment_type != CommentType.cpp or not cpp_macros.applies(src_path):
+        return parser.parse(src_string), None
+    tree, macros = cpp_macros.parse(parser, src_string)
+    return tree, CppNames(src_string, tree.root_node, macros)
+
+
+def captured_comments(tree: Tree, query: Query) -> list[TreeSitterNode] | None:
+    """The comment nodes ``query`` captures in ``tree``."""
     query_cursor = QueryCursor(query)
     captures: dict[str, list[TreeSitterNode]] = query_cursor.captures(tree.root_node)
-
     return captures.get("comment")
+
+
+# @Comment extraction from source code using tree-sitter, IMPL_EXTR_1, impl, [FE_DEF]
+def extract_comments(
+    src_string: bytes, parser: Parser, query: Query
+) -> list[TreeSitterNode] | None:
+    """Get all comments from source files by tree-sitter.
+
+    The buffer is parsed whole, as :func:`parse_source` explains; the analysis parses
+    through :func:`parse_source`, and this is its comment capture alone.
+    """
+    return captured_comments(parser.parse(src_string), query)
 
 
 def find_enclosing_scope(
@@ -405,11 +433,12 @@ def _in_head_of(
     return wrapped is not None and wrapped.id == entity.id
 
 
-def _is_inner_doc(node: TreeSitterNode, comment_type: CommentType) -> bool:
-    """A Rust inner doc comment (``//!``, ``/*!``): it documents what it is inside."""
+def _is_inner_doc(text: bytes, comment_type: CommentType) -> bool:
+    """Whether the comment ``text`` is a Rust inner doc comment (``//!``, ``/*!``): it
+    documents what it is inside."""
     if comment_type != CommentType.rust:
         return False
-    return (node.text or b"").startswith((b"//!", b"/*!"))
+    return text.startswith((b"//!", b"/*!"))
 
 
 def _find_yaml_structure_in_block_node(
@@ -541,7 +570,10 @@ def find_jsonc_associated_structure(node: TreeSitterNode) -> TreeSitterNode | No
 
 # @Attach a marker to the adjacent code entity, IMPL_ENTITY_1, impl, [FE_DEF]
 def associate(
-    node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
+    node: TreeSitterNode,
+    comment_type: CommentType = CommentType.cpp,
+    *,
+    text: bytes | None = None,
 ) -> Association | None:
     """The entity a comment is attached to, and how (see :data:`Mechanism`).
 
@@ -579,6 +611,8 @@ def associate(
 
     :param node: The comment node, or a Python docstring's ``expression_statement``.
     :param comment_type: The language of the file ``node`` was parsed from.
+    :param text: The comment's text as the file writes it (``SourceComment.text``),
+        where a C++ tree is parsed from a prepared copy; ``node.text`` when not given.
     :return: The association, or ``None`` when the comment is attached to no entity
         (file level).
     """
@@ -590,11 +624,12 @@ def associate(
         # JSONC uses data-aware structure association logic
         return _jsonc_associate(node)
 
+    written = (node.text or b"") if text is None else text
     declared: Mechanism = "doc_comment"
-    if node.type == CommentCategory.docstring or _is_inner_doc(node, comment_type):
+    if node.type == CommentCategory.docstring or _is_inner_doc(written, comment_type):
         scope = find_enclosing_scope(node, comment_type)
         return Association(scope, declared) if scope is not None else None
-    is_doc = is_doc_comment(node, comment_type)
+    is_doc = is_doc_comment(node, comment_type, text=written)
 
     def enclosing(trailing: bool = False) -> Association | None:
         scope = find_enclosing_scope(node, comment_type)
@@ -612,7 +647,7 @@ def associate(
             return enclosing(trailing=True)
         return Association(entity, declared if is_doc else "trailing")
     if _is_file_header(node) and (
-        not is_doc or documents_file((node.text or b"").decode("utf-8", "replace"))
+        not is_doc or documents_file(written.decode("utf-8", "replace"))
     ):
         return None
     entity = find_next_scope(node, comment_type)
