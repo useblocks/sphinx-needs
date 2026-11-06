@@ -36,7 +36,7 @@ CORPUS_PATH = (
 #:
 #: Raising it is the normal consequence of adding a case; lowering it needs a reason in
 #: the commit message.
-EXPECTED_CASE_COUNT = 76
+EXPECTED_CASE_COUNT = 77
 
 #: The keys a case may carry, and those its ``[case.options]`` and ``[case.expect]``
 #: may: the header defines each. A key outside them is a case this runner would

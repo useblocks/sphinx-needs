@@ -657,12 +657,14 @@ LINKS = [
     {"id": "B", "part": "p1", "condition": "c"},
     {"id": "B", "condition": "tags[0] == 'x'"},
     {"id": "B", "part": "p", "condition": "a[b[0]] == 1"},
+    {"id": "B", "condition": "x == a[0]"},
+    {"id": "B", "part": "p", "condition": "status in ['open']"},
 ]
 
-#: A condition that ends in ``]``: sphinx-needs' own writer spells it so that its reader
-#: reads it back without the condition (a limit of format 1's grammar, which the draft's
+#: A condition that starts with ``[``: sphinx-needs' own writer spells it so that its
+#: reader reads it back as another link (a limit of format 1's grammar, which the draft's
 #: link object does not have). The projection spells it as that writer does all the same.
-NOT_ROUND_TRIPPED = {"id": "B", "condition": "x == a[0]"}
+NOT_ROUND_TRIPPED = {"id": "B", "condition": "[1] == y"}
 
 
 @pytest.mark.parametrize(

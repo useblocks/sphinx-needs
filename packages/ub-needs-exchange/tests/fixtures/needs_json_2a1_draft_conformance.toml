@@ -501,6 +501,15 @@ diagnostics = []
 records = { A = { links = ["B[[tags[0] == 'x']]", "C[[[a[b[0]] == 1]]]"] } }
 
 [[case]]
+name = "a-condition-that-ends-in-a-bracket"
+why = "a condition that ends in a closing bracket is bracketed one deeper than its longest run, as any other: the condition runs to the brackets that end the string"
+layer = "document"
+json = '''{"format_version": "2a1", "project": {"name": "up", "version": "1.0"}, "needs": [{"id": "A", "type": "req", "links": {"links": [{"id": "B", "condition": "x == a[0]"}, {"id": "C", "part": "p", "condition": "a]]"}]}}]}'''
+[case.expect]
+diagnostics = []
+records = { A = { links = ["B[[x == a[0]]]", "C.p[[[a]]]]]"] } }
+
+[[case]]
 name = "an-empty-part-is-no-part"
 why = "an empty part is spelled as no part, as format 1's writer spells a link whose part is empty"
 layer = "document"
