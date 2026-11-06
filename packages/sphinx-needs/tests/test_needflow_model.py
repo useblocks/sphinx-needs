@@ -10,7 +10,7 @@ reported as a rule that changed rather than as a diagram that moved.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, get_args
 from unittest.mock import Mock
 
 import pytest
@@ -28,6 +28,16 @@ from sphinx_needs.directives.needflow._model import (
     resolve_color,
     resolve_link_types,
     resolve_presentation,
+)
+from sphinx_needs.directives.needflow._options import (
+    _FLOW_DIRECTIONS,
+    _LEGEND_PARTS,
+    _LEGEND_PLACEMENTS,
+    _LINK_LABELS,
+    FlowDirection,
+    LegendPart,
+    LegendPlacement,
+    LinkLabels,
 )
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.need_item import (
@@ -532,3 +542,23 @@ def test_edge_style_is_the_part_style_for_a_part_edge():
     edges = collect_edges([a, part, need("B")], [schema], {"A", "B", "P.p1"})
     styles = {e.target_id: e.style for e in edges}
     assert styles == {"P.p1": "dotted", "B": "dashed"}
+
+
+@pytest.mark.parametrize(
+    ("values", "literal"),
+    [
+        (_FLOW_DIRECTIONS, FlowDirection),
+        (_LINK_LABELS, LinkLabels),
+        (_LEGEND_PARTS, LegendPart),
+        (_LEGEND_PLACEMENTS, LegendPlacement),
+    ],
+)
+def test_enumeration_values_are_their_literal(
+    values: tuple[str, ...], literal: Any
+) -> None:
+    """Each typed tuple of option values holds exactly its ``Literal``'s values.
+
+    ``get_args`` returns ``tuple[Any, ...]``, so the checker cannot see a tuple typed as
+    one ``Literal`` but built from another; this pins each pairing.
+    """
+    assert values == get_args(literal)

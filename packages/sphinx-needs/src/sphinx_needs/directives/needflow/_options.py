@@ -25,7 +25,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Any, Literal, get_args
+from typing import Any, Literal, TypeVar, get_args
 
 from docutils.parsers.rst import directives
 
@@ -40,6 +40,10 @@ LocationType = Any
 
 FlowDirection = Literal["down", "up", "right", "left"]
 """The direction a diagram flows in, as an intent rather than an engine token."""
+
+#: The values of each closed enumeration here, typed as the ``Literal`` they enumerate,
+#: so that a membership test narrows a string to that ``Literal``.
+_FLOW_DIRECTIONS: tuple[FlowDirection, ...] = get_args(FlowDirection)
 
 #: Every spelling accepted by ``:direction:``, mapped to the neutral value.
 #: The two-letter forms are the tokens Graphviz and Mermaid users already know, and are
@@ -84,12 +88,18 @@ _PLANTUML_DIRECTION: Mapping[FlowDirection, str] = {
 
 LinkLabels = Literal["none", "outgoing", "incoming", "type"]
 """What to write on an edge, if anything."""
+_LINK_LABELS: tuple[LinkLabels, ...] = get_args(LinkLabels)
 
 LegendPart = Literal["types", "links"]
 """A section of the out-of-diagram legend."""
+_LEGEND_PARTS: tuple[LegendPart, ...] = get_args(LegendPart)
 
 LegendPlacement = Literal["internal", "external"]
 """Where a legend is asked to be drawn."""
+_LEGEND_PLACEMENTS: tuple[LegendPlacement, ...] = get_args(LegendPlacement)
+
+#: A value of one closed enumeration, see :func:`validated_config_enum`.
+_Choice = TypeVar("_Choice", bound=str)
 
 
 #: The keys a ``needs_flow_legends`` entry may set.
@@ -176,7 +186,10 @@ def show_link_names_option(argument: str | None) -> LinkLabels:
     """
     if not (value := (argument or "").strip().lower()):
         return "outgoing"
-    return directives.choice(value, get_args(LinkLabels))  # ty: ignore[invalid-return-type]
+    # docutils refuses a value outside the set in its own words; what it accepts is
+    # returned as the member it equals, which is typed as the Literal
+    choice = directives.choice(value, _LINK_LABELS)
+    return next(label for label in _LINK_LABELS if label == choice)
 
 
 def show_legend_option(argument: str | None) -> str:
@@ -331,21 +344,21 @@ def resolve_direction(
         return config_direction
     return validated_config_enum(
         project_default,
-        get_args(FlowDirection),
+        _FLOW_DIRECTIONS,
         "down",
         name="needs_flow_direction",
         location=None,
-    )  # ty: ignore[invalid-return-type]
+    )
 
 
 def validated_config_enum(
     value: str,
-    allowed: tuple[str, ...],
-    default: str,
+    allowed: tuple[_Choice, ...],
+    default: _Choice,
     *,
     name: str,
     location: LocationType,
-) -> str:
+) -> _Choice:
     """Check a configured value against a closed enumeration, without failing the build.
 
     An out-of-enum value is a mistake in one line of ``conf.py``, not a reason to end a
@@ -368,8 +381,10 @@ def validated_config_enum(
     :param location: Where to report the value, if anywhere.
     :return: The normalised value, or the default if it is not usable.
     """
-    if (normalised := str(value).strip().lower()) in allowed:
-        return normalised
+    normalised = str(value).strip().lower()
+    for choice in allowed:
+        if choice == normalised:
+            return choice
     log_warning(
         LOGGER,
         f"Invalid {name!r} value {value!r}, "
@@ -457,32 +472,32 @@ def compile_legends(
         parts: list[LegendPart] = []
         for raw in raw_parts:
             part = str(raw).strip().lower()
-            if part not in get_args(LegendPart):
+            if part not in _LEGEND_PARTS:
                 log_warning(
                     LOGGER,
                     f"unknown legend section {raw!r} of legend {name!r}, "
-                    f"allowed values: {', '.join(get_args(LegendPart))}",
+                    f"allowed values: {', '.join(_LEGEND_PARTS)}",
                     "config",
                     location=location,
                     once=True,
                 )
                 continue
             if part not in parts:
-                parts.append(part)  # ty: ignore[invalid-argument-type]
+                parts.append(part)
         placement: LegendPlacement | None = None
         if (raw_placement := spec.get("placement")) is not None:
             candidate = str(raw_placement).strip().lower()
-            if candidate not in get_args(LegendPlacement):
+            if candidate not in _LEGEND_PLACEMENTS:
                 log_warning(
                     LOGGER,
                     f"unknown placement {raw_placement!r} of legend {name!r}, "
-                    f"allowed values: {', '.join(get_args(LegendPlacement))}",
+                    f"allowed values: {', '.join(_LEGEND_PLACEMENTS)}",
                     "config",
                     location=location,
                     once=True,
                 )
             else:
-                placement = candidate  # ty: ignore[invalid-assignment]
+                placement = candidate
         compiled[str(name)] = LegendSpec(
             parts=tuple(parts) or ("types",), placement=placement
         )
@@ -611,11 +626,11 @@ def validated_config_show_links(
         return "outgoing" if value else "none"
     return validated_config_enum(
         str(value),
-        get_args(LinkLabels),
+        _LINK_LABELS,
         "none",
         name="needs_flow_show_links",
         location=location,
-    )  # ty: ignore[invalid-return-type]
+    )
 
 
 def resolve_link_labels(
@@ -661,7 +676,7 @@ def validate_flow_config(
     """
     validated_config_enum(
         direction,
-        get_args(FlowDirection),
+        _FLOW_DIRECTIONS,
         "down",
         name="needs_flow_direction",
         location=None,
