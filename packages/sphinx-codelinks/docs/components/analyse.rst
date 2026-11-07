@@ -450,7 +450,9 @@ Each line of a comment is scanned from left to right for the configured markers
 
 - **A marker that ends in a letter, a digit or** ``_`` **matches a whole word only**: the character after it must not
   be one of those (or the line ends there). A letter or a digit here is any Unicode letter or number -- a character
-  whose general category is L* or N* -- so a circled letter (``ⓐ``) or a combining mark is neither. With the marker
+  whose general category is L* or N* -- so a circled letter (``ⓐ``) or a combining mark is neither. The
+  classification follows the Unicode tables of the Python that runs the build, so a character newer than another
+  tool's tables can be classed differently there. With the marker
   ``\verifies``, ``\verifiesall REQ_2`` holds no reference.
   A marker that ends in anything else matches wherever it occurs: ``@need-ids:REQ_1`` is the reference ``REQ_1``.
   Nothing is required before a marker.

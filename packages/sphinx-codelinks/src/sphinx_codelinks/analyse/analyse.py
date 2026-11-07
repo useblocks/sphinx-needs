@@ -57,7 +57,10 @@ def _is_alphanumeric(char: str) -> bool:
     The one notion of alphanumeric of the reference markers' rules, shared with another
     implementation of them. ``str.isalnum`` is exactly that test (no other character
     passes it): characters Unicode calls Alphabetic without being letters -- a circled
-    letter (So), a combining mark (Mn, Mc) -- are not alphanumeric here.
+    letter (So), a combining mark (Mn, Mc) -- are not alphanumeric here. The
+    classification follows each tool's own Unicode tables (here the running Python's,
+    ``unicodedata.unidata_version``), so a character newer than the older of two tables
+    can be classed differently.
     """
     return char.isalnum()
 

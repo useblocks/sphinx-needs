@@ -189,7 +189,7 @@ Names the need field the project's ``@need-ids:`` references are attached to dur
    [codelinks.projects.my_project]
    ref_url_field = "code_url"
 
-References are attached only when :ref:`set_remote_url` or :ref:`set_local_url` is on, references are extracted (``get_need_id_refs``, on by default) and at least one marker is configured. The field is registered as a list of strings when at least one marker is a plain string (not when every marker is a table); projects naming the same field share it. Where it is written -- URLs on and a plain-string marker configured -- it must differ from ``local_url_field`` and ``remote_url_field``, and must not name a need link type (``links``, ``parent_needs``, or one ``needs_links`` or ``needs_extra_links`` declares): a link holds need ids, never URLs.
+References are attached only when :ref:`set_remote_url` or :ref:`set_local_url` is on, references are extracted (``get_need_id_refs``, on by default) and at least one marker is configured. The field is registered as a list of strings when at least one marker is a plain string (not when every marker is a table); projects naming the same field share it. Where it is written -- URLs on and a plain-string marker configured -- it must differ from ``local_url_field`` and ``remote_url_field``, and must not name a need link type (``links``, ``parent_needs``, or one ``needs_links`` or ``needs_extra_links`` declares) or a link type's back links (``<link type>_back``): a link holds need ids, never URLs.
 
 .. _`discover_config`:
 
@@ -655,7 +655,7 @@ Configuration for Sphinx-Needs ID reference extraction.
 
   In ``conf.py`` the table is a dict, ``{"marker": "\\satisfies", "field": "impl_url"}``.
   A table takes exactly the two keys, ``marker`` a non-empty string and ``field`` a string; anything else is a configuration error.
-  A table's non-empty ``field`` is checked as :ref:`ref_url_field` is (not a URL field, not a link type) when URLs are on, and every field a marker can write is registered as a list of strings.
+  A table's non-empty ``field`` is checked as :ref:`ref_url_field` is (not a URL field, not a link type or its back links) when URLs are on, and every field a marker can write is registered as a list of strings.
   A marker text may be listed once only, whichever form each entry takes.
   How a marker is found on a line is described in :ref:`need_id_refs_matching`.
 

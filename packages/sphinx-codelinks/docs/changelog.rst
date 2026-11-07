@@ -18,10 +18,11 @@ New and Improved
   a build they make no record. Every field a marker can write is registered, and
   ``ref_url_field`` only when a plain-string marker exists. A field is checked where it
   can be written -- URLs on, and ``ref_url_field`` while a plain-string marker exists, or
-  a table's non-empty ``field`` -- and may now name no need link type there: a
-  ``ref_url_field`` naming ``links``, ``parent_needs`` or a ``needs_links`` /
-  ``needs_extra_links`` entry, accepted before, is now a configuration error when it is
-  written. (A ``ref_url_field`` equal to a URL field in a project with no marker at all,
+  a table's non-empty ``field`` -- and may now name no need link type there, nor a link
+  type's back links: a ``ref_url_field`` naming ``links``, ``parent_needs``, a
+  ``needs_links`` / ``needs_extra_links`` entry, or the ``<link type>_back`` of any of
+  them, accepted before (a back-link name made Sphinx-Needs ignore a declared link type,
+  every link of it with it), is now a configuration error when it is written. (A ``ref_url_field`` equal to a URL field in a project with no marker at all,
   refused before, now loads: nothing writes it.) A malformed table (a missing or unknown
   key) is refused, and so is a marker listed twice, in any form.
   The documentation gains :ref:`codelinks_doxygen`.
@@ -51,13 +52,14 @@ Fixes
   ``\satisfies`` the ids ``REQ_1``, ``\verifies`` and ``REQ_2``, and now gives it
   ``REQ_1`` alone, as the same marker twice on a line gives each its own ids; with the
   marker ``\verifies``, ``\verifiesall REQ_2`` gave the ids ``all`` and ``REQ_2``, and is
-  now no reference. A line extracts as before when exactly one configured marker matches
-  on it, once, and that marker does not end in a letter, a digit or ``_`` followed by one;
-  other lines may extract differently, in ``marked_content.json`` and in the build. Two
-  more changes: an empty marker string, which matched every line, now matches nothing;
-  and of overlapping markers (``@need-ids`` and ``@need-ids:``) only the longest matches
-  where both would. Which lines are reference lines, never one-line needs, follows the
-  same rule. The first build after upgrading reads every document once, so no reference
+  now no reference. A line extracts as before when exactly one configured marker occurs
+  in its text, once, and that marker does not end in a letter, digit or ``_`` that a
+  letter, digit or ``_`` directly follows. Other lines may extract differently, in
+  ``marked_content.json`` and in the build: two markers on a line; the same marker twice;
+  a marker that is the start of a longer word; overlapping markers (``@need-ids`` and
+  ``@need-ids:``), where the longest now wins; and an empty marker string, which matched
+  every line and now matches nothing. Which lines are reference lines, never one-line
+  needs, follows the same rule. The first build after upgrading reads every document once, so no reference
   extracted by the old rule is kept (the extension's ``env_version`` is now 4).
 - 🐛 A C or C++ marker directly above the line of a preprocessor conditional belongs to
   no entity anywhere outside a function's body (at file level, in a namespace, class,
