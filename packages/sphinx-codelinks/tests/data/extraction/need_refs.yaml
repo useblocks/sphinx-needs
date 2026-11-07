@@ -188,3 +188,20 @@ second_match_after_multibyte:
     need_id_markers: ["\\satisfies", "\\verifies"]
   extract: [need_refs]
   source: "// \\satisfies R\u00C9Q_1 \\verifies REQ_2\n// \u00E9 \\satisfies REQ_3 \\verifies REQ_4\n// \\satisfies REQ_5\u3000\\verifies REQ_6\nvoid f() {}\n"
+
+digit_after_marker:
+  # A digit is a word character: after a marker that ends in a letter it is the same
+  # word, so ``\verifies2`` holds no reference; and before the first match it makes the
+  # line no reference line, so the one-line need after the reference on the third line
+  # is created, where the second line, starting with the marker, withholds its own.
+  lang: cpp
+  config:
+    need_id_markers: ["\\verifies"]
+    start_sequence: "[["
+    end_sequence: "]]"
+  extract: [oneline, need_refs]
+  source: |
+    // \verifies2 REQ_1
+    // \verifies REQ_2 [[A title, IMPL_1]]
+    // 1 \verifies REQ_3 [[B title, IMPL_2]]
+    void f() {}

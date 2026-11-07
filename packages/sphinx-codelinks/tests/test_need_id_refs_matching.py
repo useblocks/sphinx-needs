@@ -226,6 +226,9 @@ def test_one_occurrence_extracts_as_before(tmp_path: Path, text: str) -> None:
             "// \\verifiesall REQ_1 \\verifies REQ_2", False, id="prefix-is-text"
         ),
         pytest.param("// see \\verifies REQ_1", False, id="word-before"),
+        pytest.param("// 1 \\verifies REQ_1", False, id="ascii-digit-before"),
+        pytest.param("// \u00b2 \\verifies REQ_1", False, id="non-ascii-number-before"),
+        pytest.param("// \u24d0 \\verifies REQ_1", True, id="circled-letter-before"),
         pytest.param(
             "// \\satisfies A see \\verifies B", True, id="second-match-after-word"
         ),
