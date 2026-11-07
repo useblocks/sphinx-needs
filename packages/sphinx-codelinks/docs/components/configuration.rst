@@ -179,7 +179,7 @@ Each need a ``src-trace`` directive creates holds, in :ref:`remote_url_field <se
 ref_url_field
 ~~~~~~~~~~~~~
 
-Names the need field the project's ``@need-ids:`` references are attached to during the build (see :ref:`need_id_refs_in_build`). The key and its default are ubCode's, so one ``ubproject.toml`` configures both tools; an empty string switches the attach off for the project.
+Names the need field the project's ``@need-ids:`` references are attached to during the build (see :ref:`need_id_refs_in_build`); an empty string switches the attach off for the project's marker strings. A marker given as a table in :ref:`analyse.need_id_refs <need_id_refs_config>` names its own field, which overrides ``ref_url_field`` for that marker's references.
 
 **Type:** ``str``
 **Default:** ``"code_url"``
@@ -189,7 +189,7 @@ Names the need field the project's ``@need-ids:`` references are attached to dur
    [codelinks.projects.my_project]
    ref_url_field = "code_url"
 
-References are attached only when :ref:`set_remote_url` or :ref:`set_local_url` is on, references are extracted (``get_need_id_refs``, on by default) and at least one marker is configured. The field is registered as a list of strings; projects naming the same field share it. It must differ from ``local_url_field`` and ``remote_url_field``.
+References are attached only when :ref:`set_remote_url` or :ref:`set_local_url` is on, references are extracted (``get_need_id_refs``, on by default) and at least one marker is configured. The field is registered as a list of strings when at least one marker is a plain string (not when every marker is a table); projects naming the same field share it. It must differ from ``local_url_field`` and ``remote_url_field``, and must not name a need link type (``links``, ``parent_needs``, or one ``needs_links`` or ``needs_extra_links`` declares): a link holds need ids, never URLs.
 
 .. _`discover_config`:
 
@@ -618,6 +618,8 @@ Is equivalent to this RST directive:
 
 .. note:: For the TS/JS family (``comment_type = "ts"``), the default ``start_sequence = "@"`` collides with JSDoc tags such as ``@param``, ``@returns``, and ``@deprecated``. Under the default ``@``, a JSDoc comment's tag lines are read by the one-line parser like any other line: one that it would turn into a marker (a comma, say) is a ``jsdoc_tag`` warning instead; choose a start sequence other than ``@``, ``[[`` or ``@@`` for example, and the check never runs: a JSDoc line is then read as any other line, a marker only where it holds that start sequence. Under ``[[``, ECMAScript's internal-slot notation in a JSDoc line is read as a marker: ``[[Prototype]]`` alone is a ``too_few_fields`` warning, and ``[[Prototype]], [[Extensible]]`` a need. ``@`` is the one start sequence the check runs for, being JSDoc's own sigil: a tag line the one-line parser would ignore (``@returns the sum``) stays silent, and under ``[[`` the line ``[[param a, b]]`` is the marker its author wrote. ``@`` also starts TypeScript's ``// @ts-ignore`` and ``// @ts-expect-error`` comments and the decorators quoted inside an ``@example``; with ``@`` as the start sequence a comma on such a line makes a marker.
 
+.. _`need_id_refs_config`:
+
 analyse.need_id_refs
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -633,7 +635,28 @@ Configuration for Sphinx-Needs ID reference extraction.
 
 **Configuration fields:**
 
-- ``markers`` (``list[str]``) - List of marker strings that identify need ID references
+- ``markers`` (``list[str | table]``) - The markers that identify need ID references. Each entry is either
+
+  - a string: the marker's references go to the project's :ref:`ref_url_field`; or
+  - a table ``{ marker = "<text>", field = "<name>" }``: the marker's references go to the field ``<name>`` instead.
+    ``field = ""`` extracts the references but attaches them nowhere, as ``ref_url_field = ""`` does.
+
+  A field per marker lets one tree fill several fields, a requirement's implementations in one and its tests in another:
+
+  .. code-block:: toml
+
+     [codelinks.projects.my_project.analyse.need_id_refs]
+     markers = [
+       "@need-ids:",
+       { marker = "\\satisfies", field = "impl_url" },
+       { marker = "\\verifies", field = "test_url" },
+     ]
+
+  In ``conf.py`` the table is a dict, ``{"marker": "\\satisfies", "field": "impl_url"}``.
+  A table takes exactly the two keys, ``marker`` a non-empty string and ``field`` a string; anything else is a configuration error.
+  A table's ``field`` is checked as :ref:`ref_url_field` is (not a URL field, not a link type), and every field a marker can write is registered as a list of strings.
+  A marker text may be listed once only, whichever form each entry takes.
+  How a marker is found on a line is described in :ref:`need_id_refs_matching`.
 
 .. _`multiline_needs_config`:
 

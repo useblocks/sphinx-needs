@@ -314,6 +314,8 @@ directives' scopes share is analysed by each, and each reports its markers. ``co
 analyse`` prints the parser's kinds to the console; it creates no needs, so a need
 Sphinx-Needs refuses is reported by a build only.
 
+.. _oneline_doc_tags:
+
 **A one-character start sequence without the field separator is not a marker.** When the
 start sequence is a single character -- the default ``@`` -- and the text after it holds no
 ``field_split_char``, while the style requires more than one field, the line is left alone:

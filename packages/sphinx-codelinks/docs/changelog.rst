@@ -9,6 +9,18 @@ Unreleased
 New and Improved
 ................
 
+- ✨ A reference marker can name its own field (:ref:`need_id_refs_config`): an entry of
+  ``[analyse.need_id_refs] markers`` is a string, as before, or a table
+  ``{ marker = "\\satisfies", field = "impl_url" }`` (a dict in ``conf.py``), whose
+  references go to ``field`` instead of the project's ``ref_url_field``, so one tree fills
+  ``impl_url`` and ``test_url`` on the requirements it references; ``field = ""`` extracts
+  the references and attaches them nowhere. Every field a marker can write is registered,
+  and ``ref_url_field`` only when a plain-string marker exists. A table's ``field`` is
+  checked as ``ref_url_field`` is, and neither may now name a need link type: a
+  ``ref_url_field`` naming ``links``, ``parent_needs`` or a ``needs_links`` /
+  ``needs_extra_links`` entry, accepted before, is now a configuration error. A malformed
+  table (a missing or unknown key) is refused, and so is a marker listed twice, in any form.
+  The documentation gains :ref:`codelinks_doxygen`.
 - 👌 A C++ marker's entity is named as clang names it in five more shapes, so that its name
   can be joined with what a compiler reports, and two spellings of one function meet
   (:ref:`cpp_names`): an inline namespace adds nothing to the names of what it holds
@@ -29,6 +41,16 @@ New and Improved
 Fixes
 .....
 
+- 🐛 A reference marker's ids end at the next marker on the line, and a marker that ends in
+  a letter, a digit or ``_`` matches a whole word only (:ref:`need_id_refs_matching`).
+  ``\satisfies REQ_1 \verifies REQ_2`` gave ``\satisfies`` the ids ``REQ_1``,
+  ``\verifies`` and ``REQ_2``, and now gives it ``REQ_1`` alone, as the same marker twice
+  on a line gives each its own ids; with the marker ``\verifies``, ``\verifiesall REQ_2``
+  gave the ids ``all`` and ``REQ_2``, and is now no reference. Where two markers match at
+  one position the longer one wins. Lines that hold more than one marker, or a marker
+  followed by a letter, a digit or ``_``, extract differently, in ``marked_content.json``
+  and in the build; every other line extracts as before. Which lines are reference lines,
+  never one-line needs, follows the same rule.
 - 🐛 A C or C++ marker directly above the line of a preprocessor conditional belongs to
   no entity anywhere outside a function's body (at file level, in a namespace, class,
   struct, union or enum body, or in an ``extern "C"`` block), as clang reads it

@@ -440,12 +440,33 @@ Below is an example of a C++ source file containing need ID references and the c
 - ``marker`` - The marker string used for identification
 - ``type`` - Type of extraction ("need-id-refs")
 
+.. _need_id_refs_matching:
+
+How a marker is found
+^^^^^^^^^^^^^^^^^^^^^
+
+Each line of a comment is scanned from left to right for the configured markers
+(:ref:`analyse.need_id_refs <need_id_refs_config>`):
+
+- **A marker that ends in a letter, a digit or** ``_`` **matches a whole word only**: the character after it must not
+  be one of those (or the line ends there). With the marker ``\verifies``, ``\verifiesall REQ_2`` holds no reference.
+  A marker that ends in anything else matches wherever it occurs: ``@need-ids:REQ_1`` is the reference ``REQ_1``.
+  Nothing is required before a marker.
+- **At one position, the longest marker wins**, and the scan goes on after it, so two matches never overlap: with
+  both ``\verifies`` and ``\verifiesall`` configured, ``\verifiesall REQ_3`` is a ``\verifiesall`` reference.
+- **A marker's ids run to the next marker on the line**, or to the end of the line: ``\satisfies REQ_1 \verifies
+  REQ_2`` gives ``\satisfies`` the id ``REQ_1`` and ``\verifies`` the id ``REQ_2``. The ids are split on commas and
+  whitespace; a ``*/`` closing the line is not an id. A marker with no id after it gives no reference.
+- **Every match counts**: the same marker twice on a line gives both its references.
+- A line whose first marker has nothing alphanumeric before it (after the comment's own decoration) is a reference
+  line, and never a one-line need.
+
 .. _need_id_refs_in_build:
 
 Need ID references in the build
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``src-trace`` directive attaches the ``@need-ids:`` references in the files it analyses to the needs they name, during the build -- the need may be defined in any document, before or after the directive. Each referenced need gets a list in its project's :ref:`ref_url_field` (default ``code_url``), one entry per reference, in source order:
+The ``src-trace`` directive attaches the ``@need-ids:`` references in the files it analyses to the needs they name, during the build -- the need may be defined in any document, before or after the directive. Each referenced need gets a list in its project's :ref:`ref_url_field` (default ``code_url``) -- or, for a marker given as a table, in the marker's own ``field`` (:ref:`need_id_refs_config`) -- one entry per reference, in source order:
 
 .. code-block:: json
 
@@ -461,12 +482,12 @@ The ``src-trace`` directive attaches the ``@need-ids:`` references in the files 
 - **An unknown id** warns at the source line: ``src/refs.cpp:5: WARNING: @need-ids reference to unknown need 'NOSUCH_ID' [codelinks.need_id_ref]``. ``suppress_warnings = ["codelinks.need_id_ref"]`` silences it. Each project with attached references also reports ``codelinks [<project>]: N references attached, M unknown``; one marker naming an unknown id warns once, even when two fields cover its file.
 - **A comment that starts with a configured marker** is a reference and never a one-line need, even on the default one-line style, whose start sequence ``@`` would match ``// @need-ids: A, B`` too.
 - **Precedence.** The references replace any value the need's own directive or a ``needs_global_options`` default gave the field (ubCode's rule); a user's :external+needs:ref:`needextend <needextend>` overrides them, as the references are attached after every need is read and before any ``needextend`` is applied. ``:+code_url:`` appends to the attached list, but on a need nothing references it fails the build until `sphinx-needs #2038 <https://github.com/useblocks/sphinx-needs/issues/2038>`__ is fixed -- set the field (``:code_url:``) instead. The need is not marked as modified.
-- **Overlapping scans** attach each reference once: two directives over the same file, or two projects whose source directories overlap. When those two projects' patterns differ, the reference keeps the URL of the first project by name (ubCode keeps the last one written). Files under different roots are different files, each kept: ``src/main.cpp`` in two repositories gives two references. Two projects naming different fields fill each its own field. A one-line need two such scans find is created once (:ref:`oneline_overlap`).
+- **Overlapping scans** attach each reference once: two directives over the same file, or two projects whose source directories overlap. When those two projects' patterns differ, the reference keeps the URL of the first project by name. Files under different roots are different files, each kept: ``src/main.cpp`` in two repositories gives two references. Two projects naming different fields fill each its own field. A one-line need two such scans find is created once (:ref:`oneline_overlap`).
 - **Incremental builds.** A file added to, removed from or edited in a directive's scope re-reads the document hosting the directive on the next build, for its references as for the needs it defines; the cost is one directory walk per scope per build, with no parsing: roughly 0.1 s per 2,000 discovered files on an Apple M2 Pro laptop, whatever their size -- the walk is the directive's own discovery plus a ``stat`` per file -- while parsing them costs tens of times more (2,000 200-line C++ files: ~0.1 s of walk against ~9 s of analysis). No build output is ever traced: the build's own output and doctree directories are skipped, and every builder writes an ``.ignore`` file (``*``) at the root of its output and doctree directories, so with ``gitignore = true`` (the default) nothing any builder writes -- the extension's source copies, Sphinx's ``_downloads/`` copies of a traced source, another builder's whole tree -- is traced, wherever the output sits: in ``_build/``, beside ``docs/`` in ``build/<builder>``, or inside a traced source directory, whose other files are traced as usual. With ``gitignore = false`` no ignore file is read, so the directory containing the output and doctree directories is skipped too when it lies inside the documentation source directory (``_build/`` in the Makefile layout), and an output directory elsewhere inside ``src_dir`` needs an ``exclude`` rule. A need whose references changed has its card rewritten, whichever document it is in: that document is written again, not read again. A ``needtable`` (or any other filter) in a third document that selects on the field is not rewritten -- the cross-document class ``needextend`` has today.
 
 **Migrating from** ``analyse`` **→** ``write rst`` **→** ``include``: remove the ``.. include::`` of the generated file (and the steps that generate it); the references now arrive by themselves, in ``code_url`` rather than in the ``remote-url`` (or ``remote_url``) field the generated ``needextend`` directives set, and as a list rather than one comma-joined string. A project that keeps including the generated file gets both. If you declared the field yourself for that route (``needs_fields``), remove the declaration: the extension registers it, and a declaration of your own warns -- the extension's ``codelinks.config`` warning names the cure -- and, as a string field, fails schema validation on every referenced need.
 
-**Differences from ubCode**, which reads the same ``ref_url_field``: ubCode stores one string, the last reference written, where this is a list of every reference; and ubCode drops a reference to an unknown need silently, where this warns. ubCode currently drops every need whose ``code_url`` is a list when it imports a Sphinx-built ``needs.json``, in a project whose codelinks configuration registers the field (``useblocks/ubcode#3838``).
+**The field holds every reference**: a list, one entry per reference, and a reference to an unknown need warns. Another tool reading the same ``ref_url_field`` from a ``ubproject.toml`` may keep a single value instead.
 
 Projects without a src-trace directive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -476,6 +497,54 @@ A project that no ``src-trace`` directive traces still has its ``@need-ids:`` re
 - **No need is created.** One-line and multi-line needs in such a project's files are not rendered -- there is no directive, and so no document, to hold them. The project's line counts them: ``codelinks [src]: 12 files, 30 references, 2 one-line needs not created (no src-trace directive)``.
 - **When it is analysed.** Every build walks the project's source directory and compares the files, their modification times and sizes with the last analysis; it analyses the project again only when they differ or the configuration changed. The cost of an unchanged build is that walk, with no parsing (see *Incremental builds* above for what the walk costs). A build that analysed the project again rewrites the cards of the needs whose references changed -- or, when none did, writes the root document -- so that Sphinx keeps the result and the next build analyses nothing.
 - **Errors do not stop the build.** A missing source directory, or a discovery or analysis failure, warns once per project and build (``codelinks.need_id_ref``), and that project's references are not attached. A file whose target lies outside the source directory is skipped with a ``codelinks.outside_src_dir`` warning on every build, since the directory is walked every build -- a directive's scope warns only when its document is read.
+
+.. _codelinks_doxygen:
+
+Coming from Doxygen
+^^^^^^^^^^^^^^^^^^^
+
+Doxygen's ``\satisfies`` and ``\verifies`` commands (or their ``@`` forms) already say which requirement a function
+implements and which one a test verifies. Configure them as reference markers, each with the field it fills, and the
+requirement collects both kinds of reference:
+
+.. code-block:: toml
+
+   [codelinks.projects.app.analyse.oneline_comment_style]
+   start_sequence = "@@"
+
+   [codelinks.projects.app.analyse.need_id_refs]
+   markers = [
+     "@need-ids:",
+     { marker = "\\satisfies", field = "impl_url" },
+     { marker = "@satisfies", field = "impl_url" },
+     { marker = "\\verifies", field = "test_url" },
+     { marker = "@verifies", field = "test_url" },
+   ]
+
+.. code-block:: cpp
+
+   /// \brief Start the motor.
+   /// \satisfies REQ_1
+   void start(int rpm);
+
+   /// \verifies REQ_1
+   void test_start();
+
+- **What it does.** ``REQ_1`` gets ``impl_url`` with the link to ``start`` and ``test_url`` with the link to
+  ``test_start`` (see :ref:`need_id_refs_in_build`); the plain ``@need-ids:`` marker still fills
+  :ref:`ref_url_field`. A filter such as ``type == "req" and not test_url`` lists the requirements no test verifies.
+- **Why** ``start_sequence = "@@"``. The default one-line start sequence is ``@``, so a Doxygen line such as
+  ``@param a, b`` -- it holds the field separator -- is read as a one-line need (see
+  :ref:`the note on documentation tags <oneline_doc_tags>`). Any start sequence Doxygen does not use avoids that.
+- **One id per command.** Everything after a marker, up to the next marker on the line, is read as ids: Doxygen's
+  optional ``(short description)`` after the id (``\satisfies REQ_2 (stops it, safely)``) is read as the ids
+  ``(stops``, ``it`` and ``safely)``, which warn as unknown needs. Leave the description out.
+- **Brace aliases are not read.** ``@implements{REQ_1}`` is no reference unless ``@implements`` is a marker, and then
+  its id is ``{REQ_1}``.
+- **A trailing** ``///<`` **on a data member** is recorded against the entity around it: data members are not entities
+  (see :ref:`attachment`). The reference still reaches the requirement.
+- **Documented entities do not become needs**: a reference fills a field of the requirement, and makes no need on the
+  code side. That is not supported yet.
 
 .. _multiline_needs:
 

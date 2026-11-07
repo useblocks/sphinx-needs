@@ -55,9 +55,7 @@ def test_each_marker_fills_its_own_field(tmp_path: Path, make_app: _MakeApp) -> 
     """``impl_url`` and ``test_url`` from one tree; the plain marker still goes to
     ``ref_url_field``; ``field = ""`` attaches nothing and, making no record, warns
     about no unknown id either; two markers on one line each keep their own ids."""
-    commit = _project(
-        tmp_path, toml_extra=MARKERS, files={"src/refs.cpp": SOURCE}
-    )
+    commit = _project(tmp_path, toml_extra=MARKERS, files={"src/refs.cpp": SOURCE})
     app = _build(tmp_path, make_app)
 
     assert build_warnings(app) == []
@@ -80,7 +78,9 @@ def test_each_marker_fills_its_own_field(tmp_path: Path, make_app: _MakeApp) -> 
         "SPEC_001": {"code_url": None, "impl_url": None, "test_url": None},
     }
     # the marker without a field makes no record at all
-    markers = {ref.marker for refs in need_id_refs_store(app.env).values() for ref in refs}
+    markers = {
+        ref.marker for refs in need_id_refs_store(app.env).values() for ref in refs
+    }
     assert markers == {"@need-ids:", "\\satisfies", "@verifies", "\\verifies"}
     properties = _json(app)["needs_schema"]["properties"]
     for name in FIELDS:
@@ -120,7 +120,9 @@ def test_python_configuration_takes_a_marker_dict(
         "    },\n"
         "}}\n"
     )
-    source = "/// \\satisfies REQ_001\nvoid a() {}\n/// @verifies REQ_001\nvoid b() {}\n"
+    source = (
+        "/// \\satisfies REQ_001\nvoid a() {}\n/// @verifies REQ_001\nvoid b() {}\n"
+    )
     commit = _project(
         tmp_path, files={"src/refs.cpp": source}, append={"docs/conf.py": conf}
     )
