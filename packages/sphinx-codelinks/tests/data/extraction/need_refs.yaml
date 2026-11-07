@@ -155,3 +155,15 @@ marker_ends_in_punctuation:
   source: |
     // @need-ids:REQ_1
     void f() {}
+
+longest_marker_wins_at_one_position:
+  # ``REFS`` and ``REFS:`` both match at the start of the line (``:`` is not a word
+  # character, so ``REFS`` has its boundary): the longer one wins, whatever the order
+  # of the configuration, and ``:`` is no id.
+  lang: cpp
+  config:
+    need_id_markers: ["REFS", "REFS:"]
+  extract: [need_refs]
+  source: |
+    // REFS: REQ_A
+    void f() {}
