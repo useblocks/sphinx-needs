@@ -61,6 +61,7 @@ from sphinx_codelinks.config import (
     CodeLinksProjectConfigType,
     locate_src_dir,
     need_id_refs_fields,
+    need_id_refs_marker_fields,
 )
 from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
 from sphinx_codelinks.source_discover.source_discover import (
@@ -523,7 +524,12 @@ def scan_config_only_project(
     context = url_context(
         codelinks_config, project_config, src_analyse, src_dir, Path(app.outdir)
     )
-    records, pages = collect_need_id_refs(src_analyse, project, context)
+    records, pages = collect_need_id_refs(
+        src_analyse,
+        project,
+        context,
+        need_id_refs_marker_fields(codelinks_config, project_config),
+    )
     not_created = sum(1 for need in src_analyse.oneline_needs if need.need)
     line = (
         f"codelinks [{project}]: {_plural(len(src_analyse.src_files), 'file')}, "

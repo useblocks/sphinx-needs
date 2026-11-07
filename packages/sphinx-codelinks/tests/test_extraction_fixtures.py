@@ -127,8 +127,9 @@ def _build_marked_content(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
 
     Entries starting at the same position are possible only with overlapping
     markers (not refused today); they are listed references first, then
-    one-line needs, then multi-line needs, and two references from one comment
-    keep the marker order of the configuration.
+    one-line needs, then multi-line needs. Two references never start at one
+    position: the marker matches of a line do not overlap, and the references of
+    one line are listed left to right.
     """
     items = []
     for entry in analyse.all_marked_content:

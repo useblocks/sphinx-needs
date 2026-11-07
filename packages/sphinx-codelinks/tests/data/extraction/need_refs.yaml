@@ -91,3 +91,117 @@ line_comment_ending_in_closer:
   source: |
     // @need-ids: REQ_1 */
     void f() {}
+
+# A marker's ids run to the next marker match on the line, or to the end of the line.
+# A marker that ends in a word character matches only before a non-word character (or
+# the end of the line), and at one index the longest marker wins.
+
+two_markers_one_line:
+  # Two markers on one line: each takes the ids up to the next match, so REQ_2 is
+  # only ``\verifies``' (and ``\verifies`` is no id of ``\satisfies``).
+  lang: cpp
+  config:
+    need_id_markers: ["\\satisfies", "\\verifies"]
+  extract: [need_refs]
+  source: |
+    /// \satisfies REQ_1 \verifies REQ_2
+    void f() {}
+
+same_marker_twice:
+  # The same marker twice on one line: both matches yield their references.
+  lang: cpp
+  config:
+    need_id_markers: ["\\satisfies"]
+  extract: [need_refs]
+  source: |
+    /// \satisfies REQ_1 \satisfies REQ_2
+    void f() {}
+
+marker_word_boundary:
+  # ``\verifies`` does not match ``\verifiesall``: no reference.
+  lang: cpp
+  config:
+    need_id_markers: ["\\verifies"]
+  extract: [need_refs]
+  source: |
+    /// \verifiesall REQ_2
+    void f() {}
+
+longest_marker_wins:
+  # ``\verifies`` and ``\verifiesall`` both configured: the longer one matches.
+  lang: cpp
+  config:
+    need_id_markers: ["\\verifies", "\\verifiesall"]
+  extract: [need_refs]
+  source: |
+    /// \verifiesall REQ_3
+    void f() {}
+
+two_markers_block_comment_end:
+  # Two markers in a one-line block comment: the closing */ ends the last ids only.
+  lang: cpp
+  config:
+    need_id_markers: ["\\satisfies", "\\verifies"]
+  extract: [need_refs]
+  source: |
+    /* \satisfies REQ_1 \verifies REQ_2 */
+    void f() {}
+
+marker_ends_in_punctuation:
+  # ``:`` is not a word character, so an id may follow the marker directly.
+  lang: cpp
+  config: default
+  extract: [need_refs]
+  source: |
+    // @need-ids:REQ_1
+    void f() {}
+
+longest_marker_wins_at_one_position:
+  # ``REFS`` and ``REFS:`` both match at the start of the line (``:`` is not a word
+  # character, so ``REFS`` has its boundary): the longer one wins, whatever the order
+  # of the configuration, and ``:`` is no id.
+  lang: cpp
+  config:
+    need_id_markers: ["REFS", "REFS:"]
+  extract: [need_refs]
+  source: |
+    // REFS: REQ_A
+    void f() {}
+
+other_alphabetic_after_marker:
+  # The word characters of the boundary rule are the characters whose Unicode general
+  # category is a letter (L*) or a number (N*), and ``_``. U+24D0 (circled small a, So)
+  # and U+0345 (a combining mark, Mn) are neither, though Unicode calls both
+  # Alphabetic: the marker matches before each, and each is read as an id.
+  lang: cpp
+  config:
+    need_id_markers: ["\\verifies"]
+  extract: [need_refs]
+  source: "// \\verifies\u24D0 REQ_6\n// \\verifies\u0345 REQ_7\nvoid f() {}\n"
+
+second_match_after_multibyte:
+  # Columns count characters, for every match on a line: a multi-byte character inside
+  # the first match's id, before the first match, and (U+3000, a whitespace, so no id)
+  # between the two matches.
+  lang: cpp
+  config:
+    need_id_markers: ["\\satisfies", "\\verifies"]
+  extract: [need_refs]
+  source: "// \\satisfies R\u00C9Q_1 \\verifies REQ_2\n// \u00E9 \\satisfies REQ_3 \\verifies REQ_4\n// \\satisfies REQ_5\u3000\\verifies REQ_6\nvoid f() {}\n"
+
+digit_after_marker:
+  # A digit is a word character: after a marker that ends in a letter it is the same
+  # word, so ``\verifies2`` holds no reference; and before the first match it makes the
+  # line no reference line, so the one-line need after the reference on the third line
+  # is created, where the second line, starting with the marker, withholds its own.
+  lang: cpp
+  config:
+    need_id_markers: ["\\verifies"]
+    start_sequence: "[["
+    end_sequence: "]]"
+  extract: [oneline, need_refs]
+  source: |
+    // \verifies2 REQ_1
+    // \verifies REQ_2 [[A title, IMPL_1]]
+    // 1 \verifies REQ_3 [[B title, IMPL_2]]
+    void f() {}

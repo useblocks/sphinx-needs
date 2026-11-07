@@ -1,0 +1,74 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 15
+      },
+      "end": {
+        "row": 0,
+        "column": 20
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 2,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need_ids": [
+      "REQ_1"
+    ],
+    "marker": "\\satisfies",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 31
+      },
+      "end": {
+        "row": 0,
+        "column": 36
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 2,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need_ids": [
+      "REQ_2"
+    ],
+    "marker": "\\verifies",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  }
+]

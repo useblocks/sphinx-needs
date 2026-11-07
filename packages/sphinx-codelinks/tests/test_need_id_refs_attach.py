@@ -14,6 +14,8 @@ from sphinx_codelinks.sphinx_extension.need_id_refs import attach_need_id_refs
 from sphinx_codelinks.sphinx_extension.string_links import REF_LINK_REGEX
 
 SHA = "a" * 40
+CODE_URL = {"@need-ids:": "code_url"}
+"""The default marker, attached to ``code_url``."""
 
 
 def _ref(need_id: str, lineno: int, **kwargs: Any) -> NeedIdRef:
@@ -43,7 +45,7 @@ def test_one_entry_per_reference_sorted_and_deduplicated() -> None:
     refs.append(_ref("REQ_1", 1, path="a/first.cpp"))
     needs = _needs("REQ_1", "REQ_2")
 
-    result = attach_need_id_refs(refs, needs, fields={"src": "code_url"})
+    result = attach_need_id_refs(refs, needs, fields={"src": CODE_URL})
 
     assert needs["REQ_1"]["code_url"] == [
         f"https://example.com/blob/{SHA}/a/first.cpp#L1",
@@ -58,7 +60,7 @@ def test_one_entry_per_reference_sorted_and_deduplicated() -> None:
 def test_unknown_ids_are_reported_not_attached() -> None:
     needs = _needs("REQ_1")
     result = attach_need_id_refs(
-        [_ref("REQ_1", 1), _ref("NOSUCH", 5)], needs, fields={"src": "code_url"}
+        [_ref("REQ_1", 1), _ref("NOSUCH", 5)], needs, fields={"src": CODE_URL}
     )
     assert [(ref.need_id, ref.path, ref.lineno) for ref in result.unknown] == [
         ("NOSUCH", "src/refs.cpp", 5)
@@ -70,7 +72,7 @@ def test_ids_are_matched_as_written() -> None:
     """``::`` and ``.`` are part of the id: nothing is split or normalised."""
     needs = _needs("A::B::C.d")
     result = attach_need_id_refs(
-        [_ref("A::B::C.d", 2), _ref("A::B::C", 2)], needs, fields={"src": "code_url"}
+        [_ref("A::B::C.d", 2), _ref("A::B::C", 2)], needs, fields={"src": CODE_URL}
     )
     assert needs["A::B::C.d"]["code_url"] == [
         f"https://example.com/blob/{SHA}/src/refs.cpp#L2"
@@ -83,7 +85,7 @@ def test_two_projects_naming_one_field_share_the_list() -> None:
     attach_need_id_refs(
         [_ref("REQ_1", 4, project="one"), _ref("REQ_1", 2, project="two")],
         needs,
-        fields={"one": "code_url", "two": "code_url"},
+        fields={"one": CODE_URL, "two": CODE_URL},
     )
     assert needs["REQ_1"]["code_url"] == [
         f"https://example.com/blob/{SHA}/src/refs.cpp#L2",
@@ -96,7 +98,7 @@ def test_projects_without_a_field_are_ignored() -> None:
     result = attach_need_id_refs(
         [_ref("REQ_1", 4, project="off"), _ref("NOSUCH", 2, project="off")],
         needs,
-        fields={"src": "code_url"},
+        fields={"src": CODE_URL},
     )
     assert needs["REQ_1"]["code_url"] is None
     assert result.attached == {}
@@ -112,7 +114,7 @@ def test_local_url_is_relative_to_the_needs_document() -> None:
         ("sub/deep", "../src/refs.cpp#L3"),
     ]:
         needs = _needs("REQ_1", docname=docname)
-        attach_need_id_refs(refs, needs, fields={"src": "code_url"})
+        attach_need_id_refs(refs, needs, fields={"src": CODE_URL})
         assert needs["REQ_1"]["code_url"] == [expected]
 
 

@@ -9,6 +9,23 @@ Unreleased
 New and Improved
 ................
 
+- ✨ A reference marker can name its own field (:ref:`need_id_refs_config`): an entry of
+  ``[analyse.need_id_refs] markers`` is a string, as before, or a table
+  ``{ marker = "\\satisfies", field = "impl_url" }`` (a dict in ``conf.py``), whose
+  references go to ``field`` instead of the project's ``ref_url_field``, so one tree fills
+  ``impl_url`` and ``test_url`` on the requirements it references. With ``field = ""``
+  the marker's references are not attached: ``codelinks analyse`` still lists them, and in
+  a build they make no record. Every field a marker can write is registered, and
+  ``ref_url_field`` only when a plain-string marker exists. A field is checked where it
+  can be written -- URLs on, and ``ref_url_field`` while a plain-string marker exists, or
+  a table's non-empty ``field`` -- and may now name no need link type there, nor a link
+  type's back links: a ``ref_url_field`` naming ``links``, ``parent_needs``, a
+  ``needs_links`` / ``needs_extra_links`` entry, or the ``<link type>_back`` of any of
+  them, accepted before (a back-link name made Sphinx-Needs ignore a declared link type,
+  every link of it with it), is now a configuration error when it is written. (A ``ref_url_field`` equal to a URL field in a project with no marker at all,
+  refused before, now loads: nothing writes it.) A malformed table (a missing or unknown
+  key) is refused, and so is a marker listed twice, in any form.
+  The documentation gains :ref:`codelinks_doxygen`.
 - 👌 A C++ marker's entity is named as clang names it in five more shapes, so that its name
   can be joined with what a compiler reports, and two spellings of one function meet
   (:ref:`cpp_names`): an inline namespace adds nothing to the names of what it holds
@@ -29,6 +46,21 @@ New and Improved
 Fixes
 .....
 
+- 🐛 A reference marker's ids end at the next marker on the line, and a marker that ends in
+  a letter, a digit or ``_`` (any Unicode letter or number) matches a whole word only
+  (:ref:`need_id_refs_matching`). ``\satisfies REQ_1 \verifies REQ_2`` gave
+  ``\satisfies`` the ids ``REQ_1``, ``\verifies`` and ``REQ_2``, and now gives it
+  ``REQ_1`` alone, as the same marker twice on a line gives each its own ids; with the
+  marker ``\verifies``, ``\verifiesall REQ_2`` gave the ids ``all`` and ``REQ_2``, and is
+  now no reference. A line extracts as before when exactly one configured marker occurs
+  in its text, once, and that marker does not end in a letter, digit or ``_`` that a
+  letter, digit or ``_`` directly follows. Other lines may extract differently, in
+  ``marked_content.json`` and in the build: two markers on a line; the same marker twice;
+  a marker that is the start of a longer word; overlapping markers (``@need-ids`` and
+  ``@need-ids:``), where the longest now wins; and an empty marker string, which matched
+  every line and now matches nothing. Which lines are reference lines, never one-line
+  needs, follows the same rule. The first build after upgrading reads every document once, so no reference
+  extracted by the old rule is kept (the extension's ``env_version`` is now 4).
 - 🐛 A C or C++ marker directly above the line of a preprocessor conditional belongs to
   no entity anywhere outside a function's body (at file level, in a namespace, class,
   struct, union or enum body, or in an ``extern "C"`` block), as clang reads it

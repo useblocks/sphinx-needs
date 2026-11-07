@@ -42,13 +42,89 @@ logger = get_logger(__name__)
 # only with overlapping markers (a need-id marker that ends with the one-line start
 # sequence), which the configuration check does not refuse. Such a tie is listed
 # references, then one-line needs, then multi-line needs: an explicit rank, because
-# the type names sort the other way round. Two references from one comment tie on
-# every key and keep the marker order of the configuration (the sort is stable).
+# the type names sort the other way round. Two references never tie: the marker
+# matches of a line do not overlap (``find_marker_matches``).
 _KIND_RANK: dict[MarkedContentType, int] = {
     MarkedContentType.need_id_refs: 0,
     MarkedContentType.need: 1,
     MarkedContentType.multiline_need: 2,
 }
+
+
+def _is_alphanumeric(char: str) -> bool:
+    """Whether ``char``'s Unicode general category is a letter (L*) or a number (N*).
+
+    The one notion of alphanumeric of the reference markers' rules, shared with another
+    implementation of them. ``str.isalnum`` is exactly that test (no other character
+    passes it): characters Unicode calls Alphabetic without being letters -- a circled
+    letter (So), a combining mark (Mn, Mc) -- are not alphanumeric here. The
+    classification follows each tool's own Unicode tables (here the running Python's,
+    ``unicodedata.unidata_version``), so a character newer than the older of two tables
+    can be classed differently.
+    """
+    return char.isalnum()
+
+
+def _is_word_char(char: str) -> bool:
+    """A word character, for a reference marker's boundary: alphanumeric (see
+    :func:`_is_alphanumeric`) or ``_``."""
+    return _is_alphanumeric(char) or char == "_"
+
+
+def _find_marker(line: str, marker: str, start: int) -> int:
+    """The index of the first match of ``marker`` in ``line`` at or after ``start``.
+
+    A marker whose last character is a word character matches only where the
+    character after it is not one (or the line ends): ``\\verifies`` does not match
+    ``\\verifiesall``. No condition applies before the match. ``-1`` when none.
+    """
+    word_final = _is_word_char(marker[-1])
+    idx = line.find(marker, start)
+    while idx != -1:
+        after = idx + len(marker)
+        if not (word_final and after < len(line) and _is_word_char(line[after])):
+            return idx
+        idx = line.find(marker, idx + 1)
+    return -1
+
+
+def find_marker_matches(
+    line: str, markers: Iterable[str], *, first_only: bool = False
+) -> list[tuple[str, int, int]]:
+    """The reference-marker matches of one line, left to right: ``(marker, start, end)``.
+
+    The line is scanned from left to right. At each index, among the markers that
+    match there (see :func:`_find_marker`), the LONGEST wins, and the scan resumes at
+    the end of that match, so matches never overlap. The same marker can match more
+    than once. An empty marker never matches.
+
+    :param line: One line of a comment.
+    :param markers: The configured reference markers.
+    :param first_only: Stop after the first match.
+    """
+    candidates = [marker for marker in markers if marker]
+    matches: list[tuple[str, int, int]] = []
+    pos = 0
+    while candidates:
+        best: tuple[int, str] | None = None
+        for marker in candidates:
+            idx = _find_marker(line, marker, pos)
+            if idx == -1:
+                continue
+            if (
+                best is None
+                or idx < best[0]
+                or (idx == best[0] and len(marker) > len(best[1]))
+            ):
+                best = (idx, marker)
+        if best is None:
+            break
+        idx, marker = best
+        matches.append((marker, idx, idx + len(marker)))
+        if first_only:
+            break
+        pos = idx + len(marker)
+    return matches
 
 
 def _char_column(src: bytes, byte_offset: int) -> int:
@@ -395,26 +471,31 @@ class SourceAnalyse:
         self,
         text: str,
     ) -> Generator[tuple[str, list[str], int, int, int], None, None]:
+        """Yield each reference-marker match of ``text`` with its ids.
+
+        Yields ``(marker, need_ids, row_offset, start_column, end_column)``, the
+        columns spanning the match's own id text. The matches of a line are found by
+        :func:`find_marker_matches`; a match's id text runs from its end to the start
+        of the next match on the line, or to the end of the line. A match with no id
+        yields nothing.
+        """
+        markers = self.analyse_config.need_id_refs_config.markers
         row_offset = 0
         for line in text.split(UNIX_NEWLINE):
-            for marker in self.analyse_config.need_id_refs_config.markers:
-                marker_idx = line.find(marker)
-                if marker_idx == -1:
-                    continue
-                after_marker = line[marker_idx + len(marker) :]
+            matches = find_marker_matches(line, markers)
+            for index, (marker, _start, end) in enumerate(matches):
+                is_last = index == len(matches) - 1
+                after_marker = (
+                    line[end:] if is_last else line[end : matches[index + 1][1]]
+                )
                 markered_text = after_marker.strip()
-                if markered_text.endswith("*/"):
+                if is_last and markered_text.endswith("*/"):
                     # The end of a one-line block comment, not an id.
                     markered_text = markered_text[:-2].rstrip()
                 need_ids = markered_text.replace(",", " ").split()
                 if not need_ids:
                     continue
-                start_column = (
-                    marker_idx
-                    + len(marker)
-                    + len(after_marker)
-                    - len(after_marker.lstrip())
-                )
+                start_column = end + len(after_marker) - len(after_marker.lstrip())
                 end_column = start_column + len(markered_text)
                 yield marker, need_ids, row_offset, start_column, end_column
             row_offset += 1
@@ -487,22 +568,23 @@ class SourceAnalyse:
         """Whether a comment line is an ``@need-ids:`` reference rather than a need.
 
         A line whose text, after comment decoration and whitespace, starts with a
-        configured need-id-refs marker is a reference, and never a one-line need --
-        ubCode's precedence. Without it the default one-line start sequence ``@`` also
+        configured need-id-refs marker is a reference, and never a one-line need.
+        Without it the default one-line start sequence ``@`` also
         matched ``// @need-ids: A, B`` and made a need titled ``need-ids: A`` with the id
         ``B``. A line with anything alphanumeric before the marker is not a reference
         line here (``// see @need-ids: X`` -- the one-line parser ignores it anyway, and
         the references on it are still extracted), and a line holding a one-line need
         before the marker (``[[…]] @need-ids: X``) keeps its need: only a line that
-        STARTS with the marker is withheld from the one-line parser.
+        STARTS with the marker is withheld from the one-line parser. The marker is the
+        line's first match as :func:`find_marker_matches` finds it, so a word that only
+        begins with a marker (``\\verifiesall`` for ``\\verifies``) is none.
         """
-        for marker in self.analyse_config.need_id_refs_config.markers:
-            marker_idx = line.find(marker)
-            if marker_idx != -1 and not any(
-                char.isalnum() for char in line[:marker_idx]
-            ):
-                return True
-        return False
+        matches = find_marker_matches(
+            line, self.analyse_config.need_id_refs_config.markers, first_only=True
+        )
+        return bool(matches) and not any(
+            _is_alphanumeric(char) for char in line[: matches[0][1]]
+        )
 
     def extract_oneline_need(
         self,

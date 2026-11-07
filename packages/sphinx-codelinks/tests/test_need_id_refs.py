@@ -630,7 +630,8 @@ def test_a_user_declaration_of_the_field_names_the_cure(
     suffix = " [codelinks.config]" if _SHOWS_WARNING_TYPES else ""
     assert (
         "WARNING: codelinks registers 'code_url' for @need-ids references; remove the "
-        f"needs_fields declaration of it, or set ref_url_field{suffix}"
+        "needs_fields declaration of it, or set ref_url_field (or the marker table's "
+        f"field){suffix}"
     ) in build_warnings(app)
 
 
@@ -654,7 +655,8 @@ def test_a_user_derive_of_the_field_is_left_to_its_rule(
     assert sorted(build_warnings(app)) == sorted(
         [
             "WARNING: codelinks registers 'code_url' for @need-ids references; remove "
-            f"the needs_fields declaration of it, or set ref_url_field{codelinks}",
+            "the needs_fields declaration of it, or set ref_url_field (or the marker "
+            f"table's field){codelinks}",
             "WARNING: Duplicate need field 'code_url', registered via "
             "add_field('Code references (@need-ids markers)') and "
             f"needs_fields('Added by needs_fields config').{needs}",
