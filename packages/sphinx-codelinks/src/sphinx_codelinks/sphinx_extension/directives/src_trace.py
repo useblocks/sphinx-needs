@@ -22,7 +22,7 @@ from sphinx_codelinks.config import (
     CodeLinksConfig,
     CodeLinksProjectConfigType,
     locate_src_dir,
-    need_id_refs_field,
+    need_id_refs_marker_fields,
 )
 from sphinx_codelinks.source_discover.config import CommentType
 from sphinx_codelinks.sphinx_extension.debug import measure_time
@@ -518,7 +518,10 @@ class SourceTracingDirective(SphinxDirective):
 
         # keep the @need-ids references, to be attached once every need is known, and
         # the pages of the files their local URLs name
-        if need_id_refs_field(src_trace_sphinx_config, src_trace_conf) is not None:
+        marker_fields = need_id_refs_marker_fields(
+            src_trace_sphinx_config, src_trace_conf
+        )
+        if marker_fields:
             records, pages = collect_need_id_refs(src_analyse, project, context)
             need_id_refs_store(self.env).setdefault(self.env.docname, []).extend(
                 records

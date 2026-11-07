@@ -19,7 +19,7 @@ from typing import Any
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
-from sphinx_codelinks.config import CodeLinksConfig, need_id_refs_fields
+from sphinx_codelinks.config import CodeLinksConfig, need_id_refs_field_names
 
 URL_LINK_REGEX = (
     r"^(?P<codelinks_url>[A-Za-z][A-Za-z0-9+.-]*://"
@@ -118,7 +118,7 @@ def register_string_links(_app: Sphinx, config: _SphinxConfig) -> None:
         entries[codelinks_config.remote_url_field] = url_string_link(
             codelinks_config.remote_url_field
         )
-    for field_name in set(need_id_refs_fields(codelinks_config).values()):
+    for field_name in need_id_refs_field_names(codelinks_config):
         entries[field_name] = ref_url_string_link(field_name)
     existing = config.needs_string_links
     if not entries or not isinstance(existing, dict):

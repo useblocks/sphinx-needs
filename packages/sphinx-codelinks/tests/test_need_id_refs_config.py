@@ -11,7 +11,7 @@ from sphinx_codelinks.config import (
     CodeLinksConfig,
     check_configuration,
     generate_project_configs,
-    need_id_refs_field,
+    need_id_refs_marker_fields,
 )
 from sphinx_needs_testkit import assert_no_warnings
 
@@ -111,7 +111,7 @@ def _gate(
     set_remote_url: bool = True,
     set_local_url: bool = False,
     project: dict[str, object] | None = None,
-) -> str | None:
+) -> dict[str, str]:
     project_config: dict[str, object] = {
         "remote_url_pattern": "https://example.com/{path}",
         "source_discover": {"src_dir": "./src"},
@@ -124,35 +124,37 @@ def _gate(
         set_local_url=set_local_url,
         projects=projects,  # ty: ignore[invalid-argument-type]
     )
-    return need_id_refs_field(config, config.projects["p"])
+    return need_id_refs_marker_fields(config, config.projects["p"])
 
 
 @pytest.mark.parametrize(
     ("kwargs", "expected"),
     [
-        pytest.param({}, "code_url", id="default-field"),
+        pytest.param({}, {"@need-ids:": "code_url"}, id="default-field"),
         pytest.param(
             {"set_remote_url": False, "set_local_url": True},
-            "code_url",
+            {"@need-ids:": "code_url"},
             id="local-urls-only",
         ),
-        pytest.param({"set_remote_url": False}, None, id="no-urls"),
-        pytest.param({"project": {"ref_url_field": ""}}, None, id="empty-field"),
+        pytest.param({"set_remote_url": False}, {}, id="no-urls"),
+        pytest.param({"project": {"ref_url_field": ""}}, {}, id="empty-field"),
         pytest.param(
-            {"project": {"ref_url_field": "test_url"}}, "test_url", id="named-field"
+            {"project": {"ref_url_field": "test_url"}},
+            {"@need-ids:": "test_url"},
+            id="named-field",
         ),
         pytest.param(
             {"project": {"analyse": {"get_need_id_refs": False}}},
-            None,
+            {},
             id="refs-not-extracted",
         ),
         pytest.param(
             {"project": {"analyse": {"need_id_refs": {"markers": []}}}},
-            None,
+            {},
             id="no-markers",
         ),
     ],
 )
-def test_attach_gate(kwargs: dict[str, object], expected: str | None) -> None:
+def test_attach_gate(kwargs: dict[str, object], expected: dict[str, str]) -> None:
     """ubCode's gate: URLs on, references extracted, a marker, and a non-empty field."""
     assert _gate(**kwargs) == expected  # ty: ignore[invalid-argument-type]

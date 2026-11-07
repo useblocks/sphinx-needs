@@ -10,7 +10,8 @@ A project no directive traces has its records made by the configuration pass ins
 
 Once every need of every document is known, at Sphinx-Needs'
 ``needs-before-post-processing`` event, :func:`attach_need_id_refs` gives each referenced
-need the list of its references' URLs, in the project's ``ref_url_field``. That event
+need the list of its references' URLs, in the field of the marker each reference was
+found by: a marker table's ``field``, else the project's ``ref_url_field``. That event
 runs before ``needextend`` is applied, so a user's ``needextend`` of the field wins.
 """
 
@@ -132,7 +133,7 @@ def attach_need_id_refs(
     refs: Iterable[NeedIdRef],
     needs: MutableMapping[str, Any],
     *,
-    fields: Mapping[str, str],
+    fields: Mapping[str, Mapping[str, str]],
     roots: Mapping[str, str] | None = None,
     derived: Collection[str] = (),
 ) -> AttachResult:
@@ -140,10 +141,12 @@ def attach_need_id_refs(
 
     This is the seam a pre-analysed input file will feed: it takes the records and the
     needs, whatever produced the records, and nothing about the analysis or the
-    directive. ``fields`` maps a project to its ``ref_url_field``; a record of a project
-    not in it is ignored, and the project reported in ``ignored_projects``. ``roots``
-    maps a project to the directory its records' ``path`` is relative to (configuration,
-    like ``fields``); a project without one is a root of its own.
+    directive. ``fields`` maps a project to its markers' fields (marker -> field), and
+    a record goes to the field of its ``marker``; a record of a project not in it is
+    ignored, and the project reported in ``ignored_projects``, and a record whose
+    marker has no field (``field = ""``) attaches nothing. ``roots`` maps a project to
+    the directory its records' ``path`` is relative to (configuration, like
+    ``fields``); a project without one is a root of its own.
 
     Records are deduplicated on ``(root, path, lineno, need_id)`` within a field,
     whatever the project -- overlapping ``src-trace`` directives, or two projects whose
@@ -151,40 +154,48 @@ def attach_need_id_refs(
     keeps the reference (and its URL). Files under different roots are different files,
     each kept. Records are ordered by ``(path, lineno, start_column)``. A
     need gets one entry per reference: its remote URL, else its local one; projects
-    naming the same field share one list. The need is not marked as modified, and an
-    unreferenced need is left alone. Nothing is written into a field in ``derived``
-    (the fields the schema derives: a user's declaration of the field with a ``derive``
-    rule), which a need refuses to have set: the need keeps what its rule computes, and
-    a reference to an unknown id is still reported.
+    and markers naming the same field share one list. The need is not marked as
+    modified, and an unreferenced need is left alone. Nothing is written into a field in
+    ``derived`` (the fields the schema derives: a user's declaration of the field with a
+    ``derive`` rule), which a need refuses to have set: the need keeps what its rule
+    computes, and a reference to an unknown id is still reported.
     """
     roots = roots or {}
-    unique: dict[tuple[str, str, str, int, str], NeedIdRef] = {}
+    unique: dict[tuple[str, str, str, int, str], tuple[NeedIdRef, str]] = {}
     ignored_projects: set[str] = set()
     for ref in sorted(refs, key=lambda ref: ref.project):
         if ref.project not in fields:
             ignored_projects.add(ref.project)
             continue
+        field_name = fields[ref.project].get(ref.marker)
+        if field_name is None:
+            continue
         root = roots.get(ref.project, f"<project {ref.project}>")
-        key = (fields[ref.project], root, ref.path, ref.lineno, ref.need_id)
-        unique.setdefault(key, ref)
+        key = (field_name, root, ref.path, ref.lineno, ref.need_id)
+        unique.setdefault(key, (ref, field_name))
     ordered = sorted(
         unique.values(),
-        key=lambda ref: (ref.path, ref.lineno, ref.start_column, ref.project),
+        key=lambda item: (
+            item[0].path,
+            item[0].lineno,
+            item[0].start_column,
+            item[0].project,
+        ),
     )
 
     result = AttachResult(ignored_projects=ignored_projects)
     values: dict[tuple[str, str], tuple[Any, list[str]]] = {}
-    for ref in ordered:
+    for ref, field_name in ordered:
         need = resolve_need_id(ref.need_id, needs)
         if need is None:
             result.unknown.append(ref)
             continue
-        if fields[ref.project] in derived:
+        if field_name in derived:
             continue
         value = ref.remote_url or _local_value(ref.local_url, need.get("docname"))
         if value is None:
             continue
-        _need, urls = values.setdefault((ref.need_id, fields[ref.project]), (need, []))
+        _need, urls = values.setdefault((ref.need_id, field_name), (need, []))
         urls.append(value)
         result.attached[ref.project] += 1
 

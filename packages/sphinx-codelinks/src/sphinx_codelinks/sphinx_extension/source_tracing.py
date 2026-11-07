@@ -19,10 +19,11 @@ from sphinx_codelinks.config import (
     CodeLinksConfigType,
     CodeLinksProjectConfigType,
     check_configuration,
+    declared_link_types,
     generate_project_configs,
     get_rst_ignored_warning,
     load_codelinks_table,
-    need_id_refs_fields,
+    need_id_refs_field_names,
     remote_url_pattern_warnings,
 )
 from sphinx_codelinks.logger import configure_sphinx
@@ -389,18 +390,23 @@ def update_sn_extra_options(_app: Sphinx, config: _SphinxConfig) -> None:
         _register_sn_field(
             src_trace_sphinx_config.remote_url_field, "Remote source URL"
         )
-    # One list-valued field per distinct ``ref_url_field``, shared by the projects naming
-    # it. ``nullable`` with no default, so a need no reference names carries ``None``,
-    # which is stripped before schema validation: a strict ``unevaluatedProperties:
-    # false`` schema never sees the field on it (a ``[]`` default would not be stripped).
+    # One list-valued field per distinct field references are attached to (a project's
+    # ``ref_url_field`` for its marker strings, a marker table's ``field``), shared by
+    # the projects naming it. ``nullable`` with no default, so a need no reference names
+    # carries ``None``, which is stripped before schema validation: a strict
+    # ``unevaluatedProperties: false`` schema never sees the field on it (a ``[]``
+    # default would not be stripped). A field naming a link type is not registered:
+    # ``check_sphinx_configuration`` refuses it, later in ``config-inited``.
     user_fields = _user_declared_fields(config)
-    for field_name in sorted(
-        set(need_id_refs_fields(src_trace_sphinx_config).values())
-    ):
+    link_types = declared_link_types(config)
+    for field_name in sorted(need_id_refs_field_names(src_trace_sphinx_config)):
+        if field_name in link_types:
+            continue
         if field_name in user_fields:
             logger.warning(
                 f"codelinks registers {field_name!r} for @need-ids references; remove "
-                "the needs_fields declaration of it, or set ref_url_field",
+                "the needs_fields declaration of it, or set ref_url_field (or the "
+                "marker table's field)",
                 type="codelinks",
                 subtype="config",
             )
@@ -459,7 +465,7 @@ def prepare_env(
 
 def check_sphinx_configuration(app: Sphinx, _config: _SphinxConfig) -> None:
     config = CodeLinksConfig.from_sphinx(app.config)
-    errors = check_configuration(config)
+    errors = check_configuration(config, declared_link_types(app.config))
     if errors:
         raise Exception("\n".join(errors))
     for warning in remote_url_pattern_warnings(config):

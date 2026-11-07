@@ -28,7 +28,6 @@ def _analyse(tmp_path: Path, markers: list[str]) -> SourceAnalyse:
         SourceAnalyseConfig(
             src_files=[source],
             src_dir=tmp_path,
-            git_root=tmp_path,
             need_id_refs_config=NeedIdRefsConfig(markers=markers),
         )
     )
@@ -184,9 +183,8 @@ def test_the_same_marker_twice_yields_both(tmp_path: Path) -> None:
 def test_matches_on_several_rows_keep_their_row(tmp_path: Path) -> None:
     text = "\\satisfies A \\verifies B\n  \\verifies C"
     assert [
-        (marker, ids, row) for marker, ids, row, *_ in _extract(
-            tmp_path, [SATISFIES, VERIFIES], text
-        )
+        (marker, ids, row)
+        for marker, ids, row, *_ in _extract(tmp_path, [SATISFIES, VERIFIES], text)
     ] == [(SATISFIES, ["A"], 0), (VERIFIES, ["B"], 0), (VERIFIES, ["C"], 1)]
 
 
