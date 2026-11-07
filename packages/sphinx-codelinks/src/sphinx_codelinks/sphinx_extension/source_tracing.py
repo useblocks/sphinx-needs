@@ -147,8 +147,11 @@ def setup(app: Sphinx) -> dict[str, Any]:
         # records) is discarded by Sphinx, so the first build after an upgrade reads
         # every document once and records them; 2: every need records its code hop
         # (an environment at 1 holds needs without one); 3: the code hop's entity
-        # carries its qualified name
-        "env_version": 3,
+        # carries its qualified name; 4: a reference marker's ids end at the next marker
+        # on the line, and a marker matches a whole word (the references an environment
+        # at 3 holds were extracted by the old rule), and the marker settings carry their
+        # fields (an older pickled configuration has none)
+        "env_version": 4,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

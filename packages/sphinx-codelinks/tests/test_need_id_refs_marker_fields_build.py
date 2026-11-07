@@ -6,8 +6,12 @@ to ``test_url``, the plain ``@need-ids:`` marker to the project's ``ref_url_fiel
 (``code_url``), and ``\\ignored`` to no field at all.
 """
 
+import dataclasses
 import os
+import pickle
 from pathlib import Path
+
+from sphinx.util.console import strip_colors
 
 from sphinx_codelinks.sphinx_extension.need_id_refs import need_id_refs_store
 from sphinx_needs_testkit import build_warnings
@@ -156,3 +160,46 @@ def test_a_changed_marker_moves_the_reference_to_the_other_field(
         "impl_url": None,
         "test_url": [_url(commit, 1), _url(commit, 3)],
     }
+
+
+def test_an_environment_pickled_at_env_version_3_is_read_again(
+    tmp_path: Path, make_app: _MakeApp
+) -> None:
+    """An environment of 2.1.0 (``env_version`` 3) holds references extracted by the
+    old matching rule -- ``\\satisfies REQ_002 \\verifies REQ_003`` gave ``\\satisfies``
+    the ids ``REQ_002``, ``\\verifies`` and ``REQ_003`` -- and a configuration whose
+    marker settings predate the marker tables. Nothing in the sources or the
+    configuration changed: ``env_version`` 4 is what has the build discard it and read
+    every document again, rather than keep those records (or fail comparing the old
+    configuration with the new)."""
+    markers = (
+        "\n[codelinks.projects.src.analyse.need_id_refs]\n"
+        'markers = ["\\\\satisfies", "\\\\verifies"]\n'
+    )
+    source = "/// \\satisfies REQ_002 \\verifies REQ_003\nvoid both() {}\n"
+    commit = _project(tmp_path, toml_extra=markers, files={"src/refs.cpp": source})
+    app = _build(tmp_path, make_app)
+    assert build_warnings(app) == []
+
+    pickled = Path(app.doctreedir, "environment.pickle")
+    env = pickle.loads(pickled.read_bytes())
+    env.version["sphinx_codelinks"] = 3
+    # what 2.1.0 pickled: the marker settings without their fields, and the old
+    # rule's records, ``\verifies`` read as an id of ``\satisfies``
+    refs_config = env.config.src_trace_projects["src"]["analyse_config"]
+    del refs_config.need_id_refs_config.__dict__["fields"]
+    records = need_id_refs_store(env)["index"]
+    satisfies = next(ref for ref in records if ref.marker == "\\satisfies")
+    records.append(dataclasses.replace(satisfies, need_id="\\verifies"))
+    pickled.write_bytes(pickle.dumps(env, pickle.HIGHEST_PROTOCOL))
+
+    app = _build(tmp_path, make_app, freshenv=False)
+    status = strip_colors(app._status.getvalue())
+    assert (
+        "loading pickled environment... failed: build environment version not current"
+        in status
+    )
+    assert "8 added, 0 changed, 0 removed" in status
+    assert not [w for w in build_warnings(app) if "unknown need" in w]
+    assert _json(app)["needs"]["REQ_002"]["code_url"] == [_url(commit, 1)]
+    assert _json(app)["needs"]["REQ_003"]["code_url"] == [_url(commit, 1)]

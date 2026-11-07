@@ -50,7 +50,9 @@ Fixes
   one position the longer one wins. Lines that hold more than one marker, or a marker
   followed by a letter, a digit or ``_``, extract differently, in ``marked_content.json``
   and in the build; every other line extracts as before. Which lines are reference lines,
-  never one-line needs, follows the same rule.
+  never one-line needs, follows the same rule. The first build after upgrading reads every
+  document once, so no reference extracted by the old rule is kept (the extension's
+  ``env_version`` is now 4).
 - 🐛 A C or C++ marker directly above the line of a preprocessor conditional belongs to
   no entity anywhere outside a function's body (at file level, in a namespace, class,
   struct, union or enum body, or in an ``extern "C"`` block), as clang reads it
