@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794010947213,
+  "lastUpdate": 1794050527379,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -29232,6 +29232,48 @@ window.BENCHMARK_DATA = {
             "value": 185.886431,
             "unit": "MB",
             "extra": "Commit: cf01110363215872d65691b9900bdadac82adfa7\nBranch: master\nTime: 2026-11-07T01:21:19+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e2b38c0d6247efe03d2fbf82644d557483bf37c8",
+          "message": "✨ sphinx-codelinks: a reference marker can name its own field, and markers match whole words (#2499)",
+          "timestamp": "2026-11-07T12:20:29+01:00",
+          "tree_id": "43367916fc6653dc531836bbc63d0ec7e7eb2a67",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e2b38c0d6247efe03d2fbf82644d557483bf37c8"
+        },
+        "date": 1794050526814,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07391612200001418,
+            "unit": "s",
+            "extra": "Commit: e2b38c0d6247efe03d2fbf82644d557483bf37c8\nBranch: master\nTime: 2026-11-07T12:20:29+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.36051107199998,
+            "unit": "s",
+            "extra": "Commit: e2b38c0d6247efe03d2fbf82644d557483bf37c8\nBranch: master\nTime: 2026-11-07T12:20:29+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 186.029194,
+            "unit": "MB",
+            "extra": "Commit: e2b38c0d6247efe03d2fbf82644d557483bf37c8\nBranch: master\nTime: 2026-11-07T12:20:29+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
