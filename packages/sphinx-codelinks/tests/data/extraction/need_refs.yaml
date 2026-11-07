@@ -167,3 +167,24 @@ longest_marker_wins_at_one_position:
   source: |
     // REFS: REQ_A
     void f() {}
+
+other_alphabetic_after_marker:
+  # The word characters of the boundary rule are the characters whose Unicode general
+  # category is a letter (L*) or a number (N*), and ``_``. U+24D0 (circled small a, So)
+  # and U+0345 (a combining mark, Mn) are neither, though Unicode calls both
+  # Alphabetic: the marker matches before each, and each is read as an id.
+  lang: cpp
+  config:
+    need_id_markers: ["\\verifies"]
+  extract: [need_refs]
+  source: "// \\verifies\u24D0 REQ_6\n// \\verifies\u0345 REQ_7\nvoid f() {}\n"
+
+second_match_after_multibyte:
+  # Columns count characters, for every match on a line: a multi-byte character inside
+  # the first match's id, before the first match, and (U+3000, a whitespace, so no id)
+  # between the two matches.
+  lang: cpp
+  config:
+    need_id_markers: ["\\satisfies", "\\verifies"]
+  extract: [need_refs]
+  source: "// \\satisfies R\u00C9Q_1 \\verifies REQ_2\n// \u00E9 \\satisfies REQ_3 \\verifies REQ_4\n// \\satisfies REQ_5\u3000\\verifies REQ_6\nvoid f() {}\n"
