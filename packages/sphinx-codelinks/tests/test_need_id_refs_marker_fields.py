@@ -256,6 +256,28 @@ def test_ref_url_field_naming_a_link_type_is_an_error() -> None:
     ]
 
 
+@pytest.mark.parametrize(
+    ("markers", "ref_url_field", "urls_on"),
+    [
+        pytest.param(TABLES[1:], "links", True, id="tables-only-ref-url-field"),
+        pytest.param(["@need-ids:"], "links", False, id="urls-off-ref-url-field"),
+        pytest.param(
+            [{"marker": SATISFIES, "field": "links"}], None, False, id="urls-off-table"
+        ),
+        pytest.param([], "remote-url", True, id="no-marker-ref-url-field"),
+    ],
+)
+def test_a_field_that_is_never_written_is_not_checked(
+    markers: list[object], ref_url_field: str | None, urls_on: bool
+) -> None:
+    """A field is checked where it can be written: URLs on, and ``ref_url_field`` while
+    a plain-string marker exists, or a marker table's field. The same fields written
+    are refused (the link-type and URL-field tests above)."""
+    config = _config(markers, ref_url_field=ref_url_field)
+    config.set_remote_url = urls_on
+    assert _errors(config, ("links",)) == []
+
+
 def test_an_empty_field_names_no_link_type() -> None:
     config = _config([{"marker": SATISFIES, "field": ""}], ref_url_field="")
     assert _errors(config, ("",)) == []

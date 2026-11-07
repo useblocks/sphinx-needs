@@ -1007,11 +1007,29 @@ def check_project_configuration(
         ref_url_field = project_config.get("ref_url_field", DEFAULT_REF_URL_FIELD)
         if not isinstance(ref_url_field, str):
             project_errors.append("ref_url_field must be a string")
-        elif problem := reference_field_problem(ref_url_field, config, link_types):
-            project_errors.append(f"ref_url_field {ref_url_field!r} {problem}")
-        if analyse_config:
-            marker_fields = analyse_config.need_id_refs_config.fields
-            for marker, field_name in marker_fields.items():
+        # a field is checked where it can be written: URLs on, and ``ref_url_field``
+        # while a plain-string marker exists, or a marker table's non-empty field
+        if config.set_local_url or config.set_remote_url:
+            refs_config = (
+                analyse_config.need_id_refs_config
+                if analyse_config
+                else NeedIdRefsConfig()
+            )
+            has_plain_marker = any(
+                isinstance(marker, str) and marker not in refs_config.fields
+                for marker in refs_config.markers
+            )
+            if (
+                has_plain_marker
+                and isinstance(ref_url_field, str)
+                and (
+                    problem := reference_field_problem(
+                        ref_url_field, config, link_types
+                    )
+                )
+            ):
+                project_errors.append(f"ref_url_field {ref_url_field!r} {problem}")
+            for marker, field_name in refs_config.fields.items():
                 if problem := reference_field_problem(field_name, config, link_types):
                     project_errors.append(
                         f"need_id_refs marker {marker!r}: field {field_name!r} {problem}"
