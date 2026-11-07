@@ -1,0 +1,28 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 8
+      },
+      "end": {
+        "row": 1,
+        "column": 70
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Above a conditional",
+      "id": "IMPL_CPP_COND_CLASS",
+      "type": "impl",
+      "links": [
+        "REQ_CPP_COND"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

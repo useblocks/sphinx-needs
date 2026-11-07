@@ -29,6 +29,23 @@ New and Improved
 Fixes
 .....
 
+- 🐛 A C or C++ marker directly above the line of a preprocessor conditional belongs to
+  no entity anywhere outside a function's body (at file level, in a namespace, class,
+  struct, union or enum body, or in an ``extern "C"`` block), as clang reads it
+  (:ref:`attachment`). It belonged to the namespace, class, struct, union or enum around
+  it, so one marker above an ``#if`` in a namespace or class traced every function of
+  it, whichever arm was compiled; at file level it already belonged to none. The line is
+  any of ``#if``, ``#ifdef``, ``#ifndef``, ``#elif``, ``#elifdef``, ``#elifndef``,
+  ``#else`` and ``#endif``, with only comments and no blank line between it and the
+  marker. Such a marker's record loses its ``tagged_scope`` and ``scope`` in
+  ``marked_content.json``, and the need ``src-trace`` creates from it records no entity.
+  Each such marker now warns at its line (``codelinks.marker_above_conditional``), so a
+  ``-W`` build fails on it until the marker moves or
+  ``suppress_warnings = ["codelinks.marker_above_conditional"]`` is set.
+  To trace one arm's definition, move the marker into the arm, directly above the
+  definition; to keep the namespace or class, leave a blank line between the marker and
+  the directive. A marker in a function's body, a trailing marker and a marker above any
+  other directive (``#define``, ``#include``, ``#pragma``) keep their entity.
 - 🐛 A one-line marker whose ``full_title`` is not a string (a ``list[str]`` marker field)
   no longer aborts the build
   (`#2479 <https://github.com/useblocks/sphinx-needs/issues/2479>`__,

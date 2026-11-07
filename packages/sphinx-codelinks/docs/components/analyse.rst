@@ -310,14 +310,34 @@ In this order:
    through what wraps it: a Python decorator, a C++ ``template <...>`` header or ``extern "C"``, a TypeScript
    ``export`` or ``declare``. In Python, a comment between ``def f():`` and the first line of its body belongs to that
    first line's entity, if it is one.
-7. **Otherwise**, the entity the marker is inside, if any: ``leading`` when the marker is directly inside, or right
+7. **A marker directly above a preprocessor conditional**, in C and C++ -- with only other comments, and no blank line,
+   between it and an ``#if``, ``#ifdef``, ``#ifndef``, ``#elif``, ``#elifdef``, ``#elifndef``, ``#else`` or
+   ``#endif`` line -- belongs to the file anywhere outside a function's body (at file level, in a namespace, class,
+   struct, union or enum body, or in an ``extern "C"`` block), where the namespace, class, struct, union or enum around
+   it would otherwise hold it, and a namespace or class would then trace every function inside, whichever arm is
+   compiled.
+   clang reads it so: a comment documents no declaration across a ``#`` line.
+   The directive is read as the grammar reads it, so a spelling the grammar does not read as one, such as a digraph
+   (``%:if``), is no conditional to this rule, though it is to a compiler.
+   The analyser warns about each marker this rule places, at the marker's line (a multi-line need's open line),
+   whatever kind of marker it is:
+   ``src/x.cpp:2: WARNING: marker_above_conditional: directly above a preprocessor conditional, so attached to no
+   entity: put the marker inside the arm, above the definition [codelinks.marker_above_conditional]``.
+   ``suppress_warnings = ["codelinks.marker_above_conditional"]`` silences it; ``codelinks analyse`` prints it with
+   the other analyser warnings, and a project that no ``src-trace`` directive traces reports none, as for every
+   analyser warning. The libclang engine attaches no marker to any entity, so it never gives this warning.
+   To trace an arm's definition, write the marker inside the arm, directly above the definition (rule 6); to mean the
+   namespace or class as a whole, leave a blank line between the marker and the directive (rule 8).
+   In a function's body (a lambda's, or a class defined in one, included), rule 8 holds.
+8. **Otherwise**, the entity the marker is inside, if any: ``leading`` when the marker is directly inside, or right
    after, an attribute, a decorator or a template header the entity owns (its head; a comment nested deeper, in such a
    head's argument list, is not), ``trailing`` when it trails code on the entity's first line, ``enclosing``
    otherwise.
 
 Anything else between a leading marker and an entity -- a statement, a variable, a macro call,
 a preprocessor directive (``#include``, ``#define``, ``#pragma``, ``#if``) -- breaks the attachment:
-the marker belongs to the entity it is inside, or to the file. A marker is never attached across code.
+the marker belongs to the entity it is inside, or to the file, and always to the file directly above a conditional
+outside a function's body (rule 7). A marker is never attached across code.
 
 What counts as an entity
 ~~~~~~~~~~~~~~~~~~~~~~~~

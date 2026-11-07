@@ -1,0 +1,46 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 3
+      },
+      "end": {
+        "row": 3,
+        "column": 11
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "type": "impl",
+      "title": "Above a conditional",
+      "id": "IMPL_CPP_COND_ML",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.cpp",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 2,
+        "col": 3
+      },
+      "end": {
+        "line": 4,
+        "col": 11
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 3
+      },
+      "scope": null
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": null
+  }
+]

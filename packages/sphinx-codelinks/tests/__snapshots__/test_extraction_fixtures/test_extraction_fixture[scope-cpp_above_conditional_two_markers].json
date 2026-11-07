@@ -1,0 +1,54 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 58
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "First above",
+      "id": "IMPL_CPP_COND_TWO_A",
+      "type": "impl",
+      "links": [
+        "REQ_CPP_COND"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 59
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Second above",
+      "id": "IMPL_CPP_COND_TWO_B",
+      "type": "impl",
+      "links": [
+        "REQ_CPP_COND"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

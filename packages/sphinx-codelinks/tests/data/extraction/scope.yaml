@@ -12,6 +12,10 @@
 # TypeScript exercises the declarations wrapped in ``export``, ``declare`` or an
 # expression statement, and those that bind only when they hold a function or
 # a class (a ``const``, a class field, an assignment, a default export).
+# C++ exercises a marker directly above a preprocessor conditional's line, which
+# binds to nothing outside a function body and is warned about
+# (``marker_above_conditional``, one warning per marker), and the shapes around it
+# that keep their scope and give no warning.
 
 cpp_above_function:
   # Marker directly above a function definition -> binds to that function.
@@ -61,6 +65,178 @@ cpp_struct_body:
         // @X coordinate, IMPL_CPP_STRUCT, impl, [REQ_CPP_STRUCT]
         int x;
     };
+
+cpp_above_conditional_namespace:
+  # A marker directly above the line of a preprocessor conditional, outside a
+  # function body, binds to nothing (clang attaches a comment to no declaration
+  # across a ``#`` line): not to the namespace, whose every unit it would trace.
+  lang: cpp
+  config: default
+  source: |
+    namespace lib {
+    // @Above a conditional, IMPL_CPP_COND_NS, impl, [REQ_CPP_COND]
+    #if FEATURE_B
+    void active() {}
+    #endif
+    }
+
+cpp_above_conditional_class_else:
+  # The same in a class body, above a conditional with an #else arm.
+  lang: cpp
+  config: default
+  source: |
+    class Widget {
+        // @Above a conditional, IMPL_CPP_COND_CLASS, impl, [REQ_CPP_COND]
+    #if FEATURE_B
+        void active() {}
+    #else
+        void fallback() {}
+    #endif
+    };
+
+cpp_above_conditional_class_above_else:
+  # The last line of an arm, directly above #else, binds to nothing too.
+  lang: cpp
+  config: default
+  source: |
+    class Widget {
+    #if FEATURE_B
+        void active() {}
+        // @Above else, IMPL_CPP_COND_ELSE, impl, [REQ_CPP_COND]
+    #else
+        void fallback() {}
+    #endif
+    };
+
+cpp_above_conditional_namespace_endif:
+  # And directly above #endif.
+  lang: cpp
+  config: default
+  source: |
+    namespace lib {
+    #if FEATURE_B
+    void active() {}
+    // @Above endif, IMPL_CPP_COND_ENDIF, impl, [REQ_CPP_COND]
+    #endif
+    }
+
+cpp_above_conditional_file_level:
+  # At file level the marker binds to nothing, as before.
+  lang: cpp
+  config: default
+  source: |
+    void first() {}
+
+    // @Above a conditional, IMPL_CPP_COND_FILE, impl, [REQ_CPP_COND]
+    #if FEATURE_B
+    void active() {}
+    #endif
+
+cpp_above_conditional_function_body:
+  # In a function body the enclosing function binds, as before.
+  lang: cpp
+  config: default
+  source: |
+    void outer() {
+        // @Above a conditional, IMPL_CPP_COND_BODY, impl, [REQ_CPP_COND]
+    #if FEATURE_B
+        fast();
+    #endif
+    }
+
+cpp_above_conditional_trailing:
+  # A trailing marker binds to the entity on its row, as before.
+  lang: cpp
+  config: default
+  source: |
+    namespace lib {
+    void first() {}  // @Trailing, IMPL_CPP_COND_TRAIL, impl, [REQ_CPP_COND]
+    #if FEATURE_B
+    void active() {}
+    #endif
+    }
+
+cpp_above_conditional_blank_line:
+  # A blank line between makes the marker a comment on the namespace as a whole:
+  # the enclosing namespace binds.
+  lang: cpp
+  config: default
+  source: |
+    namespace lib {
+    // @On the namespace, IMPL_CPP_COND_BLANK, impl, [REQ_CPP_COND]
+
+    #if FEATURE_B
+    void active() {}
+    #endif
+    }
+
+cpp_inside_conditional_arm:
+  # Inside the arm, the marker leads the definition: where to write one for it.
+  lang: cpp
+  config: default
+  source: |
+    namespace lib {
+    #if FEATURE_B
+    // @Inside the arm, IMPL_CPP_COND_ARM, impl, [REQ_CPP_COND]
+    void active() {}
+    #endif
+    }
+
+cpp_above_define:
+  # Any other directive, #define here, breaks the attachment to the next entity as
+  # code does: the enclosing namespace binds, as before.
+  lang: cpp
+  config: default
+  source: |
+    namespace lib {
+    // @Above a define, IMPL_CPP_DEFINE, impl, [REQ_CPP_COND]
+    #define FAST 1
+    void active() {}
+    }
+
+cpp_above_conditional_two_markers:
+  # A comment run holding two markers above a conditional: each is on nothing, and
+  # each gets its own warning, at its own line.
+  lang: cpp
+  config: default
+  source: |
+    namespace lib {
+    // @First above, IMPL_CPP_COND_TWO_A, impl, [REQ_CPP_COND]
+    // @Second above, IMPL_CPP_COND_TWO_B, impl, [REQ_CPP_COND]
+    #ifdef FEATURE_B
+    void active() {}
+    #endif
+    }
+
+cpp_above_conditional_need_id_refs:
+  # A need-ID reference marker above a conditional: on nothing, and warned about
+  # as a reference (type ``need-id-refs``).
+  lang: cpp
+  config: default
+  extract: [need_refs]
+  source: |
+    class Widget {
+        // @need-ids: REQ_CPP_COND_A, REQ_CPP_COND_B
+    #if FEATURE_B
+        void active() {}
+    #endif
+    };
+
+cpp_above_conditional_multiline_need:
+  # A multi-line need whose block stands above a conditional: on nothing, and
+  # warned about at its open line (type ``multiline-need``).
+  lang: cpp
+  config: default
+  extract: [multiline]
+  source: |
+    namespace lib {
+    // @need impl: Above a conditional
+    // :id: IMPL_CPP_COND_ML
+    // @endneed
+    #if FEATURE_B
+    void active() {}
+    #endif
+    }
 
 python_above_function:
   # Marker directly above a function definition -> binds to that function.
