@@ -51,9 +51,21 @@ _KIND_RANK: dict[MarkedContentType, int] = {
 }
 
 
+def _is_alphanumeric(char: str) -> bool:
+    """Whether ``char``'s Unicode general category is a letter (L*) or a number (N*).
+
+    The one notion of alphanumeric of the reference markers' rules, shared with another
+    implementation of them. ``str.isalnum`` is exactly that test (no other character
+    passes it): characters Unicode calls Alphabetic without being letters -- a circled
+    letter (So), a combining mark (Mn, Mc) -- are not alphanumeric here.
+    """
+    return char.isalnum()
+
+
 def _is_word_char(char: str) -> bool:
-    """A word character, for a reference marker's boundary: alphanumeric or ``_``."""
-    return char.isalnum() or char == "_"
+    """A word character, for a reference marker's boundary: alphanumeric (see
+    :func:`_is_alphanumeric`) or ``_``."""
+    return _is_alphanumeric(char) or char == "_"
 
 
 def _find_marker(line: str, marker: str, start: int) -> int:
@@ -568,7 +580,7 @@ class SourceAnalyse:
             line, self.analyse_config.need_id_refs_config.markers, first_only=True
         )
         return bool(matches) and not any(
-            char.isalnum() for char in line[: matches[0][1]]
+            _is_alphanumeric(char) for char in line[: matches[0][1]]
         )
 
     def extract_oneline_need(

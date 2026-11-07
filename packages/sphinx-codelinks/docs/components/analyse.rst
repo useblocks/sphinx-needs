@@ -449,7 +449,9 @@ Each line of a comment is scanned from left to right for the configured markers
 (:ref:`analyse.need_id_refs <need_id_refs_config>`):
 
 - **A marker that ends in a letter, a digit or** ``_`` **matches a whole word only**: the character after it must not
-  be one of those (or the line ends there). With the marker ``\verifies``, ``\verifiesall REQ_2`` holds no reference.
+  be one of those (or the line ends there). A letter or a digit here is any Unicode letter or number -- a character
+  whose general category is L* or N* -- so a circled letter (``ⓐ``) or a combining mark is neither. With the marker
+  ``\verifies``, ``\verifiesall REQ_2`` holds no reference.
   A marker that ends in anything else matches wherever it occurs: ``@need-ids:REQ_1`` is the reference ``REQ_1``.
   Nothing is required before a marker.
 - **At one position, the longest marker wins**, and the scan goes on after it, so two matches never overlap: with
@@ -458,8 +460,8 @@ Each line of a comment is scanned from left to right for the configured markers
   REQ_2`` gives ``\satisfies`` the id ``REQ_1`` and ``\verifies`` the id ``REQ_2``. The ids are split on commas and
   whitespace; a ``*/`` closing the line is not an id. A marker with no id after it gives no reference.
 - **Every match counts**: the same marker twice on a line gives both its references.
-- A line whose first marker has nothing alphanumeric before it (after the comment's own decoration) is a reference
-  line, and never a one-line need.
+- A line whose first marker has no letter or number before it (after the comment's own decoration; the same Unicode
+  letters and numbers) is a reference line, and never a one-line need.
 
 .. _need_id_refs_in_build:
 
@@ -509,6 +511,12 @@ requirement collects both kinds of reference:
 
 .. code-block:: toml
 
+   [codelinks]
+   set_remote_url = true
+
+   [codelinks.projects.app]
+   remote_url_pattern = "https://github.com/org/repo/blob/{commit}/{path}#L{line}"
+
    [codelinks.projects.app.analyse.oneline_comment_style]
    start_sequence = "@@"
 
@@ -533,6 +541,9 @@ requirement collects both kinds of reference:
 - **What it does.** ``REQ_1`` gets ``impl_url`` with the link to ``start`` and ``test_url`` with the link to
   ``test_start`` (see :ref:`need_id_refs_in_build`); the plain ``@need-ids:`` marker still fills
   :ref:`ref_url_field`. A filter such as ``type == "req" and not test_url`` lists the requirements no test verifies.
+- **URL generation must be on.** The references are attached only when :ref:`set_remote_url` (with the project's
+  ``remote_url_pattern``, as above) or :ref:`set_local_url` is on. Without it nothing is attached, ``impl_url`` and
+  ``test_url`` are not registered, and a filter naming them is invalid.
 - **Why** ``start_sequence = "@@"``. The default one-line start sequence is ``@``, so a Doxygen line such as
   ``@param a, b`` -- it holds the field separator -- is read as a one-line need (see
   :ref:`the note on documentation tags <oneline_doc_tags>`). Any start sequence Doxygen does not use avoids that.
