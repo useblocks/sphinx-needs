@@ -22,6 +22,7 @@ from sphinx_codelinks.config import (
     declared_link_types,
     generate_project_configs,
     get_rst_ignored_warning,
+    is_back_link_name,
     load_codelinks_table,
     need_id_refs_field_names,
     remote_url_pattern_warnings,
@@ -398,12 +399,14 @@ def update_sn_extra_options(_app: Sphinx, config: _SphinxConfig) -> None:
     # the projects naming it. ``nullable`` with no default, so a need no reference names
     # carries ``None``, which is stripped before schema validation: a strict
     # ``unevaluatedProperties: false`` schema never sees the field on it (a ``[]``
-    # default would not be stripped). A field naming a link type is not registered:
-    # ``check_sphinx_configuration`` refuses it, later in ``config-inited``.
+    # default would not be stripped). A field naming a link type, or a link type's back
+    # links, is not registered: ``check_sphinx_configuration`` refuses it, later in
+    # ``config-inited``, and a field of that name would make Sphinx-Needs ignore the
+    # link type first, every link of it with it.
     user_fields = _user_declared_fields(config)
     link_types = declared_link_types(config)
     for field_name in sorted(need_id_refs_field_names(src_trace_sphinx_config)):
-        if field_name in link_types:
+        if field_name in link_types or is_back_link_name(field_name, link_types):
             continue
         if field_name in user_fields:
             logger.warning(

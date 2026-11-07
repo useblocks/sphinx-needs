@@ -1176,7 +1176,15 @@ def reference_field_problem(
         return "must differ from local_url_field and remote_url_field"
     if field_name in link_types:
         return "names a need link type, which cannot hold URLs"
+    if is_back_link_name(field_name, link_types):
+        return "names the back links of a need link type, which cannot hold URLs"
     return None
+
+
+def is_back_link_name(field_name: str, link_types: Collection[str]) -> bool:
+    """Whether ``field_name`` is the back links of one of ``link_types``
+    (``<link type>_back``, as Sphinx-Needs names them), core or declared."""
+    return field_name.endswith("_back") and field_name[: -len("_back")] in link_types
 
 
 def need_id_refs_marker_fields(

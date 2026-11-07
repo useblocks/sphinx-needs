@@ -239,8 +239,19 @@ def test_a_table_field_naming_a_url_field_is_an_error(field_name: str) -> None:
     ]
 
 
-def test_a_table_field_naming_a_link_type_is_an_error() -> None:
-    config = _config([{"marker": SATISFIES, "field": "satisfies"}])
+_URLS = pytest.mark.parametrize("urls", ["remote", "local"])
+
+
+def _urls(config: CodeLinksConfig, urls: str) -> CodeLinksConfig:
+    """Turn on remote URLs or local URLs alone: either one writes the fields."""
+    config.set_remote_url = urls == "remote"
+    config.set_local_url = urls == "local"
+    return config
+
+
+@_URLS
+def test_a_table_field_naming_a_link_type_is_an_error(urls: str) -> None:
+    config = _urls(_config([{"marker": SATISFIES, "field": "satisfies"}]), urls)
     assert _errors(config, ("links", "satisfies")) == [
         "Project 'p' has the following errors:",
         f"need_id_refs marker {SATISFIES!r}: field 'satisfies' names a need link "
@@ -248,8 +259,27 @@ def test_a_table_field_naming_a_link_type_is_an_error() -> None:
     ]
 
 
-def test_ref_url_field_naming_a_link_type_is_an_error() -> None:
-    config = _config(["@need-ids:"], ref_url_field="links")
+@_URLS
+def test_ref_url_field_naming_a_link_type_is_an_error(urls: str) -> None:
+    config = _urls(_config(["@need-ids:"], ref_url_field="links"), urls)
+    assert _errors(config, ("links",)) == [
+        "Project 'p' has the following errors:",
+        "ref_url_field 'links' names a need link type, which cannot hold URLs",
+    ]
+
+
+def test_a_project_given_without_its_analysis_has_the_default_plain_marker() -> None:
+    """``check_configuration`` takes a configuration whose projects were not passed
+    through ``generate_project_configs`` (no ``analyse_config``): such a project
+    extracts with the default marker, a plain string, so its ``ref_url_field`` is
+    written and checked."""
+    projects = {
+        "p": {
+            "remote_url_pattern": "https://example.com/{path}#L{line}",
+            "ref_url_field": "links",
+        }
+    }
+    config = CodeLinksConfig(set_remote_url=True, projects=projects)  # ty: ignore[invalid-argument-type]
     assert _errors(config, ("links",)) == [
         "Project 'p' has the following errors:",
         "ref_url_field 'links' names a need link type, which cannot hold URLs",
@@ -276,6 +306,32 @@ def test_a_field_that_is_never_written_is_not_checked(
     config = _config(markers, ref_url_field=ref_url_field)
     config.set_remote_url = urls_on
     assert _errors(config, ("links",)) == []
+
+
+@pytest.mark.parametrize(
+    "field_name", ["verifies_back", "links_back", "parent_needs_back"]
+)
+def test_a_field_naming_a_link_types_back_links_is_an_error(field_name: str) -> None:
+    """``<link type>_back`` holds a link type's back links, core or declared: no URL
+    goes there, as none goes into the link type itself."""
+    link_types = ("links", "parent_needs", "verifies")
+    config = _config([{"marker": SATISFIES, "field": field_name}])
+    assert _errors(config, link_types) == [
+        "Project 'p' has the following errors:",
+        f"need_id_refs marker {SATISFIES!r}: field {field_name!r} names the back links "
+        "of a need link type, which cannot hold URLs",
+    ]
+    config = _config(["@need-ids:"], ref_url_field=field_name)
+    assert _errors(config, link_types) == [
+        "Project 'p' has the following errors:",
+        f"ref_url_field {field_name!r} names the back links of a need link type, which "
+        "cannot hold URLs",
+    ]
+
+
+def test_a_back_like_name_of_no_link_type_is_a_field() -> None:
+    config = _config([{"marker": SATISFIES, "field": "impl_back"}])
+    assert _errors(config, ("links", "parent_needs", "verifies")) == []
 
 
 def test_an_empty_field_names_no_link_type() -> None:
@@ -354,3 +410,45 @@ def test_the_build_checks_the_fields_against_its_link_types(
     with pytest.raises(Exception, match="names a need link type") as excinfo:
         check_sphinx_configuration(app, app.config)
     assert f"need_id_refs marker {SATISFIES!r}: field 'satisfies'" in str(excinfo.value)
+
+
+def test_a_back_link_field_leaves_the_link_type_intact(
+    tmp_path: Path,
+    make_app: Callable[..., SphinxTestApp],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A table field naming a declared link type's back links is refused, and is not
+    registered first: a field ``verifies_back`` would make Sphinx-Needs ignore the
+    ``verifies`` link type, and every ``:verifies:`` link with it. The build runs with
+    the configuration check switched off, to see what registration alone does; the
+    check itself is then called on the built app (a build that fails in
+    ``config-inited`` leaves Sphinx's logging bound to an app with no environment)."""
+    from sphinx_codelinks.sphinx_extension import source_tracing
+    from sphinx_needs.data import SphinxNeedsData
+    from sphinx_needs_testkit import build_warnings
+
+    _project(
+        tmp_path,
+        _TOML + 'markers = [{ marker = "\\\\satisfies", field = "verifies_back" }]\n',
+        conf_extra="needs_links = {'verifies': {}}\n",
+    )
+    (tmp_path / "index.rst").write_text(
+        "T\n=\n\n.. req:: One\n   :id: REQ_1\n\n"
+        ".. req:: Three\n   :id: REQ_3\n   :verifies: REQ_1\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(source_tracing, "check_sphinx_configuration", lambda *_: None)
+    app = make_app(srcdir=tmp_path, freshenv=True)
+    app.build()
+
+    assert build_warnings(app) == []
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert needs["REQ_3"]["verifies"] == ["REQ_1"]
+    assert needs["REQ_1"]["verifies_back"] == ["REQ_3"]
+
+    monkeypatch.undo()
+    with pytest.raises(Exception, match="names the back links") as excinfo:
+        source_tracing.check_sphinx_configuration(app, app.config)
+    assert f"need_id_refs marker {SATISFIES!r}: field 'verifies_back'" in str(
+        excinfo.value
+    )
