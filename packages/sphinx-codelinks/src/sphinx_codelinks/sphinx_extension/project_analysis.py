@@ -12,7 +12,7 @@ build, from the pages recorded in the environment (``source_tracing.generate_cod
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path, PurePath
 
@@ -211,10 +211,17 @@ def page_target(context: UrlContext, filepath: Path) -> str:
 
 
 def collect_need_id_refs(
-    src_analyse: SourceAnalyse, project: str, context: UrlContext
+    src_analyse: SourceAnalyse,
+    project: str,
+    context: UrlContext,
+    markers: Collection[str] | None = None,
 ) -> tuple[list[NeedIdRef], list[SourcePage]]:
     """The analysis' ``@need-ids:`` references, as records, and the pages of the files
     their local URLs name.
+
+    ``markers``, when given, keeps the references of those markers only: the markers
+    whose references are attached to a field (a marker table's ``field = ""`` attaches
+    its references nowhere, so they make no record and no page).
 
     Their URLs follow the created needs' rules: the remote one fills the project's
     ``remote_url_pattern`` exactly as a created need's does. The local one -- only
@@ -246,8 +253,11 @@ def collect_need_id_refs(
         pages.setdefault(target, SourcePage(str(filepath), target, ()))
         return f"{target}#L{line}"
 
+    refs = src_analyse.need_id_refs
+    if markers is not None:
+        refs = [ref for ref in refs if ref.marker in markers]
     records = need_id_ref_records(
-        src_analyse.need_id_refs,
+        refs,
         project=project,
         root=src_analyse.git_root or src_dir,
         root_kind="git" if src_analyse.git_root else "src_dir",

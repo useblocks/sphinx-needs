@@ -522,7 +522,9 @@ class SourceTracingDirective(SphinxDirective):
             src_trace_sphinx_config, src_trace_conf
         )
         if marker_fields:
-            records, pages = collect_need_id_refs(src_analyse, project, context)
+            records, pages = collect_need_id_refs(
+                src_analyse, project, context, marker_fields
+            )
             need_id_refs_store(self.env).setdefault(self.env.docname, []).extend(
                 records
             )

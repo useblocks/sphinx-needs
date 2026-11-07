@@ -331,6 +331,4 @@ def test_the_build_checks_the_fields_against_its_link_types(
     app.config.needs_links = {"satisfies": {}}
     with pytest.raises(Exception, match="names a need link type") as excinfo:
         check_sphinx_configuration(app, app.config)
-    assert f"need_id_refs marker {SATISFIES!r}: field 'satisfies'" in str(
-        excinfo.value
-    )
+    assert f"need_id_refs marker {SATISFIES!r}: field 'satisfies'" in str(excinfo.value)
