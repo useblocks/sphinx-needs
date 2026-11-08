@@ -5,7 +5,7 @@
 #
 # Repository of record: useblocks/sphinx-needs (public)
 # Canonical path:       packages/sphinx-ub-directives/tests/fixtures/template_directives_conformance.toml
-# minijinja:            3.0.5 (the series both tools pin, and the version this corpus was
+# minijinja:            3.1.0 (the series both tools pin, and the version this corpus was
 #                       recorded against; a runner asserts the version it renders with)
 #
 # THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
