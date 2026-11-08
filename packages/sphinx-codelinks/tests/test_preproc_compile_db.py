@@ -114,8 +114,9 @@ def test_load_flags_map_command_and_arguments_forms(tmp_path: Path):
     )
 
     flags = compile_db.load_flags_map(db)
-    assert flags[a.resolve()] == ["-DA=1"]
-    assert flags[b.resolve()] == ["-DB=2"]
+    working = f"-working-directory={tmp_path.resolve()}"
+    assert flags[a.resolve()] == [working, "-DA=1"]
+    assert flags[b.resolve()] == [working, "-DB=2"]
 
 
 def test_load_flags_map_relative_input_path_stripped(tmp_path: Path):
@@ -144,7 +145,90 @@ def test_load_flags_map_relative_input_path_stripped(tmp_path: Path):
     )
 
     flags = compile_db.load_flags_map(db)
-    assert flags[a.resolve()] == ["-DA=1"]
+    assert flags[a.resolve()] == [f"-working-directory={tmp_path.resolve()}", "-DA=1"]
+
+
+def test_load_flags_map_starts_every_entry_with_its_working_directory(
+    tmp_path: Path,
+) -> None:
+    """Each entry's arguments start with ``-working-directory=<its directory>``, so a
+    relative ``-I`` (or ``-iquote``, ``-isystem``, ``-include``, ``-imacros``) resolves
+    against the entry's directory, as the build resolves it, and not against the
+    directory the analysis happens to run in. The flag is first, and the entry's own
+    arguments follow unchanged."""
+    build = tmp_path / "build"
+    other = tmp_path / "other"
+    db = tmp_path / "compile_commands.json"
+    db.write_text(
+        json.dumps(
+            [
+                {
+                    "directory": str(build),
+                    "file": "../a.cpp",
+                    "arguments": ["clang++", "-I../include", "-c", "../a.cpp"],
+                },
+                {
+                    "directory": str(other),
+                    "file": "b.cpp",
+                    "command": "clang++ -iquote q -DB=1 -c b.cpp",
+                },
+            ]
+        )
+    )
+
+    flags = compile_db.load_flags_map(db)
+
+    assert flags[(tmp_path / "a.cpp").resolve()] == [
+        f"-working-directory={build.resolve()}",
+        "-I../include",
+    ]
+    assert flags[(other / "b.cpp").resolve()] == [
+        f"-working-directory={other.resolve()}",
+        "-iquote",
+        "q",
+        "-DB=1",
+    ]
+
+
+@pytest.mark.parametrize("directory", [".", "build", "build/../build"])
+def test_load_flags_map_relative_directory_is_taken_against_the_database(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, directory: str
+) -> None:
+    """A relative ``directory`` is taken against the database file's own directory,
+    never against the process' working directory: the analysis runs elsewhere here,
+    and both the entry's file and its working directory still land beside the
+    database."""
+    project = tmp_path / "project"
+    (project / "build").mkdir(parents=True)
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    monkeypatch.chdir(elsewhere)
+    db = project / "compile_commands.json"
+    db.write_text(
+        json.dumps(
+            [{"directory": directory, "file": "a.cpp", "arguments": ["cc", "a.cpp"]}]
+        )
+    )
+
+    flags = compile_db.load_flags_map(db)
+
+    expected_dir = (project / directory).resolve()
+    assert flags == {
+        expected_dir / "a.cpp": [f"-working-directory={expected_dir}"],
+    }
+
+
+def test_working_directory_reads_the_flag_else_the_process_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The working directory of an argument list is its ``-working-directory=``;
+    without one it is the process' working directory, where libclang takes a
+    relative path."""
+    assert compile_db.working_directory(
+        ["-DA", f"-working-directory={tmp_path}", "-I."]
+    ) == Path(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    assert compile_db.working_directory(["-DA"]) == Path.cwd()
 
 
 def test_defines_to_args(tmp_path: Path):

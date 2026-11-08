@@ -5,7 +5,14 @@
 # `case.<ext>` source. These exercise the per-file argument resolution the shared
 # single-`.cpp`/defines fixtures never touch: DB-provided flags, headers absent
 # from a present DB (parsed standalone), translation-unit sources absent from the
-# DB (skipped), and an unreadable explicit DB path (defines fallback).
+# DB (skipped), an entry's `directory`, and an unreadable explicit DB path
+# (defines fallback).
+#
+# Two optional keys serve the cases that need more than one file:
+# - `files`: further files, by path relative to the case root, written next to
+#   `case.<ext>` and never analysed themselves (a DB entry's main file, a header);
+# - a `compile_commands` entry's `directory`: relative to the case root, written
+#   absolute into the DB (default: the case root itself).
 
 file_in_db_uses_flags_libclang:
   lang: cpp
@@ -138,3 +145,27 @@ launcher_prefix_uses_db_flags_libclang:
   # from the DB then activates the #ifdef branch: IMPL_ALWAYS, IMPL_VAR_A. With the
   # launcher bug (dropping only argv[0]) the compiler leaks in as a second input
   # and the TU fails to load, dropping every marker.
+
+relative_include_dir_resolved_against_entry_directory_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    include/config.h: |
+      #define FEATURE_ON 1
+  compile_commands:
+    - file: ../case.cpp
+      directory: build
+      arguments: ["clang++", "-std=c++17", "-I../include", "-c", "../case.cpp"]
+  source: |
+    #include "config.h"
+    // @Always, IMPL_ALWAYS, impl, [REQ]
+    #ifdef FEATURE_ON
+    // @Feature on, IMPL_FEATURE_ON, impl, [REQ]
+    #endif
+  # The entry's directory is build, not the directory the analysis runs in, and
+  # its -I../include is relative: it resolves against the entry's directory as the
+  # build resolves it, so config.h is found and the arm guarded by its FEATURE_ON is
+  # active: IMPL_ALWAYS, IMPL_FEATURE_ON.

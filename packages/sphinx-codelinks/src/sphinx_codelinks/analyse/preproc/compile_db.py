@@ -104,10 +104,22 @@ def filter_args(argv: list[str], input_file: str) -> list[str]:
     return out
 
 
+WORKING_DIRECTORY_FLAG = "-working-directory="
+"""The libclang flag every database entry's arguments start with (see
+:func:`load_flags_map`)."""
+
+
 # @Resolve per-file compiler flags from the compilation database, IMPL_PREPROC_4, impl, [FE_PREPROC]
 def load_flags_map(db_path: Path) -> dict[Path, list[str]]:
-    """Parse compile_commands.json -> {absolute file path: filtered args}."""
+    """Parse compile_commands.json -> {absolute file path: filtered args}.
+
+    Each entry's arguments start with ``-working-directory=<directory>``, the entry's
+    ``directory`` (a relative one is taken against the database file's own directory),
+    so that a relative ``-I``, ``-iquote``, ``-isystem``, ``-include`` or ``-imacros``
+    resolves as the build resolves it, not against the process' working directory.
+    """
     entries = json.loads(db_path.read_text())
+    db_dir = db_path.absolute().parent
     flags: dict[Path, list[str]] = {}
     for entry in entries:
         if "file" not in entry or "directory" not in entry:
@@ -118,11 +130,24 @@ def load_flags_map(db_path: Path) -> dict[Path, list[str]]:
             argv = shlex.split(entry["command"])
         else:
             continue
-        directory = Path(entry["directory"])
+        # an absolute ``directory`` replaces ``db_dir`` in the join
+        directory = (db_dir / entry["directory"]).resolve()
         file_field = entry["file"]
         abs_file = (directory / file_field).resolve()
-        flags[abs_file] = filter_args(argv, file_field)
+        flags[abs_file] = [
+            f"{WORKING_DIRECTORY_FLAG}{directory}",
+            *filter_args(argv, file_field),
+        ]
     return flags
+
+
+def working_directory(args: list[str]) -> Path:
+    """The working directory ``args`` name with ``-working-directory=``, or, without
+    one, the process' working directory, as libclang takes it."""
+    for arg in args:
+        if arg.startswith(WORKING_DIRECTORY_FLAG):
+            return Path(arg[len(WORKING_DIRECTORY_FLAG) :])
+    return Path.cwd()
 
 
 # @Parse headers standalone from configured defines and includes, IMPL_PREPROC_5, impl, [FE_PREPROC]
