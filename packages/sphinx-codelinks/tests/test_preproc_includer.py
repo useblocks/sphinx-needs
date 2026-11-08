@@ -12,6 +12,7 @@ extraction; these tests pin the pieces and the run.
 """
 
 import json
+import os
 import pickle
 import weakref
 from collections.abc import Callable
@@ -726,3 +727,153 @@ def test_one_includer_unit_is_alive_at_a_time(
     }
     assert sorted(parsed) == ["u_a.cpp", "u_b.cpp", "u_c.cpp"]
     assert peak[0] == 1
+
+
+def test_the_analysis_records_what_an_includer_read_depended_on(
+    tmp_path: Path,
+) -> None:
+    """The files an includer read depended on besides the analysed ones: the database,
+    each tried candidate's main file (a confirmed one and one that confirmed nothing),
+    and the non-system headers their units included. A source with its own entry adds
+    nothing."""
+    _write(
+        tmp_path,
+        {
+            "a_unity.cpp": '#include "a_flags.h"\n#if 0\n#include "s.cpp"\n#endif\n',
+            "a_flags.h": "#include <stddef.h>\n",
+            "b_unity.cpp": '#include "b_flags.h"\n#include "s.cpp"\n',
+            "b_flags.h": "#define B 1\n",
+            "own.cpp": '#include "own.h"\n',
+            "own.h": "",
+            "s.cpp": "// @s, IMPL_S, impl\n",
+        },
+    )
+    db = _db(
+        tmp_path,
+        [
+            {"file": "a_unity.cpp", "args": []},
+            {"file": "b_unity.cpp", "args": []},
+            {"file": "own.cpp", "args": []},
+        ],
+    )
+
+    analyse = _run(tmp_path, ["s.cpp", "own.cpp"], db)
+
+    assert _ids(analyse) == {("s.cpp", "IMPL_S")}
+    assert analyse.dependencies == {
+        (tmp_path / name).resolve()
+        for name in (
+            "compile_commands.json",
+            "a_unity.cpp",
+            "a_flags.h",
+            "b_unity.cpp",
+            "b_flags.h",
+            "s.cpp",
+        )
+    }
+
+
+#: the unity project with its flag defined in a header the unity file includes
+UNITY_HEADER_PROJECT = {
+    "toml_extra": UNITY_PROJECT["toml_extra"],
+    "files": {
+        **UNITY_PROJECT["files"],
+        "build/compile_commands.json": UNITY_PROJECT["files"][
+            "build/compile_commands.json"
+        ].replace(', "-DUNITY_FLAG=1"', ""),
+        "build/unity.cpp": (
+            '#include "flags.h"\n' + UNITY_PROJECT["files"]["build/unity.cpp"]
+        ),
+        "build/flags.h": "#define UNITY_FLAG 1\n",
+    },
+}
+
+
+def _rewrite(path: Path, old: str, new: str) -> None:
+    text = path.read_text(encoding="utf-8")
+    assert old in text
+    path.write_text(text.replace(old, new), encoding="utf-8")
+    later = path.stat().st_mtime + 10
+    os.utime(path, (later, later))
+
+
+@pytest.mark.parametrize(
+    ("project", "edited", "old", "new"),
+    [
+        pytest.param(
+            UNITY_PROJECT,
+            "build/unity.cpp",
+            '#include "a.cpp"',
+            '#undef UNITY_FLAG\n#include "a.cpp"',
+            id="the-includer",
+        ),
+        pytest.param(
+            UNITY_HEADER_PROJECT,
+            "build/flags.h",
+            "#define UNITY_FLAG 1",
+            "",
+            id="a-header-it-includes",
+        ),
+    ],
+)
+def test_an_edit_to_an_includer_reads_the_document_again(
+    tmp_path: Path,
+    make_app: Callable[..., SphinxTestApp],
+    project: dict,
+    edited: str,
+    old: str,
+    new: str,
+) -> None:
+    """The unity file lives in the build directory, outside every scope: an edit to
+    it, or to a header it includes, still reads the directive's document again in an
+    incremental build, and the source's needs follow the edit."""
+    _project(tmp_path, **project)
+    app = _build(tmp_path, make_app)
+    assert "IMPL_A_ON" in _json(app)["needs"]
+
+    _rewrite(tmp_path / edited, old, new)
+    app = _build(tmp_path, make_app, freshenv=False)
+
+    needs = _json(app)["needs"]
+    assert "IMPL_A_OFF" in needs
+    assert "IMPL_A_ON" not in needs
+
+
+def test_an_edit_to_an_includer_analyses_a_config_only_project_again(
+    tmp_path: Path, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    """A project no directive traces is scanned again when an includer of its sources
+    changes, though no discovered file did: the references follow the edit."""
+    index = (tmp_path / "docs" / "index.rst").as_posix()
+    files = {
+        **UNITY_PROJECT["files"],
+        "src/a.cpp": (
+            "#ifdef UNITY_FLAG\n// @need-ids: REQ_001\n"
+            "#else\n// @need-ids: REQ_002\n#endif\nvoid a() {}\n"
+        ),
+    }
+    _project(tmp_path, toml_extra=UNITY_PROJECT["toml_extra"], files=files)
+    text = Path(index).read_text(encoding="utf-8")
+    Path(index).write_text(
+        text.replace(".. src-trace::\n   :project: src\n", ""), encoding="utf-8"
+    )
+    app = _build(tmp_path, make_app)
+    assert _a_refs(app) == {"REQ_001"}
+
+    _rewrite(
+        tmp_path / "build" / "unity.cpp",
+        '#include "a.cpp"',
+        '#undef UNITY_FLAG\n#include "a.cpp"',
+    )
+    app = _build(tmp_path, make_app, freshenv=False)
+
+    assert _a_refs(app) == {"REQ_002"}
+
+
+def _a_refs(app: SphinxTestApp) -> set[str]:
+    """The needs a reference of ``src/a.cpp`` is attached to."""
+    return {
+        need_id
+        for need_id, need in _json(app)["needs"].items()
+        if any("src/a.cpp" in url for url in need.get("code_url") or [])
+    }

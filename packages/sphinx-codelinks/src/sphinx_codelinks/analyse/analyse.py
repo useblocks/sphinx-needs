@@ -293,6 +293,11 @@ class SourceAnalyse:
         # Per-run memo of each database's inclusion index (included file -> the
         # entries' main files that include it), built only when a source needs it.
         self._inclusion_index_cache: dict[Path, dict[Path, list[Path]]] = {}
+        self.dependencies: set[Path] = set()
+        """Files besides ``src_files`` the extraction read: the main file of every
+        entry tried as a source's includer, the files its unit included that are not
+        system headers, and the database. An edit to one of them can change what is
+        extracted."""
 
     @property
     def oneline_warnings(self) -> list[AnalyseWarning]:
@@ -480,6 +485,7 @@ class SourceAnalyse:
                 heads, key=lambda head: (os.fsencode(head[1]), os.fsencode(head[0]))
             )
             args = (self._flags_map_for(database) or {})[main]
+            self.dependencies.update((database, main))
             try:
                 tu = libclang_parser.parse_translation_unit(main, args)
             except translation_unit_load_error:
@@ -490,8 +496,10 @@ class SourceAnalyse:
                 tu = None
                 includes: set[Path] = set()
             else:
-                includes = libclang_parser.main_file_inclusions(
-                    tu, compile_db.working_directory(args)
+                working_directory = compile_db.working_directory(args)
+                includes = libclang_parser.main_file_inclusions(tu, working_directory)
+                self.dependencies.update(
+                    libclang_parser.included_files(tu, working_directory)
                 )
             for position, w in list(unread.items()):
                 if w.database != database or next_candidate[position] >= len(

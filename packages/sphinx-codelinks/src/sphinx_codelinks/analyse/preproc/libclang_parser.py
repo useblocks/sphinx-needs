@@ -105,6 +105,25 @@ def main_file_inclusions(tu: Any, working_directory: Path) -> set[Path]:
     return out
 
 
+def included_files(tu: Any, working_directory: Path) -> set[Path]:
+    """Every file the unit included, at any depth, that is not a system header,
+    canonical: what the unit's preprocessing read besides its main file.
+
+    A relative name (a file found through a relative include directory) is taken
+    against ``working_directory``, as in :func:`main_file_inclusions`.
+    """
+    cx = loader.load_clang_cindex()
+    out: set[Path] = set()
+    for inclusion in tu.get_includes():
+        file = inclusion.include
+        if file is None:
+            continue
+        if cx.SourceLocation.from_offset(tu, file, 0).is_in_system_header:
+            continue
+        out.add((working_directory / file.name).resolve())
+    return out
+
+
 # @Read a source through a compile-database entry that includes it, IMPL_PREPROC_7, impl, [FE_PREPROC]
 def extract_included_active_comments(tu: Any, file_path: Path) -> list[LibclangComment]:
     """Return the ACTIVE comment tokens of ``file_path``, a file ``tu`` includes.
