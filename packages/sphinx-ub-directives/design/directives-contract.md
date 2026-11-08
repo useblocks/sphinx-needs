@@ -573,7 +573,9 @@ that pin this rule, nor any option twice.) Enforced by: corpus
    - `length` and `count` of an undefined value are a render error, as minijinja's own
      filters make them under strict undefined: minijinja-py 3.1.0 replaces both with
      filters that skip the check (they answer `0`), so the Sphinx half restores the refusal
-     (upstream issue: TBD), and ubCode's engine refuses it natively;
+     until a minijinja-py release fixes
+     [minijinja#1028](https://github.com/mitsuhiko/minijinja/issues/1028), and ubCode's
+     engine refuses it natively;
    - `debug()` removed; Python-compatible methods on values (`pycompat`);
    - `break` / `continue` (minijinja's `loop_controls`);
    - `filesizeformat`, `urlencode`, `truncate`, `pluralize`, `striptags`, `joiner()`,

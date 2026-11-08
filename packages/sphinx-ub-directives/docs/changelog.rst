@@ -33,7 +33,8 @@ Unreleased
   ``|length`` and ``|count`` of an undefined name stay ``template_render_error``: minijinja-py 3.1.0's own filters
   make it ``0`` under strict undefined too, so a template that names either filter is rendered a second time to find
   one, and the page keeps the first render's text. The template corpus pins it in a new case,
-  ``dialect-undefined-length-is-an-error`` (546 cases).
+  ``dialect-undefined-length-is-an-error`` (546 cases). The second render is temporary: it goes once a minijinja-py
+  release fixes `minijinja#1028 <https://github.com/mitsuhiko/minijinja/issues/1028>`__.
 
 - A template context file ending in ``.toml`` (``[parse.template_contexts.<name>] file``) is
   read as TOML 1.1, through ub-project's ``loads_toml``, as ``ubproject.toml`` itself is: an

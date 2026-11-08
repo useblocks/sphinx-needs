@@ -313,6 +313,10 @@ def _wordwrap(
 #: The filters minijinja-py 3.1.0 replaces with its own ``length``, which skips the strict
 #: undefined check minijinja's own does: ``{{ nope|length }}`` is ``0`` there, an error in
 #: ubCode and in minijinja-py 3.0.5 (§7.1).
+#:
+#: TEMPORARY, with :func:`_strict_length`, :func:`_probe_length` and ``environment``'s
+#: ``strict_length``: remove all four, and raise the minijinja floor, once a minijinja-py
+#: release fixes https://github.com/mitsuhiko/minijinja/issues/1028.
 _LENGTH_FILTERS = ("length", "count")
 
 
@@ -382,7 +386,9 @@ def render(source: str, name: str, context: Mapping[str, Any], root: Root) -> Re
     renders, and a template that names either filter is then rendered again with
     :func:`_strict_length` in their place, from the same sources: the same path up to the
     first undefined value that reaches one (``none`` there has already failed the first
-    render). The page always gets the first render's text.
+    render). The page always gets the first render's text. This probe is TEMPORARY: it
+    goes, with the floor raised, once a minijinja-py release fixes
+    https://github.com/mitsuhiko/minijinja/issues/1028.
 
     :raises Failure: With the contract code of what went wrong.
     """
