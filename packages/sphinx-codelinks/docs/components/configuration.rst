@@ -722,7 +722,9 @@ limitations.
   database. Relative paths resolve against the TOML config file. If omitted,
   **Sphinx-CodeLinks** walks up from each source file to find one, stopping at a
   directory containing ``.git``, ``ubproject.toml``, or ``pyproject.toml``, or at the
-  filesystem root.
+  filesystem root. Each entry is parsed in its ``directory``, and a compiled source with
+  no entry is read through an entry that includes it, or skipped with a warning; see
+  :ref:`preprocessor_compile_db`.
 - ``defines`` (``list[str]``) - ``-D`` macros used when a file has **no** entry in the
   database. This is the fallback applied to every header file (headers never appear in a
   database) and to all files when no database is found.

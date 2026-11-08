@@ -46,6 +46,25 @@ New and Improved
 Fixes
 .....
 
+- 🐛 The libclang engine reads a C/C++ source that a unity (jumbo) build compiles by
+  ``#include``\ -ing it, which has no ``compile_commands.json`` entry of its own, through
+  the entry that includes it (:ref:`preprocessor_compile_db`). Such a source was
+  skipped without a word, so none of its markers were extracted; its markers now follow
+  the including entry's flags, and an ``#if`` branch is inactive when the source's first
+  inclusion skips it. The includer is the first entry, by path, whose own source directly
+  includes the file and whose parse confirms it, so an ``#include`` in an ``#if 0``
+  branch or a comment is none. A compiled source that no entry includes is still
+  skipped, now with a ``codelinks.not_in_compile_database`` warning naming it and the
+  database, which fails a ``-W`` build: list it in ``exclude``, or add
+  ``codelinks.not_in_compile_database`` to ``suppress_warnings``. Headers keep their
+  standalone parse.
+- 🐛 A ``compile_commands.json`` entry is parsed in its ``directory``, so a relative
+  ``-I``, ``-iquote``, ``-isystem``, ``-include`` or ``-imacros`` resolves as the build
+  resolved it. It resolved against the directory the analysis ran in, which, for a
+  database in a build directory, found no header, and the branches guarded by its macros
+  were dropped as inactive. A relative ``directory`` is taken against the database's own
+  directory. An environment of an earlier version is read again once (``env_version``
+  5).
 - 🐛 A reference marker's ids end at the next marker on the line, and a marker that ends in
   a letter, a digit or ``_`` (any Unicode letter or number) matches a whole word only
   (:ref:`need_id_refs_matching`). ``\satisfies REQ_1 \verifies REQ_2`` gave
