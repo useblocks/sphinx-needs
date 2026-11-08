@@ -570,6 +570,10 @@ that pin this rule, nor any option twice.) Enforced by: corpus
    these differences from the engine's bare defaults:
    - undefined is strict (`is defined` tests it); no autoescaping; the standard delimiters;
      one trailing newline of a template dropped;
+   - `length` and `count` of an undefined value are a render error, as minijinja's own
+     filters make them under strict undefined: minijinja-py 3.1.0 replaces both with
+     filters that skip the check (they answer `0`), so the Sphinx half restores the refusal
+     (upstream issue: TBD), and ubCode's engine refuses it natively;
    - `debug()` removed; Python-compatible methods on values (`pycompat`);
    - `break` / `continue` (minijinja's `loop_controls`);
    - `filesizeformat`, `urlencode`, `truncate`, `pluralize`, `striptags`, `joiner()`,
@@ -581,8 +585,9 @@ that pin this rule, nor any option twice.) Enforced by: corpus
    - no clock, randomness or I/O: `now`, `random`, `lipsum`, `datetimeformat` are unknown.
    The Python-only string methods ubCode's docs once listed (`center`, `ljust`, `rjust`,
    `zfill`, `expandtabs`) do not exist on either side.
-   Enforced by: corpus `dialect-*` (one case per name above),
-   `render-error-debug-is-removed`, `render-error-undefined-attribute-test`.
+   Enforced by: corpus `dialect-*` (one case per name above, and
+   `dialect-undefined-length-is-an-error`), `render-error-debug-is-removed`,
+   `render-error-undefined-attribute-test`.
 2. **`env` is unavailable.** A template that names `env` as a free variable is
    `template_context_unavailable` (sphinx-jinja2 handed a template the live build
    environment; neither implementation has one to give), unless a context defines `env`,

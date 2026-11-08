@@ -3074,6 +3074,36 @@ code = "template_render_error"
 directive = "d"
 
 [[case]]
+name = "dialect-undefined-length-is-an-error"
+why = "length and count of an undefined value are a render error under strict undefined, not 0, while a defined value still measures; minijinja-py 3.1.0's own length and count skip the strict check, so the Sphinx half restores it, and ubCode's engine (minijinja) refuses it natively"
+config = '''
+[parse.directive_templates.len]
+body = "{{ nope|length }}"
+[parse.directive_templates.cnt]
+body = "{% set r = {} %}{{ r.missing|count }}"
+[parse.directive_templates.ok]
+body = "{{ [1, 2]|length }}{{ ''|count }}"
+'''
+source = '''
+.. len::
+
+.. cnt::
+
+.. ok::
+'''
+[case.expect]
+expansions = [
+'''
+20''',
+]
+[[case.expect.findings]]
+code = "template_render_error"
+directive = "len"
+[[case.expect.findings]]
+code = "template_render_error"
+directive = "cnt"
+
+[[case]]
 name = "output-reads-file-include"
 why = "output may not hold include: that directive renders nothing and is reported, the rest of the output renders"
 config = '''
