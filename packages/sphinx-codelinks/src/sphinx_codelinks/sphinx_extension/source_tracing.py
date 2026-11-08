@@ -151,8 +151,12 @@ def setup(app: Sphinx) -> dict[str, Any]:
         # carries its qualified name; 4: a reference marker's ids end at the next marker
         # on the line, and a marker matches a whole word (the references an environment
         # at 3 holds were extracted by the old rule), and the marker settings carry their
-        # fields (an older pickled configuration has none)
-        "env_version": 4,
+        # fields (an older pickled configuration has none); 5: the libclang engine applies
+        # a compilation database as the build does -- each entry's directory is the
+        # working directory, and a source with no entry is read through an entry that
+        # includes it -- so the records an environment at 4 holds for such sources were
+        # extracted without them
+        "env_version": 5,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

@@ -175,7 +175,8 @@ def is_translation_unit_source(path: Path) -> bool:
     """True if ``path`` is a compiled translation-unit source (not a header).
 
     compile_commands.json lists one entry per compiled TU; headers are never
-    entries. So a discovered file absent from the DB is skipped only when it is
-    a TU source; header-like files are parsed standalone (see _resolve_preproc_args).
+    entries. So a discovered file absent from the DB is read through an entry that
+    includes it, or skipped, only when it is a TU source; header-like files are
+    parsed standalone (see _resolve_preproc_args).
     """
     return path.suffix.lower() in TU_SOURCE_SUFFIXES

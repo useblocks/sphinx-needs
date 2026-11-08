@@ -1,0 +1,28 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 38
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Picked a",
+      "id": "IMPL_PICK_A",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]
