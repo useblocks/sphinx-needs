@@ -15,6 +15,27 @@ Unreleased
   data prints as the engine prints its values, so ``{{ rows }}`` is ``[1, 'a']``, which was ``[1, "a"]``.
   The full list is in sphinx-needs' changelog entry for the same move.
 
+- ⬆️ Templates render with minijinja 3.1 (``minijinja>=3.1.0,<4``, which was ``>=3.0.5,<4``); the template corpus
+  is recorded against 3.1.0, no case in it moves, and one is added **(changed output)**
+  (`#2500 <https://github.com/useblocks/sphinx-needs/pull/2500>`__)
+
+  A value a template builds or tests itself can render differently: ``true`` and ``false`` compare and sort as
+  ``1`` and ``0`` (``[true, 2, false, 1, 0]|sort`` is ``[False, 0, True, 1, 2]``), ``max`` and ``groupby`` keep the
+  first of equal items, ``title`` and ``capitalize`` follow Unicode's case mappings, a map reverses, a negative
+  repeat is empty, and ``replace`` takes a count. Under the strict undefined of a template directive, ``|join`` of
+  an undefined name is ``template_render_error``, where it was empty. ``4 is divisibleby(0)`` and a slice with a
+  negative step, which crashed the engine, are now an error and a result (``[1, 2, 3][5:0:-1]`` is ``[3, 2]``).
+  The full list is in sphinx-needs' changelog entry for the same move.
+
+  A render's fuel now also counts the bytes and items it makes, writes or scans, so it bounds memory as well as
+  time; the heaviest render in the corpus uses under 0.5% of it.
+
+  ``|length`` and ``|count`` of an undefined name stay ``template_render_error``: minijinja-py 3.1.0's own filters
+  make it ``0`` under strict undefined too, so a template that names either filter is rendered a second time to find
+  one, and the page keeps the first render's text. The template corpus pins it in a new case,
+  ``dialect-undefined-length-is-an-error`` (546 cases). The second render is temporary: it goes once a minijinja-py
+  release fixes `minijinja#1028 <https://github.com/mitsuhiko/minijinja/issues/1028>`__.
+
 - A template context file ending in ``.toml`` (``[parse.template_contexts.<name>] file``) is
   read as TOML 1.1, through ub-project's ``loads_toml``, as ``ubproject.toml`` itself is: an
   inline table may span lines or end with a trailing comma, and a string may use the ``\e``

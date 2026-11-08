@@ -5,7 +5,7 @@
 #
 # Repository of record: useblocks/sphinx-needs (public)
 # Canonical path:       packages/sphinx-ub-directives/tests/fixtures/template_directives_conformance.toml
-# minijinja:            3.0.5 (the series both tools pin, and the version this corpus was
+# minijinja:            3.1.0 (the series both tools pin, and the version this corpus was
 #                       recorded against; a runner asserts the version it renders with)
 #
 # THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
@@ -3072,6 +3072,36 @@ expansions = [
 [[case.expect.findings]]
 code = "template_render_error"
 directive = "d"
+
+[[case]]
+name = "dialect-undefined-length-is-an-error"
+why = "length and count of an undefined value are a render error under strict undefined, not 0, while a defined value still measures; minijinja-py 3.1.0's own length and count skip the strict check, so the Sphinx half restores it, and ubCode's engine (minijinja) refuses it natively"
+config = '''
+[parse.directive_templates.len]
+body = "{{ nope|length }}"
+[parse.directive_templates.cnt]
+body = "{% set r = {} %}{{ r.missing|count }}"
+[parse.directive_templates.ok]
+body = "{{ [1, 2]|length }}{{ ''|count }}"
+'''
+source = '''
+.. len::
+
+.. cnt::
+
+.. ok::
+'''
+[case.expect]
+expansions = [
+'''
+20''',
+]
+[[case.expect.findings]]
+code = "template_render_error"
+directive = "len"
+[[case.expect.findings]]
+code = "template_render_error"
+directive = "cnt"
 
 [[case]]
 name = "output-reads-file-include"
