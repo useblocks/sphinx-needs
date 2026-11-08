@@ -310,12 +310,42 @@ def _wordwrap(
     )
 
 
-def environment(root: Root) -> minijinja.Environment:
+#: The filters minijinja-py 3.1.0 replaces with its own ``length``, which skips the strict
+#: undefined check minijinja's own does: ``{{ nope|length }}`` is ``0`` there, an error in
+#: ubCode and in minijinja-py 3.0.5 (§7.1).
+_LENGTH_FILTERS = ("length", "count")
+
+
+class _UndefinedLength(Exception):
+    """An undefined value reached ``length`` or ``count`` (raised by the probe only)."""
+
+
+def _strict_length(filter_name: str) -> Callable[[Any], int]:
+    """The probe's ``length``: an undefined value (``None`` once it reaches Python, which
+    is also ``none``: see :func:`render`) is refused, and anything else is measured."""
+
+    def length(value: Any) -> int:
+        if value is None:
+            msg = f"undefined value: `{filter_name}` was given an undefined value"
+            raise _UndefinedLength(msg)
+        return len(value)
+
+    return length
+
+
+def environment(
+    root: Root,
+    loader: Callable[[str], str | None] | None = None,
+    *,
+    strict_length: bool = False,
+) -> minijinja.Environment:
     """The contract's dialect (§7.1): strict undefined, no autoescaping, standard
     delimiters, ``debug`` removed, ``pycompat``, the positional ``wordwrap``, a fuel
-    bound, and a loader that never leaves the source root."""
+    bound, and a loader that never leaves the source root (``loader``, by default the
+    root's own). ``strict_length`` is :func:`render`'s probe: ``length`` and ``count``
+    refuse an undefined value."""
     env = minijinja.Environment(
-        loader=root.loader(),
+        loader=loader or root.loader(),
         undefined_behavior="strict",
         auto_escape_callback=lambda _name: False,
         fuel=FUEL,
@@ -323,6 +353,9 @@ def environment(root: Root) -> minijinja.Environment:
     )
     env.remove_global("debug")
     env.add_filter("wordwrap", _wordwrap)
+    if strict_length:
+        for filter_name in _LENGTH_FILTERS:
+            env.add_filter(filter_name, _strict_length(filter_name))
     return env
 
 
@@ -342,9 +375,25 @@ def render(source: str, name: str, context: Mapping[str, Any], root: Root) -> Re
     and 3.1.0: ``1.0`` prints ``1``, and ``[1.0, 2.5]`` prints ``[1, 2.5]``), which would
     break the dialect (§7.1); fuel bounds the render instead (§7.5).
 
+    ``length`` and ``count`` of an undefined value are refused (§7.1), as ubCode and
+    minijinja-py 3.0.5 refuse them; minijinja-py 3.1.0's own filters skip that check.
+    A Python filter cannot tell an undefined value from ``none``, and sees every other
+    value converted, so it cannot stand in for the engine's filter. The engine's filter
+    renders, and a template that names either filter is then rendered again with
+    :func:`_strict_length` in their place, from the same sources: the same path up to the
+    first undefined value that reaches one (``none`` there has already failed the first
+    render). The page always gets the first render's text.
+
     :raises Failure: With the contract code of what went wrong.
     """
-    env = environment(root)
+    sources: dict[str, str | None] = {}
+    files = root.loader()
+
+    def load(template: str) -> str | None:
+        sources[template] = files(template)
+        return sources[template]
+
+    env = environment(root, load)
     try:
         free = env.undeclared_variables_in_str(source)
     except minijinja.TemplateError as error:
@@ -367,7 +416,29 @@ def render(source: str, name: str, context: Mapping[str, Any], root: Root) -> Re
         raise Failure("template_render_error", msg) from error
     if len(text.encode("utf-8")) > OUTPUT_LIMIT:
         raise Failure("template_output_limit", _limit_message())
+    read = [source, *(loaded for loaded in sources.values() if loaded is not None)]
+    if any(f in body for body in read for f in _LENGTH_FILTERS):
+        _probe_length(name, preamble(context) + source, root, sources)
     return Rendered(text)
+
+
+def _probe_length(
+    name: str, source: str, root: Root, sources: Mapping[str, str | None]
+) -> None:
+    """Render ``source`` again with the strict ``length`` (:func:`render`).
+
+    :raises Failure: When an undefined value reached ``length`` or ``count``.
+    """
+    env = environment(root, sources.get, strict_length=True)
+    env.add_template(name, source)
+    try:
+        env.render_template(name)
+    except _UndefinedLength as error:
+        msg = f"the template cannot be rendered: {error}"
+        raise Failure("template_render_error", msg) from error
+    except Exception:
+        # anything else: the first render succeeded, and its text stands
+        return
 
 
 def _limit_message() -> str:
