@@ -8,7 +8,8 @@ with a ``document`` is the page the need is placed on (its *placement*, a role r
 than a hop kind; an external need has none). The legacy location keys of a need -- ``docname``, ``lineno``,
 ``lineno_content``, ``is_import``, ``is_external``, ``external_url`` -- are computed from
 the hops plus a few stored legacy facts, and are unchanged. The hop types are
-re-exported from :mod:`sphinx_needs.api`. Until ``needs.json`` carries them, a 9.x
+re-exported from :mod:`sphinx_needs.api`. Until the final ``needs.json`` format version
+2 carries them (the draft ``"2a1"`` writes them, and does not end that), a 9.x
 minor release only adds to them (an optional field, a hop kind); a rename, a removal or
 a change of an existing field's meaning or type waits for 10.0, because published
 sibling extensions construct them (see :ref:`api_public`).
@@ -39,10 +40,10 @@ import os
 import re
 import sys
 import warnings
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import PurePath
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import docutils
 from docutils import nodes
@@ -72,10 +73,10 @@ _DOCSTRING_OF: Final = "docstring of "
 class NeedSourcePhysical:
     """Where a hop's text physically is: a file under a named root, or a URL.
 
-    **Provisional** until it reaches ``needs.json``: additions only through 9.x (new
-    optional fields; a rename, a removal or a change of an existing field's meaning or
-    type waits for 10.0), because published sibling extensions construct it. See
-    :ref:`api_public`.
+    **Provisional** until the final ``needs.json`` format version 2 carries it (the
+    draft ``"2a1"`` does not end that): additions only through 9.x (new optional fields;
+    a rename, a removal or a change of an existing field's meaning or type waits for
+    10.0), because published sibling extensions construct it. See :ref:`api_public`.
     """
 
     root: str | None = None
@@ -98,10 +99,10 @@ class NeedSourcePhysical:
 class NeedSourceSemantic:
     """One entry of a hop's semantic location: a section, a domain object, a service.
 
-    **Provisional** until it reaches ``needs.json``: additions only through 9.x (new
-    optional fields; a rename, a removal or a change of an existing field's meaning or
-    type waits for 10.0), because published sibling extensions construct it. See
-    :ref:`api_public`.
+    **Provisional** until the final ``needs.json`` format version 2 carries it (the
+    draft ``"2a1"`` does not end that): additions only through 9.x (new optional fields;
+    a rename, a removal or a change of an existing field's meaning or type waits for
+    10.0), because published sibling extensions construct it. See :ref:`api_public`.
     """
 
     kind: str
@@ -148,10 +149,10 @@ class NeedSourceHop:
     through it, and a need written in that file itself records no chain at all
     (docutils 0.21 logs it).
 
-    **Provisional** until it reaches ``needs.json``: additions only through 9.x (new
-    optional fields; a rename, a removal or a change of an existing field's meaning or
-    type waits for 10.0), because published sibling extensions construct it. See
-    :ref:`api_public`.
+    **Provisional** until the final ``needs.json`` format version 2 carries it (the
+    draft ``"2a1"`` does not end that): additions only through 9.x (new optional fields;
+    a rename, a removal or a change of an existing field's meaning or type waits for
+    10.0), because published sibling extensions construct it. See :ref:`api_public`.
     """
 
     kind: str
@@ -159,7 +160,13 @@ class NeedSourceHop:
     ``"report"`` (a test report, which sphinx-test-reports records); the vocabulary is
     open: a minor release may add a kind."""
     origin: str | None = None
-    """A key into a registry of origins (a repository, a test run); ``None`` for now."""
+    """The project the hop belongs to: ``None`` for a hop of this build; on a hop read
+    from a ``needs.json`` of the experimental format 2a1 (a need's ``upstream``), the name
+    of the project that wrote it, as the file gives it -- or, where the file names no
+    project, the file as the reader names it (its path relative to the source
+    directory, a needimport's file or an external source's ``json_path`` alike, or its
+    URL as written). A key into a registry of origins (a repository, a test run)
+    later."""
     physical: NeedSourcePhysical | None = None
     semantic: tuple[NeedSourceSemantic, ...] | None = None
     """Outermost to innermost; ``None`` where it is not determined (the placement's,
@@ -187,6 +194,61 @@ class NeedSourceHop:
             self,
             physical=dataclasses.replace(self.physical, start_line=None, end_line=None),
         )
+
+
+def upstream_hops(
+    hops: Iterable[Mapping[str, Any]], *, origin: str
+) -> tuple[NeedSourceHop, ...]:
+    """The hops of a record of a ``needs.json`` of the draft format 2a1 (its ``source``,
+    as ub-needs-exchange hands it on: plain objects, their shape validated), as the
+    need's ``upstream``, innermost first.
+
+    Each is built from the keys a :class:`NeedSourceHop` has; a key this build does not
+    know is not kept. A hop without an ``origin`` is the project's that wrote the file,
+    and is given ``origin``; an origin the file states is never changed.
+
+    :param origin: The project that wrote the file: its envelope's ``project.name``, or,
+        where it names none, the file as the reader names it.
+    """
+    return tuple(_upstream_hop(hop, origin) for hop in hops)
+
+
+def _upstream_hop(hop: Mapping[str, Any], origin: str) -> NeedSourceHop:
+    physical = hop.get("physical")
+    semantic = hop.get("semantic")
+    return NeedSourceHop(
+        kind=hop["kind"],
+        origin=hop.get("origin", origin),
+        physical=None
+        if physical is None
+        else NeedSourcePhysical(
+            root=physical.get("root"),
+            path=physical.get("path"),
+            url=physical.get("url"),
+            start_line=physical.get("start_line"),
+            end_line=physical.get("end_line"),
+        ),
+        semantic=None
+        if semantic is None
+        else tuple(
+            NeedSourceSemantic(
+                kind=entry["kind"],
+                name=entry["name"],
+                extras=tuple(entry.get("extras", {}).items()),
+            )
+            for entry in semantic
+        ),
+        document=hop.get("document"),
+        language=hop.get("language"),
+    )
+
+
+def writing_project(document: Mapping[str, Any]) -> str | None:
+    """The name of the project that wrote a ``needs.json`` of the draft format 2a1, from
+    its envelope (``project.name``), or ``None`` where it names none."""
+    project = document.get("project")
+    name = project.get("name") if isinstance(project, Mapping) else None
+    return name if isinstance(name, str) else None
 
 
 def placement_index(hops: tuple[NeedSourceHop, ...]) -> int | None:

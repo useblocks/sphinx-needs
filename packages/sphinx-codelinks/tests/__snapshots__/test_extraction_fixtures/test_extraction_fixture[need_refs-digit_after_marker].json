@@ -1,0 +1,118 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 13
+      },
+      "end": {
+        "row": 1,
+        "column": 38
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 4,
+      "end": 4,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need_ids": [
+      "REQ_2",
+      "[[A",
+      "title",
+      "IMPL_1]]"
+    ],
+    "marker": "\\verifies",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 15
+      },
+      "end": {
+        "row": 2,
+        "column": 40
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 4,
+      "end": 4,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need_ids": [
+      "REQ_3",
+      "[[B",
+      "title",
+      "IMPL_2]]"
+    ],
+    "marker": "\\verifies",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 23
+      },
+      "end": {
+        "row": 2,
+        "column": 38
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 4,
+      "end": 4,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "B title",
+      "id": "IMPL_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

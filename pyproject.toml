@@ -155,10 +155,10 @@ test = [
   # dependency there rather than a docs one. It costs nothing in the lock -- it is already
   # here through `sphinx-needs[theme-furo]` -- only in what the `test` group installs
   "furo>=2025.12.19",
-  # sphinx-ai-index: its property-based tests need it. It was in that package's own
-  # `testing` group, which this group replaces; being HERE is also what carries it into the
-  # release workflow's compat cell, which builds its environment from
-  # `uv export --only-group test`
+  # the property-based tests: sphinx-ai-index's, and sphinx-needs' of a link's string form
+  # (`tests/test_need_link_string.py`). It was in sphinx-ai-index's own `testing` group,
+  # which this group replaces; being HERE is also what carries it into the release
+  # workflow's compat cell, which builds its environment from `uv export --only-group test`
   "hypothesis>=6.0",
 ]
 # sphinx-codelinks' optional libclang engine, in a group of its own because only the job
@@ -871,8 +871,9 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
 
 # ub-project. The short name is the whole distribution name: there is no `sphinx-` prefix to
 # drop. ONE task and no `-sphinxN` cells: the package depends on nothing but the standard
-# library, so a sphinx series is not an axis it has. The environment that matters is the one
-# WITHOUT Sphinx, and that is ci.yaml's `toolchain-free` job, which runs this suite there.
+# library and, below Python 3.15, its TOML 1.1 backport, so a sphinx series is not an axis it
+# has. The environment that matters is the one WITHOUT Sphinx, and that is ci.yaml's
+# `toolchain-free` job, which runs this suite there (and on 3.15, without the backport).
 # No path is named, like `test-mounts`: `poe test-ub-project tests/test_variants.py` narrows
 # the run rather than adding to it, and nothing under `src/` is called `test_*.py`
 [tool.poe.tasks.test-ub-project]
@@ -1095,8 +1096,9 @@ cmd = "uv build --package ub-project --no-sources -o dist/ub-project"
 
 [tool.poe.tasks.import-check-ub-project]
 help = "Import every ub_project module from its built wheel, in an environment of its own"
-# the wheel declares no dependencies at all, so what this proves is that the ARTEFACT is
-# complete -- every module present and importable -- rather than a sibling's API
+# the wheel declares no dependency but `tomli` below Python 3.15, resolved from PyPI, so what
+# this proves is that the ARTEFACT is complete -- every module present and importable --
+# rather than a sibling's API
 cmd = "python tools/src/sn_tools/import_check.py ub-project"
 
 [tool.poe.tasks.build-ub-needs-exchange]

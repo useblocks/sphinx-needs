@@ -162,8 +162,7 @@ class _Comment:
 
 
 def _text(comment: SourceComment) -> str:
-    raw = comment.node.text or b""
-    return raw.decode("utf-8", errors="replace")
+    return comment.text.decode("utf-8", errors="replace")
 
 
 def _column(comment: SourceComment, text: str, row_text: str | None) -> int | None:

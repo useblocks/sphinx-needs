@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 4
+      },
+      "end": {
+        "row": 6,
+        "column": 47
+      }
+    },
+    "tagged_scope": "int g() { return 1; }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 8,
+      "end": 8,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "g",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "g"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "After a macro statement",
+      "id": "IMPL_R_NSX_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

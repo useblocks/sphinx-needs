@@ -30,6 +30,7 @@ from sphinx_needs._need_templates import (
     purge_template_probes,
     reread_on_template_inputs_change,
 )
+from sphinx_needs._needsfile_v2a1 import check_json_format_config
 from sphinx_needs._wording import joined, title_hint
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.builder import (
@@ -623,8 +624,9 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
     try:
         toml_doc = load_toml(toml_file)
     except Exception as e:
-        # not only ProjectConfigError: tomllib can also fail with a RecursionError, for
-        # example, which ``load_toml`` does not wrap; either way the file only warns
+        # not only ProjectConfigError: the TOML parser can also fail with a
+        # RecursionError, for example, which ``load_toml`` does not wrap; either way the
+        # file only warns
         log_warning(
             LOGGER,
             f"Error loading 'needs_from_toml' file: {e}",
@@ -1894,6 +1896,7 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     E.g. defined need-option, which is already defined internally
     """
     needs_config = NeedsSphinxConfig(config)
+    check_json_format_config(needs_config)
     # a field declared on need types alone is checked as a field (a core field or a
     # link type a type's entry names is none: the entry narrows it, or is refused)
     fields = {

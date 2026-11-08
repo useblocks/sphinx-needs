@@ -15,13 +15,14 @@ from sphinx_codelinks.analyse.models import (
     MarkedContentType,
     MultilineNeed,
     OneLineNeed,
+    WarningSubTypeEnum,
 )
 from sphinx_codelinks.analyse.references import _relative_posix
 from sphinx_codelinks.config import (
     CodeLinksConfig,
     CodeLinksProjectConfigType,
     locate_src_dir,
-    need_id_refs_field,
+    need_id_refs_marker_fields,
 )
 from sphinx_codelinks.source_discover.config import CommentType
 from sphinx_codelinks.sphinx_extension.debug import measure_time
@@ -254,7 +255,9 @@ def would_be_id(
 
     - ``"marker"``, a one-line marker's fields, given to ``create_need``: a
       ``full_title`` among them is its ``full_title`` argument, declared as a field or
-      not (as ``add_need`` took it), so the id is hashed from it;
+      not (as ``add_need`` took it), so the id is hashed from it -- unless the project
+      has a link type of that name, which is only the link (#2466), or it is not a
+      string (a ``list[str]`` marker field), which is no full title (#2479);
     - ``"record"``, a multi-line need's record (:func:`multiline_record`), given to
       ``ingest_need_record``: that path passes no ``full_title`` argument -- a
       ``full_title`` the project declares is only the field -- so the id is hashed from
@@ -266,13 +269,24 @@ def would_be_id(
     if NeedsSphinxConfig(app.config).id_required:
         return None
     full_title = need.get("full_title") if route == "marker" else None
+    if full_title is not None:
+        # a link type of that name is only the link (#2466); before the schema is
+        # built (called outside a build) no link type is known
+        try:
+            links = set(SphinxNeedsData(app.env).get_schema().iter_link_field_names())
+        except RuntimeError:
+            links = set()
+        # only a string is a full title (#2479): checked here rather than left to
+        # generate_need_id, which does not refuse any other value in sphinx-needs 9.2
+        if "full_title" in links or not isinstance(full_title, str):
+            full_title = None
     try:
         return generate_need_id(
             app,
             str(need.get("type")),
             str(need.get("title")),
             str(need.get("content", "")),
-            full_title=None if full_title is None else str(full_title),
+            full_title=full_title,
         )
     except InvalidNeedException:  # an unknown type, which create_need refuses too
         return None
@@ -362,19 +376,25 @@ def report_oneline_warnings(src_analyse: SourceAnalyse, root: Path) -> None:
     One type per kind of marker, so one ``suppress_warnings`` entry silences each:
     ``codelinks.oneline`` for malformed one-line markers, ``codelinks.multiline_need``
     for multi-line needs (as for every other warning about them in the build); the
-    kind leads the message.
+    kind leads the message. A marker attached to no entity because it stands directly
+    above a preprocessor conditional is ``codelinks.marker_above_conditional``,
+    whatever kind of marker it is.
 
     :param src_analyse: An analysis that has run.
     :param root: The root the locations are relative to, as for the other warnings at a
         source line.
     """
-    for warning in src_analyse.oneline_warnings:
+    for warning in src_analyse.warnings:
+        if warning.sub_type == WarningSubTypeEnum.marker_above_conditional:
+            subtype = WarningSubTypeEnum.marker_above_conditional.value
+        elif warning.type == MarkedContentType.multiline_need:
+            subtype = "multiline_need"
+        else:
+            subtype = "oneline"
         logger.warning(
             f"{warning.sub_type}: {warning.msg}",
             type="codelinks",
-            subtype="multiline_need"
-            if warning.type == MarkedContentType.multiline_need
-            else "oneline",
+            subtype=subtype,
             location=f"{_relative_posix(Path(warning.file_path), root)}:"
             f"{warning.lineno}",
         )
@@ -498,8 +518,13 @@ class SourceTracingDirective(SphinxDirective):
 
         # keep the @need-ids references, to be attached once every need is known, and
         # the pages of the files their local URLs name
-        if need_id_refs_field(src_trace_sphinx_config, src_trace_conf) is not None:
-            records, pages = collect_need_id_refs(src_analyse, project, context)
+        marker_fields = need_id_refs_marker_fields(
+            src_trace_sphinx_config, src_trace_conf
+        )
+        if marker_fields:
+            records, pages = collect_need_id_refs(
+                src_analyse, project, context, marker_fields
+            )
             need_id_refs_store(self.env).setdefault(self.env.docname, []).extend(
                 records
             )
@@ -881,9 +906,12 @@ class SourceTracingDirective(SphinxDirective):
                 }
                 # a declared full_title is the field, and still the full title the
                 # generated id is derived from, as add_need took it: the id is the
-                # one would_be_id predicts
-                if "full_title" in values:
+                # one would_be_id predicts; a link type of that name is only the
+                # link (#2466); a value that is not a string (a list[str] marker
+                # field) is no full title, and only a declared field holds it (#2479)
+                if "full_title" in values and "full_title" not in link_names:
                     arguments["full_title"] = values["full_title"]
+                full_title = arguments.get("full_title")
 
                 try:
                     _, created = create_need(
@@ -896,7 +924,7 @@ class SourceTracingDirective(SphinxDirective):
                         content=arguments.get("content", ""),
                         doctype=arguments.get("doctype"),
                         jinja_content=arguments.get("jinja_content"),
-                        full_title=arguments.get("full_title"),
+                        full_title=full_title if isinstance(full_title, str) else None,
                         allow_type_coercion=arguments.get("allow_type_coercion", True),
                         fields={k: v for k, v in values.items() if k not in link_names},
                         links={k: v for k, v in values.items() if k in link_names},

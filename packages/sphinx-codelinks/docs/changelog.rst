@@ -3,6 +3,105 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+New and Improved
+................
+
+- ✨ A reference marker can name its own field (:ref:`need_id_refs_config`): an entry of
+  ``[analyse.need_id_refs] markers`` is a string, as before, or a table
+  ``{ marker = "\\satisfies", field = "impl_url" }`` (a dict in ``conf.py``), whose
+  references go to ``field`` instead of the project's ``ref_url_field``, so one tree fills
+  ``impl_url`` and ``test_url`` on the requirements it references. With ``field = ""``
+  the marker's references are not attached: ``codelinks analyse`` still lists them, and in
+  a build they make no record. Every field a marker can write is registered, and
+  ``ref_url_field`` only when a plain-string marker exists. A field is checked where it
+  can be written -- URLs on, and ``ref_url_field`` while a plain-string marker exists, or
+  a table's non-empty ``field`` -- and may now name no need link type there, nor a link
+  type's back links: a ``ref_url_field`` naming ``links``, ``parent_needs``, a
+  ``needs_links`` / ``needs_extra_links`` entry, or the ``<link type>_back`` of any of
+  them, accepted before (a back-link name made Sphinx-Needs ignore a declared link type,
+  every link of it with it), is now a configuration error when it is written. (A ``ref_url_field`` equal to a URL field in a project with no marker at all,
+  refused before, now loads: nothing writes it.) A malformed table (a missing or unknown
+  key) is refused, and so is a marker listed twice, in any form.
+  The documentation gains :ref:`codelinks_doxygen`.
+- 👌 A C++ marker's entity is named as clang names it in five more shapes, so that its name
+  can be joined with what a compiler reports, and two spellings of one function meet
+  (:ref:`cpp_names`): an inline namespace adds nothing to the names of what it holds
+  (``lib::f``, not ``lib::v1::f``), nor to a reopening of it without ``inline``, nor to a
+  function, a class or a conversion operator written out of line through one the file
+  declares; a ``friend`` function is named in its namespace (``ns::operator==``, not
+  ``ns::A::operator==``); a partial specialisation keeps its arguments
+  (``P<T,4>::fill``, not ``P::fill``), in its class and out of line, where a qualifier is
+  spelled as the one specialisation with a body the file defines for it; and a namespace
+  macro the file defines itself is read (``json.hpp``'s ``NLOHMANN_JSON_NAMESPACE_BEGIN``),
+  where the error recovery around the macro could lose every namespace and class of the
+  file. Where leaving an inline namespace or a friend's classes out would give two
+  definitions of a file one name and parameters, each keeps its full chain, and so does
+  everything but a friend that a class or namespace kept that way holds. The names of these
+  shapes change, in ``marked_content.json`` and on the needs' source: a ``c.source.symbol``
+  filter, or a name stored elsewhere, that selects one of them needs updating once.
+
+Fixes
+.....
+
+- 🐛 A reference marker's ids end at the next marker on the line, and a marker that ends in
+  a letter, a digit or ``_`` (any Unicode letter or number) matches a whole word only
+  (:ref:`need_id_refs_matching`). ``\satisfies REQ_1 \verifies REQ_2`` gave
+  ``\satisfies`` the ids ``REQ_1``, ``\verifies`` and ``REQ_2``, and now gives it
+  ``REQ_1`` alone, as the same marker twice on a line gives each its own ids; with the
+  marker ``\verifies``, ``\verifiesall REQ_2`` gave the ids ``all`` and ``REQ_2``, and is
+  now no reference. A line extracts as before when exactly one configured marker occurs
+  in its text, once, and that marker does not end in a letter, digit or ``_`` that a
+  letter, digit or ``_`` directly follows. Other lines may extract differently, in
+  ``marked_content.json`` and in the build: two markers on a line; the same marker twice;
+  a marker that is the start of a longer word; overlapping markers (``@need-ids`` and
+  ``@need-ids:``), where the longest now wins; and an empty marker string, which matched
+  every line and now matches nothing. Which lines are reference lines, never one-line
+  needs, follows the same rule. The first build after upgrading reads every document once, so no reference
+  extracted by the old rule is kept (the extension's ``env_version`` is now 4).
+- 🐛 A C or C++ marker directly above the line of a preprocessor conditional belongs to
+  no entity anywhere outside a function's body (at file level, in a namespace, class,
+  struct, union or enum body, or in an ``extern "C"`` block), as clang reads it
+  (:ref:`attachment`). It belonged to the namespace, class, struct, union or enum around
+  it, so one marker above an ``#if`` in a namespace or class traced every function of
+  it, whichever arm was compiled; at file level it already belonged to none. The line is
+  any of ``#if``, ``#ifdef``, ``#ifndef``, ``#elif``, ``#elifdef``, ``#elifndef``,
+  ``#else`` and ``#endif``, with only comments and no blank line between it and the
+  marker. Such a marker's record loses its ``tagged_scope`` and ``scope`` in
+  ``marked_content.json``, and the need ``src-trace`` creates from it records no entity.
+  Each such marker now warns at its line (``codelinks.marker_above_conditional``), so a
+  ``-W`` build fails on it until the marker moves or
+  ``suppress_warnings = ["codelinks.marker_above_conditional"]`` is set.
+  To trace one arm's definition, move the marker into the arm, directly above the
+  definition; to keep the namespace or class, leave a blank line between the marker and
+  the directive. A marker in a function's body, a trailing marker and a marker above any
+  other directive (``#define``, ``#include``, ``#pragma``) keep their entity.
+- 🐛 A one-line marker whose ``full_title`` is not a string (a ``list[str]`` marker field)
+  no longer aborts the build
+  (`#2479 <https://github.com/useblocks/sphinx-needs/issues/2479>`__,
+  `#2491 <https://github.com/useblocks/sphinx-needs/pull/2491>`__): it is no full
+  title, so the need is created with the id of its title, the one the duplicate check and
+  the ``[docs]`` link name; a field the project declares as an array holds the list, and a ``full_title`` the
+  project does not declare is dropped, without a warning.
+- 🐛 A one-line marker that sets a link type named ``full_title`` no longer aborts the build
+  (`#2466 <https://github.com/useblocks/sphinx-needs/issues/2466>`__,
+  `#2477 <https://github.com/useblocks/sphinx-needs/pull/2477>`__): the link is the need's
+  link, never the full title a need without an id has its id hashed from, so the id is the
+  one the duplicate check and the ``[docs]`` link name.
+- 🐛 A multi-line need with no body keeps a ``:description:`` the project declares as a
+  field or link type, where it was taken as the need's content
+  (`#2465 <https://github.com/useblocks/sphinx-needs/issues/2465>`__); without an id and
+  with an empty title, its id is then the one the duplicate check and the ``[docs]`` link
+  name. The fix is Sphinx-Needs' (its needs.json reader, ub-needs-exchange).
+- 🐛 The libclang engine no longer drops the markers of a file its own includes enter
+  again: a guarded header whose includes include it back, parsed standalone as every
+  header absent from a compilation database is, or a guarded file that includes itself.
+  The second pass through the preprocessor skips the guarded body, and the engine dropped
+  every comment of the file inside what either pass skipped, so it extracted none; only
+  the file's own pass decides now.
+
 .. _`release:2.1.0`:
 
 2.1.0

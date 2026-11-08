@@ -1,0 +1,391 @@
+"""``needimport``'s own warnings name the file and line it is written on (#2463).
+
+Four of its warning sites reported at ``(docname, self.lineno)``: the page, with the
+parser's running line. Below an ``rst_prolog`` or an include that line is shifted, and in
+an included file it names the HOST page. Each warning now names the file the directive is
+written in and the line the needs it imports record (``lineno``, since #2461), so the two
+agree -- in a ``:start-line:`` include too, where the parser's line is the slice's.
+
+The project has one placement per row, each with a ``needimport`` that imports a need and
+triggers four warnings (a record that is not an object, an absent id in ``:ids:``, a
+``:filter:`` that fails on one record, a key the project does not know), and three that
+are refused (a missing file, a URL that cannot be fetched, a file that is not JSON), and
+one whose records warn one by one (an empty id, a need that cannot be created, a doctype the
+project cannot parse). A MyST page is the control: its warnings were already right. The build runs from the source
+directory, where an included file's path is relative.
+
+A ``needimport`` another extension GENERATES has no file it is written in (its source is
+``<unknown>``, empty, or a name that is no file): its warnings keep the page and the
+parser's line, as before.
+"""
+
+from __future__ import annotations
+
+import io
+import json
+from collections.abc import Callable, Iterator
+
+import pytest
+from sphinx.testing.util import SphinxTestApp
+
+from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs_testkit import build_warnings
+
+CONF = '''\
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+sys.modules.pop("generating_needimport_ext", None)
+extensions = ["sphinx_needs", "myst_parser", "generating_needimport_ext"]
+source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
+exclude_patterns = ["_build", "incl_*"]
+rst_prolog = """
+.. |p1| replace:: prolog one
+.. |p2| replace:: prolog two
+"""
+'''
+
+INDEX = """\
+Needimport warnings
+===================
+
+.. toctree::
+
+   below
+   inc_host
+   slice_host
+   myst
+   gen_nosource
+   gen_insert
+   gen_insert_empty
+"""
+
+EXT = '''\
+"""Directives that generate a needimport from text no file holds, as extensions do."""
+
+from docutils import nodes
+from docutils.statemachine import StringList
+from sphinx.util.docutils import SphinxDirective
+
+
+class GenNoSource(SphinxDirective):
+    """Parses the needimport from a ``StringList`` with no source."""
+
+    required_arguments = 1
+
+    def run(self):
+        node = nodes.container()
+        lines = StringList([f".. needimport:: {self.arguments[0]}"])
+        self.state.nested_parse(lines, 0, node)
+        return node.children
+
+
+def _inserting(source):
+    class GenInsert(SphinxDirective):
+        """Inserts the needimport into the input under a virtual source."""
+
+        required_arguments = 1
+
+        def run(self):
+            lines = [f".. needimport:: {self.arguments[0]}", ""]
+            self.state_machine.insert_input(lines, source)
+            return []
+
+    return GenInsert
+
+
+def setup(app):
+    app.add_directive("gen-nosource", GenNoSource)
+    app.add_directive("gen-insert", _inserting("<generated>"))
+    # sphinx-jinja's ``jinja`` directive inserts its output with an empty source
+    app.add_directive("gen-insert-empty", _inserting(""))
+    return {"parallel_read_safe": True}
+'''
+
+
+def _rst_directives(tag: str) -> str:
+    return f"""\
+.. needimport:: /imp_{tag}.json
+   :id_prefix: {tag.upper()}_
+   :ids: IMP_1, IMP_2, NOPE_{tag.upper()}
+   :filter: title.startswith("ok") or undefined_{tag}
+
+.. needimport:: /missing_{tag}.json
+
+.. needimport:: file:///nonexistent/dl_{tag}.json
+
+.. needimport:: /bad_{tag}.json
+
+.. needimport:: /rec_{tag}.json
+   :id_prefix: {tag.upper()}_
+   :parse_by_doctype: true
+"""
+
+
+SEVEN_LINES = "".join(f"Included line {n}.\n" for n in range(1, 8))
+
+FILES: dict[str, str] = {
+    "conf.py": CONF,
+    "generating_needimport_ext.py": EXT,
+    "index.rst": INDEX,
+    # below an rst_prolog and a 7-line include
+    "block7.txt": SEVEN_LINES,
+    "below.rst": "Below an include\n================\n\n.. include:: block7.txt\n\n"
+    + _rst_directives("b"),
+    # inside a plain include
+    "inc_host.rst": "Inside an include\n=================\n\nHost paragraph.\n\n"
+    ".. include:: incl_body.rst\n",
+    "incl_body.rst": "Included text.\n\n" + _rst_directives("i"),
+    # inside an include sliced by :start-line:
+    "slice_host.rst": "Inside a sliced include\n=======================\n\n"
+    ".. include:: incl_slice.rst\n   :start-line: 3\n",
+    "incl_slice.rst": "Sliced off one.\nSliced off two.\nSliced off three.\n\n"
+    "Kept text.\n\n" + _rst_directives("s"),
+    # the control: a MyST page
+    "myst.md": """\
+# MyST page
+
+Some text.
+
+```{needimport} /imp_m.json
+:id_prefix: M_
+:ids: IMP_1, IMP_2, NOPE_M
+:filter: title.startswith("ok") or undefined_m
+```
+
+```{needimport} /missing_m.json
+```
+
+```{needimport} file:///nonexistent/dl_m.json
+```
+
+```{needimport} /bad_m.json
+```
+
+```{needimport} /rec_m.json
+:id_prefix: M_
+:parse_by_doctype: true
+```
+""",
+    # generated by another extension: no file holds the directive
+    "gen_nosource.rst": "Generated, no source\n====================\n\n"
+    ".. gen-nosource:: /missing_g.json\n",
+    "gen_insert.rst": "Generated, inserted\n===================\n\n"
+    ".. gen-insert:: /missing_n.json\n",
+    "gen_insert_empty.rst": "Generated, inserted, empty source\n"
+    "=================================\n\n"
+    ".. gen-insert-empty:: /missing_e.json\n",
+}
+
+for _tag in "bism":
+    FILES[f"imp_{_tag}.json"] = json.dumps(
+        {
+            "current_version": "1.0",
+            "versions": {
+                "1.0": {
+                    "needs": {
+                        "IMP_1": {
+                            "id": "IMP_1",
+                            "type": "req",
+                            "title": "ok one",
+                            f"zzz_{_tag}": "a key the project does not know",
+                        },
+                        "IMP_2": {"id": "IMP_2", "type": "req", "title": "two"},
+                        "BAD": 1,
+                    }
+                }
+            },
+        }
+    )
+    FILES[f"bad_{_tag}.json"] = "{not json"
+    # records that warn one by one: an empty id, a need type the project does not
+    # have, a content in a doctype it cannot parse (named after the placement)
+    FILES[f"rec_{_tag}.json"] = json.dumps(
+        {
+            "current_version": "1.0",
+            "versions": {
+                "1.0": {
+                    "needs": {
+                        "": {"id": "", "type": "req", "title": "no id"},
+                        "NOTYPE": {"id": "NOTYPE", "type": "nosuch", "title": "x"},
+                        "DOC": {
+                            "id": "DOC",
+                            "type": "req",
+                            "title": "a doctype",
+                            "content": "Some content.",
+                            "doctype": f".x{_tag}",
+                        },
+                    }
+                }
+            },
+        }
+    )
+
+PLACEMENTS = {
+    # placement: (its tag, the file its directives are written in)
+    "after-prolog-and-include": ("b", "below.rst"),
+    "inside-include": ("i", "incl_body.rst"),
+    "inside-start-line-include": ("s", "incl_slice.rst"),
+    "myst-page": ("m", "myst.md"),
+}
+
+GENERATED = {
+    # placement: (its tag, where master reported it and it still is: the page, and
+    # the parser's line)
+    "generated-no-source": ("g", "<srcdir>/gen_nosource.rst:1"),
+    "generated-inserted": ("n", "<srcdir>/gen_insert.rst:10"),
+    "generated-inserted-empty-source": ("e", "<srcdir>/gen_insert_empty.rst:10"),
+}
+
+SITES: dict[str, Callable[[str], bool]] = {
+    # site: whether a message is its warning
+    "diagnostic": lambda m: "is not an object" in m,
+    "ids": lambda m: "has no needs with the ids" in m,
+    "filter": lambda m: "needimport: Filter " in m,
+    "unknown_keys": lambda m: "Unknown keys in import need source" in m,
+    "missing": lambda m: "Could not load needs import file" in m and "/missing_" in m,
+    "download": lambda m: "Could not load needs import file" in m and "/dl_" in m,
+    "invalid": lambda m: "Could not load needs import file" in m and "/bad_" in m,
+    "empty_id": lambda m: "could not be imported: id is empty" in m,
+    "invalid_need": lambda m: "_NOTYPE' could not be imported" in m,
+    "doctype": lambda m: "Imported needs declare doctype" in m,
+}
+#: the sites of the directive that imports a need, which report where it is written
+IMPORTING_SITES = ("diagnostic", "ids", "filter", "unknown_keys")
+#: each refused directive's file name
+REFUSED = {"missing": "/missing_", "download": "/dl_", "invalid": "/bad_"}
+#: the sites of the directive whose records warn one by one
+RECORD_SITES = ("empty_id", "invalid_need", "doctype")
+
+
+def _of_tag(message: str, tag: str) -> bool:
+    return any(
+        token in message
+        for token in (
+            f"_{tag}.json",
+            f"undefined_{tag}'",
+            f"zzz_{tag}'",
+            f"Need '{tag.upper()}_",
+            f"doctype '.x{tag}'",
+        )
+    )
+
+
+def _line(file: str, text: str) -> int:
+    """The 1-based line of ``file`` that starts with ``text``."""
+    lines = FILES[file].splitlines()
+    (index,) = [i for i, line in enumerate(lines) if line.startswith(text)]
+    return index + 1
+
+
+def _written_line(placement: str, site: str) -> int:
+    """The line the placement's directive of ``site`` is written on."""
+    tag, file = PLACEMENTS[placement]
+    opener = "```{needimport}" if file.endswith(".md") else ".. needimport::"
+    if site in IMPORTING_SITES:
+        return _line(file, f"{opener} /imp_{tag}.json")
+    if site in RECORD_SITES:
+        return _line(file, f"{opener} /rec_{tag}.json")
+    argument = "file:///nonexistent" if site == "download" else ""
+    return _line(file, f"{opener} {argument}{REFUSED[site]}{tag}.json")
+
+
+@pytest.fixture(scope="module")
+def built(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> Iterator[tuple[dict[tuple[str, str], list[str]], list[str], dict[str, str]]]:
+    """The project, built once: each ``(placement, site)``'s warning locations, the
+    warnings no placement and site claims, and where each imported need is written
+    (``<srcdir>/<file>:<lineno>``)."""
+    srcdir = tmp_path_factory.mktemp("needimport_locations") / "docs"
+    srcdir.mkdir()
+    for name, text in FILES.items():
+        (srcdir / name).write_text(text, encoding="utf-8")
+    app = SphinxTestApp(
+        "html",
+        srcdir=srcdir,
+        freshenv=True,
+        status=io.StringIO(),
+        warning=io.StringIO(),
+    )
+    try:
+        # built from the source directory, as a project usually is: docutils then
+        # records an included file relative to the working directory, which the
+        # warning must make absolute again, as Sphinx does for a node's location
+        with pytest.MonkeyPatch.context() as patch:
+            patch.chdir(srcdir)
+            app.build()
+        locations: dict[tuple[str, str], list[str]] = {}
+        unclaimed: list[str] = []
+        for warning in build_warnings(app):
+            location, _, message = warning.partition(": WARNING: ")
+            claims = [
+                (placement, site)
+                for placement, (tag, _) in {**PLACEMENTS, **GENERATED}.items()
+                if _of_tag(message, tag)
+                for site, is_site in SITES.items()
+                if is_site(message)
+            ]
+            if len(claims) == 1:
+                locations.setdefault(claims[0], []).append(location)
+            else:
+                unclaimed.append(warning)
+        needs = SphinxNeedsData(app.env).get_needs_view()
+        written: dict[str, str] = {}
+        for placement, (tag, _) in PLACEMENTS.items():
+            need = needs[f"{tag.upper()}_IMP_1"]
+            # the hop after the imported file's: the file the directive is written in
+            (file_hop, *_) = [
+                hop.physical.path
+                for hop in need.source.hops[1:]
+                if hop.physical is not None and hop.physical.path
+            ]
+            written[placement] = f"<srcdir>/{file_hop}:{need['lineno']}"
+        yield locations, unclaimed, written
+    finally:
+        app.cleanup()
+
+
+def test_every_warning_is_one_placement_s_and_one_site_s(built) -> None:
+    """The control: the project's warnings are exactly one per placement and site."""
+    locations, unclaimed, _ = built
+    assert unclaimed == []
+    assert {key: len(found) for key, found in locations.items()} == {
+        **{(placement, site): 1 for placement in PLACEMENTS for site in SITES},
+        **{(placement, "missing"): 1 for placement in GENERATED},
+    }
+
+
+@pytest.mark.parametrize("placement", PLACEMENTS)
+def test_the_imported_need_records_the_written_line(built, placement: str) -> None:
+    """The control (#2461): the imported need records the file and line its directive
+    is written on."""
+    _, file = PLACEMENTS[placement]
+    importing = _written_line(placement, "diagnostic")
+    assert built[2][placement] == f"<srcdir>/{file}:{importing}"
+
+
+@pytest.mark.parametrize("site", SITES)
+@pytest.mark.parametrize("placement", PLACEMENTS)
+def test_a_needimport_warning_names_the_written_line(
+    built, placement: str, site: str
+) -> None:
+    """Each site's warning names the file and line the directive is written on: for
+    the importing directive, the place its need records."""
+    locations, _, written = built
+    _, file = PLACEMENTS[placement]
+    expected = f"<srcdir>/{file}:{_written_line(placement, site)}"
+    if site in IMPORTING_SITES:
+        assert locations.get((placement, site)) == [written[placement]]
+        assert written[placement] == expected
+    else:
+        assert locations.get((placement, site)) == [expected]
+
+
+@pytest.mark.parametrize("placement", GENERATED)
+def test_a_generated_needimport_keeps_the_page_location(built, placement: str) -> None:
+    """A needimport no file holds is reported where it was before #2463, at the page
+    and the parser's line -- never at ``<unknown>`` or at a file that does not exist."""
+    locations, _, _ = built
+    assert locations.get((placement, "missing")) == [GENERATED[placement][1]]

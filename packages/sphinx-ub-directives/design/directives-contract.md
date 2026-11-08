@@ -390,14 +390,16 @@ sorted; the path is `….<name>.<table>.<key>`.
    `context-refused-mixed-array`, `context-refused-int-float-array`,
    `context-refused-array-of-arrays`, `context-refused-not-a-mapping`,
    `context-array-of-tables`, `context-values-keep-their-types`.
-3. **Formats: JSON and TOML only** (by extension, `.json` and `.toml`); there are no YAML
+3. **Formats: JSON and TOML 1.1 only** (by extension, `.json` and `.toml`); there are no YAML
    contexts in v0.1, so a `.yaml` or `.yml` file is `template_context_invalid` saying so,
    and so is any other extension, a missing file, and a file that does not parse. The
    extension is read case-insensitively (`c.JSON` is JSON).
    Enforced by: corpus `context-file-extension-is-case-insensitive`,
    `context-refused-yaml-file`, `context-refused-yml-file`,
    `context-refused-other-extension`, `context-refused-missing-file`,
-   `context-refused-invalid-json`.
+   `context-refused-invalid-json`, `dx-toml-1-1-trailing-comma-in-inline-table`,
+   `dx-toml-1-1-newline-in-inline-table`, `dx-toml-1-1-escape-e`, `dx-toml-1-1-x-escape`;
+   test `test_templates.py::test_a_context_file_that_is_not_toml_is_refused_with_the_parsers_words`.
 4. **Map order is FILE order.** A mapping iterates in the order its data writes it, for a
    file and an inline table alike; a mapping a template builds keeps insertion order; only
    `dictsort` sorts. The one carve-out is `var` (§4.6), which iterates in SORTED key order,
@@ -408,17 +410,20 @@ sorted; the path is `….<name>.<table>.<key>`.
 5. **Context data is the engine's own data.** It reaches a template as engine-native
    values: read-only (a method that would change it — `pop`, `append`, `clear` — is a
    render error, and no render changes the data another sees), iterated in file order,
-   and printed as the engine prints its values (`{{ rows }}` is `[1, "a"]`).
+   and printed as the engine prints its values (`{{ rows }}` is `[1, 'a']`).
    Enforced by: corpus `context-is-read-only`, `dialect-values-render-pythonically`,
    `context-data-prints-as-the-engine-prints`.
 
    *The Sphinx half (informative):* minijinja-py hands a Python `dict` or `list` to a
-   template as a Python object — printed as Python's `repr` (`{'a': [1, 2]}`), with
-   Python's own `items()` and `pop()` — and freezing it into a `MappingProxyType` keeps the
-   `repr` (measured on 2.24). So the context is written into the template as one line of
-   `{% set %}` statements of literals in front of it: JSON is minijinja's literal syntax
-   once null is excluded, which the data model guarantees, and one line moves no
-   template line.
+   template as a Python object — printed as Python's `repr`, with Python's own `items()`
+   (a `dict_items`), `pop()` and `append()` — and freezing it into a `MappingProxyType`
+   keeps the `repr` and guards only the top level (`pop()` is refused, a nested list's
+   `append()` is not). Measured on 3.0.5, the `repr` matches the engine's own printing
+   for most data (`{'a': [1, 2]}` both ways), but not for every value (a float in a map
+   is `1e+20` against the engine's `1e20`), and `items()` and mutation differ for all of
+   it. So the context is written into the template as one line of `{% set %}` statements
+   of literals in front of it: JSON is minijinja's literal syntax once null is excluded,
+   which the data model guarantees, and one line moves no template line.
 6. **`var`** is in every template context: the project's merged variant data (the map
    `.. if::` evaluates against — reading contract §8), read-only, by attribute or by key.
    A key it does not define is undefined, and undefined is an error (`is defined` tests
@@ -561,10 +566,16 @@ that pin this rule, nor any option twice.) Enforced by: corpus
 
 ## 7. Rendering, and joining the page (both template forms)
 
-1. **The dialect** is minijinja 2.x, configured identically on both sides — these and only
+1. **The dialect** is minijinja 3.x, configured identically on both sides — these and only
    these differences from the engine's bare defaults:
    - undefined is strict (`is defined` tests it); no autoescaping; the standard delimiters;
      one trailing newline of a template dropped;
+   - `length` and `count` of an undefined value are a render error, as minijinja's own
+     filters make them under strict undefined: minijinja-py 3.1.0 replaces both with
+     filters that skip the check (they answer `0`), so the Sphinx half restores the refusal
+     until a minijinja-py release fixes
+     [minijinja#1028](https://github.com/mitsuhiko/minijinja/issues/1028), and ubCode's
+     engine refuses it natively;
    - `debug()` removed; Python-compatible methods on values (`pycompat`);
    - `break` / `continue` (minijinja's `loop_controls`);
    - `filesizeformat`, `urlencode`, `truncate`, `pluralize`, `striptags`, `joiner()`,
@@ -576,8 +587,9 @@ that pin this rule, nor any option twice.) Enforced by: corpus
    - no clock, randomness or I/O: `now`, `random`, `lipsum`, `datetimeformat` are unknown.
    The Python-only string methods ubCode's docs once listed (`center`, `ljust`, `rjust`,
    `zfill`, `expandtabs`) do not exist on either side.
-   Enforced by: corpus `dialect-*` (one case per name above),
-   `render-error-debug-is-removed`, `render-error-undefined-attribute-test`.
+   Enforced by: corpus `dialect-*` (one case per name above, and
+   `dialect-undefined-length-is-an-error`), `render-error-debug-is-removed`,
+   `render-error-undefined-attribute-test`.
 2. **`env` is unavailable.** A template that names `env` as a free variable is
    `template_context_unavailable` (sphinx-jinja2 handed a template the live build
    environment; neither implementation has one to give), unless a context defines `env`,
@@ -597,11 +609,15 @@ that pin this rule, nor any option twice.) Enforced by: corpus
    exceed a limit, how fast that is said, and how much memory is used first are
    implementation-defined. The corpus pins only "an output over 1 MiB is refused"
    (`template_output_limit`), which both sides check after the render. The Sphinx half
-   bounds a render by fuel and checks the output after it; it does not bound
-   intermediate values, and it has NO live output cap: a minijinja-py `finalizer` changes
-   how every value it sees prints (measured on 2.24: `1.0` prints `1`, a list prints as
-   Python's `repr`), which would break §7.1. ubCode keeps its byte budget and value limit
-   (`template_value_limit`, `template_compute_limit`, never pinned).
+   bounds a render by fuel and checks the output after it. Since minijinja 3.1, fuel is
+   also a memory bound: a render is charged for the bytes it makes, writes or scans (one
+   unit per 64) and the items it visits (one per two), as well as for its instructions, so
+   the Sphinx half's 10M fuel holds a render to roughly 640 MB. The corpus's heaviest
+   render takes 48,762 fuel on 3.1.0, 205 times under that. The Sphinx half has no cap of
+   its own on intermediate values, and NO live output cap: a minijinja-py `finalizer`
+   changes how every value it sees prints (measured on 3.0.5 and 3.1.0: `1.0` prints `1`,
+   and `[1.0, 2.5]` prints `[1, 2.5]`), which would break §7.1. ubCode's limits, and their
+   codes (`template_compute_limit` and the rest), are its own, and never pinned.
    Enforced by: corpus `output-over-1-mib-is-refused`, `output-of-1-mib-is-rendered`.
 6. **The per-page breaker.** In one page, once a template has hit a limit with three
    different inputs, its later uses there with yet other inputs are not rendered
@@ -788,6 +804,12 @@ myst-parser).
    check, and the version check is `tools/check_minijinja_version.py` (and
    `tests/test_minijinja_version.py`): the monorepo's locked minijinja equals the
    version the header records. ubCode's runner records its own `Cargo.lock` version.
+   Moving the engine is therefore one lockstep change, made here first: the lock moves,
+   and the header and every expansion the new version renders differently are
+   re-recorded in the same commit; ubCode then re-vendors the corpus from that commit and
+   locks the same version. A point release counts: minijinja 3 has changed rendered text
+   in its point and minor releases, so the packages' range (`>=3.1.0,<4`) is a floor for
+   users, and the LOCK is what the corpus is held to.
 5. **Registered general-parser differences.** These are not part of this contract, and no case
    depends on them. In each, ubCode's parser differs from docutils or myst-parser for any
    page, hand-written or generated:

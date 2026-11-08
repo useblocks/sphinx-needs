@@ -95,6 +95,8 @@ needs_from_toml
 .. versionadded:: 4.1.0
 
 This configuration takes the (relative) path to a `toml file <https://toml.io>`__ which contains some or all of the needs configuration (configuration in the toml will override that in the :file:`conf.py`).
+The file is read as `TOML 1.1 <https://toml.io/en/v1.1.0>`__ when ub-project 1.3 or later is installed; sphinx-mounts reads it so from its release after 0.3.1.
+Taplo-based editor tooling may still flag the syntax TOML 1.1 adds.
 
 .. code-block:: python
 
@@ -117,7 +119,7 @@ For example:
 The exception is :ref:`needs_functions`, because it holds Python callables, which a toml file cannot hold:
 a ``functions`` key in the toml is ignored, with a warning.
 
-To specify a different `root table path <https://toml.io/en/v1.0.0#table>`__ to read from in the toml file, use the ``needs_from_toml_table`` option.
+To specify a different `root table path <https://toml.io/en/v1.1.0#table>`__ to read from in the toml file, use the ``needs_from_toml_table`` option.
 For example to read from a ``[tool.needs]`` table:
 
 .. code-block:: python
@@ -3162,6 +3164,9 @@ keys:
   ``https://github.com/…``), which is used as it is; ``base_url`` may then be ``""``. A render with a scheme but no
   ``//``, such as ``req:REQ_1``, is appended as before.
   If no ``target_url`` is given, the external need url uses the default calculated ``base_url``.
+  A ``:need:`` reference to a part of an external need links the part's anchor, ``#<id>.<part>``, on the default url,
+  where ``<id>`` is the id in the ``needs.json``, without the ``id_prefix``; a ``target_url`` url is linked as it is,
+  unless its fragment is that id (``…#{{need['id']}}``).
   |br| The ``target_url`` supports Jinja context ``{{need[]}}``, ``need option`` used as key, e.g ``{{need['id']}}`` or ``{{need['type']}}``.
 :json_url: An url, which can be used to download the ``needs.json`` (or similar) file.
 :json_path: The path to a ``needs.json`` file located inside your documentation project. Can not be used together with
@@ -3432,6 +3437,60 @@ Example:
    So if ``html`` is used as builder, the final location is e.g. ``_build/html/needs.json``.
 
    See :ref:`this section <needs_builder_format>`, for an explanation of the output format.
+
+.. _`needs_json_format_version`:
+
+needs_json_format_version
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.3.0
+
+The format the ``needs.json`` files are written in: by the :ref:`needs builder <needs_builder>`, by
+:ref:`needs_build_json`, and by the :ref:`needs_id builder <needs_id_builder>` and :ref:`needs_build_json_per_id`.
+
+- ``1`` (the default): the format described in :ref:`needs_builder_format`, unchanged.
+- ``"2a1"``: the first draft of format version 2, :ref:`needs_builder_format_2a1`. Each need carries
+  the places its text came through -- the file and the lines of its directive, the files it was
+  included through, the needs.json it was imported from, the docstring it was written in -- and
+  keeps them when another project imports it.
+
+Any other value is reported as a ``needs.config`` warning, and the file is written in format 1.
+Set it in ``conf.py`` or in ``ubproject.toml``: ``-D needs_json_format_version=2a1`` cannot set it, because
+Sphinx converts a ``-D`` value to the type of the default, an integer.
+
+.. attention:: **Experimental.**
+
+   A ``"2a1"`` file is readable only by the release of Sphinx-Needs that wrote it: the draft may
+   change, or be replaced by the next one, in any release. Each build that writes such a file says
+   so in one ``needs.beta`` warning (silence it with ``suppress_warnings = ["needs.beta"]``); a build
+   that writes no ``needs.json`` is not warned. Sphinx-Needs 9.0.0 to 9.2.0 refuse such a file with
+   a warning, as ubCode does, and Sphinx-Needs 8.5.0 aborts the build on it (see
+   :ref:`needs_builder_format_2a1`). Use it to try the format, not for a file another project
+   relies on.
+
+Of the other ``needs.json`` options, under ``"2a1"``:
+
+- :ref:`needs_json_exclude_fields` leaves out a field or a link type it names, the ``content``
+  (``doctype`` and ``parts`` its keys), and ``source``, the need's source; a key of format 1 that
+  the source carries in ``"2a1"`` -- ``docname``, ``lineno``, ``sections``, ``section_name``,
+  ``signature``, ``external_url``, ``is_import``, ``is_external`` -- is reported, once, as having
+  no key of its own (exclude ``source`` instead);
+- :ref:`needs_builder_filter`, :ref:`needs_reproducible_json` and
+  :ref:`needs_json_include_link_conditions` work as in format 1;
+- :ref:`needs_json_remove_defaults` and :ref:`needs_file` are ignored, each with one warning: a
+  ``"2a1"`` file writes every default (and leaves out a ``null``) and carries no schema, and has no
+  versions to accumulate.
+
+Default: :need_config_default:`json_format_version`
+
+.. code-block:: python
+
+   needs_json_format_version = "2a1"
+
+.. code-block:: toml
+
+   [needs]
+   json_format_version = "2a1"
 
 .. _`needs_reproducible_json`:
 

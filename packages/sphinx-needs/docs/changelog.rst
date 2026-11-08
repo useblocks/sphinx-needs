@@ -7,12 +7,88 @@ Changelog
 Unreleased
 ----------
 
-Need templates are fixed in place: a broken template no longer deletes its need, typos and unresolved fields
-are reported, template files are dependencies, and ``needimport`` never applies a record's template names again
-(:ref:`need_templates_portability`, :pr:`2474`).
-
 Improvements
 ............
+
+- ✨ **needs.json format 2a1 (experimental draft)**: write it with :ref:`needs_json_format_version` ``= "2a1"``,
+  off by default (:pr:`2484`)
+
+  Each need in a 2a1 file carries its source: the lines of its directive in the file it is written in, each file it
+  was included through, the needs.json it was imported from, and the docstring or the service it came from, innermost
+  first, then the page it is placed on, with its sections. A record is ``{id, type, fields, links, content,
+  source}``: every value of the fields its need type declares (a default and a typed empty too: the file carries no
+  schema), but for a ``null``, which is left out and read as unset, links as a bare id or ``{id, part, condition}``,
+  and nothing computed -- no back links, no ``is_*`` or
+  ``type_*`` keys, none of format 1's location keys. The ``needs`` builder, :ref:`needs_build_json` and the per-id
+  builder obey the option; :ref:`needs_json_exclude_fields`, :ref:`needs_builder_filter`,
+  :ref:`needs_reproducible_json` and :ref:`needs_json_include_link_conditions` apply, while
+  :ref:`needs_json_remove_defaults` and :ref:`needs_file` are ignored, each with a warning. The format is
+  :ref:`needs_builder_format_2a1`.
+
+  :ref:`needimport` and :ref:`needs_external_needs` read a 2a1 file, and an imported or external need keeps the
+  source its record carries before the hops of this build, so re-exporting it writes them all: the source travels
+  with a need from project to project. Each such hop names the project it belongs to (``origin``). What the need
+  answers about where it is from (``docname``, ``lineno``, ``sections``, ``section_name``, ``signature``,
+  ``is_external``, ``external_url``, ``c.source``) is what it answers read from a format-1 file. A ``needimport``
+  ``:filter:`` or a ``target_url`` template over the record itself sees less: its fields, links and content, and
+  ``docname``, ``sections``, ``section_name`` and ``signature``, but no ``lineno``, ``is_*``, ``type_name``,
+  ``external_url`` or other computed key.
+
+  A 2a1 file is readable only by the release that wrote it, and each build that writes one says so in a
+  ``needs.beta`` warning (a build that writes no ``needs.json`` is not warned). Sphinx-Needs 9.1.0 and 9.2.0 refuse
+  it with one warning per reader that names its format version, 9.0.0 with one that its ``'versions' is missing``,
+  and 8.5.0 aborts the build on it. At the default, ``1``, the ``needs.json`` is written exactly as before, but for
+  one case that crashed: a :ref:`needs_file` with no ``versions`` (a 2a1 file, say) is one ``needs.json_load``
+  warning and a new file, where the build stopped with a ``KeyError``.
+
+- ⬆️ Templates render with minijinja 3: ``minijinja>=3.0.5,<4``, which was ``~=2.15`` **(changed output)** (:pr:`2475`)
+
+  The data sphinx-needs hands a template prints as before: need fields, ``needs_render_context`` and the
+  :ref:`needreport` variables are Python values, printed as Python prints them. What moves is a value a template
+  builds itself, mostly towards Jinja2's behaviour:
+
+  - a list or map a template writes, and every filter result, prints with Python's quoting (``{{ ['a'] }}`` is
+    ``['a']``, was ``["a"]``), and ``items``, ``dictsort`` and ``groupby`` give tuples (``[('a', 1)]``);
+  - ``tojson`` spaces its output as ``json.dumps`` does (``{"a": [1, 2]}``, was ``{"a":[1,2]}``);
+  - ``round`` rounds half to even (``2.5|round`` is ``2.0``), and a negative precision rounds (``15|round(-1)``
+    is ``20``);
+  - ``//`` and ``%`` follow Python (``7 // -2`` is ``-4``); ``1 / 0`` is an error, where it printed ``inf``;
+    ``2 ** -1`` is ``0.5``, where it was an error; ``-foo.bar`` negates the attribute, where it was an error;
+  - ``title`` keeps an apostrophe's letter (``Don't``), ``min``, ``max`` and ``sort`` on several attributes ignore
+    case, ``'%s'|format`` and ``'{}'.format`` print a float in full, ``find`` counts characters, and ``islower``
+    and its siblings answer as Python's do;
+  - ``int`` takes ``default=`` and ``base=``, and ``min``, ``max``, ``sum`` and ``join`` take ``attribute=``;
+  - a macro whose name starts with ``_`` cannot be imported from another template.
+
+  It also fixes three faults of 2.x: ``{{ 'abc'.count('') }}`` hung the build forever (it is ``4``), one panic in a
+  template broke every later render on its environment, and a filter that rendered a template on its own environment
+  deadlocked. The full list is minijinja's own
+  `changelog <https://github.com/mitsuhiko/minijinja/blob/main/CHANGELOG.md>`__.
+
+- ⬆️ Templates render with minijinja 3.1: ``minijinja>=3.1.0,<4``, which was ``>=3.0.5,<4`` **(changed output)**
+  (:pr:`2500`)
+
+  The data sphinx-needs hands a template prints as before. What moves is again a value a template builds or tests
+  itself, mostly towards Jinja2's behaviour:
+
+  - ``true`` and ``false`` compare and sort as ``1`` and ``0``: ``[true, 2, false, 1, 0]|sort`` is
+    ``[False, 0, True, 1, 2]``, which was ``[False, True, 0, 1, 2]``, ``[true, 1]|unique|list`` is ``[True]``,
+    ``{true: 'a', 1: 'b'}`` is the one-key map ``{True: 'b'}``, and ``[true, 0, false]|min`` is ``0``;
+  - ``max`` and ``groupby`` keep the first of equal items: ``max(attribute='a')`` of two items with the same ``a``
+    is the first, ``['B', 'b']|max`` is ``B``, and ``groupby('k', case_sensitive=false)`` names a group by its first
+    spelling;
+  - an undefined value is empty, as in Jinja2: ``|length`` and ``|count`` of it are ``0``, ``|first`` and ``|last``
+    are empty, and ``|items`` is ``[]``, where each was an error; ``none|reverse`` is an error, where it was empty;
+  - ``title`` and ``capitalize`` follow Unicode's case mappings (``'ΟΔΟΣ'|title`` is ``Οδος``, and
+    ``'ǆemal'|capitalize`` is ``ǅemal``);
+  - a map reverses: ``{'a': 1, 'b': 2}|reverse|list`` is ``['b', 'a']``, and ``|last`` of it is ``b``, where it was
+    an error;
+  - a negative repeat is empty (``'ab' * -1`` is ``''``, and ``[1] * -2`` is ``[]``), where it was an error;
+  - ``replace`` takes a count (``'aaa'|replace('a', 'b', 2)`` is ``bba``).
+
+  It also turns two panics into ordinary results: ``4 is divisibleby(0)`` is an error that says it cannot calculate
+  ``4 % 0``, and a slice with a negative step works (``[1, 2, 3][5:0:-1]`` is ``[3, 2]``). The full list is
+  minijinja's own `changelog <https://github.com/mitsuhiko/minijinja/blob/main/CHANGELOG.md>`__.
 
 - 👌 A need template's undefined names and unresolved fields are reported; the output is unchanged
   (:ref:`need_templates_portability`, :pr:`2474`)
@@ -44,6 +120,94 @@ Deprecations
 
 Bug fixes
 .........
+
+- 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
+  ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
+  **(changed output)** (:issue:`2489`, :pr:`2494`)
+
+  A condition runs to the closing brackets that end the link, as many ``]`` as it was opened with:
+  ``REQ_001[status in ["open"]]`` and ``REQ_001[[x == a[0]]]`` are the conditions ``status in ["open"]`` and
+  ``x == a[0]``. A need directive with such a link was refused (``needs.create_need``), and ``needimport`` and
+  external needs dropped its condition without a warning, also from a needs.json sphinx-needs wrote itself. A
+  condition that starts with ``[`` read back as another condition, or not at all: one that also ends with ``]`` is
+  now written with one space after the opening brackets (``REQ_001[[ [x] == a[0]]]``), which the reader drops, and
+  one that does not is read where the link closes with fewer brackets than it opened with (``REQ_001[[1] == y]``).
+  Every link that was read without a warning is read as before; a link that was malformed may now read as a link
+  with a condition.
+
+- 🐛 A ``:need:`` reference to a part of an :ref:`external need <needs_external_needs>` names the part and links
+  its anchor **(changed output)** (:issue:`2487`, :pr:`2493`)
+
+  It rendered the external need's bare id and linked the need, so the part was lost, and so was a text given in the
+  role. It is now written as a reference to a part of a need of the project: the part's text and the full
+  ``ID.part`` (``first part text (UP_001.p1)``), or the role's text, keeping the external need's css class. The link
+  goes to the part's anchor, ``#UP_001.p1``, when the fragment of the external need's URL is the need's id, alone or
+  after the ``id_prefix`` of one of the project's external sources, as on the default ``…/<docname>.html#<id>``.
+  A ``target_url`` of another shape is linked as it is.
+  A reference to a whole external need still renders its id, also with a text given in the role.
+
+- 🐛 A part id repeated in one need is reported once, as ``needs.duplicate_part_id``, and no longer also as a part
+  "not associated with a need" (``needs.part``); the first part of the id is still the one kept (:issue:`2485`, :pr:`2492`)
+
+- 🐛 ``add_need`` warns, once per need, of the ``parts`` it was given that a need on a page drops (:issue:`2486`, :pr:`2492`)
+
+  A need on a page takes its parts from its content (its :ref:`need_part` roles), which replaced the given ones
+  silently. The result is unchanged: a given part whose id the content marks takes the content's text, and an
+  external or a hidden need keeps the parts as given. Now each other given part id is named in one ``needs.part``
+  warning.
+
+- 🐛 A ``full_title`` that is not a string no longer aborts the build: ``create_need`` refuses it with a warning,
+  and a ``needservice`` need takes no full title from a link type or a value that is not a string (:issue:`2479`, :pr:`2491`)
+
+  ``create_need``, ``add_need``, ``generate_need`` and ``generate_need_id`` raise ``InvalidNeedException``
+  (``invalid_value``, "full_title must be a string, not list") for a ``full_title`` that is neither ``None`` nor a
+  string, which a producer reports as it reports any refused need. That holds whether or not an ``id`` is given:
+  without one they raised ``AttributeError: 'list' object has no attribute 'encode'``, which ended the build, and
+  with one the value was ignored. A ``needservice`` datum's ``full_title`` is the full
+  title a need without an id has its id hashed from only when it is a string and the project has no link type of
+  that name, as for a sphinx-codelinks one-line marker; it is still the need's link or field. So a service need
+  whose ``full_title`` is a list (a link type, or a field declared as an array) is created, with the id of its
+  title, and one whose ``full_title`` is a link given as a string now has the id of its title, where it had the
+  id of the link's value **(changed output)**.
+
+- 🐛 A link type named ``full_title`` is kept on ``needimport``, external needs and codelinks multi-line needs
+  (:issue:`2466`, :pr:`2477`)
+
+  A needs.json written by sphinx-needs 5.0 or earlier carries a legacy ``full_title`` string on every need: in a
+  project with such a link type it is now read as that need's link targets, one warning per unknown target
+  (``link_outgoing``, or ``external_link_outgoing`` for an external need), where it was dropped silently; filter
+  those needs out with the ``needimport``'s ``:filter:``, or rename the link type (the only way out for external
+  needs).
+
+- 🐛 ``needimport``'s own warnings name the file and line the directive is written on, not the parser's running
+  line, under an ``rst_prolog`` or an include **(changed output)** (:issue:`2463`, :pr:`2478`)
+
+  Inside an included file they named the including page; they now name the included file and the line the needs
+  the directive imports record, also in an include sliced by ``:start-line:``. Every warning of one directive names
+  that one place, those about its records (an empty id, a need that cannot be created, unknown keys) included. A
+  ``needimport`` that another extension generates is written in no file, and is still reported at its page.
+
+- 🐛 A field or link type named ``description`` is kept on ``needimport``, external needs and codelinks multi-line
+  needs, also on a need without content, so a project's own needs.json reads back as written, unless it is written with
+  ``content`` excluded **(changed output)** (:issue:`2465`, :pr:`2481`)
+
+  sphinx-needs before 4.0 wrote a need's content as ``description``; that legacy ``description`` is now read as the
+  content only when the record has no ``content`` key, after its schema defaults are merged -- the rule of
+  ub-needs-exchange, whose next release carries it. A need without content, which sphinx-needs writes as
+  ``"content": ""`` (or, with ``needs_json_remove_defaults``, as the schema's ``content`` default), lost its
+  ``description`` field into the content, and a need with neither content nor a ``description`` (a nullable field
+  written as ``null``) was refused. A link type of that name was refused on ``needimport`` and external needs and lost
+  on a codelinks block. A body-less codelinks block without an id and with an empty title is given the id codelinks
+  predicts for its duplicate check and ``[docs]`` link, and a body-less imported need no longer warns
+  ``needs.import_doctype`` under ``:parse_by_doctype:``. A file written with ``content`` excluded
+  (``needs_json_exclude_fields``) has no ``content`` key and reads as a pre-4.0 file, as before: its ``description``
+  is taken as the content.
+
+  A hand-written record with an empty ``content`` beside a ``description`` meant as its content now keeps the content
+  empty, and, in a project that declares no ``description``, an imported need reports that key as unknown
+  (``needs.unknown_import_keys``, or ``needs.unknown_external_keys`` for external needs); move the text into the
+  ``content``. One whose ``content`` is not a string (``null``, ``0``, ``false``, ``[]``, ``{}``) beside a
+  ``description`` is refused, as such a ``content`` already is without one.
 
 - 🐛 A need whose template cannot be rendered is created, with a warning, where it was not created at all
   **(changed output)** (:pr:`2474`)
@@ -81,9 +245,10 @@ Bug fixes
   of a sphinx-ub-directives template -- has the ``doctype`` ``.rst``, the markup its content is written in, where it
   had the page's ``.md`` **(changed output)** (:pr:`2474`)
 
-- 🔧 ``ENV_DATA_VERSION`` is 26: the first build after upgrading re-reads every document, which records what the
-  documents' need templates were read with and the record templates a ``needimport`` did not find, and creates
-  the needs the need-template fixes above change (:pr:`2474`)
+- 🔧 ``ENV_DATA_VERSION`` is 27: the first build after upgrading re-reads every document, which records each need
+  source's upstream hops (a need read from a format-2a1 needs.json), what the documents' need templates were read
+  with and the record templates a ``needimport`` did not find, and creates the needs the need-template fixes above
+  change (:pr:`2474`)
 
 .. _`release:9.2.0`:
 

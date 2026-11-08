@@ -1,0 +1,94 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 12
+      },
+      "end": {
+        "row": 3,
+        "column": 67
+      }
+    },
+    "tagged_scope": "void swap(Widget&, Widget&) {\n        // @Inside a kept class's hidden friend, IMPL_R_FRK_1, impl\n    }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 3,
+      "end": 5,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "lib::swap",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "function",
+          "name": "swap"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Inside a kept class's hidden friend",
+      "id": "IMPL_R_FRK_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 12
+      },
+      "end": {
+        "row": 6,
+        "column": 60
+      }
+    },
+    "tagged_scope": "void draw() {\n        // @Inside a kept class's member, IMPL_R_FRK_2, impl\n    }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 6,
+      "end": 8,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "lib::v1::Widget::draw",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "namespace",
+          "name": "v1"
+        },
+        {
+          "kind": "struct",
+          "name": "Widget"
+        },
+        {
+          "kind": "method",
+          "name": "draw"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Inside a kept class's member",
+      "id": "IMPL_R_FRK_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

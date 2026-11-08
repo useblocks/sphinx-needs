@@ -32,15 +32,17 @@ corpus and the tests change in the same commit. Every rule names the test that e
    returned (`tests/test_variants.py::TestDiagnostics`).
 2. The variant-**condition** grammar (`var.edition == 'pro'`) is not here. It has its own
    corpus, `packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml`.
-3. The package imports **the standard library and nothing else**: no Sphinx, no docutils,
-   no workspace member.
+3. The package imports **the standard library, plus the TOML 1.1 backport `tomli` below
+   Python 3.15, and nothing else**: no Sphinx, no docutils, no workspace member.
    Enforced by: `tests/test_imports.py::test_no_sphinx_docutils_or_sibling_is_imported`,
-   `tests/test_imports.py::test_only_the_standard_library_is_imported`, and CI's
-   `toolchain-free` job, which runs this suite where Sphinx is not installed.
+   `tests/test_imports.py::test_only_the_standard_library_is_imported`,
+   `tests/test_imports.py::test_only_the_declared_distributions_are_admitted`, and CI's
+   `toolchain-free` job, which runs this suite where Sphinx is not installed, and again
+   on Python 3.15, where `tomli` is not.
 4. Every hard failure is an `ProjectConfigError` whose message names the file (or the dotted
    path inside the data) and the rule broken. Nothing else is raised for a problem with
-   the file's bytes, syntax or values. Pathological depth (input nested ~1 000 levels,
-   which Python's recursion limit refuses) is out of contract.
+   the file's bytes, syntax or values. Nesting deeper than a few hundred levels is out of
+   contract; each reader has its own limit.
    Enforced by: `tests/test_variants.py::TestRefusals`, `tests/test_project.py::TestLoadToml`,
    `tests/test_variant_data.py::TestValidate::test_invalid_shapes_name_the_path_and_the_rule`.
 
@@ -79,13 +81,17 @@ corpus and the tests change in the same commit. Every rule names the test that e
 Whether a consumer walks at all is its own decision (§1.1). The walk is test-reports'
 existing behaviour, moved here unchanged.
 
-## 3. Loading — `load_toml`
+## 3. Loading — `load_toml`, `loads_toml`
 
-1. The file is parsed as UTF-8 TOML 1.0. Invalid TOML, bytes that are not UTF-8, a
+1. The file is parsed as UTF-8 TOML 1.1. Invalid TOML, bytes that are not UTF-8, a
    missing file, a directory and an unreadable file are each an `ProjectConfigError` naming
    the file.
    Enforced by: `tests/test_project.py::TestLoadToml` (all six tests, including
-   `test_a_non_utf8_file_names_the_file`).
+   `test_a_non_utf8_file_names_the_file`), and
+   `tests/test_project.py::TestLoadsToml::test_toml_1_1_is_read` for TOML 1.1.
+2. `loads_toml(text, source)` parses a text the same way; invalid TOML is an
+   `ProjectConfigError` naming *source*.
+   Enforced by: `tests/test_project.py::TestLoadsToml`.
 
 ## 4. Selecting a table — `select_table`
 

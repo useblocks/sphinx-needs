@@ -3,8 +3,8 @@
 One implementation of the parts of ``ubproject.toml`` that more than one tool reads -- the
 sphinx-needs family of Sphinx extensions and their command lines, which will depend on it,
 and ubCode, which is to be held to the same behaviour through the conformance corpus in
-this package's tests. Standard library only: no Sphinx, no docutils, no sibling
-distribution.
+this package's tests. Standard library only, plus the TOML 1.1 backport below Python
+3.15: no Sphinx, no docutils, no sibling distribution.
 
 It decides no policy. Discovery (walk up or read the ``confdir``), whether a finding is
 worth a warning, and how ``-D`` / ``-c`` on a command line interact with the file are each
@@ -20,6 +20,7 @@ from ub_project.project import (
     anchor,
     find_project_config,
     load_toml,
+    loads_toml,
     select_table,
     table_path,
 )
@@ -58,6 +59,7 @@ __all__ = [
     "find_project_config",
     "load_toml",
     "load_variant_data_file",
+    "loads_toml",
     "read_variants",
     "resolve_variant_data",
     "select_table",

@@ -1,0 +1,102 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 12
+      },
+      "end": {
+        "row": 3,
+        "column": 38
+      }
+    },
+    "tagged_scope": "bool operator==(const iterator&, const iterator&) {\n        // @List's, IMPL_R_FRC_1, impl\n        return true;\n    }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 3,
+      "end": 6,
+      "language": "cpp",
+      "entity_kind": "operator",
+      "qualified_name": "ns::List::iterator::operator==",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "struct",
+          "name": "List"
+        },
+        {
+          "kind": "struct",
+          "name": "iterator"
+        },
+        {
+          "kind": "operator",
+          "name": "operator=="
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "List's",
+      "id": "IMPL_R_FRC_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 12
+      },
+      "end": {
+        "row": 9,
+        "column": 37
+      }
+    },
+    "tagged_scope": "bool operator==(const iterator&, const iterator&) {\n        // @Map's, IMPL_R_FRC_2, impl\n        return false;\n    }",
+    "scope": {
+      "kind": "function_definition",
+      "start": 9,
+      "end": 12,
+      "language": "cpp",
+      "entity_kind": "operator",
+      "qualified_name": "ns::Map::iterator::operator==",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "ns"
+        },
+        {
+          "kind": "struct",
+          "name": "Map"
+        },
+        {
+          "kind": "struct",
+          "name": "iterator"
+        },
+        {
+          "kind": "operator",
+          "name": "operator=="
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Map's",
+      "id": "IMPL_R_FRC_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

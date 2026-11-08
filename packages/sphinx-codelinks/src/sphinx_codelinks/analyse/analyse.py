@@ -1,6 +1,6 @@
 import json
 import os
-from collections.abc import Generator
+from collections.abc import Generator, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
@@ -42,13 +42,89 @@ logger = get_logger(__name__)
 # only with overlapping markers (a need-id marker that ends with the one-line start
 # sequence), which the configuration check does not refuse. Such a tie is listed
 # references, then one-line needs, then multi-line needs: an explicit rank, because
-# the type names sort the other way round. Two references from one comment tie on
-# every key and keep the marker order of the configuration (the sort is stable).
+# the type names sort the other way round. Two references never tie: the marker
+# matches of a line do not overlap (``find_marker_matches``).
 _KIND_RANK: dict[MarkedContentType, int] = {
     MarkedContentType.need_id_refs: 0,
     MarkedContentType.need: 1,
     MarkedContentType.multiline_need: 2,
 }
+
+
+def _is_alphanumeric(char: str) -> bool:
+    """Whether ``char``'s Unicode general category is a letter (L*) or a number (N*).
+
+    The one notion of alphanumeric of the reference markers' rules, shared with another
+    implementation of them. ``str.isalnum`` is exactly that test (no other character
+    passes it): characters Unicode calls Alphabetic without being letters -- a circled
+    letter (So), a combining mark (Mn, Mc) -- are not alphanumeric here. The
+    classification follows each tool's own Unicode tables (here the running Python's,
+    ``unicodedata.unidata_version``), so a character newer than the older of two tables
+    can be classed differently.
+    """
+    return char.isalnum()
+
+
+def _is_word_char(char: str) -> bool:
+    """A word character, for a reference marker's boundary: alphanumeric (see
+    :func:`_is_alphanumeric`) or ``_``."""
+    return _is_alphanumeric(char) or char == "_"
+
+
+def _find_marker(line: str, marker: str, start: int) -> int:
+    """The index of the first match of ``marker`` in ``line`` at or after ``start``.
+
+    A marker whose last character is a word character matches only where the
+    character after it is not one (or the line ends): ``\\verifies`` does not match
+    ``\\verifiesall``. No condition applies before the match. ``-1`` when none.
+    """
+    word_final = _is_word_char(marker[-1])
+    idx = line.find(marker, start)
+    while idx != -1:
+        after = idx + len(marker)
+        if not (word_final and after < len(line) and _is_word_char(line[after])):
+            return idx
+        idx = line.find(marker, idx + 1)
+    return -1
+
+
+def find_marker_matches(
+    line: str, markers: Iterable[str], *, first_only: bool = False
+) -> list[tuple[str, int, int]]:
+    """The reference-marker matches of one line, left to right: ``(marker, start, end)``.
+
+    The line is scanned from left to right. At each index, among the markers that
+    match there (see :func:`_find_marker`), the LONGEST wins, and the scan resumes at
+    the end of that match, so matches never overlap. The same marker can match more
+    than once. An empty marker never matches.
+
+    :param line: One line of a comment.
+    :param markers: The configured reference markers.
+    :param first_only: Stop after the first match.
+    """
+    candidates = [marker for marker in markers if marker]
+    matches: list[tuple[str, int, int]] = []
+    pos = 0
+    while candidates:
+        best: tuple[int, str] | None = None
+        for marker in candidates:
+            idx = _find_marker(line, marker, pos)
+            if idx == -1:
+                continue
+            if (
+                best is None
+                or idx < best[0]
+                or (idx == best[0] and len(marker) > len(best[1]))
+            ):
+                best = (idx, marker)
+        if best is None:
+            break
+        idx, marker = best
+        matches.append((marker, idx, idx + len(marker)))
+        if first_only:
+            break
+        pos = idx + len(marker)
+    return matches
 
 
 def _char_column(src: bytes, byte_offset: int) -> int:
@@ -65,8 +141,14 @@ def _count(n: int, noun: str) -> str:
 def _row_count(src_comment: SourceComment) -> int:
     """The rows a comment covers: a Rust ``///`` node's text ends with its newline, which
     starts no row of its own."""
-    return (src_comment.node.text or b"").rstrip(b"\n").count(b"\n") + 1
+    return src_comment.text.rstrip(b"\n").count(b"\n") + 1
 
+
+#: The message of a ``marker_above_conditional`` warning.
+ABOVE_CONDITIONAL_MSG = (
+    "directly above a preprocessor conditional, so attached to no entity: "
+    "put the marker inside the arm, above the definition"
+)
 
 #: How a tag warning names the tag it found.
 _TAG_NAMES = {
@@ -75,10 +157,9 @@ _TAG_NAMES = {
 }
 
 
-def _is_jsdoc(node: TreeSitterNode) -> bool:
-    """A JSDoc comment: a block comment opened by exactly ``/**``, as JSDoc reads one
-    (``/***`` and the empty ``/**/`` are not)."""
-    text = node.text or b""
+def _is_jsdoc(text: bytes) -> bool:
+    """Whether the comment ``text`` is a JSDoc comment: a block comment opened by
+    exactly ``/**``, as JSDoc reads one (``/***`` and the empty ``/**/`` are not)."""
     return (
         text.startswith(b"/**")
         and not text.startswith(b"/***")
@@ -87,14 +168,14 @@ def _is_jsdoc(node: TreeSitterNode) -> bool:
 
 
 def _docstring_contents(
-    node: TreeSitterNode, column: int
+    node: TreeSitterNode, raw: bytes, column: int
 ) -> list[tuple[str, int, int]]:
     """The content of each string of a docstring statement, between its quotes.
 
     Each with its 0-based row and its column, in characters: the quotes' column plus
-    the prefix letters' and the delimiter's length. ``column`` is the statement's.
+    the prefix letters' and the delimiter's length. ``raw`` is the statement's text as
+    the file writes it, ``column`` its column.
     """
-    raw = node.text or b""
     contents = []
     for string in node.named_children:
         if string.type != "string":
@@ -134,9 +215,9 @@ def _scanned_texts(
     """
     node = src_comment.node
     if getattr(node, "type", None) == CommentCategory.docstring:
-        texts = _docstring_contents(node, src_comment.column)
+        texts = _docstring_contents(node, src_comment.text, src_comment.column)
     else:
-        text = node.text.decode("utf-8") if node.text else ""
+        text = src_comment.text.decode("utf-8")
         if text.startswith("/*") and text.endswith("*/"):
             text = text[:-2]
         elif text.startswith("<!--") and text.endswith("-->"):
@@ -233,9 +314,10 @@ class SourceAnalyse:
                 parser_cache[cache_key] = utils.init_tree_sitter(comment_type, src_path)
             parser, query = parser_cache[cache_key]
 
-            comments: list[TreeSitterNode] | None = utils.extract_comments(
-                src_string, parser, query
+            tree, cpp_names = utils.parse_source(
+                src_string, parser, comment_type, src_path
             )
+            comments: list[TreeSitterNode] | None = utils.captured_comments(tree, query)
             if not comments:
                 continue
             src_comments: list[SourceComment] = [
@@ -244,6 +326,7 @@ class SourceAnalyse:
             ]
 
             src_file = SourceFile(src_path.absolute())
+            src_file.cpp_names = cpp_names
             src_file.add_comments(src_comments)
             if self.analyse_config.get_multiline_needs:
                 src_file.lines = src_string.decode("utf-8").split(UNIX_NEWLINE)
@@ -388,26 +471,31 @@ class SourceAnalyse:
         self,
         text: str,
     ) -> Generator[tuple[str, list[str], int, int, int], None, None]:
+        """Yield each reference-marker match of ``text`` with its ids.
+
+        Yields ``(marker, need_ids, row_offset, start_column, end_column)``, the
+        columns spanning the match's own id text. The matches of a line are found by
+        :func:`find_marker_matches`; a match's id text runs from its end to the start
+        of the next match on the line, or to the end of the line. A match with no id
+        yields nothing.
+        """
+        markers = self.analyse_config.need_id_refs_config.markers
         row_offset = 0
         for line in text.split(UNIX_NEWLINE):
-            for marker in self.analyse_config.need_id_refs_config.markers:
-                marker_idx = line.find(marker)
-                if marker_idx == -1:
-                    continue
-                after_marker = line[marker_idx + len(marker) :]
+            matches = find_marker_matches(line, markers)
+            for index, (marker, _start, end) in enumerate(matches):
+                is_last = index == len(matches) - 1
+                after_marker = (
+                    line[end:] if is_last else line[end : matches[index + 1][1]]
+                )
                 markered_text = after_marker.strip()
-                if markered_text.endswith("*/"):
+                if is_last and markered_text.endswith("*/"):
                     # The end of a one-line block comment, not an id.
                     markered_text = markered_text[:-2].rstrip()
                 need_ids = markered_text.replace(",", " ").split()
                 if not need_ids:
                     continue
-                start_column = (
-                    marker_idx
-                    + len(marker)
-                    + len(after_marker)
-                    - len(after_marker.lstrip())
-                )
+                start_column = end + len(after_marker) - len(after_marker.lstrip())
                 end_column = start_column + len(markered_text)
                 yield marker, need_ids, row_offset, start_column, end_column
             row_offset += 1
@@ -480,22 +568,23 @@ class SourceAnalyse:
         """Whether a comment line is an ``@need-ids:`` reference rather than a need.
 
         A line whose text, after comment decoration and whitespace, starts with a
-        configured need-id-refs marker is a reference, and never a one-line need --
-        ubCode's precedence. Without it the default one-line start sequence ``@`` also
+        configured need-id-refs marker is a reference, and never a one-line need.
+        Without it the default one-line start sequence ``@`` also
         matched ``// @need-ids: A, B`` and made a need titled ``need-ids: A`` with the id
         ``B``. A line with anything alphanumeric before the marker is not a reference
         line here (``// see @need-ids: X`` -- the one-line parser ignores it anyway, and
         the references on it are still extracted), and a line holding a one-line need
         before the marker (``[[…]] @need-ids: X``) keeps its need: only a line that
-        STARTS with the marker is withheld from the one-line parser.
+        STARTS with the marker is withheld from the one-line parser. The marker is the
+        line's first match as :func:`find_marker_matches` finds it, so a word that only
+        begins with a marker (``\\verifiesall`` for ``\\verifies``) is none.
         """
-        for marker in self.analyse_config.need_id_refs_config.markers:
-            marker_idx = line.find(marker)
-            if marker_idx != -1 and not any(
-                char.isalnum() for char in line[:marker_idx]
-            ):
-                return True
-        return False
+        matches = find_marker_matches(
+            line, self.analyse_config.need_id_refs_config.markers, first_only=True
+        )
+        return bool(matches) and not any(
+            _is_alphanumeric(char) for char in line[: matches[0][1]]
+        )
 
     def extract_oneline_need(
         self,
@@ -516,7 +605,7 @@ class SourceAnalyse:
         )
         # Only a TypeScript or JavaScript JSDoc comment can hold JSDoc tags.
         in_jsdoc = self.analyse_config.comment_type == CommentType.ts and _is_jsdoc(
-            src_comment.node
+            src_comment.text
         )
         for line in lines:
             if self._is_need_id_refs_line(line):
@@ -701,7 +790,7 @@ class SourceAnalyse:
             ),
             run.comments[0],
         )
-        tagged_scope, scope = self._associate(src_comment, filepath)
+        tagged_scope, scope, unattached = self._associate(src_comment, filepath)
         lineno = block.open_row + 1
         remote_url = self.git_remote_url
         if self.git_remote_url and self.git_commit_rev:
@@ -732,7 +821,7 @@ class SourceAnalyse:
             "option_lines": dict(block.option_rows),
             "scope": scope,
         }
-        return MultilineNeed(
+        need = MultilineNeed(
             filepath,
             remote_url,
             source_map,
@@ -743,66 +832,108 @@ class SourceAnalyse:
             source,
             scope=scope,
         )
+        self._warn_unattached(unattached, [need])
+        return need
 
     def _associate(
         self, src_comment: SourceComment, filepath: Path
-    ) -> tuple[TreeSitterNode | None, CodeScope | None]:
+    ) -> tuple[TreeSitterNode | None, CodeScope | None, utils.Unattached | None]:
         """The entity a comment of ``filepath`` is attached to: its node and its
-        ``scope`` object.
+        ``scope`` object, and why it is attached to none where the analysis warns
+        about that (:class:`~sphinx_codelinks.analyse.utils.Unattached`).
 
         A libclang comment has no tree-sitter node, so it is attached to nothing.
         """
         if getattr(src_comment.node, "is_libclang", False):
-            return None, None
+            return None, None, None
         comment_type = self.analyse_config.comment_type
-        association = utils.associate(src_comment.node, comment_type)
-        if association is None or not association.node.text:
-            return None, None
-        return association.node, code_scope(
-            association, comment_type, scope_language(comment_type, filepath)
+        association = utils.associate(
+            src_comment.node, comment_type, text=src_comment.text
         )
+        if association is None:
+            return None, None, None
+        if isinstance(association, utils.Unattached):
+            return None, None, association
+        source_file = src_comment.source_file
+        written = (
+            source_file.node_text(association.node)
+            if source_file is not None
+            else association.node.text
+        )
+        if not written:
+            return None, None, None
+        return (
+            association.node,
+            code_scope(
+                association,
+                comment_type,
+                scope_language(comment_type, filepath),
+                source_file.cpp_names if source_file is not None else None,
+            ),
+            None,
+        )
+
+    def _warn_unattached(
+        self,
+        unattached: utils.Unattached | None,
+        records: Iterable[NeedIdRefs | OneLineNeed | MultilineNeed],
+    ) -> None:
+        """Warn about each marker in ``records`` that rule 7 attached to no entity, at
+        its line (a multi-line need's open line)."""
+        if unattached is not utils.Unattached.above_conditional:
+            return
+        for record in records:
+            self.warnings.append(
+                AnalyseWarning(
+                    str(record.filepath),
+                    record.source_map["start"]["row"] + 1,
+                    ABOVE_CONDITIONAL_MSG,
+                    record.type,
+                    WarningSubTypeEnum.marker_above_conditional.value,
+                )
+            )
 
     def extract_marked_content(self) -> None:
         claimed: dict[int, set[int]] = {}
         if self.analyse_config.get_multiline_needs:
             claimed = self.extract_multiline_needs()
         for src_comment in self.src_comments:
-            if not src_comment.node.text:
+            if not src_comment.text:
                 continue
             filepath = (
                 src_comment.source_file.filepath if src_comment.source_file else None
             )
             if not filepath:
                 continue
-            tagged_scope, scope = self._associate(src_comment, filepath)
+            tagged_scope, scope, unattached = self._associate(src_comment, filepath)
             for text, first_row, first_column in _scanned_texts(
                 src_comment, claimed.get(id(src_comment))
             ):
                 if self.analyse_config.get_need_id_refs:
-                    self.need_id_refs.extend(
-                        self.extract_anchors(
-                            text,
-                            filepath,
-                            tagged_scope,
-                            src_comment,
-                            first_row,
-                            first_column,
-                            scope=scope,
-                        )
+                    anchors = self.extract_anchors(
+                        text,
+                        filepath,
+                        tagged_scope,
+                        src_comment,
+                        first_row,
+                        first_column,
+                        scope=scope,
                     )
+                    self._warn_unattached(unattached, anchors)
+                    self.need_id_refs.extend(anchors)
                 if self.analyse_config.get_oneline_needs:
-                    self.oneline_needs.extend(
-                        self.extract_oneline_needs(
-                            text,
-                            filepath,
-                            tagged_scope,
-                            src_comment,
-                            self.analyse_config.oneline_comment_style,
-                            first_row,
-                            first_column,
-                            scope=scope,
-                        )
+                    oneline_needs = self.extract_oneline_needs(
+                        text,
+                        filepath,
+                        tagged_scope,
+                        src_comment,
+                        self.analyse_config.oneline_comment_style,
+                        first_row,
+                        first_column,
+                        scope=scope,
                     )
+                    self._warn_unattached(unattached, oneline_needs)
+                    self.oneline_needs.extend(oneline_needs)
 
     def merge_marked_content(self) -> None:
         """List the marked content in source order: by file, row and column (#2150).

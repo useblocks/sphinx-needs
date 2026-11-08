@@ -113,6 +113,24 @@ def test_a_variants_table_is_read_when_sphinx_needs_is_absent(make_app, tmp_path
     assert _pages(app) >= GATED_PAGES
 
 
+def test_a_toml_1_1_file_is_read(make_app, tmp_path):
+    """The mounts, the rules and ``[variants]`` from a file only TOML 1.1 reads.
+
+    The inline table spans lines and ends with a trailing comma, which TOML 1.0
+    refuses: both readers of the file, and the variant map, must take it.
+    """
+    toml = RULES + (
+        '\n[variants]\ndata_file = "vd.json"\n'
+        'data = {\n  edition = "pro",\n  build = { debug = false, },\n}\n'
+    )
+    confdir = _project(tmp_path, toml)
+    app = _build(make_app, confdir)
+    warnings = app._warning.getvalue()
+    assert "mounts.variant_rule_unevaluable" not in warnings, warnings
+    assert "mnt/index.html" in _pages(app)
+    assert _pages(app) >= GATED_PAGES
+
+
 def test_both_locations_read_variants_and_warn_once(make_app, tmp_path):
     """O6: ``[variants]`` wins whole, and the ignored ``[needs]`` key is named.
 

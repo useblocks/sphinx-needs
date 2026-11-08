@@ -21,8 +21,11 @@ from sphinx_needs._need_source import (
     directive_hops,
     directive_line,
     physical_for,
+    upstream_hops,
+    writing_project,
 )
 from sphinx_needs._need_templates import template_path
+from sphinx_needs._needsfile_v2a1 import READ_DRAFTS
 from sphinx_needs.api import InvalidNeedException, ingest_need_record
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
@@ -84,6 +87,10 @@ class NeedimportDirective(SphinxDirective):
         need_import_path = needs_config.import_keys.get(
             self.arguments[0], self.arguments[0]
         )
+        # the file and line the directive is written on: the line every need it
+        # imports records (#1349), and where its own warnings are located (#2463)
+        written_source, resolved = directive_line(self)
+        location = self._written_location(written_source, resolved)
 
         # check if given argument is downloadable needs.json path
         url = urlparse(need_import_path)
@@ -91,7 +98,7 @@ class NeedimportDirective(SphinxDirective):
         if url.scheme and (url.netloc or url.scheme == "file"):
             # download needs.json
             logger.info(f"Downloading needs.json from url {need_import_path}")
-            source_name = need_import_path
+            source_name = source_label = need_import_path
             imported = NeedSourceHop(
                 kind="file",
                 physical=NeedSourcePhysical(url=need_import_path),
@@ -105,7 +112,8 @@ class NeedimportDirective(SphinxDirective):
             except Exception as e:
                 return self._refuse(
                     f"Could not load needs import file {need_import_path}: "
-                    f"getting it failed: {e}"
+                    f"getting it failed: {e}",
+                    location,
                 )
             read = partial(exchange.parse, response.content)
         else:
@@ -120,6 +128,12 @@ class NeedimportDirective(SphinxDirective):
                 physical=physical_for(self.env.srcdir, correct_need_import_path),
                 language=os.path.splitext(correct_need_import_path)[1] or None,
             )
+            # the file relative to the source directory, as its hop records it
+            source_label = (
+                imported.physical.path
+                if imported.physical is not None and imported.physical.path is not None
+                else correct_need_import_path
+            )
 
             # noted before the file is looked for, so that a file that is missing or
             # cannot be read now is read again once it exists or changes (Sphinx takes
@@ -128,15 +142,19 @@ class NeedimportDirective(SphinxDirective):
 
             if not os.path.exists(correct_need_import_path):
                 return self._refuse(
-                    f"Could not load needs import file {correct_need_import_path}"
+                    f"Could not load needs import file {correct_need_import_path}",
+                    location,
                 )
             read = partial(exchange.load, correct_need_import_path)
 
         try:
-            selected = read().select_version(version)
+            # a draft 2a1 file is read too: reading it is harmless, only writing one is
+            # behind needs_json_format_version
+            selected = read().select_version(version, drafts=READ_DRAFTS)
         except exchange.ExchangeError as err:
             return self._refuse(
-                f"Could not load needs import file {source_name}: {err.message}"
+                f"Could not load needs import file {source_name}: {err.message}",
+                location,
             )
         records = selected.records()
         for diagnostic in (
@@ -148,11 +166,15 @@ class NeedimportDirective(SphinxDirective):
                 f"Needs import file {source_name}: {diagnostic.message} "
                 f"(at {diagnostic.path})",
                 "needimport",
-                location=(self.env.docname, self.lineno),
+                location=location,
             )
 
         # note this is not exactly NeedsInfoType, because the export removes/adds some keys
         all_needs: dict[str, dict[str, Any]] = {r.key: r.fields for r in records}
+        # a 2a1 record's hops, the need's upstream: a hop with no origin is the writing
+        # project's, else the file's as this directive names it
+        origin = writing_project(selected.data) or source_label
+        upstream = {r.key: r.source for r in records}
         needs_list = all_needs
 
         if ids := self.options.get("ids"):
@@ -163,7 +185,7 @@ class NeedimportDirective(SphinxDirective):
                     f"Needs import file {source_name} has no needs with the ids "
                     f"{absent!r}",
                     "needimport",
-                    location=(self.env.docname, self.lineno),
+                    location=location,
                 )
             needs_list = {key: all_needs[key] for key in id_list if key in all_needs}
 
@@ -183,7 +205,7 @@ class NeedimportDirective(SphinxDirective):
                     logger,
                     f"needimport: {filter_error}",
                     "needimport",
-                    location=(self.env.docname, self.lineno),
+                    location=location,
                 )
             needs_list = needs_list_filtered
 
@@ -258,9 +280,8 @@ class NeedimportDirective(SphinxDirective):
         # every need of the directive shares its hops: the imported file (resolved),
         # then the file and page the directive is written on
         hops = directive_hops(self, first=(imported,))
-        _, resolved = directive_line(self)
         need_nodes = []
-        for need_params in needs_list.values():
+        for key, need_params in needs_list.items():
             record = dict(need_params)
             # ``ingest_need_record`` drops the keys the project does not know AFTER
             # these are written; every override option (and ``hide``) is a field the
@@ -274,13 +295,14 @@ class NeedimportDirective(SphinxDirective):
                     continue
                 if not isinstance(name, str):
                     continue
-                key = (decoration, name)
-                if key not in record_decorations:
-                    record_decorations[key] = self._importer_has_template(
+                # not ``key``: that names the record in the loop around this one
+                decorated = (decoration, name)
+                if decorated not in record_decorations:
+                    record_decorations[decorated] = self._importer_has_template(
                         needs_config, name, template_root
                     )
-                if record_decorations[key]:
-                    deprecated_decorations.add(key)
+                if record_decorations[decorated]:
+                    deprecated_decorations.add(decorated)
                 else:
                     del record[decoration]
             for override_option in override_options:
@@ -298,7 +320,7 @@ class NeedimportDirective(SphinxDirective):
                     logger,
                     f"Need {need_id!r} could not be imported: id is empty",
                     "import_need",
-                    location=self.get_location(),
+                    location=location,
                 )
                 continue
 
@@ -309,6 +331,7 @@ class NeedimportDirective(SphinxDirective):
                 lineno=resolved or self.lineno,
                 parser_lineno=self.lineno,
                 is_import=True,
+                upstream=upstream_hops(upstream[key], origin=origin),
             )
 
             # a template is a file of the importing project, written in the page's
@@ -337,7 +360,7 @@ class NeedimportDirective(SphinxDirective):
                     logger,
                     f"Need {need_id!r} could not be imported: {err.message}",
                     "import_need",
-                    location=self.get_location(),
+                    location=location,
                 )
             else:
                 need_nodes.extend(need_node)
@@ -351,7 +374,7 @@ class NeedimportDirective(SphinxDirective):
                 f"directive (:{decoration}: {name}), or give it as a default of "
                 f"needs_fields ({decoration}), to keep it.",
                 "deprecated",
-                location=self.get_location(),
+                location=location,
             )
 
         for doctype, reason in fallbacks.items():
@@ -362,7 +385,7 @@ class NeedimportDirective(SphinxDirective):
                 "page's markup instead. Add the suffix to source_suffix with a "
                 "reStructuredText or MyST parser, or set :parse_by_doctype: false.",
                 "import_doctype",
-                location=self.get_location(),
+                location=location,
             )
 
         if unknown_keys:
@@ -370,7 +393,7 @@ class NeedimportDirective(SphinxDirective):
                 logger,
                 f"Unknown keys in import need source: {sorted(unknown_keys)!r}",
                 "unknown_import_keys",
-                location=self.get_location(),
+                location=location,
             )
 
         add_doc(self.env, self.env.docname)
@@ -402,14 +425,33 @@ class NeedimportDirective(SphinxDirective):
         ).add(str(path))
         return False
 
-    def _refuse(self, message: str) -> list[nodes.Node]:
+    def _written_location(
+        self, source: str | None, line: int | None
+    ) -> str | tuple[str, int]:
+        """Where every warning of the directive is located: ``source`` and ``line``,
+        the file and line it is written on (:func:`directive_line`), the file made
+        absolute, as Sphinx makes a node's (docutils records an included file
+        relative to the working directory).
+
+        A needimport another extension generates is written in no file: its source is
+        ``<unknown>``, empty, or a name that is no file (``<generated>``). It keeps
+        the page and the parser's line, as before #2463, which at least names the
+        page that holds it.
+        """
+        if source and line and os.path.isfile(absolute := os.path.abspath(source)):
+            return f"{absolute}:{line}"
+        return (self.env.docname, self.lineno)
+
+    def _refuse(
+        self, message: str, location: str | tuple[str, int]
+    ) -> list[nodes.Node]:
         """Report a file no need can be imported from: one warning at the directive,
         and the warning node in its place."""
         log_warning(
             logger,
             message,
             "needimport",
-            location=(self.env.docname, self.lineno),
+            location=location,
         )
         warning = nodes.warning()
         warning += nodes.paragraph(text=message)
@@ -445,7 +487,7 @@ class NeedimportDirective(SphinxDirective):
                 refusals[doctype] = None
         if (reason := refusals[doctype]) is None:
             return doctype
-        content = record.get("content") or record.get("description") or ""
+        content = record.get("content") or ""
         blank = isinstance(content, str) and not content.strip()
         if not blank and not record.get("hide"):
             fallbacks.setdefault(doctype, reason)

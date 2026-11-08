@@ -1,0 +1,46 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 21
+      },
+      "end": {
+        "row": 1,
+        "column": 72
+      }
+    },
+    "tagged_scope": "void first() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 2,
+      "end": 2,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "lib::first",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        },
+        {
+          "kind": "function",
+          "name": "first"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Trailing",
+      "id": "IMPL_CPP_COND_TRAIL",
+      "type": "impl",
+      "links": [
+        "REQ_CPP_COND"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

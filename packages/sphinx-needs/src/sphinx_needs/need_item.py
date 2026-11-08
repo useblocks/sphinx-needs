@@ -88,8 +88,9 @@ class NeedItemSource:
     provisional, as every hop is), :meth:`on_page`, and reading a source through
     :class:`NeedItemSourceProtocol` (``dict_repr``). **Provisional**: the constructor
     itself and its keywords (``hops``, ``lineno``, ``lineno_content``,
-    ``parser_lineno``, ``is_import``), like the hop types, until ``needs.json`` carries
-    them: through 9.x a minor release only adds to them (a new optional keyword), and a
+    ``parser_lineno``, ``is_import``, ``upstream``), like the hop types, until the final
+    ``needs.json`` format version 2 carries them (the draft ``"2a1"`` does not end that):
+    through 9.x a minor release only adds to them (a new optional keyword), and a
     rename, a removal or a change of a keyword's meaning or type waits for 10.0, because
     published sibling extensions construct them (see :ref:`api_public`). They are the
     stored legacy facts a later release turns into projections of the hops, and are
@@ -135,6 +136,12 @@ class NeedItemSource:
     """
     is_import: bool
     """Whether :ref:`needimport` read the need from a ``needs.json``."""
+    upstream: tuple[NeedSourceHop, ...]
+    """The hops the need's text came through before this build read it, innermost
+    first: those a ``needs.json`` of the experimental format 2a1 records for it, read by
+    :ref:`needimport` or :ref:`needs_external_needs`, each with the ``origin`` of the
+    project it belongs to (**provisional**). They come before ``hops``, which are this
+    build's; no legacy key and no ``c.source`` facet reads them."""
     dict_repr: NeedsSourceInfoType = field(init=False)
 
     def __init__(
@@ -145,6 +152,7 @@ class NeedItemSource:
         lineno_content: int | None = None,
         parser_lineno: int | None = None,
         is_import: bool = False,
+        upstream: Iterable[NeedSourceHop] = (),
     ) -> None:
         hops = checked_hops(hops)
         _set(
@@ -154,6 +162,7 @@ class NeedItemSource:
             lineno_content=lineno_content,
             parser_lineno=parser_lineno,
             is_import=is_import,
+            upstream=checked_hops(upstream),
             dict_repr=_legacy_keys(hops, lineno, lineno_content, is_import),
         )
 
@@ -632,6 +641,13 @@ class NeedConstraintResults(Mapping[str, tuple[tuple[str, bool, str | None], ...
         )
 
 
+#: A condition that starts with ``[``, after any spaces
+_BRACKETED_CONDITION = re.compile(r" *\[")
+#: A condition as :meth:`NeedLink.to_link_string` writes one of the above that also ends
+#: with ``]``: one space more
+_MARKED_CONDITION = re.compile(r" +\[")
+
+
 @dataclass(slots=True, frozen=True, kw_only=True)
 class NeedLink:
     """A class representing a link from one need to another.
@@ -657,6 +673,15 @@ class NeedLink:
 
         Supports formats: ``ID``, ``ID.part``, ``ID[condition]``,
         ``ID.part[condition]``, ``ID[[nested_condition]]``.
+
+        The condition opens with the run of ``[`` after the address, and runs to the
+        same number of ``]`` that end the string, so it may itself hold and end in
+        ``]``: ``ID[x == a[0]]`` and ``ID[[x == a[0]]]`` are the condition
+        ``x == a[0]``. A condition that starts with ``[`` and ends with ``]`` is
+        written with one space after the opening brackets, which is dropped
+        (``ID[ [1] == a[:1]]`` is ``[1] == a[:1]``); one that starts with ``[`` and
+        does not end with ``]`` needs nothing (``ID[[1] == y]`` is ``[1] == y``). An
+        empty condition is no condition.
 
         On malformed brackets (unclosed, trailing text), falls back to
         parsing without a condition. Use :meth:`from_string_with_warnings`
@@ -699,26 +724,40 @@ class NeedLink:
         while depth < len(rest) and rest[depth] == "[":
             depth += 1
 
-        # Find the matching closing brackets
+        # The condition runs to the closing brackets that end the link, so that it may
+        # itself end in `]` (`REQ[x == a[0]]`). Where the link ends otherwise, the first
+        # closing run is the end of the condition, and the text after it is malformed.
         closing = "]" * depth
         inner = rest[depth:]
         close_pos = inner.find(closing)
         if close_pos < 0:
+            # A condition that starts with `[` adds its own to the opening run: the
+            # link `REQ[[1] == y]` opens with two and ends with one. The condition is
+            # what lies within the closing run that ends the link, and as many opening
+            # brackets.
+            closed = len(rest) - len(rest.rstrip("]"))
+            if 0 < closed < depth:
+                condition = rest[closed:-closed]
+                return NeedLink.parse_address(address, condition=condition), warnings
             warnings.append(
                 f"Unclosed condition brackets in link {link_str!r}: "
                 f"expected {depth} closing ']' characters."
             )
             return NeedLink.parse_address(link_str), warnings
 
-        trailing = inner[close_pos + depth :]
-        if trailing:
+        if not inner.endswith(closing):
+            trailing = inner[close_pos + depth :]
             warnings.append(
                 f"Unexpected text after closing condition bracket "
                 f"in link {link_str!r}: {trailing!r}."
             )
             return NeedLink.parse_address(address), warnings
 
-        condition = inner[:close_pos]
+        condition = inner[: len(inner) - depth]
+        if condition.endswith("]") and _MARKED_CONDITION.match(condition):
+            # the space `to_link_string` writes before a condition that starts with
+            # `[` and ends with `]`
+            condition = condition[1:]
         link = NeedLink.parse_address(
             address, condition=condition if condition else None
         )
@@ -743,12 +782,20 @@ class NeedLink:
         """Serialize the link including the condition, e.g. 'NEED-1[cond]' or 'NEED-1.part[cond]'.
 
         Uses bracket depth one greater than the longest consecutive run of
-        ``]`` in the condition, so the result always round-trips through
-        :meth:`from_string`.
+        ``]`` in the condition, and one space after the opening brackets when the
+        condition starts with ``[`` (after any spaces) and ends with ``]``, so the
+        result reads back through :meth:`from_string` as the same link. An empty
+        condition is written ``ID[]``, which reads as no condition.
         """
         base = f"{self.id}.{self.part}" if self.part else self.id
         if self.condition is None:
             return base
+        condition = self.condition
+        if condition.endswith("]") and _BRACKETED_CONDITION.match(condition):
+            # Its own `[` would read as more opening brackets, and its own `]` as more
+            # closing ones: one space after the opening brackets keeps them apart, and
+            # the reader drops it.
+            condition = " " + condition
         # Find the longest consecutive run of ']' in the condition
         max_run = 0
         current_run = 0
@@ -762,7 +809,7 @@ class NeedLink:
         depth = max_run + 1
         open_b = "[" * depth
         close_b = "]" * depth
-        return f"{base}{open_b}{self.condition}{close_b}"
+        return f"{base}{open_b}{condition}{close_b}"
 
 
 _NATURAL_SORT_RE = re.compile(r"(\d+)")

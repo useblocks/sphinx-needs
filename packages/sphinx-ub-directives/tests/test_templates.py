@@ -242,6 +242,28 @@ def test_a_syntax_error_names_the_template(
     assert errors and "_t/broken.rst.j2, line 2" in errors[0], errors
 
 
+def test_a_context_file_that_is_not_toml_is_refused_with_the_parsers_words(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """§4.3: a ``.toml`` context file that does not parse is
+    ``template_context_invalid``, and the message is the file's name and the parser's
+    own text -- no reader's wrapping in between."""
+    files = {
+        "ubproject.toml": '[parse.template_contexts.c]\nfile = "c.toml"\n\n[parse.directive_templates.d]\nbody = "{{ contexts.c.a }}"\n',
+        "c.toml": "[c\n",
+        "index.rst": "Case\n====\n\n.. d::\n",
+    }
+    app = _build(make_app, tmp_path, files)
+    found = [
+        w for w in build_warnings(app) if "ub_directives.template_context_invalid" in w
+    ]
+    assert len(found) == 1, build_warnings(app)
+    assert (
+        "the context 'c' cannot be used: c.toml is not valid TOML (Expected ']' at the"
+        " end of a table declaration (at line 1, column 3))"
+    ) in found[0], found
+
+
 def test_a_configuration_finding_is_located_in_ubproject_toml(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:
@@ -416,3 +438,113 @@ def test_a_need_in_rst_output_on_a_myst_page_has_the_rst_doctype(
     needs = SphinxNeedsData(app.env).get_needs_view()
     assert needs["REQ_TRST"]["doctype"] == ".rst"
     assert needs["REQ_PAGE"]["doctype"] == ".md"
+
+
+# -- ``length`` / ``count`` of an undefined value (§7.1) --------------------------------
+
+# Every input the engine's own ``length`` takes, and some it refuses. minijinja-py hands a
+# Python filter ``none`` and an undefined value alike as ``None``, a lazy sequence as a
+# list and a function as its name, so these pin that the page still gets the ENGINE's
+# answer: the render's strict probe only ever refuses, it never measures for the page.
+LENGTH_INPUTS = [
+    "'abc'",
+    "''",
+    "'é😀ü'",
+    "'a<b>'|safe",
+    "'<b>'|escape",
+    "[1, 2, 3]",
+    "[]",
+    "(1, 2)",
+    "()",
+    "{'a': 1, 'b': 2}",
+    "{}",
+    "range(5)",
+    "[1, -2]|map('abs')",
+    "[1, 2, 3]|select('odd')",
+    "{'a': 1}|items",
+    "'a b c'|split",
+    "namespace(a=1, b=2)",
+    "[[1], [2]]|map('length')",
+    # refused by the engine as well
+    "none",
+    "1",
+    "true",
+    "range",
+    "joiner()",
+]
+
+
+@pytest.mark.parametrize("name", ["length", "count"])
+@pytest.mark.parametrize("value", LENGTH_INPUTS)
+def test_length_renders_what_the_engine_renders(
+    tmp_path: Path, value: str, name: str
+) -> None:
+    """Every input but an undefined value gives the engine's own ``length`` byte for
+    byte, or fails where it fails."""
+    from sphinx_ub_directives._engine import Failure, Root, environment, render
+
+    source = f"[{{{{ ({value})|{name} }}}}]"
+    try:
+        expected: str | None = environment(Root(tmp_path)).render_str(source)
+    except Exception:
+        # the engine refuses it, so the render must too
+        expected = None
+    if expected is None:
+        with pytest.raises(Failure) as failure:
+            render(source, "t", {}, Root(tmp_path))
+        assert failure.value.code == "template_render_error"
+    else:
+        assert render(source, "t", {}, Root(tmp_path)).text == expected
+
+
+def test_a_loop_and_a_macro_measure_as_the_engine_measures(tmp_path: Path) -> None:
+    """The two engine objects minijinja-py hands a Python filter as a dict, of a size of
+    its own, render the engine's numbers."""
+    from sphinx_ub_directives._engine import Root, environment, render
+
+    source = (
+        "{% macro m(a) %}{% endmacro %}"
+        "{% for x in [1, 2] %}{{ loop|length }} {% endfor %}{{ m|length }}"
+    )
+    expected = environment(Root(tmp_path)).render_str(source)
+    assert render(source, "t", {}, Root(tmp_path)).text == expected
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "{{ nope|length }}",
+        "{{ nope|count }}",
+        "{% if nope|length %}y{% endif %}n",
+        "{% set r = {} %}{{ r.missing|length }}",
+        "{{ [{}]|map(attribute='missing')|map('count')|list }}",
+        "{% for x in [1] %}{% if loop.missing|length %}{% endif %}{% endfor %}",
+    ],
+)
+def test_length_of_an_undefined_value_is_a_render_error(
+    tmp_path: Path, source: str
+) -> None:
+    """§7.1's strict undefined: minijinja-py 3.1.0's own ``length`` and ``count`` make an
+    undefined value ``0``, where minijinja (ubCode's engine) and minijinja-py 3.0.5
+    refuse it."""
+    from sphinx_ub_directives._engine import Failure, Root, render
+
+    with pytest.raises(Failure) as failure:
+        render(source, "t", {}, Root(tmp_path))
+    assert failure.value.code == "template_render_error"
+    assert "undefined value" in failure.value.message
+
+
+def test_length_of_an_undefined_value_in_an_include_is_a_render_error(
+    tmp_path: Path,
+) -> None:
+    """The probe renders the same sources: an included template that measures an
+    undefined value is refused too, and no file is read twice."""
+    from sphinx_ub_directives._engine import Failure, Root, render
+
+    (tmp_path / "inc.j2").write_text("{{ nope|length }}", encoding="utf-8")
+    root = Root(tmp_path)
+    with pytest.raises(Failure) as failure:
+        render("{% include 'inc.j2' %}", "t", {}, root)
+    assert failure.value.code == "template_render_error"
+    assert root.reads == [tmp_path / "inc.j2"]

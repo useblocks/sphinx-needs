@@ -164,7 +164,8 @@ def generate_need(
 
         It will also not validate that the ID is not already in use within the project.
 
-    :raises InvalidNeedException: If the data fails any validation issue.
+    :raises InvalidNeedException: If the data fails any validation issue, such as a
+        ``full_title`` that is not a string (type ``invalid_value``).
 
     ``kwargs`` can contain options defined in ``needs_fields`` and ``needs_links``.
     If an entry is found in ``kwargs``, which *is not* specified in the configuration or registered e.g. via
@@ -190,7 +191,7 @@ def generate_need(
     :param need_type: Name of the need type to create.
     :param title: String as title.
     :param full_title: This is given, if an auto-generated title was trimmed.
-        It is used to auto-generate the ID, if required.
+        It is used to auto-generate the ID, if required. A string.
     :param id: ID as string. If not given, an id will get generated.
     :param content: Content of the need
     :param status: Status as string.
@@ -294,6 +295,20 @@ def _legacy_source(
     )
 
 
+def _check_full_title(full_title: object) -> None:
+    """Refuse a ``full_title`` that is given but is not a string: it is the text a
+    generated id is hashed from (#2479).
+
+    :raises InvalidNeedException: (type ``invalid_value``) If ``full_title`` is neither
+        ``None`` nor a string.
+    """
+    if full_title is not None and not isinstance(full_title, str):
+        raise InvalidNeedException(
+            "invalid_value",
+            f"full_title must be a string, not {type(full_title).__name__}",
+        )
+
+
 def _generate_need(
     needs_config: NeedsSphinxConfig,
     needs_schema: FieldsSchema,
@@ -324,8 +339,10 @@ def _generate_need(
         keyword arguments, so that no field name meets a parameter (#2392).
     :raises InvalidNeedException: If the data fails any validation issue; (type
         ``invalid_kwargs``) if ``values`` names no field or link type of the need's
-        type.
+        type; (type ``invalid_value``) for a ``full_title`` that is not a string,
+        whether or not an ``id`` is given.
     """
+    _check_full_title(full_title)
     # location is used to provide source mapped warnings
     location = (
         (source.dict_repr["docname"], source.dict_repr["lineno"])
@@ -890,7 +907,8 @@ def add_need(
     Instead, the need is referencing an external url.
     Used mostly for :ref:`needs_external_needs` to integrate and reference needs from external documentation.
 
-    :raises InvalidNeedException: If the need could not be added due to a validation issue;
+    :raises InvalidNeedException: If the need could not be added due to a validation issue,
+        such as a ``full_title`` that is not a string (type ``invalid_value``);
         also, before the need is recorded, if a ``MarkupContent``'s ``markup`` names no
         reStructuredText or MyST parser of the project.
 
@@ -914,7 +932,7 @@ def add_need(
     :param need_type: Name of the need type to create.
     :param title: String as title.
     :param full_title: This is given, if an auto-generated title was trimmed.
-        It is used to auto-generate the ID, if required.
+        It is used to auto-generate the ID, if required. A string.
     :param id: ID as string. If not given, an id will get generated.
     :param content: Content of the need, either as a ``str``
         or a ``StringList`` (a string with mapping to the source text), parsed by the
@@ -931,6 +949,11 @@ def add_need(
     :param status: Status as string.
     :param tags: A list of tags, or a comma separated string.
     :param constraints: Constraints as single, comma separated, string.
+    :param parts: The need's parts, keyed by part id. Kept as given only for an external
+        or a hidden need: a need on a page takes its parts from its content (its
+        :ref:`need_part` roles), a given part whose id the content marks takes the
+        content's text, and the given part ids the content does not mark are dropped,
+        with one ``needs.part`` warning per need naming them.
     :param constraints_passed: Contains bool describing if all constraints have passed
     :param hide: If True then the need is not rendered.
         ``None`` means that the value can be overriden by global defaults, else it is set to False.
@@ -961,7 +984,7 @@ def add_need(
         )
         kwargs = {k: v for k, v in kwargs.items() if k not in _deprecated_kwargs}
 
-    _, need_nodes = _create_need(
+    need, need_nodes = _create_need(
         app,
         state,
         _legacy_source(
@@ -1000,6 +1023,16 @@ def add_need(
         sections=sections,
         external_css=external_css,
     )
+    # a need on a page takes its parts from its content, which replaces the given ones;
+    # an external or a hidden need keeps them, so it drops none
+    if parts and (dropped := sorted(parts.keys() - need["parts"].keys())):
+        log_warning(
+            logger,
+            f"Need {need['id']!r}: the parts {dropped} given to add_need are dropped: "
+            "a need on a page takes its parts from its content",
+            "part",
+            location=(need["docname"], need["lineno"]) if need["docname"] else None,
+        )
     return need_nodes
 
 
@@ -1085,7 +1118,7 @@ def create_need(
         else the suffix of the document the need is created in.
     :param jinja_content: If true, the content is rendered as a Jinja template first.
     :param full_title: The title before it was trimmed, if it was: the generated id is
-        derived from it.
+        derived from it. A string; any other value is refused.
     :param allow_type_coercion: If true, values are coerced to the type of their field
         where possible.
     :return: The need, as it is recorded in the project (the object, not a copy), and
@@ -1098,7 +1131,8 @@ def create_need(
         taken, a ``MarkupContent`` whose ``markup`` names no reStructuredText or MyST
         parser of the project, and any other validation the need fails, such as an
         unknown need type, a constraint not in :ref:`needs_constraints`, a template that
-        does not exist, or Jinja content that does not render; (type
+        does not exist, or Jinja content that does not render; (type ``invalid_value``)
+        for a ``full_title`` that is not a string, whether or not an ``id`` is given; (type
         ``invalid_kwargs``) for a name in ``fields`` or ``links`` the project does not
         declare, or one given in the wrong place: a link type in ``fields``, a field in
         ``links``, or one of this function's own arguments (``title``, ``content``, ...)
@@ -1382,8 +1416,9 @@ def _import_key_sets(
         *extra_names,
     }
     omitted = {
-        # legacy, unless the project declares a field of that name (#2392)
-        *({"full_title"} - extra_names),
+        # legacy, unless the project declares a field (#2392) or a link type (#2466)
+        # of that name
+        *({"full_title"} - extra_names - {*link_names}),
         *(k for k, v in NeedsCoreFields.items() if v.get(flag)),
         *(f"{x}_back" for x in link_names),
     }
@@ -1514,10 +1549,16 @@ def ingest_need_record(
     (the format sphinx-needs writes): ``type``, ``title``, ``id``, fields and links as
     authored, ``content``, ``doctype``, and so on. A record of a later format is not
     read by this function.
-    It is not modified. A legacy ``description`` is taken as the ``content`` when that is
-    empty; keys the project does not know are dropped and returned; keys that are
-    computed rather than imported (such as ``docname``, ``lineno``, ``full_title`` or
-    the ``<link>_back`` names) are dropped silently. The need is created from the rest
+    It is not modified. A legacy ``description`` is taken as the ``content`` when the
+    record has none (no ``content`` key: sphinx-needs before 4.0 wrote the content as
+    ``description``); a record with a ``content``, even an empty one, keeps its
+    ``description`` as the field or link of that name. A caller that builds records
+    sets ``content``, even ``""``, for a need without one, so that a ``description`` it
+    gives is not taken as the content. Keys the project does not know are dropped and
+    returned; keys that are
+    computed rather than imported (such as ``docname``, ``lineno`` or the ``<link>_back``
+    names) are dropped silently, and so is the legacy ``full_title``, unless the project
+    has a field or a link type of that name. The need is created from the rest
     through the same path as :func:`create_need`: ``type`` as its ``need_type``, and
     its fields and links as one mapping, so a record key named like an argument of
     that path is the field of its name.
@@ -2071,11 +2112,13 @@ def generate_need_id(
     :param title: Title of the need.
     :param content: Content of the need, either as a ``str``
         or a ``StringList``, as :func:`create_need` takes it.
-    :param full_title: The untrimmed title, if ``title`` was trimmed.
+    :param full_title: The untrimmed title, if ``title`` was trimmed: a string.
     :return: The generated id.
     :raises InvalidNeedException: If ``need_type`` is not a configured need type
-        (type ``invalid_type``, as :func:`create_need` raises it).
+        (type ``invalid_type``), or ``full_title`` is not a string (type
+        ``invalid_value``), as :func:`create_need` raises it.
     """
+    _check_full_title(full_title)
     needs_config = NeedsSphinxConfig(app.config)
     return _generate_need_id(
         needs_config,

@@ -55,8 +55,9 @@ dependencies = [
 # this, so libclang stays optional. Named after the backend, not "cpp": the
 # engine handles C and Objective-C too, and tree-sitter already covers C++.
 # Floor 16 (not 18): the extraction snapshots are byte-identical on libclang 16,
-# 17 and 18 (the engine only uses get_all_skipped_ranges + comment tokenization,
-# stable since long before 16), so support older toolchains too. No upper bound.
+# 17 and 18 (the engine only uses get_all_skipped_ranges, isFromMainFile on their
+# starts + comment tokenization, stable since long before 16), so support older
+# toolchains too. No upper bound.
 libclang = ["libclang>=16"]
 
 # An EXTRA, not a dependency group, because Read the Docs installs extras and cannot install

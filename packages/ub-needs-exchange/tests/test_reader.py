@@ -325,9 +325,40 @@ SCHEMA = {
 
 
 def test_map_legacy_keys_in_place():
-    fields = {"description": "legacy"}
+    """A record with no ``content`` key has its ``description`` renamed to it, in
+    place (contract section 6.3)."""
+    fields = {"id": "A", "description": "legacy"}
     nx.map_legacy_keys(fields)
-    assert fields == {"content": "legacy"}
+    assert fields == {"id": "A", "content": "legacy"}
+
+
+#: every falsy JSON value a ``content`` can hold; ``null`` is the one the corpus cannot
+#: state, as TOML has no null
+FALSY_CONTENTS = ["", None, 0, False, [], {}]
+
+
+@pytest.mark.parametrize("content", FALSY_CONTENTS, ids=repr)
+def test_map_legacy_keys_keeps_a_description_beside_any_content(content: Any):
+    """A record with a ``content`` key -- whatever its value, a falsy one too -- was not
+    written before 4.0, so its ``description`` is a key of its own (contract section
+    6.3)."""
+    fields = {"content": content, "description": "a field"}
+    nx.map_legacy_keys(fields)
+    assert fields == {"content": content, "description": "a field"}
+
+
+@pytest.mark.parametrize("content", FALSY_CONTENTS, ids=repr)
+def test_a_record_with_a_falsy_content_keeps_its_description(content: Any):
+    (rec,) = (
+        nx.parse(
+            json.dumps(
+                envelope({"A": record("A", content=content, description="a field")})
+            )
+        )
+        .select_version(None)
+        .records()
+    )
+    assert (rec.fields["content"], rec.fields["description"]) == (content, "a field")
 
 
 def test_a_null_default_is_merged():
@@ -346,6 +377,43 @@ def test_schema_defaults_can_be_left_out():
     ).select_version(None)
     assert "priority" not in version.records(apply_schema_defaults=False)[0].fields
     assert version.records()[0].fields["priority"] == "medium"
+
+
+def test_without_the_defaults_a_content_default_still_keeps_the_description():
+    """A 4.0+ writer that removed defaults left an empty ``content`` to the schema's
+    ``content`` default: read without the defaults merged, the record has no
+    ``content`` key, and its ``description`` is still a key of its own -- the mapping
+    reads it as the merge would (contract section 6.3). A file whose schema gives
+    ``content`` no default is mapped as with the merge."""
+    schema = {"properties": {"content": {"type": "string", "default": ""}}}
+    modern = nx.parse(
+        json.dumps(
+            envelope(
+                {"A": record("A", description="own text")},
+                creator={"program": "sphinx_needs", "version": "9.2.0"},
+                needs_defaults_removed=True,
+                needs_schema=schema,
+            )
+        )
+    ).select_version(None)
+    (bare,) = modern.records(apply_schema_defaults=False)
+    assert bare.fields["description"] == "own text"
+    assert "content" not in bare.fields
+    # a 3.x remove-defaults file: its schema has a ``description`` default, and none
+    # for ``content``
+    three_x = {"properties": {"description": {"type": "string", "default": ""}}}
+    legacy = nx.parse(
+        json.dumps(
+            envelope(
+                {"A": record("A", description="TEST IMPORT DESCRIPTION")},
+                needs_defaults_removed=True,
+                needs_schema=three_x,
+            )
+        )
+    ).select_version(None)
+    (old,) = legacy.records(apply_schema_defaults=False)
+    assert old.fields["content"] == "TEST IMPORT DESCRIPTION"
+    assert "description" not in old.fields
 
 
 def test_a_summary_marker_is_passed_through():
@@ -380,3 +448,259 @@ def test_a_default_is_one_object_in_every_record():
     a, b = doc.select_version(None).records()
     schema_tags = doc.data["versions"]["1.0"]["needs_schema"]["properties"]["tags"]
     assert a.fields["tags"] is b.fields["tags"] is schema_tags["default"]
+
+
+# ------------------------------------------------------------------------------------
+# the draft "2a1", on opt-in (design/v2a1-draft.md; its corpus is
+# tests/fixtures/needs_json_2a1_draft_conformance.toml)
+
+
+def draft(needs: Any, **envelope_keys: Any) -> dict[str, Any]:
+    """A "2a1" document."""
+    return {
+        "format_version": "2a1",
+        "project": {"name": "up", "version": "1.0"},
+        "creator": {"program": "sphinx_needs", "version": "9.3.0"},
+        "needs": needs,
+        **envelope_keys,
+    }
+
+
+def read_draft(data: dict[str, Any], requested: str | None = None) -> nx.Version:
+    return nx.parse(json.dumps(data)).select_version(requested, drafts=("2a1",))
+
+
+def test_without_the_opt_in_a_draft_is_refused_exactly_as_before():
+    """The same code and the same message as a reader with no drafts at all."""
+    doc = nx.parse(json.dumps(draft([{"id": "A", "type": "req"}])))
+    with pytest.raises(nx.ExchangeError) as info:
+        doc.select_version(None)
+    assert (info.value.code, info.value.message) == (
+        "format_version_unsupported",
+        'the file is of format version "2a1"; this reader reads format version 1 only',
+    )
+
+
+@pytest.mark.parametrize(
+    "drafts",
+    [
+        pytest.param(("2a1",), id="tuple"),
+        pytest.param(["2a1"], id="list"),
+        pytest.param(frozenset({"2a1"}), id="frozenset"),
+    ],
+)
+def test_drafts_is_any_collection(drafts):
+    doc = nx.parse(json.dumps(draft([{"id": "A", "type": "req"}])))
+    assert [r.key for r in doc.select_version(None, drafts=drafts).records()] == ["A"]
+
+
+@pytest.mark.parametrize("stated", [[], {}], ids=["array", "object"])
+def test_an_unhashable_format_version_is_invalid_whatever_the_drafts(stated):
+    """A ``format_version`` that is neither a number nor a string is
+    ``format_version_invalid`` under a hashing ``drafts`` too, never a ``TypeError``."""
+    data = {"format_version": stated, **envelope({"A": record("A")})}
+    with pytest.raises(nx.ExchangeError) as info:
+        nx.parse(json.dumps(data)).select_version(None, drafts=frozenset({"2a1"}))
+    assert info.value.code == "format_version_invalid"
+
+
+@pytest.mark.parametrize(
+    "drafts",
+    [
+        pytest.param(("2b1",), id="another-pre-release"),
+        pytest.param(("2a1", "2"), id="a-later-format"),
+        pytest.param("2a1", id="a-string-is-its-characters"),
+    ],
+)
+def test_an_unknown_draft_is_a_programming_error(drafts):
+    """Not a finding about a file: refused before the file is looked at, a format-1
+    file included."""
+    doc = nx.parse(json.dumps(envelope({"A": record("A")})))
+    with pytest.raises(ValueError, match="unknown drafts"):
+        doc.select_version(None, drafts=drafts)
+
+
+@pytest.mark.parametrize(
+    ("data", "requested", "code", "message"),
+    [
+        pytest.param(
+            draft([], versions={}),
+            None,
+            "draft_has_versions",
+            "the file is of format version \"2a1\", which has no 'versions'; a file "
+            "that has one is not read",
+            id="versions",
+        ),
+        pytest.param(
+            draft([], current_version="1.0"),
+            None,
+            "draft_has_versions",
+            "the file is of format version \"2a1\", which has no 'current_version'; a "
+            "file that has one is not read",
+            id="current_version",
+        ),
+        pytest.param(
+            draft([]),
+            "2.0",
+            "version_not_found",
+            "Version '2.0' not found in the file: ['1.0']",
+            id="version_not_found",
+        ),
+        pytest.param(
+            {**draft([]), "project": {"name": "up"}},
+            "1.0",
+            "version_not_found",
+            "Version '1.0' not found in the file: []",
+            id="no_project_version",
+        ),
+        pytest.param(
+            draft({}),
+            None,
+            "needs_missing",
+            "'needs' is missing or not an array",
+            id="needs_missing",
+        ),
+    ],
+)
+def test_a_draft_is_refused(data, requested, code, message):
+    with pytest.raises(nx.ExchangeError) as info:
+        read_draft(data, requested)
+    assert (info.value.code, info.value.message) == (code, message)
+
+
+def test_a_draft_version_is_marked_as_one():
+    version = read_draft(draft([]))
+    assert (version.name, version.format_version) == ("1.0", "2a1")
+    assert version.data["project"] == {"name": "up", "version": "1.0"}
+    plain = nx.parse(json.dumps(envelope({}))).select_version(None)
+    assert plain.format_version == nx.FORMAT_VERSION == 1
+
+
+def test_a_format_1_record_has_no_source():
+    (only,) = (
+        nx.parse(json.dumps(envelope({"A": record("A")})))
+        .select_version(None, drafts=("2a1",))
+        .records()
+    )
+    assert only.source == ()
+    assert nx.Record("A", {}).source == ()
+
+
+def test_a_draft_has_no_schema_defaults():
+    """A draft carries no schema: a ``needs_schema`` key in its envelope is ignored, and
+    ``apply_schema_defaults`` changes nothing."""
+    schema = {"properties": {"status": {"default": "open"}}}
+    version = read_draft(draft([{"id": "A", "type": "req"}], needs_schema=schema))
+    assert version.schema_defaults() == {}
+    assert version.records() == version.records(apply_schema_defaults=False)
+    assert "status" not in version.records()[0].fields
+
+
+def test_a_null_value_of_a_draft_is_read():
+    """A field written as ``null`` is read as ``None`` (TOML has no null)."""
+    version = read_draft(draft([{"id": "A", "type": "req", "fields": {"asil": None}}]))
+    assert version.records()[0].fields["asil"] is None
+
+
+def test_hops_are_the_document_s_own_objects():
+    """A hop is not copied (the draft contract's section 4): the record's source holds
+    the document's objects, less the invalid ones."""
+    hops = [{"kind": "page", "document": "index"}, {"kind": 1}, {"kind": "file"}]
+    data = draft([{"id": "A", "type": "req", "source": hops}])
+    doc = nx.parse(json.dumps(data))
+    (only,) = doc.select_version(None, drafts=("2a1",)).records()
+    own = doc.data["needs"][0]["source"]
+    assert len(only.source) == 2
+    assert only.source[0] is own[0]
+    assert only.source[1] is own[2]
+
+
+def test_a_draft_s_records_do_not_alter_the_document():
+    data = draft(
+        [{"id": "A", "type": "req", "fields": {"title": "t"}, "links": {"l": ["B"]}}]
+    )
+    doc = nx.parse(json.dumps(data))
+    (only,) = doc.select_version(None, drafts=("2a1",)).records()
+    only.fields["title"] = "changed"
+    only.fields["l"].append("C")
+    assert doc.data["needs"][0]["fields"] == {"title": "t"}
+    assert doc.data["needs"][0]["links"] == {"l": ["B"]}
+
+
+def test_the_draft_findings_messages():
+    data = draft(
+        [
+            {"id": "A", "type": "req", "source": [{"kind": "page", "document": 1}]},
+            {"id": "A", "type": "req"},
+        ]
+    )
+    version = read_draft(data)
+    assert [(d.code, d.message) for d in version.diagnostics] == [
+        (
+            "duplicate_id",
+            "the need at index 1 has the id 'A' of the need at index 0; the first is "
+            "read, this one skipped",
+        )
+    ]
+    assert [(d.code, d.message) for d in version.records()[0].diagnostics] == [
+        (
+            "hop_invalid",
+            "the hop at index 0 has a 'document' that is not a string; it is not read",
+        )
+    ]
+
+
+LINKS = [
+    {"id": "B"},
+    {"id": "B", "part": "p1"},
+    {"id": "B", "condition": "status == 'open'"},
+    {"id": "B", "part": "p1", "condition": "c"},
+    {"id": "B", "condition": "tags[0] == 'x'"},
+    {"id": "B", "part": "p", "condition": "a[b[0]] == 1"},
+    {"id": "B", "condition": "x == a[0]"},
+    {"id": "B", "part": "p", "condition": "status in ['open']"},
+    {"id": "B", "condition": "[1] == y"},
+    {"id": "B", "part": "p", "condition": "[x] == a[0]"},
+]
+
+
+@pytest.mark.parametrize("link", LINKS, ids=[json.dumps(link) for link in LINKS])
+def test_a_link_object_is_spelled_as_sphinx_needs_writes_it(link):
+    """A link object reads as the string sphinx-needs' format-1 writer writes for the
+    same link (``NeedLink.to_link_string``). Run where sphinx-needs is installed (the
+    workspace); CI's toolchain-free job skips it, and the package itself never imports
+    it."""
+    need_item = pytest.importorskip("sphinx_needs.need_item")
+    version = read_draft(draft([{"id": "A", "type": "req", "links": {"l": [link]}}]))
+    (spelled,) = version.records()[0].fields["l"]
+    assert spelled == need_item.NeedLink(**link).to_link_string()
+
+
+def test_an_empty_condition_is_spelled_as_no_condition():
+    """An empty condition is spelled ``B[]``, as sphinx-needs' writer spells it, which
+    sphinx-needs reads as no condition: the one condition that does not read back as
+    itself, by design (``design/v2a1-draft.md`` §5.1)."""
+    version = read_draft(
+        draft(
+            [{"id": "A", "type": "req", "links": {"l": [{"id": "B", "condition": ""}]}}]
+        )
+    )
+    (spelled,) = version.records()[0].fields["l"]
+    assert spelled == "B[]"
+    need_item = pytest.importorskip("sphinx_needs.need_item")
+    assert need_item.NeedLink.from_string(spelled) == need_item.NeedLink(id="B")
+
+
+@pytest.mark.parametrize("link", LINKS, ids=[json.dumps(link) for link in LINKS])
+def test_a_link_object_reads_back_as_the_same_link(link):
+    """The round trip the projection exists for: sphinx-needs reads the spelled link
+    back as the link the object states."""
+    need_item = pytest.importorskip("sphinx_needs.need_item")
+    version = read_draft(draft([{"id": "A", "type": "req", "links": {"l": [link]}}]))
+    (spelled,) = version.records()[0].fields["l"]
+    parsed = need_item.NeedLink.from_string(spelled)
+    assert (parsed.id, parsed.part, parsed.condition) == (
+        link["id"],
+        link.get("part"),
+        link.get("condition"),
+    )

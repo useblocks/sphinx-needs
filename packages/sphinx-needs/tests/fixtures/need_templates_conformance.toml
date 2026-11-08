@@ -6,7 +6,7 @@
 # Repository of record: useblocks/sphinx-needs (public)
 # Canonical path:       packages/sphinx-needs/tests/fixtures/need_templates_conformance.toml
 #
-# minijinja: 2.24.0
+# minijinja: 3.1.0
 # sphinx-needs: 9.3.0
 #
 # The `minijinja:` line is the engine the cases were recorded against (both tools render

@@ -1,0 +1,42 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 63
+      }
+    },
+    "tagged_scope": "namespace lib {\n// @On the namespace, IMPL_CPP_COND_BLANK, impl, [REQ_CPP_COND]\n\n#if FEATURE_B\nvoid active() {}\n#endif\n}",
+    "scope": {
+      "kind": "namespace_definition",
+      "start": 1,
+      "end": 7,
+      "language": "cpp",
+      "entity_kind": "namespace",
+      "qualified_name": "lib",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "On the namespace",
+      "id": "IMPL_CPP_COND_BLANK",
+      "type": "impl",
+      "links": [
+        "REQ_CPP_COND"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "namespace_definition"
+  }
+]

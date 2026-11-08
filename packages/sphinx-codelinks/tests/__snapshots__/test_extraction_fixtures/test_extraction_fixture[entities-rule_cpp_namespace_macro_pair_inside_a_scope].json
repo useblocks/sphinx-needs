@@ -1,0 +1,86 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 4
+      },
+      "end": {
+        "row": 4,
+        "column": 57
+      }
+    },
+    "tagged_scope": "void h();",
+    "scope": {
+      "kind": "declaration",
+      "start": 6,
+      "end": 6,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "outer::h",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "outer"
+        },
+        {
+          "kind": "function",
+          "name": "h"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Between a pair inside a namespace",
+      "id": "IMPL_R_NSI_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "declaration"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 11,
+        "column": 8
+      },
+      "end": {
+        "row": 11,
+        "column": 57
+      }
+    },
+    "tagged_scope": "void n();",
+    "scope": {
+      "kind": "field_declaration",
+      "start": 13,
+      "end": 13,
+      "language": "cpp",
+      "entity_kind": "method",
+      "qualified_name": "S::n",
+      "semantic": [
+        {
+          "kind": "struct",
+          "name": "S"
+        },
+        {
+          "kind": "method",
+          "name": "n"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Between a pair inside a class",
+      "id": "IMPL_R_NSI_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "field_declaration"
+  }
+]

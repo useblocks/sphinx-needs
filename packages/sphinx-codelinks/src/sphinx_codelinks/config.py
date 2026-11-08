@@ -1,4 +1,5 @@
 from collections import deque
+from collections.abc import Collection
 from dataclasses import MISSING, dataclass, field, fields, replace
 from enum import Enum
 from pathlib import Path
@@ -40,8 +41,46 @@ class CommentCategory(str, Enum):  # noqa: UP042  # StrEnum changes str(member),
     docstring = "expression_statement"
 
 
+class NeedIdRefsMarkerType(TypedDict):
+    """A reference marker given as a table: its text and the field its URLs go to."""
+
+    marker: str
+    field: str
+
+
 class NeedIdRefsConfigType(TypedDict):
-    markers: list[str]
+    markers: list[str | NeedIdRefsMarkerType]
+
+
+MARKER_TABLE_KEYS: tuple[str, ...] = ("marker", "field")
+"""The keys of a reference marker given as a table, every one required."""
+
+
+def _marker_table(index: int, entry: dict[Any, Any]) -> tuple[str, str]:
+    """The ``(marker, field)`` of the marker table at ``markers[index]``.
+
+    :raises TypeError: If the table lacks a key, has another key, its ``marker`` is not
+        a non-empty string or its ``field`` not a string.
+    """
+    where = f"markers[{index}]"
+    unknown = [key for key in entry if key not in MARKER_TABLE_KEYS]
+    if unknown:
+        names = ", ".join(repr(key) for key in unknown)
+        raise TypeError(
+            f"{where}: unknown key {names}; a marker table takes 'marker' and 'field'"
+        )
+    missing = [key for key in MARKER_TABLE_KEYS if key not in entry]
+    if missing:
+        names = " and ".join(repr(key) for key in missing)
+        raise TypeError(
+            f"{where}: missing {names}; a marker table takes 'marker' and 'field'"
+        )
+    marker, field_name = entry["marker"], entry["field"]
+    if not isinstance(marker, str) or not marker:
+        raise TypeError(f"{where}: 'marker' must be a non-empty string")
+    if not isinstance(field_name, str):
+        raise TypeError(f"{where}: 'field' must be a string")
+    return marker, field_name
 
 
 @dataclass
@@ -52,9 +91,52 @@ class NeedIdRefsConfig:
 
     markers: list[str] = field(
         default_factory=lambda: ["@need-ids:"],
-        metadata={"schema": {"type": "array", "items": {"type": "string"}}},
+        metadata={
+            "schema": {
+                "type": "array",
+                "items": {
+                    "anyOf": [
+                        {"type": "string"},
+                        {
+                            "type": "object",
+                            "properties": {
+                                "marker": {"type": "string", "minLength": 1},
+                                "field": {"type": "string"},
+                            },
+                            "required": list(MARKER_TABLE_KEYS),
+                            "additionalProperties": False,
+                        },
+                    ]
+                },
+            }
+        },
     )
-    """The markers to extract need ids from"""
+    """The markers to extract need ids from.
+
+    Each entry is a marker string, whose references go to the project's
+    ``ref_url_field``, or a table ``{"marker": ..., "field": ...}``, whose references go
+    to ``field`` instead (``""``: to no field). Once constructed, this is the list of
+    the marker texts, and :attr:`fields` holds the tables' fields.
+    """
+    fields: dict[str, str] = field(default_factory=dict, init=False)
+    """Each marker given as a table, mapped to its field (resolved from ``markers``)."""
+
+    def __post_init__(self) -> None:
+        """Split the marker tables of ``markers`` into their texts and :attr:`fields`.
+
+        :raises TypeError: For a malformed marker table (see :func:`_marker_table`).
+        """
+        if not isinstance(self.markers, list):
+            return  # reported by check_schema
+        texts: list[str] = []
+        for index, entry in enumerate(self.markers):
+            if isinstance(entry, dict):
+                marker, field_name = _marker_table(index, entry)
+                texts.append(marker)
+                self.fields.setdefault(marker, field_name)
+            else:
+                texts.append(entry)
+        self.markers = texts
 
     @classmethod
     def get_schema(cls, name: str) -> dict[str, Any] | None:
@@ -571,7 +653,11 @@ class SourceAnalyseConfig:
             else:
                 markers.add(marker)
 
+        # a reference marker listed twice is an error too, in whichever form (a string,
+        # a table, or one of each): one text cannot name two fields
         for marker in self.need_id_refs_config.markers:
+            if not isinstance(marker, str):
+                continue  # reported by the schema check
             if marker in markers:
                 errors.add(f"Marker {marker} is defined multiple times")
             else:
@@ -610,7 +696,8 @@ DEFAULT_CONFIG_TOML: str = "ubproject.toml"
 
 DEFAULT_REF_URL_FIELD: str = "code_url"
 """The need field ``@need-ids:`` references are attached to, unless a project's
-``ref_url_field`` names another (ubCode's key and default; ``""`` disables the attach)."""
+``ref_url_field`` names another (``""`` disables the attach), or a marker table names
+the field of its own references."""
 
 #: The table of the TOML file that both readers, the Sphinx extension and the CLI,
 #: take their configuration from.
@@ -876,8 +963,15 @@ def check_schema(config: CodeLinksConfig) -> list[str]:
     return errors
 
 
-def check_project_configuration(config: CodeLinksConfig) -> list[str]:
-    """Check nested project configurations"""
+def check_project_configuration(
+    config: CodeLinksConfig, link_types: Collection[str] = ()
+) -> list[str]:
+    """Check nested project configurations.
+
+    :param config: The configuration.
+    :param link_types: The declared need link types, which no reference field may name
+        (:func:`declared_link_types`; empty where no Sphinx-Needs configuration exists).
+    """
     errors = []
 
     for project_name, project_config in config.projects.items():
@@ -913,11 +1007,33 @@ def check_project_configuration(config: CodeLinksConfig) -> list[str]:
         ref_url_field = project_config.get("ref_url_field", DEFAULT_REF_URL_FIELD)
         if not isinstance(ref_url_field, str):
             project_errors.append("ref_url_field must be a string")
-        elif ref_url_field and ref_url_field in _url_fields(config):
-            project_errors.append(
-                f"ref_url_field {ref_url_field!r} must differ from local_url_field "
-                "and remote_url_field"
+        # a field is checked where it can be written: URLs on, and ``ref_url_field``
+        # while a plain-string marker exists, or a marker table's non-empty field
+        if config.set_local_url or config.set_remote_url:
+            refs_config = (
+                analyse_config.need_id_refs_config
+                if analyse_config
+                else NeedIdRefsConfig()
             )
+            has_plain_marker = any(
+                isinstance(marker, str) and marker not in refs_config.fields
+                for marker in refs_config.markers
+            )
+            if (
+                has_plain_marker
+                and isinstance(ref_url_field, str)
+                and (
+                    problem := reference_field_problem(
+                        ref_url_field, config, link_types
+                    )
+                )
+            ):
+                project_errors.append(f"ref_url_field {ref_url_field!r} {problem}")
+            for marker, field_name in refs_config.fields.items():
+                if problem := reference_field_problem(field_name, config, link_types):
+                    project_errors.append(
+                        f"need_id_refs marker {marker!r}: field {field_name!r} {problem}"
+                    )
 
         if analyse_errors or src_discover_errors or project_errors:
             errors.append(f"Project '{project_name}' has the following errors:")
@@ -1015,50 +1131,123 @@ def _url_fields(config: CodeLinksConfig) -> set[str]:
     return names
 
 
-def need_id_refs_field(
-    config: CodeLinksConfig, project_config: CodeLinksProjectConfigType
-) -> str | None:
-    """The field a project's ``@need-ids:`` references are attached to, or ``None``.
+CORE_LINK_TYPES: frozenset[str] = frozenset({"links", "parent_needs"})
+"""The link types every Sphinx-Needs project has."""
 
-    ubCode's gate: URLs are on (local or remote), references are extracted, the project
-    has at least one marker, and its ``ref_url_field`` is not ``""``. A field that is not
-    a string, or that is one of the URL fields, is a configuration error reported by
-    :func:`check_project_configuration`, and attaches nothing.
+
+def declared_link_types(sphinx_config: _SphinxConfig) -> frozenset[str]:
+    """The need link types a Sphinx configuration declares.
+
+    The core ones, ``needs_links``' keys and ``needs_extra_links``' ``option`` names:
+    the link types Sphinx-Needs itself checks a field name against. Read from the
+    configuration values, so it is complete once ``needs_from_toml`` has been loaded
+    (early in ``config-inited``).
     """
-    if not (config.set_remote_url or config.set_local_url):
-        return None
-    field_name = project_config.get("ref_url_field", DEFAULT_REF_URL_FIELD)
-    if not isinstance(field_name, str) or not field_name:
+    names = set(CORE_LINK_TYPES)
+    links = getattr(sphinx_config, "needs_links", None)
+    if isinstance(links, dict):
+        names.update(name for name in links if isinstance(name, str))
+    extra_links = getattr(sphinx_config, "needs_extra_links", None)
+    if isinstance(extra_links, list | tuple):
+        names.update(
+            link["option"]
+            for link in extra_links
+            if isinstance(link, dict) and isinstance(link.get("option"), str)
+        )
+    return frozenset(names)
+
+
+def reference_field_problem(
+    field_name: str, config: CodeLinksConfig, link_types: Collection[str] = ()
+) -> str | None:
+    """Why a field cannot hold reference URLs, or ``None``.
+
+    The one check of every field references are attached to, ``ref_url_field`` and a
+    marker table's ``field`` alike. ``""`` (attach nowhere) has no problem.
+
+    :param field_name: The field.
+    :param config: The configuration, for the URL fields.
+    :param link_types: The declared need link types (:func:`declared_link_types`).
+    :return: The rest of a sentence naming the field, or ``None``.
+    """
+    if not field_name:
         return None
     if field_name in _url_fields(config):
-        return None
+        return "must differ from local_url_field and remote_url_field"
+    if field_name in link_types:
+        return "names a need link type, which cannot hold URLs"
+    if is_back_link_name(field_name, link_types):
+        return "names the back links of a need link type, which cannot hold URLs"
+    return None
+
+
+def is_back_link_name(field_name: str, link_types: Collection[str]) -> bool:
+    """Whether ``field_name`` is the back links of one of ``link_types``
+    (``<link type>_back``, as Sphinx-Needs names them), core or declared."""
+    return field_name.endswith("_back") and field_name[: -len("_back")] in link_types
+
+
+def need_id_refs_marker_fields(
+    config: CodeLinksConfig, project_config: CodeLinksProjectConfigType
+) -> dict[str, str]:
+    """Each marker of a project whose references are attached, mapped to its field.
+
+    The gate: URLs are on (local or remote) and references are extracted. A marker
+    given as a table takes its own ``field``; a marker string takes the project's
+    ``ref_url_field``. A marker whose field is ``""``, not a string, or one of the URL
+    fields attaches nothing and is left out -- the last two are configuration errors
+    reported by :func:`check_project_configuration`, as is a field naming a link type.
+    An empty mapping: the project attaches no reference.
+    """
+    if not (config.set_remote_url or config.set_local_url):
+        return {}
     analyse_config = project_config.get("analyse_config")
     if analyse_config is None or not analyse_config.get_need_id_refs:
-        return None
-    if not analyse_config.need_id_refs_config.markers:
-        return None
-    return field_name
+        return {}
+    refs_config = analyse_config.need_id_refs_config
+    ref_url_field = project_config.get("ref_url_field", DEFAULT_REF_URL_FIELD)
+    url_fields = _url_fields(config)
+    marker_fields: dict[str, str] = {}
+    for marker in refs_config.markers:
+        if not isinstance(marker, str):
+            continue
+        field_name = refs_config.fields.get(marker, ref_url_field)
+        if isinstance(field_name, str) and field_name and field_name not in url_fields:
+            marker_fields[marker] = field_name
+    return marker_fields
 
 
-def need_id_refs_fields(config: CodeLinksConfig) -> dict[str, str]:
-    """Each project whose references are attached, mapped to its field."""
+def need_id_refs_fields(config: CodeLinksConfig) -> dict[str, dict[str, str]]:
+    """Each project whose references are attached, mapped to its markers' fields
+    (:func:`need_id_refs_marker_fields`)."""
     projects = config.projects
     if not isinstance(projects, dict):
         return {}
-    fields_by_project: dict[str, str] = {}
+    fields_by_project: dict[str, dict[str, str]] = {}
     for name, project_config in projects.items():
         if not isinstance(project_config, dict):
             continue
-        field_name = need_id_refs_field(config, project_config)
-        if field_name is not None:
-            fields_by_project[name] = field_name
+        marker_fields = need_id_refs_marker_fields(config, project_config)
+        if marker_fields:
+            fields_by_project[name] = marker_fields
     return fields_by_project
 
 
-def check_configuration(config: CodeLinksConfig) -> list[str]:
+def need_id_refs_field_names(config: CodeLinksConfig) -> set[str]:
+    """Every field some project attaches references to: the fields to register."""
+    return {
+        field_name
+        for marker_fields in need_id_refs_fields(config).values()
+        for field_name in marker_fields.values()
+    }
+
+
+def check_configuration(
+    config: CodeLinksConfig, link_types: Collection[str] = ()
+) -> list[str]:
     errors = []
     errors.extend(check_schema(config))
-    errors.extend(check_project_configuration(config))
+    errors.extend(check_project_configuration(config, link_types))
     return errors
 
 
@@ -1279,9 +1468,10 @@ def convert_need_id_refs_config(
         need_id_refs_config = NeedIdRefsConfig()
     else:
         try:
-            need_id_refs_config = NeedIdRefsConfig(**config_dict)
+            # a marker table is resolved to its text by ``__post_init__``
+            need_id_refs_config = NeedIdRefsConfig(**config_dict)  # ty: ignore[invalid-argument-type]
         except TypeError as e:
-            raise TypeError(f"Invalid oneline comment style configuration: {e}") from e
+            raise TypeError(f"Invalid need_id_refs configuration: {e}") from e
     return need_id_refs_config
 
 

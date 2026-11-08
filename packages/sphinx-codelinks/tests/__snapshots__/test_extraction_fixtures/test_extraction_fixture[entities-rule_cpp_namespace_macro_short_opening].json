@@ -1,0 +1,64 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 4
+      },
+      "end": {
+        "row": 3,
+        "column": 46
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Before a short opening",
+      "id": "IMPL_R_NSS_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 4
+      },
+      "end": {
+        "row": 6,
+        "column": 43
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "scope": {
+      "kind": "function_definition",
+      "start": 8,
+      "end": 8,
+      "language": "cpp",
+      "entity_kind": "function",
+      "qualified_name": "f",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Inside a short pair",
+      "id": "IMPL_R_NSS_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 57
+      }
+    },
+    "tagged_scope": "namespace lib {\n// @Above a define, IMPL_CPP_DEFINE, impl, [REQ_CPP_COND]\n#define FAST 1\nvoid active() {}\n}",
+    "scope": {
+      "kind": "namespace_definition",
+      "start": 1,
+      "end": 5,
+      "language": "cpp",
+      "entity_kind": "namespace",
+      "qualified_name": "lib",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "lib"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Above a define",
+      "id": "IMPL_CPP_DEFINE",
+      "type": "impl",
+      "links": [
+        "REQ_CPP_COND"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "namespace_definition"
+  }
+]

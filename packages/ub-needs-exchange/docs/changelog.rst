@@ -3,6 +3,56 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- **A draft "2a1" link object whose condition starts with ``[`` and ends with ``]`` is
+  spelled with one space after its opening brackets** (``{"id": "B", "condition": "[x]
+  == a[0]"}`` is ``B[[ [x] == a[0]]]``, was ``B[[[x] == a[0]]]``), as sphinx-needs'
+  format-1 writer now spells it, so that sphinx-needs reads it back as the same link
+  (changed output). ``design/v2a1-draft.md`` §5.1 drops the condition exception to the
+  round trip, and the draft's corpus has two new cases,
+  ``a-condition-that-ends-in-a-bracket`` and
+  ``a-condition-that-starts-and-ends-with-a-bracket-is-spelled-with-a-space``.
+- **A record's legacy ``description`` is its ``content`` only when the record has no
+  ``content``** -- after the schema defaults are merged --, as in every needs.json
+  sphinx-needs wrote before 4.0; a record with a ``content``, even an empty one, keeps its
+  ``description`` (changed output). 1.1.0 renamed it over any ``content`` Python treats as
+  false (``""``, ``null``, ``0``, ``false``, ``[]``, ``{}``), so a field or link type named
+  ``description`` on a need without content -- which every writer since 4.0 writes as
+  ``"content": ""``, or as the schema's ``content`` default, unless told to leave
+  ``content`` out -- was read as the content. A file written with ``content`` left out
+  reads as a pre-4.0 one, as it did.
+- **Read without the defaults, the same.** ``Version.records(apply_schema_defaults=False)``
+  maps a record as the merge would: where the schema gives ``content`` a default, no
+  record's ``description`` is renamed, where 1.1.0 renamed it on the unmerged record.
+- **The contract and the corpus.** ``design/exchange-contract.md`` §6.3 and §9 say so. Of
+  the corpus, the seven cases whose ``content`` is present but falsy keep the
+  ``description`` and are renamed to say so (``description-fills-an-empty-content`` is
+  now ``an-empty-content-keeps-the-description``,
+  ``a-content-default-does-not-hide-the-description`` is now
+  ``a-content-default-keeps-the-description``, and so on), and
+  ``a-modern-record-keeps-an-empty-content-and-its-description`` is new.
+- **A draft needs.json, format "2a1", is read on opt-in (experimental).**
+  ``Document.select_version(requested, drafts=("2a1",))`` reads a ``"2a1"`` file -- one
+  version, no ``versions`` or ``current_version``, a ``project`` object whose ``version``
+  names it, and ``needs`` an array of records of an ``id``, a ``type``, ``fields``,
+  ``links``, ``content`` and ``source`` --; without ``drafts`` such a file is refused
+  exactly as before. Each record is handed out in the shape a format-1 record has (its
+  fields, its links spelled as format 1 writes them, ``content``, ``doctype``, ``parts``,
+  and ``docname``, ``sections``, ``section_name`` and ``signature`` from the page it is
+  placed on), and its hops, as the
+  file has them, in the new ``Record.source`` (``()`` for a format-1 record);
+  ``Version.format_version`` says which format a version is read as. The draft's
+  findings and refusals have codes of their own (``draft_has_versions``,
+  ``duplicate_id`` -- the first record of an id is read --, ``field_reserved``,
+  ``hop_invalid``, ...), and
+  an unknown name in ``drafts`` is a ``ValueError``. The draft may change or be removed
+  in any release while it is one, and a file of it is readable only by the release that
+  wrote it. Its contract is ``design/v2a1-draft.md`` and its corpus
+  ``tests/fixtures/needs_json_2a1_draft_conformance.toml``, both this package's own: the
+  shared corpus, which ubCode vendors, is unchanged, and still refuses ``"2a1"``.
+
 .. _`release:1.1.0`:
 
 1.1.0

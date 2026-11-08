@@ -1,11 +1,14 @@
 import configparser
 import re
+from enum import Enum
 from pathlib import Path
 from urllib.request import pathname2url
 
 from giturlparse import parse
-from tree_sitter import Language, Parser, Query, QueryCursor
+from tree_sitter import Language, Parser, Query, QueryCursor, Tree
 from tree_sitter import Node as TreeSitterNode
+
+from sphinx_codelinks.analyse import cpp_macros
 
 # The entity tables live with the naming in ``entity``; they stay importable from
 # here, where they were.
@@ -13,7 +16,9 @@ from sphinx_codelinks.analyse.entity import (
     COMMENT_TYPES,
     ENTITY_HEAD_TYPES,
     Association,
+    CppNames,
     Mechanism,
+    in_function_body,
     is_doc_comment,
     is_entity,
     is_trivia,
@@ -196,11 +201,18 @@ def init_tree_sitter(
     return parser, query
 
 
-# @Comment extraction from source code using tree-sitter, IMPL_EXTR_1, impl, [FE_DEF]
-def extract_comments(
-    src_string: bytes, parser: Parser, query: Query
-) -> list[TreeSitterNode] | None:
-    """Get all comments from source files by tree-sitter.
+def parse_source(
+    src_string: bytes, parser: Parser, comment_type: CommentType, src_path: Path
+) -> tuple[Tree, CppNames | None]:
+    """The one parse of a source file the analysis reads, and, for a C++ file, what the
+    whole file decides about the names of its entities (:class:`CppNames`).
+
+    Every analysis of a file's markers parses it here, so that every C++ name is made
+    the one way. A C++ file is parsed from a copy with the namespace macros it defines
+    itself rewritten (:mod:`sphinx_codelinks.analyse.cpp_macros`): the tree's offsets
+    are the file's, and every comment, name, tagged scope and excerpt is read from
+    ``src_string``, through :class:`CppNames` and ``SourceFile.node_text``, never from
+    the copy. A ``.c`` file is C: it is parsed as written, and gets no file-level names.
 
     The whole buffer is parsed in one piece: read one byte at a time, a multi-byte
     UTF-8 character inside a token (a YAML scalar, an identifier, a Rust, Go or C#
@@ -210,11 +222,29 @@ def extract_comments(
     from-offset chunk of four bytes or more happens to work; a block-aligned one
     does not).
     """
-    tree = parser.parse(src_string)
+    if comment_type != CommentType.cpp or not cpp_macros.applies(src_path):
+        return parser.parse(src_string), None
+    tree, macros = cpp_macros.parse(parser, src_string)
+    return tree, CppNames(src_string, tree.root_node, macros)
+
+
+def captured_comments(tree: Tree, query: Query) -> list[TreeSitterNode] | None:
+    """The comment nodes ``query`` captures in ``tree``."""
     query_cursor = QueryCursor(query)
     captures: dict[str, list[TreeSitterNode]] = query_cursor.captures(tree.root_node)
-
     return captures.get("comment")
+
+
+# @Comment extraction from source code using tree-sitter, IMPL_EXTR_1, impl, [FE_DEF]
+def extract_comments(
+    src_string: bytes, parser: Parser, query: Query
+) -> list[TreeSitterNode] | None:
+    """Get all comments from source files by tree-sitter.
+
+    The buffer is parsed whole, as :func:`parse_source` explains; the analysis parses
+    through :func:`parse_source`, and this is its comment capture alone.
+    """
+    return captured_comments(parser.parse(src_string), query)
 
 
 def find_enclosing_scope(
@@ -314,12 +344,59 @@ def _is_file_header(node: TreeSitterNode) -> bool:
         index += 1
     if not in_block or last_comment is None or index >= len(siblings):
         return in_block
-    end_row = last_comment.end_point.row
-    if last_comment.end_point.column == 0:
+    return siblings[index].start_point.row - _last_row(last_comment) > 1
+
+
+def _last_row(comment: TreeSitterNode) -> int:
+    """The last row the ``comment`` node is written on."""
+    if comment.end_point.column == 0:
         # a Rust doc line comment (``///``) takes its line break in its ``doc_comment``
         # child, so its node ends at column 0 of the next row
-        end_row -= 1
-    return siblings[index].start_point.row - end_row > 1
+        return comment.end_point.row - 1
+    return comment.end_point.row
+
+
+# The tokens that open the line of a C or C++ preprocessor conditional, as the grammar
+# names them (``# if`` is ``#if`` too).
+_CONDITIONAL_DIRECTIVES = frozenset(
+    {"#if", "#ifdef", "#ifndef", "#elif", "#elifdef", "#elifndef", "#else", "#endif"}
+)
+
+
+def _directly_above_a_conditional(node: TreeSitterNode) -> bool:
+    """Whether the line of a preprocessor conditional (``#if`` ... ``#endif``) comes
+    right after the comment ``node``: past other comments only, and with no blank line
+    between.
+
+    When ``node`` ends a conditional's arm, what comes next is the arm's parent's: the
+    next ``#elif`` or ``#else``, or the ``#endif``.
+    """
+    last_row = _last_row(node)
+    current = node
+    while True:
+        following = current.next_sibling
+        outer = current
+        while following is None and outer.parent is not None:
+            outer = outer.parent
+            following = outer.next_sibling
+        if following is None or following.start_point.row - last_row > 1:
+            return False
+        if following.type not in COMMENT_TYPES:
+            break
+        last_row = _last_row(following)
+        current = following
+    while following.child_count:
+        following = following.children[0]
+    return following.type in _CONDITIONAL_DIRECTIVES
+
+
+class Unattached(Enum):
+    """Why :func:`associate` attached a comment to no entity, where the analysis
+    warns about it; every other comment on nothing is ``None``."""
+
+    above_conditional = "above_conditional"
+    """Rule 7: a C or C++ comment directly above a preprocessor conditional's line,
+    outside a function's body."""
 
 
 # A Doxygen or JSDoc tag saying a documentation comment documents the file, not the
@@ -366,11 +443,12 @@ def _in_head_of(
     return wrapped is not None and wrapped.id == entity.id
 
 
-def _is_inner_doc(node: TreeSitterNode, comment_type: CommentType) -> bool:
-    """A Rust inner doc comment (``//!``, ``/*!``): it documents what it is inside."""
+def _is_inner_doc(text: bytes, comment_type: CommentType) -> bool:
+    """Whether the comment ``text`` is a Rust inner doc comment (``//!``, ``/*!``): it
+    documents what it is inside."""
     if comment_type != CommentType.rust:
         return False
-    return (node.text or b"").startswith((b"//!", b"/*!"))
+    return text.startswith((b"//!", b"/*!"))
 
 
 def _find_yaml_structure_in_block_node(
@@ -502,8 +580,11 @@ def find_jsonc_associated_structure(node: TreeSitterNode) -> TreeSitterNode | No
 
 # @Attach a marker to the adjacent code entity, IMPL_ENTITY_1, impl, [FE_DEF]
 def associate(
-    node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
-) -> Association | None:
+    node: TreeSitterNode,
+    comment_type: CommentType = CommentType.cpp,
+    *,
+    text: bytes | None = None,
+) -> Association | Unattached | None:
     """The entity a comment is attached to, and how (see :data:`Mechanism`).
 
     The rules, in order:
@@ -522,17 +603,29 @@ def associate(
     6. A leading comment belongs to the entity right after it, when only trivia
        stands between (comments, blank lines, attributes, decorators), through its
        wrappers; never across other code.
-    7. Otherwise, the enclosing entity, if any.
+    7. A C or C++ comment directly above the line of a preprocessor conditional
+       (``#if``, ``#ifdef``, ``#ifndef``, ``#elif``, ``#elifdef``, ``#elifndef``,
+       ``#else``, ``#endif``, as the grammar reads them) -- past other comments,
+       with no blank line between -- belongs to no entity anywhere outside a
+       function's body (at file level, in a namespace, class, struct, union or enum
+       body, or in an ``extern "C"`` block): clang attaches a comment to no
+       declaration across a ``#`` line. With a blank line between, or in a
+       function's body (a lambda's, or a class defined in one, included), rule 8
+       holds.
+    8. Otherwise, the enclosing entity, if any.
 
-    A documentation comment attached by rule 4 or 6 is a ``doc_comment``. By rule 7, a
+    A documentation comment attached by rule 4 or 6 is a ``doc_comment``. By rule 8, a
     comment in the entity's head (after an attribute, a decorator or a template header
     the entity owns) leads it, and a trailing comment whose entity starts on its row
     (``def f():  # c``) is ``trailing``; any other is ``enclosing``.
 
     :param node: The comment node, or a Python docstring's ``expression_statement``.
     :param comment_type: The language of the file ``node`` was parsed from.
-    :return: The association, or ``None`` when the comment is attached to no entity
-        (file level).
+    :param text: The comment's text as the file writes it (``SourceComment.text``),
+        where a C++ tree is parsed from a prepared copy; ``node.text`` when not given.
+    :return: The association; :attr:`Unattached.above_conditional` when rule 7
+        attaches the comment to no entity, and ``None`` when another rule does (file
+        level).
     """
     if comment_type == CommentType.yaml:
         # YAML uses different structure association logic
@@ -542,11 +635,12 @@ def associate(
         # JSONC uses data-aware structure association logic
         return _jsonc_associate(node)
 
+    written = (node.text or b"") if text is None else text
     declared: Mechanism = "doc_comment"
-    if node.type == CommentCategory.docstring or _is_inner_doc(node, comment_type):
+    if node.type == CommentCategory.docstring or _is_inner_doc(written, comment_type):
         scope = find_enclosing_scope(node, comment_type)
         return Association(scope, declared) if scope is not None else None
-    is_doc = is_doc_comment(node, comment_type)
+    is_doc = is_doc_comment(node, comment_type, text=written)
 
     def enclosing(trailing: bool = False) -> Association | None:
         scope = find_enclosing_scope(node, comment_type)
@@ -564,11 +658,17 @@ def associate(
             return enclosing(trailing=True)
         return Association(entity, declared if is_doc else "trailing")
     if _is_file_header(node) and (
-        not is_doc or documents_file((node.text or b"").decode("utf-8", "replace"))
+        not is_doc or documents_file(written.decode("utf-8", "replace"))
     ):
         return None
     entity = find_next_scope(node, comment_type)
     if entity is None:
+        if (
+            comment_type == CommentType.cpp
+            and not in_function_body(node)
+            and _directly_above_a_conditional(node)
+        ):
+            return Unattached.above_conditional
         return enclosing()
     return Association(entity, declared if is_doc else "leading")
 
@@ -578,7 +678,7 @@ def find_associated_scope(
 ) -> TreeSitterNode | None:
     """Find the associated scope of a comment: the node :func:`associate` binds."""
     association = associate(node, comment_type)
-    return association.node if association is not None else None
+    return association.node if isinstance(association, Association) else None
 
 
 def _git_dir(path: Path) -> Path | None:
