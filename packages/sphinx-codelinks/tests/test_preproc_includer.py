@@ -13,6 +13,7 @@ extraction; these tests pin the pieces and the run.
 
 import json
 import pickle
+import weakref
 from collections.abc import Callable
 from pathlib import Path
 
@@ -681,3 +682,47 @@ def test_an_include_the_parse_cannot_find_does_not_stop_an_includer(
     db = _db(tmp_path, [{"file": "unity.cpp", "args": ["-DUNITY_FLAG=1"]}])
 
     assert _ids(_run(tmp_path, ["s.cpp"], db)) == {("s.cpp", "IMPL_S")}
+
+
+def test_one_includer_unit_is_alive_at_a_time(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Each includer's translation unit is released before the next is parsed, so
+    memory does not grow with the number of includers: three unity entries, each
+    including one source, never have two units alive. Every source is still read,
+    each through its own includer, and each includer is parsed once."""
+    files = {}
+    for name in ("a", "b", "c"):
+        files[f"u_{name}.cpp"] = f'#include "{name}.cpp"\n'
+        files[f"{name}.cpp"] = (
+            f"#ifdef ON_{name}\n// @{name}, IMPL_{name}, impl\n#endif\n"
+        )
+    _write(tmp_path, files)
+    db = _db(
+        tmp_path,
+        [{"file": f"u_{n}.cpp", "args": [f"-DON_{n}=1"]} for n in ("c", "a", "b")],
+    )
+    live: list[int] = [0]
+    peak: list[int] = [0]
+    parsed: list[str] = []
+    real_parse = libclang_parser.parse_translation_unit
+
+    def tracking_parse(file_path: Path, args: list[str]) -> object:
+        tu = real_parse(file_path, args)
+        parsed.append(file_path.name)
+        live[0] += 1
+        peak[0] = max(peak[0], live[0])
+        weakref.finalize(tu, lambda: live.__setitem__(0, live[0] - 1))
+        return tu
+
+    monkeypatch.setattr(libclang_parser, "parse_translation_unit", tracking_parse)
+
+    analyse = _run(tmp_path, ["a.cpp", "b.cpp", "c.cpp"], db)
+
+    assert _ids(analyse) == {
+        ("a.cpp", "IMPL_a"),
+        ("b.cpp", "IMPL_b"),
+        ("c.cpp", "IMPL_c"),
+    }
+    assert sorted(parsed) == ["u_a.cpp", "u_b.cpp", "u_c.cpp"]
+    assert peak[0] == 1

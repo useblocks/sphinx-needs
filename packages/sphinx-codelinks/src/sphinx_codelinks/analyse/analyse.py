@@ -3,7 +3,7 @@ import os
 from collections.abc import Generator, Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from tree_sitter import Node as TreeSitterNode
 from tree_sitter import Parser, Query
@@ -35,6 +35,9 @@ from sphinx_codelinks.config import (
 )
 from sphinx_codelinks.logger import get_logger
 from sphinx_codelinks.source_discover.config import CommentType
+
+if TYPE_CHECKING:
+    from sphinx_codelinks.analyse.preproc.libclang_parser import LibclangComment
 
 logger = get_logger(__name__)
 
@@ -242,16 +245,17 @@ class AnalyseWarning:
 
 
 @dataclass(frozen=True)
-class _IncluderParse:
-    """A compilation-database entry's translation unit, parsed to read the sources
-    its main file includes."""
+class _Waiting:
+    """A compiled source with no compilation-database entry, waiting for its includer."""
 
-    main: Path
-    """The entry's main file, canonical."""
-    tu: Any
-    """The parsed ``clang.cindex.TranslationUnit``."""
-    includes: set[Path]
-    """The files the main file itself includes, by the parse, canonical."""
+    position: int
+    """Its index in ``src_files``."""
+    path: Path
+    database: Path | None
+    """The database that applies to it."""
+    candidates: tuple[Path, ...]
+    """The main files of the database's entries whose ``#include`` lines name it,
+    ordered by path."""
 
 
 class SourceAnalyse:
@@ -440,43 +444,80 @@ class SourceAnalyse:
             self._inclusion_index_cache[db_path] = includer.inclusion_index(flags)
         return self._inclusion_index_cache[db_path].get(src_path.resolve(), [])
 
-    def _includer_parse(
-        self, db_path: Path, src_path: Path, parses: dict[Path, _IncluderParse | None]
-    ) -> _IncluderParse | None:
-        """The parse of ``src_path``'s includer in ``db_path``, or ``None``.
+    def _read_through_includers(
+        self, waiting: list[_Waiting]
+    ) -> dict[int, list["LibclangComment"]]:
+        """Read each waiting source through its includer; warn about the rest.
 
-        The includer is the first candidate, by path, whose parse confirms that its
-        main file includes ``src_path``: the lexical scan cannot see ``#if`` arms.
-        Each candidate is parsed once per run (``parses``) and serves every source
-        it includes; one libclang cannot load confirms nothing.
+        A source's includer is the first of its candidates, by path, whose parse
+        confirms that its main file includes the source (the lexical scan cannot see
+        ``#if`` arms). The candidates are parsed in path order across every waiting
+        source, each once, and each unit is released before the next is parsed: when
+        a candidate is parsed it is the next candidate of every source that lists
+        it, so it is never needed again. One libclang cannot load confirms nothing.
+
+        :return: The comments read, by the source's position in ``src_files``.
         """
         from sphinx_codelinks.analyse.preproc import compile_db, libclang_parser, loader
 
         translation_unit_load_error = (
             loader.load_clang_cindex().TranslationUnitLoadError
         )
-        flags = self._flags_map_for(db_path) or {}
-        source = src_path.resolve()
-        for main in self._includer_candidates(db_path, src_path):
-            if main not in parses:
-                try:
-                    args = flags[main]
-                    tu = libclang_parser.parse_translation_unit(main, args)
-                except translation_unit_load_error:
+        read: dict[int, list[LibclangComment]] = {}
+        # each unread source's next candidate, by position
+        next_candidate = {w.position: 0 for w in waiting}
+        unread = {w.position: w for w in waiting}
+        while True:
+            heads = {
+                (w.database, w.candidates[next_candidate[position]])
+                for position, w in unread.items()
+                if w.database is not None
+                and next_candidate[position] < len(w.candidates)
+            }
+            if not heads:
+                break
+            database, main = min(
+                heads, key=lambda head: (os.fsencode(head[1]), os.fsencode(head[0]))
+            )
+            args = (self._flags_map_for(database) or {})[main]
+            try:
+                tu = libclang_parser.parse_translation_unit(main, args)
+            except translation_unit_load_error:
+                logger.debug(
+                    f"codelinks: {main} could not be loaded as a translation unit, "
+                    f"so it includes no source"
+                )
+                tu = None
+                includes: set[Path] = set()
+            else:
+                includes = libclang_parser.main_file_inclusions(
+                    tu, compile_db.working_directory(args)
+                )
+            for position, w in list(unread.items()):
+                if w.database != database or next_candidate[position] >= len(
+                    w.candidates
+                ):
+                    continue
+                if w.candidates[next_candidate[position]] != main:
+                    continue
+                if tu is not None and w.path.resolve() in includes:
                     logger.debug(
-                        f"codelinks: {main} could not be loaded as a translation "
-                        f"unit, so it includes no source"
+                        f"codelinks: reading {w.path} through {main}, which includes it"
                     )
-                    parses[main] = None
+                    read[position] = libclang_parser.extract_included_active_comments(
+                        tu, w.path
+                    )
+                    del unread[position]
                 else:
-                    includes = libclang_parser.main_file_inclusions(
-                        tu, compile_db.working_directory(args)
-                    )
-                    parses[main] = _IncluderParse(main, tu, includes)
-            parse = parses[main]
-            if parse is not None and source in parse.includes:
-                return parse
-        return None
+                    next_candidate[position] += 1
+            del tu  # released before the next candidate is parsed
+        for w in unread.values():
+            logger.warning(
+                f"codelinks: skipping {w.path} — it has no entry in "
+                f"{w.database} and no entry of it includes it",
+                subtype="not_in_compile_database",
+            )
+        return read
 
     # @Extract traceability objects with the preprocessor-aware libclang engine, IMPL_PREPROC_1, impl, [FE_PREPROC]
     def create_src_objects_libclang(self) -> None:
@@ -491,53 +532,44 @@ class SourceAnalyse:
         translation_unit_load_error = (
             loader.load_clang_cindex().TranslationUnitLoadError
         )
-        # The includers parsed in this run, by main file (``None``: not loadable).
-        includer_parses: dict[Path, _IncluderParse | None] = {}
-
-        for src_path in self.analyse_config.src_files:
+        src_files = self.analyse_config.src_files
+        read: dict[int, list[LibclangComment]] = {}
+        # the compiled sources the database has no entry for: read through the entry
+        # that includes them, with that entry's flags, once every other file is read
+        waiting: list[_Waiting] = []
+        for position, src_path in enumerate(src_files):
             if not utils.is_text_file(src_path):
                 continue
             args = self._resolve_preproc_args(src_path)
             if args is None:
-                # A compiled source the database has no entry for: read it through
-                # the entry that includes it, with that entry's flags, or skip it.
-                db_path = self._compile_db_for(src_path)
-                parse = (
-                    None
-                    if db_path is None
-                    else self._includer_parse(db_path, src_path, includer_parses)
+                database = self._compile_db_for(src_path)
+                candidates = (
+                    ()
+                    if database is None
+                    else tuple(self._includer_candidates(database, src_path))
                 )
-                if parse is None:
-                    logger.warning(
-                        f"codelinks: skipping {src_path} — it has no entry in "
-                        f"{db_path} and no entry of it includes it",
-                        subtype="not_in_compile_database",
-                    )
-                    continue
-                logger.debug(
-                    f"codelinks: reading {src_path} through {parse.main}, which "
-                    f"includes it"
+                waiting.append(_Waiting(position, src_path, database, candidates))
+                continue
+            try:
+                read[position] = libclang_parser.extract_active_comments(src_path, args)
+            except translation_unit_load_error:
+                # Last-resort guard. Standalone parses pin ``-x`` to match the
+                # ``-std`` (see defines_to_args), so the common case — a ``.h``/
+                # ``.c`` header handed a C++ ``-std`` — now parses as C++ and its
+                # markers extract. This only fires if libclang still cannot load
+                # the file as a translation unit at all; skip it rather than
+                # aborting the whole run. Surfaced as a ``warning`` so the silent
+                # data-loss (a file's markers dropped) is visible — accepting
+                # that this fails ``sphinx-build -W``.
+                logger.warning(
+                    f"codelinks: skipping {src_path} — libclang could not load "
+                    f"it as a translation unit"
                 )
-                comments = libclang_parser.extract_included_active_comments(
-                    parse.tu, src_path
-                )
-            else:
-                try:
-                    comments = libclang_parser.extract_active_comments(src_path, args)
-                except translation_unit_load_error:
-                    # Last-resort guard. Standalone parses pin ``-x`` to match the
-                    # ``-std`` (see defines_to_args), so the common case — a ``.h``/
-                    # ``.c`` header handed a C++ ``-std`` — now parses as C++ and its
-                    # markers extract. This only fires if libclang still cannot load
-                    # the file as a translation unit at all; skip it rather than
-                    # aborting the whole run. Surfaced as a ``warning`` so the silent
-                    # data-loss (a file's markers dropped) is visible — accepting
-                    # that this fails ``sphinx-build -W``.
-                    logger.warning(
-                        f"codelinks: skipping {src_path} — libclang could not load "
-                        f"it as a translation unit"
-                    )
-                    continue
+        read.update(self._read_through_includers(waiting))
+
+        for position in sorted(read):
+            src_path = src_files[position]
+            comments = read[position]
             if not comments:
                 continue
             # ``c`` is a LibclangComment duck-typing the tree-sitter Node
