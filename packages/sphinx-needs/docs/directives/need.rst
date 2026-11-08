@@ -617,8 +617,10 @@ empty list (``{{ links|first }}``, ``{{ tags[0] }}`` where there is none), used 
 ``is defined`` test or the ``default`` filter: testing one for truth (``{% if typo %}``) is a use. Every
 declared field is defined; test a value only some needs have with ``{% if x is defined %}`` or give it a
 ``default``, which report nothing. A few uses of an undefined name are not reported, as the engine lets them
-pass: an ``is none`` or ``is string`` test of it, and ``|length`` or ``|count`` of it (``0``, since minijinja 3.1).
-The output is the same as without the warning. A call of a function given directly in :ref:`needs_render_context` that returned a plain value
+pass: an ``is none`` or ``is string`` test of it. ``|join`` over one is reported (minijinja 3.1). A temporary gap:
+under minijinja-py 3.1.0, a typo reached only through ``|length`` or ``|count`` renders ``0`` and is not reported
+(a bug of the Python binding, `minijinja#1028 <https://github.com/mitsuhiko/minijinja/issues/1028>`__); ubCode
+reports it. The output is the same as without the warning. A call of a function given directly in :ref:`needs_render_context` that returned a plain value
 (a string, a number, a boolean, ``None``) is replayed in the second render, so it is made once, as with a single
 render; any other call runs again -- one returning a list, a mapping, a generator or another object, and every
 call of a class, a callable object, or a method or function reached through a value of the render context. One
