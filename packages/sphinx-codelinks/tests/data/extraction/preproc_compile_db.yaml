@@ -302,3 +302,28 @@ relative_include_dir_resolved_against_entry_directory_libclang:
   # its -I../include is relative: it resolves against the entry's directory as the
   # build resolves it, so config.h is found and the arm guarded by its FEATURE_ON is
   # active: IMPL_ALWAYS, IMPL_FEATURE_ON.
+
+tu_source_included_only_through_a_header_is_skipped_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    unity.cpp: |
+      #if 0
+      #include "case.cpp"
+      #endif
+      #include "through.h"
+    through.h: |
+      #include "case.cpp"
+  compile_commands:
+    - file: unity.cpp
+      arguments: ["clang++", "-std=c++17", "-DUNITY_FLAG=1", "-c", "unity.cpp"]
+  source: |
+    // @Through a header, IMPL_THROUGH_HEADER, impl, [REQ]
+    void f() {}
+  # unity.cpp's own #include "case.cpp" makes it a lexical candidate, but it is in
+  # an #if 0 arm; case.cpp IS compiled in this unit, through the header through.h.
+  # Only the candidate's main file's own #include confirms an includer (no
+  # transitive includers), so case.cpp has none and is skipped: no markers.

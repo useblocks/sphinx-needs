@@ -611,3 +611,26 @@ def test_an_environment_pickled_at_env_version_4_is_read_again(
         in status
     )
     assert "IMPL_A_ON" in _json(app)["needs"]
+
+
+def test_only_the_main_files_own_include_confirms_an_includer(tmp_path: Path) -> None:
+    """The inclusions that confirm an includer are its main file's own: a source the
+    unit compiles through a header of the main file is not one of them (no transitive
+    includers), even when the main file's own ``#include`` of it, in an ``#if 0`` arm,
+    made the entry a lexical candidate. The shared case
+    ``tu_source_included_only_through_a_header_is_skipped_libclang`` pins the run."""
+    _write(
+        tmp_path,
+        {
+            "unity.cpp": '#if 0\n#include "s.cpp"\n#endif\n#include "through.h"\n',
+            "through.h": '#include "s.cpp"\n',
+            "s.cpp": "int s;\n",
+        },
+    )
+    tu = libclang_parser.parse_translation_unit(
+        tmp_path / "unity.cpp", [f"-working-directory={tmp_path}"]
+    )
+
+    assert libclang_parser.main_file_inclusions(tu, tmp_path) == {
+        (tmp_path / "through.h").resolve()
+    }
