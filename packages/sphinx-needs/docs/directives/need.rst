@@ -173,9 +173,15 @@ Links without conditions continue to work as before:
 .. note::
 
    Any number of opening ``[`` brackets can be used to start the condition,
-   as long as the same number of closing ``]`` brackets are used to end it.
-   This is useful when the condition itself contains square brackets (e.g. for list indexing):
-   ``REQ_001[[tags[0]=="important"]]``.
+   as long as the same number of closing ``]`` brackets end the link.
+   The condition runs to those closing brackets, so it may itself contain square brackets (e.g. for list indexing),
+   and end with one: ``REQ_001[[tags[0]=="important"]]``, ``REQ_001["important" == tags[0]]`` and
+   ``REQ_001[status in ["open"]]`` are each the condition within the outermost brackets.
+
+   A condition that starts with ``[`` and ends with ``]`` is written with one space after the opening brackets,
+   which is not part of the condition: ``REQ_001[ ["important"] == tags[:1]]`` is the condition
+   ``["important"] == tags[:1]``.
+   The ``needs.json`` writer spells conditions the same way, so every condition reads back as it was written.
 
 .. note::
 
@@ -611,8 +617,8 @@ empty list (``{{ links|first }}``, ``{{ tags[0] }}`` where there is none), used 
 ``is defined`` test or the ``default`` filter: testing one for truth (``{% if typo %}``) is a use. Every
 declared field is defined; test a value only some needs have with ``{% if x is defined %}`` or give it a
 ``default``, which report nothing. A few uses of an undefined name are not reported, as the engine lets them
-pass: an ``is none`` or ``is string`` test of it, and ``|join`` over it. The output is the same as without the
-warning. A call of a function given directly in :ref:`needs_render_context` that returned a plain value
+pass: an ``is none`` or ``is string`` test of it, and ``|length`` or ``|count`` of it (``0``, since minijinja 3.1).
+The output is the same as without the warning. A call of a function given directly in :ref:`needs_render_context` that returned a plain value
 (a string, a number, a boolean, ``None``) is replayed in the second render, so it is made once, as with a single
 render; any other call runs again -- one returning a list, a mapping, a generator or another object, and every
 call of a class, a callable object, or a method or function reached through a value of the render context. One
