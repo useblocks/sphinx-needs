@@ -143,8 +143,10 @@ def load_flags_map(db_path: Path) -> dict[Path, list[str]]:
 
 def working_directory(args: list[str]) -> Path:
     """The working directory ``args`` name with ``-working-directory=``, or, without
-    one, the process' working directory, as libclang takes it."""
-    for arg in args:
+    one, the process' working directory, as libclang takes it: the last one wins, so
+    an entry whose own arguments carry one overrides the one :func:`load_flags_map`
+    puts first."""
+    for arg in reversed(args):
         if arg.startswith(WORKING_DIRECTORY_FLAG):
             return Path(arg[len(WORKING_DIRECTORY_FLAG) :])
     return Path.cwd()

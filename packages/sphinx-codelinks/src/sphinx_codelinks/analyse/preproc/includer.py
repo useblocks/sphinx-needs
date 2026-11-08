@@ -130,9 +130,11 @@ def search_path(args: list[str]) -> SearchPath:
 
     ``-iquote``, ``-I`` and ``-isystem`` are read in their joined (``-Idir``) and
     separate (``-I dir``) forms, each kind in argument order, and a relative
-    directory is taken against the entry's working directory (its
+    directory is taken against the entry's working directory (its last
     ``-working-directory=``; the process' working directory without one, as
-    libclang takes it).
+    libclang takes it). No other form names a directory here: ``-idirafter``,
+    ``--include-directory=``, ``-I=`` (sysroot-relative) and MSVC's ``/I`` are not
+    read, nor a ``cd`` in a ``command``.
     """
     working = working_directory(args)
     quote: list[Path] = []

@@ -961,10 +961,16 @@ An entry of ``compile_commands.json`` is applied as the build applies it:
     ``#include <…>`` lines (not those inside a block comment), each name looked up as
     the compiler looks it up: a quoted name next to the including file first, then in
     the entry's ``-iquote`` directories; both forms then in its ``-I`` and then its
-    ``-isystem`` directories.
+    ``-isystem`` directories (joined, ``-Idir``, or separate, ``-I dir``). No other flag
+    adds a directory to this search: a source found only through ``-idirafter``,
+    ``--include-directory=``, ``-I=`` or ``/I`` has no candidate.
   - The includer is the first candidate, ordered by the path of its source, whose parse
     confirms the inclusion: an ``#include`` in an inactive branch (``#if 0``) does not
-    make an includer. One parse of an includer serves every source it includes.
+    make an includer, nor does one in a header the entry's source includes. An
+    ``#include`` the parse cannot find (``<stddef.h>``, a header not generated yet) is
+    passed over. Each entry is parsed once as an includer, and that parse serves every
+    source it includes; an entry whose source is traced too is also parsed as its own
+    unit.
   - The source's own comments are read from that parse, and a branch is inactive when
     the source's **first** inclusion skips it. So its markers follow the includer's
     ``-D`` flags and whatever its source defines before the ``#include``.
@@ -974,6 +980,12 @@ An entry of ``compile_commands.json`` is applied as the build applies it:
   ``suppress_warnings`` can silence). Only direct includes count: a source included by
   a file that is itself included is not read through the entry. Headers are unaffected:
   they keep their standalone parse (below).
+
+  The files such a read depends on -- the database, the source of every entry tried as
+  its includer and the headers those include (not the system headers) -- are
+  dependencies of the ``src-trace`` directive's document, so an edit to a unity file in
+  the build directory, outside every traced directory, reads the source again in an
+  incremental build; a project no directive traces is analysed again too.
 
 Header files
 ~~~~~~~~~~~~~

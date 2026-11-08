@@ -229,6 +229,11 @@ def test_working_directory_reads_the_flag_else_the_process_directory(
     ) == Path(tmp_path)
     monkeypatch.chdir(tmp_path)
     assert compile_db.working_directory(["-DA"]) == Path.cwd()
+    # an entry's own -working-directory follows the one load_flags_map puts first,
+    # and libclang takes the last
+    assert compile_db.working_directory(
+        ["-working-directory=/first", "-DA", "-working-directory=/own"]
+    ) == Path("/own")
 
 
 def test_defines_to_args(tmp_path: Path):

@@ -57,7 +57,8 @@ Fixes
   skipped, now with a ``codelinks.not_in_compile_database`` warning naming it and the
   database, which fails a ``-W`` build: list it in ``exclude``, or add
   ``codelinks.not_in_compile_database`` to ``suppress_warnings``. Headers keep their
-  standalone parse.
+  standalone parse. An edit to the including entry's source, or to a header it includes,
+  reads the source again in an incremental build.
 - 🐛 A ``compile_commands.json`` entry is parsed in its ``directory``, so a relative
   ``-I``, ``-iquote``, ``-isystem``, ``-include`` or ``-imacros`` resolves as the build
   resolved it. It resolved against the directory the analysis ran in, which, for a
