@@ -21,7 +21,9 @@ import minijinja
 
 from ub_project import ProjectConfigError, loads_toml
 
-#: The render's fuel: one unit per instruction (§7.5; a bound, not a semantic).
+#: The render's fuel (§7.5; a bound, not a semantic): one unit per instruction, plus, since
+#: minijinja 3.1, one per 64 bytes made, written or scanned and one per two items visited,
+#: so it bounds memory too (roughly 640 MB at this level).
 FUEL = 10_000_000
 #: The largest output a template may render, in UTF-8 bytes (§7.5).
 OUTPUT_LIMIT = 1024 * 1024
@@ -336,9 +338,9 @@ def render(source: str, name: str, context: Mapping[str, Any], root: Root) -> Re
     data model; it reaches the template as native values, :func:`preamble`).
 
     The output limit is checked after the render. There is deliberately no live check: a
-    minijinja-py ``finalizer`` changes how every value it sees prints (measured on 3.0.5:
-    ``1.0`` prints ``1``, and ``[1.0, 2.5]`` prints ``[1, 2.5]``), which would break the
-    dialect (§7.1); fuel bounds the render instead (§7.5).
+    minijinja-py ``finalizer`` changes how every value it sees prints (measured on 3.0.5
+    and 3.1.0: ``1.0`` prints ``1``, and ``[1.0, 2.5]`` prints ``[1, 2.5]``), which would
+    break the dialect (§7.1); fuel bounds the render instead (§7.5).
 
     :raises Failure: With the contract code of what went wrong.
     """
