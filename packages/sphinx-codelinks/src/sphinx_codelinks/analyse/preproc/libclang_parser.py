@@ -98,10 +98,10 @@ def main_file_inclusions(tu: Any, working_directory: Path) -> set[Path]:
             continue
         if not is_from_main(cursor.location):
             continue
-        included = cursor.get_included_file()
+        included = loader.included_file(cursor)
         if included is None:
-            continue
-        out.add((working_directory / included.name).resolve())
+            continue  # an include libclang could not find names no file
+        out.add((working_directory / included).resolve())
     return out
 
 

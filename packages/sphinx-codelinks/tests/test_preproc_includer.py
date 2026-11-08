@@ -588,6 +588,23 @@ def test_a_build_traces_the_sources_a_unity_entry_includes(
     ]
 
 
+def test_a_build_survives_an_include_the_parse_cannot_find(
+    tmp_path: Path, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    """The unity file of :data:`UNITY_PROJECT` also includes ``<stddef.h>``, which
+    libclang cannot find without its builtin headers: the build still succeeds, and
+    the source the unity file includes is still read through it."""
+    files = dict(UNITY_PROJECT["files"])
+    files["build/unity.cpp"] = "#include <stddef.h>\n" + files["build/unity.cpp"]
+    _project(tmp_path, toml_extra=UNITY_PROJECT["toml_extra"], files=files)
+
+    app = _build(tmp_path, make_app)
+
+    needs = _json(app)["needs"]
+    assert "IMPL_A_ON" in needs
+    assert "IMPL_A_OFF" not in needs
+
+
 def test_an_environment_pickled_at_env_version_4_is_read_again(
     tmp_path: Path, make_app: Callable[..., SphinxTestApp]
 ) -> None:
@@ -634,3 +651,33 @@ def test_only_the_main_files_own_include_confirms_an_includer(tmp_path: Path) ->
     assert libclang_parser.main_file_inclusions(tu, tmp_path) == {
         (tmp_path / "through.h").resolve()
     }
+
+
+@pytest.mark.parametrize(
+    "unity",
+    [
+        pytest.param('#include <stddef.h>\n#include "s.cpp"\n', id="system-before"),
+        pytest.param('#include "missing.h"\n#include "s.cpp"\n', id="quoted-before"),
+        pytest.param(
+            '#include "s.cpp"\n#include "generated_config.h"\n', id="quoted-after"
+        ),
+        pytest.param('#include <no/such/header.h>\n#include "s.cpp"\n', id="angled"),
+    ],
+)
+def test_an_include_the_parse_cannot_find_does_not_stop_an_includer(
+    tmp_path: Path, unity: str
+) -> None:
+    """An ``#include`` of the main file that libclang cannot resolve -- a builtin
+    header such as ``<stddef.h>``, which the wheel does not ship, or a header not yet
+    generated -- has no included file: it confirms nothing and is passed over, and
+    the main file's include of the source still confirms it."""
+    _write(
+        tmp_path,
+        {
+            "unity.cpp": unity,
+            "s.cpp": "#ifdef UNITY_FLAG\n// @s, IMPL_S, impl\n#endif\n",
+        },
+    )
+    db = _db(tmp_path, [{"file": "unity.cpp", "args": ["-DUNITY_FLAG=1"]}])
+
+    assert _ids(_run(tmp_path, ["s.cpp"], db)) == {("s.cpp", "IMPL_S")}
