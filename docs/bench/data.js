@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794250185665,
+  "lastUpdate": 1794255687630,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -29358,6 +29358,48 @@ window.BENCHMARK_DATA = {
             "value": 185.892205,
             "unit": "MB",
             "extra": "Commit: e7327bd96ea2b9a6d84519d65bd8e16a9fa63b4e\nBranch: master\nTime: 2026-11-09T19:48:24+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bc23bae7b4ead23d28dedcb0ff7d27a8d14c6634",
+          "message": "🔧 Suppress design.card_legacy in the docs builds (#2502)\n\nsphinx-design 0.8.0 will warn by default (`design.card_legacy`) on the\nlegacy `+++` / `^^^` card separators, which would fail the `-nW` docs\nbuilds here: `packages/sphinx-needs/docs/index.rst` and\n`packages/sphinx-test-reports/docs/index.rst` both use `+++` footers.\nThis PR adds `\"design.card_legacy\"` to `suppress_warnings` in both docs\n`conf.py` files ahead of that release, each with a comment to migrate to\ncard-footer once sphinx-design>=0.8 is the floor. On the current\nsphinx-design (0.7.0) the entry does nothing: `poe docs-needs` and `poe\ndocs-reports` both build clean with `-nW`. Docs-build config only, so no\nchangelog entry.",
+          "timestamp": "2026-11-09T21:19:46+01:00",
+          "tree_id": "0d095a2f00d7bbd997ecd44ced935cd5a7ebf949",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/bc23bae7b4ead23d28dedcb0ff7d27a8d14c6634"
+        },
+        "date": 1794255686820,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07459673400001066,
+            "unit": "s",
+            "extra": "Commit: bc23bae7b4ead23d28dedcb0ff7d27a8d14c6634\nBranch: master\nTime: 2026-11-09T21:19:46+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 12.957024715999978,
+            "unit": "s",
+            "extra": "Commit: bc23bae7b4ead23d28dedcb0ff7d27a8d14c6634\nBranch: master\nTime: 2026-11-09T21:19:46+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 186.035571,
+            "unit": "MB",
+            "extra": "Commit: bc23bae7b4ead23d28dedcb0ff7d27a8d14c6634\nBranch: master\nTime: 2026-11-09T21:19:46+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
