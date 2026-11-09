@@ -68,6 +68,10 @@ if _DOCS_THEME.is_dir():
     sys.path.insert(0, str(_DOCS_THEME))
     extensions.append("ub_docs_theme")
 
+# sphinx-design 0.8 deprecates the `+++` card-footer separator used in index.rst;
+# migrate to card-footer once sphinx-design>=0.8 is the floor
+suppress_warnings = ["design.card_legacy"]
+
 
 def _resolve_plantuml() -> str:
     """How these docs render PlantUML, in the order the whole workspace agrees on.

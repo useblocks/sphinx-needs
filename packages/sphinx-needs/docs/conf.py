@@ -67,6 +67,9 @@ suppress_warnings = [
     # ``status`` names a field another page's dynamic-function or variant example
     # computes, which is reported (as it should be in a real project)
     "needs.derive_scope",
+    # sphinx-design 0.8 deprecates the `+++` card-footer separator used in index.rst;
+    # migrate to card-footer once sphinx-design>=0.8 is the floor
+    "design.card_legacy",
 ]
 
 nitpicky = True
