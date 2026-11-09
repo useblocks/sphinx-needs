@@ -12,6 +12,7 @@ matched before, keeps its value and the other is reported and ignored.
 """
 
 import io
+import re
 from pathlib import Path
 
 import pytest
@@ -90,9 +91,13 @@ def test_a_built_in_option_keeps_myst_matching_it_exactly(
     make_app, tmp_path, clean_docutils_registry
 ):
     """The rule is for the configured names: a directive's own option (``:ID:``) is
-    myst-parser's to match, exactly, as before."""
+    myst-parser's to match, exactly, as before: ``ID`` is unknown although ``id`` is
+    allowed. myst-parser 5.2 rewords the warning, from ``Unknown option keys: ['ID']``
+    to ``Unknown option key: 'ID'``; both are accepted."""
     _, warnings = _build(make_app, tmp_path, "myst", [("ID", "TF_YYY")])
-    assert "Unknown option keys: ['ID']" in warnings
+    assert re.search(
+        r"Unknown option keys?: \[?'ID'\]? \(allowed: \[[^\]]*'id'", warnings
+    )
 
 
 def test_an_extra_option_equal_to_a_field_the_directives_set_but_for_case_is_refused(
