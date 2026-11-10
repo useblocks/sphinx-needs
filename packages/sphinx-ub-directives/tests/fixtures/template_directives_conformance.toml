@@ -5772,6 +5772,31 @@ code = "template_option_invalid"
 directive = "ub-template"
 
 [[case]]
+name = "ub-template-raw-format-is-normalised"
+why = ":raw: reads its format as the raw directive does: lower-cased, its whitespace collapsed"
+config = '''
+[parse]
+ub_template_enabled = true
+'''
+source = '''
+.. ub-template::
+   :raw: HTML  LaTeX
+
+   <p>{{ 1 + 1 }}</p>
+'''
+equivalent = '''
+.. raw:: html latex
+
+   <p>2</p>
+'''
+[case.expect]
+expansions = [
+'''
+<p>2</p>''',
+]
+findings = []
+
+[[case]]
 name = "ub-template-debug"
 why = ":debug: also shows the rendered text; the output still renders"
 config = '''

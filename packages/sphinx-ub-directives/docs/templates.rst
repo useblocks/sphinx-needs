@@ -146,6 +146,7 @@ Its argument names a context, whose keys are the template's variables. Options:
    Also show the rendered text, as a literal block.
 ``:raw:``
    Emit the rendered text unparsed, as raw content of this output format (``:raw: html``).
+   The format is read as the ``raw`` directive reads it, so ``:raw: HTML`` is ``html``.
 
 How output joins the page
 -------------------------

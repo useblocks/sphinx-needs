@@ -71,7 +71,11 @@ class UbTemplate(Directive):
             )
             return []
         raw = self.options.get("raw")
-        if raw is not None and not raw.strip():
+        if raw is not None:
+            # the format as docutils' raw directive stores it, lower-cased with its
+            # whitespace collapsed: the HTML writer matches it case-sensitively (§6.4)
+            raw = " ".join(raw.lower().split())
+        if raw is not None and not raw:
             warn(
                 "template_option_invalid",
                 NAME,
