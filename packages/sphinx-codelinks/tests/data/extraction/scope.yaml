@@ -481,6 +481,19 @@ powershell_pester_it:
         }
     }
 
+powershell_pester_parameters_before_the_name:
+  # Parameters before a Pester block's name -> the name is the -Name argument, else
+  # the first positional argument past Pester's switches and valued parameters.
+  lang: powershell
+  config: default
+  source: |
+    Describe -Tag Unit 'px' {
+        # @Named, TEST_PS_NAMED, test
+        It -Name 'named' { }
+        # @Skipped, TEST_PS_SKIPPED, test
+        It -Skip 'skipped' { }
+    }
+
 powershell_trailing_pester_it:
   # A trailing marker after an It on its row -> binds that It, not the Describe
   # around it.

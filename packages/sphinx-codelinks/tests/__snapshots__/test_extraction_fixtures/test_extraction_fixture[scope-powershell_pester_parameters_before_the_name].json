@@ -1,0 +1,86 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
+      },
+      "end": {
+        "row": 1,
+        "column": 33
+      }
+    },
+    "tagged_scope": "It -Name 'named' { }",
+    "scope": {
+      "kind": "command",
+      "start": 3,
+      "end": 3,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "px.named",
+      "semantic": [
+        {
+          "kind": "test",
+          "name": "px"
+        },
+        {
+          "kind": "test",
+          "name": "named"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Named",
+      "id": "TEST_PS_NAMED",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 7
+      },
+      "end": {
+        "row": 3,
+        "column": 37
+      }
+    },
+    "tagged_scope": "It -Skip 'skipped' { }",
+    "scope": {
+      "kind": "command",
+      "start": 5,
+      "end": 5,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "px.skipped",
+      "semantic": [
+        {
+          "kind": "test",
+          "name": "px"
+        },
+        {
+          "kind": "test",
+          "name": "skipped"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Skipped",
+      "id": "TEST_PS_SKIPPED",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  }
+]

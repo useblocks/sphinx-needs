@@ -2944,29 +2944,90 @@ def _powershell_child(node: TreeSitterNode, kind: str) -> TreeSitterNode | None:
     return next((child for child in node.named_children if child.type == kind), None)
 
 
-def _pester_name(command: TreeSitterNode) -> str | None:
-    """A Pester block's name: its first argument, a string without its quotes or a
-    bare word, as written; ``None`` when the block is named another way."""
-    elements = _powershell_child(command, "command_elements")
-    argument = next(
-        (
-            child
-            for child in (elements.named_children if elements is not None else [])
-            if child.type != "command_argument_sep"
-        ),
-        None,
+# Pester's ``Describe``, ``Context`` and ``It`` parameters, lower-cased: the switches,
+# and those that take a value (aliases included). ``-Name`` names the block.
+PESTER_SWITCHES = frozenset({"skip", "pending", "focus", "allownulloremptyforeach"})
+PESTER_VALUE_PARAMETERS = frozenset(
+    {"tag", "tags", "fixture", "test", "testcases", "foreach"}
+)
+PESTER_NAME_PARAMETER = "name"
+
+
+def _attached_value(parameter: TreeSitterNode) -> bool:
+    """Whether a value is written onto the command parameter, ``-Skip:$false``."""
+    following = parameter.next_named_sibling
+    return (
+        following is not None
+        and following.type == "command_argument_sep"
+        and _text(following) == ":"
     )
-    while argument is not None and argument.type not in (
-        "string_literal",
-        "generic_token",
+
+
+# @Pester block names, IMPL_PS_11, impl, [FE_POWERSHELL]
+def _pester_name(command: TreeSitterNode) -> str | None:
+    """A Pester block's name: its ``-Name`` argument, else its first positional
+    argument past the switches and the parameters with their values that Pester
+    declares; a string without its delimiters or a bare word, as written. ``None``
+    when the block is named another way: by an expression, or past a parameter Pester
+    does not declare."""
+    elements = _powershell_child(command, "command_elements")
+    arguments = [
+        child
+        for child in (elements.named_children if elements is not None else [])
+        if child.type != "command_argument_sep"
+    ]
+    index = 0
+    while index < len(arguments):
+        argument = arguments[index]
+        if argument.type != "command_parameter":
+            return _pester_literal(argument)
+        parameter = _text(argument).lstrip("-").lower()
+        attached = _attached_value(argument)
+        if parameter == PESTER_NAME_PARAMETER:
+            return (
+                _pester_literal(arguments[index + 1])
+                if index + 1 < len(arguments)
+                else None
+            )
+        if parameter in PESTER_SWITCHES:
+            index += 2 if attached else 1
+        elif parameter in PESTER_VALUE_PARAMETERS:
+            index += 2
+            # the grammar splits a bare list (``-Tag a,b``) into ``a`` and ``,b``
+            while index < len(arguments) and _text(arguments[index]).startswith(","):
+                index += 1
+        else:
+            return None
+    return None
+
+
+# The expression nodes a command argument is wrapped in, each with one child.
+_POWERSHELL_ARGUMENT_WRAPPERS = frozenset(
+    {"array_literal_expression", "unary_expression"}
+)
+
+
+def _pester_literal(argument: TreeSitterNode) -> str | None:
+    """The text of a command argument that is a string literal, without its
+    delimiters, or a bare word; ``None`` for any other argument."""
+    while (
+        argument.type in _POWERSHELL_ARGUMENT_WRAPPERS
+        and argument.named_child_count == 1
     ):
-        argument = argument.named_children[0] if argument.named_children else None
-    if argument is None:
-        return None
+        argument = argument.named_children[0]
     text = _text(argument)
-    if argument.type == "string_literal" and len(text) >= 2:
-        return text[1:-1]
-    return text
+    if argument.type == "generic_token":
+        return text
+    if argument.type != "string_literal":
+        return None
+    if text[:2] in ('@"', "@'") and text[-2:] in ('"@', "'@") and len(text) >= 4:
+        # a here-string: its content lies between the line breaks after its opening
+        # and before its closing delimiter
+        inner = text[2:-2]
+        inner = inner[2:] if inner.startswith("\r\n") else inner.removeprefix("\n")
+        inner = inner[:-2] if inner.endswith("\r\n") else inner.removesuffix("\n")
+        return inner
+    return text[1:-1] if len(text) >= 2 else text
 
 
 def _powershell_own_name(node: TreeSitterNode) -> str | None:
@@ -2983,8 +3044,9 @@ def _powershell_describe(node: TreeSitterNode) -> EntityName | None:
     """A PowerShell function or filter, class, method, property, enum or Pester block.
 
     A method or a property is qualified by its class (``Shape.Area``), a Pester block
-    by the blocks around it, as Pester's ``ExpandedPath`` joins them (``px.starts``);
-    a function, a class and an enum are named alone.
+    by the blocks around it, joined with ``.`` as Pester joins a test's path
+    (``px.starts``), each named as its source writes it, never expanded; a function, a
+    class and an enum are named alone. A Pester block in an unnamed one has no name.
     """
     kind = _POWERSHELL_KINDS.get(node.type)
     if kind is None or (node.type == "command" and not _is_pester_block(node)):

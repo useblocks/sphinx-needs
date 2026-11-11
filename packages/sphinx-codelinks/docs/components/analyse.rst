@@ -134,8 +134,13 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   ``ns::Widget::draw`` in C++, ``Shape.area`` and ``outer.<locals>.inner`` in Python (its ``__qualname__``),
   ``Widget::new`` and ``<Widget as Shape>::area`` (and ``<dyn Shape>::area`` for a type that is no path) in Rust,
   ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in TypeScript,
-  ``Shape.Area`` in PowerShell, where a Pester block is named after the blocks around it as Pester joins them
-  (``px.starts`` for ``It 'starts'`` in ``Describe 'px'``).
+  ``Shape.Area`` in PowerShell, where a Pester block is named after the blocks around it, joined with ``.`` as
+  Pester joins a test's path (``px.starts`` for ``It 'starts'`` in ``Describe 'px'``). A block's own name is its
+  ``-Name`` argument, else its first positional argument past Pester's switches (``-Skip``) and its parameters with
+  their values (``-Tag Unit``), as the source writes it: a string without its quotes, a here-string's included, and
+  never expanded (``It 'adds <a>'`` stays ``adds <a>``, ``It "starts $x"`` stays ``starts $x``). A block named by a
+  variable or an expression, or past a parameter Pester does not declare, has no name, and neither has any block
+  inside it.
   No module, crate or package prefix: the file's path decides that.
   ``null`` in YAML and JSON, and for an entity without a name;
 - ``semantic`` -- that name in its parts, outermost first and the entity itself last, each a ``kind`` and a ``name``

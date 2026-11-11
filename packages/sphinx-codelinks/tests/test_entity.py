@@ -841,6 +841,51 @@ def test_name_chain() -> None:
     assert name_chain(rebuilt, "python") == ((("name", "A"),),)
 
 
+@pytest.mark.parametrize(
+    ("source", "index", "expected"),
+    [
+        pytest.param("It 'plain' { }", 0, "plain", id="positional"),
+        pytest.param("It -Name 'named' { }", 0, "named", id="name-parameter"),
+        pytest.param("Describe -name:'n' { }", 0, "n", id="name-parameter-colon"),
+        pytest.param("It -Skip 'skipped' { }", 0, "skipped", id="switch-first"),
+        pytest.param("It -Skip:$true 'x' { }", 0, "x", id="switch-with-value"),
+        pytest.param("It -Pending -Focus 'x' { }", 0, "x", id="two-switches"),
+        pytest.param(
+            "Describe -Tag Unit 'px' { It 'a' { } }", 1, "px.a", id="tag-first"
+        ),
+        pytest.param("Describe -Tags 'a','b' 'px' { }", 0, "px", id="tag-list"),
+        pytest.param("Describe -Tag x,y 'px' { }", 0, "px", id="bareword-tag-list"),
+        pytest.param("It -ForEach 1, 2 'each <_>' { }", 0, "each <_>", id="foreach"),
+        pytest.param(
+            "It -TestCases @(@{ a = 1 }) 'cases' { }", 0, "cases", id="testcases"
+        ),
+        pytest.param("It 'after' -Tag Unit { }", 0, "after", id="tag-after"),
+        pytest.param("It @'\nhere name\n'@ { }", 0, "here name", id="here-string"),
+        pytest.param(
+            'It @"\r\nhere $x\r\n"@ { }', 0, "here $x", id="expandable-here-string"
+        ),
+        # a parameter Pester does not declare cannot be read: is a value its own?
+        pytest.param("It -Unknown 'x' { }", 0, None, id="unknown-parameter"),
+        pytest.param("It $name { }", 0, None, id="variable-name"),
+        pytest.param("It ('a' + 'b') { }", 0, None, id="expression-name"),
+        # an unnamed block leaves every block in it unnamed: an incomplete path is
+        # not the name Pester gives
+        pytest.param("Describe $name { It 'a' { } }", 1, None, id="unnamed-ancestor"),
+    ],
+)
+def test_a_pester_block_is_named_as_pester_names_it(
+    source: str, index: int, expected: str | None
+) -> None:
+    """A Pester block's name is its ``-Name`` argument, else its first positional
+    argument, past the switches and the parameters with their values Pester
+    declares; a string loses its delimiters, a here-string's included."""
+    name = _describe(source, CommentType.powershell, "ps1", "command", index)
+    assert name is not None
+    assert name.qualified_name == expected
+    if expected is not None:
+        assert render_semantic(name.semantic, "powershell") == expected
+
+
 def test_describe_entity_refuses_a_node_that_is_no_entity() -> None:
     """A node no table names (a C++ ``return`` statement) is described as nothing."""
     assert (
