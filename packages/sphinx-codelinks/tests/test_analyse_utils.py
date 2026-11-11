@@ -2768,3 +2768,51 @@ def test_every_powershell_help_keyword_makes_help(line, init_powershell_tree_sit
         "function Outer {",
         "doc_comment",
     )
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
+            "Describe 'outer' {\n    # marker\n    Describe 'x' { } | Out-Null\n}\n",
+            ("Describe 'x' { }", "leading"),
+            id="leading-entity-first",
+        ),
+        pytest.param(
+            "Describe 'outer' {\n    It 'tx' { } | Out-Null # marker\n}\n",
+            ("It 'tx' { }", "trailing"),
+            id="trailing-entity-first",
+        ),
+        pytest.param(
+            "Describe 'outer' {\n    # marker\n    Get-Thing | It 'y' { }\n}\n",
+            ("It 'y' { }", "leading"),
+            id="leading-entity-after-a-command",
+        ),
+        pytest.param(
+            "Describe 'outer' {\n    # marker\n    It 'a' { } && It 'b' { }\n}\n",
+            ("It 'a' { }", "leading"),
+            id="leading-chain-of-two-entities",
+        ),
+        # the comment is in ForEach-Object's block, not in the Describe before it
+        pytest.param(
+            "Describe 'outer' {\n    Describe 'x' { } | ForEach-Object {\n"
+            "        # marker\n        $_\n    }\n}\n",
+            ("Describe 'outer' {", "enclosing"),
+            id="enclosing-past-a-pipeline-entity-it-is-not-in",
+        ),
+        pytest.param(
+            "Describe 'outer' {\n    # marker\n    Get-Thing | Out-Null\n}\n",
+            ("Describe 'outer' {", "enclosing"),
+            id="pipeline-of-no-entity",
+        ),
+    ],
+)
+def test_a_powershell_pipeline_is_its_first_entity(
+    source, expected, init_powershell_tree_sitter
+):
+    """A pipeline (or a chain of them) is the first of its commands, in source order,
+    that is an entity, on the leading and the trailing path alike; without one it is no
+    entity. A comment inside a command of a pipeline is in that command, never in the
+    pipeline's entity when it is another command."""
+    parser, query = init_powershell_tree_sitter
+    assert _powershell_attached(source, parser, query) == expected

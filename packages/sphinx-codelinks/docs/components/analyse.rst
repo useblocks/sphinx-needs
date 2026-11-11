@@ -380,7 +380,11 @@ What counts as an entity
   ``private:`` or ``local:`` scope modifier, as it is called), classes, methods, constructors (a method named as its
   class, in any letter case, without a return type), properties, enums, and Pester's ``Describe``, ``Context`` and
   ``It`` blocks (in any letter case, bare or as ``Pester\It``, known by that name alone, so a function or an alias of
-  the script's own of that name is taken for Pester's); no other command, a DSC ``Configuration`` included. The
+  the script's own of that name is taken for Pester's); no other command, a DSC ``Configuration`` included. A
+  pipeline, or a chain of them (``&&``, ``||``), is the first of its commands that is an entity: a marker above
+  ``Describe 'x' { } | Out-Null`` or trailing ``It 'x' { } | Out-Null`` is attached to that block, one above
+  ``Get-Thing | It 'y' { }`` to the ``It``; a marker inside another command of the pipeline (in a
+  ``ForEach-Object { }`` block after it) is not in that block, but in the entity around the pipeline. The
   ``tree-sitter-powershell`` grammar cannot read an attribute before a class or an enum (``[DscResource()]``,
   ``[Flags()]``), so a marker above such an attribute is attached to no entity; with the attribute on a line of its
   own, a marker trailing the ``class`` or ``enum`` line is attached to it.

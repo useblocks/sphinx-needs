@@ -15,6 +15,7 @@ from sphinx_codelinks.analyse import cpp_macros
 from sphinx_codelinks.analyse.entity import (
     COMMENT_TYPES,
     ENTITY_HEAD_TYPES,
+    FIRST_ENTITY_WRAPPER_TYPES,
     Association,
     CppNames,
     Mechanism,
@@ -302,17 +303,28 @@ def find_enclosing_scope(
     node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
 ) -> TreeSitterNode | None:
     """The nearest entity ``node`` is inside of, if any. A wrapper ``node`` is inside of
-    (a decorated definition, a template) counts as the entity it wraps."""
+    (a decorated definition, a template) counts as the entity it wraps; a PowerShell
+    pipeline only when ``node`` is inside that entity, not in another of its commands."""
     current = node.parent
     while current is not None:
         if is_entity(current, comment_type):
             return current
         if is_wrapper(current, comment_type):
             wrapped = unwrap_entity(current, comment_type)
-            if wrapped is not None:
+            if wrapped is not None and (
+                current.type not in FIRST_ENTITY_WRAPPER_TYPES.get(comment_type, ())
+                or _contains(wrapped, node)
+            ):
                 return wrapped
         current = current.parent
     return None
+
+
+def _contains(outer: TreeSitterNode, node: TreeSitterNode) -> bool:
+    """Whether ``node`` lies within ``outer``: a pipeline's entity is not around a
+    comment in another command of the pipeline (``Describe 'x' { } | ForEach-Object {
+    # c }``)."""
+    return outer.start_byte <= node.start_byte and node.end_byte <= outer.end_byte
 
 
 # The nodes a PowerShell script or script block holds its statements in. A comment

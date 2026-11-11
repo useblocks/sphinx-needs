@@ -681,6 +681,28 @@ powershell_help_before_and_after:
         #>
     }
 
+powershell_pipeline_first_entity:
+  # A pipeline, or a chain of pipelines, is the first of its commands in source order
+  # that is an entity, on the leading and the trailing path; with none, it is no entity.
+  # A comment inside a command of a pipeline is in that command: inside ForEach-Object's
+  # block it is not in the Describe before it, and binds the enclosing block.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'outer' {
+        # @Entity first, TEST_PS_PIPE_FIRST, test
+        Describe 'x' { } | Out-Null
+        It 'tx' { } | Out-Null # @Trailing entity first, TEST_PS_PIPE_TRAIL, test
+        # @Entity after a command, TEST_PS_PIPE_AFTER, test
+        Get-Thing | It 'y' { }
+        # @Chain, TEST_PS_PIPE_CHAIN, test
+        It 'a' { } && It 'b' { }
+        Describe 'z' { } | ForEach-Object {
+            # @In ForEach-Object, TEST_PS_PIPE_INNER, test
+            $_
+        }
+    }
+
 powershell_non_ascii_scope:
   # Non-ASCII text before the marked function does not lose the scope.
   lang: powershell

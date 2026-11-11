@@ -462,8 +462,16 @@ WRAPPER_TYPES: dict[CommentType, dict[str, str | None]] = {
     },
     # @PowerShell commands sit in a pipeline, IMPL_PS_8, impl, [FE_POWERSHELL]
     # every PowerShell command, a Pester block among them, sits in a pipeline (and a
-    # pipeline chain), whatever path reaches it
+    # pipeline chain), whatever path reaches it; see FIRST_ENTITY_WRAPPER_TYPES
     CommentType.powershell: {"pipeline": None, "pipeline_chain": None},
+}
+
+# The wrappers that hold several items and are the first of them, in source order,
+# that is an entity, rather than the item a field or their last child names: a
+# PowerShell pipeline (``Describe 'x' { } | Out-Null`` is the Describe,
+# ``Get-Thing | It 'y' { }`` the It) and a chain of pipelines (``&&``, ``||``).
+FIRST_ENTITY_WRAPPER_TYPES: dict[CommentType, frozenset[str]] = {
+    CommentType.powershell: frozenset({"pipeline", "pipeline_chain"}),
 }
 
 
@@ -488,7 +496,8 @@ def is_wrapper(node: TreeSitterNode, comment_type: CommentType) -> bool:
 def unwrap_entity(
     node: TreeSitterNode | None, comment_type: CommentType
 ) -> TreeSitterNode | None:
-    """The entity ``node`` is, or wraps (``@decorator``, ``template <…>``, ``export``)."""
+    """The entity ``node`` is, or wraps (``@decorator``, ``template <…>``, ``export``,
+    a PowerShell pipeline: see :data:`FIRST_ENTITY_WRAPPER_TYPES`)."""
     wrappers = WRAPPER_TYPES.get(comment_type, {})
     for _ in range(4):
         if node is None:
@@ -497,6 +506,17 @@ def unwrap_entity(
             return node
         if node.type not in wrappers:
             return None
+        # @A PowerShell pipeline is its first entity, IMPL_PS_17, impl, [FE_POWERSHELL]
+        if node.type in FIRST_ENTITY_WRAPPER_TYPES.get(comment_type, ()):
+            return next(
+                (
+                    entity
+                    for child in node.named_children
+                    if child.type not in COMMENT_TYPES
+                    and (entity := unwrap_entity(child, comment_type)) is not None
+                ),
+                None,
+            )
         field = wrappers[node.type]
         inner = node.child_by_field_name(field) if field is not None else None
         if inner is None:
