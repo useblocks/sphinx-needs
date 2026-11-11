@@ -123,6 +123,21 @@ subexpression_comment_in_string_powershell:
     "@
     function Start-Demo { }
 
+# PowerShell's @ is the sigil of a hashtable @{ } and an array @( ): commented-out code
+# and .EXAMPLE help hold them at a line's start, and they open no marker, nor a warning
+sigil_literal_powershell:
+  lang: powershell
+  config: default
+  source: |
+    # @{ Keys = 'k' }, $Value.Keys is the string 'k'
+    # `@(9, 9, 1) -eq 1` returns 1, not a list
+    <#
+    .EXAMPLE
+        @{ Name = 'Jakub'; Age = 30 } | Should-BeHashtable -Key Name, Age
+    #>
+    # @Real, IMPL_PS_SIGIL, impl
+    function Start-Demo { }
+
 # a one-line <# #> comment: its closing #> is not part of the last field
 block_oneliner_powershell:
   lang: powershell

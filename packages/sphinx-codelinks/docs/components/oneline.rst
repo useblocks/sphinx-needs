@@ -294,7 +294,11 @@ reported as one of these kinds, the kind leading the message:
   the interpreter's Unicode tables -- are where ubCode's notion of alphanumeric differs: a
   documented non-goal.
 
-A line with nothing between the start and end sequences is not a marker. A marker that
+A line with nothing between the start and end sequences is not a marker. Under
+``comment_type = "powershell"``, neither is a line whose first start sequence is directly
+followed by ``{`` or ``(``, and it is no warning either: with the default ``@`` that is
+PowerShell's hashtable or array literal (``@{ Name = 'a' }``, ``@(1, 2)``), which
+commented-out code and ``.EXAMPLE`` help hold at the start of a line. A marker that
 fits the style but whose need Sphinx-Needs refuses -- an id that does not match
 ``needs_id_regex``, say -- is reported too, with the Sphinx-Needs reason leading the
 message: ``invalid_id: one-line need could not be created: Given ID 'b' does not match

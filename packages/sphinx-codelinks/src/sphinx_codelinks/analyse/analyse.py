@@ -24,6 +24,7 @@ from sphinx_codelinks.analyse.oneline_parser import (
     OnelineParserInvalidWarning,
     docstring_tag,
     jsdoc_tag,
+    opens_powershell_literal,
     oneline_parser,
 )
 from sphinx_codelinks.analyse.references import _relative_posix
@@ -609,11 +610,16 @@ class SourceAnalyse:
         in_jsdoc = self.analyse_config.comment_type == CommentType.ts and _is_jsdoc(
             src_comment.text
         )
+        in_powershell = self.analyse_config.comment_type == CommentType.powershell
         for line in lines:
             if self._is_need_id_refs_line(line):
                 row_offset += 1
                 continue
             start_sequence = oneline_comment_style.start_sequence
+            if in_powershell and opens_powershell_literal(line, start_sequence):
+                # a hashtable or an array, ``@{ … }`` or ``@( … )``: code, not a marker
+                row_offset += 1
+                continue
             tag, kind, holders = None, WarningSubTypeEnum.docstring_tag, "docstrings"
             if in_docstring:
                 tag = docstring_tag(line, start_sequence)
