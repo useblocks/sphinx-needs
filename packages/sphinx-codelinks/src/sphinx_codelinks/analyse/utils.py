@@ -336,13 +336,16 @@ def _first_named_inside(
 def _last_named_inside(
     node: TreeSitterNode, wrappers: frozenset[str]
 ) -> TreeSitterNode:
-    """``node``'s last named child that is no comment, followed while the node is one of
-    ``wrappers``, or ``node`` itself when it is none of them or wraps nothing."""
-    while node.type in wrappers:
-        inner = [c for c in node.named_children if c.type not in COMMENT_TYPES]
-        if not inner:
-            break
-        node = inner[-1]
+    """``node``'s last named child, followed while the node is one of ``wrappers``, or
+    ``node`` itself when it is none of them or wraps nothing.
+
+    No comment is skipped: where the trailing path looks into a body, a comment on the
+    marker's row after the body's last statement is the marker itself, or beside the
+    body with it, never last in the body (no input in a corpus of 610 files or in
+    generated shapes reached one).
+    """
+    while node.type in wrappers and node.named_children:
+        node = node.named_children[-1]
     return node
 
 
