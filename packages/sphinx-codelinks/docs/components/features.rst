@@ -297,17 +297,21 @@ Features
      blocks, in any letter case and with or without the ``Pester\`` module
      qualifier; other commands are no scope
    * Shebang lines (``#!/usr/bin/env pwsh``) never produce spurious markers
-   * A ``#`` line inside a here-string is string content, never a marker, even
-     where the grammar parses it as a comment
+   * A ``#`` line inside a here-string, and a ``#`` that follows an interpolation
+     (``$x``, ``$( … )``) in a double-quoted string, is string content, never a
+     marker, even where the grammar parses it as a comment; a comment inside a
+     subexpression ``$( … )`` of a string is code, and a marker in it counts
    * A UTF-8 byte order mark, as Windows PowerShell 5.1 writes it, does not
      disturb a one-line marker on the first line
 
    .. note::
 
-      A multi-line double-quoted string whose closing quote ends a line that
-      starts with ``#`` confuses the ``tree-sitter-powershell`` grammar: it reads
-      the quote as part of a comment, and every marker after it is lost. Use a
-      here-string for such text.
+      In a double-quoted string that interpolates (``$x``, ``$( … )``), a ``#``
+      that follows an interpolation past whitespace alone, on the line that holds
+      the string's closing quote, confuses the ``tree-sitter-powershell`` grammar:
+      it reads the rest of that line, the quote included, as a comment, and every
+      marker after it in the file is lost (``"one $x`` on one line, ``# two"`` on
+      the next). Use a here-string or a single-quoted string for such text.
 
    .. fault:: Traceability objects are not detected in PowerShell
       :id: FAULT_POWERSHELL_1

@@ -100,6 +100,29 @@ here_string_content_line_powershell:
     # @Real, IMPL_PS_REAL_AFTER, impl
     function Start-Demo { }
 
+# in an ordinary double-quoted string, a # after an interpolation is string content too,
+# though the grammar makes it a comment node inside the string
+interpolated_string_content_line_powershell:
+  lang: powershell
+  config: default
+  source: |
+    $c = "one $x
+    # @Fake, IMPL_PS_FAKE, impl $y
+    three"
+    # @Real, IMPL_PS_REAL_STRING, impl
+    function Start-Demo { }
+
+# a comment in a subexpression $( ... ) of a string is code, not string content
+subexpression_comment_in_string_powershell:
+  lang: powershell
+  config: default
+  source: |
+    $text = @"
+    $( # @In code, IMPL_PS_SUBEXPR, impl
+    Get-Date )
+    "@
+    function Start-Demo { }
+
 # a one-line <# #> comment: its closing #> is not part of the last field
 block_oneliner_powershell:
   lang: powershell

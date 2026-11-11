@@ -91,6 +91,54 @@ def test_a_hash_line_in_a_powershell_here_string_is_no_comment(
     assert [comment.text for comment in comments] == [b"# real"]
 
 
+@pytest.mark.parametrize(
+    "code",
+    [
+        # an ordinary double-quoted string that interpolates before its ``#`` line
+        # and on it
+        b'$c = "one $x\n# @Fake, ID_FAKE, impl $y\nthree"\n',
+        # the interpolation first in the string
+        b'$c = "$x\n# @Fake, ID_FAKE, impl $y\nthree"\n',
+        # a subexpression is an interpolation too
+        b'$c = "one $($x)\n# @Fake, ID_FAKE, impl $($y)\nthree"\n',
+        # a string passed to a command, the ``#`` indented
+        b'Write-Host "one $x\n    # @Fake $y, ID_FAKE, impl\nthree"\n',
+        # the ``#`` on the interpolation's own line
+        b'$c = "one $x # @Fake, ID_FAKE, impl $y\nthree"\n',
+    ],
+)
+def test_a_hash_line_in_an_interpolating_powershell_string_is_no_comment(
+    code, init_powershell_tree_sitter
+):
+    """After an interpolation in a double-quoted string, the grammar may read a ``#``
+    that follows it past whitespace alone as a comment node inside the string, as it
+    does in a here-string: it is string content, never a marker."""
+    parser, query = init_powershell_tree_sitter
+    comments = utils.extract_comments(code + b"# real\nfunction f { }\n", parser, query)
+    assert comments
+    assert [comment.text for comment in comments] == [b"# real"]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        # a subexpression in a here-string is code
+        b'$s = @"\n$( # in code\n 1 )\n"@\n',
+        # and in an ordinary double-quoted string
+        b'$s = "a $( # in code\n 1 ) b"\n',
+    ],
+)
+def test_a_comment_in_a_powershell_subexpression_is_a_comment(
+    code, init_powershell_tree_sitter
+):
+    """A comment inside ``$( … )`` is a comment of the code the string interpolates,
+    not string content: it is kept, string or not around it."""
+    parser, query = init_powershell_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    assert comments
+    assert [comment.text for comment in comments] == [b"# in code"]
+
+
 def test_every_comment_type_is_wired():
     """A comment type is a ``CommentType`` member plus an entry in each of several
     tables; a member one of them misses fails here, rather than as a ``KeyError`` in

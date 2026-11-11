@@ -73,12 +73,18 @@ RUST_QUERY = """
     (line_comment) @comment
     (block_comment) @comment
 """
-# PowerShell's grammar reads a ``#`` line inside an expandable (double-quoted)
-# here-string as a comment node within the string, unless it is the string's first
-# line. It is string content: captured as such, it is left out of the comments.
+# PowerShell's grammar reads some ``#`` text inside an expandable (double-quoted)
+# string as a comment node within the string: a ``#`` line of a here-string, unless
+# it is the string's first line, and, in an ordinary ``"…"`` string, a ``#`` that
+# follows an interpolation past whitespace alone. It is string content. The strings
+# are captured as ``string`` and the subexpressions ``$( … )`` as ``string_code``, so
+# that :func:`captured_comments` leaves out a comment inside a string unless it is in
+# a subexpression of it, which is code.
 POWERSHELL_QUERY = """
     (comment) @comment
-    (expandable_here_string_literal (comment) @string_content)
+    (expandable_string_literal) @string
+    (expandable_here_string_literal) @string
+    (sub_expression) @string_code
 """
 
 # JSON value node types that can be associated with a comment.
@@ -245,16 +251,37 @@ def parse_source(
 def captured_comments(tree: Tree, query: Query) -> list[TreeSitterNode] | None:
     """The comment nodes ``query`` captures in ``tree``.
 
-    A query may also capture ``string_content``: comment nodes a grammar places
-    inside a string (PowerShell's here-strings), which are left out.
+    A query may also capture ``string`` nodes, in which a grammar places comment
+    nodes that are string content (PowerShell's double-quoted strings), and
+    ``string_code`` nodes, the code such a string holds (PowerShell's ``$( … )``). A
+    comment is left out when, of those, the nearest one around it is a ``string``.
     """
     query_cursor = QueryCursor(query)
     captures: dict[str, list[TreeSitterNode]] = query_cursor.captures(tree.root_node)
     comments = captures.get("comment")
-    string_content = captures.get("string_content")
-    if comments and string_content:
-        comments = [comment for comment in comments if comment not in string_content]
+    strings = {node.id for node in captures.get("string", ())}
+    if comments and strings:
+        code = {node.id for node in captures.get("string_code", ())}
+        comments = [
+            comment
+            for comment in comments
+            if not _in_string(comment, strings, code)
+        ]
     return comments
+
+
+# @PowerShell comments inside strings are string content, IMPL_PS_7, impl, [FE_POWERSHELL]
+def _in_string(node: TreeSitterNode, strings: set[int], code: set[int]) -> bool:
+    """Whether the nearest of ``strings`` and ``code`` (node ids) around ``node`` is a
+    string."""
+    ancestor = node.parent
+    while ancestor is not None:
+        if ancestor.id in code:
+            return False
+        if ancestor.id in strings:
+            return True
+        ancestor = ancestor.parent
+    return False
 
 
 # @Comment extraction from source code using tree-sitter, IMPL_EXTR_1, impl, [FE_DEF]
