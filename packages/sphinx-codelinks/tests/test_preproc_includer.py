@@ -877,3 +877,40 @@ def _a_refs(app: SphinxTestApp) -> set[str]:
         for need_id, need in _json(app)["needs"].items()
         if any("src/a.cpp" in url for url in need.get("code_url") or [])
     }
+
+
+def test_candidates_are_parsed_smallest_path_first_and_once(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The waiting sources' candidates are parsed in path order, each once: ``s1.cpp``
+    has the candidates ``a_unity.cpp`` (its include is in an ``#if 0`` arm, so it does
+    not confirm) and ``b_unity.cpp``; ``s2.cpp`` has ``b_unity.cpp`` only. Parsing
+    ``a_unity.cpp`` first moves ``s1.cpp`` on to ``b_unity.cpp``, whose one parse then
+    serves both sources. Taking the largest path first would parse ``b_unity.cpp`` for
+    ``s2.cpp`` before ``s1.cpp`` gets there, and parse it a second time."""
+    _write(
+        tmp_path,
+        {
+            "a_unity.cpp": '#if 0\n#include "s1.cpp"\n#endif\n',
+            "b_unity.cpp": '#include "s1.cpp"\n#include "s2.cpp"\n',
+            "s1.cpp": "// @s1, IMPL_S1, impl\n",
+            "s2.cpp": "// @s2, IMPL_S2, impl\n",
+        },
+    )
+    db = _db(
+        tmp_path,
+        [{"file": "b_unity.cpp", "args": []}, {"file": "a_unity.cpp", "args": []}],
+    )
+    parsed: list[str] = []
+    real_parse = libclang_parser.parse_translation_unit
+
+    def recording_parse(file_path: Path, args: list[str]) -> object:
+        parsed.append(file_path.name)
+        return real_parse(file_path, args)
+
+    monkeypatch.setattr(libclang_parser, "parse_translation_unit", recording_parse)
+
+    analyse = _run(tmp_path, ["s1.cpp", "s2.cpp"], db)
+
+    assert _ids(analyse) == {("s1.cpp", "IMPL_S1"), ("s2.cpp", "IMPL_S2")}
+    assert parsed == ["a_unity.cpp", "b_unity.cpp"]
