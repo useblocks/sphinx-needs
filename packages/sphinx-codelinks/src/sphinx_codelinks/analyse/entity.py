@@ -60,7 +60,8 @@ Mechanism = Literal["doc_comment", "leading", "trailing", "enclosing"]
 """How a marker came to be attached to its entity.
 
 ``doc_comment`` is *declared*: a documentation comment (``///``, ``//!``, ``/**``,
-``/*!``, a C# ``///``, a JSDoc ``/**``, a Python docstring) attached by its own rule.
+``/*!``, a C# ``///``, a JSDoc ``/**``, a Python docstring, PowerShell comment-based
+help first in a function's body) attached by its own rule.
 The other three are *inferred* from where a plain comment sits: on the lines before the
 entity (``leading``), after code on the entity's own line (``trailing``), or inside its
 body (``enclosing``).

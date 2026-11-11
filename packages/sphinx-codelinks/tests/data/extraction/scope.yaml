@@ -513,6 +513,26 @@ powershell_scope_modifier:
     # @Global, IMPL_PS_GLOBAL, impl
     function global:Get-Px { }
 
+powershell_help_first_in_a_body:
+  # Comment-based help first in a function's body documents that function, even when
+  # a nested function follows; a plain comment there binds the nested function, as in
+  # every other language.
+  lang: powershell
+  config: default
+  source: |
+    function Start-Px {
+        <#
+        .SYNOPSIS
+            Starts the proxy.
+        @Help, IMPL_PS_HELP_BODY, impl
+        #>
+        function Get-Inner { }
+    }
+    function Stop-Px {
+        # @Plain, IMPL_PS_PLAIN_BODY, impl
+        function Get-Inner { }
+    }
+
 powershell_trailing_pester_it:
   # A trailing marker after an It on its row -> binds that It, not the Describe
   # around it.

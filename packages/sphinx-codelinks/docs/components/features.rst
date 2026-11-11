@@ -293,6 +293,9 @@ Features
      multi-line needs
    * Association of comments with functions, filters, classes, methods,
      properties and enums
+   * Comment-based help first in a function's body documents that function: a
+     marker in it is attached to the function, even when a nested function
+     follows
    * Association of comments with Pester's ``Describe``, ``Context`` and ``It``
      blocks, in any letter case and with or without the ``Pester\`` module
      qualifier; other commands are no scope

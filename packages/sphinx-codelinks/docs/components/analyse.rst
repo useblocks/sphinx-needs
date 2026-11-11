@@ -175,7 +175,8 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   apart what the qualified name cannot: overloads, a C ``struct stat`` and a function ``stat()``, C# classes that
   differ in their number of type parameters;
 - ``mechanism`` -- how the marker was attached: ``doc_comment`` (a documentation comment -- ``///``, ``//!``, ``/**``,
-  ``/*!``, a C# ``///``, a JSDoc ``/**`` -- or a Python docstring),
+  ``/*!``, a C# ``///``, a JSDoc ``/**`` -- a Python docstring, or PowerShell comment-based help first in a
+  function's body),
   ``leading`` (a comment on the lines before the entity, or directly inside or right after an attribute, a decorator
   or a template header in its head), ``trailing`` (after code on the entity's own line) or ``enclosing`` (inside its
   body).
@@ -301,6 +302,12 @@ In this order:
 1. **YAML and JSON**: the key/value pair or item on the comment's line, else the next one, else the enclosing one.
 2. **A Python docstring** documents the function or class it is in.
 3. **A Rust inner doc comment** (``//!``, ``/*!``) documents what it is inside: the module, or the file.
+   **PowerShell comment-based help** first in a function's or a filter's body documents that function, as
+   ``Get-Help`` reads it, even when a nested function follows: a ``<# #>`` comment, or a run of ``#`` comments on
+   consecutive lines, holding a help keyword (``.SYNOPSIS``, ``.DESCRIPTION``, ``.PARAMETER``, ``.EXAMPLE``, ...;
+   any letter case) at the start of one of its lines, with nothing but other comments before it in the body. A plain
+   comment there follows rule 6, and help before the function, or at the end of its body, is attached as any comment
+   is (rules 6 and 8).
 4. **A trailing marker** -- code before it on its line -- belongs to the entity on that line (a Doxygen ``///<`` after
    a function declaration is the classic case; after a data member or an enumerator it belongs to the enclosing class,
    struct or enum), else to the entity it is inside: ``trailing`` when that entity starts on the marker's line

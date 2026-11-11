@@ -543,6 +543,73 @@ def _is_inner_doc(text: bytes, comment_type: CommentType) -> bool:
     return text.startswith((b"//!", b"/*!"))
 
 
+# PowerShell's comment-based help keywords: one at the start of a line of a comment
+# makes it help, as ``Get-Help`` reads it.
+_POWERSHELL_HELP_KEYWORD = re.compile(
+    r"^[ \t]*\.(?:SYNOPSIS|DESCRIPTION|PARAMETER|EXAMPLE|INPUTS|OUTPUTS|NOTES|LINK"
+    r"|COMPONENT|ROLE|FUNCTIONALITY|FORWARDHELPTARGETNAME|FORWARDHELPCATEGORY"
+    r"|REMOTEHELPRUNSPACE|EXTERNALHELP)(?![A-Za-z0-9_])",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def _powershell_hash_run(node: TreeSitterNode) -> list[TreeSitterNode]:
+    """The ``#`` comments on consecutive rows that the ``#`` comment ``node`` is one
+    of, in order."""
+    run = [node]
+    previous = node.prev_named_sibling
+    while (
+        previous is not None
+        and previous.type in COMMENT_TYPES
+        and not (previous.text or b"").startswith(b"<#")
+        and previous.end_point.row == run[0].start_point.row - 1
+    ):
+        run.insert(0, previous)
+        previous = previous.prev_named_sibling
+    following = node.next_named_sibling
+    while (
+        following is not None
+        and following.type in COMMENT_TYPES
+        and not (following.text or b"").startswith(b"<#")
+        and following.start_point.row == run[-1].end_point.row + 1
+    ):
+        run.append(following)
+        following = following.next_named_sibling
+    return run
+
+
+# @PowerShell comment-based help documents its function, IMPL_PS_14, impl, [FE_POWERSHELL]
+def powershell_help_function(
+    node: TreeSitterNode, text: bytes | None = None
+) -> TreeSitterNode | None:
+    """The function whose comment-based help the comment ``node`` is, first in its body.
+
+    Help is a ``<# #>`` comment, or a run of ``#`` comments on consecutive rows,
+    holding a help keyword (``.SYNOPSIS``, ``.DESCRIPTION``, ``.PARAMETER``,
+    ``.EXAMPLE``, ...) at the start of a line, as PowerShell recognises it. First in
+    the body is before every statement of the function's body (its ``param`` block
+    included), where the grammar places it as the function's child.
+
+    :param text: The comment's text as the file writes it; ``node.text`` when not given.
+    """
+    parent = node.parent
+    if parent is None or parent.type != "function_statement":
+        return None
+    body = next((c for c in parent.named_children if c.type == "script_block"), None)
+    if body is not None and node.start_byte > body.start_byte:
+        return None
+    written = (node.text or b"") if text is None else text
+    if written.startswith(b"<#"):
+        help_text = written[2:-2] if written.endswith(b"#>") else written[2:]
+    else:
+        help_text = b"\n".join(
+            (comment.text or b"")[1:] for comment in _powershell_hash_run(node)
+        )
+    if _POWERSHELL_HELP_KEYWORD.search(help_text.decode("utf-8", "replace")) is None:
+        return None
+    return parent
+
+
 def _find_yaml_structure_in_block_node(
     block_node: TreeSitterNode,
 ) -> TreeSitterNode | None:
@@ -684,7 +751,9 @@ def associate(
     1. YAML and JSONC: the data structure on the comment's row, else the next one,
        else the enclosing one.
     2. A Python docstring documents the definition it is in.
-    3. A Rust inner doc comment (``//!``) documents what it is inside.
+    3. A Rust inner doc comment (``//!``) documents what it is inside, and PowerShell
+       comment-based help first in a function's body documents that function (see
+       :func:`powershell_help_function`).
     4. A trailing comment (code before it on its row) belongs to the entity on its
        row, else to the enclosing one; an attribute, a decorator or a template header
        before it is no code.
@@ -732,6 +801,10 @@ def associate(
     if node.type == CommentCategory.docstring or _is_inner_doc(written, comment_type):
         scope = find_enclosing_scope(node, comment_type)
         return Association(scope, declared) if scope is not None else None
+    if comment_type == CommentType.powershell:
+        documented = powershell_help_function(node, written)
+        if documented is not None:
+            return Association(documented, declared)
     is_doc = is_doc_comment(node, comment_type, text=written)
 
     def enclosing(trailing: bool = False) -> Association | None:
