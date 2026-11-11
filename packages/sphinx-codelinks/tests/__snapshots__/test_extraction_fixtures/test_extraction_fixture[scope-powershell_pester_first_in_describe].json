@@ -18,11 +18,11 @@
       "start": 1,
       "end": 5,
       "language": "powershell",
-      "entity_kind": "test",
+      "entity_kind": "namespace",
       "qualified_name": "px",
       "semantic": [
         {
-          "kind": "test",
+          "kind": "namespace",
           "name": "px"
         }
       ],

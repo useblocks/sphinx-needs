@@ -613,9 +613,31 @@ def _describe(
             EntityName(
                 "test",
                 "px.ctx.starts $x",
-                _s(("test", "px"), ("test", "ctx"), ("test", "starts $x")),
+                _s(("namespace", "px"), ("namespace", "ctx"), ("test", "starts $x")),
             ),
             id="powershell-pester-blocks-joined-as-pester-joins-them",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "Describe 'px' { Pester\\Context ctx { It \"starts $x\" { } } }",
+            "command",
+            1,
+            EntityName(
+                "namespace",
+                "px.ctx",
+                _s(("namespace", "px"), ("namespace", "ctx")),
+            ),
+            id="powershell-pester-context-is-a-namespace",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "describe 'px' { }",
+            "command",
+            0,
+            EntityName("namespace", "px", _s(("namespace", "px"))),
+            id="powershell-pester-describe-is-a-namespace",
         ),
         pytest.param(
             CommentType.powershell,

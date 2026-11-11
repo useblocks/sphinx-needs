@@ -22,7 +22,7 @@
       "qualified_name": "d.x",
       "semantic": [
         {
-          "kind": "test",
+          "kind": "namespace",
           "name": "d"
         },
         {

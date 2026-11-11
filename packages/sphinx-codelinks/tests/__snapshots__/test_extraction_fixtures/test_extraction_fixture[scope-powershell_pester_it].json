@@ -22,7 +22,7 @@
       "qualified_name": "px.starts",
       "semantic": [
         {
-          "kind": "test",
+          "kind": "namespace",
           "name": "px"
         },
         {

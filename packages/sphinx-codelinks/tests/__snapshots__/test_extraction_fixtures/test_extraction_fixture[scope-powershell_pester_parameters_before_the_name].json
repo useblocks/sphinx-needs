@@ -22,7 +22,7 @@
       "qualified_name": "px.named",
       "semantic": [
         {
-          "kind": "test",
+          "kind": "namespace",
           "name": "px"
         },
         {
@@ -64,7 +64,7 @@
       "qualified_name": "px.skipped",
       "semantic": [
         {
-          "kind": "test",
+          "kind": "namespace",
           "name": "px"
         },
         {

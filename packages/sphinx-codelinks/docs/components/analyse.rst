@@ -128,8 +128,8 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   A ``.c`` file is read with the C++ grammar too, though it records ``c``, and its names follow C++'s rule;
 - ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
   ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,
-  ``property``, ``event``, ``indexer`` or ``delegate``; ``test`` for a Pester block; in YAML and JSON ``key`` or
-  ``item``;
+  ``property``, ``event``, ``indexer`` or ``delegate``; ``test`` for a Pester ``It`` block (a ``Describe`` or a
+  ``Context`` is a ``namespace``); in YAML and JSON ``key`` or ``item``;
 - ``qualified_name`` -- the entity's name within its file, qualified by the containers the file shows:
   ``ns::Widget::draw`` in C++, ``Shape.area`` and ``outer.<locals>.inner`` in Python (its ``__qualname__``),
   ``Widget::new`` and ``<Widget as Shape>::area`` (and ``<dyn Shape>::area`` for a type that is no path) in Rust,

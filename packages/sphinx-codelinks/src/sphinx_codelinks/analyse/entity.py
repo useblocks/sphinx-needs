@@ -375,17 +375,26 @@ PESTER_BLOCKS = frozenset({"describe", "context", "it"})
 PESTER_MODULE = "pester"
 
 
-def _is_pester_block(node: TreeSitterNode) -> bool:
-    """A command that is a Pester block (``Describe``, ``Context``, ``It``), called
-    bare or through Pester's module qualifier (``Pester\\It``): a test, or a group of
-    tests, rather than a command a script merely runs."""
+def _pester_block(node: TreeSitterNode) -> str | None:
+    """The Pester block a command is (``describe``, ``context`` or ``it``, lower-cased),
+    called bare or through Pester's module qualifier (``Pester\\It``); ``None`` for a
+    command a script merely runs."""
     name = next(
         (child for child in node.named_children if child.type == "command_name"), None
     )
     if name is None or name.text is None:
-        return False
+        return None
     module, _, command = name.text.decode("utf-8").lower().rpartition("\\")
-    return command in PESTER_BLOCKS and module in ("", PESTER_MODULE)
+    return (
+        command if command in PESTER_BLOCKS and module in ("", PESTER_MODULE) else None
+    )
+
+
+def _is_pester_block(node: TreeSitterNode) -> bool:
+    """A command that is a Pester block (``Describe``, ``Context``, ``It``), called
+    bare or through Pester's module qualifier (``Pester\\It``): a test, or a group of
+    tests, rather than a command a script merely runs."""
+    return _pester_block(node) is not None
 
 
 ENTITY_PREDICATES: dict[CommentType, dict[str, Callable[[TreeSitterNode], bool]]] = {
@@ -2931,9 +2940,15 @@ def _bash_describe(node: TreeSitterNode) -> EntityName | None:
     return _named("function", own, [_element("function", own or "")])
 
 
-# The entity kind of a Pester block (``Describe``, ``Context``, ``It``): the one place
-# it is chosen, for the block and for the blocks its name is joined from.
-PESTER_BLOCK_KIND: EntityKind = "test"
+# @Pester block kinds, IMPL_PS_15, impl, [FE_POWERSHELL]
+# The entity kind of each Pester block: an ``It`` is a test, a ``Describe`` or a
+# ``Context`` the group the tests are named in. The one place they are chosen, for the
+# block and for the blocks its name is joined from.
+PESTER_BLOCK_KINDS: dict[str, EntityKind] = {
+    "describe": "namespace",
+    "context": "namespace",
+    "it": "test",
+}
 
 _POWERSHELL_KINDS: dict[str, EntityKind] = {
     "function_statement": "function",
@@ -2941,7 +2956,6 @@ _POWERSHELL_KINDS: dict[str, EntityKind] = {
     "class_method_definition": "method",
     "class_property_definition": "property",
     "enum_statement": "enum",
-    "command": PESTER_BLOCK_KIND,
 }
 
 
@@ -3062,8 +3076,14 @@ def _powershell_describe(node: TreeSitterNode) -> EntityName | None:
     (``px.starts``), each named as its source writes it, never expanded; a function, a
     class and an enum are named alone. A Pester block in an unnamed one has no name.
     """
-    kind = _POWERSHELL_KINDS.get(node.type)
-    if kind is None or (node.type == "command" and not _is_pester_block(node)):
+    if node.type == "command":
+        block = _pester_block(node)
+        if block is None:
+            return None
+        kind: EntityKind = PESTER_BLOCK_KINDS[block]
+    elif node.type in _POWERSHELL_KINDS:
+        kind = _POWERSHELL_KINDS[node.type]
+    else:
         return None
     own = _powershell_own_name(node)
     parent = node.parent
@@ -3091,11 +3111,12 @@ def _powershell_describe(node: TreeSitterNode) -> EntityName | None:
     elif node.type == "command":
         ancestor = node.parent
         while ancestor is not None:
-            if ancestor.type == "command" and _is_pester_block(ancestor):
+            block = _pester_block(ancestor) if ancestor.type == "command" else None
+            if block is not None:
                 name = _pester_name(ancestor)
                 if name is None:
                     return EntityName(kind, None, None)
-                outer.insert(0, _element(PESTER_BLOCK_KIND, name))
+                outer.insert(0, _element(PESTER_BLOCK_KINDS[block], name))
             ancestor = ancestor.parent
     return _named(
         kind,
