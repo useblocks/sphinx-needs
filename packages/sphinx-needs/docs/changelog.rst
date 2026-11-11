@@ -65,6 +65,31 @@ Improvements
   deadlocked. The full list is minijinja's own
   `changelog <https://github.com/mitsuhiko/minijinja/blob/main/CHANGELOG.md>`__.
 
+- ⬆️ Templates render with minijinja 3.1: ``minijinja>=3.1.0,<4``, which was ``>=3.0.5,<4`` **(changed output)**
+  (:pr:`2500`)
+
+  The data sphinx-needs hands a template prints as before. What moves is again a value a template builds or tests
+  itself, mostly towards Jinja2's behaviour:
+
+  - ``true`` and ``false`` compare and sort as ``1`` and ``0``: ``[true, 2, false, 1, 0]|sort`` is
+    ``[False, 0, True, 1, 2]``, which was ``[False, True, 0, 1, 2]``, ``[true, 1]|unique|list`` is ``[True]``,
+    ``{true: 'a', 1: 'b'}`` is the one-key map ``{True: 'b'}``, and ``[true, 0, false]|min`` is ``0``;
+  - ``max`` and ``groupby`` keep the first of equal items: ``max(attribute='a')`` of two items with the same ``a``
+    is the first, ``['B', 'b']|max`` is ``B``, and ``groupby('k', case_sensitive=false)`` names a group by its first
+    spelling;
+  - an undefined value is empty, as in Jinja2: ``|length`` and ``|count`` of it are ``0``, ``|first`` and ``|last``
+    are empty, and ``|items`` is ``[]``, where each was an error; ``none|reverse`` is an error, where it was empty;
+  - ``title`` and ``capitalize`` follow Unicode's case mappings (``'ΟΔΟΣ'|title`` is ``Οδος``, and
+    ``'ǆemal'|capitalize`` is ``ǅemal``);
+  - a map reverses: ``{'a': 1, 'b': 2}|reverse|list`` is ``['b', 'a']``, and ``|last`` of it is ``b``, where it was
+    an error;
+  - a negative repeat is empty (``'ab' * -1`` is ``''``, and ``[1] * -2`` is ``[]``), where it was an error;
+  - ``replace`` takes a count (``'aaa'|replace('a', 'b', 2)`` is ``bba``).
+
+  It also turns two panics into ordinary results: ``4 is divisibleby(0)`` is an error that says it cannot calculate
+  ``4 % 0``, and a slice with a negative step works (``[1, 2, 3][5:0:-1]`` is ``[3, 2]``). The full list is
+  minijinja's own `changelog <https://github.com/mitsuhiko/minijinja/blob/main/CHANGELOG.md>`__.
+
 Bug fixes
 .........
 

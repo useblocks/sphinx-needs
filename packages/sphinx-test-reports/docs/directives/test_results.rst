@@ -27,7 +27,7 @@ is a ``test_reports.report_missing`` / ``test_reports.report_unreadable`` warnin
 and an error box with the same text takes the place of the sections; the build goes on (see :ref:`tr_warnings`).
 The directive takes no options:
 in reStructuredText an option written under it is docutils' ``unknown option`` error, as for any directive;
-in a MyST page MyST warns (``Unknown option keys``) and renders the table.
+in a MyST page MyST warns that the option is unknown (a ``myst.directive_option`` warning) and renders the table.
 
 .. note::
 

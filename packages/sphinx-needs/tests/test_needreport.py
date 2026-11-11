@@ -91,11 +91,11 @@ SYNTAX_ERROR_TEMPLATE = """\
 * {{ type.title }}
 """
 
-# MiniJinja tolerates an undefined value printed on its own, but not one passed
-# through a filter -- and this is exactly what the stale template in the docs
-# did with its non-existent ``fields`` variable.
-UNDEFINED_FILTER_TEMPLATE = """\
-{% if no_such_variable|length != 0 %}
+# MiniJinja tolerates an undefined value printed on its own, or passed through
+# ``length`` (``0`` since minijinja 3.1, as in Jinja2), but not one whose
+# attribute is read.
+UNDEFINED_ATTRIBUTE_TEMPLATE = """\
+{% if no_such_variable.title|length != 0 %}
 Never rendered.
 {% endif %}
 """
@@ -122,11 +122,11 @@ Never rendered.
                 "files": [
                     (Path("conf.py"), RENDER_FAIL_CONF),
                     (Path("index.rst"), REPORT_INDEX),
-                    (Path("report_template.need"), UNDEFINED_FILTER_TEMPLATE),
+                    (Path("report_template.need"), UNDEFINED_ATTRIBUTE_TEMPLATE),
                 ],
             },
-            "cannot calculate length of value of type undefined",
-            id="undefined-through-filter",
+            "undefined value: `no_such_variable` is undefined",
+            id="undefined-attribute",
         ),
     ],
     indirect=["test_app"],
@@ -678,7 +678,7 @@ def test_hardcoded_dropdown_template_keeps_todays_errors(test_app):
 # ahead of the render and announce a substitution that never happened.
 UNRENDERABLE_MENTION_TEMPLATE = """\
 {# report_directive #}
-{% if no_such_variable|length != 0 %}
+{% if no_such_variable.title|length != 0 %}
 Never rendered.
 {% endif %}
 """
@@ -881,7 +881,7 @@ LITERAL_BLOCK_SECOND_RENDER_FAILS_TEMPLATE = """\
 .. code-block:: rst
 
    .. {{ report_directive }}:: Need Types
-{% if report_directive == "admonition" %}{{ no_such_variable|length }}{% endif %}
+{% if report_directive == "admonition" %}{{ no_such_variable.title }}{% endif %}
 """
 
 
@@ -964,7 +964,7 @@ REAL_USE_SECOND_RENDER_FAILS_TEMPLATE = """\
    * {{ type.title }}
    {% endfor %}
 
-{% if report_directive == "admonition" %}{{ no_such_variable|length }}{% endif %}
+{% if report_directive == "admonition" %}{{ no_such_variable.title }}{% endif %}
 """
 
 

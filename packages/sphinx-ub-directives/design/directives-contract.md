@@ -559,10 +559,13 @@ that pin this rule, nor any option twice.) Enforced by: corpus
    `ub-template-file-from-the-source-root`, `ub-template-file-missing`,
    `ub-template-file-outside-the-root`, `ub-template-file-and-body`,
    `ub-template-file-of-the-other-markup`.
-4. `:raw: <format>` emits the output as raw content of that format, unparsed (an empty
-   `:raw:` is `template_option_invalid`); `:debug:` also shows the rendered text as a
-   literal block after the output. Enforced by: corpus `ub-template-raw`,
-   `ub-template-raw-needs-a-format`, `ub-template-debug`.
+4. `:raw: <format>` emits the output as raw content of that format, unparsed. The format
+   is read as docutils' `raw` directive reads its argument, lower-cased with its whitespace
+   collapsed (`:raw: HTML` is `html`), before the template renders; an empty `:raw:` is
+   `template_option_invalid`. `:debug:` also shows the rendered text as a literal block
+   after the output. Enforced by: corpus `ub-template-raw`,
+   `ub-template-raw-needs-a-format`, `ub-template-raw-format-is-normalised`,
+   `ub-template-debug`.
 
 ## 7. Rendering, and joining the page (both template forms)
 
@@ -570,6 +573,12 @@ that pin this rule, nor any option twice.) Enforced by: corpus
    these differences from the engine's bare defaults:
    - undefined is strict (`is defined` tests it); no autoescaping; the standard delimiters;
      one trailing newline of a template dropped;
+   - `length` and `count` of an undefined value are a render error, as minijinja's own
+     filters make them under strict undefined: minijinja-py 3.1.0 replaces both with
+     filters that skip the check (they answer `0`), so the Sphinx half restores the refusal
+     until a minijinja-py release fixes
+     [minijinja#1028](https://github.com/mitsuhiko/minijinja/issues/1028), and ubCode's
+     engine refuses it natively;
    - `debug()` removed; Python-compatible methods on values (`pycompat`);
    - `break` / `continue` (minijinja's `loop_controls`);
    - `filesizeformat`, `urlencode`, `truncate`, `pluralize`, `striptags`, `joiner()`,
@@ -581,8 +590,9 @@ that pin this rule, nor any option twice.) Enforced by: corpus
    - no clock, randomness or I/O: `now`, `random`, `lipsum`, `datetimeformat` are unknown.
    The Python-only string methods ubCode's docs once listed (`center`, `ljust`, `rjust`,
    `zfill`, `expandtabs`) do not exist on either side.
-   Enforced by: corpus `dialect-*` (one case per name above),
-   `render-error-debug-is-removed`, `render-error-undefined-attribute-test`.
+   Enforced by: corpus `dialect-*` (one case per name above, and
+   `dialect-undefined-length-is-an-error`), `render-error-debug-is-removed`,
+   `render-error-undefined-attribute-test`.
 2. **`env` is unavailable.** A template that names `env` as a free variable is
    `template_context_unavailable` (sphinx-jinja2 handed a template the live build
    environment; neither implementation has one to give), unless a context defines `env`,
@@ -602,11 +612,15 @@ that pin this rule, nor any option twice.) Enforced by: corpus
    exceed a limit, how fast that is said, and how much memory is used first are
    implementation-defined. The corpus pins only "an output over 1 MiB is refused"
    (`template_output_limit`), which both sides check after the render. The Sphinx half
-   bounds a render by fuel and checks the output after it; it does not bound
-   intermediate values, and it has NO live output cap: a minijinja-py `finalizer` changes
-   how every value it sees prints (measured on 3.0.5: `1.0` prints `1`, and `[1.0, 2.5]`
-   prints `[1, 2.5]`), which would break §7.1. ubCode keeps its byte budget and value limit
-   (`template_value_limit`, `template_compute_limit`, never pinned).
+   bounds a render by fuel and checks the output after it. Since minijinja 3.1, fuel is
+   also a memory bound: a render is charged for the bytes it makes, writes or scans (one
+   unit per 64) and the items it visits (one per two), as well as for its instructions, so
+   the Sphinx half's 10M fuel holds a render to roughly 640 MB. The corpus's heaviest
+   render takes 48,762 fuel on 3.1.0, 205 times under that. The Sphinx half has no cap of
+   its own on intermediate values, and NO live output cap: a minijinja-py `finalizer`
+   changes how every value it sees prints (measured on 3.0.5 and 3.1.0: `1.0` prints `1`,
+   and `[1.0, 2.5]` prints `[1, 2.5]`), which would break §7.1. ubCode's limits, and their
+   codes (`template_compute_limit` and the rest), are its own, and never pinned.
    Enforced by: corpus `output-over-1-mib-is-refused`, `output-of-1-mib-is-rendered`.
 6. **The per-page breaker.** In one page, once a template has hit a limit with three
    different inputs, its later uses there with yet other inputs are not rendered
@@ -796,8 +810,8 @@ myst-parser).
    Moving the engine is therefore one lockstep change, made here first: the lock moves,
    and the header and every expansion the new version renders differently are
    re-recorded in the same commit; ubCode then re-vendors the corpus from that commit and
-   locks the same version. A point release counts: the 3.0 series has changed rendered
-   text in its point releases, so the packages' range (`>=3.0.5,<4`) is a floor for
+   locks the same version. A point release counts: minijinja 3 has changed rendered text
+   in its point and minor releases, so the packages' range (`>=3.1.0,<4`) is a floor for
    users, and the LOCK is what the corpus is held to.
 5. **Registered general-parser differences.** These are not part of this contract, and no case
    depends on them. In each, ubCode's parser differs from docutils or myst-parser for any

@@ -46,7 +46,7 @@ dependencies = [
   "sphinx-data-viewer~=0.1.5",   # needservice debug output
   "sphinxcontrib-jquery~=4.0",   # sphinx_needs_collapse.js is still jQuery
   "typing-extensions>=4.14.0",   # for `**kwargs: Unpack[...]` (PEP 692), which typing supports from 3.12
-  "minijinja>=3.0.5,<4",         # lightweight jinja2-compatible template engine
+  "minijinja>=3.1.0,<4",         # lightweight jinja2-compatible template engine
   "ub-project>=1.2.0,<2",        # reads the `[variants]` table of `needs_from_toml`
   "ub-needs-exchange>=1.1.0,<2", # reads needs.json: `needimport`, `needs_external_needs`
 ]
