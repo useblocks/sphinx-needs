@@ -559,10 +559,13 @@ that pin this rule, nor any option twice.) Enforced by: corpus
    `ub-template-file-from-the-source-root`, `ub-template-file-missing`,
    `ub-template-file-outside-the-root`, `ub-template-file-and-body`,
    `ub-template-file-of-the-other-markup`.
-4. `:raw: <format>` emits the output as raw content of that format, unparsed (an empty
-   `:raw:` is `template_option_invalid`); `:debug:` also shows the rendered text as a
-   literal block after the output. Enforced by: corpus `ub-template-raw`,
-   `ub-template-raw-needs-a-format`, `ub-template-debug`.
+4. `:raw: <format>` emits the output as raw content of that format, unparsed. The format
+   is read as docutils' `raw` directive reads its argument, lower-cased with its whitespace
+   collapsed (`:raw: HTML` is `html`), before the template renders; an empty `:raw:` is
+   `template_option_invalid`. `:debug:` also shows the rendered text as a literal block
+   after the output. Enforced by: corpus `ub-template-raw`,
+   `ub-template-raw-needs-a-format`, `ub-template-raw-format-is-normalised`,
+   `ub-template-debug`.
 
 ## 7. Rendering, and joining the page (both template forms)
 

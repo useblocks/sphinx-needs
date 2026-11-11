@@ -46,6 +46,11 @@ Unreleased
   vendored copy of that corpus is due a refresh
   (`#2476 <https://github.com/useblocks/sphinx-needs/pull/2476>`__).
 
+- 🐛 ``ub-template``'s ``:raw:`` format is read as the ``raw`` directive reads its argument, lower-cased with its
+  whitespace collapsed, so ``:raw: HTML`` emits HTML where it rendered nothing; the template corpus pins it in a new
+  case, ``ub-template-raw-format-is-normalised`` (547 cases)
+  (`#2504 <https://github.com/useblocks/sphinx-needs/pull/2504>`__)
+
 .. _`release:0.1.0`:
 
 0.1.0
