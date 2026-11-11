@@ -2931,13 +2931,17 @@ def _bash_describe(node: TreeSitterNode) -> EntityName | None:
     return _named("function", own, [_element("function", own or "")])
 
 
+# The entity kind of a Pester block (``Describe``, ``Context``, ``It``): the one place
+# it is chosen, for the block and for the blocks its name is joined from.
+PESTER_BLOCK_KIND: EntityKind = "test"
+
 _POWERSHELL_KINDS: dict[str, EntityKind] = {
     "function_statement": "function",
     "class_statement": "class",
     "class_method_definition": "method",
     "class_property_definition": "property",
     "enum_statement": "enum",
-    "command": "test",
+    "command": PESTER_BLOCK_KIND,
 }
 
 
@@ -3084,14 +3088,14 @@ def _powershell_describe(node: TreeSitterNode) -> EntityName | None:
             if class_name is None:
                 return EntityName(kind, None, None)
             outer.append(_element("class", class_name))
-    elif kind == "test":
+    elif node.type == "command":
         ancestor = node.parent
         while ancestor is not None:
             if ancestor.type == "command" and _is_pester_block(ancestor):
                 name = _pester_name(ancestor)
                 if name is None:
                     return EntityName(kind, None, None)
-                outer.insert(0, _element("test", name))
+                outer.insert(0, _element(PESTER_BLOCK_KIND, name))
             ancestor = ancestor.parent
     return _named(
         kind,
