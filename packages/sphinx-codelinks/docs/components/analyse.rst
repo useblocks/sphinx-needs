@@ -302,12 +302,15 @@ In this order:
 1. **YAML and JSON**: the key/value pair or item on the comment's line, else the next one, else the enclosing one.
 2. **A Python docstring** documents the function or class it is in.
 3. **A Rust inner doc comment** (``//!``, ``/*!``) documents what it is inside: the module, or the file.
-   **PowerShell comment-based help** first in a function's or a filter's body documents that function, as
-   ``Get-Help`` reads it, even when a nested function follows: a ``<# #>`` comment, or a run of ``#`` comments on
-   consecutive lines, holding a help keyword (``.SYNOPSIS``, ``.DESCRIPTION``, ``.PARAMETER``, ``.EXAMPLE``, ...;
-   any letter case) at the start of one of its lines, with nothing but other comments before it in the body. A plain
-   comment there follows rule 6, and help before the function, or at the end of its body, is attached as any comment
-   is (rules 6 and 8).
+   **PowerShell comment-based help** first in a function's or a filter's body documents that function, even when a
+   nested function follows: a ``<# #>`` comment, or a run of ``#`` comments on consecutive lines, holding one of
+   PowerShell's comment-based-help keyword lines, with nothing but other comments before it in the body. A keyword
+   line holds a keyword alone (``.SYNOPSIS``, ``.DESCRIPTION``, ``.EXAMPLE``, ``.INPUTS``, ``.OUTPUTS``, ``.NOTES``,
+   ``.LINK``, ``.COMPONENT``, ``.ROLE``, ``.FUNCTIONALITY``), or a keyword that takes an argument with that one
+   argument (``.PARAMETER``, ``.FORWARDHELPTARGETNAME``, ``.FORWARDHELPCATEGORY``, ``.REMOTEHELPRUNSPACE``,
+   ``.EXTERNALHELP``), in any letter case and with whitespace around: ``.PARAMETER Path`` is one, ``.NOTES: detail``
+   and ``.SYNOPSIS Starts it.`` are not. A plain comment there follows rule 6, and help before the function, or at
+   the end of its body, is attached as any comment is (rules 6 and 8).
 4. **A trailing marker** -- code before it on its line -- belongs to the entity on that line (a Doxygen ``///<`` after
    a function declaration is the classic case; after a data member or an enumerator it belongs to the enclosing class,
    struct or enum), else to the entity it is inside: ``trailing`` when that entity starts on the marker's line

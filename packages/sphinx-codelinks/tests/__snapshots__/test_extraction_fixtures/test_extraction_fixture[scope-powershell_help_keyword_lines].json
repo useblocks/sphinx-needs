@@ -1,0 +1,78 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 7
+      },
+      "end": {
+        "row": 3,
+        "column": 43
+      }
+    },
+    "tagged_scope": "function Start-Px {\n    # .parameter Path\n    # .EXTERNALHELP Px-help.xml\n    # @Help lines, IMPL_PS_HELP_LINES, impl\n    function Get-Inner { }\n}",
+    "scope": {
+      "kind": "function_statement",
+      "start": 1,
+      "end": 6,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Start-Px",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Start-Px"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Help lines",
+      "id": "IMPL_PS_HELP_LINES",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 7
+      },
+      "end": {
+        "row": 8,
+        "column": 39
+      }
+    },
+    "tagged_scope": "function Get-Inner { }",
+    "scope": {
+      "kind": "function_statement",
+      "start": 10,
+      "end": 10,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Get-Inner",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Get-Inner"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Not help",
+      "id": "IMPL_PS_NOT_HELP",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  }
+]

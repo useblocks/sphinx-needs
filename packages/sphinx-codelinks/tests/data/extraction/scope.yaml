@@ -641,6 +641,26 @@ powershell_help_hash_run_first_in_a_body:
         function Get-Inner { }
     }
 
+powershell_help_keyword_lines:
+  # A help keyword line holds the keyword alone, or a keyword that takes an argument
+  # and that one argument, in any letter case: such a run first in a body is help
+  # and documents the function. "# .NOTES: ..." holds more, so it is a plain comment,
+  # and the marker after it binds the nested function.
+  lang: powershell
+  config: default
+  source: |
+    function Start-Px {
+        # .parameter Path
+        # .EXTERNALHELP Px-help.xml
+        # @Help lines, IMPL_PS_HELP_LINES, impl
+        function Get-Inner { }
+    }
+    function Stop-Px {
+        # .NOTES: a detail, not help
+        # @Not help, IMPL_PS_NOT_HELP, impl
+        function Get-Inner { }
+    }
+
 powershell_help_before_and_after:
   # Help before a function binds it as any comment does (leading); help at the end of
   # its body is inside it (enclosing).

@@ -547,12 +547,16 @@ def _is_inner_doc(text: bytes, comment_type: CommentType) -> bool:
     return text.startswith((b"//!", b"/*!"))
 
 
-# PowerShell's comment-based help keywords: one at the start of a line of a comment
-# makes it help, as ``Get-Help`` reads it.
+# PowerShell's comment-based-help keyword lines: a line of a comment that holds a
+# help keyword alone, or a keyword that takes an argument and that one argument, with
+# whitespace around, in any letter case, makes the comment help.
 _POWERSHELL_HELP_KEYWORD = re.compile(
-    r"^[ \t]*\.(?:SYNOPSIS|DESCRIPTION|PARAMETER|EXAMPLE|INPUTS|OUTPUTS|NOTES|LINK"
-    r"|COMPONENT|ROLE|FUNCTIONALITY|FORWARDHELPTARGETNAME|FORWARDHELPCATEGORY"
-    r"|REMOTEHELPRUNSPACE|EXTERNALHELP)(?![A-Za-z0-9_])",
+    r"^[ \t]*\.(?:"
+    r"(?:SYNOPSIS|DESCRIPTION|EXAMPLE|INPUTS|OUTPUTS|NOTES|LINK|COMPONENT|ROLE"
+    r"|FUNCTIONALITY)"
+    r"|(?:PARAMETER|FORWARDHELPTARGETNAME|FORWARDHELPCATEGORY|REMOTEHELPRUNSPACE"
+    r"|EXTERNALHELP)(?:[ \t]+[^ \t\r\n]+)?"
+    r")[ \t\r]*$",
     re.IGNORECASE | re.MULTILINE,
 )
 
@@ -589,8 +593,9 @@ def powershell_help_function(
     """The function whose comment-based help the comment ``node`` is, first in its body.
 
     Help is a ``<# #>`` comment, or a run of ``#`` comments on consecutive rows,
-    holding a help keyword (``.SYNOPSIS``, ``.DESCRIPTION``, ``.PARAMETER``,
-    ``.EXAMPLE``, ...) at the start of a line, as PowerShell recognises it. First in
+    holding a comment-based-help keyword line: a line that holds a keyword
+    (``.SYNOPSIS``, ``.DESCRIPTION``, ``.EXAMPLE``, ...) alone, or one that takes an
+    argument with that argument (``.PARAMETER Path``), in any letter case. First in
     the body is before every statement of the function's body (its ``param`` block
     included), where the grammar places it as the function's child.
 

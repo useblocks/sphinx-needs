@@ -1001,19 +1001,19 @@ def _powershell_attached(
             id="help-block-before-a-nested-function",
         ),
         pytest.param(
-            "function Outer {\n    <# .synopsis marker #>\n    [CmdletBinding()]\n"
+            "function Outer {\n    <# marker\n    .synopsis #>\n    [CmdletBinding()]\n"
             "    param()\n    Get-X\n}\n",
             ("function Outer {", "doc_comment"),
             id="help-block-before-param-lower-case-keyword",
         ),
         pytest.param(
-            "filter Outer {\n    <# .DESCRIPTION marker #>\n    Get-X\n}\n",
+            "filter Outer {\n    <# .DESCRIPTION\n    marker #>\n    Get-X\n}\n",
             ("filter Outer {", "doc_comment"),
             id="help-block-in-a-filter",
         ),
         pytest.param(
-            "function Outer { <# .SYNOPSIS marker #> Get-X }\n",
-            ("function Outer { <# .SYNOPSIS marker #> Get-X }", "doc_comment"),
+            "function Outer { <# marker\n    .SYNOPSIS #> Get-X }\n",
+            ("function Outer { <# marker", "doc_comment"),
             id="help-block-on-the-function-row",
         ),
         pytest.param(
@@ -1052,14 +1052,14 @@ def _powershell_attached(
         ),
         # help after a statement is not first in the body
         pytest.param(
-            "function Outer {\n    $x = 1\n    <# .SYNOPSIS marker #>\n"
+            "function Outer {\n    $x = 1\n    <# .SYNOPSIS\n    marker #>\n"
             "    function Inner { }\n}\n",
             ("function Inner { }", "leading"),
             id="help-after-a-statement",
         ),
         # only a function's body: a script block's help is a plain comment
         pytest.param(
-            "Describe 'd' {\n    <# .SYNOPSIS marker #>\n    It 'a' { }\n}\n",
+            "Describe 'd' {\n    <# .SYNOPSIS\n    marker #>\n    It 'a' { }\n}\n",
             ("It 'a' { }", "leading"),
             id="help-in-a-pester-block",
         ),
@@ -1071,9 +1071,40 @@ def _powershell_attached(
         ),
         # help at the end of a body is inside it
         pytest.param(
-            "function Outer {\n    Get-X\n    <# .SYNOPSIS marker #>\n}\n",
+            "function Outer {\n    Get-X\n    <# .SYNOPSIS\n    marker #>\n}\n",
             ("function Outer {", "enclosing"),
             id="help-at-the-end-of-the-body",
+        ),
+        # a keyword line holds the keyword alone, or with its one argument
+        pytest.param(
+            "function Outer {\n    # .NOTES: a detail, not help\n    # marker\n"
+            "    function Inner { }\n}\n",
+            ("function Inner { }", "leading"),
+            id="keyword-followed-by-a-colon",
+        ),
+        pytest.param(
+            "function Outer {\n    #   .Description = $x.Description\n    # marker\n"
+            "    function Inner { }\n}\n",
+            ("function Inner { }", "leading"),
+            id="commented-out-assignment",
+        ),
+        pytest.param(
+            "function Outer {\n    <# .SYNOPSIS Starts it.\n    marker #>\n"
+            "    function Inner { }\n}\n",
+            ("function Inner { }", "leading"),
+            id="argument-to-a-keyword-that-takes-none",
+        ),
+        pytest.param(
+            "function Outer {\n    <# .PARAMETER Path Extra\n    marker #>\n"
+            "    function Inner { }\n}\n",
+            ("function Inner { }", "leading"),
+            id="two-arguments",
+        ),
+        pytest.param(
+            "function Outer {\n    <#\n      .Parameter Path  \n    marker #>\n"
+            "    function Inner { }\n}\n",
+            ("function Outer {", "doc_comment"),
+            id="parameter-with-its-argument",
         ),
     ],
 )
@@ -1081,8 +1112,8 @@ def test_powershell_help_first_in_a_body_documents_the_function(
     source, expected, init_powershell_tree_sitter
 ):
     """Comment-based help (a ``<# #>`` block, or a run of ``#`` lines, holding a help
-    keyword such as ``.SYNOPSIS`` at the start of a line) first in a function's body
-    documents that function, as ``Get-Help`` reads it: a marker in it is the function's
+    keyword line such as ``.SYNOPSIS``) first in a function's body documents that
+    function: a marker in it is the function's
     documentation comment, even when a nested function follows. A plain comment there
     keeps the rule of every language, and binds the next statement's entity."""
     parser, query = init_powershell_tree_sitter
@@ -2713,3 +2744,27 @@ def test_documents_file(text: str, expected: bool) -> None:
     ``!``, and only as a whole ASCII word: an address or a longer word never counts,
     and a non-ASCII mark ends the word rather than extending it."""
     assert utils.documents_file(text) is expected
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        ".COMPONENT",
+        ".ROLE",
+        ".FUNCTIONALITY",
+        ".FORWARDHELPTARGETNAME Get-Item",
+        ".FORWARDHELPCATEGORY Cmdlet",
+        ".REMOTEHELPRUNSPACE $session",
+        ".EXTERNALHELP Px-help.xml",
+        ".forwardhelptargetname",
+    ],
+)
+def test_every_powershell_help_keyword_makes_help(line, init_powershell_tree_sitter):
+    """Each of PowerShell's comment-based-help keywords, the rarer ones included, makes
+    a comment first in a function's body that function's help."""
+    parser, query = init_powershell_tree_sitter
+    source = f"function Outer {{\n    <#\n    {line}\n    marker\n    #>\n    function Inner {{ }}\n}}\n"
+    assert _powershell_attached(source, parser, query) == (
+        "function Outer {",
+        "doc_comment",
+    )
