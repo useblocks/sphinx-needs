@@ -481,6 +481,32 @@ powershell_pester_it:
         }
     }
 
+powershell_trailing_pester_it:
+  # A trailing marker after an It on its row -> binds that It, not the Describe
+  # around it.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'd' {
+        It 'x' { } # @Trailing It, TEST_PS_TRAIL_IT, test
+    }
+
+powershell_trailing_describe:
+  # A trailing marker after a top-level Describe on its row -> binds that Describe.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'top' { } # @Trailing Describe, TEST_PS_TRAIL_TOP, test
+    function Start-Px { }
+
+powershell_trailing_last_function:
+  # A trailing marker after the file's last statement, a function -> binds that
+  # function, though the grammar puts the comment beside the statement list.
+  lang: powershell
+  config: default
+  source: |
+    function Start-Px { } # @Trailing Function, IMPL_PS_TRAIL_FN, impl
+
 powershell_non_ascii_scope:
   # Non-ASCII text before the marked function does not lose the scope.
   lang: powershell

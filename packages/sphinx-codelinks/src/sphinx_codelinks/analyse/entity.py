@@ -450,6 +450,10 @@ WRAPPER_TYPES: dict[CommentType, dict[str, str | None]] = {
         "ambient_declaration": None,
         "expression_statement": None,
     },
+    # @PowerShell commands sit in a pipeline, IMPL_PS_8, impl, [FE_POWERSHELL]
+    # every PowerShell command, a Pester block among them, sits in a pipeline (and a
+    # pipeline chain), whatever path reaches it
+    CommentType.powershell: {"pipeline": None, "pipeline_chain": None},
 }
 
 

@@ -953,6 +953,65 @@ def test_a_non_pester_command_is_no_scope(command, init_powershell_tree_sitter):
     assert utils.find_associated_scope(comments[0], CommentType.powershell) is None
 
 
+def _powershell_attached(
+    source: str, parser: Parser, query: Query
+) -> tuple[str, str] | None:
+    """The first line of the entity the comment holding ``marker`` in the PowerShell
+    ``source`` is attached to, and the mechanism; ``None`` for nothing."""
+    comments = utils.extract_comments(source.encode(), parser, query) or []
+    marker = next(c for c in comments if b"marker" in (c.text or b""))
+    association = utils.associate(marker, CommentType.powershell)
+    if association is None or isinstance(association, utils.Unattached):
+        return None
+    first_line = (association.node.text or b"").decode().splitlines()[0]
+    return first_line.strip(), association.mechanism
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
+            "function f { } # marker\n",
+            ("function f { }", "trailing"),
+            id="function",
+        ),
+        pytest.param(
+            "Describe 'd' {\n    It 'x' { } # marker\n}\n",
+            ("It 'x' { }", "trailing"),
+            id="it-in-describe",
+        ),
+        pytest.param(
+            "Describe 'top' { } # marker\nfunction f { }\n",
+            ("Describe 'top' { }", "trailing"),
+            id="describe-at-file-level",
+        ),
+        pytest.param(
+            "Describe 'd' {\n    Context 'c' {\n    } # marker\n}\n",
+            ("Context 'c' {", "trailing"),
+            id="context-closing-on-the-row",
+        ),
+        pytest.param(
+            "Set-StrictMode -Version 3 # marker\nfunction f { }\n",
+            None,
+            id="plain-command",
+        ),
+        pytest.param(
+            "Describe 'd' {\n    Write-Host 'x' # marker\n}\n",
+            ("Describe 'd' {", "enclosing"),
+            id="plain-command-in-describe",
+        ),
+    ],
+)
+def test_a_trailing_powershell_marker_binds_the_entity_on_its_row(
+    source, expected, init_powershell_tree_sitter
+):
+    """A trailing comment belongs to the entity that ends on its row, a Pester block
+    included, which the grammar wraps in a pipeline; on a plain command's row it falls
+    back to the enclosing entity, as in every other language."""
+    parser, query = init_powershell_tree_sitter
+    assert _powershell_attached(source, parser, query) == expected
+
+
 @pytest.mark.parametrize(
     ("code", "result"),
     [

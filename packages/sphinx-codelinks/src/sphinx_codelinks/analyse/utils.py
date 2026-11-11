@@ -314,13 +314,11 @@ def find_enclosing_scope(
 
 
 # The nodes a PowerShell script or script block holds its statements in. A comment
-# before the first statement of a body is their sibling, not the statements'.
+# before the first statement of a body, or after the last one on its row, is their
+# sibling, not the statements'.
 POWERSHELL_BODY_TYPES = frozenset(
     {"statement_list", "script_block", "script_block_body"}
 )
-# The nodes every PowerShell command sits in: a command is tested as an entity inside
-# them.
-POWERSHELL_PIPELINE_TYPES = frozenset({"pipeline", "pipeline_chain"})
 
 
 def _first_named_inside(
@@ -330,6 +328,19 @@ def _first_named_inside(
     ``node`` itself when it is none of them or wraps nothing."""
     while node.type in wrappers and node.named_children:
         node = node.named_children[0]
+    return node
+
+
+def _last_named_inside(
+    node: TreeSitterNode, wrappers: frozenset[str]
+) -> TreeSitterNode:
+    """``node``'s last named child that is no comment, followed while the node is one of
+    ``wrappers``, or ``node`` itself when it is none of them or wraps nothing."""
+    while node.type in wrappers:
+        inner = [c for c in node.named_children if c.type not in COMMENT_TYPES]
+        if not inner:
+            break
+        node = inner[-1]
     return node
 
 
@@ -347,8 +358,7 @@ def find_next_scope(
 
     PowerShell's grammar places a comment before a body's first statement beside the
     body (its statement list, or the script block holding it), so such a comment is
-    followed by that first statement too; and a statement is looked through the
-    pipeline it sits in, which holds every command.
+    followed by that first statement too.
     """
     sibling = node.next_named_sibling
     while sibling is not None and is_trivia(sibling, comment_type):
@@ -364,10 +374,7 @@ def find_next_scope(
         )
     # @PowerShell next entity across statement bodies, IMPL_PS_6, impl, [FE_POWERSHELL]
     if comment_type == CommentType.powershell and sibling is not None:
-        sibling = _first_named_inside(
-            _first_named_inside(sibling, POWERSHELL_BODY_TYPES),
-            POWERSHELL_PIPELINE_TYPES,
-        )
+        sibling = _first_named_inside(sibling, POWERSHELL_BODY_TYPES)
     return unwrap_entity(sibling, comment_type)
 
 
@@ -398,11 +405,18 @@ def _code_before_on_row(node: TreeSitterNode) -> bool:
 def _entity_on_row(
     node: TreeSitterNode, comment_type: CommentType
 ) -> TreeSitterNode | None:
-    """The entity that ends on the trailing comment ``node``'s row, before it."""
+    """The entity that ends on the trailing comment ``node``'s row, before it.
+
+    PowerShell's grammar places a comment after a body's last statement beside the
+    body, so the entity is looked for at the end of that body.
+    """
     previous = node.prev_named_sibling
     while previous is not None and previous.type in COMMENT_TYPES:
         previous = previous.prev_named_sibling
     if previous is not None and previous.end_point.row == node.start_point.row:
+        # @PowerShell entity on a trailing marker's row, IMPL_PS_9, impl, [FE_POWERSHELL]
+        if comment_type == CommentType.powershell:
+            previous = _last_named_inside(previous, POWERSHELL_BODY_TYPES)
         return unwrap_entity(previous, comment_type)
     return None
 
