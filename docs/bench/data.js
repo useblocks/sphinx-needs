@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794255687630,
+  "lastUpdate": 1794390758379,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -29400,6 +29400,48 @@ window.BENCHMARK_DATA = {
             "value": 186.035571,
             "unit": "MB",
             "extra": "Commit: bc23bae7b4ead23d28dedcb0ff7d27a8d14c6634\nBranch: master\nTime: 2026-11-09T21:19:46+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8305b2ce7196968795f24ec4e98b6716da3f7476",
+          "message": "🐛 sphinx-ub-directives: `ub-template :raw: HTML` emits its output (the format is normalised) (#2504)\n\n`ub-template`'s `:raw:` format is now read as docutils' `raw` directive\nreads its argument, lower-cased with its\nwhitespace collapsed, before the template renders, exactly as\nsphinx-jinja2 0.1.0 does\n(`\" \".join(raw.lower().split())`). It was passed to the raw node as\nwritten, and the HTML writer matches the\nformat case-sensitively (`'html' in format.split()`), so `:raw: HTML`\nsilently rendered nothing.\nAn empty or whitespace-only `:raw:` is still `template_option_invalid`,\nbefore rendering.\n\n- Contract §6.4 states the rule.\n- The template corpus pins it in a new case,\n`ub-template-raw-format-is-normalised` (`:raw: HTML LaTeX` against\n`.. raw:: html latex`), so it holds 547 cases. ubCode re-vendors the\ncorpus byte for byte and applies the same\nnormalisation on its side (useblocks/ubcode, branch\n`osspar/template-raw`; its PR follows this one).\n- Tests: the new case fails without the change (the doctree has\n`format=\"HTML LaTeX\"`), and fails again with either\n  half of the normalisation removed.",
+          "timestamp": "2026-11-11T10:50:57+01:00",
+          "tree_id": "fa0705a05428f2f97dfcccfcfc226d2d12ce7d9b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8305b2ce7196968795f24ec4e98b6716da3f7476"
+        },
+        "date": 1794390757746,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07435165199999716,
+            "unit": "s",
+            "extra": "Commit: 8305b2ce7196968795f24ec4e98b6716da3f7476\nBranch: master\nTime: 2026-11-11T10:50:57+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 12.971326032999997,
+            "unit": "s",
+            "extra": "Commit: 8305b2ce7196968795f24ec4e98b6716da3f7476\nBranch: master\nTime: 2026-11-11T10:50:57+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 184.986997,
+            "unit": "MB",
+            "extra": "Commit: 8305b2ce7196968795f24ec4e98b6716da3f7476\nBranch: master\nTime: 2026-11-11T10:50:57+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
