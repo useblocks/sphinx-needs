@@ -119,6 +119,9 @@ def test_search_path_reads_the_three_kinds_in_both_forms(tmp_path: Path) -> None
     """``-iquote``, ``-I`` and ``-isystem``, joined or separate, each kind in argument
     order, relative to the working directory; ``-I`` before ``-isystem`` whatever
     their order on the line, as the compiler searches them; other flags ignored."""
+    # An absolute directory on this platform: `/abs/i2` has no drive on Windows, so it is
+    # relative there and lands on the working directory's drive (as a compiler reads it).
+    abs_i2 = Path(tmp_path.anchor) / "abs" / "i2"
     args = [
         f"-working-directory={tmp_path}",
         "-isystem",
@@ -131,7 +134,7 @@ def test_search_path_reads_the_three_kinds_in_both_forms(tmp_path: Path) -> None
         "-isysroot",
         "/root",
         "-I",
-        "/abs/i2",
+        str(abs_i2),
         "-iquoteq2",
         "-isystemsys2",
     ]
@@ -139,7 +142,7 @@ def test_search_path_reads_the_three_kinds_in_both_forms(tmp_path: Path) -> None
         quote=(tmp_path / "q1", tmp_path / "q2"),
         angled=(
             tmp_path / "i1",
-            Path("/abs/i2"),
+            abs_i2,
             tmp_path / "sys1",
             tmp_path / "sys2",
         ),
