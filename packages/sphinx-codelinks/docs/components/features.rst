@@ -280,7 +280,8 @@ Features
 
    The PowerShell language parser leverages tree-sitter to identify and extract
    comments from PowerShell source, associating each marker with the function,
-   filter, class, method, property, enum or Pester block it annotates.
+   filter, workflow, class, method, constructor, property, enum or Pester block it
+   annotates.
 
    ``.ps1``, ``.psm1`` and ``.psd1`` files are auto-discovered when
    ``comment_type = "powershell"``.
@@ -291,14 +292,19 @@ Features
    * Block comments (``<# #>``), comment-based help included, with their
      delimiters stripped for one-line markers, need-id references and
      multi-line needs
-   * Association of comments with functions, filters, classes, methods,
-     properties and enums
+   * Association of comments with functions, filters and workflows (each a
+     ``function``, named without a ``global:``, ``script:``, ``private:`` or
+     ``local:`` scope modifier), classes, methods, constructors, properties and
+     enums; a DSC ``Configuration`` is a command, and no entity
    * Comment-based help first in a function's body documents that function: a
      marker in it is attached to the function, even when a nested function
      follows
    * Association of comments with Pester's ``Describe``, ``Context`` and ``It``
      blocks, in any letter case and with or without the ``Pester\`` module
-     qualifier; other commands are no scope
+     qualifier, a marker trailing a block's line included; other commands are no
+     scope. The blocks are known by their command name alone, so a function or an
+     alias of the script's own named ``Describe``, ``Context`` or ``It`` is taken
+     for Pester's
    * Shebang lines (``#!/usr/bin/env pwsh``) never produce spurious markers
    * A hashtable or array literal at the start of a comment line (``# @{ … }``,
      ``@( … )`` in ``.EXAMPLE`` help) is never a marker: the start sequence
@@ -309,6 +315,11 @@ Features
      subexpression ``$( … )`` of a string is code, and a marker in it counts
    * A UTF-8 byte order mark, as Windows PowerShell 5.1 writes it, does not
      disturb a one-line marker on the first line
+
+   Only UTF-8 files are read: a file saved as UTF-16, as Windows PowerShell 5.1's
+   ``Out-File`` and ``New-ModuleManifest`` write it by default, holds NUL bytes, is
+   taken for a binary file and is skipped without a warning, as in every language.
+   Save such a file as UTF-8 to trace it.
 
    .. note::
 

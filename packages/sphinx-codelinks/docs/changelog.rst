@@ -44,9 +44,15 @@ New and Improved
   filter, or a name stored elsewhere, that selects one of them needs updating once.
 - ✨ PowerShell: ``comment_type = "powershell"`` discovers ``.ps1``, ``.psm1`` and
   ``.psd1`` files and reads markers from their ``#`` and ``<# #>`` comments, parsed with the
-  ``tree-sitter-powershell`` grammar, a new dependency. A marker binds to the function,
-  filter, class, method, property or enum it annotates, and to Pester's ``Describe``,
-  ``Context`` and ``It`` blocks, an entity of the new kind ``test`` (:ref:`attachment`).
+  ``tree-sitter-powershell`` grammar, a new dependency. A marker is attached to the
+  function, filter, workflow, class, method, constructor, property or enum it annotates, and
+  to Pester's ``Describe``, ``Context`` and ``It`` blocks, an entity of the new kind
+  ``test`` named by its path (``px.starts``); comment-based help first in a function's body
+  documents the function (:ref:`attachment`). A ``#`` inside a string, and a hashtable or
+  array literal (``@{ }``, ``@( )``) opening a comment line, are no markers. The grammar
+  cannot read an attribute before a class or an enum (``[DscResource()]``), so a marker
+  above one is attached to no entity, and a UTF-16 file is skipped as a binary one
+  (:need:`FE_POWERSHELL`).
 
 Fixes
 .....

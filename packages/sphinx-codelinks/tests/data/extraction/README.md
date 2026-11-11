@@ -153,7 +153,8 @@ The fields of a marked-content entry, as `Metadata.to_dict()` writes them:
   alone names any other suffix: `c` for a `.c` file, `cpp` for any other C or C++
   file, a `.h` and a `.C` included; `csharp`; `javascript` for `.js`, `.jsx`, `.mjs`
   and `.cjs` in any case, `typescript` for the rest of the `ts` comment type, `.tsx`
-  included; else the comment type — `python`, `rust`, `go`, `yaml`, `jsonc`, `bash`;
+  included; else the comment type — `python`, `rust`, `go`, `yaml`, `jsonc`, `bash`,
+  `powershell`;
   so `lang: csharp` records `csharp`, `typescript` and `tsx` record `typescript`, and
   `js` records `javascript`), `entity_kind` (`function`, `method`, `class`,
   `namespace`, …, `key` or `item` in a data file; `null` if it cannot be named),
