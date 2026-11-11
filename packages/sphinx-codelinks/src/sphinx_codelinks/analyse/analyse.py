@@ -3,7 +3,7 @@ import os
 from collections.abc import Generator, Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from tree_sitter import Node as TreeSitterNode
 from tree_sitter import Parser, Query
@@ -36,6 +36,9 @@ from sphinx_codelinks.config import (
 )
 from sphinx_codelinks.logger import get_logger
 from sphinx_codelinks.source_discover.config import CommentType
+
+if TYPE_CHECKING:
+    from sphinx_codelinks.analyse.preproc.libclang_parser import LibclangComment
 
 logger = get_logger(__name__)
 
@@ -244,6 +247,20 @@ class AnalyseWarning:
     sub_type: str
 
 
+@dataclass(frozen=True)
+class _Waiting:
+    """A compiled source with no compilation-database entry, waiting for its includer."""
+
+    position: int
+    """Its index in ``src_files``."""
+    path: Path
+    database: Path | None
+    """The database that applies to it."""
+    candidates: tuple[Path, ...]
+    """The main files of the database's entries whose ``#include`` lines name it,
+    ordered by path."""
+
+
 class SourceAnalyse:
     def __init__(
         self,
@@ -276,6 +293,14 @@ class SourceAnalyse:
         # Per-run memo of parsed compile_commands.json, keyed by DB path, so the
         # database is read once per run instead of once per source file.
         self._flags_map_cache: dict[Path, dict[Path, list[str]] | None] = {}
+        # Per-run memo of each database's inclusion index (included file -> the
+        # entries' main files that include it), built only when a source needs it.
+        self._inclusion_index_cache: dict[Path, dict[Path, list[Path]]] = {}
+        self.dependencies: set[Path] = set()
+        """Files besides ``src_files`` the extraction read: the main file of every
+        entry tried as a source's includer, the files its unit included that are not
+        system headers, and the database. An edit to one of them can change what is
+        extracted."""
 
     @property
     def oneline_warnings(self) -> list[AnalyseWarning]:
@@ -360,6 +385,18 @@ class SourceAnalyse:
         self._flags_map_cache[db_path] = flags
         return flags
 
+    def _compile_db_for(self, src_path: Path) -> Path | None:
+        """The compilation database that applies to ``src_path``, if one is named
+        or found (an explicit path that is not a readable file included)."""
+        from sphinx_codelinks.analyse.preproc import compile_db
+
+        preproc = self.analyse_config.preprocessor
+        if preproc is None:
+            return None
+        if preproc.compile_commands is not None:
+            return preproc.compile_commands
+        return compile_db.find_compile_db(src_path, self.project_path)
+
     def _resolve_preproc_args(self, src_path: Path) -> list[str] | None:
         from sphinx_codelinks.analyse.preproc import compile_db
 
@@ -369,9 +406,7 @@ class SourceAnalyse:
         preproc = self.analyse_config.preprocessor
         if preproc is None:
             return []
-        db_path = preproc.compile_commands
-        if db_path is None:
-            db_path = compile_db.find_compile_db(src_path, self.project_path)
+        db_path = self._compile_db_for(src_path)
         if db_path is not None and db_path.is_file():
             flags = self._flags_map_for(db_path)
             if flags is None:
@@ -386,7 +421,8 @@ class SourceAnalyse:
             # Absent from the DB. compile_commands.json lists only compiled
             # translation units, never headers — so a header here is parsed
             # standalone with the global defines (one run = one variant). A
-            # compiled source absent from the build is skipped (spec §3.3).
+            # compiled source absent from the DB has no arguments of its own: it is
+            # read through an entry that includes it, or skipped (spec §3.3).
             if compile_db.is_translation_unit_source(src_path):
                 return None
             return compile_db.defines_to_args(
@@ -406,6 +442,94 @@ class SourceAnalyse:
             preproc.defines, preproc.includes, preproc.std
         )
 
+    def _includer_candidates(self, db_path: Path, src_path: Path) -> list[Path]:
+        """The main files of ``db_path``'s entries whose ``#include`` lines name
+        ``src_path``, ordered by path (see :mod:`.preproc.includer`)."""
+        from sphinx_codelinks.analyse.preproc import includer
+
+        if db_path not in self._inclusion_index_cache:
+            flags = self._flags_map_for(db_path) or {}
+            self._inclusion_index_cache[db_path] = includer.inclusion_index(flags)
+        return self._inclusion_index_cache[db_path].get(src_path.resolve(), [])
+
+    def _read_through_includers(
+        self, waiting: list[_Waiting]
+    ) -> dict[int, list["LibclangComment"]]:
+        """Read each waiting source through its includer; warn about the rest.
+
+        A source's includer is the first of its candidates, by path, whose parse
+        confirms that its main file includes the source (the lexical scan cannot see
+        ``#if`` arms). The candidates are parsed in path order across every waiting
+        source, each once, and each unit is released before the next is parsed: when
+        a candidate is parsed it is the next candidate of every source that lists
+        it, so it is never needed again. One libclang cannot load confirms nothing.
+
+        :return: The comments read, by the source's position in ``src_files``.
+        """
+        from sphinx_codelinks.analyse.preproc import compile_db, libclang_parser, loader
+
+        translation_unit_load_error = (
+            loader.load_clang_cindex().TranslationUnitLoadError
+        )
+        read: dict[int, list[LibclangComment]] = {}
+        # each unread source's next candidate, by position
+        next_candidate = {w.position: 0 for w in waiting}
+        unread = {w.position: w for w in waiting}
+        while True:
+            heads = {
+                (w.database, w.candidates[next_candidate[position]])
+                for position, w in unread.items()
+                if w.database is not None
+                and next_candidate[position] < len(w.candidates)
+            }
+            if not heads:
+                break
+            database, main = min(
+                heads, key=lambda head: (os.fsencode(head[1]), os.fsencode(head[0]))
+            )
+            args = (self._flags_map_for(database) or {})[main]
+            self.dependencies.update((database, main))
+            try:
+                tu = libclang_parser.parse_translation_unit(main, args)
+            except translation_unit_load_error:
+                logger.debug(
+                    f"codelinks: {main} could not be loaded as a translation unit, "
+                    f"so it includes no source"
+                )
+                tu = None
+                includes: set[Path] = set()
+            else:
+                working_directory = compile_db.working_directory(args)
+                includes = libclang_parser.main_file_inclusions(tu, working_directory)
+                self.dependencies.update(
+                    libclang_parser.included_files(tu, working_directory)
+                )
+            for position, w in list(unread.items()):
+                if w.database != database or next_candidate[position] >= len(
+                    w.candidates
+                ):
+                    continue
+                if w.candidates[next_candidate[position]] != main:
+                    continue
+                if tu is not None and w.path.resolve() in includes:
+                    logger.debug(
+                        f"codelinks: reading {w.path} through {main}, which includes it"
+                    )
+                    read[position] = libclang_parser.extract_included_active_comments(
+                        tu, w.path
+                    )
+                    del unread[position]
+                else:
+                    next_candidate[position] += 1
+            del tu  # released before the next candidate is parsed
+        for w in unread.values():
+            logger.warning(
+                f"codelinks: skipping {w.path} — it has no entry in "
+                f"{w.database} and no entry of it includes it",
+                subtype="not_in_compile_database",
+            )
+        return read
+
     # @Extract traceability objects with the preprocessor-aware libclang engine, IMPL_PREPROC_1, impl, [FE_PREPROC]
     def create_src_objects_libclang(self) -> None:
         from sphinx_codelinks.analyse.preproc import (
@@ -419,18 +543,26 @@ class SourceAnalyse:
         translation_unit_load_error = (
             loader.load_clang_cindex().TranslationUnitLoadError
         )
-
-        for src_path in self.analyse_config.src_files:
+        src_files = self.analyse_config.src_files
+        read: dict[int, list[LibclangComment]] = {}
+        # the compiled sources the database has no entry for: read through the entry
+        # that includes them, with that entry's flags, once every other file is read
+        waiting: list[_Waiting] = []
+        for position, src_path in enumerate(src_files):
             if not utils.is_text_file(src_path):
                 continue
             args = self._resolve_preproc_args(src_path)
             if args is None:
-                logger.debug(
-                    f"codelinks: skipping {src_path} — not found in compile_commands.json"
+                database = self._compile_db_for(src_path)
+                candidates = (
+                    ()
+                    if database is None
+                    else tuple(self._includer_candidates(database, src_path))
                 )
+                waiting.append(_Waiting(position, src_path, database, candidates))
                 continue
             try:
-                comments = libclang_parser.extract_active_comments(src_path, args)
+                read[position] = libclang_parser.extract_active_comments(src_path, args)
             except translation_unit_load_error:
                 # Last-resort guard. Standalone parses pin ``-x`` to match the
                 # ``-std`` (see defines_to_args), so the common case — a ``.h``/
@@ -438,13 +570,17 @@ class SourceAnalyse:
                 # markers extract. This only fires if libclang still cannot load
                 # the file as a translation unit at all; skip it rather than
                 # aborting the whole run. Surfaced as a ``warning`` so the silent
-                # data-loss (a file's markers dropped) is visible — accepting that
-                # this fails ``sphinx-build -W``.
+                # data-loss (a file's markers dropped) is visible — accepting
+                # that this fails ``sphinx-build -W``.
                 logger.warning(
-                    f"codelinks: skipping {src_path} — libclang could not load it "
-                    f"as a translation unit"
+                    f"codelinks: skipping {src_path} — libclang could not load "
+                    f"it as a translation unit"
                 )
-                continue
+        read.update(self._read_through_includers(waiting))
+
+        for position in sorted(read):
+            src_path = src_files[position]
+            comments = read[position]
             if not comments:
                 continue
             # ``c`` is a LibclangComment duck-typing the tree-sitter Node

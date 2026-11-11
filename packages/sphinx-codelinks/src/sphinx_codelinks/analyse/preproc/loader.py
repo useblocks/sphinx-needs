@@ -3,8 +3,11 @@
 clang.cindex (shipped by the PyPI ``libclang`` wheel, which bundles the native
 library — no compiler required) does not expose clang_getAllSkippedRanges, so
 we bind it via ctypes, exactly as the design concept's _common.py did. Nor do
-the 16.0 and 18.1 bindings expose clang_Location_isFromMainFile, which both
-wheels' native libraries export: it is bound the same way.
+the 16.0 and 18.1 bindings expose clang_Location_isFromMainFile or
+clang_getSkippedRanges, which both wheels' native libraries export: they are bound
+the same way. And their ``Cursor.get_included_file`` asserts on the NULL that
+clang_getIncludedFile returns for an ``#include`` libclang could not resolve, so
+:func:`included_file` reads it through a binding of its own.
 """
 
 from __future__ import annotations
@@ -61,6 +64,7 @@ class _CXSourceRangeList(ctypes.Structure):
 
 
 _BOUND = False
+_INCLUDED_FILE: Any = None
 
 
 def _bind() -> None:
@@ -75,6 +79,8 @@ def _bind() -> None:
     lib = cx.conf.lib
     lib.clang_getAllSkippedRanges.argtypes = [ctypes.c_void_p]
     lib.clang_getAllSkippedRanges.restype = ctypes.POINTER(_CXSourceRangeList)
+    lib.clang_getSkippedRanges.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    lib.clang_getSkippedRanges.restype = ctypes.POINTER(_CXSourceRangeList)
     lib.clang_disposeSourceRangeList.argtypes = [ctypes.POINTER(_CXSourceRangeList)]
     lib.clang_disposeSourceRangeList.restype = None
     # Registered as cindex registers clang_Location_isInSystemHeader, but with a
@@ -84,11 +90,54 @@ def _bind() -> None:
     _BOUND = True
 
 
+def included_file(cursor: Any) -> Path | None:
+    """The file an inclusion-directive cursor includes, or ``None`` when libclang did
+    not find it (``<stddef.h>`` without the builtin headers, a header not generated
+    yet).
+
+    The name is the one libclang knows the file by: relative to the unit's working
+    directory when it was found through a relative include directory.
+    """
+    global _INCLUDED_FILE
+    cx = load_clang_cindex()
+    if _INCLUDED_FILE is None:
+        # A function pointer of its own (``CDLL.__getitem__`` makes a new one), so
+        # the ``clang.cindex`` binding of the same function is left as it is.
+        function = cx.conf.lib["clang_getIncludedFile"]
+        function.argtypes = [cx.Cursor]
+        function.restype = ctypes.c_void_p
+        _INCLUDED_FILE = function
+    pointer = _INCLUDED_FILE(cursor)
+    if not pointer:
+        return None
+    return Path(cx.File(ctypes.cast(pointer, cx.c_object_p)).name)
+
+
 def get_all_skipped_ranges(tu: Any) -> list[SkippedRange]:
     """Return every source range the preprocessor skipped in this TU."""
     _bind()
     cx = load_clang_cindex()
-    ptr = cx.conf.lib.clang_getAllSkippedRanges(tu.obj)
+    return _read_range_list(cx, cx.conf.lib.clang_getAllSkippedRanges(tu.obj))
+
+
+def get_first_inclusion_skipped_ranges(tu: Any, file: Any) -> list[SkippedRange]:
+    """Return the ranges the preprocessor skipped in ``file``'s FIRST pass.
+
+    ``clang_getSkippedRanges`` selects the ranges of one file ID, the one the source
+    manager gives for the file (``SourceManager::translateFile``): its first inclusion
+    in the translation unit. A later inclusion of the same file is a file ID of its
+    own, and its ranges are not returned.
+
+    :param tu: The parsed translation unit.
+    :param file: A ``clang.cindex.File`` of ``tu`` (``tu.get_file``).
+    """
+    _bind()
+    cx = load_clang_cindex()
+    return _read_range_list(cx, cx.conf.lib.clang_getSkippedRanges(tu.obj, file))
+
+
+def _read_range_list(cx: Any, ptr: Any) -> list[SkippedRange]:
+    """Read and dispose of a ``CXSourceRangeList``."""
     if not ptr:
         return []
     try:

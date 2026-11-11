@@ -402,7 +402,9 @@ Features
    Key capabilities:
 
    * Evaluation of ``#if`` / ``#ifdef`` / ``#else`` regions to determine active branches
-   * Per-file compiler flag resolution from a ``compile_commands.json`` compilation database
+   * Per-file compiler flag resolution from a ``compile_commands.json`` compilation database,
+     each entry parsed in its ``directory``
+   * Sources a unity build compiles by ``#include``, read through the entry that includes them
    * Walk-up discovery of the compilation database from the source file
    * Standalone parsing of headers, which a compilation database never lists, using
      configured ``defines``, ``includes`` and ``std``

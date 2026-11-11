@@ -171,9 +171,11 @@ def _build_warnings(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
 def _build_preprocessor(case: dict, tmp_path: Path) -> PreprocessorConfig:
     """Build the libclang ``PreprocessorConfig`` for a case.
 
-    ``compile_commands`` (a list of ``{file, arguments}`` entries) is materialized
-    into a real ``compile_commands.json`` under ``tmp_path`` so the engine resolves
-    per-file flags from it. ``compile_commands_raw`` instead writes a verbatim
+    ``compile_commands`` (a list of ``{file, arguments}`` entries, each with an
+    optional ``directory`` relative to ``tmp_path``, ``tmp_path`` itself by default)
+    is materialized into a real ``compile_commands.json`` under ``tmp_path``, with
+    each ``directory`` created (a build's directory exists) and written absolute, so
+    the engine resolves per-file flags from it. ``compile_commands_raw`` instead writes a verbatim
     string as the DB (to exercise a present-but-malformed DB).
     ``compile_commands_path`` instead points at an explicit path (which may be
     intentionally absent, to exercise the fallback). Otherwise only the global
@@ -183,8 +185,16 @@ def _build_preprocessor(case: dict, tmp_path: Path) -> PreprocessorConfig:
     compile_commands: Path | None = None
     if "compile_commands" in case:
         db = tmp_path / "compile_commands.json"
+        for e in case["compile_commands"]:
+            (tmp_path / e.get("directory", ".")).mkdir(parents=True, exist_ok=True)
         entries = [
-            {"directory": str(tmp_path), "file": e["file"], "arguments": e["arguments"]}
+            {
+                "directory": str(tmp_path / e["directory"])
+                if "directory" in e
+                else str(tmp_path),
+                "file": e["file"],
+                "arguments": e["arguments"],
+            }
             for e in case["compile_commands"]
         ]
         _write_exact(db, json.dumps(entries))
@@ -238,6 +248,12 @@ def _extract(case: dict, root: Path, source: str) -> tuple[list[dict], list[dict
 
     src_path = root / f"case.{ext}"
     _write_exact(src_path, source)
+    # Further files the case needs on disk (a database entry's main file that
+    # includes the source, a header), written as exact bytes; never analysed.
+    for relative, text in case.get("files", {}).items():
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        _write_exact(path, text)
 
     cfg = SourceAnalyseConfig(
         src_files=[src_path],

@@ -5,7 +5,14 @@
 # `case.<ext>` source. These exercise the per-file argument resolution the shared
 # single-`.cpp`/defines fixtures never touch: DB-provided flags, headers absent
 # from a present DB (parsed standalone), translation-unit sources absent from the
-# DB (skipped), and an unreadable explicit DB path (defines fallback).
+# DB (read through an entry that includes them, else skipped), an entry's
+# `directory`, and an unreadable explicit DB path (defines fallback).
+#
+# Two optional keys serve the cases that need more than one file:
+# - `files`: further files, by path relative to the case root, written next to
+#   `case.<ext>` and never analysed themselves (a DB entry's main file, a header);
+# - a `compile_commands` entry's `directory`: relative to the case root, written
+#   absolute into the DB (default: the case root itself).
 
 file_in_db_uses_flags_libclang:
   lang: cpp
@@ -138,3 +145,185 @@ launcher_prefix_uses_db_flags_libclang:
   # from the DB then activates the #ifdef branch: IMPL_ALWAYS, IMPL_VAR_A. With the
   # launcher bug (dropping only argv[0]) the compiler leaks in as a second input
   # and the TU fails to load, dropping every marker.
+
+tu_source_included_by_db_entry_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    unity.cpp: |
+      #define FROM_UNITY 1
+      #include "case.cpp"
+  compile_commands:
+    - file: unity.cpp
+      arguments: ["clang++", "-std=c++17", "-DUNITY_FLAG=1", "-c", "unity.cpp"]
+  source: |
+    // @Always, IMPL_ALWAYS, impl, [REQ]
+    #ifdef UNITY_FLAG
+    // @Unity flag, IMPL_UNITY_FLAG, impl, [REQ]
+    #else
+    // @No unity flag, IMPL_NO_UNITY_FLAG, impl, [REQ]
+    #endif
+    #if FROM_UNITY
+    // @Unity context, IMPL_UNITY_CONTEXT, impl, [REQ]
+    #endif
+  # case.cpp has no DB entry, but the entry unity.cpp directly includes it, so it is
+  # read through unity.cpp's parse: under that entry's -DUNITY_FLAG and the
+  # FROM_UNITY its main file defines before the #include. IMPL_ALWAYS,
+  # IMPL_UNITY_FLAG, IMPL_UNITY_CONTEXT; IMPL_NO_UNITY_FLAG is in an arm the
+  # inclusion skips, so it is not extracted.
+
+tu_source_included_twice_first_inclusion_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    unity.cpp: |
+      #define PASS 1
+      #include "case.cpp"
+      #undef PASS
+      #define PASS 2
+      #include "case.cpp"
+  compile_commands:
+    - file: unity.cpp
+      arguments: ["clang++", "-std=c++17", "-c", "unity.cpp"]
+  source: |
+    // @Always, IMPL_ALWAYS, impl, [REQ]
+    #if PASS == 1
+    // @First pass, IMPL_PASS_ONE, impl, [REQ]
+    #else
+    // @Second pass, IMPL_PASS_TWO, impl, [REQ]
+    #endif
+  # unity.cpp includes case.cpp twice, PASS 1 then PASS 2. The arms of case.cpp's
+  # FIRST inclusion decide: IMPL_ALWAYS, IMPL_PASS_ONE. Merging the skipped ranges
+  # of both inclusions would drop IMPL_PASS_ONE too; the second's alone would give
+  # IMPL_PASS_TWO.
+
+tu_source_includer_first_by_path_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    b_unity.cpp: |
+      #include "case.cpp"
+    a_unity.cpp: |
+      #include "case.cpp"
+  compile_commands:
+    - file: b_unity.cpp
+      arguments: ["clang++", "-std=c++17", "-DPICK=2", "-c", "b_unity.cpp"]
+    - file: a_unity.cpp
+      arguments: ["clang++", "-std=c++17", "-DPICK=1", "-c", "a_unity.cpp"]
+  source: |
+    #if PICK == 1
+    // @Picked a, IMPL_PICK_A, impl, [REQ]
+    #elif PICK == 2
+    // @Picked b, IMPL_PICK_B, impl, [REQ]
+    #endif
+  # Two entries include case.cpp. The includer is the first by its main file's
+  # path, a_unity.cpp, whatever order the DB lists them in: IMPL_PICK_A only.
+
+tu_source_includer_confirmed_by_parse_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    a_unity.cpp: |
+      #if 0
+      #include "case.cpp"
+      #endif
+    b_unity.cpp: |
+      #include "case.cpp"
+  compile_commands:
+    - file: a_unity.cpp
+      arguments: ["clang++", "-std=c++17", "-DPICK=1", "-c", "a_unity.cpp"]
+    - file: b_unity.cpp
+      arguments: ["clang++", "-std=c++17", "-DPICK=2", "-c", "b_unity.cpp"]
+  source: |
+    #if PICK == 1
+    // @Picked a, IMPL_PICK_A, impl, [REQ]
+    #elif PICK == 2
+    // @Picked b, IMPL_PICK_B, impl, [REQ]
+    #endif
+  # a_unity.cpp sorts first and has an #include line naming case.cpp, but in an
+  # #if 0 arm: its parse does not confirm the inclusion, so b_unity.cpp, whose
+  # parse does, is the includer: IMPL_PICK_B only.
+
+tu_source_included_through_include_dir_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    build/unity.cpp: |
+      #include "case.cpp"
+  compile_commands:
+    - file: unity.cpp
+      directory: build
+      arguments: ["clang++", "-std=c++17", "-I..", "-DUNITY_FLAG=1", "-c", "unity.cpp"]
+  source: |
+    // @Always, IMPL_ALWAYS, impl, [REQ]
+    #ifdef UNITY_FLAG
+    // @Unity flag, IMPL_UNITY_FLAG, impl, [REQ]
+    #endif
+  # The entry's main file build/unity.cpp includes "case.cpp", which is not next
+  # to it: the name resolves through the entry's relative -I.., taken against the
+  # entry's directory (build), to case.cpp, which is read through it:
+  # IMPL_ALWAYS, IMPL_UNITY_FLAG.
+
+relative_include_dir_resolved_against_entry_directory_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    include/config.h: |
+      #define FEATURE_ON 1
+  compile_commands:
+    - file: ../case.cpp
+      directory: build
+      arguments: ["clang++", "-std=c++17", "-I../include", "-c", "../case.cpp"]
+  source: |
+    #include "config.h"
+    // @Always, IMPL_ALWAYS, impl, [REQ]
+    #ifdef FEATURE_ON
+    // @Feature on, IMPL_FEATURE_ON, impl, [REQ]
+    #endif
+  # The entry's directory is build, not the directory the analysis runs in, and
+  # its -I../include is relative: it resolves against the entry's directory as the
+  # build resolves it, so config.h is found and the arm guarded by its FEATURE_ON is
+  # active: IMPL_ALWAYS, IMPL_FEATURE_ON.
+
+tu_source_included_only_through_a_header_is_skipped_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    unity.cpp: |
+      #if 0
+      #include "case.cpp"
+      #endif
+      #include "through.h"
+    through.h: |
+      #include "case.cpp"
+  compile_commands:
+    - file: unity.cpp
+      arguments: ["clang++", "-std=c++17", "-DUNITY_FLAG=1", "-c", "unity.cpp"]
+  source: |
+    // @Through a header, IMPL_THROUGH_HEADER, impl, [REQ]
+    void f() {}
+  # unity.cpp's own #include "case.cpp" makes it a lexical candidate, but it is in
+  # an #if 0 arm; case.cpp IS compiled in this unit, through the header through.h.
+  # Only the candidate's main file's own #include confirms an includer (no
+  # transitive includers), so case.cpp has none and is skipped: no markers.
