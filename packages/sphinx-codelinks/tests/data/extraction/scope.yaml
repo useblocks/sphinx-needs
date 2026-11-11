@@ -483,7 +483,9 @@ powershell_pester_it:
 
 powershell_pester_parameters_before_the_name:
   # Parameters before a Pester block's name -> the name is the -Name argument, else
-  # the first positional argument past Pester's switches and valued parameters.
+  # the first positional argument past Pester's switches (-Skip, -AllowNullOrEmptyForEach,
+  # -Pending, each also as -X:value) and valued parameters (-Tag, -Tags, -Fixture, -Test,
+  # -ForEach, -TestCases); past a parameter Pester does not declare (-Focus), no name.
   lang: powershell
   config: default
   source: |
@@ -492,6 +494,12 @@ powershell_pester_parameters_before_the_name:
         It -Name 'named' { }
         # @Skipped, TEST_PS_SKIPPED, test
         It -Skip 'skipped' { }
+        # @Qualified, TEST_PS_QUALIFIED, test
+        Pester\It -Tag:Fast -Skip:$false 'qualified' { }
+        # @Cases, TEST_PS_CASES, test
+        It -ForEach @(1, 2) -AllowNullOrEmptyForEach 'cases <_>' { }
+        # @Undeclared, TEST_PS_UNDECLARED, test
+        It -Focus 'focused' { }
     }
 
 powershell_constructor:

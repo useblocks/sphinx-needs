@@ -2963,11 +2963,13 @@ def _powershell_child(node: TreeSitterNode, kind: str) -> TreeSitterNode | None:
     return next((child for child in node.named_children if child.type == kind), None)
 
 
-# Pester's ``Describe``, ``Context`` and ``It`` parameters, lower-cased: the switches,
-# and those that take a value (aliases included). ``-Name`` names the block.
-PESTER_SWITCHES = frozenset({"skip", "pending", "focus", "allownulloremptyforeach"})
+# Pester's ``Describe``, ``Context`` and ``It`` parameters, lower-cased, as Pester's
+# own parameter blocks declare them (``Pending``: Pester 4's ``It``): the switches,
+# and those that take a value (aliases included: ``Tags``, ``TestCases``). ``-Name``
+# names the block; any other parameter is undeclared, and may take a value.
+PESTER_SWITCHES = frozenset({"skip", "allownulloremptyforeach", "pending"})
 PESTER_VALUE_PARAMETERS = frozenset(
-    {"tag", "tags", "fixture", "test", "testcases", "foreach"}
+    {"tag", "tags", "fixture", "test", "foreach", "testcases"}
 )
 PESTER_NAME_PARAMETER = "name"
 

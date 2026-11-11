@@ -933,7 +933,19 @@ def test_name_chain() -> None:
         pytest.param("Describe -name:'n' { }", 0, "n", id="name-parameter-colon"),
         pytest.param("It -Skip 'skipped' { }", 0, "skipped", id="switch-first"),
         pytest.param("It -Skip:$true 'x' { }", 0, "x", id="switch-with-value"),
-        pytest.param("It -Pending -Focus 'x' { }", 0, "x", id="two-switches"),
+        pytest.param(
+            "It -Pending -AllowNullOrEmptyForEach 'x' { }", 0, "x", id="two-switches"
+        ),
+        pytest.param(
+            "Describe -AllowNullOrEmptyForEach:$true -ForEach @() 'x' { }",
+            0,
+            "x",
+            id="switch-with-value-then-foreach",
+        ),
+        pytest.param("It -Test { } 'x'", 0, "x", id="test-parameter"),
+        pytest.param("Context -Fixture { } 'x'", 0, "x", id="fixture-parameter"),
+        # Pester declares no -Focus: an undeclared parameter may take a value
+        pytest.param("It -Focus 'x' { }", 0, None, id="undeclared-parameter"),
         pytest.param(
             "Describe -Tag Unit 'px' { It 'a' { } }", 1, "px.a", id="tag-first"
         ),
