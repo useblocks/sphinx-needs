@@ -244,8 +244,8 @@ POWERSHELL_LITERAL_OPENERS = ("{", "(")
 # @PowerShell hashtable and array literals are no markers, IMPL_PS_10, impl, [FE_POWERSHELL]
 def opens_powershell_literal(line: str, start_sequence: str) -> bool:
     """Whether the first ``start_sequence`` of ``line`` is directly followed by ``{``
-    or ``(``, as PowerShell's hashtable and array literals are (``@{ Name = 'a' }``,
-    ``@(1, 2)``): commented-out code and ``.EXAMPLE`` help, never a marker.
+    or ``(``, as the ``@`` of PowerShell's hashtable and array literals is: such a
+    line is commented-out code or ``.EXAMPLE`` help, never a marker.
     """
     if not start_sequence:
         return False
