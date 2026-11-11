@@ -6,6 +6,11 @@ Changelog
 Unreleased
 ----------
 
+- 🐛 ``ub-template``'s ``:raw:`` format is read as the ``raw`` directive reads its argument, lower-cased with its
+  whitespace collapsed, so ``:raw: HTML`` emits HTML where it rendered nothing; the template corpus pins it in a new
+  case, ``ub-template-raw-format-is-normalised`` (547 cases)
+  (`#2504 <https://github.com/useblocks/sphinx-needs/pull/2504>`__)
+
 - ⬆️ Templates render with minijinja 3 (``minijinja>=3.0.5,<4``, which was ``~=2.15``), the series ubCode renders
   with; the template corpus both tools are held to is recorded against 3.0.5 **(changed output)**
   (`#2475 <https://github.com/useblocks/sphinx-needs/pull/2475>`__)
