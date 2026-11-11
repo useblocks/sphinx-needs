@@ -366,8 +366,10 @@ What counts as an entity
   signatures; a ``const``, ``let`` or ``var``, a class field, an assignment or a default export only when it holds a
   function or a class (one written with ``declare`` always does).
 - **Bash**: functions.
-- **PowerShell**: functions and filters, classes, methods, properties, enums, and Pester's ``Describe``,
-  ``Context`` and ``It`` blocks (in any letter case, bare or as ``Pester\It``); no other command.
+- **PowerShell**: functions, filters and workflows (each a ``function``, named without a ``global:``, ``script:``,
+  ``private:`` or ``local:`` scope modifier, as it is called), classes, methods, constructors (a method named as its
+  class, in any letter case), properties, enums, and Pester's ``Describe``, ``Context`` and ``It`` blocks (in any
+  letter case, bare or as ``Pester\It``); no other command.
 
 Data members, variables, lambdas bound to a name and macro invocations are not entities, nor, yet, a C
 ``typedef struct {...} T;``: a marker above one is attached to the entity it is inside, or to the file.

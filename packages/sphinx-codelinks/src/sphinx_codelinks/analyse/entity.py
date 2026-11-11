@@ -3030,11 +3030,20 @@ def _pester_literal(argument: TreeSitterNode) -> str | None:
     return text[1:-1] if len(text) >= 2 else text
 
 
+# The scope modifiers a function's name can carry, lower-cased: the function is called
+# without it (``function global:Get-Foo`` defines ``Get-Foo``).
+POWERSHELL_SCOPE_MODIFIERS = ("global:", "script:", "private:", "local:")
+
+
 def _powershell_own_name(node: TreeSitterNode) -> str | None:
     if node.type == "command":
         return _pester_name(node)
     if node.type == "function_statement":
-        return _text(_powershell_child(node, "function_name")) or None
+        # @PowerShell function names without their scope modifier, IMPL_PS_12, impl, [FE_POWERSHELL]
+        name = _text(_powershell_child(node, "function_name"))
+        if name.lower().startswith(POWERSHELL_SCOPE_MODIFIERS):
+            name = name.split(":", 1)[1]
+        return name or None
     if node.type == "class_property_definition":
         return _text(_powershell_child(node, "variable")).lstrip("$") or None
     return _text(_powershell_child(node, "simple_name")) or None
@@ -3052,16 +3061,28 @@ def _powershell_describe(node: TreeSitterNode) -> EntityName | None:
     if kind is None or (node.type == "command" and not _is_pester_block(node)):
         return None
     own = _powershell_own_name(node)
+    parent = node.parent
+    class_name = (
+        _powershell_own_name(parent)
+        if parent is not None and parent.type == "class_statement"
+        else None
+    )
+    # @PowerShell constructors are named after their class, IMPL_PS_13, impl, [FE_POWERSHELL]
+    if (
+        kind == "method"
+        and own is not None
+        and class_name is not None
+        and own.lower() == class_name.lower()
+    ):
+        kind = "constructor"
     if own is None:
         return EntityName(kind, None, None)
     outer: list[SemanticElement] = []
-    if kind in ("method", "property"):
-        parent = node.parent
+    if kind in ("method", "constructor", "property"):
         if parent is not None and parent.type == "class_statement":
-            name = _powershell_own_name(parent)
-            if name is None:
+            if class_name is None:
                 return EntityName(kind, None, None)
-            outer.append(_element("class", name))
+            outer.append(_element("class", class_name))
     elif kind == "test":
         ancestor = node.parent
         while ancestor is not None:

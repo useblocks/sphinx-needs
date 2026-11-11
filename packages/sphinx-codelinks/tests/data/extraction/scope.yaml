@@ -494,6 +494,25 @@ powershell_pester_parameters_before_the_name:
         It -Skip 'skipped' { }
     }
 
+powershell_constructor:
+  # Marker above a method named as its class, in any letter case -> a constructor.
+  lang: powershell
+  config: default
+  source: |
+    class Proxy {
+        # @Ctor, IMPL_PS_CTOR, impl
+        proxy([string] $c) { }
+    }
+
+powershell_scope_modifier:
+  # Marker above a function defined with a scope modifier -> named without it, as it
+  # is called.
+  lang: powershell
+  config: default
+  source: |
+    # @Global, IMPL_PS_GLOBAL, impl
+    function global:Get-Px { }
+
 powershell_trailing_pester_it:
   # A trailing marker after an It on its row -> binds that It, not the Describe
   # around it.
