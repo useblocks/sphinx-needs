@@ -24,8 +24,8 @@ from sphinx_codelinks.analyse.oneline_parser import (
     OnelineParserInvalidWarning,
     docstring_tag,
     jsdoc_tag,
-    opens_powershell_literal,
     oneline_parser,
+    opens_powershell_literal,
 )
 from sphinx_codelinks.analyse.references import _relative_posix
 from sphinx_codelinks.config import (

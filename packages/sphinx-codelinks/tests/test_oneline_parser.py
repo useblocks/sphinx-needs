@@ -6,8 +6,8 @@ from sphinx_codelinks.analyse.oneline_parser import (
     WarningSubTypeEnum,
     docstring_tag,
     jsdoc_tag,
-    opens_powershell_literal,
     oneline_parser,
+    opens_powershell_literal,
 )
 from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
 
