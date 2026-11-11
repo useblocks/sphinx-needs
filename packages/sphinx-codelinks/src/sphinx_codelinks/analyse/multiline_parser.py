@@ -279,8 +279,6 @@ def _make_run(views: list[_Comment]) -> CommentRun:
 def _logical_lines(view: _Comment) -> list[LogicalLine]:
     if view.kind == "line":
         return [_line_comment_line(view)]
-    if view.kind == "block" and view.delimiter == POWERSHELL_BLOCK_OPENER:
-        return _powershell_block_lines(view)
     if view.kind == "block":
         return _block_comment_lines(view)[0]
     if view.kind == "docstring":
