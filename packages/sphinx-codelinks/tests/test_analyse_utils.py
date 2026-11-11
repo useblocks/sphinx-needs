@@ -105,6 +105,8 @@ def test_a_hash_line_in_a_powershell_here_string_is_no_comment(
         b'Write-Host "one $x\n    # @Fake $y, ID_FAKE, impl\nthree"\n',
         # the ``#`` on the interpolation's own line
         b'$c = "one $x # @Fake, ID_FAKE, impl $y\nthree"\n',
+        # right after the interpolation: the comment node starts with its ``#``
+        b'$c = "$x# @Fake, ID_FAKE, impl $y\nthree"\n',
     ],
 )
 def test_a_hash_line_in_an_interpolating_powershell_string_is_no_comment(
@@ -117,6 +119,28 @@ def test_a_hash_line_in_an_interpolating_powershell_string_is_no_comment(
     comments = utils.extract_comments(code + b"# real\nfunction f { }\n", parser, query)
     assert comments
     assert [comment.text for comment in comments] == [b"# real"]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        # the string's closing quote on the ``#`` line: the grammar's comment takes the
+        # quote in and lands under an ERROR node, in no string
+        b'$s = "one $x\n# @Fake, ID_F, impl"\n',
+        b'$s = "one $x # @Fake, ID_F, impl"\n',
+        b'Write-Host "$x\n    # @Fake, ID_F, impl"\n',
+    ],
+)
+def test_a_powershell_comment_token_that_is_no_comment_is_left_out(
+    code, init_powershell_tree_sitter
+):
+    """A PowerShell comment opens with ``#`` or ``<#``; the comment node the grammar
+    makes of a ``#`` after an interpolation starts with the whitespace before it, and
+    where it is in no string node (the string's quote is lost to it), it is still no
+    comment of the file."""
+    parser, query = init_powershell_tree_sitter
+    comments = utils.extract_comments(code, parser, query) or []
+    assert [c.text for c in comments if not (c.text or b"").startswith(b"#")] == []
 
 
 @pytest.mark.parametrize(

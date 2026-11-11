@@ -112,6 +112,17 @@ interpolated_string_content_line_powershell:
     # @Real, IMPL_PS_REAL_STRING, impl
     function Start-Demo { }
 
+# the string's closing quote on the # line after an interpolation: the grammar takes the
+# quote into a comment node under an ERROR node, which starts with the line break and is
+# no comment; the rest of the file is unreadable to the grammar (a documented limitation)
+string_quote_on_hash_line_powershell:
+  lang: powershell
+  config: default
+  source: |
+    $s = "one $x
+    # @Fake, IMPL_PS_FAKE_QUOTE, impl"
+    function Start-Demo { }
+
 # a comment in a subexpression $( ... ) of a string is code, not string content
 subexpression_comment_in_string_powershell:
   lang: powershell

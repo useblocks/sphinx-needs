@@ -73,15 +73,19 @@ RUST_QUERY = """
     (line_comment) @comment
     (block_comment) @comment
 """
+# @PowerShell comment nodes open with # or <#, IMPL_PS_16, impl, [FE_POWERSHELL]
 # PowerShell's grammar reads some ``#`` text inside an expandable (double-quoted)
 # string as a comment node within the string: a ``#`` line of a here-string, unless
 # it is the string's first line, and, in an ordinary ``"…"`` string, a ``#`` that
 # follows an interpolation past whitespace alone. It is string content. The strings
 # are captured as ``string`` and the subexpressions ``$( … )`` as ``string_code``, so
 # that :func:`captured_comments` leaves out a comment inside a string unless it is in
-# a subexpression of it, which is code.
+# a subexpression of it, which is code. Where such a comment takes the string's
+# closing quote in, it lands in an ``ERROR`` node and in no string: it starts with the
+# whitespace before its ``#``, so only a node that starts with ``#`` or ``<#``, as
+# every PowerShell comment does, is captured.
 POWERSHELL_QUERY = """
-    (comment) @comment
+    ((comment) @comment (#match? @comment "^<?#"))
     (expandable_string_literal) @string
     (expandable_here_string_literal) @string
     (sub_expression) @string_code
