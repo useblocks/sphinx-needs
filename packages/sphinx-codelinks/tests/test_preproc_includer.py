@@ -38,7 +38,7 @@ from sphinx_codelinks.analyse.preproc.includer import (
 from sphinx_codelinks.config import PreprocessorConfig, SourceAnalyseConfig
 from sphinx_needs_testkit import build_warnings
 
-from .test_need_id_refs import _SHOWS_WARNING_TYPES, DANGLING, _build, _json, _project
+from .test_need_id_refs import DANGLING, _build, _json, _project
 
 
 def _names(text: str) -> list[tuple[str, bool]]:
@@ -584,7 +584,9 @@ def test_a_build_traces_the_sources_a_unity_entry_includes(
     assert "IMPL_A_ON" in needs
     assert "IMPL_A_OFF" not in needs
     assert "IMPL_ORPHAN" not in needs
-    suffix = " [codelinks.not_in_compile_database]" if _SHOWS_WARNING_TYPES else ""
+    # the analysis layer's logger: Sphinx renders the type from 8, the package logger
+    # appends it before (test_outside_roots.test_the_type_suffix_is_rendered_at_most_once)
+    suffix = " [codelinks.not_in_compile_database]"
     database = tmp_path / "build" / "compile_commands.json"
     assert build_warnings(app) == [
         f"WARNING: codelinks: skipping {tmp_path / 'src' / 'orphan.cpp'} — it has no "
