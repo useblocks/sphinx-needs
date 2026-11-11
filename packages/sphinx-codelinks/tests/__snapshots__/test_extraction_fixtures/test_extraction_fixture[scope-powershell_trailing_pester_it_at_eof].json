@@ -1,0 +1,44 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 9
+      },
+      "end": {
+        "row": 2,
+        "column": 52
+      }
+    },
+    "tagged_scope": "It 'x' {\n    } ",
+    "scope": {
+      "kind": "command",
+      "start": 2,
+      "end": 3,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "d.x",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "d"
+        },
+        {
+          "kind": "test",
+          "name": "x"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Trailing It EOF",
+      "id": "TEST_PS_TRAIL_IT_EOF",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  }
+]

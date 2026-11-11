@@ -55,3 +55,22 @@ powershell_scope_crlf:
         param([string] $Config)
         Write-Host $Config
     }
+
+powershell_pester_and_help_crlf:
+  # A Windows checkout of a Pester test file: CRLF endings, a marker in help first in a
+  # function's body, a marker above an It and one trailing another.
+  lang: powershell
+  config: default
+  line_endings: crlf
+  source: |
+    function Start-Px {
+        <# .SYNOPSIS
+        @Help, IMPL_PS_HELP_CRLF, impl
+        #>
+        function Get-Inner { }
+    }
+    Describe 'px' {
+        # @Starts, TEST_PS_IT_CRLF, test
+        It 'starts' { }
+        It 'stops' { } # @Stops, TEST_PS_TRAIL_CRLF, test
+    }

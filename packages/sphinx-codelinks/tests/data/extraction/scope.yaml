@@ -567,6 +567,97 @@ powershell_trailing_last_function:
   source: |
     function Start-Px { } # @Trailing Function, IMPL_PS_TRAIL_FN, impl
 
+powershell_trailing_describe_at_eof:
+  # A trailing marker after the closing brace of the file's last statement, a
+  # Describe -> binds that Describe; the grammar puts the comment beside the statement
+  # list.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'd' {
+        It 'x' { }
+    } # @Trailing Describe EOF, TEST_PS_TRAIL_DESC_EOF, test
+
+powershell_trailing_pester_it_at_eof:
+  # A trailing marker on the closing line of the last It of a Describe that ends the
+  # file -> binds that It.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'd' {
+        It 'x' {
+        } # @Trailing It EOF, TEST_PS_TRAIL_IT_EOF, test
+    }
+
+powershell_pester_context:
+  # A marker above a Context -> binds it, a namespace, as a Describe is; an It is a
+  # test.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'px' {
+        # @Context, TEST_PS_CONTEXT, test
+        Context 'when idle' {
+            # @It, TEST_PS_IN_CONTEXT, test
+            It 'waits' { }
+        }
+    }
+
+powershell_scope_modifiers:
+  # Every scope modifier, in any letter case, is left out of the function's name.
+  lang: powershell
+  config: default
+  source: |
+    # @Script, IMPL_PS_SCRIPT_SCOPE, impl
+    function Script:Get-Px { }
+    # @Private, IMPL_PS_PRIVATE_SCOPE, impl
+    filter private:Get-Odd { $_ }
+    # @Local, IMPL_PS_LOCAL_SCOPE, impl
+    function local:Get-Local { }
+
+powershell_static_constructor:
+  # A static constructor is a constructor too; another method is a method.
+  lang: powershell
+  config: default
+  source: |
+    class Proxy {
+        # @Static ctor, IMPL_PS_STATIC_CTOR, impl
+        static Proxy() { }
+        # @Method, IMPL_PS_METHOD, impl
+        [void] Start() { }
+    }
+
+powershell_help_hash_run_first_in_a_body:
+  # A run of # lines holding a help keyword, first in a function's body, is that
+  # function's help: a marker in it documents the function, even when a nested
+  # function follows.
+  lang: powershell
+  config: default
+  source: |
+    function Start-Px {
+        # .SYNOPSIS
+        #     Starts the proxy.
+        # @Help run, IMPL_PS_HELP_RUN, impl
+        function Get-Inner { }
+    }
+
+powershell_help_before_and_after:
+  # Help before a function binds it as any comment does (leading); help at the end of
+  # its body is inside it (enclosing).
+  lang: powershell
+  config: default
+  source: |
+    <#
+    .SYNOPSIS
+    @Help before, IMPL_PS_HELP_BEFORE, impl
+    #>
+    function Start-Px {
+        Get-Date
+        <# .NOTES
+        @Help after, IMPL_PS_HELP_AFTER, impl
+        #>
+    }
+
 powershell_non_ascii_scope:
   # Non-ASCII text before the marked function does not lose the scope.
   lang: powershell

@@ -317,6 +317,23 @@ powershell_block_comment_inline_delimiters:
     @endneed #>
     function Start-Deploy { }
 
+powershell_help_first_in_a_body:
+  # A multi-line need in comment-based help first in a function's body documents that
+  # function, even when a nested function follows.
+  lang: powershell
+  config: default
+  source: |
+    function Start-Px {
+        <#
+        .SYNOPSIS
+            Starts the proxy.
+        @need impl: Proxy start
+        :id: IMPL_PS_HELP_MULTI
+        @endneed
+        #>
+        function Get-Inner { }
+    }
+
 cpp_bang_block_opener:
   # The "/*!" opener (Qt style) is a block comment opener like "/*" and "/**": on a row
   # of its own it is a delimiter row and dropped; on the open line's row it is removed

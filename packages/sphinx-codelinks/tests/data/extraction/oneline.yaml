@@ -123,6 +123,19 @@ string_quote_on_hash_line_powershell:
     # @Fake, IMPL_PS_FAKE_QUOTE, impl"
     function Start-Demo { }
 
+# a # right after an interpolation, or after it on its own line: the grammar's comment node
+# inside the string starts with the #, and is string content all the same
+interpolated_string_same_line_powershell:
+  lang: powershell
+  config: default
+  source: |
+    $a = "$x# @Fake, IMPL_PS_FAKE_TIGHT, impl $y
+    three"
+    $b = "one $x # @Fake, IMPL_PS_FAKE_LINE, impl $y
+    three"
+    # @Real, IMPL_PS_REAL_LINE, impl
+    function Start-Demo { }
+
 # a comment in a subexpression $( ... ) of a string is code, not string content
 subexpression_comment_in_string_powershell:
   lang: powershell

@@ -1,0 +1,116 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 0,
+        "column": 37
+      }
+    },
+    "tagged_scope": "function Script:Get-Px { }",
+    "scope": {
+      "kind": "function_statement",
+      "start": 2,
+      "end": 2,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Get-Px",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Get-Px"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Script",
+      "id": "IMPL_PS_SCRIPT_SCOPE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 3
+      },
+      "end": {
+        "row": 2,
+        "column": 39
+      }
+    },
+    "tagged_scope": "filter private:Get-Odd { $_ }",
+    "scope": {
+      "kind": "function_statement",
+      "start": 4,
+      "end": 4,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Get-Odd",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Get-Odd"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Private",
+      "id": "IMPL_PS_PRIVATE_SCOPE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 3
+      },
+      "end": {
+        "row": 4,
+        "column": 35
+      }
+    },
+    "tagged_scope": "function local:Get-Local { }",
+    "scope": {
+      "kind": "function_statement",
+      "start": 6,
+      "end": 6,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Get-Local",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Get-Local"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Local",
+      "id": "IMPL_PS_LOCAL_SCOPE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  }
+]

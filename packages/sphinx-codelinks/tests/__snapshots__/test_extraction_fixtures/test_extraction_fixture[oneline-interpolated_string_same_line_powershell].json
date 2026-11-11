@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 3
+      },
+      "end": {
+        "row": 4,
+        "column": 32
+      }
+    },
+    "tagged_scope": "function Start-Demo { }",
+    "scope": {
+      "kind": "function_statement",
+      "start": 6,
+      "end": 6,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Start-Demo",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Start-Demo"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Real",
+      "id": "IMPL_PS_REAL_LINE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  }
+]
