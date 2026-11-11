@@ -263,9 +263,7 @@ def captured_comments(tree: Tree, query: Query) -> list[TreeSitterNode] | None:
     if comments and strings:
         code = {node.id for node in captures.get("string_code", ())}
         comments = [
-            comment
-            for comment in comments
-            if not _in_string(comment, strings, code)
+            comment for comment in comments if not _in_string(comment, strings, code)
         ]
     return comments
 

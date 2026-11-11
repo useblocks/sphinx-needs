@@ -470,7 +470,10 @@ def test_a_brace_after_the_start_sequence_is_a_marker_elsewhere(
     """The rule is PowerShell's: in another language, ``@{`` opens a marker as
     before."""
     analyse = _oneline_run(
-        tmp_path, "demo.py", "# @{ a }, ID_PY, impl\ndef f(): pass\n", CommentType.python
+        tmp_path,
+        "demo.py",
+        "# @{ a }, ID_PY, impl\ndef f(): pass\n",
+        CommentType.python,
     )
 
     assert [need.need["id"] for need in analyse.oneline_needs] == ["ID_PY"]

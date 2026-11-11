@@ -782,7 +782,9 @@ def test_jsdoc_tag(line: str, expected: str | None) -> None:
         ("# @{", "", False),
     ],
 )
-def test_opens_powershell_literal(line: str, start_sequence: str, expected: bool) -> None:
+def test_opens_powershell_literal(
+    line: str, start_sequence: str, expected: bool
+) -> None:
     """A PowerShell line opens a hashtable or array literal, not a marker, when its
     first start sequence is directly followed by ``{`` or ``(``."""
     assert opens_powershell_literal(line, start_sequence) is expected
