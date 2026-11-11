@@ -677,6 +677,30 @@ def _describe(
         pytest.param(
             CommentType.powershell,
             "ps1",
+            "class Proxy {\n [void] Proxy([int] $x) { }\n}",
+            "class_method_definition",
+            0,
+            EntityName(
+                "method", "Proxy.Proxy", _s(("class", "Proxy"), ("method", "Proxy"))
+            ),
+            id="powershell-method-with-a-return-type-named-as-its-class",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "class Proxy {\n hidden Proxy([string] $s) { }\n}",
+            "class_method_definition",
+            0,
+            EntityName(
+                "constructor",
+                "Proxy.Proxy",
+                _s(("class", "Proxy"), ("constructor", "Proxy")),
+            ),
+            id="powershell-hidden-constructor",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
             "function global:Get-Foo { }",
             "function_statement",
             0,

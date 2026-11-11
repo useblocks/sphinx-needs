@@ -616,7 +616,8 @@ powershell_scope_modifiers:
     function local:Get-Local { }
 
 powershell_static_constructor:
-  # A static constructor is a constructor too; another method is a method.
+  # A static constructor is a constructor too; another method is a method, and so is a
+  # method named as its class with a return type: a constructor has none.
   lang: powershell
   config: default
   source: |
@@ -625,6 +626,8 @@ powershell_static_constructor:
         static Proxy() { }
         # @Method, IMPL_PS_METHOD, impl
         [void] Start() { }
+        # @Typed, IMPL_PS_TYPED_PROXY, impl
+        [void] Proxy([int] $x) { }
     }
 
 powershell_help_hash_run_first_in_a_body:

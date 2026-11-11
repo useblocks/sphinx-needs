@@ -82,5 +82,47 @@
     },
     "type": "need",
     "tagged_scope_type": "class_method_definition"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 7
+      },
+      "end": {
+        "row": 5,
+        "column": 39
+      }
+    },
+    "tagged_scope": "[void] Proxy([int] $x) { }",
+    "scope": {
+      "kind": "class_method_definition",
+      "start": 7,
+      "end": 7,
+      "language": "powershell",
+      "entity_kind": "method",
+      "qualified_name": "Proxy.Proxy",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Proxy"
+        },
+        {
+          "kind": "method",
+          "name": "Proxy"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Typed",
+      "id": "IMPL_PS_TYPED_PROXY",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_method_definition"
   }
 ]

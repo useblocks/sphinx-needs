@@ -3095,11 +3095,13 @@ def _powershell_describe(node: TreeSitterNode) -> EntityName | None:
         else None
     )
     # @PowerShell constructors are named after their class, IMPL_PS_13, impl, [FE_POWERSHELL]
+    # and have no return type: ``[void] Proxy()`` is a method
     if (
         kind == "method"
         and own is not None
         and class_name is not None
         and own.lower() == class_name.lower()
+        and _powershell_child(node, "type_literal") is None
     ):
         kind = "constructor"
     if own is None:
