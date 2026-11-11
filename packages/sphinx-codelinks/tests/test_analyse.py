@@ -477,3 +477,26 @@ def test_a_brace_after_the_start_sequence_is_a_marker_elsewhere(
     )
 
     assert [need.need["id"] for need in analyse.oneline_needs] == ["ID_PY"]
+
+
+def test_a_powershell_title_cannot_open_with_a_parenthesis_or_a_brace(
+    tmp_path: Path,
+) -> None:
+    """The hashtable and array rule is deliberate and has a cost: a marker whose title
+    starts with ``(`` or ``{`` is read as ``@(`` or ``@{``, and is dropped without a
+    warning, as the documentation says. Only PowerShell pays it."""
+    source = (
+        "# @(Draft) Login handler, S1_PAREN, impl, [R]\n"
+        "# @{Braced} title, S1_BRACE, impl\n"
+        "function Start-Login { }\n"
+    )
+    analyse = _oneline_run(tmp_path, "login.ps1", source, CommentType.powershell)
+
+    assert analyse.oneline_needs == []
+    assert analyse.warnings == []
+
+    other = _oneline_run(tmp_path, "login.py", source, CommentType.python)
+    assert [need.need["id"] for need in other.oneline_needs] == [
+        "S1_PAREN",
+        "S1_BRACE",
+    ]

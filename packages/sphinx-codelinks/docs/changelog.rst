@@ -50,7 +50,8 @@ New and Improved
   kind ``test``, a ``Describe`` or a ``Context`` a ``namespace``. Comment-based help first
   in a function's body documents the function (:ref:`attachment`). A ``#`` inside a
   string, and a hashtable or array literal (``@{ }``, ``@( )``) opening a comment line, are
-  no markers. The grammar cannot read an attribute before a class or an enum
+  no markers, so in a PowerShell file a one-line need's title cannot start with ``(`` or
+  ``{``: ``# @(Draft) Login, ID_1, impl`` is dropped without a warning. The grammar cannot read an attribute before a class or an enum
   (``[DscResource()]``), so a marker above one is attached to no entity, and a UTF-16 file
   is skipped as a binary one (:need:`FE_POWERSHELL`).
 

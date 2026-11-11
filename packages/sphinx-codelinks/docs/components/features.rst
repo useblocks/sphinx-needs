@@ -308,7 +308,9 @@ Features
    * Shebang lines (``#!/usr/bin/env pwsh``) never produce spurious markers
    * A hashtable or array literal at the start of a comment line (``# @{ … }``,
      ``@( … )`` in ``.EXAMPLE`` help) is never a marker: the start sequence
-     directly followed by ``{`` or ``(`` opens none
+     directly followed by ``{`` or ``(`` opens none, so a title cannot start
+     with ``(`` or ``{`` (``# @(Draft) Login, ID_1, impl`` is dropped without a
+     warning)
    * A ``#`` line inside a here-string, and a ``#`` that follows an interpolation
      (``$x``, ``$( … )``) in a double-quoted string, is string content, never a
      marker, even where the grammar parses it as a comment; a comment inside a
