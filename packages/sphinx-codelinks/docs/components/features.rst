@@ -316,6 +316,11 @@ Features
       marker after it in the file is lost (``"one $x`` on one line, ``# two"`` on
       the next). Use a here-string or a single-quoted string for such text.
 
+      The grammar cannot read an attribute before a class or an enum either
+      (``[DscResource()]``, ``[Flags()]``): a marker above the attribute binds no
+      entity. With the attribute on a line of its own, a marker trailing the
+      ``class`` or ``enum`` line binds the class or the enum.
+
    .. fault:: Traceability objects are not detected in PowerShell
       :id: FAULT_POWERSHELL_1
 

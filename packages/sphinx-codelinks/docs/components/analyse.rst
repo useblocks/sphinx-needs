@@ -369,7 +369,10 @@ What counts as an entity
 - **PowerShell**: functions, filters and workflows (each a ``function``, named without a ``global:``, ``script:``,
   ``private:`` or ``local:`` scope modifier, as it is called), classes, methods, constructors (a method named as its
   class, in any letter case), properties, enums, and Pester's ``Describe``, ``Context`` and ``It`` blocks (in any
-  letter case, bare or as ``Pester\It``); no other command.
+  letter case, bare or as ``Pester\It``); no other command. The ``tree-sitter-powershell`` grammar cannot read an
+  attribute before a class or an enum (``[DscResource()]``, ``[Flags()]``), so a marker above such an attribute is
+  attached to no entity; with the attribute on a line of its own, a marker trailing the ``class`` or ``enum`` line is
+  attached to it.
 
 Data members, variables, lambdas bound to a name and macro invocations are not entities, nor, yet, a C
 ``typedef struct {...} T;``: a marker above one is attached to the entity it is inside, or to the file.

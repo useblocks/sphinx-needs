@@ -971,6 +971,49 @@ def _powershell_attached(
     ("source", "expected"),
     [
         pytest.param(
+            "# marker\n[DscResource()]\nclass K { }\n",
+            None,
+            id="above-attribute-at-file-start",
+        ),
+        pytest.param(
+            "function a { }\n# marker\n[DscResource()]\nclass K { }\n",
+            None,
+            id="above-attribute-after-code",
+        ),
+        pytest.param(
+            'function a { }\n# marker\n[SuppressMessage("A", "")]\nclass K { }\n',
+            None,
+            id="above-attribute-with-arguments",
+        ),
+        pytest.param(
+            "function a { }\n[Flags()]\nenum E { # marker\n    A = 1\n}\n",
+            ("enum E { # marker", "trailing"),
+            id="trailing-the-enum-line",
+        ),
+        pytest.param(
+            "function a { }\n[DscResource()]\nclass K { # marker\n}\n",
+            ("class K { # marker", "trailing"),
+            id="trailing-the-class-line",
+        ),
+    ],
+)
+def test_a_marker_above_a_powershell_attribute_binds_nothing(
+    source, expected, init_powershell_tree_sitter
+):
+    """The grammar cannot read an attribute before a class or an enum: what it makes of
+    one depends on the code around it (an ``ERROR`` node, a type literal statement
+    holding one, a cast that takes the class in), so a marker above the attribute binds
+    nothing, as the documentation says. A marker trailing the class's or the enum's
+    line, with the attribute on a line of its own, binds it. A grammar that learns
+    attributes fails this test: then the documented limitation goes."""
+    parser, query = init_powershell_tree_sitter
+    assert _powershell_attached(source, parser, query) == expected
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
             "function f { } # marker\n",
             ("function f { }", "trailing"),
             id="function",
