@@ -505,6 +505,12 @@ class SourceTracingDirective(SphinxDirective):
             self.env.note_dependency(str(preprocessor.compile_commands))
         src_analyse = SourceAnalyse(analyse_config, name=project)
         src_analyse.run(log_summary=False)
+        # and the files the extraction read besides the discovered ones: a source
+        # read through the compilation-database entry that includes it depends on
+        # that entry's main file and the headers it includes (a unity file usually
+        # lives in the build directory, outside every scope)
+        for dependency in sorted(src_analyse.dependencies):
+            self.env.note_dependency(str(dependency))
         report_oneline_warnings(
             src_analyse, src_analyse.git_root or src_analyse.analyse_config.src_dir
         )

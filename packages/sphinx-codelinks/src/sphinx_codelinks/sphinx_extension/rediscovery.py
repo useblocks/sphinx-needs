@@ -230,6 +230,20 @@ def fingerprint(
     return files_fingerprint(found, root)
 
 
+def dependencies_fingerprint(paths: Iterable[Path]) -> Fingerprint:
+    """The fingerprint of files outside any scan, by absolute POSIX path; a file that
+    cannot be ``stat``-ed (gone) is ``-1, -1``."""
+    entries = []
+    for path in paths:
+        try:
+            stat = path.stat()
+        except OSError:
+            entries.append((path.as_posix(), -1, -1))
+        else:
+            entries.append((path.as_posix(), stat.st_mtime_ns, stat.st_size))
+    return tuple(sorted(entries))
+
+
 def file_fingerprint(src_dir: Path, file: str) -> Fingerprint:
     """The fingerprint of a ``:file:`` scope: that one file, or ``()`` if it is missing
     or lies outside ``src_dir`` (an empty scope, as :func:`discover_scope` has it)."""
@@ -387,6 +401,11 @@ class ConfigOnlyScan:
     """The pages of the files the records' local URLs name. A plain default, so that the
     class attribute exists and a scan pickled before the field existed loads and pages
     nothing (a ``default_factory`` leaves no class attribute)."""
+    dependencies: Fingerprint = ()
+    """The files besides the discovered ones the analysis read
+    (``SourceAnalyse.dependencies``), by absolute POSIX path, with their modification
+    times and sizes (:func:`dependencies_fingerprint`); a change to one analyses the
+    project again. A plain default, as for ``pages``."""
 
 
 def config_only_refs_store(env: BuildEnvironment) -> dict[str, ConfigOnlyScan]:
@@ -487,7 +506,8 @@ def scan_config_only_project(
     previous: ConfigOnlyScan | None,
 ) -> ConfigOnlyScan:
     """The records of a project's whole source directory, analysed again only when
-    its fingerprint differs from ``previous``'s.
+    its fingerprint, or one of the other files the analysis read
+    (``ConfigOnlyScan.dependencies``), differs from ``previous``'s.
 
     The analysis is the directive's, through the same preparation and record builder;
     its one-line needs are counted and never created.
@@ -506,7 +526,12 @@ def scan_config_only_project(
         exclude=build_output_dirs(app, parents=not discover_config.gitignore),
     )
     found = files_fingerprint(files, src_dir)
-    if previous is not None and previous.fingerprint == found:
+    if (
+        previous is not None
+        and previous.fingerprint == found
+        and dependencies_fingerprint(Path(path) for path, *_ in previous.dependencies)
+        == previous.dependencies
+    ):
         return previous
     if not files:
         # nothing to parse, so no git lookup and no line either (as ubCode)
@@ -541,7 +566,12 @@ def scan_config_only_project(
             "(no src-trace directive)"
         )
     logger.info(line)
-    return ConfigOnlyScan(found, records, tuple(pages))
+    return ConfigOnlyScan(
+        found,
+        records,
+        tuple(pages),
+        dependencies_fingerprint(src_analyse.dependencies),
+    )
 
 
 def update_config_only_refs(

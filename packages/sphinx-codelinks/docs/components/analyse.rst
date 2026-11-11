@@ -906,7 +906,9 @@ A branch is inactive when the file's own pass through the preprocessor skips it.
 A file its own includes enter again -- a guarded header whose includes include it back, or a
 file that includes itself -- passes through the preprocessor a second time, and that pass
 finds the guard defined and skips the whole guarded body: its comments are kept all the
-same, since the file's own pass compiled them.
+same, since the file's own pass compiled them. A source read through the entry that
+includes it is the one exception: there its first inclusion's pass decides
+(:ref:`preprocessor_compile_db`).
 
 .. important:: The libclang engine requires an optional dependency:
    ``pip install 'sphinx-codelinks[libclang]'``. The wheel bundles the native library, so
@@ -926,13 +928,64 @@ discovered file is parsed:
    * - File
      - How it is parsed
    * - Listed in ``compile_commands.json``
-     - Parsed with the exact flags the compiler used for that translation unit.
-   * - A compiled source (``.c``, ``.cpp``, ``.cc``, ``.cxx``) **not** listed
-     - Skipped — assumed to be excluded from the build (e.g. another platform).
+     - Parsed with the exact flags the compiler used for that translation unit, in the
+       entry's ``directory``.
+   * - A compiled source (``.c``, ``.cpp``, ``.cc``, ``.cxx``) **not** listed, that a
+       listed source ``#include``\ s (a unity build)
+     - Read through that entry's parse, with its flags (see
+       :ref:`preprocessor_compile_db`).
+   * - A compiled source **not** listed, that no listed source includes
+     - Skipped, with a ``codelinks.not_in_compile_database`` warning — assumed to be
+       excluded from the build (e.g. another platform).
    * - A **header** (``.h``, ``.hpp``, …) — never listed in a database
      - Parsed **standalone** using ``defines`` and ``includes`` (see below).
    * - Any file, when **no** database is found
      - Parsed with ``defines`` and ``includes``.
+
+.. _preprocessor_compile_db:
+
+How the compilation database is applied
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An entry of ``compile_commands.json`` is applied as the build applies it:
+
+- **In its directory.** The entry's ``directory`` is the working directory of its parse,
+  so a relative ``-I``, ``-iquote``, ``-isystem``, ``-include`` or ``-imacros`` resolves
+  against it, as it did for the compiler, whatever directory the analysis runs in.
+  A relative ``directory`` is taken against the directory of the database file.
+- **Through its includes.** A unity (or "jumbo") build compiles one entry whose source
+  ``#include``\ s other sources, which then have no entry of their own. Such a source is
+  read through its **includer**: an entry whose own source directly includes it.
+
+  - The candidates are found by reading each entry's ``#include "…"`` and
+    ``#include <…>`` lines (not those inside a block comment), each name looked up as
+    the compiler looks it up: a quoted name next to the including file first, then in
+    the entry's ``-iquote`` directories; both forms then in its ``-I`` and then its
+    ``-isystem`` directories (joined, ``-Idir``, or separate, ``-I dir``). No other flag
+    adds a directory to this search: a source found only through ``-idirafter``,
+    ``--include-directory=``, ``-I=`` or ``/I`` has no candidate.
+  - The includer is the first candidate, ordered by the path of its source, whose parse
+    confirms the inclusion: an ``#include`` in an inactive branch (``#if 0``) does not
+    make an includer, nor does one in a header the entry's source includes. An
+    ``#include`` the parse cannot find (``<stddef.h>``, a header not generated yet) is
+    passed over. Each entry is parsed once as an includer, and that parse serves every
+    source it includes; an entry whose source is traced too is also parsed as its own
+    unit.
+  - The source's own comments are read from that parse, and a branch is inactive when
+    the source's **first** inclusion skips it. So its markers follow the includer's
+    ``-D`` flags and whatever its source defines before the ``#include``.
+
+  A compiled source no entry includes is skipped as before, now with one warning naming
+  it and the database (``codelinks.not_in_compile_database``, which
+  ``suppress_warnings`` can silence). Only direct includes count: a source included by
+  a file that is itself included is not read through the entry. Headers are unaffected:
+  they keep their standalone parse (below).
+
+  The files such a read depends on -- the database, the source of every entry tried as
+  its includer and the headers those include (not the system headers) -- are
+  dependencies of the ``src-trace`` directive's document, so an edit to a unity file in
+  the build directory, outside every traced directory, reads the source again in an
+  incremental build; a project no directive traces is analysed again too.
 
 Header files
 ~~~~~~~~~~~~~
