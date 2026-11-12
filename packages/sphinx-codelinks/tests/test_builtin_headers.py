@@ -137,6 +137,7 @@ DRIVER_CASES = [
     pytest.param(["-Xcuda-ptxas", "-nostdinc"], False, id="Xcuda-ptxas"),
     pytest.param(["-Xassembler", "-nostdinc"], False, id="Xassembler"),
     pytest.param(["-Xlinker", "-nostdinc"], False, id="Xlinker"),
+    pytest.param(["-z", "-nostdinc"], False, id="z"),
     # no clang driver option: the driver reads the argument after it
     pytest.param(["-Xflang", "-nostdinc"], True, id="Xflang-unknown"),
     pytest.param(["-Xarch_host", "-nobuiltininc"], True, id="Xarch_host"),
@@ -146,6 +147,11 @@ DRIVER_CASES = [
         ["--target=arm64-apple-macos", "-Xarch_arm64", "-nostdinc"],
         True,
         id="Xarch-macho-own-arch",
+    ),
+    pytest.param(
+        ["-target", "arm64-apple-macos", "-Xarch_arm64", "-nostdinc"],
+        True,
+        id="Xarch-macho-own-arch-separate-target",
     ),
     pytest.param(
         ["--target=arm64-apple-macos", "-Xarch_x86_64", "-nostdinc"],
