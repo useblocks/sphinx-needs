@@ -218,10 +218,30 @@ def excluding_flag(args: list[str]) -> str | None:
     )
 
 
+def _end_of_options(args: list[str]) -> int:
+    """The index of the ``--`` after which the driver reads every argument as an input
+    file, else ``len(args)``. A ``--`` handed to another tool (``-Xlinker --``) is
+    not it."""
+    index = 0
+    while index < len(args):
+        arg = args[index]
+        if arg == "--":
+            return index
+        if (
+            arg in _PASS_THROUGH
+            or arg.startswith(_PASS_THROUGH_PREFIXES)
+            or arg.startswith("-Xarch_")
+        ):
+            index += 2
+            continue
+        index += 1
+    return len(args)
+
+
 def _with_resource_dir(args: list[str], directory: Path) -> list[str]:
-    """``args`` with ``-resource-dir <directory>``, before a ``--``, after which the
-    driver reads every argument as an input file."""
-    at = args.index("--") if "--" in args else len(args)
+    """``args`` with ``-resource-dir <directory>``, before the end of the options
+    (:func:`_end_of_options`)."""
+    at = _end_of_options(args)
     return [*args[:at], "-resource-dir", str(directory), *args[at:]]
 
 
@@ -264,24 +284,18 @@ def is_builtin_header(name: str) -> bool:
     return name in builtin_header_names()
 
 
-def _is_angled(file: Path, line: int, column: int, name: str) -> bool:
-    """Whether the include ``name`` at ``file:line:column`` (1-based, the column in
-    bytes, where libclang places a missing include's diagnostic) is written in angle
-    brackets, ``<name>``. A file that cannot be read counts as angled."""
+def _is_angled(file: Path, offset: int) -> bool | None:
+    """Whether the include whose name starts at byte ``offset`` of ``file`` (where
+    libclang places a missing include's diagnostic) is written in angle brackets,
+    ``<name>``, rather than in quotes; ``None`` when that cannot be told: the file
+    cannot be read, or the name is a macro's (``#include HDR``)."""
     try:
         with file.open("rb") as handle:
-            text = b""
-            for _ in range(line):
-                text = handle.readline()
+            handle.seek(offset)
+            first = handle.read(1)
     except OSError:
-        return True
-    at = text[column - 1 :] if column > 0 else b""
-    if at.startswith(b'"'):
-        return False
-    if at.startswith(b"<"):
-        return True
-    # no column to go by: the line's own include
-    return not re.search(rb'#\s*include(?:_next)?\s*"' + re.escape(name.encode()), text)
+        return None
+    return {b"<": True, b'"': False}.get(first)
 
 
 def missing_builtin_header(
@@ -291,9 +305,11 @@ def missing_builtin_header(
     line of the ``#include`` (``None`` and 0 when libclang gives no location).
 
     Only an angled include (``#include <cpuid.h>``) of a builtin header's name counts:
-    a quoted one (``#include "cpuid.h"``) names the project's own header. Only the
-    first missing header is reported by libclang as an error; a later one fails
-    without a diagnostic.
+    a quoted one (``#include "cpuid.h"``) names the project's own header, and one
+    whose form cannot be told (``#include HDR``, a file that cannot be read) is not
+    reported, rather than reported wrongly. One with no location at all is a compile
+    command's own (``-include immintrin.h``) and counts. Only the first missing header
+    is reported by libclang as an error; a later one fails without a diagnostic.
 
     :param working_directory: The parse's working directory, against which a file
         libclang names relatively is read.
@@ -306,7 +322,7 @@ def missing_builtin_header(
         file = location.file.name if location.file is not None else None
         if file is not None:
             path = (working_directory or Path.cwd()) / file
-            if not _is_angled(path, location.line, location.column, match["name"]):
+            if not _is_angled(path, location.offset):
                 continue
         return match["name"], file, location.line
     return None

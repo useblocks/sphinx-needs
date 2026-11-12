@@ -1087,7 +1087,8 @@ Compiler intrinsics (``immintrin.h``, ``arm_neon.h`` …) and clang's other buil
 (``cpuid.h``, ``unwind.h``, compiler-rt's ``sanitizer/`` headers …) are not shipped. If a
 parse still cannot find a header a full clang install puts in its resource directory,
 included in angle brackets (``#include <cpuid.h>``; ``#include "cpuid.h"`` names a header
-of the project), **Sphinx-CodeLinks** warns once per file in a build or a
+of the project, and an include written through a macro, ``#include HDR``, is not warned
+about), or by the compile command itself (``-include immintrin.h``), **Sphinx-CodeLinks** warns once per file in a build or a
 ``codelinks analyse`` run, naming the header (``codelinks.builtin_header``, which fails a
 ``-W`` build), and continues: ``#if`` tests on what that header defines take their
 ``#else`` branch. When the entry itself leaves clang's headers out (``-nostdinc``,

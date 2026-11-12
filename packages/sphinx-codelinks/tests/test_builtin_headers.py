@@ -500,6 +500,12 @@ def test_an_entry_without_builtin_headers_is_warned_about(
             '#  include   "unwind.h" // the project\'s', False, id="quoted-spaced"
         ),
         pytest.param("#include_next <cpuid.h>", True, id="include_next"),
+        # the form a macro gives the name cannot be told from the line: no warning
+        pytest.param('#define HDR "cpuid.h"\n#include HDR', False, id="macro-quoted"),
+        pytest.param("#define HDR <cpuid.h>\n#include HDR", False, id="macro-angled"),
+        # a lone CR ends a line for clang: the include is found by its byte offset
+        pytest.param("int a;\r#include <cpuid.h>\r", True, id="cr-angled"),
+        pytest.param('int a;\r#include "cpuid.h"\r', False, id="cr-quoted"),
     ],
 )
 def test_only_an_angled_include_of_a_builtin_name_is_warned_about(
@@ -510,7 +516,9 @@ def test_only_an_angled_include_of_a_builtin_name_is_warned_about(
     warned: bool,
 ):
     """``#include <cpuid.h>`` asks for clang's header; ``#include "cpuid.h"`` for the
-    project's own one of that name, whose absence no resource directory explains."""
+    project's own one of that name, whose absence no resource directory explains; and
+    an include whose form cannot be told is not warned about (a wrong warning fails a
+    ``-W`` build, a missed one does not)."""
     db = _db(tmp_path, [("a.c", ["-std=c11"])])
     _ids, warnings = _analyse(
         tmp_path,
@@ -520,6 +528,87 @@ def test_only_an_angled_include_of_a_builtin_name_is_warned_about(
     )
 
     assert len(warnings) == int(warned), warnings
+
+
+def test_an_include_form_that_cannot_be_told_is_not_warned_about(
+    builtin_headers, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A file that cannot be read gives no form; the engine then does not warn."""
+    assert builtin_headers._is_angled(tmp_path / "gone.c", 0) is None
+    monkeypatch.setattr(builtin_headers, "_is_angled", lambda *_: None)
+    db = _db(tmp_path, [("a.c", ["-std=c11"])])
+    _ids, warnings = _analyse(
+        tmp_path,
+        {"a.c": "#include <cpuid.h>\n"},
+        monkeypatch,
+        preprocessor=PreprocessorConfig(compile_commands=db),
+    )
+
+    assert warnings == []
+
+
+def test_an_include_is_read_in_the_parse_s_working_directory(
+    builtin_headers, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """libclang names a header found through a relative ``-I`` relative to the entry's
+    directory: its include is read there, whatever directory the analysis runs in."""
+    monkeypatch.chdir(tmp_path.parent)
+    db = _db(tmp_path, [("a.c", ["-std=c11", "-Iinclude"])])
+    _ids, warnings = _analyse(
+        tmp_path,
+        {
+            "a.c": '#include "q.h"\n// @a, IMPL_A, impl\n',
+            "include/q.h": "#include <cpuid.h>\n",
+        },
+        monkeypatch,
+        preprocessor=PreprocessorConfig(compile_commands=db),
+        analysed=["a.c"],
+    )
+
+    assert len(warnings) == 1, warnings
+    assert "(included at include/q.h:1)" in warnings[0][0]
+
+
+def test_a_compile_command_s_own_include_is_warned_about_without_a_location(
+    builtin_headers, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """``-include immintrin.h`` has no include line: it is the command's, and is
+    warned about without one."""
+    db = _db(tmp_path, [("a.c", ["-std=c11", "-include", "immintrin.h"])])
+    _ids, warnings = _analyse(
+        tmp_path,
+        {"a.c": "// @a, IMPL_A, impl\n"},
+        monkeypatch,
+        preprocessor=PreprocessorConfig(compile_commands=db),
+    )
+
+    assert len(warnings) == 1, warnings
+    assert "'immintrin.h' was not found, so" in warnings[0][0]
+    assert "included at" not in warnings[0][0]
+
+
+@pytest.mark.parametrize("option", ["-Xlinker", "-Xanalyzer", "-z", "-Xarch_host"])
+def test_a_double_dash_handed_to_another_tool_ends_nothing(
+    builtin_headers, option: str
+):
+    """``-Xlinker --`` hands the ``--`` to the linker: the driver reads on (measured
+    with clang 18: ``-Xlinker -- -resource-dir /r`` compiles with ``/r``), so the
+    resource directory is added after the options, not before that ``--``.
+    (libclang itself loads no unit from such a command, so no parse is checked.)"""
+    args = ["-std=c11", option, "--", "-c"]
+    assert builtin_headers.resource_dir_args(args, None)[0] == [
+        *args,
+        "-resource-dir",
+        str(RESOURCE),
+    ]
+    later = [*args, "--", "a.c"]
+    assert builtin_headers.resource_dir_args(later, None)[0] == [
+        *args,
+        "-resource-dir",
+        str(RESOURCE),
+        "--",
+        "a.c",
+    ]
 
 
 def test_the_resource_dir_goes_before_a_double_dash(
