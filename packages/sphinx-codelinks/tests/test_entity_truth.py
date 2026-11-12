@@ -159,8 +159,9 @@ def _fence_difference(scope: dict[str, Any], lang: str) -> str | None:
         if extra and (extra != {"trait"} or element["kind"] != "impl"):
             return f"component with extra keys: {element}"
     # a VHDL design element no kind fits is named all the same, its last component a
-    # ``scope``
-    if semantic[-1]["kind"] != (scope["entity_kind"] or "scope"):
+    # ``scope``; in every other language a named entity has a kind
+    kindless = "scope" if scope["language"] == "vhdl" else None
+    if semantic[-1]["kind"] != (scope["entity_kind"] or kindless):
         return f"last component {semantic[-1]} is not the {scope['entity_kind']}"
     rendered = render_semantic(semantic, scope["language"])
     if rendered != scope["qualified_name"]:
@@ -305,24 +306,32 @@ def test_name_chain_contains_by_module(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize(
-    ("last", "expected"),
+    ("language", "last", "expected"),
     [
-        pytest.param("scope", None, id="scope"),
+        pytest.param("vhdl", "scope", None, id="scope"),
         pytest.param(
+            "vhdl",
             "function",
             "last component {'kind': 'function', 'name': 'p_main'} is not the None",
             id="a-kind",
         ),
+        pytest.param(
+            "cpp",
+            "scope",
+            "last component {'kind': 'scope', 'name': 'p_main'} is not the None",
+            id="not-vhdl",
+        ),
     ],
 )
 def test_fence_names_a_kindless_entity_by_a_scope(
-    last: str, expected: str | None
+    language: str, last: str, expected: str | None
 ) -> None:
     """A VHDL design element no kind fits (a process, a signal) is named all the same:
     its ``entity_kind`` is ``None`` and its last component a ``scope``, never one of a
-    kind it does not have."""
+    kind it does not have. Only VHDL: in another language a named entity without a
+    kind fails the fence, whatever its last component."""
     scope = {
-        "language": "vhdl",
+        "language": language,
         "qualified_name": "counter.rtl.p_main",
         "entity_kind": None,
         "semantic": [
@@ -331,7 +340,7 @@ def test_fence_names_a_kindless_entity_by_a_scope(
             {"kind": last, "name": "p_main"},
         ],
     }
-    assert _fence_difference(scope, "vhdl") == expected
+    assert _fence_difference(scope, language) == expected
 
 
 def test_name_chain_vhdl_declaration_and_body(tmp_path: Path) -> None:
