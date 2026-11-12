@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 5
+      },
+      "end": {
+        "row": 1,
+        "column": 41
+      }
+    },
+    "tagged_scope": "class Widget {}",
+    "scope": {
+      "kind": "class_declaration",
+      "start": 4,
+      "end": 4,
+      "language": "csharp",
+      "entity_kind": "class",
+      "qualified_name": "Widget",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Widget"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Widget",
+      "id": "IMPL_R_DOC_RUN_FILE_CS",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  }
+]

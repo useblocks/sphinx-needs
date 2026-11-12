@@ -1513,6 +1513,47 @@ rule_doc_comment_file_block_is_file_level_ts:
   truth:
     - {id: REQ_R_FILE_TS, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "JSDoc: @fileoverview documents the file"}
 
+rule_doc_line_file_tag_on_another_line_cpp:
+  # A ``///`` line is a comment of its own: a marker on the line after a ``/// @file``
+  # line documents the next item, a blank line after the two or not. Only VHDL reads a
+  # run of doc lines (``--!``) as one comment for ``@file``.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /// @file widget.h
+    /// @Widget, IMPL_R_DOC_RUN_FILE_CPP, impl
+
+    int f();
+  truth:
+    - {id: IMPL_R_DOC_RUN_FILE_CPP, outcome: exact, entity_kind: "function", qualified_name: "f", start: 4, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
+rule_doc_line_file_tag_on_another_line_rust:
+  # As in C++: a Rust ``///`` line after a ``/// \file`` line documents the next item.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /// \file widget.rs
+    /// @Widget, IMPL_R_DOC_RUN_FILE_RS, impl
+
+    fn f() {}
+  truth:
+    - {id: IMPL_R_DOC_RUN_FILE_RS, outcome: exact, entity_kind: "function", qualified_name: "f", start: 4, mechanism: doc_comment, compiler: "rustc: an outer doc comment is a #[doc] attribute of the next item"}
+
+rule_doc_line_file_tag_on_another_line_csharp:
+  # As in C++: a C# ``///`` line after a ``/// @file`` line documents the next item.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /// @file Widget.cs
+    /// @Widget, IMPL_R_DOC_RUN_FILE_CS, impl
+
+    class Widget {}
+  truth:
+    - {id: IMPL_R_DOC_RUN_FILE_CS, outcome: exact, entity_kind: "class", qualified_name: "Widget", start: 4, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
 rule_inner_attribute_is_no_entity_head:
   # An inner attribute (``#![...]``) applies to what it is inside, so it heads no item:
   # a marker after one on its row is trailing, and belongs to the module, or the file.
@@ -2574,6 +2615,61 @@ rule_vhdl_names_as_written:
     - {id: IMPL_N_EXTENDED, outcome: exact, entity_kind: null, node_kind: signal_declaration, qualified_name: "counter.RTL.\\weird name\\", start: 4, mechanism: trailing, compiler: "syntax-only: VHDL expanded names"}
     - {id: IMPL_N_TWO_NAMES, outcome: exact, entity_kind: null, node_kind: signal_declaration, qualified_name: null, start: 5, mechanism: trailing, compiler: "syntax-only: VHDL expanded names"}
     - {id: IMPL_N_OPERATOR, outcome: exact, entity_kind: "function", qualified_name: "counter.RTL.\"+\"", start: 7, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+
+rule_vhdl_names_inside_an_unnamed_element:
+  # An element inside an unnamed one (an unlabelled process) has no name, even where
+  # the elements around the unnamed one are named: its name would not say where it is.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    architecture rtl of counter is
+    begin
+      process (clk)
+        -- @Step variable, IMPL_N_UNNAMED_VARIABLE, impl
+        variable step : natural;
+      begin
+      end process;
+      g : for i in 0 to 1 generate
+        process (clk)
+          -- @Lane variable, IMPL_N_UNNAMED_LANE_VARIABLE, impl
+          variable v : bit;
+        begin
+        end process;
+      end generate g;
+    end architecture rtl;
+  truth:
+    - {id: IMPL_N_UNNAMED_VARIABLE, outcome: exact, entity_kind: null, node_kind: variable_declaration, qualified_name: null, start: 5, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_UNNAMED_LANE_VARIABLE, outcome: exact, entity_kind: null, node_kind: variable_declaration, qualified_name: null, start: 11, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+
+rule_vhdl_names_other_types:
+  # A type that is no enumeration, record or protected type -- an array, integer,
+  # access, physical, file or incomplete type -- is a ``type``.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    package types_pkg is
+      -- @Word array, IMPL_N_ARRAY_TYPE, impl
+      type word_t is array (0 to 3) of bit;
+      -- @Count integer, IMPL_N_INTEGER_TYPE, impl
+      type count_t is range 0 to 15;
+      -- @Node access, IMPL_N_ACCESS_TYPE, impl
+      type node_ptr is access integer;
+      -- @Distance physical, IMPL_N_PHYSICAL_TYPE, impl
+      type dist_t is range 0 to 1000 units mm; cm = 10 mm; end units;
+      -- @Log file, IMPL_N_FILE_TYPE, impl
+      type log_t is file of character;
+      -- @Incomplete, IMPL_N_INCOMPLETE_TYPE, impl
+      type cell_t;
+    end package types_pkg;
+  truth:
+    - {id: IMPL_N_ARRAY_TYPE, outcome: exact, entity_kind: "type", qualified_name: "types_pkg.word_t", start: 3, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_INTEGER_TYPE, outcome: exact, entity_kind: "type", qualified_name: "types_pkg.count_t", start: 5, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_ACCESS_TYPE, outcome: exact, entity_kind: "type", qualified_name: "types_pkg.node_ptr", start: 7, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_PHYSICAL_TYPE, outcome: exact, entity_kind: "type", qualified_name: "types_pkg.dist_t", start: 9, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_FILE_TYPE, outcome: exact, entity_kind: "type", qualified_name: "types_pkg.log_t", start: 11, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_INCOMPLETE_TYPE, outcome: exact, entity_kind: "type", qualified_name: "types_pkg.cell_t", start: 13, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
 
 rule_vhdl_double_bang_is_no_doc_comment:
   # A ``--!!`` comment is a plain comment, as ``////`` is beside ``///``: a marker in one

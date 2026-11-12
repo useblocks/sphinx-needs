@@ -1,0 +1,68 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 52
+      }
+    },
+    "tagged_scope": "variable step : natural;",
+    "scope": {
+      "kind": "variable_declaration",
+      "start": 5,
+      "end": 5,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Step variable",
+      "id": "IMPL_N_UNNAMED_VARIABLE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "variable_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 10
+      },
+      "end": {
+        "row": 9,
+        "column": 59
+      }
+    },
+    "tagged_scope": "variable v : bit;",
+    "scope": {
+      "kind": "variable_declaration",
+      "start": 11,
+      "end": 11,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Lane variable",
+      "id": "IMPL_N_UNNAMED_LANE_VARIABLE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "variable_declaration"
+  }
+]
