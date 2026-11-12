@@ -22,13 +22,14 @@ resource directory, the first that applies:
 
 A builtin header that is still missing after that (an intrinsics header such as
 ``immintrin.h``, which is not shipped) is warned about once per parsed file, naming it
-and the setting that fixes it.
+and the setting that fixes it. A builtin header is any name clang 18 installs in its
+resource ``include`` directory (``clang_resource/names.txt``).
 """
 
 from __future__ import annotations
 
 import re
-from fnmatch import fnmatch
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -69,16 +70,32 @@ BUILTIN_HEADERS: frozenset[str] = frozenset(
     }
 )
 
-#: Builtin headers the package does not ship, by name: the compiler intrinsics.
-_UNSHIPPED_PATTERNS = ("*intrin.h", "arm_*.h")
+#: Every header name clang installs in its resource ``include`` directory, one per line,
+#: relative to it (``immintrin.h``, ``cuda_wrappers/new``).
+_NAMES_FILE: Path = Path(__file__).parent / "clang_resource" / "names.txt"
 
 #: The directory holding the shipped headers under ``include/``.
 BUNDLED_RESOURCE_DIR: Path = Path(__file__).parent / "clang_resource"
 
-#: Arguments with which a compile command chooses its builtin headers itself: its own
-#: resource directory, or none (``--no-standard-includes`` is ``-nostdinc``).
+#: Driver arguments with which a compile command chooses its builtin headers itself: its
+#: own resource directory, or none (``--no-standard-includes`` is ``-nostdinc``).
 _CHOOSING_FLAGS = frozenset(
     {"-resource-dir", "-nostdinc", "--no-standard-includes", "-nobuiltininc"}
+)
+
+#: Driver arguments whose next argument is handed to another tool, not read by the
+#: driver: ``-Xclang -nobuiltininc`` reaches the compiler after the driver has already
+#: added the builtin headers' directory, so it chooses nothing.
+_PASS_THROUGH = frozenset(
+    {
+        "-Xclang",
+        "-Xpreprocessor",
+        "-Xassembler",
+        "-Xlinker",
+        "-Xopenmp-target",
+        "-Xcuda-fatbinary",
+        "-Xcuda-ptxas",
+    }
 )
 
 _NOT_FOUND = re.compile(r"^'(?P<name>[^']+)' file not found$")
@@ -94,11 +111,20 @@ def bundled_resource_dir() -> Path | None:
 
 
 def chooses_builtin_headers(args: list[str]) -> bool:
-    """Whether ``args`` choose their builtin headers themselves (see
-    :data:`_CHOOSING_FLAGS`; ``-resource-dir=<dir>`` too)."""
-    return any(
-        arg in _CHOOSING_FLAGS or arg.startswith("-resource-dir=") for arg in args
-    )
+    """Whether ``args`` choose their builtin headers themselves, as driver arguments
+    (see :data:`_CHOOSING_FLAGS`; ``-resource-dir=<dir>`` too). An argument passed
+    through to another tool (:data:`_PASS_THROUGH`, ``-Xarch_<arch>``) is not one."""
+    passed_through = False
+    for arg in args:
+        if passed_through:
+            passed_through = False
+            continue
+        if arg in _PASS_THROUGH or arg.startswith("-Xarch_"):
+            passed_through = True
+            continue
+        if arg in _CHOOSING_FLAGS or arg.startswith("-resource-dir="):
+            return True
+    return False
 
 
 def resource_dir_args(
@@ -121,15 +147,23 @@ def resource_dir_args(
     return [*args, "-resource-dir", str(bundled)], False
 
 
+@cache
+def builtin_header_names() -> frozenset[str]:
+    """Every header name clang installs in its resource ``include`` directory
+    (``clang_resource/names.txt``); the shipped ones alone when that file cannot be
+    read."""
+    try:
+        text = _NAMES_FILE.read_text(encoding="utf-8")
+    except OSError:
+        return BUILTIN_HEADERS
+    return frozenset(text.split()) | BUILTIN_HEADERS
+
+
 def is_builtin_header(name: str) -> bool:
-    """Whether the ``#include``\\ d ``name`` is a header the compiler provides: one
-    of :data:`BUILTIN_HEADERS`, or an intrinsics header (``immintrin.h``,
-    ``arm_neon.h``). A name with a directory (``sys/stdint.h``) is none."""
-    if "/" in name or "\\" in name:
-        return False
-    return name in BUILTIN_HEADERS or any(
-        fnmatch(name, pattern) for pattern in _UNSHIPPED_PATTERNS
-    )
+    """Whether the ``#include``\\ d ``name`` is one clang installs in its resource
+    ``include`` directory (:func:`builtin_header_names`), as written: ``immintrin.h``
+    is, ``sys/stdint.h`` is not."""
+    return name in builtin_header_names()
 
 
 def missing_builtin_header(tu: Any) -> tuple[str, str | None, int] | None:

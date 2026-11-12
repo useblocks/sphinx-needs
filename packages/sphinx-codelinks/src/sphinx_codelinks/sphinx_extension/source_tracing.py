@@ -50,6 +50,7 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     purge_doc,
     purged_documents,
     purged_targets,
+    reset_builtin_header_warnings,
     scope_store,
     source_pages_store,
 )
@@ -464,6 +465,8 @@ def prepare_env(
     config_only_refs_store(env)
     # a need of a document still to be read is stale: the directives may replace it
     note_documents_to_read(env, docnames)
+    # each builtin-header warning once per build, across every analysis it makes
+    reset_builtin_header_warnings(env)
 
     # Set time measurement flag
     if src_trace_sphinx_config.debug_measurement:

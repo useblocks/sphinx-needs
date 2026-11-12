@@ -47,21 +47,69 @@ def test_a_changed_missing_or_extra_file_is_named(
     assert "LICENSE.TXT does not match the manifest" in err
 
 
+CMAKE = """\
+# Headers shared by Arm and AArch64
+set(core_files
+  float.h
+  stddef.h # trailing comment
+  ${some_var}
+  )
+set(cuda_wrapper_files
+  cuda_wrappers/new
+)
+clang_generate_header(-gen-arm-neon arm_neon.td arm_neon.h)
+"""
+
+
+def test_the_installed_names_are_read_from_the_cmake_lists() -> None:
+    """The ``*_files`` lists and the generated headers, without comments, words of
+    comments or variables."""
+    assert clang_headers.installed_names(CMAKE) == [
+        "arm_neon.h",
+        "cuda_wrappers/new",
+        "float.h",
+        "stddef.h",
+    ]
+
+
+def test_a_changed_name_list_or_an_unlisted_header_is_named(
+    root: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    names = _directory(root) / "names.txt"
+    names.write_text(
+        "".join(f"{name}\n" for name in names.read_text().split() if name != "stddef.h")
+    )
+
+    assert clang_headers.main(["--verify", "--root", str(root)]) == 1
+
+    err = capsys.readouterr().err
+    assert "names.txt does not match the manifest" in err
+    assert "include/stddef.h is not in names.txt" in err
+
+
 def test_a_download_rewrites_the_files_and_the_manifest(
     root: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A bump fetches the manifest's names at the new tag, and the result verifies."""
+    """A bump fetches the manifest's header names, the licence and the CMake lists at
+    the new tag, and the result verifies."""
     fetched: list[str] = []
+    headers_cmake = (
+        "set(core_files\n"
+        + "\n".join(sorted(clang_headers.read_manifest(_directory(root))[3]))
+        + "\n  cpuid.h\n)\n"
+    )
 
     def fake_fetch(url: str) -> bytes:
         fetched.append(url)
+        if url.endswith("/CMakeLists.txt"):
+            return headers_cmake.encode()
         return url.encode()
 
     monkeypatch.setattr(clang_headers, "fetch", fake_fetch)
 
     assert clang_headers.main(["--tag", "llvmorg-99.1.0", "--root", str(root)]) == 0
 
-    tag, license_sha, headers = clang_headers.read_manifest(_directory(root))
+    tag, license_sha, names_sha, headers = clang_headers.read_manifest(_directory(root))
     assert tag == "llvmorg-99.1.0"
     assert len(headers) == 30
     url = clang_headers.SOURCE.format(
@@ -77,3 +125,6 @@ def test_a_download_rewrites_the_files_and_the_manifest(
             ).encode()
         ).hexdigest()
     )
+    names = (_directory(root) / "names.txt").read_bytes()
+    assert names_sha == hashlib.sha256(names).hexdigest()
+    assert len(names.split()) == 31

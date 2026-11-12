@@ -38,6 +38,7 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     ScopeKind,
     ScopeRecord,
     build_output_dirs,
+    builtin_header_warnings,
     discover_scope,
     file_fingerprint,
     files_fingerprint,
@@ -503,7 +504,11 @@ class SourceTracingDirective(SphinxDirective):
             # (Auto-discovered databases are located per-file inside the analysis
             # and are not tracked here.)
             self.env.note_dependency(str(preprocessor.compile_commands))
-        src_analyse = SourceAnalyse(analyse_config, name=project)
+        src_analyse = SourceAnalyse(
+            analyse_config,
+            name=project,
+            builtin_header_warnings=builtin_header_warnings(self.env),
+        )
         src_analyse.run(log_summary=False)
         # and the files the extraction read besides the discovered ones: a source
         # read through the compilation-database entry that includes it depends on

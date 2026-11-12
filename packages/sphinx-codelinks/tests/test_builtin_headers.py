@@ -10,12 +10,15 @@ tests here pin the files, each step of the resolution and the warnings.
 
 import hashlib
 import json
+import re
 import tomllib
 from pathlib import Path
 from types import ModuleType
 
 import pytest
+import sphinx
 
+from sphinx_codelinks.analyse.analyse import BuiltinHeaderWarnings
 from sphinx_codelinks.config import PreprocessorConfig, SourceAnalyseConfig
 
 RESOURCE = (
@@ -47,6 +50,10 @@ def test_the_shipped_headers_are_the_ones_the_manifest_pins():
     assert on_disk == manifest["headers"]
     assert len(on_disk) == 30
     assert _sha256(RESOURCE / "LICENSE.TXT") == manifest["license_sha256"]
+    assert _sha256(RESOURCE / "names.txt") == manifest["names_sha256"]
+    names = (RESOURCE / "names.txt").read_text(encoding="utf-8").split()
+    assert names == sorted(set(names))
+    assert set(on_disk) <= set(names)
 
 
 @pytest.fixture
@@ -79,32 +86,44 @@ def test_a_parse_is_given_the_shipped_headers(builtin_headers):
         pytest.param(["-nostdinc"], id="nostdinc"),
         pytest.param(["--no-standard-includes"], id="no-standard-includes"),
         pytest.param(["-nobuiltininc"], id="nobuiltininc"),
-        pytest.param(["-Xclang", "-nobuiltininc"], id="Xclang"),
     ],
 )
 def test_a_compile_command_that_chooses_its_builtin_headers_keeps_its_choice(
     builtin_headers, choice: list[str]
 ):
     """Step 2: a compile command with its own resource directory, or none, is left as
-    it is, in every spelling clang accepts."""
+    it is, in every spelling the driver accepts."""
     args = ["-std=c11", *choice]
     assert builtin_headers.resource_dir_args(args, None) == (args, False)
 
 
 @pytest.mark.parametrize(
-    "flag",
+    "flags",
     [
-        pytest.param("-nostdlibinc", id="nostdlibinc"),
-        pytest.param("-nostdinc++", id="nostdinc++"),
-        pytest.param("--resource=/opt/clang", id="resource-is-another-flag"),
+        pytest.param(["-nostdlibinc"], id="nostdlibinc"),
+        pytest.param(["-nostdinc++"], id="nostdinc++"),
+        pytest.param(["--resource=/opt/clang"], id="resource-is-another-flag"),
+        pytest.param(["-Xclang", "-nobuiltininc"], id="Xclang-nobuiltininc"),
+        pytest.param(["-Xclang", "-resource-dir"], id="Xclang-resource-dir"),
+        pytest.param(["-Xpreprocessor", "-nostdinc"], id="Xpreprocessor-nostdinc"),
+        pytest.param(["-Xarch_x86_64", "-nostdinc"], id="Xarch-nostdinc"),
     ],
 )
-def test_flags_that_keep_the_builtin_headers_choose_nothing(builtin_headers, flag: str):
+def test_flags_that_keep_the_builtin_headers_choose_nothing(
+    builtin_headers, flags: list[str]
+):
     """``-nostdlibinc`` and ``-nostdinc++`` drop the C library's or the C++ library's
-    headers, not the compiler's, and ``--resource`` is ``-fcompile-resource``: the
-    shipped headers are still given."""
-    args, _ = builtin_headers.resource_dir_args([flag], None)
-    assert args == [flag, "-resource-dir", str(RESOURCE)]
+    headers, not the compiler's; ``--resource`` is ``-fcompile-resource``; and a flag
+    passed through to another tool (``-Xclang -nobuiltininc``) is not read by the
+    driver, which still adds the builtin headers' directory: the shipped headers are
+    still given."""
+    args, _ = builtin_headers.resource_dir_args(flags, None)
+    assert args == [*flags, "-resource-dir", str(RESOURCE)]
+
+
+def test_a_flag_after_a_pass_through_value_is_read_again(builtin_headers):
+    """Only the one argument after ``-Xclang`` is passed through."""
+    assert builtin_headers.chooses_builtin_headers(["-Xclang", "-v", "-nostdinc"])
 
 
 @pytest.mark.parametrize(
@@ -125,11 +144,16 @@ def test_the_setting_comes_first(builtin_headers, args: list[str]):
     )
 
 
+@pytest.mark.parametrize("kept", [0, 29], ids=["none", "one-missing"])
 def test_missing_shipped_headers_give_none_and_say_so(
-    builtin_headers, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    builtin_headers, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, kept: int
 ):
-    """Step 4: when the shipped headers are not files (an archive import, a
-    repackaging that dropped them), nothing is added and the caller is told."""
+    """Step 4: when the shipped headers are not all files (an archive import, a
+    repackaging that dropped some of them), nothing is added and the caller is told:
+    a directory missing one header is no resource directory."""
+    (tmp_path / "include").mkdir()
+    for name in sorted(builtin_headers.BUILTIN_HEADERS)[:kept]:
+        (tmp_path / "include" / name).write_bytes(b"")
     monkeypatch.setattr(builtin_headers, "BUNDLED_RESOURCE_DIR", tmp_path)
     assert builtin_headers.resource_dir_args(["-std=c11"], None) == (
         ["-std=c11"],
@@ -144,6 +168,12 @@ def test_missing_shipped_headers_give_none_and_say_so(
         ("stdatomic.h", True),
         ("immintrin.h", True),
         ("arm_neon.h", True),
+        ("cpuid.h", True),
+        ("mm_malloc.h", True),
+        ("unwind.h", True),
+        ("cuda_wrappers/new", True),
+        ("new", False),
+        ("omp.h", False),
         ("sys/stdint.h", False),
         ("x86/immintrin.h", False),
         ("config.h", False),
@@ -151,6 +181,10 @@ def test_missing_shipped_headers_give_none_and_say_so(
     ],
 )
 def test_which_headers_are_builtin(builtin_headers, name: str, builtin: bool):
+    """A builtin header is a name clang installs in its resource ``include``
+    directory, as an ``#include`` writes it: not only the 30 shipped ones nor only
+    the intrinsics (``cpuid.h``, ``unwind.h``), and not ``omp.h``, which comes with
+    an OpenMP runtime."""
     assert builtin_headers.is_builtin_header(name) is builtin
 
 
@@ -177,6 +211,7 @@ def _analyse(
     *,
     preprocessor: PreprocessorConfig,
     analysed: list[str] | None = None,
+    shared: BuiltinHeaderWarnings | None = None,
 ) -> tuple[set[str], list[tuple[str, str]]]:
     """Run the libclang engine over ``sources``: the one-line need ids and warnings."""
     from sphinx_codelinks.analyse import analyse as analyse_module
@@ -194,7 +229,8 @@ def _analyse(
             get_oneline_needs=True,
             get_need_id_refs=False,
             preprocessor=preprocessor,
-        )
+        ),
+        builtin_header_warnings=shared,
     )
     analyse.git_remote_url = None
     analyse.git_commit_rev = None
@@ -345,4 +381,156 @@ def test_missing_shipped_headers_are_warned_about_once_per_run(
     unavailable = [m for m, _ in warnings if "are not under" in m]
     assert len(unavailable) == 1
     assert str(tmp_path / "gone" / "include") in unavailable[0]
+    assert "resource_dir" in unavailable[0]
     assert [s for _, s in warnings] == ["builtin_header"] * 3
+
+
+INTRIN_UNITY = '#include <immintrin.h>\n#include "s.c"\n'
+
+
+def test_an_includer_parse_that_misses_a_builtin_header_is_warned_about(
+    builtin_headers, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A source read through its includer is parsed as the includer's unit: the
+    builtin header that unit misses is warned about, naming the includer."""
+    db = _db(tmp_path, [("unity.c", ["-std=c11"])])
+    ids, warnings = _analyse(
+        tmp_path,
+        {"unity.c": INTRIN_UNITY, "s.c": "// @s, IMPL_S, impl\n"},
+        monkeypatch,
+        preprocessor=PreprocessorConfig(compile_commands=db),
+        analysed=["s.c"],
+    )
+
+    assert ids == {"IMPL_S"}
+    assert len(warnings) == 1, warnings
+    assert str(tmp_path / "unity.c") in warnings[0][0]
+    assert "'immintrin.h'" in warnings[0][0]
+
+
+def test_a_file_parsed_twice_is_warned_about_once(
+    builtin_headers, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """A traced source that is also the includer of another is parsed twice, as its
+    own unit and as the includer: the header it misses is warned about once."""
+    db = _db(tmp_path, [("unity.c", ["-std=c11"])])
+    ids, warnings = _analyse(
+        tmp_path,
+        {"unity.c": INTRIN_UNITY, "s.c": "// @s, IMPL_S, impl\n"},
+        monkeypatch,
+        preprocessor=PreprocessorConfig(compile_commands=db),
+    )
+
+    assert ids == {"IMPL_S"}
+    assert len(warnings) == 1, warnings
+    assert str(tmp_path / "unity.c") in warnings[0][0]
+
+
+def test_analyses_that_share_their_warnings_warn_once_across_them(
+    builtin_headers, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Two analyses given one :class:`BuiltinHeaderWarnings` (a build's directives,
+    the CLI's projects) warn about the unavailable headers once, and about a file
+    they both parse once."""
+    monkeypatch.setattr(builtin_headers, "BUNDLED_RESOURCE_DIR", tmp_path / "gone")
+    db = _db(tmp_path, [("a.c", ["-std=c11", "-nostdlibinc"])])
+    shared = BuiltinHeaderWarnings()
+    runs = [
+        _analyse(
+            tmp_path,
+            {"a.c": WIDTH_ARMS},
+            monkeypatch,
+            preprocessor=PreprocessorConfig(compile_commands=db),
+            shared=shared,
+        )
+        for _ in range(2)
+    ]
+
+    assert [len(warnings) for _, warnings in runs] == [2, 0]
+    assert shared.unavailable
+    assert shared.files == {tmp_path / "a.c"}
+
+
+# --- in a build: once per build, the type rendered once ---------------------------
+
+#: the fixture's project on the libclang engine, a source that misses an intrinsics
+#: header, and a second ``src-trace`` of the project, so two directives analyse it
+BUILD_FILES = {"src/intrin.cpp": "#include <immintrin.h>\nvoid intrin() {}\n"}
+BUILD_TOML = "\n[codelinks.projects.src.analyse.preprocessor]\ndefines = []\n"
+SECOND_DIRECTIVE = {"docs/page1.rst": "\n.. src-trace::\n   :project: src\n"}
+
+
+def _builtin_warnings(app) -> list[str]:
+    from sphinx_needs_testkit import build_warnings
+
+    return [w for w in build_warnings(app) if "builtin header" in w]
+
+
+def test_a_build_warns_about_a_missing_builtin_header_once(
+    builtin_headers, tmp_path: Path, make_app
+):
+    """Two ``src-trace`` directives analyse the same source: the builtin header it
+    misses is warned about once in the build, not once per directive."""
+    from .test_need_id_refs import _build, _project
+
+    _project(
+        tmp_path, toml_extra=BUILD_TOML, files=BUILD_FILES, append=SECOND_DIRECTIVE
+    )
+    warnings = _builtin_warnings(_build(tmp_path, make_app))
+
+    assert len(warnings) == 1, warnings
+    assert "intrin.cpp" in warnings[0]
+    assert "'immintrin.h'" in warnings[0]
+
+
+def test_a_build_warns_once_that_the_shipped_headers_are_missing(
+    builtin_headers, tmp_path: Path, make_app, monkeypatch: pytest.MonkeyPatch
+):
+    """Without the shipped headers, a build with two ``src-trace`` directives says so
+    once; and the next build says so again."""
+    from .test_need_id_refs import _build, _project
+
+    monkeypatch.setattr(builtin_headers, "BUNDLED_RESOURCE_DIR", tmp_path / "gone")
+    _project(tmp_path, toml_extra=BUILD_TOML, append=SECOND_DIRECTIVE)
+    for _ in range(2):
+        warnings = [
+            w
+            for w in _builtin_warnings(_build(tmp_path, make_app))
+            if "are not under" in w
+        ]
+        assert len(warnings) == 1, warnings
+
+
+_SHOWS_WARNING_TYPES = sphinx.version_info >= (8,)
+
+
+@pytest.mark.parametrize(
+    ("show", "expected"),
+    [
+        # Sphinx renders the suffix itself, so the package logger adds none
+        pytest.param(True, ["[codelinks.builtin_header]"], id="on"),
+        # before Sphinx 8 the package logger appends it; from 8 nothing renders it
+        pytest.param(
+            False,
+            [] if _SHOWS_WARNING_TYPES else ["[codelinks.builtin_header]"],
+            id="off",
+        ),
+    ],
+)
+def test_the_builtin_header_type_is_rendered_at_most_once(
+    builtin_headers, tmp_path: Path, make_app, show: bool, expected: list[str]
+):
+    """The warning's ``[codelinks.builtin_header]`` suffix appears once (or, on Sphinx
+    8 and later with ``show_warning_types`` off, not at all), never twice."""
+    from .test_need_id_refs import _build, _project
+
+    _project(
+        tmp_path,
+        toml_extra=BUILD_TOML,
+        files=BUILD_FILES,
+        append={"docs/conf.py": f"\nshow_warning_types = {show}\n"},
+    )
+    warnings = _builtin_warnings(_build(tmp_path, make_app))
+
+    assert len(warnings) == 1, warnings
+    assert re.findall(r"\[codelinks\.[a-z_]+\]", warnings[0]) == expected

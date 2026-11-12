@@ -72,3 +72,4 @@ vendor/plantuml/*.jar binary
 # no end-of-line normalisation on any platform.
 packages/sphinx-codelinks/src/sphinx_codelinks/analyse/preproc/clang_resource/include/** -text
 packages/sphinx-codelinks/src/sphinx_codelinks/analyse/preproc/clang_resource/LICENSE.TXT -text
+packages/sphinx-codelinks/src/sphinx_codelinks/analyse/preproc/clang_resource/names.txt -text

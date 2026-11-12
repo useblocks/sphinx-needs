@@ -54,7 +54,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import CONFIG_OK, BuildEnvironment
 from sphinx.util import logging
 
-from sphinx_codelinks.analyse.analyse import SourceAnalyse
+from sphinx_codelinks.analyse.analyse import BuiltinHeaderWarnings, SourceAnalyse
 from sphinx_codelinks.analyse.references import NeedIdRef
 from sphinx_codelinks.config import (
     CodeLinksConfig,
@@ -329,6 +329,25 @@ def note_documents_to_read(env: BuildEnvironment, docnames: Iterable[str]) -> No
     _UNREAD[env] = set(docnames)
 
 
+#: what this build warned about clang's builtin headers, shared by every analysis it
+#: makes (the directives' and the config-only scan's), so each warning is made once per
+#: build -- once per reading process under ``-j N``, whose forked workers each start
+#: from the main process' copy. Reset at ``env-before-read-docs``; in memory only
+_BUILTIN_HEADER_WARNINGS: weakref.WeakKeyDictionary[
+    BuildEnvironment, BuiltinHeaderWarnings
+] = weakref.WeakKeyDictionary()
+
+
+def reset_builtin_header_warnings(env: BuildEnvironment) -> None:
+    """Start this build's builtin-header warnings afresh (``env-before-read-docs``)."""
+    _BUILTIN_HEADER_WARNINGS[env] = BuiltinHeaderWarnings()
+
+
+def builtin_header_warnings(env: BuildEnvironment) -> BuiltinHeaderWarnings:
+    """What this build has warned about clang's builtin headers so far."""
+    return _BUILTIN_HEADER_WARNINGS.setdefault(env, BuiltinHeaderWarnings())
+
+
 #: the documents this build purged -- every one it reads (added or changed, before the
 #: read, or before the ``-j N`` fork) and every removed one -- and the targets of the
 #: source pages they had recorded: a page whose ``[docs]`` links may have changed with
@@ -544,7 +563,11 @@ def scan_config_only_project(
         src_dir=src_dir,
         src_files=files,
     )
-    src_analyse = SourceAnalyse(analyse_config, name=project)
+    src_analyse = SourceAnalyse(
+        analyse_config,
+        name=project,
+        builtin_header_warnings=builtin_header_warnings(app.env),
+    )
     src_analyse.run(log_summary=False)
     context = url_context(
         codelinks_config, project_config, src_analyse, src_dir, Path(app.outdir)

@@ -1,7 +1,7 @@
 import json
 import os
 from collections.abc import Generator, Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -247,6 +247,21 @@ class AnalyseWarning:
     sub_type: str
 
 
+@dataclass
+class BuiltinHeaderWarnings:
+    """What the libclang engine has already warned about clang's builtin headers.
+
+    One object shared by several analyses makes each warning once across all of them:
+    the CLI shares one across its projects, a Sphinx build one across its directives
+    and its scan of config-only projects.
+    """
+
+    files: set[Path] = field(default_factory=set)
+    """The parsed files already warned about a builtin header they could not find."""
+    unavailable: bool = False
+    """Whether the shipped builtin headers were warned to be unavailable."""
+
+
 @dataclass(frozen=True)
 class _Waiting:
     """A compiled source with no compilation-database entry, waiting for its includer."""
@@ -267,7 +282,13 @@ class SourceAnalyse:
         analyse_config: SourceAnalyseConfig,
         *,
         name: str = "",
+        builtin_header_warnings: BuiltinHeaderWarnings | None = None,
     ) -> None:
+        """
+        :param builtin_header_warnings: What was already warned about clang's builtin
+            headers, shared with other analyses so that each warning is made once
+            across them all; by default this analysis' own.
+        """
         self.name = name
         self.analyse_config = analyse_config
         self.src_files: list[SourceFile] = []
@@ -296,10 +317,11 @@ class SourceAnalyse:
         # Per-run memo of each database's inclusion index (included file -> the
         # entries' main files that include it), built only when a source needs it.
         self._inclusion_index_cache: dict[Path, dict[Path, list[Path]]] = {}
-        # The parsed files already warned about a missing builtin header, and whether
-        # the shipped builtin headers were warned to be unavailable: once each per run.
-        self._builtin_header_warned: set[Path] = set()
-        self._bundled_headers_warned = False
+        self.builtin_header_warnings = (
+            builtin_header_warnings
+            if builtin_header_warnings is not None
+            else BuiltinHeaderWarnings()
+        )
         self.dependencies: set[Path] = set()
         """Files besides ``src_files`` the extraction read: the main file of every
         entry tried as a source's includer, the files its unit included that are not
@@ -448,15 +470,16 @@ class SourceAnalyse:
 
     def _with_builtin_headers(self, args: list[str]) -> list[str]:
         """``args`` with the resource directory that gives a parse clang's builtin
-        headers (:func:`.preproc.builtin_headers.resource_dir_args`); warns once per
-        run when the headers that ship with the package are wanted but missing."""
+        headers (:func:`.preproc.builtin_headers.resource_dir_args`); warns once (see
+        :class:`BuiltinHeaderWarnings`) when the headers that ship with the package
+        are wanted but missing."""
         from sphinx_codelinks.analyse.preproc import builtin_headers
 
         preproc = self.analyse_config.preprocessor
         configured = preproc.resource_dir if preproc is not None else None
         args, unavailable = builtin_headers.resource_dir_args(args, configured)
-        if unavailable and not self._bundled_headers_warned:
-            self._bundled_headers_warned = True
+        if unavailable and not self.builtin_header_warnings.unavailable:
+            self.builtin_header_warnings.unavailable = True
             logger.warning(
                 f"codelinks: clang's builtin headers are not under "
                 f"{builtin_headers.BUNDLED_RESOURCE_DIR / 'include'}, so C/C++ files "
@@ -469,15 +492,17 @@ class SourceAnalyse:
         return args
 
     def _warn_missing_builtin_header(self, path: Path, tu: Any) -> None:
-        """Warn, once per parsed file, when its parse found no builtin header."""
+        """Warn, once per parsed file (see :class:`BuiltinHeaderWarnings`), when its
+        parse found no builtin header."""
         from sphinx_codelinks.analyse.preproc import builtin_headers
 
-        if path in self._builtin_header_warned:
+        warned = self.builtin_header_warnings.files
+        if path in warned:
             return
         missing = builtin_headers.missing_builtin_header(tu)
         if missing is None:
             return
-        self._builtin_header_warned.add(path)
+        warned.add(path)
         name, file, line = missing
         where = f" (included at {file}:{line})" if file is not None else ""
         logger.warning(
