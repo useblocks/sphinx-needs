@@ -296,6 +296,10 @@ class SourceAnalyse:
         # Per-run memo of each database's inclusion index (included file -> the
         # entries' main files that include it), built only when a source needs it.
         self._inclusion_index_cache: dict[Path, dict[Path, list[Path]]] = {}
+        # The parsed files already warned about a missing builtin header, and whether
+        # the shipped builtin headers were warned to be unavailable: once each per run.
+        self._builtin_header_warned: set[Path] = set()
+        self._bundled_headers_warned = False
         self.dependencies: set[Path] = set()
         """Files besides ``src_files`` the extraction read: the main file of every
         entry tried as a source's includer, the files its unit included that are not
@@ -442,6 +446,48 @@ class SourceAnalyse:
             preproc.defines, preproc.includes, preproc.std
         )
 
+    def _with_builtin_headers(self, args: list[str]) -> list[str]:
+        """``args`` with the resource directory that gives a parse clang's builtin
+        headers (:func:`.preproc.builtin_headers.resource_dir_args`); warns once per
+        run when the headers that ship with the package are wanted but missing."""
+        from sphinx_codelinks.analyse.preproc import builtin_headers
+
+        preproc = self.analyse_config.preprocessor
+        configured = preproc.resource_dir if preproc is not None else None
+        args, unavailable = builtin_headers.resource_dir_args(args, configured)
+        if unavailable and not self._bundled_headers_warned:
+            self._bundled_headers_warned = True
+            logger.warning(
+                f"codelinks: clang's builtin headers are not under "
+                f"{builtin_headers.BUNDLED_RESOURCE_DIR / 'include'}, so C/C++ files "
+                f"are parsed without them, and an #if on what <stddef.h>, <stdint.h>, "
+                f"<limits.h> or <stdatomic.h> define may take the wrong branch; set "
+                f"resource_dir in [analyse.preprocessor] to a clang resource directory "
+                f"(clang -print-resource-dir)",
+                subtype="builtin_header",
+            )
+        return args
+
+    def _warn_missing_builtin_header(self, path: Path, tu: Any) -> None:
+        """Warn, once per parsed file, when its parse found no builtin header."""
+        from sphinx_codelinks.analyse.preproc import builtin_headers
+
+        if path in self._builtin_header_warned:
+            return
+        missing = builtin_headers.missing_builtin_header(tu)
+        if missing is None:
+            return
+        self._builtin_header_warned.add(path)
+        name, file, line = missing
+        where = f" (included at {file}:{line})" if file is not None else ""
+        logger.warning(
+            f"codelinks: {path}: clang's builtin header '{name}' was not "
+            f"found{where}, so an #if on what it defines takes its #else branch; set "
+            f"resource_dir in [analyse.preprocessor] to a clang resource directory "
+            f"that has it (clang -print-resource-dir)",
+            subtype="builtin_header",
+        )
+
     def _includer_candidates(self, db_path: Path, src_path: Path) -> list[Path]:
         """The main files of ``db_path``'s entries whose ``#include`` lines name
         ``src_path``, ordered by path (see :mod:`.preproc.includer`)."""
@@ -487,7 +533,9 @@ class SourceAnalyse:
             database, main = min(
                 heads, key=lambda head: (os.fsencode(head[1]), os.fsencode(head[0]))
             )
-            args = (self._flags_map_for(database) or {})[main]
+            args = self._with_builtin_headers(
+                (self._flags_map_for(database) or {})[main]
+            )
             self.dependencies.update((database, main))
             try:
                 tu = libclang_parser.parse_translation_unit(main, args)
@@ -499,6 +547,7 @@ class SourceAnalyse:
                 tu = None
                 includes: set[Path] = set()
             else:
+                self._warn_missing_builtin_header(main, tu)
                 working_directory = compile_db.working_directory(args)
                 includes = libclang_parser.main_file_inclusions(tu, working_directory)
                 self.dependencies.update(
@@ -562,7 +611,13 @@ class SourceAnalyse:
                 waiting.append(_Waiting(position, src_path, database, candidates))
                 continue
             try:
-                read[position] = libclang_parser.extract_active_comments(src_path, args)
+                read[position] = libclang_parser.extract_active_comments(
+                    src_path,
+                    self._with_builtin_headers(args),
+                    on_parse=lambda tu, path=src_path: (
+                        self._warn_missing_builtin_header(path, tu)
+                    ),
+                )
             except translation_unit_load_error:
                 # Last-resort guard. Standalone parses pin ``-x`` to match the
                 # ``-std`` (see defines_to_args), so the common case — a ``.h``/

@@ -276,10 +276,18 @@ class PreprocessorConfig:
     ``c++20``, ``c11``); libclang pins ``-x`` to match it. Files resolved from a
     ``compile_commands.json`` entry use that entry's own ``-std`` instead."""
 
+    resource_dir: Path | None = field(
+        default=None, metadata={"schema": {"type": ["string", "null"]}}
+    )
+    """A clang resource directory (``clang -print-resource-dir``), passed to every parse
+    as ``-resource-dir``. If None, the builtin headers that ship with the package are
+    passed, unless a compile command chooses its own (``-resource-dir``, ``-nostdinc``,
+    ``-nobuiltininc``)."""
+
 
 def anchor_preproc_paths(preproc: PreprocessorConfig, base: Path) -> PreprocessorConfig:
-    """Resolve a preprocessor config's ``compile_commands`` and ``includes``
-    against ``base`` (the config file's directory), so a relative path resolves
+    """Resolve a preprocessor config's ``compile_commands``, ``includes`` and
+    ``resource_dir`` against ``base`` (the config file's directory), so a relative path resolves
     against the TOML file rather than the process CWD — matching ``src_dir`` /
     ``git_root``. An absolute path is not anchored, but it is resolved too
     (symlinks followed, ``..`` folded), like every other path here.
@@ -292,6 +300,11 @@ def anchor_preproc_paths(preproc: PreprocessorConfig, base: Path) -> Preprocesso
             else None
         ),
         includes=[anchor(inc, base).resolve() for inc in preproc.includes],
+        resource_dir=(
+            anchor(preproc.resource_dir, base).resolve()
+            if preproc.resource_dir is not None
+            else None
+        ),
     )
 
 
@@ -1286,7 +1299,7 @@ def _validate_preprocessor_dict(preproc: dict[str, object]) -> None:
                 f"[preprocessor] {key} must be a list of strings, "
                 f"got {type(value).__name__}: {value!r}"
             )
-    for key in ("compile_commands", "std"):
+    for key in ("compile_commands", "std", "resource_dir"):
         value = preproc.get(key)
         if value is not None and not isinstance(value, str):
             raise TypeError(
@@ -1430,6 +1443,11 @@ def convert_analyse_config(
                 defines=list(preprocessor_dict.get("defines", [])),  # ty: ignore[invalid-argument-type]
                 includes=[Path(str(p)) for p in preprocessor_dict.get("includes", [])],  # ty: ignore[not-iterable]
                 std=str(preprocessor_dict.get("std", DEFAULT_CPP_STD)),
+                resource_dir=(
+                    Path(str(preprocessor_dict["resource_dir"]))
+                    if preprocessor_dict.get("resource_dir")
+                    else None
+                ),
             )
 
     if src_discover:

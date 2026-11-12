@@ -66,3 +66,9 @@ packages/sphinx-ub-directives/tests/fixtures/template_directives_conformance.tom
 # The committed PlantUML jar. `text=auto` at the top would otherwise ask git to classify a
 # 30 MB zip on every checkout; git's own detection gets it right, and this states it.
 vendor/plantuml/*.jar binary
+
+# clang's builtin headers that sphinx-codelinks ships are pinned by sha256 in the manifest
+# beside them (tools/src/sn_tools/clang_headers.py), so their bytes must never be converted:
+# no end-of-line normalisation on any platform.
+packages/sphinx-codelinks/src/sphinx_codelinks/analyse/preproc/clang_resource/include/** -text
+packages/sphinx-codelinks/src/sphinx_codelinks/analyse/preproc/clang_resource/LICENSE.TXT -text
