@@ -18,9 +18,14 @@
       "start": 4,
       "end": 9,
       "language": "vhdl",
-      "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "entity_kind": "module",
+      "qualified_name": "top",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -52,8 +57,17 @@
       "end": 7,
       "language": "vhdl",
       "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "qualified_name": "top.W",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "scope",
+          "name": "W"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

@@ -117,7 +117,7 @@ def test_known_wrong_today_names_real_markers() -> None:
 
 # The kinds a component may have: the entity kinds but the data kinds ``key`` and
 # ``item`` (a data entry has no name, so no components), and ``scope`` for a C++
-# qualifier the syntax cannot classify.
+# qualifier the syntax cannot classify and a VHDL design element no kind fits.
 _COMPONENT_KINDS = (frozenset(get_args(EntityKind)) - {"key", "item"}) | {"scope"}
 
 
@@ -158,7 +158,9 @@ def _fence_difference(scope: dict[str, Any], lang: str) -> str | None:
             return f"component of unknown kind: {element}"
         if extra and (extra != {"trait"} or element["kind"] != "impl"):
             return f"component with extra keys: {element}"
-    if semantic[-1]["kind"] != scope["entity_kind"]:
+    # a VHDL design element no kind fits is named all the same, its last component a
+    # ``scope``
+    if semantic[-1]["kind"] != (scope["entity_kind"] or "scope"):
         return f"last component {semantic[-1]} is not the {scope['entity_kind']}"
     rendered = render_semantic(semantic, scope["language"])
     if rendered != scope["qualified_name"]:
@@ -300,3 +302,55 @@ def test_name_chain_contains_by_module(tmp_path: Path) -> None:
     assert _kinds(semantic["IMPL_R_MOD_5"]) == ["module", "impl", "method"]
     assert semantic["IMPL_R_MOD_5"][1]["name"] == "x::P"
     assert semantic["IMPL_R_MOD_6"][1]["name"] == "crate::Q"
+
+
+@pytest.mark.parametrize(
+    ("last", "expected"),
+    [
+        pytest.param("scope", None, id="scope"),
+        pytest.param(
+            "function",
+            "last component {'kind': 'function', 'name': 'p_main'} is not the None",
+            id="a-kind",
+        ),
+    ],
+)
+def test_fence_names_a_kindless_entity_by_a_scope(
+    last: str, expected: str | None
+) -> None:
+    """A VHDL design element no kind fits (a process, a signal) is named all the same:
+    its ``entity_kind`` is ``None`` and its last component a ``scope``, never one of a
+    kind it does not have."""
+    scope = {
+        "language": "vhdl",
+        "qualified_name": "counter.rtl.p_main",
+        "entity_kind": None,
+        "semantic": [
+            {"kind": "module", "name": "counter"},
+            {"kind": "impl", "name": "rtl"},
+            {"kind": last, "name": "p_main"},
+        ],
+    }
+    assert _fence_difference(scope, "vhdl") == expected
+
+
+def test_name_chain_vhdl_declaration_and_body(tmp_path: Path) -> None:
+    """A VHDL subprogram declared in a package and defined in its body, and a protected
+    type and its body, are one entity each: the same name chain. An architecture's
+    names are inside its entity's, as a port of the entity is."""
+    semantic = _semantic_of("rule_vhdl_names", tmp_path)
+    chains = {marker: name_chain(parts, "vhdl") for marker, parts in semantic.items()}
+    assert chains["IMPL_N_PROCEDURE_DECL"] == chains["IMPL_N_PROCEDURE_BODY"]
+    assert chains["IMPL_N_PROTECTED"] == chains["IMPL_N_PROTECTED_BODY"]
+    assert chains["IMPL_N_PACKAGE"] == chains["IMPL_N_PACKAGE_BODY"]
+    entity = chains["IMPL_N_ENTITY"]
+    assert entity is not None
+    for marker in ("IMPL_N_PORT", "IMPL_N_ARCH", "IMPL_N_VARIABLE"):
+        chain = chains[marker]
+        assert chain is not None and chain[: len(entity)] == entity, marker
+    assert semantic["IMPL_N_VARIABLE"] == [
+        {"kind": "module", "name": "counter"},
+        {"kind": "impl", "name": "rtl"},
+        {"kind": "scope", "name": "tick"},
+        {"kind": "scope", "name": "step"},
+    ]

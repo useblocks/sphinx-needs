@@ -18,9 +18,26 @@
       "start": 5,
       "end": 5,
       "language": "vhdl",
-      "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "entity_kind": "function",
+      "qualified_name": "top.rtl.blk.f",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "blk"
+        },
+        {
+          "kind": "function",
+          "name": "f"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

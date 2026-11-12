@@ -19,8 +19,21 @@
       "end": 7,
       "language": "vhdl",
       "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "qualified_name": "top.rtl.proc",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "proc"
+        }
+      ],
       "mechanism": "enclosing"
     },
     "need": {

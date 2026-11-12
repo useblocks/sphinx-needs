@@ -19,8 +19,25 @@
       "end": 5,
       "language": "vhdl",
       "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "qualified_name": "top.rtl.gen.p_if",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "gen"
+        },
+        {
+          "kind": "scope",
+          "name": "p_if"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -52,8 +69,25 @@
       "end": 8,
       "language": "vhdl",
       "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "qualified_name": "top.rtl.gen.p_elsif",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "gen"
+        },
+        {
+          "kind": "scope",
+          "name": "p_elsif"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -85,8 +119,25 @@
       "end": 11,
       "language": "vhdl",
       "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "qualified_name": "top.rtl.gen.p_else",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "gen"
+        },
+        {
+          "kind": "scope",
+          "name": "p_else"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

@@ -18,9 +18,14 @@
       "start": 4,
       "end": 5,
       "language": "vhdl",
-      "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "entity_kind": "module",
+      "qualified_name": "counter",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

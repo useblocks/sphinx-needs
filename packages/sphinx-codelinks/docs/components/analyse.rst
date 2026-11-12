@@ -114,6 +114,8 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
        - Every shell file the bash grammar reads: ``.sh``, ``.bash``, ``.zsh`` and ``.ksh``.
      * - ``powershell``
        - ``.ps1``, ``.psm1`` and ``.psd1``
+     * - ``vhdl``
+       - ``.vhd`` and ``.vhdl``
 
   One language is one name, so the value groups files that editors may tell apart:
   a ``.h`` header is ``cpp`` whether C or C++ includes it,
@@ -129,11 +131,21 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
 - ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
   ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,
   ``property``, ``event``, ``indexer`` or ``delegate``; ``test`` for a Pester ``It`` block (a ``Describe`` or a
-  ``Context`` is a ``namespace``); in YAML and JSON ``key`` or ``item``;
+  ``Context`` is a ``namespace``); in YAML and JSON ``key`` or ``item``.
+  VHDL takes these kinds where one fits: an entity is a ``module``, its architecture an ``impl``, a package (its
+  declaration, its body, an instance of it) a ``namespace``, a component an ``interface``, a function or a procedure
+  (declared, defined or instantiated) a ``function``, an enumeration, record or protected type (or protected body)
+  an ``enum``, ``record`` or ``class``, and any other type or subtype a ``type``. Every other VHDL design element --
+  a configuration, a context, a process, a block, a generate, a component instance, a concurrent signal assignment,
+  assertion or procedure call, a signal, constant, variable, file or alias, a generic, a port, a parameter -- has
+  ``null``, and is named all the same (see ``semantic``);
 - ``qualified_name`` -- the entity's name within its file, qualified by the containers the file shows:
   ``ns::Widget::draw`` in C++, ``Shape.area`` and ``outer.<locals>.inner`` in Python (its ``__qualname__``),
   ``Widget::new`` and ``<Widget as Shape>::area`` (and ``<dyn Shape>::area`` for a type that is no path) in Rust,
   ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in TypeScript,
+  ``counter.rtl.p_main`` in VHDL (as VHDL's expanded names are written, with an architecture under the entity its
+  ``of`` clause names, as the source spells it: VHDL is case-insensitive, and the name is not folded; an extended
+  identifier keeps its backslashes, an operator function its quotes, ``"+"``),
   ``Shape.Area`` in PowerShell, where a Pester block is named after the blocks around it, joined with ``.`` as
   Pester joins a test's path (``px.starts`` for ``It 'starts'`` in ``Describe 'px'``). A block's own name is its
   ``-Name`` argument, else its first positional argument past Pester's switches (``-Skip``) and its parameters with
@@ -142,13 +154,16 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   variable or an expression, or past a parameter Pester does not declare, has no name, and neither has any block
   inside it.
   No module, crate or package prefix: the file's path decides that.
-  ``null`` in YAML and JSON, and for an entity without a name;
+  ``null`` in YAML and JSON, and for an entity without a name -- in VHDL an unlabelled process or statement, a
+  declaration of several names (``signal a, b : bit``), and anything inside one of them;
 - ``semantic`` -- that name in its parts, outermost first and the entity itself last, each a ``kind`` and a ``name``
   (``null`` exactly when ``qualified_name`` is). The kinds are those of ``entity_kind`` but ``key`` and ``item``
   (a YAML or JSON entry has no name, so no parts), and one more, for what the syntax alone cannot classify:
   ``scope``, a C++ qualifier such as the ``ns`` of ``void ns::W::f() {}`` (the qualifier right before a method,
   a constructor, a destructor or a conversion operator is its ``class``; so is the ``ns`` of a free function defined
-  with a namespace qualifier, ``void ns::f() {}``, which reads as a method).
+  with a namespace qualifier, ``void ns::f() {}``, which reads as a method), and a VHDL design element no kind fits,
+  whose ``entity_kind`` is ``null`` (``module counter``, ``impl rtl``, ``scope p_main``, ``scope v`` for a variable
+  of a process).
   The type a Go method's receiver names is a part of kind ``type``.
   A Rust ``impl`` is a part of kind ``impl`` named after its self type as written
   (``Widget``, ``dyn Shape``), with a ``trait`` key for a trait impl (the trait as ``qualified_name`` spells it); the
@@ -384,6 +399,12 @@ What counts as an entity
   signatures; a ``const``, ``let`` or ``var``, a class field, an assignment or a default export only when it holds a
   function or a class (one written with ``declare`` always does).
 - **Bash**: functions.
+- **VHDL**: entities, architectures, packages and package bodies, package instances, configurations, contexts;
+  functions and procedures, declared, defined or instantiated; types, subtypes and components; signals, constants,
+  variables, files and aliases; generics, ports and parameters; processes, blocks, generates (``for``, ``if`` and
+  ``case``), component instances, and concurrent signal assignments, assertions and procedure calls. A sequential
+  statement, a record field, an ``attribute`` declaration or specification is none: a marker before one is attached to
+  the entity it is inside.
 - **PowerShell**: functions, filters and workflows (each a ``function``, named without a ``global:``, ``script:``,
   ``private:`` or ``local:`` scope modifier, as it is called), classes, methods, constructors (a method named as its
   class, in any letter case, without a return type), properties, enums, and Pester's ``Describe``, ``Context`` and
@@ -399,6 +420,8 @@ What counts as an entity
 
 Data members, variables, lambdas bound to a name and macro invocations are not entities, nor, yet, a C
 ``typedef struct {...} T;``: a marker above one is attached to the entity it is inside, or to the file.
+VHDL is the deliberate exception: a hardware design traces its ports and signals, so its data elements are entities,
+without a kind.
 
 Extraction Examples
 -------------------

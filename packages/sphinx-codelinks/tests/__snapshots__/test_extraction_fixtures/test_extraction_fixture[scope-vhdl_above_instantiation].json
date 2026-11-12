@@ -19,8 +19,21 @@
       "end": 4,
       "language": "vhdl",
       "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "qualified_name": "top.rtl.u_fifo",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "u_fifo"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

@@ -19,8 +19,21 @@
       "end": 3,
       "language": "vhdl",
       "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "qualified_name": "top.rtl.cnt",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "cnt"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {
@@ -52,8 +65,21 @@
       "end": 4,
       "language": "vhdl",
       "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "qualified_name": "top.rtl.MAX",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "MAX"
+        }
+      ],
       "mechanism": "trailing"
     },
     "need": {

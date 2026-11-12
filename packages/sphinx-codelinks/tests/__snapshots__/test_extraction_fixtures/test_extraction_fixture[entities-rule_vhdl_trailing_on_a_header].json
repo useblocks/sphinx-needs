@@ -18,9 +18,22 @@
       "start": 2,
       "end": 5,
       "language": "vhdl",
-      "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "entity_kind": "function",
+      "qualified_name": "counter.rtl.next_count",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "function",
+          "name": "next_count"
+        }
+      ],
       "mechanism": "trailing"
     },
     "need": {
@@ -51,9 +64,22 @@
       "start": 6,
       "end": 8,
       "language": "vhdl",
-      "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "entity_kind": "function",
+      "qualified_name": "counter.rtl.reset_all",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "function",
+          "name": "reset_all"
+        }
+      ],
       "mechanism": "trailing"
     },
     "need": {
@@ -85,8 +111,21 @@
       "end": 12,
       "language": "vhdl",
       "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "qualified_name": "counter.rtl.tick",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "tick"
+        }
+      ],
       "mechanism": "trailing"
     },
     "need": {

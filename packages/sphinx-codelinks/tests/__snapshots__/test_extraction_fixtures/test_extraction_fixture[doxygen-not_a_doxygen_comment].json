@@ -18,9 +18,14 @@
       "start": 2,
       "end": 3,
       "language": "vhdl",
-      "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "entity_kind": "module",
+      "qualified_name": "e",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "e"
+        }
+      ],
       "mechanism": "leading"
     },
     "need": {

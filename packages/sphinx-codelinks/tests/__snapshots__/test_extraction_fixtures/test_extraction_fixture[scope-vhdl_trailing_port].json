@@ -19,8 +19,17 @@
       "end": 3,
       "language": "vhdl",
       "entity_kind": null,
-      "qualified_name": null,
-      "semantic": null,
+      "qualified_name": "top.clk",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "scope",
+          "name": "clk"
+        }
+      ],
       "mechanism": "trailing"
     },
     "need": {
