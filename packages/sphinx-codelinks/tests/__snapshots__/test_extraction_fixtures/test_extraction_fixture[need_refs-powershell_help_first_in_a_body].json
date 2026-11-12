@@ -1,0 +1,39 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 15
+      },
+      "end": {
+        "row": 4,
+        "column": 27
+      }
+    },
+    "tagged_scope": "function Start-Px {\n    <#\n    .SYNOPSIS\n        Starts the proxy.\n    @need-ids: REQ_1, REQ_2\n    #>\n    function Get-Inner { }\n}",
+    "scope": {
+      "kind": "function_statement",
+      "start": 1,
+      "end": 8,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Start-Px",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Start-Px"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need_ids": [
+      "REQ_1",
+      "REQ_2"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_statement"
+  }
+]

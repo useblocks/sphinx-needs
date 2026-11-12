@@ -47,7 +47,7 @@ Limitations
 
 **Current Limitations:**
 
-- **Language Support**: C/C++ (``//``, ``/* */``), C# (``//``, ``/* */``, ``///``), TypeScript/JavaScript (``//``, ``/* */``, and the legacy one-line ``<!--``), Python (``#``), YAML (``#``), Rust (``//``, ``/* */``, ``///``), Go (``//``, ``/* */``), JSONC (``//``, ``/* */``) and Bash (``#``) comment styles are supported
+- **Language Support**: C/C++ (``//``, ``/* */``), C# (``//``, ``/* */``, ``///``), TypeScript/JavaScript (``//``, ``/* */``, and the legacy one-line ``<!--``), Python (``#``), YAML (``#``), Rust (``//``, ``/* */``, ``///``), Go (``//``, ``/* */``), JSONC (``//``, ``/* */``), Bash (``#``) and PowerShell (``#``, ``<# #>``) comment styles are supported
 - **Single Comment Style**: Each analysis run processes only one comment style at a time
 
 .. _attachment:
@@ -112,6 +112,8 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
        - ``.jsonc``, and a ``.json`` file that opens with a comment: JSON with comments.
      * - ``bash``
        - Every shell file the bash grammar reads: ``.sh``, ``.bash``, ``.zsh`` and ``.ksh``.
+     * - ``powershell``
+       - ``.ps1``, ``.psm1`` and ``.psd1``
 
   One language is one name, so the value groups files that editors may tell apart:
   a ``.h`` header is ``cpp`` whether C or C++ includes it,
@@ -126,11 +128,19 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   A ``.c`` file is read with the C++ grammar too, though it records ``c``, and its names follow C++'s rule;
 - ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
   ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,
-  ``property``, ``event``, ``indexer`` or ``delegate``; in YAML and JSON ``key`` or ``item``;
+  ``property``, ``event``, ``indexer`` or ``delegate``; ``test`` for a Pester ``It`` block (a ``Describe`` or a
+  ``Context`` is a ``namespace``); in YAML and JSON ``key`` or ``item``;
 - ``qualified_name`` -- the entity's name within its file, qualified by the containers the file shows:
   ``ns::Widget::draw`` in C++, ``Shape.area`` and ``outer.<locals>.inner`` in Python (its ``__qualname__``),
   ``Widget::new`` and ``<Widget as Shape>::area`` (and ``<dyn Shape>::area`` for a type that is no path) in Rust,
-  ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in TypeScript.
+  ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in TypeScript,
+  ``Shape.Area`` in PowerShell, where a Pester block is named after the blocks around it, joined with ``.`` as
+  Pester joins a test's path (``px.starts`` for ``It 'starts'`` in ``Describe 'px'``). A block's own name is its
+  ``-Name`` argument, else its first positional argument past Pester's switches (``-Skip``) and its parameters with
+  their values (``-Tag Unit``), as the source writes it: a string without its quotes, a here-string's included, and
+  never expanded (``It 'adds <a>'`` stays ``adds <a>``, ``It "starts $x"`` stays ``starts $x``). A block named by a
+  variable or an expression, or past a parameter Pester does not declare, has no name, and neither has any block
+  inside it.
   No module, crate or package prefix: the file's path decides that.
   ``null`` in YAML and JSON, and for an entity without a name;
 - ``semantic`` -- that name in its parts, outermost first and the entity itself last, each a ``kind`` and a ``name``
@@ -165,7 +175,8 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   apart what the qualified name cannot: overloads, a C ``struct stat`` and a function ``stat()``, C# classes that
   differ in their number of type parameters;
 - ``mechanism`` -- how the marker was attached: ``doc_comment`` (a documentation comment -- ``///``, ``//!``, ``/**``,
-  ``/*!``, a C# ``///``, a JSDoc ``/**`` -- or a Python docstring),
+  ``/*!``, a C# ``///``, a JSDoc ``/**`` -- a Python docstring, or PowerShell comment-based help first in a
+  function's body),
   ``leading`` (a comment on the lines before the entity, or directly inside or right after an attribute, a decorator
   or a template header in its head), ``trailing`` (after code on the entity's own line) or ``enclosing`` (inside its
   body).
@@ -291,6 +302,15 @@ In this order:
 1. **YAML and JSON**: the key/value pair or item on the comment's line, else the next one, else the enclosing one.
 2. **A Python docstring** documents the function or class it is in.
 3. **A Rust inner doc comment** (``//!``, ``/*!``) documents what it is inside: the module, or the file.
+   **PowerShell comment-based help** first in a function's or a filter's body documents that function, even when a
+   nested function follows: a ``<# #>`` comment, or a run of ``#`` comments on consecutive lines, holding one of
+   PowerShell's comment-based-help keyword lines, with nothing but other comments before it in the body. A keyword
+   line holds a keyword alone (``.SYNOPSIS``, ``.DESCRIPTION``, ``.EXAMPLE``, ``.INPUTS``, ``.OUTPUTS``, ``.NOTES``,
+   ``.LINK``, ``.COMPONENT``, ``.ROLE``, ``.FUNCTIONALITY``), or a keyword that takes an argument with that one
+   argument (``.PARAMETER``, ``.FORWARDHELPTARGETNAME``, ``.FORWARDHELPCATEGORY``, ``.REMOTEHELPRUNSPACE``,
+   ``.EXTERNALHELP``), in any letter case and with whitespace around: ``.PARAMETER Path`` is one, ``.NOTES: detail``
+   and ``.SYNOPSIS Starts it.`` are not. A plain comment there follows rule 6, and help before the function, or at
+   the end of its body, is attached as any comment is (rules 6 and 8).
 4. **A trailing marker** -- code before it on its line -- belongs to the entity on that line (a Doxygen ``///<`` after
    a function declaration is the classic case; after a data member or an enumerator it belongs to the enclosing class,
    struct or enum), else to the entity it is inside: ``trailing`` when that entity starts on the marker's line
@@ -356,6 +376,18 @@ What counts as an entity
   signatures; a ``const``, ``let`` or ``var``, a class field, an assignment or a default export only when it holds a
   function or a class (one written with ``declare`` always does).
 - **Bash**: functions.
+- **PowerShell**: functions, filters and workflows (each a ``function``, named without a ``global:``, ``script:``,
+  ``private:`` or ``local:`` scope modifier, as it is called), classes, methods, constructors (a method named as its
+  class, in any letter case, without a return type), properties, enums, and Pester's ``Describe``, ``Context`` and
+  ``It`` blocks (in any letter case, bare or as ``Pester\It``, known by that name alone, so a function or an alias of
+  the script's own of that name is taken for Pester's); no other command, a DSC ``Configuration`` included. A
+  pipeline, or a chain of them (``&&``, ``||``), is the first of its commands that is an entity: a marker above
+  ``Describe 'x' { } | Out-Null`` or trailing ``It 'x' { } | Out-Null`` is attached to that block, one above
+  ``Get-Thing | It 'y' { }`` to the ``It``; a marker inside another command of the pipeline (in a
+  ``ForEach-Object { }`` block after it) is not in that block, but in the entity around the pipeline. The
+  ``tree-sitter-powershell`` grammar cannot read an attribute before a class or an enum (``[DscResource()]``,
+  ``[Flags()]``), so a marker above such an attribute is attached to no entity; with the attribute on a line of its
+  own, a marker trailing the ``class`` or ``enum`` line is attached to it.
 
 Data members, variables, lambdas bound to a name and macro invocations are not entities, nor, yet, a C
 ``typedef struct {...} T;``: a marker above one is attached to the entity it is inside, or to the file.

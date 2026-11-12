@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 7
+      },
+      "end": {
+        "row": 3,
+        "column": 39
+      }
+    },
+    "tagged_scope": "function Start-Px {\n    # .SYNOPSIS\n    #     Starts the proxy.\n    # @Help run, IMPL_PS_HELP_RUN, impl\n    function Get-Inner { }\n}",
+    "scope": {
+      "kind": "function_statement",
+      "start": 1,
+      "end": 6,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Start-Px",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Start-Px"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Help run",
+      "id": "IMPL_PS_HELP_RUN",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  }
+]

@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 25
+      },
+      "end": {
+        "row": 0,
+        "column": 66
+      }
+    },
+    "tagged_scope": "function Start-Px { }",
+    "scope": {
+      "kind": "function_statement",
+      "start": 1,
+      "end": 1,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Start-Px",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Start-Px"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Trailing Function",
+      "id": "IMPL_PS_TRAIL_FN",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  }
+]

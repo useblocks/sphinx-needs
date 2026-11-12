@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 22
+      },
+      "end": {
+        "row": 0,
+        "column": 64
+      }
+    },
+    "tagged_scope": "Describe 'top' { } ",
+    "scope": {
+      "kind": "command",
+      "start": 1,
+      "end": 1,
+      "language": "powershell",
+      "entity_kind": "namespace",
+      "qualified_name": "top",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "top"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Trailing Describe",
+      "id": "TEST_PS_TRAIL_TOP",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  }
+]

@@ -1,0 +1,78 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 1
+      },
+      "end": {
+        "row": 2,
+        "column": 39
+      }
+    },
+    "tagged_scope": "function Start-Px {\n    Get-Date\n    <# .NOTES\n    @Help after, IMPL_PS_HELP_AFTER, impl\n    #>\n}",
+    "scope": {
+      "kind": "function_statement",
+      "start": 5,
+      "end": 10,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Start-Px",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Start-Px"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Help before",
+      "id": "IMPL_PS_HELP_BEFORE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 5
+      },
+      "end": {
+        "row": 7,
+        "column": 41
+      }
+    },
+    "tagged_scope": "function Start-Px {\n    Get-Date\n    <# .NOTES\n    @Help after, IMPL_PS_HELP_AFTER, impl\n    #>\n}",
+    "scope": {
+      "kind": "function_statement",
+      "start": 5,
+      "end": 10,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Start-Px",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Start-Px"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "Help after",
+      "id": "IMPL_PS_HELP_AFTER",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  }
+]

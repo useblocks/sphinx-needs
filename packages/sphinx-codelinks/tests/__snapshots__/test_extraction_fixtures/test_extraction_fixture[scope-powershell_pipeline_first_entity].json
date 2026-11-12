@@ -1,0 +1,208 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
+      },
+      "end": {
+        "row": 1,
+        "column": 45
+      }
+    },
+    "tagged_scope": "Describe 'x' { } ",
+    "scope": {
+      "kind": "command",
+      "start": 3,
+      "end": 3,
+      "language": "powershell",
+      "entity_kind": "namespace",
+      "qualified_name": "outer.x",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "outer"
+        },
+        {
+          "kind": "namespace",
+          "name": "x"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Entity first",
+      "id": "TEST_PS_PIPE_FIRST",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 30
+      },
+      "end": {
+        "row": 3,
+        "column": 77
+      }
+    },
+    "tagged_scope": "It 'tx' { } ",
+    "scope": {
+      "kind": "command",
+      "start": 4,
+      "end": 4,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "outer.tx",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "outer"
+        },
+        {
+          "kind": "test",
+          "name": "tx"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Trailing entity first",
+      "id": "TEST_PS_PIPE_TRAIL",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 7
+      },
+      "end": {
+        "row": 4,
+        "column": 55
+      }
+    },
+    "tagged_scope": "It 'y' { }",
+    "scope": {
+      "kind": "command",
+      "start": 6,
+      "end": 6,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "outer.y",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "outer"
+        },
+        {
+          "kind": "test",
+          "name": "y"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Entity after a command",
+      "id": "TEST_PS_PIPE_AFTER",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 7
+      },
+      "end": {
+        "row": 6,
+        "column": 38
+      }
+    },
+    "tagged_scope": "It 'a' { } ",
+    "scope": {
+      "kind": "command",
+      "start": 8,
+      "end": 8,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "outer.a",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "outer"
+        },
+        {
+          "kind": "test",
+          "name": "a"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Chain",
+      "id": "TEST_PS_PIPE_CHAIN",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 11
+      },
+      "end": {
+        "row": 9,
+        "column": 54
+      }
+    },
+    "tagged_scope": "Describe 'outer' {\n    # @Entity first, TEST_PS_PIPE_FIRST, test\n    Describe 'x' { } | Out-Null\n    It 'tx' { } | Out-Null # @Trailing entity first, TEST_PS_PIPE_TRAIL, test\n    # @Entity after a command, TEST_PS_PIPE_AFTER, test\n    Get-Thing | It 'y' { }\n    # @Chain, TEST_PS_PIPE_CHAIN, test\n    It 'a' { } && It 'b' { }\n    Describe 'z' { } | ForEach-Object {\n        # @In ForEach-Object, TEST_PS_PIPE_INNER, test\n        $_\n    }\n}",
+    "scope": {
+      "kind": "command",
+      "start": 1,
+      "end": 13,
+      "language": "powershell",
+      "entity_kind": "namespace",
+      "qualified_name": "outer",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "outer"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "In ForEach-Object",
+      "id": "TEST_PS_PIPE_INNER",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 6
+      },
+      "end": {
+        "row": 1,
+        "column": 36
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "In code",
+      "id": "IMPL_PS_SUBEXPR",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

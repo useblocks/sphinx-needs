@@ -50,6 +50,7 @@ EntityKind = Literal[
     "event",
     "indexer",
     "delegate",
+    "test",
     "key",
     "item",
 ]
@@ -59,7 +60,8 @@ Mechanism = Literal["doc_comment", "leading", "trailing", "enclosing"]
 """How a marker came to be attached to its entity.
 
 ``doc_comment`` is *declared*: a documentation comment (``///``, ``//!``, ``/**``,
-``/*!``, a C# ``///``, a JSDoc ``/**``, a Python docstring) attached by its own rule.
+``/*!``, a C# ``///``, a JSDoc ``/**``, a Python docstring, PowerShell comment-based
+help first in a function's body) attached by its own rule.
 The other three are *inferred* from where a plain comment sits: on the lines before the
 entity (``leading``), after code on the entity's own line (``trailing``), or inside its
 body (``enclosing``).
@@ -228,6 +230,16 @@ ENTITY_NODE_TYPES: dict[CommentType, set[str]] = {
     },
     # @Bash Scope Node Types, IMPL_BASH_2, impl, [FE_BASH]
     CommentType.bash: {"function_definition"},
+    # @PowerShell Scope Node Types, IMPL_PS_2, impl, [FE_POWERSHELL]
+    # A command is an entity only when it is a Pester block: see ENTITY_PREDICATES.
+    CommentType.powershell: {
+        "function_statement",
+        "class_statement",
+        "class_method_definition",
+        "class_property_definition",
+        "enum_statement",
+        "command",
+    },
 }
 SCOPE_NODE_TYPES = ENTITY_NODE_TYPES
 """The name this table had before entities were named; kept for importers."""
@@ -358,6 +370,33 @@ def _cpp_has_body(node: TreeSitterNode) -> bool:
 
 
 # Entity node types that are an entity only when their predicate holds, per language.
+# Pester's blocks, lower-cased: PowerShell resolves command names in any case.
+PESTER_BLOCKS = frozenset({"describe", "context", "it"})
+PESTER_MODULE = "pester"
+
+
+def _pester_block(node: TreeSitterNode) -> str | None:
+    """The Pester block a command is (``describe``, ``context`` or ``it``, lower-cased),
+    called bare or through Pester's module qualifier (``Pester\\It``); ``None`` for a
+    command a script merely runs."""
+    name = next(
+        (child for child in node.named_children if child.type == "command_name"), None
+    )
+    if name is None or name.text is None:
+        return None
+    module, _, command = name.text.decode("utf-8").lower().rpartition("\\")
+    return (
+        command if command in PESTER_BLOCKS and module in ("", PESTER_MODULE) else None
+    )
+
+
+def _is_pester_block(node: TreeSitterNode) -> bool:
+    """A command that is a Pester block (``Describe``, ``Context``, ``It``), called
+    bare or through Pester's module qualifier (``Pester\\It``): a test, or a group of
+    tests, rather than a command a script merely runs."""
+    return _pester_block(node) is not None
+
+
 ENTITY_PREDICATES: dict[CommentType, dict[str, Callable[[TreeSitterNode], bool]]] = {
     CommentType.cpp: {
         "declaration": _cpp_prototype,
@@ -376,6 +415,8 @@ ENTITY_PREDICATES: dict[CommentType, dict[str, Callable[[TreeSitterNode], bool]]
         "assignment_expression": _assigns_function,
         "export_statement": _value_is_function,
     },
+    # @Pester blocks are PowerShell entities, IMPL_PS_5, impl, [FE_POWERSHELL]
+    CommentType.powershell: {"command": _is_pester_block},
 }
 SCOPE_PREDICATES = ENTITY_PREDICATES
 """The name this table had before entities were named; kept for importers."""
@@ -419,6 +460,18 @@ WRAPPER_TYPES: dict[CommentType, dict[str, str | None]] = {
         "ambient_declaration": None,
         "expression_statement": None,
     },
+    # @PowerShell commands sit in a pipeline, IMPL_PS_8, impl, [FE_POWERSHELL]
+    # every PowerShell command, a Pester block among them, sits in a pipeline (and a
+    # pipeline chain), whatever path reaches it; see FIRST_ENTITY_WRAPPER_TYPES
+    CommentType.powershell: {"pipeline": None, "pipeline_chain": None},
+}
+
+# The wrappers that hold several items and are the first of them, in source order,
+# that is an entity, rather than the item a field or their last child names: a
+# PowerShell pipeline (``Describe 'x' { } | Out-Null`` is the Describe,
+# ``Get-Thing | It 'y' { }`` the It) and a chain of pipelines (``&&``, ``||``).
+FIRST_ENTITY_WRAPPER_TYPES: dict[CommentType, frozenset[str]] = {
+    CommentType.powershell: frozenset({"pipeline", "pipeline_chain"}),
 }
 
 
@@ -443,7 +496,8 @@ def is_wrapper(node: TreeSitterNode, comment_type: CommentType) -> bool:
 def unwrap_entity(
     node: TreeSitterNode | None, comment_type: CommentType
 ) -> TreeSitterNode | None:
-    """The entity ``node`` is, or wraps (``@decorator``, ``template <…>``, ``export``)."""
+    """The entity ``node`` is, or wraps (``@decorator``, ``template <…>``, ``export``,
+    a PowerShell pipeline: see :data:`FIRST_ENTITY_WRAPPER_TYPES`)."""
     wrappers = WRAPPER_TYPES.get(comment_type, {})
     for _ in range(4):
         if node is None:
@@ -452,6 +506,17 @@ def unwrap_entity(
             return node
         if node.type not in wrappers:
             return None
+        # @A PowerShell pipeline is its first entity, IMPL_PS_17, impl, [FE_POWERSHELL]
+        if node.type in FIRST_ENTITY_WRAPPER_TYPES.get(comment_type, ()):
+            return next(
+                (
+                    entity
+                    for child in node.named_children
+                    if child.type not in COMMENT_TYPES
+                    and (entity := unwrap_entity(child, comment_type)) is not None
+                ),
+                None,
+            )
         field = wrappers[node.type]
         inner = node.child_by_field_name(field) if field is not None else None
         if inner is None:
@@ -2885,7 +2950,7 @@ def _ts_describe(node: TreeSitterNode) -> EntityName | None:
     )
 
 
-# --- Bash, YAML and JSON -----------------------------------------------------
+# --- Bash, PowerShell, YAML and JSON -----------------------------------------
 
 
 def _bash_describe(node: TreeSitterNode) -> EntityName | None:
@@ -2893,6 +2958,195 @@ def _bash_describe(node: TreeSitterNode) -> EntityName | None:
         return None
     own = _text(node.child_by_field_name("name")) or None
     return _named("function", own, [_element("function", own or "")])
+
+
+# @Pester block kinds, IMPL_PS_15, impl, [FE_POWERSHELL]
+# The entity kind of each Pester block: an ``It`` is a test, a ``Describe`` or a
+# ``Context`` the group the tests are named in. The one place they are chosen, for the
+# block and for the blocks its name is joined from.
+PESTER_BLOCK_KINDS: dict[str, EntityKind] = {
+    "describe": "namespace",
+    "context": "namespace",
+    "it": "test",
+}
+
+_POWERSHELL_KINDS: dict[str, EntityKind] = {
+    "function_statement": "function",
+    "class_statement": "class",
+    "class_method_definition": "method",
+    "class_property_definition": "property",
+    "enum_statement": "enum",
+}
+
+
+def _powershell_child(node: TreeSitterNode, kind: str) -> TreeSitterNode | None:
+    return next((child for child in node.named_children if child.type == kind), None)
+
+
+# Pester's ``Describe``, ``Context`` and ``It`` parameters, lower-cased, as Pester's
+# own parameter blocks declare them (``Pending``: Pester 4's ``It``): the switches,
+# and those that take a value (aliases included: ``Tags``, ``TestCases``). ``-Name``
+# names the block; any other parameter is undeclared, and may take a value.
+PESTER_SWITCHES = frozenset({"skip", "allownulloremptyforeach", "pending"})
+PESTER_VALUE_PARAMETERS = frozenset(
+    {"tag", "tags", "fixture", "test", "foreach", "testcases"}
+)
+PESTER_NAME_PARAMETER = "name"
+
+
+def _attached_value(parameter: TreeSitterNode) -> bool:
+    """Whether a value is written onto the command parameter, ``-Skip:$false``."""
+    following = parameter.next_named_sibling
+    return (
+        following is not None
+        and following.type == "command_argument_sep"
+        and _text(following) == ":"
+    )
+
+
+# @Pester block names, IMPL_PS_11, impl, [FE_POWERSHELL]
+def _pester_name(command: TreeSitterNode) -> str | None:
+    """A Pester block's name: its ``-Name`` argument, else its first positional
+    argument past the switches and the parameters with their values that Pester
+    declares; a string without its delimiters or a bare word, as written. ``None``
+    when the block is named another way: by an expression, or past a parameter Pester
+    does not declare."""
+    elements = _powershell_child(command, "command_elements")
+    arguments = [
+        child
+        for child in (elements.named_children if elements is not None else [])
+        if child.type != "command_argument_sep"
+    ]
+    index = 0
+    while index < len(arguments):
+        argument = arguments[index]
+        if argument.type != "command_parameter":
+            return _pester_literal(argument)
+        parameter = _text(argument).lstrip("-").lower()
+        attached = _attached_value(argument)
+        if parameter == PESTER_NAME_PARAMETER:
+            return (
+                _pester_literal(arguments[index + 1])
+                if index + 1 < len(arguments)
+                else None
+            )
+        if parameter in PESTER_SWITCHES:
+            index += 2 if attached else 1
+        elif parameter in PESTER_VALUE_PARAMETERS:
+            index += 2
+            # the grammar splits a bare list (``-Tag a,b``) into ``a`` and ``,b``
+            while index < len(arguments) and _text(arguments[index]).startswith(","):
+                index += 1
+        else:
+            return None
+    return None
+
+
+# The expression nodes a command argument is wrapped in, each with one child.
+_POWERSHELL_ARGUMENT_WRAPPERS = frozenset(
+    {"array_literal_expression", "unary_expression"}
+)
+
+
+def _pester_literal(argument: TreeSitterNode) -> str | None:
+    """The text of a command argument that is a string literal, without its
+    delimiters, or a bare word; ``None`` for any other argument."""
+    while (
+        argument.type in _POWERSHELL_ARGUMENT_WRAPPERS
+        and argument.named_child_count == 1
+    ):
+        argument = argument.named_children[0]
+    text = _text(argument)
+    if argument.type == "generic_token":
+        return text
+    if argument.type != "string_literal":
+        return None
+    if text[:2] in ('@"', "@'") and text[-2:] in ('"@', "'@") and len(text) >= 4:
+        # a here-string: its content lies between the line breaks after its opening
+        # and before its closing delimiter
+        inner = text[2:-2]
+        inner = inner[2:] if inner.startswith("\r\n") else inner.removeprefix("\n")
+        inner = inner[:-2] if inner.endswith("\r\n") else inner.removesuffix("\n")
+        return inner
+    return text[1:-1] if len(text) >= 2 else text
+
+
+# The scope modifiers a function's name can carry, lower-cased: the function is called
+# without it (``function global:Get-Foo`` defines ``Get-Foo``).
+POWERSHELL_SCOPE_MODIFIERS = ("global:", "script:", "private:", "local:")
+
+
+def _powershell_own_name(node: TreeSitterNode) -> str | None:
+    if node.type == "command":
+        return _pester_name(node)
+    if node.type == "function_statement":
+        # @PowerShell function names without their scope modifier, IMPL_PS_12, impl, [FE_POWERSHELL]
+        name = _text(_powershell_child(node, "function_name"))
+        if name.lower().startswith(POWERSHELL_SCOPE_MODIFIERS):
+            name = name.split(":", 1)[1]
+        return name or None
+    if node.type == "class_property_definition":
+        return _text(_powershell_child(node, "variable")).lstrip("$") or None
+    return _text(_powershell_child(node, "simple_name")) or None
+
+
+def _powershell_describe(node: TreeSitterNode) -> EntityName | None:
+    """A PowerShell function or filter, class, method, property, enum or Pester block.
+
+    A method or a property is qualified by its class (``Shape.Area``), a Pester block
+    by the blocks around it, joined with ``.`` as Pester joins a test's path
+    (``px.starts``), each named as its source writes it, never expanded; a function, a
+    class and an enum are named alone. A Pester block in an unnamed one has no name.
+    """
+    if node.type == "command":
+        block = _pester_block(node)
+        if block is None:
+            return None
+        kind: EntityKind = PESTER_BLOCK_KINDS[block]
+    elif node.type in _POWERSHELL_KINDS:
+        kind = _POWERSHELL_KINDS[node.type]
+    else:
+        return None
+    own = _powershell_own_name(node)
+    parent = node.parent
+    class_name = (
+        _powershell_own_name(parent)
+        if parent is not None and parent.type == "class_statement"
+        else None
+    )
+    # @PowerShell constructors are named after their class, IMPL_PS_13, impl, [FE_POWERSHELL]
+    # and have no return type: ``[void] Proxy()`` is a method
+    if (
+        kind == "method"
+        and own is not None
+        and class_name is not None
+        and own.lower() == class_name.lower()
+        and _powershell_child(node, "type_literal") is None
+    ):
+        kind = "constructor"
+    if own is None:
+        return EntityName(kind, None, None)
+    outer: list[SemanticElement] = []
+    if kind in ("method", "constructor", "property"):
+        if parent is not None and parent.type == "class_statement":
+            if class_name is None:
+                return EntityName(kind, None, None)
+            outer.append(_element("class", class_name))
+    elif node.type == "command":
+        ancestor = node.parent
+        while ancestor is not None:
+            block = _pester_block(ancestor) if ancestor.type == "command" else None
+            if block is not None:
+                name = _pester_name(ancestor)
+                if name is None:
+                    return EntityName(kind, None, None)
+                outer.insert(0, _element(PESTER_BLOCK_KINDS[block], name))
+            ancestor = ancestor.parent
+    return _named(
+        kind,
+        ".".join([*(element["name"] for element in outer), own]),
+        [*outer, _element(kind, own)],
+    )
 
 
 def _data_describe(node: TreeSitterNode) -> EntityName:
@@ -2909,6 +3163,7 @@ _DESCRIBERS: dict[CommentType, Callable[[TreeSitterNode], EntityName | None]] = 
     CommentType.go: _go_describe,
     CommentType.ts: _ts_describe,
     CommentType.bash: _bash_describe,
+    CommentType.powershell: _powershell_describe,
     CommentType.yaml: _data_describe,
     CommentType.jsonc: _data_describe,
 }
@@ -3039,7 +3294,7 @@ def render_semantic(
     no path, and folds the modules before an impl into a self type written bare
     (``m::G``). Python joins them with ``.``, with ``<locals>`` after a function or a
     method another component follows (CPython's ``__qualname__``). C#, Go,
-    TypeScript, JavaScript and Bash join them with ``.``.
+    TypeScript, JavaScript, Bash and PowerShell join them with ``.``.
 
     :param semantic: An entity's components, as :func:`describe_entity` gives them.
     :param language: The language of the entity's file, as ``scope.language``
@@ -3124,7 +3379,7 @@ def scope_language(comment_type: CommentType, path: PurePath) -> str:
     ``csharp``; ``javascript`` for a ``.js``, ``.jsx``, ``.mjs`` or ``.cjs`` file, in
     any case, and ``typescript`` for every other file of the ``ts`` comment type,
     ``.tsx`` included; otherwise the comment type (``python``, ``rust``, ``go``,
-    ``yaml``, ``jsonc``, ``bash``). A ``.c`` file is parsed with the C++ grammar too,
+    ``yaml``, ``jsonc``, ``bash``, ``powershell``). A ``.c`` file is parsed with the C++ grammar too,
     and its components render as C++'s.
 
     :param comment_type: The project's comment type.

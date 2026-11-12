@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 3
+      },
+      "end": {
+        "row": 1,
+        "column": 22
+      }
+    },
+    "tagged_scope": "function Get-Gr\u00fc\u00dfe { $greeting }",
+    "scope": {
+      "kind": "function_statement",
+      "start": 3,
+      "end": 3,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Get-Gr\u00fc\u00dfe",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Get-Gr\u00fc\u00dfe"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "T",
+      "id": "ID_PS_UTF8",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  }
+]

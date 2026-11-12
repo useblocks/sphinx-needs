@@ -1,0 +1,44 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
+      },
+      "end": {
+        "row": 1,
+        "column": 31
+      }
+    },
+    "tagged_scope": "proxy([string] $c) { }",
+    "scope": {
+      "kind": "class_method_definition",
+      "start": 3,
+      "end": 3,
+      "language": "powershell",
+      "entity_kind": "constructor",
+      "qualified_name": "Proxy.proxy",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Proxy"
+        },
+        {
+          "kind": "constructor",
+          "name": "proxy"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Ctor",
+      "id": "IMPL_PS_CTOR",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_method_definition"
+  }
+]

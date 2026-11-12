@@ -1,0 +1,124 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 5
+      },
+      "end": {
+        "row": 2,
+        "column": 34
+      }
+    },
+    "tagged_scope": "function Start-Px {\n    <# .SYNOPSIS\n    @Help, IMPL_PS_HELP_CRLF, impl\n    #>\n    function Get-Inner { }\n}",
+    "scope": {
+      "kind": "function_statement",
+      "start": 1,
+      "end": 6,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Start-Px",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Start-Px"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Help",
+      "id": "IMPL_PS_HELP_CRLF",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 7
+      },
+      "end": {
+        "row": 7,
+        "column": 36
+      }
+    },
+    "tagged_scope": "It 'starts' { }",
+    "scope": {
+      "kind": "command",
+      "start": 9,
+      "end": 9,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "px.starts",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "px"
+        },
+        {
+          "kind": "test",
+          "name": "starts"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Starts",
+      "id": "TEST_PS_IT_CRLF",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 22
+      },
+      "end": {
+        "row": 9,
+        "column": 53
+      }
+    },
+    "tagged_scope": "It 'stops' { } ",
+    "scope": {
+      "kind": "command",
+      "start": 10,
+      "end": 10,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "px.stops",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "px"
+        },
+        {
+          "kind": "test",
+          "name": "stops"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Stops",
+      "id": "TEST_PS_TRAIL_CRLF",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  }
+]

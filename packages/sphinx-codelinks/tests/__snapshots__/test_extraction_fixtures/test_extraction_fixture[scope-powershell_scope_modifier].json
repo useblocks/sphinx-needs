@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 0,
+        "column": 31
+      }
+    },
+    "tagged_scope": "function global:Get-Px { }",
+    "scope": {
+      "kind": "function_statement",
+      "start": 2,
+      "end": 2,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Get-Px",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Get-Px"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Global",
+      "id": "IMPL_PS_GLOBAL",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  }
+]

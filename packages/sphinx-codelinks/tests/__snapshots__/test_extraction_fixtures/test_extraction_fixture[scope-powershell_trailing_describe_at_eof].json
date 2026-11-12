@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 5
+      },
+      "end": {
+        "row": 2,
+        "column": 56
+      }
+    },
+    "tagged_scope": "Describe 'd' {\n    It 'x' { }\n} ",
+    "scope": {
+      "kind": "command",
+      "start": 1,
+      "end": 3,
+      "language": "powershell",
+      "entity_kind": "namespace",
+      "qualified_name": "d",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "d"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Trailing Describe EOF",
+      "id": "TEST_PS_TRAIL_DESC_EOF",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  }
+]

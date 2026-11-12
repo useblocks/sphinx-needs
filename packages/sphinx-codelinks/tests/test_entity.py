@@ -564,6 +564,176 @@ def _describe(
             EntityName("item", None, None),
             id="yaml-item",
         ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "filter Get-Odd { $_ }",
+            "function_statement",
+            0,
+            EntityName("function", "Get-Odd", _s(("function", "Get-Odd"))),
+            id="powershell-filter-is-a-function",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "class Shape { [int]$Size\n [int] Area() { return 1 } }",
+            "class_method_definition",
+            0,
+            EntityName(
+                "method", "Shape.Area", _s(("class", "Shape"), ("method", "Area"))
+            ),
+            id="powershell-method",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "class Shape { [int]$Size\n [int] Area() { return 1 } }",
+            "class_property_definition",
+            0,
+            EntityName(
+                "property", "Shape.Size", _s(("class", "Shape"), ("property", "Size"))
+            ),
+            id="powershell-property-without-its-dollar",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "enum Mode { Direct }",
+            "enum_statement",
+            0,
+            EntityName("enum", "Mode", _s(("enum", "Mode"))),
+            id="powershell-enum",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "Describe 'px' { Pester\\Context ctx { It \"starts $x\" { } } }",
+            "command",
+            2,
+            EntityName(
+                "test",
+                "px.ctx.starts $x",
+                _s(("namespace", "px"), ("namespace", "ctx"), ("test", "starts $x")),
+            ),
+            id="powershell-pester-blocks-joined-as-pester-joins-them",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "Describe 'px' { Pester\\Context ctx { It \"starts $x\" { } } }",
+            "command",
+            1,
+            EntityName(
+                "namespace",
+                "px.ctx",
+                _s(("namespace", "px"), ("namespace", "ctx")),
+            ),
+            id="powershell-pester-context-is-a-namespace",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "describe 'px' { }",
+            "command",
+            0,
+            EntityName("namespace", "px", _s(("namespace", "px"))),
+            id="powershell-pester-describe-is-a-namespace",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "Write-Host 'x'",
+            "command",
+            0,
+            None,
+            id="powershell-plain-command-is-no-entity",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "class Derived : Base {\n Derived([string] $n) : base($n) { }\n}",
+            "class_method_definition",
+            0,
+            EntityName(
+                "constructor",
+                "Derived.Derived",
+                _s(("class", "Derived"), ("constructor", "Derived")),
+            ),
+            id="powershell-constructor",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "class Derived {\n static derived() { }\n}",
+            "class_method_definition",
+            0,
+            EntityName(
+                "constructor",
+                "Derived.derived",
+                _s(("class", "Derived"), ("constructor", "derived")),
+            ),
+            id="powershell-static-constructor-in-another-case",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "class Proxy {\n [void] Proxy([int] $x) { }\n}",
+            "class_method_definition",
+            0,
+            EntityName(
+                "method", "Proxy.Proxy", _s(("class", "Proxy"), ("method", "Proxy"))
+            ),
+            id="powershell-method-with-a-return-type-named-as-its-class",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "class Proxy {\n hidden Proxy([string] $s) { }\n}",
+            "class_method_definition",
+            0,
+            EntityName(
+                "constructor",
+                "Proxy.Proxy",
+                _s(("class", "Proxy"), ("constructor", "Proxy")),
+            ),
+            id="powershell-hidden-constructor",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "function global:Get-Foo { }",
+            "function_statement",
+            0,
+            EntityName("function", "Get-Foo", _s(("function", "Get-Foo"))),
+            id="powershell-global-scope-modifier",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "function Script:Get-Foo { }",
+            "function_statement",
+            0,
+            EntityName("function", "Get-Foo", _s(("function", "Get-Foo"))),
+            id="powershell-script-scope-modifier-in-another-case",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "filter private:Get-Odd { $_ }",
+            "function_statement",
+            0,
+            EntityName("function", "Get-Odd", _s(("function", "Get-Odd"))),
+            id="powershell-private-scope-modifier",
+        ),
+        pytest.param(
+            CommentType.powershell,
+            "ps1",
+            "function local:Get-Foo { }",
+            "function_statement",
+            0,
+            EntityName("function", "Get-Foo", _s(("function", "Get-Foo"))),
+            id="powershell-local-scope-modifier",
+        ),
     ],
 )
 def test_describe_entity(
@@ -732,6 +902,7 @@ def test_render_semantic(
         (CommentType.yaml, "a.yml", "yaml"),
         (CommentType.jsonc, "a.json", "jsonc"),
         (CommentType.bash, "a.sh", "bash"),
+        (CommentType.powershell, "a.psm1", "powershell"),
     ],
 )
 def test_scope_language(
@@ -776,6 +947,63 @@ def test_name_chain() -> None:
     # a code hop's rendering of the chain, on a component rebuilt from it, is no link
     rebuilt: Any = [{"kind": "class", "name": "A", "qualified_name": "A"}]
     assert name_chain(rebuilt, "python") == ((("name", "A"),),)
+
+
+@pytest.mark.parametrize(
+    ("source", "index", "expected"),
+    [
+        pytest.param("It 'plain' { }", 0, "plain", id="positional"),
+        pytest.param("It -Name 'named' { }", 0, "named", id="name-parameter"),
+        pytest.param("Describe -name:'n' { }", 0, "n", id="name-parameter-colon"),
+        pytest.param("It -Skip 'skipped' { }", 0, "skipped", id="switch-first"),
+        pytest.param("It -Skip:$true 'x' { }", 0, "x", id="switch-with-value"),
+        pytest.param(
+            "It -Pending -AllowNullOrEmptyForEach 'x' { }", 0, "x", id="two-switches"
+        ),
+        pytest.param(
+            "Describe -AllowNullOrEmptyForEach:$true -ForEach @() 'x' { }",
+            0,
+            "x",
+            id="switch-with-value-then-foreach",
+        ),
+        pytest.param("It -Test { } 'x'", 0, "x", id="test-parameter"),
+        pytest.param("Context -Fixture { } 'x'", 0, "x", id="fixture-parameter"),
+        # Pester declares no -Focus: an undeclared parameter may take a value
+        pytest.param("It -Focus 'x' { }", 0, None, id="undeclared-parameter"),
+        pytest.param(
+            "Describe -Tag Unit 'px' { It 'a' { } }", 1, "px.a", id="tag-first"
+        ),
+        pytest.param("Describe -Tags 'a','b' 'px' { }", 0, "px", id="tag-list"),
+        pytest.param("Describe -Tag x,y 'px' { }", 0, "px", id="bareword-tag-list"),
+        pytest.param("It -ForEach 1, 2 'each <_>' { }", 0, "each <_>", id="foreach"),
+        pytest.param(
+            "It -TestCases @(@{ a = 1 }) 'cases' { }", 0, "cases", id="testcases"
+        ),
+        pytest.param("It 'after' -Tag Unit { }", 0, "after", id="tag-after"),
+        pytest.param("It @'\nhere name\n'@ { }", 0, "here name", id="here-string"),
+        pytest.param(
+            'It @"\r\nhere $x\r\n"@ { }', 0, "here $x", id="expandable-here-string"
+        ),
+        # a parameter Pester does not declare cannot be read: is a value its own?
+        pytest.param("It -Unknown 'x' { }", 0, None, id="unknown-parameter"),
+        pytest.param("It $name { }", 0, None, id="variable-name"),
+        pytest.param("It ('a' + 'b') { }", 0, None, id="expression-name"),
+        # an unnamed block leaves every block in it unnamed: an incomplete path is
+        # not the name Pester gives
+        pytest.param("Describe $name { It 'a' { } }", 1, None, id="unnamed-ancestor"),
+    ],
+)
+def test_a_pester_block_is_named_as_pester_names_it(
+    source: str, index: int, expected: str | None
+) -> None:
+    """A Pester block's name is its ``-Name`` argument, else its first positional
+    argument, past the switches and the parameters with their values Pester
+    declares; a string loses its delimiters, a here-string's included."""
+    name = _describe(source, CommentType.powershell, "ps1", "command", index)
+    assert name is not None
+    assert name.qualified_name == expected
+    if expected is not None:
+        assert render_semantic(name.semantic, "powershell") == expected
 
 
 def test_describe_entity_refuses_a_node_that_is_no_entity() -> None:
