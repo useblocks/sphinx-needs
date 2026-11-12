@@ -92,7 +92,8 @@ _CHOOSING_FLAGS = frozenset(
 #: The driver options (clang 18's ``Options.td``) that hand their next argument to another
 #: tool, so the driver does not read it: ``-Xclang -nobuiltininc`` reaches the compiler
 #: after the driver has already added the builtin headers' directory, and chooses
-#: nothing. ``-Xarch_device`` is the offloading device's, never the host compile's.
+#: nothing. ``-Xarch_device`` is the offloading device's, never the host compile's, and
+#: ``-mllvm`` hands its argument to LLVM's own option processing.
 _PASS_THROUGH = frozenset(
     {
         "-Xanalyzer",
@@ -104,6 +105,7 @@ _PASS_THROUGH = frozenset(
         "-Xlinker",
         "-Xopenmp-target",
         "-Xpreprocessor",
+        "-mllvm",
         "-z",
     }
 )
@@ -218,23 +220,33 @@ def excluding_flag(args: list[str]) -> str | None:
     )
 
 
+def passes_next_argument(arg: str) -> bool:
+    """Whether the driver takes the argument after ``arg`` as ``arg``'s value, for
+    another tool (:data:`_PASS_THROUGH`, ``-Xopenmp-target=<triple>``,
+    ``-Xoffload-linker-<triple>``) or for one architecture's compile
+    (``-Xarch_<arch>``): that argument is not one of the driver's own, and a ``--``
+    there does not end the options."""
+    return (
+        arg in _PASS_THROUGH
+        or arg.startswith(_PASS_THROUGH_PREFIXES)
+        or arg.startswith("-Xarch_")
+    )
+
+
 def _end_of_options(args: list[str]) -> int:
     """The index of the ``--`` after which the driver reads every argument as an input
     file, else ``len(args)``. A ``--`` handed to another tool (``-Xlinker --``) is
-    not it."""
+    not it.
+
+    A compilation database entry's arguments carry no ``--`` by the time they get
+    here (``compile_db.filter_args`` leaves every one out); arguments from anywhere
+    else are still placed correctly."""
     index = 0
     while index < len(args):
         arg = args[index]
         if arg == "--":
             return index
-        if (
-            arg in _PASS_THROUGH
-            or arg.startswith(_PASS_THROUGH_PREFIXES)
-            or arg.startswith("-Xarch_")
-        ):
-            index += 2
-            continue
-        index += 1
+        index += 2 if passes_next_argument(arg) else 1
     return len(args)
 
 

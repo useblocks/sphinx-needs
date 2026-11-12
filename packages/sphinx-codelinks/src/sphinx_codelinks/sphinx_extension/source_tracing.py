@@ -158,8 +158,11 @@ def setup(app: Sphinx) -> dict[str, Any]:
         # includes it -- so the records an environment at 4 holds for such sources were
         # extracted without them; 6: the libclang engine passes clang's builtin headers,
         # so an #if on what they define (UINT32_MAX, __has_include(<stdatomic.h>)) takes
-        # another arm than in the records an environment at 5 holds
-        "env_version": 6,
+        # another arm than in the records an environment at 5 holds; 7: the libclang
+        # engine leaves a compilation database entry's `--` out, so the records an
+        # environment at 6 holds for an entry with one were extracted from every arm
+        # (an options-ending `--`) or not at all (`-Xlinker --`)
+        "env_version": 7,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

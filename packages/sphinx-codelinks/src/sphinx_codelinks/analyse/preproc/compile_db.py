@@ -6,6 +6,7 @@ import json
 import shlex
 from pathlib import Path
 
+from sphinx_codelinks.analyse.preproc.builtin_headers import passes_next_argument
 from sphinx_codelinks.config import DEFAULT_CPP_STD
 
 _DB_NAME = "compile_commands.json"
@@ -26,6 +27,8 @@ _KEEP_WITH_VALUE = {
     "-x",
     "-I",
 }
+# The argument after which the driver reads every argument as an input file.
+END_OF_OPTIONS = "--"
 # Minimum length for joined-form flags like -MFdep.d (prefix length = 3)
 _MIN_JOINED_FLAG_LEN = 3
 
@@ -59,10 +62,23 @@ def find_compile_db(start: Path, project_root: Path | None = None) -> Path | Non
 
 
 def filter_args(argv: list[str], input_file: str) -> list[str]:
-    """Keep only flags libclang needs; drop the compiler, -c/-o, depfiles, input."""
+    """Keep only flags libclang needs; drop the compiler, -c/-o, depfiles, input.
+
+    A ``--`` ends the options: every argument after it is an input, so it is left
+    out with them (the entry's own file is parsed on its own, and any other input
+    would make a second compiler job). A ``--`` that is the value of an option the
+    driver takes it for (``-Xlinker --``, ``-I --``) ends nothing, and the arguments
+    after it are still read as options. No ``--`` is passed on in either case:
+    libclang reads the first ``--`` of its arguments as the end of the options
+    whatever precedes it, so a pass-through option (:func:`.passes_next_argument`)
+    whose value is ``--`` is left out with it (no tool it hands it to runs in a
+    parse), and a ``-I``, ``-include``, ``-x``, ... whose value is ``--`` is joined
+    to it (``-I--``), which the driver reads the same.
+    """
     out: list[str] = []
     skip_next = False
     keep_next_value = False
+    pass_through: str | None = None
     input_base = Path(input_file).name
     # Skip leading non-flag tokens. argv[0] is the compiler, but a build may prefix
     # it with a launcher (ccache/sccache/distcc), so drop every leading non-flag
@@ -80,9 +96,25 @@ def filter_args(argv: list[str], input_file: str) -> list[str]:
             skip_next = False
             continue
         if keep_next_value:
-            # Value of a separate-form -include/-isystem/-I/... — keep verbatim.
+            # Value of a separate-form -include/-isystem/-I/... — keep verbatim,
+            # joined to its option when it is a `--` (see the docstring).
             keep_next_value = False
-            out.append(arg)
+            if arg == END_OF_OPTIONS:
+                out[-1] += arg
+            else:
+                out.append(arg)
+            continue
+        if pass_through is not None:
+            # Value of -Xclang/-Xlinker/-mllvm/... — another tool's, kept verbatim
+            # with its option, or left out with it when it is a `--`.
+            if arg != END_OF_OPTIONS:
+                out += [pass_through, arg]
+            pass_through = None
+            continue
+        if arg == END_OF_OPTIONS:
+            break
+        if passes_next_argument(arg):
+            pass_through = arg
             continue
         if arg in _DROP_WITH_VALUE:
             skip_next = True
@@ -101,6 +133,8 @@ def filter_args(argv: list[str], input_file: str) -> list[str]:
         ):
             continue
         out.append(arg)
+    if pass_through is not None:
+        out.append(pass_through)  # missing its value: passed on as the entry has it
     return out
 
 

@@ -1017,6 +1017,10 @@ An entry of ``compile_commands.json`` is applied as the build applies it:
   so a relative ``-I``, ``-iquote``, ``-isystem``, ``-include`` or ``-imacros`` resolves
   against it, as it did for the compiler, whatever directory the analysis runs in.
   A relative ``directory`` is taken against the directory of the database file.
+- **Up to its** ``--``. An entry that ends its options with ``--`` (``-c -- src/a.cpp``)
+  is read with the options before it; what follows is its input. A ``--`` that is an
+  option's value (``-Xlinker --``, ``-I --``) ends nothing, and the options after it
+  are read too.
 - **Through its includes.** A unity (or "jumbo") build compiles one entry whose source
   ``#include``\ s other sources, which then have no entry of their own. Such a source is
   read through its **includer**: an entry whose own source directly includes it.

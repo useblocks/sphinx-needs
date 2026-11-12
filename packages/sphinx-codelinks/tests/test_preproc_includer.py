@@ -663,6 +663,30 @@ def test_an_environment_pickled_at_env_version_5_is_read_again(
     )
 
 
+def test_an_environment_pickled_at_env_version_6_is_read_again(
+    tmp_path: Path, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    """An environment of ``env_version`` 6 holds records the libclang engine extracted
+    with a database entry's ``--`` passed on: from every arm for an entry that ends its
+    options with it, from none for one that hands it to another tool (``-Xlinker
+    --``). Nothing in the sources or the configuration changed: ``env_version`` 7 is
+    what has the build discard it and read every document again."""
+    _project(tmp_path, **UNITY_PROJECT)
+    app = _build(tmp_path, make_app)
+    pickled = Path(app.doctreedir, "environment.pickle")
+    env = pickle.loads(pickled.read_bytes())
+    env.version["sphinx_codelinks"] = 6
+    pickled.write_bytes(pickle.dumps(env, pickle.HIGHEST_PROTOCOL))
+
+    app = _build(tmp_path, make_app, freshenv=False)
+
+    status = strip_colors(app._status.getvalue())
+    assert (
+        "loading pickled environment... failed: build environment version not current"
+        in status
+    )
+
+
 def test_only_the_main_files_own_include_confirms_an_includer(tmp_path: Path) -> None:
     """The inclusions that confirm an includer are its main file's own: a source the
     unit compiles through a header of the main file is not one of them (no transitive

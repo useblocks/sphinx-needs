@@ -138,6 +138,7 @@ DRIVER_CASES = [
     pytest.param(["-Xassembler", "-nostdinc"], False, id="Xassembler"),
     pytest.param(["-Xlinker", "-nostdinc"], False, id="Xlinker"),
     pytest.param(["-z", "-nostdinc"], False, id="z"),
+    pytest.param(["-mllvm", "-nostdinc"], False, id="mllvm"),
     # no clang driver option: the driver reads the argument after it
     pytest.param(["-Xflang", "-nostdinc"], True, id="Xflang-unknown"),
     pytest.param(["-Xarch_host", "-nobuiltininc"], True, id="Xarch_host"),
@@ -601,7 +602,9 @@ def test_a_compile_command_s_own_include_is_warned_about_without_a_location(
     assert "included at" not in warnings[0][0]
 
 
-@pytest.mark.parametrize("option", ["-Xlinker", "-Xanalyzer", "-z", "-Xarch_host"])
+@pytest.mark.parametrize(
+    "option", ["-Xlinker", "-Xanalyzer", "-z", "-Xarch_host", "-mllvm"]
+)
 def test_a_double_dash_handed_to_another_tool_ends_nothing(
     builtin_headers, option: str
 ):
@@ -628,10 +631,10 @@ def test_a_double_dash_handed_to_another_tool_ends_nothing(
 def test_the_resource_dir_goes_before_a_double_dash(
     builtin_headers, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    """After ``--`` the driver reads every argument as an input file: a compile
-    command that ends with ``-- a.c`` is given the builtin headers before it, so its
-    parse finds ``<stdint.h>``. (Which arms are active is not asserted: libclang's
-    own arguments come after the ``--`` too, and the parse records no skipped range.)"""
+    """After ``--`` the driver reads every argument as an input file: arguments that
+    end with ``-- a.c`` are given the builtin headers before it. A database entry's
+    ``--`` never gets this far (``filter_args`` leaves it out, with the inputs after
+    it), and its parse finds ``<stdint.h>`` all the same."""
     assert builtin_headers.resource_dir_args(["-std=c11", "--", "a.c"], None)[0] == [
         "-std=c11",
         "-resource-dir",

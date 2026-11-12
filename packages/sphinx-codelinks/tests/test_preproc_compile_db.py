@@ -266,6 +266,155 @@ def test_filter_args_keeps_separate_form_value_matching_input_basename():
     ]
 
 
+def test_filter_args_drops_an_options_terminator_and_the_inputs_after_it():
+    """``--`` ends the options (CMake and some generators write ``-c -- <file>``):
+    it and every argument after it are inputs, and are left out. Passed on, the
+    arguments libclang adds after the entry's own would be read as inputs too (no
+    preprocessing record, so the markers of every arm), and a second input makes a
+    second compiler job, which libclang refuses."""
+    argv = ["clang++", "-DX=1", "-c", "--", "src/a.cpp", "other.cpp", "-DY=1"]
+    assert compile_db.filter_args(argv, "src/a.cpp") == ["-DX=1"]
+
+
+def test_filter_args_double_dash_as_the_last_argument():
+    """A trailing ``--`` ends nothing that follows, and is left out all the same."""
+    argv = ["clang++", "-DX=1", "-c", "a.cpp", "--"]
+    assert compile_db.filter_args(argv, "a.cpp") == ["-DX=1"]
+
+
+@pytest.mark.parametrize(
+    ("argv", "expected"),
+    [
+        pytest.param(
+            ["clang++", "-DX", "--", "a.cpp", "--", "b.cpp"], ["-DX"], id="two-ends"
+        ),
+        pytest.param(
+            ["clang++", "-Xlinker", "--", "-DX", "--", "a.cpp", "-DY"],
+            ["-DX"],
+            id="a-value-then-an-end",
+        ),
+        pytest.param(
+            ["clang++", "-DX", "--", "-Xlinker", "--", "-DY"],
+            ["-DX"],
+            id="an-end-then-a-value",
+        ),
+    ],
+)
+def test_filter_args_two_double_dashes(argv: list[str], expected: list[str]):
+    """The first ``--`` that is not an option's value ends the options; one that is
+    an option's value ends nothing, and after the end nothing is an option."""
+    assert compile_db.filter_args(argv, "a.cpp") == expected
+
+
+#: clang 18's options that take the argument after them as their value for another
+#: tool or for one architecture (``clang --help-hidden``), plus the joined-target forms.
+PASS_THROUGH_OPTIONS = [
+    "-Xanalyzer",
+    "-Xarch_device",
+    "-Xarch_host",
+    "-Xarch_x86_64",
+    "-Xassembler",
+    "-Xclang",
+    "-Xcuda-fatbinary",
+    "-Xcuda-ptxas",
+    "-Xlinker",
+    "-Xoffload-linker",
+    "-Xoffload-linker-nvptx64",
+    "-Xopenmp-target",
+    "-Xopenmp-target=nvptx64",
+    "-Xpreprocessor",
+    "-mllvm",
+    "-z",
+]
+
+
+@pytest.mark.parametrize("option", PASS_THROUGH_OPTIONS)
+def test_filter_args_double_dash_handed_to_another_tool_ends_nothing(option: str):
+    """``-Xlinker --`` hands the ``--`` to the linker: the driver reads the arguments
+    after it as options. libclang, though, takes the first ``--`` of its arguments
+    for the end of the options whatever precedes it, so the option is left out with
+    its ``--`` (none of these tools runs in a parse), and the ``-DFEATURE`` after it
+    is kept."""
+    argv = ["clang++", "-std=c++17", option, "--", "-DFEATURE", "-c", "a.cpp"]
+    assert compile_db.filter_args(argv, "a.cpp") == ["-std=c++17", "-DFEATURE"]
+
+
+@pytest.mark.parametrize("option", PASS_THROUGH_OPTIONS)
+def test_filter_args_keeps_another_tools_argument_verbatim(option: str):
+    """Any other value of such an option is kept with it, verbatim: it is not read
+    as one of the driver's own options (``-c``, ``-o``) or as the input."""
+    argv = ["clang++", option, "-o", option, "a.cpp", "-DX", "-c", "a.cpp"]
+    assert compile_db.filter_args(argv, "a.cpp") == [
+        option,
+        "-o",
+        option,
+        "a.cpp",
+        "-DX",
+    ]
+
+
+def test_filter_args_keeps_a_pass_through_option_missing_its_value():
+    """An entry that ends with ``-Xlinker`` is passed on as it is."""
+    assert compile_db.filter_args(["clang++", "-DX", "-Xlinker"], "a.cpp") == [
+        "-DX",
+        "-Xlinker",
+    ]
+
+
+@pytest.mark.parametrize(
+    "option", ["-include", "-isystem", "-iquote", "-idirafter", "-isysroot", "-x", "-I"]
+)
+def test_filter_args_joins_a_double_dash_value_to_its_option(option: str):
+    """A ``--`` that is the value of ``-I`` (likewise ``-include``, ``-isystem``, ...)
+    ends nothing, and is passed on joined to its option (``-I--``), which the driver
+    reads the same, so that libclang does not take it for the end of the options."""
+    argv = ["clang++", option, "--", "-DFEATURE", "-c", "a.cpp"]
+    assert compile_db.filter_args(argv, "a.cpp") == [f"{option}--", "-DFEATURE"]
+
+
+@pytest.mark.parametrize("option", ["-o", "-MF", "-MT", "-MQ"])
+def test_filter_args_drops_a_double_dash_value_with_its_dropped_option(option: str):
+    """``-o --`` names an output: it is left out with its value, as before, and the
+    arguments after it are still options."""
+    argv = ["clang++", option, "--", "-DFEATURE", "-c", "a.cpp"]
+    assert compile_db.filter_args(argv, "a.cpp") == ["-DFEATURE"]
+
+
+def test_filter_args_openmp_target_joined_and_separate_forms():
+    """``-Xopenmp-target=<triple> <arg>`` takes the ``--`` after the triple as its
+    value; ``-Xopenmp-target <arg>`` takes the triple, and the ``--`` after it ends
+    the options (clang 18: "no such file or directory: '-DFEATURE'")."""
+    joined = ["clang++", "-Xopenmp-target=nvptx64", "--", "-DFEATURE", "a.cpp"]
+    assert compile_db.filter_args(joined, "a.cpp") == ["-DFEATURE"]
+    separate = ["clang++", "-Xopenmp-target", "nvptx64", "--", "-DFEATURE", "a.cpp"]
+    assert compile_db.filter_args(separate, "a.cpp") == [
+        "-Xopenmp-target",
+        "nvptx64",
+    ]
+
+
+def test_load_flags_map_entry_with_options_terminator(tmp_path: Path):
+    """The ``command`` form of an entry that ends its options with ``--`` gives its
+    file the options before it, and nothing after."""
+    db = tmp_path / "compile_commands.json"
+    db.write_text(
+        json.dumps(
+            [
+                {
+                    "directory": str(tmp_path),
+                    "file": "a.cpp",
+                    "command": "clang++ -DX=1 -c -- a.cpp",
+                }
+            ]
+        )
+    )
+    flags = compile_db.load_flags_map(db)
+    assert flags[(tmp_path / "a.cpp").resolve()] == [
+        f"{compile_db.WORKING_DIRECTORY_FLAG}{tmp_path.resolve()}",
+        "-DX=1",
+    ]
+
+
 def test_defines_to_args_pins_cpp_for_gnu_cpp_dialect():
     """A GNU C++ dialect (gnu++17/gnu++20) is a C++ standard; pairing it with
     ``-x c`` makes clang reject it and return a NULL TU. It must resolve to C++."""
