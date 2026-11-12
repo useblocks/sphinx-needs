@@ -1119,6 +1119,46 @@ vhdl_trailing_port:
       );
     end entity top;
 
+vhdl_trailing_subprogram_declaration:
+  # Trailing a subprogram declaration -> the subprogram, not the last parameter of its
+  # list, which ends on the same row (a procedure's; a function's return type follows
+  # its list), in a package and in an architecture alike, and when the ``;`` is on the
+  # next row. Trailing a parameter inside a list written over several rows -> the
+  # parameter.
+  lang: vhdl
+  config: default
+  source: |
+    package p is
+      procedure inc(variable v : inout integer); -- @Increment, IMPL_VHDL_PROC_DECL_PKG, impl
+      procedure pair(a : in bit; b : out bit); -- @Pair, IMPL_VHDL_PROC_PAIR, impl
+      function g(x : integer) return integer; -- @G, IMPL_VHDL_FN_DECL, impl
+      procedure split(a : in bit; -- @Split a, IMPL_VHDL_PARAM_A, impl
+                      b : out bit); -- @Split, IMPL_VHDL_PROC_SPLIT, impl
+      procedure late(variable v : inout integer) -- @Late, IMPL_VHDL_PROC_LATE, impl
+        ;
+    end package p;
+    architecture rtl of top is
+      procedure reset(signal s : out bit); -- @Reset, IMPL_VHDL_PROC_DECL_ARCH, impl
+    begin
+    end architecture rtl;
+
+vhdl_trailing_interface_list_on_one_row:
+  # Trailing a generic or port list written on one row -> its (last) generic or port,
+  # which is an entity: a subprogram's parameter list is the only list passed over. And
+  # trailing the last port of a list written over several rows -> that port.
+  lang: vhdl
+  config: default
+  source: |
+    entity top is
+      generic (W : natural := 8); -- @Width, IMPL_VHDL_GENERIC_ROW, impl
+      port (clk : in std_logic); -- @Clock, IMPL_VHDL_PORT_ROW, impl
+    end entity top;
+    entity two is
+      port (
+        d : in std_logic;
+        q : out std_logic); -- @Q, IMPL_VHDL_PORT_LAST, impl
+    end entity two;
+
 vhdl_process_in_generate:
   # Above a process inside a for-generate -> the process (through the generate_block
   # wrapper), not the generate.

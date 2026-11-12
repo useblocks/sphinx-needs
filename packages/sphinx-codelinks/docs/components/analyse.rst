@@ -331,7 +331,8 @@ In this order:
    struct or enum), else to the entity it is inside: ``trailing`` when that entity starts on the marker's line
    (``def f():  # @...``, a VHDL ``function f return t is -- @...``), ``enclosing`` otherwise.
    In VHDL, the entity on the line is the innermost design element that ends there: the signal of
-   ``signal s : bit; -- @...``, the port of ``clk : in std_logic; -- @...``. An attribute, a decorator or a template header before the marker
+   ``signal s : bit; -- @...``, the port of ``clk : in std_logic; -- @...``, but never a subprogram's parameter: after
+   ``procedure inc(variable v : inout integer); -- @...`` it is the procedure. An attribute, a decorator or a template header before the marker
    is not code: the marker leads the item they precede (an inner attribute, ``#![...]``, precedes none: it applies to
    what it is inside).
 5. **The comments before a file's first item**, when a blank line separates the last of them from it, belong to the

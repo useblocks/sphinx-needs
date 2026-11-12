@@ -1,0 +1,128 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 34
+      },
+      "end": {
+        "row": 1,
+        "column": 68
+      }
+    },
+    "tagged_scope": "W : natural := 8",
+    "scope": {
+      "kind": "interface_declaration",
+      "start": 2,
+      "end": 2,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "top.W",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "scope",
+          "name": "W"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Width",
+      "id": "IMPL_VHDL_GENERIC_ROW",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "interface_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 33
+      },
+      "end": {
+        "row": 2,
+        "column": 64
+      }
+    },
+    "tagged_scope": "clk : in std_logic",
+    "scope": {
+      "kind": "interface_declaration",
+      "start": 3,
+      "end": 3,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "top.clk",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "scope",
+          "name": "clk"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Clock",
+      "id": "IMPL_VHDL_PORT_ROW",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "interface_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 28
+      },
+      "end": {
+        "row": 7,
+        "column": 56
+      }
+    },
+    "tagged_scope": "q : out std_logic",
+    "scope": {
+      "kind": "interface_declaration",
+      "start": 8,
+      "end": 8,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "two.q",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "two"
+        },
+        {
+          "kind": "scope",
+          "name": "q"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Q",
+      "id": "IMPL_VHDL_PORT_LAST",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "interface_declaration"
+  }
+]

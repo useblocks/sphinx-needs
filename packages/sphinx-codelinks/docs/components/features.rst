@@ -402,7 +402,8 @@ Features
      subtype, component, constant, signal, variable, file or alias declaration; a
      generic, port or parameter; a process, block or generate statement, a component
      instantiation, a concurrent signal assignment, assertion or procedure call. A
-     trailing marker documents the element ending on its row, a leading one the element
+     trailing marker documents the element ending on its row (the subprogram, not its
+     last parameter, after a subprogram declaration), a leading one the element
      that follows it, never one further down; a marker among sequential statements
      documents its process or subprogram
    * The attachment rules every language follows: a marker in the licence banner

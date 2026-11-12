@@ -481,10 +481,15 @@ def _innermost_on_row(
     that holds it (an architecture's ``signal s : bit; -- c`` is beside the
     architecture's head), and a comment after a port beside the port, so the entity
     a trailing comment follows is looked for down the subtree that ends on its row.
+
+    The search does not enter a subprogram's parameter list: after
+    ``procedure inc(variable v : inout integer); -- c`` the list ends on the row too,
+    and the comment follows the subprogram, not its last parameter. A comment inside a
+    list written over several rows starts its search at the parameter before it.
     """
     found = None
     current: TreeSitterNode | None = node
-    while current is not None:
+    while current is not None and current.type not in _ROW_SEARCH_STOP_TYPES:
         if is_entity(current, comment_type):
             found = current
         current = next(
@@ -496,6 +501,10 @@ def _innermost_on_row(
             None,
         )
     return found
+
+
+# The nodes :func:`_innermost_on_row` does not enter: a VHDL subprogram's parameter list.
+_ROW_SEARCH_STOP_TYPES = frozenset({"parameter_list_specification"})
 
 
 def _is_file_header(node: TreeSitterNode) -> bool:
