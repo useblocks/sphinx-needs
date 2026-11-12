@@ -54,6 +54,16 @@ New and Improved
   ``{``: ``# @(Draft) Login, ID_1, impl`` is dropped without a warning. The grammar cannot read an attribute before a class or an enum
   (``[DscResource()]``), so a marker above one is attached to no entity, and a UTF-16 file
   is skipped as a binary one (:need:`FE_POWERSHELL`).
+- ✨ VHDL comment type: ``comment_type = "vhdl"`` analyses ``.vhd`` and ``.vhdl`` files,
+  their ``--`` and VHDL-2008 ``/* */`` comments
+  (`#2077 <https://github.com/useblocks/sphinx-needs/pull/2077>`__).
+
+  A marker is associated with the design element next to it -- the port, signal,
+  instantiation, process or subprogram it stands above or trails, and otherwise the one
+  enclosing it -- never with one further down the file. Multi-line needs are read from
+  runs of ``--`` and of ``--!`` comments. A Doxygen command line in a ``--!`` comment
+  (``--! @brief Counter with enable, reset and load``) is a ``doxygen_tag`` warning
+  rather than a need with the id ``reset and load``.
 
 Fixes
 .....
@@ -304,16 +314,6 @@ New and Improved
 - ⬆️ The ``docs`` extra now requires furo 2025.12.19 or newer (previously 2024.5.6), the
   first release of that theme that supports Sphinx 9: every earlier one caps Sphinx below
   9.0. It is the floor Sphinx-Needs' ``theme-furo`` extra already declares.
-- ✨ VHDL comment type: ``comment_type = "vhdl"`` analyses ``.vhd`` and ``.vhdl`` files,
-  their ``--`` and VHDL-2008 ``/* */`` comments
-  (`#2077 <https://github.com/useblocks/sphinx-needs/pull/2077>`__).
-
-  A marker is associated with the design element next to it -- the port, signal,
-  instantiation, process or subprogram it stands above or trails, and otherwise the one
-  enclosing it -- never with one further down the file. Multi-line needs are read from
-  runs of ``--`` and of ``--!`` comments. A Doxygen command line in a ``--!`` comment
-  (``--! @brief Counter with enable, reset and load``) is a ``doxygen_tag`` warning
-  rather than a need with the id ``reset and load``.
 
 .. _`release:2.0.0`:
 
