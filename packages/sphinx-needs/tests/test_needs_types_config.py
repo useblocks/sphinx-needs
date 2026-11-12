@@ -9,7 +9,8 @@ warnings instead of failing the build (#2262).
 
 A need type's directive is registered once, whichever of ``load_config`` and
 ``add_need_type`` comes first (#2271); a directive of another class under a type's name
-is still overridden, with Sphinx's own warning.
+is still overridden, reported while ``needs_directive_name`` is unset as one
+``needs.directive_name_clash`` warning, in place of Sphinx's own.
 """
 
 from __future__ import annotations
@@ -46,8 +47,8 @@ TOML_CONF = CONF + 'needs_from_toml = "ubproject.toml"\n'
 
 #: the known keys, as the unknown-key finding lists them
 KNOWN = (
-    "known keys are back_links, color, directive, fields, id_regex, inherits, links, "
-    "prefix, style, title"
+    "known keys are back_links, color, directive, directive_name, fields, id_regex, "
+    "inherits, links, prefix, style, title"
 )
 
 #: three types in an order that is not alphabetical, so that a sort would show
@@ -1061,13 +1062,18 @@ def setup(app):
 def test_a_foreign_directive_under_a_type_name_is_overridden(test_app: Any) -> None:
     """A directive of another class under a need type's name -- a subclass of the
     need directive, or a class that only shares its name, included -- is overridden by
-    the need directive itself, with Sphinx's own warning, as it always was."""
+    the need directive itself, as it always was, with sphinx-needs' clash warning in
+    place of Sphinx's own (``needs_directive_name`` is unset)."""
     app = test_app
     assert directives._directives.get("req") is NeedDirective
     app.build()
     warnings = build_warnings(app)
     assert len(warnings) == 1
-    assert "directive 'req' is already registered" in warnings[0]
+    assert warnings[0].startswith(
+        "WARNING: need type 'req': the directive name 'req' is also the directive "
+    )
+    assert warnings[0].endswith("[needs.directive_name_clash]")
+    assert "already registered" not in warnings[0]
     assert list(_needs(app)) == ["R_00001"]
 
 

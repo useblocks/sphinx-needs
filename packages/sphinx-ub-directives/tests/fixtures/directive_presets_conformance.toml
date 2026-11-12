@@ -28,7 +28,10 @@
 #     `sphinx.ext.autodoc` and `sphinx_ub_directives`, and reads the needs configuration from the same `ubproject.toml`
 #     (`needs_from_toml`); nothing else. ubCode reads the file as a project
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
-#     the default ones (`req`, `spec`, `impl`, `test`), so a case never carries a need type
+#     the default ones (`req`, `spec`, `impl`, `test`), except in a case about a need type
+#     sharing its name with another directive, which declares that one type (lower case) in
+#     its `config` and then has ONLY that type (a declared type replaces the defaults);
+#     a case never carries a need type
 #     spelled with upper-case letters (the contract refuses one as a preset base, and a Sphinx
 #     build cannot use one at all)
 #   - a case never writes an RST option name with capitals, and never writes an option
@@ -2223,6 +2226,233 @@ Text.
 [[case.expect.findings]]
 code = "directive_preset_name_taken"
 path = "parse.directive_presets.spec"
+
+[[case]]
+name = "refused-name-taken-by-a-qualified-need-type"
+why = "refused at load, once, at its entry: a new name need:<type> is the need type's qualified directive, taken as its bare name is"
+config = '''
+[parse.directive_presets."need:spec"]
+base = "note"
+'''
+source = '''
+.. need:spec:: Kept
+   :id: SPEC_Q01
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_name_taken"
+path = 'parse.directive_presets."need:spec"'
+[case.expect.needs.SPEC_Q01]
+type = "spec"
+
+[[case]]
+name = "qualified-need-type-base"
+why = "a base need:<type> is that need type, its options the need's"
+config = '''
+[parse.directive_presets.req-open]
+base = "need:req"
+options = { status = "open" }
+'''
+source = '''
+.. req-open:: A
+   :id: REQ_Q02
+'''
+equivalent = '''
+.. need:req:: A
+   :id: REQ_Q02
+   :status: open
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_Q02]
+type = "req"
+status = "open"
+
+[[case]]
+name = "self-preset-of-a-qualified-need-type"
+why = "a self-preset of need:<type> gives the qualified directive project-wide defaults"
+config = '''
+[parse.directive_presets."need:req"]
+base = "need:req"
+options = { status = "open" }
+'''
+source = '''
+.. need:req:: A
+   :id: REQ_Q03
+
+.. need:req:: B
+   :id: REQ_Q04
+   :status: done
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_Q03]
+status = "open"
+[case.expect.needs.REQ_Q04]
+status = "done"
+
+[[case]]
+name = "refused-self-preset-of-a-bare-name-no-directive-has"
+why = "a self-preset is of the directive its name resolves to: with directive_name = qualified, the bare req is none, so the self-preset has no base"
+config = '''
+[needs]
+directive_name = "qualified"
+
+[parse.directive_presets.req]
+base = "req"
+options = { status = "open" }
+'''
+source = '''
+.. need:req:: A
+   :id: REQ_Q05
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_unknown_base"
+path = "parse.directive_presets.req.base"
+[case.expect.needs.REQ_Q05]
+type = "req"
+
+[[case]]
+name = "self-preset-of-a-bare-name-another-directive-has"
+why = "a self-preset is of the directive its name resolves to: with directive_name = yield, the bare dropdown is sphinx-design's, so the self-preset applies to sphinx-design's dropdown (its class-container is accepted), and need:dropdown is the need"
+config = '''
+[needs.types.dropdown]
+title = "Dropdown"
+prefix = "DD_"
+directive_name = "yield"
+
+[parse.directive_presets.dropdown]
+base = "dropdown"
+options = { class-container = "zzcls" }
+'''
+source = '''
+.. dropdown:: Title
+
+   Body.
+
+.. need:dropdown:: A
+   :id: DD_Q06
+'''
+equivalent = '''
+.. dropdown:: Title
+   :class-container: zzcls
+
+   Body.
+
+.. need:dropdown:: A
+   :id: DD_Q06
+'''
+[case.expect]
+findings = []
+[case.expect.needs.DD_Q06]
+type = "dropdown"
+
+[[case]]
+name = "nonself-bare-base-of-a-yielding-need-type"
+why = "a non-self preset's bare base that is a need type names the NEED TYPE, whatever its directive_name makes of the bare name: with directive_name = yield the bare dropdown is sphinx-design's, yet the base dropdown is the need type dropdown (a status option, a dropdown need)"
+config = '''
+[needs.types.dropdown]
+title = "Dropdown"
+prefix = "DD_"
+directive_name = "yield"
+
+[parse.directive_presets.dd-open]
+base = "dropdown"
+options = { status = "open" }
+'''
+source = '''
+.. dd-open:: A
+   :id: DD_Q07
+'''
+equivalent = '''
+.. need:dropdown:: A
+   :id: DD_Q07
+   :status: open
+'''
+[case.expect]
+findings = []
+[case.expect.needs.DD_Q07]
+type = "dropdown"
+status = "open"
+
+[[case]]
+name = "nonself-bare-base-of-a-yielding-need-type-step"
+why = "a non-self preset's bare base that is a need type names the NEED TYPE, whatever its directive_name makes of the bare name: with directive_name = yield the bare step is sphinx-design's where it has one (0.8 and later, and ubCode's port), yet the base step is the need type step (a status option, a step need)"
+config = '''
+[needs.types.step]
+title = "Step"
+prefix = "ST_"
+directive_name = "yield"
+
+[parse.directive_presets.bstep]
+base = "step"
+options = { status = "open" }
+'''
+source = '''
+.. bstep:: A
+   :id: ST_Q01
+'''
+equivalent = '''
+.. need:step:: A
+   :id: ST_Q01
+   :status: open
+'''
+[case.expect]
+findings = []
+[case.expect.needs.ST_Q01]
+type = "step"
+status = "open"
+
+[[case]]
+name = "nonself-bare-base-of-a-qualified-need-type"
+why = "a non-self preset's bare base that is a need type names the NEED TYPE, whatever its directive_name makes of the bare name: with directive_name = qualified the bare step is sphinx-design's (or no directive, where sphinx-design has no step), yet the base step is the need type step (a status option, a step need)"
+config = '''
+[needs.types.step]
+title = "Step"
+prefix = "ST_"
+directive_name = "qualified"
+
+[parse.directive_presets.bstep]
+base = "step"
+options = { status = "open" }
+'''
+source = '''
+.. bstep:: A
+   :id: ST_Q02
+'''
+equivalent = '''
+.. need:step:: A
+   :id: ST_Q02
+   :status: open
+'''
+[case.expect]
+findings = []
+[case.expect.needs.ST_Q02]
+type = "step"
+status = "open"
+
+[[case]]
+name = "refused-identity-option-in-a-self-preset-of-a-need-type"
+why = "a self-preset of a need type's bare name, where the bare name is the need's, has the need type as its base: a need's id is an identity option there too"
+config = '''
+[parse.directive_presets.req]
+base = "req"
+options = { id = "REQ_Q07" }
+'''
+source = '''
+.. req:: A
+   :id: REQ_Q08
+
+.. req:: B
+'''
+[case.expect]
+missing = ["REQ_Q07"]
+[[case.expect.findings]]
+code = "directive_preset_identity_option"
+path = "parse.directive_presets.req.options.id"
+[case.expect.needs.REQ_Q08]
+type = "req"
 
 [[case]]
 name = "refused-unknown-option"

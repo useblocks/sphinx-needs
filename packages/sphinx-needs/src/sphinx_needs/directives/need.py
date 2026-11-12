@@ -9,6 +9,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs._directive_name import need_type_of
 from sphinx_needs._need_source import (
     enclosing_need,
     placement_semantic,
@@ -107,8 +108,10 @@ class NeedDirective(SphinxDirective):
     @measure_time("need")
     def run(self) -> Sequence[nodes.Node]:
         needs_schema = SphinxNeedsData(self.env).get_schema()
-        # the options of a need of this type (the directive's name)
-        type_schema = needs_schema.for_type(self.name)
+        # the options of a need of this type (the directive's name, ``need:``-qualified
+        # or bare: the qualified one keeps its name, which locates a MyST fence)
+        need_type = need_type_of(self.name)
+        type_schema = needs_schema.for_type(need_type)
         link_keys = set(type_schema.iter_link_field_names())
         extra_keys = set(type_schema.iter_extra_field_names())
 
@@ -233,7 +236,7 @@ class NeedDirective(SphinxDirective):
                 self.env.app,
                 self.state,
                 source,
-                self.name,
+                need_type,
                 title,
                 full_title=full_title,
                 id=id,

@@ -281,7 +281,7 @@ def _conditional(
 
 def _is_need_type(name: str) -> bool:
     """Whether ``name`` (as Sphinx looks a directive up, in lower case) is a need type's
-    directive, by sphinx-needs' public ``get_need_types``. The build's application is the
+    directive, bare or ``need:``-qualified, by sphinx-needs' public ``get_need_types``. The build's application is the
     one templates registered with, never the deprecated ``env.app``."""
     from ._templates import APP
 
@@ -290,7 +290,8 @@ def _is_need_type(name: str) -> bool:
         return False
     from sphinx_needs.api import get_need_types
 
-    return name in get_need_types(app)
+    # a need type is also written ``need:<type>`` (sphinx-needs' ``need`` domain)
+    return name.removeprefix("need:") in get_need_types(app)
 
 
 def test_report_names(env: Any) -> frozenset[str]:

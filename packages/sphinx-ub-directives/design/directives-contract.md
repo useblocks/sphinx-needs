@@ -216,17 +216,33 @@ force_options = { collapse = true }  # a use cannot change these
 2. A missing or blank `base` is `directive_preset_unknown_base` at the entry.
    Enforced by: corpus `refused-missing-base`, `refused-blank-base`.
 3. A **self-preset** is an entry whose name equals its base (case-insensitively): it gives
-   that directive project-wide defaults.
-   Enforced by: corpus `self-preset-gives-project-defaults`, `self-preset-of-a-need-type`.
+   that directive project-wide defaults. It is of the directive its name resolves to:
+   a domain's (`py:function`, `need:req`), and, for a need type's BARE name, the need
+   only where the bare name is the need's (and then it has the need type as its base, with
+   every need-type check of 3.3) -- where the type's `directive_name` leaves it to another
+   directive (`yield`), or a `std` or primary-domain directive has it (any value), it is
+   that directive's, and where no directive has it (`qualified`) it is
+   `directive_preset_unknown_base` at `….base`. A self-preset of one spelling of a need
+   type is not one of the other (`req` and `need:req`).
+   Enforced by: corpus `self-preset-gives-project-defaults`, `self-preset-of-a-need-type`,
+   `refused-identity-option-in-a-self-preset-of-a-need-type`,
+   `self-preset-of-a-qualified-need-type`, `self-preset-of-a-bare-name-another-directive-has`,
+   `refused-self-preset-of-a-bare-name-no-directive-has`;
+   tests `test_presets.py::test_a_self_preset_of_a_need_type_s_bare_name`,
+   `…::test_a_self_preset_of_a_domain_directive_applies`.
 4. A base naming another (accepted, non-self) preset is `directive_preset_base_is_preset`:
    presets do not chain. Enforced by: corpus `refused-base-is-preset`.
 5. **The base** is the need type of that name (case-insensitively; need types are lower
-   case, see 3.2.6), else the directive registered under that name (docutils, Sphinx, any
+   case, see 3.2.6), written bare or qualified (`need:<type>`, sphinx-needs' `need` domain),
+   whatever the type's `directive_name` makes of its bare directive (a self-preset
+   excepted, 3.2.3), else the directive registered under that name (docutils, Sphinx, any
    domain, any loaded extension). Nothing found is `directive_preset_unknown_base` at
    `….base`, and so is a TEMPLATE directive (`ub-template`, or a declared one), which is no
    preset base. Enforced by: corpus `refused-unknown-base`, `base-is-case-insensitive`,
    `identity-confval-rst`, `px-preset-of-ub-template`, `px-preset-of-ub-template-generates-a-need`,
-   `px-preset-of-ub-template-switched-off`, `px-preset-of-a-declared-template`.
+   `px-preset-of-ub-template-switched-off`, `px-preset-of-a-declared-template`,
+   `qualified-need-type-base`, `nonself-bare-base-of-a-yielding-need-type`,
+   `nonself-bare-base-of-a-yielding-need-type-step`, `nonself-bare-base-of-a-qualified-need-type`.
 6. **A need type spelled with upper-case letters is refused as a base**
    (`directive_preset_unknown_base`, saying why): a Sphinx build registers such a type
    verbatim but looks every directive up in lower case, so the type is unusable there, and
@@ -236,9 +252,11 @@ force_options = { collapse = true }  # a use cannot change these
    public `resolve_need_option`): `directive_preset_unknown_base`, saying "need-type
    presets need sphinx-needs 9.2 or later"; every other preset and template works.
    Enforced by: test `test_presets.py::test_need_type_presets_need_resolve_need_option`.
-7. A new (non-self) name that is already a directive — built in, a need type, any loaded
-   extension's — is `directive_preset_name_taken` at the entry.
-   Enforced by: corpus `refused-name-taken`, `refused-name-taken-by-a-need-type`.
+7. A new (non-self) name that is already a directive — built in, a need type (bare or
+   `need:`-qualified), any loaded extension's — is `directive_preset_name_taken` at the entry.
+   Enforced by: corpus `refused-name-taken`, `refused-name-taken-by-a-need-type`,
+   `refused-name-taken-by-a-qualified-need-type`;
+   test `test_presets.py::test_a_qualified_name_is_taken`.
 
 ### 3.3 Option checks (every problem reported; the preset is left out if any)
 
@@ -251,7 +269,7 @@ sorted; the path is `….<name>.<table>.<key>`.
    `px-need-option-keys-equal-ignoring-case-conflict`.
 2. An identity option — the base's `name`, or a need's `id` — is
    `directive_preset_identity_option`. Enforced by: corpus `refused-identity-option-name`,
-   `refused-identity-option-id`.
+   `refused-identity-option-id`, `refused-identity-option-in-a-self-preset-of-a-need-type`.
 3. A key the base does not take is `directive_preset_unknown_option`.
    - **A need-type base** takes exactly the options its need type's directive MATCHES: the
      directive's own options and every field and link of the project -- global ones, the
@@ -349,7 +367,11 @@ sorted; the path is `….<name>.<table>.<key>`.
   by: test `test_presets.py::test_a_need_type_option_is_never_read_from_an_earlier_schema`.
 - Each accepted preset is a subclass of the base's class, registered with
   `app.add_directive(name, cls, override=<self-preset>)`, every base class snapshotted
-  before the first registration (3.4.5).
+  before the first registration (3.4.5). A self-preset of a domain's directive is
+  registered with `app.add_directive_to_domain(domain, local name, cls, override=True)`
+  AND given to the build's instance of the domain (its `directives`, its cache of what it
+  served for the name dropped): the instance was made from the registry before the
+  presets are registered, so the registry alone never reached a use.
 - With a default argument, `required_arguments = 0` and `optional_arguments =
   max(1, required + optional)` of the base: docutils (and MyST) check the argument count
   BEFORE `run()`.

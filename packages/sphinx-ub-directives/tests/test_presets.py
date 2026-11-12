@@ -411,11 +411,13 @@ def test_the_same_application_built_twice_judges_its_presets_afresh(
     toml = (
         '[parse.directive_presets.callout]\nbase = "note"\noptions = { class = "first" }\n\n'
         '[parse.directive_presets.req-draft]\nbase = "req"\noptions = { status = "draft" }\n\n'
-        '[parse.directive_presets.note]\nbase = "note"\noptions = { class = "self-first" }\n'
+        '[parse.directive_presets.note]\nbase = "note"\noptions = { class = "self-first" }\n\n'
+        '[parse.directive_presets."py:function"]\nbase = "py:function"\n'
+        'options = { module = "modfirst" }\n'
     )
     page = (
         ".. callout::\n\n   Body.\n\n.. req-draft:: A\n   :id: REQ_TWICE\n\n"
-        ".. note::\n\n   Plain.\n"
+        ".. note::\n\n   Plain.\n\n.. py:function:: f(x)\n"
     )
     app = _build(make_app, tmp_path, toml, page)
     assert not [w for w in build_warnings(app) if "ub_directives." in w], (
@@ -425,6 +427,7 @@ def test_the_same_application_built_twice_judges_its_presets_afresh(
     presets["callout"]["options"]["class"] = "second"
     presets["req-draft"]["options"]["status"] = "open"
     presets["note"]["options"]["class"] = "self-second"
+    presets["py:function"]["options"]["module"] = "modsecond"
     warning_stream = getattr(app, "_warning")  # noqa: B009
     warning_stream.seek(0)
     warning_stream.truncate(0)
@@ -445,3 +448,222 @@ def test_the_same_application_built_twice_judges_its_presets_afresh(
     assert "second" in doctree and "first" not in doctree
     # the self-preset wraps the ORIGINAL note, not the first build's preset of it
     assert "self-second" in doctree and "self-first" not in doctree
+    # and so does a domain directive's: the build's domain serves one preset of it
+    assert "modsecond" in doctree
+    served = app.env.get_domain("py").directives["function"]
+    assert [c.__name__ for c in served.__mro__].count("Preset_py_function") == 1
+
+
+#: need types ``req`` and ``step``; ``step`` is never written bare (its directive_name)
+QUALIFIED_TYPES = """\
+[[needs.types]]
+directive = "req"
+title = "Requirement"
+prefix = "R_"
+
+[[needs.types]]
+directive = "step"
+title = "Step"
+prefix = "ST_"
+directive_name = "qualified"
+"""
+
+
+def _needs(app: SphinxTestApp) -> dict[str, dict[str, object]]:
+    data = json.loads((Path(app.outdir) / "needs.json").read_text(encoding="utf-8"))
+    return data["versions"][data["current_version"]]["needs"]
+
+
+@pytest.mark.parametrize(
+    "base",
+    [
+        pytest.param("need:req", id="qualified-base"),
+        pytest.param("need:step", id="qualified-base-of-a-qualified-type"),
+        pytest.param("step", id="bare-base-of-a-qualified-type"),
+    ],
+)
+def test_a_need_type_base_qualified_or_not(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path, base: str
+) -> None:
+    """A base ``need:<type>`` is that need type (its options are the need's), and so is
+    a bare base naming a need type whose bare directive is not the need's
+    (``directive_name = "qualified"``): the need the ``need`` domain serves."""
+    toml = (
+        QUALIFIED_TYPES
+        + f'\n[parse.directive_presets.my-preset]\nbase = "{base}"\n'
+        + 'options = { status = "draft" }\n'
+    )
+    app = _build(make_app, tmp_path, toml, ".. my-preset:: A\n   :id: X_001\n")
+    assert build_warnings(app) == []
+    need = _needs(app)["X_001"]
+    assert (need["type"], need["status"]) == (base.removeprefix("need:"), "draft")
+
+
+def test_a_qualified_name_is_taken(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A new preset name ``need:<type>`` is taken by the need type, as its bare name
+    is: a preset of that name would replace the need."""
+    toml = (
+        QUALIFIED_TYPES
+        + '\n[parse.directive_presets."need:req"]\nbase = "note"\n'
+        + '\n[parse.directive_presets."NEED:step"]\nbase = "note"\n'
+    )
+    app = _build(make_app, tmp_path, toml, ".. need:req:: A\n   :id: R_001\n")
+    refused = [w for w in build_warnings(app) if "directive_preset_name_taken" in w]
+    assert len(refused) == 2, build_warnings(app)
+    assert _needs(app)["R_001"]["type"] == "req"
+
+
+def test_a_qualified_base_takes_the_need_type_s_options(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A base ``need:req`` is the need type ``req`` (§3.3.3), not just the directive the
+    ``need`` domain serves: a key the type's directive does not match is refused, as for
+    the bare base ``req``, where a directive taking any option would accept it."""
+    toml = (
+        QUALIFIED_TYPES
+        + '\n[parse.directive_presets.my-preset]\nbase = "need:req"\n'
+        + 'options = { nosuch = "x" }\n'
+    )
+    app = _build(make_app, tmp_path, toml, ".. need:req:: A\n   :id: R_001\n")
+    refused = [w for w in build_warnings(app) if "directive_preset_unknown_option" in w]
+    assert len(refused) == 1, build_warnings(app)
+    assert "[parse.directive_presets.my-preset.options.nosuch]" in refused[0]
+
+
+#: need type ``dropdown`` (sphinx-design's directive name too), and ``step`` (no other
+#: directive's); each test appends the types' ``directive_name`` and one self-preset
+DROPDOWN_TYPES = """\
+[[needs.types]]
+directive = "dropdown"
+title = "Dropdown"
+prefix = "DD_"
+directive_name = "{dropdown}"
+
+[[needs.types]]
+directive = "step"
+title = "Step"
+prefix = "ST_"
+directive_name = "{step}"
+"""
+
+
+@pytest.mark.parametrize(
+    ("modes", "preset", "page", "codes", "needs", "doctree"),
+    [
+        pytest.param(
+            {"dropdown": "claim", "step": "claim"},
+            '[parse.directive_presets.step]\nbase = "step"\noptions = { status = "zz" }\n',
+            ".. step:: A\n   :id: ST_001\n",
+            [],
+            {"ST_001": "zz"},
+            None,
+            id="claim-the-need",
+        ),
+        pytest.param(
+            {"dropdown": "yield", "step": "claim"},
+            '[parse.directive_presets.dropdown]\nbase = "dropdown"\n'
+            'options = { class-container = "zzcls" }\n',
+            ".. dropdown:: A\n\n   Body.\n",
+            [],
+            {},
+            "zzcls",
+            id="yield-the-other-directive",
+        ),
+        pytest.param(
+            {"dropdown": "yield", "step": "claim"},
+            '[parse.directive_presets.Dropdown]\nbase = "DROPDOWN"\n'
+            'options = { class-container = "zzcls" }\n',
+            ".. dropdown:: A\n\n   Body.\n",
+            [],
+            {},
+            "zzcls",
+            id="yield-the-other-directive-name-and-base-cased-differently",
+        ),
+        pytest.param(
+            {"dropdown": "yield", "step": "claim"},
+            '[parse.directive_presets.dropdown]\nbase = "dropdown"\n'
+            'options = { status = "zz" }\n',
+            ".. dropdown:: A\n\n   Body.\n",
+            ["directive_preset_unknown_option"],
+            {},
+            None,
+            id="yield-a-need-option-is-the-other-directive-s-unknown-option",
+        ),
+        pytest.param(
+            {"dropdown": "claim", "step": "qualified"},
+            '[parse.directive_presets.step]\nbase = "step"\noptions = { status = "zz" }\n',
+            ".. need:step:: A\n   :id: ST_001\n",
+            ["directive_preset_unknown_base"],
+            {"ST_001": None},
+            None,
+            id="qualified-no-directive",
+        ),
+    ],
+)
+def test_a_self_preset_of_a_need_type_s_bare_name(
+    make_app: Callable[..., SphinxTestApp],
+    tmp_path: Path,
+    modes: dict[str, str],
+    preset: str,
+    page: str,
+    codes: list[str],
+    needs: dict[str, object],
+    doctree: str | None,
+) -> None:
+    """§3.2.3: a self-preset gives the directive its name resolves to project-wide
+    defaults. The bare name of a need type whose ``directive_name`` leaves it to another
+    directive (``yield``) is that directive, so the self-preset is that directive's, and
+    the need stays out of the bare name; under ``qualified`` the bare name is no
+    directive at all, so the self-preset has no base. Only where the bare name is the
+    need (``claim``) is it a self-preset of the need type."""
+    toml = DROPDOWN_TYPES.format(**modes) + "\n" + preset
+    app = _build(make_app, tmp_path, toml, page)
+    found = [
+        code
+        for w in build_warnings(app)
+        for code in re.findall(r"\[ub_directives\.([a-z_]+)\]", w)
+    ]
+    assert found == codes, build_warnings(app)
+    assert {k: v["status"] for k, v in _needs(app).items()} == needs
+    if doctree is not None:
+        assert doctree in app.env.get_doctree("index").pformat()
+
+
+@pytest.mark.parametrize(
+    ("preset", "page", "expected"),
+    [
+        pytest.param(
+            '[parse.directive_presets."need:req"]\nbase = "need:req"\n'
+            'options = { status = "zz" }\n',
+            ".. need:req:: A\n   :id: R_001\n",
+            "zz",
+            id="need-req",
+        ),
+        pytest.param(
+            '[parse.directive_presets."py:function"]\nbase = "py:function"\n'
+            'options = { module = "zzmod" }\n',
+            ".. py:function:: f(x)\n",
+            "zzmod",
+            id="py-function",
+        ),
+    ],
+)
+def test_a_self_preset_of_a_domain_directive_applies(
+    make_app: Callable[..., SphinxTestApp],
+    tmp_path: Path,
+    preset: str,
+    page: str,
+    expected: str,
+) -> None:
+    """§3.2.3: a self-preset of a domain's directive (``need:req``, ``py:function``)
+    gives it project-wide defaults, as a self-preset of any directive does. The domain's
+    instance already serves the directive when the presets are registered, so the preset
+    must reach it there, not only Sphinx's registry of domain directives."""
+    app = _build(make_app, tmp_path, QUALIFIED_TYPES + "\n" + preset, page)
+    assert build_warnings(app) == []
+    if expected == "zz":
+        assert _needs(app)["R_001"]["status"] == "zz"
+    else:
+        assert expected in app.env.get_doctree("index").pformat()

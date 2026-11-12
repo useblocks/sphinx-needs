@@ -154,7 +154,13 @@ def add_need_type(
 
     Call it from a ``config-inited`` handler at a priority above 12, or later, as
     :func:`get_need_types` reads it; an earlier call is narrowed by the project's
-    entries all the same. Unlike a configured entry, the type is not validated.
+    entries all the same. Unlike a configured entry, the type is not validated, but for
+    its directive, which must not have a ``:``: every need type is also written
+    ``.. need:<directive>::``.
+
+    The bare directive is the need's as the type's ``directive_name`` in the project's
+    entry naming it (else :ref:`needs_directive_name`) says, decided at this call
+    against the directives registered by then.
 
     .. versionchanged:: 9.2.0
 
@@ -178,6 +184,11 @@ def add_need_type(
     """
     from sphinx_needs.needs import _normalise_need_types, _register_need_directive
 
+    if ":" in directive:
+        raise NeedsApiConfigException(
+            f"{directive!r} has a ':', which a need type's directive cannot have (its "
+            "needs are written '.. need:<directive>::' too)"
+        )
     configured = NeedsSphinxConfig(app.config)._types
     named = _NEEDS_CONFIG.type_entries
     if named is None and isinstance(configured, list | Mapping):

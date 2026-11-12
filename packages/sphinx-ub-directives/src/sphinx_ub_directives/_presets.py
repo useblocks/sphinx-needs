@@ -16,7 +16,7 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from decimal import Decimal
 from importlib import import_module
-from typing import Any, cast
+from typing import Any, Final, cast
 
 from docutils.parsers.rst import Directive, directives
 from sphinx.application import Sphinx
@@ -114,6 +114,10 @@ def lookup(app: Sphinx, name: str) -> tuple[type[Directive], str | None] | None:
     return (found, None) if found is not None else None
 
 
+#: The qualifier of a need type's directive in sphinx-needs' ``need`` domain.
+NEED_QUALIFIER: Final = "need:"
+
+
 def need_types(app: Sphinx) -> list[str]:
     """The need types' directive names, from sphinx-needs' public API (empty when it is
     not loaded)."""
@@ -200,13 +204,16 @@ class Resolver:
 
     def base_of(self, name: str, base: str) -> Base | str:
         """The base an entry names, or why it names none."""
-        exact = [t for t in self.types if t == base]
+        # a need type is also written ``need:<type>`` (sphinx-needs' ``need`` domain)
+        qualified = base.lower().startswith(NEED_QUALIFIER)
+        typed = base[len(NEED_QUALIFIER) :] if qualified else base
+        exact = [t for t in self.types if t == typed]
         if exact and exact[0] != exact[0].lower():
             return (
-                f"the need type {base!r} is spelled with upper-case letters, which a "
+                f"the need type {typed!r} is spelled with upper-case letters, which a "
                 "Sphinx build cannot use as a directive, so it is no preset base"
             )
-        lowered = [t for t in self.types if t == base.lower()]
+        lowered = [t for t in self.types if t == typed.lower()]
         if lowered:
             if _resolver() is None:
                 return (
@@ -214,8 +221,37 @@ class Resolver:
                     "9.2 or later"
                 )
             cls = _lookup_docutils(lowered[0])
+            # the need directive sphinx-needs' ``need`` domain serves for the type (none
+            # from a sphinx-needs that has no such domain)
+            in_domain = lookup(self.app, f"{NEED_QUALIFIER}{lowered[0]}")
+            if in_domain is not None and not qualified and name.lower() == base.lower():
+                # a self-preset gives the directive its name resolves to defaults
+                # (§3.2.3): where the bare name is not the need's (directive_name
+                # "yield" or "qualified"), that is the other directive, or none
+                bare = lookup(self.app, lowered[0])
+                if bare is None:
+                    return (
+                        f"the bare directive {lowered[0]!r} is not the need type's (its "
+                        "directive_name), and no other directive has the name; a "
+                        "preset of the need type names the base "
+                        f"'{NEED_QUALIFIER}{lowered[0]}'"
+                    )
+                if not issubclass(in_domain[0], bare[0]):
+                    # another directive (a domain's adapter is never the need's base)
+                    return Base(lowered[0], bare[0], domain=bare[1])
+            if in_domain is not None and (
+                qualified or cls is None or not issubclass(in_domain[0], cls)
+            ):
+                # qualified, or the bare name is not the need's (the type's
+                # directive_name is "yield" or "qualified"): the need is the domain's
+                cls = in_domain[0]
             if cls is not None:
-                return Base(lowered[0], cls, need_type=True)
+                return Base(
+                    lowered[0],
+                    cls,
+                    need_type=True,
+                    domain=NEED_QUALIFIER[:-1] if qualified else None,
+                )
         if base.lower() in self.template_names:
             return f"{base!r} is a template directive, which is no preset base"
         found = lookup(self.app, base)
@@ -227,9 +263,11 @@ class Resolver:
         return Base(base.lower(), cls, domain=domain)
 
     def taken(self, name: str) -> bool:
-        """Whether ``name`` is already a directive of the project."""
+        """Whether ``name`` is already a directive of the project: a need type's, bare or
+        ``need:``-qualified, or any directive Sphinx resolves."""
         lowered = name.lower()
-        return any(t.lower() == lowered for t in self.types) or (
+        typed = lowered.removeprefix(NEED_QUALIFIER)
+        return any(t.lower() == typed for t in self.types) or (
             lookup(self.app, lowered) is not None
         )
 
@@ -601,12 +639,31 @@ def register(app: Sphinx) -> None:
     _REGISTERED[:] = []
     for preset, cls in classes:
         if preset.self_preset and preset.base.domain is not None:
-            app.add_directive_to_domain(
-                preset.base.domain, preset.base.name, cls, override=True
-            )
+            domain = preset.base.domain
+            local = preset.base.name.removeprefix(f"{domain}:")
+            app.add_directive_to_domain(domain, local, cls, override=True)
+            # the build's domain was made from the registry before the presets were
+            # registered, so it is given the preset as Sphinx gives a new one the
+            # registry's directives; its cache of what it served goes with it
+            live = app.env.get_domain(domain)
+            _DOMAIN_REGISTERED.append((live, local, live.directives.get(local), cls))
+            _serve(live, local, cls)
         else:
             app.add_directive(preset.name.lower(), cls, override=preset.self_preset)
             _REGISTERED.append((preset.name.lower(), cls, source, preset.self_preset))
+
+
+def _serve(domain: Any, name: str, cls: type[Directive] | None) -> None:
+    """Make the build's ``domain`` serve ``cls`` as its directive ``name`` (none when
+    ``cls`` is ``None``), dropping what it cached for the name."""
+    if cls is None:
+        domain.directives.pop(name, None)
+    else:
+        domain.directives[name] = cls
+    # Sphinx's per-domain cache of the adapter it served for the name
+    cache = getattr(domain, "_directive_cache", None)
+    if isinstance(cache, dict):
+        cache.pop(name, None)
 
 
 def _unregister_previous() -> None:
@@ -623,7 +680,16 @@ def _unregister_previous() -> None:
             registry[name] = cls.__mro__[1]
         else:
             del registry[name]
+    # a domain's self-preset: the build's domain serves what it served before
+    for domain, name, original, cls in reversed(_DOMAIN_REGISTERED):
+        if domain.directives.get(name) is cls:
+            _serve(domain, name, original)
+    _DOMAIN_REGISTERED[:] = []
 
+
+#: The self-presets of a domain's directive this build: the build's domain, the
+#: directive's name in it, what the domain served before, and the preset.
+_DOMAIN_REGISTERED: list[tuple[Any, str, type[Directive] | None, type[Directive]]] = []
 
 #: The presets registered in the docutils registry this build, each with its source and
 #: whether it is a self-preset (§3.4.7).
