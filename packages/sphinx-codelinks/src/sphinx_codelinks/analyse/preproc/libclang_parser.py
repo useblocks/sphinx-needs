@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -65,14 +66,23 @@ def parse_translation_unit(file_path: Path, args: list[str]) -> Any:
 
 
 # @Drop comments inside inactive preprocessor branches, IMPL_PREPROC_2, impl, [FE_PREPROC]
-def extract_active_comments(file_path: Path, args: list[str]) -> list[LibclangComment]:
+def extract_active_comments(
+    file_path: Path,
+    args: list[str],
+    on_parse: Callable[[Any], None] | None = None,
+) -> list[LibclangComment]:
     """Return one LibclangComment per ACTIVE comment token in ``file_path``.
 
     Comments inside the ranges the file's own pass through the preprocessor
     skipped (its inactive branches) are dropped; what a later pass through the
     same file skips is not (see :func:`_main_file_skipped`).
+
+    :param on_parse: Called with the translation unit once it is parsed (to read
+        its diagnostics).
     """
     tu = parse_translation_unit(file_path, args)
+    if on_parse is not None:
+        on_parse(tu)
     skipped = _main_file_skipped(loader.get_all_skipped_ranges(tu))
     return _active_comments(tu, file_path, skipped)
 

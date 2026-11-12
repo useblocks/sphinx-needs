@@ -50,6 +50,7 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     purge_doc,
     purged_documents,
     purged_targets,
+    reset_builtin_header_warnings,
     scope_store,
     source_pages_store,
 )
@@ -155,8 +156,10 @@ def setup(app: Sphinx) -> dict[str, Any]:
         # a compilation database as the build does -- each entry's directory is the
         # working directory, and a source with no entry is read through an entry that
         # includes it -- so the records an environment at 4 holds for such sources were
-        # extracted without them
-        "env_version": 5,
+        # extracted without them; 6: the libclang engine passes clang's builtin headers,
+        # so an #if on what they define (UINT32_MAX, __has_include(<stdatomic.h>)) takes
+        # another arm than in the records an environment at 5 holds
+        "env_version": 6,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
@@ -462,6 +465,8 @@ def prepare_env(
     config_only_refs_store(env)
     # a need of a document still to be read is stale: the directives may replace it
     note_documents_to_read(env, docnames)
+    # each builtin-header warning once per build, across every analysis it makes
+    reset_builtin_header_warnings(env)
 
     # Set time measurement flag
     if src_trace_sphinx_config.debug_measurement:

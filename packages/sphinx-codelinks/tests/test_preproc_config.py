@@ -121,3 +121,41 @@ def test_anchor_preproc_paths_resolves_relative_against_base(tmp_path):
     assert out.includes[0] == (base / "include").resolve()
     assert out.includes[1] == abs_inc.resolve()  # already absolute -> unchanged
     assert out.defines == ["X=1"]  # non-path fields untouched
+
+
+def test_preprocessor_resource_dir_is_read():
+    """``resource_dir`` names the clang resource directory every parse is given; it
+    is unset by default (the headers that ship with the package are used)."""
+    cfg = convert_analyse_config(
+        {"preprocessor": {"resource_dir": "/opt/clang/lib/clang/18"}}
+    )
+    assert cfg.preprocessor is not None
+    assert cfg.preprocessor.resource_dir == Path("/opt/clang/lib/clang/18")
+    default = convert_analyse_config({"preprocessor": {}})
+    assert default.preprocessor is not None
+    assert default.preprocessor.resource_dir is None
+
+
+def test_preprocessor_non_string_resource_dir_is_rejected():
+    with pytest.raises(TypeError, match="resource_dir must be a string"):
+        convert_analyse_config({"preprocessor": {"resource_dir": ["/opt/clang"]}})
+
+
+def test_anchor_preproc_paths_resolves_resource_dir_against_base(tmp_path):
+    """A relative ``resource_dir`` resolves against the configuration file's
+    directory, like ``compile_commands`` and ``includes``."""
+    from sphinx_codelinks.config import anchor_preproc_paths
+
+    base = tmp_path / "cfgdir"
+    out = anchor_preproc_paths(PreprocessorConfig(resource_dir=Path("clang")), base)
+    assert out.resource_dir == (base / "clang").resolve()
+    unset = anchor_preproc_paths(PreprocessorConfig(), base)
+    assert unset.resource_dir is None
+
+
+def test_an_empty_resource_dir_is_unset():
+    """``resource_dir = ""`` means unset, as an empty string does for every other
+    setting: the shipped headers are passed, not a directory named ``""``."""
+    cfg = convert_analyse_config({"preprocessor": {"resource_dir": ""}})
+    assert cfg.preprocessor is not None
+    assert cfg.preprocessor.resource_dir is None

@@ -1,6 +1,6 @@
 import json
 
-from sphinx_codelinks.analyse.analyse import SourceAnalyse
+from sphinx_codelinks.analyse.analyse import BuiltinHeaderWarnings, SourceAnalyse
 from sphinx_codelinks.config import CodeLinksConfig, CodeLinksProjectConfigType
 from sphinx_codelinks.logger import get_logger
 
@@ -16,8 +16,14 @@ class AnalyseProjects:
         self.outdir = codelink_config.outdir
 
     def run(self) -> None:
+        # one per run: each builtin-header warning is made once across the projects
+        warnings = BuiltinHeaderWarnings()
         for project, config in self.projects_configs.items():
-            src_analyse = SourceAnalyse(config["analyse_config"], name=project)
+            src_analyse = SourceAnalyse(
+                config["analyse_config"],
+                name=project,
+                builtin_header_warnings=warnings,
+            )
             src_analyse.run()
             self.projects_analyse[project] = src_analyse
 

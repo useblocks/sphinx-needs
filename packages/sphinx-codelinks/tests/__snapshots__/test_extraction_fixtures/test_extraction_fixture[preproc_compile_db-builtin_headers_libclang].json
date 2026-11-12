@@ -1,0 +1,106 @@
+[
+  {
+    "filepath": "case.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 4
+      },
+      "end": {
+        "row": 3,
+        "column": 39
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Always",
+      "id": "IMPL_BH_ALWAYS",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 4
+      },
+      "end": {
+        "row": 7,
+        "column": 43
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Wide counter",
+      "id": "IMPL_BH_WIDE",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 15,
+        "column": 4
+      },
+      "end": {
+        "row": 15,
+        "column": 47
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Atomic counter",
+      "id": "IMPL_BH_ATOMIC",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 23,
+        "column": 4
+      },
+      "end": {
+        "row": 23,
+        "column": 43
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "C bool flags",
+      "id": "IMPL_BH_BOOL",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

@@ -7,7 +7,13 @@ maintainers = [
   { name = "Marco Heinemann", email = "marco.heinemann@useblocks.com" },
   { name = "Jui-Wen Chen", email = "jui-wen.chen@useblocks.com" },
 ]
-license = { file = "LICENSE" }
+# The package is MIT; the clang builtin headers it ships for the libclang engine
+# (src/sphinx_codelinks/analyse/preproc/clang_resource/) are LLVM's, under their licence.
+license = "MIT AND Apache-2.0 WITH LLVM-exception"
+license-files = [
+  "LICENSE",
+  "src/sphinx_codelinks/analyse/preproc/clang_resource/LICENSE.TXT",
+]
 readme = "README.md"
 # EQUAL to the sphinx-needs workspace root's `requires-python`, deliberately: on import
 # `tools/src/sn_tools/check_workspace.py` check (3) compares the two strings for equality,
@@ -85,7 +91,7 @@ Issues = "https://github.com/useblocks/sphinx-needs/issues"
 Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphinx-codelinks/docs/changelog.rst"
 
 [build-system]
-requires = ["flit_core >=3.4,<4"]
+requires = ["flit_core >=4,<5"]
 build-backend = "flit_core.buildapi"
 
 # Deliberately NO `[tool.flit.sdist]`: this distribution carries nothing outside the module

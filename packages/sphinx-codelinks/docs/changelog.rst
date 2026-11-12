@@ -76,9 +76,31 @@ New and Improved
   1.19.0's, ``@satisfies`` and ``@verifies`` included, and a ``--!!`` comment is a plain
   comment (:need:`FE_VHDL`).
 
+- ✨ ``[analyse.preprocessor] resource_dir`` names the clang resource directory the
+  libclang engine passes to every parse (:ref:`preprocessor_builtin_headers`), such as the
+  output of ``clang -print-resource-dir``: for code that includes compiler intrinsics
+  (``immintrin.h``, ``arm_neon.h``), which **Sphinx-CodeLinks** does not ship. A relative
+  path resolves against the configuration file. It is passed even when a
+  ``compile_commands.json`` entry chooses its own builtin headers.
+
 Fixes
 .....
 
+- 🐛 The libclang engine passes clang's builtin headers to every parse
+  (:ref:`preprocessor_builtin_headers`). The ``libclang`` wheel carries none, so
+  ``stddef.h``, ``stdarg.h``, ``stdbool.h``, ``float.h``, ``stdatomic.h``, the compiler's
+  half of ``limits.h`` and, on a bare-metal target, ``stdint.h`` were never found, without
+  a word, and an ``#if`` on what they define (``UINT32_MAX``, ``INT_MAX``,
+  ``__has_include(<stdatomic.h>)``, ``bool``) took the branch the compiler does not take,
+  so a marker in it was dropped and one in the other kept. **Sphinx-CodeLinks** now ships
+  clang 18.1.1's 30 portable builtin headers (105 KB, Apache-2.0 WITH LLVM-exception: the
+  package's licence expression is now ``MIT AND Apache-2.0 WITH LLVM-exception``) and
+  passes them as ``-resource-dir``, unless the new ``resource_dir`` setting names another
+  directory or a ``compile_commands.json`` entry chooses its own (``-resource-dir``,
+  ``-nostdinc``, ``-nobuiltininc``). A builtin header a parse still cannot find, such as
+  an intrinsics header, is warned about once per file and build
+  (``codelinks.builtin_header``, which fails a ``-W`` build). Markers in such arms move,
+  so an environment of an earlier version is read again once (``env_version`` 6).
 - 🐛 The libclang engine reads a C/C++ source that a unity (jumbo) build compiles by
   ``#include``\ -ing it, which has no ``compile_commands.json`` entry of its own, through
   the entry that includes it (:ref:`preprocessor_compile_db`). Such a source was
