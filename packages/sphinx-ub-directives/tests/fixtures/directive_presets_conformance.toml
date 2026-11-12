@@ -28,9 +28,10 @@
 #     `sphinx.ext.autodoc` and `sphinx_ub_directives`, and reads the needs configuration from the same `ubproject.toml`
 #     (`needs_from_toml`); nothing else. ubCode reads the file as a project
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
-#     the default ones (`req`, `spec`, `impl`, `test`), but in a case about a need type that
-#     shares its name with another directive, which declares that one type (lower case) in
-#     its `config`; so a case never carries a need type
+#     the default ones (`req`, `spec`, `impl`, `test`), except in a case about a need type
+#     sharing its name with another directive, which declares that one type (lower case) in
+#     its `config` and then has ONLY that type (a declared type replaces the defaults);
+#     a case never carries a need type
 #     spelled with upper-case letters (the contract refuses one as a preset base, and a Sphinx
 #     build cannot use one at all)
 #   - a case never writes an RST option name with capitals, and never writes an option
@@ -2314,7 +2315,7 @@ type = "req"
 
 [[case]]
 name = "self-preset-of-a-bare-name-another-directive-has"
-why = "a self-preset is of the directive its name resolves to: with directive_name = yield, the bare dropdown is sphinx-design's, so the self-preset is, and the bare name makes no need"
+why = "a self-preset is of the directive its name resolves to: with directive_name = yield, the bare dropdown is sphinx-design's, so the self-preset applies to sphinx-design's dropdown (its class-container is accepted), and need:dropdown is the need"
 config = '''
 [needs.types.dropdown]
 title = "Dropdown"
