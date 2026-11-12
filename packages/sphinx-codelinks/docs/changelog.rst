@@ -54,16 +54,27 @@ New and Improved
   ``{``: ``# @(Draft) Login, ID_1, impl`` is dropped without a warning. The grammar cannot read an attribute before a class or an enum
   (``[DscResource()]``), so a marker above one is attached to no entity, and a UTF-16 file
   is skipped as a binary one (:need:`FE_POWERSHELL`).
-- ✨ VHDL comment type: ``comment_type = "vhdl"`` analyses ``.vhd`` and ``.vhdl`` files,
-  their ``--`` and VHDL-2008 ``/* */`` comments
-  (`#2077 <https://github.com/useblocks/sphinx-needs/pull/2077>`__).
-
-  A marker is associated with the design element next to it -- the port, signal,
-  instantiation, process or subprogram it stands above or trails, and otherwise the one
-  enclosing it -- never with one further down the file. Multi-line needs are read from
-  runs of ``--`` and of ``--!`` comments. A Doxygen command line in a ``--!`` comment
-  (``--! @brief Counter with enable, reset and load``) is a ``doxygen_tag`` warning
-  rather than a need with the id ``reset and load``.
+- ✨ VHDL: ``comment_type = "vhdl"`` discovers ``.vhd`` and ``.vhdl`` files and reads
+  markers from their ``--`` and VHDL-2008 ``/* */`` comments, parsed with the
+  ``tree-sitter-vhdl`` grammar, a new dependency (``>=1.4.0``). A marker is attached to the
+  design element next to it -- the entity, architecture, package, subprogram, type,
+  component, process, block, generate, instance or concurrent statement it stands above or
+  trails, and the port, generic, signal, constant, variable, file or alias too: unlike in
+  other languages, VHDL's data elements are entities, since a hardware design traces its
+  ports and signals -- and otherwise to the one enclosing it, by the rules every language
+  follows (:ref:`attachment`): a marker in the licence banner before the first design
+  unit, a blank line after it, is the file's, and so is a ``--!`` comment that holds
+  ``@file``. Each element is named as VHDL's expanded names are written, an architecture
+  under its entity (``counter.rtl.p_main``), with the existing kinds where one fits: an
+  entity is a ``module``, an architecture an ``impl``, a package a ``namespace``, a
+  component an ``interface``, a function or procedure a ``function``, a type an ``enum``,
+  ``record``, ``class`` or ``type``; a process, a statement or a data element has no kind
+  (``entity_kind`` ``null``), its name's last part a ``scope``. Multi-line needs are read
+  from runs of ``--``, ``---`` and ``--!`` comments. A Doxygen command line in a ``--!``
+  comment (``--! @brief Counter with enable, reset and load``) is a ``doxygen_tag``
+  warning rather than a need with the id ``reset and load``; the command list is Doxygen
+  1.19.0's, ``@satisfies`` and ``@verifies`` included, and a ``--!!`` comment is a plain
+  comment (:need:`FE_VHDL`).
 
 Fixes
 .....
