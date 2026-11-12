@@ -6,8 +6,9 @@ because the ``libclang`` wheel carries none (see the package's
 ``analyse/preproc/builtin_headers.py``). The 30 portable ones are committed under
 ``packages/sphinx-codelinks/src/sphinx_codelinks/analyse/preproc/clang_resource/``:
 ``include/*.h``, the LLVM licence as ``LICENSE.TXT``, ``names.txt`` -- the name of every
-header clang installs in its resource ``include`` directory, one per line, which the
-engine uses to tell a missing builtin header from any other missing file -- and
+header a default full install of clang puts in its resource ``include`` directory (clang's
+own and compiler-rt's), one per line, which the engine uses to tell a missing builtin
+header from any other missing file -- and
 ``manifest.toml``, which names the LLVM tag all of them were taken from and the sha256 of
 every file. This script has the two jobs that arrangement leaves:
 
@@ -18,9 +19,10 @@ every file. This script has the two jobs that arrangement leaves:
 * **the download**, for a bump with the ``libclang`` pin: run it with ``--tag`` naming the
   new LLVM release tag (``llvmorg-<version>``); it fetches the same header names from
   ``clang/lib/Headers/`` and ``clang/LICENSE.TXT`` at that tag on GitHub, derives
-  ``names.txt`` from that tag's ``clang/lib/Headers/CMakeLists.txt`` (its ``*_files``
-  lists and the headers ``clang_generate_header`` writes: what the build installs), and
-  rewrites the files and the manifest. Review the diff, then run the codelinks suite.
+  ``names.txt`` from that tag's ``clang/lib/Headers/CMakeLists.txt`` and
+  ``compiler-rt/include/CMakeLists.txt`` (the ``install(FILES ...)`` rules a default
+  build runs: every ``if`` taken, as its options default, and none ``EXCLUDE_FROM_ALL``),
+  and rewrites the files and the manifest. Review the diff, then run the codelinks suite.
 
 Stdlib only, run by path::
 
@@ -58,8 +60,28 @@ LICENSE = "LICENSE.TXT"
 NAMES = "names.txt"
 """Every header name clang installs in its resource ``include`` directory."""
 
-_FILE_LIST = re.compile(r"set\(\s*\w+_files\b(?P<body>.*?)\)", re.S)
-_GENERATED = re.compile(r"clang_generate_header\(\s*\S+\s+\S+\s+(?P<name>[^\s)]+)\s*\)")
+#: The CMake lists whose install rules fill the resource ``include`` directory.
+CMAKE_LISTS = (
+    "clang/lib/Headers/CMakeLists.txt",
+    "compiler-rt/include/CMakeLists.txt",
+)
+
+_COMMAND = re.compile(r"(?P<command>\w+)\s*\((?P<args>[^()]*)\)")
+_FUNCTION = re.compile(r"\bfunction\s*\(.*?\bendfunction\s*\([^()]*\)", re.S)
+_VARIABLE = re.compile(r"\$\{(?P<name>\w+)\}")
+#: The keywords of ``install(FILES <file>... <keyword> ...)`` that end the file list.
+_INSTALL_KEYWORDS = frozenset(
+    {
+        "DESTINATION",
+        "TYPE",
+        "PERMISSIONS",
+        "CONFIGURATIONS",
+        "COMPONENT",
+        "RENAME",
+        "OPTIONAL",
+        "EXCLUDE_FROM_ALL",
+    }
+)
 
 
 def default_root() -> Path:
@@ -101,19 +123,54 @@ def render_manifest(
     return "\n".join(lines)
 
 
-def installed_names(cmake: str) -> list[str]:
-    """The header names a ``clang/lib/Headers/CMakeLists.txt`` installs: every file of
-    its ``set(<x>_files ...)`` lists and every header ``clang_generate_header`` writes,
-    relative to the resource ``include`` directory, sorted."""
-    text = re.sub(r"#[^\n]*", "", cmake)
-    names = {
-        token
-        for match in _FILE_LIST.finditer(text)
-        for token in match["body"].split()
-        if not token.startswith("$") and ("." in token or "/" in token)
-    }
-    names.update(match["name"] for match in _GENERATED.finditer(text))
-    return sorted(names)
+def installed_names(cmake: str) -> set[str]:
+    """The header names one ``CMakeLists.txt`` installs in the resource ``include``
+    directory, relative to it, by its ``install(FILES ... DESTINATION ...)`` rules.
+
+    A small reading of CMake, enough for these two files: ``set`` and
+    ``list(APPEND ...)`` define lists, ``clang_generate_header(<opt> <td> <header>)``
+    adds a generated header, every ``if`` is taken (each option these files test
+    defaults to the branch a full install takes), function bodies are skipped, and a
+    rule that ends up ``EXCLUDE_FROM_ALL`` installs nothing by default. A file lands in
+    its rule's destination below the include directory, by its base name.
+    """
+    text = _FUNCTION.sub("", re.sub(r"#[^\n]*", "", cmake))
+    variables: dict[str, list[str]] = {}
+
+    def expand(tokens: list[str]) -> list[str]:
+        out: list[str] = []
+        for token in tokens:
+            token = token.strip('"')
+            whole = _VARIABLE.fullmatch(token)
+            if whole is not None:
+                out.extend(expand(variables.get(whole["name"], [])))
+            else:
+                out.append(token)
+        return out
+
+    names: set[str] = set()
+    for match in _COMMAND.finditer(text):
+        command, args = match["command"].lower(), match["args"].split()
+        if command == "set" and args:
+            variables[args[0]] = [a for a in args[1:] if a != "PARENT_SCOPE"]
+        elif command == "list" and args[:1] == ["APPEND"] and len(args) > 1:
+            variables.setdefault(args[1], []).extend(args[2:])
+        elif command == "clang_generate_header" and len(args) == 3:
+            variables.setdefault("generated_files", []).append(args[2])
+        elif command == "install" and args[:1] == ["FILES"] and "DESTINATION" in args:
+            end = next(
+                (i for i, a in enumerate(args) if i and a in _INSTALL_KEYWORDS),
+                len(args),
+            )
+            if "EXCLUDE_FROM_ALL" in expand(args[end:]):
+                continue
+            # below the include directory: what follows ``${<include dir>}``
+            destination = args[args.index("DESTINATION") + 1]
+            subdirectory = destination.partition("}")[2].strip("/")
+            for file in expand(args[1:end]):
+                base = file.rsplit("/", 1)[-1]
+                names.add(f"{subdirectory}/{base}" if subdirectory else base)
+    return names
 
 
 def render_names(names: list[str]) -> str:
@@ -163,8 +220,12 @@ def download(directory: Path, tag: str) -> None:
     at ``tag``; rewrite all."""
     *_old, old_headers = read_manifest(directory)
     license_bytes = fetch(SOURCE.format(tag=tag, path="clang/LICENSE.TXT"))
-    cmake = fetch(SOURCE.format(tag=tag, path="clang/lib/Headers/CMakeLists.txt"))
-    names = render_names(installed_names(cmake.decode("utf-8"))).encode("utf-8")
+    installed: set[str] = set()
+    for lists in CMAKE_LISTS:
+        installed |= installed_names(
+            fetch(SOURCE.format(tag=tag, path=lists)).decode("utf-8")
+        )
+    names = render_names(sorted(installed)).encode("utf-8")
     contents = {
         name: fetch(SOURCE.format(tag=tag, path=f"clang/lib/Headers/{name}"))
         for name in sorted(old_headers)

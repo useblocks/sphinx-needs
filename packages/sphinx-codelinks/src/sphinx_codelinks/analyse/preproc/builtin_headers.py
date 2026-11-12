@@ -20,15 +20,20 @@ resource directory, the first that applies:
 4. none, when those are not on the filesystem (the package is imported from an archive,
    or the files were removed): the analysis warns once and parses without them.
 
+``chooses_builtin_headers`` reads a compile command as clang 18's driver does.
+
 A builtin header that is still missing after that (an intrinsics header such as
 ``immintrin.h``, which is not shipped) is warned about once per parsed file, naming it
-and the setting that fixes it. A builtin header is any name clang 18 installs in its
-resource ``include`` directory (``clang_resource/names.txt``).
+and the setting that fixes it. A builtin header is any name a default full install of
+clang 18 (and its compiler-rt) puts in its resource ``include`` directory
+(``clang_resource/names.txt``).
 """
 
 from __future__ import annotations
 
+import platform
 import re
+import sys
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -70,8 +75,8 @@ BUILTIN_HEADERS: frozenset[str] = frozenset(
     }
 )
 
-#: Every header name clang installs in its resource ``include`` directory, one per line,
-#: relative to it (``immintrin.h``, ``cuda_wrappers/new``).
+#: Every header name a default full clang install puts in its resource ``include``
+#: directory, one per line, relative to it (``immintrin.h``, ``sanitizer/asan_interface.h``).
 _NAMES_FILE: Path = Path(__file__).parent / "clang_resource" / "names.txt"
 
 #: The directory holding the shipped headers under ``include/``.
@@ -83,20 +88,36 @@ _CHOOSING_FLAGS = frozenset(
     {"-resource-dir", "-nostdinc", "--no-standard-includes", "-nobuiltininc"}
 )
 
-#: Driver arguments whose next argument is handed to another tool, not read by the
-#: driver: ``-Xclang -nobuiltininc`` reaches the compiler after the driver has already
-#: added the builtin headers' directory, so it chooses nothing.
+#: The driver options (clang 18's ``Options.td``) that hand their next argument to another
+#: tool, so the driver does not read it: ``-Xclang -nobuiltininc`` reaches the compiler
+#: after the driver has already added the builtin headers' directory, and chooses
+#: nothing. ``-Xarch_device`` is the offloading device's, never the host compile's.
 _PASS_THROUGH = frozenset(
     {
-        "-Xclang",
-        "-Xpreprocessor",
+        "-Xanalyzer",
+        "-Xarch_device",
         "-Xassembler",
-        "-Xlinker",
-        "-Xopenmp-target",
+        "-Xclang",
         "-Xcuda-fatbinary",
         "-Xcuda-ptxas",
+        "-Xlinker",
+        "-Xopenmp-target",
+        "-Xpreprocessor",
+        "-z",
     }
 )
+#: The same, joined to a target: ``-Xopenmp-target=<triple> <arg>``,
+#: ``-Xoffload-linker[-<triple>] <arg>``.
+_PASS_THROUGH_PREFIXES = ("-Xopenmp-target=", "-Xoffload-linker")
+
+#: Of :data:`_CHOOSING_FLAGS`, those the driver takes through ``-Xarch_``: it refuses
+#: ``-resource-dir`` there (a driver-only option, and one with a value).
+_XARCH_CHOOSING_FLAGS = frozenset(
+    {"-nostdinc", "--no-standard-includes", "-nobuiltininc"}
+)
+
+#: The operating systems of a Mach-O target, whose driver reads ``-Xarch_<arch>``.
+_MACHO_SYSTEMS = ("darwin", "macos", "ios", "tvos", "watchos", "xros", "driverkit")
 
 _NOT_FOUND = re.compile(r"^'(?P<name>[^']+)' file not found$")
 
@@ -110,20 +131,71 @@ def bundled_resource_dir() -> Path | None:
     return None
 
 
+def _xarch_reads(args: list[str]) -> frozenset[str]:
+    """The ``<arch>`` names whose ``-Xarch_<arch> <arg>`` the driver reads for the
+    compile ``args`` describe.
+
+    Only a Mach-O (Apple) target reads them, and only for its own architecture, by its
+    Mach-O name (``arm64`` for ``aarch64``), or for an ``-arch``. Other targets leave
+    them unused. The target is the last ``--target=`` / ``-target``, else the host
+    libclang runs on. (``-Xflang`` is no clang driver option: the argument after it is
+    read.)
+    """
+    target = None
+    arches: list[str] = []
+    for index, arg in enumerate(args):
+        following = args[index + 1] if index + 1 < len(args) else None
+        if arg.startswith("--target="):
+            target = arg.removeprefix("--target=")
+        elif arg == "-target" and following is not None:
+            target = following
+        elif arg == "-arch" and following is not None:
+            arches.append(following)
+    if target is None:
+        macho = sys.platform == "darwin"
+        arch = platform.machine()
+    else:
+        parts = target.split("-")
+        arch = parts[0]
+        macho = (len(parts) > 1 and parts[1] == "apple") or any(
+            part.startswith(_MACHO_SYSTEMS) for part in parts[2:3]
+        )
+    if not macho:
+        return frozenset()
+    # the Mach-O name of the target's architecture (``arm64`` for ``aarch64``), as
+    # the driver names it
+    universal = {"aarch64": "arm64", "aarch64_32": "arm64_32"}.get(arch, arch)
+    return frozenset({universal, *arches})
+
+
 def chooses_builtin_headers(args: list[str]) -> bool:
-    """Whether ``args`` choose their builtin headers themselves, as driver arguments
-    (see :data:`_CHOOSING_FLAGS`; ``-resource-dir=<dir>`` too). An argument passed
-    through to another tool (:data:`_PASS_THROUGH`, ``-Xarch_<arch>``) is not one."""
-    passed_through = False
-    for arg in args:
-        if passed_through:
-            passed_through = False
+    """Whether ``args`` choose their builtin headers themselves, as the driver reads
+    them (see :data:`_CHOOSING_FLAGS`; ``-resource-dir=<dir>`` too).
+
+    An argument the driver hands to another tool (:data:`_PASS_THROUGH`) is not
+    read. One after ``-Xarch_host``, or after ``-Xarch_<arch>`` for the architecture
+    being compiled on a Mach-O target (:func:`_xarch_reads`), is, unless it is one the
+    driver refuses there.
+    """
+    reads: frozenset[str] | None = None
+    index = 0
+    while index < len(args):
+        arg = args[index]
+        value = args[index + 1] if index + 1 < len(args) else None
+        if arg in _PASS_THROUGH or arg.startswith(_PASS_THROUGH_PREFIXES):
+            index += 2
             continue
-        if arg in _PASS_THROUGH or arg.startswith("-Xarch_"):
-            passed_through = True
+        if arg.startswith("-Xarch_"):
+            if reads is None:
+                reads = _xarch_reads(args)
+            arch = arg.removeprefix("-Xarch_")
+            if (arch == "host" or arch in reads) and value in _XARCH_CHOOSING_FLAGS:
+                return True
+            index += 2
             continue
         if arg in _CHOOSING_FLAGS or arg.startswith("-resource-dir="):
             return True
+        index += 1
     return False
 
 
@@ -149,9 +221,9 @@ def resource_dir_args(
 
 @cache
 def builtin_header_names() -> frozenset[str]:
-    """Every header name clang installs in its resource ``include`` directory
-    (``clang_resource/names.txt``); the shipped ones alone when that file cannot be
-    read."""
+    """Every header name a default full clang install puts in its resource ``include``
+    directory (``clang_resource/names.txt``); the shipped ones alone when that file
+    cannot be read."""
     try:
         text = _NAMES_FILE.read_text(encoding="utf-8")
     except OSError:

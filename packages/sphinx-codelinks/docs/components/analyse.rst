@@ -1074,20 +1074,22 @@ Without them an ``#if`` on what they define (``UINT32_MAX``, ``INT_MAX``,
 take. Each parse is given the first of:
 
 1. the ``resource_dir`` of :ref:`analyse.preprocessor <preprocessor_config>`, when set;
-2. nothing, when its ``compile_commands.json`` entry already chooses, with a driver flag
-   (``-resource-dir``, ``-nostdinc`` or ``-nobuiltininc``; not one passed on with
-   ``-Xclang``, which the driver does not read);
+2. nothing, when its ``compile_commands.json`` entry already chooses, as the clang driver
+   reads it (``-resource-dir``, ``-nostdinc`` or ``-nobuiltininc``; also after
+   ``-Xarch_host``, or ``-Xarch_<arch>`` for the architecture of an Apple target, but not
+   after an option that hands it to another tool, such as ``-Xclang``);
 3. the headers that ship with **Sphinx-CodeLinks**, read where the package is installed;
 4. nothing, when those are not all on the filesystem (the package was imported from an
    archive, or some of the files were removed); a build, or a ``codelinks analyse`` run,
    then warns once.
 
 Compiler intrinsics (``immintrin.h``, ``arm_neon.h`` …) and clang's other builtin headers
-(``cpuid.h``, ``unwind.h`` …) are not shipped. If a parse still cannot find a header clang
-installs in its resource directory, **Sphinx-CodeLinks** warns once per file in a build or
+(``cpuid.h``, ``unwind.h``, compiler-rt's ``sanitizer/`` headers …) are not shipped. If a
+parse still cannot find a header a full clang install puts in its resource directory, **Sphinx-CodeLinks** warns once per file in a build or
 a ``codelinks analyse`` run, naming the header (``codelinks.builtin_header``, which fails a
 ``-W`` build), and continues: ``#if`` tests on what that header defines take their
-``#else`` branch. Under ``-j N`` each reading process warns once. To use your own clang's headers, set
+``#else`` branch. Under ``-j N`` Sphinx reads the documents in chunks, each in a process
+of its own, and each chunk warns once. To use your own clang's headers, set
 ``resource_dir`` to the output of ``clang -print-resource-dir``.
 
 The shipped headers are clang's own, under the Apache License v2.0 with LLVM Exceptions;

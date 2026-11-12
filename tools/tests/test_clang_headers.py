@@ -47,29 +47,81 @@ def test_a_changed_missing_or_extra_file_is_named(
     assert "LICENSE.TXT does not match the manifest" in err
 
 
-CMAKE = """\
+CLANG_CMAKE = """\
 # Headers shared by Arm and AArch64
 set(core_files
   float.h
   stddef.h # trailing comment
-  ${some_var}
   )
+set(hlsl_h hlsl.h)
 set(cuda_wrapper_files
   cuda_wrappers/new
 )
-clang_generate_header(-gen-arm-neon arm_neon.td arm_neon.h)
+set(files ${core_files})
+function(clang_generate_header td_option td_file out_file)
+  list(APPEND generated_files "${CMAKE_CURRENT_BINARY_DIR}/${out_file}")
+endfunction(clang_generate_header)
+set(generated_files)
+if(ARM IN_LIST LLVM_TARGETS_TO_BUILD)
+  clang_generate_header(-gen-arm-neon arm_neon.td arm_neon.h)
+endif()
+install(
+  FILES ${files} ${generated_files}
+  DESTINATION ${header_install_dir}
+  COMPONENT clang-resource-headers)
+install(
+  FILES ${cuda_wrapper_files}
+  DESTINATION ${header_install_dir}/cuda_wrappers
+  COMPONENT clang-resource-headers)
+install(
+  FILES ${core_files} unlisted.h
+  DESTINATION ${header_install_dir}
+  EXCLUDE_FROM_ALL
+  COMPONENT core-resource-headers)
+if(NOT CLANG_ENABLE_HLSL)
+  set(EXCLUDE_HLSL EXCLUDE_FROM_ALL)
+endif()
+install(
+  FILES ${hlsl_h}
+  DESTINATION ${header_install_dir}
+  ${EXCLUDE_HLSL}
+  COMPONENT hlsl-resource-headers)
+"""
+
+COMPILER_RT_CMAKE = """\
+if (COMPILER_RT_BUILD_XRAY)
+  set(XRAY_HEADERS
+    xray/xray_interface.h
+    )
+endif(COMPILER_RT_BUILD_XRAY)
+if (COMPILER_RT_BUILD_ORC)
+  set(ORC_HEADERS orc_rt/c_api.h)
+endif(COMPILER_RT_BUILD_ORC)
+install(FILES ${XRAY_HEADERS}
+  COMPONENT compiler-rt-headers
+  PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+  DESTINATION ${COMPILER_RT_INSTALL_INCLUDE_DIR}/xray)
+install(FILES ${ORC_HEADERS}
+  COMPONENT compiler-rt-headers
+  DESTINATION ${COMPILER_RT_INSTALL_INCLUDE_DIR}/orc)
 """
 
 
-def test_the_installed_names_are_read_from_the_cmake_lists() -> None:
-    """The ``*_files`` lists and the generated headers, without comments, words of
-    comments or variables."""
-    assert clang_headers.installed_names(CMAKE) == [
+def test_the_installed_names_follow_the_default_install_rules() -> None:
+    """What a default build installs: the rules' files (variables, generated headers
+    and branches taken), at their destination below the include directory, and not
+    a rule that is ``EXCLUDE_FROM_ALL``, directly or through a variable; a function's
+    body is no rule."""
+    assert clang_headers.installed_names(CLANG_CMAKE) == {
         "arm_neon.h",
         "cuda_wrappers/new",
         "float.h",
         "stddef.h",
-    ]
+    }
+    assert clang_headers.installed_names(COMPILER_RT_CMAKE) == {
+        "orc/c_api.h",
+        "xray/xray_interface.h",
+    }
 
 
 def test_a_changed_name_list_or_an_unlisted_header_is_named(
@@ -93,16 +145,16 @@ def test_a_download_rewrites_the_files_and_the_manifest(
     """A bump fetches the manifest's header names, the licence and the CMake lists at
     the new tag, and the result verifies."""
     fetched: list[str] = []
-    headers_cmake = (
-        "set(core_files\n"
-        + "\n".join(sorted(clang_headers.read_manifest(_directory(root))[3]))
-        + "\n  cpuid.h\n)\n"
-    )
+    shipped = " ".join(sorted(clang_headers.read_manifest(_directory(root))[3]))
+    clang_cmake = f"install(FILES {shipped} cpuid.h DESTINATION ${{dir}})\n"
+    compiler_rt_cmake = "install(FILES xray/x.h DESTINATION ${dir}/xray)\n"
 
     def fake_fetch(url: str) -> bytes:
         fetched.append(url)
-        if url.endswith("/CMakeLists.txt"):
-            return headers_cmake.encode()
+        if url.endswith("clang/lib/Headers/CMakeLists.txt"):
+            return clang_cmake.encode()
+        if url.endswith("compiler-rt/include/CMakeLists.txt"):
+            return compiler_rt_cmake.encode()
         return url.encode()
 
     monkeypatch.setattr(clang_headers, "fetch", fake_fetch)
@@ -127,4 +179,5 @@ def test_a_download_rewrites_the_files_and_the_manifest(
     )
     names = (_directory(root) / "names.txt").read_bytes()
     assert names_sha == hashlib.sha256(names).hexdigest()
-    assert len(names.split()) == 31
+    assert len(names.split()) == 32
+    assert b"xray/x.h\n" in names

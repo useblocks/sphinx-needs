@@ -331,8 +331,9 @@ def note_documents_to_read(env: BuildEnvironment, docnames: Iterable[str]) -> No
 
 #: what this build warned about clang's builtin headers, shared by every analysis it
 #: makes (the directives' and the config-only scan's), so each warning is made once per
-#: build -- once per reading process under ``-j N``, whose forked workers each start
-#: from the main process' copy. Reset at ``env-before-read-docs``; in memory only
+#: build -- once per reading chunk under ``-j N``: Sphinx forks a process per chunk of
+#: documents, each starting from the main process' copy. Reset at
+#: ``env-before-read-docs``; in memory only
 _BUILTIN_HEADER_WARNINGS: weakref.WeakKeyDictionary[
     BuildEnvironment, BuiltinHeaderWarnings
 ] = weakref.WeakKeyDictionary()

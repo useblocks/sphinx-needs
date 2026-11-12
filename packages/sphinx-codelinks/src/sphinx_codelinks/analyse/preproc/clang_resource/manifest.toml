@@ -3,7 +3,7 @@
 # the files against it. Each sha256 is of the file's bytes at `llvm_tag`.
 llvm_tag = "llvmorg-18.1.1"
 license_sha256 = "ebcd9bbf783a73d05c53ba4d586b8d5813dcdf3bbec50265860ccc885e606f47"
-names_sha256 = "0e55b9f404f8136113268066048a6e60c4667a2939ab335638fd2d34f2838933"
+names_sha256 = "4d0b8cc8b6b70e75ce52fca5d50c8361c2e099d8794204ad4fbc2fa4eeb23447"
 
 [headers]
 "__stdarg___gnuc_va_list.h" = "feca975bfdfb254d17458a8e3d51f8ad6d9bdc9fd6287727f0f8b2fb81fcb0b0"

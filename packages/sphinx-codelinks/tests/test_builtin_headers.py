@@ -106,7 +106,11 @@ def test_a_compile_command_that_chooses_its_builtin_headers_keeps_its_choice(
         pytest.param(["-Xclang", "-nobuiltininc"], id="Xclang-nobuiltininc"),
         pytest.param(["-Xclang", "-resource-dir"], id="Xclang-resource-dir"),
         pytest.param(["-Xpreprocessor", "-nostdinc"], id="Xpreprocessor-nostdinc"),
-        pytest.param(["-Xarch_x86_64", "-nostdinc"], id="Xarch-nostdinc"),
+        pytest.param(["-Xarch_device", "-nobuiltininc"], id="Xarch_device"),
+        pytest.param(
+            ["--target=x86_64-linux-gnu", "-Xarch_x86_64", "-nostdinc"],
+            id="Xarch-not-macho",
+        ),
     ],
 )
 def test_flags_that_keep_the_builtin_headers_choose_nothing(
@@ -119,6 +123,83 @@ def test_flags_that_keep_the_builtin_headers_choose_nothing(
     still given."""
     args, _ = builtin_headers.resource_dir_args(flags, None)
     assert args == [*flags, "-resource-dir", str(RESOURCE)]
+
+
+#: compile commands and whether the driver takes its builtin headers from them, as
+#: clang 18 reads them (each one checked against libclang below)
+DRIVER_CASES = [
+    pytest.param(["-nobuiltininc"], True, id="nobuiltininc"),
+    pytest.param(["-Xclang", "-nobuiltininc"], False, id="Xclang"),
+    pytest.param(["-Xanalyzer", "-nostdinc"], False, id="Xanalyzer"),
+    pytest.param(["-Xopenmp-target=nvptx64", "-nostdinc"], False, id="Xopenmp-target="),
+    pytest.param(["-Xopenmp-target", "-nostdinc"], False, id="Xopenmp-target"),
+    pytest.param(["-Xoffload-linker", "-nostdinc"], False, id="Xoffload-linker"),
+    pytest.param(["-Xcuda-ptxas", "-nostdinc"], False, id="Xcuda-ptxas"),
+    pytest.param(["-Xassembler", "-nostdinc"], False, id="Xassembler"),
+    pytest.param(["-Xlinker", "-nostdinc"], False, id="Xlinker"),
+    # no clang driver option: the driver reads the argument after it
+    pytest.param(["-Xflang", "-nostdinc"], True, id="Xflang-unknown"),
+    pytest.param(["-Xarch_host", "-nobuiltininc"], True, id="Xarch_host"),
+    pytest.param(["-Xarch_device", "-nobuiltininc"], False, id="Xarch_device"),
+    pytest.param(["-Xarch_x86_64", "-nobuiltininc"], False, id="Xarch-linux"),
+    pytest.param(
+        ["--target=arm64-apple-macos", "-Xarch_arm64", "-nostdinc"],
+        True,
+        id="Xarch-macho-own-arch",
+    ),
+    pytest.param(
+        ["--target=arm64-apple-macos", "-Xarch_x86_64", "-nostdinc"],
+        False,
+        id="Xarch-macho-other-arch",
+    ),
+    pytest.param(
+        ["--target=aarch64-apple-darwin", "-Xarch_arm64", "-nostdinc"],
+        True,
+        id="Xarch-macho-name",
+    ),
+    pytest.param(
+        ["--target=aarch64-apple-darwin", "-Xarch_aarch64", "-nostdinc"],
+        False,
+        id="Xarch-macho-not-the-macho-name",
+    ),
+    pytest.param(
+        [
+            "--target=x86_64-apple-macos",
+            "-arch",
+            "x86_64",
+            "-Xarch_x86_64",
+            "-nostdinc",
+        ],
+        True,
+        id="Xarch-macho-arch",
+    ),
+    pytest.param(
+        ["--target=arm64-apple-macos", "-Xarch_arm64", "-resource-dir=/nonexistent"],
+        False,
+        id="Xarch-refuses-resource-dir",
+    ),
+]
+
+
+@pytest.mark.parametrize(("flags", "chooses"), DRIVER_CASES)
+def test_the_driver_options_are_read_as_the_driver_reads_them(
+    builtin_headers, tmp_path: Path, flags: list[str], chooses: bool
+):
+    """Whether a compile command chooses its builtin headers is what libclang's
+    driver makes of it: given the shipped headers as well, it finds them exactly when
+    the command does not choose. The target is explicit (Linux unless the case names
+    an Apple one), so the case holds on every host."""
+    import clang.cindex as cx
+
+    args = ["-std=c11", "-nostdlibinc", "--target=x86_64-linux-gnu", *flags]
+    assert builtin_headers.chooses_builtin_headers(args) is chooses
+    source = tmp_path / "a.c"
+    source.write_text("#include <stdint.h>\n")
+    tu = cx.Index.create().parse(
+        str(source), args=[*args, "-resource-dir", str(RESOURCE)]
+    )
+    found = not any("file not found" in d.spelling for d in tu.diagnostics)
+    assert found is not chooses
 
 
 def test_a_flag_after_a_pass_through_value_is_read_again(builtin_headers):
@@ -172,6 +253,12 @@ def test_missing_shipped_headers_give_none_and_say_so(
         ("mm_malloc.h", True),
         ("unwind.h", True),
         ("cuda_wrappers/new", True),
+        ("sanitizer/asan_interface.h", True),
+        ("xray/xray_interface.h", True),
+        ("fuzzer/FuzzedDataProvider.h", True),
+        ("hlsl.h", False),
+        ("hlsl/hlsl_intrinsics.h", False),
+        ("ISO_Fortran_binding.h", False),
         ("new", False),
         ("omp.h", False),
         ("sys/stdint.h", False),
@@ -181,10 +268,11 @@ def test_missing_shipped_headers_give_none_and_say_so(
     ],
 )
 def test_which_headers_are_builtin(builtin_headers, name: str, builtin: bool):
-    """A builtin header is a name clang installs in its resource ``include``
-    directory, as an ``#include`` writes it: not only the 30 shipped ones nor only
-    the intrinsics (``cpuid.h``, ``unwind.h``), and not ``omp.h``, which comes with
-    an OpenMP runtime."""
+    """A builtin header is a name a default full install of clang puts in its
+    resource ``include`` directory, as an ``#include`` writes it: not only the 30
+    shipped ones nor only the intrinsics (``cpuid.h``, ``unwind.h``, compiler-rt's
+    ``sanitizer/`` headers), and not ``omp.h`` (an OpenMP runtime's), flang's
+    ``ISO_Fortran_binding.h`` or the HLSL headers a default build does not install."""
     assert builtin_headers.is_builtin_header(name) is builtin
 
 
@@ -449,6 +537,44 @@ def test_analyses_that_share_their_warnings_warn_once_across_them(
     assert [len(warnings) for _, warnings in runs] == [2, 0]
     assert shared.unavailable
     assert shared.files == {tmp_path / "a.c"}
+
+
+def test_the_cli_projects_share_their_warnings(
+    builtin_headers, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """``codelinks analyse`` runs one analysis per project: two projects over the
+    same file warn once that the shipped headers are missing, and once about it."""
+    from sphinx_codelinks.analyse import analyse as analyse_module
+    from sphinx_codelinks.analyse.projects import AnalyseProjects
+    from sphinx_codelinks.config import CodeLinksConfig
+
+    monkeypatch.setattr(builtin_headers, "BUNDLED_RESOURCE_DIR", tmp_path / "gone")
+    recorder = _Recorder()
+    monkeypatch.setattr(analyse_module, "logger", recorder)
+    source = tmp_path / "a.c"
+    source.write_text("#include <stdint.h>\n// @a, IMPL_A, impl\n")
+    db = _db(tmp_path, [("a.c", ["-std=c11", "-nostdlibinc"])])
+
+    def project() -> dict:
+        return {
+            "analyse_config": SourceAnalyseConfig(
+                src_files=[source],
+                src_dir=tmp_path,
+                get_oneline_needs=True,
+                preprocessor=PreprocessorConfig(compile_commands=db),
+            )
+        }
+
+    config = CodeLinksConfig()
+    config.projects = {"one": project(), "two": project()}  # ty: ignore[invalid-assignment]
+    projects = AnalyseProjects(config)
+    projects.run()
+
+    assert [len(a.oneline_needs) for a in projects.projects_analyse.values()] == [1, 1]
+    messages = [message for message, _ in recorder.warnings]
+    assert len(messages) == 2, messages
+    assert sum("are not under" in m for m in messages) == 1
+    assert sum("'stdint.h'" in m for m in messages) == 1
 
 
 # --- in a build: once per build, the type rendered once ---------------------------
