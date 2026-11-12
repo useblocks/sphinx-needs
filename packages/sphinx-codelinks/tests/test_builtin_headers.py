@@ -501,6 +501,53 @@ def test_a_build_warns_once_that_the_shipped_headers_are_missing(
         assert len(warnings) == 1, warnings
 
 
+def test_the_next_build_of_the_same_environment_warns_again(
+    builtin_headers, tmp_path: Path, make_app, monkeypatch: pytest.MonkeyPatch
+):
+    """The record is per build, not per environment: a second build of the same
+    application, which keeps its environment, warns again once."""
+    from .test_need_id_refs import _build, _project
+
+    monkeypatch.setattr(builtin_headers, "BUNDLED_RESOURCE_DIR", tmp_path / "gone")
+    _project(tmp_path, toml_extra=BUILD_TOML)
+    app = _build(tmp_path, make_app)
+    index = tmp_path / "docs" / "index.rst"
+    index.write_text(index.read_text(encoding="utf-8") + "\nMore.\n", encoding="utf-8")
+    app.build()
+
+    warnings = [w for w in _builtin_warnings(app) if "are not under" in w]
+    assert len(warnings) == 2, warnings
+
+
+def test_the_config_only_scan_shares_the_build_record(
+    builtin_headers, tmp_path: Path, make_app, monkeypatch: pytest.MonkeyPatch
+):
+    """A project no directive traces is scanned after the reads, by the same build:
+    the headers missing are warned about once across the directive and the scan."""
+    from .test_need_id_refs import _build, _json, _project
+
+    monkeypatch.setattr(builtin_headers, "BUNDLED_RESOURCE_DIR", tmp_path / "gone")
+    other = (
+        "\n[codelinks.projects.other]\n"
+        'remote_url_pattern = "https://github.com/example/demo/blob/{commit}/{path}"\n'
+        "\n[codelinks.projects.other.source_discover]\n"
+        'src_dir = "../other"\ncomment_type = "cpp"\n'
+        "\n[codelinks.projects.other.analyse.preprocessor]\ndefines = []\n"
+    )
+    _project(
+        tmp_path,
+        toml_extra=BUILD_TOML + other,
+        files={"other/o.cpp": "// @need-ids: REQ_002\nvoid o() {}\n"},
+    )
+    app = _build(tmp_path, make_app)
+
+    assert any(
+        "other/o.cpp" in url for url in _json(app)["needs"]["REQ_002"]["code_url"]
+    )
+    warnings = [w for w in _builtin_warnings(app) if "are not under" in w]
+    assert len(warnings) == 1, warnings
+
+
 _SHOWS_WARNING_TYPES = sphinx.version_info >= (8,)
 
 
