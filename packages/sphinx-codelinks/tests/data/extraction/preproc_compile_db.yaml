@@ -404,3 +404,53 @@ builtin_headers_entry_nostdinc_libclang:
   # its builtin headers itself, and the engine adds none: <stdint.h> is not found,
   # UINT32_MAX is undefined and <stdatomic.h> is not there, so both #else arms are
   # active, as for the compiler: IMPL_BH_NOSTDINC_NARROW, IMPL_BH_NOSTDINC_LOCKED.
+
+options_terminator_in_entry_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  compile_commands:
+    - file: case.cpp
+      arguments: ["clang++", "-std=c++17", "-DVARIANT_A=1", "-c", "--", "case.cpp"]
+  source: |
+    // @Always, IMPL_DD_ALWAYS, impl, [REQ]
+    #ifdef VARIANT_A
+    // @Variant A, IMPL_DD_VAR_A, impl, [REQ]
+    #else
+    // @Variant B, IMPL_DD_VAR_B, impl, [REQ]
+    #endif
+    #if 0
+    // @Disabled, IMPL_DD_DISABLED, impl, [REQ]
+    #else
+    // @Enabled, IMPL_DD_ENABLED, impl, [REQ]
+    #endif
+  # The entry ends its options with `--` before its input, as CMake and some
+  # generators write it. Everything after a `--` is an input, so the arguments the
+  # engine adds after the entry's own must not land behind it: IMPL_DD_ALWAYS,
+  # IMPL_DD_VAR_A, IMPL_DD_ENABLED. Read as an input, the request for the
+  # preprocessing record is lost, no arm is known to be skipped, and the markers of
+  # every arm are extracted.
+
+double_dash_value_of_pass_through_option_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  compile_commands:
+    - file: case.cpp
+      arguments: ["clang++", "-std=c++17", "-Xlinker", "--", "-DFEATURE", "-c", "case.cpp"]
+  source: |
+    // @Always, IMPL_XL_ALWAYS, impl, [REQ]
+    #ifdef FEATURE
+    // @Feature on, IMPL_XL_ON, impl, [REQ]
+    #endif
+    #ifndef FEATURE
+    // @Feature off, IMPL_XL_OFF, impl, [REQ]
+    #endif
+  # The `--` is the value of -Xlinker, handed to the linker: it does not end the
+  # options, and the compiler reads the -DFEATURE after it as an option:
+  # IMPL_XL_ALWAYS, IMPL_XL_ON. Taken as the end of the options, -DFEATURE would be
+  # an input and IMPL_XL_OFF extracted instead.
