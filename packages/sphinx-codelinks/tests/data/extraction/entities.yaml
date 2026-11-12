@@ -14,7 +14,9 @@
 #   entity_kind     the expected ``scope.entity_kind`` (``null``: ``scope`` is ``null``,
 #                   unless ``node_kind`` is given)
 #   node_kind       (optional) the expected ``scope.kind``, for an entity bound but not
-#                   named (``entity_kind`` and ``qualified_name`` both ``null``)
+#                   named (``entity_kind`` and ``qualified_name`` both ``null``), or a
+#                   VHDL design element no kind fits (``entity_kind`` ``null``, its
+#                   name's last component a ``scope``)
 #   qualified_name  the expected in-file name: the compiler's name without the module,
 #                   crate or package prefix, which the file's path decides
 #   start           the expected ``scope.start``: the first line of the definition as
@@ -36,6 +38,7 @@
 #   Go      go 1.24 build, go tool nm; go doc for the types
 #   TS      the TypeScript checker's getFullyQualifiedName on each declaration
 #   C#      no compiler: syntax-only
+#   VHDL    no compiler: syntax-only, by VHDL's expanded names (``pkg.add``)
 #
 # Rust names follow the compiler's v0 form for trait impls (``<Widget as Shape>::area``)
 # and the path form for inherent methods (``Widget::new``); a generic function or impl
@@ -1510,6 +1513,47 @@ rule_doc_comment_file_block_is_file_level_ts:
   truth:
     - {id: REQ_R_FILE_TS, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "JSDoc: @fileoverview documents the file"}
 
+rule_doc_line_file_tag_on_another_line_cpp:
+  # A ``///`` line is a comment of its own: a marker on the line after a ``/// @file``
+  # line documents the next item, a blank line after the two or not. Only VHDL reads a
+  # run of doc lines (``--!``) as one comment for ``@file``.
+  lang: cpp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /// @file widget.h
+    /// @Widget, IMPL_R_DOC_RUN_FILE_CPP, impl
+
+    int f();
+  truth:
+    - {id: IMPL_R_DOC_RUN_FILE_CPP, outcome: exact, entity_kind: "function", qualified_name: "f", start: 4, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
+rule_doc_line_file_tag_on_another_line_rust:
+  # As in C++: a Rust ``///`` line after a ``/// \file`` line documents the next item.
+  lang: rust
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /// \file widget.rs
+    /// @Widget, IMPL_R_DOC_RUN_FILE_RS, impl
+
+    fn f() {}
+  truth:
+    - {id: IMPL_R_DOC_RUN_FILE_RS, outcome: exact, entity_kind: "function", qualified_name: "f", start: 4, mechanism: doc_comment, compiler: "rustc: an outer doc comment is a #[doc] attribute of the next item"}
+
+rule_doc_line_file_tag_on_another_line_csharp:
+  # As in C++: a C# ``///`` line after a ``/// @file`` line documents the next item.
+  lang: csharp
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    /// @file Widget.cs
+    /// @Widget, IMPL_R_DOC_RUN_FILE_CS, impl
+
+    class Widget {}
+  truth:
+    - {id: IMPL_R_DOC_RUN_FILE_CS, outcome: exact, entity_kind: "class", qualified_name: "Widget", start: 4, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
 rule_inner_attribute_is_no_entity_head:
   # An inner attribute (``#![...]``) applies to what it is inside, so it heads no item:
   # a marker after one on its row is trailing, and belongs to the module, or the file.
@@ -2302,3 +2346,377 @@ rule_cpp_reopened_inline_namespace:
   truth:
     - {id: IMPL_R_REOP_1, outcome: exact, entity_kind: "function", qualified_name: "lib::g", start: 4, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::g() (warning: inline namespace reopened as a non-inline namespace)"}
     - {id: IMPL_R_REOP_2, outcome: exact, entity_kind: "method", qualified_name: "lib::g", start: 7, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::g() (the syntax reads the namespace qualifier as a class: method)"}
+
+# The VHDL rule cases: the generic attachment rules hold for VHDL. A marker in the
+# leading licence banner is file level, a ``--!`` doc comment is exempt unless it holds
+# ``@file``, and a marker after a header's ``is`` is trailing on the element the header
+# opens.
+
+rule_vhdl_file_header_banner:
+  # A marker in the comment block before the first design unit, a blank line after the
+  # block, is file level; the unit's context clauses do not change that.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    -- Copyright (c) 2026 ACME
+    -- @File level requirement, IMPL_R_VHDL_HEADER, impl
+
+    library ieee;
+    use ieee.std_logic_1164.all;
+
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_HEADER, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+
+rule_vhdl_file_header_no_blank_line:
+  # Without the blank line, the block documents the design unit after its context
+  # clauses.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    -- Copyright (c) 2026 ACME
+    -- @Counter, IMPL_R_VHDL_HEADER_ADJ, impl
+    library ieee;
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_HEADER_ADJ, outcome: exact, entity_kind: "module", qualified_name: "counter", start: 4, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_vhdl_doc_comment_before_first_item:
+  # A ``--!`` doc comment is exempt from the file-header rule: it documents the next
+  # design unit, blank line or not.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    --! @Counter, IMPL_R_VHDL_DOC_HEADER, impl
+
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_DOC_HEADER, outcome: exact, entity_kind: "module", qualified_name: "counter", start: 3, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
+rule_vhdl_file_tag:
+  # A ``--!`` doc comment that holds ``@file`` documents the file, not the next unit.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    --! @file counter.vhd
+    --! @Counter file, IMPL_R_VHDL_FILE_TAG, impl
+
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_FILE_TAG, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+
+rule_vhdl_file_tag_needs_the_blank_line:
+  # A ``--! @file`` run documents the file only as a file header: with no blank line
+  # after it, it documents the design unit it stands above.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    --! @file counter.vhd
+    --! @Counter, IMPL_R_VHDL_FILE_TAG_ADJ, impl
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_FILE_TAG_ADJ, outcome: exact, entity_kind: "module", qualified_name: "counter", start: 3, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
+rule_vhdl_file_tag_run_ends_at_a_blank_line:
+  # A run of ``--!`` lines is on consecutive lines: after a blank line a ``--!`` line
+  # starts a run of its own, which documents the next design unit without the
+  # ``@file`` of the run before.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    --! @file counter.vhd
+
+    --! @Counter, IMPL_R_VHDL_FILE_TAG_GAP, impl
+
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_FILE_TAG_GAP, outcome: exact, entity_kind: "module", qualified_name: "counter", start: 5, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
+rule_vhdl_file_tag_run_ends_at_a_plain_comment:
+  # A run of ``--!`` lines holds ``--!`` lines only: a plain ``--`` line ends it, and
+  # the ``--!`` line after it documents the next design unit.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    --! @file counter.vhd
+    -- A plain comment.
+    --! @Counter, IMPL_R_VHDL_FILE_TAG_PLAIN, impl
+
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_FILE_TAG_PLAIN, outcome: exact, entity_kind: "module", qualified_name: "counter", start: 5, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
+rule_vhdl_file_tag_after_a_design_unit:
+  # A ``--! @file`` run after the first design unit is no file header: it documents the
+  # next design unit, a blank line after it or not.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    entity first is
+    end entity first;
+
+    --! @file counter.vhd
+    --! @Counter, IMPL_R_VHDL_FILE_TAG_LATE, impl
+
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_FILE_TAG_LATE, outcome: exact, entity_kind: "module", qualified_name: "counter", start: 7, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
+rule_vhdl_trailing_on_a_header:
+  # A marker after a header's ``is`` -- a function's, a procedure's, a process's -- is
+  # trailing on the element the header opens, as a marker after ``int g() {`` is.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    architecture rtl of counter is
+      impure function next_count(c : natural) return natural is -- @Next count, IMPL_R_VHDL_FN_HEAD, impl
+      begin
+        return c + 1;
+      end function next_count;
+      procedure reset_all is -- @Reset all, IMPL_R_VHDL_PROC_HEAD, impl
+      begin
+      end procedure reset_all;
+    begin
+      tick : process (clk) is -- @Tick, IMPL_R_VHDL_PROCESS_HEAD, impl
+      begin
+      end process tick;
+    end architecture rtl;
+  truth:
+    - {id: IMPL_R_VHDL_FN_HEAD, outcome: exact, entity_kind: "function", qualified_name: "counter.rtl.next_count", start: 2, mechanism: trailing, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_VHDL_PROC_HEAD, outcome: exact, entity_kind: "function", qualified_name: "counter.rtl.reset_all", start: 6, mechanism: trailing, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_VHDL_PROCESS_HEAD, outcome: exact, entity_kind: null, node_kind: process_statement, qualified_name: "counter.rtl.tick", start: 10, mechanism: trailing, compiler: "syntax-only: rule case"}
+
+rule_vhdl_names:
+  # VHDL names: a design element is named by the design elements around it, joined
+  # with ``.`` as VHDL's expanded names are, an architecture under the entity its
+  # ``of`` clause names. The existing kinds where one fits (entity ``module``,
+  # architecture ``impl``, package and package body ``namespace``, component
+  # ``interface``, function and procedure ``function``, enum, record and protected type
+  # ``enum``, ``record``, ``class``, any other type or subtype ``type``); every other
+  # element has no kind, its last component a ``scope``. An element inside an unnamed
+  # one (an unlabelled process) has no name.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    library ieee;
+    use ieee.std_logic_1164.all;
+
+    -- @Counter entity, IMPL_N_ENTITY, impl
+    entity counter is
+      generic (
+        WIDTH : natural := 8 -- @Width generic, IMPL_N_GENERIC, impl
+      );
+      port (
+        clk : in std_logic; -- @Clock port, IMPL_N_PORT, impl
+        q : out natural
+      );
+    end entity counter;
+
+    -- @RTL architecture, IMPL_N_ARCH, impl
+    architecture rtl of counter is
+      -- @State type, IMPL_N_ENUM, impl
+      type state_t is (IDLE, RUN);
+      -- @Pair record, IMPL_N_RECORD, impl
+      type pair_t is record
+        a, b : natural;
+      end record;
+      -- @Byte subtype, IMPL_N_SUBTYPE, impl
+      subtype byte_t is natural range 0 to 255;
+      -- @Count signal, IMPL_N_SIGNAL, impl
+      signal count : natural := 0;
+      -- @Max constant, IMPL_N_CONSTANT, impl
+      constant MAX : natural := 10;
+      -- @Fifo component, IMPL_N_COMPONENT, impl
+      component fifo is
+        port (d : in std_logic); -- @Fifo port, IMPL_N_COMPONENT_PORT, impl
+      end component fifo;
+      -- @Next count, IMPL_N_FUNCTION, impl
+      function next_count(c : natural) return natural is
+      begin
+        return c + 1;
+      end function next_count;
+    begin
+      -- @Tick process, IMPL_N_PROCESS, impl
+      tick : process (clk)
+        -- @Step variable, IMPL_N_VARIABLE, impl
+        variable step : natural;
+      begin
+        count <= next_count(count);
+      end process tick;
+      -- @Fifo instance, IMPL_N_INSTANCE, impl
+      u_fifo : fifo port map (d => clk);
+      -- @Lanes, IMPL_N_GENERATE, impl
+      lanes : for i in 0 to 3 generate
+        -- @Lane process, IMPL_N_GEN_PROCESS, impl
+        lane : process (clk) begin end process lane;
+      end generate lanes;
+      -- @Output, IMPL_N_ASSIGN, impl
+      drive : q <= count;
+      -- @Unlabelled process, IMPL_N_UNLABELLED, impl
+      process (clk) begin end process;
+    end architecture rtl;
+
+    -- @Math package, IMPL_N_PACKAGE, impl
+    package math_pkg is
+      -- @Add declaration, IMPL_N_PROCEDURE_DECL, impl
+      procedure add(signal a : inout natural; b : natural);
+      -- @Shared counter, IMPL_N_PROTECTED, impl
+      type shared_counter is protected
+        -- @Increment, IMPL_N_METHOD, impl
+        procedure increment;
+      end protected shared_counter;
+    end package math_pkg;
+
+    -- @Math package body, IMPL_N_PACKAGE_BODY, impl
+    package body math_pkg is
+      -- @Add body, IMPL_N_PROCEDURE_BODY, impl
+      procedure add(signal a : inout natural; b : natural) is
+      begin
+        a <= a + b;
+      end procedure add;
+      -- @Shared counter body, IMPL_N_PROTECTED_BODY, impl
+      type shared_counter is protected body
+        variable n : natural := 0;
+        procedure increment is begin n := n + 1; end procedure;
+      end protected body shared_counter;
+    end package body math_pkg;
+  truth:
+    - {id: IMPL_N_ENTITY, outcome: exact, entity_kind: "module", qualified_name: "counter", start: 5, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_GENERIC, outcome: exact, entity_kind: null, node_kind: interface_declaration, qualified_name: "counter.WIDTH", start: 7, mechanism: trailing, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_PORT, outcome: exact, entity_kind: null, node_kind: interface_declaration, qualified_name: "counter.clk", start: 10, mechanism: trailing, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_ARCH, outcome: exact, entity_kind: "impl", qualified_name: "counter.rtl", start: 16, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_ENUM, outcome: exact, entity_kind: "enum", qualified_name: "counter.rtl.state_t", start: 18, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_RECORD, outcome: exact, entity_kind: "record", qualified_name: "counter.rtl.pair_t", start: 20, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_SUBTYPE, outcome: exact, entity_kind: "type", qualified_name: "counter.rtl.byte_t", start: 24, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_SIGNAL, outcome: exact, entity_kind: null, node_kind: signal_declaration, qualified_name: "counter.rtl.count", start: 26, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_CONSTANT, outcome: exact, entity_kind: null, node_kind: constant_declaration, qualified_name: "counter.rtl.MAX", start: 28, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_COMPONENT, outcome: exact, entity_kind: "interface", qualified_name: "counter.rtl.fifo", start: 30, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_COMPONENT_PORT, outcome: exact, entity_kind: null, node_kind: interface_declaration, qualified_name: "counter.rtl.fifo.d", start: 31, mechanism: trailing, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_FUNCTION, outcome: exact, entity_kind: "function", qualified_name: "counter.rtl.next_count", start: 34, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_PROCESS, outcome: exact, entity_kind: null, node_kind: process_statement, qualified_name: "counter.rtl.tick", start: 40, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_VARIABLE, outcome: exact, entity_kind: null, node_kind: variable_declaration, qualified_name: "counter.rtl.tick.step", start: 42, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_INSTANCE, outcome: exact, entity_kind: null, node_kind: component_instantiation_statement, qualified_name: "counter.rtl.u_fifo", start: 47, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_GENERATE, outcome: exact, entity_kind: null, node_kind: for_generate_statement, qualified_name: "counter.rtl.lanes", start: 49, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_GEN_PROCESS, outcome: exact, entity_kind: null, node_kind: process_statement, qualified_name: "counter.rtl.lanes.lane", start: 51, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_ASSIGN, outcome: exact, entity_kind: null, node_kind: concurrent_simple_signal_assignment, qualified_name: "counter.rtl.drive", start: 54, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_UNLABELLED, outcome: exact, entity_kind: null, node_kind: process_statement, qualified_name: null, start: 56, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_PACKAGE, outcome: exact, entity_kind: "namespace", qualified_name: "math_pkg", start: 60, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_PROCEDURE_DECL, outcome: exact, entity_kind: "function", qualified_name: "math_pkg.add", start: 62, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_PROTECTED, outcome: exact, entity_kind: "class", qualified_name: "math_pkg.shared_counter", start: 64, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_METHOD, outcome: exact, entity_kind: "function", qualified_name: "math_pkg.shared_counter.increment", start: 66, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_PACKAGE_BODY, outcome: exact, entity_kind: "namespace", qualified_name: "math_pkg", start: 71, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_PROCEDURE_BODY, outcome: exact, entity_kind: "function", qualified_name: "math_pkg.add", start: 73, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_PROTECTED_BODY, outcome: exact, entity_kind: "class", qualified_name: "math_pkg.shared_counter", start: 78, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+
+rule_vhdl_names_as_written:
+  # A VHDL name is spelled as the source writes it: VHDL is case-insensitive, and the
+  # architecture is named under its ``of`` clause as written (``counter.RTL`` for an
+  # entity declared ``Counter``); an extended identifier keeps its backslashes, and an
+  # operator function its quotes. A declaration of several names has none.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    entity Counter is
+    end entity Counter;
+    architecture RTL of counter is
+      signal \weird name\ : bit; -- @Extended identifier, IMPL_N_EXTENDED, impl
+      signal a, b : bit; -- @Two signals, IMPL_N_TWO_NAMES, impl
+      -- @Plus, IMPL_N_OPERATOR, impl
+      function "+"(l, r : bit) return bit is begin return l xor r; end function;
+    begin
+    end architecture RTL;
+  truth:
+    - {id: IMPL_N_EXTENDED, outcome: exact, entity_kind: null, node_kind: signal_declaration, qualified_name: "counter.RTL.\\weird name\\", start: 4, mechanism: trailing, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_TWO_NAMES, outcome: exact, entity_kind: null, node_kind: signal_declaration, qualified_name: null, start: 5, mechanism: trailing, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_OPERATOR, outcome: exact, entity_kind: "function", qualified_name: "counter.RTL.\"+\"", start: 7, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+
+rule_vhdl_names_inside_an_unnamed_element:
+  # An element inside an unnamed one (an unlabelled process) has no name, even where
+  # the elements around the unnamed one are named: its name would not say where it is.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    architecture rtl of counter is
+    begin
+      process (clk)
+        -- @Step variable, IMPL_N_UNNAMED_VARIABLE, impl
+        variable step : natural;
+      begin
+      end process;
+      g : for i in 0 to 1 generate
+        process (clk)
+          -- @Lane variable, IMPL_N_UNNAMED_LANE_VARIABLE, impl
+          variable v : bit;
+        begin
+        end process;
+      end generate g;
+    end architecture rtl;
+  truth:
+    - {id: IMPL_N_UNNAMED_VARIABLE, outcome: exact, entity_kind: null, node_kind: variable_declaration, qualified_name: null, start: 5, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_UNNAMED_LANE_VARIABLE, outcome: exact, entity_kind: null, node_kind: variable_declaration, qualified_name: null, start: 11, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+
+rule_vhdl_names_other_types:
+  # A type that is no enumeration, record or protected type -- an array, integer,
+  # access, physical, file or incomplete type -- is a ``type``.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    package types_pkg is
+      -- @Word array, IMPL_N_ARRAY_TYPE, impl
+      type word_t is array (0 to 3) of bit;
+      -- @Count integer, IMPL_N_INTEGER_TYPE, impl
+      type count_t is range 0 to 15;
+      -- @Node access, IMPL_N_ACCESS_TYPE, impl
+      type node_ptr is access integer;
+      -- @Distance physical, IMPL_N_PHYSICAL_TYPE, impl
+      type dist_t is range 0 to 1000 units mm; cm = 10 mm; end units;
+      -- @Log file, IMPL_N_FILE_TYPE, impl
+      type log_t is file of character;
+      -- @Incomplete, IMPL_N_INCOMPLETE_TYPE, impl
+      type cell_t;
+    end package types_pkg;
+  truth:
+    - {id: IMPL_N_ARRAY_TYPE, outcome: exact, entity_kind: "type", qualified_name: "types_pkg.word_t", start: 3, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_INTEGER_TYPE, outcome: exact, entity_kind: "type", qualified_name: "types_pkg.count_t", start: 5, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_ACCESS_TYPE, outcome: exact, entity_kind: "type", qualified_name: "types_pkg.node_ptr", start: 7, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_PHYSICAL_TYPE, outcome: exact, entity_kind: "type", qualified_name: "types_pkg.dist_t", start: 9, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_FILE_TYPE, outcome: exact, entity_kind: "type", qualified_name: "types_pkg.log_t", start: 11, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+    - {id: IMPL_N_INCOMPLETE_TYPE, outcome: exact, entity_kind: "type", qualified_name: "types_pkg.cell_t", start: 13, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+
+rule_vhdl_double_bang_is_no_doc_comment:
+  # A ``--!!`` comment is a plain comment, as ``////`` is beside ``///``: a marker in one
+  # is ``leading``, where one in a ``--!`` comment is a ``doc_comment``.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    --!! @Commented out, IMPL_R_VHDL_DOUBLE_BANG, impl
+    entity counter is
+    end entity counter;
+    --! @Documented, IMPL_R_VHDL_SINGLE_BANG, impl
+    entity other is
+    end entity other;
+  truth:
+    - {id: IMPL_R_VHDL_DOUBLE_BANG, outcome: exact, entity_kind: "module", qualified_name: "counter", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_VHDL_SINGLE_BANG, outcome: exact, entity_kind: "module", qualified_name: "other", start: 5, mechanism: doc_comment, compiler: "syntax-only: rule case"}

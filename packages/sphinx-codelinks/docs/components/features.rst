@@ -385,6 +385,49 @@ Features
    .. fault:: Sphinx-codelinks hallucinates traceability objects in TypeScript
       :id: FAULT_TS_2
 
+.. feature:: VHDL Language Support
+   :id: FE_VHDL
+
+   Support for defining traceability objects in VHDL source files.
+
+   The VHDL language parser leverages tree-sitter to identify and extract single-line
+   (``--``) and VHDL-2008 multi-line (``/* */``) comments, associating each marker with
+   the design element it documents.
+
+   Key capabilities:
+
+   * Detection of line and block comments, a comment after code included
+   * Association of a marker with the design element next to it: an entity,
+     architecture, package, configuration or context; a function or procedure; a type,
+     subtype, component, constant, signal, variable, file or alias declaration; a
+     generic, port or parameter; a process, block or generate statement, a component
+     instantiation, a concurrent signal assignment, assertion or procedure call. A
+     trailing marker documents the element ending on its row (the subprogram, not its
+     last parameter, after a subprogram declaration), a leading one the element
+     that follows it, never one further down; a marker among sequential statements
+     documents its process or subprogram
+   * The attachment rules every language follows: a marker in the licence banner
+     before the first design unit, a blank line after it, is the file's, and so is one
+     in a run of ``--!`` lines there that holds ``@file``; a marker after a header's ``is``
+     (``function f return t is -- @...``) is trailing on what the header opens
+   * Each element named as VHDL's expanded names are written (``counter.rtl.p_main``,
+     an architecture under its entity), with the existing kinds where one fits (an
+     entity is a ``module``, an architecture an ``impl``, a package a ``namespace``, a
+     component an ``interface``, a subprogram a ``function``, a type an ``enum``,
+     ``record``, ``class`` or ``type``); a process, a statement or a data element such
+     as a port or a signal has no kind, and is named all the same
+   * Multi-line needs over runs of ``--``, ``---`` and ``--!`` comments
+   * A Doxygen command line (``--! @param clk Clock input, rising edge``) under a start
+     sequence Doxygen also uses is a ``doxygen_tag`` warning, never a need; a ``--!!``
+     comment is a plain comment
+   * File extensions ``.vhd`` and ``.vhdl`` auto-discovered when ``comment_type = "vhdl"``
+
+   .. fault:: Traceability objects are not detected in VHDL
+      :id: FAULT_VHDL_1
+
+   .. fault:: Sphinx-codelinks hallucinates traceability objects in VHDL
+      :id: FAULT_VHDL_2
+
 .. feature:: Preprocessor-Aware C/C++ Extraction
    :id: FE_PREPROC
 
@@ -487,7 +530,7 @@ Features
 
    * One grammar for every language, the header parsed by the analyser and the body kept
      as written
-   * Blocks over runs of line comments (``//``, ``///``, ``//!``, ``#``) as well as block
+   * Blocks over runs of line comments (``//``, ``///``, ``//!``, ``--``, ``---``, ``--!``, ``#``) as well as block
      comments and Python docstrings
    * Comment prefixes stripped by the comment's kind, the doxygen ``*`` leader only when
      every line carries one, so ``*emphasis*`` in a body is kept

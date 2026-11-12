@@ -1,0 +1,140 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 64
+      },
+      "end": {
+        "row": 1,
+        "column": 101
+      }
+    },
+    "tagged_scope": "impure function next_count(c : natural) return natural is -- @Next count, IMPL_R_VHDL_FN_HEAD, impl\n  begin\n    return c + 1;\n  end function next_count;",
+    "scope": {
+      "kind": "subprogram_definition",
+      "start": 2,
+      "end": 5,
+      "language": "vhdl",
+      "entity_kind": "function",
+      "qualified_name": "counter.rtl.next_count",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "function",
+          "name": "next_count"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Next count",
+      "id": "IMPL_R_VHDL_FN_HEAD",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_definition"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 29
+      },
+      "end": {
+        "row": 5,
+        "column": 67
+      }
+    },
+    "tagged_scope": "procedure reset_all is -- @Reset all, IMPL_R_VHDL_PROC_HEAD, impl\n  begin\n  end procedure reset_all;",
+    "scope": {
+      "kind": "subprogram_definition",
+      "start": 6,
+      "end": 8,
+      "language": "vhdl",
+      "entity_kind": "function",
+      "qualified_name": "counter.rtl.reset_all",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "function",
+          "name": "reset_all"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Reset all",
+      "id": "IMPL_R_VHDL_PROC_HEAD",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_definition"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 30
+      },
+      "end": {
+        "row": 9,
+        "column": 66
+      }
+    },
+    "tagged_scope": "tick : process (clk) is -- @Tick, IMPL_R_VHDL_PROCESS_HEAD, impl\n  begin\n  end process tick;",
+    "scope": {
+      "kind": "process_statement",
+      "start": 10,
+      "end": 12,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "counter.rtl.tick",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "tick"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Tick",
+      "id": "IMPL_R_VHDL_PROCESS_HEAD",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "process_statement"
+  }
+]

@@ -1,0 +1,1145 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 4
+      },
+      "end": {
+        "row": 3,
+        "column": 39
+      }
+    },
+    "tagged_scope": "entity counter is\n  generic (\n    WIDTH : natural := 8 -- @Width generic, IMPL_N_GENERIC, impl\n  );\n  port (\n    clk : in std_logic; -- @Clock port, IMPL_N_PORT, impl\n    q : out natural\n  );\nend entity counter;",
+    "scope": {
+      "kind": "entity_declaration",
+      "start": 5,
+      "end": 13,
+      "language": "vhdl",
+      "entity_kind": "module",
+      "qualified_name": "counter",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Counter entity",
+      "id": "IMPL_N_ENTITY",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "entity_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 29
+      },
+      "end": {
+        "row": 6,
+        "column": 64
+      }
+    },
+    "tagged_scope": "WIDTH : natural := 8",
+    "scope": {
+      "kind": "interface_declaration",
+      "start": 7,
+      "end": 7,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "counter.WIDTH",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "scope",
+          "name": "WIDTH"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Width generic",
+      "id": "IMPL_N_GENERIC",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "interface_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 28
+      },
+      "end": {
+        "row": 9,
+        "column": 57
+      }
+    },
+    "tagged_scope": "clk : in std_logic",
+    "scope": {
+      "kind": "interface_declaration",
+      "start": 10,
+      "end": 10,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "counter.clk",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "scope",
+          "name": "clk"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Clock port",
+      "id": "IMPL_N_PORT",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "interface_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 14,
+        "column": 4
+      },
+      "end": {
+        "row": 14,
+        "column": 39
+      }
+    },
+    "tagged_scope": "architecture rtl of counter is\n  -- @State type, IMPL_N_ENUM, impl\n  type state_t is (IDLE, RUN);\n  -- @Pair record, IMPL_N_RECORD, impl\n  type pair_t is record\n    a, b : natural;\n  end record;\n  -- @Byte subtype, IMPL_N_SUBTYPE, impl\n  subtype byte_t is natural range 0 to 255;\n  -- @Count signal, IMPL_N_SIGNAL, impl\n  signal count : natural := 0;\n  -- @Max constant, IMPL_N_CONSTANT, impl\n  constant MAX : natural := 10;\n  -- @Fifo component, IMPL_N_COMPONENT, impl\n  component fifo is\n    port (d : in std_logic); -- @Fifo port, IMPL_N_COMPONENT_PORT, impl\n  end component fifo;\n  -- @Next count, IMPL_N_FUNCTION, impl\n  function next_count(c : natural) return natural is\n  begin\n    return c + 1;\n  end function next_count;\nbegin\n  -- @Tick process, IMPL_N_PROCESS, impl\n  tick : process (clk)\n    -- @Step variable, IMPL_N_VARIABLE, impl\n    variable step : natural;\n  begin\n    count <= next_count(count);\n  end process tick;\n  -- @Fifo instance, IMPL_N_INSTANCE, impl\n  u_fifo : fifo port map (d => clk);\n  -- @Lanes, IMPL_N_GENERATE, impl\n  lanes : for i in 0 to 3 generate\n    -- @Lane process, IMPL_N_GEN_PROCESS, impl\n    lane : process (clk) begin end process lane;\n  end generate lanes;\n  -- @Output, IMPL_N_ASSIGN, impl\n  drive : q <= count;\n  -- @Unlabelled process, IMPL_N_UNLABELLED, impl\n  process (clk) begin end process;\nend architecture rtl;",
+    "scope": {
+      "kind": "architecture_definition",
+      "start": 16,
+      "end": 57,
+      "language": "vhdl",
+      "entity_kind": "impl",
+      "qualified_name": "counter.rtl",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "RTL architecture",
+      "id": "IMPL_N_ARCH",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "architecture_definition"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 16,
+        "column": 6
+      },
+      "end": {
+        "row": 16,
+        "column": 35
+      }
+    },
+    "tagged_scope": "type state_t is (IDLE, RUN);",
+    "scope": {
+      "kind": "type_declaration",
+      "start": 18,
+      "end": 18,
+      "language": "vhdl",
+      "entity_kind": "enum",
+      "qualified_name": "counter.rtl.state_t",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "enum",
+          "name": "state_t"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "State type",
+      "id": "IMPL_N_ENUM",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "type_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 18,
+        "column": 6
+      },
+      "end": {
+        "row": 18,
+        "column": 38
+      }
+    },
+    "tagged_scope": "type pair_t is record\n    a, b : natural;\n  end record;",
+    "scope": {
+      "kind": "type_declaration",
+      "start": 20,
+      "end": 22,
+      "language": "vhdl",
+      "entity_kind": "record",
+      "qualified_name": "counter.rtl.pair_t",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "record",
+          "name": "pair_t"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Pair record",
+      "id": "IMPL_N_RECORD",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "type_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 22,
+        "column": 6
+      },
+      "end": {
+        "row": 22,
+        "column": 40
+      }
+    },
+    "tagged_scope": "subtype byte_t is natural range 0 to 255;",
+    "scope": {
+      "kind": "subtype_declaration",
+      "start": 24,
+      "end": 24,
+      "language": "vhdl",
+      "entity_kind": "type",
+      "qualified_name": "counter.rtl.byte_t",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "type",
+          "name": "byte_t"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Byte subtype",
+      "id": "IMPL_N_SUBTYPE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subtype_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 24,
+        "column": 6
+      },
+      "end": {
+        "row": 24,
+        "column": 39
+      }
+    },
+    "tagged_scope": "signal count : natural := 0;",
+    "scope": {
+      "kind": "signal_declaration",
+      "start": 26,
+      "end": 26,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "counter.rtl.count",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "count"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Count signal",
+      "id": "IMPL_N_SIGNAL",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "signal_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 26,
+        "column": 6
+      },
+      "end": {
+        "row": 26,
+        "column": 41
+      }
+    },
+    "tagged_scope": "constant MAX : natural := 10;",
+    "scope": {
+      "kind": "constant_declaration",
+      "start": 28,
+      "end": 28,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "counter.rtl.MAX",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "MAX"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Max constant",
+      "id": "IMPL_N_CONSTANT",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "constant_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 28,
+        "column": 6
+      },
+      "end": {
+        "row": 28,
+        "column": 44
+      }
+    },
+    "tagged_scope": "component fifo is\n    port (d : in std_logic); -- @Fifo port, IMPL_N_COMPONENT_PORT, impl\n  end component fifo;",
+    "scope": {
+      "kind": "component_declaration",
+      "start": 30,
+      "end": 32,
+      "language": "vhdl",
+      "entity_kind": "interface",
+      "qualified_name": "counter.rtl.fifo",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "interface",
+          "name": "fifo"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Fifo component",
+      "id": "IMPL_N_COMPONENT",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "component_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 30,
+        "column": 33
+      },
+      "end": {
+        "row": 30,
+        "column": 71
+      }
+    },
+    "tagged_scope": "d : in std_logic",
+    "scope": {
+      "kind": "interface_declaration",
+      "start": 31,
+      "end": 31,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "counter.rtl.fifo.d",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "interface",
+          "name": "fifo"
+        },
+        {
+          "kind": "scope",
+          "name": "d"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Fifo port",
+      "id": "IMPL_N_COMPONENT_PORT",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "interface_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 32,
+        "column": 6
+      },
+      "end": {
+        "row": 32,
+        "column": 39
+      }
+    },
+    "tagged_scope": "function next_count(c : natural) return natural is\n  begin\n    return c + 1;\n  end function next_count;",
+    "scope": {
+      "kind": "subprogram_definition",
+      "start": 34,
+      "end": 37,
+      "language": "vhdl",
+      "entity_kind": "function",
+      "qualified_name": "counter.rtl.next_count",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "function",
+          "name": "next_count"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Next count",
+      "id": "IMPL_N_FUNCTION",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_definition"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 38,
+        "column": 6
+      },
+      "end": {
+        "row": 38,
+        "column": 40
+      }
+    },
+    "tagged_scope": "tick : process (clk)\n    -- @Step variable, IMPL_N_VARIABLE, impl\n    variable step : natural;\n  begin\n    count <= next_count(count);\n  end process tick;",
+    "scope": {
+      "kind": "process_statement",
+      "start": 40,
+      "end": 45,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "counter.rtl.tick",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "tick"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Tick process",
+      "id": "IMPL_N_PROCESS",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "process_statement"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 40,
+        "column": 8
+      },
+      "end": {
+        "row": 40,
+        "column": 44
+      }
+    },
+    "tagged_scope": "variable step : natural;",
+    "scope": {
+      "kind": "variable_declaration",
+      "start": 42,
+      "end": 42,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "counter.rtl.tick.step",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "tick"
+        },
+        {
+          "kind": "scope",
+          "name": "step"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Step variable",
+      "id": "IMPL_N_VARIABLE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "variable_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 45,
+        "column": 6
+      },
+      "end": {
+        "row": 45,
+        "column": 42
+      }
+    },
+    "tagged_scope": "u_fifo : fifo port map (d => clk);",
+    "scope": {
+      "kind": "component_instantiation_statement",
+      "start": 47,
+      "end": 47,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "counter.rtl.u_fifo",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "u_fifo"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Fifo instance",
+      "id": "IMPL_N_INSTANCE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "component_instantiation_statement"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 47,
+        "column": 6
+      },
+      "end": {
+        "row": 47,
+        "column": 34
+      }
+    },
+    "tagged_scope": "lanes : for i in 0 to 3 generate\n    -- @Lane process, IMPL_N_GEN_PROCESS, impl\n    lane : process (clk) begin end process lane;\n  end generate lanes;",
+    "scope": {
+      "kind": "for_generate_statement",
+      "start": 49,
+      "end": 52,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "counter.rtl.lanes",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "lanes"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Lanes",
+      "id": "IMPL_N_GENERATE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "for_generate_statement"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 49,
+        "column": 8
+      },
+      "end": {
+        "row": 49,
+        "column": 46
+      }
+    },
+    "tagged_scope": "lane : process (clk) begin end process lane;",
+    "scope": {
+      "kind": "process_statement",
+      "start": 51,
+      "end": 51,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "counter.rtl.lanes.lane",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "lanes"
+        },
+        {
+          "kind": "scope",
+          "name": "lane"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Lane process",
+      "id": "IMPL_N_GEN_PROCESS",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "process_statement"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 52,
+        "column": 6
+      },
+      "end": {
+        "row": 52,
+        "column": 33
+      }
+    },
+    "tagged_scope": "drive : q <= count;",
+    "scope": {
+      "kind": "concurrent_simple_signal_assignment",
+      "start": 54,
+      "end": 54,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "counter.rtl.drive",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "drive"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Output",
+      "id": "IMPL_N_ASSIGN",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "concurrent_simple_signal_assignment"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 54,
+        "column": 6
+      },
+      "end": {
+        "row": 54,
+        "column": 49
+      }
+    },
+    "tagged_scope": "process (clk) begin end process;",
+    "scope": {
+      "kind": "process_statement",
+      "start": 56,
+      "end": 56,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Unlabelled process",
+      "id": "IMPL_N_UNLABELLED",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "process_statement"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 58,
+        "column": 4
+      },
+      "end": {
+        "row": 58,
+        "column": 38
+      }
+    },
+    "tagged_scope": "package math_pkg is\n  -- @Add declaration, IMPL_N_PROCEDURE_DECL, impl\n  procedure add(signal a : inout natural; b : natural);\n  -- @Shared counter, IMPL_N_PROTECTED, impl\n  type shared_counter is protected\n    -- @Increment, IMPL_N_METHOD, impl\n    procedure increment;\n  end protected shared_counter;\nend package math_pkg;",
+    "scope": {
+      "kind": "package_declaration",
+      "start": 60,
+      "end": 68,
+      "language": "vhdl",
+      "entity_kind": "namespace",
+      "qualified_name": "math_pkg",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "math_pkg"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Math package",
+      "id": "IMPL_N_PACKAGE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "package_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 60,
+        "column": 6
+      },
+      "end": {
+        "row": 60,
+        "column": 50
+      }
+    },
+    "tagged_scope": "procedure add(signal a : inout natural; b : natural);",
+    "scope": {
+      "kind": "subprogram_declaration",
+      "start": 62,
+      "end": 62,
+      "language": "vhdl",
+      "entity_kind": "function",
+      "qualified_name": "math_pkg.add",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "math_pkg"
+        },
+        {
+          "kind": "function",
+          "name": "add"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Add declaration",
+      "id": "IMPL_N_PROCEDURE_DECL",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 62,
+        "column": 6
+      },
+      "end": {
+        "row": 62,
+        "column": 44
+      }
+    },
+    "tagged_scope": "type shared_counter is protected\n    -- @Increment, IMPL_N_METHOD, impl\n    procedure increment;\n  end protected shared_counter;",
+    "scope": {
+      "kind": "type_declaration",
+      "start": 64,
+      "end": 67,
+      "language": "vhdl",
+      "entity_kind": "class",
+      "qualified_name": "math_pkg.shared_counter",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "math_pkg"
+        },
+        {
+          "kind": "class",
+          "name": "shared_counter"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Shared counter",
+      "id": "IMPL_N_PROTECTED",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "type_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 64,
+        "column": 8
+      },
+      "end": {
+        "row": 64,
+        "column": 38
+      }
+    },
+    "tagged_scope": "procedure increment;",
+    "scope": {
+      "kind": "subprogram_declaration",
+      "start": 66,
+      "end": 66,
+      "language": "vhdl",
+      "entity_kind": "function",
+      "qualified_name": "math_pkg.shared_counter.increment",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "math_pkg"
+        },
+        {
+          "kind": "class",
+          "name": "shared_counter"
+        },
+        {
+          "kind": "function",
+          "name": "increment"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Increment",
+      "id": "IMPL_N_METHOD",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 69,
+        "column": 4
+      },
+      "end": {
+        "row": 69,
+        "column": 48
+      }
+    },
+    "tagged_scope": "package body math_pkg is\n  -- @Add body, IMPL_N_PROCEDURE_BODY, impl\n  procedure add(signal a : inout natural; b : natural) is\n  begin\n    a <= a + b;\n  end procedure add;\n  -- @Shared counter body, IMPL_N_PROTECTED_BODY, impl\n  type shared_counter is protected body\n    variable n : natural := 0;\n    procedure increment is begin n := n + 1; end procedure;\n  end protected body shared_counter;\nend package body math_pkg;",
+    "scope": {
+      "kind": "package_definition",
+      "start": 71,
+      "end": 82,
+      "language": "vhdl",
+      "entity_kind": "namespace",
+      "qualified_name": "math_pkg",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "math_pkg"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Math package body",
+      "id": "IMPL_N_PACKAGE_BODY",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "package_definition"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 71,
+        "column": 6
+      },
+      "end": {
+        "row": 71,
+        "column": 43
+      }
+    },
+    "tagged_scope": "procedure add(signal a : inout natural; b : natural) is\n  begin\n    a <= a + b;\n  end procedure add;",
+    "scope": {
+      "kind": "subprogram_definition",
+      "start": 73,
+      "end": 76,
+      "language": "vhdl",
+      "entity_kind": "function",
+      "qualified_name": "math_pkg.add",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "math_pkg"
+        },
+        {
+          "kind": "function",
+          "name": "add"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Add body",
+      "id": "IMPL_N_PROCEDURE_BODY",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_definition"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 76,
+        "column": 6
+      },
+      "end": {
+        "row": 76,
+        "column": 54
+      }
+    },
+    "tagged_scope": "type shared_counter is protected body\n    variable n : natural := 0;\n    procedure increment is begin n := n + 1; end procedure;\n  end protected body shared_counter;",
+    "scope": {
+      "kind": "type_declaration",
+      "start": 78,
+      "end": 81,
+      "language": "vhdl",
+      "entity_kind": "class",
+      "qualified_name": "math_pkg.shared_counter",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "math_pkg"
+        },
+        {
+          "kind": "class",
+          "name": "shared_counter"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Shared counter body",
+      "id": "IMPL_N_PROTECTED_BODY",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "type_declaration"
+  }
+]
