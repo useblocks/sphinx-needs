@@ -61,19 +61,53 @@ def find_compile_db(start: Path, project_root: Path | None = None) -> Path | Non
         current = current.parent
 
 
+def _left_out(arg: str, input_file: str, input_base: str) -> int:
+    """How many arguments, ``arg`` first, :func:`filter_args` leaves out at ``arg``:
+    2 for an option whose separate value names an output (``-o out.o``, ``-MF dep.d``),
+    1 for one that asks for an output or none (``-c``, ``-MD``, ``-MFdep.d``) and for
+    the entry's own input, else 0."""
+    if arg in _DROP_WITH_VALUE:
+        return 2
+    if arg in _DROP_EXACT:
+        return 1
+    if arg.startswith(("-MF", "-MT", "-MQ")) and len(arg) > _MIN_JOINED_FLAG_LEN:
+        return 1  # joined form, e.g. -MFdep.d
+    # the TU source positional (exact match, or same basename)
+    if not arg.startswith("-") and (
+        arg in (input_file, input_base) or Path(arg).name == input_base
+    ):
+        return 1
+    return 0
+
+
 def filter_args(argv: list[str], input_file: str) -> list[str]:
     """Keep only flags libclang needs; drop the compiler, -c/-o, depfiles, input.
 
     A ``--`` ends the options: every argument after it is an input, so it is left
     out with them (the entry's own file is parsed on its own, and any other input
-    would make a second compiler job). A ``--`` that is the value of an option the
-    driver takes it for (``-Xlinker --``, ``-I --``) ends nothing, and the arguments
-    after it are still read as options. No ``--`` is passed on in either case:
-    libclang reads the first ``--`` of its arguments as the end of the options
-    whatever precedes it, so a pass-through option (:func:`.passes_next_argument`)
-    whose value is ``--`` is left out with it (no tool it hands it to runs in a
-    parse), and a ``-I``, ``-include``, ``-x``, ... whose value is ``--`` is joined
-    to it (``-I--``), which the driver reads the same.
+    would make a second compiler job). libclang reads the first ``--`` of its
+    arguments as the end of the options whatever precedes it, so no ``--`` is
+    passed on, and one that is the value of these options ends nothing (the
+    arguments after it are still read as options):
+
+    - a pass-through option (:func:`.passes_next_argument`: ``-Xlinker``,
+      ``-Xclang``, ``-mllvm``, ``-Xarch_<arch>``, ...) is left out with its ``--``.
+      A real compile rejects a ``--`` that reaches the compiler or the driver that
+      way (``-Xclang --``, ``-Xpreprocessor --``: "unknown argument: '--'";
+      ``-Xarch_host --``: "invalid Xarch argument"), and the other options hand it
+      to a tool or stage that has no say in preprocessing (the linker, the
+      assembler, LLVM's backend), so this loses nothing a working entry has;
+    - ``-I``, ``-include``, ``-isystem``, ``-iquote``, ``-idirafter``,
+      ``-isysroot`` and ``-x`` are joined to their ``--`` (``-I--``), which the
+      driver reads the same.
+
+    Nothing is promised for another option whose separate value is ``--``
+    (``-D --``, ``-imacros --``): the ``--`` is taken for the end of the options.
+
+    Any other value of a pass-through option is kept with it, verbatim, except that
+    of ``-Xarch_<arch>``, which the driver reads as one of its own options: it goes
+    through the same rules as a bare option, so ``-Xarch_host -MD`` is left out like
+    ``-MD`` (or the parse would write a dependency file).
     """
     out: list[str] = []
     skip_next = False
@@ -105,9 +139,16 @@ def filter_args(argv: list[str], input_file: str) -> list[str]:
                 out.append(arg)
             continue
         if pass_through is not None:
-            # Value of -Xclang/-Xlinker/-mllvm/... — another tool's, kept verbatim
-            # with its option, or left out with it when it is a `--`.
-            if arg != END_OF_OPTIONS:
+            # Value of -Xclang/-Xlinker/-mllvm/... — kept verbatim with its option,
+            # or left out with it when it is a `--`; the value of -Xarch_<arch> is
+            # one of the driver's own options, and left out as one would be.
+            if arg == END_OF_OPTIONS:
+                pass
+            elif pass_through.startswith("-Xarch_") and (
+                left_out := _left_out(arg, input_file, input_base)
+            ):
+                skip_next = left_out == 2
+            else:
                 out += [pass_through, arg]
             pass_through = None
             continue
@@ -116,21 +157,12 @@ def filter_args(argv: list[str], input_file: str) -> list[str]:
         if passes_next_argument(arg):
             pass_through = arg
             continue
-        if arg in _DROP_WITH_VALUE:
-            skip_next = True
+        if left_out := _left_out(arg, input_file, input_base):
+            skip_next = left_out == 2
             continue
-        if arg in _DROP_EXACT:
-            continue
-        if arg.startswith(("-MF", "-MT", "-MQ")) and len(arg) > _MIN_JOINED_FLAG_LEN:
-            continue  # joined form, e.g. -MFdep.d
         if arg in _KEEP_WITH_VALUE:
             out.append(arg)
             keep_next_value = True
-            continue
-        # Strip the TU source positional (exact match, or same basename).
-        if not arg.startswith("-") and (
-            arg in (input_file, input_base) or Path(arg).name == input_base
-        ):
             continue
         out.append(arg)
     if pass_through is not None:

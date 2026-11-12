@@ -333,16 +333,26 @@ def test_filter_args_double_dash_handed_to_another_tool_ends_nothing(option: str
     """``-Xlinker --`` hands the ``--`` to the linker: the driver reads the arguments
     after it as options. libclang, though, takes the first ``--`` of its arguments
     for the end of the options whatever precedes it, so the option is left out with
-    its ``--`` (none of these tools runs in a parse), and the ``-DFEATURE`` after it
-    is kept."""
+    its ``--``, and the ``-DFEATURE`` after it is kept. That loses nothing a working
+    entry has: a real compile rejects a ``--`` handed to the compiler or the driver
+    (``-Xclang``, ``-Xpreprocessor``, ``-Xarch_host``), and the other tools have no
+    say in preprocessing."""
     argv = ["clang++", "-std=c++17", option, "--", "-DFEATURE", "-c", "a.cpp"]
     assert compile_db.filter_args(argv, "a.cpp") == ["-std=c++17", "-DFEATURE"]
 
 
-@pytest.mark.parametrize("option", PASS_THROUGH_OPTIONS)
+#: The ``-Xarch_<arch>`` options, whose value the driver reads as one of its own.
+XARCH_OPTIONS = [o for o in PASS_THROUGH_OPTIONS if o.startswith("-Xarch_")]
+
+
+@pytest.mark.parametrize(
+    "option", [o for o in PASS_THROUGH_OPTIONS if o not in XARCH_OPTIONS]
+)
 def test_filter_args_keeps_another_tools_argument_verbatim(option: str):
     """Any other value of such an option is kept with it, verbatim: it is not read
-    as one of the driver's own options (``-c``, ``-o``) or as the input."""
+    as one of the driver's own options (``-c``, ``-o``) or as the input. (Not
+    ``-Xarch_<arch>``, whose value is the driver's own option: see
+    :func:`test_filter_args_reads_an_xarch_value_as_a_bare_option`.)"""
     argv = ["clang++", option, "-o", option, "a.cpp", "-DX", "-c", "a.cpp"]
     assert compile_db.filter_args(argv, "a.cpp") == [
         option,
@@ -351,6 +361,37 @@ def test_filter_args_keeps_another_tools_argument_verbatim(option: str):
         "a.cpp",
         "-DX",
     ]
+
+
+@pytest.mark.parametrize("option", XARCH_OPTIONS)
+@pytest.mark.parametrize(
+    ("values", "kept"),
+    [
+        pytest.param(["-MD"], False, id="MD"),
+        pytest.param(["-MMD"], False, id="MMD"),
+        pytest.param(["-MP"], False, id="MP"),
+        pytest.param(["-c"], False, id="c"),
+        pytest.param(["-MFdep.d"], False, id="MF-joined"),
+        pytest.param(["-o", "out.o"], False, id="o"),
+        pytest.param(["-MF", "dep.d"], False, id="MF"),
+        pytest.param(["a.cpp"], False, id="input"),
+        pytest.param(["-DFOO"], True, id="define"),
+        pytest.param(["-nostdinc"], True, id="nostdinc"),
+    ],
+)
+def test_filter_args_reads_an_xarch_value_as_a_bare_option(
+    option: str, values: list[str], kept: bool
+):
+    """``-Xarch_host`` (and ``-Xarch_<arch>`` for the architecture a Mach-O target
+    compiles) hands its value to the driver itself, which reads it as one of its own
+    options: so the value goes through the rules a bare option does. One that would
+    be left out (an output, a dependency file, ``-c``, the input) is left out with
+    its ``-Xarch_*``, and one that would be kept stays with it. Passed on,
+    ``-Xarch_host -MD`` makes the parse write a dependency file
+    (:func:`test_an_xarch_dependency_file_option_writes_no_file`)."""
+    argv = ["clang++", "-DX", option, *values, "-DY", "-c", "a.cpp"]
+    middle = [option, *values] if kept else []
+    assert compile_db.filter_args(argv, "a.cpp") == ["-DX", *middle, "-DY"]
 
 
 def test_filter_args_keeps_a_pass_through_option_missing_its_value():
@@ -413,6 +454,87 @@ def test_load_flags_map_entry_with_options_terminator(tmp_path: Path):
         f"{compile_db.WORKING_DIRECTORY_FLAG}{tmp_path.resolve()}",
         "-DX=1",
     ]
+
+
+def _extract_ids(root: Path, arguments: list[str], files: dict[str, str]) -> set[str]:
+    """The one-line need ids the libclang engine extracts from ``root/case.cpp``
+    under one ``compile_commands.json`` entry with ``arguments``, run in ``root``;
+    ``files`` are written under ``root`` first, ``case.cpp`` among them."""
+    for name, text in files.items():
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+    db = root / "compile_commands.json"
+    db.write_text(
+        json.dumps(
+            [{"directory": str(root), "file": "case.cpp", "arguments": arguments}]
+        )
+    )
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[root / "case.cpp"],
+            src_dir=root,
+            get_oneline_needs=True,
+            get_need_id_refs=False,
+            preprocessor=PreprocessorConfig(compile_commands=db),
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run()
+    return {need.need["id"] for need in analyse.oneline_needs}
+
+
+def test_an_entry_with_a_joined_value_and_an_options_terminator_is_parsed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Through libclang: ``-I --`` reaches the parse as ``-I--``, so the header in the
+    directory named ``--`` is found and the arm its macro selects is active; and the
+    ``other.cpp`` after the entry's ``--`` is left out, or it would be a second input
+    and libclang would load no unit at all. Each of the two, passed on as the entry
+    has it, leaves the parse without a unit."""
+    monkeypatch.chdir(tmp_path)
+    source = (
+        '#include "feature.h"\n'
+        "// @always, IMPL_ALWAYS, impl\n"
+        "#ifdef FEATURE\n// @on, IMPL_ON, impl\n"
+        "#else\n// @off, IMPL_OFF, impl\n#endif\n"
+    )
+    files = {
+        "case.cpp": source,
+        "other.cpp": "int other;\n",
+        "--/feature.h": "#define FEATURE 1\n",
+    }
+    arguments = [
+        "clang++",
+        "-std=c++17",
+        "-I",
+        "--",
+        "-c",
+        "--",
+        "case.cpp",
+        "other.cpp",
+    ]
+
+    assert _extract_ids(tmp_path, arguments, files) == {"IMPL_ALWAYS", "IMPL_ON"}
+
+
+def test_an_xarch_dependency_file_option_writes_no_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """``-Xarch_host -MD`` is the driver's own ``-MD``: passed on, the parse writes
+    ``case.d`` into the process' working directory. It is left out like a bare
+    ``-MD``, so the parse writes nothing."""
+    project = tmp_path / "project"
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    arguments = ["clang++", "-std=c++17", "-Xarch_host", "-MD", "-c", "case.cpp"]
+
+    ids = _extract_ids(project, arguments, {"case.cpp": "// @a, IMPL_A, impl\n"})
+
+    assert ids == {"IMPL_A"}
+    assert sorted(tmp_path.rglob("*.d")) == []
 
 
 def test_defines_to_args_pins_cpp_for_gnu_cpp_dialect():
