@@ -10,7 +10,8 @@ Unreleased
   (``.. need:req::``), and a new preset name ``need:<type>`` is taken by that need type as its bare name is. A bare
   ``base`` naming a need type whose bare directive is not the need (sphinx-needs' ``directive_name = "yield"`` or
   ``"qualified"``) is still that need type; a self-preset of that bare name is of the directive the name is
-  (the other extension's under ``"yield"``; none under ``"qualified"``, so it is refused)
+  (the other extension's under ``"yield"``; none under ``"qualified"``, so it is refused; and the domain's, under
+  any value, where a ``std`` or primary-domain directive has the name, such as ``data``)
   (`#2507 <https://github.com/useblocks/sphinx-needs/pull/2507>`__)
 
 - 🐛 A self-preset of a domain's directive (``base = "py:function"`` named ``py:function``, or ``need:req``) now applies

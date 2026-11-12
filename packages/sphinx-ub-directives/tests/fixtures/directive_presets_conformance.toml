@@ -28,7 +28,9 @@
 #     `sphinx.ext.autodoc` and `sphinx_ub_directives`, and reads the needs configuration from the same `ubproject.toml`
 #     (`needs_from_toml`); nothing else. ubCode reads the file as a project
 #   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
-#     the default ones (`req`, `spec`, `impl`, `test`), so a case never carries a need type
+#     the default ones (`req`, `spec`, `impl`, `test`), but in a case about a need type that
+#     shares its name with another directive, which declares that one type (lower case) in
+#     its `config`; so a case never carries a need type
 #     spelled with upper-case letters (the contract refuses one as a preset base, and a Sphinx
 #     build cannot use one at all)
 #   - a case never writes an RST option name with capitals, and never writes an option
@@ -2308,6 +2310,63 @@ source = '''
 code = "directive_preset_unknown_base"
 path = "parse.directive_presets.req.base"
 [case.expect.needs.REQ_Q05]
+type = "req"
+
+[[case]]
+name = "self-preset-of-a-bare-name-another-directive-has"
+why = "a self-preset is of the directive its name resolves to: with directive_name = yield, the bare dropdown is sphinx-design's, so the self-preset is, and the bare name makes no need"
+config = '''
+[needs.types.dropdown]
+title = "Dropdown"
+prefix = "DD_"
+directive_name = "yield"
+
+[parse.directive_presets.dropdown]
+base = "dropdown"
+options = { class-container = "zzcls" }
+'''
+source = '''
+.. dropdown:: Title
+
+   Body.
+
+.. need:dropdown:: A
+   :id: DD_Q06
+'''
+equivalent = '''
+.. dropdown:: Title
+   :class-container: zzcls
+
+   Body.
+
+.. need:dropdown:: A
+   :id: DD_Q06
+'''
+[case.expect]
+findings = []
+[case.expect.needs.DD_Q06]
+type = "dropdown"
+
+[[case]]
+name = "refused-identity-option-in-a-self-preset-of-a-need-type"
+why = "a self-preset of a need type's bare name, where the bare name is the need's, has the need type as its base: a need's id is an identity option there too"
+config = '''
+[parse.directive_presets.req]
+base = "req"
+options = { id = "REQ_Q07" }
+'''
+source = '''
+.. req:: A
+   :id: REQ_Q08
+
+.. req:: B
+'''
+[case.expect]
+missing = ["REQ_Q07"]
+[[case.expect.findings]]
+code = "directive_preset_identity_option"
+path = "parse.directive_presets.req.options.id"
+[case.expect.needs.REQ_Q08]
 type = "req"
 
 [[case]]

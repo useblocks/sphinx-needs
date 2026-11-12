@@ -573,6 +573,16 @@ directive_name = "{step}"
         ),
         pytest.param(
             {"dropdown": "yield", "step": "claim"},
+            '[parse.directive_presets.Dropdown]\nbase = "DROPDOWN"\n'
+            'options = { class-container = "zzcls" }\n',
+            ".. dropdown:: A\n\n   Body.\n",
+            [],
+            {},
+            "zzcls",
+            id="yield-the-other-directive-name-and-base-cased-differently",
+        ),
+        pytest.param(
+            {"dropdown": "yield", "step": "claim"},
             '[parse.directive_presets.dropdown]\nbase = "dropdown"\n'
             'options = { status = "zz" }\n',
             ".. dropdown:: A\n\n   Body.\n",

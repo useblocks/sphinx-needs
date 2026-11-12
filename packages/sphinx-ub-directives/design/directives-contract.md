@@ -218,12 +218,16 @@ force_options = { collapse = true }  # a use cannot change these
 3. A **self-preset** is an entry whose name equals its base (case-insensitively): it gives
    that directive project-wide defaults. It is of the directive its name resolves to:
    a domain's (`py:function`, `need:req`), and, for a need type's BARE name, the need
-   only where the bare name is the need's -- where the type's `directive_name` leaves
-   it to another directive (`yield`) it is that directive's, and where no directive has
-   it (`qualified`) it is `directive_preset_unknown_base` at `….base`. A self-preset of
-   one spelling of a need type is not one of the other (`req` and `need:req`).
+   only where the bare name is the need's (and then it has the need type as its base, with
+   every need-type check of 3.3) -- where the type's `directive_name` leaves it to another
+   directive (`yield`), or a `std` or primary-domain directive has it (any value), it is
+   that directive's, and where no directive has it (`qualified`) it is
+   `directive_preset_unknown_base` at `….base`. A self-preset of one spelling of a need
+   type is not one of the other (`req` and `need:req`).
    Enforced by: corpus `self-preset-gives-project-defaults`, `self-preset-of-a-need-type`,
-   `self-preset-of-a-qualified-need-type`, `refused-self-preset-of-a-bare-name-no-directive-has`;
+   `refused-identity-option-in-a-self-preset-of-a-need-type`,
+   `self-preset-of-a-qualified-need-type`, `self-preset-of-a-bare-name-another-directive-has`,
+   `refused-self-preset-of-a-bare-name-no-directive-has`;
    tests `test_presets.py::test_a_self_preset_of_a_need_type_s_bare_name`,
    `…::test_a_self_preset_of_a_domain_directive_applies`.
 4. A base naming another (accepted, non-self) preset is `directive_preset_base_is_preset`:
@@ -264,7 +268,7 @@ sorted; the path is `….<name>.<table>.<key>`.
    `px-need-option-keys-equal-ignoring-case-conflict`.
 2. An identity option — the base's `name`, or a need's `id` — is
    `directive_preset_identity_option`. Enforced by: corpus `refused-identity-option-name`,
-   `refused-identity-option-id`.
+   `refused-identity-option-id`, `refused-identity-option-in-a-self-preset-of-a-need-type`.
 3. A key the base does not take is `directive_preset_unknown_option`.
    - **A need-type base** takes exactly the options its need type's directive MATCHES: the
      directive's own options and every field and link of the project -- global ones, the
