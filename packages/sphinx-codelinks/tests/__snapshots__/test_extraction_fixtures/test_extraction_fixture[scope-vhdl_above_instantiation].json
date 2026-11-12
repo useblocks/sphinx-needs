@@ -1,0 +1,48 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 6
+      },
+      "end": {
+        "row": 2,
+        "column": 41
+      }
+    },
+    "tagged_scope": "u_fifo : entity work.fifo port map (clk => clk);",
+    "scope": {
+      "kind": "component_instantiation_statement",
+      "start": 4,
+      "end": 4,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "top.rtl.u_fifo",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "u_fifo"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Fifo instance",
+      "id": "IMPL_VHDL_INST",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "component_instantiation_statement"
+  }
+]

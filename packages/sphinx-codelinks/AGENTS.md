@@ -12,7 +12,7 @@ sphinx-codelinks is a Sphinx extension that provides fast source code traceabili
 sphinx-needs. It:
 
 - **analyses source code** — scans C, C++, C#, Python, Rust, Go, TypeScript/JavaScript,
-  YAML, JSON, Bash and PowerShell files for special comment markers, with tree-sitter;
+  YAML, JSON, Bash, PowerShell and VHDL files for special comment markers, with tree-sitter;
 - **creates needs from them** — turns discovered markers into sphinx-needs items;
 - **traces sources** — links documentation to exact source lines, and generates a
   syntax-highlighted HTML page per traced file with line anchors;

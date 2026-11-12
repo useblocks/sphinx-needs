@@ -1,0 +1,152 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 38
+      }
+    },
+    "tagged_scope": "p_if : process (clk) begin end process p_if;",
+    "scope": {
+      "kind": "process_statement",
+      "start": 5,
+      "end": 5,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "top.rtl.gen.p_if",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "gen"
+        },
+        {
+          "kind": "scope",
+          "name": "p_if"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "If arm",
+      "id": "IMPL_VHDL_GEN_IF",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "process_statement"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 8
+      },
+      "end": {
+        "row": 6,
+        "column": 44
+      }
+    },
+    "tagged_scope": "p_elsif : process (clk) begin end process p_elsif;",
+    "scope": {
+      "kind": "process_statement",
+      "start": 8,
+      "end": 8,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "top.rtl.gen.p_elsif",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "gen"
+        },
+        {
+          "kind": "scope",
+          "name": "p_elsif"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Elsif arm",
+      "id": "IMPL_VHDL_GEN_ELSIF",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "process_statement"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 8
+      },
+      "end": {
+        "row": 9,
+        "column": 42
+      }
+    },
+    "tagged_scope": "p_else : process (clk) begin end process p_else;",
+    "scope": {
+      "kind": "process_statement",
+      "start": 11,
+      "end": 11,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "top.rtl.gen.p_else",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "scope",
+          "name": "gen"
+        },
+        {
+          "kind": "scope",
+          "name": "p_else"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Else arm",
+      "id": "IMPL_VHDL_GEN_ELSE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "process_statement"
+  }
+]

@@ -1,0 +1,127 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 33
+      },
+      "end": {
+        "row": 3,
+        "column": 75
+      }
+    },
+    "tagged_scope": "signal \\weird name\\ : bit;",
+    "scope": {
+      "kind": "signal_declaration",
+      "start": 4,
+      "end": 4,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "counter.RTL.\\weird name\\",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "RTL"
+        },
+        {
+          "kind": "scope",
+          "name": "\\weird name\\"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Extended identifier",
+      "id": "IMPL_N_EXTENDED",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "signal_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 25
+      },
+      "end": {
+        "row": 4,
+        "column": 60
+      }
+    },
+    "tagged_scope": "signal a, b : bit;",
+    "scope": {
+      "kind": "signal_declaration",
+      "start": 5,
+      "end": 5,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Two signals",
+      "id": "IMPL_N_TWO_NAMES",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "signal_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 6
+      },
+      "end": {
+        "row": 5,
+        "column": 33
+      }
+    },
+    "tagged_scope": "function \"+\"(l, r : bit) return bit is begin return l xor r; end function;",
+    "scope": {
+      "kind": "subprogram_definition",
+      "start": 7,
+      "end": 7,
+      "language": "vhdl",
+      "entity_kind": "function",
+      "qualified_name": "counter.RTL.\"+\"",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        },
+        {
+          "kind": "impl",
+          "name": "RTL"
+        },
+        {
+          "kind": "function",
+          "name": "\"+\""
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Plus",
+      "id": "IMPL_N_OPERATOR",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_definition"
+  }
+]

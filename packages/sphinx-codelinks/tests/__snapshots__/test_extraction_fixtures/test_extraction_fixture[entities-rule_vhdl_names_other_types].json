@@ -1,0 +1,254 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 6
+      },
+      "end": {
+        "row": 1,
+        "column": 41
+      }
+    },
+    "tagged_scope": "type word_t is array (0 to 3) of bit;",
+    "scope": {
+      "kind": "type_declaration",
+      "start": 3,
+      "end": 3,
+      "language": "vhdl",
+      "entity_kind": "type",
+      "qualified_name": "types_pkg.word_t",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "types_pkg"
+        },
+        {
+          "kind": "type",
+          "name": "word_t"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Word array",
+      "id": "IMPL_N_ARRAY_TYPE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "type_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 6
+      },
+      "end": {
+        "row": 3,
+        "column": 46
+      }
+    },
+    "tagged_scope": "type count_t is range 0 to 15;",
+    "scope": {
+      "kind": "type_declaration",
+      "start": 5,
+      "end": 5,
+      "language": "vhdl",
+      "entity_kind": "type",
+      "qualified_name": "types_pkg.count_t",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "types_pkg"
+        },
+        {
+          "kind": "type",
+          "name": "count_t"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Count integer",
+      "id": "IMPL_N_INTEGER_TYPE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "type_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 6
+      },
+      "end": {
+        "row": 5,
+        "column": 43
+      }
+    },
+    "tagged_scope": "type node_ptr is access integer;",
+    "scope": {
+      "kind": "type_declaration",
+      "start": 7,
+      "end": 7,
+      "language": "vhdl",
+      "entity_kind": "type",
+      "qualified_name": "types_pkg.node_ptr",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "types_pkg"
+        },
+        {
+          "kind": "type",
+          "name": "node_ptr"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Node access",
+      "id": "IMPL_N_ACCESS_TYPE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "type_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 6
+      },
+      "end": {
+        "row": 7,
+        "column": 51
+      }
+    },
+    "tagged_scope": "type dist_t is range 0 to 1000 units mm; cm = 10 mm; end units;",
+    "scope": {
+      "kind": "type_declaration",
+      "start": 9,
+      "end": 9,
+      "language": "vhdl",
+      "entity_kind": "type",
+      "qualified_name": "types_pkg.dist_t",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "types_pkg"
+        },
+        {
+          "kind": "type",
+          "name": "dist_t"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Distance physical",
+      "id": "IMPL_N_PHYSICAL_TYPE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "type_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 6
+      },
+      "end": {
+        "row": 9,
+        "column": 38
+      }
+    },
+    "tagged_scope": "type log_t is file of character;",
+    "scope": {
+      "kind": "type_declaration",
+      "start": 11,
+      "end": 11,
+      "language": "vhdl",
+      "entity_kind": "type",
+      "qualified_name": "types_pkg.log_t",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "types_pkg"
+        },
+        {
+          "kind": "type",
+          "name": "log_t"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Log file",
+      "id": "IMPL_N_FILE_TYPE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "type_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 11,
+        "column": 6
+      },
+      "end": {
+        "row": 11,
+        "column": 46
+      }
+    },
+    "tagged_scope": "type cell_t;",
+    "scope": {
+      "kind": "type_declaration",
+      "start": 13,
+      "end": 13,
+      "language": "vhdl",
+      "entity_kind": "type",
+      "qualified_name": "types_pkg.cell_t",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "types_pkg"
+        },
+        {
+          "kind": "type",
+          "name": "cell_t"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Incomplete",
+      "id": "IMPL_N_INCOMPLETE_TYPE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "type_declaration"
+  }
+]

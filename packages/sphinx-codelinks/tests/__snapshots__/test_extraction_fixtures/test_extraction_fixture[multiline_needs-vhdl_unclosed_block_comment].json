@@ -1,0 +1,119 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 1
+      },
+      "end": {
+        "row": 4,
+        "column": 45
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Bare in block",
+      "id": "IMPL_VHDL_UNCLOSED_BARE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 4
+      },
+      "end": {
+        "row": 5,
+        "column": 48
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Dash in block",
+      "id": "IMPL_VHDL_UNCLOSED_DASH",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 11
+      },
+      "end": {
+        "row": 6,
+        "column": 32
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need_ids": [
+      "REQ_VHDL_UNCLOSED_REF"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 0
+      },
+      "end": {
+        "row": 11,
+        "column": 8
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "type": "impl",
+      "title": "Multi-line in block",
+      "id": "IMPL_VHDL_UNCLOSED_ML",
+      "content": "Body.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.vhd",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 8,
+        "col": 0
+      },
+      "end": {
+        "line": 12,
+        "col": 8
+      },
+      "content_start": {
+        "line": 11,
+        "col": 0
+      },
+      "option_lines": {
+        "id": 9
+      },
+      "scope": null
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": null
+  }
+]

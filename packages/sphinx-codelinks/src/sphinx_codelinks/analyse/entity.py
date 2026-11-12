@@ -61,7 +61,7 @@ Mechanism = Literal["doc_comment", "leading", "trailing", "enclosing"]
 
 ``doc_comment`` is *declared*: a documentation comment (``///``, ``//!``, ``/**``,
 ``/*!``, a C# ``///``, a JSDoc ``/**``, a Python docstring, PowerShell comment-based
-help first in a function's body) attached by its own rule.
+help first in a function's body, a VHDL ``--!``) attached by its own rule.
 The other three are *inferred* from where a plain comment sits: on the lines before the
 entity (``leading``), after code on the entity's own line (``trailing``), or inside its
 body (``enclosing``).
@@ -73,8 +73,9 @@ class SemanticElement(TypedDict):
 
     kind: str
     """What it is: an :data:`EntityKind`, or ``scope`` for a C++ qualifier the syntax
-    cannot classify (the ``ns`` of ``void ns::W::f() {}``). A Rust impl is an
-    ``impl``, a Go receiver's type a ``type``."""
+    cannot classify (the ``ns`` of ``void ns::W::f() {}``) and for a VHDL design
+    element no kind fits (a process, a signal). A Rust impl is an ``impl``, a Go
+    receiver's type a ``type``."""
     name: str
     """Its name, as the qualified name spells it: ``Box<bool>`` keeps the arguments of
     an explicit specialisation, an expression name (``module.exports.f``) is whole,
@@ -87,8 +88,9 @@ class SemanticElement(TypedDict):
 class EntityName:
     """A definition node, named."""
 
-    kind: EntityKind
-    """What the node defines."""
+    kind: EntityKind | None
+    """What the node defines; ``None`` for a VHDL design element no kind fits (a
+    process, a signal, a port), which is named all the same."""
     qualified_name: str | None
     """The name within its file, qualified by the containers the file shows
     (``ns::Widget::draw``, ``Shape.area``, ``<Widget as Shape>::area``); ``None`` when
@@ -123,7 +125,8 @@ class CodeScope(TypedDict):
     language: str
     """The file's language (:func:`scope_language`): the rule ``semantic`` renders by."""
     entity_kind: str | None
-    """The entity's kind (:data:`EntityKind`), ``None`` if it could not be named."""
+    """The entity's kind (:data:`EntityKind`), ``None`` if it could not be named, or,
+    for a VHDL design element no kind fits, if it has none."""
     qualified_name: str | None
     """The entity's in-file qualified name, ``None`` if it has none."""
     semantic: list[SemanticElement] | None
@@ -149,6 +152,11 @@ class CodeScope(TypedDict):
 # (a lambda bound to a name included), Rust ``const``/``static``, Go ``var``/``const``,
 # TypeScript plain consts, and macro invocations. A marker above one of them is
 # attached to the enclosing entity, or to the file.
+#
+# VHDL is the deliberate exception: its signals, constants, variables, files and
+# aliases, and the generics, ports and parameters of its interface lists, ARE entities,
+# because a hardware design traces its ports and signals. They have no entity kind
+# (see _VHDL_KINDS), and are named where they declare one name.
 ENTITY_NODE_TYPES: dict[CommentType, set[str]] = {
     # @Python Scope Node Types, IMPL_PY_2, impl, [FE_PY]
     CommentType.python: {"function_definition", "class_definition"},
@@ -239,6 +247,54 @@ ENTITY_NODE_TYPES: dict[CommentType, set[str]] = {
         "class_property_definition",
         "enum_statement",
         "command",
+    },
+    # @VHDL Scope Node Types, IMPL_VHDL_2, impl, [FE_VHDL]
+    # VHDL's design elements, data elements included (see above). Sequential
+    # statements are not among them: a marker among those documents its process or
+    # subprogram.
+    CommentType.vhdl: {
+        # design units
+        "entity_declaration",
+        "architecture_definition",
+        "package_declaration",
+        "package_definition",
+        "package_instantiation_declaration",
+        "configuration_declaration",
+        "context_declaration",
+        # subprograms
+        "subprogram_declaration",
+        "subprogram_definition",
+        "subprogram_instantiation_declaration",
+        # declarations
+        "type_declaration",
+        "subtype_declaration",
+        "component_declaration",
+        "constant_declaration",
+        "signal_declaration",
+        "variable_declaration",
+        "file_declaration",
+        "alias_declaration",
+        # generics, ports and parameters
+        "interface_declaration",
+        "interface_constant_declaration",
+        "interface_signal_declaration",
+        "interface_variable_declaration",
+        "interface_file_declaration",
+        "interface_type_declaration",
+        "interface_subprogram_declaration",
+        "interface_package_declaration",
+        # concurrent statements
+        "process_statement",
+        "block_statement",
+        "for_generate_statement",
+        "if_generate_statement",
+        "case_generate_statement",
+        "component_instantiation_statement",
+        "concurrent_simple_signal_assignment",
+        "concurrent_conditional_signal_assignment",
+        "concurrent_selected_signal_assignment",
+        "concurrent_assertion_statement",
+        "concurrent_procedure_call_statement",
     },
 }
 SCOPE_NODE_TYPES = ENTITY_NODE_TYPES
@@ -474,6 +530,27 @@ FIRST_ENTITY_WRAPPER_TYPES: dict[CommentType, frozenset[str]] = {
     CommentType.powershell: frozenset({"pipeline", "pipeline_chain"}),
 }
 
+# @VHDL wrappers a leading comment documents the first item of, IMPL_VHDL_5, impl, [FE_VHDL]
+# The nodes whose FIRST item a comment before them documents, each with the child kinds
+# passed over to reach it: VHDL's grammar places a comment before a design unit's
+# context clauses beside the unit, a comment before the first declaration of a process,
+# a block or a generate beside their head or body, and a comment before the first
+# generic or port beside the interface list. Unlike a wrapper of WRAPPER_TYPES, such a
+# node is no entity's stand-in: a comment inside one is not inside its first item, so
+# only the next-entity search reads this table, and the first item must be an entity
+# itself -- the search never walks past it to a later one.
+FIRST_ITEM_WRAPPER_TYPES: dict[CommentType, dict[str, frozenset[str]]] = {
+    CommentType.vhdl: {
+        # a design unit's context clauses belong to the unit
+        "design_unit": frozenset({"library_clause", "use_clause", "context_reference"}),
+        "process_head": frozenset(),
+        "block_head": frozenset(),
+        "generate_head": frozenset(),
+        "generate_block": frozenset(),
+        "interface_list": frozenset(),
+    },
+}
+
 
 def is_entity(node: TreeSitterNode, comment_type: CommentType) -> bool:
     """Whether ``node`` is an entity of its language (kind and predicate)."""
@@ -531,12 +608,14 @@ def unwrap_entity(
 # ---------------------------------------------------------------------------
 
 # The openings of a documentation comment, per language. A line opening followed by
-# one more ``/`` (``////``) and a block opening followed by ``*`` or ``/`` (``/***``,
-# ``/**/``) are plain comments.
+# one more ``/`` (``////``) or ``!`` (VHDL's ``--!!``, commented-out code) and a block
+# opening followed by ``*`` or ``/`` (``/***``, ``/**/``) are plain comments.
 _DOC_LINE_OPENINGS: dict[CommentType, tuple[str, ...]] = {
     CommentType.cpp: ("///", "//!"),
     CommentType.cs: ("///",),
     CommentType.rust: ("///", "//!"),
+    # Doxygen's VHDL comment
+    CommentType.vhdl: ("--!",),
 }
 _DOC_BLOCK_OPENINGS: dict[CommentType, tuple[str, ...]] = {
     CommentType.cpp: ("/**", "/*!"),
@@ -560,7 +639,10 @@ def is_doc_comment(
     written = ((node.text or b"") if text is None else text).decode("utf-8", "replace")
     for opening in _DOC_LINE_OPENINGS.get(comment_type, ()):
         if written.startswith(opening):
-            return not (opening == "///" and written.startswith("////"))
+            return not (
+                (opening == "///" and written.startswith("////"))
+                or (opening == "--!" and written.startswith("--!!"))
+            )
     for opening in _DOC_BLOCK_OPENINGS.get(comment_type, ()):
         if written.startswith(opening):
             return opening == "/*!" or not written[len(opening) :].startswith(
@@ -640,7 +722,7 @@ def _element(kind: str, name: str) -> SemanticElement:
 
 
 def _named(
-    kind: EntityKind,
+    kind: EntityKind | None,
     qualified_name: str | None,
     semantic: Iterable[SemanticElement],
     name_end: int | None = None,
@@ -3149,6 +3231,153 @@ def _powershell_describe(node: TreeSitterNode) -> EntityName | None:
     )
 
 
+# --- VHDL --------------------------------------------------------------------
+
+# @VHDL entity kinds, IMPL_VHDL_8, impl, [FE_VHDL]
+# The entity kind of each VHDL design element the existing kinds fit: an entity is a
+# ``module``, its architecture an ``impl`` of it, a package (declaration, body or
+# instance) a ``namespace``, a component the ``interface`` of the entity it stands for,
+# a function or a procedure (declared, defined or instantiated) a ``function``. A type
+# is read by its definition (:data:`_VHDL_TYPE_KINDS`). Every other design element --
+# a configuration, a context, a process, a block, a generate, an instance, a concurrent
+# statement, and the data elements (signals, constants, variables, files, aliases,
+# generics, ports, parameters) -- has no kind: it is named, where it declares one name,
+# and its name's last component is a ``scope``.
+_VHDL_KINDS: dict[str, EntityKind] = {
+    "entity_declaration": "module",
+    "architecture_definition": "impl",
+    "package_declaration": "namespace",
+    "package_definition": "namespace",
+    "package_instantiation_declaration": "namespace",
+    "component_declaration": "interface",
+    "subprogram_declaration": "function",
+    "subprogram_definition": "function",
+    "subprogram_instantiation_declaration": "function",
+    "subtype_declaration": "type",
+}
+
+# A type declaration's kind, by the definition it holds; any other definition (an
+# integer, a physical, an array, an access, a file type) is a ``type``.
+_VHDL_TYPE_KINDS: dict[str, EntityKind] = {
+    "enumeration_type_definition": "enum",
+    "record_type_definition": "record",
+    "protected_type_declaration": "class",
+    "protected_type_body": "class",
+}
+
+# The field that names each design element; the rest are named otherwise (see
+# _vhdl_own_name).
+_VHDL_NAME_FIELDS: dict[str, str] = {
+    "entity_declaration": "entity",
+    "architecture_definition": "architecture",
+    "package_declaration": "package",
+    "package_definition": "package",
+    "package_instantiation_declaration": "package",
+    "interface_package_declaration": "package",
+    "configuration_declaration": "configuration",
+    "component_declaration": "component",
+    "type_declaration": "type",
+    "subtype_declaration": "type",
+    "interface_type_declaration": "type",
+}
+
+# The nodes a subprogram's name is in, and its field there.
+_VHDL_SUBPROGRAM_SPECIFICATIONS: dict[str, str] = {
+    "function_specification": "function",
+    "procedure_specification": "procedure",
+    "interface_function_specification": "function",
+    "interface_procedure_specification": "procedure",
+}
+
+
+def _vhdl_kind(node: TreeSitterNode) -> EntityKind | None:
+    if node.type == "type_declaration":
+        return next(
+            (
+                _VHDL_TYPE_KINDS[child.type]
+                for child in node.named_children
+                if child.type in _VHDL_TYPE_KINDS
+            ),
+            "type",
+        )
+    return _VHDL_KINDS.get(node.type)
+
+
+# @VHDL design element names, IMPL_VHDL_9, impl, [FE_VHDL]
+def _vhdl_own_name(node: TreeSitterNode) -> str | None:
+    """A design element's own name, as the source writes it (VHDL is case-insensitive,
+    and an extended identifier keeps its backslashes, ``\\a b\\``): its declared name,
+    the label of a statement, or the one name of a declaration of data; ``None`` for
+    an unlabelled statement and for a declaration of several names (``signal a, b``)."""
+    field = _VHDL_NAME_FIELDS.get(node.type)
+    if field is not None:
+        return _text(node.child_by_field_name(field)) or None
+    for child in node.named_children:
+        spec_field = _VHDL_SUBPROGRAM_SPECIFICATIONS.get(child.type)
+        if spec_field is not None:
+            return _text(child.child_by_field_name(spec_field)) or None
+        if child.type == "label_declaration":
+            return _text(_powershell_child(child, "label")) or None
+        if child.type == "identifier_list":
+            names = child.named_children
+            if len(names) != 1:
+                return None
+            return _text(names[0]) or None
+    if node.type == "subprogram_instantiation_declaration":
+        designator = node.child_by_field_name("function") or node.child_by_field_name(
+            "procedure"
+        )
+        return _text(designator) or None
+    if node.type in ("alias_declaration", "context_declaration"):
+        # the designator, the first child
+        children = node.named_children
+        return (_text(children[0]) or None) if children else None
+    return None
+
+
+def _vhdl_components(node: TreeSitterNode) -> list[SemanticElement] | None:
+    """The components ``node`` stands for: an architecture is an ``impl`` of the
+    ``module`` its ``of`` clause names (``counter.rtl``); ``None`` without a name."""
+    own = _vhdl_own_name(node)
+    if own is None:
+        return None
+    element = _element(_vhdl_kind(node) or "scope", own)
+    if node.type == "architecture_definition":
+        entity = _text(node.child_by_field_name("entity"))
+        if not entity:
+            return None
+        return [_element("module", entity), element]
+    return [element]
+
+
+def _vhdl_describe(node: TreeSitterNode) -> EntityName | None:
+    """A VHDL design element, named by the design elements around it, joined with
+    ``.`` as VHDL's expanded names are (``pkg.add``, ``counter.rtl.p_main``).
+
+    An architecture is named under the entity it implements (``counter.rtl``), and so
+    is what it holds. A design element inside an unnamed one (an unlabelled process,
+    a declaration of several names) has no name. See :data:`_VHDL_KINDS` for the
+    kinds.
+    """
+    if not is_entity(node, CommentType.vhdl):
+        return None
+    kind = _vhdl_kind(node)
+    own = _vhdl_components(node)
+    if own is None:
+        return EntityName(kind, None, None)
+    outer: list[SemanticElement] = []
+    ancestor = node.parent
+    while ancestor is not None:
+        if is_entity(ancestor, CommentType.vhdl):
+            components = _vhdl_components(ancestor)
+            if components is None:
+                return EntityName(kind, None, None)
+            outer[:0] = components
+        ancestor = ancestor.parent
+    semantic = [*outer, *own]
+    return _named(kind, ".".join(element["name"] for element in semantic), semantic)
+
+
 def _data_describe(node: TreeSitterNode) -> EntityName:
     """A YAML or JSON entry: a key/value pair is a ``key``, anything else an ``item``."""
     is_pair = node.type in ("block_mapping_pair", "flow_pair", "pair")
@@ -3164,6 +3393,7 @@ _DESCRIBERS: dict[CommentType, Callable[[TreeSitterNode], EntityName | None]] = 
     CommentType.ts: _ts_describe,
     CommentType.bash: _bash_describe,
     CommentType.powershell: _powershell_describe,
+    CommentType.vhdl: _vhdl_describe,
     CommentType.yaml: _data_describe,
     CommentType.jsonc: _data_describe,
 }
@@ -3294,7 +3524,7 @@ def render_semantic(
     no path, and folds the modules before an impl into a self type written bare
     (``m::G``). Python joins them with ``.``, with ``<locals>`` after a function or a
     method another component follows (CPython's ``__qualname__``). C#, Go,
-    TypeScript, JavaScript, Bash and PowerShell join them with ``.``.
+    TypeScript, JavaScript, Bash, PowerShell and VHDL join them with ``.``.
 
     :param semantic: An entity's components, as :func:`describe_entity` gives them.
     :param language: The language of the entity's file, as ``scope.language``
@@ -3379,7 +3609,7 @@ def scope_language(comment_type: CommentType, path: PurePath) -> str:
     ``csharp``; ``javascript`` for a ``.js``, ``.jsx``, ``.mjs`` or ``.cjs`` file, in
     any case, and ``typescript`` for every other file of the ``ts`` comment type,
     ``.tsx`` included; otherwise the comment type (``python``, ``rust``, ``go``,
-    ``yaml``, ``jsonc``, ``bash``, ``powershell``). A ``.c`` file is parsed with the C++ grammar too,
+    ``yaml``, ``jsonc``, ``bash``, ``powershell``, ``vhdl``). A ``.c`` file is parsed with the C++ grammar too,
     and its components render as C++'s.
 
     :param comment_type: The project's comment type.

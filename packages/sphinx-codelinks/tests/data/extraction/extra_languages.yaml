@@ -11,3 +11,11 @@ default_oneliner_jsonc:
   source: |
     // @Jsonc Title, IMPL_JSONC, impl, [REQ_JSONC]
     { "k": 1 }
+
+default_oneliner_vhdl:
+  lang: vhdl
+  config: default
+  source: |
+    -- @Vhdl Title, IMPL_VHDL, impl, [REQ_VHDL]
+    entity e is
+    end entity e;

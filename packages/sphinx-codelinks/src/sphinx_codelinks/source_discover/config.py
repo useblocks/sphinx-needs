@@ -30,6 +30,7 @@ COMMENT_FILETYPE = {
     # Scripts, script modules and module manifests: all three are PowerShell
     # source with `#` and `<# #>` comments.
     "powershell": ["ps1", "psm1", "psd1"],
+    "vhdl": ["vhd", "vhdl"],
 }
 
 
@@ -88,6 +89,8 @@ class CommentType(str, Enum):  # noqa: UP042  # StrEnum changes str(member), whi
     bash = "bash"
     # @Support PowerShell style comments, IMPL_PS_1, impl, [FE_POWERSHELL]
     powershell = "powershell"
+    # @Support VHDL style comments, IMPL_VHDL_1, impl, [FE_VHDL]
+    vhdl = "vhdl"
 
 
 def default_exclude_for_comment_type(comment_type: str) -> list[str]:

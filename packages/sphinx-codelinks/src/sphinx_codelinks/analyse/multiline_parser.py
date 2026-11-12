@@ -19,6 +19,7 @@ comment kind                              stripped from each line               
 ========================================  ==================================================  ===========================================
 line comment ``//``, ``///``, ``//!``     the delimiter, then ONE space if present            C/C++, C#, Rust, Go, TS/JS, JSONC
 line comment ``#``                        the delimiter, then ONE space if present            Python, YAML, Bash, PowerShell
+line comment ``--``, ``---``, ``--!``     the delimiter, then ONE space if present            VHDL
 block comment ``<# … #>``                 a first row holding only ``<#`` and a last row      PowerShell
                                           holding only ``#>`` are dropped; the delimiters
                                           are removed (no leader rule)
@@ -32,7 +33,6 @@ block comment ``/* … */``, ``/** … */``,  a first row holding only the opene
 Python docstring                          the quotes and any string prefix; the interior      Python
                                           dedented as ``inspect.cleandoc`` does (no line is
                                           removed)
-line comment ``--``                       one row to add when the language lands              VHDL, SQL (sphinx-needs #2077)
 block comment ``<!-- … -->``              one row to add when the language lands              Markdown (sphinx-needs #1895)
 ========================================  ==================================================  ===========================================
 
@@ -63,8 +63,9 @@ logger = get_logger(__name__)
 
 CommentKind = Literal["line", "block", "docstring", "unknown"]
 
-#: line-comment delimiters, longest first so that ``///`` is not read as ``//``
-LINE_DELIMITERS: tuple[str, ...] = ("///", "//!", "//", "#")
+#: line-comment delimiters, longest first so that ``///`` is not read as ``//``, and
+#: ``---`` (a common VHDL style) not as ``--``
+LINE_DELIMITERS: tuple[str, ...] = ("///", "//!", "//", "---", "--!", "--", "#")
 
 #: PowerShell's block comment delimiters
 POWERSHELL_BLOCK_OPENER = "<#"

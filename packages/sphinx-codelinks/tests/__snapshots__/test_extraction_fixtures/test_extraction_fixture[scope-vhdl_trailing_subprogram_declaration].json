@@ -1,0 +1,304 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 49
+      },
+      "end": {
+        "row": 1,
+        "column": 89
+      }
+    },
+    "tagged_scope": "procedure inc(variable v : inout integer);",
+    "scope": {
+      "kind": "subprogram_declaration",
+      "start": 2,
+      "end": 2,
+      "language": "vhdl",
+      "entity_kind": "function",
+      "qualified_name": "p.inc",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "p"
+        },
+        {
+          "kind": "function",
+          "name": "inc"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Increment",
+      "id": "IMPL_VHDL_PROC_DECL_PKG",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 47
+      },
+      "end": {
+        "row": 2,
+        "column": 78
+      }
+    },
+    "tagged_scope": "procedure pair(a : in bit; b : out bit);",
+    "scope": {
+      "kind": "subprogram_declaration",
+      "start": 3,
+      "end": 3,
+      "language": "vhdl",
+      "entity_kind": "function",
+      "qualified_name": "p.pair",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "p"
+        },
+        {
+          "kind": "function",
+          "name": "pair"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Pair",
+      "id": "IMPL_VHDL_PROC_PAIR",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 46
+      },
+      "end": {
+        "row": 3,
+        "column": 72
+      }
+    },
+    "tagged_scope": "function g(x : integer) return integer;",
+    "scope": {
+      "kind": "subprogram_declaration",
+      "start": 4,
+      "end": 4,
+      "language": "vhdl",
+      "entity_kind": "function",
+      "qualified_name": "p.g",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "p"
+        },
+        {
+          "kind": "function",
+          "name": "g"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "G",
+      "id": "IMPL_VHDL_FN_DECL",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 34
+      },
+      "end": {
+        "row": 4,
+        "column": 66
+      }
+    },
+    "tagged_scope": "a : in bit",
+    "scope": {
+      "kind": "interface_declaration",
+      "start": 5,
+      "end": 5,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": "p.split.a",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "p"
+        },
+        {
+          "kind": "function",
+          "name": "split"
+        },
+        {
+          "kind": "scope",
+          "name": "a"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Split a",
+      "id": "IMPL_VHDL_PARAM_A",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "interface_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 36
+      },
+      "end": {
+        "row": 5,
+        "column": 69
+      }
+    },
+    "tagged_scope": "procedure split(a : in bit; -- @Split a, IMPL_VHDL_PARAM_A, impl\n                  b : out bit);",
+    "scope": {
+      "kind": "subprogram_declaration",
+      "start": 5,
+      "end": 6,
+      "language": "vhdl",
+      "entity_kind": "function",
+      "qualified_name": "p.split",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "p"
+        },
+        {
+          "kind": "function",
+          "name": "split"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Split",
+      "id": "IMPL_VHDL_PROC_SPLIT",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 49
+      },
+      "end": {
+        "row": 6,
+        "column": 80
+      }
+    },
+    "tagged_scope": "procedure late(variable v : inout integer) -- @Late, IMPL_VHDL_PROC_LATE, impl\n    ;",
+    "scope": {
+      "kind": "subprogram_declaration",
+      "start": 7,
+      "end": 8,
+      "language": "vhdl",
+      "entity_kind": "function",
+      "qualified_name": "p.late",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "p"
+        },
+        {
+          "kind": "function",
+          "name": "late"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Late",
+      "id": "IMPL_VHDL_PROC_LATE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 10,
+        "column": 43
+      },
+      "end": {
+        "row": 10,
+        "column": 80
+      }
+    },
+    "tagged_scope": "procedure reset(signal s : out bit);",
+    "scope": {
+      "kind": "subprogram_declaration",
+      "start": 11,
+      "end": 11,
+      "language": "vhdl",
+      "entity_kind": "function",
+      "qualified_name": "top.rtl.reset",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "top"
+        },
+        {
+          "kind": "impl",
+          "name": "rtl"
+        },
+        {
+          "kind": "function",
+          "name": "reset"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Reset",
+      "id": "IMPL_VHDL_PROC_DECL_ARCH",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "subprogram_declaration"
+  }
+]

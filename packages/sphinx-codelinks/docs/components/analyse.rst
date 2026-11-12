@@ -47,7 +47,7 @@ Limitations
 
 **Current Limitations:**
 
-- **Language Support**: C/C++ (``//``, ``/* */``), C# (``//``, ``/* */``, ``///``), TypeScript/JavaScript (``//``, ``/* */``, and the legacy one-line ``<!--``), Python (``#``), YAML (``#``), Rust (``//``, ``/* */``, ``///``), Go (``//``, ``/* */``), JSONC (``//``, ``/* */``), Bash (``#``) and PowerShell (``#``, ``<# #>``) comment styles are supported
+- **Language Support**: C/C++ (``//``, ``/* */``), C# (``//``, ``/* */``, ``///``), TypeScript/JavaScript (``//``, ``/* */``, and the legacy one-line ``<!--``), Python (``#``), YAML (``#``), Rust (``//``, ``/* */``, ``///``), Go (``//``, ``/* */``), JSONC (``//``, ``/* */``), Bash (``#``), PowerShell (``#``, ``<# #>``) and VHDL (``--``, ``/* */``) comment styles are supported
 - **Single Comment Style**: Each analysis run processes only one comment style at a time
 
 .. _attachment:
@@ -114,6 +114,8 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
        - Every shell file the bash grammar reads: ``.sh``, ``.bash``, ``.zsh`` and ``.ksh``.
      * - ``powershell``
        - ``.ps1``, ``.psm1`` and ``.psd1``
+     * - ``vhdl``
+       - ``.vhd`` and ``.vhdl``
 
   One language is one name, so the value groups files that editors may tell apart:
   a ``.h`` header is ``cpp`` whether C or C++ includes it,
@@ -129,11 +131,21 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
 - ``entity_kind`` -- ``function``, ``method``, ``constructor``, ``destructor``, ``operator``, ``class``, ``struct``,
   ``union``, ``enum``, ``interface``, ``trait``, ``impl``, ``record``, ``namespace``, ``module``, ``type``, ``macro``,
   ``property``, ``event``, ``indexer`` or ``delegate``; ``test`` for a Pester ``It`` block (a ``Describe`` or a
-  ``Context`` is a ``namespace``); in YAML and JSON ``key`` or ``item``;
+  ``Context`` is a ``namespace``); in YAML and JSON ``key`` or ``item``.
+  VHDL takes these kinds where one fits: an entity is a ``module``, its architecture an ``impl``, a package (its
+  declaration, its body, an instance of it) a ``namespace``, a component an ``interface``, a function or a procedure
+  (declared, defined or instantiated) a ``function``, an enumeration, record or protected type (or protected body)
+  an ``enum``, ``record`` or ``class``, and any other type or subtype a ``type``. Every other VHDL design element --
+  a configuration, a context, a process, a block, a generate, a component instance, a concurrent signal assignment,
+  assertion or procedure call, a signal, constant, variable, file or alias, a generic, a port, a parameter -- has
+  ``null``, and is named all the same (see ``semantic``);
 - ``qualified_name`` -- the entity's name within its file, qualified by the containers the file shows:
   ``ns::Widget::draw`` in C++, ``Shape.area`` and ``outer.<locals>.inner`` in Python (its ``__qualname__``),
   ``Widget::new`` and ``<Widget as Shape>::area`` (and ``<dyn Shape>::area`` for a type that is no path) in Rust,
   ``Acme.Gfx.Widget.Draw`` in C#, ``Widget.Area`` in Go, ``Gfx.Widget.draw`` in TypeScript,
+  ``counter.rtl.p_main`` in VHDL (as VHDL's expanded names are written, with an architecture under the entity its
+  ``of`` clause names, as the source spells it: VHDL is case-insensitive, and the name is not folded; an extended
+  identifier keeps its backslashes, an operator function its quotes, ``"+"``),
   ``Shape.Area`` in PowerShell, where a Pester block is named after the blocks around it, joined with ``.`` as
   Pester joins a test's path (``px.starts`` for ``It 'starts'`` in ``Describe 'px'``). A block's own name is its
   ``-Name`` argument, else its first positional argument past Pester's switches (``-Skip``) and its parameters with
@@ -142,13 +154,16 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   variable or an expression, or past a parameter Pester does not declare, has no name, and neither has any block
   inside it.
   No module, crate or package prefix: the file's path decides that.
-  ``null`` in YAML and JSON, and for an entity without a name;
+  ``null`` in YAML and JSON, and for an entity without a name -- in VHDL an unlabelled process or statement, a
+  declaration of several names (``signal a, b : bit``), and anything inside one of them;
 - ``semantic`` -- that name in its parts, outermost first and the entity itself last, each a ``kind`` and a ``name``
   (``null`` exactly when ``qualified_name`` is). The kinds are those of ``entity_kind`` but ``key`` and ``item``
   (a YAML or JSON entry has no name, so no parts), and one more, for what the syntax alone cannot classify:
   ``scope``, a C++ qualifier such as the ``ns`` of ``void ns::W::f() {}`` (the qualifier right before a method,
   a constructor, a destructor or a conversion operator is its ``class``; so is the ``ns`` of a free function defined
-  with a namespace qualifier, ``void ns::f() {}``, which reads as a method).
+  with a namespace qualifier, ``void ns::f() {}``, which reads as a method), and a VHDL design element no kind fits,
+  whose ``entity_kind`` is ``null`` (``module counter``, ``impl rtl``, ``scope p_main``, ``scope v`` for a variable
+  of a process).
   The type a Go method's receiver names is a part of kind ``type``.
   A Rust ``impl`` is a part of kind ``impl`` named after its self type as written
   (``Widget``, ``dyn Shape``), with a ``trait`` key for a trait impl (the trait as ``qualified_name`` spells it); the
@@ -175,8 +190,8 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   apart what the qualified name cannot: overloads, a C ``struct stat`` and a function ``stat()``, C# classes that
   differ in their number of type parameters;
 - ``mechanism`` -- how the marker was attached: ``doc_comment`` (a documentation comment -- ``///``, ``//!``, ``/**``,
-  ``/*!``, a C# ``///``, a JSDoc ``/**`` -- a Python docstring, or PowerShell comment-based help first in a
-  function's body),
+  ``/*!``, a C# ``///``, a JSDoc ``/**``, a VHDL ``--!`` (not ``--!!``) -- a Python docstring, or PowerShell comment-based help
+  first in a function's body),
   ``leading`` (a comment on the lines before the entity, or directly inside or right after an attribute, a decorator
   or a template header in its head), ``trailing`` (after code on the entity's own line) or ``enclosing`` (inside its
   body).
@@ -314,22 +329,31 @@ In this order:
 4. **A trailing marker** -- code before it on its line -- belongs to the entity on that line (a Doxygen ``///<`` after
    a function declaration is the classic case; after a data member or an enumerator it belongs to the enclosing class,
    struct or enum), else to the entity it is inside: ``trailing`` when that entity starts on the marker's line
-   (``def f():  # @...``), ``enclosing`` otherwise. An attribute, a decorator or a template header before the marker
+   (``def f():  # @...``, a VHDL ``function f return t is -- @...``), ``enclosing`` otherwise.
+   In VHDL, the entity on the line is the innermost design element that ends there: the signal of
+   ``signal s : bit; -- @...``, the port of ``clk : in std_logic; -- @...``, but never a subprogram's parameter: after
+   ``procedure inc(variable v : inout integer); -- @...`` it is the procedure. An attribute, a decorator or a template header before the marker
    is not code: the marker leads the item they precede (an inner attribute, ``#![...]``, precedes none: it applies to
    what it is inside).
 5. **The comments before a file's first item**, when a blank line separates the last of them from it, belong to the
-   file -- documentation comments (``///``, ``/** */``, ``/*!``) excepted: they document the next item, blank lines
-   or not, as rustc and Doxygen read them, unless the comment holding the marker says it documents the file
-   (``@file``, ``\file``, ``@fileoverview``, ``@packageDocumentation`` or ``@module``, as a whole word at the start
-   of the comment or after whitespace, ``*``, ``/`` or ``!``).
+   file -- documentation comments (``///``, ``/** */``, ``/*!``, a VHDL ``--!``) excepted: they document the next
+   item, blank lines or not, as rustc and Doxygen read them, unless the comment holding the marker says it documents
+   the file (``@file``, ``\file``, ``@fileoverview``, ``@packageDocumentation`` or ``@module``, as a whole word at
+   the start of the comment or after whitespace, ``*``, ``/`` or ``!``).
    That exception holds only for the comments before the first item: a ``@file`` block after ``#pragma once`` or
    inside an include guard documents the next item like any documentation comment, and so does a ``///`` line whose
    ``\file`` is on another line of the run.
+   In VHDL, whose only documentation comment is a line comment, a run of ``--!`` lines on consecutive lines is one
+   comment, as Doxygen reads it: a ``--! @file`` line makes every line of its run document the file.
+   A VHDL design unit's first item is the unit itself, its ``library``, ``use`` and ``context`` clauses included, so
+   a licence banner before them, and a blank line after the banner, is the file's.
 6. **A leading marker** belongs to the entity right after it, when only *trivia* stands between: other comments,
    blank lines, attributes (Rust ``#[...]``, C++ ``[[...]]``) and decorators (TypeScript). The entity is looked for
    through what wraps it: a Python decorator, a C++ ``template <...>`` header or ``extern "C"``, a TypeScript
    ``export`` or ``declare``. In Python, a comment between ``def f():`` and the first line of its body belongs to that
-   first line's entity, if it is one.
+   first line's entity, if it is one. In VHDL, a comment before a design unit's context clauses belongs to the unit
+   they open, and a comment before the first declaration of a process, a block or a generate, or before the first
+   generic or port of a list, belongs to that declaration, generic or port, if it is an entity.
 7. **A marker directly above a preprocessor conditional**, in C and C++ -- with only other comments, and no blank line,
    between it and an ``#if``, ``#ifdef``, ``#ifndef``, ``#elif``, ``#elifdef``, ``#elifndef``, ``#else`` or
    ``#endif`` line -- belongs to the file anywhere outside a function's body (at file level, in a namespace, class,
@@ -376,6 +400,12 @@ What counts as an entity
   signatures; a ``const``, ``let`` or ``var``, a class field, an assignment or a default export only when it holds a
   function or a class (one written with ``declare`` always does).
 - **Bash**: functions.
+- **VHDL**: entities, architectures, packages and package bodies, package instances, configurations, contexts;
+  functions and procedures, declared, defined or instantiated; types, subtypes and components; signals, constants,
+  variables, files and aliases; generics, ports and parameters; processes, blocks, generates (``for``, ``if`` and
+  ``case``), component instances, and concurrent signal assignments, assertions and procedure calls. A sequential
+  statement, a record field, an ``attribute`` declaration or specification is none: a marker before one is attached to
+  the entity it is inside.
 - **PowerShell**: functions, filters and workflows (each a ``function``, named without a ``global:``, ``script:``,
   ``private:`` or ``local:`` scope modifier, as it is called), classes, methods, constructors (a method named as its
   class, in any letter case, without a return type), properties, enums, and Pester's ``Describe``, ``Context`` and
@@ -391,6 +421,8 @@ What counts as an entity
 
 Data members, variables, lambdas bound to a name and macro invocations are not entities, nor, yet, a C
 ``typedef struct {...} T;``: a marker above one is attached to the entity it is inside, or to the file.
+VHDL is the deliberate exception: a hardware design traces its ports and signals, so its data elements are entities,
+without a kind.
 
 Extraction Examples
 -------------------
@@ -682,7 +714,7 @@ Comment runs and prefixes
 
 A block lives in one **comment run**: one block comment (``/* … */``, ``/** … */``, ``/*! … */``),
 one Python string statement (a docstring, or any bare string statement), or consecutive line
-comments (``//``, ``///``, ``//!``, ``#``) on consecutive rows with
+comments (``//``, ``///``, ``//!``, ``--``, ``---``, ``--!``, ``#``) on consecutive rows with
 the same delimiter and only whitespace before them on their rows. A code line, or a change of
 delimiter, ends a run; a comment after code on its row neither starts nor continues one.
 
@@ -695,7 +727,7 @@ line of a block keeps its source line:
 
    * - Comment
      - Stripped from each line
-   * - ``//``, ``///``, ``//!``, ``#``
+   * - ``//``, ``///``, ``//!``, ``--``, ``---``, ``--!``, ``#``
      - the delimiter, then one space if there is one
    * - ``/* … */``, ``/** … */``, ``/*! … */``
      - first, a first row holding only the opener (with any number of stars, as in a ``/*****``
