@@ -1133,6 +1133,26 @@ vhdl_process_in_generate:
       end generate gen;
     end architecture rtl;
 
+vhdl_process_in_if_generate_arms:
+  # Above a process in each arm of an if-generate -- if, elsif, else -> that arm's
+  # process (through its generate_block wrapper), not the generate.
+  lang: vhdl
+  config: default
+  source: |
+    architecture rtl of top is
+    begin
+      gen : if FAST generate
+        -- @If arm, IMPL_VHDL_GEN_IF, impl
+        p_if : process (clk) begin end process p_if;
+      elsif SMALL generate
+        -- @Elsif arm, IMPL_VHDL_GEN_ELSIF, impl
+        p_elsif : process (clk) begin end process p_elsif;
+      else generate
+        -- @Else arm, IMPL_VHDL_GEN_ELSE, impl
+        p_else : process (clk) begin end process p_else;
+      end generate gen;
+    end architecture rtl;
+
 vhdl_procedure_in_process:
   # Above the first procedure of a process -> the procedure (through the process_head
   # wrapper), not the process.

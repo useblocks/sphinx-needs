@@ -1,0 +1,101 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 38
+      }
+    },
+    "tagged_scope": "p_if : process (clk) begin end process p_if;",
+    "scope": {
+      "kind": "process_statement",
+      "start": 5,
+      "end": 5,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "If arm",
+      "id": "IMPL_VHDL_GEN_IF",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "process_statement"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 8
+      },
+      "end": {
+        "row": 6,
+        "column": 44
+      }
+    },
+    "tagged_scope": "p_elsif : process (clk) begin end process p_elsif;",
+    "scope": {
+      "kind": "process_statement",
+      "start": 8,
+      "end": 8,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Elsif arm",
+      "id": "IMPL_VHDL_GEN_ELSIF",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "process_statement"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 8
+      },
+      "end": {
+        "row": 9,
+        "column": 42
+      }
+    },
+    "tagged_scope": "p_else : process (clk) begin end process p_else;",
+    "scope": {
+      "kind": "process_statement",
+      "start": 11,
+      "end": 11,
+      "language": "vhdl",
+      "entity_kind": null,
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Else arm",
+      "id": "IMPL_VHDL_GEN_ELSE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "process_statement"
+  }
+]
