@@ -818,8 +818,7 @@ def test_opens_powershell_literal(
 )
 def test_doxygen_tag(line: str, expected: str | None) -> None:
     """A Doxygen comment line is a ``doxygen_tag`` only when a listed command right after
-    the start sequence ends at a space, a tab, a ``[``, a ``{`` or the end of the line.
-    The same table as ubCode's."""
+    the start sequence ends at a space, a tab, a ``[``, a ``{`` or the end of the line."""
     assert doxygen_tag(line, "@") == expected
 
 
