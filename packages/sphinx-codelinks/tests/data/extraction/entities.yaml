@@ -2427,6 +2427,39 @@ rule_vhdl_file_tag_needs_the_blank_line:
   truth:
     - {id: IMPL_R_VHDL_FILE_TAG_ADJ, outcome: exact, entity_kind: "module", qualified_name: "counter", start: 3, mechanism: doc_comment, compiler: "syntax-only: rule case"}
 
+rule_vhdl_file_tag_run_ends_at_a_blank_line:
+  # A run of ``--!`` lines is on consecutive lines: after a blank line a ``--!`` line
+  # starts a run of its own, which documents the next design unit without the
+  # ``@file`` of the run before.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    --! @file counter.vhd
+
+    --! @Counter, IMPL_R_VHDL_FILE_TAG_GAP, impl
+
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_FILE_TAG_GAP, outcome: exact, entity_kind: "module", qualified_name: "counter", start: 5, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
+rule_vhdl_file_tag_run_ends_at_a_plain_comment:
+  # A run of ``--!`` lines holds ``--!`` lines only: a plain ``--`` line ends it, and
+  # the ``--!`` line after it documents the next design unit.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    --! @file counter.vhd
+    -- A plain comment.
+    --! @Counter, IMPL_R_VHDL_FILE_TAG_PLAIN, impl
+
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_FILE_TAG_PLAIN, outcome: exact, entity_kind: "module", qualified_name: "counter", start: 5, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
 rule_vhdl_file_tag_after_a_design_unit:
   # A ``--! @file`` run after the first design unit is no file header: it documents the
   # next design unit, a blank line after it or not.
