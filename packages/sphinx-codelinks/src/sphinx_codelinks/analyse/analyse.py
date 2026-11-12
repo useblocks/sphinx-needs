@@ -9,7 +9,12 @@ from tree_sitter import Node as TreeSitterNode
 from tree_sitter import Parser, Query
 
 from sphinx_codelinks.analyse import multiline_parser, utils
-from sphinx_codelinks.analyse.entity import CodeScope, code_scope, scope_language
+from sphinx_codelinks.analyse.entity import (
+    CodeScope,
+    code_scope,
+    is_doc_comment,
+    scope_language,
+)
 from sphinx_codelinks.analyse.models import (
     MarkedContentType,
     MultilineNeed,
@@ -749,10 +754,11 @@ class SourceAnalyse:
             src_comment.text
         )
         in_powershell = self.analyse_config.comment_type == CommentType.powershell
-        # Only a VHDL ``--!`` comment, Doxygen's VHDL comment, can hold Doxygen commands.
+        # Only a VHDL ``--!`` comment, Doxygen's VHDL comment, can hold Doxygen commands
+        # (a ``--!!`` comment is a plain one)
         in_doxygen = self.analyse_config.comment_type == CommentType.vhdl and (
-            src_comment.node.text or b""
-        ).startswith(b"--!")
+            is_doc_comment(src_comment.node, CommentType.vhdl, text=src_comment.text)
+        )
         for line in lines:
             if self._is_need_id_refs_line(line):
                 row_offset += 1

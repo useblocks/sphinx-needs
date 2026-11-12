@@ -2542,3 +2542,20 @@ rule_vhdl_names_as_written:
     - {id: IMPL_N_EXTENDED, outcome: exact, entity_kind: null, node_kind: signal_declaration, qualified_name: "counter.RTL.\\weird name\\", start: 4, mechanism: trailing, compiler: "syntax-only: VHDL expanded names"}
     - {id: IMPL_N_TWO_NAMES, outcome: exact, entity_kind: null, node_kind: signal_declaration, qualified_name: null, start: 5, mechanism: trailing, compiler: "syntax-only: VHDL expanded names"}
     - {id: IMPL_N_OPERATOR, outcome: exact, entity_kind: "function", qualified_name: "counter.RTL.\"+\"", start: 7, mechanism: leading, compiler: "syntax-only: VHDL expanded names"}
+
+rule_vhdl_double_bang_is_no_doc_comment:
+  # A ``--!!`` comment is a plain comment, as ``////`` is beside ``///``: a marker in one
+  # is ``leading``, where one in a ``--!`` comment is a ``doc_comment``.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    --!! @Commented out, IMPL_R_VHDL_DOUBLE_BANG, impl
+    entity counter is
+    end entity counter;
+    --! @Documented, IMPL_R_VHDL_SINGLE_BANG, impl
+    entity other is
+    end entity other;
+  truth:
+    - {id: IMPL_R_VHDL_DOUBLE_BANG, outcome: exact, entity_kind: "module", qualified_name: "counter", start: 2, mechanism: leading, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_VHDL_SINGLE_BANG, outcome: exact, entity_kind: "module", qualified_name: "other", start: 5, mechanism: doc_comment, compiler: "syntax-only: rule case"}

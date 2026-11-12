@@ -1,0 +1,65 @@
+[
+  {
+    "file_path": "case.vhd",
+    "lineno": 1,
+    "msg": "'@requirement' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen comments do not contain",
+    "type": "need",
+    "sub_type": "doxygen_tag"
+  },
+  {
+    "file_path": "case.vhd",
+    "lineno": 2,
+    "msg": "'@satisfies' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen comments do not contain",
+    "type": "need",
+    "sub_type": "doxygen_tag"
+  },
+  {
+    "file_path": "case.vhd",
+    "lineno": 3,
+    "msg": "'@verifies' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen comments do not contain",
+    "type": "need",
+    "sub_type": "doxygen_tag"
+  },
+  {
+    "file_path": "case.vhd",
+    "lineno": 4,
+    "msg": "'@important' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen comments do not contain",
+    "type": "need",
+    "sub_type": "doxygen_tag"
+  },
+  {
+    "file_path": "case.vhd",
+    "lineno": 5,
+    "msg": "'@mermaid' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen comments do not contain",
+    "type": "need",
+    "sub_type": "doxygen_tag"
+  },
+  {
+    "file_path": "case.vhd",
+    "lineno": 6,
+    "msg": "'@endmermaid' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen comments do not contain",
+    "type": "need",
+    "sub_type": "doxygen_tag"
+  },
+  {
+    "file_path": "case.vhd",
+    "lineno": 7,
+    "msg": "'@mermaidfile' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen comments do not contain",
+    "type": "need",
+    "sub_type": "doxygen_tag"
+  },
+  {
+    "file_path": "case.vhd",
+    "lineno": 8,
+    "msg": "'@showenumvalues' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen comments do not contain",
+    "type": "need",
+    "sub_type": "doxygen_tag"
+  },
+  {
+    "file_path": "case.vhd",
+    "lineno": 9,
+    "msg": "'@hideenumvalues' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen comments do not contain",
+    "type": "need",
+    "sub_type": "doxygen_tag"
+  }
+]

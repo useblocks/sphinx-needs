@@ -608,8 +608,8 @@ def unwrap_entity(
 # ---------------------------------------------------------------------------
 
 # The openings of a documentation comment, per language. A line opening followed by
-# one more ``/`` (``////``) and a block opening followed by ``*`` or ``/`` (``/***``,
-# ``/**/``) are plain comments.
+# one more ``/`` (``////``) or ``!`` (VHDL's ``--!!``, commented-out code) and a block
+# opening followed by ``*`` or ``/`` (``/***``, ``/**/``) are plain comments.
 _DOC_LINE_OPENINGS: dict[CommentType, tuple[str, ...]] = {
     CommentType.cpp: ("///", "//!"),
     CommentType.cs: ("///",),
@@ -639,7 +639,10 @@ def is_doc_comment(
     written = ((node.text or b"") if text is None else text).decode("utf-8", "replace")
     for opening in _DOC_LINE_OPENINGS.get(comment_type, ()):
         if written.startswith(opening):
-            return not (opening == "///" and written.startswith("////"))
+            return not (
+                (opening == "///" and written.startswith("////"))
+                or (opening == "--!" and written.startswith("--!!"))
+            )
     for opening in _DOC_BLOCK_OPENINGS.get(comment_type, ()):
         if written.startswith(opening):
             return opening == "/*!" or not written[len(opening) :].startswith(

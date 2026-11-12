@@ -1,7 +1,11 @@
 # @Test suite for one-line comment parser functionality, TEST_OLP_1, test, [IMPL_OLP_1]
+import re
+from pathlib import Path
+
 import pytest
 
 from sphinx_codelinks.analyse.oneline_parser import (
+    DOXYGEN_COMMANDS,
     OnelineParserInvalidWarning,
     WarningSubTypeEnum,
     docstring_tag,
@@ -806,6 +810,10 @@ def test_opens_powershell_literal(
         pytest.param("--! @param: text", None, id="colon_glued_to_command"),
         pytest.param("--! see @param a text", None, id="text_before_start"),
         pytest.param("--! @Real Need, IMPL_1, impl", None, id="not_a_command"),
+        pytest.param("--! @satisfies REQ_1, REQ_2", "satisfies", id="satisfies"),
+        pytest.param("--! @verifies REQ_3, REQ_4", "verifies", id="verifies"),
+        pytest.param("--! @requirement R Login, x", "requirement", id="requirement"),
+        pytest.param("--! @mermaid{flow.mmd} a, b", "mermaid", id="mermaid"),
     ],
 )
 def test_doxygen_tag(line: str, expected: str | None) -> None:
@@ -813,3 +821,23 @@ def test_doxygen_tag(line: str, expected: str | None) -> None:
     the start sequence ends at a space, a tab, a ``[``, a ``{`` or the end of the line.
     The same table as ubCode's."""
     assert doxygen_tag(line, "@") == expected
+
+
+def test_doxygen_commands_are_the_corpus_list() -> None:
+    """``DOXYGEN_COMMANDS`` is the list the shared corpus file ``doxygen.yaml`` writes in
+    its header, command for command, and the count the header gives."""
+    header = (Path(__file__).parent / "data" / "extraction" / "doxygen.yaml").read_text(
+        encoding="utf-8"
+    )
+    match = re.search(
+        r"^# The commands \((\d+)\)(?:.*\n)*?#\n((?:#   .*\n)+)", header, re.M
+    )
+    assert match is not None
+    listed = {
+        word.strip()
+        for line in match.group(2).splitlines()
+        for word in line.removeprefix("#").split(",")
+        if word.strip()
+    }
+    assert listed == DOXYGEN_COMMANDS
+    assert int(match.group(1)) == len(listed)

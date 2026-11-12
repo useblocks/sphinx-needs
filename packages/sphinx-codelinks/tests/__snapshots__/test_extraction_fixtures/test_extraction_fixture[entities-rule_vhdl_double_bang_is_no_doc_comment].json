@@ -1,0 +1,78 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 6
+      },
+      "end": {
+        "row": 0,
+        "column": 50
+      }
+    },
+    "tagged_scope": "entity counter is\nend entity counter;",
+    "scope": {
+      "kind": "entity_declaration",
+      "start": 2,
+      "end": 3,
+      "language": "vhdl",
+      "entity_kind": "module",
+      "qualified_name": "counter",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Commented out",
+      "id": "IMPL_R_VHDL_DOUBLE_BANG",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "entity_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 5
+      },
+      "end": {
+        "row": 3,
+        "column": 46
+      }
+    },
+    "tagged_scope": "entity other is\nend entity other;",
+    "scope": {
+      "kind": "entity_declaration",
+      "start": 5,
+      "end": 6,
+      "language": "vhdl",
+      "entity_kind": "module",
+      "qualified_name": "other",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "other"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Documented",
+      "id": "IMPL_R_VHDL_SINGLE_BANG",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "entity_declaration"
+  }
+]

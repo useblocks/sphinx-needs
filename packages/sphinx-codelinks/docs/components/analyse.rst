@@ -190,7 +190,7 @@ The analysis records it in two forms: ``tagged_scope``, the entity's full text, 
   apart what the qualified name cannot: overloads, a C ``struct stat`` and a function ``stat()``, C# classes that
   differ in their number of type parameters;
 - ``mechanism`` -- how the marker was attached: ``doc_comment`` (a documentation comment -- ``///``, ``//!``, ``/**``,
-  ``/*!``, a C# ``///``, a JSDoc ``/**``, a VHDL ``--!`` -- a Python docstring, or PowerShell comment-based help
+  ``/*!``, a C# ``///``, a JSDoc ``/**``, a VHDL ``--!`` (not ``--!!``) -- a Python docstring, or PowerShell comment-based help
   first in a function's body),
   ``leading`` (a comment on the lines before the entity, or directly inside or right after an attribute, a decorator
   or a template header in its head), ``trailing`` (after code on the entity's own line) or ``enclosing`` (inside its

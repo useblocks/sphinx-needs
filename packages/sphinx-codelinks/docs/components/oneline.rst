@@ -295,11 +295,13 @@ reported as one of these kinds, the kind leading the message:
   documented non-goal.
 - ``doxygen_tag`` -- a line of a Doxygen comment (a VHDL line comment opened by ``--!``,
   under ``comment_type = "vhdl"``) is a ``doxygen_tag`` warning, and never a need, under the
-  same rule as ``jsdoc_tag``, with Doxygen's special commands (``param``, ``brief``,
-  ``return``, ``see``, ...) as the list and a command that ends at a space, a tab, ``[``,
-  ``{`` or the line end (``@param[in] clk``, ``@code{.vhd}``):
+  same rule as ``jsdoc_tag``, with Doxygen's special commands as the Doxygen 1.19.0 manual
+  lists them (``param``, ``brief``, ``return``, ``see``, the requirements commands
+  ``requirement``, ``satisfies`` and ``verifies``, ...) as the list and a command that ends
+  at a space, a tab, ``[``, ``{`` or the line end (``@param[in] clk``, ``@code{.vhd}``):
   ``'@param' is a Doxygen tag, not a one-line need; use a start sequence that Doxygen
-  comments do not contain``. A ``--`` comment is no Doxygen comment.
+  comments do not contain``. A ``--`` comment is no Doxygen comment, and neither is a
+  ``--!!`` comment (commented-out code, as ``////`` is beside ``///``).
 
 A line with nothing between the start and end sequences is not a marker. Under
 ``comment_type = "powershell"``, neither is a line whose first start sequence is directly

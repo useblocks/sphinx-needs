@@ -257,10 +257,11 @@ def opens_powershell_literal(line: str, start_sequence: str) -> bool:
     )
 
 
-# Doxygen's special commands, by name: a line of a Doxygen comment that a one-line start
-# sequence such as ``@`` also matches (``@param clk Clock input, rising edge``) would
-# otherwise become a need with the id ``rising edge``. The list of the shared corpus file
-# ``doxygen.yaml``; ubCode spells the same.
+# Doxygen's special commands, by name, as the Doxygen 1.19.0 manual lists them: a line
+# of a Doxygen comment that a one-line start sequence such as ``@`` also matches (``@param
+# clk Clock input, rising edge``) would otherwise become a need with the id ``rising
+# edge``. The list the shared corpus file ``doxygen.yaml`` writes in its header, which
+# ``test_doxygen_commands_are_the_corpus_list`` holds equal.
 DOXYGEN_COMMANDS = frozenset(
     {
         "a",
@@ -317,6 +318,7 @@ DOXYGEN_COMMANDS = frozenset(
         "endlatexonly",
         "endlink",
         "endmanonly",
+        "endmermaid",
         "endmsc",
         "endparblock",
         "endrtfonly",
@@ -337,6 +339,7 @@ DOXYGEN_COMMANDS = frozenset(
         "hidecallgraph",
         "hidecollaborationgraph",
         "hidedirectorygraph",
+        "hideenumvalues",
         "hidegroupgraph",
         "hideincludedbygraph",
         "hideincludegraph",
@@ -352,6 +355,7 @@ DOXYGEN_COMMANDS = frozenset(
         "ifnot",
         "image",
         "implements",
+        "important",
         "include",
         "includedbygraph",
         "includedoc",
@@ -372,6 +376,8 @@ DOXYGEN_COMMANDS = frozenset(
         "maninclude",
         "manonly",
         "memberof",
+        "mermaid",
+        "mermaidfile",
         "module",
         "msc",
         "mscfile",
@@ -411,6 +417,7 @@ DOXYGEN_COMMANDS = frozenset(
         "relatesalso",
         "remark",
         "remarks",
+        "requirement",
         "result",
         "return",
         "returns",
@@ -418,11 +425,13 @@ DOXYGEN_COMMANDS = frozenset(
         "rtfinclude",
         "rtfonly",
         "sa",
+        "satisfies",
         "secreflist",
         "section",
         "see",
         "short",
         "showdate",
+        "showenumvalues",
         "showinitializer",
         "showinlinesource",
         "showrefby",
@@ -453,6 +462,7 @@ DOXYGEN_COMMANDS = frozenset(
         "var",
         "verbatim",
         "verbinclude",
+        "verifies",
         "version",
         "vhdlflow",
         "warning",
@@ -465,7 +475,7 @@ DOXYGEN_COMMANDS = frozenset(
 
 
 #: What ends a Doxygen command: a space, a tab, a ``[`` as in ``@param[in]``, a ``{`` as
-#: in ``@code{.vhd}``, or the end of the line. Locale-free: ubCode spells the same.
+#: in ``@code{.vhd}``, or the end of the line. Locale-free.
 _DOXYGEN_COMMAND_END = re.compile(r"[ \t\n\[{]|$")
 
 
