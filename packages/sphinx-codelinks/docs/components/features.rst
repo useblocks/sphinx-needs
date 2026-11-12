@@ -407,8 +407,8 @@ Features
      that follows it, never one further down; a marker among sequential statements
      documents its process or subprogram
    * The attachment rules every language follows: a marker in the licence banner
-     before the first design unit, a blank line after it, is the file's, and so is a
-     ``--!`` comment that holds ``@file``; a marker after a header's ``is``
+     before the first design unit, a blank line after it, is the file's, and so is one
+     in a run of ``--!`` lines there that holds ``@file``; a marker after a header's ``is``
      (``function f return t is -- @...``) is trailing on what the header opens
    * Each element named as VHDL's expanded names are written (``counter.rtl.p_main``,
      an architecture under its entity), with the existing kinds where one fits (an

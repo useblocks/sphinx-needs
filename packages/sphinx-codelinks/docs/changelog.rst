@@ -63,8 +63,8 @@ New and Improved
   other languages, VHDL's data elements are entities, since a hardware design traces its
   ports and signals -- and otherwise to the one enclosing it, by the rules every language
   follows (:ref:`attachment`): a marker in the licence banner before the first design
-  unit, a blank line after it, is the file's, and so is a ``--!`` comment that holds
-  ``@file``. Each element is named as VHDL's expanded names are written, an architecture
+  unit, a blank line after it, is the file's, and so is one in a run of ``--!`` lines there
+  that holds ``@file``. Each element is named as VHDL's expanded names are written, an architecture
   under its entity (``counter.rtl.p_main``), with the existing kinds where one fits: an
   entity is a ``module``, an architecture an ``impl``, a package a ``namespace``, a
   component an ``interface``, a function or procedure a ``function``, a type an ``enum``,

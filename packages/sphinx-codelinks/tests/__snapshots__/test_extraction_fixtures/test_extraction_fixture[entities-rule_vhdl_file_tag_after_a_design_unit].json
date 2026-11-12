@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 5
+      },
+      "end": {
+        "row": 4,
+        "column": 45
+      }
+    },
+    "tagged_scope": "entity counter is\nend entity counter;",
+    "scope": {
+      "kind": "entity_declaration",
+      "start": 7,
+      "end": 8,
+      "language": "vhdl",
+      "entity_kind": "module",
+      "qualified_name": "counter",
+      "semantic": [
+        {
+          "kind": "module",
+          "name": "counter"
+        }
+      ],
+      "mechanism": "doc_comment"
+    },
+    "need": {
+      "title": "Counter",
+      "id": "IMPL_R_VHDL_FILE_TAG_LATE",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "entity_declaration"
+  }
+]
