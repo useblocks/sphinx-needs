@@ -87,11 +87,12 @@ Fixes
 .....
 
 - 🐛 A ``compile_commands.json`` entry whose arguments end their options with ``--``
-  (``-c -- src/a.cpp``, as CMake and some generators write it) is read correctly; before,
+  (``-c -- src/a.cpp``, as CMake writes it for clang-cl) is read correctly; before,
   the libclang engine's own arguments landed after the ``--`` as inputs, no ``#if`` arm
   was known to be inactive, and the markers of every arm were extracted. A ``--`` that is
-  an option's value (``-Xlinker --``) ends nothing: such an entry, which libclang could not
-  load, is read with the options after it. An environment of an earlier version is read
+  the value of ``-Xlinker``, ``-I`` or another option :ref:`preprocessor_compile_db` names
+  ends nothing: such an entry, which libclang could not load, is read with the options
+  after it. An environment of an earlier version is read
   again once (``env_version`` 7).
 - 🐛 The libclang engine passes clang's builtin headers to every parse
   (:ref:`preprocessor_builtin_headers`). The ``libclang`` wheel carries none, so
