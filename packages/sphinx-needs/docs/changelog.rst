@@ -11,7 +11,7 @@ Improvements
 ............
 
 - ✨ **Qualified need directives and** :ref:`needs_directive_name`: every need type is also written
-  ``.. need:<type>::`` (```` ```{need:<type>} ```` in MyST), and a project chooses whether the bare ``.. <type>::`` is
+  ``.. need:<type>::`` (a ``{need:<type>}`` fence in MyST), and a project chooses whether the bare ``.. <type>::`` is
   the need where another directive has the name too (:pr:`2507`)
 
   ``need`` is a Sphinx domain of sphinx-needs' own that serves each need type's directive under its qualified name,

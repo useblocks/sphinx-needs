@@ -509,3 +509,20 @@ def test_a_qualified_name_is_taken(
     refused = [w for w in build_warnings(app) if "directive_preset_name_taken" in w]
     assert len(refused) == 2, build_warnings(app)
     assert _needs(app)["R_001"]["type"] == "req"
+
+
+def test_a_qualified_base_takes_the_need_type_s_options(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A base ``need:req`` is the need type ``req`` (§3.3.3), not just the directive the
+    ``need`` domain serves: a key the type's directive does not match is refused, as for
+    the bare base ``req``, where a directive taking any option would accept it."""
+    toml = (
+        QUALIFIED_TYPES
+        + '\n[parse.directive_presets.my-preset]\nbase = "need:req"\n'
+        + 'options = { nosuch = "x" }\n'
+    )
+    app = _build(make_app, tmp_path, toml, ".. need:req:: A\n   :id: R_001\n")
+    refused = [w for w in build_warnings(app) if "directive_preset_unknown_option" in w]
+    assert len(refused) == 1, build_warnings(app)
+    assert "[parse.directive_presets.my-preset.options.nosuch]" in refused[0]

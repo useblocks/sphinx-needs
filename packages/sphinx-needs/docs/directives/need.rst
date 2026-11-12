@@ -34,7 +34,7 @@ The qualified spelling: ``need:<type>``
 .. versionadded:: 9.3.0
 
 Every need type is also written with its directive qualified by ``need:``,
-``.. need:req::`` in reStructuredText and ```` ```{need:req} ```` in MyST.
+``.. need:req::`` in reStructuredText and a ``{need:req}`` fence in MyST.
 It takes the same arguments, options and content, and makes the same need, of type ``req``:
 
 .. code-block:: rst

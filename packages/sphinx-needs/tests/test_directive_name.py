@@ -63,6 +63,8 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 extensions = {extensions!r}
 needs_build_json = True
+# sphinx 7 does not append `[type.subtype]` to a warning by default; 8 and 9 do
+show_warning_types = True
 needs_types = [
     {{"directive": "req", "title": "Requirement", "prefix": "R_"}},
     {{"directive": "step", "title": "Step", "prefix": "ST_"{step_keys}}},
@@ -256,7 +258,8 @@ def test_no_clash_in_each_mode(
     where it is no directive at all; nothing is reported but the unknown directive."""
     app = test_app
     app.build()
-    assert build_warnings(app) == warnings
+    # the myst-parser of the sphinx-7 cell locates a MyST page's warning as ``.md.rst``
+    assert [w.replace(".md.rst:", ".md:") for w in build_warnings(app)] == warnings
     assert _bare(app) == bare
     _qualified_ok(app)
 
@@ -441,6 +444,8 @@ def test_the_warning_is_silent_where_sphinx_s_was(
 SHADOWED_CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
+# sphinx 7 does not append `[type.subtype]` to a warning by default; 8 and 9 do
+show_warning_types = True
 needs_types = [
     {{"directive": "data", "title": "Data", "prefix": "D_"}},
     {{"directive": "glossary", "title": "Glossary", "prefix": "G_"}},
@@ -521,6 +526,8 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 extensions = ["dname_step_ext", "sphinx_needs"]
 needs_build_json = True
+# sphinx 7 does not append `[type.subtype]` to a warning by default; 8 and 9 do
+show_warning_types = True
 needs_directive_name = "nope"
 needs_types = {types}
 """
@@ -583,6 +590,7 @@ def test_invalid_values_are_reported_and_unset(test_app: Any) -> None:
                 (
                     Path("conf.py"),
                     'extensions = ["sphinx_needs"]\n'
+                    "show_warning_types = True\n"
                     'needs_types = {"a:b": {"title": "AB", "prefix": "AB_"}}\n',
                 ),
                 (Path("index.rst"), "Index\n=====\n"),
@@ -626,6 +634,8 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 extensions = ["dname_step_ext", "myst_parser", "sphinx_needs"]
 needs_build_json = True
+# sphinx 7 does not append `[type.subtype]` to a warning by default; 8 and 9 do
+show_warning_types = True
 needs_types = [
     {{"directive": "req", "title": "Requirement", "prefix": "R_"}},
     {narrowing}
@@ -695,7 +705,10 @@ def test_a_type_an_extension_adds(
         {
             "buildername": "html",
             "files": [
-                (Path("conf.py"), 'extensions = ["sphinx_needs"]\n'),
+                (
+                    Path("conf.py"),
+                    'extensions = ["sphinx_needs"]\nshow_warning_types = True\n',
+                ),
                 (
                     Path("index.rst"),
                     textwrap.dedent("""\
@@ -723,6 +736,8 @@ def test_an_unknown_qualified_name(test_app: Any) -> None:
 BUILTIN_CONF = """\
 extensions = ["sphinx_needs"]
 needs_build_json = True
+# sphinx 7 does not append `[type.subtype]` to a warning by default; 8 and 9 do
+show_warning_types = True
 needs_types = [{{"directive": "image", "title": "Image", "prefix": "IM_"}}]
 {extra}
 """

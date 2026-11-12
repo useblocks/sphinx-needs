@@ -195,6 +195,9 @@ def other_owner(
             else None
         )
     module = getattr(registered, "__module__", "") or ""
+    if module == "builtins":
+        # a class a conf.py defines: its module is no name a project knows it by
+        module = ""
     qualname = getattr(registered, "__qualname__", None) or repr(registered)
     return f"the directive {module + '.' if module else ''}{qualname}", False
 
