@@ -122,10 +122,13 @@ def resource_dir_args(
 
 
 def is_builtin_header(name: str) -> bool:
-    """Whether the ``#include``\\ d ``name`` is a header the compiler provides."""
-    base = name.replace("\\", "/").rsplit("/", 1)[-1]
-    return base in BUILTIN_HEADERS or any(
-        fnmatch(base, pattern) for pattern in _UNSHIPPED_PATTERNS
+    """Whether the ``#include``\\ d ``name`` is a header the compiler provides: one
+    of :data:`BUILTIN_HEADERS`, or an intrinsics header (``immintrin.h``,
+    ``arm_neon.h``). A name with a directory (``sys/stdint.h``) is none."""
+    if "/" in name or "\\" in name:
+        return False
+    return name in BUILTIN_HEADERS or any(
+        fnmatch(name, pattern) for pattern in _UNSHIPPED_PATTERNS
     )
 
 

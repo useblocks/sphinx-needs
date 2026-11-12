@@ -155,8 +155,10 @@ def setup(app: Sphinx) -> dict[str, Any]:
         # a compilation database as the build does -- each entry's directory is the
         # working directory, and a source with no entry is read through an entry that
         # includes it -- so the records an environment at 4 holds for such sources were
-        # extracted without them
-        "env_version": 5,
+        # extracted without them; 6: the libclang engine passes clang's builtin headers,
+        # so an #if on what they define (UINT32_MAX, __has_include(<stdatomic.h>)) takes
+        # another arm than in the records an environment at 5 holds
+        "env_version": 6,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

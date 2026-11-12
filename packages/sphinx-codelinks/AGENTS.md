@@ -116,6 +116,16 @@ The summary prints **26 skipped**, not 56: three of the four guards are module-l
 `pytest.importorskip`, which pytest reports as one skip per module and never collects the
 tests inside. 56 is how many test cases stop running.
 
+**clang's builtin headers ship with the engine.** The `libclang` wheel has none, so
+`analyse/preproc/clang_resource/` carries clang's 30 portable builtin headers (`include/`),
+their licence and a `manifest.toml` pinning the LLVM tag and each file's sha256, and
+`analyse/preproc/builtin_headers.py` passes that directory as `-resource-dir`. They follow
+the `libclang` the suite is locked to: when that moves to a new major, re-fetch them with
+`python tools/src/sn_tools/clang_headers.py --tag llvmorg-<version>` (`--verify` checks
+them offline; `tests/test_builtin_headers.py` fails on any byte that differs). They are
+package data, so the wheel and the sdist carry them, and `.gitattributes` keeps their
+bytes from any line-ending conversion.
+
 ### It reads `ubproject.toml` through `ub-project`
 
 `load_codelinks_table` in `config.py` is ub-project's `load_toml` + `select_table`, and both

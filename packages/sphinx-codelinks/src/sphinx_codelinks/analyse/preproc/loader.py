@@ -92,7 +92,7 @@ def _bind() -> None:
 
 def included_file(cursor: Any) -> Path | None:
     """The file an inclusion-directive cursor includes, or ``None`` when libclang did
-    not find it (``<stddef.h>`` without the builtin headers, a header not generated
+    not find it (``<stddef.h>`` without clang's builtin headers, a header not generated
     yet).
 
     The name is the one libclang knows the file by: relative to the unit's working

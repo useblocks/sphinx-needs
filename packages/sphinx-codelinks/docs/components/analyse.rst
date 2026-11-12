@@ -999,7 +999,7 @@ An entry of ``compile_commands.json`` is applied as the build applies it:
   - The includer is the first candidate, ordered by the path of its source, whose parse
     confirms the inclusion: an ``#include`` in an inactive branch (``#if 0``) does not
     make an includer, nor does one in a header the entry's source includes. An
-    ``#include`` the parse cannot find (``<stddef.h>``, a header not generated yet) is
+    ``#include`` the parse cannot find (``<immintrin.h>``, a header not generated yet) is
     passed over. Each entry is parsed once as an includer, and that parse serves every
     source it includes; an entry whose source is traced too is also parsed as its own
     unit.
@@ -1058,6 +1058,36 @@ With ``defines = []`` only ``IMPL_BASE`` is extracted — the ``#ifdef VARIANT_A
 inactive, so its need is dropped. The include guard (``#ifndef FEATURE_HPP``) is always
 active when the header is parsed on its own, so ``IMPL_BASE`` is never suppressed by it,
 even when one of the header's own includes includes it back.
+
+.. _preprocessor_builtin_headers:
+
+Builtin headers
+~~~~~~~~~~~~~~~
+
+Some standard headers come with the compiler rather than with the C library:
+``stddef.h``, ``stdarg.h``, ``stdbool.h``, ``float.h``, ``stdatomic.h``, the compiler's half
+of ``limits.h``, and ``stdint.h`` where no C library is on the search path (a bare-metal
+target). The ``libclang`` wheel carries none of them, so **Sphinx-CodeLinks** ships clang
+18's 30 portable builtin headers and passes them to every parse as ``-resource-dir``.
+Without them an ``#if`` on what they define (``UINT32_MAX``, ``INT_MAX``,
+``__has_include(<stdatomic.h>)``, ``bool``) would take the branch the compiler does not
+take. Each parse is given the first of:
+
+1. the ``resource_dir`` of :ref:`analyse.preprocessor <preprocessor_config>`, when set;
+2. nothing, when its ``compile_commands.json`` entry already chooses (``-resource-dir``,
+   ``-nostdinc`` or ``-nobuiltininc``);
+3. the headers that ship with **Sphinx-CodeLinks**, read where the package is installed;
+4. nothing, when those are not on the filesystem (the package was imported from an
+   archive, or the files were removed); the analysis then warns once.
+
+Compiler intrinsics (``immintrin.h``, ``arm_neon.h`` …) are not shipped. If a parse still
+cannot find a builtin header, **Sphinx-CodeLinks** warns once per file, naming the header
+(``codelinks.builtin_header``, which fails a ``-W`` build), and continues: ``#if`` tests on
+what that header defines take their ``#else`` branch. To use your own clang's headers, set
+``resource_dir`` to the output of ``clang -print-resource-dir``.
+
+The shipped headers are clang's own, under the Apache License v2.0 with LLVM Exceptions;
+the licence is installed beside them (``sphinx_codelinks/analyse/preproc/clang_resource/``).
 
 Variant handling is the caller's job
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

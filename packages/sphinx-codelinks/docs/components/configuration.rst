@@ -735,3 +735,12 @@ limitations.
   database) and to all files when no database is found.
 - ``includes`` (``list[str]``) - ``-I`` include directories used together with
   ``defines`` on the fallback path.
+- ``resource_dir`` (``str``) - A clang resource directory, passed to every parse as
+  ``-resource-dir``: the directory whose ``include/`` holds clang's builtin headers
+  (``stddef.h``, ``stdint.h``, ``limits.h``, ``stdatomic.h`` …). Relative paths resolve
+  against the TOML config file. If omitted, the builtin headers that ship with
+  **Sphinx-CodeLinks** are passed, unless a ``compile_commands.json`` entry chooses its
+  own (``-resource-dir``, ``-nostdinc``, ``-nobuiltininc``). Set it to the output of
+  ``clang -print-resource-dir`` when your code includes compiler intrinsics
+  (``immintrin.h``, ``arm_neon.h``), which are not shipped; see
+  :ref:`preprocessor_builtin_headers`.
