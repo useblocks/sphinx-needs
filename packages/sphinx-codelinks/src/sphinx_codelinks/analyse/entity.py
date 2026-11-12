@@ -522,6 +522,27 @@ FIRST_ENTITY_WRAPPER_TYPES: dict[CommentType, frozenset[str]] = {
     CommentType.powershell: frozenset({"pipeline", "pipeline_chain"}),
 }
 
+# @VHDL wrappers a leading comment documents the first item of, IMPL_VHDL_5, impl, [FE_VHDL]
+# The nodes whose FIRST item a comment before them documents, each with the child kinds
+# passed over to reach it: VHDL's grammar places a comment before a design unit's
+# context clauses beside the unit, a comment before the first declaration of a process,
+# a block or a generate beside their head or body, and a comment before the first
+# generic or port beside the interface list. Unlike a wrapper of WRAPPER_TYPES, such a
+# node is no entity's stand-in: a comment inside one is not inside its first item, so
+# only the next-entity search reads this table, and the first item must be an entity
+# itself -- the search never walks past it to a later one.
+FIRST_ITEM_WRAPPER_TYPES: dict[CommentType, dict[str, frozenset[str]]] = {
+    CommentType.vhdl: {
+        # a design unit's context clauses belong to the unit
+        "design_unit": frozenset({"library_clause", "use_clause", "context_reference"}),
+        "process_head": frozenset(),
+        "block_head": frozenset(),
+        "generate_head": frozenset(),
+        "generate_block": frozenset(),
+        "interface_list": frozenset(),
+    },
+}
+
 
 def is_entity(node: TreeSitterNode, comment_type: CommentType) -> bool:
     """Whether ``node`` is an entity of its language (kind and predicate)."""

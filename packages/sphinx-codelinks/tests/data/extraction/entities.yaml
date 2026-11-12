@@ -2302,3 +2302,94 @@ rule_cpp_reopened_inline_namespace:
   truth:
     - {id: IMPL_R_REOP_1, outcome: exact, entity_kind: "function", qualified_name: "lib::g", start: 4, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::g() (warning: inline namespace reopened as a non-inline namespace)"}
     - {id: IMPL_R_REOP_2, outcome: exact, entity_kind: "method", qualified_name: "lib::g", start: 7, mechanism: leading, compiler: "clang.cindex 18.1.1, fully qualified: void lib::g() (the syntax reads the namespace qualifier as a class: method)"}
+
+# The VHDL rule cases: the generic attachment rules hold for VHDL. A marker in the
+# leading licence banner is file level, a ``--!`` doc comment is exempt unless it holds
+# ``@file``, and a marker after a header's ``is`` is trailing on the element the header
+# opens.
+
+rule_vhdl_file_header_banner:
+  # A marker in the comment block before the first design unit, a blank line after the
+  # block, is file level; the unit's context clauses do not change that.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    -- Copyright (c) 2026 ACME
+    -- @File level requirement, IMPL_R_VHDL_HEADER, impl
+
+    library ieee;
+    use ieee.std_logic_1164.all;
+
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_HEADER, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+
+rule_vhdl_file_header_no_blank_line:
+  # Without the blank line, the block documents the design unit after its context
+  # clauses.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    -- Copyright (c) 2026 ACME
+    -- @Counter, IMPL_R_VHDL_HEADER_ADJ, impl
+    library ieee;
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_HEADER_ADJ, outcome: exact, entity_kind: null, node_kind: entity_declaration, qualified_name: null, start: 4, mechanism: leading, compiler: "syntax-only: rule case"}
+
+rule_vhdl_doc_comment_before_first_item:
+  # A ``--!`` doc comment is exempt from the file-header rule: it documents the next
+  # design unit, blank line or not.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    --! @Counter, IMPL_R_VHDL_DOC_HEADER, impl
+
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_DOC_HEADER, outcome: exact, entity_kind: null, node_kind: entity_declaration, qualified_name: null, start: 3, mechanism: doc_comment, compiler: "syntax-only: rule case"}
+
+rule_vhdl_file_tag:
+  # A ``--!`` doc comment that holds ``@file`` documents the file, not the next unit.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    --! @file counter.vhd
+    --! @Counter file, IMPL_R_VHDL_FILE_TAG, impl
+
+    entity counter is
+    end entity counter;
+  truth:
+    - {id: IMPL_R_VHDL_FILE_TAG, outcome: none, entity_kind: null, qualified_name: null, start: null, compiler: "syntax-only: rule case"}
+
+rule_vhdl_trailing_on_a_header:
+  # A marker after a header's ``is`` -- a function's, a procedure's, a process's -- is
+  # trailing on the element the header opens, as a marker after ``int g() {`` is.
+  lang: vhdl
+  config: default
+  extract: [oneline, need_refs]
+  source: |
+    architecture rtl of counter is
+      impure function next_count(c : natural) return natural is -- @Next count, IMPL_R_VHDL_FN_HEAD, impl
+      begin
+        return c + 1;
+      end function next_count;
+      procedure reset_all is -- @Reset all, IMPL_R_VHDL_PROC_HEAD, impl
+      begin
+      end procedure reset_all;
+    begin
+      tick : process (clk) is -- @Tick, IMPL_R_VHDL_PROCESS_HEAD, impl
+      begin
+      end process tick;
+    end architecture rtl;
+  truth:
+    - {id: IMPL_R_VHDL_FN_HEAD, outcome: exact, entity_kind: null, node_kind: subprogram_definition, qualified_name: null, start: 2, mechanism: trailing, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_VHDL_PROC_HEAD, outcome: exact, entity_kind: null, node_kind: subprogram_definition, qualified_name: null, start: 6, mechanism: trailing, compiler: "syntax-only: rule case"}
+    - {id: IMPL_R_VHDL_PROCESS_HEAD, outcome: exact, entity_kind: null, node_kind: process_statement, qualified_name: null, start: 10, mechanism: trailing, compiler: "syntax-only: rule case"}

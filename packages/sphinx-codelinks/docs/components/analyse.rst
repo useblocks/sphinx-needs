@@ -314,22 +314,30 @@ In this order:
 4. **A trailing marker** -- code before it on its line -- belongs to the entity on that line (a Doxygen ``///<`` after
    a function declaration is the classic case; after a data member or an enumerator it belongs to the enclosing class,
    struct or enum), else to the entity it is inside: ``trailing`` when that entity starts on the marker's line
-   (``def f():  # @...``), ``enclosing`` otherwise. An attribute, a decorator or a template header before the marker
+   (``def f():  # @...``, a VHDL ``function f return t is -- @...``), ``enclosing`` otherwise.
+   In VHDL, the entity on the line is the innermost design element that ends there: the signal of
+   ``signal s : bit; -- @...``, the port of ``clk : in std_logic; -- @...``. An attribute, a decorator or a template header before the marker
    is not code: the marker leads the item they precede (an inner attribute, ``#![...]``, precedes none: it applies to
    what it is inside).
 5. **The comments before a file's first item**, when a blank line separates the last of them from it, belong to the
-   file -- documentation comments (``///``, ``/** */``, ``/*!``) excepted: they document the next item, blank lines
-   or not, as rustc and Doxygen read them, unless the comment holding the marker says it documents the file
-   (``@file``, ``\file``, ``@fileoverview``, ``@packageDocumentation`` or ``@module``, as a whole word at the start
-   of the comment or after whitespace, ``*``, ``/`` or ``!``).
+   file -- documentation comments (``///``, ``/** */``, ``/*!``, a VHDL ``--!``) excepted: they document the next
+   item, blank lines or not, as rustc and Doxygen read them, unless the comment holding the marker says it documents
+   the file (``@file``, ``\file``, ``@fileoverview``, ``@packageDocumentation`` or ``@module``, as a whole word at
+   the start of the comment or after whitespace, ``*``, ``/`` or ``!``).
    That exception holds only for the comments before the first item: a ``@file`` block after ``#pragma once`` or
    inside an include guard documents the next item like any documentation comment, and so does a ``///`` line whose
    ``\file`` is on another line of the run.
+   In VHDL, whose only documentation comment is a line comment, a run of ``--!`` lines on consecutive lines is one
+   comment, as Doxygen reads it: a ``--! @file`` line makes every line of its run document the file.
+   A VHDL design unit's first item is the unit itself, its ``library``, ``use`` and ``context`` clauses included, so
+   a licence banner before them, and a blank line after the banner, is the file's.
 6. **A leading marker** belongs to the entity right after it, when only *trivia* stands between: other comments,
    blank lines, attributes (Rust ``#[...]``, C++ ``[[...]]``) and decorators (TypeScript). The entity is looked for
    through what wraps it: a Python decorator, a C++ ``template <...>`` header or ``extern "C"``, a TypeScript
    ``export`` or ``declare``. In Python, a comment between ``def f():`` and the first line of its body belongs to that
-   first line's entity, if it is one.
+   first line's entity, if it is one. In VHDL, a comment before a design unit's context clauses belongs to the unit
+   they open, and a comment before the first declaration of a process, a block or a generate, or before the first
+   generic or port of a list, belongs to that declaration, generic or port, if it is an entity.
 7. **A marker directly above a preprocessor conditional**, in C and C++ -- with only other comments, and no blank line,
    between it and an ``#if``, ``#ifdef``, ``#ifndef``, ``#elif``, ``#elifdef``, ``#elifndef``, ``#else`` or
    ``#endif`` line -- belongs to the file anywhere outside a function's body (at file level, in a namespace, class,

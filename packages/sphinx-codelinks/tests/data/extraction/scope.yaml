@@ -16,10 +16,11 @@
 # binds to nothing outside a function body and is warned about
 # (``marker_above_conditional``, one warning per marker), and the shapes around it
 # that keep their scope and give no warning.
-# VHDL binds a marker to a design element next to it and never walks past a
-# sibling: a trailing comment to the innermost design element ending on its row,
-# a leading comment to the next sibling or a wrapper's first item, and otherwise
-# to the enclosing design element (``_vhdl_associate``).
+# VHDL takes the rules every language does, with two VHDL shapes: a trailing comment
+# binds the innermost design element ending on its row, and a leading comment the
+# next sibling or the first item of a wrapper its grammar places it beside (a design
+# unit after its context clauses, a process, block or generate head, an interface
+# list), never walking past a sibling; otherwise the enclosing design element.
 
 cpp_above_function:
   # Marker directly above a function definition -> binds to that function.
