@@ -381,6 +381,28 @@ vhdl_triple_dash_run:
     entity other is
     end entity other;
 
+vhdl_unclosed_block_comment:
+  # A VHDL-2008 ``/*`` with no ``*/`` is a block comment to the end of the file, as the
+  # grammar reads it, and its text is read like a closed block's: a one-line need, a
+  # one-line need on a ``--`` line inside it, a need reference and a multi-line need,
+  # all at file level. (A C++ ``/*`` with no ``*/`` is no comment: the parser recovers
+  # from the error, so what it reads there is not pinned.)
+  lang: vhdl
+  config: default
+  source: |
+    entity e is
+    end entity e;
+
+    /* unclosed block
+    @Bare in block, IMPL_VHDL_UNCLOSED_BARE, impl
+    -- @Dash in block, IMPL_VHDL_UNCLOSED_DASH, impl
+    @need-ids: REQ_VHDL_UNCLOSED_REF
+    @need impl: Multi-line in block
+    :id: IMPL_VHDL_UNCLOSED_ML
+
+    Body.
+    @endneed
+
 cpp_bang_block_opener:
   # The "/*!" opener (Qt style) is a block comment opener like "/*" and "/**": on a row
   # of its own it is a delimiter row and dropped; on the open line's row it is removed
