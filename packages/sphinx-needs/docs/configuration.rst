@@ -229,6 +229,75 @@ Default: **True**
 
    needs_include_needs = False
 
+.. _`needs_directive_name`:
+
+needs_directive_name
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.3.0
+
+Whether a need type's bare directive, ``.. <directive>::``, is its need when another directive has the same name,
+from another extension (such as sphinx-design's ``step``) or a Sphinx domain (such as ``py:data``, which a bare
+``.. data::`` runs).
+Every need type is also written ``.. need:<directive>::``, which is always its need (:ref:`need_qualified`).
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 55 30
+
+   * - Value
+     - bare ``.. step::``
+     - ``.. need:step::``
+   * - unset (default)
+     - the need, over the other directive, and the clash is one ``needs.directive_name_clash`` warning
+     - the need
+   * - ``"claim"``
+     - the need, over the other directive
+     - the need
+   * - ``"yield"``
+     - the other directive (docutils' own included, such as ``image``); the need where no other directive has the name
+     - the need
+   * - ``"qualified"``
+     - never the need
+     - the need
+
+Unset behaves as ``"claim"``, which is what a need type has always done.
+A need type's own ``directive_name`` (its :ref:`needs_types` entry) wins over this option for that type.
+Any other value is a ``needs.config`` warning, and is ignored.
+
+.. code-block:: toml
+
+   [needs]
+   directive_name = "yield"
+
+   # sphinx-design's step stays sphinx-design's; the need type is written `.. need:step::`
+   [needs.types.step]
+   title = "Step"
+   prefix = "ST_"
+
+**The clash warning.** While neither this option nor the type's ``directive_name`` is given,
+a need type that takes the name of another directive is one warning when its directive is registered::
+
+   WARNING: need type 'step': the directive name 'step' is also the directive sphinx_design.steps.StepDirective; a bare '.. step::' is the need. Set needs_directive_name (or the type's directive_name) to 'claim' to keep it so, or to 'yield' to leave the bare name to the other directive and write '.. need:step::' for the need [needs.directive_name_clash]
+
+It replaces Sphinx's own ``directive 'step' is already registered and will not be overridden [app.add_directive]``,
+which said the opposite of what happens: the need does take the name.
+A project that suppresses ``app.add_directive`` (or ``app``) gets neither,
+and ``needs.directive_name_clash`` in ``suppress_warnings`` silences this one alone.
+A need type named as a directive of the ``std`` domain or of the ``primary_domain`` (``glossary``, ``data``)
+was never usable bare, as Sphinx looks a domain up first, and nothing said so; it is now reported the same way
+(``a bare '.. data::' runs it``). Giving the option, any value, says the clash is meant, and it is not reported.
+
+**When "another directive has the name" is decided.** When the need type's directive is registered:
+at ``config-inited`` (priority 500) for a configured type,
+and at the :func:`~sphinx_needs.api.configuration.add_need_type` call for a type an extension adds.
+By then every extension's ``setup()`` has run, so the order of ``extensions`` does not matter.
+A directive another extension registers later (a ``config-inited`` handler above 500, ``builder-inited`` or later)
+is not seen, and replaces the bare need whatever the value, with Sphinx's own ``app.add_directive`` warning, as before.
+A directive of docutils that Sphinx does not register itself (``image``, ``role``, ``raw``, ``table``, ...) is the
+other directive under ``"yield"``, but is not reported while the option is unset: Sphinx's warning never saw it,
+and a need type of that name takes it silently, as before.
+
 .. _`needs_id_length`:
 
 needs_id_length
@@ -270,6 +339,11 @@ By default it is set to:
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`__ for more.
 * **inherits**, **fields**, **links** (optional): the fields and link types the type declares anew for its needs, see :ref:`needs_types_fields`.
 * **id_regex** (optional): a regular expression the id of every need of the type matches, beside :ref:`needs_id_regex` (below).
+* **directive_name** (optional): ``"claim"``, ``"yield"`` or ``"qualified"``, whether a bare ``.. <directive>::`` is the
+  type's need where another directive has the name too; it wins over :ref:`needs_directive_name` for this type.
+
+Every need type is also written ``.. need:<directive>::`` (:ref:`need_qualified`), so a ``directive`` cannot have a ``:``:
+such an entry is a ``needs.config`` warning, and is ignored.
 
 A type's ``id_regex`` is matched as :ref:`needs_id_regex` is, where it is: against the need's local id
 (the whole id while ids carry no namespace), with Python's ``re.match``,

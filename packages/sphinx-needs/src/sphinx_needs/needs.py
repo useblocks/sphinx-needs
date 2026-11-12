@@ -14,7 +14,6 @@ from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, Final, Literal, TypedDict, TypeVar, cast
 
 from docutils import nodes
-from docutils.parsers.rst import directives as rst_directives
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 from sphinx.config import Config
@@ -24,6 +23,12 @@ from sphinx.environment import BuildEnvironment
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
 import sphinx_needs.logging as needs_logging
 from sphinx_needs import __version__
+from sphinx_needs._directive_name import (
+    DIRECTIVE_NAME_VALUES,
+    NeedsDomain,
+    check_directive_name_config,
+    register_need_directive,
+)
 from sphinx_needs._incremental import get_updated_docs, stash_purged_doc
 from sphinx_needs._needsfile_v2a1 import check_json_format_config
 from sphinx_needs._wording import joined, title_hint
@@ -88,7 +93,6 @@ from sphinx_needs.derive import (
 from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
 from sphinx_needs.directives.need import (
     NEED_DIRECTIVE_OPTIONS,
-    NeedDirective,
     analyse_need_locations,
     html_depart,
     html_visit,
@@ -364,6 +368,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     ########################################################################
     # DIRECTIVES
     ########################################################################
+
+    # every need type's directive under its qualified name, ``need:<directive>``
+    app.add_domain(NeedsDomain)
 
     # Define directives
     app.add_directive("needbar", NeedbarDirective)
@@ -814,6 +821,7 @@ def _load_variants_from_toml(
 #: ``id_regex``: the pattern the ids of the type's needs match, beside ``needs_id_regex``.
 NEED_TYPE_KEYS = (
     "directive",
+    "directive_name",
     "title",
     "prefix",
     "color",
@@ -907,6 +915,10 @@ _SHAPES: Mapping[str, tuple[str, Callable[[object], bool]]] = {
     "style": ("a string", lambda v: isinstance(v, str)),
     "inherits": ("a non-empty string", lambda v: isinstance(v, str) and bool(v)),
     "id_regex": ("a string", lambda v: isinstance(v, str)),
+    "directive_name": (
+        "one of 'claim', 'yield' and 'qualified'",
+        lambda v: v in DIRECTIVE_NAME_VALUES,
+    ),
     "fields": ("a mapping", lambda v: isinstance(v, Mapping)),
     "links": ("a mapping", lambda v: isinstance(v, Mapping)),
     "back_links": ("a mapping", lambda v: isinstance(v, Mapping)),
@@ -963,7 +975,7 @@ def _got(name: str, value: object) -> str:
             if not value
             else "a list with an item that is not a non-empty string"
         )
-    if name == "severity" and isinstance(value, str):
+    if name in ("severity", "directive_name") and isinstance(value, str):
         return repr(value)
     return repr(value) if value == "" else _type_name(value)
 
@@ -1161,8 +1173,10 @@ def _normalise_need_types(
     shape is checked here: what a declaration names, and whether its values apply to
     the field, is for :func:`create_schema`, which knows the fields and every need type.
 
-    A directive name is otherwise not checked: which names docutils accepts is
-    docutils' concern.
+    A directive name with a ``:`` is refused (the entry is dropped): every need type is
+    also written ``need:<directive>``, in the ``need`` domain, and a ``:`` would make
+    that another domain's name. A directive name is otherwise not checked: which names
+    docutils accepts is docutils' concern.
 
     The function is pure: the value is not modified, and nothing is logged. A resolved
     list resolves to itself, with no findings.
@@ -1236,6 +1250,13 @@ def _normalise_need_types(
                 )
             resolved = {"directive": key}
             resolved.update((k, v) for k, v in entry.items() if k != "directive")
+        if ":" in resolved["directive"]:
+            findings.append(
+                f"{named} has directive = {resolved['directive']!r}, which has a ':': "
+                "a directive name of a need type cannot (its needs are written "
+                "'.. need:<directive>::' too); the entry is ignored"
+            )
+            continue
 
         # a bare entry naming a default type narrows it: it is filled below
         default = (
@@ -1349,25 +1370,21 @@ def resolve_need_types(_app: Sphinx, config: Config) -> None:
 
 
 def _register_need_directive(app: Sphinx, name: str) -> None:
-    """Register the need directive under a need type's name, once.
+    """Register the need directive under a need type's name, once, as the type's
+    ``directive_name`` (else ``needs_directive_name``) says.
 
     Both ``load_config`` and ``add_need_type`` register the directive of a need type,
     and either may run first: ``add_need_type`` is called from other extensions'
     ``config-inited`` handlers, at the same priority as ``load_config`` or earlier. A
     name that already holds :class:`NeedDirective` itself is left alone, so a type
-    registers its directive once whichever comes first (#2271). Any other directive
-    under the name is overridden as before, with Sphinx's ``already registered``
-    warning: only the need directive's own registration is skipped.
+    registers its directive once whichever comes first (#2271). Whether another
+    directive has the bare name is decided here, when the type's directive is
+    registered (see :mod:`sphinx_needs._directive_name`).
 
     :param app: The Sphinx application.
     :param name: The need type's directive name.
     """
-    # the registry Sphinx's own ``is_directive_registered`` reads, which docutils'
-    # stubs do not declare
-    registry = rst_directives._directives  # ty: ignore[unresolved-attribute]
-    if registry.get(name) is NeedDirective:
-        return
-    app.add_directive(name, NeedDirective)
+    register_need_directive(app, name)
 
 
 def load_config(app: Sphinx, *_args: Any) -> None:
@@ -1503,6 +1520,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                         f"Schema type for option '{option}' is not 'integer' or 'number' as required by needgantt."
                     )
 
+    check_directive_name_config(app.config)
     for t in needs_config.types:
         # Register requested types of needs
         _register_need_directive(app, t["directive"])

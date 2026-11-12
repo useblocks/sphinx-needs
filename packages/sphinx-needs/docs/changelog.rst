@@ -10,6 +10,24 @@ Unreleased
 Improvements
 ............
 
+- ✨ **Qualified need directives and** :ref:`needs_directive_name`: every need type is also written
+  ``.. need:<type>::`` (```` ```{need:<type>} ```` in MyST), and a project chooses whether the bare ``.. <type>::`` is
+  the need where another directive has the name too (:pr:`2507`)
+
+  ``need`` is a Sphinx domain of sphinx-needs' own that serves each need type's directive under its qualified name,
+  whatever else the project loads (:ref:`need_qualified`). :ref:`needs_directive_name`, and a ``directive_name`` in a
+  :ref:`needs_types` entry for one type, say what the bare name is: ``"claim"``, the need, over the other directive (what
+  a need type has always done); ``"yield"``, the other directive, so a project keeps both sphinx-design's ``step`` and a
+  need type ``step``, written ``.. need:step::``; or ``"qualified"``, never the need. Both keys are read from
+  ``ubproject.toml`` too (``[needs] directive_name``), where ubCode reads them.
+
+  While neither is given, a need type taking another directive's name is one ``needs.directive_name_clash`` warning
+  that names the fix, in place of Sphinx's ``directive 'step' is already registered and will not be overridden
+  [app.add_directive]``, which said the opposite of what happened. It is silent where ``app.add_directive`` is
+  suppressed, as Sphinx's was. A need type named as a ``std`` or primary-domain directive (``glossary``, ``data``),
+  which a bare directive never reached, is now reported the same way, where nothing was said. A need type's
+  ``directive`` with a ``:`` is a ``needs.config`` warning and its entry is ignored, and ``add_need_type`` refuses it.
+
 - ✨ **needs.json format 2a1 (experimental draft)**: write it with :ref:`needs_json_format_version` ``= "2a1"``,
   off by default (:pr:`2484`)
 

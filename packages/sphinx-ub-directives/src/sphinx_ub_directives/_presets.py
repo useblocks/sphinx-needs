@@ -16,7 +16,7 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from decimal import Decimal
 from importlib import import_module
-from typing import Any, cast
+from typing import Any, Final, cast
 
 from docutils.parsers.rst import Directive, directives
 from sphinx.application import Sphinx
@@ -114,6 +114,10 @@ def lookup(app: Sphinx, name: str) -> tuple[type[Directive], str | None] | None:
     return (found, None) if found is not None else None
 
 
+#: The qualifier of a need type's directive in sphinx-needs' ``need`` domain.
+NEED_QUALIFIER: Final = "need:"
+
+
 def need_types(app: Sphinx) -> list[str]:
     """The need types' directive names, from sphinx-needs' public API (empty when it is
     not loaded)."""
@@ -200,13 +204,16 @@ class Resolver:
 
     def base_of(self, name: str, base: str) -> Base | str:
         """The base an entry names, or why it names none."""
-        exact = [t for t in self.types if t == base]
+        # a need type is also written ``need:<type>`` (sphinx-needs' ``need`` domain)
+        qualified = base.lower().startswith(NEED_QUALIFIER)
+        typed = base[len(NEED_QUALIFIER) :] if qualified else base
+        exact = [t for t in self.types if t == typed]
         if exact and exact[0] != exact[0].lower():
             return (
-                f"the need type {base!r} is spelled with upper-case letters, which a "
+                f"the need type {typed!r} is spelled with upper-case letters, which a "
                 "Sphinx build cannot use as a directive, so it is no preset base"
             )
-        lowered = [t for t in self.types if t == base.lower()]
+        lowered = [t for t in self.types if t == typed.lower()]
         if lowered:
             if _resolver() is None:
                 return (
@@ -214,8 +221,22 @@ class Resolver:
                     "9.2 or later"
                 )
             cls = _lookup_docutils(lowered[0])
+            # the need directive sphinx-needs' ``need`` domain serves for the type (none
+            # from a sphinx-needs that has no such domain)
+            in_domain = lookup(self.app, f"{NEED_QUALIFIER}{lowered[0]}")
+            if in_domain is not None and (
+                qualified or cls is None or not issubclass(in_domain[0], cls)
+            ):
+                # qualified, or the bare name is not the need's (the type's
+                # directive_name is "yield" or "qualified"): the need is the domain's
+                cls = in_domain[0]
             if cls is not None:
-                return Base(lowered[0], cls, need_type=True)
+                return Base(
+                    lowered[0],
+                    cls,
+                    need_type=True,
+                    domain=NEED_QUALIFIER[:-1] if qualified else None,
+                )
         if base.lower() in self.template_names:
             return f"{base!r} is a template directive, which is no preset base"
         found = lookup(self.app, base)
@@ -227,9 +248,11 @@ class Resolver:
         return Base(base.lower(), cls, domain=domain)
 
     def taken(self, name: str) -> bool:
-        """Whether ``name`` is already a directive of the project."""
+        """Whether ``name`` is already a directive of the project: a need type's, bare or
+        ``need:``-qualified, or any directive Sphinx resolves."""
         lowered = name.lower()
-        return any(t.lower() == lowered for t in self.types) or (
+        typed = lowered.removeprefix(NEED_QUALIFIER)
+        return any(t.lower() == typed for t in self.types) or (
             lookup(self.app, lowered) is not None
         )
 

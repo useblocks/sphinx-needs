@@ -445,3 +445,67 @@ def test_the_same_application_built_twice_judges_its_presets_afresh(
     assert "second" in doctree and "first" not in doctree
     # the self-preset wraps the ORIGINAL note, not the first build's preset of it
     assert "self-second" in doctree and "self-first" not in doctree
+
+
+#: need types ``req`` and ``step``; ``step`` is never written bare (its directive_name)
+QUALIFIED_TYPES = """\
+[[needs.types]]
+directive = "req"
+title = "Requirement"
+prefix = "R_"
+
+[[needs.types]]
+directive = "step"
+title = "Step"
+prefix = "ST_"
+directive_name = "qualified"
+"""
+
+
+def _needs(app: SphinxTestApp) -> dict[str, dict[str, object]]:
+    data = json.loads((Path(app.outdir) / "needs.json").read_text(encoding="utf-8"))
+    return data["versions"][data["current_version"]]["needs"]
+
+
+@pytest.mark.parametrize(
+    ("base", "self_preset"),
+    [
+        pytest.param("need:req", False, id="qualified-base"),
+        pytest.param("need:step", False, id="qualified-base-of-a-qualified-type"),
+        pytest.param("step", False, id="bare-base-of-a-qualified-type"),
+    ],
+)
+def test_a_need_type_base_qualified_or_not(
+    make_app: Callable[..., SphinxTestApp],
+    tmp_path: Path,
+    base: str,
+    self_preset: bool,
+) -> None:
+    """A base ``need:<type>`` is that need type (its options are the need's), and so is
+    a bare base naming a need type whose bare directive is not the need's
+    (``directive_name = "qualified"``): the need the ``need`` domain serves."""
+    toml = (
+        QUALIFIED_TYPES
+        + f'\n[parse.directive_presets.my-preset]\nbase = "{base}"\n'
+        + 'options = { status = "draft" }\n'
+    )
+    app = _build(make_app, tmp_path, toml, ".. my-preset:: A\n   :id: X_001\n")
+    assert build_warnings(app) == []
+    need = _needs(app)["X_001"]
+    assert (need["type"], need["status"]) == (base.removeprefix("need:"), "draft")
+
+
+def test_a_qualified_name_is_taken(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A new preset name ``need:<type>`` is taken by the need type, as its bare name
+    is: a preset of that name would replace the need."""
+    toml = (
+        QUALIFIED_TYPES
+        + '\n[parse.directive_presets."need:req"]\nbase = "note"\n'
+        + '\n[parse.directive_presets."NEED:step"]\nbase = "note"\n'
+    )
+    app = _build(make_app, tmp_path, toml, ".. need:req:: A\n   :id: R_001\n")
+    refused = [w for w in build_warnings(app) if "directive_preset_name_taken" in w]
+    assert len(refused) == 2, build_warnings(app)
+    assert _needs(app)["R_001"]["type"] == "req"

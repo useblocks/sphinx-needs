@@ -221,8 +221,9 @@ force_options = { collapse = true }  # a use cannot change these
 4. A base naming another (accepted, non-self) preset is `directive_preset_base_is_preset`:
    presets do not chain. Enforced by: corpus `refused-base-is-preset`.
 5. **The base** is the need type of that name (case-insensitively; need types are lower
-   case, see 3.2.6), else the directive registered under that name (docutils, Sphinx, any
-   domain, any loaded extension). Nothing found is `directive_preset_unknown_base` at
+   case, see 3.2.6), written bare or qualified (`need:<type>`, sphinx-needs' `need` domain),
+   whatever the type's `directive_name` makes of its bare directive, else the directive
+   registered under that name (docutils, Sphinx, any domain, any loaded extension). Nothing found is `directive_preset_unknown_base` at
    `….base`, and so is a TEMPLATE directive (`ub-template`, or a declared one), which is no
    preset base. Enforced by: corpus `refused-unknown-base`, `base-is-case-insensitive`,
    `identity-confval-rst`, `px-preset-of-ub-template`, `px-preset-of-ub-template-generates-a-need`,
@@ -236,9 +237,10 @@ force_options = { collapse = true }  # a use cannot change these
    public `resolve_need_option`): `directive_preset_unknown_base`, saying "need-type
    presets need sphinx-needs 9.2 or later"; every other preset and template works.
    Enforced by: test `test_presets.py::test_need_type_presets_need_resolve_need_option`.
-7. A new (non-self) name that is already a directive — built in, a need type, any loaded
-   extension's — is `directive_preset_name_taken` at the entry.
-   Enforced by: corpus `refused-name-taken`, `refused-name-taken-by-a-need-type`.
+7. A new (non-self) name that is already a directive — built in, a need type (bare or
+   `need:`-qualified), any loaded extension's — is `directive_preset_name_taken` at the entry.
+   Enforced by: corpus `refused-name-taken`, `refused-name-taken-by-a-need-type`;
+   test `test_presets.py::test_a_qualified_name_is_taken`.
 
 ### 3.3 Option checks (every problem reported; the preset is left out if any)
 

@@ -24,7 +24,37 @@ but you must set a title as an argument (i.e. if you do not specify :ref:`needs_
 .. note::
 
     By default, the above example works also with ``.. spec::``, ``.. impl::``, ``.. test::`` and all other need types,
-    which are configured via :ref:`needs_types`.
+    which are configured via :ref:`needs_types`. Each is also written ``.. need:<type>::`` (:ref:`need_qualified`).
+
+.. _need_qualified:
+
+The qualified spelling: ``need:<type>``
+---------------------------------------
+
+.. versionadded:: 9.3.0
+
+Every need type is also written with its directive qualified by ``need:``,
+``.. need:req::`` in reStructuredText and ```` ```{need:req} ```` in MyST.
+It takes the same arguments, options and content, and makes the same need, of type ``req``:
+
+.. code-block:: rst
+
+   .. need:req:: User needs to login
+      :id: ID123
+
+.. code-block:: md
+
+   ```{need:req} User needs to login
+   :id: ID123
+   ```
+
+The qualified spelling is always the need, whatever else the project loads,
+and it is how a need type is written when another directive has its name:
+with :ref:`needs_directive_name` (or the type's ``directive_name``) set to ``"yield"``,
+a bare ``.. step::`` is sphinx-design's step, and ``.. need:step::`` the need type ``step``;
+with ``"qualified"``, a need type is written only qualified.
+``need`` is a Sphinx domain of its own, which holds no objects and adds nothing to ``objects.inv``.
+A ``need:<name>`` naming no need type is an unknown directive, as any other.
 
 .. _need_diagram:
 

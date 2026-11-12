@@ -685,6 +685,9 @@ class NeedType(TypedDict):
 
     directive: str
     """The directive name."""
+    directive_name: NotRequired[str]
+    """Whether the bare directive name is the need's: ``"claim"``, ``"yield"`` or
+    ``"qualified"``, over ``needs_directive_name``. ``need:<directive>`` always is."""
     title: str
     """A human readable title."""
     prefix: str
@@ -1261,6 +1264,14 @@ class NeedsSphinxConfig:
     @types.setter
     def types(self, _value: object) -> None:
         _read_only(TYPES_READ_ONLY)
+
+    directive_name: str | None = field(
+        default=None, metadata={"rebuild": "env", "types": (str, type(None))}
+    )
+    """Whether a need type's bare directive name is the need's when another directive
+    has it too: ``"claim"`` (it is the need's), ``"yield"`` (it is the other one's) or
+    ``"qualified"`` (never the need's); ``need:<directive>`` always is. Unset behaves
+    as ``"claim"`` and reports the clash. A type's ``directive_name`` wins."""
 
     include_needs: bool = field(
         default=True, metadata={"rebuild": "html", "types": (bool,)}
