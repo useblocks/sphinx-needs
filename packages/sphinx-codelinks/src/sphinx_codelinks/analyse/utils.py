@@ -15,6 +15,7 @@ from sphinx_codelinks.analyse import cpp_macros
 from sphinx_codelinks.analyse.entity import (
     COMMENT_TYPES,
     ENTITY_HEAD_TYPES,
+    FIRST_ENTITY_WRAPPER_TYPES,
     Association,
     CppNames,
     Mechanism,
@@ -73,6 +74,23 @@ RUST_QUERY = """
     (line_comment) @comment
     (block_comment) @comment
 """
+# @PowerShell comment nodes open with # or <#, IMPL_PS_16, impl, [FE_POWERSHELL]
+# PowerShell's grammar reads some ``#`` text inside an expandable (double-quoted)
+# string as a comment node within the string: a ``#`` line of a here-string, unless
+# it is the string's first line, and, in an ordinary ``"…"`` string, a ``#`` that
+# follows an interpolation past whitespace alone. It is string content. The strings
+# are captured as ``string`` and the subexpressions ``$( … )`` as ``string_code``, so
+# that :func:`captured_comments` leaves out a comment inside a string unless it is in
+# a subexpression of it, which is code. Where such a comment takes the string's
+# closing quote in, it lands in an ``ERROR`` node and in no string: it starts with the
+# whitespace before its ``#``, so only a node that starts with ``#`` or ``<#``, as
+# every PowerShell comment does, is captured.
+POWERSHELL_QUERY = """
+    ((comment) @comment (#match? @comment "^<?#"))
+    (expandable_string_literal) @string
+    (expandable_here_string_literal) @string
+    (sub_expression) @string_code
+"""
 
 # JSON value node types that can be associated with a comment.
 JSON_STRUCTURE_TYPES = {
@@ -123,7 +141,7 @@ def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
         return False
 
 
-# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS]
+# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH, FE_TS, FE_POWERSHELL]
 def init_tree_sitter(
     comment_type: CommentType, src_path: Path | None = None
 ) -> tuple[Parser, Query]:
@@ -195,6 +213,13 @@ def init_tree_sitter(
 
         parsed_language = Language(tree_sitter_bash.language())
         query = Query(parsed_language, SIMPLE_COMMENT_QUERY)
+    elif comment_type == CommentType.powershell:
+        # @PowerShell comment query for tree-sitter, IMPL_PS_3, impl, [FE_POWERSHELL]
+        # ``#`` and ``<# #>`` comments are both ``comment`` nodes in this grammar.
+        import tree_sitter_powershell
+
+        parsed_language = Language(tree_sitter_powershell.language())
+        query = Query(parsed_language, POWERSHELL_QUERY)
     else:
         raise ValueError(f"Unsupported comment style: {comment_type}")
     parser = Parser(parsed_language)
@@ -229,10 +254,37 @@ def parse_source(
 
 
 def captured_comments(tree: Tree, query: Query) -> list[TreeSitterNode] | None:
-    """The comment nodes ``query`` captures in ``tree``."""
+    """The comment nodes ``query`` captures in ``tree``.
+
+    A query may also capture ``string`` nodes, in which a grammar places comment
+    nodes that are string content (PowerShell's double-quoted strings), and
+    ``string_code`` nodes, the code such a string holds (PowerShell's ``$( … )``). A
+    comment is left out when, of those, the nearest one around it is a ``string``.
+    """
     query_cursor = QueryCursor(query)
     captures: dict[str, list[TreeSitterNode]] = query_cursor.captures(tree.root_node)
-    return captures.get("comment")
+    comments = captures.get("comment")
+    strings = {node.id for node in captures.get("string", ())}
+    if comments and strings:
+        code = {node.id for node in captures.get("string_code", ())}
+        comments = [
+            comment for comment in comments if not _in_string(comment, strings, code)
+        ]
+    return comments
+
+
+# @PowerShell comments inside strings are string content, IMPL_PS_7, impl, [FE_POWERSHELL]
+def _in_string(node: TreeSitterNode, strings: set[int], code: set[int]) -> bool:
+    """Whether the nearest of ``strings`` and ``code`` (node ids) around ``node`` is a
+    string."""
+    ancestor = node.parent
+    while ancestor is not None:
+        if ancestor.id in code:
+            return False
+        if ancestor.id in strings:
+            return True
+        ancestor = ancestor.parent
+    return False
 
 
 # @Comment extraction from source code using tree-sitter, IMPL_EXTR_1, impl, [FE_DEF]
@@ -251,17 +303,62 @@ def find_enclosing_scope(
     node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
 ) -> TreeSitterNode | None:
     """The nearest entity ``node`` is inside of, if any. A wrapper ``node`` is inside of
-    (a decorated definition, a template) counts as the entity it wraps."""
+    (a decorated definition, a template) counts as the entity it wraps; a PowerShell
+    pipeline only when ``node`` is inside that entity, not in another of its commands."""
     current = node.parent
     while current is not None:
         if is_entity(current, comment_type):
             return current
         if is_wrapper(current, comment_type):
             wrapped = unwrap_entity(current, comment_type)
-            if wrapped is not None:
+            if wrapped is not None and (
+                current.type not in FIRST_ENTITY_WRAPPER_TYPES.get(comment_type, ())
+                or _contains(wrapped, node)
+            ):
                 return wrapped
         current = current.parent
     return None
+
+
+def _contains(outer: TreeSitterNode, node: TreeSitterNode) -> bool:
+    """Whether ``node`` lies within ``outer``: a pipeline's entity is not around a
+    comment in another command of the pipeline (``Describe 'x' { } | ForEach-Object {
+    # c }``)."""
+    return outer.start_byte <= node.start_byte and node.end_byte <= outer.end_byte
+
+
+# The nodes a PowerShell script or script block holds its statements in. A comment
+# before the first statement of a body, or after the last one on its row, is their
+# sibling, not the statements'.
+POWERSHELL_BODY_TYPES = frozenset(
+    {"statement_list", "script_block", "script_block_body"}
+)
+
+
+def _first_named_inside(
+    node: TreeSitterNode, wrappers: frozenset[str]
+) -> TreeSitterNode:
+    """``node``'s first named child, followed while the node is one of ``wrappers``, or
+    ``node`` itself when it is none of them or wraps nothing."""
+    while node.type in wrappers and node.named_children:
+        node = node.named_children[0]
+    return node
+
+
+def _last_named_inside(
+    node: TreeSitterNode, wrappers: frozenset[str]
+) -> TreeSitterNode:
+    """``node``'s last named child, followed while the node is one of ``wrappers``, or
+    ``node`` itself when it is none of them or wraps nothing.
+
+    No comment is skipped: where the trailing path looks into a body, a comment on the
+    marker's row after the body's last statement is the marker itself, or beside the
+    body with it, never last in the body (no input in a corpus of 610 files or in
+    generated shapes reached one).
+    """
+    while node.type in wrappers and node.named_children:
+        node = node.named_children[-1]
+    return node
 
 
 def find_next_scope(
@@ -275,6 +372,10 @@ def find_next_scope(
     body is followed by the body's first statement; in every other grammar a block
     after a comment is the body of the entity the comment is inside. The entity found
     is looked through its wrappers (``@decorator``, ``template <…>``, ``export``).
+
+    PowerShell's grammar places a comment before a body's first statement beside the
+    body (its statement list, or the script block holding it), so such a comment is
+    followed by that first statement too.
     """
     sibling = node.next_named_sibling
     while sibling is not None and is_trivia(sibling, comment_type):
@@ -288,6 +389,9 @@ def find_next_scope(
             (c for c in sibling.named_children if not is_trivia(c, comment_type)),
             None,
         )
+    # @PowerShell next entity across statement bodies, IMPL_PS_6, impl, [FE_POWERSHELL]
+    if comment_type == CommentType.powershell and sibling is not None:
+        sibling = _first_named_inside(sibling, POWERSHELL_BODY_TYPES)
     return unwrap_entity(sibling, comment_type)
 
 
@@ -318,11 +422,18 @@ def _code_before_on_row(node: TreeSitterNode) -> bool:
 def _entity_on_row(
     node: TreeSitterNode, comment_type: CommentType
 ) -> TreeSitterNode | None:
-    """The entity that ends on the trailing comment ``node``'s row, before it."""
+    """The entity that ends on the trailing comment ``node``'s row, before it.
+
+    PowerShell's grammar places a comment after a body's last statement beside the
+    body, so the entity is looked for at the end of that body.
+    """
     previous = node.prev_named_sibling
     while previous is not None and previous.type in COMMENT_TYPES:
         previous = previous.prev_named_sibling
     if previous is not None and previous.end_point.row == node.start_point.row:
+        # @PowerShell entity on a trailing marker's row, IMPL_PS_9, impl, [FE_POWERSHELL]
+        if comment_type == CommentType.powershell:
+            previous = _last_named_inside(previous, POWERSHELL_BODY_TYPES)
         return unwrap_entity(previous, comment_type)
     return None
 
@@ -449,6 +560,78 @@ def _is_inner_doc(text: bytes, comment_type: CommentType) -> bool:
     if comment_type != CommentType.rust:
         return False
     return text.startswith((b"//!", b"/*!"))
+
+
+# PowerShell's comment-based-help keyword lines: a line of a comment that holds a
+# help keyword alone, or a keyword that takes an argument and that one argument, with
+# whitespace around, in any letter case, makes the comment help.
+_POWERSHELL_HELP_KEYWORD = re.compile(
+    r"^[ \t]*\.(?:"
+    r"(?:SYNOPSIS|DESCRIPTION|EXAMPLE|INPUTS|OUTPUTS|NOTES|LINK|COMPONENT|ROLE"
+    r"|FUNCTIONALITY)"
+    r"|(?:PARAMETER|FORWARDHELPTARGETNAME|FORWARDHELPCATEGORY|REMOTEHELPRUNSPACE"
+    r"|EXTERNALHELP)(?:[ \t]+[^ \t\r\n]+)?"
+    r")[ \t\r]*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def _powershell_hash_run(node: TreeSitterNode) -> list[TreeSitterNode]:
+    """The ``#`` comments on consecutive rows that the ``#`` comment ``node`` is one
+    of, in order."""
+    run = [node]
+    previous = node.prev_named_sibling
+    while (
+        previous is not None
+        and previous.type in COMMENT_TYPES
+        and not (previous.text or b"").startswith(b"<#")
+        and previous.end_point.row == run[0].start_point.row - 1
+    ):
+        run.insert(0, previous)
+        previous = previous.prev_named_sibling
+    following = node.next_named_sibling
+    while (
+        following is not None
+        and following.type in COMMENT_TYPES
+        and not (following.text or b"").startswith(b"<#")
+        and following.start_point.row == run[-1].end_point.row + 1
+    ):
+        run.append(following)
+        following = following.next_named_sibling
+    return run
+
+
+# @PowerShell comment-based help documents its function, IMPL_PS_14, impl, [FE_POWERSHELL]
+def powershell_help_function(
+    node: TreeSitterNode, text: bytes | None = None
+) -> TreeSitterNode | None:
+    """The function whose comment-based help the comment ``node`` is, first in its body.
+
+    Help is a ``<# #>`` comment, or a run of ``#`` comments on consecutive rows,
+    holding a comment-based-help keyword line: a line that holds a keyword
+    (``.SYNOPSIS``, ``.DESCRIPTION``, ``.EXAMPLE``, ...) alone, or one that takes an
+    argument with that argument (``.PARAMETER Path``), in any letter case. First in
+    the body is before every statement of the function's body (its ``param`` block
+    included), where the grammar places it as the function's child.
+
+    :param text: The comment's text as the file writes it; ``node.text`` when not given.
+    """
+    parent = node.parent
+    if parent is None or parent.type != "function_statement":
+        return None
+    body = next((c for c in parent.named_children if c.type == "script_block"), None)
+    if body is not None and node.start_byte > body.start_byte:
+        return None
+    written = (node.text or b"") if text is None else text
+    if written.startswith(b"<#"):
+        help_text = written[2:-2] if written.endswith(b"#>") else written[2:]
+    else:
+        help_text = b"\n".join(
+            (comment.text or b"")[1:] for comment in _powershell_hash_run(node)
+        )
+    if _POWERSHELL_HELP_KEYWORD.search(help_text.decode("utf-8", "replace")) is None:
+        return None
+    return parent
 
 
 def _find_yaml_structure_in_block_node(
@@ -592,7 +775,9 @@ def associate(
     1. YAML and JSONC: the data structure on the comment's row, else the next one,
        else the enclosing one.
     2. A Python docstring documents the definition it is in.
-    3. A Rust inner doc comment (``//!``) documents what it is inside.
+    3. A Rust inner doc comment (``//!``) documents what it is inside, and PowerShell
+       comment-based help first in a function's body documents that function (see
+       :func:`powershell_help_function`).
     4. A trailing comment (code before it on its row) belongs to the entity on its
        row, else to the enclosing one; an attribute, a decorator or a template header
        before it is no code.
@@ -640,6 +825,10 @@ def associate(
     if node.type == CommentCategory.docstring or _is_inner_doc(written, comment_type):
         scope = find_enclosing_scope(node, comment_type)
         return Association(scope, declared) if scope is not None else None
+    if comment_type == CommentType.powershell:
+        documented = powershell_help_function(node, written)
+        if documented is not None:
+            return Association(documented, declared)
     is_doc = is_doc_comment(node, comment_type, text=written)
 
     def enclosing(trailing: bool = False) -> Association | None:

@@ -25,6 +25,7 @@ from sphinx_codelinks.analyse.oneline_parser import (
     docstring_tag,
     jsdoc_tag,
     oneline_parser,
+    opens_powershell_literal,
 )
 from sphinx_codelinks.analyse.references import _relative_posix
 from sphinx_codelinks.config import (
@@ -212,16 +213,18 @@ def _scanned_texts(
 
     Each text comes with the 0-based row and the column, in characters, at which it
     starts. A docstring is scanned as its content, without the quotes; a block
-    comment without its closing ``*/``, and a legacy ``<!-- … -->`` comment without
-    its ``-->``, which are not marker text. The rows a multi-line need claims are
-    blanked.
+    comment without its closing ``*/``, a PowerShell ``<# … #>`` comment without its
+    ``#>``, and a legacy ``<!-- … -->`` comment without its ``-->``, which are not
+    marker text. The rows a multi-line need claims are blanked.
     """
     node = src_comment.node
     if getattr(node, "type", None) == CommentCategory.docstring:
         texts = _docstring_contents(node, src_comment.text, src_comment.column)
     else:
         text = src_comment.text.decode("utf-8")
-        if text.startswith("/*") and text.endswith("*/"):
+        if (text.startswith("/*") and text.endswith("*/")) or (
+            text.startswith("<#") and text.endswith("#>")
+        ):
             text = text[:-2]
         elif text.startswith("<!--") and text.endswith("-->"):
             text = text[:-3]
@@ -743,11 +746,16 @@ class SourceAnalyse:
         in_jsdoc = self.analyse_config.comment_type == CommentType.ts and _is_jsdoc(
             src_comment.text
         )
+        in_powershell = self.analyse_config.comment_type == CommentType.powershell
         for line in lines:
             if self._is_need_id_refs_line(line):
                 row_offset += 1
                 continue
             start_sequence = oneline_comment_style.start_sequence
+            if in_powershell and opens_powershell_literal(line, start_sequence):
+                # a hashtable or an array, ``@{ … }`` or ``@( … )``: code, not a marker
+                row_offset += 1
+                continue
             tag, kind, holders = None, WarningSubTypeEnum.docstring_tag, "docstrings"
             if in_docstring:
                 tag = docstring_tag(line, start_sequence)

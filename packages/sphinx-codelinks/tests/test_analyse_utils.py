@@ -58,6 +58,111 @@ def init_bash_tree_sitter() -> tuple[Parser, Query]:
     return utils.init_tree_sitter(CommentType.bash)
 
 
+@pytest.fixture(scope="session")
+def init_powershell_tree_sitter() -> tuple[Parser, Query]:
+    return utils.init_tree_sitter(CommentType.powershell)
+
+
+def test_init_tree_sitter_powershell(init_powershell_tree_sitter):
+    """Both PowerShell comment forms, ``#`` and ``<# #>``, are comment nodes."""
+    parser, query = init_powershell_tree_sitter
+    comments = utils.extract_comments(b"# a\n<# b #>\nfunction f { }\n", parser, query)
+    assert comments
+    assert [comment.text for comment in comments] == [b"# a", b"<# b #>"]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        # a here-string whose ``#`` line is not its first line
+        b'$stub = @"\nfunction Test-It {\n# @Generated, IMPL_GEN, impl\n}\n"@\n',
+        # an interpolating here-string
+        b'$name = "px"\n$t = @"\nHello $name\n# @Interp, IMPL_INTERP, impl\n"@\n',
+    ],
+)
+def test_a_hash_line_in_a_powershell_here_string_is_no_comment(
+    code, init_powershell_tree_sitter
+):
+    """The grammar reads a ``#`` line inside an expandable here-string as a comment
+    node; it is string content, so extraction leaves it out."""
+    parser, query = init_powershell_tree_sitter
+    comments = utils.extract_comments(code + b"# real\nfunction f { }\n", parser, query)
+    assert comments
+    assert [comment.text for comment in comments] == [b"# real"]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        # an ordinary double-quoted string that interpolates before its ``#`` line
+        # and on it
+        b'$c = "one $x\n# @Fake, ID_FAKE, impl $y\nthree"\n',
+        # the interpolation first in the string
+        b'$c = "$x\n# @Fake, ID_FAKE, impl $y\nthree"\n',
+        # a subexpression is an interpolation too
+        b'$c = "one $($x)\n# @Fake, ID_FAKE, impl $($y)\nthree"\n',
+        # a string passed to a command, the ``#`` indented
+        b'Write-Host "one $x\n    # @Fake $y, ID_FAKE, impl\nthree"\n',
+        # the ``#`` on the interpolation's own line
+        b'$c = "one $x # @Fake, ID_FAKE, impl $y\nthree"\n',
+        # right after the interpolation: the comment node starts with its ``#``
+        b'$c = "$x# @Fake, ID_FAKE, impl $y\nthree"\n',
+    ],
+)
+def test_a_hash_line_in_an_interpolating_powershell_string_is_no_comment(
+    code, init_powershell_tree_sitter
+):
+    """After an interpolation in a double-quoted string, the grammar may read a ``#``
+    that follows it past whitespace alone as a comment node inside the string, as it
+    does in a here-string: it is string content, never a marker."""
+    parser, query = init_powershell_tree_sitter
+    comments = utils.extract_comments(code + b"# real\nfunction f { }\n", parser, query)
+    assert comments
+    assert [comment.text for comment in comments] == [b"# real"]
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        # the string's closing quote on the ``#`` line: the grammar's comment takes the
+        # quote in and lands under an ERROR node, in no string
+        b'$s = "one $x\n# @Fake, ID_F, impl"\n',
+        b'$s = "one $x # @Fake, ID_F, impl"\n',
+        b'Write-Host "$x\n    # @Fake, ID_F, impl"\n',
+    ],
+)
+def test_a_powershell_comment_token_that_is_no_comment_is_left_out(
+    code, init_powershell_tree_sitter
+):
+    """A PowerShell comment opens with ``#`` or ``<#``; the comment node the grammar
+    makes of a ``#`` after an interpolation starts with the whitespace before it, and
+    where it is in no string node (the string's quote is lost to it), it is still no
+    comment of the file."""
+    parser, query = init_powershell_tree_sitter
+    comments = utils.extract_comments(code, parser, query) or []
+    assert [c.text for c in comments if not (c.text or b"").startswith(b"#")] == []
+
+
+@pytest.mark.parametrize(
+    "code",
+    [
+        # a subexpression in a here-string is code
+        b'$s = @"\n$( # in code\n 1 )\n"@\n',
+        # and in an ordinary double-quoted string
+        b'$s = "a $( # in code\n 1 ) b"\n',
+    ],
+)
+def test_a_comment_in_a_powershell_subexpression_is_a_comment(
+    code, init_powershell_tree_sitter
+):
+    """A comment inside ``$( … )`` is a comment of the code the string interpolates,
+    not string content: it is kept, string or not around it."""
+    parser, query = init_powershell_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    assert comments
+    assert [comment.text for comment in comments] == [b"# in code"]
+
+
 def test_every_comment_type_is_wired():
     """A comment type is a ``CommentType`` member plus an entry in each of several
     tables; a member one of them misses fails here, rather than as a ``KeyError`` in
@@ -727,6 +832,380 @@ def test_find_associated_scope_bash(code, result, init_bash_tree_sitter):
     assert node.text
     func_def = node.text.decode("utf-8")
     assert func_def.startswith(result)
+
+
+@pytest.mark.parametrize(
+    ("code", "result"),
+    [
+        # comment above a function
+        (
+            b"""# @req-id: need_001
+function Start-Px {
+    param([string] $Config)
+}
+""",
+            "function Start-Px",
+        ),
+        # comment above a filter, PowerShell's pipeline function
+        (b"# @req-id: need_002\nfilter Get-Odd { $_ }\n", "filter Get-Odd"),
+        # comment after a function body's last statement falls back to the function
+        (
+            b"""function Start-Px {
+    Write-Host 'start'
+    # @req-id: need_003
+}
+""",
+            "function Start-Px",
+        ),
+        # comment above a class
+        (b"# @req-id: need_004\nclass Proxy { }\n", "class Proxy"),
+        # comment above a method inside a class
+        (
+            b"""class Proxy {
+    # @req-id: need_005
+    [string] Start([string] $c) { return $c }
+}
+""",
+            "[string] Start",
+        ),
+        # comment above a Pester It inside a Describe
+        (
+            b"""Describe 'px' {
+    # @req-id: need_006
+    It 'starts' {
+        1 | Should -Be 1
+    }
+}
+""",
+            "It 'starts'",
+        ),
+        # PowerShell is case-insensitive, and so are Pester's block names
+        (
+            b"""describe 'px' {
+    # @req-id: need_007
+    it 'lower' { }
+}
+""",
+            "it 'lower'",
+        ),
+        # comment above a Describe
+        (b"# @req-id: need_008\nDescribe 'px' { }\n", "Describe 'px'"),
+        # comment inside an It body falls back to the It
+        (
+            b"""Describe 'px' {
+    It 'starts' {
+        1 | Should -Be 1
+        # @req-id: need_009
+    }
+}
+""",
+            "It 'starts'",
+        ),
+        # a plain command after the comment is code: it belongs to the Describe it is
+        # in, not to the It past the command, as in every other language
+        (
+            b"""Describe 'px' {
+    # @req-id: need_012
+    BeforeAll { $x = 1 }
+    It 'a' { }
+}
+""",
+            "Describe 'px'",
+        ),
+        # a Context is a scope like an It
+        (
+            b"""Describe 'px' {
+    # @req-id: need_013
+    Context 'ctx' { }
+}
+""",
+            "Context 'ctx'",
+        ),
+        # a block called through Pester's module qualifier is a Pester block too
+        (
+            b"""Describe 'px' {
+    # @req-id: need_014
+    Pester\\It 'qualified' { }
+}
+""",
+            "Pester\\It 'qualified'",
+        ),
+        # comment above a property inside a class
+        (
+            b"""class Proxy {
+    # @req-id: need_015
+    [string] $Name
+    [void] Start() { }
+}
+""",
+            "[string] $Name",
+        ),
+        # comment above an enum
+        (b"# @req-id: need_016\nenum Mode { Direct }\n", "enum Mode"),
+    ],
+)
+def test_find_associated_scope_powershell(code, result, init_powershell_tree_sitter):
+    parser, query = init_powershell_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    assert comments
+    node: TreeSitterNode | None = utils.find_associated_scope(
+        comments[0], CommentType.powershell
+    )
+    assert node
+    assert node.text
+    assert node.text.decode("utf-8").startswith(result)
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        b"Write-Host 'x'",
+        # an It of another module is not Pester's
+        b"Other\\It 'x' { }",
+        # a plain command is code: the function past it is not the marker's
+        b"Set-StrictMode -Version Latest\nfunction Start-Px { }",
+    ],
+)
+def test_a_non_pester_command_is_no_scope(command, init_powershell_tree_sitter):
+    """Only Pester's blocks are scopes among commands: a marker above any other
+    command, at file level, binds to nothing, and not to an entity after it."""
+    parser, query = init_powershell_tree_sitter
+    comments = utils.extract_comments(
+        b"# @req-id: need_010\n" + command + b"\n", parser, query
+    )
+    assert comments
+    assert utils.find_associated_scope(comments[0], CommentType.powershell) is None
+
+
+def _powershell_attached(
+    source: str, parser: Parser, query: Query
+) -> tuple[str, str] | None:
+    """The first line of the entity the comment holding ``marker`` in the PowerShell
+    ``source`` is attached to, and the mechanism; ``None`` for nothing."""
+    comments = utils.extract_comments(source.encode(), parser, query) or []
+    marker = next(c for c in comments if b"marker" in (c.text or b""))
+    association = utils.associate(marker, CommentType.powershell)
+    if association is None or isinstance(association, utils.Unattached):
+        return None
+    first_line = (association.node.text or b"").decode().splitlines()[0]
+    return first_line.strip(), association.mechanism
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
+            "function Outer {\n    <#\n    .SYNOPSIS\n    marker\n    #>\n"
+            "    function Inner { }\n}\n",
+            ("function Outer {", "doc_comment"),
+            id="help-block-before-a-nested-function",
+        ),
+        pytest.param(
+            "function Outer {\n    <# marker\n    .synopsis #>\n    [CmdletBinding()]\n"
+            "    param()\n    Get-X\n}\n",
+            ("function Outer {", "doc_comment"),
+            id="help-block-before-param-lower-case-keyword",
+        ),
+        pytest.param(
+            "filter Outer {\n    <# .DESCRIPTION\n    marker #>\n    Get-X\n}\n",
+            ("filter Outer {", "doc_comment"),
+            id="help-block-in-a-filter",
+        ),
+        pytest.param(
+            "function Outer { <# marker\n    .SYNOPSIS #> Get-X }\n",
+            ("function Outer { <# marker", "doc_comment"),
+            id="help-block-on-the-function-row",
+        ),
+        pytest.param(
+            "function Outer {\n    # .SYNOPSIS\n    #   Does it.\n    # marker\n"
+            "    function Inner { }\n}\n",
+            ("function Outer {", "doc_comment"),
+            id="help-hash-run-keyword-above-the-marker",
+        ),
+        pytest.param(
+            "function Outer {\n    # marker\n    # .EXAMPLE\n    function Inner { }\n}\n",
+            ("function Outer {", "doc_comment"),
+            id="help-hash-run-keyword-below-the-marker",
+        ),
+        # a plain comment first in a body keeps the rule of every language
+        pytest.param(
+            "function Outer {\n    # marker\n    function Inner { }\n}\n",
+            ("function Inner { }", "leading"),
+            id="plain-comment-before-a-nested-function",
+        ),
+        pytest.param(
+            "function Outer {\n    <# marker #>\n    function Inner { }\n}\n",
+            ("function Inner { }", "leading"),
+            id="plain-block-before-a-nested-function",
+        ),
+        # a keyword that does not open a line is no help keyword
+        pytest.param(
+            "function Outer {\n    <# see .SYNOPSIS marker #>\n    function Inner { }\n}\n",
+            ("function Inner { }", "leading"),
+            id="keyword-inside-a-line",
+        ),
+        # a blank line ends a run of # comments: the help is another run
+        pytest.param(
+            "function Outer {\n    # .SYNOPSIS\n\n    # marker\n    function Inner { }\n}\n",
+            ("function Inner { }", "leading"),
+            id="hash-run-broken-by-a-blank-line",
+        ),
+        # help after a statement is not first in the body
+        pytest.param(
+            "function Outer {\n    $x = 1\n    <# .SYNOPSIS\n    marker #>\n"
+            "    function Inner { }\n}\n",
+            ("function Inner { }", "leading"),
+            id="help-after-a-statement",
+        ),
+        # only a function's body: a script block's help is a plain comment
+        pytest.param(
+            "Describe 'd' {\n    <# .SYNOPSIS\n    marker #>\n    It 'a' { }\n}\n",
+            ("It 'a' { }", "leading"),
+            id="help-in-a-pester-block",
+        ),
+        # help before the function binds it as any comment does
+        pytest.param(
+            "<#\n.SYNOPSIS\nmarker\n#>\nfunction Outer { }\n",
+            ("function Outer { }", "leading"),
+            id="help-before-the-function",
+        ),
+        # help at the end of a body is inside it
+        pytest.param(
+            "function Outer {\n    Get-X\n    <# .SYNOPSIS\n    marker #>\n}\n",
+            ("function Outer {", "enclosing"),
+            id="help-at-the-end-of-the-body",
+        ),
+        # a keyword line holds the keyword alone, or with its one argument
+        pytest.param(
+            "function Outer {\n    # .NOTES: a detail, not help\n    # marker\n"
+            "    function Inner { }\n}\n",
+            ("function Inner { }", "leading"),
+            id="keyword-followed-by-a-colon",
+        ),
+        pytest.param(
+            "function Outer {\n    #   .Description = $x.Description\n    # marker\n"
+            "    function Inner { }\n}\n",
+            ("function Inner { }", "leading"),
+            id="commented-out-assignment",
+        ),
+        pytest.param(
+            "function Outer {\n    <# .SYNOPSIS Starts it.\n    marker #>\n"
+            "    function Inner { }\n}\n",
+            ("function Inner { }", "leading"),
+            id="argument-to-a-keyword-that-takes-none",
+        ),
+        pytest.param(
+            "function Outer {\n    <# .PARAMETER Path Extra\n    marker #>\n"
+            "    function Inner { }\n}\n",
+            ("function Inner { }", "leading"),
+            id="two-arguments",
+        ),
+        pytest.param(
+            "function Outer {\n    <#\n      .Parameter Path  \n    marker #>\n"
+            "    function Inner { }\n}\n",
+            ("function Outer {", "doc_comment"),
+            id="parameter-with-its-argument",
+        ),
+    ],
+)
+def test_powershell_help_first_in_a_body_documents_the_function(
+    source, expected, init_powershell_tree_sitter
+):
+    """Comment-based help (a ``<# #>`` block, or a run of ``#`` lines, holding a help
+    keyword line such as ``.SYNOPSIS``) first in a function's body documents that
+    function: a marker in it is the function's
+    documentation comment, even when a nested function follows. A plain comment there
+    keeps the rule of every language, and binds the next statement's entity."""
+    parser, query = init_powershell_tree_sitter
+    assert _powershell_attached(source, parser, query) == expected
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
+            "# marker\n[DscResource()]\nclass K { }\n",
+            None,
+            id="above-attribute-at-file-start",
+        ),
+        pytest.param(
+            "function a { }\n# marker\n[DscResource()]\nclass K { }\n",
+            None,
+            id="above-attribute-after-code",
+        ),
+        pytest.param(
+            'function a { }\n# marker\n[SuppressMessage("A", "")]\nclass K { }\n',
+            None,
+            id="above-attribute-with-arguments",
+        ),
+        pytest.param(
+            "function a { }\n[Flags()]\nenum E { # marker\n    A = 1\n}\n",
+            ("enum E { # marker", "trailing"),
+            id="trailing-the-enum-line",
+        ),
+        pytest.param(
+            "function a { }\n[DscResource()]\nclass K { # marker\n}\n",
+            ("class K { # marker", "trailing"),
+            id="trailing-the-class-line",
+        ),
+    ],
+)
+def test_a_marker_above_a_powershell_attribute_binds_nothing(
+    source, expected, init_powershell_tree_sitter
+):
+    """The grammar cannot read an attribute before a class or an enum: what it makes of
+    one depends on the code around it (an ``ERROR`` node, a type literal statement
+    holding one, a cast that takes the class in), so a marker above the attribute binds
+    nothing, as the documentation says. A marker trailing the class's or the enum's
+    line, with the attribute on a line of its own, binds it. A grammar that learns
+    attributes fails this test: then the documented limitation goes."""
+    parser, query = init_powershell_tree_sitter
+    assert _powershell_attached(source, parser, query) == expected
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
+            "function f { } # marker\n",
+            ("function f { }", "trailing"),
+            id="function",
+        ),
+        pytest.param(
+            "Describe 'd' {\n    It 'x' { } # marker\n}\n",
+            ("It 'x' { }", "trailing"),
+            id="it-in-describe",
+        ),
+        pytest.param(
+            "Describe 'top' { } # marker\nfunction f { }\n",
+            ("Describe 'top' { }", "trailing"),
+            id="describe-at-file-level",
+        ),
+        pytest.param(
+            "Describe 'd' {\n    Context 'c' {\n    } # marker\n}\n",
+            ("Context 'c' {", "trailing"),
+            id="context-closing-on-the-row",
+        ),
+        pytest.param(
+            "Set-StrictMode -Version 3 # marker\nfunction f { }\n",
+            None,
+            id="plain-command",
+        ),
+        pytest.param(
+            "Describe 'd' {\n    Write-Host 'x' # marker\n}\n",
+            ("Describe 'd' {", "enclosing"),
+            id="plain-command-in-describe",
+        ),
+    ],
+)
+def test_a_trailing_powershell_marker_binds_the_entity_on_its_row(
+    source, expected, init_powershell_tree_sitter
+):
+    """A trailing comment belongs to the entity that ends on its row, a Pester block
+    included, which the grammar wraps in a pipeline; on a plain command's row it falls
+    back to the enclosing entity, as in every other language."""
+    parser, query = init_powershell_tree_sitter
+    assert _powershell_attached(source, parser, query) == expected
 
 
 @pytest.mark.parametrize(
@@ -2265,3 +2744,75 @@ def test_documents_file(text: str, expected: bool) -> None:
     ``!``, and only as a whole ASCII word: an address or a longer word never counts,
     and a non-ASCII mark ends the word rather than extending it."""
     assert utils.documents_file(text) is expected
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        ".COMPONENT",
+        ".ROLE",
+        ".FUNCTIONALITY",
+        ".FORWARDHELPTARGETNAME Get-Item",
+        ".FORWARDHELPCATEGORY Cmdlet",
+        ".REMOTEHELPRUNSPACE $session",
+        ".EXTERNALHELP Px-help.xml",
+        ".forwardhelptargetname",
+    ],
+)
+def test_every_powershell_help_keyword_makes_help(line, init_powershell_tree_sitter):
+    """Each of PowerShell's comment-based-help keywords, the rarer ones included, makes
+    a comment first in a function's body that function's help."""
+    parser, query = init_powershell_tree_sitter
+    source = f"function Outer {{\n    <#\n    {line}\n    marker\n    #>\n    function Inner {{ }}\n}}\n"
+    assert _powershell_attached(source, parser, query) == (
+        "function Outer {",
+        "doc_comment",
+    )
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        pytest.param(
+            "Describe 'outer' {\n    # marker\n    Describe 'x' { } | Out-Null\n}\n",
+            ("Describe 'x' { }", "leading"),
+            id="leading-entity-first",
+        ),
+        pytest.param(
+            "Describe 'outer' {\n    It 'tx' { } | Out-Null # marker\n}\n",
+            ("It 'tx' { }", "trailing"),
+            id="trailing-entity-first",
+        ),
+        pytest.param(
+            "Describe 'outer' {\n    # marker\n    Get-Thing | It 'y' { }\n}\n",
+            ("It 'y' { }", "leading"),
+            id="leading-entity-after-a-command",
+        ),
+        pytest.param(
+            "Describe 'outer' {\n    # marker\n    It 'a' { } && It 'b' { }\n}\n",
+            ("It 'a' { }", "leading"),
+            id="leading-chain-of-two-entities",
+        ),
+        # the comment is in ForEach-Object's block, not in the Describe before it
+        pytest.param(
+            "Describe 'outer' {\n    Describe 'x' { } | ForEach-Object {\n"
+            "        # marker\n        $_\n    }\n}\n",
+            ("Describe 'outer' {", "enclosing"),
+            id="enclosing-past-a-pipeline-entity-it-is-not-in",
+        ),
+        pytest.param(
+            "Describe 'outer' {\n    # marker\n    Get-Thing | Out-Null\n}\n",
+            ("Describe 'outer' {", "enclosing"),
+            id="pipeline-of-no-entity",
+        ),
+    ],
+)
+def test_a_powershell_pipeline_is_its_first_entity(
+    source, expected, init_powershell_tree_sitter
+):
+    """A pipeline (or a chain of them) is the first of its commands, in source order,
+    that is an entity, on the leading and the trailing path alike; without one it is no
+    entity. A comment inside a command of a pipeline is in that command, never in the
+    pipeline's entity when it is another command."""
+    parser, query = init_powershell_tree_sitter
+    assert _powershell_attached(source, parser, query) == expected

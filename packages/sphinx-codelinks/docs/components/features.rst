@@ -272,6 +272,77 @@ Features
    .. fault:: Sphinx-codelinks hallucinates traceability objects in Bash
       :id: FAULT_BASH_2
 
+.. feature:: PowerShell Language Support
+   :id: FE_POWERSHELL
+
+   Support for defining traceability objects in PowerShell scripts, script modules
+   and module manifests.
+
+   The PowerShell language parser leverages tree-sitter to identify and extract
+   comments from PowerShell source, associating each marker with the function,
+   filter, workflow, class, method, constructor, property, enum or Pester block it
+   annotates.
+
+   ``.ps1``, ``.psm1`` and ``.psd1`` files are auto-discovered when
+   ``comment_type = "powershell"``.
+
+   Key capabilities:
+
+   * Hash-style comment (``#``) detection
+   * Block comments (``<# #>``), comment-based help included, with their
+     delimiters stripped for one-line markers, need-id references and
+     multi-line needs
+   * Association of comments with functions, filters and workflows (each a
+     ``function``, named without a ``global:``, ``script:``, ``private:`` or
+     ``local:`` scope modifier), classes, methods, constructors, properties and
+     enums; a DSC ``Configuration`` is a command, and no entity
+   * Comment-based help first in a function's body documents that function: a
+     marker in it is attached to the function, even when a nested function
+     follows
+   * Association of comments with Pester's ``Describe``, ``Context`` and ``It``
+     blocks, in any letter case and with or without the ``Pester\`` module
+     qualifier, a marker trailing a block's line included; other commands are no
+     scope. The blocks are known by their command name alone, so a function or an
+     alias of the script's own named ``Describe``, ``Context`` or ``It`` is taken
+     for Pester's
+   * Shebang lines (``#!/usr/bin/env pwsh``) never produce spurious markers
+   * A hashtable or array literal at the start of a comment line (``# @{ … }``,
+     ``@( … )`` in ``.EXAMPLE`` help) is never a marker: the start sequence
+     directly followed by ``{`` or ``(`` opens none, so a title cannot start
+     with ``(`` or ``{`` (``# @(Draft) Login, ID_1, impl`` is dropped without a
+     warning)
+   * A ``#`` line inside a here-string, and a ``#`` that follows an interpolation
+     (``$x``, ``$( … )``) in a double-quoted string, is string content, never a
+     marker, even where the grammar parses it as a comment; a comment inside a
+     subexpression ``$( … )`` of a string is code, and a marker in it counts
+   * A UTF-8 byte order mark, as Windows PowerShell 5.1 writes it, does not
+     disturb a one-line marker on the first line
+
+   Only UTF-8 files are read: a file saved as UTF-16, as Windows PowerShell 5.1's
+   ``Out-File`` and ``New-ModuleManifest`` write it by default, holds NUL bytes, is
+   taken for a binary file and is skipped without a warning, as in every language.
+   Save such a file as UTF-8 to trace it.
+
+   .. note::
+
+      In a double-quoted string that interpolates (``$x``, ``$( … )``), a ``#``
+      that follows an interpolation past whitespace alone, on the line that holds
+      the string's closing quote, confuses the ``tree-sitter-powershell`` grammar:
+      it reads the rest of that line, the quote included, as a comment, and every
+      marker after it in the file is lost (``"one $x`` on one line, ``# two"`` on
+      the next). Use a here-string or a single-quoted string for such text.
+
+      The grammar cannot read an attribute before a class or an enum either
+      (``[DscResource()]``, ``[Flags()]``): a marker above the attribute binds no
+      entity. With the attribute on a line of its own, a marker trailing the
+      ``class`` or ``enum`` line binds the class or the enum.
+
+   .. fault:: Traceability objects are not detected in PowerShell
+      :id: FAULT_POWERSHELL_1
+
+   .. fault:: Sphinx-codelinks hallucinates traceability objects in PowerShell
+      :id: FAULT_POWERSHELL_2
+
 .. feature:: TypeScript Language Support
    :id: FE_TS
 

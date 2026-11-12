@@ -417,6 +417,310 @@ bash_non_ascii_identifier_scope:
     # @T, ID_BASH_UTF8, impl
     fé() { :; }
 
+powershell_above_function:
+  # Marker directly above a top-level function -> binds to that function, which
+  # sits inside a statement_list wrapper rather than beside the comment.
+  lang: powershell
+  config: default
+  source: |
+    # @Above Function, IMPL_PS_ABOVE, impl, [REQ_PS_ABOVE]
+    function Start-Px { }
+
+powershell_inside_function_body:
+  # Marker is the last statement in a function body -> falls back to the
+  # enclosing function.
+  lang: powershell
+  config: default
+  source: |
+    function Start-Px {
+        Write-Host 'start'
+        # @Inside Function, IMPL_PS_INSIDE, impl, [REQ_PS_INSIDE]
+    }
+
+powershell_no_scope:
+  # Marker followed by a plain command, with nothing else around it -> no
+  # associated scope: only Pester's blocks are scopes among commands.
+  lang: powershell
+  config: default
+  source: |
+    # @No Scope, IMPL_PS_NONE, impl, [REQ_PS_NONE]
+    Write-Host 'hi'
+
+powershell_scope_after_a_plain_command:
+  # A plain command between the marker and the function, at the top of a file -> the
+  # command is code between them, so the marker binds neither.
+  lang: powershell
+  config: default
+  source: |
+    # @After Command, IMPL_PS_AFTER_CMD, impl, [REQ_PS]
+    Set-StrictMode -Version Latest
+    function Start-Px { }
+
+powershell_pester_first_in_describe:
+  # A marker first in a Describe, followed by BeforeAll -> the command is code
+  # before the It, so the marker binds the Describe it is in.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'px' {
+        # @First Test, TEST_PS_FIRST, test, [REQ_PS]
+        BeforeAll { $x = 1 }
+        It 'a' { }
+    }
+
+powershell_pester_it:
+  # Marker above a Pester It nested in a Describe -> binds to the It, five
+  # wrapper nodes below the comment's next sibling.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'px' {
+        # @Starts px, TEST_PS_IT, test, [REQ_PS]
+        It 'starts' {
+            1 | Should -Be 1
+        }
+    }
+
+powershell_pester_parameters_before_the_name:
+  # Parameters before a Pester block's name -> the name is the -Name argument, else
+  # the first positional argument past Pester's switches (-Skip, -AllowNullOrEmptyForEach,
+  # -Pending, each also as -X:value) and valued parameters (-Tag, -Tags, -Fixture, -Test,
+  # -ForEach, -TestCases); past a parameter Pester does not declare (-Focus), no name.
+  lang: powershell
+  config: default
+  source: |
+    Describe -Tag Unit 'px' {
+        # @Named, TEST_PS_NAMED, test
+        It -Name 'named' { }
+        # @Skipped, TEST_PS_SKIPPED, test
+        It -Skip 'skipped' { }
+        # @Qualified, TEST_PS_QUALIFIED, test
+        Pester\It -Tag:Fast -Skip:$false 'qualified' { }
+        # @Cases, TEST_PS_CASES, test
+        It -ForEach @(1, 2) -AllowNullOrEmptyForEach 'cases <_>' { }
+        # @Undeclared, TEST_PS_UNDECLARED, test
+        It -Focus 'focused' { }
+    }
+
+powershell_constructor:
+  # Marker above a method named as its class, in any letter case -> a constructor.
+  lang: powershell
+  config: default
+  source: |
+    class Proxy {
+        # @Ctor, IMPL_PS_CTOR, impl
+        proxy([string] $c) { }
+    }
+
+powershell_scope_modifier:
+  # Marker above a function defined with a scope modifier -> named without it, as it
+  # is called.
+  lang: powershell
+  config: default
+  source: |
+    # @Global, IMPL_PS_GLOBAL, impl
+    function global:Get-Px { }
+
+powershell_help_first_in_a_body:
+  # Comment-based help first in a function's body documents that function, even when
+  # a nested function follows; a plain comment there binds the nested function, as in
+  # every other language.
+  lang: powershell
+  config: default
+  source: |
+    function Start-Px {
+        <#
+        .SYNOPSIS
+            Starts the proxy.
+        @Help, IMPL_PS_HELP_BODY, impl
+        #>
+        function Get-Inner { }
+    }
+    function Stop-Px {
+        # @Plain, IMPL_PS_PLAIN_BODY, impl
+        function Get-Inner { }
+    }
+
+powershell_trailing_pester_it:
+  # A trailing marker after an It on its row -> binds that It, not the Describe
+  # around it.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'd' {
+        It 'x' { } # @Trailing It, TEST_PS_TRAIL_IT, test
+    }
+
+powershell_trailing_describe:
+  # A trailing marker after a top-level Describe on its row -> binds that Describe.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'top' { } # @Trailing Describe, TEST_PS_TRAIL_TOP, test
+    function Start-Px { }
+
+powershell_trailing_last_function:
+  # A trailing marker after the file's last statement, a function -> binds that
+  # function, though the grammar puts the comment beside the statement list.
+  lang: powershell
+  config: default
+  source: |
+    function Start-Px { } # @Trailing Function, IMPL_PS_TRAIL_FN, impl
+
+powershell_trailing_describe_at_eof:
+  # A trailing marker after the closing brace of the file's last statement, a
+  # Describe -> binds that Describe; the grammar puts the comment beside the statement
+  # list.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'd' {
+        It 'x' { }
+    } # @Trailing Describe EOF, TEST_PS_TRAIL_DESC_EOF, test
+
+powershell_trailing_pester_it_at_eof:
+  # A trailing marker on the closing line of the last It of a Describe that ends the
+  # file -> binds that It.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'd' {
+        It 'x' {
+        } # @Trailing It EOF, TEST_PS_TRAIL_IT_EOF, test
+    }
+
+powershell_pester_context:
+  # A marker above a Context -> binds it, a namespace, as a Describe is; an It is a
+  # test.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'px' {
+        # @Context, TEST_PS_CONTEXT, test
+        Context 'when idle' {
+            # @It, TEST_PS_IN_CONTEXT, test
+            It 'waits' { }
+        }
+    }
+
+powershell_scope_modifiers:
+  # Every scope modifier, in any letter case, is left out of the function's name.
+  lang: powershell
+  config: default
+  source: |
+    # @Script, IMPL_PS_SCRIPT_SCOPE, impl
+    function Script:Get-Px { }
+    # @Private, IMPL_PS_PRIVATE_SCOPE, impl
+    filter private:Get-Odd { $_ }
+    # @Local, IMPL_PS_LOCAL_SCOPE, impl
+    function local:Get-Local { }
+
+powershell_static_constructor:
+  # A static constructor is a constructor too; another method is a method, and so is a
+  # method named as its class with a return type: a constructor has none.
+  lang: powershell
+  config: default
+  source: |
+    class Proxy {
+        # @Static ctor, IMPL_PS_STATIC_CTOR, impl
+        static Proxy() { }
+        # @Method, IMPL_PS_METHOD, impl
+        [void] Start() { }
+        # @Typed, IMPL_PS_TYPED_PROXY, impl
+        [void] Proxy([int] $x) { }
+    }
+
+powershell_help_hash_run_first_in_a_body:
+  # A run of # lines holding a help keyword, first in a function's body, is that
+  # function's help: a marker in it documents the function, even when a nested
+  # function follows.
+  lang: powershell
+  config: default
+  source: |
+    function Start-Px {
+        # .SYNOPSIS
+        #     Starts the proxy.
+        # @Help run, IMPL_PS_HELP_RUN, impl
+        function Get-Inner { }
+    }
+
+powershell_help_keyword_lines:
+  # A help keyword line holds the keyword alone, or a keyword that takes an argument
+  # and that one argument, in any letter case: such a run first in a body is help
+  # and documents the function. "# .NOTES: ..." holds more, so it is a plain comment,
+  # and the marker after it binds the nested function.
+  lang: powershell
+  config: default
+  source: |
+    function Start-Px {
+        # .parameter Path
+        # .EXTERNALHELP Px-help.xml
+        # @Help lines, IMPL_PS_HELP_LINES, impl
+        function Get-Inner { }
+    }
+    function Stop-Px {
+        # .NOTES: a detail, not help
+        # @Not help, IMPL_PS_NOT_HELP, impl
+        function Get-Inner { }
+    }
+
+powershell_help_before_and_after:
+  # Help before a function binds it as any comment does (leading); help at the end of
+  # its body is inside it (enclosing).
+  lang: powershell
+  config: default
+  source: |
+    <#
+    .SYNOPSIS
+    @Help before, IMPL_PS_HELP_BEFORE, impl
+    #>
+    function Start-Px {
+        Get-Date
+        <# .NOTES
+        @Help after, IMPL_PS_HELP_AFTER, impl
+        #>
+    }
+
+powershell_pipeline_first_entity:
+  # A pipeline, or a chain of pipelines, is the first of its commands in source order
+  # that is an entity, on the leading and the trailing path; with none, it is no entity.
+  # A comment inside a command of a pipeline is in that command: inside ForEach-Object's
+  # block it is not in the Describe before it, and binds the enclosing block.
+  lang: powershell
+  config: default
+  source: |
+    Describe 'outer' {
+        # @Entity first, TEST_PS_PIPE_FIRST, test
+        Describe 'x' { } | Out-Null
+        It 'tx' { } | Out-Null # @Trailing entity first, TEST_PS_PIPE_TRAIL, test
+        # @Entity after a command, TEST_PS_PIPE_AFTER, test
+        Get-Thing | It 'y' { }
+        # @Chain, TEST_PS_PIPE_CHAIN, test
+        It 'a' { } && It 'b' { }
+        Describe 'z' { } | ForEach-Object {
+            # @In ForEach-Object, TEST_PS_PIPE_INNER, test
+            $_
+        }
+    }
+
+powershell_trailing_nested_function:
+  # A trailing marker after a nested function, the last statement of its body -> binds
+  # the nested function, through the body's script block and statement list.
+  lang: powershell
+  config: default
+  source: |
+    function Outer { function Inner { } # @Trailing nested, IMPL_PS_TRAIL_NESTED, impl
+    }
+
+powershell_non_ascii_scope:
+  # Non-ASCII text before the marked function does not lose the scope.
+  lang: powershell
+  config: default
+  source: |
+    $greeting = 'Grüße'
+    # @T, ID_PS_UTF8, impl
+    function Get-Grüße { $greeting }
+
 typescript_above_function:
   # Marker directly above a function declaration -> binds to it.
   lang: typescript

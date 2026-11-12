@@ -236,6 +236,27 @@ def jsdoc_tag(line: str, start_sequence: str) -> str | None:
     return tag
 
 
+#: What follows PowerShell's ``@`` sigil in a hashtable (``@{ }``) or an array
+#: subexpression (``@( )``) literal.
+POWERSHELL_LITERAL_OPENERS = ("{", "(")
+
+
+# @PowerShell hashtable and array literals are no markers, IMPL_PS_10, impl, [FE_POWERSHELL]
+def opens_powershell_literal(line: str, start_sequence: str) -> bool:
+    """Whether the first ``start_sequence`` of ``line`` is directly followed by ``{``
+    or ``(``, as the ``@`` of PowerShell's hashtable and array literals is: such a
+    line is commented-out code or ``.EXAMPLE`` help, never a marker.
+    """
+    if not start_sequence:
+        return False
+    idx = line.find(start_sequence)
+    if idx == -1:
+        return False
+    return line[idx + len(start_sequence) : idx + len(start_sequence) + 1] in (
+        POWERSHELL_LITERAL_OPENERS
+    )
+
+
 @dataclass
 class OnelineParserInvalidWarning:
     """Invalid oneline comments."""

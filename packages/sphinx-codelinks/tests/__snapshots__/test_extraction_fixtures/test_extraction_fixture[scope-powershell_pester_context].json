@@ -1,0 +1,90 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
+      },
+      "end": {
+        "row": 1,
+        "column": 37
+      }
+    },
+    "tagged_scope": "Context 'when idle' {\n        # @It, TEST_PS_IN_CONTEXT, test\n        It 'waits' { }\n    }",
+    "scope": {
+      "kind": "command",
+      "start": 3,
+      "end": 6,
+      "language": "powershell",
+      "entity_kind": "namespace",
+      "qualified_name": "px.when idle",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "px"
+        },
+        {
+          "kind": "namespace",
+          "name": "when idle"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Context",
+      "id": "TEST_PS_CONTEXT",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 11
+      },
+      "end": {
+        "row": 3,
+        "column": 39
+      }
+    },
+    "tagged_scope": "It 'waits' { }",
+    "scope": {
+      "kind": "command",
+      "start": 5,
+      "end": 5,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "px.when idle.waits",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "px"
+        },
+        {
+          "kind": "namespace",
+          "name": "when idle"
+        },
+        {
+          "kind": "test",
+          "name": "waits"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "It",
+      "id": "TEST_PS_IN_CONTEXT",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  }
+]

@@ -1,0 +1,40 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 39
+      },
+      "end": {
+        "row": 0,
+        "column": 82
+      }
+    },
+    "tagged_scope": "function Inner { }",
+    "scope": {
+      "kind": "function_statement",
+      "start": 1,
+      "end": 1,
+      "language": "powershell",
+      "entity_kind": "function",
+      "qualified_name": "Inner",
+      "semantic": [
+        {
+          "kind": "function",
+          "name": "Inner"
+        }
+      ],
+      "mechanism": "trailing"
+    },
+    "need": {
+      "title": "Trailing nested",
+      "id": "IMPL_PS_TRAIL_NESTED",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "function_statement"
+  }
+]

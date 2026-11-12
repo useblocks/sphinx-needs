@@ -27,6 +27,9 @@ COMMENT_FILETYPE = {
     # PyPI, so it cannot be wired in here. Track fish separately if a PyPI
     # grammar becomes available.
     "bash": ["sh", "bash", "zsh", "ksh"],
+    # Scripts, script modules and module manifests: all three are PowerShell
+    # source with `#` and `<# #>` comments.
+    "powershell": ["ps1", "psm1", "psd1"],
 }
 
 
@@ -83,6 +86,8 @@ class CommentType(str, Enum):  # noqa: UP042  # StrEnum changes str(member), whi
     jsonc = "jsonc"
     # @Support Bash style comments, IMPL_BASH_1, impl, [FE_BASH]
     bash = "bash"
+    # @Support PowerShell style comments, IMPL_PS_1, impl, [FE_POWERSHELL]
+    powershell = "powershell"
 
 
 def default_exclude_for_comment_type(comment_type: str) -> list[str]:

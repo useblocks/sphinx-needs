@@ -1,0 +1,42 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
+      },
+      "end": {
+        "row": 1,
+        "column": 48
+      }
+    },
+    "tagged_scope": "Describe 'px' {\n    # @First Test, TEST_PS_FIRST, test, [REQ_PS]\n    BeforeAll { $x = 1 }\n    It 'a' { }\n}",
+    "scope": {
+      "kind": "command",
+      "start": 1,
+      "end": 5,
+      "language": "powershell",
+      "entity_kind": "namespace",
+      "qualified_name": "px",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "px"
+        }
+      ],
+      "mechanism": "enclosing"
+    },
+    "need": {
+      "title": "First Test",
+      "id": "TEST_PS_FIRST",
+      "type": "test",
+      "links": [
+        "REQ_PS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  }
+]

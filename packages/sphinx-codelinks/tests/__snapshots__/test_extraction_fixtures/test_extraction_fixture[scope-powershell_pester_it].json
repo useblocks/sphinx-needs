@@ -1,0 +1,46 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
+      },
+      "end": {
+        "row": 1,
+        "column": 44
+      }
+    },
+    "tagged_scope": "It 'starts' {\n        1 | Should -Be 1\n    }",
+    "scope": {
+      "kind": "command",
+      "start": 3,
+      "end": 5,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "px.starts",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "px"
+        },
+        {
+          "kind": "test",
+          "name": "starts"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Starts px",
+      "id": "TEST_PS_IT",
+      "type": "test",
+      "links": [
+        "REQ_PS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  }
+]

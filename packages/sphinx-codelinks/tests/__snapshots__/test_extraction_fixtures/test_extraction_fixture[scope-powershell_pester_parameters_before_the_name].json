@@ -1,0 +1,203 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
+      },
+      "end": {
+        "row": 1,
+        "column": 33
+      }
+    },
+    "tagged_scope": "It -Name 'named' { }",
+    "scope": {
+      "kind": "command",
+      "start": 3,
+      "end": 3,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "px.named",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "px"
+        },
+        {
+          "kind": "test",
+          "name": "named"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Named",
+      "id": "TEST_PS_NAMED",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 7
+      },
+      "end": {
+        "row": 3,
+        "column": 37
+      }
+    },
+    "tagged_scope": "It -Skip 'skipped' { }",
+    "scope": {
+      "kind": "command",
+      "start": 5,
+      "end": 5,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "px.skipped",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "px"
+        },
+        {
+          "kind": "test",
+          "name": "skipped"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Skipped",
+      "id": "TEST_PS_SKIPPED",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 7
+      },
+      "end": {
+        "row": 5,
+        "column": 41
+      }
+    },
+    "tagged_scope": "Pester\\It -Tag:Fast -Skip:$false 'qualified' { }",
+    "scope": {
+      "kind": "command",
+      "start": 7,
+      "end": 7,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "px.qualified",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "px"
+        },
+        {
+          "kind": "test",
+          "name": "qualified"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Qualified",
+      "id": "TEST_PS_QUALIFIED",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 7
+      },
+      "end": {
+        "row": 7,
+        "column": 33
+      }
+    },
+    "tagged_scope": "It -ForEach @(1, 2) -AllowNullOrEmptyForEach 'cases <_>' { }",
+    "scope": {
+      "kind": "command",
+      "start": 9,
+      "end": 9,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": "px.cases <_>",
+      "semantic": [
+        {
+          "kind": "namespace",
+          "name": "px"
+        },
+        {
+          "kind": "test",
+          "name": "cases <_>"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Cases",
+      "id": "TEST_PS_CASES",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 7
+      },
+      "end": {
+        "row": 9,
+        "column": 43
+      }
+    },
+    "tagged_scope": "It -Focus 'focused' { }",
+    "scope": {
+      "kind": "command",
+      "start": 11,
+      "end": 11,
+      "language": "powershell",
+      "entity_kind": "test",
+      "qualified_name": null,
+      "semantic": null,
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Undeclared",
+      "id": "TEST_PS_UNDECLARED",
+      "type": "test",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "command"
+  }
+]

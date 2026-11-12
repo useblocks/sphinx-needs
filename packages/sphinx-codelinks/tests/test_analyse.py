@@ -391,3 +391,112 @@ def test_dump_marked_content_when_its_directory_appears_after_the_check(
 
     marked = json.loads((outdir / "marked_content.json").read_text(encoding="utf-8"))
     assert marked == []
+
+
+def test_a_bom_before_a_powershell_marker_keeps_the_title_clean(tmp_path: Path):
+    """Windows PowerShell 5.1 saves a script with a UTF-8 BOM: the marker on the
+    first line is still a need on that line, and the BOM is not part of its title."""
+    source = tmp_path / "demo.ps1"
+    source.write_bytes("﻿# @Bom Title, IMPL_BOM, impl\nfunction f { }\n".encode())
+    config = SourceAnalyseConfig(
+        src_files=[source],
+        src_dir=tmp_path,
+        get_oneline_needs=True,
+        comment_type=CommentType.powershell,
+    )
+    analyse = SourceAnalyse(config)
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run()
+
+    assert len(analyse.oneline_needs) == 1
+    need = analyse.oneline_needs[0]
+    assert need.need["title"] == "Bom Title"
+    assert need.need["id"] == "IMPL_BOM"
+    assert need.source_map["start"]["row"] == 0
+
+
+def _oneline_run(
+    tmp_path: Path, name: str, source: str, comment_type: CommentType
+) -> SourceAnalyse:
+    """One file analysed with the default one-line style, outside a repository."""
+    path = tmp_path / name
+    path.write_bytes(source.encode())
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[path],
+            src_dir=tmp_path,
+            get_oneline_needs=True,
+            comment_type=comment_type,
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run()
+    return analyse
+
+
+POWERSHELL_LITERALS = """\
+# @{ Keys = 'k' }, $Value.Keys is the string 'k' and not an array
+# @() or $null is provided and allowed, do nothing
+#   @($null) which evaluates to false, even though, it is
+# `@(9, 9, 1) -eq 1` returns 1, not a list
+<#
+.EXAMPLE
+    @{ Name = 'Jakub'; Age = 30 } | Should-BeHashtable -Key Name, Age
+    @(1, 2, 3) | Should-BeHashtable
+#>
+# @Real, IMPL_PS_REAL, impl
+function Start-Demo { }
+"""
+
+
+def test_a_powershell_hashtable_or_array_is_no_marker(tmp_path: Path) -> None:
+    """PowerShell's ``@`` is the sigil of a hashtable ``@{ }`` and an array ``@( )``,
+    which commented-out code and ``.EXAMPLE`` help hold at the start of a line: the
+    start sequence directly followed by ``{`` or ``(`` opens no marker, and no
+    warning."""
+    analyse = _oneline_run(
+        tmp_path, "demo.ps1", POWERSHELL_LITERALS, CommentType.powershell
+    )
+
+    assert [need.need["id"] for need in analyse.oneline_needs] == ["IMPL_PS_REAL"]
+    assert analyse.warnings == []
+
+
+def test_a_brace_after_the_start_sequence_is_a_marker_elsewhere(
+    tmp_path: Path,
+) -> None:
+    """The rule is PowerShell's: in another language, ``@{`` opens a marker as
+    before."""
+    analyse = _oneline_run(
+        tmp_path,
+        "demo.py",
+        "# @{ a }, ID_PY, impl\ndef f(): pass\n",
+        CommentType.python,
+    )
+
+    assert [need.need["id"] for need in analyse.oneline_needs] == ["ID_PY"]
+
+
+def test_a_powershell_title_cannot_open_with_a_parenthesis_or_a_brace(
+    tmp_path: Path,
+) -> None:
+    """The hashtable and array rule is deliberate and has a cost: a marker whose title
+    starts with ``(`` or ``{`` is read as ``@(`` or ``@{``, and is dropped without a
+    warning, as the documentation says. Only PowerShell pays it."""
+    source = (
+        "# @(Draft) Login handler, S1_PAREN, impl, [R]\n"
+        "# @{Braced} title, S1_BRACE, impl\n"
+        "function Start-Login { }\n"
+    )
+    analyse = _oneline_run(tmp_path, "login.ps1", source, CommentType.powershell)
+
+    assert analyse.oneline_needs == []
+    assert analyse.warnings == []
+
+    other = _oneline_run(tmp_path, "login.py", source, CommentType.python)
+    assert [need.need["id"] for need in other.oneline_needs] == [
+        "S1_PAREN",
+        "S1_BRACE",
+    ]

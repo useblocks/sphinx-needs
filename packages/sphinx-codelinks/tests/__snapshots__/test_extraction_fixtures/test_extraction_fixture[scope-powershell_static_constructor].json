@@ -1,0 +1,128 @@
+[
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
+      },
+      "end": {
+        "row": 1,
+        "column": 45
+      }
+    },
+    "tagged_scope": "static Proxy() { }",
+    "scope": {
+      "kind": "class_method_definition",
+      "start": 3,
+      "end": 3,
+      "language": "powershell",
+      "entity_kind": "constructor",
+      "qualified_name": "Proxy.Proxy",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Proxy"
+        },
+        {
+          "kind": "constructor",
+          "name": "Proxy"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Static ctor",
+      "id": "IMPL_PS_STATIC_CTOR",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_method_definition"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 7
+      },
+      "end": {
+        "row": 3,
+        "column": 35
+      }
+    },
+    "tagged_scope": "[void] Start() { }",
+    "scope": {
+      "kind": "class_method_definition",
+      "start": 5,
+      "end": 5,
+      "language": "powershell",
+      "entity_kind": "method",
+      "qualified_name": "Proxy.Start",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Proxy"
+        },
+        {
+          "kind": "method",
+          "name": "Start"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Method",
+      "id": "IMPL_PS_METHOD",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_method_definition"
+  },
+  {
+    "filepath": "case.ps1",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 7
+      },
+      "end": {
+        "row": 5,
+        "column": 39
+      }
+    },
+    "tagged_scope": "[void] Proxy([int] $x) { }",
+    "scope": {
+      "kind": "class_method_definition",
+      "start": 7,
+      "end": 7,
+      "language": "powershell",
+      "entity_kind": "method",
+      "qualified_name": "Proxy.Proxy",
+      "semantic": [
+        {
+          "kind": "class",
+          "name": "Proxy"
+        },
+        {
+          "kind": "method",
+          "name": "Proxy"
+        }
+      ],
+      "mechanism": "leading"
+    },
+    "need": {
+      "title": "Typed",
+      "id": "IMPL_PS_TYPED_PROXY",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need",
+    "tagged_scope_type": "class_method_definition"
+  }
+]

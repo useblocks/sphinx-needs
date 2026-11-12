@@ -7,6 +7,7 @@ from sphinx_codelinks.analyse.oneline_parser import (
     docstring_tag,
     jsdoc_tag,
     oneline_parser,
+    opens_powershell_literal,
 )
 from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
 
@@ -762,3 +763,28 @@ def test_jsdoc_tag(line: str, expected: str | None) -> None:
     start sequence ends at a space, a tab, a ``{``, a ``}`` or the end of the line. The
     same table as ubCode's."""
     assert jsdoc_tag(line, "@") == expected
+
+
+@pytest.mark.parametrize(
+    ("line", "start_sequence", "expected"),
+    [
+        ("# @{ Keys = 'k' }, b, impl", "@", True),
+        ("# @(1, 2) | Measure-Object", "@", True),
+        ("    @{ Name = 'a' } | Should-BeHashtable", "@", True),
+        ("# `@(9, 9, 1) -eq 1` returns 1", "@", True),
+        ("# @Title, ID_1, impl", "@", False),
+        # the start sequence's FIRST occurrence decides, as the one-line parser takes it
+        ("# @Title, ID_1, impl @{ a }", "@", False),
+        ("# @ {spaced}, ID_1, impl", "@", False),
+        # any start sequence: ``${`` and ``$(`` are PowerShell code too
+        ("# ${env:PATH}, ID_1, impl", "$", True),
+        ("# no start sequence here", "@", False),
+        ("# @{", "", False),
+    ],
+)
+def test_opens_powershell_literal(
+    line: str, start_sequence: str, expected: bool
+) -> None:
+    """A PowerShell line opens a hashtable or array literal, not a marker, when its
+    first start sequence is directly followed by ``{`` or ``(``."""
+    assert opens_powershell_literal(line, start_sequence) is expected
