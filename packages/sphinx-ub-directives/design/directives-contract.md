@@ -241,7 +241,8 @@ force_options = { collapse = true }  # a use cannot change these
    preset base. Enforced by: corpus `refused-unknown-base`, `base-is-case-insensitive`,
    `identity-confval-rst`, `px-preset-of-ub-template`, `px-preset-of-ub-template-generates-a-need`,
    `px-preset-of-ub-template-switched-off`, `px-preset-of-a-declared-template`,
-   `qualified-need-type-base`.
+   `qualified-need-type-base`, `nonself-bare-base-of-a-yielding-need-type`,
+   `nonself-bare-base-of-a-yielding-need-type-step`, `nonself-bare-base-of-a-qualified-need-type`.
 6. **A need type spelled with upper-case letters is refused as a base**
    (`directive_preset_unknown_base`, saying why): a Sphinx build registers such a type
    verbatim but looks every directive up in lower case, so the type is unusable there, and
