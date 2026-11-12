@@ -352,12 +352,25 @@ WIDTH_ARMS = (
 )
 
 
+#: Arguments that make a parse search no system include directory, on every host: a
+#: Linux target (on Windows libclang's default MSVC target finds Visual Studio's
+#: headers, ``immintrin.h`` among them) and ``-nostdlibinc``. So a builtin header is
+#: found exactly when the parse is given clang's.
+HOST_FREE = ["--target=x86_64-linux-gnu", "-nostdlibinc"]
+
+
 def _db(root: Path, entries: list[tuple[str, list[str]]]) -> Path:
+    """A ``compile_commands.json`` under ``root``: each entry's ``args`` after
+    :data:`HOST_FREE`."""
     db = root / "compile_commands.json"
     db.write_text(
         json.dumps(
             [
-                {"directory": str(root), "file": file, "arguments": ["clang", *args]}
+                {
+                    "directory": str(root),
+                    "file": file,
+                    "arguments": ["clang", *HOST_FREE, *args],
+                }
                 for file, args in entries
             ]
         )
@@ -566,7 +579,8 @@ def test_an_include_is_read_in_the_parse_s_working_directory(
     )
 
     assert len(warnings) == 1, warnings
-    assert "(included at include/q.h:1)" in warnings[0][0]
+    # libclang names the file in the platform's own form (``include\\q.h`` on Windows)
+    assert f"(included at {Path('include/q.h')}:1)" in warnings[0][0]
 
 
 def test_a_compile_command_s_own_include_is_warned_about_without_a_location(
@@ -770,8 +784,22 @@ def test_the_cli_projects_share_their_warnings(
 
 #: the fixture's project on the libclang engine, a source that misses an intrinsics
 #: header, and a second ``src-trace`` of the project, so two directives analyse it
-BUILD_FILES = {"src/intrin.cpp": "#include <immintrin.h>\nvoid intrin() {}\n"}
 BUILD_TOML = "\n[codelinks.projects.src.analyse.preprocessor]\ndefines = []\n"
+#: the source that misses a builtin header, parsed through a database whose entries
+#: search no system include directory (:data:`HOST_FREE`)
+BUILD_FILES = {
+    "src/intrin.cpp": "#include <immintrin.h>\nvoid intrin() {}\n",
+    "src/compile_commands.json": json.dumps(
+        [
+            {"directory": ".", "file": name, "arguments": ["clang++", *HOST_FREE]}
+            for name in ("intrin.cpp", "refs.cpp")
+        ]
+    ),
+}
+BUILD_DB_TOML = (
+    "\n[codelinks.projects.src.analyse.preprocessor]\n"
+    'compile_commands = "../src/compile_commands.json"\n'
+)
 SECOND_DIRECTIVE = {"docs/page1.rst": "\n.. src-trace::\n   :project: src\n"}
 
 
@@ -789,7 +817,7 @@ def test_a_build_warns_about_a_missing_builtin_header_once(
     from .test_need_id_refs import _build, _project
 
     _project(
-        tmp_path, toml_extra=BUILD_TOML, files=BUILD_FILES, append=SECOND_DIRECTIVE
+        tmp_path, toml_extra=BUILD_DB_TOML, files=BUILD_FILES, append=SECOND_DIRECTIVE
     )
     warnings = _builtin_warnings(_build(tmp_path, make_app))
 
@@ -888,7 +916,7 @@ def test_the_builtin_header_type_is_rendered_at_most_once(
 
     _project(
         tmp_path,
-        toml_extra=BUILD_TOML,
+        toml_extra=BUILD_DB_TOML,
         files=BUILD_FILES,
         append={"docs/conf.py": f"\nshow_warning_types = {show}\n"},
     )
