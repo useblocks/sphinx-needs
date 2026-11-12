@@ -174,6 +174,16 @@ DRIVER_CASES = [
         id="Xarch-macho-arch",
     ),
     pytest.param(
+        ["--target=arm64-apple-macos", "-arch", "x86_64", "-Xarch_x86_64", "-nostdinc"],
+        True,
+        id="Xarch-macho-arch-replaces-target",
+    ),
+    pytest.param(
+        ["--target=arm64-apple-macos", "-arch", "x86_64", "-Xarch_arm64", "-nostdinc"],
+        False,
+        id="Xarch-macho-target-replaced",
+    ),
+    pytest.param(
         ["--target=arm64-apple-macos", "-Xarch_arm64", "-resource-dir=/nonexistent"],
         False,
         id="Xarch-refuses-resource-dir",

@@ -135,8 +135,8 @@ def _xarch_reads(args: list[str]) -> frozenset[str]:
     """The ``<arch>`` names whose ``-Xarch_<arch> <arg>`` the driver reads for the
     compile ``args`` describe.
 
-    Only a Mach-O (Apple) target reads them, and only for its own architecture, by its
-    Mach-O name (``arm64`` for ``aarch64``), or for an ``-arch``. Other targets leave
+    Only a Mach-O (Apple) target reads them, and only for the architecture compiled:
+    an ``-arch``, else the target's, by its Mach-O name (``arm64`` for ``aarch64``). Other targets leave
     them unused. The target is the last ``--target=`` / ``-target``, else the host
     libclang runs on. (``-Xflang`` is no clang driver option: the argument after it is
     read.)
@@ -165,7 +165,8 @@ def _xarch_reads(args: list[str]) -> frozenset[str]:
     # the Mach-O name of the target's architecture (``arm64`` for ``aarch64``), as
     # the driver names it
     universal = {"aarch64": "arm64", "aarch64_32": "arm64_32"}.get(arch, arch)
-    return frozenset({universal, *arches})
+    # an ``-arch`` replaces the target's architecture
+    return frozenset(arches or [universal])
 
 
 def chooses_builtin_headers(args: list[str]) -> bool:
