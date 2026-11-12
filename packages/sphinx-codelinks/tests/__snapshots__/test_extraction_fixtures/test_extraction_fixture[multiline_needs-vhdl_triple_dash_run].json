@@ -1,0 +1,121 @@
+[
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 4,
+        "column": 12
+      }
+    },
+    "tagged_scope": "entity counter is\nend entity counter;",
+    "need": {
+      "type": "impl",
+      "title": "Three dashes",
+      "id": "IMPL_VHDL_THREE",
+      "content": "Counts the clock edges.",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.vhd",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 1,
+        "col": 4
+      },
+      "end": {
+        "line": 5,
+        "col": 12
+      },
+      "content_start": {
+        "line": 4,
+        "col": 4
+      },
+      "option_lines": {
+        "id": 2
+      },
+      "scope": {
+        "kind": "entity_declaration",
+        "start": 6,
+        "end": 7,
+        "language": "vhdl",
+        "entity_kind": "module",
+        "qualified_name": "counter",
+        "semantic": [
+          {
+            "kind": "module",
+            "name": "counter"
+          }
+        ],
+        "mechanism": "leading"
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "entity_declaration"
+  },
+  {
+    "filepath": "case.vhd",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 3
+      },
+      "end": {
+        "row": 10,
+        "column": 11
+      }
+    },
+    "tagged_scope": "entity other is\nend entity other;",
+    "need": {
+      "type": "impl",
+      "title": "Banner boxed",
+      "id": "IMPL_VHDL_BANNER",
+      "content": "",
+      "doctype": ".rst"
+    },
+    "markup": "rst",
+    "source": {
+      "project": "",
+      "path": "case.vhd",
+      "root": "src_dir",
+      "commit": null,
+      "start": {
+        "line": 9,
+        "col": 3
+      },
+      "end": {
+        "line": 11,
+        "col": 11
+      },
+      "content_start": null,
+      "option_lines": {
+        "id": 10
+      },
+      "scope": {
+        "kind": "entity_declaration",
+        "start": 13,
+        "end": 14,
+        "language": "vhdl",
+        "entity_kind": "module",
+        "qualified_name": "other",
+        "semantic": [
+          {
+            "kind": "module",
+            "name": "other"
+          }
+        ],
+        "mechanism": "leading"
+      }
+    },
+    "type": "multiline-need",
+    "tagged_scope_type": "entity_declaration"
+  }
+]

@@ -517,7 +517,7 @@ Features
 
    * One grammar for every language, the header parsed by the analyser and the body kept
      as written
-   * Blocks over runs of line comments (``//``, ``///``, ``//!``, ``--``, ``--!``, ``#``) as well as block
+   * Blocks over runs of line comments (``//``, ``///``, ``//!``, ``--``, ``---``, ``--!``, ``#``) as well as block
      comments and Python docstrings
    * Comment prefixes stripped by the comment's kind, the doxygen ``*`` leader only when
      every line carries one, so ``*emphasis*`` in a body is kept

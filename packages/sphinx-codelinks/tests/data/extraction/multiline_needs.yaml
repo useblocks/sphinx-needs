@@ -358,6 +358,29 @@ vhdl_doxygen_run:
     entity counter is
     end entity counter;
 
+vhdl_triple_dash_run:
+  # A run of ``---`` comments, a common VHDL style, forms one block: ``---`` is stripped
+  # as ``--`` is, the delimiter and one space. A licence banner of dashes next to a
+  # block is a run of its own, and a run that mixes ``--`` and ``---`` lines breaks,
+  # as one that mixes ``//`` and ``///`` does.
+  lang: vhdl
+  config: default
+  source: |
+    --- @need impl: Three dashes
+    --- :id: IMPL_VHDL_THREE
+    ---
+    --- Counts the clock edges.
+    --- @endneed
+    entity counter is
+    end entity counter;
+    ------------------------------------------------------------
+    -- @need impl: Banner boxed
+    -- :id: IMPL_VHDL_BANNER
+    -- @endneed
+    ------------------------------------------------------------
+    entity other is
+    end entity other;
+
 cpp_bang_block_opener:
   # The "/*!" opener (Qt style) is a block comment opener like "/*" and "/**": on a row
   # of its own it is a delimiter row and dropped; on the open line's row it is removed

@@ -713,7 +713,7 @@ Comment runs and prefixes
 
 A block lives in one **comment run**: one block comment (``/* … */``, ``/** … */``, ``/*! … */``),
 one Python string statement (a docstring, or any bare string statement), or consecutive line
-comments (``//``, ``///``, ``//!``, ``--``, ``--!``, ``#``) on consecutive rows with
+comments (``//``, ``///``, ``//!``, ``--``, ``---``, ``--!``, ``#``) on consecutive rows with
 the same delimiter and only whitespace before them on their rows. A code line, or a change of
 delimiter, ends a run; a comment after code on its row neither starts nor continues one.
 
@@ -726,7 +726,7 @@ line of a block keeps its source line:
 
    * - Comment
      - Stripped from each line
-   * - ``//``, ``///``, ``//!``, ``--``, ``--!``, ``#``
+   * - ``//``, ``///``, ``//!``, ``--``, ``---``, ``--!``, ``#``
      - the delimiter, then one space if there is one
    * - ``/* … */``, ``/** … */``, ``/*! … */``
      - first, a first row holding only the opener (with any number of stars, as in a ``/*****``
