@@ -14,16 +14,21 @@ project loads. The bare ``.. <directive>::`` is decided per type by
 
 **When "another directive has it" is decided.** At the moment the type's directive is
 registered: sphinx-needs' ``load_config`` (``config-inited``, priority 500) for a
-configured type, or the ``add_need_type`` call for a type an extension adds. By then
-every extension's ``setup()`` has run, so every directive registered in ``setup()``
-(sphinx-design's, sphinx-subfigure's) is seen, in any ``extensions`` order. What is seen
-is what a bare name resolves to in a Sphinx build: docutils' directive registry (as
-Sphinx's own ``app.add_directive`` warning reads it), the ``std`` domain, and the
-``primary_domain``; for ``yield``, also docutils' own directives that Sphinx has not
-registered (``image``, ``role``, ...), which docutils loads on their first use. A directive another extension registers later (a ``config-inited``
-handler above 500, ``builder-inited`` or later) is not seen; it replaces the need's bare
-name whatever the mode, with Sphinx's own ``app.add_directive`` warning, as it did before
-this choice existed.
+configured type, or the ``add_need_type`` call for a type an extension adds (at its
+documented time, a ``config-inited`` handler). By then every extension's ``setup()`` has
+run, so every directive registered in ``setup()`` (sphinx-design's, sphinx-subfigure's)
+is seen, in any ``extensions`` order. What is seen is what a bare name resolves to in a
+Sphinx build: docutils' directive registry (as Sphinx's own ``app.add_directive``
+warning reads it), the ``std`` domain, and the ``primary_domain``; for ``yield``, also
+docutils' own directives that Sphinx has not registered (``image``, ``role``, ...),
+which docutils loads on their first use.
+
+A directive registered after that is not seen, and replaces the need's bare name
+whatever the mode, as it did before this choice existed: one a ``config-inited``
+handler registers after sphinx-needs' has run (a priority above 500, or 500 in an
+extension listed after sphinx-needs, as sphinx-design's ``sd_custom_directives`` are),
+or one registered at ``builder-inited`` or later. Sphinx warns about it
+(``app.add_directive``) only when it is registered without ``override=True``.
 
 **What is reported.** A bare name another directive has, under a type whose mode is
 unset (neither ``needs_directive_name`` nor its ``directive_name`` is given), is one
@@ -44,7 +49,7 @@ from docutils.parsers.rst import directives as rst_directives
 from sphinx.application import Sphinx
 from sphinx.config import Config
 from sphinx.domains import Domain
-from sphinx.util.logging import getLogger
+from sphinx.util.logging import getLogger, is_suppressed_warning
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.logging import log_warning
@@ -202,16 +207,6 @@ def other_owner(
     return f"the directive {module + '.' if module else ''}{qualname}", False
 
 
-def _suppressed(suppress_warnings: Iterable[str], type: str, subtype: str) -> bool:
-    """Whether ``suppress_warnings`` suppresses a warning of ``type.subtype``, as Sphinx
-    matches its entries (``type``, ``type.*`` and ``type.subtype``)."""
-    for entry in suppress_warnings:
-        target, _, subtarget = str(entry).partition(".")
-        if target == type and subtarget in ("", "*", subtype):
-            return True
-    return False
-
-
 def register_need_directive(app: Sphinx, name: str) -> None:
     """Register the bare directive name of the need type ``name``, as its mode says.
 
@@ -239,8 +234,8 @@ def register_need_directive(app: Sphinx, name: str) -> None:
     # claim: the need takes the bare name, as it always has; the clash is reported
     # once, by sphinx-needs rather than by Sphinx (``override``), unless the project
     # chose the mode or silences Sphinx's warning for the same clash
-    if not given and not _suppressed(
-        app.config.suppress_warnings, "app", "add_directive"
+    if not given and not is_suppressed_warning(
+        "app", "add_directive", app.config.suppress_warnings
     ):
         owner, domain_owned = found
         fix = (

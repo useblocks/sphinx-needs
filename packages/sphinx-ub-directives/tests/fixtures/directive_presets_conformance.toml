@@ -2225,6 +2225,92 @@ code = "directive_preset_name_taken"
 path = "parse.directive_presets.spec"
 
 [[case]]
+name = "refused-name-taken-by-a-qualified-need-type"
+why = "refused at load, once, at its entry: a new name need:<type> is the need type's qualified directive, taken as its bare name is"
+config = '''
+[parse.directive_presets."need:spec"]
+base = "note"
+'''
+source = '''
+.. need:spec:: Kept
+   :id: SPEC_Q01
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_name_taken"
+path = 'parse.directive_presets."need:spec"'
+[case.expect.needs.SPEC_Q01]
+type = "spec"
+
+[[case]]
+name = "qualified-need-type-base"
+why = "a base need:<type> is that need type, its options the need's"
+config = '''
+[parse.directive_presets.req-open]
+base = "need:req"
+options = { status = "open" }
+'''
+source = '''
+.. req-open:: A
+   :id: REQ_Q02
+'''
+equivalent = '''
+.. need:req:: A
+   :id: REQ_Q02
+   :status: open
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_Q02]
+type = "req"
+status = "open"
+
+[[case]]
+name = "self-preset-of-a-qualified-need-type"
+why = "a self-preset of need:<type> gives the qualified directive project-wide defaults"
+config = '''
+[parse.directive_presets."need:req"]
+base = "need:req"
+options = { status = "open" }
+'''
+source = '''
+.. need:req:: A
+   :id: REQ_Q03
+
+.. need:req:: B
+   :id: REQ_Q04
+   :status: done
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_Q03]
+status = "open"
+[case.expect.needs.REQ_Q04]
+status = "done"
+
+[[case]]
+name = "refused-self-preset-of-a-bare-name-no-directive-has"
+why = "a self-preset is of the directive its name resolves to: with directive_name = qualified, the bare req is none, so the self-preset has no base"
+config = '''
+[needs]
+directive_name = "qualified"
+
+[parse.directive_presets.req]
+base = "req"
+options = { status = "open" }
+'''
+source = '''
+.. need:req:: A
+   :id: REQ_Q05
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_unknown_base"
+path = "parse.directive_presets.req.base"
+[case.expect.needs.REQ_Q05]
+type = "req"
+
+[[case]]
 name = "refused-unknown-option"
 why = "refused at load, once, at its entry: an option the base does not take; the preset is left out"
 config = '''

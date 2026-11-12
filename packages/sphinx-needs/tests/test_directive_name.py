@@ -518,6 +518,69 @@ def test_a_name_a_domain_shadows(test_app: Any, warnings: list[str]) -> None:
     assert (needs["D_001"]["type"], needs["G_001"]["type"]) == ("data", "glossary")
 
 
+#: a need type ``event``, and a ``std`` directive ``event`` the project adds in its
+#: ``setup()`` (``REGISTER``); Sphinx puts such a directive into the domain only when it
+#: makes the build's domains, after ``config-inited``
+ADDED_TO_A_DOMAIN_CONF = """\
+from docutils.parsers.rst import Directive
+
+extensions = ["sphinx_needs"]
+needs_build_json = True
+# sphinx 7 does not append `[type.subtype]` to a warning by default; 8 and 9 do
+show_warning_types = True
+needs_types = [{"directive": "event", "title": "Event", "prefix": "E_"}]
+
+
+class EventDirective(Directive):
+    def run(self):
+        return []
+
+
+def setup(app):
+    REGISTER
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        pytest.param(
+            {
+                "buildername": "html",
+                "files": [
+                    (
+                        Path("conf.py"),
+                        ADDED_TO_A_DOMAIN_CONF.replace("REGISTER", register),
+                    ),
+                    (
+                        Path("index.rst"),
+                        "Index\n=====\n\n.. need:event:: qualified event\n   :id: E_001\n",
+                    ),
+                ],
+            },
+            id=id_,
+        )
+        for id_, register in (
+            (
+                "add-directive-to-domain",
+                'app.add_directive_to_domain("std", "event", EventDirective)',
+            ),
+            ("add-object-type", 'app.add_object_type("event", "event")'),
+        )
+    ],
+    indirect=True,
+)
+def test_a_directive_an_extension_adds_to_a_domain(test_app: Any) -> None:
+    """A directive an extension (or ``conf.py``) adds to the ``std`` domain in its
+    ``setup()`` is in Sphinx's registry of domain directives, not yet in the domain, when
+    a need type's directive is registered: it shadows the bare name as the domain's own
+    directives do, and is reported the same way."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [_domain_clash("event", "std")]
+    assert _needs(app)["E_001"]["type"] == "event"
+
+
 # --- validation -----------------------------------------------------------------------
 
 

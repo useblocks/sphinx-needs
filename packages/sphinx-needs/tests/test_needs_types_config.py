@@ -9,7 +9,8 @@ warnings instead of failing the build (#2262).
 
 A need type's directive is registered once, whichever of ``load_config`` and
 ``add_need_type`` comes first (#2271); a directive of another class under a type's name
-is still overridden, with Sphinx's own warning.
+is still overridden, reported while ``needs_directive_name`` is unset as one
+``needs.directive_name_clash`` warning, in place of Sphinx's own.
 """
 
 from __future__ import annotations

@@ -249,10 +249,10 @@ Every need type is also written ``.. need:<directive>::``, which is always its n
      - bare ``.. step::``
      - ``.. need:step::``
    * - unset (default)
-     - the need, over the other directive, and the clash is one ``needs.directive_name_clash`` warning
+     - as ``"claim"``, and the clash is one ``needs.directive_name_clash`` warning
      - the need
    * - ``"claim"``
-     - the need, over the other directive
+     - the need, over the other directive (not over a ``std`` or primary-domain directive, see below)
      - the need
    * - ``"yield"``
      - the other directive (docutils' own included, such as ``image``); the need where no other directive has the name
@@ -290,10 +290,16 @@ was never usable bare, as Sphinx looks a domain up first, and nothing said so; i
 
 **When "another directive has the name" is decided.** When the need type's directive is registered:
 at ``config-inited`` (priority 500) for a configured type,
-and at the :func:`~sphinx_needs.api.configuration.add_need_type` call for a type an extension adds.
-By then every extension's ``setup()`` has run, so the order of ``extensions`` does not matter.
-A directive another extension registers later (a ``config-inited`` handler above 500, ``builder-inited`` or later)
-is not seen, and replaces the bare need whatever the value, with Sphinx's own ``app.add_directive`` warning, as before.
+and at the :func:`~sphinx_needs.api.configuration.add_need_type` call for a type an extension adds
+(at its documented time, a ``config-inited`` handler).
+By then every extension's ``setup()`` has run, so a directive registered in ``setup()``,
+such as sphinx-design's ``step``, is seen whatever the order of ``extensions``.
+A directive registered after that is not seen, and replaces the bare need whatever the value, as it did before:
+one a ``config-inited`` handler registers after sphinx-needs' has run
+(a priority above 500, or 500 in an extension listed after ``sphinx_needs`` in ``extensions``,
+as sphinx-design's ``sd_custom_directives`` are),
+or one registered at ``builder-inited`` or later.
+Sphinx warns about it (``app.add_directive``) only when it is registered without ``override=True``.
 A directive of docutils that Sphinx does not register itself (``image``, ``role``, ``raw``, ``table``, ...) is the
 other directive under ``"yield"``, but is not reported while the option is unset: Sphinx's warning never saw it,
 and a need type of that name takes it silently, as before.

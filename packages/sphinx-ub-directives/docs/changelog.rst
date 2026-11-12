@@ -6,10 +6,16 @@ Changelog
 Unreleased
 ----------
 
-- A preset's ``base`` may name a need type qualified, ``need:<type>``, as sphinx-needs now writes every need type
+- ✨ A preset's ``base`` may name a need type qualified, ``need:<type>``, as sphinx-needs now writes every need type
   (``.. need:req::``), and a new preset name ``need:<type>`` is taken by that need type as its bare name is. A bare
   ``base`` naming a need type whose bare directive is not the need (sphinx-needs' ``directive_name = "yield"`` or
-  ``"qualified"``) is still that need type (`#2507 <https://github.com/useblocks/sphinx-needs/pull/2507>`__)
+  ``"qualified"``) is still that need type; a self-preset of that bare name is of the directive the name is
+  (the other extension's under ``"yield"``; none under ``"qualified"``, so it is refused)
+  (`#2507 <https://github.com/useblocks/sphinx-needs/pull/2507>`__)
+
+- 🐛 A self-preset of a domain's directive (``base = "py:function"`` named ``py:function``, or ``need:req``) now applies
+  its defaults in a Sphinx build; before, it was accepted and silently had no effect
+  (`#2507 <https://github.com/useblocks/sphinx-needs/pull/2507>`__)
 
 - ⬆️ Templates render with minijinja 3 (``minijinja>=3.0.5,<4``, which was ``~=2.15``), the series ubCode renders
   with; the template corpus both tools are held to is recorded against 3.0.5 **(changed output)**

@@ -224,6 +224,21 @@ class Resolver:
             # the need directive sphinx-needs' ``need`` domain serves for the type (none
             # from a sphinx-needs that has no such domain)
             in_domain = lookup(self.app, f"{NEED_QUALIFIER}{lowered[0]}")
+            if in_domain is not None and not qualified and name.lower() == base.lower():
+                # a self-preset gives the directive its name resolves to defaults
+                # (§3.2.3): where the bare name is not the need's (directive_name
+                # "yield" or "qualified"), that is the other directive, or none
+                bare = lookup(self.app, lowered[0])
+                if bare is None:
+                    return (
+                        f"the bare directive {lowered[0]!r} is not the need type's (its "
+                        "directive_name), and no other directive has the name; a "
+                        "preset of the need type names the base "
+                        f"'{NEED_QUALIFIER}{lowered[0]}'"
+                    )
+                if not issubclass(in_domain[0], bare[0]):
+                    # another directive (a domain's adapter is never the need's base)
+                    return Base(lowered[0], bare[0], domain=bare[1])
             if in_domain is not None and (
                 qualified or cls is None or not issubclass(in_domain[0], cls)
             ):
@@ -624,12 +639,31 @@ def register(app: Sphinx) -> None:
     _REGISTERED[:] = []
     for preset, cls in classes:
         if preset.self_preset and preset.base.domain is not None:
-            app.add_directive_to_domain(
-                preset.base.domain, preset.base.name, cls, override=True
-            )
+            domain = preset.base.domain
+            local = preset.base.name.removeprefix(f"{domain}:")
+            app.add_directive_to_domain(domain, local, cls, override=True)
+            # the build's domain was made from the registry before the presets were
+            # registered, so it is given the preset as Sphinx gives a new one the
+            # registry's directives; its cache of what it served goes with it
+            live = app.env.get_domain(domain)
+            _DOMAIN_REGISTERED.append((live, local, live.directives.get(local), cls))
+            _serve(live, local, cls)
         else:
             app.add_directive(preset.name.lower(), cls, override=preset.self_preset)
             _REGISTERED.append((preset.name.lower(), cls, source, preset.self_preset))
+
+
+def _serve(domain: Any, name: str, cls: type[Directive] | None) -> None:
+    """Make the build's ``domain`` serve ``cls`` as its directive ``name`` (none when
+    ``cls`` is ``None``), dropping what it cached for the name."""
+    if cls is None:
+        domain.directives.pop(name, None)
+    else:
+        domain.directives[name] = cls
+    # Sphinx's per-domain cache of the adapter it served for the name
+    cache = getattr(domain, "_directive_cache", None)
+    if isinstance(cache, dict):
+        cache.pop(name, None)
 
 
 def _unregister_previous() -> None:
@@ -646,7 +680,16 @@ def _unregister_previous() -> None:
             registry[name] = cls.__mro__[1]
         else:
             del registry[name]
+    # a domain's self-preset: the build's domain serves what it served before
+    for domain, name, original, cls in reversed(_DOMAIN_REGISTERED):
+        if domain.directives.get(name) is cls:
+            _serve(domain, name, original)
+    _DOMAIN_REGISTERED[:] = []
 
+
+#: The self-presets of a domain's directive this build: the build's domain, the
+#: directive's name in it, what the domain served before, and the preset.
+_DOMAIN_REGISTERED: list[tuple[Any, str, type[Directive] | None, type[Directive]]] = []
 
 #: The presets registered in the docutils registry this build, each with its source and
 #: whether it is a self-preset (§3.4.7).
