@@ -327,3 +327,80 @@ tu_source_included_only_through_a_header_is_skipped_libclang:
   # an #if 0 arm; case.cpp IS compiled in this unit, through the header through.h.
   # Only the candidate's main file's own #include confirms an includer (no
   # transitive includers), so case.cpp has none and is skipped: no markers.
+
+builtin_headers_libclang:
+  lang: c
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  compile_commands:
+    - file: case.c
+      arguments: ["clang", "-std=c11", "-nostdlibinc", "-c", "case.c"]
+  source: |
+    #include <stdint.h>
+    #include <stdbool.h>
+
+    // @Always, IMPL_BH_ALWAYS, impl, [REQ]
+    int always(void);
+
+    #if UINT32_MAX > 0xFFFFu
+    // @Wide counter, IMPL_BH_WIDE, impl, [REQ]
+    int wide(void);
+    #else
+    // @Narrow counter, IMPL_BH_NARROW, impl, [REQ]
+    int narrow(void);
+    #endif
+
+    #if __has_include(<stdatomic.h>)
+    // @Atomic counter, IMPL_BH_ATOMIC, impl, [REQ]
+    int atomic_counter(void);
+    #else
+    // @Locked counter, IMPL_BH_LOCKED, impl, [REQ]
+    int locked_counter(void);
+    #endif
+
+    #if defined(bool) && defined(__bool_true_false_are_defined)
+    // @C bool flags, IMPL_BH_BOOL, impl, [REQ]
+    bool flag(void);
+    #else
+    // @int flags, IMPL_BH_INT, impl, [REQ]
+    int flag(void);
+    #endif
+  # The arms test what clang's builtin headers define. -nostdlibinc leaves the
+  # builtin headers as the only system headers on every host, as on a bare-metal
+  # target, so <stdint.h> and <stdbool.h> come from them, and __has_include sees
+  # their <stdatomic.h>: IMPL_BH_ALWAYS, IMPL_BH_WIDE, IMPL_BH_ATOMIC, IMPL_BH_BOOL.
+  # A parse without the builtin headers takes all three #else arms instead.
+
+builtin_headers_entry_nostdinc_libclang:
+  lang: c
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  compile_commands:
+    - file: case.c
+      arguments: ["clang", "-std=c11", "-nostdinc", "-c", "case.c"]
+  source: |
+    #include <stdint.h>
+
+    #if UINT32_MAX > 0xFFFFu
+    // @Wide counter, IMPL_BH_NOSTDINC_WIDE, impl, [REQ]
+    int wide(void);
+    #else
+    // @Narrow counter, IMPL_BH_NOSTDINC_NARROW, impl, [REQ]
+    int narrow(void);
+    #endif
+
+    #if __has_include(<stdatomic.h>)
+    // @Atomic counter, IMPL_BH_NOSTDINC_ATOMIC, impl, [REQ]
+    int atomic_counter(void);
+    #else
+    // @Locked counter, IMPL_BH_NOSTDINC_LOCKED, impl, [REQ]
+    int locked_counter(void);
+    #endif
+  # An entry with -nostdinc (likewise -nobuiltininc or its own -resource-dir) chooses
+  # its builtin headers itself, and the engine adds none: <stdint.h> is not found,
+  # UINT32_MAX is undefined and <stdatomic.h> is not there, so both #else arms are
+  # active, as for the compiler: IMPL_BH_NOSTDINC_NARROW, IMPL_BH_NOSTDINC_LOCKED.

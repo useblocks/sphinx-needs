@@ -1,0 +1,54 @@
+[
+  {
+    "filepath": "case.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 4
+      },
+      "end": {
+        "row": 6,
+        "column": 56
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Narrow counter",
+      "id": "IMPL_BH_NOSTDINC_NARROW",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 14,
+        "column": 4
+      },
+      "end": {
+        "row": 14,
+        "column": 56
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Locked counter",
+      "id": "IMPL_BH_NOSTDINC_LOCKED",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]
