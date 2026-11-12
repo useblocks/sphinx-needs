@@ -151,3 +151,11 @@ def test_anchor_preproc_paths_resolves_resource_dir_against_base(tmp_path):
     assert out.resource_dir == (base / "clang").resolve()
     unset = anchor_preproc_paths(PreprocessorConfig(), base)
     assert unset.resource_dir is None
+
+
+def test_an_empty_resource_dir_is_unset():
+    """``resource_dir = ""`` means unset, as an empty string does for every other
+    setting: the shipped headers are passed, not a directory named ``""``."""
+    cfg = convert_analyse_config({"preprocessor": {"resource_dir": ""}})
+    assert cfg.preprocessor is not None
+    assert cfg.preprocessor.resource_dir is None

@@ -445,22 +445,106 @@ def test_a_missing_builtin_header_is_warned_about_once_per_file(
     assert "resource_dir" in message
 
 
+@pytest.mark.parametrize(
+    ("flags", "named"),
+    [
+        pytest.param(["-nostdinc"], "-nostdinc", id="nostdinc"),
+        pytest.param(["-nobuiltininc"], "-nobuiltininc", id="nobuiltininc"),
+        pytest.param(
+            ["--no-standard-includes"], "--no-standard-includes", id="long-spelling"
+        ),
+        pytest.param(
+            ["-Xarch_host", "-nobuiltininc"], "-nobuiltininc", id="Xarch_host"
+        ),
+    ],
+)
+@pytest.mark.parametrize("setting", [False, True], ids=["unset", "resource_dir"])
 def test_an_entry_without_builtin_headers_is_warned_about(
+    builtin_headers,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    flags: list[str],
+    named: str,
+    setting: bool,
+):
+    """An entry that leaves clang's builtin headers out keeps its choice, and the
+    header it then misses is named, with the flag that left it out: ``resource_dir``
+    cannot bring it back (it is passed, and the flag still wins), so the warning does
+    not suggest it."""
+    db = _db(tmp_path, [("a.c", ["-std=c11", "-nostdlibinc", *flags])])
+    ids, warnings = _analyse(
+        tmp_path,
+        {"a.c": WIDTH_ARMS},
+        monkeypatch,
+        preprocessor=PreprocessorConfig(
+            compile_commands=db, resource_dir=RESOURCE if setting else None
+        ),
+    )
+
+    assert ids == {"IMPL_NARROW"}
+    assert [subtype for _, subtype in warnings] == ["builtin_header"]
+    message = warnings[0][0]
+    assert "'stdint.h'" in message
+    assert message.endswith(
+        f"; the compile command's {named} leaves clang's builtin headers out"
+    )
+    assert "resource_dir" not in message
+
+
+@pytest.mark.parametrize(
+    ("include", "warned"),
+    [
+        pytest.param("#include <cpuid.h>", True, id="angled"),
+        pytest.param('#include "cpuid.h"', False, id="quoted"),
+        pytest.param(
+            '#  include   "unwind.h" // the project\'s', False, id="quoted-spaced"
+        ),
+        pytest.param("#include_next <cpuid.h>", True, id="include_next"),
+    ],
+)
+def test_only_an_angled_include_of_a_builtin_name_is_warned_about(
+    builtin_headers,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    include: str,
+    warned: bool,
+):
+    """``#include <cpuid.h>`` asks for clang's header; ``#include "cpuid.h"`` for the
+    project's own one of that name, whose absence no resource directory explains."""
+    db = _db(tmp_path, [("a.c", ["-std=c11"])])
+    _ids, warnings = _analyse(
+        tmp_path,
+        {"a.c": f"{include}\n// @a, IMPL_A, impl\n"},
+        monkeypatch,
+        preprocessor=PreprocessorConfig(compile_commands=db),
+    )
+
+    assert len(warnings) == int(warned), warnings
+
+
+def test_the_resource_dir_goes_before_a_double_dash(
     builtin_headers, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    """An entry that turns the builtin headers off (``-nostdinc``) keeps its choice,
-    and the header it then misses is named."""
-    db = _db(tmp_path, [("a.c", ["-std=c11", "-nostdinc"])])
-    ids, warnings = _analyse(
+    """After ``--`` the driver reads every argument as an input file: a compile
+    command that ends with ``-- a.c`` is given the builtin headers before it, so its
+    parse finds ``<stdint.h>``. (Which arms are active is not asserted: libclang's
+    own arguments come after the ``--`` too, and the parse records no skipped range.)"""
+    assert builtin_headers.resource_dir_args(["-std=c11", "--", "a.c"], None)[0] == [
+        "-std=c11",
+        "-resource-dir",
+        str(RESOURCE),
+        "--",
+        "a.c",
+    ]
+    db = _db(tmp_path, [("a.c", ["-std=c11", "-nostdlibinc", "-c", "--", "a.c"])])
+    _ids, warnings = _analyse(
         tmp_path,
         {"a.c": WIDTH_ARMS},
         monkeypatch,
         preprocessor=PreprocessorConfig(compile_commands=db),
     )
 
-    assert ids == {"IMPL_NARROW"}
-    assert [subtype for _, subtype in warnings] == ["builtin_header"]
-    assert "'stdint.h'" in warnings[0][0]
+    assert warnings == []
 
 
 def test_missing_shipped_headers_are_warned_about_once_per_run(

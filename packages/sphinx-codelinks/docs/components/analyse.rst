@@ -1085,10 +1085,14 @@ take. Each parse is given the first of:
 
 Compiler intrinsics (``immintrin.h``, ``arm_neon.h`` …) and clang's other builtin headers
 (``cpuid.h``, ``unwind.h``, compiler-rt's ``sanitizer/`` headers …) are not shipped. If a
-parse still cannot find a header a full clang install puts in its resource directory, **Sphinx-CodeLinks** warns once per file in a build or
-a ``codelinks analyse`` run, naming the header (``codelinks.builtin_header``, which fails a
+parse still cannot find a header a full clang install puts in its resource directory,
+included in angle brackets (``#include <cpuid.h>``; ``#include "cpuid.h"`` names a header
+of the project), **Sphinx-CodeLinks** warns once per file in a build or a
+``codelinks analyse`` run, naming the header (``codelinks.builtin_header``, which fails a
 ``-W`` build), and continues: ``#if`` tests on what that header defines take their
-``#else`` branch. Under ``-j N`` Sphinx reads the documents in chunks, each in a process
+``#else`` branch. When the entry itself leaves clang's headers out (``-nostdinc``,
+``-nobuiltininc``), the warning names that flag instead: no ``resource_dir`` brings them
+back. Under ``-j N`` Sphinx reads the documents in chunks, each in a process
 of its own, and each chunk warns once. To use your own clang's headers, set
 ``resource_dir`` to the output of ``clang -print-resource-dir``.
 

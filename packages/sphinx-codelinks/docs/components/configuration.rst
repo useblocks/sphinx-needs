@@ -738,7 +738,7 @@ limitations.
 - ``resource_dir`` (``str``) - A clang resource directory, passed to every parse as
   ``-resource-dir``: the directory whose ``include/`` holds clang's builtin headers
   (``stddef.h``, ``stdint.h``, ``limits.h``, ``stdatomic.h`` …). Relative paths resolve
-  against the TOML config file. If omitted, the builtin headers that ship with
+  against the TOML config file. If omitted or empty (``""``), the builtin headers that ship with
   **Sphinx-CodeLinks** are passed, unless a ``compile_commands.json`` entry chooses its
   own (``-resource-dir``, ``-nostdinc``, ``-nobuiltininc``). Set it to the output of
   ``clang -print-resource-dir`` when your code includes compiler intrinsics

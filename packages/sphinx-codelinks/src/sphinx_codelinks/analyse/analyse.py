@@ -491,25 +491,37 @@ class SourceAnalyse:
             )
         return args
 
-    def _warn_missing_builtin_header(self, path: Path, tu: Any) -> None:
+    def _warn_missing_builtin_header(
+        self, path: Path, tu: Any, args: list[str]
+    ) -> None:
         """Warn, once per parsed file (see :class:`BuiltinHeaderWarnings`), when its
-        parse found no builtin header."""
-        from sphinx_codelinks.analyse.preproc import builtin_headers
+        parse found no builtin header. When its arguments ``args`` leave clang's
+        builtin headers out (``-nostdinc``), the warning names that flag, which no
+        ``resource_dir`` overrides; otherwise it points at ``resource_dir``."""
+        from sphinx_codelinks.analyse.preproc import builtin_headers, compile_db
 
         warned = self.builtin_header_warnings.files
         if path in warned:
             return
-        missing = builtin_headers.missing_builtin_header(tu)
+        missing = builtin_headers.missing_builtin_header(
+            tu, compile_db.working_directory(args)
+        )
         if missing is None:
             return
         warned.add(path)
         name, file, line = missing
         where = f" (included at {file}:{line})" if file is not None else ""
+        excluding = builtin_headers.excluding_flag(args)
+        remedy = (
+            f"the compile command's {excluding} leaves clang's builtin headers out"
+            if excluding is not None
+            else "set resource_dir in [analyse.preprocessor] to a clang resource "
+            "directory that has it (clang -print-resource-dir)"
+        )
         logger.warning(
             f"codelinks: {path}: clang's builtin header '{name}' was not "
-            f"found{where}, so an #if on what it defines takes its #else branch; set "
-            f"resource_dir in [analyse.preprocessor] to a clang resource directory "
-            f"that has it (clang -print-resource-dir)",
+            f"found{where}, so an #if on what it defines takes its #else branch; "
+            f"{remedy}",
             subtype="builtin_header",
         )
 
@@ -572,7 +584,7 @@ class SourceAnalyse:
                 tu = None
                 includes: set[Path] = set()
             else:
-                self._warn_missing_builtin_header(main, tu)
+                self._warn_missing_builtin_header(main, tu, args)
                 working_directory = compile_db.working_directory(args)
                 includes = libclang_parser.main_file_inclusions(tu, working_directory)
                 self.dependencies.update(
@@ -635,12 +647,13 @@ class SourceAnalyse:
                 )
                 waiting.append(_Waiting(position, src_path, database, candidates))
                 continue
+            args = self._with_builtin_headers(args)
             try:
                 read[position] = libclang_parser.extract_active_comments(
                     src_path,
-                    self._with_builtin_headers(args),
-                    on_parse=lambda tu, path=src_path: (
-                        self._warn_missing_builtin_header(path, tu)
+                    args,
+                    on_parse=lambda tu, path=src_path, args=args: (
+                        self._warn_missing_builtin_header(path, tu, args)
                     ),
                 )
             except translation_unit_load_error:

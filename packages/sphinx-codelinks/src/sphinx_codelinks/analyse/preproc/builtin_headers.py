@@ -34,6 +34,7 @@ from __future__ import annotations
 import platform
 import re
 import sys
+from collections.abc import Iterator
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -169,9 +170,10 @@ def _xarch_reads(args: list[str]) -> frozenset[str]:
     return frozenset(arches or [universal])
 
 
-def chooses_builtin_headers(args: list[str]) -> bool:
-    """Whether ``args`` choose their builtin headers themselves, as the driver reads
-    them (see :data:`_CHOOSING_FLAGS`; ``-resource-dir=<dir>`` too).
+def _driver_choices(args: list[str]) -> Iterator[str]:
+    """Each argument of ``args`` with which the driver chooses the builtin headers
+    (see :data:`_CHOOSING_FLAGS`; ``-resource-dir=<dir>`` is yielded as
+    ``-resource-dir``), in order, as clang 18's driver reads them.
 
     An argument the driver hands to another tool (:data:`_PASS_THROUGH`) is not
     read. One after ``-Xarch_host``, or after ``-Xarch_<arch>`` for the architecture
@@ -191,13 +193,36 @@ def chooses_builtin_headers(args: list[str]) -> bool:
                 reads = _xarch_reads(args)
             arch = arg.removeprefix("-Xarch_")
             if (arch == "host" or arch in reads) and value in _XARCH_CHOOSING_FLAGS:
-                return True
+                yield value
             index += 2
             continue
-        if arg in _CHOOSING_FLAGS or arg.startswith("-resource-dir="):
-            return True
+        if arg in _CHOOSING_FLAGS:
+            yield arg
+        elif arg.startswith("-resource-dir="):
+            yield "-resource-dir"
         index += 1
-    return False
+
+
+def chooses_builtin_headers(args: list[str]) -> bool:
+    """Whether ``args`` choose their builtin headers themselves, as the driver reads
+    them: their own resource directory, or none (:func:`_driver_choices`)."""
+    return next(_driver_choices(args), None) is not None
+
+
+def excluding_flag(args: list[str]) -> str | None:
+    """The argument of ``args`` with which the driver leaves clang's builtin headers
+    out altogether (``-nostdinc``, ``--no-standard-includes``, ``-nobuiltininc``), if
+    any: no resource directory brings them back."""
+    return next(
+        (flag for flag in _driver_choices(args) if flag in _XARCH_CHOOSING_FLAGS), None
+    )
+
+
+def _with_resource_dir(args: list[str], directory: Path) -> list[str]:
+    """``args`` with ``-resource-dir <directory>``, before a ``--``, after which the
+    driver reads every argument as an input file."""
+    at = args.index("--") if "--" in args else len(args)
+    return [*args[:at], "-resource-dir", str(directory), *args[at:]]
 
 
 def resource_dir_args(
@@ -211,13 +236,13 @@ def resource_dir_args(
         available (step 4), which the caller warns about once.
     """
     if configured is not None:
-        return [*args, "-resource-dir", str(configured)], False
+        return _with_resource_dir(args, configured), False
     if chooses_builtin_headers(args):
         return args, False
     bundled = bundled_resource_dir()
     if bundled is None:
         return args, True
-    return [*args, "-resource-dir", str(bundled)], False
+    return _with_resource_dir(args, bundled), False
 
 
 @cache
@@ -239,12 +264,39 @@ def is_builtin_header(name: str) -> bool:
     return name in builtin_header_names()
 
 
-def missing_builtin_header(tu: Any) -> tuple[str, str | None, int] | None:
+def _is_angled(file: Path, line: int, column: int, name: str) -> bool:
+    """Whether the include ``name`` at ``file:line:column`` (1-based, the column in
+    bytes, where libclang places a missing include's diagnostic) is written in angle
+    brackets, ``<name>``. A file that cannot be read counts as angled."""
+    try:
+        with file.open("rb") as handle:
+            text = b""
+            for _ in range(line):
+                text = handle.readline()
+    except OSError:
+        return True
+    at = text[column - 1 :] if column > 0 else b""
+    if at.startswith(b'"'):
+        return False
+    if at.startswith(b"<"):
+        return True
+    # no column to go by: the line's own include
+    return not re.search(rb'#\s*include(?:_next)?\s*"' + re.escape(name.encode()), text)
+
+
+def missing_builtin_header(
+    tu: Any, working_directory: Path | None = None
+) -> tuple[str, str | None, int] | None:
     """The first builtin header a parse could not find: its name, and the file and
     line of the ``#include`` (``None`` and 0 when libclang gives no location).
 
-    Only the first such header is reported by libclang as an error; a later one
-    fails without a diagnostic.
+    Only an angled include (``#include <cpuid.h>``) of a builtin header's name counts:
+    a quoted one (``#include "cpuid.h"``) names the project's own header. Only the
+    first missing header is reported by libclang as an error; a later one fails
+    without a diagnostic.
+
+    :param working_directory: The parse's working directory, against which a file
+        libclang names relatively is read.
     """
     for diagnostic in tu.diagnostics:
         match = _NOT_FOUND.match(diagnostic.spelling)
@@ -252,5 +304,9 @@ def missing_builtin_header(tu: Any) -> tuple[str, str | None, int] | None:
             continue
         location = diagnostic.location
         file = location.file.name if location.file is not None else None
+        if file is not None:
+            path = (working_directory or Path.cwd()) / file
+            if not _is_angled(path, location.line, location.column, match["name"]):
+                continue
         return match["name"], file, location.line
     return None
