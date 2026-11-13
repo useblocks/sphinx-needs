@@ -86,6 +86,14 @@ New and Improved
 Fixes
 .....
 
+- 🐛 A ``compile_commands.json`` entry whose arguments end their options with ``--``
+  (``-c -- src/a.cpp``, as CMake writes it for clang-cl) is read correctly; before,
+  the libclang engine's own arguments landed after the ``--`` as inputs, no ``#if`` arm
+  was known to be inactive, and the markers of every arm were extracted. A ``--`` that is
+  the value of ``-Xlinker``, ``-I`` or another option listed under
+  :ref:`preprocessor_compile_db` ends nothing: such an entry, which libclang could not load, is read with the options
+  after it. An environment of an earlier version is read
+  again once (``env_version`` 7).
 - 🐛 The libclang engine passes clang's builtin headers to every parse
   (:ref:`preprocessor_builtin_headers`). The ``libclang`` wheel carries none, so
   ``stddef.h``, ``stdarg.h``, ``stdbool.h``, ``float.h``, ``stdatomic.h``, the compiler's
