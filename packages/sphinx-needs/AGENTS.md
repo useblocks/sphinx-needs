@@ -30,7 +30,7 @@ tests/                 # Test suite
 ├── doc_test/          # Test documentation projects
 ├── benchmarks/        # Performance benchmarks
 ├── conformance/       # The needflow conformance corpus (shared with ubCode — see the root file)
-├── fixtures/          # Data files, among them derive_conformance.toml, field_declaration_conformance.toml and filter_conformance.toml: the derived-field, the fields-per-need-type and the portable-filter-language conformance corpora (canonical here; ubCode vendors the first and is to vendor the other two)
+├── fixtures/          # Data files, among them derive_conformance.toml, field_declaration_conformance.toml, filter_conformance.toml and need_templates_conformance.toml: the derived-field, the fields-per-need-type, the portable-filter-language and the need-template conformance corpora (canonical here; ubCode vendors the first and is to vendor the other three)
 ├── __snapshots__/     # Syrupy snapshot files
 └── ...
 

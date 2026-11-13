@@ -931,6 +931,15 @@ diagnostics = [
 ]
 keys = ["A", "C"]
 
+[[case]]
+name = "producer-presentation-keys-are-read-as-data"
+why = "a record's template names, jinja_content and rendered decorations are the producer's provenance: read as written, with no finding, and content (already rendered, Jinja syntax and all) is not rendered again"
+layer = "document"
+json = '''{"current_version": "1.0", "versions": {"1.0": {"needs": {"REQ_1": {"id": "REQ_1", "type": "req", "title": "t", "content": "WRAP[REQ_1] literal={{ title }}", "doctype": ".md", "template": "wrap", "pre_template": "pre", "post_template": "post", "jinja_content": true, "pre_content": "PRE REQ_1", "post_content": "POST REQ_1"}}}}}'''
+[case.expect]
+diagnostics = []
+records = { REQ_1 = { content = "WRAP[REQ_1] literal={{ title }}", doctype = ".md", template = "wrap", pre_template = "pre", post_template = "post", jinja_content = true, pre_content = "PRE REQ_1", post_content = "POST REQ_1" } }
+
 # --- what v1 must still read --------------------------------------------------------
 
 [[case]]

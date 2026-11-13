@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import build_warnings
 
 from .corpus import CONF_PY
@@ -412,6 +413,31 @@ def test_a_need_template_option_in_any_case_in_myst_output_is_refused(
         if "ub_directives.template_output_reads_file" in w
     ]
     assert len(refused) == 1, build_warnings(app)
+
+
+def test_a_need_in_rst_output_on_a_myst_page_has_the_rst_doctype(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """A need's ``doctype`` is the markup its content is written in (sphinx-needs): a
+    need in the reStructuredText output of a template used on a MyST page is ``.rst``,
+    as one inside ``{eval-rst}`` is; one written on the page is ``.md``."""
+    files = {
+        "ubproject.toml": (
+            "[needs]\n\n"
+            "[parse.directive_templates.emitrst]\n"
+            'body = ".. req:: From an RST template\\n   :id: REQ_TRST\\n\\n'
+            '   RST `l <https://x.example>`_ body.\\n"\n'
+            'markup = "rst"\n'
+        ),
+        "index.md": (
+            "# Case\n\n```{emitrst}\n```\n\n```{req} On the page\n:id: REQ_PAGE\n```\n"
+        ),
+    }
+    app = _build(make_app, tmp_path, files)
+    assert build_warnings(app) == []
+    needs = SphinxNeedsData(app.env).get_needs_view()
+    assert needs["REQ_TRST"]["doctype"] == ".rst"
+    assert needs["REQ_PAGE"]["doctype"] == ".md"
 
 
 # -- ``length`` / ``count`` of an undefined value (§7.1) --------------------------------

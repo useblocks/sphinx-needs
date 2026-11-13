@@ -725,11 +725,12 @@ INTERACTION_INDEX += rst_import(
     indirect=True,
 )
 def test_jinja_templates_and_id_prefix(test_app: SphinxTestApp):
-    """(4): ``jinja_content`` text is rendered, then parsed in the record's doctype;
-    a need rendered through a template -- the record's ``template`` or the directive's
-    ``:template:`` -- is parsed as the page's markup, the template's, content and all;
-    a ``:pre_template:`` or ``:post_template:`` is the page's markup and the content
-    its doctype's; and
+    """(4): a record's ``jinja_content`` and ``template`` are the producer's, its
+    content already their output: neither is applied again, so the content is parsed
+    in the record's doctype, Jinja syntax it holds staying text; a need rendered
+    through the directive's ``:template:`` is parsed as the page's markup, the
+    template's, content and all; a ``:pre_template:`` or ``:post_template:`` is the
+    page's markup and the content its doctype's; and
     ``:id_prefix:`` rewrites a ``{need}`` role in MyST content, which then resolves."""
     app = test_app
     app.build()
@@ -740,15 +741,23 @@ def test_jinja_templates_and_id_prefix(test_app: SphinxTestApp):
         path = text.removesuffix("link")
         return f'<a class="reference external" href="https://example.com/{path}">{text}</a>'
 
-    # rendered by Jinja, then parsed as MyST
+    # not rendered again by Jinja: parsed as MyST, its Jinja syntax text
     content = need_content_html(app, "index.html", "J1")
-    assert f"Hello JINJA and a {link('jlink')}" in content
-    # through a template: the template's reStructuredText renders, and so the content
-    # in it is parsed as reStructuredText too
-    for need_id, body_link in (("TR", "blink"), ("T_MD1", "mlink")):
-        content = need_content_html(app, "index.html", need_id)
-        assert f"<strong>TPL bold</strong> and a {link('tlink')}" in content, need_id
-        assert f"then: Body [{body_link}](<a class" in content, need_id
+    assert (
+        f"Hello {{{{ \u2018JIN\u2019 + \u2018JA\u2019 }}}} and a {link('jlink')}"
+        in content
+    )
+    assert needs_by_id(app)["J1"]["jinja_content"] is False
+    # the record's template is not applied again: parsed as MyST, its doctype
+    content = need_content_html(app, "index.html", "TR")
+    assert "TPL bold" not in content
+    assert f"Body {link('blink')}." in content
+    assert needs_by_id(app)["TR"]["template"] is None
+    # through the directive's template: the template's reStructuredText renders, and
+    # so the content in it is parsed as reStructuredText too
+    content = need_content_html(app, "index.html", "T_MD1")
+    assert f"<strong>TPL bold</strong> and a {link('tlink')}" in content
+    assert "then: Body [mlink](<a class" in content
     # a pre or post template is parsed as the page's markup, the content as its
     # doctype's
     page = html(app, "index.html")

@@ -1,5 +1,5 @@
 {
-  "ENV_DATA_VERSION": 26,
+  "ENV_DATA_VERSION": 27,
   "env": {
     "_need_all_needextend": "dict[str, NeedsExtendType]",
     "_needs_all_docs": "dict[str, list[str]]",
@@ -11,6 +11,8 @@
     "_needs_resolved_schemas": "list[SchemasRootType]",
     "_needs_role_refs": "dict[str, set[str]]",
     "_needs_schema": "FieldsSchema",
+    "_needs_template_inputs_read_with": "tuple[str, dict[str, Any]] | None",
+    "_needs_template_probes": "dict[str, set[str]]",
     "_needs_types_read_with": "list[dict[str, Any]] | None"
   },
   "classes": {
