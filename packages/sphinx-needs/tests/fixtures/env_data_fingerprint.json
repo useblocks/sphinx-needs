@@ -1,5 +1,5 @@
 {
-  "ENV_DATA_VERSION": 26,
+  "ENV_DATA_VERSION": 27,
   "env": {
     "_need_all_needextend": "dict[str, NeedsExtendType]",
     "_needs_all_docs": "dict[str, list[str]]",
@@ -530,6 +530,8 @@
         "_derived: frozenset[str]",
         "_dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray]",
         "_extras: dict[str, AllowedTypes | None]",
+        "_id_local: str",
+        "_id_ns: tuple[str, ...]",
         "_links: dict[str, list[NeedLink]]",
         "_modifications: tuple[NeedModification, ...]",
         "_parts: dict[str, NeedPartData]",

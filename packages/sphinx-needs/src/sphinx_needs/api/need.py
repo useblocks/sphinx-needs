@@ -19,6 +19,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs._jinja import render_template_string
+from sphinx_needs._namespaced_ids import read_id
 from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
@@ -382,6 +383,8 @@ def _generate_need(
         if id is None
         else id
     )
+    # the need's namespace and local id, read here alone, for every route
+    id_namespace, id_local, _id_problem = read_id(need_id, needs_config.namespaced_ids)
     # a need from outside the project's sources (imported, external) is the source's
     # data: its id is not checked against ``needs_id_regex`` (a prefix may break any
     # pattern), and it keeps the values of its derived fields
@@ -695,6 +698,7 @@ def _generate_need(
             dynamic_fields=dynamic_fields,
             # one set for every need type, the schema's own (derived_names)
             derived=schema.derived_names,
+            _id_split=(id_namespace, id_local),
             _validate=False,
         )
     except ValueError as err:
