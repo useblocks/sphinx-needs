@@ -111,6 +111,15 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 A :ref:`needsequence` over need ids holding ``::`` renders
+
+  It wrote each need id as it is as a PlantUML participant name, so an id such as ``SUPPLIER::USER_A``, which the
+  default :ref:`needs_id_regex` accepts, made the diagram a PlantUML syntax error. A participant is now named as
+  :ref:`needflow` names a need in a PlantUML diagram, over the participants of the one diagram: each character
+  PlantUML refuses in a name becomes ``_``, and two ids that become the same name are told apart by a numeric
+  suffix. The participant titles and message labels are unchanged, and so is a diagram whose ids hold none of
+  those characters.
+
 - 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
   ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
   **(changed output)** (:issue:`2489`, :pr:`2494`)
