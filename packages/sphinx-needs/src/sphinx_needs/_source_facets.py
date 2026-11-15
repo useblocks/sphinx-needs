@@ -57,6 +57,7 @@ from collections.abc import Callable, Mapping
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Final
 
+from sphinx_needs import _id_facets
 from sphinx_needs._need_source import SRCDIR_ROOT
 
 if TYPE_CHECKING:
@@ -231,6 +232,15 @@ READERS: Final[Mapping[str, Callable[[Any], Any]]] = {
 :data:`SOURCE_FACETS`."""
 
 
+CHECK_FACETS: Final[Mapping[str, Mapping[str, Callable[[Any], Any]]]] = {
+    SOURCE_NAME: READERS,
+    _id_facets.ID_NAME: _id_facets.READERS,
+}
+"""The facets of the check context, by the attribute of ``c`` that holds them
+(``c.source.<facet>``, ``c.id.<facet>``): the one table the portable tier's 3-name chain,
+the explanation where there is no check context and a derived field's whitelist read."""
+
+
 def unknown_facet(name: str) -> str:
     """The error of ``c.source.<name>`` naming no facet, with the closest facet."""
     close = difflib.get_close_matches(name, SOURCE_FACETS, 1, 0.8)
@@ -268,27 +278,62 @@ class SourceFacets:
         return f"<c.source of {self._need['id']!r}>"
 
 
-def _is_facet_read(node: ast.AST) -> bool:
-    """Whether *node* is ``c.source.<facet>`` for a name of :data:`SOURCE_FACETS`."""
-    return (
+def facet_read(node: ast.AST) -> str | None:
+    """The attribute of ``c`` holding the facet *node* reads, ``c.<group>.<facet>``
+    (``"source"``, ``"id"``), or ``None`` where *node* is no facet of
+    :data:`CHECK_FACETS`."""
+    if (
         isinstance(node, ast.Attribute)
-        and node.attr in READERS
         and isinstance(node.value, ast.Attribute)
-        and node.value.attr == SOURCE_NAME
         and isinstance(node.value.value, ast.Name)
         and node.value.value.id == CHECKS_NAME
+        and node.attr in CHECK_FACETS.get(node.value.attr, ())
+    ):
+        return node.value.attr
+    return None
+
+
+def _is_in_namespace(node: ast.AST) -> bool:
+    """Whether *node* is a call of ``c.in_namespace``, whatever its arguments."""
+    return (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == _id_facets.IN_NAMESPACE
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == CHECKS_NAME
     )
 
 
+#: what each read of the check context is called where there is none, in this order
+_UNAVAILABLE: Final = (
+    (SOURCE_NAME, "the c.source facets"),
+    (_id_facets.ID_NAME, "the c.id facets"),
+    (_id_facets.IN_NAMESPACE, "c.in_namespace()"),
+)
+
+
 @lru_cache(maxsize=256)
-def reads_a_facet(expression: str) -> bool:
-    """Whether an expression reads a facet, ``c.source.<facet>``. False for an
-    expression that does not parse. Cached per string."""
+def _check_reads(expression: str) -> frozenset[str]:
+    """What an expression reads of the check context: the attributes of ``c`` holding
+    a facet it reads (``source``, ``id``), and ``in_namespace`` for a call of it. Empty
+    for an expression that does not parse. Cached per string."""
     try:
         tree = ast.parse(expression.strip(), mode="eval")
     except (SyntaxError, ValueError):
-        return False
-    return any(map(_is_facet_read, ast.walk(tree)))
+        return frozenset()
+    reads: set[str] = set()
+    for node in ast.walk(tree):
+        if (group := facet_read(node)) is not None:
+            reads.add(group)
+        elif _is_in_namespace(node):
+            reads.add(_id_facets.IN_NAMESPACE)
+    return frozenset(reads)
+
+
+def reads_a_facet(expression: str) -> bool:
+    """Whether an expression reads a facet (``c.source.<facet>``, ``c.id.<facet>``) or
+    calls ``c.in_namespace``. False for an expression that does not parse."""
+    return bool(_check_reads(expression))
 
 
 def unavailable(error: BaseException, expression: str) -> bool:
@@ -296,15 +341,14 @@ def unavailable(error: BaseException, expression: str) -> bool:
     failed for want of them: it reads a facet, and fails with ``c`` undefined, or with
     an attribute error on what ``c`` is there (a field named ``c``: a predicate's and a
     variant condition's contexts are built from the need's fields)."""
-    if not reads_a_facet(expression):
+    reads = _check_reads(expression)
+    if not reads:
         return False
     if isinstance(error, NameError):
         return getattr(error, "name", None) == CHECKS_NAME
-    # the read itself failing: what ``c`` is there (a field named ``c``) has no ``source``
-    return (
-        isinstance(error, AttributeError)
-        and getattr(error, "name", None) == SOURCE_NAME
-    )
+    # the read itself failing: what ``c`` is there (a field named ``c``) has no
+    # ``source``, ``id`` or ``in_namespace``
+    return isinstance(error, AttributeError) and getattr(error, "name", None) in reads
 
 
 def explained(error: BaseException, where: str, expression: str) -> str:
@@ -312,5 +356,8 @@ def explained(error: BaseException, where: str, expression: str) -> str:
     (*where*: a field predicate, a needimport filter, a variant condition), with why,
     where it failed for want of them (:func:`unavailable`)."""
     if unavailable(error, expression):
-        return f"{error}; the c.source facets are not available in {where}"
+        reads = _check_reads(expression)
+        names = [said for name, said in _UNAVAILABLE if name in reads]
+        verb = "is" if names == ["c.in_namespace()"] else "are"
+        return f"{error}; {' and '.join(names)} {verb} not available in {where}"
     return str(error)

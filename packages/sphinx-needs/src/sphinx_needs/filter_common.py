@@ -25,6 +25,7 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs import _read_watch
+from sphinx_needs._id_facets import IdFacets, in_namespace, namespace_argument
 from sphinx_needs._source_facets import SourceFacets, explained
 from sphinx_needs._wording import title_hint
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
@@ -1261,6 +1262,22 @@ class NeedCheckContext:
         need's), each computed when it is read (:mod:`sphinx_needs._source_facets`)."""
         need = self._need
         return SourceFacets(need._need if isinstance(need, NeedPartItem) else need)
+
+    @property
+    def id(self) -> IdFacets:
+        """The facets of the need's id, ``c.id.ns`` and ``c.id.local`` (a part's are its
+        need's), as the need stored them when it was created
+        (:mod:`sphinx_needs._id_facets`)."""
+        need = self._need
+        return IdFacets(need._need if isinstance(need, NeedPartItem) else need)
+
+    def in_namespace(self, namespace: str) -> bool:
+        """Whether the need's namespace is *namespace* or below it, compared by
+        segments (a part's is its need's).
+
+        :raises ValueError: For an empty text, or one that is no namespace.
+        """
+        return in_namespace(self._need.id_ns_segments, namespace_argument(namespace))
 
     def is_a(self, name: str) -> bool:
         """Whether the need's type is *name*, or a type inheriting from it, transitively,

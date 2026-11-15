@@ -546,7 +546,7 @@ def test_portable_form_compiles_and_answers(
         pytest.param("bool(arch)", "call:bool", id="other-function"),
         pytest.param("any(tags)", "call:any", id="any"),
         pytest.param("c.this_doc() == True", "call:c.this_doc", id="this-doc-compared"),
-        pytest.param('c.in_namespace("x")', "call:c.in_namespace", id="c-other"),
+        pytest.param('c.in_scope("x")', "call:c.in_scope", id="c-other"),
         pytest.param('id.ns == "x"', "attribute:id", id="facet-root"),
         pytest.param("needs", "name:needs", id="needs"),
         pytest.param("x[0] == 1", "subscript", id="subscript"),

@@ -754,3 +754,308 @@ def test_needextract_reads_a_namespaced_argument_as_an_id(test_app: Any) -> None
     ]
     html = Path(app.outdir, "index.html").read_text("utf-8")
     assert html.count('id="nc::REQ_00001"') == 2
+
+
+# --- filters: c.id.ns, c.id.local, c.in_namespace() ---
+
+FILTER_INDEX = """\
+Index
+=====
+
+.. req:: Plain
+   :id: PLAIN_001
+
+.. req:: One segment
+   :id: nc::REQ_001
+
+.. req:: Two segments
+   :id: nc::m2::REQ_002
+
+   A part :np:`(p1) of it`.
+
+.. req:: A look-alike namespace
+   :id: ncx::REQ_001
+
+.. req:: Not split cleanly
+   :id: A::::B
+"""
+
+FILTER_CONF = (
+    UNCHECKED
+    + 'suppress_warnings = ["needs.id_namespace"]\nneeds_filter_data = {"nsv": "nc"}\n'
+)
+
+#: each filter, and what it selects of FILTER_INDEX with the switch on and off
+FILTERS: dict[str, tuple[list[str], list[str]]] = {
+    'c.id.ns == "nc"': (["nc::REQ_001"], []),
+    'c.id.ns == "nc::m2"': (["nc::m2::REQ_002"], []),
+    'c.id.ns == ""': (
+        ["A::::B", "PLAIN_001"],
+        [
+            *sorted(
+                [
+                    "A::::B",
+                    "PLAIN_001",
+                    "nc::REQ_001",
+                    "nc::m2::REQ_002",
+                    "ncx::REQ_001",
+                ]
+            )
+        ],
+    ),
+    'c.id.local == "REQ_001"': (["nc::REQ_001", "ncx::REQ_001"], []),
+    'c.id.local == "A::::B"': (["A::::B"], ["A::::B"]),
+    "c.id.local == id": (
+        ["A::::B", "PLAIN_001"],
+        [
+            *sorted(
+                [
+                    "A::::B",
+                    "PLAIN_001",
+                    "nc::REQ_001",
+                    "nc::m2::REQ_002",
+                    "ncx::REQ_001",
+                ]
+            )
+        ],
+    ),
+    'c.id.ns in ["nc", "ncx"]': (["nc::REQ_001", "ncx::REQ_001"], []),
+    'c.id.ns.startswith("nc")': (
+        ["nc::REQ_001", "nc::m2::REQ_002", "ncx::REQ_001"],
+        [],
+    ),
+    'c.in_namespace("nc")': (["nc::REQ_001", "nc::m2::REQ_002"], []),
+    'c.in_namespace("nc::m2")': (["nc::m2::REQ_002"], []),
+    'c.in_namespace("m2")': ([], []),
+    'not c.in_namespace("nc")': (
+        ["A::::B", "PLAIN_001", "ncx::REQ_001"],
+        [
+            *sorted(
+                [
+                    "A::::B",
+                    "PLAIN_001",
+                    "nc::REQ_001",
+                    "nc::m2::REQ_002",
+                    "ncx::REQ_001",
+                ]
+            )
+        ],
+    ),
+    "c.in_namespace(nsv)": (["nc::REQ_001", "nc::m2::REQ_002"], []),
+    'id == "nc::REQ_001"': (["nc::REQ_001"], ["nc::REQ_001"]),
+}
+
+
+def _filter_project(on: bool) -> dict[str, Any]:
+    conf = FILTER_CONF + ("" if on else "needs_namespaced_ids = False\n")
+    return _unclean_project(conf, FILTER_INDEX)
+
+
+def _both_tiers(app: Any, filter_string: str, parts: bool = False) -> Any:
+    """What a filter selects, by the engine and by ``eval`` alone, need by need."""
+    from unittest.mock import patch
+
+    from sphinx_needs import filter_common
+    from sphinx_needs.filter_common import filter_needs_parts, filter_needs_view
+    from sphinx_needs.ubquery import CompiledFilter
+
+    view = _needs(app)
+    config = NeedsSphinxConfig(app.config)
+
+    def select() -> list[str]:
+        if parts:
+            found = filter_needs_parts(view.to_list_with_parts(), config, filter_string)
+        else:
+            found = filter_needs_view(view, config, filter_string)
+        return sorted(item["id_complete"] for item in found)
+
+    engine = select()
+    refused = CompiledFilter(None, "refused", False)
+    with patch.object(filter_common, "compile_portable", lambda _: refused):
+        evaluated = select()
+    return engine, evaluated
+
+
+@pytest.mark.parametrize("on", [True, False], ids=["on", "off"])
+@pytest.mark.parametrize("filter_string", list(FILTERS))
+def test_the_filter_names_in_both_tiers(
+    filter_string: str, on: bool, make_app: Any, tmp_path: Path
+) -> None:
+    """``c.id.ns`` (text), ``c.id.local`` and ``c.in_namespace()`` (by segments) select
+    the same needs in the portable tier and in ``eval``; with the switch off every need
+    is plain and the names stay defined."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    for name, text in _filter_project(on)["files"]:
+        (srcdir / name).write_text(text, "utf-8")
+    app = make_app(
+        srcdir=srcdir,
+        buildername="needs",
+        freshenv=True,
+        status=io.StringIO(),
+        warning=io.StringIO(),
+    )
+    app.build()
+    engine, evaluated = _both_tiers(app, filter_string)
+    expected = FILTERS[filter_string][0 if on else 1]
+    assert engine == expected
+    assert evaluated == expected
+
+
+@pytest.mark.parametrize("test_app", [_filter_project(True)], indirect=True)
+def test_a_part_reads_its_needs_facets(test_app: Any) -> None:
+    """A part answers with its need's namespace and local id; its ``id`` is its own."""
+    app = test_app
+    app.build()
+    for filter_string, expected in {
+        'c.in_namespace("nc::m2")': ["nc::m2::REQ_002", "nc::m2::REQ_002.p1"],
+        'c.id.local == "REQ_002"': ["nc::m2::REQ_002", "nc::m2::REQ_002.p1"],
+        'id == "p1"': ["nc::m2::REQ_002.p1"],
+    }.items():
+        assert _both_tiers(app, filter_string, parts=True) == (expected, expected)
+
+
+@pytest.mark.parametrize(
+    ("filter_string", "error"),
+    [
+        (
+            'c.in_namespace("")',
+            "c.in_namespace('') names no namespace; a need in no namespace is "
+            "c.id.ns == ''",
+        ),
+        ('c.in_namespace("nc::")', "c.in_namespace: 'nc::' is not a namespace"),
+        ('c.in_namespace("a b")', "c.in_namespace: 'a b' is not a namespace"),
+        ("c.in_namespace(1)", "c.in_namespace takes a namespace as a string, not int"),
+        ("c.id.nss", "c.id has no facet 'nss' (did you mean 'ns'?)"),
+        ("c.id.local_id", "c.id has no facet 'local_id' (did you mean 'local'?)"),
+    ],
+)
+def test_an_argument_that_is_no_namespace_is_an_error_of_the_filter(
+    filter_string: str, error: str, make_app: Any, tmp_path: Path
+) -> None:
+    """An empty argument, and a text that is no namespace, never match everything: the
+    filter is invalid, in both tiers, with one message; an unknown facet names the
+    closest."""
+    from unittest.mock import patch
+
+    from sphinx_needs import filter_common
+    from sphinx_needs.exceptions import NeedsInvalidFilter
+    from sphinx_needs.filter_common import filter_single_need
+    from sphinx_needs.ubquery import CompiledFilter
+
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    for name, text in _filter_project(True)["files"]:
+        (srcdir / name).write_text(text, "utf-8")
+    app = make_app(
+        srcdir=srcdir,
+        buildername="needs",
+        freshenv=True,
+        status=io.StringIO(),
+        warning=io.StringIO(),
+    )
+    app.build()
+    need = _needs(app)["nc::REQ_001"]
+    config = NeedsSphinxConfig(app.config)
+    messages = []
+    with pytest.raises(NeedsInvalidFilter) as parsed:
+        filter_single_need(need, config, filter_string)
+    messages.append(str(parsed.value))
+    refused = CompiledFilter(None, "refused", False)
+    with (
+        patch.object(filter_common, "compile_portable", lambda _: refused),
+        pytest.raises(NeedsInvalidFilter) as evaluated,
+    ):
+        filter_single_need(need, config, filter_string)
+    messages.append(str(evaluated.value))
+    assert messages[0] == messages[1]
+    assert error in messages[0]
+
+
+@pytest.mark.parametrize(
+    ("filter_string", "tier"),
+    [
+        ('c.in_namespace("nc")', ("fast", None)),
+        ('c.in_namespace("")', ("fast", None)),
+        ('c.id.ns == "nc"', ("fast", None)),
+        ('c.id.local.startswith("REQ")', ("fast", None)),
+        ("c.in_namespace(nsv)", ("eval", "call:c.in_namespace")),
+        ('c.in_namespace("a", "b")', ("eval", "call:c.in_namespace")),
+        ("c.id.nss", ("eval", "attribute:c")),
+        ("c.id", ("eval", "attribute:c")),
+    ],
+)
+def test_the_tier_of_each(filter_string: str, tier: tuple[str, Any]) -> None:
+    """One string literal argument is compiled, as ``c.is_a``; anything else is
+    answered by ``eval``."""
+    from sphinx_needs.filter_common import _filter_tier
+
+    assert _filter_tier(filter_string) == tier
+
+
+@pytest.mark.parametrize(
+    ("text", "problem"),
+    [
+        ('c.id.ns == "nc"', None),
+        ('c.id.local == "REQ_1"', None),
+        ('c.in_namespace("nc")', None),
+        (
+            "c.in_namespace(status)",
+            "calls 'c.in_namespace', which a declared rule cannot read",
+        ),
+        ("c.id.nope", "calls 'c.id', which a declared rule cannot read"),
+        ("c.id", "calls 'c.id', which a declared rule cannot read"),
+    ],
+)
+def test_a_declared_rule_reads_them(text: str, problem: str | None) -> None:
+    """A derived field's ``where`` admits the facets and ``c.in_namespace`` with a
+    string literal, as it admits ``c.source`` and ``c.is_a``."""
+    from sphinx_needs.derive import filter_problem
+
+    assert filter_problem(text) == problem
+
+
+@pytest.mark.parametrize(
+    "filter_string",
+    ['c.id.ns == "nc"', 'c.id.local == "x"', 'c.in_namespace("nc")'],
+)
+def test_they_read_the_id_not_the_document(filter_string: str) -> None:
+    """The order of the dynamic functions sees them read ``id``, which never changes
+    after creation, and not ``docname`` (what any other use of ``c`` reads)."""
+    from sphinx_needs.functions.order import filter_names
+
+    assert filter_names(filter_string).names == frozenset({"id"})
+
+
+@pytest.mark.parametrize(
+    ("expression", "said"),
+    [
+        ('c.id.ns == "nc"', "the c.id facets are not available in a needimport filter"),
+        (
+            'c.in_namespace("nc")',
+            "c.in_namespace() is not available in a needimport filter",
+        ),
+    ],
+)
+def test_where_there_is_no_check_context_it_says_so(
+    expression: str, said: str, make_app: Any, tmp_path: Path
+) -> None:
+    """A needimport filter reads the imported record: it has no check context, and says
+    so, as for the source facets."""
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(UNCHECKED, "utf-8")
+    (srcdir / "index.rst").write_text(
+        f"Index\n=====\n\n.. needimport:: imp.json\n   :filter: {expression}\n", "utf-8"
+    )
+    (srcdir / "imp.json").write_text(_record_file("nc::IMP_1"), "utf-8")
+    app = make_app(
+        srcdir=srcdir,
+        buildername="needs",
+        freshenv=True,
+        status=io.StringIO(),
+        warning=io.StringIO(),
+    )
+    app.build()
+    (warning,) = [w for w in build_warnings(app) if "[needs.needimport]" in w]
+    assert "name 'c' is not defined; " + said in warning
