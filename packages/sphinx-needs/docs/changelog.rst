@@ -10,6 +10,29 @@ Unreleased
 Improvements
 ............
 
+- ✨ **Namespaced ids**: a need id holding ``::`` names a namespace, ``nc::m2::REQ_1`` being the need ``REQ_1`` in
+  the namespace ``nc::m2``, and a filter selects a namespace and everything below it with ``c.in_namespace("nc")``
+  (:ref:`namespaced_ids`)
+
+  An id is split at its last ``::``, each segment before it made of ASCII letters, digits, ``_`` and ``-``; the id
+  itself is unchanged, the need's key, anchor and ``needs.json`` id, and a link names it whole. In a filter,
+  ``c.id.ns`` is the namespace as text (``""`` for none), ``c.id.local`` the local id, and ``c.in_namespace()``
+  compares by segments, so ``nc`` does not select ``ncx::REQ_1`` (:ref:`filter_namespace`); in Python a need has
+  ``id_ns``, ``id_ns_segments`` and ``id_local``. :ref:`needs_id_regex` and a need type's ``id_regex`` accept an id
+  whose local id matches, or which matches as a whole: with the default pattern ``nc::REQ_00001`` is now accepted,
+  and every id accepted before still is. A dead link or a ``:need:`` role naming a bare id that exactly one need has
+  as its local id ends ``Did you mean 'nc::REQ_2'?``. An ``id_prefix`` ending in ``::`` on :ref:`needimport` or
+  :ref:`needs_external_needs` puts the imported needs into that namespace. The filter names and the attributes are
+  experimental; :ref:`needs_namespaced_ids` (``[needs] namespaced_ids``), on by default, turns the reading off.
+
+  A project with no ``::`` in its ids sees no change; one whose ids split cleanly sees the new names report their
+  namespace, and the same ids, links, pages and ``needs.json``. **One change can fail a build**: an id the project
+  writes or generates that holds ``::`` but does not split cleanly (``A::::B``, ``std::vector<int>::size``) is kept
+  as a plain id and reported as ``needs.id_namespace``, which fails a ``-W`` build until the id is corrected,
+  :ref:`needs_namespaced_ids` is set to ``False``, or the warning type is suppressed
+  (``suppress_warnings = ["needs.id_namespace"]``). Imported and external needs are not reported. Every need now
+  stores its namespace, so every project re-reads its sources once after upgrading.
+
 - ✨ **Qualified need directives and** :ref:`needs_directive_name`: every need type is also written
   ``.. need:<type>::`` (a ``{need:<type>}`` fence in MyST), and a project chooses whether the bare ``.. <type>::`` is
   the need where another directive has the name too (:pr:`2507`)

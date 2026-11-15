@@ -357,7 +357,7 @@ the records of the imported file, nor in the ``predicates`` of a :ref:`needs_fie
 using it there fails with ``name 'c' is not defined``.
 
 Beside ``c.this_doc()`` and ``c.is_a()``, ``c.source`` holds the facets of where the need comes from
-(see :ref:`filter_source`).
+(see :ref:`filter_source`), and ``c.id`` and ``c.in_namespace()`` read the need's namespace (see :ref:`filter_namespace`).
 
 .. _filter_source:
 
@@ -488,6 +488,62 @@ The ``:columns:`` of a :ref:`needtable` and the ``:sort:`` and ``:sort_by:`` of 
 A filter on the facets is in the :ref:`portable filter language <filter_string_performance>`;
 `ubCode <https://ubcode.useblocks.com>`__ does not read them yet.
 
+.. _filter_namespace:
+
+Filtering by namespace (``c.id``, ``c.in_namespace``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.3.0
+
+A need id holding ``::`` names a namespace: ``nc::m2::REQ_1`` is the local id ``REQ_1`` in the namespace ``nc::m2``
+(:ref:`namespaced_ids`). Three names read it:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 28 72
+
+   * - name
+     - what it reads
+   * - ``c.id.ns``
+     - The need's namespace, as text: ``"nc::m2"``; ``""`` for a need in no namespace.
+   * - ``c.id.local``
+     - The need's local id: ``"REQ_1"``; the whole id for a need in no namespace.
+   * - ``c.in_namespace("nc")``
+     - Whether the need's namespace is ``nc`` or below it, compared by segments: true of ``nc::REQ_1`` and
+       ``nc::m2::REQ_1``, false of ``ncx::REQ_1`` and ``REQ_1``.
+
+.. code-block:: rst
+
+   .. needtable::
+      :filter: c.in_namespace("nc") and type == "req"
+
+   .. needlist::
+      :filter: c.id.ns == ""
+
+- ``id`` stays the full id, ``nc::m2::REQ_1``. ``id.startswith("nc::")`` keeps working, but it is a text test:
+  ``c.in_namespace("nc")`` is the namespace test.
+- A need part reads its need's namespace and local id; its ``id`` is its own part id.
+- ``c.in_namespace("")``, and an argument that is no namespace (``"nc::"``, ``"a b"``), is an error of the filter
+  (``needs.filter``), never "every need": a need in no namespace is ``c.id.ns == ""``. A namespace no need is in
+  selects nothing.
+- The three are defined in every project: with :ref:`needs_namespaced_ids` off every need is in no namespace.
+- ``c.in_namespace`` with a string literal is in the :ref:`portable filter language <filter_string_performance>`,
+  as are the two facets; any other argument (``c.in_namespace(group)``) is evaluated by ``eval``, which gives the
+  same answer. A name after ``c.id.`` that is no facet is an error naming the closest one (``c.id.nss``).
+- ``c`` is the check context: a field named ``ns``, ``local_id``, ``id_ns`` or ``id_local`` is read as any other
+  field, and leaves these as they are.
+
+They are available where ``c.is_a()`` is: the need-listing and diagram directives, :ref:`needextend`,
+:ref:`needs_warnings`, :ref:`needs_constraints`, :ref:`needs_builder_filter`,
+a :ref:`link condition <need_conditional_links>`, ``copy(filter=...)`` and a derived field's ``where``
+(``c.in_namespace`` with a string literal there). They are not available in the ``predicates`` of a
+:ref:`needs_fields` entry, in a :ref:`needimport` ``:filter:`` nor in a variant condition, which have no check
+context: ``name 'c' is not defined; the c.id facets are not available in a field predicate``
+(or ``c.in_namespace() is not available in ...``).
+
+The names are **experimental** in this release: they may change before they are declared stable
+(:ref:`api_public`).
+
 .. _re_search:
 
 search
@@ -555,7 +611,8 @@ so writing filters the first two take is recommended:
 
    - **operands**: a field (any field of the need, a :ref:`needs_filter_data` key,
      a :ref:`variant data <filter_variant_data>` key such as ``var.build.debug``,
-     a facet of the need's source such as ``c.source.path``, see :ref:`filter_source`),
+     a facet of the need's source such as ``c.source.path``, see :ref:`filter_source`,
+     a facet of its id, ``c.id.ns`` or ``c.id.local``, see :ref:`filter_namespace`),
      ``len(field)``, ``field.lower()`` and ``field.upper()``;
    - **literals**: a string in single or double quotes, an integer or a float (``-1``, ``2.5``, ``1e-3``),
      ``True``, ``False``, ``None``, and a list of those after ``in``;
@@ -568,15 +625,16 @@ so writing filters the first two take is recommended:
    - ``x is None`` / ``x is not None``;
    - ``x.startswith('...')`` / ``x.endswith('...')`` after an operand: ``id.lower().startswith('req')``;
    - ``search('pattern', x)`` (see :ref:`re_search`), with a plain string literal as the pattern;
-   - ``c.this_doc()`` (see :ref:`filter_current_page`), and ``c.is_a('...')`` with a string literal
-     (see :ref:`filter_is_a`);
+   - ``c.this_doc()`` (see :ref:`filter_current_page`), ``c.is_a('...')`` with a string literal
+     (see :ref:`filter_is_a`), and ``c.in_namespace('...')`` with a string literal (see :ref:`filter_namespace`);
    - ``and``, ``or``, ``not``, parentheses, and an operand alone, which is read by its truthiness.
 
    Not in it, and so evaluated by ``eval``: a field ``in`` a field (``sphinx_tag in tags``),
    a list beside ``==`` or ``!=`` (``tags == ['a']``; write ``len(tags) == 1 and 'a' in tags``),
    arithmetic, subscripts (``sections[0]``), comprehensions, any other call or method (``any(...)``, ``bool(x)``, ``x.strip()``),
    ``is`` with anything but ``None``, a chain of comparisons (``1 < x < 5``), a dotted name not under ``var.``,
-   nor a ``c.source.`` facet, a name after ``c.source.`` that is no facet (``c.source.pth``, reported with the closest facet),
+   nor a ``c.source.`` or ``c.id.`` facet, a name after ``c.source.`` or ``c.id.`` that is no facet (``c.source.pth``,
+   reported with the closest facet),
    and the names ``needs`` and ``current_need``.
 
 3. **Python's** ``eval``, for every other string: it is evaluated need by need against a context holding every field of the need,
