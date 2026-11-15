@@ -446,7 +446,9 @@ cases of that file.
    `split-a-hyphen-only-segment`, `split-an-upper-case-namespace`,
    `split-a-lower-case-namespace`, `split-a-segment-of-a-non-ascii-letter`,
    `split-a-segment-of-a-non-ascii-digit`, `split-a-segment-of-the-kelvin-sign`,
-   `split-a-segment-ending-in-a-line-feed`.
+   `split-a-segment-ending-in-a-line-feed`, `split-a-segment-holding-a-nul`,
+   `split-a-segment-holding-a-caret`, `split-a-segment-holding-a-slash`,
+   `namespace-a-backtick`.
 3. **A namespace** is a sequence of zero or more segments; as text, the segments joined by
    `::`, and the empty namespace is the empty text. Its text is parsed by cutting it at
    every `::`; every piece must be a segment, and the empty text is the empty namespace

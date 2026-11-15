@@ -65,7 +65,7 @@
 #   problem    - the class of an id that holds `::` and does not split cleanly; its split
 #                is then the empty namespace and the id itself
 #
-# [[namespace]] - parsing a namespace from its text (cut at every `::` from the left)
+# [[namespace]] - parsing a namespace from its text (cut at every `::`)
 #   text       - the namespace as text
 #   then EITHER
 #   segments   - the segments, in order (`[]` for the empty text)
