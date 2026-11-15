@@ -15,6 +15,7 @@ from ub_needs_exchange import (
     format_namespace,
     id_problem,
     join_id,
+    need_id,
     parse_namespace,
     split_id,
 )
@@ -22,6 +23,22 @@ from ub_needs_exchange import (
 
 def test_the_separator():
     assert SEPARATOR == "::"
+
+
+def test_the_public_names():
+    """The module's API, which the corpus's other implementations mirror."""
+    assert set(need_id.__all__) == {
+        "SEPARATOR",
+        "EMPTY_LOCAL",
+        "EMPTY_SEGMENT",
+        "SEGMENT_CHARACTER",
+        "is_segment",
+        "split_id",
+        "id_problem",
+        "join_id",
+        "parse_namespace",
+        "format_namespace",
+    }
 
 
 @pytest.mark.parametrize(
