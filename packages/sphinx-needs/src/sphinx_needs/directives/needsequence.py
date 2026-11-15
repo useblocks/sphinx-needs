@@ -228,6 +228,14 @@ def process_needsequence(
             [need_id for need_id, _ in declarations]
             + [end for sender_id, rec_id, _ in arrows for end in (sender_id, rec_id)]
         )
+        # PlantUML shows a participant that is not declared by its name, so a receiver
+        # that sends no message, which the walk does not declare, is declared here when
+        # its name is not its id, with the id as its title, in the order of the arrows
+        declared = {need_id for need_id, _ in declarations}
+        for end in (end for s_id, r_id, _ in arrows for end in (s_id, r_id)):
+            if end not in declared and entity_names[end] != end:
+                declarations.append((end, end))
+                declared.add(end)
         p_string = "".join(
             f'participant "{title}" as {get_entity_name(entity_names, need_id)}\n'
             for need_id, title in declarations
