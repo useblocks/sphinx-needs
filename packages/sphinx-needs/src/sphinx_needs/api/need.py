@@ -19,7 +19,7 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs._jinja import render_template_string
-from sphinx_needs._namespaced_ids import read_id
+from sphinx_needs._namespaced_ids import read_id, unclean_id_message
 from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
@@ -751,6 +751,16 @@ def _generate_need(
 
         needs_info.set_content(content_info)
 
+    if _id_problem is not None and not from_outside:
+        # the project's own id (authored or generated) holds the separator but does not
+        # split cleanly: the need is kept, as a plain id. An imported or external one is
+        # the source's data, as for the id patterns
+        log_warning(
+            logger,
+            unclean_id_message(need_id, _id_problem),
+            "id_namespace",
+            location,
+        )
     return needs_info
 
 

@@ -17,7 +17,23 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from ub_needs_exchange import id_problem, split_id
+from ub_needs_exchange import (
+    EMPTY_LOCAL,
+    EMPTY_SEGMENT,
+    SEGMENT_CHARACTER,
+    SEPARATOR,
+    id_problem,
+    split_id,
+)
+
+#: what the warning of an id that does not split cleanly says of each class of problem
+_REASONS = {
+    EMPTY_LOCAL: f"nothing follows the last {SEPARATOR!r}",
+    EMPTY_SEGMENT: "a namespace segment is empty",
+    SEGMENT_CHARACTER: (
+        "a namespace segment holds a character other than a letter, a digit, '_' or '-'"
+    ),
+}
 
 
 @lru_cache(maxsize=4096)
@@ -48,3 +64,19 @@ def read_id(
     if namespace:
         return _shared(namespace), local, None
     return (), need_id, id_problem(need_id)
+
+
+def unclean_id_message(need_id: str, problem: str, /) -> str:
+    """The ``needs.id_namespace`` warning of a need whose id holds ``::`` but does not
+    split cleanly: the id is kept as a plain id, and the message names the class of the
+    problem (never the offending segment, which would mean cutting the id outside
+    ``ub_needs_exchange.need_id``) and the three ways out.
+
+    :param problem: The class ``ub_needs_exchange.id_problem`` gives.
+    """
+    return (
+        f"Need id {need_id!r} contains {SEPARATOR!r} but is not a namespaced id "
+        f"({_REASONS[problem]}), so it is read as a plain id. Correct the id, set "
+        "needs_namespaced_ids = False to read no id as namespaced, or suppress the "
+        "warning type needs.id_namespace."
+    )

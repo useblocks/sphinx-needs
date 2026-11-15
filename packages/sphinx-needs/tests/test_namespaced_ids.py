@@ -446,3 +446,168 @@ def test_the_environment_keeps_the_values(
     needs = _needs(second)
     assert {key: _split(needs[key]) for key in expected} == expected
     assert needs["pg::p0::REQ_0"]["title"] == "Changed"
+
+
+# --- the warning for an id that holds the separator and does not split cleanly ---
+
+#: no id pattern: what these pin does not depend on how the patterns read an id
+UNCHECKED = """\
+extensions = ["sphinx_needs"]
+needs_id_regex = ""
+"""
+
+
+def _unclean(need_id: str, reason: str) -> str:
+    """The warning for an authored id that does not split cleanly, without a location."""
+    return (
+        f"WARNING: Need id {need_id!r} contains '::' but is not a namespaced id "
+        f"({reason}), so it is read as a plain id. Correct the id, set "
+        "needs_namespaced_ids = False to read no id as namespaced, or suppress the "
+        "warning type needs.id_namespace. [needs.id_namespace]"
+    )
+
+
+#: each problem class of the grammar, with the reason the warning gives for it
+UNCLEAN = {
+    "NS::": "nothing follows the last '::'",
+    "A::::B": "a namespace segment is empty",
+    "std::vector<int>::size": (
+        "a namespace segment holds a character other than a letter, a digit, '_' or '-'"
+    ),
+}
+
+UNCLEAN_INDEX = "Index\n=====\n" + "".join(
+    f"\n.. req:: Unclean {i}\n   :id: {need_id}\n" for i, need_id in enumerate(UNCLEAN)
+)
+
+
+def _unclean_project(conf: str = UNCHECKED, index: str = UNCLEAN_INDEX) -> Any:
+    return {
+        "buildername": "needs",
+        "files": [(Path("conf.py"), conf), (Path("index.rst"), index)],
+    }
+
+
+@pytest.mark.parametrize("test_app", [_unclean_project()], indirect=True)
+def test_an_authored_id_that_does_not_split_is_warned_and_kept(test_app: Any) -> None:
+    """One warning per need, at the need, naming the problem's class and the three ways
+    out; the need is kept, as a plain id."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:{4 + 3 * i}: {_unclean(need_id, reason)}"
+        for i, (need_id, reason) in enumerate(UNCLEAN.items())
+    ]
+    needs = _needs(app)
+    assert sorted(needs) == sorted(UNCLEAN)
+    for need_id in UNCLEAN:
+        assert (needs[need_id].id_ns, needs[need_id].id_local) == ("", need_id)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _unclean_project(UNCHECKED + "needs_namespaced_ids = False\n"),
+        _unclean_project(UNCHECKED + 'suppress_warnings = ["needs.id_namespace"]\n'),
+    ],
+    indirect=True,
+    ids=["switched-off", "suppressed"],
+)
+def test_no_warning_switched_off_or_suppressed(test_app: Any) -> None:
+    """With the switch off no id is read as namespaced, so none is warned; the warning
+    type can be suppressed. Either way the needs are kept."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    assert sorted(_needs(app)) == sorted(UNCLEAN)
+
+
+def _record_file(need_id: str, **more: str) -> str:
+    return json.dumps(
+        {
+            "current_version": "1.0",
+            "versions": {
+                "1.0": {
+                    "needs": {
+                        need_id: {
+                            "id": need_id,
+                            "type": "req",
+                            "title": "From outside",
+                            "content": "",
+                            **more,
+                        }
+                    }
+                }
+            },
+        }
+    )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (Path("conf.py"), UNCHECKED),
+                (Path("index.rst"), "Index\n=====\n\n.. needimport:: imp.json\n"),
+                (Path("imp.json"), _record_file("A::::B")),
+            ],
+        },
+        {
+            "buildername": "needs",
+            "files": [
+                (
+                    Path("conf.py"),
+                    UNCHECKED + "needs_external_needs = [{'base_url': 'http://x', "
+                    "'json_path': 'ext.json'}]\n",
+                ),
+                (Path("index.rst"), "Index\n=====\n"),
+                (Path("ext.json"), _record_file("A::::B", docname="page")),
+            ],
+        },
+    ],
+    indirect=True,
+    ids=["imported", "external"],
+)
+def test_an_id_from_outside_is_not_warned(test_app: Any) -> None:
+    """An imported and an external need are the source's data: their id is not warned,
+    and it is a plain id."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    need = _needs(app)["A::::B"]
+    assert (need.id_ns, need.id_local) == ("", "A::::B")
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _unclean_project(
+            UNCHECKED
+            + 'needs_types = [{"directive": "req", "title": "R", "prefix": "A::::"}]\n',
+            "Index\n=====\n\n.. req:: Generated from a prefix\n",
+        ),
+        _unclean_project(
+            UNCHECKED + "needs_id_from_title = True\nneeds_id_length = 30\n",
+            "Index\n=====\n\n.. req:: std::vector<int>::size\n",
+        ),
+    ],
+    indirect=True,
+    ids=["type-prefix", "id-from-title"],
+)
+def test_a_generated_id_is_the_projects_own(test_app: Any) -> None:
+    """An id the project generates (a type's prefix, ``needs_id_from_title``) is
+    warned as an authored one is."""
+    app = test_app
+    app.build()
+    ((need_id, need),) = _needs(app).items()
+    if need_id.startswith("A::::"):
+        problem = "a namespace segment is empty"
+    else:
+        assert need_id.startswith("R_STD::VECTOR<INT>::SIZE")
+        problem = UNCLEAN["std::vector<int>::size"]
+    assert build_warnings(app) == [
+        f"<srcdir>/index.rst:4: {_unclean(need_id, problem)}"
+    ]
+    assert need.id_local == need_id
