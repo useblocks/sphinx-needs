@@ -141,7 +141,7 @@ def test_every_case_uses_only_the_keys_of_its_table(table: str) -> None:
         assert re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", name), name
         assert name.startswith(f"{table}-"), name
         assert case["why"], name
-        assert "\n" not in case["why"], name
+        assert case["why"].splitlines() == [case["why"]], name
         rest = set(case) - REQUIRED_KEYS[table]
         assert REQUIRED_KEYS[table] <= set(case), name
         assert rest in OUTCOME_KEYS[table], name

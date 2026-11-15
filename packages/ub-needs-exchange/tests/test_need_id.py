@@ -88,8 +88,8 @@ def test_an_empty_generator_is_the_empty_namespace():
 
 def test_a_bare_string_is_not_a_namespace():
     """A ``str`` is an iterable of strings, but iterating it gives its characters
-    (``"nc"`` would be ``n::c``): both functions refuse it, naming the two right
-    spellings."""
+    (``"nc"`` would be ``n::c``): both functions refuse it with a ``TypeError``, whose
+    advice ``test_a_bare_string_is_refused_with_advice_that_holds`` pins."""
     with pytest.raises(TypeError, match=r"not the string 'nc'"):
         format_namespace("nc")
     with pytest.raises(TypeError, match=r"not the string 'nc'"):
