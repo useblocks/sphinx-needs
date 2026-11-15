@@ -48,10 +48,41 @@ def test_a_deep_namespace_splits_in_one_pass():
     assert split_id(text) == (("a",) * 5000, "X")
 
 
-def test_join_takes_any_iterable_of_segments():
-    assert join_id(iter(["nc", "m2"]), "X") == "nc::m2::X"
-    assert join_id((s for s in ()), "a::b") == "a::b"
-    assert format_namespace(iter(["nc", "m2"])) == "nc::m2"
+@pytest.mark.parametrize(
+    "make",
+    [
+        lambda: ["nc", "m2"],
+        lambda: ("nc", "m2"),
+        lambda: (segment for segment in ["nc", "m2"]),
+        lambda: iter(["nc", "m2"]),
+    ],
+    ids=["list", "tuple", "generator", "iterator"],
+)
+def test_a_sequence_of_segments_is_a_namespace(make):
+    """Any iterable of segments is a namespace: a list, a tuple, a generator."""
+    assert format_namespace(make()) == "nc::m2"
+    assert join_id(make(), "X") == "nc::m2::X"
+
+
+def test_an_empty_generator_is_the_empty_namespace():
+    assert join_id((segment for segment in ()), "a::b") == "a::b"
+    assert format_namespace(segment for segment in ()) == ""
+
+
+def test_a_bare_string_is_not_a_namespace():
+    """A ``str`` is an iterable of strings, but iterating it gives its characters
+    (``"nc"`` would be ``n::c``): both functions refuse it, naming the two right
+    spellings."""
+    with pytest.raises(TypeError, match=r"not the string 'nc'") as info:
+        format_namespace("nc")
+    assert "['nc']" in str(info.value)
+    assert "parse_namespace('nc')" in str(info.value)
+    with pytest.raises(TypeError, match=r"not the string 'nc'"):
+        join_id("nc", "X")
+    with pytest.raises(TypeError, match=r"not the string ''"):
+        join_id("", "X")
+    with pytest.raises(TypeError, match=r"not the string ''"):
+        format_namespace("")
 
 
 def test_format_namespace_does_not_check():

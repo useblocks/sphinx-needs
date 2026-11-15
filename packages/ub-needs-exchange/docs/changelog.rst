@@ -11,8 +11,8 @@ Unreleased
   letters, ASCII digits, ``_`` and ``-`` -- and a local id:
   ``split_id("nc::m2::REQ_1")`` is ``(("nc", "m2"), "REQ_1")``. An id that does not split
   cleanly (``nc::``, ``a::::b``, ``std::vector<int>::size``) is a plain id, and
-  ``id_problem`` names its class (``empty-local``, ``empty-segment``,
-  ``segment-character``); splitting never raises. ``join_id``, ``parse_namespace``,
+  ``id_problem`` names its class (``empty_local``, ``empty_segment``,
+  ``segment_character``); splitting never raises. ``join_id``, ``parse_namespace``,
   ``format_namespace`` and ``is_segment`` complete it, all re-exported from the package.
   The package splits no record's id on its own: the reader is unchanged.
   ``design/exchange-contract.md`` §14 states the grammar, and

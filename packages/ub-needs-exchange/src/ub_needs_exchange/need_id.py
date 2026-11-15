@@ -43,14 +43,26 @@ SEPARATOR: Final = "::"
 _SEGMENT: Final = re.compile(r"[A-Za-z0-9_-]+")
 
 # the classes of an id that holds ``::`` and does not split cleanly, tested in this order
-EMPTY_LOCAL: Final = "empty-local"
+EMPTY_LOCAL: Final = "empty_local"
 """Nothing follows the id's last ``::``."""
-EMPTY_SEGMENT: Final = "empty-segment"
+EMPTY_SEGMENT: Final = "empty_segment"
 """The text before the id's last ``::`` is empty, or has an empty piece between two
 ``::``."""
-SEGMENT_CHARACTER: Final = "segment-character"
+SEGMENT_CHARACTER: Final = "segment_character"
 """A piece of the text before the id's last ``::`` holds a character that is not an ASCII
 letter, an ASCII digit, ``_`` or ``-``."""
+
+
+def _segments(namespace: Iterable[str]) -> tuple[str, ...]:
+    """*namespace* as a tuple of segments; a bare ``str`` is refused, since iterating it
+    would give its characters (``"nc"`` would be the namespace ``n::c``)."""
+    if isinstance(namespace, str):
+        raise TypeError(
+            f"a namespace is a sequence of segments, not the string {namespace!r}: "
+            f"pass [{namespace!r}] for one segment, or parse_namespace({namespace!r}) "
+            "for a namespace's text"
+        )
+    return tuple(namespace)
 
 
 def is_segment(text: str) -> bool:
@@ -101,12 +113,14 @@ def join_id(namespace: Iterable[str], local: str) -> str:
     An empty namespace gives *local* unchanged, whatever it holds, so that
     ``join_id(*split_id(x)) == x`` for every text.
 
+    :raises TypeError: If *namespace* is a ``str``: it is a sequence of segments (parse a
+        namespace's text with :func:`parse_namespace` first).
     :raises ValueError: With a non-empty namespace, if a segment is not a segment (see
         :func:`is_segment`), or *local* is empty, holds ``::`` or starts with ``:`` --
         any of which would split back differently. The message names the value and the
         rule.
     """
-    segments = tuple(namespace)
+    segments = _segments(namespace)
     if not segments:
         return local
     for segment in segments:
@@ -151,6 +165,7 @@ def parse_namespace(text: str) -> tuple[str, ...]:
 
 def format_namespace(namespace: Iterable[str]) -> str:
     """A namespace's text: its segments joined by ``::``, and ``""`` for the empty
-    namespace (contract section 14). It does not check the segments; ``format_namespace(
+    namespace (contract section 14). It does not check the segments, but refuses a bare
+    ``str`` with a ``TypeError`` (it is a sequence of segments); ``format_namespace(
     parse_namespace(text)) == text`` for every text :func:`parse_namespace` accepts."""
-    return SEPARATOR.join(namespace)
+    return SEPARATOR.join(_segments(namespace))

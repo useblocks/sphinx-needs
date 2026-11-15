@@ -473,12 +473,12 @@ cases of that file.
 
    | class | when |
    |---|---|
-   | `empty-local` | nothing follows the last `::` |
-   | `empty-segment` | `head` is empty, or has an empty piece |
-   | `segment-character` | a piece of `head` holds a character that is not in a segment |
+   | `empty_local` | nothing follows the last `::` |
+   | `empty_segment` | `head` is empty, or has an empty piece |
+   | `segment_character` | a piece of `head` holds a character that is not in a segment |
 
    The order is by class, not by piece: `a.b::::c` (a bad first piece, an empty second
-   one) is `empty-segment`.
+   one) is `empty_segment`.
    Enforced by: corpus: every `split-` case with a `problem`, among them
    `split-empty-local-wins-over-segment-character`,
    `split-empty-segment-wins-over-an-earlier-bad-character`.
@@ -513,10 +513,10 @@ cases of that file.
 |---|---|---|---|
 | `REQ_1` | — | `REQ_1` | — |
 | `nc::REQ_1` | `nc` | `REQ_1` | — |
-| `nc::m2::REQ_1.part` | `nc`, `m2` | `REQ_1.part` | — |
+| `nc::m2::REQ_1` | `nc`, `m2` | `REQ_1` | — |
 | `2024::REQ_5` | `2024` | `REQ_5` | — |
-| `nc::` | — | `nc::` | `empty-local` |
-| `::X` | — | `::X` | `empty-segment` |
-| `a::::b` | — | `a::::b` | `empty-segment` |
-| `a:::b` | — | `a:::b` | `segment-character` |
-| `std::vector<int>::size` | — | `std::vector<int>::size` | `segment-character` |
+| `nc::` | — | `nc::` | `empty_local` |
+| `::X` | — | `::X` | `empty_segment` |
+| `a::::b` | — | `a::::b` | `empty_segment` |
+| `a:::b` | — | `a:::b` | `segment_character` |
+| `std::vector<int>::size` | — | `std::vector<int>::size` | `segment_character` |
