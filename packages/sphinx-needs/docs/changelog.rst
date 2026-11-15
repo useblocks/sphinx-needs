@@ -111,6 +111,17 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 An ``id_prefix`` of :ref:`needimport` or :ref:`needs_external_needs` leaves a longer ``::``-joined id in a
+  need's content as it is **(changed output)**
+
+  The prefix rewrites each id of the file written in a need's content, and it took ``:`` as a word boundary, so with
+  the file id ``PLAIN_1`` and the prefix ``SUP::`` the text ``other::PLAIN_1`` became ``other::SUP::PLAIN_1`` and
+  ``PLAIN_1::x`` became ``SUP::PLAIN_1::x``, although neither names the file's ``PLAIN_1``. A file id directly after a
+  ``::`` that follows a letter, digit, ``_`` or ``-``, or directly before a ``::`` that one of those follows, is now
+  left as it is, whatever the prefix. Everything else is rewritten as before: an id of the file that itself holds
+  ``::`` (``nc::REQ_1``) as a whole, an id beside a single ``:`` (``:need:`PLAIN_1```, ``PLAIN_1: text``), and one
+  before a ``::`` that ends the text or is followed by white space (``see PLAIN_1::`` before a literal block).
+
 - 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
   ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
   **(changed output)** (:issue:`2489`, :pr:`2494`)

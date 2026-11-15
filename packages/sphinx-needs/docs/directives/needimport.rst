@@ -103,7 +103,9 @@ This may be useful to avoid duplicated ids.
 
     The content is opaque markup: every occurrence of a file id as a whole word is
     rewritten, inside code blocks and file names too; an id inside a longer word is left
-    as it is.
+    as it is, and so is one that is one end of a longer ``::``-joined id (``REQ_1`` in
+    ``other::REQ_1`` or ``REQ_1::x``). A single ``:`` beside an id, or a ``::`` followed
+    by white space or ending the text, does not join it (``see REQ_1::`` is rewritten).
 
 version
 ~~~~~~~
