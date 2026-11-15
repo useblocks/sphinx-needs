@@ -118,10 +118,10 @@ Plain
 
 .. spec:: Message 1
    :id: MSG_1
-   :links: USER_B, USER_C
+   :links: USERS_B, USER_C
 
 .. req:: User B
-   :id: USER_B
+   :id: USERS_B
    :links: MSG_2
 
 .. spec:: Message 2
@@ -135,7 +135,7 @@ Plain
    :id: USER_D
 
 .. req:: Not drawn
-   :id: SUPPLIER::USER_B
+   :id: USERS:B
 
 .. needsequence::
    :start: USER_A
@@ -146,9 +146,9 @@ Plain
 def test_plain_ids_are_written_as_before(test_app: SphinxTestApp):
     """A sequence over ids holding no folded character is written byte for byte as before.
 
-    The project also holds ``SUPPLIER::USER_B``, which folds to the name ``USER_B``
-    folds to, but is no participant of this diagram: the mapping is made over the
-    diagram's own participants, so it does not rename ``USER_B``.
+    The project also holds ``USERS:B``, which folds to ``USERS_B`` and sorts before
+    it, but is no participant of this diagram: the mapping is made over the
+    diagram's own participants, so it does not rename ``USERS_B``.
     """
     app = test_app
     sources = capture_sequences(app)
@@ -158,11 +158,11 @@ def test_plain_ids_are_written_as_before(test_app: SphinxTestApp):
         "@startuml\n"
         "\n' Nodes definition \n\n"
         'participant "User A" as USER_A\n'
-        'participant "User B" as USER_B\n'
+        'participant "User B" as USERS_B\n'
         "\n' Connection definition \n\n"
-        "USER_A -> USER_B: Message 1\n"
-        "USER_B -> USER_D: Message 2\n"
         "USER_A -> USER_C: Message 1\n"
+        "USER_A -> USERS_B: Message 1\n"
+        "USERS_B -> USER_D: Message 2\n"
         "\n@enduml"
     ]
 
@@ -220,6 +220,52 @@ def test_ids_folding_alike_stay_two_participants(test_app: SphinxTestApp):
     assert 'participant "Underscores" as SUPPLIER__B_2' in lines
     assert "USER_A -> SUPPLIER__B: Message 1" in lines
     assert "USER_A -> SUPPLIER__B_2: Message 1" in lines
+    assert "SUPPLIER__B -> USER_C: Message 2" in lines
+    assert "SUPPLIER__B_2 -> USER_C: Message 3" in lines
+
+
+TWO_STARTS = """\
+Two starts
+==========
+
+.. req:: Colons
+   :id: SUPPLIER::B
+   :links: MSG_2
+
+.. spec:: Message 2
+   :id: MSG_2
+   :links: USER_C
+
+.. req:: Underscores
+   :id: SUPPLIER__B
+   :links: MSG_3
+
+.. spec:: Message 3
+   :id: MSG_3
+   :links: USER_C
+
+.. req:: User C
+   :id: USER_C
+
+.. needsequence::
+   :start: SUPPLIER::B, SUPPLIER__B
+"""
+
+
+@pytest.mark.parametrize("test_app", [params(TWO_STARTS)], indirect=True)
+def test_one_mapping_per_diagram(test_app: SphinxTestApp):
+    """Ids that fold alike from two start needs are still two participants.
+
+    The names are made once for the diagram, not once per start need.
+    """
+    app = test_app
+    sources = capture_sequences(app)
+    app.build()
+
+    assert len(sources) == 1
+    lines = sources[0].splitlines()
+    assert 'participant "Colons" as SUPPLIER__B' in lines
+    assert 'participant "Underscores" as SUPPLIER__B_2' in lines
     assert "SUPPLIER__B -> USER_C: Message 2" in lines
     assert "SUPPLIER__B_2 -> USER_C: Message 3" in lines
 
