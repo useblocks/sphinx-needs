@@ -16,7 +16,9 @@ the id never changes after creation, so they cannot go stale. The design record 
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
 from ub_needs_exchange import (
     EMPTY_LOCAL,
@@ -26,6 +28,9 @@ from ub_needs_exchange import (
     id_problem,
     split_id,
 )
+
+if TYPE_CHECKING:
+    from sphinx_needs.need_item import NeedItem
 
 #: what the warning of an id that does not split cleanly says of each class of problem
 _REASONS = {
@@ -109,3 +114,43 @@ def nor_local(need_id: str, local_id: str) -> str:
     """What a refusal by an id pattern adds for a namespaced id: its local id, which the
     pattern did not match either."""
     return "" if local_id == need_id else f", nor does its local id {local_id!r}"
+
+
+class LocalIdHints:
+    """The did-you-mean of a dead link target or a ``:need:`` role naming no need: the
+    one need, if exactly one, in a namespace whose local id is the target's id.
+
+    The index of local ids is built lazily, once, when the first dead target is met:
+    a build with no dead target never builds it. Nothing changes in what resolves.
+    """
+
+    __slots__ = ("_index", "_needs", "_on")
+
+    def __init__(self, needs: Mapping[str, NeedItem], namespaced: bool) -> None:
+        """:param needs: The needs of the build, by id.
+        :param namespaced: ``needs_namespaced_ids``: off, no need is in a namespace,
+            so nothing is hinted (and nothing is indexed).
+        """
+        self._needs = needs
+        self._on = namespaced
+        self._index: dict[str, list[str]] | None = None
+
+    def hint(self, need_id: str, part: str | None = None) -> str:
+        """What a "not found" message about the target *need_id* gains: `` Did you mean
+        'nc::REQ_2'?`` (the full id, with *part* re-attached), or ``""``.
+
+        :param need_id: The target's id, its part and condition stripped.
+        :param part: The target's part, if it named one.
+        """
+        if not self._on or SEPARATOR in need_id:
+            return ""
+        if self._index is None:
+            self._index = {}
+            for key, need in self._needs.items():
+                if need.id_ns_segments:
+                    self._index.setdefault(need.id_local, []).append(key)
+        candidates = self._index.get(need_id, ())
+        if len(candidates) != 1:
+            return ""
+        (target,) = candidates
+        return f" Did you mean {target if part is None else f'{target}.{part}'!r}?"

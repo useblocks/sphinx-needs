@@ -1059,3 +1059,171 @@ def test_where_there_is_no_check_context_it_says_so(
     app.build()
     (warning,) = [w for w in build_warnings(app) if "[needs.needimport]" in w]
     assert "name 'c' is not defined; " + said in warning
+
+
+# --- did-you-mean hints on a dead link and a :need: role naming no need ---
+
+HINT_INDEX = """\
+Index
+=====
+
+.. req:: Target
+   :id: nc::REQ_002
+
+   A part :np:`(p1) of it`.
+
+.. req:: Two candidates, one
+   :id: nc::REQ_003
+
+.. req:: Two candidates, two
+   :id: sup::REQ_003
+
+.. req:: Linking
+   :id: SRC_001
+   :links: REQ_002, REQ_002.p1, REQ_003, REQ_009, other::REQ_002
+
+:need:`REQ_002` :need:`REQ_002.p1` :need:`REQ_003` :need:`REQ_009`
+"""
+
+
+def _dead(target: str, hint: str = "") -> str:
+    return (
+        "<srcdir>/index.rst:15: WARNING: Need 'SRC_001' has unknown outgoing link "
+        f"{target!r} in field 'links'{hint} [needs.link_outgoing]"
+    )
+
+
+def _role(target: str, hint: str = "") -> str:
+    return (
+        f"<srcdir>/index.rst:19: WARNING: linked need {target} not found{hint} "
+        "[needs.link_ref]"
+    )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{**_unclean_project(UNCHECKED, HINT_INDEX), "buildername": "html"}],
+    indirect=True,
+)
+def test_a_dead_target_one_need_has_as_its_local_id_is_hinted(test_app: Any) -> None:
+    """A dead link or a :need: role naming a bare id that exactly one need has as its
+    local id, in a namespace, says which (with the part re-attached); with no candidate,
+    two, or a target that holds a namespace itself, the message is as before."""
+    app = test_app
+    app.build()
+    assert sorted(build_warnings(app)) == sorted(
+        [
+            _dead("REQ_002", " Did you mean 'nc::REQ_002'?"),
+            _dead("REQ_002.p1", " Did you mean 'nc::REQ_002.p1'?"),
+            _dead("REQ_003"),
+            _dead("REQ_009"),
+            _dead("other::REQ_002"),
+            _role("REQ_002", " Did you mean 'nc::REQ_002'?"),
+            _role("REQ_002.p1", " Did you mean 'nc::REQ_002.p1'?"),
+            _role("REQ_003"),
+            _role("REQ_009"),
+        ]
+    )
+    # nothing changes in what resolves: the links are as written, every one dead
+    needs = _needs(app)
+    assert sorted(needs["SRC_001"]["links"]) == sorted(
+        ["REQ_002", "REQ_002.p1", "REQ_003", "REQ_009", "other::REQ_002"]
+    )
+    assert needs["nc::REQ_002"]["links_back"] == []
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            **_unclean_project(
+                UNCHECKED + "needs_namespaced_ids = False\n", HINT_INDEX
+            ),
+            "buildername": "html",
+        }
+    ],
+    indirect=True,
+)
+def test_no_hint_switched_off(test_app: Any) -> None:
+    """With the switch off no need is in a namespace: no hint."""
+    app = test_app
+    app.build()
+    assert sorted(build_warnings(app)) == sorted(
+        [
+            *(
+                _dead(t)
+                for t in [
+                    "REQ_002",
+                    "REQ_002.p1",
+                    "REQ_003",
+                    "REQ_009",
+                    "other::REQ_002",
+                ]
+            ),
+            *(_role(t) for t in ["REQ_002", "REQ_002.p1", "REQ_003", "REQ_009"]),
+        ]
+    )
+
+
+def test_the_hint_index_is_built_once_and_only_when_needed() -> None:
+    """The index of local ids is built when the first dead target is met, once; never
+    with the switch off, nor for a target holding a namespace itself."""
+    from collections.abc import Iterator, Mapping
+
+    from sphinx_needs._namespaced_ids import LocalIdHints
+
+    class _Need:
+        def __init__(self, segments: tuple[str, ...], local: str) -> None:
+            self.id_ns_segments, self.id_local = segments, local
+
+    class _Counting(Mapping[str, Any]):
+        walks = 0
+        _data = {
+            "nc::REQ_2": _Need(("nc",), "REQ_2"),
+            "REQ_3": _Need((), "REQ_3"),
+        }
+
+        def __getitem__(self, key: str) -> Any:
+            return self._data[key]
+
+        def __iter__(self) -> Iterator[str]:
+            type(self).walks += 1
+            return iter(self._data)
+
+        def __len__(self) -> int:
+            return len(self._data)
+
+    needs = _Counting()
+    off = LocalIdHints(needs, False)
+    assert off.hint("REQ_2") == ""
+    hints = LocalIdHints(needs, True)
+    assert hints.hint("x::REQ_2") == ""
+    assert _Counting.walks == 0
+    assert hints.hint("REQ_2") == " Did you mean 'nc::REQ_2'?"
+    assert hints.hint("REQ_2", "p1") == " Did you mean 'nc::REQ_2.p1'?"
+    assert hints.hint("REQ_3") == ""
+    assert _Counting.walks == 1
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{**_unclean_project(UNCHECKED, HINT_INDEX), "buildername": "html"}],
+    indirect=True,
+)
+def test_the_links_and_the_roles_share_one_index(test_app: Any) -> None:
+    """The dead links (post-processing) and the roles (writing) of a build read one
+    index."""
+    from sphinx_needs import _namespaced_ids
+
+    built = []
+    real = _namespaced_ids.LocalIdHints.hint
+
+    def counting(self: Any, need_id: str, part: str | None = None) -> str:
+        if self._index is None:
+            built.append(need_id)
+        return real(self, need_id, part)
+
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(_namespaced_ids.LocalIdHints, "hint", counting)
+        test_app.build()
+    assert len(built) == 1

@@ -161,9 +161,14 @@ def process_need_ref(
         need_id_complete = need_link.to_link_string()
 
         if need_id_main not in all_needs:
+            hint = (
+                SphinxNeedsData(env)
+                .get_local_id_hints()
+                .hint(need_id_main, need_id_part)
+            )
             log_warning(
                 log,
-                f"linked need {node_need_ref['reftarget']} not found",
+                f"linked need {node_need_ref['reftarget']} not found{hint}",
                 "link_ref",
                 location=node_need_ref,
             )
