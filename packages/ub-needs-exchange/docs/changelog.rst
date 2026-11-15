@@ -6,6 +6,18 @@ Changelog
 Unreleased
 ----------
 
+- **The grammar of a need id: ``ub_needs_exchange.need_id``.** An id that holds ``::``
+  splits at its last ``::`` into a namespace -- one or more segments, each of ASCII
+  letters, ASCII digits, ``_`` and ``-`` -- and a local id:
+  ``split_id("nc::m2::REQ_1")`` is ``(("nc", "m2"), "REQ_1")``. An id that does not split
+  cleanly (``nc::``, ``a::::b``, ``std::vector<int>::size``) is a plain id, and
+  ``id_problem`` names its class (``empty-local``, ``empty-segment``,
+  ``segment-character``); splitting never raises. ``join_id``, ``parse_namespace``,
+  ``format_namespace`` and ``is_segment`` complete it, all re-exported from the package.
+  The package splits no record's id on its own: the reader is unchanged.
+  ``design/exchange-contract.md`` §14 states the grammar, and
+  ``tests/fixtures/need_id_conformance.toml`` is its corpus (100 cases), which ubCode is
+  to vendor.
 - **A draft "2a1" link object whose condition starts with ``[`` and ends with ``]`` is
   spelled with one space after its opening brackets** (``{"id": "B", "condition": "[x]
   == a[0]"}`` is ``B[[ [x] == a[0]]]``, was ``B[[[x] == a[0]]]``), as sphinx-needs'
