@@ -13,7 +13,6 @@ cannot show on every machine.
 from __future__ import annotations
 
 import json
-import platform
 from collections.abc import Callable
 from pathlib import Path
 
@@ -707,20 +706,20 @@ def test_a_cpu_clang_refuses_keeps_the_file_and_its_target(
     assert f"loaded refused `{refused}` with that target" in message
 
 
-@pytest.mark.skipif(
-    platform.machine().lower() not in ("x86_64", "amd64"),
-    reason="the host's own parse must accept -mfpmath=sse, as an x86-64 host's does",
-)
+#: The arm of :data:`ARMS` each machine the suite runs on reads for itself.
+HOST_ARMS = {"x86_64": "IMPL_X86", "aarch64": "IMPL_A64", "arm64": "IMPL_A64"}
+
+
 def test_libclang_refusing_the_target_without_the_cpu_reads_the_host(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Step 3 against the loaded libclang: ``-mfpmath=sse`` makes clang refuse an Arm
-    target with or without the CPU, and an x86-64 host accepts it, so the file is read
-    for the host there (an Arm64 host refuses it too, and the file is skipped as
-    before targets were read)."""
-    argv = ["arm-none-eabi-gcc", "-mcpu=cortex-m4", "-mfpmath=sse", "-c", "case.c"]
+    """Step 3 against the loaded libclang, on every machine: ``-mcmse`` makes clang
+    refuse ``arm-none-eabi`` with or without the CPU (it needs an ARMv8-M one), while
+    an x86-64, an Arm64 and a Windows host each accept it for themselves (ubCode's
+    example), so the file is read for the host with its other flags."""
+    argv = ["arm-none-eabi-gcc", "-mcpu=cortex-m4", "-mcmse", "-c", "case.c"]
     ids, warnings = _analyse(tmp_path, monkeypatch, ARMS, argv)
-    assert ids == {"IMPL_ALWAYS", "IMPL_X86"}
+    assert ids == {"IMPL_ALWAYS", HOST_ARMS[_host_triple().split("-", 1)[0]]}
     [(message, subtype)] = warnings
     assert subtype == "preprocessor_target_unknown"
     assert (

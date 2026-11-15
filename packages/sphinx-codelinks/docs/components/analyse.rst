@@ -1112,11 +1112,13 @@ the target the file is read for instead:
 - a ``target`` setting naming one is not used: the file is read for the machine the
   analysis runs on;
 - a target from the compiler's name or the setting that clang refuses with the entry's
-  own flags (a CPU GCC knows and clang 18 does not, such as ``-mcpu=e200z4`` or
-  ``-mcpu=cortex-r52plus``) is kept, and the file read without the entry's ``-mcpu=``,
-  ``-march=``, ``-mtune=`` and ``-mabi=``, for the architecture's default
-  sub-architecture; when clang refuses that too, the file is read with the rest of its
-  flags for the machine the analysis runs on.
+  own flags (a CPU or an ABI GCC knows and clang 18 does not, such as ``-mcpu=e200z4``,
+  ``-mcpu=cortex-r52plus`` or ``-mabi=lp64`` for ``aarch64-linux-gnu``) is kept, and the
+  file read without the entry's ``-mcpu=``, ``-march=``, ``-mtune=`` and ``-mabi=``, for
+  the architecture's default sub-architecture;
+- a target clang refuses without those flags too, because of another of the entry's flags
+  (``-mcmse`` with ``arm-none-eabi``), is dropped for that file, which is read with its
+  other flags for the machine the analysis runs on.
 
 No file is left unread because of a target the engine inserted: with the inserted
 target left out, the parse is the one the file had before targets were read. A file
