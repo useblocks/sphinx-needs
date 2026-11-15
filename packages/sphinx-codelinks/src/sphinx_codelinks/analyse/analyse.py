@@ -45,6 +45,7 @@ from sphinx_codelinks.source_discover.config import CommentType
 
 if TYPE_CHECKING:
     from sphinx_codelinks.analyse.preproc.libclang_parser import LibclangComment
+    from sphinx_codelinks.analyse.preproc.target import Decision
 
 logger = get_logger(__name__)
 
@@ -321,6 +322,9 @@ class SourceAnalyse:
         # Per-run memo of parsed compile_commands.json, keyed by DB path, so the
         # database is read once per run instead of once per source file.
         self._flags_map_cache: dict[Path, dict[Path, list[str]] | None] = {}
+        # Each database entry's target decision, by the same keys (see
+        # ``_flags_map_for``).
+        self._decisions_cache: dict[Path, dict[Path, Decision]] = {}
         # Per-run memo of each database's inclusion index (included file -> the
         # entries' main files that include it), built only when a source needs it.
         self._inclusion_index_cache: dict[Path, dict[Path, list[Path]]] = {}
@@ -401,13 +405,17 @@ class SourceAnalyse:
         file (O(files x entries) -> O(entries)). A present-but-malformed or
         unreadable database is warned once and cached as ``None`` so callers fall
         back to the configured defines without re-reading or re-warning per file.
+
+        Each entry's arguments carry the target decided for it
+        (:func:`.preproc.target.decide`), whose decision ``_decisions_cache`` keeps:
+        every parse of an entry, its own or as an includer, reads them so.
         """
-        from sphinx_codelinks.analyse.preproc import compile_db
+        from sphinx_codelinks.analyse.preproc import compile_db, target
 
         if db_path in self._flags_map_cache:
             return self._flags_map_cache[db_path]
         try:
-            flags = compile_db.load_flags_map(db_path)
+            database = compile_db.load_database(db_path)
         except (OSError, ValueError, TypeError) as exc:
             logger.warning(
                 f"codelinks: failed to read {db_path} ({exc}); "
@@ -415,8 +423,48 @@ class SourceAnalyse:
             )
             self._flags_map_cache[db_path] = None
             return None
+        flags: dict[Path, list[str]] = {}
+        decisions: dict[Path, Decision] = {}
+        for path, entry in database.items():
+            flags[path], decisions[path] = target.decide(
+                entry.args,
+                entry=True,
+                compiler=entry.compiler_target,
+                setting=self._target_setting(),
+                modelled=target.modelled_by,
+                reads_the_rest=target.reads_the_rest,
+            )
         self._flags_map_cache[db_path] = flags
+        self._decisions_cache[db_path] = decisions
         return flags
+
+    def _target_setting(self) -> str | None:
+        """The ``[preprocessor] target`` setting, if one is set."""
+        preproc = self.analyse_config.preprocessor
+        return preproc.target if preproc is not None else None
+
+    def _entry_decision(self, db_path: Path, main: Path) -> "Decision":
+        """The target decision of ``db_path``'s entry for ``main``."""
+        from sphinx_codelinks.analyse.preproc import target
+
+        return self._decisions_cache.get(db_path, {}).get(main, target.HOST)
+
+    def _defines_args(self) -> tuple[list[str], "Decision"]:
+        """The ``defines`` path's arguments, for the ``target`` setting's target, else
+        the host's: a file with no entry of its own reads the setting alone (not the
+        target the database's entries declare, which without their flags would blank
+        arms their build compiles)."""
+        from sphinx_codelinks.analyse.preproc import compile_db, target
+
+        preproc = self.analyse_config.preprocessor
+        if preproc is None:
+            return [], target.HOST
+        return target.decide(
+            compile_db.defines_to_args(preproc.defines, preproc.includes, preproc.std),
+            entry=False,
+            setting=preproc.target,
+            modelled=target.modelled_by,
+        )
 
     def _compile_db_for(self, src_path: Path) -> Path | None:
         """The compilation database that applies to ``src_path``, if one is named
@@ -431,26 +479,33 @@ class SourceAnalyse:
         return compile_db.find_compile_db(src_path, self.project_path)
 
     def _resolve_preproc_args(self, src_path: Path) -> list[str] | None:
-        from sphinx_codelinks.analyse.preproc import compile_db
+        """The arguments ``src_path`` is parsed with (:meth:`_resolve_preproc`)."""
+        resolved = self._resolve_preproc(src_path)
+        return resolved[0] if resolved is not None else None
+
+    def _resolve_preproc(self, src_path: Path) -> tuple[list[str], "Decision"] | None:
+        """The arguments ``src_path`` is parsed with, its target decided, and the
+        decision; ``None`` for a compiled source the database has no entry for (read
+        through an entry that includes it, or skipped)."""
+        from sphinx_codelinks.analyse.preproc import compile_db, target
 
         # `run()` calls this (via create_src_objects_libclang) only when
         # `preprocessor is not None`, but keep the guard: it narrows the type for
         # the checker and is a cheap defense (an `assert` would trip bandit S101).
         preproc = self.analyse_config.preprocessor
         if preproc is None:
-            return []
+            return [], target.HOST
         db_path = self._compile_db_for(src_path)
         if db_path is not None and db_path.is_file():
             flags = self._flags_map_for(db_path)
             if flags is None:
                 # Present-but-malformed/unreadable DB (warned once in the helper):
                 # fall back to the configured defines so extraction still runs.
-                return compile_db.defines_to_args(
-                    preproc.defines, preproc.includes, preproc.std
-                )
-            args = flags.get(src_path.absolute().resolve())
+                return self._defines_args()
+            key = src_path.absolute().resolve()
+            args = flags.get(key)
             if args is not None:
-                return args
+                return args, self._entry_decision(db_path, key)
             # Absent from the DB. compile_commands.json lists only compiled
             # translation units, never headers — so a header here is parsed
             # standalone with the global defines (one run = one variant). A
@@ -458,9 +513,7 @@ class SourceAnalyse:
             # read through an entry that includes it, or skipped (spec §3.3).
             if compile_db.is_translation_unit_source(src_path):
                 return None
-            return compile_db.defines_to_args(
-                preproc.defines, preproc.includes, preproc.std
-            )
+            return self._defines_args()
         # No readable DB. `find_compile_db` only ever returns a real file, so a
         # non-None `db_path` that reaches here is an explicit `compile_commands`
         # path that is not a readable file (typo/missing): warn and fall back
@@ -471,9 +524,7 @@ class SourceAnalyse:
                 f"codelinks: compile_commands path {db_path} is not a readable "
                 f"file; falling back to the configured defines"
             )
-        return compile_db.defines_to_args(
-            preproc.defines, preproc.includes, preproc.std
-        )
+        return self._defines_args()
 
     def _with_builtin_headers(self, args: list[str]) -> list[str]:
         """``args`` with the resource directory that gives a parse clang's builtin
@@ -532,6 +583,42 @@ class SourceAnalyse:
             subtype="builtin_header",
         )
 
+    def _read_active(
+        self, path: Path, args: list[str]
+    ) -> tuple[list["LibclangComment"], str]:
+        """The active comments of ``path`` parsed with ``args``, and the triple libclang
+        parsed it for; warns about a builtin header the parse did not find.
+
+        :raises clang.cindex.TranslationUnitLoadError: libclang could not load it.
+        """
+        from sphinx_codelinks.analyse.preproc import libclang_parser, target
+
+        triples: list[str] = []
+
+        def on_parse(tu: Any) -> None:
+            self._warn_missing_builtin_header(path, tu, args)
+            triples.append(target.triple_of(tu))
+
+        comments = libclang_parser.extract_active_comments(
+            path, args, on_parse=on_parse
+        )
+        return comments, triples[0]
+
+    def _warn_target(
+        self, path: Path, decision: "Decision", read_for: str, *, includer: bool
+    ) -> None:
+        """Warn, at its first line, that ``path`` is read for ``read_for`` (the triple
+        libclang parsed it for), not for the target its build declares, which the
+        loaded libclang does not model or refused the entry's flags with (``decision``;
+        through its includer when ``includer``)."""
+        message = decision.message(str(path), read_for, includer)
+        if message is not None:
+            logger.warning(
+                message,
+                subtype="preprocessor_target_unknown",
+                location=f"{path}:1",
+            )
+
     def _includer_candidates(self, db_path: Path, src_path: Path) -> list[Path]:
         """The main files of ``db_path``'s entries whose ``#include`` lines name
         ``src_path``, ordered by path (see :mod:`.preproc.includer`)."""
@@ -556,7 +643,12 @@ class SourceAnalyse:
 
         :return: The comments read, by the source's position in ``src_files``.
         """
-        from sphinx_codelinks.analyse.preproc import compile_db, libclang_parser, loader
+        from sphinx_codelinks.analyse.preproc import (
+            compile_db,
+            libclang_parser,
+            loader,
+            target,
+        )
 
         translation_unit_load_error = (
             loader.load_clang_cindex().TranslationUnitLoadError
@@ -581,8 +673,17 @@ class SourceAnalyse:
                 (self._flags_map_for(database) or {})[main]
             )
             self.dependencies.update((database, main))
+            decision = self._entry_decision(database, main)
+            read_for = ""
             try:
-                tu = libclang_parser.parse_translation_unit(main, args)
+                tu, args, decision = target.parse_or_again(
+                    args,
+                    decision,
+                    lambda attempt, main=main: libclang_parser.parse_translation_unit(
+                        main, attempt
+                    ),
+                    translation_unit_load_error,
+                )
             except translation_unit_load_error:
                 logger.debug(
                     f"codelinks: {main} could not be loaded as a translation unit, "
@@ -591,6 +692,7 @@ class SourceAnalyse:
                 tu = None
                 includes: set[Path] = set()
             else:
+                read_for = target.triple_of(tu)
                 self._warn_missing_builtin_header(main, tu, args)
                 working_directory = compile_db.working_directory(args)
                 includes = libclang_parser.main_file_inclusions(tu, working_directory)
@@ -611,6 +713,7 @@ class SourceAnalyse:
                     read[position] = libclang_parser.extract_included_active_comments(
                         tu, w.path
                     )
+                    self._warn_target(w.path, decision, read_for, includer=True)
                     del unread[position]
                 else:
                     next_candidate[position] += 1
@@ -626,8 +729,8 @@ class SourceAnalyse:
     # @Extract traceability objects with the preprocessor-aware libclang engine, IMPL_PREPROC_1, impl, [FE_PREPROC]
     def create_src_objects_libclang(self) -> None:
         from sphinx_codelinks.analyse.preproc import (
-            libclang_parser,
             loader,
+            target,
         )
 
         # Resolve the exception via the loader (never a direct ``import
@@ -644,8 +747,8 @@ class SourceAnalyse:
         for position, src_path in enumerate(src_files):
             if not utils.is_text_file(src_path):
                 continue
-            args = self._resolve_preproc_args(src_path)
-            if args is None:
+            resolved = self._resolve_preproc(src_path)
+            if resolved is None:
                 database = self._compile_db_for(src_path)
                 candidates = (
                     ()
@@ -654,14 +757,14 @@ class SourceAnalyse:
                 )
                 waiting.append(_Waiting(position, src_path, database, candidates))
                 continue
+            args, decision = resolved
             args = self._with_builtin_headers(args)
             try:
-                read[position] = libclang_parser.extract_active_comments(
-                    src_path,
+                (comments, read_for), _, decision = target.parse_or_again(
                     args,
-                    on_parse=lambda tu, path=src_path, args=args: (
-                        self._warn_missing_builtin_header(path, tu, args)
-                    ),
+                    decision,
+                    lambda attempt, path=src_path: self._read_active(path, attempt),
+                    translation_unit_load_error,
                 )
             except translation_unit_load_error:
                 # Last-resort guard. Standalone parses pin ``-x`` to match the
@@ -676,6 +779,9 @@ class SourceAnalyse:
                     f"codelinks: skipping {src_path} — libclang could not load "
                     f"it as a translation unit"
                 )
+            else:
+                read[position] = comments
+                self._warn_target(src_path, decision, read_for, includer=False)
         read.update(self._read_through_includers(waiting))
 
         for position in sorted(read):

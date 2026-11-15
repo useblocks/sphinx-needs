@@ -161,8 +161,11 @@ def setup(app: Sphinx) -> dict[str, Any]:
         # another arm than in the records an environment at 5 holds; 7: the libclang
         # engine leaves a compilation database entry's `--` out, so the records an
         # environment at 6 holds for an entry with one were extracted from every arm
-        # (an options-ending `--`) or not at all (`-Xlinker --`)
-        "env_version": 7,
+        # (an options-ending `--`) or not at all (`-Xlinker --`); 8: the libclang engine
+        # reads the target an entry declares (its `--target`, its compiler's name) and the
+        # `[preprocessor] target` setting, so the records an environment at 7 holds for a
+        # cross build were extracted for the machine that read them
+        "env_version": 8,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
