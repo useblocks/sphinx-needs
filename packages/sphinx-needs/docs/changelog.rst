@@ -111,14 +111,19 @@ Improvements
 Bug fixes
 .........
 
-- 🐛 A :ref:`needsequence` over need ids holding ``::`` renders
+- 🐛 A :ref:`needsequence` over need ids holding ``::`` (or another character PlantUML refuses in a name, such as
+  ``-``) renders, and shows each participant by its title or its id
 
-  It wrote each need id as it is as a PlantUML participant name, so an id such as ``SUPPLIER::USER_A``, which the
-  default :ref:`needs_id_regex` accepts, made the diagram a PlantUML syntax error. A participant is now named as
+  It wrote each need id as it is as a PlantUML participant name. For a participant that sends a message, which is
+  declared with its title, an id such as ``SUPPLIER::USER_A`` (which the default :ref:`needs_id_regex` accepts) or
+  ``USER-A`` made the diagram a PlantUML syntax error; a receiver that sends none was drawn wrongly instead
+  (``SUPPLIER::B`` as a participant ``SUPPLIER`` with the message ``:B: …``). A participant is now named as
   :ref:`needflow` names a need in a PlantUML diagram, over the participants of the one diagram: each character
   PlantUML refuses in a name becomes ``_``, and two ids that become the same name are told apart by a numeric
-  suffix. The participant titles and message labels are unchanged, and so is a diagram whose ids hold none of
-  those characters.
+  suffix. What the reader sees keeps its text: a participant that sends a message shows its title, and a receiver
+  that sends none shows its id, as before, now declared where its name is not its id. The message labels are
+  unchanged, and a diagram whose ids hold none of those characters is written as before. The first build after
+  upgrading reads every document again.
 
 - 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
   ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
