@@ -60,8 +60,8 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "filter_conformance.toml"
 #: carries. Raising one is the normal consequence of adding a case or an entry; lowering
 #: it needs a reason in the commit message, and ubCode's vendored copy has to follow
 #: either way.
-EXPECTED_CASE_COUNT = 26
-EXPECTED_FILTER_COUNT = 306
+EXPECTED_CASE_COUNT = 28
+EXPECTED_FILTER_COUNT = 335
 
 #: The configuration the runner gives every case besides its ``ubproject.toml``: its
 #: ``extensions`` are sphinx-needs, then the case's own, and each reads the case's
@@ -133,6 +133,10 @@ _UNKNOWN_INHERITS = re.compile(
     r"WARNING: Need type '[^']+' inherits '[^']+', which is not a need type; "
     r"its inherits is ignored\. \[needs\.type_inherits\]"
 )
+
+#: The report of an id that holds ``::`` but does not split cleanly, which the "namespaced
+#: ids" section leaves uncompared: the id is a plain id, which its entries compare.
+_UNCLEAN_ID = "[needs.id_namespace]"
 
 #: The one code a reported filter carries, compared bare.
 _FILTER_CODE = "filter"
@@ -412,11 +416,13 @@ def test_case(test_app: Any, case: dict[str, Any]) -> None:
     # read as written tests something else (the warnings a case may earn are the
     # deprecation of `filter_data`, which the residue's own filters read, and the
     # finding of an `inherits` naming no need type, a configuration finding the header
-    # leaves uncompared)
+    # leaves uncompared, and the report of an id that does not split cleanly, which the
+    # "namespaced ids" section leaves uncompared)
     assert [
         w
         for w in build_warnings(app)
-        if not w.endswith(_DEPRECATED) and not _UNKNOWN_INHERITS.fullmatch(w)
+        if not w.endswith((_DEPRECATED, _UNCLEAN_ID))
+        and not _UNKNOWN_INHERITS.fullmatch(w)
     ] == [], case["name"]
     problems = [
         problem
