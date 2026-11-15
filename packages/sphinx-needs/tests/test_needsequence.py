@@ -252,11 +252,24 @@ Two starts
 """
 
 
-@pytest.mark.parametrize("test_app", [params(TWO_STARTS)], indirect=True)
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        params(TWO_STARTS),
+        params(
+            TWO_STARTS.replace(
+                ":start: SUPPLIER::B, SUPPLIER__B", ":start: SUPPLIER__B, SUPPLIER::B"
+            )
+        ),
+    ],
+    ids=["sorted-order", "reverse-order"],
+    indirect=True,
+)
 def test_one_mapping_per_diagram(test_app: SphinxTestApp):
     """Ids that fold alike from two start needs are still two participants.
 
-    The names are made once for the diagram, not once per start need.
+    The names are made once for the diagram, not once per start need, and in the
+    sorted order of the ids, not the order the walk reaches them in.
     """
     app = test_app
     sources = capture_sequences(app)
@@ -268,6 +281,74 @@ def test_one_mapping_per_diagram(test_app: SphinxTestApp):
     assert 'participant "Underscores" as SUPPLIER__B_2' in lines
     assert "SUPPLIER__B -> USER_C: Message 2" in lines
     assert "SUPPLIER__B_2 -> USER_C: Message 3" in lines
+
+
+LEAVES = """\
+Leaves
+======
+
+.. req:: User A
+   :id: USER_A
+   :links: MSG_1
+
+.. spec:: Message 1
+   :id: MSG_1
+   :links: SUPPLIER::B, SUPPLIER__B, USERS-D
+
+.. req:: Colons
+   :id: SUPPLIER::B
+
+.. req:: Underscores
+   :id: SUPPLIER__B
+
+.. req:: Dash
+   :id: USERS-D
+
+.. req:: Not drawn
+   :id: USERS_D
+
+.. needsequence::
+   :start: USER_A
+"""
+
+
+@pytest.mark.parametrize("test_app", [params(LEAVES)], indirect=True)
+def test_a_receiver_that_sends_nothing_is_shown_by_its_id(test_app: SphinxTestApp):
+    """A receiver that sends no message is declared with its id as its title.
+
+    PlantUML shows an undeclared participant by its alias, which is now its entity
+    name: ``SUPPLIER__B`` for the need ``SUPPLIER::B``, ``SUPPLIER__B_2`` for the need
+    ``SUPPLIER__B``. So a receiver whose entity name is not its id is declared, and
+    shown by its id, as a plain id is; one whose name is its id is not declared.
+    """
+    app = test_app
+    sources = capture_sequences(app)
+    app.build()
+
+    assert len(sources) == 1
+    lines = sources[0].splitlines()
+    assert 'participant "SUPPLIER::B" as SUPPLIER__B' in lines
+    assert 'participant "SUPPLIER__B" as SUPPLIER__B_2' in lines
+    assert 'participant "USERS-D" as USERS_D' in lines
+    assert "USER_A -> SUPPLIER__B: Message 1" in lines
+    assert "USER_A -> SUPPLIER__B_2: Message 1" in lines
+    assert "USER_A -> USERS_D: Message 1" in lines
+    # a declaration after an arrow naming it would be dead: PlantUML creates the
+    # lifeline on the first mention
+    last_declaration = max(
+        n for n, line in enumerate(lines) if line.startswith("participant ")
+    )
+    first_arrow = min(n for n, line in enumerate(lines) if " -> " in line)
+    assert last_declaration < first_arrow
+
+
+@pytest.mark.parametrize("test_app", [params(LEAVES, render=True)], indirect=True)
+def test_leaves_holding_folded_characters_render(test_app: SphinxTestApp):
+    app = test_app
+    app.build()
+
+    assert_no_warnings(app)
+    assert "<object" in Path(app.outdir, "index.html").read_text(encoding="utf-8")
 
 
 CAPPED = """\
