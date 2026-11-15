@@ -46,8 +46,7 @@ _SEGMENT: Final = re.compile(r"[A-Za-z0-9_-]+")
 EMPTY_LOCAL: Final = "empty_local"
 """Nothing follows the id's last ``::``."""
 EMPTY_SEGMENT: Final = "empty_segment"
-"""The text before the id's last ``::`` is empty, or has an empty piece between two
-``::``."""
+"""The text before the id's last ``::`` is empty, or has an empty piece."""
 SEGMENT_CHARACTER: Final = "segment_character"
 """A piece of the text before the id's last ``::`` holds a character that is not an ASCII
 letter, an ASCII digit, ``_`` or ``-``."""
@@ -55,12 +54,15 @@ letter, an ASCII digit, ``_`` or ``-``."""
 
 def _segments(namespace: Iterable[str]) -> tuple[str, ...]:
     """*namespace* as a tuple of segments; a bare ``str`` is refused, since iterating it
-    would give its characters (``"nc"`` would be the namespace ``n::c``)."""
+    would give its characters (``"nc"`` would be the namespace ``n::c``). The message
+    offers ``[text]`` only where the text is one segment."""
     if isinstance(namespace, str):
+        advice = f"parse_namespace({namespace!r}) for a namespace's text"
+        if is_segment(namespace):
+            advice = f"[{namespace!r}] for one segment, or {advice}"
         raise TypeError(
             f"a namespace is a sequence of segments, not the string {namespace!r}: "
-            f"pass [{namespace!r}] for one segment, or parse_namespace({namespace!r}) "
-            "for a namespace's text"
+            f"pass {advice}"
         )
     return tuple(namespace)
 
@@ -146,7 +148,7 @@ def join_id(namespace: Iterable[str], local: str) -> str:
 
 def parse_namespace(text: str) -> tuple[str, ...]:
     """The segments of a namespace given as text (contract section 14): *text* cut at
-    every ``::``, from the left. The empty text is the empty namespace, ``()``.
+    every ``::``. The empty text is the empty namespace, ``()``.
 
     :raises ValueError: If a piece is not a segment (see :func:`is_segment`). The
         message names the text, the piece and the rule.
