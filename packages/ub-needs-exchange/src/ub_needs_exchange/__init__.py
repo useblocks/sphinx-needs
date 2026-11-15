@@ -4,7 +4,8 @@ One implementation of reading the file every tool of the sphinx-needs family exc
 needs through -- for sphinx-needs' ``needimport`` and ``needs_external_needs``, and for
 ubCode, which is to be held to the same behaviour through the conformance corpus
 in this package's tests. Standard library only: no Sphinx, no docutils, no sibling
-distribution.
+distribution. It also holds the grammar of a need id (``need_id``): how an id splits into
+a namespace and a local id at ``::``, held to a corpus of its own.
 
 It decides no policy. Which fields a project defines, which ids it accepts, whether a
 finding is worth a warning, and how a record becomes a need are each consumer's to
@@ -12,6 +13,18 @@ decide; this package returns what it found and raises an error for a file no rec
 be read from.
 """
 
+from ub_needs_exchange.need_id import (
+    EMPTY_LOCAL,
+    EMPTY_SEGMENT,
+    SEGMENT_CHARACTER,
+    SEPARATOR,
+    format_namespace,
+    id_problem,
+    is_segment,
+    join_id,
+    parse_namespace,
+    split_id,
+)
 from ub_needs_exchange.reader import (
     CONTENT_NOT_OBJECT,
     CURRENT_VERSION_MISSING,
@@ -55,6 +68,8 @@ __all__ = [
     "DEFAULTS_REMOVED_WITHOUT_SCHEMA",
     "DRAFT_HAS_VERSIONS",
     "DUPLICATE_ID",
+    "EMPTY_LOCAL",
+    "EMPTY_SEGMENT",
     "FIELDS_NOT_OBJECT",
     "FIELD_RESERVED",
     "FORMAT_VERSION",
@@ -71,6 +86,8 @@ __all__ = [
     "NOT_AN_OBJECT",
     "PROJECT_INVALID",
     "RECORD_NOT_OBJECT",
+    "SEGMENT_CHARACTER",
+    "SEPARATOR",
     "SOURCE_NOT_A_LIST",
     "VERSIONS_MISSING",
     "VERSION_NOT_FOUND",
@@ -80,7 +97,13 @@ __all__ = [
     "Record",
     "Version",
     "__version__",
+    "format_namespace",
+    "id_problem",
+    "is_segment",
+    "join_id",
     "load",
     "map_legacy_keys",
     "parse",
+    "parse_namespace",
+    "split_id",
 ]

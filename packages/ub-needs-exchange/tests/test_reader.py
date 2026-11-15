@@ -17,7 +17,7 @@ from typing import Any
 import pytest
 
 import ub_needs_exchange as nx
-from ub_needs_exchange import reader
+from ub_needs_exchange import need_id, reader
 
 
 def envelope(
@@ -36,8 +36,9 @@ def record(need_id: str, **fields: Any) -> dict[str, Any]:
 
 
 def test_the_package_exports_the_reader():
-    assert set(nx.__all__) == {*reader.__all__, "__version__"}
+    assert set(nx.__all__) == {*reader.__all__, *need_id.__all__, "__version__"}
     assert all(getattr(nx, name) is getattr(reader, name) for name in reader.__all__)
+    assert all(getattr(nx, name) is getattr(need_id, name) for name in need_id.__all__)
 
 
 # ------------------------------------------------------------------------------------
