@@ -394,8 +394,8 @@ As `ub-project`'s contract says of discovery, each of these stays with each cons
 ## 12. Divergences from ubCode
 
 ubCode is to be held to this contract through the corpus. A behaviour ubCode diverges from
-deliberately is a row of its `design/divergence-register.md`, and a corpus case it
-diverges on carries `divergent = { ubcode = "design/divergence-register.md#…" }`. **No
+deliberately is a row of its `design/divergence-register.md`, and a reading-corpus case
+it diverges on carries `divergent = { ubcode = "design/divergence-register.md#…" }`. **No
 document-layer case does**: none of the register's needs.json rows is a document-layer
 behaviour. The rows about the file, by subject (as of ubCode `51eb4f4784`):
 
@@ -446,11 +446,12 @@ cases of that file.
    `split-a-hyphen-only-segment`, `split-an-upper-case-namespace`,
    `split-a-lower-case-namespace`, `split-a-segment-of-a-non-ascii-letter`,
    `split-a-segment-of-a-non-ascii-digit`, `split-a-segment-of-the-kelvin-sign`,
-   `split-a-segment-ending-in-a-line-feed`.
+   `split-a-segment-ending-in-a-line-feed`, `split-a-segment-holding-a-nul`,
+   `split-a-segment-holding-a-caret`, `split-a-segment-holding-a-slash`,
+   `namespace-a-backtick`.
 3. **A namespace** is a sequence of zero or more segments; as text, the segments joined by
    `::`, and the empty namespace is the empty text. Its text is parsed by cutting it at
-   every `::`, scanning from the left (as Python's `str.split` and Rust's `str::split`
-   do); every piece must be a segment, and the empty text is the empty namespace
+   every `::`; every piece must be a segment, and the empty text is the empty namespace
    (`parse_namespace`, `format_namespace`).
    Enforced by: corpus: every `namespace-` case.
 4. **Splitting an id** (`split_id`). Find the LAST occurrence of `::` in the id. None: the
@@ -500,14 +501,14 @@ cases of that file.
    `…::test_join_refuses_what_would_not_split_back`.
 8. **An id, not a link target.** A link target is not an id. A consumer first strips the
    target's `[condition]`, then splits the rest at its FIRST `.` into an id and a part,
-   and only then splits that id's namespace at its LAST `::`, as above. This package
-   parses no link.
+   and only then splits that id's namespace at its LAST `::`, as above **(not pinned
+   here: this package parses no link)**.
 9. **The package splits nothing on its own.** A reader hands out a record's `id` as
    written — its key (§6.2), `::` and all — and no record, finding or path of §1–§13
    depends on this section. Whether and how a project reads a namespace out of an id is
    the consumer's.
-   Enforced by: the API itself — `Version.records` never calls `need_id`; and the
-   reading corpus, whose ids are compared as written.
+   Enforced by: `test_reader.py::test_an_id_holding_the_separator_is_read_as_written`
+   (`nc::REQ_1`, which splits cleanly, and three ids that do not).
 
 | id | namespace | local id | problem |
 |---|---|---|---|

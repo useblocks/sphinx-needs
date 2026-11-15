@@ -293,6 +293,21 @@ def test_the_key_is_the_id(given, message):
     )
 
 
+@pytest.mark.parametrize(
+    "key", ["nc::REQ_1", "a::::b", "nc::", "std::vector<int>::size"]
+)
+def test_an_id_holding_the_separator_is_read_as_written(key):
+    """The reader splits no id (contract section 14.9): an id holding ``::`` -- one that
+    splits cleanly, and three that do not -- is the record's key and ``id`` as written,
+    with no finding. The reading corpus holds no such id."""
+    (rec,) = (
+        nx.parse(json.dumps(envelope({key: record(key)})))
+        .select_version(None)
+        .records()
+    )
+    assert (rec.key, rec.fields["id"], rec.diagnostics) == (key, key, ())
+
+
 def test_defaults_removed_without_a_schema():
     version = nx.parse(
         json.dumps(envelope({"A": record("A")}, needs_defaults_removed=True))

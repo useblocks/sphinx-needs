@@ -42,7 +42,9 @@
 #   - a refusal (`invalid = true`) states only that the operation is refused; its message
 #     is not compared
 #   - every case name is unique across the whole file, kebab-case, and starts with its
-#     table's name
+#     table's name; every `why` is one line
+#   - no case carries `divergent` (as the reading corpus's may): this grammar has one
+#     answer, and an implementation passes a case or does not
 #
 # `packages/ub-needs-exchange/tests/test_need_id_conformance.py` runs every case against
 # the Python module `ub_needs_exchange.need_id`, holds the module to two laws over every
@@ -63,7 +65,7 @@
 #   problem    - the class of an id that holds `::` and does not split cleanly; its split
 #                is then the empty namespace and the id itself
 #
-# [[namespace]] - parsing a namespace from its text (cut at every `::` from the left)
+# [[namespace]] - parsing a namespace from its text (cut at every `::`)
 #   text       - the namespace as text
 #   then EITHER
 #   segments   - the segments, in order (`[]` for the empty text)
@@ -480,6 +482,24 @@ id = "a:b::X"
 problem = "segment_character"
 
 [[split]]
+name = "split-a-segment-holding-a-caret"
+why = "`^` lies between `Z` and `a`: the range typo `[A-z]` accepts it, the grammar does not"
+id = "a^b::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-holding-a-slash"
+why = "the segment alphabet is an allow-list: a character no denylist thought of, such as `/`, is still bad"
+id = "a/b::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-holding-a-nul"
+why = "a NUL is neither white space nor punctuation, and still not a segment character"
+id = "nc\u0000::X"
+problem = "segment_character"
+
+[[split]]
 name = "split-three-colons-between-segments"
 why = "`a:::b`: the last `::` is at offset 2, so head is `a:` and the local id is `b`, not `:b`"
 id = "a:::b"
@@ -563,6 +583,12 @@ invalid = true
 name = "namespace-a-dot"
 why = "a `.` is not a segment character"
 text = "nc.m2"
+invalid = true
+
+[[namespace]]
+name = "namespace-a-backtick"
+why = "a backtick lies between `Z` and `a`: the range typo `[A-z]` accepts it, the grammar does not"
+text = "a`b"
 invalid = true
 
 [[namespace]]

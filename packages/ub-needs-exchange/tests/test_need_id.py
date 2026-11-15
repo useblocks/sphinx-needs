@@ -15,6 +15,7 @@ from ub_needs_exchange import (
     format_namespace,
     id_problem,
     join_id,
+    need_id,
     parse_namespace,
     split_id,
 )
@@ -22,6 +23,22 @@ from ub_needs_exchange import (
 
 def test_the_separator():
     assert SEPARATOR == "::"
+
+
+def test_the_public_names():
+    """The module's API, which the corpus's other implementations mirror."""
+    assert set(need_id.__all__) == {
+        "SEPARATOR",
+        "EMPTY_LOCAL",
+        "EMPTY_SEGMENT",
+        "SEGMENT_CHARACTER",
+        "is_segment",
+        "split_id",
+        "id_problem",
+        "join_id",
+        "parse_namespace",
+        "format_namespace",
+    }
 
 
 @pytest.mark.parametrize(
@@ -42,8 +59,8 @@ def test_splitting_never_raises(text):
     id_problem(text)
 
 
-def test_a_deep_namespace_splits_in_one_pass():
-    """Many segments split without a limit (and without a backtracking regex)."""
+def test_a_deep_namespace_splits():
+    """Many segments split without a limit."""
     text = "a::" * 5000 + "X"
     assert split_id(text) == (("a",) * 5000, "X")
 
@@ -71,18 +88,30 @@ def test_an_empty_generator_is_the_empty_namespace():
 
 def test_a_bare_string_is_not_a_namespace():
     """A ``str`` is an iterable of strings, but iterating it gives its characters
-    (``"nc"`` would be ``n::c``): both functions refuse it, naming the two right
-    spellings."""
-    with pytest.raises(TypeError, match=r"not the string 'nc'") as info:
+    (``"nc"`` would be ``n::c``): both functions refuse it with a ``TypeError``, whose
+    advice ``test_a_bare_string_is_refused_with_advice_that_holds`` pins."""
+    with pytest.raises(TypeError, match=r"not the string 'nc'"):
         format_namespace("nc")
-    assert "['nc']" in str(info.value)
-    assert "parse_namespace('nc')" in str(info.value)
     with pytest.raises(TypeError, match=r"not the string 'nc'"):
         join_id("nc", "X")
     with pytest.raises(TypeError, match=r"not the string ''"):
         join_id("", "X")
     with pytest.raises(TypeError, match=r"not the string ''"):
         format_namespace("")
+
+
+@pytest.mark.parametrize(
+    ("text", "offers_a_list"),
+    [("nc", True), ("nc::m2", False), ("", False), ("a.b", False)],
+)
+def test_a_bare_string_is_refused_with_advice_that_holds(text, offers_a_list):
+    """``[text]`` is offered only where *text* is one segment; ``parse_namespace(text)``
+    always."""
+    with pytest.raises(TypeError) as info:
+        join_id(text, "X")
+    message = str(info.value)
+    assert f"parse_namespace({text!r})" in message
+    assert (f"[{text!r}]" in message) == offers_a_list
 
 
 def test_format_namespace_does_not_check():

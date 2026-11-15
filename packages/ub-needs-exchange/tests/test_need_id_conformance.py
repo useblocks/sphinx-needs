@@ -22,6 +22,7 @@ implements. Standard library only, as the package is.
 from __future__ import annotations
 
 import itertools
+import re
 import tomllib
 from collections import Counter
 from pathlib import Path
@@ -48,7 +49,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "need_id_conformance.toml"
 #:
 #: Raising one is the normal consequence of adding a case; lowering one needs a reason in
 #: the commit message, and ubCode's vendored copy has to follow either way.
-EXPECTED_CASE_COUNTS = {"split": 62, "namespace": 18, "join": 20}
+EXPECTED_CASE_COUNTS = {"split": 65, "namespace": 19, "join": 20}
 
 #: The keys a case of each table may carry, as the header defines them: those it must,
 #: and the alternative sets of which it carries exactly one.
@@ -132,12 +133,15 @@ def test_every_case_name_is_unique() -> None:
 
 @pytest.mark.parametrize("table", sorted(EXPECTED_CASE_COUNTS))
 def test_every_case_uses_only_the_keys_of_its_table(table: str) -> None:
-    """The keys a table's case must carry, then exactly one of its two outcomes; a name
-    that starts with the table's name; values of the type the header gives."""
+    """The keys a table's case must carry, then exactly one of its two outcomes; a
+    kebab-case name that starts with the table's name; a one-line ``why``; values of the
+    type the header gives."""
     for case in CORPUS[table]:
         name = case["name"]
+        assert re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", name), name
         assert name.startswith(f"{table}-"), name
         assert case["why"], name
+        assert case["why"].splitlines() == [case["why"]], name
         rest = set(case) - REQUIRED_KEYS[table]
         assert REQUIRED_KEYS[table] <= set(case), name
         assert rest in OUTCOME_KEYS[table], name

@@ -16,8 +16,8 @@ Unreleased
   ``format_namespace`` and ``is_segment`` complete it, all re-exported from the package.
   The package splits no record's id on its own: the reader is unchanged.
   ``design/exchange-contract.md`` §14 states the grammar, and
-  ``tests/fixtures/need_id_conformance.toml`` is its corpus (100 cases), which ubCode is
-  to vendor.
+  ``tests/fixtures/need_id_conformance.toml`` is its corpus, which ubCode is to
+  vendor.
 - **A draft "2a1" link object whose condition starts with ``[`` and ends with ``]`` is
   spelled with one space after its opening brackets** (``{"id": "B", "condition": "[x]
   == a[0]"}`` is ``B[[ [x] == a[0]]]``, was ``B[[[x] == a[0]]]``), as sphinx-needs'
