@@ -89,3 +89,41 @@ def test_format_2a1_file_names(test_app: SphinxTestApp):
     ]
     data = _read(folder / "SUPPLIER%3A%3AREQ_1.json")
     assert [record["id"] for record in data["needs"]] == ["SUPPLIER::REQ_1"]
+
+
+@pytest.mark.parametrize(
+    ("need_id", "file_name"),
+    [
+        ("REQ_1", "REQ_1.json"),
+        ("nc::REQ_1", "nc%3A%3AREQ_1.json"),
+        ("a<b", "a%3Cb.json"),
+        ("a>b", "a%3Eb.json"),
+        ("a:b", "a%3Ab.json"),
+        ('a"b', "a%22b.json"),
+        ("a/b", "a%2Fb.json"),
+        ("a\\b", "a%5Cb.json"),
+        ("a|b", "a%7Cb.json"),
+        ("a?b", "a%3Fb.json"),
+        ("a*b", "a%2Ab.json"),
+        ("50%", "50%25.json"),
+        ("50%3A", "50%253A.json"),
+        ("a\x00b", "a%00b.json"),
+        ("a\tb", "a%09b.json"),
+        ("a\x1fb", "a%1Fb.json"),
+        # kept: everything else, DEL and non-ASCII text included
+        ("a\x7fb", "a\x7fb.json"),
+        ("REQ-1.a b'c;d=é", "REQ-1.a b'c;d=é.json"),
+    ],
+)
+def test_id_file_name(need_id: str, file_name: str):
+    from sphinx_needs.builder import _id_file_name
+
+    assert _id_file_name(need_id) == file_name
+
+
+def test_id_file_names_are_distinct():
+    """``%`` is encoded too, so an id that reads like an encoded one keeps its own name."""
+    from sphinx_needs.builder import _id_file_name
+
+    ids = ["a:b", "a%3Ab", "a%b", "a%253Ab"]
+    assert len({_id_file_name(need_id) for need_id in ids}) == len(ids)

@@ -111,6 +111,15 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 :ref:`needs_build_json_per_id` and the :ref:`needs_id builder <needs_id_builder>` write a need whose id holds
+  ``:`` (or another character a file name cannot hold) to a file every system can create **(changed output)**
+
+  Each file was named ``<id>.json`` with the id as it is, so ``SUPPLIER::REQ_1``, which the default
+  :ref:`needs_id_regex` accepts, gave ``SUPPLIER::REQ_1.json``: a name Windows refuses, and an id holding ``/``
+  named a file in a sub-folder. ``<`` ``>`` ``:`` ``"`` ``/`` ``\`` ``|`` ``?`` ``*``, the control characters and ``%``
+  are now each written as ``%`` and two upper-case hex digits (``SUPPLIER%3A%3AREQ_1.json``), in both needs.json
+  formats. The file of an id holding none of them keeps its name, and every file's content is unchanged.
+
 - 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
   ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
   **(changed output)** (:issue:`2489`, :pr:`2494`)

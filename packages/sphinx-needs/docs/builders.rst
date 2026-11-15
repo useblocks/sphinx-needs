@@ -306,6 +306,10 @@ The **needs_id** builder exports all found needs and selected filter results to 
 
 The build creates a folder called :ref:``needs_build_json_per_id_path`` and all file json of each need inside the given build-folder.
 
+A character of an id that a file name cannot hold on every system (``<`` ``>`` ``:`` ``"`` ``/`` ``\`` ``|`` ``?``
+``*``, a control character, and ``%`` itself) is written as ``%`` and two upper-case hex digits, so the need
+``SUPPLIER::REQ_1`` is written to ``SUPPLIER%3A%3AREQ_1.json`` (see :ref:`needs_build_json_per_id`).
+
 Usage
 +++++
 
