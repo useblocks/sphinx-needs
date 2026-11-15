@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from copy import copy, deepcopy
@@ -15,6 +14,7 @@ from sphinx.environment.collectors.asset import DownloadFileCollector, ImageColl
 from sphinx.transforms import SphinxTransformer
 from sphinx.util.logging import getLogger
 
+from sphinx_needs._namespaced_ids import id_matched_by_patterns, read_id
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsExtractType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -185,7 +185,12 @@ def process_needextract(
             # check if given filter argument is need-id
             if need_filter_arg in all_needs:
                 need_filter_arg = f'id == "{need_filter_arg}"'
-            elif re.fullmatch(needs_config.id_regex, need_filter_arg):
+            elif id_matched_by_patterns(
+                needs_config.id_regex,
+                need_filter_arg,
+                read_id(need_filter_arg, needs_config.namespaced_ids)[1],
+                full=True,
+            ):
                 # check if given filter argument is need-id, but not exists
                 log_warning(
                     LOGGER,

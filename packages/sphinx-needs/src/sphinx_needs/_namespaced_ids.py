@@ -15,6 +15,7 @@ the id never changes after creation, so they cannot go stale. The design record 
 
 from __future__ import annotations
 
+import re
 from functools import lru_cache
 
 from ub_needs_exchange import (
@@ -80,3 +81,31 @@ def unclean_id_message(need_id: str, problem: str, /) -> str:
         "needs_namespaced_ids = False to read no id as namespaced, or suppress the "
         "warning type needs.id_namespace."
     )
+
+
+def id_matched_by_patterns(
+    pattern: str, need_id: str, local_id: str, /, *, full: bool = False
+) -> bool:
+    """Whether an id pattern accepts a need's id: :ref:`needs_id_regex` and a need
+    type's ``id_regex`` accept an id whose LOCAL id matches, or which matches as a whole
+    (an id master accepted as a whole stays accepted, whatever its local id).
+
+    The one place both patterns read the id from, and ``needextract``'s test of an
+    argument naming an id.
+
+    :param pattern: The pattern.
+    :param need_id: The id, as written or generated.
+    :param local_id: Its local id, as the project reads it (:ref:`needs_namespaced_ids`):
+        the whole id for a plain id, where local and whole are one test.
+    :param full: Match the whole text (``re.fullmatch``), not its start (``re.match``).
+    """
+    match = re.fullmatch if full else re.match
+    return match(pattern, local_id) is not None or (
+        local_id != need_id and match(pattern, need_id) is not None
+    )
+
+
+def nor_local(need_id: str, local_id: str) -> str:
+    """What a refusal by an id pattern adds for a namespaced id: its local id, which the
+    pattern did not match either."""
+    return "" if local_id == need_id else f", nor does its local id {local_id!r}"

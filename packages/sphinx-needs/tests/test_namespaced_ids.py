@@ -611,3 +611,146 @@ def test_a_generated_id_is_the_projects_own(test_app: Any) -> None:
         f"<srcdir>/index.rst:4: {_unclean(need_id, problem)}"
     ]
     assert need.id_local == need_id
+
+
+# --- id patterns: the local id, or the whole id ---
+
+#: the default needs_id_regex, ``^[A-Z0-9_]{5,}``, applied with ``re.match``
+PATTERN_INDEX = """\
+Index
+=====
+
+.. req:: Namespaced, the local id matches
+   :id: nc::REQ_00001
+
+.. req:: Namespaced, nothing matches
+   :id: nc::req
+
+.. req:: Namespaced, the whole id matches
+   :id: SUPPLIER::REQ_1
+
+.. req:: Accepted by master as a whole, its local id does not match
+   :id: REQ_1::A
+"""
+
+
+def _refused(need_id: str, line: int, local: str | None, pattern: str) -> str:
+    nor = "" if local is None else f", nor does its local id {local!r}"
+    return (
+        f"<srcdir>/index.rst:{line}: WARNING: Need could not be created: Given ID "
+        f"{need_id!r} does not match {pattern}{nor} [needs.create_need]"
+    )
+
+
+DEFAULT = "configured regex '^[A-Z0-9_]{5,}'"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_unclean_project('extensions = ["sphinx_needs"]\n', PATTERN_INDEX)],
+    indirect=True,
+)
+def test_the_default_pattern_accepts_a_matching_local_id(test_app: Any) -> None:
+    """``needs_id_regex`` accepts an id whose local id matches, or which matches as a
+    whole: ``nc::REQ_00001`` (refused before namespaces) and ``REQ_1::A`` (accepted
+    before, as a whole) are both accepted; the refusal names the local id too."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [_refused("nc::req", 7, "req", DEFAULT)]
+    assert sorted(_needs(app)) == ["REQ_1::A", "SUPPLIER::REQ_1", "nc::REQ_00001"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _unclean_project(
+            'extensions = ["sphinx_needs"]\nneeds_namespaced_ids = False\n',
+            PATTERN_INDEX,
+        )
+    ],
+    indirect=True,
+)
+def test_switched_off_the_pattern_reads_the_whole_id(test_app: Any) -> None:
+    """With the switch off every id is plain: the pattern reads it whole, as before."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        _refused("nc::REQ_00001", 4, None, DEFAULT),
+        _refused("nc::req", 7, None, DEFAULT),
+    ]
+    assert sorted(_needs(app)) == ["REQ_1::A", "SUPPLIER::REQ_1"]
+
+
+TYPE_PATTERN = """\
+extensions = ["sphinx_needs"]
+needs_id_regex = ""
+needs_from_toml = "ubproject.toml"
+"""
+
+TYPE_TOML = """\
+[needs.types.req]
+title = "Requirement"
+prefix = "R_"
+id_regex = "^REQ_[0-9]+$"
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            **_unclean_project(TYPE_PATTERN, PATTERN_INDEX),
+            "files": [
+                *_unclean_project(TYPE_PATTERN, PATTERN_INDEX)["files"],
+                (Path("ubproject.toml"), TYPE_TOML),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_type_pattern_accepts_a_matching_local_id(test_app: Any) -> None:
+    """A need type's ``id_regex`` reads the id as ``needs_id_regex`` does."""
+    app = test_app
+    app.build()
+    pattern = "the id_regex '^REQ_[0-9]+$' of need type 'req'"
+    assert build_warnings(app) == [
+        _refused("nc::req", 7, "req", pattern),
+        _refused("REQ_1::A", 13, "A", pattern),
+    ]
+    assert sorted(_needs(app)) == ["SUPPLIER::REQ_1", "nc::REQ_00001"]
+
+
+EXTRACT_INDEX = """\
+Index
+=====
+
+.. req:: Present
+   :id: nc::REQ_00001
+
+.. needextract:: nc::REQ_00002
+
+.. needextract:: nc::REQ_00001
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            **_unclean_project('extensions = ["sphinx_needs"]\n', EXTRACT_INDEX),
+            "buildername": "html",
+        }
+    ],
+    indirect=True,
+)
+def test_needextract_reads_a_namespaced_argument_as_an_id(test_app: Any) -> None:
+    """The argument of a needextract is an id that names no need, rather than a filter,
+    when ``needs_id_regex`` matches its local id or the whole of it (in full)."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == [
+        "<srcdir>/index.rst:7: WARNING: Requested need 'nc::REQ_00002' not found. "
+        "[needs.needextract]"
+    ]
+    html = Path(app.outdir, "index.html").read_text("utf-8")
+    assert html.count('id="nc::REQ_00001"') == 2
