@@ -20,8 +20,10 @@ Improvements
   compares by segments, so ``nc`` does not select ``ncx::REQ_1`` (:ref:`filter_namespace`); in Python a need has
   ``id_ns``, ``id_ns_segments`` and ``id_local``. :ref:`needs_id_regex` and a need type's ``id_regex`` accept an id
   whose local id matches, or which matches as a whole: with the default pattern ``nc::REQ_00001`` is now accepted,
-  and every id accepted before still is. A dead link or a ``:need:`` role naming a bare id that exactly one need has
-  as its local id ends ``Did you mean 'nc::REQ_2'?``. An ``id_prefix`` ending in ``::`` on :ref:`needimport` or
+  and every id accepted before still is. As the local id is tried first, a pattern cannot refuse a namespace: a
+  project that wants none sets :ref:`needs_namespaced_ids` to ``False``, and its patterns see the whole id as
+  before. A dead link or a ``:need:`` role naming a bare id that no need has, and exactly one need has as its local
+  id in a namespace, ends ``(did you mean 'nc::REQ_2'?)``. An ``id_prefix`` ending in ``::`` on :ref:`needimport` or
   :ref:`needs_external_needs` puts the imported needs into that namespace. The filter names and the attributes are
   experimental; :ref:`needs_namespaced_ids` (``[needs] namespaced_ids``), on by default, turns the reading off.
 

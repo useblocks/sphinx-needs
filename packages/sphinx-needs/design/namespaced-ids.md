@@ -24,8 +24,9 @@ it, and a reader applies its own rule to every id whatever wrote the file.
 **The joined string is the key.** `id` is unchanged everywhere: the key of every mapping
 (`NeedsView`, the environment), `need["id"]`, the HTML anchor, the `needs.json` id, what a
 link and a `:need:` role name. `need["id"]` is a string in the public Python contract, and
-a tuple key is the slower lookup (1.6 to 2.9 times a string key, measured on 14 044 ids
-during the October design).
+a structured key is the slower lookup: a dict keyed by `(segments, local id)` tuples takes
+3.6 to 3.8 times as long as one keyed by the joined strings to look up 14 044 namespaced
+ids (prebuilt keys, the minimum of five runs of fifty lookups, three rounds, at this tip).
 
 ## 2. The grammar, and the composition order
 
@@ -51,23 +52,28 @@ link without its tail being read as a part.
 ## 3. The switch
 
 `needs_namespaced_ids` (`[needs] namespaced_ids`), a boolean, **on by default**, rebuild
-`"env"`. It is read in one place, the creation funnel (`api.need._generate_need`, which
-every route passes: a directive, the API, `list2need`, `needservice`, `needimport`,
-`needs_external_needs`, and the family's producers). Off, no id is split and every need is
-plain; the filter names stay defined and read `""` and the whole id. "No namespaces" is
-the empty rule, not a second mode of the code.
+`"env"` (flipping it re-reads every document). It is read where a need is created, in the
+creation funnel (`api.need._generate_need`, which every route passes: a directive, the API,
+`list2need`, `needservice`, `needimport`, `needs_external_needs`, and the family's
+producers), and by `needextract` to classify an argument naming an id that does not exist.
+Nothing else reads it: the filters and the hints read what the funnel stored. Off, no id is
+split and every need is plain; the filter names stay defined and read `""` and the whole id,
+and no hint is offered, as no need is in a namespace. "No namespaces" is the empty rule,
+not a second mode of the code.
 
 ## 4. What does not split, and why it is never refused
 
 An id that holds `::` but does not split cleanly (`A::::B`, `NS::`,
 `std::vector<int>::size`) is a **plain id**. It is never refused: with the rule on by
 default, refusing would break projects whose ids hold `::` for another reason, and every
-import of such a file. An id the project writes or generates is reported once, at the
-need, as `needs.id_namespace`, with the class of the problem and the three ways out
+import of such a file. An id the project writes or generates is reported at the need, once
+per need directive (a duplicate of such an id, refused as a duplicate, is reported for its
+id too), as `needs.id_namespace`, with the class of the problem and the three ways out
 (correct the id; `needs_namespaced_ids = False`; suppress the warning type). It does not
 name the offending segment: finding it would mean cutting the id outside the one module.
 An imported or external need is the data of the project that wrote it and is not
-reported, as it is not checked against the id patterns.
+reported, as it is not checked against the id patterns. The report is the funnel's last
+act: a need an id pattern or a value refuses is reported for that refusal, not for its id.
 
 ## 5. Id patterns
 
@@ -82,7 +88,9 @@ one text. A refusal keeps its wording and names the local id too.
 
 ## 6. The stored structure, and why it is not a field
 
-Each `NeedItem` stores its namespace (a tuple of segments, one tuple object per namespace)
+Each `NeedItem` stores its namespace (a tuple of segments, shared by the needs of one
+namespace within a reading process: a `-j` read's workers and a loaded environment each
+start their own)
 and its local id in two slots that are **not mapping keys**, set once in the funnel and
 kept by every copy, pickle, parallel merge and needtable row: the id never changes after
 creation, so they cannot go stale. Read-only attributes expose them: `id_ns` (text),
@@ -101,7 +109,11 @@ for a plain id), and `c.in_namespace("<ns>")` (the namespace or below it, by seg
 rather than the tuple, because the portable language has no list equality or subscripts,
 and in `eval` a tuple never equals a string. An empty argument, or one that is no
 namespace, is an error of the filter in both tiers, never "every need"; "in no namespace"
-is `c.id.ns == ""`.
+is `c.id.ns == ""`; in a derived field's `where` such a literal is the rule's problem,
+`needs.derive_invalid`. `c.id` itself holds the facets, not the id: compared with a value
+(`c.id == "nc::REQ_1"`, `!=`, `c.id in [...]`) it is an error of the filter, naming what
+to compare instead (`id`, `c.id.local`, `c.id.ns`). `c.in_namespace` takes its argument
+positionally.
 
 They live under the check context `c`, beside `c.source`, because `c` is set over every
 field: no name a project declares can shadow them, and none is reserved. They are added
@@ -114,12 +126,16 @@ answered by `eval`. The order of the dynamic functions records them as reading `
 
 ## 8. Hints
 
-A dead outgoing link, or a `:need:` role naming no need, whose target (condition and part
-stripped) holds no `::` and is the local id of exactly one need in a namespace, ends
-`Did you mean 'nc::REQ_2'?` (the part re-attached). Zero or several candidates leave the
-message as it was; nothing changes in what resolves. The index of local ids is built
-lazily, once per build, when the first dead target is met, and shared by the links and the
-roles.
+A dead outgoing link (an external need's too: it explains why the target is not found
+here), or a `:need:` role naming no need, gains ` (did you mean 'nc::REQ_2'?)` after its
+unchanged text when its target, condition and part stripped: names no need, holds no `::`,
+and is the local id of exactly one need in a non-empty namespace; and, where the target
+names a part, that need has the part (which the hint re-attaches). Otherwise the message is
+as it was; nothing changes in what resolves. The index of local ids is built lazily, when
+the first such target is met, and shared by the links and the roles of a build. It is held
+in the environment while the build writes; in an application that builds twice (a server
+rebuilding on change) the second build's pickled environment carries the first build's
+index, which the second build replaces before it offers any hint.
 
 ## 9. Deliberately absent
 
@@ -147,10 +163,15 @@ roles.
 
 ## 10. Measurements (unreleased tip, Python 3.13, sphinx 9.2, one machine)
 
-- **Memory**, 10 000 needs in one namespace (`nc::REQ_…`), the needs held after a pickle
-  round trip (`tracemalloc`): 44.16 MB against 43.49 MB on the base without namespaces
-  (+1.5 %, about 67 bytes a need); 10 000 plain ids: 43.61 MB against 43.13 MB (+1.1 %). The
-  pickled needs: 5.06 MB against 4.87 MB (namespaced), 4.93 MB against 4.83 MB (plain).
-- **`c.in_namespace("nc")`** over 14 000 needs (half of them in `nc` or below), fast tier,
-  `filter_needs_view`: 3.5 ms; `id.startswith("nc::")` 6.7 ms; `c.id.ns == "nc"` 4.4 ms;
-  `type == "req"` (index tier, every need selected) 5.5 ms. No index arm is needed.
+- **Memory**: the needs of a 10 000-need build, held after a pickle round trip
+  (`tracemalloc`), against the base without namespaces, the arms interleaved with a null arm
+  (the same code twice, spread at most 62 bytes): 10 000 ids in one namespace (`nc::REQ_…`)
+  +0.67 MB, +1.5 %, about 67 bytes a need (the two slot pointers and the local id's own
+  string); 10 000 plain ids +0.16 MB, +0.4 %, 16 bytes a need (the two slot pointers alone:
+  the empty tuple is shared, and the local id is the id's own string). The pickled needs:
+  5.06 MB against 4.87 MB (namespaced), 4.93 MB against 4.83 MB (plain).
+- **Filters** over 14 000 needs (7 000 in `nc` or below), fast tier, `filter_needs_view`:
+  `c.in_namespace("nc")` is the fastest of the four measured, about 3 ms, about half of
+  `id.startswith("nc::")`; `c.id.ns == "nc"` about 4 ms; `type == "req"` (index tier, every
+  need selected) about 5 ms (two machines' runs, each the minimum of five runs of twenty,
+  which differ by up to a quarter and agree on the order). No index arm is needed.

@@ -524,8 +524,12 @@ A need id holding ``::`` names a namespace: ``nc::m2::REQ_1`` is the local id ``
   ``c.in_namespace("nc")`` is the namespace test.
 - A need part reads its need's namespace and local id; its ``id`` is its own part id.
 - ``c.in_namespace("")``, and an argument that is no namespace (``"nc::"``, ``"a b"``), is an error of the filter
-  (``needs.filter``), never "every need": a need in no namespace is ``c.id.ns == ""``. A namespace no need is in
+  (``needs.filter``), never "every need": a need in no namespace is ``c.id.ns == ""``. In a derived field's
+  ``where`` such a literal makes the rule invalid (``needs.derive_invalid``). A namespace no need is in
   selects nothing.
+- ``c.id`` holds the facets of the id, not the id: ``c.id == "nc::REQ_1"`` (or ``!=``, or ``c.id in [...]``) is an
+  error of the filter; compare ``id``, ``c.id.local`` or ``c.id.ns``. ``c.in_namespace`` takes one argument,
+  positionally.
 - The three are defined in every project: with :ref:`needs_namespaced_ids` off every need is in no namespace.
 - ``c.in_namespace`` with a string literal is in the :ref:`portable filter language <filter_string_performance>`,
   as are the two facets; any other argument (``c.in_namespace(group)``) is evaluated by ``eval``, which gives the

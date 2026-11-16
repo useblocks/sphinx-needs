@@ -352,7 +352,8 @@ Every need type is also written ``.. need:<directive>::`` (:ref:`need_qualified`
 such an entry is a ``needs.config`` warning, and is ignored.
 
 A type's ``id_regex`` is matched as :ref:`needs_id_regex` is, where it is: it accepts an id whose local id
-matches, or which matches as a whole (:ref:`namespaced_ids`), with Python's ``re.match``,
+matches, or which matches as a whole (:ref:`namespaced_ids`; so it cannot refuse a namespace, which
+:ref:`needs_namespaced_ids` turns off), with Python's ``re.match``,
 so it is anchored at the start of the id and open at its end (``"REQ_"`` accepts ``REQ_001`` and refuses ``XREQ_001``;
 end it with ``$`` to anchor the end too), on an id given in the need or generated from the type's ``prefix``,
 and never on a need :ref:`needimport` imports or :ref:`needs_external_needs` loads.
@@ -2771,7 +2772,11 @@ End a pattern with ``$`` to anchor its end too.
 
 It accepts an id whose local id matches, or which matches as a whole (:ref:`namespaced_ids`), as does a need
 type's ``id_regex``: with the default, ``nc::REQ_00001`` is accepted through its local id ``REQ_00001``,
-``SUPPLIER::REQ_1`` as a whole, and ``nc::req`` is refused. For an id that is not namespaced the two are one test.
+``REQ_1::A`` as a whole (its local id ``A`` does not match), and ``nc::req`` is refused. For an id that is not
+namespaced the two are one test. Because the local id is tried first, a pattern cannot refuse a namespace:
+``^(?!.*::)[A-Z_]+``, written to refuse every id holding ``::``, accepts ``nc::REQ_1`` through its local id
+``REQ_1``. A project that wants no namespaced ids sets :ref:`needs_namespaced_ids` to ``False``; the pattern then
+sees the whole id, as before, and refuses ``nc::REQ_1``.
 It applies to the needs defined in this project's sources. It is not
 applied to imported needs (:ref:`needimport`) or to external needs
 (:ref:`needs_external_needs`): their ids are the data of the project that wrote them, and an

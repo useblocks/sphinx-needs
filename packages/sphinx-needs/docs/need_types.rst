@@ -365,7 +365,8 @@ beside :ref:`needs_id_regex`, and beside the ``id_regex`` of every type it inher
 
 A ``req`` id starts with ``REQ_``, a ``safety_req`` id with ``REQ_S``, and so it is a ``req`` id too.
 The pattern is matched as :ref:`needs_id_regex` is: it accepts an id whose local id matches, or which matches
-as a whole (:ref:`namespaced_ids`), with Python's ``re.match`` (anchored at the start only),
+as a whole (:ref:`namespaced_ids`; so it cannot refuse a namespace: :ref:`needs_namespaced_ids` turns namespaces
+off), with Python's ``re.match`` (anchored at the start only),
 on ids written in a need and ids generated from the type's ``prefix`` alike
 -- a generated id is the prefix, then (with :ref:`needs_id_from_title`) the title in upper case, then a hash of
 upper-case letters and digits, all of which the pattern must accept --

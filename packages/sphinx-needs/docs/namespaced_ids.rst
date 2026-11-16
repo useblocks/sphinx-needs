@@ -48,7 +48,9 @@ An id that holds ``::`` but is not a namespace and a local id by these rules is 
 refused for that. That is an id where nothing follows the last ``::`` (``NS::``), where a segment is empty
 (``A::::B``, ``::REQ_1``), or where a segment holds another character (``std::vector<int>::size``,
 ``a.b::REQ_1``). A need written in the project's documents, or whose id the project generates (from a need
-type's ``prefix`` or its title), with such an id is reported once, as ``needs.id_namespace``::
+type's ``prefix`` or its title), with such an id is reported at the need, as ``needs.id_namespace``, once per
+need directive (a duplicate of the id is reported for its id too, beside its refusal as a duplicate); a need
+refused for another reason, by an id pattern say, is reported for that alone::
 
    Need id 'A::::B' contains '::' but is not a namespaced id (a namespace segment is empty), so it is read as a
    plain id. Correct the id, set needs_namespaced_ids = False to read no id as namespaced, or suppress the
@@ -61,8 +63,13 @@ Id patterns
 
 :ref:`needs_id_regex` and a need type's ``id_regex`` accept an id whose local id matches, or which matches as a
 whole: with the default ``^[A-Z0-9_]{5,}``, ``nc::REQ_00001`` is accepted through its local id, an id
-accepted before (``SUPPLIER::REQ_1``) still is, and ``nc::req`` is refused. Imported and external needs are not
-checked, as before.
+accepted before as a whole (``REQ_1::A``, whose local id ``A`` does not match) still is, and ``nc::req`` is
+refused. Imported and external needs are not checked, as before.
+
+Because the local id is tried first, a pattern cannot refuse a namespace:
+``^(?!.*::)[A-Z_]+``, written to refuse every id holding ``::``, accepts ``nc::REQ_1`` through its local id
+``REQ_1``. A project that wants no namespaced ids sets :ref:`needs_namespaced_ids` to ``False``; the pattern then
+sees the whole id, as before, and refuses ``nc::REQ_1``.
 
 Namespaces from an import
 -------------------------
@@ -83,8 +90,12 @@ Filtering by namespace
    .. needtable::
       :filter: c.in_namespace("nc")
 
-A dead link or a ``:need:`` role naming a bare id that exactly one need has as its local id says which:
-``Did you mean 'nc::REQ_2'?``.
+A dead link (an external need's too) or a ``:need:`` role naming a bare id that no need has, and that exactly
+one need has as its local id in a namespace, says which, after its usual text: ``linked need REQ_2 not found
+(did you mean 'nc::REQ_2'?)``. A part the link names is re-attached when that need has it
+(``(did you mean 'nc::REQ_2.p1'?)``); otherwise, and with no such need or several, the message is as before.
+The three warnings that carry it are ``needs.link_outgoing``, ``needs.external_link_outgoing`` and
+``needs.link_ref``.
 
 Turning it off
 --------------
