@@ -3257,7 +3257,9 @@ keys:
   prefixed ids. The content is opaque markup, so every whole-word occurrence of a file id in it is rewritten, inside
   code blocks and file names too, but for one that is one end of a longer ``::``-joined id (``REQ_1`` in
   ``other::REQ_1`` or ``REQ_1::x``; a ``::`` followed (or preceded) by anything but a letter, a digit, ``_`` or ``-``
-  joins nothing).
+  joins nothing). Each id of the file is tested on its own, so a shorter file id inside a longer one that is left as
+  it is may be rewritten (``x::REQ_1.SUB_2`` becomes ``x::REQ_1.EXT_SUB_2`` with the file ids ``REQ_1.SUB_2`` and
+  ``SUB_2`` and the prefix ``EXT_``).
 :css_class: A class name as string, which gets set in link representations like :ref:`needtable`.
   The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.
   (*optional*) (*default*: ``external_link``)

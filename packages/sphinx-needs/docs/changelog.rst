@@ -119,10 +119,12 @@ Bug fixes
   ``PLAIN_1::x`` became ``SUP::PLAIN_1::x``, although neither names the file's ``PLAIN_1``. A file id directly after a
   ``::`` that follows a letter, digit, ``_`` or ``-``, or directly before a ``::`` that one of those follows, is now
   left as it is, whatever the prefix; any other character beside the ``::`` (white space, punctuation, a third ``:``,
-  the end of the text) joins nothing. For file ids that neither begin nor end with ``:`` or ``-``, everything else is
-  rewritten as before: an id of the file that itself holds ``::`` (``nc::REQ_1``) as a whole, an id beside a single
-  ``:`` (``:need:`PLAIN_1```, ``PLAIN_1: text``), and one before a ``::`` that ends the text or is followed by white
-  space (``see PLAIN_1::`` before a literal block). The first build after upgrading reads every document again.
+  the end of the text) joins nothing. So an id of the file that itself holds ``::`` (``nc::REQ_1``) is still rewritten
+  as a whole, and so are an id beside a single ``:`` (``:need:`PLAIN_1```, ``PLAIN_1: text``) and one before a ``::``
+  that ends the text or is followed by white space (``see PLAIN_1::`` before a literal block). Each id of the file is
+  tested on its own, so where a longer file id is now left as it is, a shorter file id inside it may be rewritten:
+  with the file ids ``REQ_1.SUB_2`` and ``SUB_2``, ``x::REQ_1.SUB_2`` becomes ``x::REQ_1.SUP::SUB_2``, where it was
+  ``x::SUP::REQ_1.SUB_2``. The first build after upgrading reads every document again.
 
 - 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
   ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
