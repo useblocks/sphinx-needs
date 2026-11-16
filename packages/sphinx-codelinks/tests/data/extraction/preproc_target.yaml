@@ -10,8 +10,9 @@
 # running it. A file with no entry of its own (a header) reads the setting alone. A
 # file whose declared target the pinned libclang cannot read (an entry's own
 # `--target=xtensa-esp32-elf`, a setting naming one, a declared target clang refuses
-# with the entry's flags) is read as written: no arm of any `#if` is left out. Every
-# case below gives the same markers on every machine: none of them is read for the
+# with the entry's flags) is read as written: no arm of any `#if` is left out; so is a
+# file whose every parse clang refuses for a target it reads (a native entry's
+# `-mfpmath=vfp`), and a source such an entry includes. Every case below gives the same markers on every machine: none of them is read for the
 # machine running it, or each reads an arm no machine that runs the extraction takes
 # (`__XTENSA__`), or it is read as written.
 
@@ -424,3 +425,64 @@ unknown_compiler_target_is_not_the_settings_libclang:
   # libclang does not model; the setting fills only what the build does not say, so
   # the file is read as written, not for thumbv7em-none-eabihf: IMPL_T15_ALWAYS,
   # IMPL_T15_XTENSA, IMPL_T15_ARM, IMPL_T15_NOT_ARM.
+
+known_target_refused_everywhere_keeps_every_arm_libclang:
+  lang: c
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  compile_commands:
+    - file: case.c
+      arguments: ["gcc", "-mfpmath=vfp", "-c", "case.c"]
+  source: |
+    // @Always, IMPL_T18_ALWAYS, impl, [REQ]
+    int always;
+    #ifdef __XTENSA__
+    // @xtensa, IMPL_T18_XTENSA, impl, [REQ]
+    int xtensa;
+    #endif
+    #if defined(__arm__)
+    // @arm, IMPL_T18_ARM, impl, [REQ]
+    int arm;
+    #else
+    // @not arm, IMPL_T18_NOT_ARM, impl, [REQ]
+    int not_arm;
+    #endif
+  # A native entry names no target, so it is read for the machine running the
+  # extraction, a target libclang reads; but its -mfpmath=vfp is refused for every
+  # machine that runs it (x86-64 and Arm64), so every parse is refused. No parse
+  # decides an arm, so it is read as written without libclang, by the tree-sitter
+  # engine (each marker on the declaration below it), and a warning says so
+  # (`codelinks.preprocessor_parse_refused`, not part of this case's warnings):
+  # IMPL_T18_ALWAYS, IMPL_T18_XTENSA, IMPL_T18_ARM, IMPL_T18_NOT_ARM.
+
+refused_includer_confirms_by_its_include_lines_libclang:
+  lang: c
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    unity.c: |
+      #ifdef __XTENSA__
+      #include "case.c"
+      #endif
+  compile_commands:
+    - file: unity.c
+      arguments: ["gcc", "-mfpmath=vfp", "-c", "unity.c"]
+  source: |
+    // @Always, IMPL_T19_ALWAYS, impl, [REQ]
+    int always;
+    #if defined(__arm__)
+    // @arm, IMPL_T19_ARM, impl, [REQ]
+    int arm;
+    #else
+    // @not arm, IMPL_T19_NOT_ARM, impl, [REQ]
+    int not_arm;
+    #endif
+  # case.c has no entry; the entry unity.c includes it, in an arm only Xtensa takes,
+  # and every parse of unity.c is refused (-mfpmath=vfp, on every machine). No parse
+  # decides which of its #include lines it compiles, so its #include line confirms
+  # case.c, which is read as written through it, every marker kept, never skipped as
+  # not in the compilation database: IMPL_T19_ALWAYS, IMPL_T19_ARM, IMPL_T19_NOT_ARM.
