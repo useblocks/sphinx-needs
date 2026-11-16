@@ -3255,7 +3255,9 @@ keys:
   function or a variant is left as written); a reference to an id the file does **not** contain is
   left as it is, and may resolve to a need of this project. This project references the external needs by their
   prefixed ids. The content is opaque markup, so every whole-word occurrence of a file id in it is rewritten, inside
-  code blocks and file names too.
+  code blocks and file names too, but for one that is one end of a longer ``::``-joined id (``REQ_1`` in
+  ``other::REQ_1`` or ``REQ_1::x``; a ``::`` followed (or preceded) by anything but a letter, a digit, ``_`` or ``-``
+  joins nothing).
 :css_class: A class name as string, which gets set in link representations like :ref:`needtable`.
   The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.
   (*optional*) (*default*: ``external_link``)
