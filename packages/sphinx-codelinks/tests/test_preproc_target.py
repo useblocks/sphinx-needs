@@ -294,7 +294,7 @@ def test_a_gcc_triple_of_an_unmodelled_architecture_is_reported(prefix: str) -> 
     reported = Unmodelled(
         prefix, TargetSource.compiler_name, why=NotRead.prefix_unmodelled
     )
-    assert decision == Decision(TargetSource.host, None, reported)
+    assert decision == Decision(TargetSource.host, unmodelled=reported)
     args, decision = _entry([WD], prefix, "riscv32-unknown-elf")
     assert args == [WD, "--target=riscv32-unknown-elf"]
     assert decision.source is TargetSource.setting
@@ -444,13 +444,9 @@ def test_a_refused_insertion_is_read_without_the_entrys_cpu(
     assert used == [WD, f"--target={triple}", "-resource-dir", "/r"]
     assert len(calls) == 2
     assert reported.source is by
-    assert reported.unmodelled == Unmodelled(
-        triple,
-        by,
-        "--target",
-        why=NotRead.flags_refused,
-        flags=("-mcpu=e200z4", "-mabi=spe"),
-    )
+    assert reported.unmodelled == Unmodelled(triple, by, why=NotRead.flags_refused)
+    assert reported.left_out == ("-mcpu=e200z4", "-mabi=spe")
+    assert reported.not_read() == ("flags_refused", triple)
     assert reported.message("a.c", "powerpc-unknown-unknown-eabi", False) == (
         f"codelinks: a.c is read for powerpc-unknown-unknown-eabi (the target {triple} "
         f"that {reported.unmodelled.declarer(False)} names, without `-mcpu=e200z4`, "
@@ -473,13 +469,10 @@ def test_a_target_refused_without_the_cpu_too_is_read_for_the_host() -> None:
     assert reported == Decision(
         TargetSource.compiler_name,
         "powerpc-eabi",
-        Unmodelled(
-            "powerpc-eabi",
-            TargetSource.compiler_name,
-            "--target",
-            why=NotRead.target_refused,
-            flags=("-mcpu=e200z4", "-mabi=spe"),
+        unmodelled=Unmodelled(
+            "powerpc-eabi", TargetSource.compiler_name, why=NotRead.target_refused
         ),
+        left_out=("-mcpu=e200z4", "-mabi=spe"),
     )
     assert reported.message("a.c", "x86_64-unknown-linux-gnu", True) == (
         "codelinks: a.c is read for x86_64-unknown-linux-gnu (the machine "
@@ -497,9 +490,8 @@ def test_without_cpu_flags_the_chain_goes_to_the_host() -> None:
     _, used, reported = parse_or_again(args, decision, parse, _Refused)
     assert used == [WD, "-DX"]
     assert len(calls) == 2
-    assert reported.unmodelled is not None
-    assert reported.unmodelled.why is NotRead.target_refused
-    assert reported.unmodelled.flags == ()
+    assert reported.not_read() == ("target_refused", "powerpc-eabi")
+    assert reported.left_out == ()
     message = reported.message("a.c", "x86_64-unknown-linux-gnu", False)
     assert message is not None
     assert "(the machine sphinx-codelinks runs on):" in message
@@ -507,20 +499,98 @@ def test_without_cpu_flags_the_chain_goes_to_the_host() -> None:
 
 
 @pytest.mark.parametrize(
-    "args",
+    ("args", "triple", "flag", "instead"),
     [
-        pytest.param([WD, "--target=arm-none-eabi", "-mcpu=x"], id="own-target"),
-        pytest.param([WD, "-mcpu=x"], id="host"),
+        pytest.param(
+            [WD, "-target", "aarch64-linux-gnu", "-mcpu=cortex-x925", "-DX"],
+            "aarch64-linux-gnu",
+            "-target",
+            "(the target aarch64-linux-gnu that its compilation-database entry's "
+            "`-target` names, without `-mcpu=cortex-x925`)",
+            id="own",
+        ),
+        pytest.param(
+            [WD, "-march=rv32imac_zicsr", "-DX"],
+            None,
+            "",
+            "(the machine sphinx-codelinks runs on, without `-march=rv32imac_zicsr`): "
+            "the libclang sphinx-codelinks loaded refused `-march=rv32imac_zicsr` for it",
+            id="host",
+        ),
     ],
 )
-def test_nothing_inserted_is_not_made_again(args: list[str]) -> None:
-    """A parse whose target was not inserted (the entry's own, or the host) is not made
-    again: its refusal is the file's, as before targets were read."""
+def test_a_target_not_inserted_is_kept_without_the_flags(
+    args: list[str], triple: str | None, flag: str, instead: str
+) -> None:
+    """ubCode fix round 3: a target the decision did not insert (an entry's own, the
+    host's) is kept, and the parse made again without the CPU and ABI flags alone,
+    never for the host without the target; reported as ``flags_refused``, naming the
+    entry's own triple as it wrote it, or no triple for the host."""
+    args, decision = _entry(args)
+    parse, calls = _parser(lambda attempt: any("-m" in arg for arg in attempt))
+    _, used, reported = parse_or_again(args, decision, parse, _Refused)
+    assert len(calls) == 2
+    assert used == [arg for arg in args if not arg.startswith(("-mcpu=", "-march="))]
+    assert reported.source is decision.source
+    assert reported.not_read() == ("flags_refused", triple)
+    assert reported.unmodelled is not None
+    assert reported.unmodelled.flag == flag
+    message = reported.message("a.c", "x86_64-pc-linux-gnu", False)
+    assert message is not None
+    assert instead in message
+
+
+@pytest.mark.parametrize(
+    "args",
+    [
+        pytest.param([WD, "--target=arm-none-eabi", "-DX"], id="own-target"),
+        pytest.param([WD, "-DX"], id="host"),
+    ],
+)
+def test_nothing_to_leave_out_is_not_made_again(args: list[str]) -> None:
+    """A parse whose target was not inserted (the entry's own, or the host) and that
+    carries none of the CPU and ABI flags is not made again: its refusal is the file's,
+    as before targets were read; the file is skipped with a log line and no finding."""
     args, decision = _entry(args)
     parse, calls = _parser(lambda _attempt: True)
     with pytest.raises(_Refused):
         parse_or_again(args, decision, parse, _Refused)
     assert len(calls) == 1
+
+
+def test_the_reason_that_decides_the_target_read_wins() -> None:
+    """Which reason is given where there are two: an unmodelled triple wins over flags
+    left out with the target read instead (the target is the same; the warning names
+    both), and a refused inserted triple wins over an unmodelled one (it changes the
+    target again)."""
+    args, decision = _entry(
+        [WD, "-march=rv32imac_zicsr", "-mabi=ilp32"], "riscv-none-elf"
+    )
+    assert decision.not_read() == ("prefix_unmodelled", "riscv-none-elf")
+    [(_, refused)] = target.again(args, decision)
+    assert refused.not_read() == ("prefix_unmodelled", "riscv-none-elf")
+    message = refused.message("a.c", "x86_64-pc-linux-gnu", False)
+    assert message is not None
+    assert (
+        "(the machine sphinx-codelinks runs on, without `-march=rv32imac_zicsr`, "
+        "`-mabi=ilp32`)" in message
+    )
+    assert "carries the target riscv-none-elf" in message
+    assert (
+        "; and it refused `-march=rv32imac_zicsr`, `-mabi=ilp32` for the target read "
+        "instead, which is read without them" in message
+    )
+    # an entry's own xtensa, then the setting, inserted and refused
+    args, decision = _entry(
+        [WD, "--target=xtensa-esp32-elf", "-mcpu=e200z4"], None, "powerpc-eabi"
+    )
+    assert decision.not_read() == ("unmodelled", "xtensa-esp32-elf")
+    attempts = target.again(args, decision)
+    assert attempts[0][1].not_read() == ("unmodelled", "xtensa-esp32-elf")
+    assert attempts[1][1].not_read() == ("target_refused", "powerpc-eabi")
+    # a setting libclang does not model is said to be the setting's
+    _, decision = _entry([WD], None, "tricore-elf")
+    assert decision.not_read() == ("setting_unmodelled", "tricore-elf")
 
 
 def test_a_refusal_at_every_step_is_the_files() -> None:
@@ -609,13 +679,6 @@ def test_each_check_asks_the_loaded_libclang_once(
     assert len(probes) == 2
 
 
-def _host_triple() -> str:
-    """The triple the loaded libclang parses for when it is given none."""
-    cx = loader.load_clang_cindex()
-    tu = cx.Index.create().parse("h.c", args=[], unsaved_files=[("h.c", "")])
-    return target.triple_of(tu)
-
-
 def _analyse(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -623,9 +686,12 @@ def _analyse(
     argv: list[str] | None,
     setting: str | None = None,
     name: str = "case.c",
+    reasons: list[tuple[str, str | None]] | None = None,
 ) -> tuple[set[str], list[tuple[str, str]]]:
     """Run the libclang engine on ``source`` (one entry of ``argv``, or none: the
-    defines path) and return the ids extracted and the warnings."""
+    defines path) and return the ids extracted and the warnings; ``reasons`` collects
+    each warned file's reason and declared triple, as ubCode's report names them
+    (:meth:`.Decision.not_read`)."""
     src = tmp_path / name
     src.write_text(source)
     db = None
@@ -636,6 +702,23 @@ def _analyse(
         )
     recorder = _RecordingLogger()
     monkeypatch.setattr(analyse_module, "logger", recorder)
+    if reasons is not None:
+        warn = SourceAnalyse._warn_target
+
+        def recording(
+            self: SourceAnalyse,
+            path: Path,
+            decision: Decision,
+            read_for: str,
+            *,
+            includer: bool,
+        ) -> None:
+            not_read = decision.not_read()
+            if not_read is not None:
+                reasons.append(not_read)
+            warn(self, path, decision, read_for, includer=includer)
+
+        monkeypatch.setattr(SourceAnalyse, "_warn_target", recording)
     analyse = SourceAnalyse(
         SourceAnalyseConfig(
             src_files=[src],
@@ -706,8 +789,8 @@ def test_a_cpu_clang_refuses_keeps_the_file_and_its_target(
     assert f"loaded refused `{refused}` with that target" in message
 
 
-#: The arm of :data:`ARMS` each machine the suite runs on reads for itself.
-HOST_ARMS = {"x86_64": "IMPL_X86", "aarch64": "IMPL_A64", "arm64": "IMPL_A64"}
+#: The arms of :data:`ARMS` a machine the suite runs on reads for itself.
+HOST_ARMS = {"IMPL_X86", "IMPL_A64"}
 
 
 def test_libclang_refusing_the_target_without_the_cpu_reads_the_host(
@@ -716,16 +799,93 @@ def test_libclang_refusing_the_target_without_the_cpu_reads_the_host(
     """Step 3 against the loaded libclang, on every machine: ``-mcmse`` makes clang
     refuse ``arm-none-eabi`` with or without the CPU (it needs an ARMv8-M one), while
     an x86-64, an Arm64 and a Windows host each accept it for themselves (ubCode's
-    example), so the file is read for the host with its other flags."""
+    example), so the file is read for the host with its other flags. The reason is
+    asserted, never the host triple's spelling (``arm64-apple-macosx14.0.0`` on a
+    macOS Arm64 machine)."""
     argv = ["arm-none-eabi-gcc", "-mcpu=cortex-m4", "-mcmse", "-c", "case.c"]
-    ids, warnings = _analyse(tmp_path, monkeypatch, ARMS, argv)
-    assert ids == {"IMPL_ALWAYS", HOST_ARMS[_host_triple().split("-", 1)[0]]}
+    reasons: list[tuple[str, str | None]] = []
+    ids, warnings = _analyse(tmp_path, monkeypatch, ARMS, argv, reasons=reasons)
+    assert "IMPL_ALWAYS" in ids
+    assert len(ids & HOST_ARMS) == 1
+    assert ids <= {"IMPL_ALWAYS", *HOST_ARMS}
+    assert reasons == [("target_refused", "arm-none-eabi")]
     [(message, subtype)] = warnings
     assert subtype == "preprocessor_target_unknown"
     assert (
         "(the machine sphinx-codelinks runs on, without `-mcpu=cortex-m4`)" in message
     )
     assert "refused the target arm-none-eabi that its compiler's name names" in message
+
+
+NEED_REFS = "// @Always, IMPL_ALWAYS, impl\nint f(void) { return 0; }\n"
+
+
+@pytest.mark.parametrize(
+    ("argv", "fallback", "declared", "flags"),
+    [
+        pytest.param(
+            [
+                "clang",
+                "--target=aarch64-linux-gnu",
+                "-mcpu=cortex-x925",
+                "-c",
+                "case.c",
+            ],
+            "flags_refused",
+            "aarch64-linux-gnu",
+            ["-mcpu=cortex-x925"],
+            id="entry-own",
+        ),
+        pytest.param(
+            [
+                "riscv-none-elf-gcc",
+                "-march=rv32imac_zicsr",
+                "-mabi=ilp32",
+                "-c",
+                "case.c",
+            ],
+            "prefix_unmodelled",
+            "riscv-none-elf",
+            ["-march=rv32imac_zicsr", "-mabi=ilp32"],
+            id="xpack-riscv",
+        ),
+        pytest.param(
+            ["gcc", "-march=rv32imac_zicsr", "-mabi=ilp32", "-c", "case.c"],
+            "flags_refused",
+            None,
+            ["-march=rv32imac_zicsr", "-mabi=ilp32"],
+            id="native",
+        ),
+    ],
+)
+def test_a_refused_cpu_is_left_out_whatever_the_targets_source(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+    fallback: str,
+    declared: str | None,
+    flags: list[str],
+) -> None:
+    """ubCode fix round 3: the CPU and ABI flags are left out of ANY refused parse that
+    carries them, keeping its target: an entry's own target (a database from a newer
+    clang naming a CPU clang 18 does not know); a compiler whose name is no target
+    libclang reads (xPack's ``riscv-none-elf-gcc``: ``riscv`` alone is no architecture
+    of libclang's, so the host is read, which refuses RISC-V's ``-march``); a native
+    compiler (the host's own target). Each was dropped before, on every machine. The
+    native row passes ``-mabi=ilp32`` too, as ubCode's does: libclang refuses
+    ``-march=rv32imac_zicsr`` for an x86-64 host but only warns for an Arm64 one, which
+    refuses ``-mabi=ilp32`` instead, so the pair is refused on every machine. Where the
+    target is not the build's for another reason too (``prefix_unmodelled``), that
+    reason is given, and the warning names both."""
+    reasons: list[tuple[str, str | None]] = []
+    ids, warnings = _analyse(tmp_path, monkeypatch, NEED_REFS, argv, reasons=reasons)
+    assert ids == {"IMPL_ALWAYS"}, "the file is read, never dropped"
+    assert reasons == [(fallback, declared)]
+    [(message, subtype)] = warnings
+    assert subtype == "preprocessor_target_unknown"
+    assert "without " + ", ".join(f"`{flag}`" for flag in flags) in message
+    if declared is not None:
+        assert declared in message
 
 
 def test_the_setting_with_a_native_entrys_host_only_flags_keeps_the_file(
@@ -754,6 +914,7 @@ XTENSA = (
         ("tricore-elf-gcc", "tricore-elf"),
         ("sh-elf-gcc", "sh-elf"),
         ("nios2-elf-gcc", "nios2-elf"),
+        ("nios2-unknown-linux-gnu-gcc", "nios2-unknown-linux-gnu"),
         ("musl-gcc", None),
         ("afl-clang-fast", None),
         ("my-arm-gcc", None),
@@ -779,9 +940,10 @@ def test_a_name_of_an_unmodelled_architecture_is_reported(
     [(message, subtype)] = warnings
     assert subtype == "preprocessor_target_unknown"
     arch = reported.split("-", 1)[0]
-    assert message == (
-        f"codelinks: {tmp_path / 'case.c'} is read for {_host_triple()} (the machine "
-        f"sphinx-codelinks runs on): its compiler's name carries the target "
+    read_for, _, rest = message.partition(" (the machine sphinx-codelinks runs on): ")
+    assert read_for.startswith(f"codelinks: {tmp_path / 'case.c'} is read for ")
+    assert rest == (
+        f"its compiler's name carries the target "
         f"{reported}, whose architecture {arch} the libclang sphinx-codelinks loaded "
         f"does not model, so the `#if` arms of the file on the target are not its "
         f"build's"

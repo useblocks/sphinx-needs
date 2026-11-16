@@ -1111,19 +1111,26 @@ the target the file is read for instead:
   analysis runs on;
 - a ``target`` setting naming one is not used: the file is read for the machine the
   analysis runs on;
-- a target from the compiler's name or the setting that clang refuses with the entry's
-  own flags (a CPU or an ABI GCC knows and clang 18 does not, such as ``-mcpu=e200z4``,
-  ``-mcpu=cortex-r52plus`` or ``-mabi=lp64`` for ``aarch64-linux-gnu``) is kept, and the
-  file read without the entry's ``-mcpu=``, ``-march=``, ``-mtune=`` and ``-mabi=``, for
-  the architecture's default sub-architecture;
-- a target clang refuses without those flags too, because of another of the entry's flags
-  (``-mcmse`` with ``arm-none-eabi``), is dropped for that file, which is read with its
-  other flags for the machine the analysis runs on.
+- a target that clang refuses with the entry's own flags (a CPU or an ABI GCC knows and
+  clang 18 does not, such as ``-mcpu=e200z4``, ``-mcpu=cortex-r52plus``,
+  ``-mcpu=cortex-x925`` or ``-mabi=lp64`` for ``aarch64-linux-gnu``, or RISC-V's
+  ``-march=rv32imac_zicsr`` for the machine the analysis runs on, which is what xPack's
+  ``riscv-none-elf-gcc`` is read for) is kept, whatever its source, and the file is read
+  for it without the entry's ``-mcpu=``, ``-march=``, ``-mtune=`` and ``-mabi=``, that
+  is, for the architecture's default CPU;
+- a target from the compiler's name or the setting that clang refuses without those
+  flags too, because of another of the entry's flags (``-mcmse`` with ``arm-none-eabi``),
+  is dropped for that file, which is read for the machine the analysis runs on, with its
+  other flags.
 
-No file is left unread because of a target the engine inserted: with the inserted
-target left out, the parse is the one the file had before targets were read. A file
-whose parse libclang refuses for the target the entry names itself, or for the machine
-the analysis runs on, is skipped with a warning, as before.
+A target **Sphinx-CodeLinks** inserts (from the compiler's name or the ``target``
+setting) never leaves a file unread that would be read without it, whatever the machine
+the analysis runs on: a refused parse is made again without the entry's ``-mcpu=``,
+``-march=``, ``-mtune=`` and ``-mabi=``, and, for an inserted target, then for the
+machine the analysis runs on without them. A file is still skipped, as before targets
+were read, when what is left of its flags is refused for that machine too
+(``-mfpmath=sse`` with an Arm target, on an Arm64 machine): it gets the warning that
+libclang could not load it, and no ``codelinks.preprocessor_target_unknown``.
 
 Header files
 ~~~~~~~~~~~~~
@@ -1244,8 +1251,13 @@ where a marker your build compiles is missing:
   ``arm-none-eabi`` is an older Arm architecture than the one a GCC configured
   ``--with-cpu`` or ``--with-arch`` defaults to, so an ``#if __ARM_ARCH < 5`` can take the
   other branch (an entry that passes ``-mcpu``, as Zephyr's do, is exact);
-- **a CPU clang does not know**: a file whose ``-mcpu`` or ``-march`` clang refuses with
-  its target (``-mcpu=e200z4``) is read for the architecture's default sub-architecture;
+- **a CPU or ABI clang does not know**: a file whose ``-mcpu``, ``-march``, ``-mtune``
+  or ``-mabi`` clang refuses with its target (``-mcpu=e200z4``, ``-mcpu=cortex-r52plus``)
+  is read for the architecture's default sub-architecture, without them, with a
+  ``codelinks.preprocessor_target_unknown`` warning; all four are left out when one is
+  refused, so an accepted ``-march`` goes with a refused ``-mabi``
+  (``-march=armv8.2-a+crypto -mabi=lp64`` for ``aarch64-linux-gnu`` loses
+  ``__ARM_FEATURE_AES``);
 - **headers**: a header, and a file no entry applies to, is read for the ``target``
   setting, else the machine the analysis runs on, not for the target and flags of the
   entries that include it;
