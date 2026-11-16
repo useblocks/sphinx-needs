@@ -37,7 +37,7 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, TypeGuard
 
-from sphinx_needs._id_facets import IN_NAMESPACE
+from sphinx_needs._id_facets import IN_NAMESPACE, namespace_argument
 from sphinx_needs._source_facets import facet_read
 from sphinx_needs._wording import title_hint
 
@@ -1492,8 +1492,8 @@ def filter_problem(text: str) -> str | None:
         and isinstance(node.args[0].value, str)
     }
     #: the ``c.in_namespace("<ns>")`` checks, which read the candidate's id alone
-    is_a |= {
-        id(node.func)
+    in_namespace = [
+        node
         for node in ast.walk(tree)
         if isinstance(node, ast.Call)
         and isinstance(node.func, ast.Attribute)
@@ -1504,7 +1504,14 @@ def filter_problem(text: str) -> str | None:
         and not node.keywords
         and isinstance(node.args[0], ast.Constant)
         and isinstance(node.args[0].value, str)
-    }
+    ]
+    for node in in_namespace:
+        # a literal naming no namespace is an error of every filter: here, the rule's
+        try:
+            namespace_argument(node.args[0].value)  # ty: ignore[unresolved-attribute]
+        except ValueError as err:
+            return str(err)
+    is_a |= {id(node.func) for node in in_namespace}
     #: the ``c.source`` / ``c.id`` of each ``c.source.<facet>`` / ``c.id.<facet>``,
     #: which reads the candidate alone
     facets = {

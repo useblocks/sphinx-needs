@@ -1271,7 +1271,7 @@ class NeedCheckContext:
         need = self._need
         return IdFacets(need._need if isinstance(need, NeedPartItem) else need)
 
-    def in_namespace(self, namespace: str) -> bool:
+    def in_namespace(self, namespace: str, /) -> bool:
         """Whether the need's namespace is *namespace* or below it, compared by
         segments (a part's is its need's).
 

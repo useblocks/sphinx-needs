@@ -915,6 +915,12 @@ def test_a_part_reads_its_needs_facets(test_app: Any) -> None:
         assert _both_tiers(app, filter_string, parts=True) == (expected, expected)
 
 
+#: the error of comparing ``c.id`` itself with a value: it holds the facets, not the id
+ID_IS_NO_ID = (
+    "c.id holds the facets of the id, not the id: compare id, c.id.local or c.id.ns"
+)
+
+
 @pytest.mark.parametrize(
     ("filter_string", "error"),
     [
@@ -928,6 +934,14 @@ def test_a_part_reads_its_needs_facets(test_app: Any) -> None:
         ("c.in_namespace(1)", "c.in_namespace takes a namespace as a string, not int"),
         ("c.id.nss", "c.id has no facet 'nss' (did you mean 'ns'?)"),
         ("c.id.local_id", "c.id has no facet 'local_id' (did you mean 'local'?)"),
+        (
+            'c.in_namespace(namespace="nc")',
+            "positional-only arguments passed as keyword",
+        ),
+        ('c.in_namespace("nc", "m2")', "takes 2 positional arguments but 3 were given"),
+        ('c.id == "nc::REQ_001"', ID_IS_NO_ID),
+        ('c.id != "nc::REQ_001"', ID_IS_NO_ID),
+        ('c.id in ["nc::REQ_001"]', ID_IS_NO_ID),
     ],
 )
 def test_an_argument_that_is_no_namespace_is_an_error_of_the_filter(
@@ -981,8 +995,11 @@ def test_an_argument_that_is_no_namespace_is_an_error_of_the_filter(
         ('c.id.local.startswith("REQ")', ("fast", None)),
         ("c.in_namespace(nsv)", ("eval", "call:c.in_namespace")),
         ('c.in_namespace("a", "b")', ("eval", "call:c.in_namespace")),
+        ('c.in_namespace("nc", x=1)', ("eval", "call:c.in_namespace")),
+        ('c.in_namespace(namespace="nc")', ("eval", "call:c.in_namespace")),
         ("c.id.nss", ("eval", "attribute:c")),
         ("c.id", ("eval", "attribute:c")),
+        ('c.id == "nc::REQ_001"', ("eval", "attribute:c")),
     ],
 )
 def test_the_tier_of_each(filter_string: str, tier: tuple[str, Any]) -> None:
@@ -991,6 +1008,13 @@ def test_the_tier_of_each(filter_string: str, tier: tuple[str, Any]) -> None:
     from sphinx_needs.filter_common import _filter_tier
 
     assert _filter_tier(filter_string) == tier
+
+
+#: ``parse_namespace``'s refusal, as ``c.in_namespace`` reports it
+NO_NAMESPACE = (
+    "c.in_namespace: {text!r} is not a namespace: its piece {piece!r} is not a "
+    "segment, which is one or more ASCII letters, ASCII digits, '_' or '-'"
+)
 
 
 @pytest.mark.parametrize(
@@ -1005,11 +1029,28 @@ def test_the_tier_of_each(filter_string: str, tier: tuple[str, Any]) -> None:
         ),
         ("c.id.nope", "calls 'c.id', which a declared rule cannot read"),
         ("c.id", "calls 'c.id', which a declared rule cannot read"),
+        (
+            'c.in_namespace("nc", x=1)',
+            "calls 'c.in_namespace', which a declared rule cannot read",
+        ),
+        (
+            'c.in_namespace("a", "b")',
+            "calls 'c.in_namespace', which a declared rule cannot read",
+        ),
+        (
+            'c.in_namespace("")',
+            "c.in_namespace('') names no namespace; a need in no namespace is "
+            "c.id.ns == ''",
+        ),
+        ('c.in_namespace("a b")', NO_NAMESPACE.format(text="a b", piece="a b")),
+        ('c.in_namespace("nc::")', NO_NAMESPACE.format(text="nc::", piece="")),
     ],
 )
 def test_a_declared_rule_reads_them(text: str, problem: str | None) -> None:
-    """A derived field's ``where`` admits the facets and ``c.in_namespace`` with a
-    string literal, as it admits ``c.source`` and ``c.is_a``."""
+    """A derived field's ``where`` admits the facets and ``c.in_namespace`` with one
+    string literal naming a namespace, as it admits ``c.source`` and ``c.is_a``; an
+    empty literal, or one that is no namespace, is the rule's problem, as it is an
+    error of every other filter."""
     from sphinx_needs.derive import filter_problem
 
     assert filter_problem(text) == problem
@@ -1227,3 +1268,93 @@ def test_the_links_and_the_roles_share_one_index(test_app: Any) -> None:
         patch.setattr(_namespaced_ids.LocalIdHints, "hint", counting)
         test_app.build()
     assert len(built) == 1
+
+
+DERIVE_TOML = """\
+[needs.fields.n_all]
+schema = { type = "integer" }
+derive = { kind = "count", over = "links", where = 'c.in_namespace("nc")' }
+""" + "".join(
+    f"""
+[needs.fields.{name}]
+schema = {{ type = "integer" }}
+derive = {{ kind = "count", over = "links", where = 'c.in_namespace("{text}")' }}
+"""
+    for name, text in [("n_empty", ""), ("n_bad", "a b"), ("n_trail", "nc::")]
+)
+
+DERIVE_INDEX = """\
+Index
+=====
+
+.. req:: Linked one
+   :id: nc::A_1
+
+.. req:: Linked two
+   :id: nc::m2::B_1
+
+.. req:: Linked three
+   :id: x::C_1
+
+.. req:: Host
+   :id: HOST_1
+   :links: nc::A_1, nc::m2::B_1, x::C_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "files": [
+                (
+                    Path("conf.py"),
+                    UNCHECKED + 'needs_from_toml = "ubproject.toml"\n',
+                ),
+                (Path("ubproject.toml"), DERIVE_TOML),
+                (Path("index.rst"), DERIVE_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_derived_rule_naming_no_namespace_is_reported(test_app: Any) -> None:
+    """A derived field's ``where`` naming no namespace is reported as an invalid rule
+    (``needs.derive_invalid``), never a count of nothing; a valid one counts."""
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    for name in ("n_empty", "n_bad", "n_trail"):
+        (warning,) = [w for w in warnings if f"field {name!r}" in w]
+        assert warning.endswith("[needs.derive_invalid]"), warning
+        assert "c.in_namespace" in warning, warning
+    assert len(warnings) == 3, warnings
+    assert _needs(app)["HOST_1"]["n_all"] == 2
+
+
+@pytest.mark.parametrize("test_app", [_filter_project(True)], indirect=True)
+def test_comparing_c_id_itself_is_an_invalid_filter(test_app: Any) -> None:
+    """``c.id`` holds the facets of the id: compared with a value it is an invalid
+    filter, reported by the engine over needs and over parts, never "no need"."""
+    from sphinx_needs.filter_common import filter_needs_parts, filter_needs_view
+
+    app = test_app
+    app.build()
+    view = _needs(app)
+    config = NeedsSphinxConfig(app.config)
+    stream = app._warning
+    for filter_string in ('c.id == "nc::REQ_001"', 'c.id in ["nc::REQ_001"]'):
+        for parts in (False, True):
+            start = len(stream.getvalue())
+            if parts:
+                found = filter_needs_parts(
+                    view.to_list_with_parts(), config, filter_string
+                )
+            else:
+                found = filter_needs_view(view, config, filter_string)
+            assert list(found) == []
+            reported = build_warnings(stream.getvalue()[start:], srcdir=app.srcdir)
+            assert len(reported) == 1, reported
+            assert reported[0].endswith("[needs.filter]"), reported
+            assert ID_IS_NO_ID in reported[0], reported

@@ -76,7 +76,18 @@ class IdFacets:
         return reader(self._need)
 
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, IdFacets) and other._need is self._need
+        """``c.id`` is the facets of the id, not the id: compared with anything else
+        (``c.id == "nc::REQ_1"``, ``c.id in [...]``) it is an error of the filter, not
+        a silent "no need"."""
+        if not isinstance(other, IdFacets):
+            raise TypeError(
+                "c.id holds the facets of the id, not the id: compare id, c.id.local "
+                "or c.id.ns"
+            )
+        return other._need is self._need
+
+    def __ne__(self, other: object) -> bool:
+        return not self == other
 
     def __hash__(self) -> int:
         return id(self._need)
