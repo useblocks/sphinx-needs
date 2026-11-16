@@ -1113,16 +1113,19 @@ such a triple fits.
   ``target`` setting does not override what the entry declares, and is not used);
 - a compiler's name whose first part is an architecture libclang does not have, but whose
   rest it reads as a vendor, an operating system or an environment
-  (``xtensa-esp32-elf-gcc``, ``tricore-elf-gcc``: ``elf``), names no target either, and is
-  reported: the file is read for the ``target`` setting, else for the machine the
-  analysis runs on;
+  (``xtensa-esp32-elf-gcc``, ``tricore-elf-gcc``, ``sh-elf-gcc``: ``elf``), names a target
+  it cannot read: the file is read as written (the ``target`` setting does not override
+  it either); by the same rule a wrapper whose name's rest is a system word
+  (``my-linux-gcc``) names one too, and is read as written;
 - a ``target`` setting naming one is not used: a file that would take it is read as
   written;
 - a target that clang refuses with the entry's own flags (a CPU or an ABI GCC knows and
   clang 18 does not, such as ``-mcpu=e200z4``, ``-mcpu=cortex-r52plus``,
   ``-mcpu=cortex-x925`` or ``-mabi=lp64`` for ``aarch64-linux-gnu``, or RISC-V's
-  ``-march=rv32imac_zicsr`` for the machine the analysis runs on, which is what xPack's
-  ``riscv-none-elf-gcc`` is read for) is kept, whatever its source, and the file is read
+  ``-march=rv32imac_zicsr`` for the machine the analysis runs on, in a build that names
+  no target; xPack's ``riscv-none-elf-gcc`` names one, ``riscv``, an architecture
+  libclang does not have without its width, so it is read as written instead) is kept,
+  whatever its source, and the file is read
   for it without the entry's ``-mcpu=``, ``-march=``, ``-mtune=`` and ``-mabi=``, that
   is, for the architecture's default CPU;
 - a declared target (the entry's own, its compiler's name's or the setting's) that clang
@@ -1290,15 +1293,13 @@ where a marker your build compiles is missing:
 - **a cross compiler whose name carries no triple** (HighTec's ``tricore-gcc``, Xilinx's
   ``mb-gcc``, Microchip's ``xc32-gcc`` and ``xc16-gcc``, IAR's ``iccarm``): its file is
   read for the machine the analysis runs on, as a native compiler's is: set the
-  ``target`` setting for it;
-- **a compiler whose name carries a target the loaded libclang cannot parse for**
-  (``xtensa-esp32-elf-gcc``): it is reported as ``codelinks.preprocessor_target_unknown``
-  and the file read for the ``target`` setting or the machine the analysis runs on.
+  ``target`` setting for it.
 
 A file whose target is unknown hides no marker, but loses precision: an entry's own
-``--target=xtensa-esp32-elf``, a ``target`` setting naming such a target for a file that
-takes it, or a declared target clang refuses with the entry's flags even without its
-``-mcpu``, ``-march``, ``-mtune`` and ``-mabi`` (``-mcmse`` with ``arm-none-eabi``)
-leaves the file read as written, with a ``codelinks.preprocessor_target_unknown``
-warning: the markers of every branch of every ``#if`` are extracted, those of the
-``#ifdef CONFIG_X`` branches the build does not compile among them, and none is lost.
+``--target=xtensa-esp32-elf``, a compiler whose name carries such a target
+(``xtensa-esp32-elf-gcc``), a ``target`` setting naming one for a file that takes it, or
+a declared target clang refuses with the entry's flags even without its ``-mcpu``,
+``-march``, ``-mtune`` and ``-mabi`` (``-mcmse`` with ``arm-none-eabi``) leaves the file
+read as written, with a ``codelinks.preprocessor_target_unknown`` warning: the markers
+of every branch of every ``#if`` are extracted, those of the ``#ifdef CONFIG_X``
+branches the build does not compile among them, and none is lost.
