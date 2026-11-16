@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shlex
+from dataclasses import dataclass
 from pathlib import Path
 
 from sphinx_codelinks.analyse.preproc.builtin_headers import passes_next_argument
@@ -61,7 +62,7 @@ def find_compile_db(start: Path, project_root: Path | None = None) -> Path | Non
         current = current.parent
 
 
-def _left_out(arg: str, input_file: str, input_base: str) -> int:
+def _left_out(arg: str, input_file: str) -> int:
     """How many arguments, ``arg`` first, :func:`filter_args` leaves out at ``arg``:
     2 for an option whose separate value names an output (``-o out.o``, ``-MF dep.d``),
     1 for one that asks for an output or none (``-c``, ``-MD``, ``-MFdep.d``) and for
@@ -73,11 +74,18 @@ def _left_out(arg: str, input_file: str, input_base: str) -> int:
     if arg.startswith(("-MF", "-MT", "-MQ")) and len(arg) > _MIN_JOINED_FLAG_LEN:
         return 1  # joined form, e.g. -MFdep.d
     # the TU source positional (exact match, or same basename)
-    if not arg.startswith("-") and (
-        arg in (input_file, input_base) or Path(arg).name == input_base
-    ):
+    if is_input(arg, input_file):
         return 1
     return 0
+
+
+def is_input(arg: str, input_file: str) -> bool:
+    """Whether the argument ``arg`` is the entry's own input ``input_file``: a word
+    that is not an option and names it, as written or by its file name."""
+    input_base = Path(input_file).name
+    return not arg.startswith("-") and (
+        arg in (input_file, input_base) or Path(arg).name == input_base
+    )
 
 
 def filter_args(argv: list[str], input_file: str) -> list[str]:
@@ -113,7 +121,6 @@ def filter_args(argv: list[str], input_file: str) -> list[str]:
     skip_next = False
     keep_next_value = False
     pass_through: str | None = None
-    input_base = Path(input_file).name
     # Skip leading non-flag tokens. argv[0] is the compiler, but a build may prefix
     # it with a launcher (ccache/sccache/distcc), so drop every leading non-flag
     # token up to the first flag — otherwise the real compiler leaks in as a
@@ -145,7 +152,7 @@ def filter_args(argv: list[str], input_file: str) -> list[str]:
             if arg == END_OF_OPTIONS:
                 pass
             elif pass_through.startswith("-Xarch_") and (
-                left_out := _left_out(arg, input_file, input_base)
+                left_out := _left_out(arg, input_file)
             ):
                 skip_next = left_out == 2
             else:
@@ -157,7 +164,7 @@ def filter_args(argv: list[str], input_file: str) -> list[str]:
         if passes_next_argument(arg):
             pass_through = arg
             continue
-        if left_out := _left_out(arg, input_file, input_base):
+        if left_out := _left_out(arg, input_file):
             skip_next = left_out == 2
             continue
         if arg in _KEEP_WITH_VALUE:
@@ -175,18 +182,33 @@ WORKING_DIRECTORY_FLAG = "-working-directory="
 :func:`load_flags_map`)."""
 
 
+@dataclass(frozen=True)
+class DatabaseEntry:
+    """One entry of a compilation database, as the engine reads it."""
+
+    args: list[str]
+    """Its arguments as libclang is given them: ``-working-directory=<directory>``
+    first, then :func:`filter_args`' (its compiler, its input and its outputs left
+    out)."""
+    compiler_target: str | None
+    """The target its compiler's name carries (:func:`target_of_compiler`), whether
+    or not the loaded libclang models it."""
+
+
 # @Resolve per-file compiler flags from the compilation database, IMPL_PREPROC_4, impl, [FE_PREPROC]
-def load_flags_map(db_path: Path) -> dict[Path, list[str]]:
-    """Parse compile_commands.json -> {absolute file path: filtered args}.
+def load_database(db_path: Path) -> dict[Path, DatabaseEntry]:
+    """Parse compile_commands.json -> {absolute file path: its entry}.
 
     Each entry's arguments start with ``-working-directory=<directory>``, the entry's
     ``directory`` (a relative one is taken against the database file's own directory),
     so that a relative ``-I``, ``-iquote``, ``-isystem``, ``-include`` or ``-imacros``
     resolves as the build resolves it, not against the process' working directory.
+    Its compiler, which :func:`filter_args` leaves out, is read for the target its name
+    carries.
     """
     entries = json.loads(db_path.read_text())
     db_dir = db_path.absolute().parent
-    flags: dict[Path, list[str]] = {}
+    database: dict[Path, DatabaseEntry] = {}
     for entry in entries:
         if "file" not in entry or "directory" not in entry:
             continue  # malformed entry: skip, keep going
@@ -200,11 +222,103 @@ def load_flags_map(db_path: Path) -> dict[Path, list[str]]:
         directory = (db_dir / entry["directory"]).resolve()
         file_field = entry["file"]
         abs_file = (directory / file_field).resolve()
-        flags[abs_file] = [
-            f"{WORKING_DIRECTORY_FLAG}{directory}",
-            *filter_args(argv, file_field),
-        ]
-    return flags
+        compiler = compiler_of(argv, file_field)
+        database[abs_file] = DatabaseEntry(
+            [f"{WORKING_DIRECTORY_FLAG}{directory}", *filter_args(argv, file_field)],
+            target_of_compiler(compiler) if compiler is not None else None,
+        )
+    return database
+
+
+def load_flags_map(db_path: Path) -> dict[Path, list[str]]:
+    """Parse compile_commands.json -> {absolute file path: filtered args}: each entry's
+    :attr:`DatabaseEntry.args` (see :func:`load_database`)."""
+    return {path: entry.args for path, entry in load_database(db_path).items()}
+
+
+def compiler_of(argv: list[str], input_file: str) -> str | None:
+    """The compiler of a compile command ``argv`` whose input is ``input_file``.
+
+    The last of its leading words that are not options (a launcher, ``ccache``,
+    ``sccache``, ``distcc``, comes before it) that is neither the input itself (``gcc
+    a.c -c`` puts it there) nor a response file (``gcc @args.rsp``, whose contents
+    libclang does not read).
+    """
+    compiler = None
+    for arg in argv:
+        if arg.startswith("-"):
+            break
+        if not arg.startswith("@") and not is_input(arg, input_file):
+            compiler = arg
+    return compiler
+
+
+_DRIVER_SUFFIXES = (
+    "clang",
+    "clang++",
+    "clang-c++",
+    "clang-cc",
+    "clang-cpp",
+    "clang-g++",
+    "clang-gcc",
+    "clang-cl",
+    "cc",
+    "cpp",
+    "cl",
+    "++",
+    "flang",
+    "clang-dxc",
+)
+"""The suffixes clang's driver recognises at the end of its program name, in the order
+it tries them (``DriverSuffixes`` in clang's ``ToolChain.cpp``; ``gcc`` and ``g++``
+match through ``cc`` and ``++``)."""
+
+
+def _suffix_start(name: str) -> int | None:
+    """Where a driver suffix starts in ``name``: the first of :data:`_DRIVER_SUFFIXES`
+    it ends with."""
+    for suffix in _DRIVER_SUFFIXES:
+        if name.endswith(suffix):
+            return len(name) - len(suffix)
+    return None
+
+
+def target_of_compiler(compiler: str) -> str | None:
+    """The target a compiler's program name declares, by the rule of clang's driver
+    (``ToolChain::getTargetAndModeFromProgramName``).
+
+    The name's last path component (by ``/`` or ``\\``, on every machine); a driver
+    suffix found at its end, else after removing ``.exe``, else after removing a
+    trailing version (``-12``, ``-13.2.1``, ``3.5``), else after removing its last
+    ``-`` component; the target is everything before the last ``-`` ahead of that
+    suffix.
+
+    ``arm-none-eabi-gcc``, ``arm-none-eabi-gcc-13.2.1``, ``/opt/bin/aarch64-linux-gnu-g++``
+    and ``C:\\sdk\\thumbv7em-none-eabihf-clang.exe`` declare one; ``gcc``,
+    ``clang++``, ``cc``, ``clang-18``, ``iccarm``, ``armcl`` and ``cl.exe`` declare
+    none. Unlike the driver, which lowercases the name on Windows only, the name is
+    lowercased on every machine, so that one database reads alike everywhere. Whether
+    the loaded libclang models the target is not checked here.
+    """
+    name = compiler.replace("\\", "/").rsplit("/", 1)[-1].lower()
+    tried = name
+    start = _suffix_start(tried)
+    if start is None and tried.endswith(".exe"):
+        tried = tried.removesuffix(".exe")
+        start = _suffix_start(tried)
+    if start is None:
+        tried = tried.rstrip("0123456789.")
+        start = _suffix_start(tried)
+    if start is None:
+        dash = tried.rfind("-")
+        tried = tried[:dash] if dash != -1 else tried
+        start = _suffix_start(tried)
+    if start is None:
+        return None
+    dash = name.rfind("-", 0, start)
+    if dash <= 0:
+        return None
+    return name[:dash]
 
 
 def working_directory(args: list[str]) -> Path:

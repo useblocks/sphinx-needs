@@ -749,3 +749,13 @@ limitations.
   ``clang -print-resource-dir`` when your code includes compiler intrinsics
   (``immintrin.h``, ``arm_neon.h``), which are not shipped; see
   :ref:`preprocessor_builtin_headers`.
+- ``target`` (``str``) - The target to read C/C++ files for when their build names none,
+  as a clang target triple (``thumbv7em-none-eabihf``, ``aarch64-unknown-linux-gnu``,
+  ``x86_64-pc-windows-msvc``). The target decides which ``#if`` branches on the
+  architecture, the operating system and the data model are read (``__arm__``,
+  ``_WIN32``, ``__SIZEOF_LONG__``). An entry of the applicable ``compile_commands.json``
+  (the explicit one, or the one found upward) that names its own ``--target``, or whose
+  compiler's name carries one (``arm-none-eabi-gcc``), is read for that target, never for
+  this setting; the setting also applies to headers and to files no entry applies to.
+  Spaces around it are ignored. If omitted or empty (``""``), those files are read for
+  the machine the analysis runs on; see :ref:`preprocessor_target`.

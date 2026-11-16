@@ -284,6 +284,16 @@ class PreprocessorConfig:
     passed, unless a compile command chooses its own (``-resource-dir``, ``-nostdinc``,
     ``-nobuiltininc``)."""
 
+    target: str | None = field(
+        default=None, metadata={"schema": {"type": ["string", "null"]}}
+    )
+    """The target triple to read C/C++ files for when their build names none
+    (``thumbv7em-none-eabihf``). A compilation-database entry that names its own
+    ``--target``, or whose compiler's name carries one (``arm-none-eabi-gcc``), is read
+    for that target, never for this one; a header, and a file no entry applies to,
+    reads this one. If None, those files are read for the machine the analysis runs on.
+    Spaces around it are not part of it, and ``""`` is None."""
+
 
 def anchor_preproc_paths(preproc: PreprocessorConfig, base: Path) -> PreprocessorConfig:
     """Resolve a preprocessor config's ``compile_commands``, ``includes`` and
@@ -1299,7 +1309,7 @@ def _validate_preprocessor_dict(preproc: dict[str, object]) -> None:
                 f"[preprocessor] {key} must be a list of strings, "
                 f"got {type(value).__name__}: {value!r}"
             )
-    for key in ("compile_commands", "std", "resource_dir"):
+    for key in ("compile_commands", "std", "resource_dir", "target"):
         value = preproc.get(key)
         if value is not None and not isinstance(value, str):
             raise TypeError(
@@ -1448,6 +1458,7 @@ def convert_analyse_config(
                     if preprocessor_dict.get("resource_dir")
                     else None
                 ),
+                target=str(preprocessor_dict.get("target") or "").strip() or None,
             )
 
     if src_discover:

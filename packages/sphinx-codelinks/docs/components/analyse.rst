@@ -993,7 +993,8 @@ discovered file is parsed:
      - How it is parsed
    * - Listed in ``compile_commands.json``
      - Parsed with the exact flags the compiler used for that translation unit, in the
-       entry's ``directory``.
+       entry's ``directory``, for the target the entry declares (see
+       :ref:`preprocessor_target`).
    * - A compiled source (``.c``, ``.cpp``, ``.cc``, ``.cxx``) **not** listed, that a
        listed source ``#include``\ s (a unity build)
      - Read through that entry's parse, with its flags (see
@@ -1002,9 +1003,10 @@ discovered file is parsed:
      - Skipped, with a ``codelinks.not_in_compile_database`` warning — assumed to be
        excluded from the build (e.g. another platform).
    * - A **header** (``.h``, ``.hpp``, …) — never listed in a database
-     - Parsed **standalone** using ``defines`` and ``includes`` (see below).
+     - Parsed **standalone** using ``defines`` and ``includes`` (see below), for the
+       ``target`` setting.
    * - Any file, when **no** database is found
-     - Parsed with ``defines`` and ``includes``.
+     - Parsed with ``defines`` and ``includes``, for the ``target`` setting.
 
 .. _preprocessor_compile_db:
 
@@ -1056,6 +1058,79 @@ An entry of ``compile_commands.json`` is applied as the build applies it:
   dependencies of the ``src-trace`` directive's document, so an edit to a unity file in
   the build directory, outside every traced directory, reads the source again in an
   incremental build; a project no directive traces is analysed again too.
+
+.. _preprocessor_target:
+
+Which target a file is read for
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The target (a clang triple: ``thumbv7em-none-eabihf``, ``x86_64-pc-linux-gnu``) decides
+which ``#if`` branches on the architecture, the operating system and the data model a file
+compiles (``__arm__``, ``_WIN32``, ``__SIZEOF_LONG__``). libclang does not read a target
+from a compile command's compiler: left alone, it reads every file for the machine the
+analysis runs on, so an Arm firmware build read on an x86-64 laptop would take its
+``#if defined(__x86_64__)`` branches. **Sphinx-CodeLinks** reads the target the build
+declares, in this order:
+
+1. The entry's own ``--target=<triple>`` or ``-target <triple>``.
+2. The target the entry's compiler's name carries, read as clang's driver reads it:
+   ``arm-none-eabi-gcc``, ``aarch64-linux-gnu-g++``, ``riscv64-unknown-elf-gcc-13.2.0`` or
+   ``thumbv7em-none-eabihf-clang`` name the target before their last ``-gcc``, ``-g++``,
+   ``-cc``, ``-c++``, ``-clang`` or ``-clang++``, with or without a directory, a version or
+   ``.exe``, and behind a launcher such as ``ccache``. As in clang's driver, the name
+   counts only when its first part is an architecture the loaded libclang has (``arm``,
+   ``aarch64``, ``riscv64``, ``powerpc``, ``x86_64``, ...): a wrapper's name such as
+   ``my-arm-gcc``, ``musl-gcc`` or ``afl-clang-fast`` names no target. The entry's own
+   flags then refine the target as the compiler does (``-mcpu=cortex-m3 -mthumb``).
+3. The ``target`` setting of :ref:`analyse.preprocessor <preprocessor_config>`.
+4. Otherwise the machine the analysis runs on. A native compiler (``gcc``, ``cc``,
+   ``c++``, ``clang``, ``/usr/bin/c++``) names no target, so a native build is read for
+   the machine reading it: right when the database was written on a machine of the same
+   kind, wrong for a database written for another architecture or operating system at the
+   same paths (a Linux build's database read on Windows takes its ``_WIN32`` branches).
+   Set ``target`` when that is the case.
+
+A header, and a file no entry applies to, has no entry to read a target from: it is read
+for the ``target`` setting, else for the machine the analysis runs on (not for the target
+of the entries that include it, whose flags it does not get either). A source read
+through the entry that includes it is read for that entry's target.
+
+A target the loaded libclang cannot parse for is not used, and a build or a
+``codelinks analyse`` run warns at the file's first line
+(``codelinks.preprocessor_target_unknown``), naming the target, where it came from, and
+the target the file is read for instead:
+
+- an entry's own ``--target`` or ``-target`` naming one (``xtensa-esp32-elf``,
+  ``tricore-elf``) is left out of the parse, and the file is read for the ``target``
+  setting, else for the machine the analysis runs on; its compiler's name is then not
+  read;
+- a compiler's name whose first part is an architecture libclang does not have, but whose
+  rest it reads as a vendor, an operating system or an environment
+  (``xtensa-esp32-elf-gcc``, ``tricore-elf-gcc``: ``elf``), names no target either, and is
+  reported: the file is read for the ``target`` setting, else for the machine the
+  analysis runs on;
+- a ``target`` setting naming one is not used: the file is read for the machine the
+  analysis runs on;
+- a target that clang refuses with the entry's own flags (a CPU or an ABI GCC knows and
+  clang 18 does not, such as ``-mcpu=e200z4``, ``-mcpu=cortex-r52plus``,
+  ``-mcpu=cortex-x925`` or ``-mabi=lp64`` for ``aarch64-linux-gnu``, or RISC-V's
+  ``-march=rv32imac_zicsr`` for the machine the analysis runs on, which is what xPack's
+  ``riscv-none-elf-gcc`` is read for) is kept, whatever its source, and the file is read
+  for it without the entry's ``-mcpu=``, ``-march=``, ``-mtune=`` and ``-mabi=``, that
+  is, for the architecture's default CPU;
+- a target from the compiler's name or the setting that clang refuses without those
+  flags too, because of another of the entry's flags (``-mcmse`` with ``arm-none-eabi``),
+  is dropped for that file, which is read for the machine the analysis runs on, with its
+  other flags.
+
+A target **Sphinx-CodeLinks** inserts (from the compiler's name or the ``target``
+setting) never leaves a file unread that would be read without it, whatever the machine
+the analysis runs on: a refused parse is made again without the entry's ``-mcpu=``,
+``-march=``, ``-mtune=`` and ``-mabi=``, and, for an inserted target, then for the
+machine the analysis runs on without them. A file is still skipped, as before targets
+were read, when what is left of its flags is refused for that machine too
+(``-mfpmath=sse`` with an Arm target, on an Arm64 machine): it gets the warning that
+libclang could not load it, and no ``codelinks.preprocessor_target_unknown``.
 
 Header files
 ~~~~~~~~~~~~~
@@ -1163,3 +1238,42 @@ flags (``-D``, ``-I``, ``-std=`` …). MSVC ``cl.exe`` slash-style flags (``/D``
 ``/I``, ``/std:`` …) are **not** recognised, so a database generated for the MSVC
 compiler driver yields no defines or include dirs. Generate the database with
 ``clang`` / ``clang-cl`` (which emit Clang-style flags) for use with this engine.
+
+The target is read exactly as the build declares it (:ref:`preprocessor_target`), but
+these still differ from the compiler's read with the right target, so check them by hand
+where a marker your build compiles is missing:
+
+- **the compiler's identity**: libclang is clang, and defines ``__clang__`` and
+  ``__GNUC__`` as ``4`` on every target, where GCC 13 defines ``__GNUC__`` as ``13`` and
+  no ``__clang__``, so an ``#if __GNUC__ >= 7`` or ``#ifdef __clang__`` takes the other
+  branch for a GCC build;
+- **the sub-architecture defaults**: with no ``-mcpu`` or ``-march`` in the entry, clang's
+  ``arm-none-eabi`` is an older Arm architecture than the one a GCC configured
+  ``--with-cpu`` or ``--with-arch`` defaults to, so an ``#if __ARM_ARCH < 5`` can take the
+  other branch (an entry that passes ``-mcpu``, as Zephyr's do, is exact);
+- **a CPU or ABI clang does not know**: a file whose ``-mcpu``, ``-march``, ``-mtune``
+  or ``-mabi`` clang refuses with its target (``-mcpu=e200z4``, ``-mcpu=cortex-r52plus``)
+  is read for the architecture's default sub-architecture, without them, with a
+  ``codelinks.preprocessor_target_unknown`` warning; all four are left out when one is
+  refused, so an accepted ``-march`` goes with a refused ``-mabi``
+  (``-march=armv8.2-a+crypto -mabi=lp64`` for ``aarch64-linux-gnu`` loses
+  ``__ARM_FEATURE_AES``);
+- **headers**: a header, and a file no entry applies to, is read for the ``target``
+  setting, else the machine the analysis runs on, not for the target and flags of the
+  entries that include it;
+- **response files** (``@args.rsp``): libclang does not read them, so a ``--target``,
+  ``-mcpu`` or ``-D`` inside one is not read;
+- **the type macros**: clang's ``arm-none-eabi`` makes ``__INT32_TYPE__`` an ``int``,
+  newlib GCC targets a ``long int``;
+- **the cross toolchain's own system headers**: a GCC cross compiler finds its C library
+  implicitly, and the compilation database does not list it, so ``<stdio.h>`` for an
+  ``arm-none-eabi`` file is not found (and a newlib or picolibc macro is undefined) unless
+  the entry passes ``--sysroot`` or ``-isystem`` (Yocto, Buildroot and Zephyr's do);
+- **the machine a native build is read for**: an entry of ``gcc``, ``cc``, ``c++`` or
+  ``clang`` names no target, so its file is read for the machine the analysis runs on,
+  which is wrong for a database written for another architecture or operating system at
+  the same paths (an x86-64 and an Arm64 CI runner sharing ``/home/runner/work``, or a
+  Linux build's database read on Windows): set the ``target`` setting then;
+- **a target the loaded libclang cannot parse for** (``xtensa-esp32-elf``): the file is
+  read for the ``target`` setting or the machine the analysis runs on, with a
+  ``codelinks.preprocessor_target_unknown`` warning.
