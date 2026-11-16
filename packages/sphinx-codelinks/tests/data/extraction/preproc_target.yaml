@@ -16,9 +16,12 @@
 # rule (`<triple>-gcc`, `-g++`, `-cc`, `-clang`, behind a launcher, with a version or a
 # directory), when its first part is an architecture libclang models, else the `target`
 # setting (key `target` here, the `[preprocessor] target` setting), else the machine
-# running it. A file with no entry of its own (a header) reads the setting alone. Every case below gives the same markers on every machine:
+# running it. A file with no entry of its own (a header) reads the setting alone. A
+# file whose declared target the pinned libclang cannot read (an entry's own
+# `--target=xtensa-esp32-elf`, a setting naming one) is read as written: no arm of
+# any `#if` is left out. Every case below gives the same markers on every machine:
 # none of them is read for the machine running it, or each reads an arm no machine
-# that runs the extraction takes (`__XTENSA__`).
+# that runs the extraction takes (`__XTENSA__`), or it is read as written.
 
 cross_gcc_entry_takes_its_target_libclang:
   lang: c
@@ -275,7 +278,77 @@ unmodelled_entry_target_reads_every_file_libclang:
     // @not xtensa, IMPL_T11_NOT_XTENSA, impl, [REQ]
     #endif
   # The entry's own --target is one the pinned libclang does not model: passed on,
-  # the parse fails and the file is dropped with every marker. It is left out, the
-  # file read for the machine running the extraction, and a warning says so
+  # the parse fails and the file is dropped with every marker. Nothing else names
+  # the build's target, so no arm can be left out soundly: the file is read as
+  # written, every arm kept, and a warning says so
   # (`codelinks.preprocessor_target_unknown`, not part of this case's warnings, as
-  # `codelinks.builtin_header` is not): IMPL_T11_ALWAYS, IMPL_T11_NOT_XTENSA.
+  # `codelinks.builtin_header` is not): IMPL_T11_ALWAYS, IMPL_T11_XTENSA,
+  # IMPL_T11_NOT_XTENSA.
+
+unknown_target_keeps_every_arm_libclang:
+  lang: c
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  compile_commands:
+    - file: case.c
+      arguments: ["clang", "--target=xtensa-esp32-elf", "-c", "case.c"]
+  source: |
+    // @Always, IMPL_T12_ALWAYS, impl, [REQ]
+    #ifdef __XTENSA__
+    // @xtensa, IMPL_T12_XTENSA, impl, [REQ]
+    #endif
+    #if defined(__arm__)
+    // @arm, IMPL_T12_ARM, impl, [REQ]
+    #elif defined(__x86_64__) || defined(_WIN32)
+    // @x86 or windows, IMPL_T12_X86_WIN, impl, [REQ]
+    #else
+    // @other, IMPL_T12_OTHER, impl, [REQ]
+    #endif
+  # An Xtensa entry is read as written on every machine: the arm only Xtensa takes,
+  # the Arm one, the x86-64 or Windows one and the `#else` are all kept, whatever the
+  # machine running the extraction defines: IMPL_T12_ALWAYS, IMPL_T12_XTENSA,
+  # IMPL_T12_ARM, IMPL_T12_X86_WIN, IMPL_T12_OTHER.
+
+unknown_setting_keeps_every_arm_libclang:
+  lang: c
+  engine: libclang
+  config: default
+  defines: []
+  std: c11
+  extract: [oneline]
+  target: tricore-elf
+  source: |
+    // @Always, IMPL_T13_ALWAYS, impl, [REQ]
+    #if defined(__x86_64__)
+    // @x86, IMPL_T13_X86, impl, [REQ]
+    #elif defined(__aarch64__)
+    // @arm64, IMPL_T13_ARM64, impl, [REQ]
+    #else
+    // @other, IMPL_T13_OTHER, impl, [REQ]
+    #endif
+  # No compilation database applies, and the setting names a target the pinned
+  # libclang does not model: the file is read as written: IMPL_T13_ALWAYS,
+  # IMPL_T13_X86, IMPL_T13_ARM64, IMPL_T13_OTHER.
+
+unknown_entry_target_is_not_the_settings_libclang:
+  lang: c
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  target: thumbv7em-none-eabihf
+  compile_commands:
+    - file: case.c
+      arguments: ["clang", "-target", "xtensa-esp32-elf", "-c", "case.c"]
+  source: |
+    // @Always, IMPL_T14_ALWAYS, impl, [REQ]
+    #if defined(__arm__)
+    // @arm, IMPL_T14_ARM, impl, [REQ]
+    #else
+    // @not arm, IMPL_T14_NOT_ARM, impl, [REQ]
+    #endif
+  # The setting fills what the build does not say, and this entry says Xtensa: its
+  # target is unknown, not the setting's, so the file is read as written, not for
+  # thumbv7em-none-eabihf: IMPL_T14_ALWAYS, IMPL_T14_ARM, IMPL_T14_NOT_ARM.

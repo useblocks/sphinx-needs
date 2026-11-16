@@ -70,6 +70,8 @@ def extract_active_comments(
     file_path: Path,
     args: list[str],
     on_parse: Callable[[Any], None] | None = None,
+    *,
+    as_written: bool = False,
 ) -> list[LibclangComment]:
     """Return one LibclangComment per ACTIVE comment token in ``file_path``.
 
@@ -79,11 +81,15 @@ def extract_active_comments(
 
     :param on_parse: Called with the translation unit once it is parsed (to read
         its diagnostics).
+    :param as_written: The file's target is unknown: no range is skipped, every
+        comment is returned, the file as written.
     """
     tu = parse_translation_unit(file_path, args)
     if on_parse is not None:
         on_parse(tu)
-    skipped = _main_file_skipped(loader.get_all_skipped_ranges(tu))
+    skipped = (
+        [] if as_written else _main_file_skipped(loader.get_all_skipped_ranges(tu))
+    )
     return _active_comments(tu, file_path, skipped)
 
 
@@ -135,7 +141,9 @@ def included_files(tu: Any, working_directory: Path) -> set[Path]:
 
 
 # @Read a source through a compile-database entry that includes it, IMPL_PREPROC_7, impl, [FE_PREPROC]
-def extract_included_active_comments(tu: Any, file_path: Path) -> list[LibclangComment]:
+def extract_included_active_comments(
+    tu: Any, file_path: Path, *, as_written: bool = False
+) -> list[LibclangComment]:
     """Return the ACTIVE comment tokens of ``file_path``, a file ``tu`` includes.
 
     Active means outside the ranges the preprocessor skipped in the file's FIRST
@@ -147,12 +155,17 @@ def extract_included_active_comments(tu: Any, file_path: Path) -> list[LibclangC
     :param tu: A translation unit whose main file includes ``file_path``
         (:func:`main_file_inclusions`).
     :param file_path: The included file.
+    :param as_written: The includer's target is unknown: no range is skipped.
     """
     file = tu.get_file(str(file_path))
-    skipped = [
-        (sr.start_line, sr.end_line)
-        for sr in loader.get_first_inclusion_skipped_ranges(tu, file)
-    ]
+    skipped = (
+        []
+        if as_written
+        else [
+            (sr.start_line, sr.end_line)
+            for sr in loader.get_first_inclusion_skipped_ranges(tu, file)
+        ]
+    )
     return _active_comments(tu, file_path, skipped)
 
 

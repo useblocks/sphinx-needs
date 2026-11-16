@@ -292,7 +292,9 @@ class PreprocessorConfig:
     ``--target``, or whose compiler's name carries one (``arm-none-eabi-gcc``), is read
     for that target, never for this one; a header, and a file no entry applies to,
     reads this one. If None, those files are read for the machine the analysis runs on.
-    Spaces around it are not part of it, and ``""`` is None."""
+    A triple the loaded libclang does not model is not used: a file that would take it is
+    read as written, every ``#if`` branch kept. Spaces around it are not part of it, and
+    ``""`` is None."""
 
 
 def anchor_preproc_paths(preproc: PreprocessorConfig, base: Path) -> PreprocessorConfig:

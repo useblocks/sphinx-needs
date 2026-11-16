@@ -39,6 +39,14 @@ runs on without the target and those flags (:func:`parse_or_again`), so a target
 leaves a file unread that would be read without it. A refused parse of any other
 target (the entry's own, the host's) is made again without those flags too, keeping its
 target, never for the host instead.
+
+A file whose build declares a target the engine cannot read (an entry's own triple
+libclang does not model, the setting's for a file that takes it, an inserted triple
+refused even without those flags) has an unknown target (:attr:`Decision.unknown`): it
+is read as written, no arm of any ``#if`` left out (useblocks/ubcode#4865 S2). The
+machine the analysis runs on is not the build's target, and no other triple is: the
+parse it is still given (for the comments libclang lexes) decides nothing. A file whose
+build declares nothing is read for the host, stated (``host``).
 """
 
 from __future__ import annotations
@@ -127,6 +135,48 @@ class Unmodelled:
             return "setting_unmodelled"
         return str(self.why)
 
+    def as_written_message(
+        self, file: str, left_out: tuple[str, ...], includer: bool
+    ) -> str:
+        """The warning for ``file``, whose target is unknown because of this
+        declaration (:attr:`Decision.unknown`) and which is read as written;
+        ``left_out`` are the entry's flags the parse was made without, through its
+        includer when ``includer``. The remedy is the setting's when the setting
+        declared it, else none: the setting does not override what the build declares,
+        and read as written is sound, only less precise. Worded as ubCode's finding is,
+        without its symbol inventory, which sphinx-codelinks does not have."""
+        triple = self.triple
+        declarer = self.declarer(includer)
+        if self.why is NotRead.target_refused:
+            without = f", and without {_spelled(left_out)}" if left_out else ""
+            why = (
+                f"the libclang sphinx-codelinks loaded refused the target {triple} that "
+                f"{declarer} names with the entry's flags{without}"
+            )
+        elif self.why is NotRead.prefix_unmodelled:
+            arch = triple.split("-", 1)[0]
+            why = (
+                f"{declarer} carries the target {triple}, whose architecture {arch} the "
+                f"libclang sphinx-codelinks loaded does not model"
+            )
+        else:
+            why = (
+                f"the target {triple} that {declarer} names is not one the libclang "
+                f"sphinx-codelinks loaded models"
+            )
+        remedy = (
+            "to read its arms for a target, set the `[preprocessor] target` setting to a "
+            "triple that libclang models"
+            if self.by is TargetSource.setting
+            else "nothing needs doing (the `[preprocessor] target` setting does not "
+            "override what the build declares)"
+        )
+        return (
+            f"codelinks: {file} is read as written, no `#if` arm left out, as no other "
+            f"target is its build's: {why}. Read as written, every marker is kept, only "
+            f"less precisely; {remedy}"
+        )
+
     def declarer(self, includer: bool) -> str:
         """Who declared it, as the finding names them; ``includer`` when the file is
         read through the entry that includes it."""
@@ -136,6 +186,10 @@ class Unmodelled:
         if self.by is TargetSource.compiler_name:
             return f"{whose} compiler's name"
         return "the `[preprocessor] target` setting"
+
+
+_UNKNOWN = frozenset({NotRead.unmodelled, NotRead.target_refused})
+"""The reasons that leave a file's target unknown (:attr:`Decision.unknown`)."""
 
 
 def _spelled(flags: tuple[str, ...]) -> str:
@@ -167,6 +221,17 @@ class Decision:
     """The entry's :data:`REFUSABLE_FLAGS` left out of the parse that read the file
     (:func:`again`); empty for a parse as decided."""
 
+    @property
+    def unknown(self) -> bool:
+        """Whether the file's target is unknown, so that it is read as written (every
+        arm of every ``#if`` kept): the build declares a triple the loaded libclang does
+        not model (an entry's own, or the setting's for a file that takes it), or
+        libclang refused the triple the engine inserted with the entry's flags even
+        without its :data:`REFUSABLE_FLAGS`. Not for flags refused with a target that is
+        then read (:attr:`NotRead.flags_refused`), nor for a build that declares none
+        (the host, stated)."""
+        return self.unmodelled is not None and self.unmodelled.why in _UNKNOWN
+
     def not_read(self) -> tuple[str, str | None] | None:
         """Why the file is not read for the target its build declares, as ubCode's
         report spells it (:attr:`Unmodelled.fallback`), and that target (``None`` for
@@ -183,6 +248,8 @@ class Decision:
         unmodelled = self.unmodelled
         if unmodelled is None:
             return None
+        if self.unknown:
+            return unmodelled.as_written_message(file, self.left_out, includer)
         nxt = (
             "the `[preprocessor] target` setting"
             if self.source is TargetSource.setting
@@ -417,12 +484,13 @@ def again(args: list[str], decision: Decision) -> list[tuple[list[str], Decision
 def parse_or_again(
     args: list[str],
     decision: Decision,
-    parse: Callable[[list[str]], T],
+    parse: Callable[[list[str], Decision], T],
     refusal: type[Exception] | tuple[type[Exception], ...],
 ) -> tuple[T, list[str], Decision]:
     """``parse`` of ``args`` for ``decision``, made :func:`again` while it is refused
     (raises ``refusal``): the read, the arguments it was made with and the decision that
-    reports it. So a target the engine inserts never leaves a file unread that would be
+    reports it. Each parse is given the decision it is made for, so that one whose
+    target is unknown reads the file as written (:attr:`Decision.unknown`). So a target the engine inserts never leaves a file unread that would be
     read without it; a file is still skipped, as before targets were read, when what is
     left of its flags is refused for the host too (``-mfpmath=sse`` with an Arm target,
     on an Arm64 machine).
@@ -431,14 +499,14 @@ def parse_or_again(
         line and no finding.
     """
     try:
-        return parse(args), args, decision
+        return parse(args, decision), args, decision
     except refusal:
         attempts = again(args, decision)
         if not attempts:
             raise
     for position, (attempt, refused) in enumerate(attempts):
         try:
-            return parse(attempt), attempt, refused
+            return parse(attempt, refused), attempt, refused
         except refusal:
             if position == len(attempts) - 1:
                 raise

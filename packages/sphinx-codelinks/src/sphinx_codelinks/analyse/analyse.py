@@ -584,10 +584,13 @@ class SourceAnalyse:
         )
 
     def _read_active(
-        self, path: Path, args: list[str]
+        self, path: Path, args: list[str], decision: "Decision"
     ) -> tuple[list["LibclangComment"], str]:
-        """The active comments of ``path`` parsed with ``args``, and the triple libclang
-        parsed it for; warns about a builtin header the parse did not find.
+        """The active comments of ``path`` parsed with ``args`` for ``decision``, and the
+        triple libclang parsed it for; warns about a builtin header the parse did not
+        find. A file whose target is unknown is read as written
+        (:attr:`.preproc.target.Decision.unknown`): every comment is kept, and no
+        builtin header changes which arms are read.
 
         :raises clang.cindex.TranslationUnitLoadError: libclang could not load it.
         """
@@ -596,11 +599,12 @@ class SourceAnalyse:
         triples: list[str] = []
 
         def on_parse(tu: Any) -> None:
-            self._warn_missing_builtin_header(path, tu, args)
+            if not decision.unknown:
+                self._warn_missing_builtin_header(path, tu, args)
             triples.append(target.triple_of(tu))
 
         comments = libclang_parser.extract_active_comments(
-            path, args, on_parse=on_parse
+            path, args, on_parse=on_parse, as_written=decision.unknown
         )
         return comments, triples[0]
 
@@ -610,7 +614,8 @@ class SourceAnalyse:
         """Warn, at its first line, that ``path`` is read for ``read_for`` (the triple
         libclang parsed it for), not for the target its build declares, which the
         loaded libclang does not model or refused the entry's flags with (``decision``;
-        through its includer when ``includer``)."""
+        through its includer when ``includer``), or that it is read as written, its
+        target unknown."""
         message = decision.message(str(path), read_for, includer)
         if message is not None:
             logger.warning(
@@ -679,8 +684,8 @@ class SourceAnalyse:
                 tu, args, decision = target.parse_or_again(
                     args,
                     decision,
-                    lambda attempt, main=main: libclang_parser.parse_translation_unit(
-                        main, attempt
+                    lambda attempt, _decision, main=main: (
+                        libclang_parser.parse_translation_unit(main, attempt)
                     ),
                     translation_unit_load_error,
                 )
@@ -711,7 +716,7 @@ class SourceAnalyse:
                         f"codelinks: reading {w.path} through {main}, which includes it"
                     )
                     read[position] = libclang_parser.extract_included_active_comments(
-                        tu, w.path
+                        tu, w.path, as_written=decision.unknown
                     )
                     self._warn_target(w.path, decision, read_for, includer=True)
                     del unread[position]
@@ -763,7 +768,9 @@ class SourceAnalyse:
                 (comments, read_for), _, decision = target.parse_or_again(
                     args,
                     decision,
-                    lambda attempt, path=src_path: self._read_active(path, attempt),
+                    lambda attempt, attempt_decision, path=src_path: self._read_active(
+                        path, attempt, attempt_decision
+                    ),
                     translation_unit_load_error,
                 )
             except translation_unit_load_error:
