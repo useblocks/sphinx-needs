@@ -2492,7 +2492,7 @@ why = "c is the check context, whatever a field is named"
 # switches the reading off (`[needs] namespaced_ids = false`): every id is plain, and the
 # names stay defined. Every entry naming c.id or c.in_namespace is divergent for ubCode,
 # its behaviour read rather than run: the mirror measures each and drops the key where
-# ubCode agrees. `c.id` compared with a value is an error: it holds the facets, not the id.
+# it agrees. `c.id` compared with a value is an error: it holds the facets, not the id.
 
 [[case]]
 name = "namespaced-ids-split-at-the-last-separator"
