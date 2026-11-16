@@ -111,6 +111,20 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 A filter that is not a Python expression no longer aborts the build where a view's ``:filter:``, the
+  ``needextract`` argument, a ``needpie`` or ``needbar`` ``:filter:`` or line, ``need_count``, needuml's ``filter()``,
+  :ref:`needs_warnings` or :ref:`needs_builder_filter` takes it
+
+  ``needextract:: nc::MISSING`` (an id the :ref:`needs_id_regex` refuses is read as a filter), or the same string as
+  the ``:filter:`` of a ``needtable``, ``needlist``, ``needflow``, ``needgantt``, ``needextract``, ``needpie`` or
+  ``needbar``, a line of a ``needpie`` or ``needbar``, a ``need_count``, needuml's ``filter()``, a
+  :ref:`needs_warnings` entry or the :ref:`needs_builder_filter`, ended the build with ``invalid syntax``. It is now
+  one ``needs.filter`` warning naming the string and the error, at the directive, where there is one, and it
+  matches no need. ``needextend``'s filter form and ``copy(filter=...)``, which reported such a string already, keep
+  their messages. Not changed: needflow's ``:highlight:``, needgantt's ``:milestone_filter:``,
+  :ref:`needs_constraints` and needsequence's ``:filter:`` still end the build on any filter that fails, as before,
+  and so does a filter too deep for Python's parser.
+
 - 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
   ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
   **(changed output)** (:issue:`2489`, :pr:`2494`)
