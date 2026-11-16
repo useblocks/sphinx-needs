@@ -149,6 +149,7 @@ def test_empty_variant_fields_html(test_app, snapshot):
         # what remains holds a lone colon: it ends at the FIRST colon, as before
         ("debug::need:`X`", (("debug", False, ":need:`X`"),), None),
         ("nc::A, x:B", (("nc", False, ":A"), ("x", False, "B")), None),
+        ("nc::A; x:B", (("nc", False, ":A"), ("x", False, "B")), None),
         (
             "x:a, http://example.com",
             (("x", False, "a"), ("http", False, "//example.com")),
@@ -160,6 +161,8 @@ def test_empty_variant_fields_html(test_app, snapshot):
         ("A:", (("A", False, ""),), None),
         ("nc::A:", (("nc", False, ":A:"),), None),
         ("plain", (), "plain"),
+        # the final value is stripped, as before
+        ("x:a, nc::B ", (("x", False, "a"),), "nc::B"),
     ],
 )
 def test_parse_variants_final_item_with_double_colons(
@@ -173,6 +176,14 @@ def test_parse_variants_final_item_with_double_colons(
     variant = VariantFunctionParsed.from_string(text, allow_semicolon=True)
     assert variant.expressions == expected_exprs
     assert variant.final_value == expected_final_value
+
+
+def test_parse_variants_final_item_with_double_colons_is_coerced():
+    """The final value holding ``::`` is coerced, as every final value is."""
+    with pytest.raises(ValueError):
+        VariantFunctionParsed.from_string("[False]:1, a::b", int)
+    variant = VariantFunctionParsed.from_string("[False]:1, 2", int)
+    assert variant.final_value == 2
 
 
 VARIANT_DEFAULT_CONF = """\
