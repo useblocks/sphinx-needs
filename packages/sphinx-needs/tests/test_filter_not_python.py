@@ -86,7 +86,7 @@ CALLERS = [
 
 
 @pytest.mark.parametrize(
-    ("test_app", "line"),
+    ("test_app", "line", "text"),
     [
         pytest.param(
             {
@@ -94,20 +94,20 @@ CALLERS = [
                 "files": [(Path("conf.py"), conf), (Path("index.rst"), HEADER + body)],
             },
             line,
+            ARGUMENT if ARGUMENT in body else "nc::MISSING",
             id=name,
         )
         for name, conf, body, line in CALLERS
     ],
     indirect=["test_app"],
 )
-def test_reported_at_the_caller(test_app: Sphinx, line: int):
+def test_reported_at_the_caller(test_app: Sphinx, line: int, text: str):
     app = test_app
     app.build()
 
-    text = ARGUMENT if ARGUMENT in Path(app.srcdir, "index.rst").read_text() else None
-    warnings = [w for w in build_warnings(app) if (text or "nc::MISSING") in w]
+    warnings = [w for w in build_warnings(app) if text in w]
     assert len(warnings) == 1
-    assert _is_not_valid(warnings[0], line, text=text or "nc::MISSING"), warnings[0]
+    assert _is_not_valid(warnings[0], line, text=text), warnings[0]
 
 
 @pytest.mark.parametrize(
