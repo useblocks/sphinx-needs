@@ -383,7 +383,7 @@ follows."""
 
 
 def _whole_ids_pattern(ids: Iterable[str]) -> re.Pattern[str] | None:
-    """A pattern matching any of ``ids`` where it stands as a whole word.
+    """A pattern matching any of ``ids`` where it stands as a whole id.
 
     An id is matched where no word character (a letter of any script, a digit, ``_``)
     adjoins it, so an id inside a longer word is not one. Nor is an id that is one end
