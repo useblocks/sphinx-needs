@@ -29,8 +29,8 @@ entry's own triple or the setting's that it does not model is treated as no
 declaration and reported once per file (:attr:`Decision.unmodelled`): an entry's own
 one leaves the setting to apply; its compiler's name is then not read. A compiler's
 name whose first part libclang does not model but whose rest it reads as a vendor, an
-OS or an environment (``xtensa-esp32-elf-gcc``: ``elf``) is a target it cannot read, the
-build's: the file's target is unknown, whatever the setting; one whose rest it does not (``my-arm-gcc``, ``musl-gcc``) declares nothing and is not
+OS or an environment (``xtensa-esp32-elf-gcc``: ``elf``) is reported the same way; one
+whose rest it does not (``my-arm-gcc``, ``musl-gcc``) declares nothing and is not
 reported. An inserted triple can still be refused with the entry's
 own flags (``-mcpu=e200z4``, a CPU GCC knows and clang does not): that parse is made
 again keeping the target and leaving out the entry's ``-mcpu=``, ``-march=``,
@@ -41,9 +41,8 @@ target (the entry's own, the host's) is made again without those flags too, keep
 target, never for the host instead.
 
 A file whose build declares a target the engine cannot read (an entry's own triple
-libclang does not model, the setting's for a file that takes it, a compiler's name's GCC
-triple whose architecture it does not model, an inserted triple refused even without
-those flags) has an unknown target (:attr:`Decision.unknown`): it
+libclang does not model, the setting's for a file that takes it, an inserted triple
+refused even without those flags) has an unknown target (:attr:`Decision.unknown`): it
 is read as written, no arm of any ``#if`` left out (useblocks/ubcode#4865 S2). The
 machine the analysis runs on is not the build's target, and no other triple is: the
 parse it is still given (for the comments libclang lexes) decides nothing. A file whose
@@ -189,9 +188,7 @@ class Unmodelled:
         return "the `[preprocessor] target` setting"
 
 
-_UNKNOWN = frozenset(
-    {NotRead.unmodelled, NotRead.prefix_unmodelled, NotRead.target_refused}
-)
+_UNKNOWN = frozenset({NotRead.unmodelled, NotRead.target_refused})
 """The reasons that leave a file's target unknown (:attr:`Decision.unknown`)."""
 
 
@@ -228,13 +225,11 @@ class Decision:
     def unknown(self) -> bool:
         """Whether the file's target is unknown, so that it is read as written (every
         arm of every ``#if`` kept): the build declares a triple the loaded libclang does
-        not model (an entry's own, or the setting's for a file that takes it), its
-        compiler's name carries one whose architecture it does not model
-        (:attr:`NotRead.prefix_unmodelled`, ``xtensa-esp32-elf-gcc``), or libclang
-        refused the triple the engine inserted with the entry's flags even without its
-        :data:`REFUSABLE_FLAGS`. Not for flags refused with a target that is then read
-        (:attr:`NotRead.flags_refused`), nor for a build that declares none (the host,
-        stated), nor for a wrapper's name (``my-arm-gcc``), which declares none."""
+        not model (an entry's own, or the setting's for a file that takes it), or
+        libclang refused the triple the engine inserted with the entry's flags even
+        without its :data:`REFUSABLE_FLAGS`. Not for flags refused with a target that is
+        then read (:attr:`NotRead.flags_refused`), nor for a build that declares none
+        (the host, stated)."""
         return self.unmodelled is not None and self.unmodelled.why in _UNKNOWN
 
     def not_read(self) -> tuple[str, str | None] | None:

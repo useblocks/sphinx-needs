@@ -1108,9 +1108,9 @@ marker in a branch the build does not compile is extracted too.
   ``target`` setting does not override what the entry declares);
 - a compiler's name whose first part is an architecture libclang does not have, but whose
   rest it reads as a vendor, an operating system or an environment
-  (``xtensa-esp32-elf-gcc``, ``tricore-elf-gcc``, ``sh-elf-gcc``: ``elf``), names a target
-  it cannot read: the file is read as written (the ``target`` setting does not override it
-  either);
+  (``xtensa-esp32-elf-gcc``, ``tricore-elf-gcc``: ``elf``), names no target either, and is
+  reported: the file is read for the ``target`` setting, else for the machine the
+  analysis runs on;
 - a ``target`` setting naming one is not used: a file that would take it is read as
   written;
 - a target that clang refuses with the entry's own flags (a CPU or an ABI GCC knows and
@@ -1277,10 +1277,9 @@ where a marker your build compiles is missing:
   Linux build's database read on Windows): set the ``target`` setting then.
 
 A file whose target is unknown hides no marker, but loses precision: an entry's own
-``--target=xtensa-esp32-elf``, a compiler whose name carries such a target
-(``xtensa-esp32-elf-gcc``), a ``target`` setting naming one for a file that takes it, or
-a target clang refuses with the entry's flags even without its ``-mcpu``, ``-march``,
-``-mtune`` and ``-mabi`` (``-mcmse`` with ``arm-none-eabi``) leaves the file read as
-written, with a ``codelinks.preprocessor_target_unknown`` warning: the markers of every
-branch of every ``#if`` are extracted, those of the ``#ifdef CONFIG_X`` branches the
+``--target=xtensa-esp32-elf``, a ``target`` setting naming such a target for a file that
+takes it, or a target clang refuses with the entry's flags even without its ``-mcpu``,
+``-march``, ``-mtune`` and ``-mabi`` (``-mcmse`` with ``arm-none-eabi``) leaves the file
+read as written, with a ``codelinks.preprocessor_target_unknown`` warning: the markers of
+every branch of every ``#if`` are extracted, those of the ``#ifdef CONFIG_X`` branches the
 build does not compile among them, and none is lost.
