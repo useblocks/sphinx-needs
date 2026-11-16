@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 26
+ENV_DATA_VERSION: Final = 27
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -194,6 +194,13 @@ Version 26 adds a field to every stored need source: ``NeedItemSource.upstream``
 a need read from a ``needs.json`` of the experimental format 2a1 was recorded with in the
 project that wrote it (empty for every other need). A source pickled by version 25 has no
 such field.
+
+Version 27 changes what is rendered from the stored values: a needsequence names its
+participants as needflow's PlantUML engine names a need, so an id holding ``::`` or
+``-`` no longer makes the diagram a syntax error, and a receiver that sends no message
+is shown by its id. The diagram is made at ``doctree-resolved``, so without the bump an
+upgraded build would write no page whose source did not change and keep the old
+diagrams there.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
