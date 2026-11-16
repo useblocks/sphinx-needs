@@ -1098,39 +1098,60 @@ through the entry that includes it is read for that entry's target.
 A target the loaded libclang cannot parse for is not used, and a build or a
 ``codelinks analyse`` run warns at the file's first line
 (``codelinks.preprocessor_target_unknown``), naming the target, where it came from, and
-the target the file is read for instead:
+how the file is read instead. When no other target is the build's, the file's target is
+unknown, and the file is **read as written**: no ``#if`` branch is left out, and every
+comment's markers are kept. Nothing is hidden, but it is less precise: a marker in a
+branch the build does not compile is extracted too, so a definition written once in each
+of two exclusive branches (``#ifdef A`` … ``#else`` …) looks like one, carrying the markers
+of both. The warning comes once per such file; to accept it, add
+``codelinks.preprocessor_target_unknown`` to Sphinx's ``suppress_warnings``, or set
+``target`` to a triple the loaded libclang models, where the file takes the setting and
+such a triple fits.
 
 - an entry's own ``--target`` or ``-target`` naming one (``xtensa-esp32-elf``,
-  ``tricore-elf``) is left out of the parse, and the file is read for the ``target``
-  setting, else for the machine the analysis runs on; its compiler's name is then not
-  read;
+  ``tricore-elf``) is left out of the parse, and the file is read as written (the
+  ``target`` setting does not override what the entry declares, and is not used);
 - a compiler's name whose first part is an architecture libclang does not have, but whose
   rest it reads as a vendor, an operating system or an environment
-  (``xtensa-esp32-elf-gcc``, ``tricore-elf-gcc``: ``elf``), names no target either, and is
-  reported: the file is read for the ``target`` setting, else for the machine the
-  analysis runs on;
-- a ``target`` setting naming one is not used: the file is read for the machine the
-  analysis runs on;
+  (``xtensa-esp32-elf-gcc``, ``tricore-elf-gcc``, ``sh-elf-gcc``: ``elf``), names a target
+  it cannot read: the file is read as written (the ``target`` setting does not override
+  it either); by the same rule a wrapper whose name's rest is a system word
+  (``my-linux-gcc``) names one too, and is read as written;
+- a ``target`` setting naming one is not used: a file that would take it is read as
+  written;
 - a target that clang refuses with the entry's own flags (a CPU or an ABI GCC knows and
   clang 18 does not, such as ``-mcpu=e200z4``, ``-mcpu=cortex-r52plus``,
   ``-mcpu=cortex-x925`` or ``-mabi=lp64`` for ``aarch64-linux-gnu``, or RISC-V's
-  ``-march=rv32imac_zicsr`` for the machine the analysis runs on, which is what xPack's
-  ``riscv-none-elf-gcc`` is read for) is kept, whatever its source, and the file is read
+  ``-march=rv32imac_zicsr`` for the machine the analysis runs on, in a build that names
+  no target; xPack's ``riscv-none-elf-gcc`` names one, ``riscv``, an architecture
+  libclang does not have without its width, so it is read as written instead) is kept,
+  whatever its source, and the file is read
   for it without the entry's ``-mcpu=``, ``-march=``, ``-mtune=`` and ``-mabi=``, that
   is, for the architecture's default CPU;
-- a target from the compiler's name or the setting that clang refuses without those
-  flags too, because of another of the entry's flags (``-mcmse`` with ``arm-none-eabi``),
-  is dropped for that file, which is read for the machine the analysis runs on, with its
-  other flags.
+- a declared target (the entry's own, its compiler's name's or the setting's) that clang
+  refuses without those flags too, because of another of the entry's flags (``-mcmse``
+  with ``arm-none-eabi``), is dropped for that file, which is read as written; the
+  warning says the target was refused with the entry's flags and lists its ``-m`` flags
+  (libclang does not say which one it refused), and, when the setting named it, gives as
+  the remedy a ``target`` that clang accepts with the entry's flags.
 
-A target **Sphinx-CodeLinks** inserts (from the compiler's name or the ``target``
-setting) never leaves a file unread that would be read without it, whatever the machine
-the analysis runs on: a refused parse is made again without the entry's ``-mcpu=``,
-``-march=``, ``-mtune=`` and ``-mabi=``, and, for an inserted target, then for the
-machine the analysis runs on without them. A file is still skipped, as before targets
-were read, when what is left of its flags is refused for that machine too
-(``-mfpmath=sse`` with an Arm target, on an Arm64 machine): it gets the warning that
-libclang could not load it, and no ``codelinks.preprocessor_target_unknown``.
+A declared target never leaves a file unread that would be read without it, whatever the
+machine the analysis runs on: a refused parse is made again without the entry's
+``-mcpu=``, ``-march=``, ``-mtune=`` and ``-mabi=``, then without the target and them,
+for the file's comments only (it is read as written). A file whose target is unknown is
+never skipped: when clang refuses even that parse, because of another of its flags
+(``-mfpmath=vfp``, which clang refuses for every machine the analysis runs on), it is
+read as written by the tree-sitter engine, every comment's markers kept, attached to no
+entity as under the libclang engine, so with the same findings as a parse read as
+written (no ``codelinks.marker_above_conditional``, which only a marker attached by the
+tree-sitter engine can get). A source with no entry of its own that such an entry
+``#include``\ s is read as written too, through that entry, whatever ``#if`` branch its
+``#include`` line is in, unless an entry whose target **Sphinx-CodeLinks** reads
+includes it in a branch that entry compiles: that one reads it, for its target. A file
+whose target is known is still skipped, as before targets were read, when what is left
+of its flags is refused for that target too (a native build's ``-mfpmath=sse``, on an
+Arm64 machine): it gets the warning that libclang could not load it, and no
+``codelinks.preprocessor_target_unknown``.
 
 Header files
 ~~~~~~~~~~~~~
@@ -1274,6 +1295,16 @@ where a marker your build compiles is missing:
   which is wrong for a database written for another architecture or operating system at
   the same paths (an x86-64 and an Arm64 CI runner sharing ``/home/runner/work``, or a
   Linux build's database read on Windows): set the ``target`` setting then;
-- **a target the loaded libclang cannot parse for** (``xtensa-esp32-elf``): the file is
-  read for the ``target`` setting or the machine the analysis runs on, with a
-  ``codelinks.preprocessor_target_unknown`` warning.
+- **a cross compiler whose name carries no triple** (HighTec's ``tricore-gcc``, Xilinx's
+  ``mb-gcc``, Microchip's ``xc32-gcc`` and ``xc16-gcc``, IAR's ``iccarm``): its file is
+  read for the machine the analysis runs on, as a native compiler's is: set the
+  ``target`` setting for it.
+
+A file whose target is unknown hides no marker, but loses precision: an entry's own
+``--target=xtensa-esp32-elf``, a compiler whose name carries such a target
+(``xtensa-esp32-elf-gcc``), a ``target`` setting naming one for a file that takes it, or
+a declared target clang refuses with the entry's flags even without its ``-mcpu``,
+``-march``, ``-mtune`` and ``-mabi`` (``-mcmse`` with ``arm-none-eabi``) leaves the file
+read as written, with a ``codelinks.preprocessor_target_unknown`` warning: the markers
+of every branch of every ``#if`` are extracted, those of the ``#ifdef CONFIG_X``
+branches the build does not compile among them, and none is lost.

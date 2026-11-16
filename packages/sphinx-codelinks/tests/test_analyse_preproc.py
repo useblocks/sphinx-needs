@@ -146,10 +146,10 @@ def test_null_tu_warns_and_skips_but_batch_continues(
 
     real = libclang_parser.extract_active_comments
 
-    def fake(src_path, args, on_parse=None):
+    def fake(src_path, args, on_parse=None, *, as_written=False):
         if Path(src_path).name == "bad.cpp":
             raise clang.cindex.TranslationUnitLoadError("forced NULL TU")
-        return real(src_path, args, on_parse)
+        return real(src_path, args, on_parse, as_written=as_written)
 
     monkeypatch.setattr(libclang_parser, "extract_active_comments", fake)
 

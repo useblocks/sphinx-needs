@@ -758,4 +758,6 @@ limitations.
   compiler's name carries one (``arm-none-eabi-gcc``), is read for that target, never for
   this setting; the setting also applies to headers and to files no entry applies to.
   Spaces around it are ignored. If omitted or empty (``""``), those files are read for
-  the machine the analysis runs on; see :ref:`preprocessor_target`.
+  the machine the analysis runs on; a triple the loaded libclang does not model is not
+  used, and a file that would take it is read as written, every ``#if`` branch kept; see
+  :ref:`preprocessor_target`.

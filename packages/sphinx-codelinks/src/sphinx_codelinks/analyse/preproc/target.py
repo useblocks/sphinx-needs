@@ -25,20 +25,31 @@ declares, in this order (:func:`decide`):
 Each triple is checked once per libclang against the loaded libclang
 (:func:`modelled_by`): libclang refuses to parse at all for a triple it does not model
 (``xtensa-esp32-elf``), so an unchecked one would drop every marker of the file. An
-entry's own triple or the setting's that it does not model is treated as no
-declaration and reported once per file (:attr:`Decision.unmodelled`): an entry's own
-one leaves the setting to apply; its compiler's name is then not read. A compiler's
-name whose first part libclang does not model but whose rest it reads as a vendor, an
-OS or an environment (``xtensa-esp32-elf-gcc``: ``elf``) is reported the same way; one
-whose rest it does not (``my-arm-gcc``, ``musl-gcc``) declares nothing and is not
-reported. An inserted triple can still be refused with the entry's
-own flags (``-mcpu=e200z4``, a CPU GCC knows and clang does not): that parse is made
-again keeping the target and leaving out the entry's ``-mcpu=``, ``-march=``,
-``-mtune=`` and ``-mabi=``, then, if that is refused too, for the machine the analysis
-runs on without the target and those flags (:func:`parse_or_again`), so a target never
-leaves a file unread that would be read without it. A refused parse of any other
-target (the entry's own, the host's) is made again without those flags too, keeping its
-target, never for the host instead.
+entry's own triple or the setting's that it does not model is left out of the parse and
+reported once per file (:attr:`Decision.unmodelled`); its compiler's name is then not
+read, nor, after an entry's own, the setting. A compiler's name whose first part
+libclang does not model but whose rest it reads as a vendor, an OS or an environment
+(``xtensa-esp32-elf-gcc``: ``elf``) is a target it cannot read, the build's: the file's
+target is unknown, and the setting is not read either; one whose rest it does not
+(``my-arm-gcc``, ``musl-gcc``) declares nothing and is not reported. A parse can still
+be refused with the entry's own flags (``-mcpu=e200z4``, a CPU GCC knows and clang does
+not): any refused parse is made again keeping its target and leaving out the entry's
+``-mcpu=``, ``-march=``, ``-mtune=`` and ``-mabi=``, and, for a declared triple (the
+entry's own or an inserted one), then without the triple and those flags
+(:func:`parse_or_again`). So a declared target never leaves a file unread that would be
+read without it. A file is still skipped, as before targets were read, when its target
+is known (the host's own, or a declared one read without the CPU flags) and what is
+left of its flags is refused for it too (``-mfpmath=sse`` on an Arm64 machine).
+
+A file whose build declares a target the engine cannot read (an entry's own triple
+libclang does not model, the setting's for a file that takes it, a compiler's name's GCC
+triple whose architecture it does not model, a declared triple refused even without
+those flags) has an unknown target (:attr:`Decision.unknown`): it
+is read as written, no arm of any ``#if`` left out (useblocks/ubcode#4865 S2). The
+machine the analysis runs on is not the build's target, and no other triple is: the
+parse it is still given (for the comments libclang lexes) decides nothing, and when even
+that parse is refused the file is read without libclang, by the tree-sitter engine. A
+file whose build declares nothing is read for the host, stated (``host``).
 """
 
 from __future__ import annotations
@@ -97,9 +108,9 @@ class NotRead(enum.StrEnum):
     """libclang refused the parse with the entry's own :data:`REFUSABLE_FLAGS`
     (:attr:`Decision.left_out`): the file is read for the target without them."""
     target_refused = "target_refused"
-    """libclang refused the parse with the inserted target, with the entry's flags and
-    without its :data:`REFUSABLE_FLAGS` (none when the entry has none): the file is read
-    for the host, without them."""
+    """libclang refused the parse with the declared target (the entry's own or an
+    inserted one), with the entry's flags and without its :data:`REFUSABLE_FLAGS` (none
+    when the entry has none): the target is unknown, and the file is read as written."""
 
 
 @dataclass(frozen=True)
@@ -127,6 +138,68 @@ class Unmodelled:
             return "setting_unmodelled"
         return str(self.why)
 
+    def as_written_message(
+        self,
+        file: str,
+        with_and_without: tuple[tuple[str, ...], tuple[str, ...]],
+        includer: bool,
+    ) -> str:
+        """The warning for ``file``, whose target is unknown because of this
+        declaration (:attr:`Decision.unknown`) and which is read as written, through its
+        includer when ``includer``. A target refused is said to be refused with the
+        entry's flags, listing every ``-m`` flag among them (libclang does not say which
+        one it refused), and without the :data:`REFUSABLE_FLAGS` (``with_and_without``);
+        the flags left out of a parse for an unmodelled triple decide nothing and are not
+        named.
+
+        Nothing is hidden, so the remedy is to accept it, by suppressing the warning, or,
+        when the setting declared the target, to set the setting to a triple libclang
+        reads (the setting does not override what the build declares). Worded as
+        ubCode's finding is, without its symbol inventory, which sphinx-codelinks does
+        not have, and with Sphinx's ``suppress_warnings`` for its ``[lint]`` tables."""
+        with_flags, left_out = with_and_without
+        triple = self.triple
+        declarer = self.declarer(includer)
+        if self.why is NotRead.target_refused:
+            refused_with = (
+                f" (its `-m` flags: {_spelled(with_flags)})" if with_flags else ""
+            )
+            without = f", and without {_spelled(left_out)}" if left_out else ""
+            why = (
+                f"it refused the target {triple} that {declarer} names with the entry's "
+                f"flags{refused_with}{without}"
+            )
+        elif self.why is NotRead.prefix_unmodelled:
+            arch = triple.split("-", 1)[0]
+            why = (
+                f"{declarer} carries the target {triple}, whose architecture {arch} it "
+                f"does not model"
+            )
+        else:
+            why = f"the target {triple} that {declarer} names is not one it models"
+        if self.by is TargetSource.setting and self.why is NotRead.target_refused:
+            setting = (
+                "; or set the `[preprocessor] target` setting to a triple that libclang "
+                "accepts with the entry's flags"
+            )
+        elif self.by is TargetSource.setting:
+            setting = (
+                "; or set the `[preprocessor] target` setting to a triple that libclang "
+                "models"
+            )
+        else:
+            setting = (
+                " (the `[preprocessor] target` setting does not override what the build "
+                "declares)"
+            )
+        return (
+            f"codelinks: {file} is read as written, no `#if` arm left out, as the libclang "
+            f"sphinx-codelinks loaded cannot read its build's target: {why}. Nothing is "
+            f"hidden: every marker is kept, only less precisely; to accept that, add "
+            f"`codelinks.preprocessor_target_unknown` to Sphinx's `suppress_warnings`"
+            f"{setting}"
+        )
+
     def declarer(self, includer: bool) -> str:
         """Who declared it, as the finding names them; ``includer`` when the file is
         read through the entry that includes it."""
@@ -136,6 +209,12 @@ class Unmodelled:
         if self.by is TargetSource.compiler_name:
             return f"{whose} compiler's name"
         return "the `[preprocessor] target` setting"
+
+
+_UNKNOWN = frozenset(
+    {NotRead.unmodelled, NotRead.prefix_unmodelled, NotRead.target_refused}
+)
+"""The reasons that leave a file's target unknown (:attr:`Decision.unknown`)."""
 
 
 def _spelled(flags: tuple[str, ...]) -> str:
@@ -158,14 +237,31 @@ class Decision:
     unmodelled: Unmodelled | None = None
     """Why the file is not read for the target its build declares, as declared: the
     first declared triple libclang does not model (the file is read for :attr:`source`
-    instead), else, on a parse made :func:`again`, the refusal: the inserted triple
-    refused with and without the entry's :data:`REFUSABLE_FLAGS` (read for the host),
-    else those flags refused (read for the same target without them). A refusal that
+    instead, or as written), else, on a parse made :func:`again`, the refusal: the
+    declared triple (the entry's own or an inserted one) refused with and without the
+    entry's :data:`REFUSABLE_FLAGS` (read as written), else those flags refused (read for the same target without them). A refusal that
     changes the target read wins over an unmodelled triple, one that leaves it does
     not; :attr:`left_out` names the flags either way."""
     left_out: tuple[str, ...] = ()
     """The entry's :data:`REFUSABLE_FLAGS` left out of the parse that read the file
     (:func:`again`); empty for a parse as decided."""
+    refused_with: tuple[str, ...] = ()
+    """Every ``-m`` flag of the entry (but the :data:`REFUSABLE_FLAGS`) in the parse that
+    refused a declared triple (:attr:`NotRead.target_refused`), listed by the warning:
+    not the one clang refused, which libclang does not say; empty otherwise."""
+
+    @property
+    def unknown(self) -> bool:
+        """Whether the file's target is unknown, so that it is read as written (every
+        arm of every ``#if`` kept): the build declares a triple the loaded libclang does
+        not model (an entry's own, or the setting's for a file that takes it), its
+        compiler's name carries one whose architecture it does not model
+        (:attr:`NotRead.prefix_unmodelled`, ``xtensa-esp32-elf-gcc``), or libclang
+        refused the declared triple (the entry's own, or one the engine
+        inserted) with the entry's flags even without its :data:`REFUSABLE_FLAGS`. Not for flags refused with a target that is
+        then read (:attr:`NotRead.flags_refused`), nor for a build that declares none
+        (the host, stated)."""
+        return self.unmodelled is not None and self.unmodelled.why in _UNKNOWN
 
     def not_read(self) -> tuple[str, str | None] | None:
         """Why the file is not read for the target its build declares, as ubCode's
@@ -183,55 +279,29 @@ class Decision:
         unmodelled = self.unmodelled
         if unmodelled is None:
             return None
-        nxt = (
-            "the `[preprocessor] target` setting"
-            if self.source is TargetSource.setting
-            else "the machine sphinx-codelinks runs on"
-        )
+        if self.unknown:
+            return unmodelled.as_written_message(
+                file, (self.refused_with, self.left_out), includer
+            )
+        # known, the target is read: flags refused with it (every other reason leaves
+        # the target unknown, decision 3 included)
         triple = unmodelled.triple
         declarer = unmodelled.declarer(includer)
-        arms = "so the `#if` arms of the file on the target are not its build's"
         flags = _spelled(self.left_out)
         without = f", without {flags}" if self.left_out else ""
-        if unmodelled.why in (NotRead.unmodelled, NotRead.prefix_unmodelled):
-            instead = f"{nxt}{without}"
-            if unmodelled.why is NotRead.unmodelled:
-                why = (
-                    f"the target {triple} that {declarer} names is not one the libclang "
-                    f"sphinx-codelinks loaded models, {arms}"
-                )
-            else:
-                arch = triple.split("-", 1)[0]
-                why = (
-                    f"{declarer} carries the target {triple}, whose architecture {arch} "
-                    f"the libclang sphinx-codelinks loaded does not model, {arms}"
-                )
-            if self.left_out:
-                why += (
-                    f"; and it refused {flags} for the target read instead, which is "
-                    f"read without them"
-                )
-        elif unmodelled.why is NotRead.flags_refused and not triple:
+        if not triple:
             instead = f"the machine sphinx-codelinks runs on{without}"
             why = (
                 f"the libclang sphinx-codelinks loaded refused {flags} for it, so the "
                 f"`#if` arms of the file on the CPU and the ABI are its defaults, not its "
                 f"build's"
             )
-        elif unmodelled.why is NotRead.flags_refused:
+        else:
             instead = f"the target {triple} that {declarer} names{without}"
             why = (
                 f"the libclang sphinx-codelinks loaded refused {flags} with that target, "
                 f"so the `#if` arms of the file on the CPU and the ABI are the target's "
                 f"defaults, not its build's"
-            )
-        else:
-            instead = f"the machine sphinx-codelinks runs on{without}"
-            why = (
-                f"the libclang sphinx-codelinks loaded refused the target {triple} that "
-                f"{declarer} names with the entry's flags"
-                + (f", and without {flags}" if self.left_out else "")
-                + f", {arms}"
             )
         return f"codelinks: {file} is read for {read_for} ({instead}): {why}"
 
@@ -369,6 +439,9 @@ def decide(
     if setting:
         candidates.append((setting, TargetSource.setting, ""))
     for triple, source, flag in candidates:
+        # the build's own declaration left the target unknown: nothing is read after it
+        if unmodelled is not None and unmodelled.why in _UNKNOWN:
+            break
         if modelled(triple):
             if source.inserted:
                 args = _with_target(args, triple)
@@ -387,10 +460,11 @@ def again(args: list[str], decision: Decision) -> list[tuple[list[str], Decision
     Whatever the target's source, keeping the target the parse had and leaving out the
     entry's :data:`REFUSABLE_FLAGS`, when it has any (:attr:`NotRead.flags_refused`:
     clang refuses CPUs and ABIs GCC knows, and the same ones on every machine, so the
-    architecture is kept); then, for a triple ``decision`` inserted only, for the host,
-    without the triple and those flags (:attr:`NotRead.target_refused`: another of the
-    entry's flags refuses the triple). The decision's source stays where the target
-    came from. None when the parse carries none of those flags and no inserted triple:
+    architecture is kept); then, for a declared triple (the entry's own or an inserted
+    one), without the triple and those flags (:attr:`NotRead.target_refused`: another
+    of the entry's flags refuses the triple, so the target is unknown, and that parse is
+    for the file's comments only). The decision's source stays where the target came
+    from. None when the parse carries none of those flags and no declared triple:
     nothing is left to leave out but what the build itself passes.
     """
     kept, flags = _without_refusable_flags(args)
@@ -406,43 +480,82 @@ def again(args: list[str], decision: Decision) -> list[tuple[list[str], Decision
             (kept, replace(decision, unmodelled=unmodelled, left_out=flags))
         )
     triple = decision.declared
-    if triple is not None and decision.source.inserted:
-        inserted = f"--target={triple}"
-        host = [arg for arg in kept if arg != inserted]
-        refused = Unmodelled(triple, decision.source, why=NotRead.target_refused)
-        attempts.append((host, replace(decision, unmodelled=refused, left_out=flags)))
+    if triple is not None:
+        if decision.source.inserted:
+            inserted = f"--target={triple}"
+            without = [arg for arg in kept if arg != inserted]
+        else:
+            without = _without_own_target(kept)
+        refused = Unmodelled(
+            triple, decision.source, decision.flag, NotRead.target_refused
+        )
+        attempts.append(
+            (
+                without,
+                replace(
+                    decision,
+                    unmodelled=refused,
+                    left_out=flags,
+                    refused_with=_machine_flags(kept),
+                ),
+            )
+        )
     return attempts
+
+
+class AllRefused(Exception):
+    """Every parse :func:`parse_or_again` made was refused; :attr:`decision` reports
+    the last one made, which says whether the file's target is unknown (it is then
+    read as written without libclang) or known (it is skipped)."""
+
+    def __init__(self, decision: Decision) -> None:
+        super().__init__(f"every parse was refused ({decision.not_read()})")
+        self.decision = decision
+        """The decision of the last parse made."""
 
 
 def parse_or_again(
     args: list[str],
     decision: Decision,
-    parse: Callable[[list[str]], T],
+    parse: Callable[[list[str], Decision], T],
     refusal: type[Exception] | tuple[type[Exception], ...],
 ) -> tuple[T, list[str], Decision]:
     """``parse`` of ``args`` for ``decision``, made :func:`again` while it is refused
     (raises ``refusal``): the read, the arguments it was made with and the decision that
-    reports it. So a target the engine inserts never leaves a file unread that would be
-    read without it; a file is still skipped, as before targets were read, when what is
-    left of its flags is refused for the host too (``-mfpmath=sse`` with an Arm target,
-    on an Arm64 machine).
+    reports it. Each parse is given the decision it is made for, so that one whose
+    target is unknown reads the file as written (:attr:`Decision.unknown`). So a
+    declared target never leaves a file unread that would be read without it.
 
-    :raises refusal: When every parse is refused: the caller skips the file with a log
-        line and no finding.
+    :raises AllRefused: When every parse is refused, with the decision of the last
+        one made: the caller reads a file whose target it leaves unknown without
+        libclang, and skips any other with a warning (its target is known, and a
+        refused flag of its own decides its arms).
     """
     try:
-        return parse(args), args, decision
-    except refusal:
-        attempts = again(args, decision)
-        if not attempts:
-            raise
-    for position, (attempt, refused) in enumerate(attempts):
+        return parse(args, decision), args, decision
+    except refusal as error:
+        last: BaseException = error
+    refused = decision
+    for attempt, refused in again(args, decision):
         try:
-            return parse(attempt), attempt, refused
-        except refusal:
-            if position == len(attempts) - 1:
-                raise
-    raise AssertionError("unreachable")  # pragma: no cover
+            return parse(attempt, refused), attempt, refused
+        except refusal as error:
+            last = error
+    raise AllRefused(refused) from last
+
+
+def _machine_flags(args: list[str]) -> tuple[str, ...]:
+    """The ``-m`` flags of ``args`` (``-mcmse``, ``-mfpmath=vfp``), which pick the
+    target's machine, in order; not an option that hands the next argument on
+    (``-mllvm``), nor such an option's value."""
+    flags: list[str] = []
+    arguments = iter(args)
+    for arg in arguments:
+        if passes_next_argument(arg):
+            next(arguments, None)
+        elif arg.startswith("-m"):
+            flags.append(arg)
+    return tuple(flags)
 
 
 _PROBE_FILE = "codelinks-target-probe.c"

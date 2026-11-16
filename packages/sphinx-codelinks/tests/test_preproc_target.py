@@ -288,17 +288,22 @@ def test_a_gcc_triple_of_an_unmodelled_architecture_is_reported(prefix: str) -> 
     """A compiler's name whose first part libclang does not model, but whose rest it
     reads as a vendor, an OS or an environment, is a GCC triple of an
     architecture libclang does not have (ESP-IDF's ``xtensa-esp32-elf-gcc``): nothing
-    is inserted, the setting applies, and the prefix is reported."""
+    is inserted, the prefix is reported, and (decision 3) the target is unknown, the
+    setting not read either."""
     args, decision = _entry([WD], prefix)
     assert args == [WD]
     reported = Unmodelled(
         prefix, TargetSource.compiler_name, why=NotRead.prefix_unmodelled
     )
     assert decision == Decision(TargetSource.host, unmodelled=reported)
+    # decision 3: the build's target, unknown, so the file is read as written
+    assert decision.unknown
+    # the setting is not read either: it does not override what the build declares
     args, decision = _entry([WD], prefix, "riscv32-unknown-elf")
-    assert args == [WD, "--target=riscv32-unknown-elf"]
-    assert decision.source is TargetSource.setting
+    assert args == [WD]
+    assert decision.source is TargetSource.host
     assert decision.unmodelled == reported
+    assert decision.unknown
 
 
 @pytest.mark.parametrize(
@@ -317,10 +322,10 @@ def test_a_gcc_triple_of_an_unmodelled_architecture_is_reported(prefix: str) -> 
             [WD, "--target=xtensa-esp32-elf"],
             None,
             "riscv32-unknown-elf",
-            [WD, "--target=riscv32-unknown-elf"],
-            TargetSource.setting,
+            [WD],
+            TargetSource.host,
             Unmodelled("xtensa-esp32-elf", TargetSource.entry, "--target"),
-            id="own-then-setting",
+            id="own-not-the-setting",
         ),
         pytest.param(
             [WD],
@@ -350,17 +355,23 @@ def test_an_unmodelled_triple_is_no_declaration(
     source: TargetSource,
     unmodelled: Unmodelled,
 ) -> None:
-    """A declared triple libclang does not model is no declaration: an entry's own is
-    removed (libclang would refuse the parse) and its compiler's name is not read, the
-    setting applies when it is modelled, else the host; the first one is reported, as
-    the entry wrote it."""
+    """A declared triple libclang does not model is not read: an entry's own is
+    removed (libclang would refuse the parse), and neither its compiler's name nor the
+    setting is then read (S2 fix round 1: the build's own declaration wins, and leaves
+    the target unknown); a setting libclang does not model leaves the host's parse. The
+    first one is reported, as the entry wrote it."""
     args, decision = _entry(args, compiler, setting)
     assert args == expected
     assert decision.source is source
     assert decision.unmodelled == unmodelled
     message = decision.message("src/a.c", "x86_64-pc-linux-gnu", includer=False)
     assert message is not None
-    assert message.startswith("codelinks: src/a.c is read for x86_64-pc-linux-gnu (")
+    # S2: the target is unknown, the file read as written, whatever was parsed for
+    assert decision.unknown
+    assert message.startswith(
+        "codelinks: src/a.c is read as written, no `#if` arm left out"
+    )
+    assert "x86_64" not in message
     assert unmodelled.triple in message
 
 
@@ -400,12 +411,16 @@ class _Refused(Exception):
 
 def _parser(
     refuses: Callable[[list[str]], bool],
-) -> tuple[Callable[[list[str]], str], list[list[str]]]:
-    """A parser that refuses the arguments ``refuses`` says, and the calls it got."""
+    as_written: list[bool] | None = None,
+) -> tuple[Callable[[list[str], Decision], str], list[list[str]]]:
+    """A parser that refuses the arguments ``refuses`` says, and the calls it got;
+    ``as_written`` collects whether each parse was made for an unknown target."""
     calls: list[list[str]] = []
 
-    def parse(args: list[str]) -> str:
+    def parse(args: list[str], decision: Decision) -> str:
         calls.append(args)
+        if as_written is not None:
+            as_written.append(decision.unknown)
         if refuses(args):
             raise _Refused
         return "read"
@@ -456,16 +471,23 @@ def test_a_refused_insertion_is_read_without_the_entrys_cpu(
     )
 
 
-def test_a_target_refused_without_the_cpu_too_is_read_for_the_host() -> None:
-    """Step 3: refused without the CPU flags too, the file is read for the host,
-    without the target and without those flags; the decision names the triple
+def test_a_target_refused_without_the_cpu_too_is_read_as_written() -> None:
+    """Step 3: refused without the CPU flags too, the file is parsed without the target
+    and those flags, for its comments only: its target is unknown, and it is read as
+    written (S2: the host is not the build's target). Each parse is given the decision
+    it is made for: only the last is read as written. The decision names the triple
     refused, and its source stays where the triple came from."""
     args, decision = _entry(ENTRY, "powerpc-eabi")
-    parse, calls = _parser(lambda attempt: "--target=powerpc-eabi" in attempt)
+    as_written: list[bool] = []
+    parse, calls = _parser(
+        lambda attempt: "--target=powerpc-eabi" in attempt, as_written
+    )
     read, used, reported = parse_or_again(args, decision, parse, _Refused)
     assert read == "read"
     assert used == [WD, "-resource-dir", "/r"]
     assert len(calls) == 3
+    assert as_written == [False, False, True]
+    assert reported.unknown
     assert reported == Decision(
         TargetSource.compiler_name,
         "powerpc-eabi",
@@ -473,13 +495,16 @@ def test_a_target_refused_without_the_cpu_too_is_read_for_the_host() -> None:
             "powerpc-eabi", TargetSource.compiler_name, why=NotRead.target_refused
         ),
         left_out=("-mcpu=e200z4", "-mabi=spe"),
+        refused_with=(),
     )
     assert reported.message("a.c", "x86_64-unknown-linux-gnu", True) == (
-        "codelinks: a.c is read for x86_64-unknown-linux-gnu (the machine "
-        "sphinx-codelinks runs on, without `-mcpu=e200z4`, `-mabi=spe`): the libclang "
-        "sphinx-codelinks loaded refused the target powerpc-eabi that its includer's "
-        "compiler's name names with the entry's flags, and without `-mcpu=e200z4`, "
-        "`-mabi=spe`, so the `#if` arms of the file on the target are not its build's"
+        "codelinks: a.c is read as written, no `#if` arm left out, as the libclang "
+        "sphinx-codelinks loaded cannot read its build's target: it refused the target "
+        "powerpc-eabi that its includer's compiler's name names with the entry's flags, "
+        "and without `-mcpu=e200z4`, `-mabi=spe`. Nothing is hidden: every marker is "
+        "kept, only less precisely; to accept that, add "
+        "`codelinks.preprocessor_target_unknown` to Sphinx's `suppress_warnings` (the "
+        "`[preprocessor] target` setting does not override what the build declares)"
     )
 
 
@@ -494,8 +519,8 @@ def test_without_cpu_flags_the_chain_goes_to_the_host() -> None:
     assert reported.left_out == ()
     message = reported.message("a.c", "x86_64-unknown-linux-gnu", False)
     assert message is not None
-    assert "(the machine sphinx-codelinks runs on):" in message
-    assert "names with the entry's flags, so the" in message
+    assert "is read as written" in message
+    assert "names with the entry's flags. Nothing is hidden" in message
 
 
 @pytest.mark.parametrize(
@@ -540,22 +565,56 @@ def test_a_target_not_inserted_is_kept_without_the_flags(
     assert instead in message
 
 
-@pytest.mark.parametrize(
-    "args",
-    [
-        pytest.param([WD, "--target=arm-none-eabi", "-DX"], id="own-target"),
-        pytest.param([WD, "-DX"], id="host"),
-    ],
-)
-def test_nothing_to_leave_out_is_not_made_again(args: list[str]) -> None:
-    """A parse whose target was not inserted (the entry's own, or the host) and that
-    carries none of the CPU and ABI flags is not made again: its refusal is the file's,
-    as before targets were read; the file is skipped with a log line and no finding."""
-    args, decision = _entry(args)
+def test_the_host_with_nothing_to_leave_out_is_not_made_again() -> None:
+    """A parse for the host, nothing declared, that carries none of the CPU and ABI
+    flags is not made again: its refusal is the file's, as before targets were read;
+    the file is skipped, its target known."""
+    args, decision = _entry([WD, "-DX"])
     parse, calls = _parser(lambda _attempt: True)
-    with pytest.raises(_Refused):
+    with pytest.raises(target.AllRefused) as refused:
         parse_or_again(args, decision, parse, _Refused)
     assert len(calls) == 1
+    assert not refused.value.decision.unknown
+
+
+@pytest.mark.parametrize(
+    ("args", "flag", "steps"),
+    [
+        pytest.param([WD, "--target=arm-none-eabi", "-mcmse"], "--target", 2, id="own"),
+        pytest.param(
+            [WD, "-target", "arm-none-eabi", "-mcpu=cortex-m4", "-mcmse"],
+            "-target",
+            3,
+            id="own-with-cpu",
+        ),
+    ],
+)
+def test_an_entrys_own_target_refused_without_the_cpu_too_is_unknown(
+    args: list[str], flag: str, steps: int
+) -> None:
+    """ubCode S2 fix round 1: an entry's own target clang refuses with its flags, even
+    without its CPU flags, is unknown too (``target_refused``, declared by the entry):
+    the last parse leaves out the target and those flags, for the comments only, and
+    names the ``-m`` flags it was refused with."""
+    args, decision = _entry(args)
+    as_written: list[bool] = []
+    parse, calls = _parser(
+        lambda attempt: any(arg.startswith(("--target", "-target")) for arg in attempt),
+        as_written,
+    )
+    _, used, reported = parse_or_again(args, decision, parse, _Refused)
+    assert len(calls) == steps
+    assert as_written[-1] and not any(as_written[:-1])
+    assert used == [WD, "-mcmse"]
+    assert reported.source is TargetSource.entry
+    assert reported.not_read() == ("target_refused", "arm-none-eabi")
+    assert reported.refused_with == ("-mcmse",)
+    message = reported.message("a.c", "", False)
+    assert message is not None
+    assert (
+        f"it refused the target arm-none-eabi that its compilation-database entry's "
+        f"`{flag}` names with the entry's flags (its `-m` flags: `-mcmse`)" in message
+    )
 
 
 def test_the_reason_that_decides_the_target_read_wins() -> None:
@@ -571,22 +630,29 @@ def test_the_reason_that_decides_the_target_read_wins() -> None:
     assert refused.not_read() == ("prefix_unmodelled", "riscv-none-elf")
     message = refused.message("a.c", "x86_64-pc-linux-gnu", False)
     assert message is not None
-    assert (
-        "(the machine sphinx-codelinks runs on, without `-march=rv32imac_zicsr`, "
-        "`-mabi=ilp32`)" in message
-    )
+    # read as written (decision 3), the flags left out of the parse decide nothing,
+    # and are not named
+    assert "is read as written" in message
     assert "carries the target riscv-none-elf" in message
-    assert (
-        "; and it refused `-march=rv32imac_zicsr`, `-mabi=ilp32` for the target read "
-        "instead, which is read without them" in message
-    )
-    # an entry's own xtensa, then the setting, inserted and refused
+    assert "-march" not in message
+    # an entry's own xtensa: the setting is not read, nothing is inserted, and its CPU
+    # flags left out keep the reason
     args, decision = _entry(
         [WD, "--target=xtensa-esp32-elf", "-mcpu=e200z4"], None, "powerpc-eabi"
     )
+    assert args == [WD, "-mcpu=e200z4"]
     assert decision.not_read() == ("unmodelled", "xtensa-esp32-elf")
-    attempts = target.again(args, decision)
-    assert attempts[0][1].not_read() == ("unmodelled", "xtensa-esp32-elf")
+    [(_, refused)] = target.again(args, decision)
+    assert refused.not_read() == ("unmodelled", "xtensa-esp32-elf")
+    # an inserted target refused without the CPU flags too wins over an unmodelled
+    # setting's reason: it changes the target read again
+    unmodelled = Decision(
+        TargetSource.compiler_name,
+        "powerpc-eabi",
+        unmodelled=Unmodelled("tricore-elf", TargetSource.setting),
+    )
+    attempts = target.again([WD, "--target=powerpc-eabi", "-mcpu=e200z4"], unmodelled)
+    assert attempts[0][1].not_read() == ("setting_unmodelled", "tricore-elf")
     assert attempts[1][1].not_read() == ("target_refused", "powerpc-eabi")
     # a setting libclang does not model is said to be the setting's
     _, decision = _entry([WD], None, "tricore-elf")
@@ -594,13 +660,16 @@ def test_the_reason_that_decides_the_target_read_wins() -> None:
 
 
 def test_a_refusal_at_every_step_is_the_files() -> None:
-    """Refused at every step, the last refusal is raised (the caller skips the file
-    with its warning, as before)."""
+    """Refused at every step, :class:`.target.AllRefused` is raised with the decision of
+    the last parse made: here an unknown one, so the caller reads the file as written
+    without libclang."""
     args, decision = _entry(ENTRY, "powerpc-eabi")
     parse, calls = _parser(lambda _attempt: True)
-    with pytest.raises(_Refused):
+    with pytest.raises(target.AllRefused) as refused:
         parse_or_again(args, decision, parse, _Refused)
     assert len(calls) == 3
+    assert refused.value.decision.unknown
+    assert refused.value.decision.not_read() == ("target_refused", "powerpc-eabi")
 
 
 def test_a_pass_through_value_is_not_left_out() -> None:
@@ -789,32 +858,32 @@ def test_a_cpu_clang_refuses_keeps_the_file_and_its_target(
     assert f"loaded refused `{refused}` with that target" in message
 
 
-#: The arms of :data:`ARMS` a machine the suite runs on reads for itself.
-HOST_ARMS = {"IMPL_X86", "IMPL_A64"}
+#: Every marker of :data:`ARMS`: the file read as written.
+ALL_ARMS = {"IMPL_ALWAYS", "IMPL_X86", "IMPL_A64", "IMPL_PPC", "IMPL_ARM", "IMPL_OTHER"}
 
 
-def test_libclang_refusing_the_target_without_the_cpu_reads_the_host(
+def test_libclang_refusing_the_target_without_the_cpu_reads_as_written(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Step 3 against the loaded libclang, on every machine: ``-mcmse`` makes clang
     refuse ``arm-none-eabi`` with or without the CPU (it needs an ARMv8-M one), while
     an x86-64, an Arm64 and a Windows host each accept it for themselves (ubCode's
-    example), so the file is read for the host with its other flags. The reason is
-    asserted, never the host triple's spelling (``arm64-apple-macosx14.0.0`` on a
-    macOS Arm64 machine)."""
+    example), so the file is parsed for the host with its other flags, for its
+    comments only: its target is unknown and it is read as written (S2), every arm
+    kept. The reason is asserted, never the host triple's spelling."""
     argv = ["arm-none-eabi-gcc", "-mcpu=cortex-m4", "-mcmse", "-c", "case.c"]
     reasons: list[tuple[str, str | None]] = []
     ids, warnings = _analyse(tmp_path, monkeypatch, ARMS, argv, reasons=reasons)
-    assert "IMPL_ALWAYS" in ids
-    assert len(ids & HOST_ARMS) == 1
-    assert ids <= {"IMPL_ALWAYS", *HOST_ARMS}
+    assert ids == ALL_ARMS
     assert reasons == [("target_refused", "arm-none-eabi")]
     [(message, subtype)] = warnings
     assert subtype == "preprocessor_target_unknown"
+    assert "is read as written, no `#if` arm left out" in message
     assert (
-        "(the machine sphinx-codelinks runs on, without `-mcpu=cortex-m4`)" in message
+        "refused the target arm-none-eabi that its compiler's name names with the "
+        "entry's flags (its `-m` flags: `-mcmse`), and without `-mcpu=cortex-m4`"
+        in message
     )
-    assert "refused the target arm-none-eabi that its compiler's name names" in message
 
 
 NEED_REFS = "// @Always, IMPL_ALWAYS, impl\nint f(void) { return 0; }\n"
@@ -883,7 +952,13 @@ def test_a_refused_cpu_is_left_out_whatever_the_targets_source(
     assert reasons == [(fallback, declared)]
     [(message, subtype)] = warnings
     assert subtype == "preprocessor_target_unknown"
-    assert "without " + ", ".join(f"`{flag}`" for flag in flags) in message
+    spelled = "without " + ", ".join(f"`{flag}`" for flag in flags)
+    if fallback == "prefix_unmodelled":
+        # decision 3: read as written, the flags left out decide nothing
+        assert "is read as written" in message
+        assert spelled not in message
+    else:
+        assert spelled in message
     if declared is not None:
         assert declared in message
 
@@ -930,23 +1005,27 @@ def test_a_name_of_an_unmodelled_architecture_is_reported(
 ) -> None:
     """Against the loaded libclang (ubCode fix round 2, ruling 3): a compiler's name
     whose first part libclang does not model and whose rest it reads as a vendor, an OS
-    or an environment (ESP-IDF's ``xtensa-esp32-elf-gcc``) is reported, the file
-    read for the host; a wrapper's name stays silent. Every file keeps its markers."""
+    or an environment (ESP-IDF's ``xtensa-esp32-elf-gcc``) is the build's target, one
+    libclang cannot read (decision 3): the file is read as written on every machine, the
+    arm only Xtensa takes kept too, and reported. A wrapper's name declares nothing and
+    stays silent, its file read for the host."""
     ids, warnings = _analyse(tmp_path, monkeypatch, XTENSA, [compiler, "-c", "case.c"])
-    assert ids == {"IMPL_ALWAYS", "IMPL_NOT_XTENSA"}
     if reported is None:
+        assert ids == {"IMPL_ALWAYS", "IMPL_NOT_XTENSA"}
         assert warnings == []
         return
+    assert ids == {"IMPL_ALWAYS", "IMPL_XTENSA", "IMPL_NOT_XTENSA"}
     [(message, subtype)] = warnings
     assert subtype == "preprocessor_target_unknown"
     arch = reported.split("-", 1)[0]
-    read_for, _, rest = message.partition(" (the machine sphinx-codelinks runs on): ")
-    assert read_for.startswith(f"codelinks: {tmp_path / 'case.c'} is read for ")
-    assert rest == (
-        f"its compiler's name carries the target "
-        f"{reported}, whose architecture {arch} the libclang sphinx-codelinks loaded "
-        f"does not model, so the `#if` arms of the file on the target are not its "
-        f"build's"
+    assert message == (
+        f"codelinks: {tmp_path / 'case.c'} is read as written, no `#if` arm left out, "
+        f"as the libclang sphinx-codelinks loaded cannot read its build's target: its "
+        f"compiler's name carries the target {reported}, whose architecture {arch} it "
+        f"does not model. Nothing is hidden: every marker is kept, only less precisely; "
+        f"to accept that, add `codelinks.preprocessor_target_unknown` to Sphinx's "
+        f"`suppress_warnings` (the `[preprocessor] target` setting does not override "
+        f"what the build declares)"
     )
 
 
@@ -954,29 +1033,43 @@ def test_an_unmodelled_entry_target_is_left_out_and_reported(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """An entry's own ``--target`` libclang does not model: passed on, the parse fails
-    and the file is dropped. It is left out, the file read for the setting, and the
-    warning names the target and the setting."""
+    and the file is dropped. It is left out of the parse, and as the setting does not
+    override what the entry declares, the file's target is unknown: it is read as
+    written, every arm kept, and the warning names the target and says nothing needs
+    doing."""
     argv = ["clang", "--target=xtensa-esp32-elf", "-c", "case.c"]
-    ids, warnings = _analyse(tmp_path, monkeypatch, ARMS, argv, "thumbv7em-none-eabihf")
-    assert ids == {"IMPL_ALWAYS", "IMPL_ARM"}
+    reasons: list[tuple[str, str | None]] = []
+    ids, warnings = _analyse(
+        tmp_path, monkeypatch, ARMS, argv, "thumbv7em-none-eabihf", reasons=reasons
+    )
+    assert ids == ALL_ARMS
+    assert reasons == [("unmodelled", "xtensa-esp32-elf")]
     [(message, subtype)] = warnings
     assert subtype == "preprocessor_target_unknown"
-    assert (
-        "is read for thumbv7em-none-unknown-eabihf (the `[preprocessor] target` "
-        "setting)" in message
+    assert message == (
+        f"codelinks: {tmp_path / 'case.c'} is read as written, no `#if` arm left out, "
+        f"as the libclang sphinx-codelinks loaded cannot read its build's target: the "
+        f"target xtensa-esp32-elf that its compilation-database entry's `--target` "
+        f"names is not one it models. Nothing is hidden: every marker is kept, only "
+        f"less precisely; to accept that, add `codelinks.preprocessor_target_unknown` "
+        f"to Sphinx's `suppress_warnings` (the `[preprocessor] target` setting does not "
+        f"override what the build declares)"
     )
-    assert "its compilation-database entry's `--target`" in message
 
 
 def test_an_unmodelled_setting_is_not_used(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A setting libclang does not model reads the file for the host, reported."""
+    """A setting libclang does not model, for a file that takes it: the target is
+    unknown, the file read as written, and the warning gives the remedy."""
     ids, warnings = _analyse(tmp_path, monkeypatch, XTENSA, None, "xtensa-esp32-elf")
-    assert ids == {"IMPL_ALWAYS", "IMPL_NOT_XTENSA"}
+    assert ids == {"IMPL_ALWAYS", "IMPL_XTENSA", "IMPL_NOT_XTENSA"}
     [(message, subtype)] = warnings
     assert subtype == "preprocessor_target_unknown"
     assert "the `[preprocessor] target` setting names is not one" in message
+    assert message.endswith(
+        "; or set the `[preprocessor] target` setting to a triple that libclang models"
+    )
 
 
 def test_a_source_read_through_its_includer_takes_its_target(
@@ -1057,3 +1150,543 @@ def test_the_target_setting_defaults_to_unset() -> None:
 def test_a_target_setting_that_is_not_a_string_is_rejected() -> None:
     with pytest.raises(TypeError, match=r"\[preprocessor\] target must be a string"):
         convert_analyse_config({"preprocessor": {"target": ["arm-none-eabi"]}})
+
+
+# --- S2: a file whose target cannot be read is read as written -------------------------
+
+
+@pytest.mark.parametrize(
+    ("args", "compiler", "setting", "unknown"),
+    [
+        pytest.param([WD], None, None, False, id="host"),
+        pytest.param([WD], "arm-none-eabi", None, False, id="name"),
+        pytest.param([WD, "--target=xtensa-esp32-elf"], None, None, True, id="own"),
+        pytest.param(
+            [WD, "--target=xtensa-esp32-elf"],
+            None,
+            "thumbv7em-none-eabihf",
+            True,
+            id="own-with-setting",
+        ),
+        pytest.param([WD], None, "tricore-elf", True, id="setting"),
+        pytest.param([WD], None, "thumbv7em-none-eabihf", False, id="modelled-setting"),
+        pytest.param([WD], "my-arm", None, False, id="wrapper"),
+        pytest.param([WD], "xtensa-esp32-elf", None, True, id="prefix"),
+        pytest.param(
+            [WD],
+            "xtensa-esp32-elf",
+            "thumbv7em-none-eabihf",
+            True,
+            id="prefix-with-setting",
+        ),
+    ],
+)
+def test_which_targets_are_unknown(
+    args: list[str], compiler: str | None, setting: str | None, unknown: bool
+) -> None:
+    """ubCode S2: an entry's own triple libclang does not model (even with a setting
+    it models: the setting does not override what the build declares), the setting's
+    for a file that takes it, and an inserted triple refused without the CPU flags too
+    leave the target unknown. Not a native build (the host, stated), a wrapper's name,
+    a modelled declaration, nor flags refused with a target then read."""
+    _, decision = _entry(args, compiler, setting)
+    assert decision.unknown is unknown
+    if compiler is None and len(args) == 1:
+        # a file with no entry: the setting's alone
+        _, decision = decide(
+            ["-x", "c"], entry=False, setting=setting, modelled=_modelled
+        )
+        assert decision.unknown is unknown
+    args, decision = _entry([*args, "-mcpu=x"], compiler, setting)
+    attempts = target.again(args, decision)
+    assert attempts[0][1].unknown is unknown
+    if len(attempts) > 1:
+        assert attempts[1][1].unknown
+        assert attempts[1][1].not_read() == ("target_refused", decision.declared)
+
+
+@pytest.mark.parametrize(
+    ("args", "setting", "declarer", "remedy"),
+    [
+        pytest.param(
+            [WD],
+            "tricore-elf",
+            "the `[preprocessor] target` setting names",
+            "; or set the `[preprocessor] target` setting to a triple that libclang "
+            "models",
+            id="setting",
+        ),
+        pytest.param(
+            [WD, "--target=xtensa-esp32-elf"],
+            "thumbv7em-none-eabihf",
+            "its compilation-database entry's `--target` names",
+            " (the `[preprocessor] target` setting does not override what the build "
+            "declares)",
+            id="entry",
+        ),
+    ],
+)
+def test_the_warning_of_a_file_read_as_written_gives_the_remedy(
+    args: list[str], setting: str, declarer: str, remedy: str
+) -> None:
+    """The warning for a file read as written gives the remedy: to suppress it
+    (Sphinx's ``suppress_warnings``), or, when the setting declared the target, a
+    setting naming a triple libclang models (the setting does not override the build's
+    declaration); never the target parsed for."""
+    _, decision = _entry(args, None, setting)
+    not_read = decision.not_read()
+    assert not_read is not None
+    message = decision.message("src/a.c", "thumbv7em-none-unknown-eabihf", False)
+    assert message == (
+        f"codelinks: src/a.c is read as written, no `#if` arm left out, as the libclang "
+        f"sphinx-codelinks loaded cannot read its build's target: the target "
+        f"{not_read[1]} that {declarer} is not one it models. Nothing is hidden: every marker is kept, only less precisely; to accept that, add `codelinks.preprocessor_target_unknown` to Sphinx's `suppress_warnings`"
+        f"{remedy}"
+    )
+
+
+def test_a_source_read_through_an_unknown_includer_is_read_as_written(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A compiled source with no entry, read through an entry whose own ``--target``
+    libclang does not model, is read as written too: the arm only Xtensa takes and the
+    one the machine running the analysis takes are both kept, and the warning names the
+    includer's declaration."""
+    (tmp_path / "unity.c").write_text('#include "case.c"\n')
+    src = tmp_path / "case.c"
+    src.write_text(XTENSA)
+    db = tmp_path / "compile_commands.json"
+    db.write_text(
+        json.dumps(
+            [
+                {
+                    "directory": str(tmp_path),
+                    "file": "unity.c",
+                    "arguments": [
+                        "clang",
+                        "--target=xtensa-esp32-elf",
+                        "-c",
+                        "unity.c",
+                    ],
+                }
+            ]
+        )
+    )
+    recorder = _RecordingLogger()
+    monkeypatch.setattr(analyse_module, "logger", recorder)
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[src],
+            src_dir=tmp_path,
+            comment_type=CommentType.cpp,
+            get_oneline_needs=True,
+            preprocessor=PreprocessorConfig(compile_commands=db, std="c11"),
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run()
+    assert {need.need["id"] for need in analyse.oneline_needs} == {
+        "IMPL_ALWAYS",
+        "IMPL_XTENSA",
+        "IMPL_NOT_XTENSA",
+    }
+    [(message, subtype)] = recorder.warnings
+    assert subtype == "preprocessor_target_unknown"
+    assert "is read as written" in message
+    assert "its includer's compilation-database entry's `--target`" in message
+
+
+# --- S2 fix round 1: no file whose target is unknown is lost to a refused parse ----------
+
+#: Markers on every arm an Xtensa or a 32-bit Arm build takes, none directly above a
+#: conditional's line (ubCode's ``XTENSA_ARM``).
+XTENSA_ARM = (
+    "// @all, IMPL_ALL, impl\n"
+    "int all;\n"
+    "#ifdef __XTENSA__\n"
+    "// @xtensa, IMPL_XT, impl\n"
+    "int xt(void) { return 1; }\n"
+    "#endif\n"
+    "#if defined(__arm__)\n"
+    "// @arm, IMPL_ARM, impl\n"
+    "int arm(void) { return 2; }\n"
+    "#endif\n"
+)
+XTENSA_ARM_IDS = {"IMPL_ALL", "IMPL_XT", "IMPL_ARM"}
+
+
+@pytest.mark.parametrize(
+    ("argv", "setting", "why", "declared", "says"),
+    [
+        pytest.param(
+            ["clang", "--target=arm-none-eabi", "-mcmse", "-c", "case.c"],
+            None,
+            "target_refused",
+            "arm-none-eabi",
+            "refused the target arm-none-eabi that its compilation-database entry's "
+            "`--target` names with the entry's flags (its `-m` flags: `-mcmse`)",
+            id="own-refused",
+        ),
+        pytest.param(
+            [
+                "clang",
+                "--target=arm-none-eabi",
+                "-mcmse",
+                "-mfpmath=vfp",
+                "-c",
+                "case.c",
+            ],
+            None,
+            "target_refused",
+            "arm-none-eabi",
+            "names with the entry's flags (its `-m` flags: `-mcmse`, `-mfpmath=vfp`)",
+            id="own-refused-everywhere",
+        ),
+        pytest.param(
+            ["clang", "--target=xtensa-esp32-elf", "-mfpmath=vfp", "-c", "case.c"],
+            None,
+            "unmodelled",
+            "xtensa-esp32-elf",
+            "the target xtensa-esp32-elf that its compilation-database entry's "
+            "`--target` names is not one it models",
+            id="unmodelled-refused-everywhere",
+        ),
+        pytest.param(
+            ["arm-none-eabi-gcc", "-mcmse", "-mfpmath=vfp", "-c", "case.c"],
+            None,
+            "target_refused",
+            "arm-none-eabi",
+            "refused the target arm-none-eabi that its compiler's name names with the "
+            "entry's flags (its `-m` flags: `-mcmse`, `-mfpmath=vfp`)",
+            id="name-refused-everywhere",
+        ),
+        pytest.param(
+            ["gcc", "-mfpmath=vfp", "-c", "case.c"],
+            "tricore-elf",
+            "setting_unmodelled",
+            "tricore-elf",
+            "the target tricore-elf that the `[preprocessor] target` setting names is "
+            "not one it models",
+            id="setting-refused-everywhere",
+        ),
+        # decision 3: a compiler's name's GCC triple of an architecture libclang does
+        # not model leaves the target unknown, so its refused parse does not drop the
+        # file either, a modelled setting not inserted
+        pytest.param(
+            ["tricore-elf-gcc", "-mfpmath=vfp", "-c", "case.c"],
+            None,
+            "prefix_unmodelled",
+            "tricore-elf",
+            "its compiler's name carries the target tricore-elf, whose architecture "
+            "tricore it does not model",
+            id="prefix-refused-everywhere",
+        ),
+        pytest.param(
+            ["xtensa-esp32-elf-gcc", "-mcmse", "-c", "case.c"],
+            "thumbv7em-none-eabihf",
+            "prefix_unmodelled",
+            "xtensa-esp32-elf",
+            "its compiler's name carries the target xtensa-esp32-elf, whose architecture "
+            "xtensa it does not model",
+            id="prefix-with-setting",
+        ),
+    ],
+)
+def test_no_unknown_target_file_is_dropped_for_a_refused_parse(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+    setting: str | None,
+    why: str,
+    declared: str,
+    says: str,
+) -> None:
+    """ubCode S2 fix round 1, MUST 2: an entry's own target clang refuses with its
+    flags, without a CPU flag to leave out (``--target=arm-none-eabi -mcmse``), is
+    unknown (``target_refused``, declared by the entry), as an inserted one is: the file
+    is read as written. And a file whose target is unknown and whose every parse is
+    refused, by a flag clang refuses on every machine that runs the tests
+    (``-mfpmath=vfp``), is read as written without libclang, by the tree-sitter engine:
+    every marker kept, the same warning."""
+    reasons: list[tuple[str, str | None]] = []
+    ids, warnings = _analyse(
+        tmp_path, monkeypatch, XTENSA_ARM, argv, setting, reasons=reasons
+    )
+    assert ids == XTENSA_ARM_IDS, "the file is read, never dropped"
+    assert reasons == [(why, declared)]
+    [(message, subtype)] = warnings
+    assert subtype == "preprocessor_target_unknown"
+    assert "is read as written, no `#if` arm left out" in message
+    assert says in message
+
+
+def test_a_known_target_file_whose_parse_is_refused_is_skipped_as_before(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The other side: a file whose target is known (a native compiler's, the host,
+    stated) and whose every parse is refused by a flag of its own (``-mfpmath=vfp``) is
+    skipped as before, with the warning that libclang could not load it and no
+    ``preprocessor_target_unknown``: its arms are the host's, and a flag of its build
+    decides them."""
+    ids, warnings = _analyse(
+        tmp_path, monkeypatch, XTENSA_ARM, ["gcc", "-mfpmath=vfp", "-c", "case.c"]
+    )
+    assert ids == set()
+    [(message, subtype)] = warnings
+    assert subtype == ""
+    assert "libclang could not load it as a translation unit" in message
+
+
+#: A unity file including one source at the top, one in an arm only Xtensa takes and
+#: one in an arm only 32-bit Arm takes.
+UNITY_XTENSA_ARM = (
+    '#include "top.c"\n'
+    "#ifdef __XTENSA__\n"
+    '#include "src.c"\n'
+    "#endif\n"
+    "#if defined(__arm__)\n"
+    '#include "arm.c"\n'
+    "#endif\n"
+)
+
+
+@pytest.mark.parametrize(
+    ("argv", "setting", "why"),
+    [
+        pytest.param(
+            ["clang", "--target=xtensa-esp32-elf"], None, "unmodelled", id="own"
+        ),
+        pytest.param(
+            ["clang", "--target=xtensa-esp32-elf", "-mfpmath=vfp"],
+            None,
+            "unmodelled",
+            id="own-refused-everywhere",
+        ),
+        pytest.param(["gcc"], "tricore-elf", "setting_unmodelled", id="setting"),
+        pytest.param(
+            ["arm-none-eabi-gcc", "-mcmse"], None, "target_refused", id="refused"
+        ),
+        # decision 3
+        pytest.param(
+            ["xtensa-esp32-elf-gcc", "-mlongcalls"],
+            "thumbv7em-none-eabihf",
+            "prefix_unmodelled",
+            id="prefix",
+        ),
+        pytest.param(
+            ["my-linux-gcc"], None, "prefix_unmodelled", id="wrapper-of-a-system"
+        ),
+    ],
+)
+def test_an_unknown_includer_confirms_by_its_include_lines(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    argv: list[str],
+    setting: str | None,
+    why: str,
+) -> None:
+    """ubCode S2 fix round 1, MUST 1: a source a unity entry whose target is unknown
+    includes is confirmed by the entry's ``#include`` lines, not by its parse, which
+    decides no arm: one included in an arm only Xtensa takes, one in an arm only 32-bit
+    Arm takes and one at the top are each read as written through it, every marker
+    kept, on every machine, never skipped as ``not_in_compile_database``. Whether the
+    target is unknown as declared (an entry's own Xtensa, alone or with a flag every
+    machine refuses, a setting libclang does not model) or after its parse was refused
+    (``arm-none-eabi`` with ``-mcmse``)."""
+    (tmp_path / "unity.c").write_text(UNITY_XTENSA_ARM)
+    files = [tmp_path / name for name in ("src.c", "arm.c", "top.c")]
+    for file in files:
+        file.write_text(XTENSA_ARM.replace("IMPL_", f"IMPL_{file.stem.upper()}_"))
+    db = tmp_path / "compile_commands.json"
+    db.write_text(
+        json.dumps(
+            [
+                {
+                    "directory": str(tmp_path),
+                    "file": "unity.c",
+                    "arguments": [*argv, "-c", "unity.c"],
+                }
+            ]
+        )
+    )
+    recorder = _RecordingLogger()
+    monkeypatch.setattr(analyse_module, "logger", recorder)
+    reasons: list[tuple[str, str | None]] = []
+    warn = SourceAnalyse._warn_target
+
+    def recording(
+        self: SourceAnalyse,
+        path: Path,
+        decision: Decision,
+        read_for: str,
+        *,
+        includer: bool,
+    ) -> None:
+        not_read = decision.not_read()
+        if not_read is not None:
+            reasons.append((not_read[0], path.name))
+        warn(self, path, decision, read_for, includer=includer)
+
+    monkeypatch.setattr(SourceAnalyse, "_warn_target", recording)
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=files,
+            src_dir=tmp_path,
+            comment_type=CommentType.cpp,
+            get_oneline_needs=True,
+            preprocessor=PreprocessorConfig(
+                compile_commands=db, std="c11", target=setting
+            ),
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run()
+    assert {need.need["id"] for need in analyse.oneline_needs} == {
+        f"IMPL_{file.stem.upper()}_{marker}"
+        for file in files
+        for marker in ("ALL", "XT", "ARM")
+    }
+    assert sorted(reasons) == sorted((why, file.name) for file in files)
+    assert len(recorder.warnings) == len(files)
+    for message, subtype in recorder.warnings:
+        assert subtype == "preprocessor_target_unknown"
+        assert "is read as written, no `#if` arm left out" in message
+        assert (
+            "the `[preprocessor] target` setting names"
+            if why == "setting_unmodelled"
+            else "its includer's"
+        ) in message
+
+
+#: A source whose markers say which arm it was read for: Arm, not Arm, or both.
+SRC_ARM = (
+    "// @all, IMPL_SRC_ALL, impl\n"
+    "int all;\n"
+    "#if defined(__arm__)\n"
+    "// @arm, IMPL_SRC_ARM, impl\n"
+    "int arm(void) { return 1; }\n"
+    "#else\n"
+    "// @not arm, IMPL_SRC_NOT_ARM, impl\n"
+    "int not_arm(void) { return 2; }\n"
+    "#endif\n"
+)
+
+XTENSA_ENTRY = ["clang", "--target=xtensa-esp32-elf"]
+ARM_ENTRY = ["arm-none-eabi-gcc", "-mcpu=cortex-m4"]
+IN_IF_0 = '#if 0\n#include "src.c"\n#endif\n'
+INCLUDED = '#include "src.c"\n'
+
+
+@pytest.mark.parametrize(
+    ("entries", "unknown_triple"),
+    [
+        pytest.param(
+            [("a_unity.c", XTENSA_ENTRY, IN_IF_0), ("b_main.c", ARM_ENTRY, INCLUDED)],
+            None,
+            id="known-wins",
+        ),
+        pytest.param(
+            [("a_main.c", ARM_ENTRY, INCLUDED), ("b_unity.c", XTENSA_ENTRY, IN_IF_0)],
+            None,
+            id="known-wins-first-by-path",
+        ),
+        pytest.param(
+            [
+                (
+                    "a_main.c",
+                    ARM_ENTRY,
+                    '#ifdef __XTENSA__\n#include "src.c"\n#endif\n',
+                ),
+                ("b_unity.c", XTENSA_ENTRY, INCLUDED),
+            ],
+            "xtensa-esp32-elf",
+            id="known-in-a-skipped-arm",
+        ),
+        pytest.param(
+            [
+                ("a_unity.c", XTENSA_ENTRY, IN_IF_0),
+                ("b_unity.c", ["clang", "--target=tricore-elf"], INCLUDED),
+            ],
+            "xtensa-esp32-elf",
+            id="unknown-alone",
+        ),
+    ],
+)
+def test_a_known_includer_that_confirms_wins_over_an_unknown_ones_text(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    entries: list[tuple[str, list[str], str]],
+    unknown_triple: str | None,
+) -> None:
+    """ubCode S2 fix round 2: a candidate includer whose target is known and whose
+    parse confirms the inclusion is taken before any candidate whose target is
+    unknown, which confirms by its ``#include`` lines only when no known one confirms
+    (path order within each). So ``src.c``, which an Xtensa unity includes in ``#if 0``
+    and an Arm entry includes for real, is read for Arm through the Arm entry,
+    whichever comes first by path: the markers of its Arm arm, not its ``#else``, and
+    no warning. A known includer whose ``#include`` sits in an arm its parse skips
+    still does not confirm, so the unknown one reads the source as written, every
+    marker kept; with unknown includers alone, the first by path does (its triple is
+    the one the warning names)."""
+    for name, _, text in entries:
+        (tmp_path / name).write_text(text)
+    src = tmp_path / "src.c"
+    src.write_text(SRC_ARM)
+    db = tmp_path / "compile_commands.json"
+    db.write_text(
+        json.dumps(
+            [
+                {
+                    "directory": str(tmp_path),
+                    "file": name,
+                    "arguments": [*argv, "-c", name],
+                }
+                for name, argv, _ in entries
+            ]
+        )
+    )
+    recorder = _RecordingLogger()
+    monkeypatch.setattr(analyse_module, "logger", recorder)
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[src],
+            src_dir=tmp_path,
+            comment_type=CommentType.cpp,
+            get_oneline_needs=True,
+            preprocessor=PreprocessorConfig(compile_commands=db, std="c11"),
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run()
+    ids = {need.need["id"] for need in analyse.oneline_needs}
+    if unknown_triple is None:
+        assert ids == {"IMPL_SRC_ALL", "IMPL_SRC_ARM"}
+        assert recorder.warnings == []
+        return
+    assert ids == {"IMPL_SRC_ALL", "IMPL_SRC_ARM", "IMPL_SRC_NOT_ARM"}
+    [(message, subtype)] = recorder.warnings
+    assert subtype == "preprocessor_target_unknown"
+    assert "is read as written" in message
+    assert f"the target {unknown_triple} that its includer's" in message
+
+
+def test_a_refused_setting_gives_the_remedy_for_the_entrys_flags() -> None:
+    """ubCode S2 fix round 2: a setting refused with the entry's flags is said to be
+    refused with them, listing its ``-m`` flags without claiming one was refused
+    (libclang does not say which), and the remedy is a triple libclang accepts with the
+    entry's flags."""
+    args, decision = _entry([WD, "-mcmse"], None, "thumbv7em-none-eabihf")
+    [(_, refused)] = target.again(args, decision)
+    message = refused.message("src/a.c", "", False)
+    assert message is not None
+    assert (
+        "it refused the target thumbv7em-none-eabihf that the `[preprocessor] target` "
+        "setting names with the entry's flags (its `-m` flags: `-mcmse`)" in message
+    )
+    assert message.endswith(
+        "; or set the `[preprocessor] target` setting to a triple that libclang accepts "
+        "with the entry's flags"
+    )
