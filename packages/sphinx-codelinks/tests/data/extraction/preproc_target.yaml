@@ -1,13 +1,4 @@
-# The target a file is read for (#4865): ubCode-only, pending its sphinx-codelinks twin.
-#
-# These cases have the shape of the shared fixture files, but no reference snapshot
-# exists for them yet: this file is not one of `SHARED_FIXTURES`
-# (`extraction_parity.rs`, `sync_codelinks_expected.py`), so the parity gate does not
-# read it, and `check_fixture_drift.py`, which refreshes only the files upstream also
-# has, leaves it alone. Only the snapshot harness (`extraction_fixtures.rs`) runs it.
-# When sphinx-codelinks adds the same file byte for byte (and reads the target), it is
-# added to both `SHARED_FIXTURES` lists and its references are synced like every
-# other shared file's.
+# The target a file is read for by the libclang engine (#4865).
 #
 # libclang reads no target from a compile command's compiler: it parses with its own
 # `clang`, for the triple it was built for (the machine running the extraction), unless
