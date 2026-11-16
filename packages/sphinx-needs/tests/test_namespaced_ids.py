@@ -12,6 +12,7 @@ that every way a need is copied or stored keeps them. The design record is
 from __future__ import annotations
 
 import ast
+import contextlib
 import copy
 import io
 import json
@@ -522,6 +523,22 @@ def test_no_warning_switched_off_or_suppressed(test_app: Any) -> None:
     assert sorted(_needs(app)) == sorted(UNCLEAN)
 
 
+@pytest.mark.parametrize(
+    "test_app",
+    [_unclean_project('extensions = ["sphinx_needs"]\nneeds_id_regex = "^X"\n')],
+    indirect=True,
+)
+def test_a_refused_need_is_reported_for_its_refusal(test_app: Any) -> None:
+    """The warning is the funnel's last act: a need an id pattern refuses is reported
+    for that, and not for its id not splitting cleanly."""
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert len(warnings) == len(UNCLEAN)
+    assert all(w.endswith("[needs.create_need]") for w in warnings), warnings
+    assert dict(_needs(app)) == {}
+
+
 def _record_file(need_id: str, **more: str) -> str:
     return json.dumps(
         {
@@ -754,6 +771,94 @@ def test_needextract_reads_a_namespaced_argument_as_an_id(test_app: Any) -> None
     ]
     html = Path(app.outdir, "index.html").read_text("utf-8")
     assert html.count('id="nc::REQ_00001"') == 2
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            **_unclean_project(
+                'extensions = ["sphinx_needs"]\nneeds_id_regex = "^[a-z]"\n',
+                "Index\n=====\n\n.. req:: Present\n   :id: req_1\n\n"
+                '.. needextract:: type == "req"\n',
+            ),
+            "buildername": "html",
+        }
+    ],
+    indirect=True,
+)
+def test_needextract_matches_an_argument_as_an_id_in_full(test_app: Any) -> None:
+    """An argument whose start alone matches ``needs_id_regex`` is a filter, as before:
+    the id test is a full match (``re.fullmatch``), of the local id or the whole id."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    html = Path(app.outdir, "index.html").read_text("utf-8")
+    assert html.count('id="req_1"') == 2
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            **_unclean_project(
+                'extensions = ["sphinx_needs"]\nneeds_namespaced_ids = False\n',
+                EXTRACT_INDEX,
+            ),
+            "buildername": "html",
+        }
+    ],
+    indirect=True,
+)
+def test_needextract_follows_the_switch(test_app: Any) -> None:
+    """With the switch off the argument's id is read whole: ``nc::REQ_00002`` is not
+    id-shaped under the default pattern, so it is not "not found" but a filter (which
+    fails: this branch does not change how a filter that is no Python is reported)."""
+    app = test_app
+    # the filter's failure is not this test's
+    with contextlib.suppress(Exception):
+        app.build()
+    assert not [w for w in build_warnings(app) if "not found" in w]
+
+
+def test_flipping_the_switch_re_reads_every_document(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """``needs_namespaced_ids`` changes what is stored on every need: flipping it between
+    two builds of one source directory re-reads every document, so the stored values
+    and the filters follow it."""
+    from sphinx_needs.filter_common import filter_needs_view
+
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    for name, text in _project()["files"]:
+        (srcdir / name).write_text(text, "utf-8")
+    answers = []
+    for switch in (True, False, True):
+        app = make_app(
+            "html",
+            srcdir=srcdir,
+            status=io.StringIO(),
+            warning=io.StringIO(),
+            confoverrides={"needs_namespaced_ids": switch},
+        )
+        app.build()
+        needs = _needs(app)
+        answers.append(
+            (
+                needs["nc::REQ_003"].id_ns_segments,
+                sorted(
+                    n["id"]
+                    for n in filter_needs_view(
+                        needs, NeedsSphinxConfig(app.config), 'c.in_namespace("nc")'
+                    )
+                ),
+            )
+        )
+    on = (("nc",), ["nc::REQ_003", "nc::m2::REQ_002", "nc::m2::REQ_004"])
+    assert answers[0][0] == on[0]
+    assert answers[1] == ((), [])
+    assert answers[2] == answers[0]
 
 
 # --- filters: c.id.ns, c.id.local, c.in_namespace() ---
