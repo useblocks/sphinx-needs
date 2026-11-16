@@ -61,7 +61,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "filter_conformance.toml"
 #: it needs a reason in the commit message, and ubCode's vendored copy has to follow
 #: either way.
 EXPECTED_CASE_COUNT = 28
-EXPECTED_FILTER_COUNT = 335
+EXPECTED_FILTER_COUNT = 336
 
 #: The configuration the runner gives every case besides its ``ubproject.toml``: its
 #: ``extensions`` are sphinx-needs, then the case's own, and each reads the case's
@@ -134,9 +134,12 @@ _UNKNOWN_INHERITS = re.compile(
     r"its inherits is ignored\. \[needs\.type_inherits\]"
 )
 
-#: The report of an id that holds ``::`` but does not split cleanly, which the "namespaced
-#: ids" section leaves uncompared: the id is a plain id, which its entries compare.
+#: The report of an id that holds ``::`` but does not split cleanly: the "namespaced ids"
+#: section's first case holds one such id, which earns exactly one report there (the id
+#: is a plain id, which its entries compare); no other case may earn one.
 _UNCLEAN_ID = "[needs.id_namespace]"
+_UNCLEAN_CASE = "namespaced-ids-split-at-the-last-separator"
+_UNCLEAN_ID_OF_CASE = "SUPPLIER::::REQ_004"
 
 #: The one code a reported filter carries, compared bare.
 _FILTER_CODE = "filter"
@@ -416,13 +419,19 @@ def test_case(test_app: Any, case: dict[str, Any]) -> None:
     # read as written tests something else (the warnings a case may earn are the
     # deprecation of `filter_data`, which the residue's own filters read, and the
     # finding of an `inherits` naming no need type, a configuration finding the header
-    # leaves uncompared, and the report of an id that does not split cleanly, which the
-    # "namespaced ids" section leaves uncompared)
+    # leaves uncompared; the one case holding an id that does not split cleanly earns
+    # exactly one report of it, for that id)
+    warnings = build_warnings(app)
+    unclean = [w for w in warnings if w.endswith(_UNCLEAN_ID)]
+    if case["name"] == _UNCLEAN_CASE:
+        assert len(unclean) == 1, unclean
+        assert f"Need id {_UNCLEAN_ID_OF_CASE!r} " in unclean[0], unclean
     assert [
         w
-        for w in build_warnings(app)
-        if not w.endswith((_DEPRECATED, _UNCLEAN_ID))
+        for w in warnings
+        if not w.endswith(_DEPRECATED)
         and not _UNKNOWN_INHERITS.fullmatch(w)
+        and (case["name"] != _UNCLEAN_CASE or w not in unclean)
     ] == [], case["name"]
     problems = [
         problem

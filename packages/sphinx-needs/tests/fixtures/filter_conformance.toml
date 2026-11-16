@@ -2490,7 +2490,9 @@ why = "c is the check context, whatever a field is named"
 # not split cleanly is a plain id and earns each tool's own report of it, which no entry
 # compares (the Python runner admits the `needs.id_namespace` warning). The second case
 # switches the reading off (`[needs] namespaced_ids = false`): every id is plain, and the
-# names stay defined. Every entry is divergent for ubCode until its mirror runs them.
+# names stay defined. Every entry naming c.id or c.in_namespace is divergent for ubCode,
+# its behaviour read rather than run: the mirror measures each and drops the key where
+# ubCode agrees. `c.id` compared with a value is an error: it holds the facets, not the id.
 
 [[case]]
 name = "namespaced-ids-split-at-the-last-separator"
@@ -2521,103 +2523,103 @@ source = '''
 [[case.filters]]
 filter = 'c.id.ns == "SUPPLIER"'
 expected = ["SUPPLIER::REQ_001"]
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'c.id.ns == "SUPPLIER::M2"'
 expected = ["SUPPLIER::M2::REQ_002"]
 why = "the namespace's text joins its segments with ::"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'c.id.ns == ""'
 expected = ["PLAIN_001", "SUPPLIER::::REQ_004"]
 why = "a plain id, and one that does not split cleanly, are in no namespace"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'c.id.ns != ""'
 expected = ["SUPPLIER::M2::REQ_002", "SUPPLIER::REQ_001", "SUPPLIERX::REQ_001"]
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'c.id.local == "REQ_001"'
 expected = ["SUPPLIER::REQ_001", "SUPPLIERX::REQ_001"]
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'c.id.local == "SUPPLIER::::REQ_004"'
 expected = ["SUPPLIER::::REQ_004"]
 why = "the local id of a plain id is the whole id"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'c.id.local == id'
 expected = ["PLAIN_001", "SUPPLIER::::REQ_004"]
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'c.id.ns in ["SUPPLIER", "SUPPLIERX"]'
 expected = ["SUPPLIER::REQ_001", "SUPPLIERX::REQ_001"]
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = '"M2" in c.id.ns'
 expected = ["SUPPLIER::M2::REQ_002"]
 why = "the namespace is text: membership is a substring test"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'c.id.ns.startswith("SUPPLIER")'
 expected = ["SUPPLIER::M2::REQ_002", "SUPPLIER::REQ_001", "SUPPLIERX::REQ_001"]
 why = "a text prefix is no namespace test: it selects the look-alike too"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'c.id.local.endswith("_001")'
 expected = ["PLAIN_001", "SUPPLIER::REQ_001", "SUPPLIERX::REQ_001"]
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'search("^REQ_00[12]$", c.id.local)'
 expected = ["SUPPLIER::M2::REQ_002", "SUPPLIER::REQ_001", "SUPPLIERX::REQ_001"]
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'c.in_namespace("SUPPLIER")'
 expected = ["SUPPLIER::M2::REQ_002", "SUPPLIER::REQ_001"]
 why = "the namespace and below it, by segments: SUPPLIERX is another namespace"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.in_namespace" }
 
 [[case.filters]]
 filter = 'c.in_namespace("SUPPLIER::M2")'
 expected = ["SUPPLIER::M2::REQ_002"]
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.in_namespace" }
 
 [[case.filters]]
 filter = 'c.in_namespace("M2")'
 expected = []
 why = "a namespace is named from its first segment"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.in_namespace" }
 
 [[case.filters]]
 filter = 'not c.in_namespace("SUPPLIER")'
 expected = ["PLAIN_001", "SUPPLIER::::REQ_004", "SUPPLIERX::REQ_001"]
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.in_namespace" }
 
 [[case.filters]]
 filter = 'c.in_namespace("")'
 expected = []
 error = "filter"
 why = "an empty argument names no namespace: an error, never every need"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.in_namespace" }
 
 [[case.filters]]
 filter = 'c.in_namespace("SUPPLIER::")'
 expected = []
 error = "filter"
 why = "a text that is no namespace is an error"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.in_namespace" }
 
 [[case.filters]]
 filter = 'c.in_namespace(c.id.ns)'
@@ -2626,7 +2628,7 @@ error = "filter"
 tier = "eval"
 reason = "call:c.in_namespace"
 why = "an argument that is no string literal is outside the language; a need in no namespace gives it the empty text, an error"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.in_namespace" }
 
 [[case.filters]]
 filter = 'c.id.nss == ""'
@@ -2635,40 +2637,46 @@ error = "filter"
 tier = "eval"
 reason = "attribute:c"
 why = "an unknown facet is an error"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.id == "SUPPLIER::REQ_001"'
+expected = []
+error = "filter"
+tier = "eval"
+reason = "attribute:c"
+why = "c.id holds the facets of the id, not the id: compared with a value it is an error, never no need"
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'id == "SUPPLIER::REQ_001"'
 expected = ["SUPPLIER::REQ_001"]
 tier = "index"
 why = "id is the full id"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
 
 [[case.filters]]
 filter = 'id.startswith("SUPPLIER::")'
 expected = ["SUPPLIER::::REQ_004", "SUPPLIER::M2::REQ_002", "SUPPLIER::REQ_001"]
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
 
 [[case.filters]]
 filter = 'c.in_namespace("SUPPLIER::M2")'
 expected = ["SUPPLIER::M2::REQ_002", "SUPPLIER::M2::REQ_002.P1"]
 include_parts = true
 why = "a part is in its need's namespace"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.in_namespace" }
 
 [[case.filters]]
 filter = 'c.id.local == "REQ_002"'
 expected = ["SUPPLIER::M2::REQ_002", "SUPPLIER::M2::REQ_002.P1"]
 include_parts = true
 why = "a part reads its need's local id"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'id == "P1"'
 expected = ["SUPPLIER::M2::REQ_002.P1"]
 include_parts = true
 why = "a part's own id is its part id"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
 
 [[case]]
 name = "namespaced-ids-switched-off"
@@ -2691,20 +2699,20 @@ source = '''
 [[case.filters]]
 filter = 'c.id.ns == ""'
 expected = ["PLAIN_001", "SUPPLIER::::REQ_004", "SUPPLIER::REQ_001"]
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'c.id.local == id'
 expected = ["PLAIN_001", "SUPPLIER::::REQ_004", "SUPPLIER::REQ_001"]
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.id" }
 
 [[case.filters]]
 filter = 'c.in_namespace("SUPPLIER")'
 expected = []
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.in_namespace" }
 
 [[case.filters]]
 filter = 'c.in_namespace("")'
 expected = []
 error = "filter"
-divergent = { ubcode = "c.id and c.in_namespace are not mirrored yet" }
+divergent = { ubcode = "fails on c.in_namespace" }
