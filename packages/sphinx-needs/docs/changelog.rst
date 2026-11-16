@@ -136,6 +136,17 @@ Bug fixes
   (``<<x:nc::A, nc::B>>``, ``<<a:::b>>``), and ``<<debug::need:`X`>>`` still names ``debug``. The first build
   after upgrading reads every document again.
 
+- 🐛 :ref:`needs_build_json_per_id` and the :ref:`needs_id builder <needs_id_builder>` encode the characters of a need
+  id that a file name cannot hold on every system, such as ``:``, in the name of the need's file **(changed output)**
+
+  Each file was named ``<id>.json`` with the id as it is, so ``SUPPLIER::REQ_1``, which the default
+  :ref:`needs_id_regex` accepts, gave ``SUPPLIER::REQ_1.json``, a name Windows refuses, and an id holding ``/`` could
+  not be written (an error). ``<`` ``>`` ``:`` ``"`` ``/`` ``\`` ``|`` ``?`` ``*``, the control characters U+0000 to
+  U+001F and ``%`` are now each written as ``%`` and two upper-case hex digits (``SUPPLIER%3A%3AREQ_1.json``), in both
+  needs.json formats. The file of an id holding none of them keeps its name, and every file's content is unchanged;
+  files an earlier release wrote under the old name are not removed. Not handled: an id too long for a file name,
+  Windows' reserved device names (``NUL``, ``CON``, …), a trailing dot or space, and names differing only by case.
+
 - 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
   ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
   **(changed output)** (:issue:`2489`, :pr:`2494`)
