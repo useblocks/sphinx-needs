@@ -45,6 +45,10 @@ ROWS = [
     ("PLAIN_1:: x", "{p}PLAIN_1:: x"),
     ("x ::PLAIN_1", "x ::{p}PLAIN_1"),
     ("x:::PLAIN_1", "x:::{p}PLAIN_1"),
+    # after the id, too, only a word character or ``-`` beyond the ``::`` joins
+    ("PLAIN_1::.", "{p}PLAIN_1::."),
+    ("PLAIN_1:::x", "{p}PLAIN_1:::x"),
+    ("PLAIN_1::ü", "PLAIN_1::ü"),
     (
         "Words: nc::REQ_1, other::PLAIN_1, PLAIN_1::x, PLAIN_1.",
         "Words: {p}nc::REQ_1, other::PLAIN_1, PLAIN_1::x, {p}PLAIN_1.",
