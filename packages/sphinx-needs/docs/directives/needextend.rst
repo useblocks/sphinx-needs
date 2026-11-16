@@ -24,8 +24,15 @@ The argument of ``needextend`` will be taken as, by order of priority:
 
 - a single need ID, if it is enclosed by ``<>``,
 - a :ref:`filter_string` if it is enclosed by ``""``,
-- a single need ID, if it is a single word (no spaces),
+- a :ref:`filter_string`, if it is a single word (no spaces) holding any of the four characters ``(``, ``=``,
+  ``'`` and ``"``, such as ``c.this_doc()`` or ``status=="open"``,
+- a single need ID, if it is any other single word, such as ``REQ_001`` or ``nc::REQ_001``,
 - a :ref:`filter_string` otherwise.
+
+The rule reads the argument alone, not the needs. A one-word argument naming an existing need whose ID holds ``(``,
+``=``, ``'`` or ``"`` (such as ``REQ_001(A)``, which the default :ref:`needs_id_regex` accepts) is a filter: write it
+``<REQ_001(A)>``. And a filter that is a single word holding none of the four, such as ``is_external``, or a
+comparison without ``=``, such as ``priority>3``, is read as an ID: write it ``"is_external"`` or ``"priority>3"``.
 
 ``needextend`` can modify the ``status``, ``tags``, ``style``, ``layout``, ``hide`` and ``collapse`` options,
 and every :ref:`extra field <needs_fields>` and :ref:`link option <needs_links>`, whatever its type;

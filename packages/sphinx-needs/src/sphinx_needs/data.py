@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 26
+ENV_DATA_VERSION: Final = 27
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -194,6 +194,12 @@ Version 26 adds a field to every stored need source: ``NeedItemSource.upstream``
 a need read from a ``needs.json`` of the experimental format 2a1 was recorded with in the
 project that wrote it (empty for every other need). A source pickled by version 25 has no
 such field.
+
+Version 27 changes what the stored values mean: a one-word ``needextend`` argument
+holding ``(``, ``=``, ``'`` or ``"`` is stored as a filter (``filter_is_id`` false),
+where version 26 stored it as an id. The argument is classified when its document is
+read, so without the bump an upgraded build would keep the old classification on the
+pages whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

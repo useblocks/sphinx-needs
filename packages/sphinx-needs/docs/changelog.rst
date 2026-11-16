@@ -111,6 +111,16 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 A one-word :ref:`needextend` argument holding ``(``, ``=``, ``'`` or ``"`` is a filter **(changed output)**
+
+  ``needextend`` read every one-word argument as a need id, so ``c.this_doc()``, ``c.is_a('req')`` and
+  ``status=="open"``, written without a space, were reported as ids that do not exist (and ended the build under
+  :ref:`needs_needextend_strict`). A one-word argument holding any of ``(``, ``=``, ``'`` or ``"`` is now a filter;
+  every other one-word argument is an id, as before, so a comparison without ``=`` such as ``priority>3`` is still
+  read as an id (write it ``"priority>3"``). A one-word argument naming an existing need whose id holds ``(``,
+  ``=``, ``'`` or ``"`` is now a filter too; write it ``<id>`` (``<REQ_001(A)>``), as ``<…>`` still forces an id.
+  The first build after upgrading reads every document again.
+
 - 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
   ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
   **(changed output)** (:issue:`2489`, :pr:`2494`)
