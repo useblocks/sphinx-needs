@@ -374,13 +374,64 @@ Order
 """
 
 
-@pytest.mark.parametrize("test_app", [params(ORDER)], indirect=True)
-def test_leaves_keep_the_order_of_the_arrows(test_app: SphinxTestApp):
+REVERSE_SORT_ORDER = """\
+Reverse sort order
+==================
+
+.. req:: User A
+   :id: USER_A
+   :links: MSG_1, MSG_2
+
+.. spec:: Message 1
+   :id: MSG_1
+   :links: ZZZZZ_LEAF
+
+.. spec:: Message 2
+   :id: MSG_2
+   :links: AAAAA::LEAF
+
+.. req:: Plain leaf
+   :id: ZZZZZ_LEAF
+
+.. req:: Folded leaf
+   :id: AAAAA::LEAF
+
+.. needsequence::
+   :start: USER_A
+"""
+
+
+@pytest.mark.parametrize(
+    ("test_app", "expected"),
+    [
+        (
+            params(ORDER),
+            [
+                'participant "User A" as USER_A',
+                'participant "AAA_LEAF" as AAA_LEAF',
+                'participant "ZZZZZ::LEAF" as ZZZZZ__LEAF',
+            ],
+        ),
+        (
+            params(REVERSE_SORT_ORDER),
+            [
+                'participant "User A" as USER_A',
+                'participant "ZZZZZ_LEAF" as ZZZZZ_LEAF',
+                'participant "AAAAA::LEAF" as AAAAA__LEAF',
+            ],
+        ),
+    ],
+    ids=["sorted-order", "reverse-sort-order"],
+    indirect=["test_app"],
+)
+def test_leaves_keep_the_order_of_the_arrows(
+    test_app: SphinxTestApp, expected: list[str]
+):
     """A plain leaf reached before a folded one is drawn before it.
 
     Once a leaf has to be declared, every leaf is, in the order the arrows first name
-    them, so the columns are those the arrows give: ``User A``, ``AAA_LEAF``,
-    ``ZZZZZ::LEAF``.
+    them, so the columns are those the arrows give, whether or not that is the sorted
+    order of the ids: ``ZZZZZ_LEAF``, reached first, comes before ``AAAAA::LEAF``.
     """
     app = test_app
     sources = capture_sequences(app)
@@ -390,11 +441,7 @@ def test_leaves_keep_the_order_of_the_arrows(test_app: SphinxTestApp):
     declared = [
         line for line in sources[0].splitlines() if line.startswith("participant ")
     ]
-    assert declared == [
-        'participant "User A" as USER_A',
-        'participant "AAA_LEAF" as AAA_LEAF',
-        'participant "ZZZZZ::LEAF" as ZZZZZ__LEAF',
-    ]
+    assert declared == expected
 
 
 CAPPED = """\
