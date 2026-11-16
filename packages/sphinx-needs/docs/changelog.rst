@@ -120,7 +120,7 @@ Bug fixes
   U+001F and ``%`` are now each written as ``%`` and two upper-case hex digits (``SUPPLIER%3A%3AREQ_1.json``), in both
   needs.json formats. The file of an id holding none of them keeps its name, and every file's content is unchanged;
   files an earlier release wrote under the old name are not removed. Not handled: an id too long for a file name,
-  Windows' reserved device names (``NUL``, ``CON``, …), a trailing dot or space, and names differing only by case.
+  Windows' reserved device names (``NUL``, ``CON``, …), and names differing only by case.
 
 - 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
   ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
