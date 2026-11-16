@@ -351,6 +351,52 @@ def test_leaves_holding_folded_characters_render(test_app: SphinxTestApp):
     assert "<object" in Path(app.outdir, "index.html").read_text(encoding="utf-8")
 
 
+ORDER = """\
+Order
+=====
+
+.. req:: User A
+   :id: USER_A
+   :links: MSG_1
+
+.. spec:: Message 1
+   :id: MSG_1
+   :links: AAA_LEAF, ZZZZZ::LEAF
+
+.. req:: Plain leaf
+   :id: AAA_LEAF
+
+.. req:: Folded leaf
+   :id: ZZZZZ::LEAF
+
+.. needsequence::
+   :start: USER_A
+"""
+
+
+@pytest.mark.parametrize("test_app", [params(ORDER)], indirect=True)
+def test_leaves_keep_the_order_of_the_arrows(test_app: SphinxTestApp):
+    """A plain leaf reached before a folded one is drawn before it.
+
+    Once a leaf has to be declared, every leaf is, in the order the arrows first name
+    them, so the columns are those the arrows give: ``User A``, ``AAA_LEAF``,
+    ``ZZZZZ::LEAF``.
+    """
+    app = test_app
+    sources = capture_sequences(app)
+    app.build()
+
+    assert len(sources) == 1
+    declared = [
+        line for line in sources[0].splitlines() if line.startswith("participant ")
+    ]
+    assert declared == [
+        'participant "User A" as USER_A',
+        'participant "AAA_LEAF" as AAA_LEAF',
+        'participant "ZZZZZ::LEAF" as ZZZZZ__LEAF',
+    ]
+
+
 CAPPED = """\
 Capped
 ======
