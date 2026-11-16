@@ -119,7 +119,8 @@ Bug fixes
   defined``. What remains of a variant is now its default value when it holds no single ``:`` (one with no ``:``
   beside it), so the value is ``SUPPLIER::REQ_2``. While a single ``:`` remains, an item's name ends at its first
   ``:``, as before: a variant reads differently only where the colons left in it all stand in runs of two or more
-  (``<<x:nc::A, nc::B>>``, ``<<a:::b>>``), and ``<<debug::need:`X`>>`` still names ``debug``.
+  (``<<x:nc::A, nc::B>>``, ``<<a:::b>>``), and ``<<debug::need:`X`>>`` still names ``debug``. The first build
+  after upgrading reads every document again.
 
 - 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
   ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
