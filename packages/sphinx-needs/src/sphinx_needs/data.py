@@ -195,12 +195,13 @@ a need read from a ``needs.json`` of the experimental format 2a1 was recorded wi
 project that wrote it (empty for every other need). A source pickled by version 25 has no
 such field.
 
-Version 27 changes what is rendered from the stored values: a needsequence names its
-participants as needflow's PlantUML engine names a need, so an id holding ``::`` or
-``-`` no longer makes the diagram a syntax error, and a receiver that sends no message
-is shown by its id. The diagram is made at ``doctree-resolved``, so without the bump an
-upgraded build would write no page whose source did not change and keep the old
-diagrams there.
+Version 27 changes what the stored values mean, and what is rendered from them, in two
+ways: a needsequence names its participants as needflow's PlantUML engine names a need
+(an id holding ``::`` or ``-`` no longer makes the diagram a syntax error, and a
+receiver that sends no message is shown by its id); and a variant's default item may
+hold ``::``. Each is decided when a document is read or its diagrams are resolved, so
+without the bump an upgraded build would keep the old values and diagrams on the pages
+whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
