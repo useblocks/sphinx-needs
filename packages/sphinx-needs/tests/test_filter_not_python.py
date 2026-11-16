@@ -1,8 +1,9 @@
 """A filter string that is not a Python expression is reported, and matches nothing.
 
-``needextract:: nc::MISSING`` (an id the default ``needs_id_regex`` refuses, so the
+``needextract:: nc::missing`` (an id the default ``needs_id_regex`` refuses, so the
 argument is taken as a filter) used to abort the build with ``invalid syntax``; so did
-the same string as the ``:filter:`` of every view and as the text of ``need_count``.
+a string such as ``nc::MISSING`` as the ``:filter:`` of every view and as the text of
+``need_count``.
 It is now one ``needs.filter`` warning naming the string and the error, at the
 directive's location, and the build goes on. The callers that reported such a string
 themselves -- ``needextend``'s filter form, ``copy(filter=…)``, ``needimport``'s
@@ -39,20 +40,28 @@ Index
 """The caller under test starts on line 8."""
 
 
-def _is_not_valid(warning: str, line: int | None, append: str = "") -> bool:
-    """Whether ``warning`` is the report of ``nc::MISSING`` at ``line``.
+ARGUMENT = "nc::missing"
+"""A needextract argument that is neither an id nor Python: the default
+``needs_id_regex`` refuses it as a whole and by what follows its last ``::``, so it is
+read as a filter, and it does not parse."""
+
+
+def _is_not_valid(
+    warning: str, line: int | None, append: str = "", text: str = "nc::MISSING"
+) -> bool:
+    """Whether ``warning`` is the report of ``text`` at ``line``.
 
     The stable parts are matched: the start, and the end after the interpreter's own
     text of the error.
     """
     where = f"<srcdir>/index.rst:{line}: " if line is not None else ""
     return warning.startswith(
-        f"{where}WARNING: Filter 'nc::MISSING' not valid. Error: "
+        f"{where}WARNING: Filter {text!r} not valid. Error: "
     ) and warning.endswith(f".{append} [needs.filter]")
 
 
 CALLERS = [
-    ("needextract-argument", CONF, ".. needextract:: nc::MISSING\n", 8),
+    ("needextract-argument", CONF, f".. needextract:: {ARGUMENT}\n", 8),
     ("needextract-filter", CONF, ".. needextract::\n   :filter: nc::MISSING\n", 8),
     ("needtable", CONF, ".. needtable::\n   :filter: nc::MISSING\n", 8),
     ("needlist", CONF, ".. needlist::\n   :filter: nc::MISSING\n", 8),
@@ -95,9 +104,10 @@ def test_reported_at_the_caller(test_app: Sphinx, line: int):
     app = test_app
     app.build()
 
-    warnings = [w for w in build_warnings(app) if "nc::MISSING" in w]
+    text = ARGUMENT if ARGUMENT in Path(app.srcdir, "index.rst").read_text() else None
+    warnings = [w for w in build_warnings(app) if (text or "nc::MISSING") in w]
     assert len(warnings) == 1
-    assert _is_not_valid(warnings[0], line), warnings[0]
+    assert _is_not_valid(warnings[0], line, text=text or "nc::MISSING"), warnings[0]
 
 
 @pytest.mark.parametrize(
@@ -107,20 +117,20 @@ def test_reported_at_the_caller(test_app: Sphinx, line: int):
             "buildername": "html",
             "files": [
                 (Path("conf.py"), CONF),
-                (Path("index.rst"), HEADER + ".. needextract:: nc::MISSING\n"),
+                (Path("index.rst"), HEADER + f".. needextract:: {ARGUMENT}\n"),
             ],
         }
     ],
     indirect=True,
 )
-def test_needextract_of_a_missing_namespaced_id(test_app: Sphinx):
+def test_needextract_of_an_argument_neither_an_id_nor_python(test_app: Sphinx):
     """The build goes on, and the needextract shows no need."""
     app = test_app
     app.build()
 
     warnings = build_warnings(app)
     assert len(warnings) == 1
-    assert _is_not_valid(warnings[0], 8), warnings[0]
+    assert _is_not_valid(warnings[0], 8, text=ARGUMENT), warnings[0]
     html = Path(app.outdir, "index.html").read_text(encoding="utf-8")
     assert html.count('id="REQ_001"') == 1
 
