@@ -3631,7 +3631,7 @@ needs_build_json_per_id
 
 .. versionadded:: 2.0.0
 
-Builds list json files for each need. The name of each file is the ``id`` of need.
+Builds list json files for each need. The name of each file is the ``id`` of the need, encoded as below.
 This option works like :ref:`needs_build_json`.
 
 An id is written into its file name as it is, but for the characters a file name cannot hold on every system:
