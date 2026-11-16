@@ -30,32 +30,6 @@
     "remote_url": null,
     "source_map": {
       "start": {
-        "row": 2,
-        "column": 4
-      },
-      "end": {
-        "row": 2,
-        "column": 40
-      }
-    },
-    "tagged_scope": null,
-    "scope": null,
-    "need": {
-      "title": "xtensa",
-      "id": "IMPL_T10_XTENSA",
-      "type": "impl",
-      "links": [
-        "REQ"
-      ]
-    },
-    "type": "need",
-    "tagged_scope_type": null
-  },
-  {
-    "filepath": "case.c",
-    "remote_url": null,
-    "source_map": {
-      "start": {
         "row": 4,
         "column": 4
       },

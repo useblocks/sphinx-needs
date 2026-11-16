@@ -29,8 +29,7 @@ entry's own triple or the setting's that it does not model is left out of the pa
 reported once per file (:attr:`Decision.unmodelled`); its compiler's name is then not
 read, nor, after an entry's own, the setting. A compiler's name whose first part
 libclang does not model but whose rest it reads as a vendor, an OS or an environment
-(``xtensa-esp32-elf-gcc``: ``elf``) is a target it cannot read, the build's: the file's
-target is unknown, and the setting is not read either; one whose rest it does not
+(``xtensa-esp32-elf-gcc``: ``elf``) is reported the same way; one whose rest it does not
 (``my-arm-gcc``, ``musl-gcc``) declares nothing and is not reported. A parse can still
 be refused with the entry's own flags (``-mcpu=e200z4``, a CPU GCC knows and clang does
 not): any refused parse is made again keeping its target and leaving out the entry's
@@ -42,9 +41,8 @@ is known (the host's own, or a declared one read without the CPU flags) and what
 left of its flags is refused for it too (``-mfpmath=sse`` on an Arm64 machine).
 
 A file whose build declares a target the engine cannot read (an entry's own triple
-libclang does not model, the setting's for a file that takes it, a compiler's name's GCC
-triple whose architecture it does not model, a declared triple refused even without
-those flags) has an unknown target (:attr:`Decision.unknown`): it
+libclang does not model, the setting's for a file that takes it, a declared triple
+refused even without those flags) has an unknown target (:attr:`Decision.unknown`): it
 is read as written, no arm of any ``#if`` left out (useblocks/ubcode#4865 S2). The
 machine the analysis runs on is not the build's target, and no other triple is: the
 parse it is still given (for the comments libclang lexes) decides nothing, and when even
@@ -208,9 +206,7 @@ class Unmodelled:
         return "the `[preprocessor] target` setting"
 
 
-_UNKNOWN = frozenset(
-    {NotRead.unmodelled, NotRead.prefix_unmodelled, NotRead.target_refused}
-)
+_UNKNOWN = frozenset({NotRead.unmodelled, NotRead.target_refused})
 """The reasons that leave a file's target unknown (:attr:`Decision.unknown`)."""
 
 
@@ -250,10 +246,8 @@ class Decision:
     def unknown(self) -> bool:
         """Whether the file's target is unknown, so that it is read as written (every
         arm of every ``#if`` kept): the build declares a triple the loaded libclang does
-        not model (an entry's own, or the setting's for a file that takes it), its
-        compiler's name carries one whose architecture it does not model
-        (:attr:`NotRead.prefix_unmodelled`, ``xtensa-esp32-elf-gcc``), or libclang
-        refused the declared triple (the entry's own, or one the engine
+        not model (an entry's own, or the setting's for a file that takes it), or
+        libclang refused the declared triple (the entry's own, or one the engine
         inserted) with the entry's flags even without its :data:`REFUSABLE_FLAGS`. Not for flags refused with a target that is
         then read (:attr:`NotRead.flags_refused`), nor for a build that declares none
         (the host, stated)."""
@@ -279,25 +273,55 @@ class Decision:
             return unmodelled.as_written_message(
                 file, (self.refused_with, self.left_out), includer
             )
-        # known, the target is read: flags refused with it (every other reason leaves
-        # the target unknown, decision 3 included)
+        nxt = (
+            "the `[preprocessor] target` setting"
+            if self.source is TargetSource.setting
+            else "the machine sphinx-codelinks runs on"
+        )
         triple = unmodelled.triple
         declarer = unmodelled.declarer(includer)
+        arms = "so the `#if` arms of the file on the target are not its build's"
         flags = _spelled(self.left_out)
         without = f", without {flags}" if self.left_out else ""
-        if not triple:
+        if unmodelled.why in (NotRead.unmodelled, NotRead.prefix_unmodelled):
+            instead = f"{nxt}{without}"
+            if unmodelled.why is NotRead.unmodelled:
+                why = (
+                    f"the target {triple} that {declarer} names is not one the libclang "
+                    f"sphinx-codelinks loaded models, {arms}"
+                )
+            else:
+                arch = triple.split("-", 1)[0]
+                why = (
+                    f"{declarer} carries the target {triple}, whose architecture {arch} "
+                    f"the libclang sphinx-codelinks loaded does not model, {arms}"
+                )
+            if self.left_out:
+                why += (
+                    f"; and it refused {flags} for the target read instead, which is "
+                    f"read without them"
+                )
+        elif unmodelled.why is NotRead.flags_refused and not triple:
             instead = f"the machine sphinx-codelinks runs on{without}"
             why = (
                 f"the libclang sphinx-codelinks loaded refused {flags} for it, so the "
                 f"`#if` arms of the file on the CPU and the ABI are its defaults, not its "
                 f"build's"
             )
-        else:
+        elif unmodelled.why is NotRead.flags_refused:
             instead = f"the target {triple} that {declarer} names{without}"
             why = (
                 f"the libclang sphinx-codelinks loaded refused {flags} with that target, "
                 f"so the `#if` arms of the file on the CPU and the ABI are the target's "
                 f"defaults, not its build's"
+            )
+        else:
+            instead = f"the machine sphinx-codelinks runs on{without}"
+            why = (
+                f"the libclang sphinx-codelinks loaded refused the target {triple} that "
+                f"{declarer} names with the entry's flags"
+                + (f", and without {flags}" if self.left_out else "")
+                + f", {arms}"
             )
         return f"codelinks: {file} is read for {read_for} ({instead}): {why}"
 

@@ -166,8 +166,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
         # `[preprocessor] target` setting, so the records an environment at 7 holds for a
         # cross build were extracted for the machine that read them; 9: a file whose
         # target the engine cannot read (an entry's own `--target` or the setting naming
-        # a triple libclang does not model, a compiler named for a GCC triple whose
-        # architecture it does not model, a target refused even without the CPU flags)
+        # a triple libclang does not model, a target refused even without the CPU flags)
         # is read as written, every arm kept, where an environment at 8 holds the records
         # of another target's arms
         "env_version": 9,
