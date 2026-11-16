@@ -629,7 +629,7 @@ def check_links(
     its local id, in a namespace, says which (``hints``; made here when not given).
     """
     if hints is None:
-        hints = LocalIdHints(needs, config.namespaced_ids)
+        hints = LocalIdHints(needs)
     #: need type -> link type -> its target types, as the type declares them: read
     #: once per need type, not per link
     target_types: dict[str, dict[str, LinkTargetTypes]] = {}

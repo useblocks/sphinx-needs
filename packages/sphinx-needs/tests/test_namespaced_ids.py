@@ -1124,45 +1124,121 @@ Index
    :links: REQ_002, REQ_002.p1, REQ_003, REQ_009, other::REQ_002
 
 :need:`REQ_002` :need:`REQ_002.p1` :need:`REQ_003` :need:`REQ_009`
+
+.. req:: A target with one part
+   :id: nc::REQ_010
+
+   A part :np:`(p1) of it`.
+
+.. req:: A plain need, with a part
+   :id: REQ_011
+
+   A part :np:`(p1) of it`.
+
+.. req:: Its namesake in a namespace
+   :id: nc::REQ_011
+
+   A part :np:`(p9) of it`.
+
+.. req:: Linking to parts
+   :id: SRC_002
+   :links: REQ_010.p1, REQ_010.p2, REQ_011.p9
+
+:need:`REQ_010.p1` :need:`REQ_010.p2` :need:`REQ_011.p9`
 """
 
+#: an external need whose link is dead in this project
+HINT_EXTERNAL = json.dumps(
+    {
+        "current_version": "1.0",
+        "versions": {
+            "1.0": {
+                "needs": {
+                    "EXT_001": {
+                        "id": "EXT_001",
+                        "type": "req",
+                        "title": "External",
+                        "content": "",
+                        "docname": "page",
+                        "links": ["REQ_002"],
+                    }
+                }
+            }
+        },
+    }
+)
 
-def _dead(target: str, hint: str = "") -> str:
+HINT_CONF = (
+    UNCHECKED
+    + "needs_external_needs = [{'base_url': 'http://x', 'json_path': 'ext.json'}]\n"
+)
+
+
+def _hint_project(conf: str = HINT_CONF) -> dict[str, Any]:
+    return {
+        "buildername": "html",
+        "files": [
+            (Path("conf.py"), conf),
+            (Path("index.rst"), HINT_INDEX),
+            (Path("ext.json"), HINT_EXTERNAL),
+        ],
+    }
+
+
+def _dead(target: str, hint: str = "", source: str = "SRC_001", line: int = 15) -> str:
     return (
-        "<srcdir>/index.rst:15: WARNING: Need 'SRC_001' has unknown outgoing link "
-        f"{target!r} in field 'links'{hint} [needs.link_outgoing]"
+        f"<srcdir>/index.rst:{line}: WARNING: Need {source!r} has unknown outgoing "
+        f"link {target!r} in field 'links'{hint} [needs.link_outgoing]"
     )
 
 
-def _role(target: str, hint: str = "") -> str:
+def _role(target: str, hint: str = "", line: int = 19, part: bool = False) -> str:
+    what = "need part" if part else "need"
     return (
-        f"<srcdir>/index.rst:19: WARNING: linked need {target} not found{hint} "
+        f"<srcdir>/index.rst:{line}: WARNING: linked {what} {target} not found{hint} "
         "[needs.link_ref]"
     )
 
 
-@pytest.mark.parametrize(
-    "test_app",
-    [{**_unclean_project(UNCHECKED, HINT_INDEX), "buildername": "html"}],
-    indirect=True,
-)
+def _external(hint: str = "") -> str:
+    return (
+        "WARNING: http://x/page.html#EXT_001: Need 'EXT_001' has unknown outgoing "
+        f"link 'REQ_002' in field 'links'{hint} [needs.external_link_outgoing]"
+    )
+
+
+def _mean(target: str) -> str:
+    return f" (did you mean {target!r}?)"
+
+
+@pytest.mark.parametrize("test_app", [_hint_project()], indirect=True)
 def test_a_dead_target_one_need_has_as_its_local_id_is_hinted(test_app: Any) -> None:
-    """A dead link or a :need: role naming a bare id that exactly one need has as its
-    local id, in a namespace, says which (with the part re-attached); with no candidate,
-    two, or a target that holds a namespace itself, the message is as before."""
+    """A dead link (an external need's too) or a :need: role naming a bare id that no
+    need has, and exactly one need has as its local id in a namespace, says which,
+    with the part re-attached where that need has the part. With no candidate, two, a
+    target that holds a namespace itself, a part the candidate lacks, or an id that
+    names a need (a dead part of it), the message is as before. (A role to a missing
+    part of an existing need is "linked need part ... not found", never hinted.)"""
     app = test_app
     app.build()
     assert sorted(build_warnings(app)) == sorted(
         [
-            _dead("REQ_002", " Did you mean 'nc::REQ_002'?"),
-            _dead("REQ_002.p1", " Did you mean 'nc::REQ_002.p1'?"),
+            _dead("REQ_002", _mean("nc::REQ_002")),
+            _dead("REQ_002.p1", _mean("nc::REQ_002.p1")),
             _dead("REQ_003"),
             _dead("REQ_009"),
             _dead("other::REQ_002"),
-            _role("REQ_002", " Did you mean 'nc::REQ_002'?"),
-            _role("REQ_002.p1", " Did you mean 'nc::REQ_002.p1'?"),
+            _role("REQ_002", _mean("nc::REQ_002")),
+            _role("REQ_002.p1", _mean("nc::REQ_002.p1")),
             _role("REQ_003"),
             _role("REQ_009"),
+            _dead("REQ_010.p1", _mean("nc::REQ_010.p1"), "SRC_002", 36),
+            _dead("REQ_010.p2", "", "SRC_002", 36),
+            _dead("REQ_011.p9", "", "SRC_002", 36),
+            _role("REQ_010.p1", _mean("nc::REQ_010.p1"), 40),
+            _role("REQ_010.p2", "", 40),
+            _role("REQ_011.p9", "", 40, part=True),
+            _external(_mean("nc::REQ_002")),
         ]
     )
     # nothing changes in what resolves: the links are as written, every one dead
@@ -1175,14 +1251,7 @@ def test_a_dead_target_one_need_has_as_its_local_id_is_hinted(test_app: Any) -> 
 
 @pytest.mark.parametrize(
     "test_app",
-    [
-        {
-            **_unclean_project(
-                UNCHECKED + "needs_namespaced_ids = False\n", HINT_INDEX
-            ),
-            "buildername": "html",
-        }
-    ],
+    [_hint_project(HINT_CONF + "needs_namespaced_ids = False\n")],
     indirect=True,
 )
 def test_no_hint_switched_off(test_app: Any) -> None:
@@ -1202,25 +1271,31 @@ def test_no_hint_switched_off(test_app: Any) -> None:
                 ]
             ),
             *(_role(t) for t in ["REQ_002", "REQ_002.p1", "REQ_003", "REQ_009"]),
+            *(_dead(t, "", "SRC_002", 36) for t in ["REQ_010.p1", "REQ_010.p2"]),
+            _dead("REQ_011.p9", "", "SRC_002", 36),
+            *(_role(t, "", 40) for t in ["REQ_010.p1", "REQ_010.p2"]),
+            _role("REQ_011.p9", "", 40, part=True),
+            _external(),
         ]
     )
 
 
 def test_the_hint_index_is_built_once_and_only_when_needed() -> None:
     """The index of local ids is built when the first dead target is met, once; never
-    with the switch off, nor for a target holding a namespace itself."""
+    for a target holding a namespace itself, nor for an id that names a need."""
     from collections.abc import Iterator, Mapping
 
     from sphinx_needs._namespaced_ids import LocalIdHints
 
-    class _Need:
-        def __init__(self, segments: tuple[str, ...], local: str) -> None:
+    class _Need(dict[str, Any]):
+        def __init__(self, segments: tuple[str, ...], local: str, *parts: str) -> None:
+            super().__init__(parts={part: {} for part in parts})
             self.id_ns_segments, self.id_local = segments, local
 
     class _Counting(Mapping[str, Any]):
         walks = 0
         _data = {
-            "nc::REQ_2": _Need(("nc",), "REQ_2"),
+            "nc::REQ_2": _Need(("nc",), "REQ_2", "p1"),
             "REQ_3": _Need((), "REQ_3"),
         }
 
@@ -1234,23 +1309,18 @@ def test_the_hint_index_is_built_once_and_only_when_needed() -> None:
         def __len__(self) -> int:
             return len(self._data)
 
-    needs = _Counting()
-    off = LocalIdHints(needs, False)
-    assert off.hint("REQ_2") == ""
-    hints = LocalIdHints(needs, True)
+    hints = LocalIdHints(_Counting())
     assert hints.hint("x::REQ_2") == ""
+    assert hints.hint("REQ_3", "p1") == ""
     assert _Counting.walks == 0
-    assert hints.hint("REQ_2") == " Did you mean 'nc::REQ_2'?"
-    assert hints.hint("REQ_2", "p1") == " Did you mean 'nc::REQ_2.p1'?"
-    assert hints.hint("REQ_3") == ""
+    assert hints.hint("REQ_2") == " (did you mean 'nc::REQ_2'?)"
+    assert hints.hint("REQ_2", "p1") == " (did you mean 'nc::REQ_2.p1'?)"
+    assert hints.hint("REQ_2", "p2") == ""
+    assert hints.hint("REQ_4") == ""
     assert _Counting.walks == 1
 
 
-@pytest.mark.parametrize(
-    "test_app",
-    [{**_unclean_project(UNCHECKED, HINT_INDEX), "buildername": "html"}],
-    indirect=True,
-)
+@pytest.mark.parametrize("test_app", [_hint_project()], indirect=True)
 def test_the_links_and_the_roles_share_one_index(test_app: Any) -> None:
     """The dead links (post-processing) and the roles (writing) of a build read one
     index."""

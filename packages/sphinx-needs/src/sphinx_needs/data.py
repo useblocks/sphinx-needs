@@ -1256,11 +1256,8 @@ class SphinxNeedsData:
     def reset_local_id_hints(self) -> LocalIdHints:
         """Start the did-you-mean of the dead targets of this build afresh."""
         from sphinx_needs._namespaced_ids import LocalIdHints
-        from sphinx_needs.config import NeedsSphinxConfig
 
-        hints = LocalIdHints(
-            self._env_needs, NeedsSphinxConfig(self.env.config).namespaced_ids
-        )
+        hints = LocalIdHints(self._env_needs)
         self.env._needs_local_id_hints = hints
         return hints
 

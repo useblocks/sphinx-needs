@@ -120,29 +120,29 @@ class LocalIdHints:
     """The did-you-mean of a dead link target or a ``:need:`` role naming no need: the
     one need, if exactly one, in a namespace whose local id is the target's id.
 
-    The index of local ids is built lazily, once, when the first dead target is met:
-    a build with no dead target never builds it. Nothing changes in what resolves.
+    A target is hinted when its id names no need, holds no ``::``, and exactly one need
+    has it as its local id in a non-empty namespace, and, where the target names a part,
+    that need has the part. With ``needs_namespaced_ids`` off no need is in a namespace,
+    so nothing is hinted: the switch is not read here. The index of local ids is built
+    lazily, once, when the first such target is met: a build with no dead target never
+    builds it. Nothing changes in what resolves.
     """
 
-    __slots__ = ("_index", "_needs", "_on")
+    __slots__ = ("_index", "_needs")
 
-    def __init__(self, needs: Mapping[str, NeedItem], namespaced: bool) -> None:
-        """:param needs: The needs of the build, by id.
-        :param namespaced: ``needs_namespaced_ids``: off, no need is in a namespace,
-            so nothing is hinted (and nothing is indexed).
-        """
+    def __init__(self, needs: Mapping[str, NeedItem]) -> None:
+        """:param needs: The needs of the build, by id."""
         self._needs = needs
-        self._on = namespaced
         self._index: dict[str, list[str]] | None = None
 
     def hint(self, need_id: str, part: str | None = None) -> str:
-        """What a "not found" message about the target *need_id* gains: `` Did you mean
-        'nc::REQ_2'?`` (the full id, with *part* re-attached), or ``""``.
+        """What a "not found" message about the target *need_id* gains: `` (did you mean
+        'nc::REQ_2'?)`` (the full id, with *part* re-attached), or ``""``.
 
         :param need_id: The target's id, its part and condition stripped.
         :param part: The target's part, if it named one.
         """
-        if not self._on or SEPARATOR in need_id:
+        if SEPARATOR in need_id or need_id in self._needs:
             return ""
         if self._index is None:
             self._index = {}
@@ -153,4 +153,8 @@ class LocalIdHints:
         if len(candidates) != 1:
             return ""
         (target,) = candidates
-        return f" Did you mean {target if part is None else f'{target}.{part}'!r}?"
+        if part is None:
+            return f" (did you mean {target!r}?)"
+        if part not in (self._needs[target]["parts"] or {}):
+            return ""
+        return f" (did you mean {f'{target}.{part}'!r}?)"
