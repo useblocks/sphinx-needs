@@ -132,10 +132,12 @@ unchanged text when its target, condition and part stripped: names no need, hold
 and is the local id of exactly one need in a non-empty namespace; and, where the target
 names a part, that need has the part (which the hint re-attaches). Otherwise the message is
 as it was; nothing changes in what resolves. The index of local ids is built lazily, when
-the first such target is met, and shared by the links and the roles of a build. It is held
-in the environment while the build writes; in an application that builds twice (a server
-rebuilding on change) the second build's pickled environment carries the first build's
-index, which the second build replaces before it offers any hint.
+the first such target is met, and shared by the links and the roles of a build: one per
+build, made when the needs are post-processed and kept on the application object the two
+callers hold (`_namespaced_ids.reset_local_id_hints` / `local_id_hints`), never in the
+environment, which Sphinx pickles. An application that builds twice (a server rebuilding on
+change) gets a new one for each build, and neither build's pickled environment holds one
+(`tests/test_namespaced_ids.py::test_the_hint_index_is_one_builds_and_never_pickled`).
 
 ## 9. Deliberately absent
 

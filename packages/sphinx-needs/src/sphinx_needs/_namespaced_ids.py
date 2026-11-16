@@ -131,7 +131,8 @@ class LocalIdHints:
     that need has the part. With ``needs_namespaced_ids`` off no need is in a namespace,
     so nothing is hinted: the switch is not read here. The index of local ids is built
     lazily, once, when the first such target is met: a build with no dead target never
-    builds it. Nothing changes in what resolves.
+    builds it. One per build, kept on the application (:func:`reset_local_id_hints`),
+    never in the pickled environment. Nothing changes in what resolves.
     """
 
     __slots__ = ("_index", "_needs")
