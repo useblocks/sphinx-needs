@@ -195,14 +195,15 @@ a need read from a ``needs.json`` of the experimental format 2a1 was recorded wi
 project that wrote it (empty for every other need). A source pickled by version 25 has no
 such field.
 
-Version 27 changes what the stored values mean, and what is rendered from them, in three
+Version 27 changes what the stored values mean, and what is rendered from them, in four
 ways: a needsequence names its participants as needflow's PlantUML engine names a need
 (an id holding ``::`` or ``-`` no longer makes the diagram a syntax error, and a
 receiver that sends no message is shown by its id); a variant's default item may hold
-``::``; and an ``id_prefix`` no longer rewrites an id of the file that is one end of a
-longer ``::``-joined id in a need's content. Each is decided when a document is read or
-its diagrams are resolved, so without the bump an upgraded build would keep the old
-values and diagrams on the pages whose sources did not change.
+``::``; an ``id_prefix`` no longer rewrites an id of the file that is one end of a
+longer ``::``-joined id in a need's content; and a one-word ``needextend`` argument
+holding ``(``, ``=``, ``'`` or ``"`` is stored as a filter. Each is decided when a
+document is read or its diagrams are resolved, so without the bump an upgraded build
+would keep the old values and diagrams on the pages whose sources did not change.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
