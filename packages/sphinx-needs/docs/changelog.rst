@@ -115,7 +115,7 @@ Bug fixes
   ``needextract`` argument, a ``needpie`` or ``needbar`` ``:filter:`` or line, ``need_count``, needuml's ``filter()``,
   :ref:`needs_warnings` or :ref:`needs_builder_filter` takes it
 
-  ``needextract:: nc::MISSING`` (an id the :ref:`needs_id_regex` refuses is read as a filter), or the same string as
+  ``needextract:: nc::missing`` (an id the :ref:`needs_id_regex` refuses is read as a filter), or the same string as
   the ``:filter:`` of a ``needtable``, ``needlist``, ``needflow``, ``needgantt``, ``needextract``, ``needpie`` or
   ``needbar``, a line of a ``needpie`` or ``needbar``, a ``need_count``, needuml's ``filter()``, a
   :ref:`needs_warnings` entry or the :ref:`needs_builder_filter`, ended the build with ``invalid syntax``. It is now
