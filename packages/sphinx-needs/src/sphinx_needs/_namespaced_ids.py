@@ -30,7 +30,13 @@ from ub_needs_exchange import (
 )
 
 if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+
     from sphinx_needs.need_item import NeedItem
+
+#: the attribute of the application that holds the build's hints (never the
+#: environment, which Sphinx pickles)
+_HINTS_ATTRIBUTE = "_needs_local_id_hints"
 
 #: what the warning of an id that does not split cleanly says of each class of problem
 _REASONS = {
@@ -158,3 +164,21 @@ class LocalIdHints:
         if part not in (self._needs[target]["parts"] or {}):
             return ""
         return f" (did you mean {f'{target}.{part}'!r}?)"
+
+
+def reset_local_id_hints(app: Sphinx, needs: Mapping[str, NeedItem], /) -> LocalIdHints:
+    """Start the did-you-mean of a build's dead targets afresh, when its needs are
+    post-processed: one per build, kept on the application *app* (a server that builds
+    twice gets a new one each time), never in the environment Sphinx pickles."""
+    hints = LocalIdHints(needs)
+    setattr(app, _HINTS_ATTRIBUTE, hints)
+    return hints
+
+
+def local_id_hints(app: Sphinx, needs: Mapping[str, NeedItem], /) -> LocalIdHints:
+    """The build's did-you-mean, as :func:`reset_local_id_hints` made it for *app*; made
+    over *needs* where there is none yet."""
+    hints = getattr(app, _HINTS_ATTRIBUTE, None)
+    if isinstance(hints, LocalIdHints):
+        return hints
+    return reset_local_id_hints(app, needs)

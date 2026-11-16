@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
 
-    from sphinx_needs._namespaced_ids import LocalIdHints
     from sphinx_needs.need_item import NeedItem
     from sphinx_needs.needs_schema import (
         FieldFunctionArray,
@@ -1243,23 +1242,6 @@ class SphinxNeedsData:
         except AttributeError:
             self.env.app._needs_services = ServiceManager(self.env.app)
         return self.env.app._needs_services
-
-    def get_local_id_hints(self) -> LocalIdHints:
-        """The did-you-mean of a dead target, over the needs of this build: one per
-        build, made when the needs are post-processed (:meth:`reset_local_id_hints`),
-        so that its index is built at most once, when the first dead target is met."""
-        try:
-            return self.env._needs_local_id_hints
-        except AttributeError:
-            return self.reset_local_id_hints()
-
-    def reset_local_id_hints(self) -> LocalIdHints:
-        """Start the did-you-mean of the dead targets of this build afresh."""
-        from sphinx_needs._namespaced_ids import LocalIdHints
-
-        hints = LocalIdHints(self._env_needs)
-        self.env._needs_local_id_hints = hints
-        return hints
 
     def get_or_create_role_refs(self) -> dict[str, set[str]]:
         """Get the ids of the needs each document's need roles reference.

@@ -10,7 +10,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs._directive_name import need_type_of
-from sphinx_needs._namespaced_ids import LocalIdHints
+from sphinx_needs._namespaced_ids import LocalIdHints, reset_local_id_hints
 from sphinx_needs._need_source import (
     enclosing_need,
     placement_semantic,
@@ -384,7 +384,7 @@ def post_process_needs_data(app: Sphinx) -> None:
             needs,
             needs_config,
             needs_schema,
-            hints=needs_data.reset_local_id_hints(),
+            hints=reset_local_id_hints(app, needs),
         )
         # last, so the dynamic functions read the links in the order written
         for need in needs.values():

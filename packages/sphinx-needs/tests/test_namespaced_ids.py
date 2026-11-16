@@ -1533,3 +1533,57 @@ def test_comparing_c_id_itself_is_an_invalid_filter(test_app: Any) -> None:
             assert len(reported) == 1, reported
             assert reported[0].endswith("[needs.filter]"), reported
             assert ID_IS_NO_ID in reported[0], reported
+
+
+@pytest.mark.parametrize("parallel", [0, 2], ids=["serial", "parallel"])
+def test_the_hint_index_is_one_builds_and_never_pickled(
+    parallel: int, make_app: Any, tmp_path: Path
+) -> None:
+    """One application building twice (a server rebuilding on change): the hint index
+    is kept on the application, never in the pickled environment, and each build has
+    its own (a second candidate added before build 2 ends the hint there)."""
+    if parallel and not parallel_available:
+        pytest.skip("this platform reads in one process")
+    from sphinx_needs._namespaced_ids import LocalIdHints
+
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    (srcdir / "conf.py").write_text(UNCHECKED, "utf-8")
+    pages = [f"page{i}" for i in range(6)]
+    for page in pages:
+        (srcdir / f"{page}.rst").write_text(f"{page}\n{'=' * len(page)}\n", "utf-8")
+    (srcdir / "index.rst").write_text(
+        "Index\n=====\n\n.. req:: Target\n   :id: nc::REQ_002\n\n"
+        ".. req:: Linking\n   :id: SRC_001\n   :links: REQ_002\n\n"
+        ".. toctree::\n\n   " + "\n   ".join(pages) + "\n",
+        "utf-8",
+    )
+    app = make_app(
+        "html",
+        srcdir=srcdir,
+        freshenv=True,
+        status=io.StringIO(),
+        warning=io.StringIO(),
+        parallel=parallel,
+    )
+    pickled = Path(app.doctreedir) / "environment.pickle"
+    hinted = "(did you mean 'nc::REQ_002'?)"
+
+    app.build()
+    assert any(hinted in w for w in build_warnings(app))
+    # a second candidate: build 2 offers no hint
+    (srcdir / "page0.rst").write_text(
+        "page0\n=====\n\n.. req:: A namesake\n   :id: sup::REQ_002\n", "utf-8"
+    )
+    start = len(app._warning.getvalue())
+    app.build()
+    second = build_warnings(app._warning.getvalue()[start:], srcdir=app.srcdir)
+    assert [w for w in second if "REQ_002" in w and "unknown outgoing" in w] == [
+        "<srcdir>/index.rst:7: WARNING: Need 'SRC_001' has unknown outgoing link "
+        "'REQ_002' in field 'links' [needs.link_outgoing]"
+    ]
+    data = pickled.read_bytes()
+    assert b"LocalIdHints" not in data
+    assert b"LocalIdHints" in pickle.dumps(LocalIdHints({}))  # the control
+    env = pickle.loads(data)
+    assert not hasattr(env, "_needs_local_id_hints")
