@@ -1128,22 +1128,27 @@ such a triple fits.
 - a declared target (the entry's own, its compiler's name's or the setting's) that clang
   refuses without those flags too, because of another of the entry's flags (``-mcmse``
   with ``arm-none-eabi``), is dropped for that file, which is read as written; the
-  warning names the entry's ``-m`` flags the target was refused with, and, when the
-  setting named it, gives as the remedy a ``target`` that clang accepts with those flags.
+  warning says the target was refused with the entry's flags and lists its ``-m`` flags
+  (libclang does not say which one it refused), and, when the setting named it, gives as
+  the remedy a ``target`` that clang accepts with the entry's flags.
 
 A declared target never leaves a file unread that would be read without it, whatever the
 machine the analysis runs on: a refused parse is made again without the entry's
-``-mcpu=``, ``-march=``, ``-mtune=`` and ``-mabi=``, then without the target and them, for
-the file's comments only (it is read as written). A file whose target is unknown is never
-skipped: when clang refuses even that parse, because of another of its flags
+``-mcpu=``, ``-march=``, ``-mtune=`` and ``-mabi=``, then without the target and them,
+for the file's comments only (it is read as written). A file whose target is unknown is
+never skipped: when clang refuses even that parse, because of another of its flags
 (``-mfpmath=vfp``, which clang refuses for every machine the analysis runs on), it is
 read as written by the tree-sitter engine, every comment's markers kept, attached to no
-entity as under the libclang engine. A source with no entry of its own that such an entry
+entity as under the libclang engine, so with the same findings as a parse read as
+written (no ``codelinks.marker_above_conditional``, which only a marker attached by the
+tree-sitter engine can get). A source with no entry of its own that such an entry
 ``#include``\ s is read as written too, through that entry, whatever ``#if`` branch its
-``#include`` line is in. A file whose target is known is still skipped, as before targets
-were read, when what is left of its flags is refused for that target too (a native
-build's ``-mfpmath=sse``, on an Arm64 machine): it gets the warning that libclang could
-not load it, and no ``codelinks.preprocessor_target_unknown``.
+``#include`` line is in, unless an entry whose target **Sphinx-CodeLinks** reads
+includes it in a branch that entry compiles: that one reads it, for its target. A file
+whose target is known is still skipped, as before targets were read, when what is left
+of its flags is refused for that target too (a native build's ``-mfpmath=sse``, on an
+Arm64 machine): it gets the warning that libclang could not load it, and no
+``codelinks.preprocessor_target_unknown``.
 
 Header files
 ~~~~~~~~~~~~~

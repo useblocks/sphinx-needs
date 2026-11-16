@@ -650,7 +650,10 @@ class SourceAnalyse:
         as decided or after its parse was refused, is not parsed for that: no parse
         decides which of its ``#include`` lines it compiles, so its ``#include`` lines
         confirm (the lexical candidates), and each source it includes is read as
-        written, without libclang (:meth:`_read_without_libclang`).
+        written, without libclang (:meth:`_read_without_libclang`); but only a source
+        no candidate whose target is known confirms, as a parse that confirms decides
+        more than the text does. Such candidates come after every known one, in path
+        order among themselves.
 
         :return: The comments read, by the source's position in ``src_files``.
         """
@@ -665,6 +668,9 @@ class SourceAnalyse:
             loader.load_clang_cindex().TranslationUnitLoadError
         )
         read: dict[int, list[LibclangComment]] = {}
+        # the candidates whose target is unknown, with their decisions: they confirm
+        # after every known one
+        unknown: dict[tuple[Path, Path], Decision] = {}
         # each unread source's next candidate, by position
         next_candidate = {w.position: 0 for w in waiting}
         unread = {w.position: w for w in waiting}
@@ -707,12 +713,9 @@ class SourceAnalyse:
                         )
             if decision.unknown:
                 # no parse decides which of its #include lines it compiles: its
-                # #include lines confirm
+                # #include lines confirm, once no known candidate has
                 tu = None
-                self._read_through_unknown_includer(
-                    database, main, decision, unread, next_candidate, read
-                )
-                continue
+                unknown[(database, main)] = decision
             if tu is not None:
                 read_for = target.triple_of(tu)
                 self._warn_missing_builtin_header(main, tu, args)
@@ -740,6 +743,19 @@ class SourceAnalyse:
                 else:
                     next_candidate[position] += 1
             del tu  # released before the next candidate is parsed
+        for position, w in list(unread.items()):
+            first = next(
+                (main for main in w.candidates if (w.database, main) in unknown), None
+            )
+            if first is None or w.database is None:
+                continue
+            logger.debug(
+                f"codelinks: reading {w.path} as written through {first}, whose "
+                f"#include lines name it and whose target is unknown"
+            )
+            read[position] = self._read_without_libclang(w.path)
+            self._warn_target(w.path, unknown[(w.database, first)], "", includer=True)
+            del unread[position]
         for w in unread.values():
             logger.warning(
                 f"codelinks: skipping {w.path} — it has no entry in "
@@ -747,32 +763,6 @@ class SourceAnalyse:
                 subtype="not_in_compile_database",
             )
         return read
-
-    def _read_through_unknown_includer(
-        self,
-        database: Path,
-        main: Path,
-        decision: "Decision",
-        unread: dict[int, _Waiting],
-        next_candidate: dict[int, int],
-        read: dict[int, list["LibclangComment"]],
-    ) -> None:
-        """Read, as written and without libclang, each unread source whose next
-        candidate is ``main``, the main file of ``database``'s entry whose target is
-        unknown (``decision``): its ``#include`` lines name the source, which is all
-        that can confirm it, since no parse decides which of them it compiles."""
-        for position, w in list(unread.items()):
-            if w.database != database or next_candidate[position] >= len(w.candidates):
-                continue
-            if w.candidates[next_candidate[position]] != main:
-                continue
-            logger.debug(
-                f"codelinks: reading {w.path} as written through {main}, whose "
-                f"#include lines name it and whose target is unknown"
-            )
-            read[position] = self._read_without_libclang(w.path)
-            self._warn_target(w.path, decision, "", includer=True)
-            del unread[position]
 
     def _read_without_libclang(self, path: Path) -> list["LibclangComment"]:
         """The comments of ``path`` read as written without libclang, by the

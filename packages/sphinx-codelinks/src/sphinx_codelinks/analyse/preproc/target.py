@@ -106,9 +106,9 @@ class NotRead(enum.StrEnum):
     """libclang refused the parse with the entry's own :data:`REFUSABLE_FLAGS`
     (:attr:`Decision.left_out`): the file is read for the target without them."""
     target_refused = "target_refused"
-    """libclang refused the parse with the inserted target, with the entry's flags and
-    without its :data:`REFUSABLE_FLAGS` (none when the entry has none): the file is read
-    for the host, without them."""
+    """libclang refused the parse with the declared target (the entry's own or an
+    inserted one), with the entry's flags and without its :data:`REFUSABLE_FLAGS` (none
+    when the entry has none): the target is unknown, and the file is read as written."""
 
 
 @dataclass(frozen=True)
@@ -144,10 +144,11 @@ class Unmodelled:
     ) -> str:
         """The warning for ``file``, whose target is unknown because of this
         declaration (:attr:`Decision.unknown`) and which is read as written, through its
-        includer when ``includer``. A target refused names the entry's ``-m`` flags it
-        was refused with and the :data:`REFUSABLE_FLAGS` it was refused without too
-        (``with_and_without``); the flags left out of a parse for an unmodelled triple
-        decide nothing and are not named.
+        includer when ``includer``. A target refused is said to be refused with the
+        entry's flags, listing every ``-m`` flag among them (libclang does not say which
+        one it refused), and without the :data:`REFUSABLE_FLAGS` (``with_and_without``);
+        the flags left out of a parse for an unmodelled triple decide nothing and are not
+        named.
 
         Nothing is hidden, so the remedy is to accept it, by suppressing the warning, or,
         when the setting declared the target, to set the setting to a triple libclang
@@ -158,7 +159,9 @@ class Unmodelled:
         triple = self.triple
         declarer = self.declarer(includer)
         if self.why is NotRead.target_refused:
-            refused_with = f" ({_spelled(with_flags)})" if with_flags else ""
+            refused_with = (
+                f" (its `-m` flags: {_spelled(with_flags)})" if with_flags else ""
+            )
             without = f", and without {_spelled(left_out)}" if left_out else ""
             why = (
                 f"it refused the target {triple} that {declarer} names with the entry's "
@@ -175,7 +178,7 @@ class Unmodelled:
         if self.by is TargetSource.setting and self.why is NotRead.target_refused:
             setting = (
                 "; or set the `[preprocessor] target` setting to a triple that libclang "
-                "accepts with those flags"
+                "accepts with the entry's flags"
             )
         elif self.by is TargetSource.setting:
             setting = (
@@ -230,17 +233,18 @@ class Decision:
     unmodelled: Unmodelled | None = None
     """Why the file is not read for the target its build declares, as declared: the
     first declared triple libclang does not model (the file is read for :attr:`source`
-    instead), else, on a parse made :func:`again`, the refusal: the inserted triple
-    refused with and without the entry's :data:`REFUSABLE_FLAGS` (read for the host),
-    else those flags refused (read for the same target without them). A refusal that
+    instead, or as written), else, on a parse made :func:`again`, the refusal: the
+    declared triple (the entry's own or an inserted one) refused with and without the
+    entry's :data:`REFUSABLE_FLAGS` (read as written), else those flags refused (read for the same target without them). A refusal that
     changes the target read wins over an unmodelled triple, one that leaves it does
     not; :attr:`left_out` names the flags either way."""
     left_out: tuple[str, ...] = ()
     """The entry's :data:`REFUSABLE_FLAGS` left out of the parse that read the file
     (:func:`again`); empty for a parse as decided."""
     refused_with: tuple[str, ...] = ()
-    """The entry's other ``-m`` flags, which a declared triple was refused with
-    (:attr:`NotRead.target_refused`), named by the warning; empty otherwise."""
+    """Every ``-m`` flag of the entry (but the :data:`REFUSABLE_FLAGS`) in the parse that
+    refused a declared triple (:attr:`NotRead.target_refused`), listed by the warning:
+    not the one clang refused, which libclang does not say; empty otherwise."""
 
     @property
     def unknown(self) -> bool:

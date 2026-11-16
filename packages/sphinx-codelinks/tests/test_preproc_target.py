@@ -608,7 +608,7 @@ def test_an_entrys_own_target_refused_without_the_cpu_too_is_unknown(
     assert message is not None
     assert (
         f"it refused the target arm-none-eabi that its compilation-database entry's "
-        f"`{flag}` names with the entry's flags (`-mcmse`)" in message
+        f"`{flag}` names with the entry's flags (its `-m` flags: `-mcmse`)" in message
     )
 
 
@@ -880,7 +880,8 @@ def test_libclang_refusing_the_target_without_the_cpu_reads_as_written(
     assert "is read as written, no `#if` arm left out" in message
     assert (
         "refused the target arm-none-eabi that its compiler's name names with the "
-        "entry's flags (`-mcmse`), and without `-mcpu=cortex-m4`" in message
+        "entry's flags (its `-m` flags: `-mcmse`), and without `-mcpu=cortex-m4`"
+        in message
     )
 
 
@@ -1305,7 +1306,7 @@ XTENSA_ARM_IDS = {"IMPL_ALL", "IMPL_XT", "IMPL_ARM"}
             "target_refused",
             "arm-none-eabi",
             "refused the target arm-none-eabi that its compilation-database entry's "
-            "`--target` names with the entry's flags (`-mcmse`)",
+            "`--target` names with the entry's flags (its `-m` flags: `-mcmse`)",
             id="own-refused",
         ),
         pytest.param(
@@ -1320,7 +1321,7 @@ XTENSA_ARM_IDS = {"IMPL_ALL", "IMPL_XT", "IMPL_ARM"}
             None,
             "target_refused",
             "arm-none-eabi",
-            "names with the entry's flags (`-mcmse`, `-mfpmath=vfp`)",
+            "names with the entry's flags (its `-m` flags: `-mcmse`, `-mfpmath=vfp`)",
             id="own-refused-everywhere",
         ),
         pytest.param(
@@ -1338,7 +1339,7 @@ XTENSA_ARM_IDS = {"IMPL_ALL", "IMPL_XT", "IMPL_ARM"}
             "target_refused",
             "arm-none-eabi",
             "refused the target arm-none-eabi that its compiler's name names with the "
-            "entry's flags (`-mcmse`, `-mfpmath=vfp`)",
+            "entry's flags (its `-m` flags: `-mcmse`, `-mfpmath=vfp`)",
             id="name-refused-everywhere",
         ),
         pytest.param(
@@ -1507,3 +1508,135 @@ def test_an_unknown_includer_confirms_by_its_include_lines(
             if why == "setting_unmodelled"
             else "its includer's"
         ) in message
+
+
+#: A source whose markers say which arm it was read for: Arm, not Arm, or both.
+SRC_ARM = (
+    "// @all, IMPL_SRC_ALL, impl\n"
+    "int all;\n"
+    "#if defined(__arm__)\n"
+    "// @arm, IMPL_SRC_ARM, impl\n"
+    "int arm(void) { return 1; }\n"
+    "#else\n"
+    "// @not arm, IMPL_SRC_NOT_ARM, impl\n"
+    "int not_arm(void) { return 2; }\n"
+    "#endif\n"
+)
+
+XTENSA_ENTRY = ["clang", "--target=xtensa-esp32-elf"]
+ARM_ENTRY = ["arm-none-eabi-gcc", "-mcpu=cortex-m4"]
+IN_IF_0 = '#if 0\n#include "src.c"\n#endif\n'
+INCLUDED = '#include "src.c"\n'
+
+
+@pytest.mark.parametrize(
+    ("entries", "unknown_triple"),
+    [
+        pytest.param(
+            [("a_unity.c", XTENSA_ENTRY, IN_IF_0), ("b_main.c", ARM_ENTRY, INCLUDED)],
+            None,
+            id="known-wins",
+        ),
+        pytest.param(
+            [("a_main.c", ARM_ENTRY, INCLUDED), ("b_unity.c", XTENSA_ENTRY, IN_IF_0)],
+            None,
+            id="known-wins-first-by-path",
+        ),
+        pytest.param(
+            [
+                (
+                    "a_main.c",
+                    ARM_ENTRY,
+                    '#ifdef __XTENSA__\n#include "src.c"\n#endif\n',
+                ),
+                ("b_unity.c", XTENSA_ENTRY, INCLUDED),
+            ],
+            "xtensa-esp32-elf",
+            id="known-in-a-skipped-arm",
+        ),
+        pytest.param(
+            [
+                ("a_unity.c", XTENSA_ENTRY, IN_IF_0),
+                ("b_unity.c", ["clang", "--target=tricore-elf"], INCLUDED),
+            ],
+            "xtensa-esp32-elf",
+            id="unknown-alone",
+        ),
+    ],
+)
+def test_a_known_includer_that_confirms_wins_over_an_unknown_ones_text(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    entries: list[tuple[str, list[str], str]],
+    unknown_triple: str | None,
+) -> None:
+    """ubCode S2 fix round 2: a candidate includer whose target is known and whose
+    parse confirms the inclusion is taken before any candidate whose target is
+    unknown, which confirms by its ``#include`` lines only when no known one confirms
+    (path order within each). So ``src.c``, which an Xtensa unity includes in ``#if 0``
+    and an Arm entry includes for real, is read for Arm through the Arm entry,
+    whichever comes first by path: the markers of its Arm arm, not its ``#else``, and
+    no warning. A known includer whose ``#include`` sits in an arm its parse skips
+    still does not confirm, so the unknown one reads the source as written, every
+    marker kept; with unknown includers alone, the first by path does (its triple is
+    the one the warning names)."""
+    for name, _, text in entries:
+        (tmp_path / name).write_text(text)
+    src = tmp_path / "src.c"
+    src.write_text(SRC_ARM)
+    db = tmp_path / "compile_commands.json"
+    db.write_text(
+        json.dumps(
+            [
+                {
+                    "directory": str(tmp_path),
+                    "file": name,
+                    "arguments": [*argv, "-c", name],
+                }
+                for name, argv, _ in entries
+            ]
+        )
+    )
+    recorder = _RecordingLogger()
+    monkeypatch.setattr(analyse_module, "logger", recorder)
+    analyse = SourceAnalyse(
+        SourceAnalyseConfig(
+            src_files=[src],
+            src_dir=tmp_path,
+            comment_type=CommentType.cpp,
+            get_oneline_needs=True,
+            preprocessor=PreprocessorConfig(compile_commands=db, std="c11"),
+        )
+    )
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run()
+    ids = {need.need["id"] for need in analyse.oneline_needs}
+    if unknown_triple is None:
+        assert ids == {"IMPL_SRC_ALL", "IMPL_SRC_ARM"}
+        assert recorder.warnings == []
+        return
+    assert ids == {"IMPL_SRC_ALL", "IMPL_SRC_ARM", "IMPL_SRC_NOT_ARM"}
+    [(message, subtype)] = recorder.warnings
+    assert subtype == "preprocessor_target_unknown"
+    assert "is read as written" in message
+    assert f"the target {unknown_triple} that its includer's" in message
+
+
+def test_a_refused_setting_gives_the_remedy_for_the_entrys_flags() -> None:
+    """ubCode S2 fix round 2: a setting refused with the entry's flags is said to be
+    refused with them, listing its ``-m`` flags without claiming one was refused
+    (libclang does not say which), and the remedy is a triple libclang accepts with the
+    entry's flags."""
+    args, decision = _entry([WD, "-mcmse"], None, "thumbv7em-none-eabihf")
+    [(_, refused)] = target.again(args, decision)
+    message = refused.message("src/a.c", "", False)
+    assert message is not None
+    assert (
+        "it refused the target thumbv7em-none-eabihf that the `[preprocessor] target` "
+        "setting names with the entry's flags (its `-m` flags: `-mcmse`)" in message
+    )
+    assert message.endswith(
+        "; or set the `[preprocessor] target` setting to a triple that libclang accepts "
+        "with the entry's flags"
+    )
