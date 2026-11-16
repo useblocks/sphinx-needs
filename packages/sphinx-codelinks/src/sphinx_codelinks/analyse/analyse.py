@@ -646,6 +646,12 @@ class SourceAnalyse:
         a candidate is parsed it is the next candidate of every source that lists
         it, so it is never needed again. One libclang cannot load confirms nothing.
 
+        A candidate whose target is unknown (:attr:`.preproc.target.Decision.unknown`),
+        as decided or after its parse was refused, is not parsed for that: no parse
+        decides which of its ``#include`` lines it compiles, so its ``#include`` lines
+        confirm (the lexical candidates), and each source it includes is read as
+        written, without libclang (:meth:`_read_without_libclang`).
+
         :return: The comments read, by the source's position in ``src_files``.
         """
         from sphinx_codelinks.analyse.preproc import (
@@ -680,23 +686,34 @@ class SourceAnalyse:
             self.dependencies.update((database, main))
             decision = self._entry_decision(database, main)
             read_for = ""
-            try:
-                tu, args, decision = target.parse_or_again(
-                    args,
-                    decision,
-                    lambda attempt, _decision, main=main: (
-                        libclang_parser.parse_translation_unit(main, attempt)
-                    ),
-                    translation_unit_load_error,
-                )
-            except translation_unit_load_error:
-                logger.debug(
-                    f"codelinks: {main} could not be loaded as a translation unit, "
-                    f"so it includes no source"
-                )
+            tu = None
+            includes: set[Path] = set()
+            if not decision.unknown:
+                try:
+                    tu, args, decision = target.parse_or_again(
+                        args,
+                        decision,
+                        lambda attempt, _decision, main=main: (
+                            libclang_parser.parse_translation_unit(main, attempt)
+                        ),
+                        translation_unit_load_error,
+                    )
+                except target.AllRefused as refused:
+                    decision = refused.decision
+                    if not decision.unknown:
+                        logger.debug(
+                            f"codelinks: {main} could not be loaded as a translation "
+                            f"unit, so it includes no source"
+                        )
+            if decision.unknown:
+                # no parse decides which of its #include lines it compiles: its
+                # #include lines confirm
                 tu = None
-                includes: set[Path] = set()
-            else:
+                self._read_through_unknown_includer(
+                    database, main, decision, unread, next_candidate, read
+                )
+                continue
+            if tu is not None:
                 read_for = target.triple_of(tu)
                 self._warn_missing_builtin_header(main, tu, args)
                 working_directory = compile_db.working_directory(args)
@@ -716,7 +733,7 @@ class SourceAnalyse:
                         f"codelinks: reading {w.path} through {main}, which includes it"
                     )
                     read[position] = libclang_parser.extract_included_active_comments(
-                        tu, w.path, as_written=decision.unknown
+                        tu, w.path
                     )
                     self._warn_target(w.path, decision, read_for, includer=True)
                     del unread[position]
@@ -730,6 +747,53 @@ class SourceAnalyse:
                 subtype="not_in_compile_database",
             )
         return read
+
+    def _read_through_unknown_includer(
+        self,
+        database: Path,
+        main: Path,
+        decision: "Decision",
+        unread: dict[int, _Waiting],
+        next_candidate: dict[int, int],
+        read: dict[int, list["LibclangComment"]],
+    ) -> None:
+        """Read, as written and without libclang, each unread source whose next
+        candidate is ``main``, the main file of ``database``'s entry whose target is
+        unknown (``decision``): its ``#include`` lines name the source, which is all
+        that can confirm it, since no parse decides which of them it compiles."""
+        for position, w in list(unread.items()):
+            if w.database != database or next_candidate[position] >= len(w.candidates):
+                continue
+            if w.candidates[next_candidate[position]] != main:
+                continue
+            logger.debug(
+                f"codelinks: reading {w.path} as written through {main}, whose "
+                f"#include lines name it and whose target is unknown"
+            )
+            read[position] = self._read_without_libclang(w.path)
+            self._warn_target(w.path, decision, "", includer=True)
+            del unread[position]
+
+    def _read_without_libclang(self, path: Path) -> list["LibclangComment"]:
+        """The comments of ``path`` read as written without libclang, by the
+        tree-sitter engine: for a file whose target is unknown and whose every parse
+        was refused, and a source read through an includer whose target is unknown.
+        No parse decides anything for either, so nothing is lost: every comment is
+        kept, attached to no entity, as the libclang engine keeps them."""
+        from sphinx_codelinks.analyse.preproc.libclang_parser import LibclangComment
+
+        text = path.read_text(encoding="utf-8", errors="replace")
+        source = text.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8")
+        parser, query = utils.init_tree_sitter(CommentType.cpp, path)
+        tree, _ = utils.parse_source(source, parser, CommentType.cpp, path)
+        return [
+            LibclangComment(
+                node.text or b"",
+                node.start_point.row,
+                _char_column(source, node.start_byte),
+            )
+            for node in utils.captured_comments(tree, query) or []
+        ]
 
     # @Extract traceability objects with the preprocessor-aware libclang engine, IMPL_PREPROC_1, impl, [FE_PREPROC]
     def create_src_objects_libclang(self) -> None:
@@ -773,7 +837,13 @@ class SourceAnalyse:
                     ),
                     translation_unit_load_error,
                 )
-            except translation_unit_load_error:
+            except target.AllRefused as refused:
+                if refused.decision.unknown:
+                    # its target unknown, the parse was for its comments only: read
+                    # as written without libclang, nothing is lost
+                    read[position] = self._read_without_libclang(src_path)
+                    self._warn_target(src_path, refused.decision, "", includer=False)
+                    continue
                 # Last-resort guard. Standalone parses pin ``-x`` to match the
                 # ``-std`` (see defines_to_args), so the common case — a ``.h``/
                 # ``.c`` header handed a C++ ``-std`` — now parses as C++ and its
