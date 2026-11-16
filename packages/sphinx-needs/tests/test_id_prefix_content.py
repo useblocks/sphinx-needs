@@ -139,3 +139,16 @@ def test_needimport_content(test_app: SphinxTestApp):
         "Words: SUP::nc::REQ_1, other::PLAIN_1, PLAIN_1::x, SUP::PLAIN_1 and "
         ":need:`SUP::nc::REQ_1` and :need:`SUP::PLAIN_1`."
     )
+
+
+@pytest.mark.parametrize("form", ["trie", "alternation"])
+def test_a_shorter_file_id_inside_a_longer_one_left_as_it_is(form: str):
+    """Each id of the file is tested on its own: a longer file id left as it is (it
+    ends the ``::``-joined id ``x::REQ_1.SUB_2``) does not shadow the file id
+    ``SUB_2`` inside it, which a ``.`` does not join.
+
+    The base gave ``x::SUP::REQ_1.SUB_2``: the longer id matched and consumed the text.
+    """
+    known_ids = ["REQ_1.SUB_2", "SUB_2"] + (DEEP_IDS if form == "alternation" else [])
+    need = _rewrite("x::REQ_1.SUB_2", "SUP::", known_ids)
+    assert need["content"] == "x::REQ_1.SUP::SUB_2"
