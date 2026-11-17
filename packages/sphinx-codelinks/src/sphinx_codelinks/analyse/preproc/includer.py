@@ -209,6 +209,8 @@ _INCLUDE_PATH_FLAGS: tuple[tuple[str, _Kind | None], ...] = (
     ("-idirafter", _Kind.after),
     ("-imsvc", _Kind.system),
     ("/imsvc", _Kind.system),
+    ("/external:I", _Kind.system),
+    ("-external:I", _Kind.system),
     ("-I", _Kind.angled),
     ("/I", _Kind.angled),
     ("-iframework", None),
@@ -226,7 +228,7 @@ def compiler_search_path(args: list[str]) -> SearchPath:
     closure, useblocks/ubcode#4866): ``-iquote``; then ``-I``, clang-cl's ``/I``,
     ``--include-directory`` (``=`` or separate) and ``-iwithprefixbefore``; then
     ``-isystem``, ``-cxx-isystem``, ``-iwithsysroot`` and clang-cl's ``/imsvc``
-    (``-imsvc``); then ``-idirafter``, ``--include-directory-after`` (``=`` or
+    (``-imsvc``) and ``/external:I`` (``-external:I``); then ``-idirafter``, ``--include-directory-after`` (``=`` or
     separate), ``-isystem-after`` and ``-iwithprefix``, last.
     Each is read joined or separate, each kind in argument order. A value that starts
     with ``=`` is under the sysroot (``-isysroot``, else ``--sysroot``), as is every

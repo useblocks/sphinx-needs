@@ -1285,8 +1285,8 @@ The flags an entry whose branches no parse decides is read for, each joined
 - the include path, searched in this order: ``-iquote`` (a quoted name only, after the
   including file's own directory); then ``-I``, clang-cl's ``/I``,
   ``--include-directory`` (``=`` or separate) and ``-iwithprefixbefore``; then
-  ``-isystem``, ``-cxx-isystem``, ``-iwithsysroot`` and clang-cl's ``/imsvc``
-  (``-imsvc``); then ``-idirafter``, ``--include-directory-after`` (``=`` or separate),
+  ``-isystem``, ``-cxx-isystem``, ``-iwithsysroot``, and clang-cl's ``/imsvc``
+  (``-imsvc``) and ``/external:I`` (``-external:I``); then ``-idirafter``, ``--include-directory-after`` (``=`` or separate),
   ``-isystem-after`` and ``-iwithprefix``, last. A directory that starts with ``=`` is
   under the sysroot (``-isysroot``, else ``--sysroot``), as is every ``-iwithsysroot``
   one; an ``-iwithprefix`` or ``-iwithprefixbefore`` directory follows the last

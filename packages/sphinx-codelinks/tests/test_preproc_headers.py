@@ -1090,6 +1090,20 @@ _WD = "-working-directory=/w"
             ["-iframework", "f", "-iframeworkg"], [], [], id="iframework-not-read"
         ),
         pytest.param(
+            [
+                "/external:Ie",
+                "-external:I",
+                "f",
+                "/Ii",
+                "-external:Ig",
+                "/external:I",
+                "h",
+            ],
+            [],
+            ["i", "e", "f", "g", "h"],
+            id="external-I",
+        ),
+        pytest.param(
             ["--include-directory-after=z", "--include-directory-after", "y", "-Ii"],
             [],
             ["i", "z", "y"],
@@ -1104,6 +1118,7 @@ def test_every_spelling_of_an_include_directory(
     ``--include-directory`` and ``-iwithprefixbefore``; then ``-isystem``,
     ``-cxx-isystem``, ``-iwithsysroot`` and ``/imsvc`` (``-imsvc``); then
     ``-idirafter``, ``-isystem-after`` and ``-iwithprefix``; each joined or separate,
+    clang-cl's ``/external:I`` (``-external:I``) a system directory too;
     each kind in argument order. A value that starts with ``=`` is under the sysroot
     (``-isysroot`` over ``--sysroot``), ``-iwithprefix*`` follows the last
     ``-iprefix``, and ``-iframework`` is not read."""
@@ -1266,3 +1281,48 @@ def test_the_units_of_one_analysis_share_one_closure_memo(tmp_path: Path) -> Non
         root / "inc" / "x.h",
         root / "inc" / "y.h",
     }
+
+
+def _files(root: Path, names: list[str]) -> None:
+    for name in names:
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("", encoding="utf-8")
+
+
+def _next(root: Path, dirs: list[str], including: str) -> Path | None:
+    path = SearchPath(quote=(), angled=tuple(root / d for d in dirs))
+    directive = IncludeDirective("w.h", angled=True, line=1, next=True)
+    found = find_include_next(directive, (root / including).resolve(), path)
+    return found.canonical if found is not None else None
+
+
+def test_an_include_next_starts_after_the_directory_that_names_the_file(
+    tmp_path: Path,
+) -> None:
+    """Search directories ``p``, ``q``, ``p/inc``, ``r``, and ``p/inc/w.h`` (reached
+    as ``inc/w.h`` from ``p``) holds the ``#include_next <w.h>``: the directory that
+    names it as ``w.h`` is ``p/inc``, so the search continues at ``r``, not at ``q``
+    (the directory after ``p``, the first that merely holds the file)."""
+    root = tmp_path.resolve()
+    _files(root, ["p/inc/w.h", "q/w.h", "r/w.h"])
+    assert _next(root, ["p", "q", "p/inc", "r"], "p/inc/w.h") == root / "r" / "w.h"
+
+
+def test_an_include_next_reads_each_directory_once(tmp_path: Path) -> None:
+    """Search directories ``a``, ``b``, ``a`` (again), ``c``, from ``b/w.h``: as clang
+    keeps only the first ``a``, the search after ``b`` is ``c``, not ``a`` again."""
+    root = tmp_path.resolve()
+    _files(root, ["a/w.h", "b/w.h", "c/w.h"])
+    assert _next(root, ["a", "b", "a", "c"], "b/w.h") == root / "c" / "w.h"
+
+
+def test_an_include_next_never_finds_the_including_file(tmp_path: Path) -> None:
+    """Search directories ``a``, ``b``, ``c``, where ``b/w.h`` is a symbolic link to
+    ``a/w.h``: from ``a/w.h`` the search after ``a`` passes ``b/w.h``, the including
+    file itself, and finds ``c/w.h``."""
+    root = tmp_path.resolve()
+    _files(root, ["a/w.h", "c/w.h"])
+    (root / "b").mkdir()
+    (root / "b" / "w.h").symlink_to(root / "a" / "w.h")
+    assert _next(root, ["a", "b", "c"], "a/w.h") == root / "c" / "w.h"
