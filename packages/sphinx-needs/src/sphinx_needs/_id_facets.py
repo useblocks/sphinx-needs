@@ -60,6 +60,12 @@ def unknown_facet(name: str) -> str:
     return f"c.id has no facet {name!r} (its facets: {', '.join(ID_FACETS)})"
 
 
+#: the error of reading ``c.id`` itself as a value: it holds the facets, not the id
+_NOT_THE_ID: Final = (
+    "c.id holds the facets of the id, not the id: compare id, c.id.local or c.id.ns"
+)
+
+
 class IdFacets:
     """What ``c.id`` is in a filter ``eval`` evaluates (``NeedCheckContext.id``)."""
 
@@ -80,17 +86,17 @@ class IdFacets:
         (``c.id == "nc::REQ_1"``, ``c.id in [...]``) it is an error of the filter, not
         a silent "no need"."""
         if not isinstance(other, IdFacets):
-            raise TypeError(
-                "c.id holds the facets of the id, not the id: compare id, c.id.local "
-                "or c.id.ns"
-            )
+            raise TypeError(_NOT_THE_ID)
         return other._need is self._need
 
     def __ne__(self, other: object) -> bool:
         return not self == other
 
     def __hash__(self) -> int:
-        return id(self._need)
+        """Hashed (a set member, a dict key: ``c.id in {"nc::REQ_1"}``), ``c.id`` is an
+        error of the filter as it is compared: it is not the id. Its text
+        (``str(c.id)``) stays printable, for messages."""
+        raise TypeError(_NOT_THE_ID)
 
     def __repr__(self) -> str:
         return f"<c.id of {self._need['id']!r}>"

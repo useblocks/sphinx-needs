@@ -22,6 +22,7 @@ from sphinx_needs_testkit import build_warnings
 
 CONF = """\
 extensions = ["sphinx_needs"]
+needs_namespaced_ids = True
 needs_build_json = True
 needs_id_regex = {global_!r}
 needs_types = [

@@ -34,6 +34,7 @@ from sphinx_needs_testkit import build_warnings
 #: not depend on how the id patterns read a namespaced id
 CONF = """\
 extensions = ["sphinx_needs"]
+needs_namespaced_ids = True
 needs_build_json = True
 needs_id_regex = r"^[A-Za-z0-9_:]+$"
 needs_types = [
@@ -451,9 +452,13 @@ def test_the_environment_keeps_the_values(
 
 # --- the warning for an id that holds the separator and does not split cleanly ---
 
+#: the switch on, nothing else: the project the pattern pins read
+ON = 'extensions = ["sphinx_needs"]\nneeds_namespaced_ids = True\n'
+
 #: no id pattern: what these pin does not depend on how the patterns read an id
 UNCHECKED = """\
 extensions = ["sphinx_needs"]
+needs_namespaced_ids = True
 needs_id_regex = ""
 """
 
@@ -664,7 +669,7 @@ DEFAULT = "configured regex '^[A-Z0-9_]{5,}'"
 
 @pytest.mark.parametrize(
     "test_app",
-    [_unclean_project('extensions = ["sphinx_needs"]\n', PATTERN_INDEX)],
+    [_unclean_project(ON, PATTERN_INDEX)],
     indirect=True,
 )
 def test_the_default_pattern_accepts_a_matching_local_id(test_app: Any) -> None:
@@ -700,6 +705,7 @@ def test_switched_off_the_pattern_reads_the_whole_id(test_app: Any) -> None:
 
 TYPE_PATTERN = """\
 extensions = ["sphinx_needs"]
+needs_namespaced_ids = True
 needs_id_regex = ""
 needs_from_toml = "ubproject.toml"
 """
@@ -754,7 +760,7 @@ Index
     "test_app",
     [
         {
-            **_unclean_project('extensions = ["sphinx_needs"]\n', EXTRACT_INDEX),
+            **_unclean_project(ON, EXTRACT_INDEX),
             "buildername": "html",
         }
     ],
@@ -1047,6 +1053,12 @@ ID_IS_NO_ID = (
         ('c.id == "nc::REQ_001"', ID_IS_NO_ID),
         ('c.id != "nc::REQ_001"', ID_IS_NO_ID),
         ('c.id in ["nc::REQ_001"]', ID_IS_NO_ID),
+        ('c.id in {"nc::REQ_001"}', ID_IS_NO_ID),
+        ("{c.id: 1} == {}", ID_IS_NO_ID),
+        ("len({c.id}) == 1", ID_IS_NO_ID),
+        ("c.id == None", ID_IS_NO_ID),
+        ("c.id == 1", ID_IS_NO_ID),
+        ("c.id in [1]", ID_IS_NO_ID),
     ],
 )
 def test_an_argument_that_is_no_namespace_is_an_error_of_the_filter(
@@ -1250,6 +1262,18 @@ Index
    :links: REQ_010.p1, REQ_010.p2, REQ_011.p9
 
 :need:`REQ_010.p1` :need:`REQ_010.p2` :need:`REQ_011.p9`
+
+.. req:: Two candidates, the one with the part
+   :id: nc::REQ_012
+
+   A part :np:`(p1) of it`.
+
+.. req:: Two candidates, the one without
+   :id: sup::REQ_012
+
+.. req:: Linking to a part one of two candidates has
+   :id: SRC_003
+   :links: REQ_012.p1
 """
 
 #: an external need whose link is dead in this project
@@ -1322,7 +1346,8 @@ def test_a_dead_target_one_need_has_as_its_local_id_is_hinted(test_app: Any) -> 
     need has, and exactly one need has as its local id in a namespace, says which,
     with the part re-attached where that need has the part. With no candidate, two, a
     target that holds a namespace itself, a part the candidate lacks, or an id that
-    names a need (a dead part of it), the message is as before. (A role to a missing
+    names a need (a dead part of it), the message is as before; so is it with two
+    candidates of which one has the part (the candidates are counted first). (A role to a missing
     part of an existing need is "linked need part ... not found", never hinted.)"""
     app = test_app
     app.build()
@@ -1343,6 +1368,7 @@ def test_a_dead_target_one_need_has_as_its_local_id_is_hinted(test_app: Any) -> 
             _role("REQ_010.p1", _mean("nc::REQ_010.p1"), 40),
             _role("REQ_010.p2", "", 40),
             _role("REQ_011.p9", "", 40, part=True),
+            _dead("REQ_012.p1", "", "SRC_003", 50),
             _external(_mean("nc::REQ_002")),
         ]
     )
@@ -1380,6 +1406,7 @@ def test_no_hint_switched_off(test_app: Any) -> None:
             _dead("REQ_011.p9", "", "SRC_002", 36),
             *(_role(t, "", 40) for t in ["REQ_010.p1", "REQ_010.p2"]),
             _role("REQ_011.p9", "", 40, part=True),
+            _dead("REQ_012.p1", "", "SRC_003", 50),
             _external(),
         ]
     )
@@ -1587,3 +1614,54 @@ def test_the_hint_index_is_one_builds_and_never_pickled(
     assert b"LocalIdHints" in pickle.dumps(LocalIdHints({}))  # the control
     env = pickle.loads(data)
     assert not hasattr(env, "_needs_local_id_hints")
+
+
+DEFAULT_INDEX = """\
+Index
+=====
+
+.. req:: One segment
+   :id: SUPPLIER::REQ_1
+
+.. req:: Not split cleanly
+   :id: SUPPLIER::::REQ_4
+
+.. req:: Refused by the default pattern, read whole
+   :id: nc::REQ_00001
+
+.. req:: Linking
+   :id: SRC_00001
+   :links: REQ_1
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            **_unclean_project('extensions = ["sphinx_needs"]\n', DEFAULT_INDEX),
+            "buildername": "html",
+        }
+    ],
+    indirect=True,
+)
+def test_off_by_default(test_app: Any) -> None:
+    """A project that sets nothing reads every id as plain (until 10.0, whose default
+    is on): no namespace is stored or filtered on, an id that does not split cleanly is
+    not reported, a pattern sees the whole id, and no hint is offered."""
+    from sphinx_needs.filter_common import filter_needs_view
+
+    app = test_app
+    app.build()
+    # read before the view: reading it after the build post-processes the needs again
+    assert build_warnings(app) == [
+        _refused("nc::REQ_00001", 10, None, DEFAULT),
+        _dead("REQ_1", "", "SRC_00001", 13),
+    ]
+    config = NeedsSphinxConfig(app.config)
+    assert config.namespaced_ids is False
+    needs = _needs(app)
+    assert sorted(needs) == ["SRC_00001", "SUPPLIER::::REQ_4", "SUPPLIER::REQ_1"]
+    for key, need in needs.items():
+        assert (need.id_ns, need.id_ns_segments, need.id_local) == ("", (), key)
+    assert list(filter_needs_view(needs, config, 'c.in_namespace("SUPPLIER")')) == []
