@@ -12,9 +12,10 @@
 # `--target=xtensa-esp32-elf`, a setting naming one, a declared target clang refuses
 # with the entry's flags) is read as written: no arm of any `#if` is left out; so is a
 # file whose every parse clang refuses for a target it reads (a native entry's
-# `-mfpmath=vfp`), and a source such an entry includes. Every case below gives the same markers on every machine: none of them is read for the
-# machine running it, or each reads an arm no machine that runs the extraction takes
-# (`__XTENSA__`), or it is read as written.
+# `-mfpmath=vfp`), and a source such an entry includes. Every case below gives the
+# same markers on every machine: none of them is read for the machine running it, or
+# each reads an arm no machine that runs the extraction takes (`__XTENSA__`), or it is
+# read as written.
 
 cross_gcc_entry_takes_its_target_libclang:
   lang: c

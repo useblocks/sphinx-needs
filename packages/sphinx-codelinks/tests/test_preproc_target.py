@@ -22,7 +22,7 @@ pytest.importorskip("clang.cindex")
 
 from sphinx_codelinks.analyse import analyse as analyse_module
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
-from sphinx_codelinks.analyse.preproc import loader, target
+from sphinx_codelinks.analyse.preproc import libclang_parser, loader, target
 from sphinx_codelinks.analyse.preproc.compile_db import (
     compiler_of,
     load_database,
@@ -672,70 +672,165 @@ def test_a_refusal_at_every_step_is_the_files() -> None:
     assert refused.value.decision.not_read() == ("target_refused", "powerpc-eabi")
 
 
-#: The opening of a ``preprocessor_parse_refused`` warning about ``a.c``, up to the
-#: flags it names.
+#: The opening of a ``preprocessor_parse_refused`` warning about ``a.c``, up to whose
+#: flags it names, for a flag refused for the target (``CXError_Failure``).
 REFUSED_OPENING = (
     "codelinks: a.c is read as written, no `#if` arm left out, without libclang: the "
     "libclang sphinx-codelinks loaded refused every parse of it for the machine "
-    "sphinx-codelinks runs on (its build names no target) with "
+    "sphinx-codelinks runs on (its build names no target) with the flags of "
 )
 
 
 @pytest.mark.parametrize(
-    ("args", "flags_of", "fix_in", "says"),
+    ("args", "whose", "fix_in", "says"),
     [
         pytest.param(
             [WD, "-mfpmath=vfp", "-DX"],
-            "its compilation-database entry's",
+            "its compilation-database entry",
             "the compilation database",
-            "its compilation-database entry's flags (its `-m` flags: `-mfpmath=vfp`) (",
+            "its compilation-database entry (its `-m` flags: `-mfpmath=vfp`) (",
             id="own-entry",
         ),
         pytest.param(
             [WD, "-mcpu=cortex-r52plus", "-mfpmath=vfp"],
-            "its includer's compilation-database entry's",
+            "the compilation-database entry of its includer /m.c",
             "the compilation database",
-            "its includer's compilation-database entry's flags (its `-m` flags: "
+            "the compilation-database entry of its includer /m.c (its `-m` flags: "
             "`-mfpmath=vfp`), and without `-mcpu=cortex-r52plus` (",
             id="cpu-left-out",
         ),
         pytest.param(
-            ["-x", "c", "-std=c99x"],
-            "the `[preprocessor]` table's",
-            "the `[preprocessor]` table",
-            "the `[preprocessor]` table's flags (",
+            [WD, "-DX"],
+            "its compilation-database entry",
+            "the compilation database",
+            "its compilation-database entry (",
             id="no-machine-flag",
         ),
     ],
 )
 def test_every_parse_refused_reads_as_written_for_a_known_target(
-    args: list[str], flags_of: str, fix_in: str, says: str
+    args: list[str], whose: str, fix_in: str, says: str
 ) -> None:
     """useblocks/ubcode#4862 (ubCode's
     ``every_parse_refused_reads_as_written_for_a_known_target``): a file whose every
-    parse libclang refused for a target it reads (the host's, after the CPU flags were
-    left out too) is ``parse_refused``: read as written, its target known (``host``,
-    not unknown), naming the entry's ``-m`` flags and the CPU flags left out, and the
-    remedy, through the flags its origin names. A decision whose parse read gives no
-    such message, and the refused one no ``preprocessor_target_unknown`` one."""
+    parse libclang refused for a target it reads, with a flag (``CXError_Failure``; the
+    host's, after the CPU flags were left out too), is ``parse_refused``: read as
+    written, its target known (``host``, not unknown), naming the entry's ``-m`` flags
+    and the CPU flags left out, and the remedy, through the arguments ``whose`` names.
+    A decision whose parse read gives no such message, and the refused one no
+    ``preprocessor_target_unknown`` one."""
     args, decision = _entry(args)
-    assert decision.refused_message("a.c", flags_of, fix_in) is None
+    assert decision.refused_message("a.c", whose, fix_in) is None
     # the parse made again without the CPU flags, refused too, is the decision the
     # refusal is read from when there is one
     attempts = target.again(args, decision)
     last = attempts[-1][1] if attempts else decision
-    refused = last.refused(args)
+    refused = last.refused(args, command=False)
     assert refused.parse_refused
     assert not refused.unknown
     assert refused.source is TargetSource.host
     assert refused.not_read() == ("parse_refused", None)
+    assert refused.command == ()
     assert refused.message("a.c", "", False) is None
-    assert refused.refused_message("a.c", flags_of, fix_in) == (
+    assert refused.refused_message("a.c", whose, fix_in) == (
         f"{REFUSED_OPENING}{says}libclang does not say which flag it refused). Nothing "
         f"is hidden: every marker is kept, only less precisely. To read it for its "
         f"target, remove or change the refused flag in {fix_in}; to accept it as "
         f"written, add `codelinks.preprocessor_parse_refused` to Sphinx's "
         f"`suppress_warnings`"
+    )
+
+
+#: The opening of a ``preprocessor_parse_refused`` warning about ``a.c`` whose
+#: command libclang refused (``CXError_ASTReadError``), for its own entry.
+COMMAND_OPENING = (
+    "codelinks: a.c is read as written, no `#if` arm left out, without libclang: the "
+    "libclang sphinx-codelinks loaded refused the arguments of its compilation-database "
+    "entry, which hold a flag or an input file it does not take "
+)
+
+#: The end of a ``preprocessor_parse_refused`` warning whose command libclang
+#: refused, after the arguments it lists.
+COMMAND_CLOSING = (
+    " Nothing is hidden: every marker is kept, only less precisely. To read it, remove "
+    "or change what libclang does not take in {fix_in}; to accept it as written, add "
+    "`codelinks.preprocessor_parse_refused` to Sphinx's `suppress_warnings`"
+)
+
+
+@pytest.mark.parametrize(
+    ("args", "says"),
+    [
+        pytest.param(
+            [WD, "-O2", "-D", "X", "-include", "pre.h", "b.c", "-resource-dir", "/r"],
+            "(libclang does not say which; input files besides this one: `b.c`): "
+            "`-O2`, `-D`, `X`, `-include`, `pre.h`, `b.c`.",
+            id="second-input",
+        ),
+        pytest.param(
+            [WD, "-std=gnu2y", "-mfpmath=vfp"],
+            "(libclang does not say which): `-std=gnu2y`, `-mfpmath=vfp`.",
+            id="unknown-std",
+        ),
+        pytest.param(
+            [WD, *(f"-a{n}" for n in range(1, 15))],
+            "(libclang does not say which): `-a1`, `-a2`, `-a3`, `-a4`, `-a5`, `-a6`, "
+            "`-a7`, `-a8`, `-a9`, `-a10`, `-a11`, `-a12`, and 2 more.",
+            id="bounded",
+        ),
+        pytest.param(
+            [WD, *(f"-a{n}" for n in range(1, 13))],
+            "(libclang does not say which): `-a1`, `-a2`, `-a3`, `-a4`, `-a5`, `-a6`, "
+            "`-a7`, `-a8`, `-a9`, `-a10`, `-a11`, `-a12`.",
+            id="twelve-all-listed",
+        ),
+        pytest.param(
+            [WD, "-Xclang", "-foo", "-Xlinker", "lib.a", "-o", "app", "-arch", "arm64"],
+            "(libclang does not say which): `-Xclang`, `-foo`, `-Xlinker`, `lib.a`, "
+            "`-o`, `app`, `-arch`, `arm64`.",
+            id="option-values-are-no-inputs",
+        ),
+        pytest.param(
+            [WD, "b.c", "c.c"],
+            "(libclang does not say which; input files besides this one: `b.c`, "
+            "`c.c`): `b.c`, `c.c`.",
+            id="two-more-inputs",
+        ),
+        pytest.param([WD], "(libclang does not say which): none.", id="none"),
+    ],
+)
+def test_a_refused_command_lists_its_arguments(args: list[str], says: str) -> None:
+    """ubCode's ``a_refused_command_lists_its_arguments``: a command libclang refused
+    whatever the target (a second input file, a ``-std`` it does not know) is
+    ``command_refused``, read as the target's refusal is; its warning lists the entry's
+    arguments (not the engine's own: the working directory, the resource directory), at
+    most twelve, names the input files besides the entry's own (not an option's value,
+    nor what an option hands on), and names no target and no ``-m`` flag."""
+    args, decision = _entry(args)
+    refused = decision.refused(args, command=True)
+    assert refused.parse_refused and not refused.unknown
+    assert refused.not_read() == ("command_refused", None)
+    assert refused.refused_with == () and refused.left_out == ()
+    assert refused.message("a.c", "", False) is None
+    assert refused.refused_message(
+        "a.c", "its compilation-database entry", "the compilation database"
+    ) == (
+        f"{COMMAND_OPENING}{says}"
+        f"{COMMAND_CLOSING.format(fix_in='the compilation database')}"
+    )
+
+
+def test_a_refused_command_leaves_out_only_the_engines_own_arguments() -> None:
+    """The arguments a refused command's warning lists are the entry's: the
+    ``--target=`` the engine inserted for a compiler's name is left out, while an
+    entry's own ``--target=`` is kept (it is the entry's), as are its values."""
+    args, decision = _entry([WD, "-std=gnu2y"], compiler="arm-none-eabi-gcc")
+    assert f"--target={decision.declared}" in args
+    assert decision.refused(args, command=True).command == ("-std=gnu2y",)
+    args, decision = _entry([WD, "--target=arm-none-eabi", "-std=gnu2y"])
+    assert decision.refused(args, command=True).command == (
+        "--target=arm-none-eabi",
+        "-std=gnu2y",
     )
 
 
@@ -748,7 +843,7 @@ def test_a_refused_decision_keeps_where_its_target_came_from() -> None:
     args, decision = _entry(
         [WD, "--target=arm-none-eabi", "-mllvm", "-mx", "-march=armv7", "-mthumb"]
     )
-    refused = decision.refused(args)
+    refused = decision.refused(args, command=False)
     assert refused.parse_refused and not refused.unknown
     assert (refused.source, refused.declared, refused.flag) == (
         TargetSource.entry,
@@ -760,9 +855,45 @@ def test_a_refused_decision_keeps_where_its_target_came_from() -> None:
     assert refused.left_out == ("-march=armv7",)
     message = refused.refused_message("a.c", "x", "y")
     assert message is not None
-    assert "refused every parse of it for the target arm-none-eabi with x flags" in (
-        message
+    assert (
+        "refused every parse of it for the target arm-none-eabi with the flags of x"
+        in (message)
     )
+
+
+@pytest.mark.parametrize(
+    ("args", "code"),
+    [
+        pytest.param(["-mfpmath=vfp"], loader.ParseError.failure, id="mfpmath-vfp"),
+        pytest.param(["other.c"], loader.ParseError.ast_read_error, id="second-input"),
+        pytest.param(["-std=gnu2y"], loader.ParseError.ast_read_error, id="gnu2y"),
+        pytest.param(["-std=c99x"], loader.ParseError.ast_read_error, id="c99x"),
+        pytest.param(
+            ["-Xclang", "-foo"], loader.ParseError.ast_read_error, id="xclang-foo"
+        ),
+    ],
+)
+def test_libclang_says_why_it_refused_a_parse(
+    tmp_path: Path, args: list[str], code: loader.ParseError
+) -> None:
+    """What decides a refused parse's wording, measured with the pinned libclang (18.1):
+    ``clang_parseTranslationUnit2`` reports ``CXError_Failure`` for a flag the target
+    does not take (``-mfpmath=vfp``, on every machine), and ``CXError_ASTReadError``
+    for a command it cannot run at all, whatever the target (a second input file, a
+    ``-std`` it does not know, an unknown ``-Xclang`` flag);
+    :func:`.loader.refused_by_command` tells the two apart. A parse that reads raises
+    nothing."""
+    (tmp_path / "a.c").write_text("int a;\n")
+    (tmp_path / "other.c").write_text("int other;\n")
+    wd = f"-working-directory={tmp_path}"
+    assert libclang_parser.parse_translation_unit(tmp_path / "a.c", [wd]) is not None
+    with pytest.raises(loader.load_clang_cindex().TranslationUnitLoadError) as error:
+        libclang_parser.parse_translation_unit(tmp_path / "a.c", [wd, *args])
+    assert loader.parse_error(error.value) is code
+    assert loader.refused_by_command(error.value) is (
+        code is not loader.ParseError.failure
+    )
+    assert not loader.refused_by_command(ValueError("no code"))
 
 
 def test_a_pass_through_value_is_not_left_out() -> None:
@@ -1523,25 +1654,46 @@ REFUSED_CLOSING = (
     "`codelinks.preprocessor_parse_refused` to Sphinx's `suppress_warnings`"
 )
 
+#: What a ``preprocessor_parse_refused`` warning says after ``the libclang
+#: sphinx-codelinks loaded refused`` for a flag refused for the host, with
+#: ``{flags}`` (whose flags, and which) before :data:`REFUSED_CLOSING`.
+REFUSED_FOR_THE_HOST = (
+    "every parse of it for the machine sphinx-codelinks runs on (its build names no "
+    "target) with the flags of {flags}"
+)
+
+#: The tail of a ``preprocessor_parse_refused`` warning about a command libclang
+#: refused, for the compilation database.
+REFUSED_COMMAND_CLOSING = (
+    "Nothing is hidden: every marker is kept, only less precisely. To read it, remove "
+    "or change what libclang does not take in {fix_in}; to accept it as written, add "
+    "`codelinks.preprocessor_parse_refused` to Sphinx's `suppress_warnings`"
+)
+
 
 @pytest.mark.parametrize(
-    ("argv", "name", "std", "flags", "fix_in"),
+    ("argv", "name", "std", "says"),
     [
+        # CXError_Failure: a flag the host does not take
         pytest.param(
             ["gcc", "-mfpmath=vfp", "-c", "case.c"],
             "case.c",
             "c11",
-            "its compilation-database entry's flags (its `-m` flags: `-mfpmath=vfp`) (",
-            "the compilation database",
+            REFUSED_FOR_THE_HOST.format(
+                flags="its compilation-database entry (its `-m` flags: `-mfpmath=vfp`) ("
+            )
+            + REFUSED_CLOSING.format(fix_in="the compilation database"),
             id="native",
         ),
         pytest.param(
             ["gcc", "-mcpu=cortex-r52plus", "-mfpmath=vfp", "-c", "case.c"],
             "case.c",
             "c11",
-            "its compilation-database entry's flags (its `-m` flags: `-mfpmath=vfp`), "
-            "and without `-mcpu=cortex-r52plus` (",
-            "the compilation database",
+            REFUSED_FOR_THE_HOST.format(
+                flags="its compilation-database entry (its `-m` flags: `-mfpmath=vfp`), "
+                "and without `-mcpu=cortex-r52plus` ("
+            )
+            + REFUSED_CLOSING.format(fix_in="the compilation database"),
             id="native-cpu-left-out",
         ),
         # a wrapper's name declares no target: the host's, a target libclang reads
@@ -1549,18 +1701,62 @@ REFUSED_CLOSING = (
             ["my-arm-gcc", "-mfpmath=vfp", "-c", "case.c"],
             "case.c",
             "c11",
-            "its compilation-database entry's flags (its `-m` flags: `-mfpmath=vfp`) (",
-            "the compilation database",
+            REFUSED_FOR_THE_HOST.format(
+                flags="its compilation-database entry (its `-m` flags: `-mfpmath=vfp`) ("
+            )
+            + REFUSED_CLOSING.format(fix_in="the compilation database"),
             id="wrapper",
         ),
-        # a header with no entry: the `[preprocessor]` table's flags, a `std` clang
-        # refuses for every target
+        # CXError_ASTReadError: a second input file, whatever the target
+        pytest.param(
+            ["clang", "-O2", "other.c", "-c", "case.c"],
+            "case.c",
+            "c11",
+            "the arguments of its compilation-database entry, which hold a flag or an "
+            "input file it does not take (libclang does not say which; input files "
+            "besides this one: `other.c`): `-O2`, `other.c`. "
+            + REFUSED_COMMAND_CLOSING.format(fix_in="the compilation database"),
+            id="second-input",
+        ),
+        # CXError_ASTReadError: a `-std` clang does not know (a newer GCC's)
+        pytest.param(
+            ["gcc", "-std=gnu2y", "-c", "case.c"],
+            "case.c",
+            "c11",
+            "the arguments of its compilation-database entry, which hold a flag or an "
+            "input file it does not take (libclang does not say which): `-std=gnu2y`. "
+            + REFUSED_COMMAND_CLOSING.format(fix_in="the compilation database"),
+            id="unknown-std",
+        ),
+        # more than twelve arguments: the first twelve, the rest counted; the
+        # resource directory the engine adds is not the entry's
+        pytest.param(
+            [
+                "gcc",
+                "-std=gnu2y",
+                *(f"-DA{n}" for n in range(1, 14)),
+                "-c",
+                "case.c",
+            ],
+            "case.c",
+            "c11",
+            "the arguments of its compilation-database entry, which hold a flag or an "
+            "input file it does not take (libclang does not say which): `-std=gnu2y`, "
+            "`-DA1`, `-DA2`, `-DA3`, `-DA4`, `-DA5`, `-DA6`, `-DA7`, `-DA8`, `-DA9`, "
+            "`-DA10`, `-DA11`, and 2 more. "
+            + REFUSED_COMMAND_CLOSING.format(fix_in="the compilation database"),
+            id="bounded",
+        ),
+        # a header with no entry: the `[preprocessor]` table's arguments, a `std`
+        # clang does not know, whatever the target
         pytest.param(
             None,
             "case.h",
             "c99x",
-            "the `[preprocessor]` table's flags (",
-            "the `[preprocessor]` table",
+            "the arguments of the `[preprocessor]` table, which hold a flag or an input "
+            "file it does not take (libclang does not say which): `-x`, `c`, "
+            "`-std=c99x`. "
+            + REFUSED_COMMAND_CLOSING.format(fix_in="the `[preprocessor]` table"),
             id="header-std",
         ),
     ],
@@ -1571,17 +1767,22 @@ def test_a_known_target_file_whose_every_parse_is_refused_is_read_as_written(
     argv: list[str] | None,
     name: str,
     std: str,
-    flags: str,
-    fix_in: str,
+    says: str,
 ) -> None:
     """useblocks/ubcode#4862: a file whose target is known (a native compiler's or a
     wrapper's, the host, stated; a header's, the ``[preprocessor]`` table's) and whose
-    every parse is refused by a flag of its own that clang refuses on every machine
-    that runs the tests (``-mfpmath=vfp``, ``-std=c99x``), with or without its CPU, is
-    no longer skipped: no parse decides an arm, so it is read as written without
-    libclang, by the tree-sitter engine, every marker kept, with one
-    ``preprocessor_parse_refused`` warning (no ``preprocessor_target_unknown``) naming
-    whose flags were refused, the CPU left out, and where to change them."""
+    every parse is refused, on every machine that runs the tests, is no longer
+    skipped: no parse decides an arm, so it is read as written without libclang, by
+    the tree-sitter engine, every marker kept, with one ``preprocessor_parse_refused``
+    warning (no ``preprocessor_target_unknown``), worded by what libclang reported
+    (ubCode's ``a_refused_parse_is_worded_by_what_libclang_reported``). A flag the
+    target does not take (``CXError_Failure``: ``-mfpmath=vfp``, with or without its
+    CPU) names the target, whose flags they are, their ``-m`` flags and the CPU left
+    out; a command libclang does not run at all (``CXError_ASTReadError``: a second
+    input file, a ``-std`` it does not know) names whose arguments they are, lists them
+    (at most twelve, the engine's own left out) and the other input files, and no
+    target. Each text exactly."""
+    (tmp_path / "other.c").write_text("int other;\n")
     reasons: list[tuple[str, str | None]] = []
     ids, warnings = _analyse(
         tmp_path, monkeypatch, XTENSA_ARM, argv, name=name, reasons=reasons, std=std
@@ -1592,9 +1793,7 @@ def test_a_known_target_file_whose_every_parse_is_refused_is_read_as_written(
     assert warnings == [
         (
             f"codelinks: {src} is read as written, no `#if` arm left out, without "
-            f"libclang: the libclang sphinx-codelinks loaded refused every parse of it "
-            f"for the machine sphinx-codelinks runs on (its build names no target) with "
-            f"{flags}{REFUSED_CLOSING.format(fix_in=fix_in)}",
+            f"libclang: the libclang sphinx-codelinks loaded refused {says}",
             "preprocessor_parse_refused",
         )
     ]
@@ -1866,8 +2065,13 @@ class _LocatingLogger(_RecordingLogger):
         self.locations.append(kwargs.get("location"))
 
 
-#: An entry whose every parse clang refuses, on every machine that runs the tests.
+#: An entry whose every parse clang refuses, on every machine that runs the tests, for
+#: a flag the target does not take (``CXError_Failure``).
 REFUSED_ENTRY = ["gcc", "-mfpmath=vfp"]
+
+#: An entry whose every parse clang refuses, on every machine that runs the tests, for
+#: a command it does not run at all (``CXError_ASTReadError``).
+COMMAND_REFUSED_ENTRY = ["gcc", "-std=gnu2y"]
 
 
 @pytest.mark.parametrize(
@@ -1906,6 +2110,17 @@ REFUSED_ENTRY = ["gcc", "-mfpmath=vfp"]
             "b_unity.c",
             id="known-in-a-skipped-arm",
         ),
+        pytest.param(
+            [
+                (
+                    "unity.c",
+                    COMMAND_REFUSED_ENTRY,
+                    '#ifdef __XTENSA__\n#include "src.c"\n#endif\n',
+                )
+            ],
+            "unity.c",
+            id="command-refused-alone",
+        ),
     ],
 )
 def test_a_refused_includer_confirms_by_its_include_lines(
@@ -1918,8 +2133,10 @@ def test_a_refused_includer_confirms_by_its_include_lines(
     is refused (``-mfpmath=vfp``) no longer includes nothing: no parse decides which of
     its ``#include`` lines it compiles, so its ``#include`` lines confirm, as an
     unknown includer's do, and ``src.c`` is read as written through it, every marker
-    kept, with one ``preprocessor_parse_refused`` warning at its first line worded for
-    its includer's flags (not skipped as ``not_in_compile_database``). An includer
+    kept, with one ``preprocessor_parse_refused`` warning at its first line naming its
+    includer, worded by what libclang reported (a flag the target does not take, or a
+    command it does not run: ``-std=gnu2y``), not skipped as
+    ``not_in_compile_database``. An includer
     whose target is known and whose parse confirms (``arm-none-eabi-gcc``) still wins,
     whichever comes first by path: ``src.c`` is read for Arm, no warning; one whose
     ``#include`` sits in an arm its parse skips does not confirm, so the refused one
@@ -1961,14 +2178,25 @@ def test_a_refused_includer_confirms_by_its_include_lines(
         assert recorder.warnings == []
         return
     assert ids == {"IMPL_SRC_ALL", "IMPL_SRC_ARM", "IMPL_SRC_NOT_ARM"}
+    includer = (tmp_path / read_as_written_through).resolve()
+    whose = f"the compilation-database entry of its includer {includer}"
+    if any(argv is COMMAND_REFUSED_ENTRY for _, argv, _ in entries):
+        says = (
+            f"the arguments of {whose}, which hold a flag or an input file it does not "
+            f"take (libclang does not say which): `-std=gnu2y`. "
+            f"{REFUSED_COMMAND_CLOSING.format(fix_in='the compilation database')}"
+        )
+    else:
+        says = (
+            f"every parse of it for the machine sphinx-codelinks runs on (its build "
+            f"names no target) with the flags of {whose} (its `-m` flags: "
+            f"`-mfpmath=vfp`) "
+            f"({REFUSED_CLOSING.format(fix_in='the compilation database')}"
+        )
     assert recorder.warnings == [
         (
             f"codelinks: {src} is read as written, no `#if` arm left out, without "
-            f"libclang: the libclang sphinx-codelinks loaded refused every parse of it "
-            f"for the machine sphinx-codelinks runs on (its build names no target) with "
-            f"its includer's compilation-database entry's flags (its `-m` flags: "
-            f"`-mfpmath=vfp`) "
-            f"({REFUSED_CLOSING.format(fix_in='the compilation database')}",
+            f"libclang: the libclang sphinx-codelinks loaded refused {says}",
             "preprocessor_parse_refused",
         )
     ]

@@ -61,17 +61,10 @@ _KIND_RANK: dict[MarkedContentType, int] = {
     MarkedContentType.multiline_need: 2,
 }
 
-# Whose flags a file whose every libclang parse was refused was parsed with, and where
-# they are set, as its ``preprocessor_parse_refused`` warning names them
-# (:meth:`SourceAnalyse._warn_parse_refused`), by where its arguments came from.
-_REFUSED_FLAGS_OF: dict[str, tuple[str, str]] = {
-    "entry": ("its compilation-database entry's", "the compilation database"),
-    "includer": (
-        "its includer's compilation-database entry's",
-        "the compilation database",
-    ),
-    "defines": ("the `[preprocessor]` table's", "the `[preprocessor]` table"),
-}
+# Where the arguments of a file whose every libclang parse was refused are set, as its
+# ``preprocessor_parse_refused`` warning names them (:meth:`SourceAnalyse._warn_parse_refused`).
+_DATABASE = "the compilation database"
+_TABLE = "the `[preprocessor]` table"
 
 
 def _is_alphanumeric(char: str) -> bool:
@@ -640,15 +633,14 @@ class SourceAnalyse:
             )
 
     def _warn_parse_refused(
-        self, path: Path, decision: "Decision", *, origin: str
+        self, path: Path, decision: "Decision", *, whose: str, fix_in: str
     ) -> None:
         """Warn, at its first line, that ``path`` is read as written without libclang
         because libclang refused every parse of it for a target it reads (``decision``:
-        :meth:`.preproc.target.Decision.refused`), with the flags of ``origin``: its own
-        compilation-database entry (``entry``), the entry of its includer
-        (``includer``) or the ``[preprocessor]`` table (``defines``)."""
-        flags_of, fix_in = _REFUSED_FLAGS_OF[origin]
-        message = decision.refused_message(str(path), flags_of, fix_in)
+        :meth:`.preproc.target.Decision.refused`), with the arguments of what ``whose``
+        names (its own compilation-database entry, the entry of its includer, or the
+        ``[preprocessor]`` table), which are set in ``fix_in``."""
+        message = decision.refused_message(str(path), whose, fix_in)
         if message is not None:
             logger.warning(
                 message,
@@ -742,8 +734,11 @@ class SourceAnalyse:
                     decision = refused.decision
                     if not decision.unknown:
                         # its target known, no parse reads it: its #include lines
-                        # confirm, as an unknown one's do (useblocks/ubcode#4862)
-                        decision = decision.refused(args)
+                        # confirm, as an unknown one's do (useblocks/ubcode#4862),
+                        # worded by what libclang reported
+                        decision = decision.refused(
+                            args, command=loader.refused_by_command(refused.error)
+                        )
                         logger.debug(
                             f"codelinks: every parse of {main} was refused; its "
                             f"#include lines confirm the sources it includes"
@@ -793,7 +788,12 @@ class SourceAnalyse:
             )
             read[position] = self._read_without_libclang(w.path)
             if decision.parse_refused:
-                self._warn_parse_refused(w.path, decision, origin="includer")
+                self._warn_parse_refused(
+                    w.path,
+                    decision,
+                    whose=f"the compilation-database entry of its includer {first}",
+                    fix_in=_DATABASE,
+                )
             else:
                 self._warn_target(w.path, decision, "", includer=True)
             del unread[position]
@@ -878,10 +878,17 @@ class SourceAnalyse:
                 if refused.decision.unknown:
                     self._warn_target(src_path, refused.decision, "", includer=False)
                 else:
+                    # worded by what libclang reported: a flag the target does not
+                    # take, or a command it does not run at all
                     self._warn_parse_refused(
                         src_path,
-                        refused.decision.refused(args),
-                        origin="entry" if from_entry else "defines",
+                        refused.decision.refused(
+                            args, command=loader.refused_by_command(refused.error)
+                        ),
+                        whose=(
+                            "its compilation-database entry" if from_entry else _TABLE
+                        ),
+                        fix_in=_DATABASE if from_entry else _TABLE,
                     )
             else:
                 read[position] = comments
