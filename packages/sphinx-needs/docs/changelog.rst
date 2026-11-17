@@ -111,6 +111,82 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 A :ref:`needsequence` over need ids holding ``::`` (or another character PlantUML refuses in a name, such as
+  ``-``) renders, and shows each participant by its title or its id
+
+  It wrote each need id as it is as a PlantUML participant name. For a participant that sends a message, which is
+  declared with its title, an id such as ``SUPPLIER::USER_A`` (which the default :ref:`needs_id_regex` accepts) or
+  ``USER-A`` made the diagram a PlantUML syntax error, and so did a receiver that sends none, but for one whose id
+  holds ``:``, which was drawn wrongly instead (``SUPPLIER::B`` as a participant ``SUPPLIER`` with the message
+  ``:B: …``). A participant is now named as :ref:`needflow` names a need in a PlantUML diagram, over the
+  participants of the one diagram: each character PlantUML refuses in a name becomes ``_``, and two ids that become
+  the same name are told apart by a numeric suffix. What the reader sees keeps its text: a participant that sends a
+  message shows its title, and a receiver that sends none shows its id, as before; in a diagram where such a
+  receiver's name is not its id, every such receiver is declared, in the order the arrows reach them. The message
+  labels are unchanged, and a diagram whose ids hold none of those characters is written as before. The first build
+  after upgrading reads every document again.
+
+- 🐛 The default item of a :ref:`variant <needs_variant_support>` may hold ``::``, as a need id such as
+  ``SUPPLIER::REQ_2`` does
+
+  ``<<[False]:X, SUPPLIER::REQ_2>>`` read its last item as the variant name ``SUPPLIER`` with the value ``:REQ_2``,
+  so the field or link was left empty with a ``needs.dynamic_function`` warning that ``name 'SUPPLIER' is not
+  defined``. What remains of a variant is now its default value when it holds no single ``:`` (one with no ``:``
+  beside it), so the value is ``SUPPLIER::REQ_2``. While a single ``:`` remains, an item's name ends at its first
+  ``:``, as before: a variant reads differently only where the colons left in it all stand in runs of two or more
+  (``<<x:nc::A, nc::B>>``, ``<<a:::b>>``), and ``<<debug::need:`X`>>`` still names ``debug``. The first build
+  after upgrading reads every document again.
+
+- 🐛 :ref:`needs_build_json_per_id` and the :ref:`needs_id builder <needs_id_builder>` encode the characters of a need
+  id that a file name cannot hold on every system, such as ``:``, in the name of the need's file **(changed output)**
+
+  Each file was named ``<id>.json`` with the id as it is, so ``SUPPLIER::REQ_1``, which the default
+  :ref:`needs_id_regex` accepts, gave ``SUPPLIER::REQ_1.json``, a name Windows refuses, and an id holding ``/`` could
+  not be written (an error). ``<`` ``>`` ``:`` ``"`` ``/`` ``\`` ``|`` ``?`` ``*``, the control characters U+0000 to
+  U+001F and ``%`` are now each written as ``%`` and two upper-case hex digits (``SUPPLIER%3A%3AREQ_1.json``), in both
+  needs.json formats. The file of an id holding none of them keeps its name, and every file's content is unchanged;
+  files an earlier release wrote under the old name are not removed. Not handled: an id too long for a file name,
+  Windows' reserved device names (``NUL``, ``CON``, …), and names differing only by case.
+
+- 🐛 An ``id_prefix`` of :ref:`needimport` or :ref:`needs_external_needs` leaves a longer ``::``-joined id in a
+  need's content as it is **(changed output)**
+
+  The prefix rewrites each id of the file written in a need's content, and it took ``:`` as a word boundary, so with
+  the file id ``PLAIN_1`` and the prefix ``SUP::`` the text ``other::PLAIN_1`` became ``other::SUP::PLAIN_1`` and
+  ``PLAIN_1::x`` became ``SUP::PLAIN_1::x``, although neither names the file's ``PLAIN_1``. A file id directly after a
+  ``::`` that follows a letter, digit, ``_`` or ``-``, or directly before a ``::`` that one of those follows, is now
+  left as it is, whatever the prefix; any other character beside the ``::`` (white space, punctuation, a third ``:``,
+  the end of the text) joins nothing. So an id of the file that itself holds ``::`` (``nc::REQ_1``) is still rewritten
+  as a whole, and so are an id beside a single ``:`` (``:need:`PLAIN_1```, ``PLAIN_1: text``) and one before a ``::``
+  that ends the text or is followed by white space (``see PLAIN_1::`` before a literal block). Each id of the file is
+  tested on its own, so where a longer file id is now left as it is, a shorter file id inside it may be rewritten:
+  with the file ids ``REQ_1.SUB_2`` and ``SUB_2``, ``x::REQ_1.SUB_2`` becomes ``x::REQ_1.SUP::SUB_2``, where it was
+  ``x::SUP::REQ_1.SUB_2``. The first build after upgrading reads every document again.
+
+- 🐛 A one-word :ref:`needextend` argument holding ``(``, ``=``, ``'`` or ``"`` is a filter **(changed output)**
+
+  ``needextend`` read every one-word argument as a need id, so ``c.this_doc()``, ``c.is_a('req')`` and
+  ``status=="open"``, written without a space, were reported as ids that do not exist (and ended the build under
+  :ref:`needs_needextend_strict`). A one-word argument holding any of ``(``, ``=``, ``'`` or ``"`` is now a filter;
+  every other one-word argument is an id, as before, so a comparison without ``=`` such as ``priority>3`` is still
+  read as an id (write it ``"priority>3"``). A one-word argument naming an existing need whose id holds ``(``,
+  ``=``, ``'`` or ``"`` is now a filter too; write it ``<id>`` (``<REQ_001(A)>``), as ``<…>`` still forces an id.
+  The first build after upgrading reads every document again.
+
+- 🐛 A filter that is not a Python expression no longer aborts the build where a view's ``:filter:``, the
+  ``needextract`` argument, a ``needpie`` or ``needbar`` ``:filter:`` or line, ``need_count``, needuml's ``filter()``,
+  :ref:`needs_warnings` or :ref:`needs_builder_filter` takes it
+
+  ``needextract:: nc::missing`` (an id the :ref:`needs_id_regex` refuses is read as a filter), or the same string as
+  the ``:filter:`` of a ``needtable``, ``needlist``, ``needflow``, ``needgantt``, ``needextract``, ``needpie`` or
+  ``needbar``, a line of a ``needpie`` or ``needbar``, a ``need_count``, needuml's ``filter()``, a
+  :ref:`needs_warnings` entry or the :ref:`needs_builder_filter`, ended the build with ``invalid syntax``. It is now
+  one ``needs.filter`` warning naming the string and the error, at the directive, where there is one, and it
+  matches no need. ``needextend``'s filter form and ``copy(filter=...)``, which reported such a string already, keep
+  their messages. Not changed: needflow's ``:highlight:``, needgantt's ``:milestone_filter:``,
+  :ref:`needs_constraints` and needsequence's ``:filter:`` still end the build on any filter that fails, as before,
+  and so does a filter too deep for Python's parser.
+
 - 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
   ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
   **(changed output)** (:issue:`2489`, :pr:`2494`)

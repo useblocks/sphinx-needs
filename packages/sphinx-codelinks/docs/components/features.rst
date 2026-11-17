@@ -448,6 +448,9 @@ Features
    * Per-file compiler flag resolution from a ``compile_commands.json`` compilation database,
      each entry parsed in its ``directory``
    * Sources a unity build compiles by ``#include``, read through the entry that includes them
+   * Each file read for the target its build declares (an entry's ``--target``, its
+     compiler's name such as ``arm-none-eabi-gcc``, or the ``target`` setting), not for the
+     machine the analysis runs on
    * Walk-up discovery of the compilation database from the source file
    * Standalone parsing of headers, which a compilation database never lists, using
      configured ``defines``, ``includes`` and ``std``

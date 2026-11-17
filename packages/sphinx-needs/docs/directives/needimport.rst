@@ -103,7 +103,14 @@ This may be useful to avoid duplicated ids.
 
     The content is opaque markup: every occurrence of a file id as a whole word is
     rewritten, inside code blocks and file names too; an id inside a longer word is left
-    as it is.
+    as it is, and so is one that is one end of a longer ``::``-joined id (``REQ_1`` in
+    ``other::REQ_1`` or ``REQ_1::x``). A single ``:`` beside an id does not join it, nor
+    does a ``::`` followed (or preceded) by anything but a letter, a digit, ``_`` or
+    ``-``: white space, punctuation, a third ``:`` or the end of the text (``see
+    REQ_1::`` is rewritten). Each id of the file is tested on its own, so a shorter file
+    id inside a longer one that is left as it is may be rewritten: with the file ids
+    ``REQ_1.SUB_2`` and ``SUB_2``, ``x::REQ_1.SUB_2`` becomes ``x::REQ_1.imp_SUB_2``
+    with the prefix ``imp_``.
 
 version
 ~~~~~~~

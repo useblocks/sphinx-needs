@@ -7,12 +7,16 @@ the 16.0 and 18.1 bindings expose clang_Location_isFromMainFile or
 clang_getSkippedRanges, which both wheels' native libraries export: they are bound
 the same way. And their ``Cursor.get_included_file`` asserts on the NULL that
 clang_getIncludedFile returns for an ``#include`` libclang could not resolve, so
-:func:`included_file` reads it through a binding of its own.
+:func:`included_file` reads it through a binding of its own. And their
+``TranslationUnit.from_source`` raises the same ``TranslationUnitLoadError`` whatever
+libclang reported, so :func:`parse_translation_unit` parses through
+clang_parseTranslationUnit2, which says why (:class:`ParseError`).
 """
 
 from __future__ import annotations
 
 import ctypes
+import enum
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -57,6 +61,13 @@ class SkippedRange(NamedTuple):
     """Whether the range starts in the translation unit's main file, in the main
     file's own pass: a later inclusion of the same path is a pass of its own, and
     reports ``False`` here (``clang_Location_isFromMainFile``)."""
+    start_offset: int = 0
+    """The byte offset of its start in its file, as written (raw bytes)."""
+    end_offset: int = 0
+    """The byte offset of its end in its file, as written: the end of the directive's
+    keyword that closes it."""
+    entry: int = -1
+    """Which entry of its file it is in (:func:`entry_base`)."""
 
 
 class _CXSourceRangeList(ctypes.Structure):
@@ -65,6 +76,96 @@ class _CXSourceRangeList(ctypes.Structure):
 
 _BOUND = False
 _INCLUDED_FILE: Any = None
+_PARSE2: Any = None
+
+
+class ParseError(enum.IntEnum):
+    """Why libclang refused a parse: the ``CXErrorCode`` clang_parseTranslationUnit2
+    returns, as :func:`parse_translation_unit` attaches it to the error it raises
+    (:func:`parse_error`)."""
+
+    failure = 1
+    """``CXError_Failure``: as the pinned libclang reports a flag the target does not
+    take (``-mfpmath=vfp``) or a target it does not model."""
+    crashed = 2
+    """``CXError_Crashed``: libclang crashed."""
+    invalid_arguments = 3
+    """``CXError_InvalidArguments``: the call itself was invalid."""
+    ast_read_error = 4
+    """``CXError_ASTReadError``: as the pinned libclang reports a command it does not
+    run at all, whatever the target: a second input file, a ``-std`` it does not know,
+    an unknown ``-Xclang`` flag."""
+
+
+_ERROR_CODE = "codelinks_parse_error"
+"""The attribute of a ``TranslationUnitLoadError`` that holds its :class:`ParseError`."""
+
+
+def parse_translation_unit(file_path: Path, args: list[str], options: int) -> Any:
+    """``file_path`` parsed by a new index with ``args`` and ``options``, as
+    ``clang.cindex``'s ``Index.parse`` parses it, but through
+    clang_parseTranslationUnit2, which says why libclang refused it.
+
+    :raises clang.cindex.TranslationUnitLoadError: libclang could not load it; the
+        error carries libclang's reason (:func:`parse_error`).
+    """
+    global _PARSE2
+    cx = load_clang_cindex()
+    if _PARSE2 is None:
+        # A function pointer of its own (``CDLL.__getitem__`` makes a new one).
+        function = cx.conf.lib["clang_parseTranslationUnit2"]
+        function.argtypes = [
+            cx.Index,
+            ctypes.c_char_p,
+            ctypes.POINTER(ctypes.c_char_p),
+            ctypes.c_int,
+            ctypes.c_void_p,
+            ctypes.c_uint,
+            ctypes.c_uint,
+            ctypes.POINTER(cx.c_object_p),
+        ]
+        function.restype = ctypes.c_int
+        _PARSE2 = function
+    index = cx.Index.create()
+    # encoded as ``clang.cindex`` encodes them
+    arguments = (ctypes.c_char_p * len(args))(*(arg.encode("utf-8") for arg in args))
+    unit = cx.c_object_p()
+    code = _PARSE2(
+        index,
+        str(file_path).encode("utf-8"),
+        arguments,
+        len(args),
+        None,
+        0,
+        options,
+        ctypes.byref(unit),
+    )
+    if code == 0 and unit:
+        return cx.TranslationUnit(unit, index=index)
+    error = cx.TranslationUnitLoadError("Error parsing translation unit.")
+    try:
+        reason: ParseError | None = ParseError(code)
+    except ValueError:
+        reason = None
+    setattr(error, _ERROR_CODE, reason)
+    raise error
+
+
+def parse_error(error: BaseException | None) -> ParseError | None:
+    """Why libclang refused the parse that raised ``error``
+    (:func:`parse_translation_unit`); ``None`` when it does not say (an error raised
+    some other way)."""
+    reason = getattr(error, _ERROR_CODE, None)
+    return reason if isinstance(reason, ParseError) else None
+
+
+def refused_by_command(error: BaseException | None) -> bool:
+    """Whether libclang refused the parse that raised ``error`` for its command
+    itself, whatever the target (``CXError_ASTReadError``, or a crash: a second input
+    file, a ``-std`` it does not know, an ``-Xclang`` flag), rather than for its target
+    with a flag (``CXError_Failure``: ``-mfpmath=vfp``), as measured with the pinned
+    libclang. An error that does not say is the target's (:func:`parse_error`)."""
+    return parse_error(error) in (ParseError.ast_read_error, ParseError.crashed)
 
 
 def _bind() -> None:
@@ -88,6 +189,22 @@ def _bind() -> None:
     lib.clang_Location_isFromMainFile.argtypes = [cx.SourceLocation]
     lib.clang_Location_isFromMainFile.restype = ctypes.c_int
     _BOUND = True
+
+
+def entry_base(location: Any) -> int:
+    """Which entry of its file a location of a translation unit is in: the start of
+    that entry in the unit's source-location space (its raw encoding less its offset in
+    the file). Each entry of a file (``#include``, ``-include``) is a file ID of its
+    own, which ``clang_getSkippedRanges`` and the file's line and offset do not tell
+    apart."""
+    return int(location.int_data) - int(location.offset)
+
+
+def first_entry_base(tu: Any, file: Any) -> int:
+    """:func:`entry_base` of ``file``'s first entry into ``tu`` (``clang_getLocation``
+    names a location in the first)."""
+    cx = load_clang_cindex()
+    return entry_base(cx.SourceLocation.from_position(tu, file, 1, 1))
 
 
 def included_file(cursor: Any) -> Path | None:
@@ -151,7 +268,15 @@ def _read_range_list(cx: Any, ptr: Any) -> list[SkippedRange]:
             from_main = bool(cx.conf.lib.clang_Location_isFromMainFile(start))
             out.append(
                 SkippedRange(
-                    f, start.line, start.column, end.line, end.column, from_main
+                    f,
+                    start.line,
+                    start.column,
+                    end.line,
+                    end.column,
+                    from_main,
+                    start.offset,
+                    end.offset,
+                    entry_base(start),
                 )
             )
         return out

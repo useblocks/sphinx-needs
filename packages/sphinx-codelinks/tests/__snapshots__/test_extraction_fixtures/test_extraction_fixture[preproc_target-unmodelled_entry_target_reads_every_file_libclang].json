@@ -1,0 +1,80 @@
+[
+  {
+    "filepath": "case.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 40
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Always",
+      "id": "IMPL_T11_ALWAYS",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 40
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "xtensa",
+      "id": "IMPL_T11_XTENSA",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 4
+      },
+      "end": {
+        "row": 4,
+        "column": 48
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "not xtensa",
+      "id": "IMPL_T11_NOT_XTENSA",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

@@ -130,17 +130,9 @@ class NeedextendDirective(SphinxDirective):
             self._log_warning(f"Invalid value for 'extend_priority' option: {err}")
             return []
 
-        extend_filter = (self.arguments[0] if self.arguments else "").strip()
-        if extend_filter.startswith("<") and extend_filter.endswith(">"):
-            filter_is_id = True
-            extend_filter = extend_filter[1:-1]
-        elif extend_filter.startswith('"') and extend_filter.endswith('"'):
-            filter_is_id = False
-            extend_filter = extend_filter[1:-1]
-        elif len(extend_filter.split()) == 1:
-            filter_is_id = True
-        else:
-            filter_is_id = False
+        extend_filter, filter_is_id = _classify_extend_argument(
+            self.arguments[0] if self.arguments else ""
+        )
 
         if not extend_filter:
             self._log_warning("Empty ID/filter argument in needextend directive.")
@@ -631,6 +623,32 @@ def _report_filters_on_computed_fields(
             "derive_scope",
             location=(needextend["docname"], needextend["lineno"]),
         )
+
+
+_FILTER_ONLY_CHARACTERS = frozenset("(='\"")
+"""A one-word needextend argument holding any of these is a filter, not an id."""
+
+
+def _classify_extend_argument(argument: str) -> tuple[str, bool]:
+    """Read a needextend argument as a need id or a filter.
+
+    On the stripped argument, in this order: ``<…>`` is an id; ``"…"`` is a filter;
+    one whitespace-separated word is a filter when it holds ``(``, ``=``, ``'`` or
+    ``"`` (``c.this_doc()``, ``status=="open"``), which no id is written with, and an
+    id otherwise; anything else is a filter. An id that does hold one of the four is
+    written ``<id>``.
+
+    :param argument: The argument as written.
+    :return: The id or filter, without its ``<…>`` or ``"…"``, and whether it is an id.
+    """
+    text = argument.strip()
+    if text.startswith("<") and text.endswith(">"):
+        return text[1:-1], True
+    if text.startswith('"') and text.endswith('"'):
+        return text[1:-1], False
+    if len(text.split()) == 1:
+        return text, not (_FILTER_ONLY_CHARACTERS & set(text))
+    return text, False
 
 
 def _ids_matched_as_written(
