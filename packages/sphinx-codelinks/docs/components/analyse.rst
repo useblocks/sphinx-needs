@@ -1202,7 +1202,10 @@ none is found above the header) whose own parse includes the header, directly, t
 other headers, through a macro ``#include`` or a ``-include``, whatever directory the
 entry's source is in, and whatever directory finds the header (one of the project's on
 an ``-isystem`` or ``-idirafter`` path counts too, though clang calls it a system
-header). Each such entry reads the header with its own flags, its own target,
+header). A file is the project's when its path is under the project's root, as resolved
+or as the compiler names it: a project directory that is a symbolic link to elsewhere
+counts (though discovery itself lists no file that resolves outside ``src_dir``, so such a
+header reaches the analysis only when a caller names it). Each such entry reads the header with its own flags, its own target,
 and whatever its source defines before the ``#include``, in the header's **first**
 inclusion into it; a file the database compiles twice counts twice.
 
@@ -1215,11 +1218,16 @@ the header as written, and with one of them no branch of the header is left out:
   twice, or a whole-file ``#ifndef`` whose macro nothing defines); a guarded header entered
   again, whose second entry skips its whole body, is read in its first inclusion;
 - one whose target is unknown (:ref:`preprocessor_target`), and one whose every parse
-  clang refuses: no parse decides their branches, so every file their ``-include`` and
-  ``-imacros`` flags and their ``#include`` and ``#include_next`` lines name, at any depth
-  and whatever ``#if`` branch the line is in, looked up on their ``-iquote``, ``-I``,
-  ``-isystem`` and ``-idirafter`` paths, counts as included (also through a file outside
-  the project, such as an SDK header that includes a project one).
+  clang refuses: no parse decides their branches, so every file their forced includes
+  and their ``#include`` and ``#include_next`` lines name, at any depth and whatever
+  ``#if`` branch the line is in, counts as included (also through a file outside the
+  project, such as an SDK header that includes a project one). The names are looked up
+  as the compiler looks them up (see :ref:`below <preprocessor_header_spellings>`), and an
+  ``#include_next`` continues after the directory that found its file, each directory
+  once (one listed again, or a symbolic link to an earlier one, is passed over, as clang
+  passes it over); in a file found on no search directory, it is looked up as an
+  ``#include``. The units of one analysis share what they read and look up, so a large
+  include path over many headers is walked once per path.
 
 The header's comments are read from one of the entries whose target is known (the one that
 includes the most project files, the first by the path of its source among equals),
@@ -1264,7 +1272,30 @@ What can still hide code in a header:
 - a header another one newly shadows on an include path is seen when an entry is read
   again (its source or a project file it includes changes);
 - a source file the database compiles twice, with other flags, is read with its last
-  entry (a header it includes is read through both).
+  entry (a header it includes is read through both);
+- a header that an entry whose target is unknown, or whose every parse is refused,
+  finds only through ``-iframework`` (a framework's headers are named
+  ``<Name/header.h>`` and live in ``Name.framework/Headers``) is not seen as included.
+
+.. _preprocessor_header_spellings:
+
+The flags an entry whose branches no parse decides is read for, each joined
+(``-Iinc``) or separate (``-I inc``), each kind in the order the entry gives it:
+
+- the include path, searched in this order: ``-iquote`` (a quoted name only, after the
+  including file's own directory); then ``-I``, clang-cl's ``/I``,
+  ``--include-directory`` (``=`` or separate) and ``-iwithprefixbefore``; then
+  ``-isystem``, ``-cxx-isystem``, ``-iwithsysroot`` and clang-cl's ``/imsvc``
+  (``-imsvc``); then ``-idirafter``, ``--include-directory-after`` (``=`` or separate),
+  ``-isystem-after`` and ``-iwithprefix``, last. A directory that starts with ``=`` is
+  under the sysroot (``-isysroot``, else ``--sysroot``), as is every ``-iwithsysroot``
+  one; an ``-iwithprefix`` or ``-iwithprefixbefore`` directory follows the last
+  ``-iprefix`` before it (a plain string prefix); any other relative directory is taken
+  against the entry's ``directory``. ``-iframework`` is not read;
+- the forced includes, ahead of the source's own lines: ``-include``, ``--include``
+  (``=`` or separate), ``-imacros`` and clang-cl's ``/FI`` (``-FI``), looked up in the
+  entry's ``directory`` first, then on the include path; never ``-include-pch`` or
+  another ``-include-*`` or ``--include-*`` flag.
 
 Example
 ~~~~~~~
