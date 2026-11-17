@@ -330,6 +330,90 @@ def _check_reads(expression: str) -> frozenset[str]:
     return frozenset(reads)
 
 
+#: the namespace values a filter can read, each as the warning names it, in the order
+#: it names them: ``c.id.<facet>`` by its facet, and the call
+_NAMESPACE_READS: Final = (
+    ("ns", "c.id.ns"),
+    ("local", "c.id.local"),
+    (_id_facets.IN_NAMESPACE, "c.in_namespace()"),
+)
+
+
+def _is_bare_id(node: ast.AST) -> bool:
+    """Whether *node* is ``c.id`` itself, which holds the facets, not the id."""
+    return (
+        isinstance(node, ast.Attribute)
+        and node.attr == _id_facets.ID_NAME
+        and isinstance(node.value, ast.Name)
+        and node.value.id == CHECKS_NAME
+    )
+
+
+def _refused(node: ast.AST) -> bool:
+    """Whether *node* is, by its text, an error every evaluation reaching it gives
+    today: a call of ``c.in_namespace`` that is not one positional argument, or whose
+    literal argument names no namespace (:func:`._id_facets.namespace_argument`); a
+    facet of ``c.source`` / ``c.id`` that is none; ``c.id`` itself compared, hashed (a
+    set member, a dict key) or searched (``"x" in c.id``)."""
+    if _is_in_namespace(node):
+        assert isinstance(node, ast.Call)
+        if node.keywords or len(node.args) != 1:
+            return True
+        if isinstance(argument := node.args[0], ast.Constant):
+            try:
+                _id_facets.namespace_argument(argument.value)
+            except (TypeError, ValueError):
+                return True
+        return False
+    if (
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Attribute)
+        and isinstance(node.value.value, ast.Name)
+        and node.value.value.id == CHECKS_NAME
+        and node.value.attr in CHECK_FACETS
+    ):
+        return node.attr not in CHECK_FACETS[node.value.attr]
+    if isinstance(node, ast.Compare):
+        operands = [node.left, *node.comparators]
+        return any(
+            not isinstance(op, ast.Is | ast.IsNot)
+            and (_is_bare_id(operands[i]) or _is_bare_id(operands[i + 1]))
+            for i, op in enumerate(node.ops)
+        )
+    if isinstance(node, ast.Set):
+        return any(map(_is_bare_id, node.elts))
+    if isinstance(node, ast.Dict):
+        return any(key is not None and _is_bare_id(key) for key in node.keys)
+    return False
+
+
+@lru_cache(maxsize=256)
+def namespace_reads(expression: str) -> tuple[str, ...]:
+    """The namespace values an expression reads, as a warning names them, in the order
+    ``c.id.ns``, ``c.id.local``, ``c.in_namespace()``, each once.
+
+    Read from its text as parsed, never from evaluating it, so a name inside a string
+    literal is no read. Empty for an expression that reads none, that does not parse,
+    and for one the text shows refused (:func:`_refused`): such a filter has its
+    refusal, and nothing beside it. Cached per string.
+    """
+    reads = _check_reads(expression)
+    if _id_facets.ID_NAME not in reads and _id_facets.IN_NAMESPACE not in reads:
+        return ()
+    # it parses: _check_reads parsed it
+    tree = ast.parse(expression.strip(), mode="eval")
+    found: set[str] = set()
+    for node in ast.walk(tree):
+        if _refused(node):
+            return ()
+        if facet_read(node) == _id_facets.ID_NAME:
+            assert isinstance(node, ast.Attribute)
+            found.add(node.attr)
+        elif _is_in_namespace(node):
+            found.add(_id_facets.IN_NAMESPACE)
+    return tuple(said for name, said in _NAMESPACE_READS if name in found)
+
+
 def reads_a_facet(expression: str) -> bool:
     """Whether an expression reads a facet (``c.source.<facet>``, ``c.id.<facet>``) or
     calls ``c.in_namespace``. False for an expression that does not parse."""

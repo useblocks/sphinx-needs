@@ -26,7 +26,7 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs import _read_watch
 from sphinx_needs._id_facets import IdFacets, in_namespace, namespace_argument
-from sphinx_needs._source_facets import SourceFacets, explained
+from sphinx_needs._source_facets import SourceFacets, explained, namespace_reads
 from sphinx_needs._wording import title_hint
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsFilteredBaseType, NeedsMutable
@@ -865,6 +865,7 @@ def filter_needs_and_parts(
             watch.active = False
     # before either tier, and before the loop: reported even where no need is given
     _report_unknown_types(filter_string, config, location, append_warning)
+    _report_namespaced_ids_off(filter_string, config, location, append_warning)
 
     # === Fast path: try compiled predicate to avoid eval() entirely ===
     compiled = compile_portable(filter_string)
@@ -977,6 +978,52 @@ def _report_unknown_types(
             "filter_type",
             location=location,
         )
+
+
+#: what each namespace value is with ``needs_namespaced_ids`` off, by its name
+_NAMESPACED_IDS_OFF: dict[str, str] = {
+    "c.id.ns": "c.id.ns is empty for every need",
+    "c.id.local": "c.id.local is the whole id",
+    "c.in_namespace()": "c.in_namespace() is false for every need",
+}
+
+
+def _report_namespaced_ids_off(
+    filter_string: str,
+    config: NeedsSphinxConfig,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+) -> None:
+    """Report a filter that reads a namespace value (``c.id.ns``, ``c.id.local``,
+    ``c.in_namespace()``) while ``needs_namespaced_ids`` is off: every id is plain then,
+    so the filter is answered, and what it reads means nothing.
+
+    Decided from the string's text (:func:`~sphinx_needs._source_facets.namespace_reads`),
+    before either tier and whether or not a need is tested; a string the text shows
+    refused is not reported here. Once per build for the string, where it is written and
+    the origin its caller appends, as :func:`_report_unknown_types` reports. The answer
+    is not touched.
+    """
+    if not (names := namespace_reads(filter_string)):
+        return
+    if config.namespaced_ids:
+        return
+    where = get_source_line(location) if isinstance(location, nodes.Node) else location
+    reported = _NEEDS_CONFIG.build.namespaced_ids_off_reported
+    if (key := (filter_string, where, append_warning)) in reported:
+        return
+    reported.add(key)
+    said = names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
+    log_warning(
+        log,
+        f"The filter reads {said}, but namespaced ids are off for this project: "
+        f"{'; '.join(_NAMESPACED_IDS_OFF[name] for name in names)}. Set "
+        "needs_namespaced_ids = True to read '::' in an id as a namespace separator, "
+        "or suppress needs.namespaced_ids_off."
+        + (f" {append_warning}" if append_warning else ""),
+        "namespaced_ids_off",
+        location=location,
+    )
 
 
 def _fast_path_context(
@@ -1107,11 +1154,15 @@ def filter_single_need(
     filter_compiled: CodeType | None = None,
     *,
     origin_docname: str | None = None,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
 ) -> bool:
     """Checks if a single need/need_part passes a filter_string.
 
     A ``c.is_a`` literal naming no need type is reported once per build for the
-    string, which has no location or origin here.
+    string, which has no location or origin here. A namespace value read while
+    ``needs_namespaced_ids`` is off is reported once per build for the string where it
+    is written (*location*) and the origin its caller appends (*append_warning*).
 
     :param need: the data for a single need
     :param config: NeedsSphinxConfig object
@@ -1120,6 +1171,8 @@ def filter_single_need(
     :param current_need: set the current_need in the filter context as this, otherwise the need itself
     :param filter_compiled: An already compiled filter_string to save time
     :param origin_docname: The origin docname that the filter was called from, if any
+    :param location: Where the filter is written, for what is reported of its text
+    :param append_warning: The origin a caller appends to what is reported of its text
 
     :return: True, if need passes the filter_string, else False
     :raises NeedsInvalidFilter: if the filter fails on the need, or is a constant
@@ -1128,6 +1181,7 @@ def filter_single_need(
         raise NeedsInvalidFilter(_constant_filter_message(filter_string))
     # before either tier
     _report_unknown_types(filter_string, config)
+    _report_namespaced_ids_off(filter_string, config, location, append_warning)
     return _filter_single_need(
         need,
         config,

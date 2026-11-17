@@ -534,7 +534,9 @@ With :ref:`needs_namespaced_ids` on, a need id holding ``::`` names a namespace:
   positionally.
 - The three are defined in every project: with :ref:`needs_namespaced_ids` off (the default until 10.0) every need
   is in no namespace, so ``c.id.ns`` is ``""``, ``c.id.local`` is the whole id, and ``c.in_namespace`` selects
-  nothing.
+  nothing. Such a filter string is answered as written and reported as ``needs.namespaced_ids_off``, once per place
+  it is written (a filter refused for another reason keeps that refusal alone; a filter function or filter code,
+  which is Python rather than a filter string, is not read for it).
 - ``c.in_namespace`` with a string literal is in the :ref:`portable filter language <filter_string_performance>`,
   as are the two facets; any other argument (``c.in_namespace(group)``) is evaluated by ``eval``, which gives the
   same answer. A name after ``c.id.`` that is no facet is an error naming the closest one (``c.id.nss``).

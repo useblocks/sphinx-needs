@@ -265,6 +265,7 @@ def process_needgantt(
                     needs_config,
                     current_needgantt["milestone_filter"],
                     origin_docname=current_needgantt["docname"],
+                    location=node,
                 )
             else:
                 is_milestone = False
@@ -347,6 +348,7 @@ def process_needgantt(
                     needs_config,
                     current_needgantt["milestone_filter"],
                     origin_docname=current_needgantt["docname"],
+                    location=node,
                 )
             else:
                 is_milestone = False

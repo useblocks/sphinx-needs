@@ -147,6 +147,11 @@ _FILTER_CODE = "filter"
 #: The finding of a `c.is_a` literal naming no need type, which the header leaves
 #: uncompared: the filter selects nothing, which `expected` compares.
 _UNKNOWN_TYPE_CODE = "filter_type"
+
+#: The finding of a filter reading a namespace value while namespaced ids are off (the
+#: switched-off case's entries), which the corpus has no key for: the filter is answered
+#: as `expected` says, and `test_namespaced_ids_off_warning.py` pins the finding.
+_NAMESPACED_IDS_OFF_CODE = "namespaced_ids_off"
 _CODE = re.compile(r"\[needs\.([a-z_]+)\]$")
 
 
@@ -318,7 +323,11 @@ def _check(app: Any, entry: dict[str, Any]) -> list[str]:
         problem(f"selects {selected}, expected {expected}")
     reported = build_warnings(stream.getvalue()[start:], srcdir=app.srcdir)
     codes = [m[1] if (m := _CODE.search(w)) else w for w in reported]
-    codes = [code for code in codes if code != _UNKNOWN_TYPE_CODE]
+    codes = [
+        code
+        for code in codes
+        if code not in (_UNKNOWN_TYPE_CODE, _NAMESPACED_IDS_OFF_CODE)
+    ]
     want = [_FILTER_CODE] if entry.get("error") else []
     if codes != want:
         problem(f"reports {reported}, expected codes {want}")

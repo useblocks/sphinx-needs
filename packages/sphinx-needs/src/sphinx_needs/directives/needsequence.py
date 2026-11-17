@@ -210,6 +210,7 @@ def process_needsequence(
                 filter=current_needsequence["filter"],
                 counter=counter,
                 origin_docname=current_needsequence["docname"],
+                location=node,
             )
             p_string += p_string_new
             c_string += c_string_new
@@ -358,11 +359,13 @@ def get_message_needs(
     *,
     counter: _MessageCounter,
     origin_docname: str | None = None,
+    location: nodes.Element | None = None,
 ) -> tuple[dict[str, dict[str, Any]], str, str]:
     """Walk the messages sent by ``sender``, drawing each receiver that passes ``filter``.
 
     :param origin_docname: The document the needsequence is written in, so that a
         ``filter`` may test the receiver against it with ``c.this_doc()``.
+    :param location: The needsequence, for what is reported of the ``filter``'s text.
     """
     msg_needs: list[dict[str, Any]] = []
     if tracked_receivers is None:
@@ -402,6 +405,7 @@ def get_message_needs(
                     filter,
                     needs=all_needs_dict.values(),
                     origin_docname=origin_docname,
+                    location=location,
                 ):
                     continue
 
@@ -426,6 +430,7 @@ def get_message_needs(
                         filter=filter,
                         counter=counter,
                         origin_docname=origin_docname,
+                        location=location,
                     )
                     p_string += p_string_new
                     c_string += c_string_new

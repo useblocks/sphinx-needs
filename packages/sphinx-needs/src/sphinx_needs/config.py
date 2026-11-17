@@ -143,6 +143,11 @@ class _BuildData:
     string, where it is written (None where no caller says) and the origin its caller
     appends to its warnings (``(from warning filter 'x')``): once per build, emptied
     where the types are set."""
+    namespaced_ids_off_reported: set[tuple[str, object, str]] = field(
+        default_factory=set
+    )
+    """The filters reported for reading a namespace value while ``needs_namespaced_ids``
+    is off, keyed as :attr:`is_a_reported` is: once per build, emptied with it."""
 
 
 class _Config:

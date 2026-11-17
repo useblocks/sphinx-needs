@@ -426,6 +426,7 @@ def build_graph(
             needs=needs_view.values(),
             location=variant_location,
             origin_docname=attributes["docname"],
+            highlight_location=location,
         ),
     )
 
@@ -489,6 +490,7 @@ def resolve_presentation(
     needs: Iterable[NeedItem | NeedPartItem],
     location: LocationType,
     origin_docname: str | None = None,
+    highlight_location: LocationType | None = None,
 ) -> NodePresentation:
     """Resolve how a single need is to be presented.
 
@@ -500,10 +502,17 @@ def resolve_presentation(
     :param location: Where to report ``border_color`` variant problems.
     :param origin_docname: The document the needflow is written in, so that a
         ``highlight`` filter may test the need against it with ``c.this_doc()``.
+    :param highlight_location: Where the ``highlight`` filter is written, for what is
+        reported of its text.
     :return: The resolved presentation.
     """
     is_highlighted = bool(highlight) and filter_single_need(
-        need, config, highlight, needs, origin_docname=origin_docname
+        need,
+        config,
+        highlight,
+        needs,
+        origin_docname=origin_docname,
+        location=highlight_location,
     )
     resolved_border = None
     if not is_highlighted and border_color:
