@@ -178,6 +178,43 @@ def test_the_rule_row_by_row(
     assert ours[0] == where + _text(*names)
 
 
+def test_the_names_come_in_the_fixed_order(make_app: Any, tmp_path: Path) -> None:
+    """The names are given in the rule's order, not in the order they are written."""
+    index = _needlist('c.in_namespace("nc") and c.id.local != "" and c.id.ns == "nc"')
+    app = _build(make_app, tmp_path, index)
+    (warning,) = _ours(build_warnings(app))
+    assert warning.endswith(_text("c.id.ns", "c.id.local", "c.in_namespace()"))
+
+
+#: filters that read a namespace value, but that the text shows refused: each with the
+#: error it is refused with today
+REFUSED_BY_TEXT: list[tuple[str, str]] = [
+    (
+        'c.id == "nc::REQ_1" or c.id.ns == "nc"',
+        "c.id holds the facets of the id, not the id",
+    ),
+    ('c.id.ns == "" and c.id in {"x"}', "c.id holds the facets of the id, not the id"),
+    ('c.id.nss == "" or c.id.ns == ""', "c.id has no facet 'nss'"),
+    ('c.in_namespace("nc", "m2")', "takes 2 positional arguments but 3 were given"),
+    ('c.in_namespace(namespace="nc")', "positional-only arguments passed as keyword"),
+    ("c.in_namespace(1)", "c.in_namespace takes a namespace as a string, not int"),
+]
+
+
+@pytest.mark.parametrize(("filter_string", "error"), REFUSED_BY_TEXT)
+def test_refused_by_its_text_though_it_reads_a_namespace_value(
+    filter_string: str, error: str, make_app: Any, tmp_path: Path
+) -> None:
+    """A filter that reads a namespace value but that its text shows refused (a
+    compared or hashed ``c.id``, a facet that is none, a call of ``c.in_namespace`` that
+    is not one positional string naming a namespace) keeps its refusal alone."""
+    app = _build(make_app, tmp_path, _needlist(filter_string))
+    warnings = build_warnings(app)
+    assert len(_ours(warnings)) == 0, warnings
+    (refusal,) = [w for w in warnings if w.endswith("[needs.filter]")]
+    assert error in refusal
+
+
 @pytest.mark.parametrize(
     ("row", "filter_string", "error"), REFUSED, ids=[f"row{r[0]}" for r in REFUSED]
 )
@@ -634,6 +671,27 @@ def test_an_unchanged_rebuild_reports_what_it_evaluates_again(
     builder = [w for w in first if "(from need_builder_filter)" in w]
     assert len(builder) == 1, first
     assert [w for w in second if "(from need_builder_filter)" in w] == builder
+
+
+def test_one_application_building_twice_reports_in_each_build(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """Per build, not per application: an application that builds twice (a server
+    rebuilding on change) reports in each build what that build evaluates."""
+    app = _build(
+        make_app,
+        tmp_path,
+        TOGGLE_INDEX,
+        TOGGLE_CONF
+        + "needs_build_json = True\nneeds_builder_filter = 'c.id.ns == \"\"'\n",
+        buildername="html",
+    )
+    first = _ours(build_warnings(app))
+    assert len(first) == 3, first
+    start = len(app._warning.getvalue())
+    app.build(force_all=True)
+    second = _ours(build_warnings(app._warning.getvalue()[start:], srcdir=app.srcdir))
+    assert sorted(second) == sorted(first)
 
 
 @pytest.mark.parametrize("parallel", [0, 2], ids=["serial", "parallel"])
