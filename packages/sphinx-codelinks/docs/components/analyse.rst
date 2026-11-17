@@ -1199,7 +1199,9 @@ reads a header the database does not list through **every entry that includes it
 entry of the header's database (of every database the project's other files find, when
 none is found above the header) whose own parse includes the header, directly, through
 other headers, through a macro ``#include`` or a ``-include``, whatever directory the
-entry's source is in. Each such entry reads the header with its own flags, its own target,
+entry's source is in, and whatever directory finds the header (one of the project's on
+an ``-isystem`` or ``-idirafter`` path counts too, though clang calls it a system
+header). Each such entry reads the header with its own flags, its own target,
 and whatever its source defines before the ``#include``, in the header's **first**
 inclusion into it; a file the database compiles twice counts twice.
 
@@ -1214,14 +1216,17 @@ the header as written, and with one of them no branch of the header is left out:
 - one whose target is unknown (:ref:`preprocessor_target`), and one whose every parse
   clang refuses: no parse decides their branches, so every file their ``-include`` and
   ``-imacros`` flags and their ``#include`` and ``#include_next`` lines name, at any depth
-  and whatever ``#if`` branch the line is in, counts as included (also through a file
-  outside the project, such as an SDK header that includes a project one).
+  and whatever ``#if`` branch the line is in, looked up on their ``-iquote``, ``-I``,
+  ``-isystem`` and ``-idirafter`` paths, counts as included (also through a file outside
+  the project, such as an SDK header that includes a project one).
 
 The header's comments are read from one of the entries whose target is known (the one that
 includes the most project files, the first by the path of its source among equals),
 parsed once more for every header it reads. When none is known, the header is read as
 written by the tree-sitter engine, with the warning the first such entry's includer would
-get (``codelinks.preprocessor_target_unknown`` or ``codelinks.preprocessor_parse_refused``).
+get (``codelinks.preprocessor_target_unknown`` or ``codelinks.preprocessor_parse_refused``);
+so is a header whose reading entry clang refuses when it is parsed again (a file changed
+in between), with that entry's warning.
 When an entry is read for its target without the ``-mcpu=``, ``-march=``, ``-mtune=`` or
 ``-mabi=`` clang refused, and every entry leaves out branches of the header, the header gets
 the same ``codelinks.preprocessor_target_unknown`` warning as that entry's source, worded
