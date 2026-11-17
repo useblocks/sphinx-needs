@@ -76,9 +76,9 @@ experimental; its default changes once, at 10.0.
 ## 4. What does not split, and why it is never refused
 
 With the switch on, an id that holds `::` but does not split cleanly (`A::::B`, `NS::`,
-`std::vector<int>::size`) is a **plain id**. It is never refused: with the rule on by
-default, refusing would break projects whose ids hold `::` for another reason, and every
-import of such a file. An id the project writes or generates is reported at the need, once
+`std::vector<int>::size`) is a **plain id**. It is never refused: with the rule on (by
+default from 10.0), refusing would break projects whose ids hold `::` for another reason,
+and every import of such a file. An id the project writes or generates is reported at the need, once
 per need directive (a duplicate of such an id, refused as a duplicate, is reported for its
 id too), as `needs.id_namespace`, with the class of the problem and the three ways out
 (correct the id; `needs_namespaced_ids = False`; suppress the warning type). It does not
@@ -176,7 +176,7 @@ change) gets a new one for each build, and neither build's pickled environment h
 - *Root-level filter names* (`ns`, `local_id`): lost because they would have to be
   reserved field names, where `c.` can be shadowed by nothing.
 
-## 10. Measurements (unreleased tip, Python 3.13, sphinx 9.2, one machine)
+## 10. Measurements (unreleased tip, Python 3.13, sphinx 9.2, one machine, with `needs_namespaced_ids = True`)
 
 - **Memory**: the needs of a 10 000-need build, held after a pickle round trip
   (`tracemalloc`), against the base without namespaces, the arms interleaved with a null arm

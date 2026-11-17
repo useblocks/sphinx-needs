@@ -1103,6 +1103,20 @@ def test_an_argument_that_is_no_namespace_is_an_error_of_the_filter(
     assert error in messages[0]
 
 
+@pytest.mark.parametrize("test_app", [_filter_project(True)], indirect=True)
+def test_the_text_of_c_id_stays_printable(test_app: Any) -> None:
+    """``str(c.id)`` and ``f"{c.id}"`` are text for messages: not the id, and not an
+    error. A filter comparing that text is answered, and it matches no id."""
+    from sphinx_needs.filter_common import filter_single_need
+
+    app = test_app
+    app.build()
+    need = _needs(app)["nc::REQ_001"]
+    config = NeedsSphinxConfig(app.config)
+    for filter_string in ('str(c.id) == "nc::REQ_001"', 'f"{c.id}" == "nc::REQ_001"'):
+        assert filter_single_need(need, config, filter_string) is False
+
+
 @pytest.mark.parametrize(
     ("filter_string", "tier"),
     [
