@@ -61,6 +61,11 @@ _KIND_RANK: dict[MarkedContentType, int] = {
     MarkedContentType.multiline_need: 2,
 }
 
+# Where the arguments of a file whose every libclang parse was refused are set, as its
+# ``preprocessor_parse_refused`` warning names them (:meth:`SourceAnalyse._warn_parse_refused`).
+_DATABASE = "the compilation database"
+_TABLE = "the `[preprocessor]` table"
+
 
 def _is_alphanumeric(char: str) -> bool:
     """Whether ``char``'s Unicode general category is a letter (L*) or a number (N*).
@@ -483,9 +488,12 @@ class SourceAnalyse:
         resolved = self._resolve_preproc(src_path)
         return resolved[0] if resolved is not None else None
 
-    def _resolve_preproc(self, src_path: Path) -> tuple[list[str], "Decision"] | None:
-        """The arguments ``src_path`` is parsed with, its target decided, and the
-        decision; ``None`` for a compiled source the database has no entry for (read
+    def _resolve_preproc(
+        self, src_path: Path
+    ) -> tuple[list[str], "Decision", bool] | None:
+        """The arguments ``src_path`` is parsed with, its target decided, the decision,
+        and whether they are its own compilation-database entry's (else the ``defines``
+        path's); ``None`` for a compiled source the database has no entry for (read
         through an entry that includes it, or skipped)."""
         from sphinx_codelinks.analyse.preproc import compile_db, target
 
@@ -494,18 +502,18 @@ class SourceAnalyse:
         # the checker and is a cheap defense (an `assert` would trip bandit S101).
         preproc = self.analyse_config.preprocessor
         if preproc is None:
-            return [], target.HOST
+            return [], target.HOST, False
         db_path = self._compile_db_for(src_path)
         if db_path is not None and db_path.is_file():
             flags = self._flags_map_for(db_path)
             if flags is None:
                 # Present-but-malformed/unreadable DB (warned once in the helper):
                 # fall back to the configured defines so extraction still runs.
-                return self._defines_args()
+                return *self._defines_args(), False
             key = src_path.absolute().resolve()
             args = flags.get(key)
             if args is not None:
-                return args, self._entry_decision(db_path, key)
+                return args, self._entry_decision(db_path, key), True
             # Absent from the DB. compile_commands.json lists only compiled
             # translation units, never headers — so a header here is parsed
             # standalone with the global defines (one run = one variant). A
@@ -513,7 +521,7 @@ class SourceAnalyse:
             # read through an entry that includes it, or skipped (spec §3.3).
             if compile_db.is_translation_unit_source(src_path):
                 return None
-            return self._defines_args()
+            return *self._defines_args(), False
         # No readable DB. `find_compile_db` only ever returns a real file, so a
         # non-None `db_path` that reaches here is an explicit `compile_commands`
         # path that is not a readable file (typo/missing): warn and fall back
@@ -524,7 +532,7 @@ class SourceAnalyse:
                 f"codelinks: compile_commands path {db_path} is not a readable "
                 f"file; falling back to the configured defines"
             )
-        return self._defines_args()
+        return *self._defines_args(), False
 
     def _with_builtin_headers(self, args: list[str]) -> list[str]:
         """``args`` with the resource directory that gives a parse clang's builtin
@@ -624,6 +632,29 @@ class SourceAnalyse:
                 location=f"{path}:1",
             )
 
+    def _warn_parse_refused(
+        self,
+        path: Path,
+        decision: "Decision",
+        *,
+        whose: str,
+        fix_in: str,
+        includer: bool = False,
+    ) -> None:
+        """Warn, at its first line, that ``path`` is read as written without libclang
+        because libclang refused every parse of it for a target it reads (``decision``:
+        :meth:`.preproc.target.Decision.refused`), with the arguments of what ``whose``
+        names (its own compilation-database entry, the entry of its includer, or the
+        ``[preprocessor]`` table), which are set in ``fix_in``; through its includer
+        when ``includer``."""
+        message = decision.refused_message(str(path), whose, fix_in, includer=includer)
+        if message is not None:
+            logger.warning(
+                message,
+                subtype="preprocessor_parse_refused",
+                location=f"{path}:1",
+            )
+
     def _includer_candidates(self, db_path: Path, src_path: Path) -> list[Path]:
         """The main files of ``db_path``'s entries whose ``#include`` lines name
         ``src_path``, ordered by path (see :mod:`.preproc.includer`)."""
@@ -647,13 +678,15 @@ class SourceAnalyse:
         it, so it is never needed again. One libclang cannot load confirms nothing.
 
         A candidate whose target is unknown (:attr:`.preproc.target.Decision.unknown`),
-        as decided or after its parse was refused, is not parsed for that: no parse
-        decides which of its ``#include`` lines it compiles, so its ``#include`` lines
-        confirm (the lexical candidates), and each source it includes is read as
+        as decided or after its parse was refused, is not parsed for that, and one whose
+        every parse is refused for a target it reads
+        (:meth:`.preproc.target.Decision.refused`, useblocks/ubcode#4862) has none: no
+        parse decides which of its ``#include`` lines it compiles, so its ``#include``
+        lines confirm (the lexical candidates), and each source it includes is read as
         written, without libclang (:meth:`_read_without_libclang`); but only a source
-        no candidate whose target is known confirms, as a parse that confirms decides
-        more than the text does. Such candidates come after every known one, in path
-        order among themselves.
+        no candidate whose parse reads confirms, as a parse that confirms decides more
+        than the text does. Such candidates come after every other one, in path order
+        among themselves.
 
         :return: The comments read, by the source's position in ``src_files``.
         """
@@ -668,8 +701,8 @@ class SourceAnalyse:
             loader.load_clang_cindex().TranslationUnitLoadError
         )
         read: dict[int, list[LibclangComment]] = {}
-        # the candidates whose target is unknown, with their decisions: they confirm
-        # after every known one
+        # the candidates read as written (their target unknown, or every parse of them
+        # refused), with their decisions: they confirm after every other one
         unknown: dict[tuple[Path, Path], Decision] = {}
         # each unread source's next candidate, by position
         next_candidate = {w.position: 0 for w in waiting}
@@ -686,9 +719,8 @@ class SourceAnalyse:
             database, main = min(
                 heads, key=lambda head: (os.fsencode(head[1]), os.fsencode(head[0]))
             )
-            args = self._with_builtin_headers(
-                (self._flags_map_for(database) or {})[main]
-            )
+            entry_args = (self._flags_map_for(database) or {})[main]
+            args = self._with_builtin_headers(entry_args)
             self.dependencies.update((database, main))
             decision = self._entry_decision(database, main)
             read_for = ""
@@ -705,15 +737,20 @@ class SourceAnalyse:
                         translation_unit_load_error,
                     )
                 except target.AllRefused as refused:
-                    decision = refused.decision
-                    if not decision.unknown:
+                    # its target known, or its command refused, no parse reads it:
+                    # its #include lines confirm, as an unknown one's do
+                    # (useblocks/ubcode#4862), worded by what libclang reported
+                    decision = refused.decision.after_every_refusal(
+                        entry_args, command=loader.refused_by_command(refused.error)
+                    )
+                    if decision.parse_refused:
                         logger.debug(
-                            f"codelinks: {main} could not be loaded as a translation "
-                            f"unit, so it includes no source"
+                            f"codelinks: every parse of {main} was refused; its "
+                            f"#include lines confirm the sources it includes"
                         )
-            if decision.unknown:
+            if decision.unknown or decision.parse_refused:
                 # no parse decides which of its #include lines it compiles: its
-                # #include lines confirm, once no known candidate has
+                # #include lines confirm, once no candidate whose parse reads has
                 tu = None
                 unknown[(database, main)] = decision
             if tu is not None:
@@ -749,12 +786,22 @@ class SourceAnalyse:
             )
             if first is None or w.database is None:
                 continue
+            decision = unknown[(w.database, first)]
             logger.debug(
                 f"codelinks: reading {w.path} as written through {first}, whose "
-                f"#include lines name it and whose target is unknown"
+                f"#include lines name it and which no parse reads"
             )
             read[position] = self._read_without_libclang(w.path)
-            self._warn_target(w.path, unknown[(w.database, first)], "", includer=True)
+            if decision.parse_refused:
+                self._warn_parse_refused(
+                    w.path,
+                    decision,
+                    whose=f"the compilation-database entry of its includer {first}",
+                    fix_in=_DATABASE,
+                    includer=True,
+                )
+            else:
+                self._warn_target(w.path, decision, "", includer=True)
             del unread[position]
         for w in unread.values():
             logger.warning(
@@ -766,8 +813,9 @@ class SourceAnalyse:
 
     def _read_without_libclang(self, path: Path) -> list["LibclangComment"]:
         """The comments of ``path`` read as written without libclang, by the
-        tree-sitter engine: for a file whose target is unknown and whose every parse
-        was refused, and a source read through an includer whose target is unknown.
+        tree-sitter engine: for a file whose every parse was refused (its target
+        unknown, or known: :meth:`.preproc.target.Decision.refused`), and a source read
+        through an includer whose target is unknown or whose every parse was refused.
         No parse decides anything for either, so nothing is lost: every comment is
         kept, attached to no entity, as the libclang engine keeps them."""
         from sphinx_codelinks.analyse.preproc.libclang_parser import LibclangComment
@@ -816,8 +864,8 @@ class SourceAnalyse:
                 )
                 waiting.append(_Waiting(position, src_path, database, candidates))
                 continue
-            args, decision = resolved
-            args = self._with_builtin_headers(args)
+            entry_args, decision, from_entry = resolved
+            args = self._with_builtin_headers(entry_args)
             try:
                 (comments, read_for), _, decision = target.parse_or_again(
                     args,
@@ -828,24 +876,26 @@ class SourceAnalyse:
                     translation_unit_load_error,
                 )
             except target.AllRefused as refused:
-                if refused.decision.unknown:
-                    # its target unknown, the parse was for its comments only: read
-                    # as written without libclang, nothing is lost
-                    read[position] = self._read_without_libclang(src_path)
-                    self._warn_target(src_path, refused.decision, "", includer=False)
-                    continue
-                # Last-resort guard. Standalone parses pin ``-x`` to match the
-                # ``-std`` (see defines_to_args), so the common case — a ``.h``/
-                # ``.c`` header handed a C++ ``-std`` — now parses as C++ and its
-                # markers extract. This only fires if libclang still cannot load
-                # the file as a translation unit at all; skip it rather than
-                # aborting the whole run. Surfaced as a ``warning`` so the silent
-                # data-loss (a file's markers dropped) is visible — accepting
-                # that this fails ``sphinx-build -W``.
-                logger.warning(
-                    f"codelinks: skipping {src_path} — libclang could not load "
-                    f"it as a translation unit"
+                # Its target unknown, the parse was for its comments only; its target
+                # known, no parse read it (a flag of its own refused for that target,
+                # or its command, whatever the target, which the warning names,
+                # useblocks/ubcode#4862): either way, read as written without libclang,
+                # nothing is lost. Worded by what libclang reported.
+                read[position] = self._read_without_libclang(src_path)
+                decision = refused.decision.after_every_refusal(
+                    entry_args, command=loader.refused_by_command(refused.error)
                 )
+                if decision.unknown:
+                    self._warn_target(src_path, decision, "", includer=False)
+                else:
+                    self._warn_parse_refused(
+                        src_path,
+                        decision,
+                        whose=(
+                            "its compilation-database entry" if from_entry else _TABLE
+                        ),
+                        fix_in=_DATABASE if from_entry else _TABLE,
+                    )
             else:
                 read[position] = comments
                 self._warn_target(src_path, decision, read_for, includer=False)

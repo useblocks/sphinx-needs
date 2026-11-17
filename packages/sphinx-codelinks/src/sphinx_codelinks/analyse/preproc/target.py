@@ -37,9 +37,14 @@ not): any refused parse is made again keeping its target and leaving out the ent
 ``-mcpu=``, ``-march=``, ``-mtune=`` and ``-mabi=``, and, for a declared triple (the
 entry's own or an inserted one), then without the triple and those flags
 (:func:`parse_or_again`). So a declared target never leaves a file unread that would be
-read without it. A file is still skipped, as before targets were read, when its target
-is known (the host's own, or a declared one read without the CPU flags) and what is
-left of its flags is refused for it too (``-mfpmath=sse`` on an Arm64 machine).
+read without it. When its target is known (the host's own: a declared one is dropped by
+the last parse made again) and what is left of its flags is refused for it too
+(``-mfpmath=sse`` on an Arm64 machine, ``-mfpmath=vfp`` on every one), no parse reads it
+(:meth:`Decision.refused`): it is read as written, as a file whose target is unknown is,
+with a warning of its own (``preprocessor_parse_refused``, useblocks/ubcode#4862). So is
+a file whose command libclang does not run at all, whatever the target (a second input
+file, a ``-std`` it does not know): the warning then names the command's arguments,
+not a target (:attr:`NotRead.command_refused`).
 
 A file whose build declares a target the engine cannot read (an entry's own triple
 libclang does not model, the setting's for a file that takes it, a compiler's name's GCC
@@ -111,6 +116,18 @@ class NotRead(enum.StrEnum):
     """libclang refused the parse with the declared target (the entry's own or an
     inserted one), with the entry's flags and without its :data:`REFUSABLE_FLAGS` (none
     when the entry has none): the target is unknown, and the file is read as written."""
+    parse_refused = "parse_refused"
+    """libclang refused every parse of the file for a target it reads (the host's own: a
+    declared one is left out of the last parse made again), with the entry's flags and
+    without its :data:`REFUSABLE_FLAGS`, as it refuses a flag for a target
+    (``CXError_Failure``: ``-mfpmath=vfp``) (:meth:`Decision.refused`): no parse decides
+    an arm, and the file is read as written, without libclang. The target is known, not
+    unknown."""
+    command_refused = "command_refused"
+    """libclang refused every parse of the file, as it refuses a command it cannot run at
+    all, whatever the target (``CXError_ASTReadError`` or a crash: a second input file,
+    a ``-std`` it does not know, a ``-Xclang`` flag); read as :attr:`parse_refused`
+    is."""
 
 
 @dataclass(frozen=True)
@@ -133,7 +150,7 @@ class Unmodelled:
     def fallback(self) -> str:
         """Why, as ubCode's report spells it: ``unmodelled`` (an entry's own triple),
         ``setting_unmodelled``, ``prefix_unmodelled``, ``flags_refused``,
-        ``target_refused``."""
+        ``target_refused``, ``parse_refused``, ``command_refused``."""
         if self.why is NotRead.unmodelled and self.by is TargetSource.setting:
             return "setting_unmodelled"
         return str(self.why)
@@ -216,10 +233,81 @@ _UNKNOWN = frozenset(
 )
 """The reasons that leave a file's target unknown (:attr:`Decision.unknown`)."""
 
+_REFUSED = frozenset({NotRead.parse_refused, NotRead.command_refused})
+"""The reasons of a file whose every parse libclang refused for a target it reads
+(:attr:`Decision.parse_refused`)."""
+
 
 def _spelled(flags: tuple[str, ...]) -> str:
     """``flags`` as a finding names them: each in backticks, joined by ``, ``."""
     return ", ".join(f"`{flag}`" for flag in flags)
+
+
+_LISTED_ARGUMENTS = 12
+"""At most this many of a refused command's arguments are listed by its warning
+(:func:`_listed`); the rest are counted."""
+
+
+def _listed(args: tuple[str, ...]) -> str:
+    """``args``, a refused command's, as its warning lists them: each in backticks, at
+    most :data:`_LISTED_ARGUMENTS`, the rest counted; ``none`` when there are none."""
+    if not args:
+        return "none"
+    shown = _spelled(args[:_LISTED_ARGUMENTS])
+    more = len(args) - _LISTED_ARGUMENTS
+    return f"{shown}, and {more} more" if more > 0 else shown
+
+
+_SEPARATE_VALUE = frozenset(
+    {
+        "-D",
+        "-U",
+        "-I",
+        "-F",
+        "-include",
+        "-imacros",
+        "-isystem",
+        "-iquote",
+        "-idirafter",
+        "-isysroot",
+        "-iprefix",
+        "-iwithprefix",
+        "-iwithprefixbefore",
+        "-x",
+        "-target",
+        "-arch",
+        "-o",
+        "-include-pch",
+        "-iframework",
+        "-isystem-after",
+        "-iwithsysroot",
+        "-imultilib",
+        "--sysroot",
+        "-B",
+        "-L",
+        "-l",
+        "-T",
+        "-u",
+        # an entry's own ``-resource-dir`` is listed (the engine's is not passed)
+        "-resource-dir",
+    }
+)
+"""The options whose value is the next argument, as the driver reads them in a
+compile's arguments: their value is not an input file."""
+
+
+def _positional_inputs(args: tuple[str, ...]) -> tuple[str, ...]:
+    """The input files among ``args`` (a compile's arguments, the entry's own file left
+    out): every argument that is no option, nor an option's value (one that
+    :data:`_SEPARATE_VALUE` names, or one an option hands on, ``-Xclang <arg>``)."""
+    inputs: list[str] = []
+    arguments = iter(args)
+    for arg in arguments:
+        if passes_next_argument(arg) or arg in _SEPARATE_VALUE:
+            next(arguments, None)
+        elif not arg.startswith("-"):
+            inputs.append(arg)
+    return tuple(inputs)
 
 
 @dataclass(frozen=True)
@@ -247,8 +335,13 @@ class Decision:
     (:func:`again`); empty for a parse as decided."""
     refused_with: tuple[str, ...] = ()
     """Every ``-m`` flag of the entry (but the :data:`REFUSABLE_FLAGS`) in the parse that
-    refused a declared triple (:attr:`NotRead.target_refused`), listed by the warning:
-    not the one clang refused, which libclang does not say; empty otherwise."""
+    refused a declared triple (:attr:`NotRead.target_refused`), or every parse of the
+    file (:attr:`NotRead.parse_refused`), listed by the warning: not the one clang
+    refused, which libclang does not say; empty otherwise."""
+    command: tuple[str, ...] = ()
+    """The arguments of a command libclang refused (:attr:`NotRead.command_refused`), as
+    the entry gives them (the engine's own left out), listed by the warning; empty
+    otherwise."""
 
     @property
     def unknown(self) -> bool:
@@ -260,8 +353,143 @@ class Decision:
         refused the declared triple (the entry's own, or one the engine
         inserted) with the entry's flags even without its :data:`REFUSABLE_FLAGS`. Not for flags refused with a target that is
         then read (:attr:`NotRead.flags_refused`), nor for a build that declares none
-        (the host, stated)."""
+        (the host, stated), nor for a file whose every parse was refused for a target
+        it reads (:attr:`parse_refused`: read as written too, its target known)."""
         return self.unmodelled is not None and self.unmodelled.why in _UNKNOWN
+
+    @property
+    def parse_refused(self) -> bool:
+        """Whether libclang refused every parse of the file for a target it reads
+        (:meth:`refused`), with a flag or its command."""
+        return self.unmodelled is not None and self.unmodelled.why in _REFUSED
+
+    def refused(self, args: list[str], *, command: bool) -> Decision:
+        """The decision for a file whose every parse of ``args`` (the parse's own
+        arguments, as decided) libclang refused, for a target it reads (:attr:`unknown`
+        is not: a declared triple is left out of the last parse made again, which then
+        leaves it unknown): no parse decides an arm, and the file is read as written
+        without libclang, its source still where its target came from. ``command`` when
+        libclang refused the command itself (:attr:`NotRead.command_refused`: it names
+        the arguments, :attr:`command`), else the target with a flag of the entry's
+        (:attr:`NotRead.parse_refused`: it names every ``-m`` flag of the entry,
+        :attr:`refused_with`, and the :data:`REFUSABLE_FLAGS` left out of a parse made
+        again, :attr:`left_out`)."""
+        why = NotRead.command_refused if command else NotRead.parse_refused
+        unmodelled = Unmodelled(self.declared or "", self.source, self.flag, why)
+        if command:
+            return replace(
+                self,
+                unmodelled=unmodelled,
+                left_out=(),
+                refused_with=(),
+                command=self._entry_arguments(args),
+            )
+        kept, left_out = _without_refusable_flags(args)
+        return replace(
+            self,
+            unmodelled=unmodelled,
+            refused_with=_machine_flags(kept),
+            left_out=left_out,
+            command=(),
+        )
+
+    def _entry_arguments(self, args: list[str]) -> tuple[str, ...]:
+        """``args``, a parse's arguments before the engine adds clang's builtin headers
+        (its ``-resource-dir`` and value: an entry's own is kept), as the entry gives
+        them: without the engine's own ``-working-directory=`` and a ``--target=`` it
+        inserted."""
+        inserted = (
+            f"--target={self.declared}"
+            if self.declared is not None and self.source.inserted
+            else None
+        )
+        return tuple(
+            arg
+            for arg in args
+            if not arg.startswith(WORKING_DIRECTORY_FLAG) and arg != inserted
+        )
+
+    def after_every_refusal(self, args: list[str], *, command: bool) -> Decision:
+        """The decision that reports a file whose every parse libclang refused, this
+        being the last parse's, made with ``args`` (as for :meth:`refused`), and
+        ``command`` when libclang refused that parse for its command
+        (:func:`.loader.refused_by_command`). A known target gives :meth:`refused`. An
+        unknown one stays unknown, read as written with the
+        ``preprocessor_target_unknown`` warning, but for a declared triple whose last
+        parse, without it, was refused for its command (a second input file, a ``-std``
+        clang does not know): the command was refused, not the target, so it is
+        :attr:`NotRead.command_refused`, its declared target kept as its source."""
+        refused_target = (
+            self.unmodelled is not None
+            and self.unmodelled.why is NotRead.target_refused
+        )
+        if self.unknown and not (command and refused_target):
+            return self
+        return self.refused(args, command=command)
+
+    def refused_message(
+        self, file: str, whose: str, fix_in: str, *, includer: bool = False
+    ) -> str | None:
+        """The message of the ``preprocessor_parse_refused`` warning about ``file``,
+        whose every parse libclang refused (:meth:`refused`), parsed with the arguments
+        of what ``whose`` names (``its compilation-database entry``, ``the
+        compilation-database entry of its includer <path>``, ``the `[preprocessor]`
+        table``), which are set in ``fix_in`` (``the compilation database``, ``the
+        `[preprocessor]` table``), through its includer when ``includer``; ``None`` when
+        its parse was not refused. A command refused names the target its build
+        declares, if any (:meth:`after_every_refusal`). Worded as ubCode's finding is,
+        without its symbol inventory, which sphinx-codelinks does not have, and with
+        Sphinx's ``suppress_warnings`` for its ``[lint]`` tables."""
+        unmodelled = self.unmodelled
+        if unmodelled is None or not self.parse_refused:
+            return None
+        tail = "Nothing is hidden: every marker is kept, only less precisely."
+        accept = (
+            "to accept it as written, add `codelinks.preprocessor_parse_refused` to "
+            "Sphinx's `suppress_warnings`"
+        )
+        opening = (
+            f"codelinks: {file} is read as written, no `#if` arm left out, without "
+            f"libclang: the libclang sphinx-codelinks loaded refused"
+        )
+        if unmodelled.why is NotRead.command_refused:
+            inputs = _positional_inputs(self.command)
+            own = "the includer's own" if includer else "this one"
+            besides = (
+                f"; input files besides {own}: {_spelled(inputs)}" if inputs else ""
+            )
+            declared = (
+                f" for {unmodelled.triple} ({unmodelled.declarer(includer)})"
+                if unmodelled.triple
+                else ""
+            )
+            return (
+                f"{opening} the arguments of {whose}{declared}, which hold a flag or an "
+                f"input file "
+                f"it does not take (libclang does not say which{besides}): "
+                f"{_listed(self.command)}. {tail} To read it, remove or change what "
+                f"libclang does not take in {fix_in}; {accept}"
+            )
+        # A declared target is left out of the last parse made again, whose refusal
+        # leaves the target unknown: this file's is the host's. The other spelling is
+        # kept for a decision built some other way.
+        read_for = (
+            f"the target {unmodelled.triple}"
+            if unmodelled.triple
+            else "the machine sphinx-codelinks runs on (its build names no target)"
+        )
+        refused_with = (
+            f" (its `-m` flags: {_spelled(self.refused_with)})"
+            if self.refused_with
+            else ""
+        )
+        without = f", and without {_spelled(self.left_out)}" if self.left_out else ""
+        return (
+            f"{opening} every parse of it for {read_for} with the flags of "
+            f"{whose}{refused_with}{without} (libclang does not say which flag it "
+            f"refused). {tail} To read it for its target, remove or change the refused "
+            f"flag in {fix_in}; {accept}"
+        )
 
     def not_read(self) -> tuple[str, str | None] | None:
         """Why the file is not read for the target its build declares, as ubCode's
@@ -275,9 +503,10 @@ class Decision:
         """The message of the ``preprocessor_target_unknown`` finding about ``file``,
         read for ``read_for`` (the triple libclang parsed it for), through its includer
         when ``includer``; ``None`` when the file is read for the target its build
-        declares. Worded as ubCode's finding is."""
+        declares, and for a file whose every parse was refused, whose warning is
+        another (:meth:`refused_message`). Worded as ubCode's finding is."""
         unmodelled = self.unmodelled
-        if unmodelled is None:
+        if unmodelled is None or self.parse_refused:
             return None
         if self.unknown:
             return unmodelled.as_written_message(
@@ -505,13 +734,17 @@ def again(args: list[str], decision: Decision) -> list[tuple[list[str], Decision
 
 class AllRefused(Exception):
     """Every parse :func:`parse_or_again` made was refused; :attr:`decision` reports
-    the last one made, which says whether the file's target is unknown (it is then
-    read as written without libclang) or known (it is skipped)."""
+    the last one made, which says whether the file's target is unknown or known (then
+    :meth:`Decision.refused` gives the decision that reports it): either way it is read
+    as written without libclang."""
 
-    def __init__(self, decision: Decision) -> None:
+    def __init__(self, decision: Decision, error: BaseException | None = None) -> None:
         super().__init__(f"every parse was refused ({decision.not_read()})")
         self.decision = decision
         """The decision of the last parse made."""
+        self.error = error
+        """The error the last parse made raised, which says why libclang refused it
+        (:func:`.loader.refused_by_command`)."""
 
 
 def parse_or_again(
@@ -527,9 +760,9 @@ def parse_or_again(
     declared target never leaves a file unread that would be read without it.
 
     :raises AllRefused: When every parse is refused, with the decision of the last
-        one made: the caller reads a file whose target it leaves unknown without
-        libclang, and skips any other with a warning (its target is known, and a
-        refused flag of its own decides its arms).
+        one made: the caller reads the file as written without libclang, its target
+        unknown as that decision says, or, known, with the decision
+        :meth:`Decision.refused` gives (useblocks/ubcode#4862).
     """
     try:
         return parse(args, decision), args, decision
@@ -541,7 +774,7 @@ def parse_or_again(
             return parse(attempt, refused), attempt, refused
         except refusal as error:
             last = error
-    raise AllRefused(refused) from last
+    raise AllRefused(refused, last) from last
 
 
 def _machine_flags(args: list[str]) -> tuple[str, ...]:

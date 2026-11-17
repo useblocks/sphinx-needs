@@ -58,11 +58,10 @@ def _is_in_skipped(line: int, skipped: list[tuple[int, int]]) -> bool:
 def parse_translation_unit(file_path: Path, args: list[str]) -> Any:
     """Parse ``file_path`` as a translation unit with ``args``.
 
-    :raises clang.cindex.TranslationUnitLoadError: libclang could not load it.
+    :raises clang.cindex.TranslationUnitLoadError: libclang could not load it; the
+        error says why (:func:`.loader.parse_error`).
     """
-    cx = loader.load_clang_cindex()
-    index = cx.Index.create()
-    return index.parse(str(file_path), args=args, options=loader.PARSE_OPTIONS)
+    return loader.parse_translation_unit(file_path, args, loader.PARSE_OPTIONS)
 
 
 # @Drop comments inside inactive preprocessor branches, IMPL_PREPROC_2, impl, [FE_PREPROC]
