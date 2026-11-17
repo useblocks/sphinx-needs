@@ -530,7 +530,7 @@ def test_no_warning_switched_off_or_suppressed(test_app: Any) -> None:
 
 @pytest.mark.parametrize(
     "test_app",
-    [_unclean_project('extensions = ["sphinx_needs"]\nneeds_id_regex = "^X"\n')],
+    [_unclean_project(ON + 'needs_id_regex = "^X"\n')],
     indirect=True,
 )
 def test_a_refused_need_is_reported_for_its_refusal(test_app: Any) -> None:
