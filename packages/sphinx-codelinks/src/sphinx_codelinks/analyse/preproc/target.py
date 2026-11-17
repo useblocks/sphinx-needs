@@ -277,6 +277,19 @@ _SEPARATE_VALUE = frozenset(
         "-target",
         "-arch",
         "-o",
+        "-include-pch",
+        "-iframework",
+        "-isystem-after",
+        "-iwithsysroot",
+        "-imultilib",
+        "--sysroot",
+        "-B",
+        "-L",
+        "-l",
+        "-T",
+        "-u",
+        # an entry's own ``-resource-dir`` is listed (the engine's is not passed)
+        "-resource-dir",
     }
 )
 """The options whose value is the next argument, as the driver reads them in a
@@ -381,32 +394,52 @@ class Decision:
         )
 
     def _entry_arguments(self, args: list[str]) -> tuple[str, ...]:
-        """``args``, a parse's arguments, as the entry gives them: without the engine's
-        own (``-working-directory=``, ``-resource-dir`` and its value, a ``--target=``
-        it inserted)."""
+        """``args``, a parse's arguments before the engine adds clang's builtin headers
+        (its ``-resource-dir`` and value: an entry's own is kept), as the entry gives
+        them: without the engine's own ``-working-directory=`` and a ``--target=`` it
+        inserted."""
         inserted = (
             f"--target={self.declared}"
             if self.declared is not None and self.source.inserted
             else None
         )
-        kept: list[str] = []
-        arguments = iter(args)
-        for arg in arguments:
-            if arg == "-resource-dir":
-                next(arguments, None)
-            elif not arg.startswith(WORKING_DIRECTORY_FLAG) and arg != inserted:
-                kept.append(arg)
-        return tuple(kept)
+        return tuple(
+            arg
+            for arg in args
+            if not arg.startswith(WORKING_DIRECTORY_FLAG) and arg != inserted
+        )
 
-    def refused_message(self, file: str, whose: str, fix_in: str) -> str | None:
+    def after_every_refusal(self, args: list[str], *, command: bool) -> Decision:
+        """The decision that reports a file whose every parse libclang refused, this
+        being the last parse's, made with ``args`` (as for :meth:`refused`), and
+        ``command`` when libclang refused that parse for its command
+        (:func:`.loader.refused_by_command`). A known target gives :meth:`refused`. An
+        unknown one stays unknown, read as written with the
+        ``preprocessor_target_unknown`` warning, but for a declared triple whose last
+        parse, without it, was refused for its command (a second input file, a ``-std``
+        clang does not know): the command was refused, not the target, so it is
+        :attr:`NotRead.command_refused`, its declared target kept as its source."""
+        refused_target = (
+            self.unmodelled is not None
+            and self.unmodelled.why is NotRead.target_refused
+        )
+        if self.unknown and not (command and refused_target):
+            return self
+        return self.refused(args, command=command)
+
+    def refused_message(
+        self, file: str, whose: str, fix_in: str, *, includer: bool = False
+    ) -> str | None:
         """The message of the ``preprocessor_parse_refused`` warning about ``file``,
         whose every parse libclang refused (:meth:`refused`), parsed with the arguments
         of what ``whose`` names (``its compilation-database entry``, ``the
         compilation-database entry of its includer <path>``, ``the `[preprocessor]`
         table``), which are set in ``fix_in`` (``the compilation database``, ``the
-        `[preprocessor]` table``); ``None`` when its parse was not refused. Worded as
-        ubCode's finding is, without its symbol inventory, which sphinx-codelinks does
-        not have, and with Sphinx's ``suppress_warnings`` for its ``[lint]`` tables."""
+        `[preprocessor]` table``), through its includer when ``includer``; ``None`` when
+        its parse was not refused. A command refused names the target its build
+        declares, if any (:meth:`after_every_refusal`). Worded as ubCode's finding is,
+        without its symbol inventory, which sphinx-codelinks does not have, and with
+        Sphinx's ``suppress_warnings`` for its ``[lint]`` tables."""
         unmodelled = self.unmodelled
         if unmodelled is None or not self.parse_refused:
             return None
@@ -421,11 +454,18 @@ class Decision:
         )
         if unmodelled.why is NotRead.command_refused:
             inputs = _positional_inputs(self.command)
+            own = "the includer's own" if includer else "this one"
             besides = (
-                f"; input files besides this one: {_spelled(inputs)}" if inputs else ""
+                f"; input files besides {own}: {_spelled(inputs)}" if inputs else ""
+            )
+            declared = (
+                f" for {unmodelled.triple} ({unmodelled.declarer(includer)})"
+                if unmodelled.triple
+                else ""
             )
             return (
-                f"{opening} the arguments of {whose}, which hold a flag or an input file "
+                f"{opening} the arguments of {whose}{declared}, which hold a flag or an "
+                f"input file "
                 f"it does not take (libclang does not say which{besides}): "
                 f"{_listed(self.command)}. {tail} To read it, remove or change what "
                 f"libclang does not take in {fix_in}; {accept}"

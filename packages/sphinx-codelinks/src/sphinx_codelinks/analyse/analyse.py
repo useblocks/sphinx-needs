@@ -633,14 +633,21 @@ class SourceAnalyse:
             )
 
     def _warn_parse_refused(
-        self, path: Path, decision: "Decision", *, whose: str, fix_in: str
+        self,
+        path: Path,
+        decision: "Decision",
+        *,
+        whose: str,
+        fix_in: str,
+        includer: bool = False,
     ) -> None:
         """Warn, at its first line, that ``path`` is read as written without libclang
         because libclang refused every parse of it for a target it reads (``decision``:
         :meth:`.preproc.target.Decision.refused`), with the arguments of what ``whose``
         names (its own compilation-database entry, the entry of its includer, or the
-        ``[preprocessor]`` table), which are set in ``fix_in``."""
-        message = decision.refused_message(str(path), whose, fix_in)
+        ``[preprocessor]`` table), which are set in ``fix_in``; through its includer
+        when ``includer``."""
+        message = decision.refused_message(str(path), whose, fix_in, includer=includer)
         if message is not None:
             logger.warning(
                 message,
@@ -712,9 +719,8 @@ class SourceAnalyse:
             database, main = min(
                 heads, key=lambda head: (os.fsencode(head[1]), os.fsencode(head[0]))
             )
-            args = self._with_builtin_headers(
-                (self._flags_map_for(database) or {})[main]
-            )
+            entry_args = (self._flags_map_for(database) or {})[main]
+            args = self._with_builtin_headers(entry_args)
             self.dependencies.update((database, main))
             decision = self._entry_decision(database, main)
             read_for = ""
@@ -731,14 +737,13 @@ class SourceAnalyse:
                         translation_unit_load_error,
                     )
                 except target.AllRefused as refused:
-                    decision = refused.decision
-                    if not decision.unknown:
-                        # its target known, no parse reads it: its #include lines
-                        # confirm, as an unknown one's do (useblocks/ubcode#4862),
-                        # worded by what libclang reported
-                        decision = decision.refused(
-                            args, command=loader.refused_by_command(refused.error)
-                        )
+                    # its target known, or its command refused, no parse reads it:
+                    # its #include lines confirm, as an unknown one's do
+                    # (useblocks/ubcode#4862), worded by what libclang reported
+                    decision = refused.decision.after_every_refusal(
+                        entry_args, command=loader.refused_by_command(refused.error)
+                    )
+                    if decision.parse_refused:
                         logger.debug(
                             f"codelinks: every parse of {main} was refused; its "
                             f"#include lines confirm the sources it includes"
@@ -793,6 +798,7 @@ class SourceAnalyse:
                     decision,
                     whose=f"the compilation-database entry of its includer {first}",
                     fix_in=_DATABASE,
+                    includer=True,
                 )
             else:
                 self._warn_target(w.path, decision, "", includer=True)
@@ -858,8 +864,8 @@ class SourceAnalyse:
                 )
                 waiting.append(_Waiting(position, src_path, database, candidates))
                 continue
-            args, decision, from_entry = resolved
-            args = self._with_builtin_headers(args)
+            entry_args, decision, from_entry = resolved
+            args = self._with_builtin_headers(entry_args)
             try:
                 (comments, read_for), _, decision = target.parse_or_again(
                     args,
@@ -872,19 +878,19 @@ class SourceAnalyse:
             except target.AllRefused as refused:
                 # Its target unknown, the parse was for its comments only; its target
                 # known, no parse read it (a flag of its own refused for that target,
-                # which the warning names, useblocks/ubcode#4862): either way, read as
-                # written without libclang, nothing is lost.
+                # or its command, whatever the target, which the warning names,
+                # useblocks/ubcode#4862): either way, read as written without libclang,
+                # nothing is lost. Worded by what libclang reported.
                 read[position] = self._read_without_libclang(src_path)
-                if refused.decision.unknown:
-                    self._warn_target(src_path, refused.decision, "", includer=False)
+                decision = refused.decision.after_every_refusal(
+                    entry_args, command=loader.refused_by_command(refused.error)
+                )
+                if decision.unknown:
+                    self._warn_target(src_path, decision, "", includer=False)
                 else:
-                    # worded by what libclang reported: a flag the target does not
-                    # take, or a command it does not run at all
                     self._warn_parse_refused(
                         src_path,
-                        refused.decision.refused(
-                            args, command=loader.refused_by_command(refused.error)
-                        ),
+                        decision,
                         whose=(
                             "its compilation-database entry" if from_entry else _TABLE
                         ),
