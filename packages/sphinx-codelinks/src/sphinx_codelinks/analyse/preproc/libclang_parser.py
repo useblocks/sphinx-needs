@@ -12,6 +12,7 @@ from sphinx_codelinks.analyse.preproc.headers import (
     Contribution,
     SkippedSpan,
     contribution,
+    lexical,
     wholly_skipped,
 )
 from sphinx_codelinks.analyse.preproc.loader import SkippedRange
@@ -133,31 +134,34 @@ def included_files(tu: Any, working_directory: Path) -> set[Path]:
     A relative name (a file found through a relative include directory) is taken
     against ``working_directory``, as in :func:`main_file_inclusions`.
     """
-    return set(_included(tu, working_directory, system=False))
-
-
-def every_included_file(tu: Any, working_directory: Path) -> set[Path]:
-    """Every file the unit included, at any depth, canonical, system headers too: a
-    project file found through ``-isystem``, ``-idirafter`` or a system directory is
-    one (useblocks/ubcode#4866), so the caller keeps what is the project's."""
-    return set(_included(tu, working_directory, system=True))
-
-
-def _included(tu: Any, working_directory: Path, *, system: bool) -> dict[Path, Any]:
-    """:func:`included_files` (with ``system``, :func:`every_included_file`), each
-    with its ``clang.cindex.File``."""
     cx = loader.load_clang_cindex()
-    out: dict[Path, Any] = {}
+    out: set[Path] = set()
     for inclusion in tu.get_includes():
         file = inclusion.include
         if file is None:
             continue
-        if (
-            not system
-            and cx.SourceLocation.from_offset(tu, file, 0).is_in_system_header
-        ):
+        if cx.SourceLocation.from_offset(tu, file, 0).is_in_system_header:
             continue
-        out.setdefault((working_directory / file.name).resolve(), file)
+        out.add((working_directory / file.name).resolve())
+    return out
+
+
+def project_included_files(
+    tu: Any, working_directory: Path, keep: Callable[[Path], bool]
+) -> set[Path]:
+    """Every file the unit included, at any depth, canonical, system headers too, that
+    ``keep`` keeps by its canonical path or by the path the compiler names it by
+    (:func:`.headers.lexical`: a project directory that is a symbolic link to
+    elsewhere)."""
+    out: set[Path] = set()
+    for inclusion in tu.get_includes():
+        file = inclusion.include
+        if file is None:
+            continue
+        spelled = working_directory / file.name
+        path = spelled.resolve()
+        if keep(path) or keep(lexical(spelled)):
+            out.add(path)
     return out
 
 
@@ -165,9 +169,10 @@ def unit_contributions(
     tu: Any, working_directory: Path, main: Path, keep: Callable[[Path], bool]
 ) -> dict[Path, Contribution]:
     """What the unit ``tu``, its target known, contributes to each file it includes
-    (:func:`every_included_file`, with ``working_directory``: system headers too, as a
-    project file found through ``-isystem`` is one) that ``keep`` keeps, but its main
-    file ``main`` (canonical): the ranges its preprocessor skipped in the file's
+    (every one, with ``working_directory``: system headers too, as a project file found
+    through ``-isystem`` is one) that ``keep`` keeps by its canonical
+    path or by the path the compiler names it by (:func:`.headers.lexical`), keyed by
+    the canonical one, but its main file ``main`` (canonical): the ranges its preprocessor skipped in the file's
     first entry, or the file as written when a later entry (an ``#include`` or a
     ``-include``) compiles some of it (:func:`.headers.contribution`,
     useblocks/ubcode#4866). A later entry is told from the first by where its skipped
@@ -175,13 +180,19 @@ def unit_contributions(
     compiles the file, unless the file holds nothing but comments."""
     entries: dict[Path, int] = {}
     files: dict[Path, Any] = {}
+    # each file's canonical path, and whether it is the project's: by its canonical
+    # path, or by the path the compiler names it by (a project directory that is a
+    # symbolic link to elsewhere)
+    kept: dict[Path, bool] = {}
     for inclusion in tu.get_includes():
         file = inclusion.include
         if file is None:
             continue
-        path = (working_directory / file.name).resolve()
+        spelled = working_directory / file.name
+        path = spelled.resolve()
         files.setdefault(path, file)
         entries[path] = entries.get(path, 0) + 1
+        kept[path] = kept.get(path, False) or keep(path) or keep(lexical(spelled))
     later_ranges: dict[Path, dict[int, list[tuple[int, int]]]] = {}
     if any(count > 1 for count in entries.values()):
         for sr in loader.get_all_skipped_ranges(tu):
@@ -194,7 +205,7 @@ def unit_contributions(
                 )
     contributions: dict[Path, Contribution] = {}
     for path, file in files.items():
-        if path == main or not keep(path):
+        if path == main or not kept[path]:
             continue
         first = [
             SkippedSpan(sr.start_offset, sr.end_offset, sr.start_line, sr.end_line)

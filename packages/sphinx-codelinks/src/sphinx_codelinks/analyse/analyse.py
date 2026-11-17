@@ -45,6 +45,7 @@ from sphinx_codelinks.source_discover.config import CommentType
 
 if TYPE_CHECKING:
     from sphinx_codelinks.analyse.preproc.headers import (
+        ClosureMemo,
         SkippedSpan,
         UnitKey,
         UnitRecord,
@@ -378,6 +379,9 @@ class SourceAnalyse:
         # The readable databases the analysis' files resolved to, in the order found:
         # a header with no database of its own is read through their entries.
         self._databases_found: dict[Path, None] = {}
+        # what the lexical closures of this analysis' units share (each file's
+        # directives, each lookup of a name), made with the first
+        self._closure_memo: ClosureMemo | None = None
         self.unit_memo: dict[UnitKey, UnitRecord] = (
             unit_memo if unit_memo is not None else {}
         )
@@ -1099,22 +1103,24 @@ class SourceAnalyse:
             loader.load_clang_cindex().TranslationUnitLoadError
         )
         main = key.main
+        # a project file: under the project's root, canonical or as given (a path the
+        # compiler names through a symbolic link in it)
+        given = self.project_path.absolute()
 
         def keep(path: Path) -> bool:
-            return path.is_relative_to(root)
+            return path.is_relative_to(root) or path.is_relative_to(given)
 
         def parse(attempt: list[str], _decision: "Decision") -> Any:
             return libclang_parser.parse_translation_unit(main, attempt)
 
         def as_written(tu: Any, how: headers.Contribution) -> dict[Path, Any]:
-            files = headers.lexical_closure(main, entry_args, keep)
+            if self._closure_memo is None:
+                self._closure_memo = headers.ClosureMemo()
+            files = headers.lexical_closure(main, entry_args, keep, self._closure_memo)
             if tu is not None:
                 working = compile_db.working_directory(args)
-                files |= {
-                    path
-                    for path in libclang_parser.every_included_file(tu, working)
-                    if path != main and keep(path)
-                }
+                files |= libclang_parser.project_included_files(tu, working, keep)
+                files.discard(main)
             return dict.fromkeys(files, how)
 
         triple: str | None = None

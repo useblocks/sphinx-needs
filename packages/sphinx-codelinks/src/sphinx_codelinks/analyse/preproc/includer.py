@@ -13,10 +13,12 @@ Nothing here needs libclang, but the module lives in the optional engine's packa
 
 from __future__ import annotations
 
+import enum
 import os
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import NamedTuple
 
 from sphinx_codelinks.analyse.preproc.compile_db import (
     WORKING_DIRECTORY_FLAG,
@@ -138,29 +140,26 @@ class SearchPath:
     quote: tuple[Path, ...]
     """``-iquote`` directories: searched for a quoted name only."""
     angled: tuple[Path, ...]
-    """``-I`` directories, then ``-isystem`` directories (then ``-idirafter`` ones, when
-    asked for): searched for both forms."""
+    """``-I`` directories, then ``-isystem`` directories (then the ``-idirafter`` ones,
+    in :func:`compiler_search_path`): searched for both forms."""
 
 
-def search_path(args: list[str], *, after: bool = False) -> SearchPath:
+def search_path(args: list[str]) -> SearchPath:
     """The include search path of a database entry's (filtered) arguments.
 
     ``-iquote``, ``-I`` and ``-isystem`` are read in their joined (``-Idir``) and
     separate (``-I dir``) forms, each kind in argument order, and a relative
     directory is taken against the entry's working directory (its last
     ``-working-directory=``; the process' working directory without one, as
-    libclang takes it); with ``after``, ``-idirafter`` too, searched last. No other
-    form names a directory here: ``--include-directory=``, ``-I=`` (sysroot-relative)
-    and MSVC's ``/I`` are not read, nor a ``cd`` in a ``command``.
+    libclang takes it). No other form names a directory here: ``-idirafter``,
+    ``--include-directory=``, ``-I=`` (sysroot-relative) and MSVC's ``/I`` are not
+    read, nor a ``cd`` in a ``command`` (every one is in :func:`compiler_search_path`).
     """
     working = working_directory(args)
     quote: list[Path] = []
     angled: list[Path] = []
     system: list[Path] = []
-    last: list[Path] = []
     kinds = {"-iquote": quote, "-isystem": system, "-I": angled}
-    if after:
-        kinds["-idirafter"] = last
     pending: list[Path] | None = None
     for arg in args:
         if pending is not None:
@@ -178,14 +177,140 @@ def search_path(args: list[str], *, after: bool = False) -> SearchPath:
                 break
     return SearchPath(
         quote=tuple(working / d for d in quote),
-        angled=tuple(working / d for d in (*angled, *system, *last)),
+        angled=tuple(working / d for d in (*angled, *system)),
     )
 
 
-def resolve_include(
+class _Kind(enum.IntEnum):
+    """Which list of the search path an include-path flag adds to."""
+
+    quote = 0
+    """``-iquote``: a quoted name only."""
+    angled = 1
+    """``-I`` and its spellings."""
+    system = 2
+    """``-isystem`` and its spellings, after the ``-I`` ones."""
+    after = 3
+    """``-idirafter`` and its spellings, last."""
+
+
+_INCLUDE_PATH_FLAGS: tuple[tuple[str, _Kind | None], ...] = (
+    ("-iquote", _Kind.quote),
+    ("--include-directory-after=", _Kind.after),
+    ("--include-directory-after", _Kind.after),
+    ("--include-directory=", _Kind.angled),
+    ("--include-directory", _Kind.angled),
+    ("-iwithprefixbefore", _Kind.angled),
+    ("-iwithprefix", _Kind.after),
+    ("-iwithsysroot", _Kind.system),
+    ("-isystem-after", _Kind.after),
+    ("-isystem", _Kind.system),
+    ("-cxx-isystem", _Kind.system),
+    ("-idirafter", _Kind.after),
+    ("-imsvc", _Kind.system),
+    ("/imsvc", _Kind.system),
+    ("-I", _Kind.angled),
+    ("/I", _Kind.angled),
+    ("-iframework", None),
+    ("-iprefix", None),
+)
+"""Every include-path flag :func:`compiler_search_path` reads, the first that starts an
+argument winning (so a longer spelling comes before its prefix), and the list it adds
+to; ``None`` for the two that add none (``-iprefix``, ``-iframework``). A spelling that
+ends in ``=`` takes its value joined only."""
+
+
+def compiler_search_path(args: list[str]) -> SearchPath:
+    """The include search path of a database entry's (filtered) arguments as the
+    compiler reads it, for a unit whose arms no parse decides (a header's lexical
+    closure, useblocks/ubcode#4866): ``-iquote``; then ``-I``, clang-cl's ``/I``,
+    ``--include-directory`` (``=`` or separate) and ``-iwithprefixbefore``; then
+    ``-isystem``, ``-cxx-isystem``, ``-iwithsysroot`` and clang-cl's ``/imsvc``
+    (``-imsvc``); then ``-idirafter``, ``--include-directory-after`` (``=`` or
+    separate), ``-isystem-after`` and ``-iwithprefix``, last.
+    Each is read joined or separate, each kind in argument order. A value that starts
+    with ``=`` is under the sysroot (``-isysroot``, else ``--sysroot``), as is every
+    ``-iwithsysroot`` one; an ``-iwithprefix`` or ``-iwithprefixbefore`` one comes
+    after the last ``-iprefix`` before it (a string prefix); any other relative
+    directory is taken against the entry's working directory. ``-iframework`` is not
+    read (a framework's headers are named ``<Name/header.h>`` and live in
+    ``Name.framework/Headers``)."""
+    working = working_directory(args)
+    sysroot = _sysroot(args)
+    kinds: list[list[Path]] = [[], [], [], []]
+    prefix = ""
+    arguments = iter(args)
+    for arg in arguments:
+        if arg.startswith(WORKING_DIRECTORY_FLAG):
+            continue
+        match = next(
+            (
+                (flag, kind)
+                for flag, kind in _INCLUDE_PATH_FLAGS
+                if arg.startswith(flag)
+            ),
+            None,
+        )
+        if match is None:
+            continue
+        flag, kind = match
+        joined = arg[len(flag) :]
+        if joined or flag.endswith("="):
+            given = joined
+        else:
+            value = next(arguments, None)
+            if value is None:
+                break
+            given = value
+        if flag == "-iprefix":
+            prefix = given
+            continue
+        if kind is None:
+            continue  # -iframework
+        if flag.startswith("-iwithprefix"):
+            spelled = prefix + given
+        elif flag == "-iwithsysroot":
+            spelled = (sysroot or "") + given
+        elif given.startswith("="):
+            spelled = (sysroot or "") + given[1:]
+        else:
+            spelled = given
+        kinds[kind].append(working / spelled)
+    quote, angled, system, after = kinds
+    return SearchPath(quote=tuple(quote), angled=(*angled, *system, *after))
+
+
+def _sysroot(args: list[str]) -> str | None:
+    """The sysroot of ``args`` for headers: the last ``-isysroot``, else the last
+    ``--sysroot`` (``=`` or separate)."""
+    isysroot: str | None = None
+    sysroot: str | None = None
+    arguments = iter(args)
+    for arg in arguments:
+        if arg == "-isysroot":
+            isysroot = next(arguments, None)
+        elif arg.startswith("-isysroot"):
+            isysroot = arg[len("-isysroot") :]
+        elif arg == "--sysroot":
+            sysroot = next(arguments, None)
+        elif arg.startswith("--sysroot="):
+            sysroot = arg[len("--sysroot=") :]
+    return isysroot if isysroot is not None else sysroot
+
+
+class Found(NamedTuple):
+    """A file an ``#include`` names, found."""
+
+    spelled: Path
+    """The directory it was found in joined with the name, as the compiler names it."""
+    canonical: Path
+    """The file, canonical."""
+
+
+def find_include(
     directive: IncludeDirective, including_file: Path, path: SearchPath
-) -> Path | None:
-    """The file ``directive`` names, canonical, as the compiler finds it; or ``None``.
+) -> Found | None:
+    """The file ``directive`` names, as the compiler finds it; or ``None``.
 
     A quoted name is looked up in the including file's directory first, then in the
     ``-iquote`` directories; both forms then in the ``-I`` and ``-isystem``
@@ -198,51 +323,84 @@ def resolve_include(
     for directory in directories:
         candidate = directory / directive.name
         if candidate.is_file():
-            return candidate.resolve()
+            return Found(candidate, candidate.resolve())
     return None
 
 
-def resolve_include_next(
+def resolve_include(
     directive: IncludeDirective, including_file: Path, path: SearchPath
 ) -> Path | None:
-    """The file an ``#include_next`` ``directive`` names, canonical: looked up as
-    :func:`resolve_include` looks it up, but never in the including file's own
-    directory, and only in the search-path directories after the one the including file
-    was found in (the first that holds it); in all of them when none does."""
-    directories = (
-        [*path.quote, *path.angled] if not directive.angled else [*path.angled]
-    )
-    resolved = [directory.resolve() for directory in directories]
+    """The file ``directive`` names, canonical, as the compiler finds it
+    (:func:`find_include`); or ``None``."""
+    found = find_include(directive, including_file, path)
+    return found.canonical if found is not None else None
+
+
+def find_include_next(
+    directive: IncludeDirective, including_file: Path, path: SearchPath
+) -> Found | None:
+    """The file an ``#include_next`` ``directive`` in ``including_file`` (canonical)
+    names, as the compiler continues: in the search-path directories after the one the
+    including file was found in (the first whose join with the name is the including
+    file), never the including file itself, each directory once (the first of those
+    that resolve alike: a directory listed again, or a symbolic link to an earlier one,
+    is dropped, as clang drops it). In a file found on no search directory, as
+    :func:`find_include` looks a name up (clang warns that it searches from the start:
+    a quoted name in the file's own directory first)."""
+    listed = [*path.quote, *path.angled] if not directive.angled else [*path.angled]
+    directories: list[Path] = []
+    resolved: set[Path] = set()
+    for directory in listed:
+        key = directory.resolve()
+        if key not in resolved:
+            resolved.add(key)
+            directories.append(directory)
     start = next(
         (
             at + 1
-            for at, directory in enumerate(resolved)
-            if including_file.is_relative_to(directory)
+            for at, directory in enumerate(directories)
+            if (directory / directive.name).is_file()
+            and (directory / directive.name).resolve() == including_file
         ),
-        0,
+        None,
     )
-    for directory in resolved[start:]:
+    if start is None:
+        return find_include(directive, including_file, path)
+    for directory in directories[start:]:
         candidate = directory / directive.name
-        if candidate.is_file():
-            return candidate.resolve()
+        if candidate.is_file() and (canonical := candidate.resolve()) != including_file:
+            return Found(candidate, canonical)
     return None
 
 
+_FORCED_INCLUDE_FLAGS = (
+    "--include=",
+    "--include",
+    "-include",
+    "-imacros",
+    "/FI",
+    "-FI",
+)
+"""The flags that include a file ahead of the main file, the first that starts an
+argument winning; a spelling that ends in ``=`` takes its value joined only."""
+
+
 def forced_includes(args: list[str]) -> list[str]:
-    """The files ``args`` include ahead of the main file, in order: each ``-include``
-    and ``-imacros`` value, separate or joined (``-include-pch`` is not one)."""
+    """The files ``args`` include ahead of the main file, in order: each ``-include``,
+    ``--include`` (``=`` or separate), ``-imacros`` and clang-cl ``/FI`` (``-FI``)
+    value, separate or joined (never ``-include-*`` nor ``--include-*``, such as
+    ``-include-pch``)."""
     names: list[str] = []
     arguments = iter(args)
     for arg in arguments:
-        for flag in ("-include", "-imacros"):
-            if arg == flag:
-                value = next(arguments, None)
-                if value is not None:
-                    names.append(value)
-                break
-            if arg.startswith(flag) and not arg.startswith("-include-"):
-                names.append(arg[len(flag) :])
-                break
+        flag = next((f for f in _FORCED_INCLUDE_FLAGS if arg.startswith(f)), None)
+        if flag is None or arg.startswith(("-include-", "--include-")):
+            continue
+        joined = arg[len(flag) :]
+        if joined or flag.endswith("="):
+            names.append(joined)
+        elif (value := next(arguments, None)) is not None:
+            names.append(value)
     return names
 
 

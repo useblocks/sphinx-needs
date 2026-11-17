@@ -156,49 +156,125 @@ def union_of_arms(contributions: Iterable[Contribution]) -> list[SkippedSpan]:
     return kept or []
 
 
+@dataclass
+class ClosureMemo:
+    """What the lexical closures of one analysis share (useblocks/ubcode#4866): each
+    file's directives, scanned once, and each lookup of a name, made once per search
+    path, including directory (a quoted name's, or an ``#include_next``'s file) and
+    form. In memory only: the files do not change within an analysis."""
+
+    paths: dict[includer.SearchPath, int] = field(default_factory=dict)
+    """Each search path met, by its id."""
+    scans: dict[Path, tuple[includer.IncludeDirective, ...]] = field(
+        default_factory=dict
+    )
+    """Each file's directives, ``#include_next`` ones too, by its path."""
+    found: dict[tuple[int, Path | None, str, bool, bool], includer.Found | None] = (
+        field(default_factory=dict)
+    )
+    """Each lookup: the search path's id, the including directory or file, the name,
+    angled, ``#include_next``."""
+    work: int = 0
+    """How many files were read and names looked up: what the memo saves."""
+
+    def id(self, path: includer.SearchPath) -> int:
+        """The id of ``path``."""
+        return self.paths.setdefault(path, len(self.paths))
+
+    def directives(self, file: Path) -> tuple[includer.IncludeDirective, ...]:
+        """The directives of ``file``; none when it cannot be read."""
+        if file not in self.scans:
+            self.work += 1
+            try:
+                text = file.read_bytes().decode("utf-8", errors="replace")
+            except OSError:
+                text = ""
+            self.scans[file] = tuple(
+                includer.scan_include_directives(text, include_next=True)
+            )
+        return self.scans[file]
+
+    def find(
+        self,
+        id_: int,
+        directive: includer.IncludeDirective,
+        including: Path,
+        path: includer.SearchPath,
+    ) -> includer.Found | None:
+        """The file ``directive`` in ``including`` (canonical) names, looked up on
+        ``path`` (whose id is ``id_``)."""
+        if directive.next:
+            source: Path | None = including
+        elif directive.angled:
+            source = None
+        else:
+            source = including.parent
+        key = (id_, source, directive.name, directive.angled, directive.next)
+        if key not in self.found:
+            self.work += 1
+            self.found[key] = (
+                includer.find_include_next(directive, including, path)
+                if directive.next
+                else includer.find_include(directive, including, path)
+            )
+        return self.found[key]
+
+
+def lexical(path: Path) -> Path:
+    """``path`` with its ``.`` and ``..`` parts resolved as written, not on the file
+    system: how the compiler names a file it found (``build/../inc/a.h`` is
+    ``inc/a.h``), through a symbolic link too."""
+    return Path(os.path.normpath(path))
+
+
 def lexical_closure(
-    main: Path, args: list[str], keep: Callable[[Path], bool]
+    main: Path,
+    args: list[str],
+    keep: Callable[[Path], bool],
+    memo: ClosureMemo | None = None,
 ) -> set[Path]:
     """Every file a unit whose arms no parse decides may include, canonical, that
-    ``keep`` keeps, but its main file ``main``: its ``-include`` and ``-imacros`` files
-    (the working directory first, then the search path), and every file their and
-    ``main``'s ``#include`` and ``#include_next`` lines name, at any depth, as the
-    compiler finds it with ``args``' include path (:func:`.includer.resolve_include`,
-    ``-idirafter`` included: a project file on any search path counts).
-    Files ``keep`` does not keep are followed too (an SDK header that includes a project
-    one), and nothing cuts the walk short: each file is read once. ``#if`` arms are not
-    read, a computed ``#include MACRO`` is not resolved."""
-    search = includer.search_path(args, after=True)
+    ``keep`` keeps by its canonical path or by the path the compiler names it by
+    (:func:`lexical`: a project directory that is a symbolic link to elsewhere), but its
+    main file ``main``: its ``-include``, ``--include``, ``-imacros`` and clang-cl
+    ``/FI`` files (the working directory first, then the search path), and every file
+    their and ``main``'s ``#include`` and ``#include_next`` lines name, at any depth, as
+    the compiler finds it with ``args``' include path
+    (:func:`.includer.compiler_search_path`: every spelling of every kind of include
+    directory, so a project file on any search path counts). Files ``keep`` does not
+    keep are followed too (an SDK header that includes a project one), and nothing cuts
+    the walk short: each file is read once, and ``memo`` shares what the other units of
+    the analysis read and found. ``#if`` arms are not read, a computed
+    ``#include MACRO`` is not resolved."""
+    memo = memo if memo is not None else ClosureMemo()
+    search = includer.compiler_search_path(args)
+    id_ = memo.id(search)
     working = working_directory(args)
     seen: set[Path] = {main}
+    kept: set[Path] = set()
     stack: list[Path] = []
+
+    def reach(found: includer.Found) -> None:
+        if keep(found.canonical) or keep(lexical(found.spelled)):
+            kept.add(found.canonical)
+        if found.canonical not in seen:
+            seen.add(found.canonical)
+            stack.append(found.canonical)
+
     # as if the first lines of the main file, looked up from the working directory
     command_line = working / "<command line>"
     for name in includer.forced_includes(args):
-        found = includer.resolve_include(
-            includer.IncludeDirective(name, angled=False, line=0), command_line, search
-        )
-        if found is not None and found not in seen:
-            seen.add(found)
-            stack.append(found)
+        directive = includer.IncludeDirective(name, angled=False, line=0)
+        if (found := memo.find(id_, directive, command_line, search)) is not None:
+            reach(found)
     stack.append(main)
     while stack:
         file = stack.pop()
-        try:
-            text = file.read_bytes().decode("utf-8", errors="replace")
-        except OSError:
-            continue
-        for directive in includer.scan_include_directives(text, include_next=True):
-            found = (
-                includer.resolve_include_next(directive, file, search)
-                if directive.next
-                else includer.resolve_include(directive, file, search)
-            )
-            if found is None or found in seen:
-                continue
-            seen.add(found)
-            stack.append(found)
-    return {path for path in seen if path != main and keep(path)}
+        for directive in memo.directives(file):
+            if (found := memo.find(id_, directive, file, search)) is not None:
+                reach(found)
+    kept.discard(main)
+    return kept
 
 
 @dataclass(frozen=True)

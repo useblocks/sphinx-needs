@@ -29,6 +29,7 @@ from sphinx_codelinks.analyse.preproc.headers import (
     REFUSED,
     REPEATED,
     UNKNOWN,
+    ClosureMemo,
     Contribution,
     ContributionKind,
     SkippedSpan,
@@ -40,6 +41,13 @@ from sphinx_codelinks.analyse.preproc.headers import (
     skipped,
     union_of_arms,
     wholly_skipped,
+)
+from sphinx_codelinks.analyse.preproc.includer import (
+    IncludeDirective,
+    SearchPath,
+    compiler_search_path,
+    find_include_next,
+    forced_includes,
 )
 from sphinx_codelinks.config import PreprocessorConfig, SourceAnalyseConfig
 
@@ -278,12 +286,8 @@ def _db(root: Path, entries: list[dict], name: str = "compile_commands.json") ->
                 {
                     "directory": str(root / e.get("directory", ".")),
                     "file": e["file"],
-                    "arguments": [
-                        e.get("compiler", "clang"),
-                        *e["args"],
-                        "-c",
-                        e["file"],
-                    ],
+                    "arguments": e.get("argv")
+                    or [e.get("compiler", "clang"), *e["args"], "-c", e["file"]],
                 }
                 for e in entries
             ]
@@ -930,3 +934,335 @@ def test_a_reader_refused_on_its_second_parse_reads_as_written_with_a_warning(
     ((message, subtype),) = recorder.warnings
     assert subtype == "preprocessor_parse_refused"
     assert f"its includer {(tmp_path / 'a.c').resolve()}" in message
+
+
+#: a header with one arm ``FEATURE_A`` decides
+FEATURE_HEADER = "#pragma once\n// @base, IMPL_BASE, impl\n#ifdef FEATURE_A\n// @a, IMPL_A, impl\n#endif\n"
+
+
+def test_an_include_next_continues_after_the_directory_that_found_the_file(
+    tmp_path: Path,
+) -> None:
+    """``p/a.c``'s entry, every parse refused, finds ``<w.h>`` in ``sdk/inc`` (not in
+    ``sdk``, which holds that directory): its ``#include_next <w.h>`` continues after
+    ``sdk/inc``, finds ``next/w.h`` and through it ``p/case.h``, so the arm ``b.c``
+    skips and ``a.c`` compiles (``-DFEATURE_A``) is kept. Continuing after the first
+    directory that holds the including file (``sdk``) found ``sdk/inc/w.h`` itself."""
+    _write(
+        tmp_path,
+        {
+            "p/a.c": "#include <w.h>\n",
+            "p/b.c": '#include "case.h"\n',
+            "p/case.h": FEATURE_HEADER,
+            "sdk/inc/w.h": "#include_next <w.h>\n",
+            "next/w.h": "#include <case.h>\n",
+        },
+    )
+    db = _db(
+        tmp_path,
+        [
+            {
+                "file": "a.c",
+                "directory": "p",
+                "compiler": "gcc",
+                "args": [
+                    "-mfpmath=vfp",
+                    "-DFEATURE_A",
+                    "-I../sdk",
+                    "-I../sdk/inc",
+                    "-I../next",
+                    "-I.",
+                ],
+            },
+            {"file": "b.c", "directory": "p", "args": []},
+        ],
+    )
+    assert _ids(_analyse(tmp_path, ["p/case.h"], db)) == {"IMPL_BASE", "IMPL_A"}
+
+
+@pytest.mark.parametrize("refused", [False, True], ids=["parsed", "refused"])
+def test_a_header_in_a_linked_project_directory_is_a_contribution(
+    tmp_path: Path, refused: bool
+) -> None:
+    """``proj/inc`` is a symbolic link to a directory outside the project: the header
+    the analysis names through it resolves outside, yet the compiler names it inside
+    the project (``proj/inc/case.h``), so the entry that includes it, whether its parse
+    reads it or every parse is refused, contributes to it and the arm ``-DFEATURE_A``
+    decides is read as that entry reads it. (Discovery never yields such a file: it
+    keeps a file only when its resolved path is under ``src_dir``,
+    ``codelinks.outside_src_dir``; a caller of the analysis that names it does.)"""
+    root = tmp_path.resolve()
+    _write(
+        root,
+        {"elsewhere/case.h": FEATURE_HEADER, "proj/a.c": '#include "inc/case.h"\n'},
+    )
+    (root / "proj" / "inc").symlink_to(root / "elsewhere", target_is_directory=True)
+    args = ["-DFEATURE_A", *(["-mfpmath=vfp"] if refused else [])]
+    db = _db(root / "proj", [{"file": "a.c", "compiler": "gcc", "args": args}])
+    analyse = _analyse(root / "proj", ["inc/case.h"], db)
+    assert _ids(analyse) == {"IMPL_BASE", "IMPL_A"}
+    (record,) = analyse.unit_memo.values()
+    assert list(record.contributions) == [root / "elsewhere" / "case.h"]
+
+
+def test_a_clang_cl_entry_names_its_include_directory_and_forced_include(
+    tmp_path: Path,
+) -> None:
+    """A clang-cl entry, every parse refused, finds ``case.h`` only through its ``/I``
+    directory, by its ``/FI``: its lexical closure counts it, so the arm the other entry
+    skips and this one compiles is kept."""
+    _write(
+        tmp_path,
+        {
+            "a.c": "int a;\n",
+            "b.c": '#include "inc/case.h"\n',
+            "inc/case.h": FEATURE_HEADER,
+        },
+    )
+    db = _db(
+        tmp_path,
+        [
+            {
+                "file": "a.c",
+                "argv": [
+                    "clang-cl",
+                    "/DFEATURE_A",
+                    "-mfpmath=vfp",
+                    "/Iinc",
+                    "/FIcase.h",
+                    "/c",
+                    "a.c",
+                ],
+            },
+            {"file": "b.c", "args": []},
+        ],
+    )
+    assert _ids(_analyse(tmp_path, ["inc/case.h"], db)) == {"IMPL_BASE", "IMPL_A"}
+
+
+_WD = "-working-directory=/w"
+
+
+@pytest.mark.parametrize(
+    ("args", "quote", "angled"),
+    [
+        pytest.param(["-iquoteq", "-iquote", "q2"], ["q", "q2"], [], id="iquote"),
+        pytest.param(
+            ["-Ia", "-I", "b", "/Ic", "/I", "d"], [], ["a", "b", "c", "d"], id="I"
+        ),
+        pytest.param(
+            ["--include-directory=a", "--include-directory", "b"],
+            [],
+            ["a", "b"],
+            id="include-directory",
+        ),
+        pytest.param(
+            ["-isystems", "-I", "i", "-cxx-isystem", "c", "-imsvcm", "/imsvc", "n"],
+            [],
+            ["i", "s", "c", "m", "n"],
+            id="system-after-angled",
+        ),
+        pytest.param(
+            ["-idirafterz", "-isystem-after", "y", "-isystemx", "-Iw"],
+            [],
+            ["w", "x", "z", "y"],
+            id="after-last",
+        ),
+        pytest.param(
+            ["-iprefix", "/pre/", "-iwithprefixbeforeb", "-iwithprefix", "a", "-Ii"],
+            [],
+            ["/pre/b", "i", "/pre/a"],
+            id="iprefix",
+        ),
+        pytest.param(
+            ["--sysroot=/s", "-I=/inc", "-iwithsysroot", "/sys"],
+            [],
+            ["/s/inc", "/s/sys"],
+            id="sysroot",
+        ),
+        pytest.param(
+            ["--sysroot", "/s", "-isysroot/i", "-I=/inc"],
+            [],
+            ["/i/inc"],
+            id="isysroot-over-sysroot",
+        ),
+        pytest.param(
+            ["-iframework", "f", "-iframeworkg"], [], [], id="iframework-not-read"
+        ),
+        pytest.param(
+            ["--include-directory-after=z", "--include-directory-after", "y", "-Ii"],
+            [],
+            ["i", "z", "y"],
+            id="include-directory-after",
+        ),
+    ],
+)
+def test_every_spelling_of_an_include_directory(
+    args: list[str], quote: list[str], angled: list[str]
+) -> None:
+    """The lexical closure's search path: ``-iquote``; then ``-I``, ``/I``,
+    ``--include-directory`` and ``-iwithprefixbefore``; then ``-isystem``,
+    ``-cxx-isystem``, ``-iwithsysroot`` and ``/imsvc`` (``-imsvc``); then
+    ``-idirafter``, ``-isystem-after`` and ``-iwithprefix``; each joined or separate,
+    each kind in argument order. A value that starts with ``=`` is under the sysroot
+    (``-isysroot`` over ``--sysroot``), ``-iwithprefix*`` follows the last
+    ``-iprefix``, and ``-iframework`` is not read."""
+    path = compiler_search_path([_WD, *args])
+    working = Path("/w")
+    assert path.quote == tuple(working / d for d in quote)
+    assert path.angled == tuple(working / d for d in angled)
+
+
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        pytest.param(["-include", "a.h", "-includeb.h"], ["a.h", "b.h"], id="include"),
+        pytest.param(
+            ["--include=a.h", "--include", "b.h"], ["a.h", "b.h"], id="--include"
+        ),
+        pytest.param(["-imacros", "a.h", "-imacrosb.h"], ["a.h", "b.h"], id="imacros"),
+        pytest.param(
+            ["/FIa.h", "/FI", "b.h", "-FIc.h"], ["a.h", "b.h", "c.h"], id="FI"
+        ),
+        pytest.param(
+            ["-include-pch", "p.pch", "--include-with-prefix", "x", "-includec.h"],
+            ["c.h"],
+            id="not-include-dash",
+        ),
+    ],
+)
+def test_every_spelling_of_a_forced_include(
+    args: list[str], expected: list[str]
+) -> None:
+    """``-include``, ``--include`` (``=`` or separate), ``-imacros`` and clang-cl's
+    ``/FI`` (``-FI``), joined or separate; never ``-include-*`` nor ``--include-*``."""
+    assert forced_includes(args) == expected
+
+
+def test_the_closures_of_a_run_share_their_reads_and_lookups(tmp_path: Path) -> None:
+    """A second unit with the same include path over the same files reads no file and
+    looks up no name again but its own lines, and finds the same files; one with
+    another include path looks its names up again."""
+    root = tmp_path.resolve()
+    _write(
+        root,
+        {
+            "a.c": "#include <x.h>\n",
+            "b.c": "#include <x.h>\n",
+            "inc/x.h": '#include <y.h>\n#include "z.h"\n',
+            "inc/y.h": "#include <x.h>\n",
+            "inc/z.h": "",
+        },
+    )
+
+    def args(extra: str) -> list[str]:
+        return [f"{compile_db.WORKING_DIRECTORY_FLAG}{root}", "-Iinc", extra]
+
+    def keep(path: Path) -> bool:
+        return path.is_relative_to(root)
+
+    memo = ClosureMemo()
+    a = lexical_closure(root / "a.c", args("-DA"), keep, memo)
+    after_a = memo.work
+    b = lexical_closure(root / "b.c", args("-DA"), keep, memo)
+    assert memo.work == after_a + 1, "b.c's own lines, read once; nothing else"
+    assert a == b == {root / "inc" / name for name in ("x.h", "y.h", "z.h")}
+    c = lexical_closure(root / "b.c", args("-Iother"), keep, memo)
+    assert memo.work > after_a + 1, "another include path looks its names up again"
+    assert c == b
+
+
+@pytest.mark.parametrize("twice", ["listed-twice", "linked"])
+def test_an_include_next_skips_a_directory_listed_again(
+    tmp_path: Path, twice: str
+) -> None:
+    """The directory that found the including file is on the search path again, listed
+    a second time or through a symbolic link to it: as clang, which keeps only the first
+    of a directory, the ``#include_next`` continues after it and never finds the
+    including file itself, so the refused entry still reaches ``p/case.h``."""
+    _write(
+        tmp_path,
+        {
+            "p/a.c": "#include <w.h>\n",
+            "p/b.c": '#include "case.h"\n',
+            "p/case.h": FEATURE_HEADER,
+            "sdk/inc/w.h": "#include_next <w.h>\n",
+            "next/w.h": "#include <case.h>\n",
+        },
+    )
+    again = "-I../sdk/inc"
+    if twice == "linked":
+        (tmp_path / "sdk" / "link").symlink_to(
+            tmp_path / "sdk" / "inc", target_is_directory=True
+        )
+        again = "-I../sdk/link"
+    db = _db(
+        tmp_path,
+        [
+            {
+                "file": "a.c",
+                "directory": "p",
+                "compiler": "gcc",
+                "args": [
+                    "-mfpmath=vfp",
+                    "-DFEATURE_A",
+                    "-I../sdk",
+                    "-I../sdk/inc",
+                    again,
+                    "-I../next",
+                    "-I.",
+                ],
+            },
+            {"file": "b.c", "directory": "p", "args": []},
+        ],
+    )
+    assert _ids(_analyse(tmp_path, ["p/case.h"], db)) == {"IMPL_BASE", "IMPL_A"}
+
+
+def test_an_include_next_in_a_file_on_no_search_directory_is_an_include(
+    tmp_path: Path,
+) -> None:
+    """``p/y.h`` was found on no search directory (next to the file that included it):
+    clang warns that its quoted ``#include_next "x.h"`` searches from the start, and
+    resolves it as an ``#include``, its own directory first: ``p/x.h``, not ``inc/x.h``."""
+    root = tmp_path.resolve()
+    _write(root, {"p/y.h": '#include_next "x.h"\n', "p/x.h": "", "inc/x.h": ""})
+    path = SearchPath(quote=(), angled=(root / "inc",))
+    directive = IncludeDirective("x.h", angled=False, line=1, next=True)
+    found = find_include_next(directive, root / "p" / "y.h", path)
+    assert found is not None
+    assert found.canonical == root / "p" / "x.h"
+
+
+def test_the_units_of_one_analysis_share_one_closure_memo(tmp_path: Path) -> None:
+    """Two entries whose every parse is refused, over one include path: the analysis
+    walks both closures through one memo, which read each file once (both sources and
+    the two headers)."""
+    root = tmp_path.resolve()
+    _write(
+        root,
+        {
+            "a.c": "#include <x.h>\n",
+            "b.c": "#include <x.h>\n",
+            "inc/x.h": "#pragma once\n#include <y.h>\n",
+            "inc/y.h": "#pragma once\n#ifdef NEVER_SET\n// @y, IMPL_Y, impl\n#endif\n",
+        },
+    )
+    refused = ["-mfpmath=vfp", "-Iinc"]
+    db = _db(
+        root,
+        [
+            {"file": "a.c", "compiler": "gcc", "args": refused},
+            {"file": "b.c", "compiler": "gcc", "args": refused},
+        ],
+    )
+    analyse = _analyse(root, ["inc/y.h"], db)
+    assert _ids(analyse) == {"IMPL_Y"}
+    memo = analyse._closure_memo
+    assert memo is not None
+    assert set(memo.scans) == {
+        root / "a.c",
+        root / "b.c",
+        root / "inc" / "x.h",
+        root / "inc" / "y.h",
+    }
