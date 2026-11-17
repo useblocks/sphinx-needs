@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794843552091,
+  "lastUpdate": 1794920260172,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -29778,6 +29778,48 @@ window.BENCHMARK_DATA = {
             "value": 185.437228,
             "unit": "MB",
             "extra": "Commit: 51753d82a8cffb3fe77ef995a55e5356087627d2\nBranch: master\nTime: 2026-11-16T16:37:44+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "32ad76a5a2179964a08e3ea8bcb75bad1df63a9a",
+          "message": "🐛 sphinx-codelinks: read a C/C++ file whose every libclang parse is refused (#2513)\n\n## What\n\n`packages/sphinx-codelinks`: a C/C++ file whose target is known but\nwhose every libclang parse is refused is no longer skipped. It is read\n**as written**, every `#if` branch kept, through the tree-sitter route\nthe unknown-target files already take, and warned once as\n`codelinks.preprocessor_parse_refused`. This is the twin of ubCode's\nuseblocks/ubcode#4923 (useblocks/ubcode#4862); both engines extract the\nsame markers for the shared cases.\n\nThe warning says what libclang refused, read from its error code\n(`clang_parseTranslationUnit2`, bound through ctypes, since\n`clang.cindex` does not expose it):\n\n- `CXError_Failure` (measured for `-mfpmath=vfp`): the target with the\nentry's `-m` flags, naming them, and that libclang does not say which\nflag it refused;\n- `CXError_ASTReadError` or a crash (measured for a second input file,\n`-std=gnu2y`, `-std=c99x`, `-Xclang -foo`, a `-fprofile-use=` profile\nthat has moved): the entry's arguments, which hold a flag or an input\nfile it does not take, listed without the engine's own\n(`-working-directory`, the inserted `-resource-dir` pair, an inserted\n`--target`), at most twelve, and the input files besides the file\nitself. This is `command_refused` for a build that declares a target too\n(\"… for arm-none-eabi (its compiler's name) …\").\n\nA source with no entry that such a refused includer `#include`s is\nconfirmed by the includer's `#include` lines, after every includer whose\nparse reads, and read as written; its warning names the includer.\n\nEach message says nothing is hidden and how to accept it\n(`suppress_warnings`). Docs: `analyse.rst` (the two kinds of refusal;\nwhat can still hide code).\n\n## Why\n\nA file whose every parse was refused (e.g. `gcc -mfpmath=vfp`, refused\non every host; a compile-and-link entry `gcc main.c util.c -o app`) was\nskipped with a \"could not load it as a translation unit\" warning: its\nmarkers were lost. Reported in useblocks/ubcode#4859, filed as\nuseblocks/ubcode#4862.\n\n## Tests\n\n- `tests/data/extraction/preproc_target.yaml` is byte-identical to\nubCode's file, with the shared cases T18\n(`known_target_refused_everywhere_keeps_every_arm_libclang`) and T19\n(`refused_includer_confirms_by_its_include_lines_libclang`); their\nsnapshots hold the same data as ubCode's references.\n- `tests/test_preproc_target.py`: the error code per input\n(`test_libclang_says_why_it_refused_a_parse`), the exact texts of both\nkinds, the includer route, a declared target's refused command, the\nargument list (engine's own left out, an entry's own `-resource-dir`\nkept, at most twelve, the separate-value options whose values are not\ninput files).\n- Every new test failed on the previous code first; mutations of each\nrule were caught.\n- `uv run poe test-codelinks -n 4`: 3000 passed, 3 skipped; the libclang\ntests ran.\n\n## Checklist\n\n- [x] I wrote this change myself and have read every line of it; it was\nnot generated automatically from an issue.\n- [x] I ran the package's tests (`uv run poe test-<package>`) and they\npass.\n- [x] Documentation is updated where behaviour or options change.\n- [ ] The package's `docs/changelog.rst` has an entry under\n*Unreleased*.\n- [x] `uv run poe lint` and `uv run poe typecheck` pass.",
+          "timestamp": "2026-11-17T13:55:55+01:00",
+          "tree_id": "1995760bddd838e8d9de3f80fe6e382678e868db",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/32ad76a5a2179964a08e3ea8bcb75bad1df63a9a"
+        },
+        "date": 1794920259345,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07370341699999727,
+            "unit": "s",
+            "extra": "Commit: 32ad76a5a2179964a08e3ea8bcb75bad1df63a9a\nBranch: master\nTime: 2026-11-17T13:55:55+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.228994934,
+            "unit": "s",
+            "extra": "Commit: 32ad76a5a2179964a08e3ea8bcb75bad1df63a9a\nBranch: master\nTime: 2026-11-17T13:55:55+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 185.580596,
+            "unit": "MB",
+            "extra": "Commit: 32ad76a5a2179964a08e3ea8bcb75bad1df63a9a\nBranch: master\nTime: 2026-11-17T13:55:55+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
