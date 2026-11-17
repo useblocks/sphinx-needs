@@ -158,8 +158,8 @@ change) gets a new one for each build, and neither build's pickled environment h
   `id_prefix` is unchanged);
 - `c.` values as needtable columns or sort keys (later, a resolver that serves `c.source`
   too);
-- short references, a bare id resolving inside the referencing need's own namespace first
-  (later: a recon, a ruling, a build);
+- short references, a bare id written inside a namespaced need naming a need of that
+  namespace (later: a recon, a ruling on the lookup order, a build);
 - any `needs.json` key: format 2 is to carry `ns` beside the full `id` (later);
 - an index-tier arm for `c.in_namespace` (the fast tier answers it, section 10);
 - a lint for a filter that names a namespace no need has, or a bare-id filter (a namespace
