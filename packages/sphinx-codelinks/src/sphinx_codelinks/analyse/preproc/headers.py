@@ -40,6 +40,7 @@ from sphinx_codelinks.analyse.preproc.compile_db import working_directory
 if TYPE_CHECKING:
     from sphinx_codelinks.analyse.preproc.target import Decision
 
+
 @dataclass(frozen=True, order=True)
 class SkippedSpan:
     """A range the preprocessor skipped in a file: from a directive's ``#`` to the end

@@ -36,10 +36,10 @@ from sphinx_codelinks.analyse.preproc.headers import (
     UnitRecord,
     contribution,
     intersect,
-    wholly_skipped,
     lexical_closure,
     skipped,
     union_of_arms,
+    wholly_skipped,
 )
 from sphinx_codelinks.config import PreprocessorConfig, SourceAnalyseConfig
 
@@ -64,7 +64,10 @@ def _spans(ranges: list[tuple[int, int]]) -> list[SkippedSpan]:
         pytest.param([(0, 10)], [(10, 30)], [], id="touching"),
         pytest.param([(0, 50)], [(10, 20)], [(10, 20)], id="nested"),
         pytest.param(
-            [(0, 10), (30, 40)], [(0, 10), (30, 40)], [(0, 10), (30, 40)], id="identical"
+            [(0, 10), (30, 40)],
+            [(0, 10), (30, 40)],
+            [(0, 10), (30, 40)],
+            id="identical",
         ),
         pytest.param([], [(0, 10)], [], id="empty-left"),
         pytest.param([(0, 10)], [], [], id="empty-right"),
@@ -106,12 +109,19 @@ def test_an_intersection_takes_the_lines_of_its_ends() -> None:
             [skipped(_spans([(30, 40), (0, 10)]))], [(0, 10), (30, 40)], id="one"
         ),
         pytest.param(
-            [skipped(_spans([(0, 10), (30, 40)])), skipped(_spans([(30, 40), (50, 60)]))],
+            [
+                skipped(_spans([(0, 10), (30, 40)])),
+                skipped(_spans([(30, 40), (50, 60)])),
+            ],
             [(30, 40)],
             id="two",
         ),
         pytest.param(
-            [skipped(_spans([(0, 50)])), skipped(_spans([(10, 40)])), skipped(_spans([(20, 30)]))],
+            [
+                skipped(_spans([(0, 50)])),
+                skipped(_spans([(10, 40)])),
+                skipped(_spans([(20, 30)])),
+            ],
             [(20, 30)],
             id="three-nested",
         ),
@@ -425,7 +435,9 @@ def test_an_entry_outside_the_source_directory_counts(tmp_path: Path) -> None:
         root,
         {"build/main.c": '#include "case.h"\n', "src/case.h": HEADER},
     )
-    db = _db(root, [{"file": "main.c", "directory": "build", "args": ["-I../src", "-DONE"]}])
+    db = _db(
+        root, [{"file": "main.c", "directory": "build", "args": ["-I../src", "-DONE"]}]
+    )
     analyse = _analyse(root, ["src/case.h"], db, src_dir=root / "src")
     assert _ids(analyse) == {"IMPL_BASE", "IMPL_ONE"}
     assert root / "build" / "main.c" in analyse.dependencies
@@ -510,7 +522,9 @@ def test_an_unknown_target_unit_contributes_its_host_and_lexical_closure(
             "y.h": "#pragma once\n#ifdef NEVER_SET\n// @y, IMPL_Y, impl\n#endif\n",
         },
     )
-    db = _db(tmp_path, [{"file": "main.c", "compiler": "xtensa-esp32-elf-gcc", "args": []}])
+    db = _db(
+        tmp_path, [{"file": "main.c", "compiler": "xtensa-esp32-elf-gcc", "args": []}]
+    )
     recorder = _RecordingLogger()
     monkeypatch.setattr(analyse_module, "logger", recorder)
 
@@ -729,8 +743,8 @@ def test_the_lexical_closure_starts_at_the_forced_includes(tmp_path: Path) -> No
             "project/main.c": "int a;\n",
             "project/forced.h": "",
             "project/inc/macros.h": "",
-            "project/inc/cfg.h": '#include_next <cfg.h>\n',
-            "project/inc2/cfg.h": '#include <sdk.h>\n',
+            "project/inc/cfg.h": "#include_next <cfg.h>\n",
+            "project/inc2/cfg.h": "#include <sdk.h>\n",
             "sdk/sdk.h": '#include "board.h"\n',
             "project/board/board.h": "",
         },
