@@ -44,6 +44,12 @@ from sphinx_codelinks.logger import get_logger
 from sphinx_codelinks.source_discover.config import CommentType
 
 if TYPE_CHECKING:
+    from sphinx_codelinks.analyse.preproc.headers import (
+        ClosureMemo,
+        SkippedSpan,
+        UnitKey,
+        UnitRecord,
+    )
     from sphinx_codelinks.analyse.preproc.libclang_parser import LibclangComment
     from sphinx_codelinks.analyse.preproc.target import Decision
 
@@ -289,6 +295,34 @@ class _Waiting:
     ordered by path."""
 
 
+@dataclass(frozen=True)
+class _Header:
+    """A header no compilation-database entry lists, waiting for the entries that
+    include it (useblocks/ubcode#4866)."""
+
+    position: int
+    """Its index in ``src_files``."""
+    path: Path
+    database: Path | None
+    """Its own database (named, or found by the walk-up); ``None`` when there is none,
+    and the databases the analysis found apply."""
+
+
+@dataclass(frozen=True)
+class _Unit:
+    """A compilation-database entry, as a unit a header is read through."""
+
+    key: "UnitKey"
+    database: Path
+    """The database as the analysis names it."""
+    args: list[str]
+    """Its arguments, its target decided, with clang's builtin headers."""
+    entry_args: list[str]
+    """Its arguments, its target decided, as the entry gives them."""
+    decision: "Decision"
+    record: "UnitRecord"
+
+
 class SourceAnalyse:
     def __init__(
         self,
@@ -296,11 +330,16 @@ class SourceAnalyse:
         *,
         name: str = "",
         builtin_header_warnings: BuiltinHeaderWarnings | None = None,
+        unit_memo: "dict[UnitKey, UnitRecord] | None" = None,
     ) -> None:
         """
         :param builtin_header_warnings: What was already warned about clang's builtin
             headers, shared with other analyses so that each warning is made once
             across them all; by default this analysis' own.
+        :param unit_memo: What each compilation-database entry contributes to the
+            headers it includes, kept between analyses (the Sphinx environment keeps
+            one), so that an entry whose files did not change is not parsed again; by
+            default this analysis' own.
         """
         self.name = name
         self.analyse_config = analyse_config
@@ -330,9 +369,24 @@ class SourceAnalyse:
         # Each database entry's target decision, by the same keys (see
         # ``_flags_map_for``).
         self._decisions_cache: dict[Path, dict[Path, Decision]] = {}
+        # Every entry of each database, in order (``_entries_for``).
+        self._entries_cache: dict[
+            Path, list[tuple[Path, int, list[str], Decision]] | None
+        ] = {}
         # Per-run memo of each database's inclusion index (included file -> the
         # entries' main files that include it), built only when a source needs it.
         self._inclusion_index_cache: dict[Path, dict[Path, list[Path]]] = {}
+        # The readable databases the analysis' files resolved to, in the order found:
+        # a header with no database of its own is read through their entries.
+        self._databases_found: dict[Path, None] = {}
+        # what the lexical closures of this analysis' units share (each file's
+        # directives, each lookup of a name), made with the first
+        self._closure_memo: ClosureMemo | None = None
+        self.unit_memo: dict[UnitKey, UnitRecord] = (
+            unit_memo if unit_memo is not None else {}
+        )
+        """What each compilation-database entry contributes to the headers it
+        includes, by entry (:mod:`.preproc.headers`)."""
         self.builtin_header_warnings = (
             builtin_header_warnings
             if builtin_header_warnings is not None
@@ -413,25 +467,50 @@ class SourceAnalyse:
 
         Each entry's arguments carry the target decided for it
         (:func:`.preproc.target.decide`), whose decision ``_decisions_cache`` keeps:
-        every parse of an entry, its own or as an includer, reads them so.
+        every parse of an entry, its own or as an includer, reads them so. A file
+        compiled more than once keeps its last entry here (every entry is a unit a
+        header is read through: :meth:`_entries_for`).
         """
-        from sphinx_codelinks.analyse.preproc import compile_db, target
-
         if db_path in self._flags_map_cache:
             return self._flags_map_cache[db_path]
+        entries = self._entries_for(db_path)
+        if entries is None:
+            self._flags_map_cache[db_path] = None
+            return None
+        flags: dict[Path, list[str]] = {}
+        decisions: dict[Path, Decision] = {}
+        for path, _ordinal, args, decision in entries:
+            flags[path], decisions[path] = args, decision
+        self._flags_map_cache[db_path] = flags
+        self._decisions_cache[db_path] = decisions
+        return flags
+
+    def _entries_for(
+        self, db_path: Path
+    ) -> list[tuple[Path, int, list[str], "Decision"]] | None:
+        """Every entry of ``db_path``, in the database's order: its main file, its
+        ordinal among that file's entries, its arguments with the target decided for
+        it and the decision; memoized. ``None``, warned once, for a database that
+        cannot be read."""
+        from sphinx_codelinks.analyse.preproc import compile_db, target
+
+        if db_path in self._entries_cache:
+            return self._entries_cache[db_path]
         try:
-            database = compile_db.load_database(db_path)
+            database = compile_db.load_entries(db_path)
         except (OSError, ValueError, TypeError) as exc:
             logger.warning(
                 f"codelinks: failed to read {db_path} ({exc}); "
                 f"falling back to the configured defines"
             )
-            self._flags_map_cache[db_path] = None
+            self._entries_cache[db_path] = None
             return None
-        flags: dict[Path, list[str]] = {}
-        decisions: dict[Path, Decision] = {}
-        for path, entry in database.items():
-            flags[path], decisions[path] = target.decide(
+        entries: list[tuple[Path, int, list[str], Decision]] = []
+        ordinals: dict[Path, int] = {}
+        for path, entry in database:
+            ordinal = ordinals.get(path, 0)
+            ordinals[path] = ordinal + 1
+            args, decision = target.decide(
                 entry.args,
                 entry=True,
                 compiler=entry.compiler_target,
@@ -439,9 +518,9 @@ class SourceAnalyse:
                 modelled=target.modelled_by,
                 reads_the_rest=target.reads_the_rest,
             )
-        self._flags_map_cache[db_path] = flags
-        self._decisions_cache[db_path] = decisions
-        return flags
+            entries.append((path, ordinal, args, decision))
+        self._entries_cache[db_path] = entries
+        return entries
 
     def _target_setting(self) -> str | None:
         """The ``[preprocessor] target`` setting, if one is set."""
@@ -493,8 +572,10 @@ class SourceAnalyse:
     ) -> tuple[list[str], "Decision", bool] | None:
         """The arguments ``src_path`` is parsed with, its target decided, the decision,
         and whether they are its own compilation-database entry's (else the ``defines``
-        path's); ``None`` for a compiled source the database has no entry for (read
-        through an entry that includes it, or skipped)."""
+        path's); ``None`` for a file the database has no entry for: a compiled source
+        (read through an entry that includes it, or skipped), and a header (read through
+        every entry that includes it, :meth:`_read_headers`, also when no database
+        applies to it and the analysis' others do)."""
         from sphinx_codelinks.analyse.preproc import compile_db, target
 
         # `run()` calls this (via create_src_objects_libclang) only when
@@ -510,18 +591,18 @@ class SourceAnalyse:
                 # Present-but-malformed/unreadable DB (warned once in the helper):
                 # fall back to the configured defines so extraction still runs.
                 return *self._defines_args(), False
+            self._databases_found.setdefault(db_path, None)
             key = src_path.absolute().resolve()
             args = flags.get(key)
             if args is not None:
                 return args, self._entry_decision(db_path, key), True
             # Absent from the DB. compile_commands.json lists only compiled
-            # translation units, never headers — so a header here is parsed
-            # standalone with the global defines (one run = one variant). A
-            # compiled source absent from the DB has no arguments of its own: it is
-            # read through an entry that includes it, or skipped (spec §3.3).
-            if compile_db.is_translation_unit_source(src_path):
-                return None
-            return *self._defines_args(), False
+            # translation units, never headers — so a header here is read through
+            # every entry that includes it, else standalone with the global defines
+            # (useblocks/ubcode#4866). A compiled source absent from the DB has no
+            # arguments of its own: it is read through an entry that includes it, or
+            # skipped (spec §3.3).
+            return None
         # No readable DB. `find_compile_db` only ever returns a real file, so a
         # non-None `db_path` that reaches here is an explicit `compile_commands`
         # path that is not a readable file (typo/missing): warn and fall back
@@ -532,6 +613,10 @@ class SourceAnalyse:
                 f"codelinks: compile_commands path {db_path} is not a readable "
                 f"file; falling back to the configured defines"
             )
+            return *self._defines_args(), False
+        if not compile_db.is_translation_unit_source(src_path):
+            # a header: through the entries of the databases the analysis found
+            return None
         return *self._defines_args(), False
 
     def _with_builtin_headers(self, args: list[str]) -> list[str]:
@@ -833,12 +918,318 @@ class SourceAnalyse:
             for node in utils.captured_comments(tree, query) or []
         ]
 
-    # @Extract traceability objects with the preprocessor-aware libclang engine, IMPL_PREPROC_1, impl, [FE_PREPROC]
-    def create_src_objects_libclang(self) -> None:
+    def _read_headers(
+        self, headers: list[_Header]
+    ) -> dict[int, list["LibclangComment"]]:
+        """Read each of ``headers`` through the units that include it
+        (useblocks/ubcode#4866, :mod:`.preproc.headers`).
+
+        Its units are the entries of its own database, or of every database the
+        analysis found when it has none, whose contributions include it. With none,
+        it is read with the ``[preprocessor]`` defines, as before (``no_includer``).
+        Else it leaves out only the ranges every one of them skipped
+        (:func:`.preproc.headers.union_of_arms`), read from its reader: of the units
+        whose target is known, the one that includes the most project files, the
+        first by main file, database and ordinal among equals, parsed again once for
+        every header it reads. When none is known (each reads it as written, its
+        target unknown or every parse of it refused), it is read as written without
+        libclang, warned as its first unit's includer would be.
+
+        :return: The comments read, by the header's position in ``src_files``.
+        """
+        from sphinx_codelinks.analyse.preproc.headers import (
+            ContributionKind,
+            union_of_arms,
+        )
+
+        if not headers:
+            return {}
+        root = self.project_path.resolve()
+        found = list(self._databases_found)
+        units: dict[Path, list[_Unit]] = {}
+        read: dict[int, list[LibclangComment]] = {}
+        readers: dict[UnitKey, tuple[_Unit, list[tuple[_Header, list[SkippedSpan]]]]]
+        readers = {}
+        for header in headers:
+            databases = [header.database] if header.database is not None else found
+            in_scope: list[_Unit] = []
+            for database in databases:
+                if database not in units:
+                    units[database] = self._units_of(database, root)
+                in_scope.extend(units[database])
+            in_scope.sort(key=lambda unit: unit.key.order())
+            for unit in in_scope:
+                # an edit to any of them can change what includes the header
+                self.dependencies.update((unit.database, unit.key.main))
+                self.dependencies.update(unit.record.contributions)
+            canonical = header.path.absolute().resolve()
+            includers = [
+                (unit, unit.record.contributions[canonical])
+                for unit in in_scope
+                if canonical in unit.record.contributions
+            ]
+            if not includers:
+                logger.debug(
+                    f"codelinks: no compilation-database entry includes {header.path} "
+                    f"(no_includer); reading it with the configured defines"
+                )
+                read[header.position] = self._read_alone(
+                    header.path, *self._defines_args(), from_entry=False
+                )
+                continue
+            ranges = union_of_arms(each for _, each in includers)
+            known = [unit for unit, _ in includers if unit.record.triple is not None]
+            if known:
+                reader = min(
+                    known,
+                    key=lambda unit: (
+                        -len(unit.record.contributions),
+                        unit.key.order(),
+                    ),
+                )
+                readers.setdefault(reader.key, (reader, []))[1].append((header, ranges))
+                if all(each.kind is ContributionKind.skipped for _, each in includers):
+                    self._warn_without_refused_flags(header.path, known)
+                continue
+            # no unit reads it with a target: as written, warned as its first unit's
+            # includer would be
+            first = includers[0][0]
+            decision = first.record.decision
+            logger.debug(
+                f"codelinks: reading {header.path} as written: no entry that includes "
+                f"it reads it for a target"
+            )
+            read[header.position] = self._read_without_libclang(header.path)
+            self._warn_header_as_written(header.path, first.key.main, decision)
+        for reader, waiting in readers.values():
+            read.update(self._read_from(reader, waiting))
+        return read
+
+    def _warn_header_as_written(
+        self, path: Path, includer: Path, decision: "Decision"
+    ) -> None:
+        """Warn about the header ``path``, read as written because no unit that
+        includes it reads it for a target, as its includer ``includer``'s unit would be,
+        for ``decision`` (its target unknown, or every parse of it refused)."""
+        if decision.parse_refused:
+            self._warn_parse_refused(
+                path,
+                decision,
+                whose=f"the compilation-database entry of its includer {includer}",
+                fix_in=_DATABASE,
+                includer=True,
+            )
+        else:
+            self._warn_target(path, decision, "", includer=True)
+
+    def _warn_without_refused_flags(self, path: Path, units: list[_Unit]) -> None:
+        """Warn about the header ``path`` as a file its first unit of ``units`` (each
+        with a known target, each leaving out the ranges it skipped) reads without the
+        ``-m`` flags libclang refused would be: those flags decide arms the header leaves
+        out as the parse without them decides. Once, worded for its includer."""
+        for unit in units:
+            triple = unit.record.triple or ""
+            if unit.record.decision.message(str(path), triple, True) is not None:
+                self._warn_target(path, unit.record.decision, triple, includer=True)
+                return
+
+    def _units_of(self, database: Path, root: Path) -> list[_Unit]:
+        """Every entry of ``database`` as a unit, with its record: from
+        :attr:`unit_memo` while it holds, else parsed (:meth:`_parse_unit`). An entry
+        whose main file cannot be read is none. Records of entries the database no
+        longer has are dropped from the memo."""
+        from sphinx_codelinks.analyse.preproc import target
+        from sphinx_codelinks.analyse.preproc.headers import UnitKey, mtime_ns
+
+        canonical = database.absolute().resolve()
+        units: list[_Unit] = []
+        current: set[UnitKey] = set()
+        for main, ordinal, entry_args, decision in self._entries_for(database) or []:
+            key = UnitKey(canonical, main, ordinal)
+            current.add(key)
+            main_mtime = mtime_ns(main)
+            if main_mtime is None:
+                continue
+            args = self._with_builtin_headers(entry_args)
+            fingerprint = (
+                tuple(args),
+                repr(decision),
+                str(canonical),
+                target.libclang_version(),
+                str(root),
+            )
+            record = self.unit_memo.get(key)
+            if record is None or not record.fresh(fingerprint, main_mtime):
+                record = self._parse_unit(
+                    key, args, entry_args, decision, root, fingerprint, main_mtime
+                )
+                self.unit_memo[key] = record
+            units.append(_Unit(key, database, args, entry_args, decision, record))
+        for key in [
+            key
+            for key in self.unit_memo
+            if key.database == canonical and key not in current
+        ]:
+            del self.unit_memo[key]
+        return units
+
+    def _parse_unit(
+        self,
+        key: "UnitKey",
+        args: list[str],
+        entry_args: list[str],
+        decision: "Decision",
+        root: Path,
+        fingerprint: tuple[Any, ...],
+        main_mtime: int,
+    ) -> "UnitRecord":
+        """What the unit ``key`` (parsed with ``args``, its entry's arguments with
+        clang's builtin headers, for ``decision``, made again while refused)
+        contributes to each file under ``root`` it includes. Its target known: the
+        ranges each one's first inclusion skipped, or the file as written
+        (:func:`.preproc.libclang_parser.unit_contributions`). Its target unknown:
+        every file a parse for the host includes or its ``#include`` lines name, as
+        written; every parse refused: every file its ``#include`` lines name, as
+        written (:func:`.preproc.headers.lexical_closure`)."""
         from sphinx_codelinks.analyse.preproc import (
+            compile_db,
+            headers,
+            libclang_parser,
             loader,
             target,
         )
+
+        translation_unit_load_error = (
+            loader.load_clang_cindex().TranslationUnitLoadError
+        )
+        main = key.main
+        # a project file: under the project's root, canonical or as given (a path the
+        # compiler names through a symbolic link in it)
+        given = self.project_path.absolute()
+
+        def keep(path: Path) -> bool:
+            return path.is_relative_to(root) or path.is_relative_to(given)
+
+        def parse(attempt: list[str], _decision: "Decision") -> Any:
+            return libclang_parser.parse_translation_unit(main, attempt)
+
+        def as_written(tu: Any, how: headers.Contribution) -> dict[Path, Any]:
+            if self._closure_memo is None:
+                self._closure_memo = headers.ClosureMemo()
+            files = headers.lexical_closure(main, entry_args, keep, self._closure_memo)
+            if tu is not None:
+                working = compile_db.working_directory(args)
+                files |= libclang_parser.project_included_files(tu, working, keep)
+                files.discard(main)
+            return dict.fromkeys(files, how)
+
+        triple: str | None = None
+        if decision.unknown:
+            # a parse for the host, for what it includes only
+            try:
+                tu = parse(args, decision)
+            except translation_unit_load_error:
+                tu = None
+            contributions = as_written(tu, headers.UNKNOWN)
+        else:
+            try:
+                tu, used, decision = target.parse_or_again(
+                    args, decision, parse, translation_unit_load_error
+                )
+            except target.AllRefused as refused:
+                tu = None
+                decision = refused.decision.after_every_refusal(
+                    entry_args, command=loader.refused_by_command(refused.error)
+                )
+                logger.debug(
+                    f"codelinks: every parse of {main} was refused; its #include lines "
+                    f"name the headers it reads as written"
+                )
+                contributions = as_written(
+                    None, headers.UNKNOWN if decision.unknown else headers.REFUSED
+                )
+            else:
+                if decision.unknown:
+                    contributions = as_written(tu, headers.UNKNOWN)
+                else:
+                    triple = target.triple_of(tu)
+                    contributions = libclang_parser.unit_contributions(
+                        tu, compile_db.working_directory(used), main, keep
+                    )
+        del tu  # released before the next unit is parsed
+        return headers.UnitRecord(
+            fingerprint=fingerprint,
+            main_mtime=main_mtime,
+            decision=decision,
+            triple=triple,
+            contributions=contributions,
+            deps={
+                path: mtime
+                for path in contributions
+                if (mtime := headers.mtime_ns(path)) is not None
+            },
+        )
+
+    def _read_from(
+        self, reader: _Unit, waiting: list[tuple[_Header, list["SkippedSpan"]]]
+    ) -> dict[int, list["LibclangComment"]]:
+        """Read each of ``waiting``, a header and the ranges every unit that includes
+        it skipped, from ``reader``, one of them, parsed again once: its comments
+        outside those ranges. A reader that no longer reads (a file changed since its
+        record: every parse refused, or its target now unknown) reads each as written,
+        without libclang, warned as a header no unit reads for a target is."""
+        from sphinx_codelinks.analyse.preproc import libclang_parser, loader, target
+
+        translation_unit_load_error = (
+            loader.load_clang_cindex().TranslationUnitLoadError
+        )
+        main = reader.key.main
+        try:
+            tu, used, decision = target.parse_or_again(
+                reader.args,
+                reader.decision,
+                lambda attempt, _decision: libclang_parser.parse_translation_unit(
+                    main, attempt
+                ),
+                translation_unit_load_error,
+            )
+        except target.AllRefused as refused:
+            tu, used = None, reader.args
+            decision = refused.decision.after_every_refusal(
+                reader.entry_args, command=loader.refused_by_command(refused.error)
+            )
+        read: dict[int, list[LibclangComment]] = {}
+        if tu is None or decision.unknown:
+            for header, _ranges in waiting:
+                read[header.position] = self._read_without_libclang(header.path)
+                self._warn_header_as_written(header.path, main, decision)
+            return read
+        self._warn_missing_builtin_header(main, tu, used)
+        for header, ranges in waiting:
+            logger.debug(
+                f"codelinks: reading {header.path} through {main} and every entry "
+                f"that includes it"
+            )
+            read[header.position] = libclang_parser.extract_comments_outside(
+                tu, header.path, ranges
+            )
+        del tu
+        return read
+
+    def _read_alone(
+        self,
+        src_path: Path,
+        entry_args: list[str],
+        decision: "Decision",
+        *,
+        from_entry: bool,
+    ) -> list["LibclangComment"]:
+        """The comments of ``src_path``, parsed as its own translation unit with
+        ``entry_args`` (its own compilation-database entry's when ``from_entry``, else
+        the ``defines`` path's) for ``decision``, made again while refused; read as
+        written without libclang when every parse is refused. Warns as the read
+        decides."""
+        from sphinx_codelinks.analyse.preproc import loader, target
 
         # Resolve the exception via the loader (never a direct ``import
         # clang.cindex``) so a missing ``libclang`` extra still surfaces the
@@ -846,17 +1237,58 @@ class SourceAnalyse:
         translation_unit_load_error = (
             loader.load_clang_cindex().TranslationUnitLoadError
         )
+        args = self._with_builtin_headers(entry_args)
+        try:
+            (comments, read_for), _, decision = target.parse_or_again(
+                args,
+                decision,
+                lambda attempt, attempt_decision, path=src_path: self._read_active(
+                    path, attempt, attempt_decision
+                ),
+                translation_unit_load_error,
+            )
+        except target.AllRefused as refused:
+            # Its target unknown, the parse was for its comments only; its target
+            # known, no parse read it (a flag of its own refused for that target,
+            # or its command, whatever the target, which the warning names,
+            # useblocks/ubcode#4862): either way, read as written without libclang,
+            # nothing is lost. Worded by what libclang reported.
+            decision = refused.decision.after_every_refusal(
+                entry_args, command=loader.refused_by_command(refused.error)
+            )
+            if decision.unknown:
+                self._warn_target(src_path, decision, "", includer=False)
+            else:
+                self._warn_parse_refused(
+                    src_path,
+                    decision,
+                    whose=("its compilation-database entry" if from_entry else _TABLE),
+                    fix_in=_DATABASE if from_entry else _TABLE,
+                )
+            return self._read_without_libclang(src_path)
+        self._warn_target(src_path, decision, read_for, includer=False)
+        return comments
+
+    # @Extract traceability objects with the preprocessor-aware libclang engine, IMPL_PREPROC_1, impl, [FE_PREPROC]
+    def create_src_objects_libclang(self) -> None:
+        from sphinx_codelinks.analyse.preproc import compile_db
+
         src_files = self.analyse_config.src_files
         read: dict[int, list[LibclangComment]] = {}
         # the compiled sources the database has no entry for: read through the entry
         # that includes them, with that entry's flags, once every other file is read
         waiting: list[_Waiting] = []
+        # the headers no database lists: read through every entry that includes them
+        headers: list[_Header] = []
         for position, src_path in enumerate(src_files):
             if not utils.is_text_file(src_path):
                 continue
             resolved = self._resolve_preproc(src_path)
             if resolved is None:
                 database = self._compile_db_for(src_path)
+                if not compile_db.is_translation_unit_source(src_path):
+                    headers.append(_Header(position, src_path, database))
+                    continue
                 candidates = (
                     ()
                     if database is None
@@ -865,41 +1297,11 @@ class SourceAnalyse:
                 waiting.append(_Waiting(position, src_path, database, candidates))
                 continue
             entry_args, decision, from_entry = resolved
-            args = self._with_builtin_headers(entry_args)
-            try:
-                (comments, read_for), _, decision = target.parse_or_again(
-                    args,
-                    decision,
-                    lambda attempt, attempt_decision, path=src_path: self._read_active(
-                        path, attempt, attempt_decision
-                    ),
-                    translation_unit_load_error,
-                )
-            except target.AllRefused as refused:
-                # Its target unknown, the parse was for its comments only; its target
-                # known, no parse read it (a flag of its own refused for that target,
-                # or its command, whatever the target, which the warning names,
-                # useblocks/ubcode#4862): either way, read as written without libclang,
-                # nothing is lost. Worded by what libclang reported.
-                read[position] = self._read_without_libclang(src_path)
-                decision = refused.decision.after_every_refusal(
-                    entry_args, command=loader.refused_by_command(refused.error)
-                )
-                if decision.unknown:
-                    self._warn_target(src_path, decision, "", includer=False)
-                else:
-                    self._warn_parse_refused(
-                        src_path,
-                        decision,
-                        whose=(
-                            "its compilation-database entry" if from_entry else _TABLE
-                        ),
-                        fix_in=_DATABASE if from_entry else _TABLE,
-                    )
-            else:
-                read[position] = comments
-                self._warn_target(src_path, decision, read_for, includer=False)
+            read[position] = self._read_alone(
+                src_path, entry_args, decision, from_entry=from_entry
+            )
         read.update(self._read_through_includers(waiting))
+        read.update(self._read_headers(headers))
 
         for position in sorted(read):
             src_path = src_files[position]

@@ -7,7 +7,8 @@
 # rule (`<triple>-gcc`, `-g++`, `-cc`, `-clang`, behind a launcher, with a version or a
 # directory), when its first part is an architecture libclang models, else the `target`
 # setting (key `target` here, the `[preprocessor] target` setting), else the machine
-# running it. A file with no entry of its own (a header) reads the setting alone. A
+# running it. A file with no entry of its own that no entry includes (such a header)
+# reads the setting alone; a header an entry includes, that entry's target. A
 # file whose declared target the pinned libclang cannot read (an entry's own
 # `--target=xtensa-esp32-elf`, a setting naming one, a declared target clang refuses
 # with the entry's flags) is read as written: no arm of any `#if` is left out; so is a
@@ -226,10 +227,10 @@ header_takes_the_setting_libclang:
     #else
     // @other, IMPL_T9_OTHER, impl, [REQ]
     #endif
-  # A header has no entry of its own: it is read with the defines, for the target the
-  # setting states, never for the target of the entries (their target without their
-  # flags, -mfloat-abi=hard among them, would blank arms their build compiles):
-  # IMPL_T9_ALWAYS, IMPL_T9_ARM.
+  # A header has no entry of its own, and no entry includes it (one.c is not on disk):
+  # it is read with the defines, for the target the setting states, never for the
+  # target of the entries alone (their target without their flags, -mfloat-abi=hard
+  # among them, would blank arms their build compiles): IMPL_T9_ALWAYS, IMPL_T9_ARM.
 
 unmodelled_compiler_target_reads_every_file_libclang:
   lang: c

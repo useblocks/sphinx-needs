@@ -61,6 +61,13 @@ class SkippedRange(NamedTuple):
     """Whether the range starts in the translation unit's main file, in the main
     file's own pass: a later inclusion of the same path is a pass of its own, and
     reports ``False`` here (``clang_Location_isFromMainFile``)."""
+    start_offset: int = 0
+    """The byte offset of its start in its file, as written (raw bytes)."""
+    end_offset: int = 0
+    """The byte offset of its end in its file, as written: the end of the directive's
+    keyword that closes it."""
+    entry: int = -1
+    """Which entry of its file it is in (:func:`entry_base`)."""
 
 
 class _CXSourceRangeList(ctypes.Structure):
@@ -184,6 +191,22 @@ def _bind() -> None:
     _BOUND = True
 
 
+def entry_base(location: Any) -> int:
+    """Which entry of its file a location of a translation unit is in: the start of
+    that entry in the unit's source-location space (its raw encoding less its offset in
+    the file). Each entry of a file (``#include``, ``-include``) is a file ID of its
+    own, which ``clang_getSkippedRanges`` and the file's line and offset do not tell
+    apart."""
+    return int(location.int_data) - int(location.offset)
+
+
+def first_entry_base(tu: Any, file: Any) -> int:
+    """:func:`entry_base` of ``file``'s first entry into ``tu`` (``clang_getLocation``
+    names a location in the first)."""
+    cx = load_clang_cindex()
+    return entry_base(cx.SourceLocation.from_position(tu, file, 1, 1))
+
+
 def included_file(cursor: Any) -> Path | None:
     """The file an inclusion-directive cursor includes, or ``None`` when libclang did
     not find it (``<stddef.h>`` without clang's builtin headers, a header not generated
@@ -245,7 +268,15 @@ def _read_range_list(cx: Any, ptr: Any) -> list[SkippedRange]:
             from_main = bool(cx.conf.lib.clang_Location_isFromMainFile(start))
             out.append(
                 SkippedRange(
-                    f, start.line, start.column, end.line, end.column, from_main
+                    f,
+                    start.line,
+                    start.column,
+                    end.line,
+                    end.column,
+                    from_main,
+                    start.offset,
+                    end.offset,
+                    entry_base(start),
                 )
             )
         return out

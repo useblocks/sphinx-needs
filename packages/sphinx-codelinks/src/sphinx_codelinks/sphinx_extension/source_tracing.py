@@ -169,8 +169,12 @@ def setup(app: Sphinx) -> dict[str, Any]:
         # a triple libclang does not model, a compiler named for a GCC triple whose
         # architecture it does not model, a target refused even without the CPU flags)
         # is read as written, every arm kept, where an environment at 8 holds the records
-        # of another target's arms
-        "env_version": 9,
+        # of another target's arms; 10: a header no compilation-database entry lists is
+        # read through every entry that includes it (useblocks/ubcode#4866), so the
+        # records an environment at 9 holds for such headers were extracted with the
+        # `[preprocessor]` defines alone, and the environment holds what each entry
+        # contributes to the headers it includes
+        "env_version": 10,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
