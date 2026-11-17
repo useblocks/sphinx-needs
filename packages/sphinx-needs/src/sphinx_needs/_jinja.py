@@ -65,6 +65,7 @@ def _new_env(
     autoescape: bool,
     variable_start_string: str = "{{",
     variable_end_string: str = "}}",
+    strict: bool = False,
 ) -> Environment:
     """Create a new Environment with standard setup (filters, autoescape).
 
@@ -74,27 +75,33 @@ def _new_env(
         different syntax, e.g. ``"[["`` for the inline ``:need:`` role text.
     :param variable_end_string: Delimiter that closes a variable expression
         (default ``"}}"``).
+    :param strict: Whether an undefined value is an error wherever it is used (other
+        than by an ``is defined`` test or the ``default`` filter), rather than
+        rendering empty (the default, lenient).
     :return: A new Environment instance.
     """
     env = Environment(
         variable_start_string=variable_start_string,
         variable_end_string=variable_end_string,
     )
+    if strict:
+        env.undefined_behavior = "strict"
     if autoescape:
         env.auto_escape_callback = lambda _name: True
     _setup_builtin_filters(env)
     return env
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=8)
 def _get_cached_env(
     autoescape: bool,
     variable_start_string: str = "{{",
     variable_end_string: str = "}}",
+    strict: bool = False,
 ) -> Environment:
     """Get or create a cached Environment instance (no custom functions).
 
-    Cached per ``(autoescape, variable_start_string, variable_end_string)``.
+    Cached per ``(autoescape, variable_start_string, variable_end_string, strict)``.
     Safe because the returned
     ``Environment`` is not mutated after creation.  ``lru_cache`` ensures
     that concurrent calls for the same key return the same instance
@@ -109,9 +116,10 @@ def _get_cached_env(
     :param autoescape: Whether to enable autoescaping.
     :param variable_start_string: Delimiter that opens a variable expression.
     :param variable_end_string: Delimiter that closes a variable expression.
+    :param strict: Whether an undefined value is an error (see :func:`_new_env`).
     :return: A cached Environment instance.
     """
-    return _new_env(autoescape, variable_start_string, variable_end_string)
+    return _new_env(autoescape, variable_start_string, variable_end_string, strict)
 
 
 def render_template_string(
@@ -122,6 +130,7 @@ def render_template_string(
     new_env: bool = False,
     variable_start_string: str = "{{",
     variable_end_string: str = "}}",
+    strict: bool = False,
 ) -> str:
     """Render a Jinja template string with the given context.
 
@@ -138,12 +147,17 @@ def render_template_string(
         (default ``"{{"``).
     :param variable_end_string: Delimiter that closes a variable expression
         (default ``"}}"``).
+    :param strict: Whether an undefined value is an error wherever it is used (other
+        than by an ``is defined`` test or the ``default`` filter), rather than
+        rendering empty (the default).
     :return: The rendered template as a string.
     """
     env = (
-        _new_env(autoescape, variable_start_string, variable_end_string)
+        _new_env(autoescape, variable_start_string, variable_end_string, strict)
         if new_env
-        else _get_cached_env(autoescape, variable_start_string, variable_end_string)
+        else _get_cached_env(
+            autoescape, variable_start_string, variable_end_string, strict
+        )
     )
     return env.render_str(template_string, **context)
 
@@ -213,3 +227,13 @@ def compile_template(
     env = _new_env(autoescape, variable_start_string, variable_end_string)
     env.add_template(CompiledTemplate._TEMPLATE_NAME, template_string)
     return CompiledTemplate(env)
+
+
+def undeclared_names(template_string: str) -> frozenset[str]:
+    """The top-level names *template_string* reads and does not set itself (MiniJinja's
+    ``undeclared_variables``, not nested): ``owner`` for ``{{ owner.name }}``.
+
+    :raises minijinja.TemplateError: If the template does not parse.
+    """
+    env = _get_cached_env(False)
+    return frozenset(env.undeclared_variables_in_str(template_string, nested=False))

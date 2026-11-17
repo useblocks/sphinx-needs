@@ -1,0 +1,1434 @@
+# Conformance corpus for NEED TEMPLATES: the `:template:`, `:pre_template:`,
+# `:post_template:` and `:jinja_content:` options of a need -- where their output lands,
+# what a template sees when it is rendered, what `needs.json` writes, what is reported,
+# and what a reader of that `needs.json` does with it.
+#
+# Repository of record: useblocks/sphinx-needs (public)
+# Canonical path:       packages/sphinx-needs/tests/fixtures/need_templates_conformance.toml
+#
+# minijinja: 3.1.0
+# sphinx-needs: 9.3.0
+#
+# The `minijinja:` line is the engine the cases were recorded against (both tools render
+# need templates with minijinja); each runner asserts it against the engine it runs, so a
+# bump of the engine is a re-record of this file, never a silent drift. The
+# `sphinx-needs:` line is the release whose behaviour the cases pin, together with the
+# fixes of the need-template contract recorded below.
+#
+# THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
+# (this path, and the commit it was taken from) prepended and nothing else changed, and to
+# run it against its own engine. The corpus travels public -> private, so vendoring with a
+# recorded source commit is the sync mechanism.
+#
+# Do not reformat this file. `.gitattributes` pins its line endings, and the taplo hook
+# excludes it: every `config = '''...'''`, `source = '''...'''` and `files` body below is
+# the INPUT of a case, so a formatter touching one silently changes what the case tests.
+# A change here is a change to the contract, and owes ubCode a re-vendor.
+#
+# The contract (each case names the rules it pins in `rules`):
+#    1. `:template:` / `:jinja_content:` output IS the need's content (inside the need);
+#       `:pre_template:` / `:post_template:` output is the need's `pre_content` /
+#       `post_content`, placed before and after it
+#    2. a template is `<template_folder>/<name>.need`, the folder `needs_templates` unless
+#       `[needs] template_folder` says otherwise, anchored at the directory of the
+#       `ubproject.toml` that sets it
+#    3. a template is set by the need's option, by `needimport`'s own options, per need
+#       type (`[needs.types.<t>.fields.<option>] default`), and through `[needs.fields]`
+#       (`default`, `predicates`); `:jinja_content:` is per need only
+#    4. the render happens ONCE, when the need is created: it sees the need's id (an
+#       automatic one included), its defaults, its type's metadata, its location, and every
+#       field the need's type declares (with its empty value when unset: `None`, or `[]`
+#       for a link type); it sees no back links, no derived, dynamic or variant value, no
+#       needextend change and no `sections`
+#    5. the id of a need given none is generated BEFORE the render, from the authored body
+#    6. the output is written in the PAGE's markup, and `doctype` is that markup
+#    7. (sphinx-needs only) a heading in pre/post output opens a real section, in place;
+#       ubCode refuses one (`template_heading`, a `ubcode_only` code)
+#    8. a hidden need shows no template output, and its pre/post templates are not
+#       rendered (`pre_content` / `post_content` null); its `content` is still the
+#       rendered text
+#    9. an undefined name renders EMPTY and is reported (`template_undefined`, once per
+#       rendered template, at the need): each tool renders strictly first and, on an
+#       undefined error, renders again leniently; `{% if x is defined %}` reports nothing.
+#       An attribute of an undefined NAME (`{{ typo.attr }}`) fails even leniently: the
+#       whole template is a `template_render` (rule 14), its output empty
+#   10. a scalar displays as Python does (`None`, `True`, `1.0`, `3`, a string); how a
+#       list, a map or a tuple displays is NOT part of the contract, and no case prints one
+#   11. a field holding a dynamic function, a variant or a derived value (where the need's
+#       type has a rule for it) is unresolved when the template is rendered: it displays
+#       as its unset value (`None`, or `[]` for a link type), and a template that NAMES it
+#       -- a top-level name the template reads, as minijinja's `undeclared_variables` (not
+#       nested) gives it -- is reported once per field (`template_unresolved`, at the
+#       need, naming the field)
+#   14. a broken template -- a missing file, a syntax error, a render error -- keeps the
+#       need, with EMPTY output for that template, and one finding: `template_missing`,
+#       `template_syntax` or `template_render`; through `needimport` too
+#   16. `needs.json` writes `content` (rendered), `pre_content` and `post_content`
+#       (rendered), and the four template keys `template`, `pre_template`,
+#       `post_template` and `jinja_content` as PROVENANCE
+#   17. a reader never re-applies a record's template keys: an imported record's
+#       `template` and `jinja_content` are never rendered again, and a missing template
+#       folder never drops an imported need. A record's `pre_template` / `post_template`
+#       are applied (with a deprecation, until sphinx-needs 10.0) only where the importer
+#       has that template; the importer's OWN `needimport` options and its defaults still
+#       decorate imported needs. `pre_content` / `post_content` are never imported
+#   18. a reader parses imported content in its `doctype` (under `parse_by_doctype`),
+#       a record that names a template included
+#   19. `doctype` is the markup the content is written in: a need inside `{eval-rst}` on
+#       a MyST page is `.rst`
+#   21. `:jinja_content:` renders the need's own body as a template, against the need,
+#       under the rules above (its deprecation is withdrawn: no finding)
+#
+# Rules for every runner:
+#   - a case is one project. `config` is its `ubproject.toml` (the `[needs]` table, and
+#     `[source] dir` for a case with `srcdir`); `source` is the body of its reStructuredText
+#     document, `index.rst`, under a title the runner adds (`Case`, underlined with `=`,
+#     and a blank line); `source_md` (optional) is the body of a MyST document,
+#     `page.md`, under a title the runner adds (`# Page` and a blank line), which the
+#     runner puts in the toctree of `index.rst` (a hidden `toctree` naming `page`, BELOW
+#     the `source`); `files` (optional) are other files of the project, relative to the
+#     case directory, among them the templates (`needs_templates/<name>.need`) and the
+#     needs.json files an import reads. A case writes only inside its own directory: a
+#     `files` key that would land outside it (`../x.json`) is a broken case, and the
+#     runner refuses it
+#   - a case with `srcdir` is built from that subdirectory of the case directory: its
+#     documents (and the Python runner's `conf.py`) are written there, its
+#     `ubproject.toml` and `files` stay at the case directory, and its `config` names the
+#     subdirectory as `[source] dir`
+#   - a template file's text is read as written: a template ending in a newline renders
+#     without it (minijinja's `keep_trailing_newline` is off in both tools)
+#   - a needs.json an import reads is written as sphinx-needs 9.1.0 writes it (the
+#     records whole), less the `needs_schema` of its version
+#   - every need id satisfies the default id regex (`^[A-Z0-9_]{5,}`); the need types are
+#     the default ones (`req`, `spec`, `impl`, `test`)
+#   - a case with `python_only = true` is one only sphinx-needs runs, and ubCode's runner
+#     skips it; `ubcode_only = true` is the converse
+#   - values are compared as `needs.json` writes them, TYPE INCLUDED; a need pinned by
+#     a `needs.<ID>` table is present, and each key it gives is compared; a key it leaves
+#     out is not compared
+#   - a `nulls` entry names a need of the case and fields that need carries, each
+#     present and null; `missing` names needs the case must NOT create
+#   - findings are compared as a MULTISET of `code`, and of `need` and `field` where the
+#     finding names them; a key a finding leaves out is not compared. `code` is the BARE
+#     subcode. Messages and severities are NOT compared. Only the codes of the
+#     need-template contract are compared --
+#         template_missing, template_syntax, template_render, template_undefined,
+#         template_unresolved, template_heading
+#     -- every other finding (a dead link, a need that could not be imported) is each
+#     tool's own. A finding's `need` is the need it is reported at (the need's
+#     directive; for an imported need, the need of that id). `field` is named by
+#     `template_unresolved` alone: the field the template reads
+#   - an import case that expects a finding imports ONE record (every needs.json it
+#     reads holds one need): the needs of one `needimport` share its line, so a finding
+#     at that line names its need only when there is one. The runners refuse a case
+#     that breaks this
+#   - each tool maps the codes to its own reports:
+#         sphinx-needs:  template_missing     -> needs.template_missing
+#                        template_syntax      -> needs.template_syntax
+#                        template_render      -> needs.template_render
+#                        template_undefined   -> needs.template_undefined
+#                        template_unresolved  -> needs.template_unresolved
+#                        template_heading     -> (none: sphinx-needs opens a section)
+#         ubCode:        each code under its own prefix, `template_heading` included
+#
+# `packages/sphinx-needs/tests/test_need_templates_conformance.py` runs every case with the
+# `needs` builder AND asserts the case COUNT, so a truncated copy is a red test rather
+# than reduced coverage. The prose half of the contract is the need-template section of
+# the `need` directive's documentation.
+#
+# Each `[[case]]` has:
+#   name         - unique, kebab-case
+#   why          - one line saying what the case pins
+#   rules        - the numbers of the rules above that it pins
+#   config       - the `ubproject.toml`
+#   source       - the body of `index.rst`
+#   source_md    - optional; the body of `page.md` (MyST)
+#   srcdir       - optional; the subdirectory of the case directory it is built from
+#   files        - optional; other files, relative to the case directory, and their text
+#   python_only  - optional; see the rules above
+#   ubcode_only  - optional; see the rules above
+#   [case.expect]
+#     findings         - the findings, `[]` for none; or one `[[case.expect.findings]]`
+#                        table per finding: `code`, and `need` and `field` where named
+#     needs.<ID>       - one table per pinned need: field = value
+#     nulls            - <ID> = [the fields pinned as unset] (TOML has no null)
+#     missing          - [the ids of needs not created]
+
+# --- placement and needs.json (rules 1, 16) ------------------------------------------
+
+[[case]]
+name = "template-output-is-the-content"
+why = "a :template: renders into content, its authored body reachable as {{ content }}; the template name is written as provenance"
+rules = [1, 16]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Wrapped
+   :id: REQ_1
+   :template: wrap
+
+   Authored body.
+'''
+files."needs_templates/wrap.need" = '''
+WRAP[{{ id }}]
+
+{{ content }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+content = "WRAP[REQ_1]\n\nAuthored body."
+template = "wrap"
+jinja_content = false
+doctype = ".rst"
+[case.expect.nulls]
+REQ_1 = ["pre_template", "post_template", "pre_content", "post_content"]
+
+[[case]]
+name = "pre-and-post-are-decorations"
+why = "a :pre_template: and a :post_template: render into pre_content and post_content; the content stays the authored body"
+rules = [1, 16]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Decorated
+   :id: REQ_1
+   :pre_template: pre
+   :post_template: post
+
+   Authored body.
+
+.. req:: Plain
+   :id: REQ_2
+
+   Plain body.
+'''
+files."needs_templates/pre.need" = '''
+PRE {{ id }}
+'''
+files."needs_templates/post.need" = '''
+POST {{ id }} {{ title }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+content = "Authored body."
+pre_content = "PRE REQ_1"
+post_content = "POST REQ_1 Decorated"
+pre_template = "pre"
+post_template = "post"
+jinja_content = false
+[case.expect.needs.REQ_2]
+content = "Plain body."
+jinja_content = false
+[case.expect.nulls]
+REQ_1 = ["template"]
+REQ_2 = ["template", "pre_template", "post_template", "pre_content", "post_content"]
+
+[[case]]
+name = "all-three-templates-on-one-need"
+why = "the content, pre and post templates of one need render independently, each against the same need"
+rules = [1, 16]
+config = '''
+[needs]
+'''
+source = '''
+.. spec:: Everything
+   :id: SPEC_1
+   :template: wrap
+   :pre_template: pre
+   :post_template: post
+
+   Body.
+'''
+files."needs_templates/wrap.need" = '''
+[{{ content }}]
+'''
+files."needs_templates/pre.need" = '''
+before {{ id }}
+'''
+files."needs_templates/post.need" = '''
+after {{ id }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+content = "[Body.]"
+pre_content = "before SPEC_1"
+post_content = "after SPEC_1"
+template = "wrap"
+pre_template = "pre"
+post_template = "post"
+
+# --- the template folder (rule 2) ----------------------------------------------------
+
+[[case]]
+name = "template-folder-is-anchored-at-the-toml"
+why = "[needs] template_folder is relative to the directory of the ubproject.toml, not to the source directory"
+rules = [2]
+srcdir = "docs"
+config = '''
+[source]
+dir = "docs"
+
+[needs]
+template_folder = "tpl"
+'''
+source = '''
+.. req:: Anchored
+   :id: REQ_1
+   :template: wrap
+
+   Body.
+'''
+files."tpl/wrap.need" = '''
+from-the-toml-directory {{ id }}: {{ content }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+content = "from-the-toml-directory REQ_1: Body."
+template = "wrap"
+
+# --- how a template is set (rule 3) --------------------------------------------------
+
+[[case]]
+name = "per-type-default-template"
+why = "a need type's default for post_template decorates every need of that type and no other, and is written as the need's post_template"
+rules = [3, 16]
+config = '''
+[needs.types.req.fields.post_template]
+default = "post"
+'''
+source = '''
+.. req:: Typed
+   :id: REQ_1
+
+   Body.
+
+.. spec:: Other type
+   :id: SPEC_1
+
+   Body.
+'''
+files."needs_templates/post.need" = '''
+POST {{ id }} {{ type }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+post_content = "POST REQ_1 req"
+post_template = "post"
+[case.expect.nulls]
+SPEC_1 = ["post_template", "post_content"]
+
+[[case]]
+name = "global-default-and-predicate-template"
+why = "[needs.fields.<option>] default decorates every need, and a predicate gives its template to the needs it matches"
+rules = [3]
+config = '''
+[needs.fields.pre_template]
+default = "pre"
+
+[needs.fields.post_template]
+predicates = [["status == 'open'", "post"]]
+'''
+source = '''
+.. req:: Open
+   :id: REQ_1
+   :status: open
+
+.. req:: Closed
+   :id: REQ_2
+   :status: closed
+'''
+files."needs_templates/pre.need" = '''
+PRE {{ id }}
+'''
+files."needs_templates/post.need" = '''
+POST {{ id }} {{ status }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+pre_content = "PRE REQ_1"
+post_content = "POST REQ_1 open"
+pre_template = "pre"
+post_template = "post"
+[case.expect.needs.REQ_2]
+pre_content = "PRE REQ_2"
+pre_template = "pre"
+[case.expect.nulls]
+REQ_2 = ["post_template", "post_content"]
+
+[[case]]
+name = "needimport-options-decorate-imported-needs"
+why = "a template named on the needimport directive decorates every imported need, rendered against the imported (prefixed) need"
+rules = [3, 17]
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: a_needs.json
+   :id_prefix: B_
+   :post_template: post
+'''
+files."needs_templates/post.need" = '''
+IMPORTED {{ id }} {{ title }}
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 1, "needs": {
+"SPEC_PLAIN": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "Plain body *em*.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_PLAIN", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 9, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": null, "post_template": null, "pre_content": null, "pre_template": null, "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": null, "title": "Plain", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.B_SPEC_PLAIN]
+content = "Plain body *em*."
+post_content = "IMPORTED B_SPEC_PLAIN Plain"
+post_template = "post"
+[case.expect.nulls]
+B_SPEC_PLAIN = ["template", "pre_template", "pre_content"]
+
+# --- what a template sees (rules 4, 5) -----------------------------------------------
+
+[[case]]
+name = "render-sees-the-created-need"
+why = "the render sees the id, a field default, the type's metadata and the location, and every declared field of the type, unset ones as None"
+rules = [4, 10]
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+default = "alice"
+
+[needs.fields.reviewer]
+schema = { type = "string" }
+'''
+source = '''
+.. spec:: Seen
+   :id: SPEC_1
+   :template: show
+'''
+files."needs_templates/show.need" = '''
+id={{ id }} type={{ type }} type_name={{ type_name }} title={{ title }} owner={{ owner }} reviewer={{ reviewer }} status={{ status }} docname={{ docname }} is_import={{ is_import }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+content = "id=SPEC_1 type=spec type_name=Specification title=Seen owner=alice reviewer=None status=None docname=index is_import=False"
+
+[[case]]
+name = "render-is-before-resolution"
+why = "the render happens at creation: it sees no back link, no section, and the value a needextend later replaces"
+rules = [4]
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Linked to
+   :id: REQ_1
+   :owner: alice
+   :template: show
+
+.. spec:: Links
+   :id: SPEC_1
+   :links: REQ_1
+
+.. needextend:: REQ_1
+   :owner: bob
+'''
+files."needs_templates/show.need" = '''
+owner={{ owner }} back={{ links_back|length }} sections={{ sections|length }} section_name={{ section_name }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+content = "owner=alice back=0 sections=0 section_name=None"
+owner = "bob"
+links_back = ["SPEC_1"]
+
+[[case]]
+name = "generated-id-is-from-the-authored-body"
+why = "an untitled need given no id gets the id hashed from its AUTHORED body (sha1 of 'Authored body.'), not from its rendered content, and the template sees it"
+rules = [5, 4]
+config = '''
+[needs]
+title_optional = true
+'''
+source = '''
+.. req::
+   :template: wrap
+
+   Authored body.
+'''
+files."needs_templates/wrap.need" = '''
+WRAP[{{ id }}] {{ content }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.R_EA9A4]
+content = "WRAP[R_EA9A4] Authored body."
+title = ""
+template = "wrap"
+
+# --- markup (rule 6) -----------------------------------------------------------------
+
+[[case]]
+name = "output-is-in-the-pages-markup"
+why = "a template's output is PARSED in the page's markup, MyST on a MyST page and RST on an RST page, and the need's doctype says so: a need directive in content output is a need inside the need, one in post output a need after it"
+rules = [6, 1]
+config = '''
+[needs]
+'''
+source = '''
+.. spec:: On RST
+   :id: SPEC_RST
+   :template: wrap
+   :post_template: post
+
+   RST body `link <https://r.example>`_.
+'''
+source_md = '''
+```{spec} On MyST
+:id: SPEC_MD
+:template: wrap
+:post_template: post
+
+MyST body [link](https://m.example).
+```
+'''
+files."needs_templates/wrap.need" = '''
+WRAP[{{ id }}] {{ content }}
+{% if doctype == ".md" %}
+```{spec} Nested
+:id: N_{{ id }}
+```
+{% else %}
+.. spec:: Nested
+   :id: N_{{ id }}
+{% endif %}
+'''
+files."needs_templates/post.need" = '''
+POST {{ id }} {{ doctype }}
+{% if doctype == ".md" %}
+```{spec} After
+:id: N_POST_{{ id }}
+```
+{% else %}
+.. spec:: After
+   :id: N_POST_{{ id }}
+{% endif %}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_RST]
+doctype = ".rst"
+[case.expect.needs.SPEC_MD]
+doctype = ".md"
+[case.expect.needs.N_SPEC_RST]
+parent_need = "SPEC_RST"
+doctype = ".rst"
+[case.expect.needs.N_SPEC_MD]
+parent_need = "SPEC_MD"
+doctype = ".md"
+[case.expect.needs.N_POST_SPEC_RST]
+title = "After"
+[case.expect.needs.N_POST_SPEC_MD]
+title = "After"
+[case.expect.nulls]
+N_POST_SPEC_RST = ["parent_need"]
+N_POST_SPEC_MD = ["parent_need"]
+
+# --- value display (rule 10) ---------------------------------------------------------
+
+[[case]]
+name = "scalars-display-as-python"
+why = "an integer, a float, a boolean, a string and an unset field display as Python prints them; a whole float keeps its .0"
+rules = [10]
+config = '''
+[needs.fields.count]
+schema = { type = "integer" }
+
+[needs.fields.weight]
+schema = { type = "number" }
+
+[needs.fields.ratio]
+schema = { type = "number" }
+
+[needs.fields.flag]
+schema = { type = "boolean" }
+
+[needs.fields.label]
+schema = { type = "string" }
+
+[needs.fields.unset]
+schema = { type = "string" }
+'''
+source = '''
+.. spec:: Values
+   :id: SPEC_1
+   :count: 3
+   :weight: 1.5
+   :ratio: 2
+   :flag: true
+   :label: it's
+   :template: show
+'''
+files."needs_templates/show.need" = '''
+count={{ count }} weight={{ weight }} ratio={{ ratio }} flag={{ flag }} label={{ label }} unset={{ unset }} none={{ none }} literal={{ 1.0 }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_1]
+content = "count=3 weight=1.5 ratio=2.0 flag=True label=it's unset=None none=None literal=1.0"
+count = 3
+weight = 1.5
+ratio = 2.0
+flag = true
+
+# --- :jinja_content: (rules 1, 16, 21) -----------------------------------------------
+
+[[case]]
+name = "jinja-content-renders-the-body"
+why = ":jinja_content: renders the need's own body as a template against the need, and needs.json writes jinja_content true"
+rules = [1, 16, 21]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Jinja
+   :id: REQ_1
+   :jinja_content:
+
+   Body of {{ id }}: {{ title }}.
+
+.. req:: Plain
+   :id: REQ_2
+
+   Body of {{ id }}.
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+content = "Body of REQ_1: Jinja."
+jinja_content = true
+[case.expect.needs.REQ_2]
+content = "Body of {{ id }}."
+jinja_content = false
+[case.expect.nulls]
+REQ_1 = ["template", "pre_template", "post_template"]
+
+# --- a broken template keeps the need (rule 14) --------------------------------------
+
+[[case]]
+name = "missing-template-keeps-the-need"
+why = "a template file that does not exist leaves the need created, with empty output for that template and one template_missing; the need is still a link target"
+rules = [14, 16]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: No such template
+   :id: REQ_1
+   :template: nope
+
+   Authored body.
+
+.. req:: No such post template
+   :id: REQ_2
+   :post_template: nope
+
+   Authored body.
+
+.. spec:: Links it
+   :id: SPEC_1
+   :links: REQ_1, REQ_2
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_missing"
+need = "REQ_1"
+[[case.expect.findings]]
+code = "template_missing"
+need = "REQ_2"
+[case.expect.needs.REQ_1]
+content = ""
+template = "nope"
+links_back = ["SPEC_1"]
+[case.expect.needs.REQ_2]
+content = "Authored body."
+post_content = ""
+post_template = "nope"
+links_back = ["SPEC_1"]
+[case.expect.nulls]
+REQ_1 = ["pre_content", "post_content"]
+
+[[case]]
+name = "missing-template-folder-keeps-the-need"
+why = "a template folder that does not exist is a missing template, never a lost need"
+rules = [14, 2]
+config = '''
+[needs]
+template_folder = "nowhere"
+'''
+source = '''
+.. req:: No folder
+   :id: REQ_1
+   :pre_template: pre
+
+   Authored body.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_missing"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "Authored body."
+pre_content = ""
+pre_template = "pre"
+
+[[case]]
+name = "template-syntax-error-keeps-the-need"
+why = "a template that does not parse leaves the need created with empty output and one template_syntax"
+rules = [14]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Broken template
+   :id: REQ_1
+   :template: broken
+
+   Authored body.
+'''
+files."needs_templates/broken.need" = '''
+before {% if %} after
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_syntax"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = ""
+template = "broken"
+
+[[case]]
+name = "template-render-error-keeps-the-need"
+why = "a template that fails while rendering (an invalid operation) leaves the need created with empty output and one template_render; the need's other templates still render"
+rules = [14]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Failing template
+   :id: REQ_1
+   :post_template: failing
+   :pre_template: pre
+
+   Authored body.
+'''
+files."needs_templates/failing.need" = '''
+{{ id + 1 }}
+'''
+files."needs_templates/pre.need" = '''
+PRE {{ id }}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_render"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "Authored body."
+pre_content = "PRE REQ_1"
+post_content = ""
+
+[[case]]
+name = "jinja-content-syntax-error-keeps-the-need"
+why = "a :jinja_content: body that does not parse leaves the need created with empty content and one template_syntax"
+rules = [14, 21]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Broken body
+   :id: REQ_1
+   :jinja_content:
+
+   Body {% if %} here.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_syntax"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = ""
+jinja_content = true
+
+[[case]]
+name = "needimport-missing-template-keeps-the-imported-need"
+why = "a template named on needimport that does not exist leaves each imported need created, with empty output and one template_missing"
+rules = [14, 3]
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: a_needs.json
+   :id_prefix: B_
+   :template: nope
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 1, "needs": {
+"SPEC_PLAIN": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "Plain body *em*.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_PLAIN", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 9, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": null, "post_template": null, "pre_content": null, "pre_template": null, "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": null, "title": "Plain", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_missing"
+need = "B_SPEC_PLAIN"
+[case.expect.needs.B_SPEC_PLAIN]
+content = ""
+template = "nope"
+
+# --- undefined names (rules 9, 12) ---------------------------------------------------
+
+[[case]]
+name = "undefined-name-renders-empty-and-is-reported"
+why = "a name no need defines (a typo) renders empty, as it always has, and is reported once per template at the need"
+rules = [9]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Typo
+   :id: REQ_1
+   :template: typo
+
+   Body.
+'''
+files."needs_templates/typo.need" = '''
+[{{ titel }}] {{ content }}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_undefined"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "[] Body."
+
+[[case]]
+name = "guarded-undefined-is-clean"
+why = "the rule is a RUNTIME one: a name tested with `is defined`, or given a `default`, is not reported, though the template names it"
+rules = [9]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Guarded
+   :id: REQ_1
+   :template: guarded
+'''
+files."needs_templates/guarded.need" = '''
+{% if extra is defined %}has {{ extra }}{% else %}no extra{% endif %}, {{ other | default("fallback") }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+content = "no extra, fallback"
+
+[[case]]
+name = "undefined-in-a-condition-is-reported"
+why = "testing an undefined name for truth (without `is defined`) is a use of it: the false branch renders, and it is reported"
+rules = [9]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Condition
+   :id: REQ_1
+   :post_template: cond
+'''
+files."needs_templates/cond.need" = '''
+{% if maybe %}yes{% else %}no{% endif %}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_undefined"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+post_content = "no"
+
+[[case]]
+name = "undefined-is-reported-per-template"
+why = "a need whose pre and post templates both use an undefined name is reported once for each; a template that uses none is not"
+rules = [9, 1]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Two typos
+   :id: REQ_1
+   :pre_template: pre
+   :post_template: post
+   :template: clean
+
+   Body.
+'''
+files."needs_templates/pre.need" = '''
+pre {{ nope1 }}{{ nope2 }}.
+'''
+files."needs_templates/post.need" = '''
+post {{ nope3 }}.
+'''
+files."needs_templates/clean.need" = '''
+{{ content }}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_undefined"
+need = "REQ_1"
+[[case.expect.findings]]
+code = "template_undefined"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "Body."
+pre_content = "pre ."
+post_content = "post ."
+
+[[case]]
+name = "undefined-in-jinja-content-is-reported"
+why = "a :jinja_content: body using an undefined name renders it empty and is reported"
+rules = [9, 21]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Jinja typo
+   :id: REQ_1
+   :jinja_content:
+
+   Hello {{ nobody }}from {{ id }}.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_undefined"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "Hello from REQ_1."
+
+[[case]]
+name = "undefined-attribute-of-an-unset-field-is-reported"
+why = "an attribute of a declared but unset field (None) is undefined: it renders empty and is reported"
+rules = [9, 4]
+config = '''
+[needs.fields.owner]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Unset owner
+   :id: REQ_1
+   :template: attr
+'''
+files."needs_templates/attr.need" = '''
+owner=[{{ owner.name }}]
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_undefined"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "owner=[]"
+
+[[case]]
+name = "render-context-is-merged-over-the-need"
+why = "[needs.render_context] in ubproject.toml is merged over the need's fields: a key it gives is defined, and not reported (a conf.py-only value, such as a function, is sphinx-needs' alone: rule 12)"
+rules = [12, 9]
+config = '''
+[needs.render_context]
+team = "blue"
+'''
+source = '''
+.. req:: Context
+   :id: REQ_1
+   :template: ctx
+'''
+files."needs_templates/ctx.need" = '''
+team={{ team }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+content = "team=blue"
+
+[[case]]
+name = "attribute-of-an-undefined-name-is-a-render-error"
+why = "an attribute of an undefined name fails even leniently (the engine's rule, unlike one of None): the template cannot be rendered, the need is kept"
+rules = [9, 14]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Deep typo
+   :id: REQ_1
+   :template: deep
+
+   Body.
+'''
+files."needs_templates/deep.need" = '''
+[{{ typo.attr }}]
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_render"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = ""
+
+# --- unresolved fields (rule 11) -----------------------------------------------------
+
+[[case]]
+name = "dynamic-function-field-is-unresolved"
+why = "a field holding a dynamic function is unresolved when the template is rendered: it renders as None and is reported, naming the field; needs.json holds the resolved value"
+rules = [11, 4]
+config = '''
+[needs.fields.copied]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Source title
+   :id: REQ_1
+   :copied: [[copy("title")]]
+   :template: show
+'''
+files."needs_templates/show.need" = '''
+copied={{ copied }}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_unresolved"
+need = "REQ_1"
+field = "copied"
+[case.expect.needs.REQ_1]
+content = "copied=None"
+copied = "Source title"
+
+[[case]]
+name = "variant-field-is-unresolved"
+why = "a field holding a variant is unresolved when the template is rendered: it renders as None and is reported"
+rules = [11]
+config = '''
+[needs.fields.level]
+schema = { type = "string" }
+parse_variants = true
+'''
+source = '''
+.. req:: Variant
+   :id: REQ_1
+   :level: <<[type == 'req']:high, low>>
+   :post_template: show
+'''
+files."needs_templates/show.need" = '''
+level={{ level }}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_unresolved"
+need = "REQ_1"
+field = "level"
+[case.expect.needs.REQ_1]
+post_content = "level=None"
+level = "high"
+
+[[case]]
+name = "derived-field-is-unresolved-where-its-type-has-a-rule"
+why = "a derived field is unresolved on a need whose type has a rule (None, reported); on a type without a rule it holds its fixed value, which is not reported"
+rules = [11, 4]
+config = '''
+[needs.fields.title_copy]
+schema = { type = "string" }
+derive_by_type = { spec = { kind = "copy", field = "title" } }
+'''
+source = '''
+.. spec:: Derived here
+   :id: SPEC_1
+   :template: show
+
+.. req:: Not derived here
+   :id: REQ_1
+   :template: show
+'''
+files."needs_templates/show.need" = '''
+copy={{ title_copy }}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_unresolved"
+need = "SPEC_1"
+field = "title_copy"
+[case.expect.needs.SPEC_1]
+content = "copy=None"
+title_copy = "Derived here"
+[case.expect.needs.REQ_1]
+content = "copy=None"
+
+[[case]]
+name = "unresolved-field-not-named-is-not-reported"
+why = "a need holding a dynamic function whose template does not name the field is not reported; one naming it in a filter is (each named field once)"
+rules = [11]
+config = '''
+[needs.fields.copied]
+schema = { type = "string" }
+
+[needs.fields.other]
+schema = { type = "string" }
+'''
+source = '''
+.. req:: Quiet
+   :id: REQ_1
+   :copied: [[copy("title")]]
+   :other: [[copy("id")]]
+   :template: quiet
+
+.. req:: Loud
+   :id: REQ_2
+   :copied: [[copy("title")]]
+   :other: [[copy("id")]]
+   :template: loud
+'''
+files."needs_templates/quiet.need" = '''
+id={{ id }}
+'''
+files."needs_templates/loud.need" = '''
+{{ copied | default("x") }} {{ copied }} {% if other %}o{% else %}-{% endif %}
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_unresolved"
+need = "REQ_2"
+field = "copied"
+[[case.expect.findings]]
+code = "template_unresolved"
+need = "REQ_2"
+field = "other"
+[case.expect.needs.REQ_1]
+content = "id=REQ_1"
+[case.expect.needs.REQ_2]
+content = "None None -"
+
+# --- hidden needs (rule 8) -----------------------------------------------------------
+
+[[case]]
+name = "hidden-need-renders-its-content-only"
+why = "a hidden need's content template is rendered (needs.json content), its pre and post templates are not rendered at all (null; nothing reported for a missing one, or for one using an undefined name); the names stay as provenance"
+rules = [8, 16, 14]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Hidden
+   :id: REQ_1
+   :hide:
+   :template: wrap
+   :pre_template: pre
+   :post_template: missing
+
+   Authored body.
+'''
+files."needs_templates/wrap.need" = '''
+WRAP {{ content }}
+'''
+files."needs_templates/pre.need" = '''
+PRE {{ id }} {{ typo }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_1]
+content = "WRAP Authored body."
+template = "wrap"
+pre_template = "pre"
+post_template = "missing"
+[case.expect.nulls]
+REQ_1 = ["pre_content", "post_content"]
+
+# --- headings in pre/post output (rule 7) --------------------------------------------
+
+[[case]]
+name = "pre-template-heading-opens-a-section-in-place"
+why = "a heading in pre_template output opens a section where the output is, inside the page's section, whatever its level, on an RST page and on a MyST page alike (a need in the output is in that section)"
+rules = [7, 6]
+python_only = true
+config = '''
+[needs]
+'''
+source = '''
+Section A
+---------
+
+.. req:: On RST
+   :id: REQ_R
+   :pre_template: hrst
+
+   Body.
+'''
+source_md = '''
+## MD section
+
+```{req} On MyST
+:id: REQ_M
+:pre_template: hmd
+
+Body.
+```
+'''
+files."needs_templates/hrst.need" = '''
+Pre {{ id }}
+~~~~~~~~~~~~
+
+.. spec:: Inner
+   :id: IN_{{ id }}
+'''
+files."needs_templates/hmd.need" = '''
+## Pre {{ id }}
+
+```{spec} Inner
+:id: IN_{{ id }}
+```
+'''
+[case.expect]
+findings = []
+[case.expect.needs.IN_REQ_R]
+sections = ["Pre REQ_R", "Section A", "Case"]
+section_name = "Pre REQ_R"
+[case.expect.needs.IN_REQ_M]
+sections = ["Pre REQ_M", "MD section", "Page"]
+section_name = "Pre REQ_M"
+[case.expect.needs.REQ_R]
+section_name = "Section A"
+pre_content = "Pre REQ_R\n~~~~~~~~~~~~\n\n.. spec:: Inner\n   :id: IN_REQ_R"
+[case.expect.needs.REQ_M]
+section_name = "MD section"
+
+[[case]]
+name = "pre-template-heading-is-refused-by-ubcode"
+why = "ubCode cannot open a section from template output: it refuses the heading (template_heading at the need), and the need is kept"
+rules = [7]
+ubcode_only = true
+config = '''
+[needs]
+'''
+source = '''
+.. req:: Heading
+   :id: REQ_1
+   :pre_template: heading
+
+   Body.
+'''
+files."needs_templates/heading.need" = '''
+Pre {{ id }}
+~~~~~~~~~~~~
+
+text
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "template_heading"
+need = "REQ_1"
+[case.expect.needs.REQ_1]
+content = "Body."
+pre_template = "heading"
+
+# --- a reader never re-applies a record's template keys (rules 17, 18) ----------------
+
+[[case]]
+name = "import-never-re-renders-a-records-template"
+why = "an imported record's content is already its template's output: the importer's template of the same name is not applied again (no double wrap), and the imported need names no template"
+rules = [17, 16]
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: a_needs.json
+'''
+files."needs_templates/wrap.need" = '''
+IMPORTER-WRAP {{ content }}
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 1, "needs": {
+"SPEC_TPL": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "WRAP[SPEC_TPL]\n\nAuthored body.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_TPL", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 14, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": null, "post_template": null, "pre_content": null, "pre_template": null, "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": "wrap", "title": "Wrapped", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_TPL]
+content = "WRAP[SPEC_TPL]\n\nAuthored body."
+jinja_content = false
+[case.expect.nulls]
+SPEC_TPL = ["template", "pre_template", "post_template", "pre_content", "post_content"]
+
+[[case]]
+name = "import-without-the-producers-templates-keeps-every-need"
+why = "an importer without the producer's template folder imports every record whatever template names it carries, its content as written, and reports no template"
+rules = [17, 14]
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: a_needs.json
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 3, "needs": {
+"SPEC_TPL": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "WRAP[SPEC_TPL]\n\nAuthored body.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_TPL", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 14, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": null, "post_template": null, "pre_content": null, "pre_template": null, "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": "wrap", "title": "Wrapped", "type": "spec", "type_name": "Specification"},
+"SPEC_DEC": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "Decorated body.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_DEC", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 20, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": "POST SPEC_DEC", "post_template": "post", "pre_content": "PRE SPEC_DEC", "pre_template": "pre", "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": null, "title": "Decorated", "type": "spec", "type_name": "Specification"},
+"SPEC_PLAIN": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "Plain body *em*.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_PLAIN", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 9, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": null, "post_template": null, "pre_content": null, "pre_template": null, "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": null, "title": "Plain", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_TPL]
+content = "WRAP[SPEC_TPL]\n\nAuthored body."
+[case.expect.needs.SPEC_DEC]
+content = "Decorated body."
+[case.expect.needs.SPEC_PLAIN]
+content = "Plain body *em*."
+[case.expect.nulls]
+SPEC_TPL = ["template"]
+SPEC_DEC = ["pre_template", "post_template", "pre_content", "post_content"]
+
+[[case]]
+name = "import-never-re-renders-jinja-content"
+why = "an imported record whose content was rendered by jinja_content is not rendered again: Jinja syntax its output holds stays text, and the imported need is not jinja_content"
+rules = [17, 21]
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: a_needs.json
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 1, "needs": {
+"SPEC_JIN": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "Jinja SPEC_JIN literal={{ title }}", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_JIN", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": true, "layout": null, "lineno": 27, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": null, "post_template": null, "pre_content": null, "pre_template": null, "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": null, "title": "Jinja", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_JIN]
+content = "Jinja SPEC_JIN literal={{ title }}"
+jinja_content = false
+
+[[case]]
+name = "import-keeps-applying-a-records-decoration-the-importer-has"
+why = "until sphinx-needs 10.0 a record's pre or post template is applied where the importer has that template (with a deprecation, not compared), and dropped where it has not; pre_content and post_content are never imported"
+rules = [17]
+python_only = true
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: a_needs.json
+'''
+files."needs_templates/pre.need" = '''
+IMPORTER-PRE {{ id }}
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 1, "needs": {
+"SPEC_DEC": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "Decorated body.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_DEC", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 20, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": "POST SPEC_DEC", "post_template": "post", "pre_content": "PRE SPEC_DEC", "pre_template": "pre", "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": null, "title": "Decorated", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_DEC]
+content = "Decorated body."
+pre_template = "pre"
+pre_content = "IMPORTER-PRE SPEC_DEC"
+[case.expect.nulls]
+SPEC_DEC = ["post_template", "post_content"]
+
+[[case]]
+name = "import-decoration-the-importer-lacks-is-dropped"
+why = "a record's pre or post template the importer has no file for is not applied and not reported: the imported need has no pre or post output"
+rules = [17]
+config = '''
+[needs]
+'''
+source = '''
+.. needimport:: a_needs.json
+'''
+files."needs_templates/other.need" = '''
+OTHER
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 1, "needs": {
+"SPEC_DEC": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "Decorated body.", "docname": "index", "doctype": ".rst", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_DEC", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 20, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": "POST SPEC_DEC", "post_template": "post", "pre_content": "PRE SPEC_DEC", "pre_template": "pre", "section_name": "Prod", "sections": ["Prod"], "signature": null, "status": null, "style": null, "tags": [], "template": null, "title": "Decorated", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_DEC]
+content = "Decorated body."
+[case.expect.nulls]
+SPEC_DEC = ["pre_template", "post_template", "pre_content", "post_content"]
+
+[[case]]
+name = "import-parses-a-templated-record-by-its-doctype"
+why = "with parse_by_doctype a record that names a template is parsed in its doctype like any other: MyST content on an RST page creates the need its MyST directive writes"
+rules = [18, 17, 6]
+config = '''
+[needs]
+import_parse_by_doctype = true
+'''
+source = '''
+.. needimport:: a_needs.json
+'''
+files."a_needs.json" = '''
+{"created": "2026-11-04T01:05:50.795231", "current_version": "1.0", "project": "Producer", "versions": {"1.0": {"created": "2026-11-04T01:05:50.795229", "creator": {"program": "sphinx_needs", "version": "9.1.0"}, "needs_amount": 1, "needs": {
+"SPEC_MDTPL": {"arch": {}, "completion": null, "constraints": [], "constraints_error": null, "constraints_passed": true, "constraints_results": {}, "content": "WRAP[SPEC_MDTPL]\n\nMyST authored [l](https://m.example).\n\n```{spec} Nested\n:id: NESTED_1\n```", "docname": "page", "doctype": ".md", "duration": null, "external_css": "external_link", "external_url": null, "has_dead_links": false, "has_forbidden_dead_links": false, "id": "SPEC_MDTPL", "is_external": false, "is_import": false, "is_modified": false, "jinja_content": false, "layout": null, "lineno": 9, "links": [], "links_back": [], "modifications": 0, "parent_need": null, "parent_needs": [], "parent_needs_back": [], "parts": {}, "post_content": null, "post_template": null, "pre_content": null, "pre_template": null, "section_name": "Page", "sections": ["Page"], "signature": null, "status": null, "style": null, "tags": [], "template": "wrap", "title": "MD wrapped", "type": "spec", "type_name": "Specification"}
+}}}}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.SPEC_MDTPL]
+content = "WRAP[SPEC_MDTPL]\n\nMyST authored [l](https://m.example).\n\n```{spec} Nested\n:id: NESTED_1\n```"
+doctype = ".md"
+[case.expect.needs.NESTED_1]
+title = "Nested"
+
+# --- doctype is the markup the content is written in (rule 19) -----------------------
+
+[[case]]
+name = "eval-rst-need-on-a-myst-page-is-rst"
+why = "a need inside {eval-rst} on a MyST page is written in reStructuredText: its doctype is .rst, and its template's output is RST too; a need beside it is .md"
+rules = [19, 6]
+config = '''
+[needs]
+'''
+source = '''
+.. req:: On RST
+   :id: REQ_RST
+'''
+source_md = '''
+```{eval-rst}
+.. req:: In eval-rst
+   :id: REQ_EVAL
+   :template: wrap
+
+   RST body `link <https://r.example>`_.
+```
+
+```{req} On MyST
+:id: REQ_MD
+```
+'''
+files."needs_templates/wrap.need" = '''
+WRAP {{ doctype }}: {{ content }}
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_EVAL]
+doctype = ".rst"
+content = "WRAP .rst: RST body `link <https://r.example>`_."
+[case.expect.needs.REQ_MD]
+doctype = ".md"
+[case.expect.needs.REQ_RST]
+doctype = ".rst"

@@ -1018,7 +1018,9 @@ def test_a_markdown_document_can_reach_the_directive_through_eval_rst(
     built = needs(app)
     assert built["MD-A"]["title"] == "A need on level one"
     assert built["MD-B"]["parent_need"] == "MD-A"
-    assert built["MD-A"]["doctype"] == ".md"
+    # written in reStructuredText, inside the fence: the doctype is that markup's, not
+    # the page's (``.md`` before the doctype followed the markup)
+    assert built["MD-A"]["doctype"] == ".rst"
     # The items are on lines 7 and 8 of index.md; the enclosing fence does not shift
     # them, because the block carries its position in the Markdown file.
     assert (built["MD-A"]["lineno"], built["MD-B"]["lineno"]) == (7, 8)

@@ -59,10 +59,11 @@ Finding = tuple[str | None, ...]
 Reader = Callable[[Any, Mapping[str, Mapping[str, Any]]], Iterable[Finding]]
 
 #: One record of the warning stream as :func:`build_warnings` gives it: an optional
-#: ``<srcdir>/<doc>.rst:<line>:`` location, the severity, the message, and the
-#: ``[family.code]`` that ends it. The code is compared BARE.
+#: ``<srcdir>/<doc>.rst:<line>:`` (or ``.md``, for a corpus with a MyST page) location,
+#: the severity, the message, and the ``[family.code]`` that ends it. The code is
+#: compared BARE.
 _WARNING = re.compile(
-    r"^(?:<srcdir>/(?P<doc>[^:]+)\.rst:(?P<line>\d+): )?(?:WARNING|ERROR): "
+    r"^(?:<srcdir>/(?P<doc>[^:]+)\.(?:rst|md):(?P<line>\d+): )?(?:WARNING|ERROR): "
     r"(?P<message>.*) \[(?P<family>[a-z_]+)\.(?P<code>[a-z_]+)\]$",
     re.DOTALL,
 )

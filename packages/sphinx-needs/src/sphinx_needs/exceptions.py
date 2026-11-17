@@ -33,6 +33,8 @@ class InvalidNeedException(Exception):
             "invalid_style",
             "invalid_value",
             "invalid_constraints",
+            # no longer raised (9.3.0): a template that cannot be rendered keeps its
+            # need and is a warning; kept, as the type is public
             "invalid_jinja_content",
             "invalid_template",
             "global_option",
