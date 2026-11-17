@@ -24,7 +24,7 @@ pytest.importorskip("clang.cindex")
 
 from sphinx_codelinks.analyse import analyse as analyse_module
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
-from sphinx_codelinks.analyse.preproc import compile_db, libclang_parser
+from sphinx_codelinks.analyse.preproc import compile_db, libclang_parser, loader
 from sphinx_codelinks.analyse.preproc.headers import (
     REFUSED,
     REPEATED,
@@ -839,3 +839,94 @@ def test_a_header_read_without_the_refused_flags_is_warned(
     assert message.startswith(f"codelinks: {tmp_path / 'case.h'} is read for aarch64")
     assert "`-march=armv8.2-a+crypto`" in message
     assert "its includer" in message
+
+
+@pytest.mark.parametrize(
+    "flag", ["-isystem", "-idirafter"], ids=["isystem", "idirafter"]
+)
+def test_a_project_header_on_a_system_path_is_a_contribution(
+    tmp_path: Path, flag: str
+) -> None:
+    """``a.c`` finds the project's ``inc/case.h`` only through a system path (``-isystem``
+    or ``-idirafter``): libclang calls it a system header, yet it is a project file, so
+    ``a.c`` contributes to it and the arm it compiles (``-DONE``) is kept beside the one
+    ``b.c`` compiles."""
+    _write(
+        tmp_path,
+        {
+            "a.c": "#include <case.h>\n",
+            "b.c": '#include "inc/case.h"\n',
+            "inc/case.h": HEADER,
+        },
+    )
+    db = _db(
+        tmp_path,
+        [
+            {"file": "a.c", "args": [flag, "inc", "-DONE"]},
+            {"file": "b.c", "args": ["-DTWO"]},
+        ],
+    )
+    assert _ids(_analyse(tmp_path, ["inc/case.h"], db)) == {
+        "IMPL_BASE",
+        "IMPL_ONE",
+        "IMPL_TWO",
+    }
+
+
+@pytest.mark.parametrize(
+    "flag", ["-isystem", "-idirafter"], ids=["isystem", "idirafter"]
+)
+def test_an_unknown_target_unit_counts_a_header_on_a_system_path(
+    tmp_path: Path, flag: str
+) -> None:
+    """An xtensa entry, its target unknown, names the project's ``inc/case.h`` only in
+    its ``#ifdef __XTENSA__`` arm and finds it only through a system path: its lexical
+    closure counts it all the same, and the header is read as written."""
+    _write(
+        tmp_path,
+        {
+            "main.c": "#ifdef __XTENSA__\n#include <case.h>\n#endif\n",
+            "inc/case.h": HEADER,
+        },
+    )
+    db = _db(
+        tmp_path,
+        [{"file": "main.c", "compiler": "xtensa-esp32-elf-gcc", "args": [flag, "inc"]}],
+    )
+    assert _ids(_analyse(tmp_path, ["inc/case.h"], db)) == {
+        "IMPL_BASE",
+        "IMPL_ONE",
+        "IMPL_TWO",
+        "IMPL_NEVER",
+    }
+
+
+def test_a_reader_refused_on_its_second_parse_reads_as_written_with_a_warning(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The only unit that includes ``case.h`` parses, then libclang refuses it when it
+    is parsed again as the header's reader (a file changed in between): the header is
+    read as written, and warned as a header no unit reads for a target is
+    (``preprocessor_parse_refused``, naming its includer)."""
+    _write(tmp_path, {"a.c": '#include "case.h"\n', "case.h": HEADER})
+    db = _db(tmp_path, [{"file": "a.c", "args": ["-DONE"]}])
+    real = libclang_parser.parse_translation_unit
+    calls: list[str] = []
+
+    def second_refused(file_path: Path, args: list[str]) -> object:
+        calls.append(file_path.name)
+        if calls.count("a.c") == 2:
+            raise loader.load_clang_cindex().TranslationUnitLoadError("refused")
+        return real(file_path, args)
+
+    monkeypatch.setattr(libclang_parser, "parse_translation_unit", second_refused)
+    recorder = _RecordingLogger()
+    monkeypatch.setattr(analyse_module, "logger", recorder)
+
+    analyse = _analyse(tmp_path, ["case.h"], db)
+
+    assert calls == ["a.c", "a.c"]
+    assert _ids(analyse) == {"IMPL_BASE", "IMPL_ONE", "IMPL_TWO", "IMPL_NEVER"}
+    ((message, subtype),) = recorder.warnings
+    assert subtype == "preprocessor_parse_refused"
+    assert f"its includer {(tmp_path / 'a.c').resolve()}" in message

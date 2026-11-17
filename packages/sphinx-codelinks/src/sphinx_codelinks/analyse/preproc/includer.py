@@ -138,25 +138,29 @@ class SearchPath:
     quote: tuple[Path, ...]
     """``-iquote`` directories: searched for a quoted name only."""
     angled: tuple[Path, ...]
-    """``-I`` directories, then ``-isystem`` directories: searched for both forms."""
+    """``-I`` directories, then ``-isystem`` directories (then ``-idirafter`` ones, when
+    asked for): searched for both forms."""
 
 
-def search_path(args: list[str]) -> SearchPath:
+def search_path(args: list[str], *, after: bool = False) -> SearchPath:
     """The include search path of a database entry's (filtered) arguments.
 
     ``-iquote``, ``-I`` and ``-isystem`` are read in their joined (``-Idir``) and
     separate (``-I dir``) forms, each kind in argument order, and a relative
     directory is taken against the entry's working directory (its last
     ``-working-directory=``; the process' working directory without one, as
-    libclang takes it). No other form names a directory here: ``-idirafter``,
-    ``--include-directory=``, ``-I=`` (sysroot-relative) and MSVC's ``/I`` are not
-    read, nor a ``cd`` in a ``command``.
+    libclang takes it); with ``after``, ``-idirafter`` too, searched last. No other
+    form names a directory here: ``--include-directory=``, ``-I=`` (sysroot-relative)
+    and MSVC's ``/I`` are not read, nor a ``cd`` in a ``command``.
     """
     working = working_directory(args)
     quote: list[Path] = []
     angled: list[Path] = []
     system: list[Path] = []
+    last: list[Path] = []
     kinds = {"-iquote": quote, "-isystem": system, "-I": angled}
+    if after:
+        kinds["-idirafter"] = last
     pending: list[Path] | None = None
     for arg in args:
         if pending is not None:
@@ -174,7 +178,7 @@ def search_path(args: list[str]) -> SearchPath:
                 break
     return SearchPath(
         quote=tuple(working / d for d in quote),
-        angled=tuple(working / d for d in (*angled, *system)),
+        angled=tuple(working / d for d in (*angled, *system, *last)),
     )
 
 

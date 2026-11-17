@@ -996,22 +996,27 @@ class SourceAnalyse:
                 f"it reads it for a target"
             )
             read[header.position] = self._read_without_libclang(header.path)
-            if decision.parse_refused:
-                self._warn_parse_refused(
-                    header.path,
-                    decision,
-                    whose=(
-                        f"the compilation-database entry of its includer "
-                        f"{first.key.main}"
-                    ),
-                    fix_in=_DATABASE,
-                    includer=True,
-                )
-            else:
-                self._warn_target(header.path, decision, "", includer=True)
+            self._warn_header_as_written(header.path, first.key.main, decision)
         for reader, waiting in readers.values():
             read.update(self._read_from(reader, waiting))
         return read
+
+    def _warn_header_as_written(
+        self, path: Path, includer: Path, decision: "Decision"
+    ) -> None:
+        """Warn about the header ``path``, read as written because no unit that
+        includes it reads it for a target, as its includer ``includer``'s unit would be,
+        for ``decision`` (its target unknown, or every parse of it refused)."""
+        if decision.parse_refused:
+            self._warn_parse_refused(
+                path,
+                decision,
+                whose=f"the compilation-database entry of its includer {includer}",
+                fix_in=_DATABASE,
+                includer=True,
+            )
+        else:
+            self._warn_target(path, decision, "", includer=True)
 
     def _warn_without_refused_flags(self, path: Path, units: list[_Unit]) -> None:
         """Warn about the header ``path`` as a file its first unit of ``units`` (each
@@ -1107,7 +1112,7 @@ class SourceAnalyse:
                 working = compile_db.working_directory(args)
                 files |= {
                     path
-                    for path in libclang_parser.included_files(tu, working)
+                    for path in libclang_parser.every_included_file(tu, working)
                     if path != main and keep(path)
                 }
             return dict.fromkeys(files, how)
@@ -1165,7 +1170,8 @@ class SourceAnalyse:
         """Read each of ``waiting``, a header and the ranges every unit that includes
         it skipped, from ``reader``, one of them, parsed again once: its comments
         outside those ranges. A reader that no longer reads (a file changed since its
-        record) reads each as written, without libclang."""
+        record: every parse refused, or its target now unknown) reads each as written,
+        without libclang, warned as a header no unit reads for a target is."""
         from sphinx_codelinks.analyse.preproc import libclang_parser, loader, target
 
         translation_unit_load_error = (
@@ -1181,12 +1187,16 @@ class SourceAnalyse:
                 ),
                 translation_unit_load_error,
             )
-        except target.AllRefused:
-            tu, used, decision = None, reader.args, reader.decision
+        except target.AllRefused as refused:
+            tu, used = None, reader.args
+            decision = refused.decision.after_every_refusal(
+                reader.entry_args, command=loader.refused_by_command(refused.error)
+            )
         read: dict[int, list[LibclangComment]] = {}
         if tu is None or decision.unknown:
             for header, _ranges in waiting:
                 read[header.position] = self._read_without_libclang(header.path)
+                self._warn_header_as_written(header.path, main, decision)
             return read
         self._warn_missing_builtin_header(main, tu, used)
         for header, ranges in waiting:

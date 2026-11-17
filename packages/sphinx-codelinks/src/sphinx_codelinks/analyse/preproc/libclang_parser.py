@@ -133,18 +133,29 @@ def included_files(tu: Any, working_directory: Path) -> set[Path]:
     A relative name (a file found through a relative include directory) is taken
     against ``working_directory``, as in :func:`main_file_inclusions`.
     """
-    return set(_included(tu, working_directory))
+    return set(_included(tu, working_directory, system=False))
 
 
-def _included(tu: Any, working_directory: Path) -> dict[Path, Any]:
-    """:func:`included_files`, each with its ``clang.cindex.File``."""
+def every_included_file(tu: Any, working_directory: Path) -> set[Path]:
+    """Every file the unit included, at any depth, canonical, system headers too: a
+    project file found through ``-isystem``, ``-idirafter`` or a system directory is
+    one (useblocks/ubcode#4866), so the caller keeps what is the project's."""
+    return set(_included(tu, working_directory, system=True))
+
+
+def _included(tu: Any, working_directory: Path, *, system: bool) -> dict[Path, Any]:
+    """:func:`included_files` (with ``system``, :func:`every_included_file`), each
+    with its ``clang.cindex.File``."""
     cx = loader.load_clang_cindex()
     out: dict[Path, Any] = {}
     for inclusion in tu.get_includes():
         file = inclusion.include
         if file is None:
             continue
-        if cx.SourceLocation.from_offset(tu, file, 0).is_in_system_header:
+        if (
+            not system
+            and cx.SourceLocation.from_offset(tu, file, 0).is_in_system_header
+        ):
             continue
         out.setdefault((working_directory / file.name).resolve(), file)
     return out
@@ -154,8 +165,9 @@ def unit_contributions(
     tu: Any, working_directory: Path, main: Path, keep: Callable[[Path], bool]
 ) -> dict[Path, Contribution]:
     """What the unit ``tu``, its target known, contributes to each file it includes
-    (:func:`included_files`, with ``working_directory``) that ``keep`` keeps, but its
-    main file ``main`` (canonical): the ranges its preprocessor skipped in the file's
+    (:func:`every_included_file`, with ``working_directory``: system headers too, as a
+    project file found through ``-isystem`` is one) that ``keep`` keeps, but its main
+    file ``main`` (canonical): the ranges its preprocessor skipped in the file's
     first entry, or the file as written when a later entry (an ``#include`` or a
     ``-include``) compiles some of it (:func:`.headers.contribution`,
     useblocks/ubcode#4866). A later entry is told from the first by where its skipped
@@ -163,12 +175,9 @@ def unit_contributions(
     compiles the file, unless the file holds nothing but comments."""
     entries: dict[Path, int] = {}
     files: dict[Path, Any] = {}
-    cx = loader.load_clang_cindex()
     for inclusion in tu.get_includes():
         file = inclusion.include
         if file is None:
-            continue
-        if cx.SourceLocation.from_offset(tu, file, 0).is_in_system_header:
             continue
         path = (working_directory / file.name).resolve()
         files.setdefault(path, file)

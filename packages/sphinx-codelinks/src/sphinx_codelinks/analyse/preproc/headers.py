@@ -163,11 +163,12 @@ def lexical_closure(
     ``keep`` keeps, but its main file ``main``: its ``-include`` and ``-imacros`` files
     (the working directory first, then the search path), and every file their and
     ``main``'s ``#include`` and ``#include_next`` lines name, at any depth, as the
-    compiler finds it with ``args``' include path (:func:`.includer.resolve_include`).
+    compiler finds it with ``args``' include path (:func:`.includer.resolve_include`,
+    ``-idirafter`` included: a project file on any search path counts).
     Files ``keep`` does not keep are followed too (an SDK header that includes a project
     one), and nothing cuts the walk short: each file is read once. ``#if`` arms are not
     read, a computed ``#include MACRO`` is not resolved."""
-    search = includer.search_path(args)
+    search = includer.search_path(args, after=True)
     working = working_directory(args)
     seen: set[Path] = {main}
     stack: list[Path] = []
