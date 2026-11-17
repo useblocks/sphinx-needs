@@ -935,6 +935,11 @@ def test_a_refused_decision_keeps_where_its_target_came_from() -> None:
         pytest.param(
             ["-Xclang", "-foo"], loader.ParseError.ast_read_error, id="xclang-foo"
         ),
+        pytest.param(
+            ["-fprofile-use=moved.profdata"],
+            loader.ParseError.ast_read_error,
+            id="moved-pgo-profile",
+        ),
     ],
 )
 def test_libclang_says_why_it_refused_a_parse(
@@ -944,7 +949,8 @@ def test_libclang_says_why_it_refused_a_parse(
     ``clang_parseTranslationUnit2`` reports ``CXError_Failure`` for a flag the target
     does not take (``-mfpmath=vfp``, on every machine), and ``CXError_ASTReadError``
     for a command it cannot run at all, whatever the target (a second input file, a
-    ``-std`` it does not know, an unknown ``-Xclang`` flag);
+    ``-std`` it does not know, an unknown ``-Xclang`` flag, a PGO profile that has
+    moved: ``-fprofile-use=`` naming a file that is not there);
     :func:`.loader.refused_by_command` tells the two apart. A parse that reads raises
     nothing."""
     (tmp_path / "a.c").write_text("int a;\n")
@@ -1833,6 +1839,17 @@ REFUSED_COMMAND_CLOSING = (
             "`-include-pch`, `pre.pch`, `-std=gnu2y`. "
             + REFUSED_COMMAND_CLOSING.format(fix_in="the compilation database"),
             id="include-pch",
+        ),
+        # CXError_ASTReadError: a PGO profile that has moved, whatever the target
+        pytest.param(
+            ["gcc", "-fprofile-use=moved.profdata", "-c", "case.c"],
+            "case.c",
+            "c11",
+            "the arguments of its compilation-database entry, which hold a flag or an "
+            "input file it does not take (libclang does not say which): "
+            "`-fprofile-use=moved.profdata`. "
+            + REFUSED_COMMAND_CLOSING.format(fix_in="the compilation database"),
+            id="moved-pgo-profile",
         ),
         # an entry's own resource directory is its own, and listed
         pytest.param(

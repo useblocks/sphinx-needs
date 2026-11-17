@@ -1165,7 +1165,8 @@ kinds of refusal are told apart, by what libclang reports:
 - its arguments, whatever the target: an input file besides the file itself (a
   compile-and-link entry, ``gcc main.c util.c -o app``), or an argument clang does not
   take, such as a ``-std`` it does not know (``-std=gnu2y`` from a newer GCC, or a
-  ``std`` in the ``[preprocessor]`` table for a header). The warning names whose
+  ``std`` in the ``[preprocessor]`` table for a header) or a PGO profile that has moved
+  (``-fprofile-use=`` naming a file that is not there). The warning names whose
   arguments they are, lists them (at most twelve, the rest counted; not the working
   directory and builtin-header directory **Sphinx-CodeLinks** adds, nor a target it
   inserted), and names the other input files among them. A target the build declares
