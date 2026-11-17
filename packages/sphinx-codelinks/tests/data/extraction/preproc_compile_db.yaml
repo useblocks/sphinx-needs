@@ -460,10 +460,11 @@ double_dash_value_of_pass_through_option_libclang:
 # A header is read through every entry that includes it (useblocks/ubcode#4866): each
 # entry of the database whose own parse includes the header, at any depth, is a unit;
 # an arm of the header is left out only when EVERY such unit skips it in the header's
-# first inclusion (the union of the arms they compile). A unit that includes the header
-# more than once without an include guard, one whose target is unknown and one whose
-# every parse is refused read it as written: no arm left out. A header no entry
-# includes keeps its standalone read with the defines (above).
+# first inclusion (the union of the arms they compile). A unit that enters the header
+# again and compiles some of it then (no include guard, or an #ifndef whose macro
+# nothing defines), one whose target is unknown and one whose every parse is refused
+# read it as written: no arm left out. A header no entry includes keeps its standalone
+# read with the defines (above).
 
 header_read_through_every_includer_libclang:
   lang: cpp_header
@@ -656,17 +657,22 @@ header_of_an_unknown_target_entry_libclang:
   source: |
     #pragma once
     // @Header Base, IMPL_H7_BASE, impl, [REQ]
+    int h7_base;
     #ifdef __XTENSA__
     // @Header Xtensa, IMPL_H7_XTENSA, impl, [REQ]
+    int h7_xtensa;
     #else
     // @Header Not Xtensa, IMPL_H7_NOT_XTENSA, impl, [REQ]
+    int h7_not_xtensa;
     #endif
     #ifdef FEATURE_A
     // @Header A, IMPL_H7_A, impl, [REQ]
+    int h7_a;
     #endif
   # The only entry that includes case.h is built for xtensa, which the pinned libclang
   # does not model: its target is unknown, so the header is read as written, every arm
-  # kept: IMPL_H7_BASE, IMPL_H7_XTENSA, IMPL_H7_NOT_XTENSA, IMPL_H7_A.
+  # kept, without libclang (each marker on the declaration below it): IMPL_H7_BASE,
+  # IMPL_H7_XTENSA, IMPL_H7_NOT_XTENSA, IMPL_H7_A.
 
 header_in_a_target_arm_of_an_unknown_target_entry_libclang:
   lang: cpp_header
@@ -685,14 +691,18 @@ header_in_a_target_arm_of_an_unknown_target_entry_libclang:
   source: |
     #pragma once
     // @Header Base, IMPL_H8_BASE, impl, [REQ]
+    int h8_base;
     #ifdef __XTENSA__
     // @Header Xtensa, IMPL_H8_XTENSA, impl, [REQ]
+    int h8_xtensa;
     #else
     // @Header Not Xtensa, IMPL_H8_NOT_XTENSA, impl, [REQ]
+    int h8_not_xtensa;
     #endif
   # main.c includes case.h only in an arm of its target, which no parse ubc can make
-  # takes: its #include lines count, and the header is read as written: IMPL_H8_BASE,
-  # IMPL_H8_XTENSA, IMPL_H8_NOT_XTENSA.
+  # takes: its #include lines count, and the header is read as written without libclang
+  # (each marker on the declaration below it): IMPL_H8_BASE, IMPL_H8_XTENSA,
+  # IMPL_H8_NOT_XTENSA.
 
 header_named_through_two_include_directories_libclang:
   lang: cpp_header
@@ -726,3 +736,37 @@ header_named_through_two_include_directories_libclang:
   # build/a.c finds case.h through -I.. from build, src/b.c through -I. from the case
   # root: two spellings of one file, both units count: IMPL_H9_BASE, IMPL_H9_A,
   # IMPL_H9_LEVEL; not IMPL_H9_NEVER.
+
+header_wrapped_in_an_ifndef_nothing_defines_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    main.c: |
+      #define PASS 1
+      #include "case.h"
+      #undef PASS
+      #define PASS 2
+      #include "case.h"
+  compile_commands:
+    - file: main.c
+      arguments: ["clang", "-c", "main.c"]
+  source: |
+    #ifndef CASE_DISABLED
+    // @Header Base, IMPL_H10_BASE, impl, [REQ]
+    #if PASS == 1
+    // @First pass, IMPL_H10_ONE, impl, [REQ]
+    #elif PASS == 2
+    // @Second pass, IMPL_H10_TWO, impl, [REQ]
+    #endif
+    #ifdef NEVER_SET
+    // @Header Never, IMPL_H10_NEVER, impl, [REQ]
+    #endif
+    #endif
+  # case.h is wrapped in an #ifndef whose macro nothing defines, which clang calls an
+  # include guard all the same; main.c enters it twice, and the second entry compiles
+  # the arm the first skipped: what decides is whether a later entry compiles some of
+  # the file, so this unit reads it as written: IMPL_H10_BASE, IMPL_H10_ONE,
+  # IMPL_H10_TWO, IMPL_H10_NEVER.
