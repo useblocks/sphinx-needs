@@ -24,9 +24,9 @@ it, and a reader applies its own rule to every id whatever wrote the file.
 **The joined string is the key.** `id` is unchanged everywhere: the key of every mapping
 (`NeedsView`, the environment), `need["id"]`, the HTML anchor, the `needs.json` id, what a
 link and a `:need:` role name. `need["id"]` is a string in the public Python contract, and
-a structured key is the slower lookup: a dict keyed by `(segments, local id)` tuples takes
-3.6 to 3.8 times as long as one keyed by the joined strings to look up 14 044 namespaced
-ids (prebuilt keys, the minimum of five runs of fifty lookups, three rounds, at this tip).
+a structured key is the slower lookup: a dict keyed by `(segments, local id)` tuples is
+slower to look up than one keyed by the joined strings, because a tuple's hash is computed
+on every lookup while a string caches its own.
 
 ## 2. The grammar, and the composition order
 
@@ -51,8 +51,9 @@ link without its tail being read as a part.
 
 ## 3. The switch
 
-`needs_namespaced_ids` (`[needs] namespaced_ids`), a boolean, **on by default**, rebuild
-`"env"` (flipping it re-reads every document). It is read where a need is created, in the
+`needs_namespaced_ids` (`[needs] namespaced_ids`), a boolean, **off by default in the 9.x
+series and on by default from 10.0** (section 3.1), rebuild `"env"` (flipping it re-reads
+every document). It is read where a need is created, in the
 creation funnel (`api.need._generate_need`, which every route passes: a directive, the API,
 `list2need`, `needservice`, `needimport`, `needs_external_needs`, and the family's
 producers), and by `needextract` to classify an argument naming an id that does not exist.
@@ -61,9 +62,20 @@ split and every need is plain; the filter names stay defined and read `""` and t
 and no hint is offered, as no need is in a namespace. "No namespaces" is the empty rule,
 not a second mode of the code.
 
+### 3.1 The default (ruled 2026-11-17)
+
+The feature ships whole in a minor release (9.3.0), but OFF by default there, and ON by
+default from 10.0. Turned on, two of its rules can change what an existing project gets:
+the warning for an authored id that does not split cleanly can fail a `-W` build, and the
+local-id rule of the id patterns means a pattern can no longer refuse a namespace. Neither
+should reach a project that did not ask for it in a minor release. With the switch on, the
+behaviour is the one this record describes; with nothing set, a project builds as before
+(one re-read of its sources aside, for the stored values). The switch itself is not
+experimental; its default changes once, at 10.0.
+
 ## 4. What does not split, and why it is never refused
 
-An id that holds `::` but does not split cleanly (`A::::B`, `NS::`,
+With the switch on, an id that holds `::` but does not split cleanly (`A::::B`, `NS::`,
 `std::vector<int>::size`) is a **plain id**. It is never refused: with the rule on by
 default, refusing would break projects whose ids hold `::` for another reason, and every
 import of such a file. An id the project writes or generates is reported at the need, once
@@ -77,7 +89,7 @@ act: a need an id pattern or a value refuses is reported for that refusal, not f
 
 ## 5. Id patterns
 
-`needs_id_regex` and a need type's `id_regex` accept an id whose LOCAL id matches, or
+With the switch on, `needs_id_regex` and a need type's `id_regex` accept an id whose LOCAL id matches, or
 which matches as a whole (each with `re.match`, as before). The local id keeps a project's
 pattern meaning what it means (`nc::REQ_00001` passes the default through `REQ_00001`), and
 "or as a whole" keeps every id a pattern accepted before accepted (`REQ_1::A`, whose local
@@ -126,7 +138,7 @@ answered by `eval`. The order of the dynamic functions records them as reading `
 
 ## 8. Hints
 
-A dead outgoing link (an external need's too: it explains why the target is not found
+With the switch on, a dead outgoing link (an external need's too: it explains why the target is not found
 here), or a `:need:` role naming no need, gains ` (did you mean 'nc::REQ_2'?)` after its
 unchanged text when its target, condition and part stripped: names no need, holds no `::`,
 and is the local id of exactly one need in a non-empty namespace; and, where the target
@@ -142,7 +154,8 @@ change) gets a new one for each build, and neither build's pickled environment h
 ## 9. Deliberately absent
 
 - a `namespace` option on `needimport` and `needs_external_needs`, beside `id_prefix`
-  (later; `id_prefix` ending in `::` already gives a namespace, and is unchanged);
+  (later; with the switch on, an `id_prefix` ending in `::` already gives a namespace;
+  `id_prefix` is unchanged);
 - `c.` values as needtable columns or sort keys (later, a resolver that serves `c.source`
   too);
 - short references, a bare id resolving inside the referencing need's own namespace first
@@ -158,8 +171,8 @@ change) gets a new one for each build, and neither build's pickled environment h
 
 - *Declared namespace roots* (an id is namespaced when its first segment is declared): lost
   because every importing project would have to declare every root a file brings.
-- *An opt-in switch*, off by default: lost because namespaces would never become normal,
-  and turning it on later is the same change with an off-switch kept for ever.
+- *An opt-in switch kept off for good*: lost because namespaces would never become normal;
+  the switch is off by default only through 9.x (section 3.1) and on from 10.0.
 - *Root-level filter names* (`ns`, `local_id`): lost because they would have to be
   reserved field names, where `c.` can be shadowed by nothing.
 
@@ -175,5 +188,6 @@ change) gets a new one for each build, and neither build's pickled environment h
 - **Filters** over 14 000 needs (7 000 in `nc` or below), fast tier, `filter_needs_view`:
   `c.in_namespace("nc")` is the fastest of the four measured, about 3 ms, about half of
   `id.startswith("nc::")`; `c.id.ns == "nc"` about 4 ms; `type == "req"` (index tier, every
-  need selected) about 5 ms (two machines' runs, each the minimum of five runs of twenty,
-  which differ by up to a quarter and agree on the order). No index arm is needed.
+  need selected) about 5 ms (two runs on one machine at different loads, each the minimum of
+  five runs of twenty, which differ by up to a quarter and agree on the order). No index arm
+  is needed.

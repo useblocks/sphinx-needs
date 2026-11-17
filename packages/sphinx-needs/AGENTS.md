@@ -259,7 +259,7 @@ A type's `id_regex` (with its ancestors', root first) is registered by `_resolve
 `needs_id_regex` (`re.match`, never on an imported or external need).
 Both patterns accept an id whose local id matches, or which matches as a whole, through one seam,
 `_namespaced_ids.id_matched_by_patterns`: a need's namespace and local id are read once, in the creation funnel
-`_generate_need` (`needs_namespaced_ids`), stored in two `NeedItem` slots that are no mapping key, and read by the
+`_generate_need` (`needs_namespaced_ids`, off by default until 10.0), stored in two `NeedItem` slots that are no mapping key, and read by the
 `c.id.*` / `c.in_namespace()` filter names; only `ub_needs_exchange.need_id` spells `::` (a test fences it), and
 `design/namespaced-ids.md` is the record.
 The normaliser at `config-inited` checks only the shape of those keys, and the resolver checks it

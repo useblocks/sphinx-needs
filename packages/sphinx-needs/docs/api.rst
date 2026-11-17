@@ -38,7 +38,8 @@ does not end their provisional status.
 What this documentation labels **experimental** may change, or be removed, in a minor release before it is
 declared stable: the namespace names of :ref:`namespaced_ids` -- the filter names ``c.id.ns``, ``c.id.local``
 and ``c.in_namespace()``, and the attributes ``id_ns``, ``id_ns_segments`` and ``id_local`` of a need and of a need
-part. The configuration value :ref:`needs_namespaced_ids` is stable.
+part. The configuration value :ref:`needs_namespaced_ids` is stable; its default, ``False`` in 9.x, becomes ``True``
+in 10.0.
 
 Anything else is internal, and may change in a minor release without a deprecation: a name
 this page does not document, a module or a name starting with ``_``, and whatever is reached

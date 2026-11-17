@@ -118,7 +118,8 @@ id
 The given ID must match the regular expression (regex) value for the :ref:`needs_id_regex` parameter in **conf.py**.
 The Sphinx build stops if the ID does not match the regex value.
 
-An id holding ``::`` names a namespace: ``nc::REQ_1`` is the need ``REQ_1`` in the namespace ``nc``
+With :ref:`needs_namespaced_ids` on (off by default until 10.0), an id holding ``::`` names a namespace:
+``nc::REQ_1`` is the need ``REQ_1`` in the namespace ``nc``
 (:ref:`namespaced_ids`).
 
 If you do not specify the id option, we calculate a short hash value based on the title. The calculated value can 

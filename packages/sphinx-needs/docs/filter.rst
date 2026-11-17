@@ -495,7 +495,7 @@ Filtering by namespace (``c.id``, ``c.in_namespace``)
 
 .. versionadded:: 9.3.0
 
-A need id holding ``::`` names a namespace: ``nc::m2::REQ_1`` is the local id ``REQ_1`` in the namespace ``nc::m2``
+With :ref:`needs_namespaced_ids` on, a need id holding ``::`` names a namespace: ``nc::m2::REQ_1`` is the local id ``REQ_1`` in the namespace ``nc::m2``
 (:ref:`namespaced_ids`). Three names read it:
 
 .. list-table::
@@ -525,12 +525,16 @@ A need id holding ``::`` names a namespace: ``nc::m2::REQ_1`` is the local id ``
 - A need part reads its need's namespace and local id; its ``id`` is its own part id.
 - ``c.in_namespace("")``, and an argument that is no namespace (``"nc::"``, ``"a b"``), is an error of the filter
   (``needs.filter``), never "every need": a need in no namespace is ``c.id.ns == ""``. In a derived field's
-  ``where`` such a literal makes the rule invalid (``needs.derive_invalid``). A namespace no need is in
-  selects nothing.
+  ``where`` such a literal makes the rule invalid (``needs.derive_invalid``); in a :ref:`needs_constraints` filter
+  it stops the build, as any invalid constraint filter does. A namespace no need is in selects nothing.
 - ``c.id`` holds the facets of the id, not the id: ``c.id == "nc::REQ_1"`` (or ``!=``, or ``c.id in [...]``) is an
-  error of the filter; compare ``id``, ``c.id.local`` or ``c.id.ns``. ``c.in_namespace`` takes one argument,
+  error of the filter; compare ``id``, ``c.id.local`` or ``c.id.ns``. ``c.id`` is not the id's text: comparing
+  it, testing membership with it, or using it as a set member or a key (``c.id in {"nc::REQ_1"}``) is an error,
+  and text made from it (``str(c.id)``) is not the id: write ``id``. ``c.in_namespace`` takes one argument,
   positionally.
-- The three are defined in every project: with :ref:`needs_namespaced_ids` off every need is in no namespace.
+- The three are defined in every project: with :ref:`needs_namespaced_ids` off (the default until 10.0) every need
+  is in no namespace, so ``c.id.ns`` is ``""``, ``c.id.local`` is the whole id, and ``c.in_namespace`` selects
+  nothing.
 - ``c.in_namespace`` with a string literal is in the :ref:`portable filter language <filter_string_performance>`,
   as are the two facets; any other argument (``c.in_namespace(group)``) is evaluated by ``eval``, which gives the
   same answer. A name after ``c.id.`` that is no facet is an error naming the closest one (``c.id.nss``).
