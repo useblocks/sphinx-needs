@@ -1149,25 +1149,37 @@ tree-sitter engine can get). A source with no entry of its own that such an entr
 ``#include`` line is in, unless an entry whose target **Sphinx-CodeLinks** reads
 includes it in a branch that entry compiles: that one reads it, for its target.
 
-A file whose target is known is never skipped either: when clang refuses every parse of
-it for that target, because of a flag of its own that clang does not take for it (a
-native build's ``-mfpmath=sse`` on an Arm64 machine, or ``-mfpmath=vfp`` on every
-machine; its ``-mcpu``, ``-march``, ``-mtune`` and ``-mabi`` are left out first), or
-because of the ``[preprocessor]`` table's own flags for a header (a ``std`` clang does
-not know), no parse decides a branch, so it is read as written by the tree-sitter
-engine, as a file whose target is unknown is, and a build or a ``codelinks analyse`` run
-warns at the file's first line (``codelinks.preprocessor_parse_refused``), once per such
-file. The warning names the file, the target it was parsed for (the machine the analysis
-runs on, for a build that names none), whose flags were refused (the entry's, its
-includer's entry's, or the ``[preprocessor]`` table's), their ``-m`` flags and the
-``-mcpu``, ``-march``, ``-mtune`` and ``-mabi`` left out (libclang does not say which
-flag it refused), and the remedy: remove or change the refused flag in the compilation
-database or the ``[preprocessor]`` table, or accept the file read as written by adding
-``codelinks.preprocessor_parse_refused`` to Sphinx's ``suppress_warnings``. A source with
-no entry of its own that such an entry ``#include``\ s is confirmed by that entry's
-``#include`` lines and read as written through it, with the same warning, unless an
-entry whose parse reads includes it in a branch that entry compiles: that one reads it,
-for its target.
+A file whose target is known is never skipped either. When clang refuses every parse of
+it, no parse decides a branch, so it is read as written by the tree-sitter engine, as a
+file whose target is unknown is, and a build or a ``codelinks analyse`` run warns at the
+file's first line (``codelinks.preprocessor_parse_refused``), once per such file. Two
+kinds of refusal are told apart, by what libclang reports:
+
+- a flag of its own that clang does not take for the target it reads (a native build's
+  ``-mfpmath=sse`` on an Arm64 machine, or ``-mfpmath=vfp`` on every machine; its
+  ``-mcpu``, ``-march``, ``-mtune`` and ``-mabi`` are left out first): the warning names
+  the target it was parsed for (the machine the analysis runs on, for a build that names
+  none), whose flags they are (its entry's, its includer's entry's, or the
+  ``[preprocessor]`` table's), their ``-m`` flags and the ``-mcpu``, ``-march``,
+  ``-mtune`` and ``-mabi`` left out (libclang does not say which flag it refused);
+- its arguments, whatever the target: an input file besides the file itself (a
+  compile-and-link entry, ``gcc main.c util.c -o app``), or an argument clang does not
+  take, such as a ``-std`` it does not know (``-std=gnu2y`` from a newer GCC, or a
+  ``std`` in the ``[preprocessor]`` table for a header). The warning names whose
+  arguments they are, lists them (at most twelve, the rest counted; not the working
+  directory and builtin-header directory **Sphinx-CodeLinks** adds, nor a target it
+  inserted), and names the other input files among them. A target the build declares
+  (``arm-none-eabi-gcc -std=gnu2y``) is named too: clang refused its command, not the
+  target, so such a file gets this warning rather than
+  ``codelinks.preprocessor_target_unknown``.
+
+The remedy is to remove or change what clang refused in the compilation database (or in
+the ``[preprocessor]`` table, for a file no entry applies to), or to accept the file read
+as written by adding ``codelinks.preprocessor_parse_refused`` to Sphinx's
+``suppress_warnings``. A source with no entry of its own that such an entry
+``#include``\ s is confirmed by that entry's ``#include`` lines and read as written
+through it, with the same warning naming that includer, unless an entry whose parse
+reads includes it in a branch that entry compiles: that one reads it, for its target.
 
 Header files
 ~~~~~~~~~~~~~
@@ -1324,6 +1336,6 @@ a declared target clang refuses with the entry's flags even without its ``-mcpu`
 read as written, with a ``codelinks.preprocessor_target_unknown`` warning: the markers
 of every branch of every ``#if`` are extracted, those of the ``#ifdef CONFIG_X``
 branches the build does not compile among them, and none is lost. So is a file whose
-every parse clang refuses for a target it reads, because of a flag of its own
-(``-mfpmath=vfp``), and a source such an entry includes, with a
-``codelinks.preprocessor_parse_refused`` warning.
+every parse clang refuses, because of a flag of its own (``-mfpmath=vfp``) or because
+of its command (a second input file, a ``-std`` clang does not know), and a source such
+an entry includes, with a ``codelinks.preprocessor_parse_refused`` warning.
