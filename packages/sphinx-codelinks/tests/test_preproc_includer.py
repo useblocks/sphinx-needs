@@ -302,8 +302,10 @@ def test_a_unity_layout_reads_each_source_through_its_includer(
     """Both included sources are read under the unity entry's ``-D`` and its main
     file's own context (``AFTER_A`` is defined between the two includes), a marker in
     an arm the inclusion skips is not extracted, the includer is parsed ONCE for both,
-    and nothing is warned. A header keeps its standalone parse with the configured
-    defines, even when the unity file includes it."""
+    and nothing is warned. A header the unity file includes is read through it
+    (useblocks/ubcode#4866: once it kept its standalone parse, ``IMPL_C_STANDALONE``),
+    which parses the unity file twice more: as the unit that includes the header, and
+    again as its reader."""
     _write(tmp_path, UNITY)
     db = _db(tmp_path, [{"file": "unity.cpp", "args": ["-DUNITY_FLAG=1"]}])
     parsed: list[Path] = []
@@ -323,9 +325,9 @@ def test_a_unity_layout_reads_each_source_through_its_includer(
         ("a.cpp", "IMPL_A"),
         ("a.cpp", "IMPL_A_UNITY"),
         ("b.cpp", "IMPL_B_AFTER_A"),
-        ("c.h", "IMPL_C_STANDALONE"),
+        ("c.h", "IMPL_C_UNITY"),
     }
-    assert parsed.count((tmp_path / "unity.cpp").resolve()) == 1
+    assert parsed.count((tmp_path / "unity.cpp").resolve()) == 3
     assert recorder.warnings == []
     # the included sources keep their own path and rows
     rows = {n.need["id"]: n.source_map["start"]["row"] for n in analyse.oneline_needs}
@@ -333,7 +335,7 @@ def test_a_unity_layout_reads_each_source_through_its_includer(
         "IMPL_A": 0,
         "IMPL_A_UNITY": 2,
         "IMPL_B_AFTER_A": 1,
-        "IMPL_C_STANDALONE": 3,
+        "IMPL_C_UNITY": 1,
     }
 
 
@@ -676,6 +678,54 @@ def test_an_environment_pickled_at_env_version_6_is_read_again(
     pickled = Path(app.doctreedir, "environment.pickle")
     env = pickle.loads(pickled.read_bytes())
     env.version["sphinx_codelinks"] = 6
+    pickled.write_bytes(pickle.dumps(env, pickle.HIGHEST_PROTOCOL))
+
+    app = _build(tmp_path, make_app, freshenv=False)
+
+    status = strip_colors(app._status.getvalue())
+    assert (
+        "loading pickled environment... failed: build environment version not current"
+        in status
+    )
+
+
+def test_an_environment_pickled_at_env_version_7_is_read_again(
+    tmp_path: Path, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    """An environment of ``env_version`` 7 holds records the libclang engine extracted
+    for the machine that read them, whatever target an entry's ``--target`` or compiler's
+    name declared (``arm-none-eabi-gcc``). Nothing in the sources or the configuration
+    changed: ``env_version`` 8 is what has the build discard it and read every document
+    again."""
+    _project(tmp_path, **UNITY_PROJECT)
+    app = _build(tmp_path, make_app)
+    pickled = Path(app.doctreedir, "environment.pickle")
+    env = pickle.loads(pickled.read_bytes())
+    env.version["sphinx_codelinks"] = 7
+    pickled.write_bytes(pickle.dumps(env, pickle.HIGHEST_PROTOCOL))
+
+    app = _build(tmp_path, make_app, freshenv=False)
+
+    status = strip_colors(app._status.getvalue())
+    assert (
+        "loading pickled environment... failed: build environment version not current"
+        in status
+    )
+
+
+def test_an_environment_pickled_at_env_version_8_is_read_again(
+    tmp_path: Path, make_app: Callable[..., SphinxTestApp]
+) -> None:
+    """An environment of ``env_version`` 8 holds records the libclang engine extracted
+    for another target than the build's when the build's could not be read (an entry's
+    own ``--target=xtensa-esp32-elf``), where such a file is now read as written. Nothing
+    in the sources or the configuration changed: ``env_version`` 9 is what has the build
+    discard it and read every document again."""
+    _project(tmp_path, **UNITY_PROJECT)
+    app = _build(tmp_path, make_app)
+    pickled = Path(app.doctreedir, "environment.pickle")
+    env = pickle.loads(pickled.read_bytes())
+    env.version["sphinx_codelinks"] = 8
     pickled.write_bytes(pickle.dumps(env, pickle.HIGHEST_PROTOCOL))
 
     app = _build(tmp_path, make_app, freshenv=False)

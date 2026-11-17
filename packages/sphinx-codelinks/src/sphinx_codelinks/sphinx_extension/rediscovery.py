@@ -98,6 +98,10 @@ SOURCE_PAGES_ATTRIBUTE = "codelinks_source_pages"
 """The environment attribute holding the directives' source pages, keyed by host
 document."""
 
+HEADER_UNITS_ATTRIBUTE = "codelinks_header_units"
+"""The environment attribute holding what each compilation-database entry contributes
+to the headers it includes, keyed by entry (``SourceAnalyse.unit_memo``)."""
+
 
 # -- discovery and the fingerprint ---------------------------------------------------
 
@@ -349,6 +353,19 @@ def builtin_header_warnings(env: BuildEnvironment) -> BuiltinHeaderWarnings:
     return _BUILTIN_HEADER_WARNINGS.setdefault(env, BuiltinHeaderWarnings())
 
 
+def header_units_store(env: BuildEnvironment) -> dict[Any, Any]:
+    """What each compilation-database entry contributes to the headers it includes,
+    kept in ``env`` (``SourceAnalyse.unit_memo``, useblocks/ubcode#4866): an entry
+    whose files did not change is not parsed again in the next build. Keyed by entry,
+    never by document, so never purged; each analysis drops the entries its databases
+    no longer have, and a ``-j N`` worker's are merged."""
+    store: dict[Any, Any] | None = getattr(env, HEADER_UNITS_ATTRIBUTE, None)
+    if store is None:
+        store = {}
+        setattr(env, HEADER_UNITS_ATTRIBUTE, store)
+    return store
+
+
 #: the documents this build purged -- every one it reads (added or changed, before the
 #: read, or before the ``-j N`` fork) and every removed one -- and the targets of the
 #: source pages they had recorded: a page whose ``[docs]`` links may have changed with
@@ -405,6 +422,9 @@ def merge_info(
         for docname in docnames:
             if docname in theirs:
                 mine[docname] = theirs[docname]
+    # what the worker's analyses found each entry contributes: a record is the same
+    # whichever process made it, so the worker's are as good as the main process'
+    header_units_store(env).update(header_units_store(other))
 
 
 # -- the config-only store -----------------------------------------------------------
@@ -568,6 +588,7 @@ def scan_config_only_project(
         analyse_config,
         name=project,
         builtin_header_warnings=builtin_header_warnings(app.env),
+        unit_memo=header_units_store(app.env),
     )
     src_analyse.run(log_summary=False)
     context = url_context(
