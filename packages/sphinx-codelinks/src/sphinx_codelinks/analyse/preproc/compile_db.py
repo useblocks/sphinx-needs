@@ -197,7 +197,15 @@ class DatabaseEntry:
 
 # @Resolve per-file compiler flags from the compilation database, IMPL_PREPROC_4, impl, [FE_PREPROC]
 def load_database(db_path: Path) -> dict[Path, DatabaseEntry]:
-    """Parse compile_commands.json -> {absolute file path: its entry}.
+    """Parse compile_commands.json -> {absolute file path: its entry}: the entries of
+    :func:`load_entries`, the last one kept of a file compiled more than once."""
+    return dict(load_entries(db_path))
+
+
+def load_entries(db_path: Path) -> list[tuple[Path, DatabaseEntry]]:
+    """Every entry of compile_commands.json, in the database's order, each with its
+    absolute (canonical) file path: a file compiled more than once has one entry each
+    time (where :func:`load_database` keeps the last).
 
     Each entry's arguments start with ``-working-directory=<directory>``, the entry's
     ``directory`` (a relative one is taken against the database file's own directory),
@@ -208,7 +216,7 @@ def load_database(db_path: Path) -> dict[Path, DatabaseEntry]:
     """
     entries = json.loads(db_path.read_text())
     db_dir = db_path.absolute().parent
-    database: dict[Path, DatabaseEntry] = {}
+    database: list[tuple[Path, DatabaseEntry]] = []
     for entry in entries:
         if "file" not in entry or "directory" not in entry:
             continue  # malformed entry: skip, keep going
@@ -223,9 +231,17 @@ def load_database(db_path: Path) -> dict[Path, DatabaseEntry]:
         file_field = entry["file"]
         abs_file = (directory / file_field).resolve()
         compiler = compiler_of(argv, file_field)
-        database[abs_file] = DatabaseEntry(
-            [f"{WORKING_DIRECTORY_FLAG}{directory}", *filter_args(argv, file_field)],
-            target_of_compiler(compiler) if compiler is not None else None,
+        database.append(
+            (
+                abs_file,
+                DatabaseEntry(
+                    [
+                        f"{WORKING_DIRECTORY_FLAG}{directory}",
+                        *filter_args(argv, file_field),
+                    ],
+                    target_of_compiler(compiler) if compiler is not None else None,
+                ),
+            )
         )
     return database
 

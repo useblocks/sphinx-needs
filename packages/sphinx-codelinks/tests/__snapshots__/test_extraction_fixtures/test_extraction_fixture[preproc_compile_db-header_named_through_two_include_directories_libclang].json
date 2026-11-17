@@ -1,0 +1,80 @@
+[
+  {
+    "filepath": "case.h",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 42
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Header Base",
+      "id": "IMPL_H9_BASE",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.h",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 4
+      },
+      "end": {
+        "row": 3,
+        "column": 36
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Header A",
+      "id": "IMPL_H9_A",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.h",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 4
+      },
+      "end": {
+        "row": 6,
+        "column": 44
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Header Level",
+      "id": "IMPL_H9_LEVEL",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

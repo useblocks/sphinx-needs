@@ -28,6 +28,11 @@ from sphinx_codelinks.analyse.preproc.compile_db import (
 _DIRECTIVE = re.compile(
     r'[ \t]*#[ \t]*include(?![A-Za-z0-9_])[ \t]*(?:"([^"\r\n]*)"|<([^>\r\n]*)>)'
 )
+# The same, `#include_next` too (group 1 holds `_next`).
+_DIRECTIVE_OR_NEXT = re.compile(
+    r"[ \t]*#[ \t]*include(_next)?(?![A-Za-z0-9_])[ \t]*"
+    r'(?:"([^"\r\n]*)"|<([^>\r\n]*)>)'
+)
 _LINE_BREAK = re.compile(r"\r\n|\r|\n")
 
 
@@ -41,10 +46,15 @@ class IncludeDirective:
     """``True`` for ``#include <…>``, ``False`` for ``#include "…"``."""
     line: int
     """The 1-based line of the directive."""
+    next: bool = False
+    """``True`` for ``#include_next``."""
 
 
-def scan_include_directives(text: str) -> list[IncludeDirective]:
-    """The ``#include "…"`` and ``#include <…>`` directive lines of ``text``.
+def scan_include_directives(
+    text: str, *, include_next: bool = False
+) -> list[IncludeDirective]:
+    """The ``#include "…"`` and ``#include <…>`` directive lines of ``text``, and its
+    ``#include_next`` lines too with ``include_next``.
 
     A directive line starts, after optional whitespace, with ``#``, optional
     whitespace and ``include``. A line inside a block comment is not one. Line
@@ -57,14 +67,20 @@ def scan_include_directives(text: str) -> list[IncludeDirective]:
     for number, line in enumerate(_LINE_BREAK.split(text), start=1):
         position = 0
         if not in_block:
-            match = _DIRECTIVE.match(line)
+            match = (_DIRECTIVE_OR_NEXT if include_next else _DIRECTIVE).match(line)
             if match is not None:
-                quoted, angled = match.group(1), match.group(2)
+                groups = match.groups()
+                is_next, (quoted, angled) = (
+                    (groups[0] is not None, groups[1:])
+                    if include_next
+                    else (False, groups)
+                )
                 out.append(
                     IncludeDirective(
                         name=quoted if quoted is not None else angled,
                         angled=quoted is None,
                         line=number,
+                        next=is_next,
                     )
                 )
                 position = match.end()
@@ -180,6 +196,50 @@ def resolve_include(
         if candidate.is_file():
             return candidate.resolve()
     return None
+
+
+def resolve_include_next(
+    directive: IncludeDirective, including_file: Path, path: SearchPath
+) -> Path | None:
+    """The file an ``#include_next`` ``directive`` names, canonical: looked up as
+    :func:`resolve_include` looks it up, but never in the including file's own
+    directory, and only in the search-path directories after the one the including file
+    was found in (the first that holds it); in all of them when none does."""
+    directories = (
+        [*path.quote, *path.angled] if not directive.angled else [*path.angled]
+    )
+    resolved = [directory.resolve() for directory in directories]
+    start = next(
+        (
+            at + 1
+            for at, directory in enumerate(resolved)
+            if including_file.is_relative_to(directory)
+        ),
+        0,
+    )
+    for directory in resolved[start:]:
+        candidate = directory / directive.name
+        if candidate.is_file():
+            return candidate.resolve()
+    return None
+
+
+def forced_includes(args: list[str]) -> list[str]:
+    """The files ``args`` include ahead of the main file, in order: each ``-include``
+    and ``-imacros`` value, separate or joined (``-include-pch`` is not one)."""
+    names: list[str] = []
+    arguments = iter(args)
+    for arg in arguments:
+        for flag in ("-include", "-imacros"):
+            if arg == flag:
+                value = next(arguments, None)
+                if value is not None:
+                    names.append(value)
+                break
+            if arg.startswith(flag) and not arg.startswith("-include-"):
+                names.append(arg[len(flag) :])
+                break
+    return names
 
 
 def _path_key(path: Path) -> bytes:

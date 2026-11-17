@@ -4,7 +4,8 @@
 # or points at an explicit `compile_commands_path`, then extracts from a single
 # `case.<ext>` source. These exercise the per-file argument resolution the shared
 # single-`.cpp`/defines fixtures never touch: DB-provided flags, headers absent
-# from a present DB (parsed standalone), translation-unit sources absent from the
+# from a present DB (read through the entries that include them, else parsed
+# standalone), translation-unit sources absent from the
 # DB (read through an entry that includes them, else skipped), an entry's
 # `directory`, and an unreadable explicit DB path (defines fallback).
 #
@@ -51,7 +52,8 @@ header_absent_from_db_standalone_libclang:
     // @Header Off, IMPL_HDR_OFF, impl, [REQ]
     #endif
   # case.h is not in the (present) DB. A header is never a compile_commands entry,
-  # so it is parsed standalone with the global defines: IMPL_HDR_BASE, IMPL_HDR_ON.
+  # and no entry includes this one (other.cpp is not on disk), so it is parsed
+  # standalone with the global defines: IMPL_HDR_BASE, IMPL_HDR_ON.
 
 tu_source_absent_from_db_skipped_libclang:
   lang: cpp
@@ -454,3 +456,273 @@ double_dash_value_of_pass_through_option_libclang:
   # options, and the compiler reads the -DFEATURE after it as an option:
   # IMPL_XL_ALWAYS, IMPL_XL_ON. Taken as the end of the options, -DFEATURE would be
   # an input and IMPL_XL_OFF extracted instead.
+
+# A header is read through every entry that includes it (useblocks/ubcode#4866): each
+# entry of the database whose own parse includes the header, at any depth, is a unit;
+# an arm of the header is left out only when EVERY such unit skips it in the header's
+# first inclusion (the union of the arms they compile). A unit that includes the header
+# more than once without an include guard, one whose target is unknown and one whose
+# every parse is refused read it as written: no arm left out. A header no entry
+# includes keeps its standalone read with the defines (above).
+
+header_read_through_every_includer_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    a.c: |
+      #include "case.h"
+    b.c: |
+      #define LEVEL 3
+      #include "case.h"
+  compile_commands:
+    - file: a.c
+      arguments: ["clang", "--target=arm-none-eabi", "-DFEATURE_A", "-c", "a.c"]
+    - file: b.c
+      arguments: ["clang", "--target=x86_64-pc-linux-gnu", "-c", "b.c"]
+  source: |
+    #pragma once
+    // @Header Base, IMPL_H1_BASE, impl, [REQ]
+    #if defined(__x86_64__)
+    // @Header x86, IMPL_H1_X86, impl, [REQ]
+    #elif defined(__arm__)
+    // @Header Arm, IMPL_H1_ARM, impl, [REQ]
+    #endif
+    #ifdef FEATURE_A
+    // @Header A, IMPL_H1_A, impl, [REQ]
+    #endif
+    #if LEVEL >= 3
+    // @Header Level, IMPL_H1_LEVEL, impl, [REQ]
+    #endif
+    #ifdef NEVER_SET
+    // @Header Never, IMPL_H1_NEVER, impl, [REQ]
+    #endif
+  # a.c (arm, FEATURE_A) and b.c (x86_64, LEVEL defined before its #include) both
+  # include case.h: every arm one of them compiles is kept, and only the arm neither
+  # compiles is left out: IMPL_H1_BASE, IMPL_H1_X86, IMPL_H1_ARM, IMPL_H1_A,
+  # IMPL_H1_LEVEL; not IMPL_H1_NEVER.
+
+header_define_before_include_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    main.c: |
+      #define LEVEL 3
+      #include "case.h"
+  compile_commands:
+    - file: main.c
+      arguments: ["clang", "-c", "main.c"]
+  source: |
+    #pragma once
+    // @Header Base, IMPL_H2_BASE, impl, [REQ]
+    #if LEVEL >= 3
+    // @Header Level, IMPL_H2_LEVEL, impl, [REQ]
+    #else
+    // @Header Low, IMPL_H2_LOW, impl, [REQ]
+    #endif
+  # main.c defines LEVEL before it includes case.h, which no flag says: read in the
+  # unit, the header takes it: IMPL_H2_BASE, IMPL_H2_LEVEL.
+
+header_reached_through_another_header_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    main.c: |
+      #include "mid.h"
+    mid.h: |
+      #pragma once
+      #include "case.h"
+  compile_commands:
+    - file: main.c
+      arguments: ["clang", "-DFEATURE_A", "-c", "main.c"]
+  source: |
+    #pragma once
+    // @Header Base, IMPL_H3_BASE, impl, [REQ]
+    #ifdef FEATURE_A
+    // @Header A, IMPL_H3_A, impl, [REQ]
+    #else
+    // @Header Not A, IMPL_H3_NOT_A, impl, [REQ]
+    #endif
+  # main.c includes case.h only through mid.h: the unit includes it all the same,
+  # with -DFEATURE_A: IMPL_H3_BASE, IMPL_H3_A.
+
+header_included_through_a_macro_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    main.c: |
+      #define HEADER "case.h"
+      #include HEADER
+  compile_commands:
+    - file: main.c
+      arguments: ["clang", "-DFEATURE_A", "-c", "main.c"]
+  source: |
+    #pragma once
+    // @Header Base, IMPL_H4_BASE, impl, [REQ]
+    #ifdef FEATURE_A
+    // @Header A, IMPL_H4_A, impl, [REQ]
+    #else
+    // @Header Not A, IMPL_H4_NOT_A, impl, [REQ]
+    #endif
+  # main.c names case.h through a macro, which no #include line spells: the unit's own
+  # parse includes it: IMPL_H4_BASE, IMPL_H4_A.
+
+header_guarded_and_entered_again_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    main.c: |
+      #include "case.h"
+    other.h: |
+      #ifndef OTHER_H
+      #define OTHER_H
+      #include "case.h"
+      #endif
+  compile_commands:
+    - file: main.c
+      arguments: ["clang", "-DFEATURE_A", "-c", "main.c"]
+  source: |
+    #ifndef CASE_H
+    #define CASE_H
+    #include "other.h"
+    // @Header Base, IMPL_H5_BASE, impl, [REQ]
+    #ifdef FEATURE_A
+    // @Header A, IMPL_H5_A, impl, [REQ]
+    #endif
+    #ifdef NEVER_SET
+    // @Header Never, IMPL_H5_NEVER, impl, [REQ]
+    #endif
+    #endif
+  # case.h is guarded and includes other.h, which includes it back: the second entry
+  # skips its whole body, which the first compiled. The first inclusion decides:
+  # IMPL_H5_BASE, IMPL_H5_A; not IMPL_H5_NEVER.
+
+header_included_twice_unguarded_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    main.c: |
+      #define PASS 1
+      #include "case.h"
+      #undef PASS
+      #define PASS 2
+      #include "case.h"
+  compile_commands:
+    - file: main.c
+      arguments: ["clang", "-c", "main.c"]
+  source: |
+    // @Header Base, IMPL_H6_BASE, impl, [REQ]
+    #if PASS == 1
+    // @First pass, IMPL_H6_ONE, impl, [REQ]
+    #elif PASS == 2
+    // @Second pass, IMPL_H6_TWO, impl, [REQ]
+    #endif
+    #ifdef NEVER_SET
+    // @Header Never, IMPL_H6_NEVER, impl, [REQ]
+    #endif
+  # case.h has no include guard and main.c includes it twice (an X-macro header): each
+  # inclusion compiles other arms, so this unit reads it as written: IMPL_H6_BASE,
+  # IMPL_H6_ONE, IMPL_H6_TWO, IMPL_H6_NEVER.
+
+header_of_an_unknown_target_entry_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    main.c: |
+      #include "case.h"
+  compile_commands:
+    - file: main.c
+      arguments: ["xtensa-esp32-elf-gcc", "-DFEATURE_A", "-c", "main.c"]
+  source: |
+    #pragma once
+    // @Header Base, IMPL_H7_BASE, impl, [REQ]
+    #ifdef __XTENSA__
+    // @Header Xtensa, IMPL_H7_XTENSA, impl, [REQ]
+    #else
+    // @Header Not Xtensa, IMPL_H7_NOT_XTENSA, impl, [REQ]
+    #endif
+    #ifdef FEATURE_A
+    // @Header A, IMPL_H7_A, impl, [REQ]
+    #endif
+  # The only entry that includes case.h is built for xtensa, which the pinned libclang
+  # does not model: its target is unknown, so the header is read as written, every arm
+  # kept: IMPL_H7_BASE, IMPL_H7_XTENSA, IMPL_H7_NOT_XTENSA, IMPL_H7_A.
+
+header_in_a_target_arm_of_an_unknown_target_entry_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    main.c: |
+      #ifdef __XTENSA__
+      #include "case.h"
+      #endif
+  compile_commands:
+    - file: main.c
+      arguments: ["xtensa-esp32-elf-gcc", "-c", "main.c"]
+  source: |
+    #pragma once
+    // @Header Base, IMPL_H8_BASE, impl, [REQ]
+    #ifdef __XTENSA__
+    // @Header Xtensa, IMPL_H8_XTENSA, impl, [REQ]
+    #else
+    // @Header Not Xtensa, IMPL_H8_NOT_XTENSA, impl, [REQ]
+    #endif
+  # main.c includes case.h only in an arm of its target, which no parse ubc can make
+  # takes: its #include lines count, and the header is read as written: IMPL_H8_BASE,
+  # IMPL_H8_XTENSA, IMPL_H8_NOT_XTENSA.
+
+header_named_through_two_include_directories_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  files:
+    build/a.c: |
+      #include "case.h"
+    src/b.c: |
+      #include <case.h>
+  compile_commands:
+    - file: a.c
+      directory: build
+      arguments: ["clang", "-I..", "-DFEATURE_A", "-c", "a.c"]
+    - file: src/b.c
+      arguments: ["clang", "-I.", "-DLEVEL=3", "-c", "src/b.c"]
+  source: |
+    #pragma once
+    // @Header Base, IMPL_H9_BASE, impl, [REQ]
+    #ifdef FEATURE_A
+    // @Header A, IMPL_H9_A, impl, [REQ]
+    #endif
+    #if LEVEL >= 3
+    // @Header Level, IMPL_H9_LEVEL, impl, [REQ]
+    #endif
+    #ifdef NEVER_SET
+    // @Header Never, IMPL_H9_NEVER, impl, [REQ]
+    #endif
+  # build/a.c finds case.h through -I.. from build, src/b.c through -I. from the case
+  # root: two spellings of one file, both units count: IMPL_H9_BASE, IMPL_H9_A,
+  # IMPL_H9_LEVEL; not IMPL_H9_NEVER.

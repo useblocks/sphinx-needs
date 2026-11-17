@@ -1,0 +1,106 @@
+[
+  {
+    "filepath": "case.h",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
+      },
+      "end": {
+        "row": 1,
+        "column": 42
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Header Base",
+      "id": "IMPL_H7_BASE",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.h",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 4
+      },
+      "end": {
+        "row": 3,
+        "column": 46
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Header Xtensa",
+      "id": "IMPL_H7_XTENSA",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.h",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 4
+      },
+      "end": {
+        "row": 5,
+        "column": 54
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Header Not Xtensa",
+      "id": "IMPL_H7_NOT_XTENSA",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.h",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 8,
+        "column": 4
+      },
+      "end": {
+        "row": 8,
+        "column": 36
+      }
+    },
+    "tagged_scope": null,
+    "scope": null,
+    "need": {
+      "title": "Header A",
+      "id": "IMPL_H7_A",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

@@ -831,6 +831,12 @@ def _version() -> str:
     return _VERSION[0]
 
 
+def libclang_version() -> str:
+    """The loaded libclang's version string: a record one libclang made is not another's
+    (the units a header is read through, :mod:`.headers`)."""
+    return _version()
+
+
 def triple_of(tu: Any) -> str:
     """The triple libclang parsed ``tu`` for (``clang_getTranslationUnitTargetInfo``,
     which the ``clang.cindex`` bindings do not expose)."""
