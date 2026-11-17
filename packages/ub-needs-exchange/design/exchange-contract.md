@@ -384,8 +384,9 @@ As `ub-project`'s contract says of discovery, each of these stays with each cons
   adds a prefix therefore rewrites every reference to one of the file's ids, and no other
   (a link given as a string holding a dynamic function or a variant is left for the
   reader to resolve first), and the reading project references those needs by their
-  prefixed ids. `content` is opaque markup: every whole-word occurrence of a file id in it
-  is such a reference, inside code blocks and file names too **(not pinned here: the
+  prefixed ids. `content` is opaque markup: every whole-word occurrence of a file id in it,
+  but for one that is an end of a longer `::`-joined id, is such a reference, inside code
+  blocks and file names too **(not pinned here: the
   ingest layer, pinned by sphinx-needs' `tests/test_exchange_readers.py`)**;
 - **`:ids:`, `:filter:`, `:tags:`**, duplicates across sources, and where a need is
   recorded (`docname`, `lineno`);
