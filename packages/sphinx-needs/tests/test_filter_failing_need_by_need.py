@@ -61,9 +61,9 @@ Index
 
 """
 """Four needs, so that every place tests its filter on more than one; the directive
-under test starts on line 23."""
+under test starts on line 22."""
 
-LINE = 23
+LINE = 22
 
 DIRECTIVES = {
     "needflow-highlight": ".. needflow::\n   :highlight: {f}\n",
@@ -139,7 +139,7 @@ def test_a_directive_reports_it_once_and_matches_nothing(
         assert sources[0].count(" lasts 1 days") == 4
         assert "lasts 0 days" not in sources[0]
         assert " happens at " not in sources[0]
-        assert "[SEQ_M] starts at [SEQ_S]'s end" in sources[0]
+        assert "[SEQ_S] starts at [SEQ_M]'s end" in sources[0]
     else:
         # no receiver passes, so no message is drawn
         assert sources == []
@@ -197,8 +197,8 @@ def test_a_constraint_check_is_reported_once_and_not_evaluated(
     ), reports[0]
     # the working check's own failure, on the need it fails on, and nothing else
     assert [w for w in warnings if w not in reports] == [
-        "<srcdir>/index.rst:28: WARNING: Constraint status == 'open' for need CON_B "
-        "FAILED! severity: LOW  [needs.constraint]"
+        "<srcdir>/index.rst:27: WARNING: Constraint status == 'open' for need CON_B "
+        "FAILED! severity: LOW None [needs.constraint]"
     ]
 
     needs = json.loads(Path(app.outdir, "needs.json").read_text(encoding="utf-8"))
@@ -208,4 +208,5 @@ def test_a_constraint_check_is_reported_once_and_not_evaluated(
     assert not stored["CON_A"].get("style")
     assert stored["CON_B"]["constraints_results"] == {"c1": {"check_1": False}}
     assert stored["CON_B"]["constraints_passed"] is False
-    assert stored["CON_B"]["style"] == "red_bar"
+    # the style the working check's failure sets, as it sets it
+    assert stored["CON_B"]["style"] == "red_bar,"

@@ -8,6 +8,7 @@ from __future__ import annotations
 import html
 import os
 import textwrap
+from collections.abc import Mapping
 from typing import TypedDict
 from urllib.parse import urlparse
 
@@ -25,6 +26,26 @@ from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.utils import get_scale, split_link_types
 
 logger = get_logger(__name__)
+
+
+def linked_needs(
+    need: NeedItem | NeedPartItem, link_type: str, needs: Mapping[str, NeedItem], /
+) -> list[NeedItem]:
+    """The needs *need* links to in the link field *link_type*, in the order of its
+    links: what needsequence and needgantt draw a link to.
+
+    A link is read as every reader of the need reads it, from the
+    :class:`~sphinx_needs.need_item.NeedLink` it was parsed into when the need was made
+    (:meth:`~sphinx_needs.need_item.NeedLink.parse_address`): a link to a need part
+    (``REQ_1.p1``) is a link to the need owning the part, its ``id``. A link to a need
+    that does not exist (``MISSING``, ``MISSING.p1``) is skipped; the dead-link check
+    reports it.
+    """
+    return [
+        target
+        for link in need.get_links(link_type, as_str=False)
+        if (target := needs.get(link.id)) is not None
+    ]
 
 
 class DiagramAttributesType(TypedDict):
