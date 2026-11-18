@@ -798,11 +798,20 @@ _IS_A_TYPES = {
 def _is_a_config(
     filter_data: dict[str, object] | None = None, *, types: object = _IS_A_TYPES
 ) -> Mock:
-    config = Mock(spec=["filter_data", "variant_data_proxy", "is_a_types", "types"])
+    config = Mock(
+        spec=[
+            "filter_data",
+            "variant_data_proxy",
+            "is_a_types",
+            "types",
+            "namespaced_ids",
+        ]
+    )
     config.filter_data = filter_data or {}
     config.variant_data_proxy = None
     config.is_a_types = types
     config.types = []  # read for a did-you-mean, where a name is no need type
+    config.namespaced_ids = False  # read before any filter's text, for its warning
     return config
 
 

@@ -662,10 +662,13 @@ def test_nothing_is_reported_before_a_build_gives_the_types() -> None:
     """With no need types (no build has prepared them) nothing is known about a name, so
     none is reported: ``c.is_a`` then answers each type itself alone."""
     _NEEDS_CONFIG.clear()  # no name reported by an earlier build is remembered
-    config = Mock(spec=["filter_data", "variant_data_proxy", "is_a_types"])
+    config = Mock(
+        spec=["filter_data", "variant_data_proxy", "is_a_types", "namespaced_ids"]
+    )
     config.filter_data = {}
     config.variant_data_proxy = None
     config.is_a_types = None
+    config.namespaced_ids = False
     with patch.object(filter_common, "log_warning") as warn:
         assert filter_needs_and_parts([], config, "c.is_a('rq')") == []
         assert filter_single_need(MagicMock(), config, "c.is_a('rq')") is False
