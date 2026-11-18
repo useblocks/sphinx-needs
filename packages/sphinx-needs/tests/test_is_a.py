@@ -954,3 +954,71 @@ def test_an_external_link_condition_names_the_external_need(test_app: Any) -> No
             f" (from the external need 'EXT_B': {url}) [needs.filter_type]",
         )
     ]
+
+
+# --- a padded filter's c.is_a literal is read as the filter is (#2521) ---
+
+
+@pytest.mark.parametrize("pad", ["", " ", "\t", " \t "])
+def test_the_names_of_a_padded_filter(pad: str) -> None:
+    """The names are read past the leading spaces and tabs ``eval`` reads past, as the
+    filter is evaluated; no further (a newline then a space does not parse)."""
+    assert is_a_literals(f"{pad}c.is_a('a') or c.is_a('b')") == ("a", "b")
+    assert is_a_literals(f"\n {pad}c.is_a('a')") == ()
+
+
+#: each pad, and the pad of a ``needpie`` line (docutils turns a tab into spaces)
+PADDED = {"none": ("", ""), "space": (" ", " "), "tab": ("\t", " ")}
+
+
+def _padded_index(line_pad: str) -> str:
+    """:data:`INDEX` with a ``needpie`` line and two constrained needs."""
+    return (
+        INDEX
+        + f"\n.. needpie:: P\n\n   {line_pad}{NOSUCH}\n   type == 'req'\n"
+        + "\n.. req:: Constrained\n   :id: REQ_101\n   :constraints: c1\n"
+        + "\n.. req:: Constrained too\n   :id: REQ_102\n   :constraints: c1\n"
+    )
+
+
+def _padded_project(pad: str, line_pad: str) -> dict[str, Any]:
+    filter_string = f"{pad}{NOSUCH}"
+    index = _padded_index(line_pad)
+    conf = (
+        CONF
+        + f"needs_warnings = {{'w': {filter_string!r}}}\n"
+        + f"needs_constraints = {{'c1': {{'check_0': {filter_string!r}, "
+        "'severity': 'LOW'}}\n"
+        + "needs_constraint_failed_options = {'LOW': {'on_fail': [], 'style': []}}\n"
+    )
+    return _project(index, conf=conf, buildername="html")
+
+
+@pytest.mark.parametrize(
+    ("test_app", "pad", "line_pad"),
+    [
+        pytest.param(_padded_project(pad, line_pad), pad, line_pad, id=name)
+        for name, (pad, line_pad) in PADDED.items()
+    ],
+    indirect=["test_app"],
+)
+def test_a_padded_filter_naming_no_type_is_reported_as_written(
+    test_app: Any, pad: str, line_pad: str
+) -> None:
+    """A filter with leading spaces or tabs is answered at every place, so a literal of it
+    naming no need type is reported as the unpadded one is: a ``needs_warnings`` entry
+    naming itself, a ``needpie`` line at its directive, a constraint once with no
+    location; each quoting the filter as written."""
+    app = test_app
+    app.build()
+    filter_string = f"{pad}{NOSUCH}"
+    line = _line(_padded_index(line_pad), ".. needpie::")
+    assert _filter_type(build_warnings(app)) == sorted(
+        [
+            _unknown("nosuch", filter_string).replace(
+                " [needs.filter_type]", " (from warning filter 'w') [needs.filter_type]"
+            ),
+            f"<srcdir>/index.rst:{line}: {_unknown('nosuch', f'{line_pad}{NOSUCH}')}",
+            _unknown("nosuch", filter_string),
+        ]
+    )
