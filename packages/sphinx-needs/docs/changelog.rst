@@ -351,6 +351,23 @@ Bug fixes
   now reported together with ``needs.namespaced_ids_off``, at the same places and as often; a constraint, which has no
   location, is still reported once per build for its string.
 
+- 🐛 A boolean is no longer accepted as an ``integer`` or a ``number``: ``true`` or ``false`` in such a field, or as
+  an item of an array of either, is refused as any other value of the wrong type is **(changed output)**
+  (:issue:`2533`, :pr:`2540`)
+
+  Python counts a ``bool`` as an ``int``, so the type check let a boolean through: the need was created holding it,
+  the schema validation then reported it (``sn_schema_violation.field_fail``), and a filter such as ``effort > 0``
+  was true for it. A :ref:`needimport`, :ref:`external <needs_external_needs>` or ``needservice`` record holding such
+  a value is now refused with that route's own warning (``needs.import_need``, ``needs.load_external_need``,
+  ``needs.load_service_need``), and so is a record that takes a boolean default from the file's own
+  ``needs_schema``. A project's own code calling the creation API (``create_need``, ``add_need``,
+  ``add_external_need``, ``ingest_need_record``, ``generate_need``) with such a value gets the
+  ``InvalidNeedException`` it gets for any other value of the wrong type, where the need was created before
+  (silently, with ``needs_schema_validation_enabled = False``). A boolean ``default`` or ``predicates`` value of
+  such a field is reported as ``needs.config`` and not used, and on a need type as ``needs.type_conflict`` (it was
+  refused as ``needs.type_widening`` before). A dynamic function or variant data returning a boolean for such a
+  field is reported as ``needs.dynamic_function``, and the value is dropped. An integer is still a ``number``.
+
 .. _`release:9.2.0`:
 
 9.2.0
