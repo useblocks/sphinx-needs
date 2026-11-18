@@ -1661,7 +1661,7 @@ class NeedsSphinxConfig:
         default=False, metadata={"rebuild": "env", "types": (bool,)}
     )
     """If True, needimport parses each imported need's content in the markup its doctype names."""
-    import_inert_content: bool = field(
+    import_restrict_content: bool = field(
         default=False, metadata={"rebuild": "env", "types": (bool,)}
     )
     """If True, the content of a need needimport creates, and the text its templates

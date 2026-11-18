@@ -1,5 +1,5 @@
-"""``needs_import_inert_content``: the content of a need ``needimport`` creates is parsed
-with docutils' file insertion and raw markup switched off.
+"""``needs_import_restrict_content``: the content of a need ``needimport`` creates is
+parsed with docutils' file insertion and raw markup switched off.
 
 Every project is built inline into ``<root>/proj``; each construct reads a canary file of
 its own in ``<root>/outside``, OUTSIDE the project, or carries its canary in the record.
@@ -32,7 +32,7 @@ import ub_needs_exchange
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
-FLAG = "needs_import_inert_content"
+FLAG = "needs_import_restrict_content"
 
 ROUTES = {
     # route: (importing page, needs_import_parse_by_doctype, record doctype)
@@ -95,19 +95,19 @@ FILE_INSERTION = "File insertion disabled"
 FILE_ACCESS = 'File and URL access deactivated; ignoring "csv-table" directive.'
 RAW = '"raw" directive disabled'
 RAW_ROLE = "raw (and derived) roles disabled"
-INERT_ON = "needs_import_inert_content is on"
+RESTRICT_ON = "needs_import_restrict_content is on"
 
 
 def refused(path: str) -> str:
     """The warning of a ``needimport`` met in imported content under the option."""
-    return f"Could not load needs import file {path}: {INERT_ON}"
+    return f"Could not load needs import file {path}: {RESTRICT_ON}"
 
 
 def removed(need_id: str, count: int) -> str:
     """The warning of an imported need whose raw markup was removed."""
     return (
         "Raw markup (an HTML block or inline HTML) removed from "
-        f"imported need {need_id!r} ({count} node(s)): {INERT_ON}"
+        f"imported need {need_id!r} ({count} node(s)): {RESTRICT_ON}"
     )
 
 
@@ -297,9 +297,9 @@ CONSTRUCTS: dict[str, Construct] = {
 }
 
 
-def conf(*, by_doctype: bool, inert: bool | None, extra: str = "") -> str:
-    """A project that parses reStructuredText and MyST; ``inert`` ``None`` leaves the
-    option unset in ``conf.py``."""
+def conf(*, by_doctype: bool, restricted: bool | None, extra: str = "") -> str:
+    """A project that parses reStructuredText and MyST; ``restricted`` ``None`` leaves
+    the option unset in ``conf.py``."""
     lines = [
         'extensions = ["myst_parser", "sphinx_needs"]',
         'source_suffix = {".rst": "restructuredtext", ".md": "markdown"}',
@@ -307,8 +307,8 @@ def conf(*, by_doctype: bool, inert: bool | None, extra: str = "") -> str:
         "show_warning_types = True",
         f"needs_import_parse_by_doctype = {by_doctype}",
     ]
-    if inert is not None:
-        lines.append(f"{FLAG} = {inert}")
+    if restricted is not None:
+        lines.append(f"{FLAG} = {restricted}")
     return "\n".join(lines) + "\n" + extra
 
 
@@ -417,7 +417,7 @@ def project(
     text: str,
     *,
     by_doctype: bool = False,
-    inert: bool | None,
+    restricted: bool | None,
     extra_conf: str = "",
     files: list[tuple[Path, str]] | None = None,
 ) -> dict[str, Any]:
@@ -427,7 +427,7 @@ def project(
         "files": [
             (
                 Path("proj/conf.py"),
-                conf(by_doctype=by_doctype, inert=inert, extra=extra_conf),
+                conf(by_doctype=by_doctype, restricted=restricted, extra=extra_conf),
             ),
             (Path("proj", page), text),
             *(files or []),
@@ -439,28 +439,31 @@ def project(
 def matrix_params() -> list[Any]:
     params = []
     for route, (page, by_doctype, _) in ROUTES.items():
-        for inert in (False, True):
+        for restricted in (False, True):
             params.append(
                 pytest.param(
                     project(
                         page,
                         importing_page(page),
                         by_doctype=by_doctype,
-                        inert=inert,
+                        restricted=restricted,
                     ),
                     route,
-                    inert,
-                    id=f"{route}-{'on' if inert else 'off'}",
+                    restricted,
+                    id=f"{route}-{'on' if restricted else 'off'}",
                 )
             )
     return params
 
 
 @pytest.mark.parametrize(
-    ("test_app", "route", "inert"), matrix_params(), indirect=["test_app"]
+    ("test_app", "route", "restricted"), matrix_params(), indirect=["test_app"]
 )
 def test_each_construct_in_each_route(
-    test_app: SphinxTestApp, route: str, inert: bool, monkeypatch: pytest.MonkeyPatch
+    test_app: SphinxTestApp,
+    route: str,
+    restricted: bool,
+    monkeypatch: pytest.MonkeyPatch,
 ):
     """On, no canary is read or written, and each construct is reported once by its own
     warning; off (in ``conf.py``), every canary is, and nothing is reported. A nested
@@ -507,7 +510,7 @@ def test_each_construct_in_each_route(
         Path(p).name for p in test_app.env.dependencies.get("index", ())
     } & nested_files
     looked_for = {Path(p).name for p in probed} & nested_files
-    if not inert:
+    if not restricted:
         assert reached_ == dict.fromkeys(constructs, True)
         assert nested == sorted(nested_files)
         assert noted == local_files
@@ -579,7 +582,7 @@ def scope_params() -> list[Any]:
                     page,
                     text,
                     by_doctype=by_doctype,
-                    inert=True,
+                    restricted=True,
                     files=[(Path("proj", "other" + Path(page).suffix), other)],
                 ),
                 route,
@@ -608,7 +611,7 @@ def include_warning(doctype: str) -> str:
 
 
 @pytest.mark.parametrize(("test_app", "route"), scope_params(), indirect=["test_app"])
-def test_only_the_imported_content_is_inert(test_app: SphinxTestApp, route: str):
+def test_only_the_imported_content_is_restricted(test_app: SphinxTestApp, route: str):
     """The needs written before and after the import, the page's own raw block, and the
     next document still include and still pass raw markup through: the switches are put
     back after the imported content's parse."""
@@ -651,12 +654,12 @@ ONE_IMPORT = ["include", "raw"]
             project(
                 "index.rst",
                 importing_page("index.rst"),
-                inert=None,
+                restricted=None,
                 extra_conf='needs_from_toml = "ubproject.toml"\n',
                 files=[
                     (
                         Path("proj/ubproject.toml"),
-                        f"[needs]\nimport_inert_content = {value}\n",
+                        f"[needs]\nimport_restrict_content = {value}\n",
                     )
                 ],
             ),
@@ -668,7 +671,7 @@ ONE_IMPORT = ["include", "raw"]
     indirect=["test_app"],
 )
 def test_the_option_in_ubproject_toml(test_app: SphinxTestApp, value: str):
-    """``[needs] import_inert_content`` in ``ubproject.toml`` is the option."""
+    """``[needs] import_restrict_content`` in ``ubproject.toml`` is the option."""
     constructs = write_import(test_app, ".rst", ONE_IMPORT)
     test_app.build()
     if value == "false":
@@ -683,7 +686,7 @@ def test_the_option_in_ubproject_toml(test_app: SphinxTestApp, value: str):
     ("test_app", "start"),
     [
         pytest.param(
-            project("index.rst", importing_page("index.rst"), inert=start),
+            project("index.rst", importing_page("index.rst"), restricted=start),
             start,
             id=f"{'on' if start else 'off'}-to-{'off' if start else 'on'}",
         )
@@ -698,9 +701,9 @@ def test_changing_the_option_rereads_the_importing_page(
     in either direction: nothing else in the project changed."""
     constructs = write_import(test_app, ".rst", ONE_IMPORT)
 
-    def check(app: SphinxTestApp, inert: bool) -> None:
-        assert [present(app, c) for c in constructs.values()] == [not inert] * 2
-        assert_warnings(app, [INCLUDE_RST, RAW] if inert else [])
+    def check(app: SphinxTestApp, restricted: bool) -> None:
+        assert [present(app, c) for c in constructs.values()] == [not restricted] * 2
+        assert_warnings(app, [INCLUDE_RST, RAW] if restricted else [])
 
     test_app.build()
     check(test_app, start)
@@ -727,7 +730,7 @@ def test_changing_the_option_rereads_the_importing_page(
             importing_page(
                 "index.rst", after=".. raw:: html\n\n   <b>CANARY_RAW_PAGE</b>\n"
             ),
-            inert=True,
+            restricted=True,
             files=[(Path("proj/docutils.conf"), "[general]\nraw_enabled: false\n")],
         )
     ],
@@ -747,7 +750,7 @@ def test_the_projects_own_settings_are_put_back(test_app: SphinxTestApp):
 
 
 @pytest.mark.parametrize(
-    ("test_app", "inert"),
+    ("test_app", "restricted"),
     [
         pytest.param(
             project(
@@ -757,7 +760,7 @@ def test_the_projects_own_settings_are_put_back(test_app: SphinxTestApp):
                     after=".. needimport:: second.json\n\n"
                     ".. include:: ../outside/page.txt\n",
                 ),
-                inert=inert,
+                restricted=restricted,
                 files=[
                     (
                         Path("proj/docutils.conf"),
@@ -765,15 +768,15 @@ def test_the_projects_own_settings_are_put_back(test_app: SphinxTestApp):
                     )
                 ],
             ),
-            inert,
-            id="on" if inert else "off",
+            restricted,
+            id="on" if restricted else "off",
         )
-        for inert in (False, True)
+        for restricted in (False, True)
     ],
     indirect=["test_app"],
 )
 def test_a_project_without_file_insertion_still_imports(
-    test_app: SphinxTestApp, inert: bool
+    test_app: SphinxTestApp, restricted: bool
 ):
     """A project that switches file insertion off itself (``docutils.conf``) still
     imports with a page-level ``needimport``, with the option off and on: the directive
@@ -800,7 +803,7 @@ def test_a_project_without_file_insertion_still_imports(
     assert "SECOND" in needs
     # the project's own switch is in force on the page itself
     assert not reached(test_app, "CANARY_PAGE", "text")
-    if not inert:
+    if not restricted:
         assert "NESTED_LOCAL" in needs
         assert_warnings(test_app, [INCLUDE_RST])
         return
@@ -826,28 +829,28 @@ def nested_need(doctype: str) -> str:
 
 
 @pytest.mark.parametrize(
-    ("test_app", "route", "inert"),
+    ("test_app", "route", "restricted"),
     [
         pytest.param(
             project(
                 page,
                 importing_page(page),
                 by_doctype=by_doctype,
-                inert=inert,
+                restricted=restricted,
             ),
             route,
-            inert,
-            id=f"{route}-{'on' if inert else 'off'}",
+            restricted,
+            id=f"{route}-{'on' if restricted else 'off'}",
         )
         for route, (page, by_doctype, _) in ROUTES.items()
-        for inert in (False, True)
+        for restricted in (False, True)
     ],
     indirect=["test_app"],
 )
 def test_a_need_written_inside_imported_content(
-    test_app: SphinxTestApp, route: str, inert: bool
+    test_app: SphinxTestApp, route: str, restricted: bool
 ):
-    """A need written inside an imported need's content is parsed inert too: its
+    """A need written inside an imported need's content is parsed restricted too: its
     ``include`` reads nothing, and its raw markup (a ``raw`` block in reStructuredText,
     an HTML block in MyST) is stopped or removed, and counted into the warning of the
     imported need that holds it."""
@@ -877,8 +880,8 @@ def test_a_need_written_inside_imported_content(
             for name in ("INNER", "OUTER")
         ]
     canaries.append(reached(test_app, "CANARY_INNER", "text"))
-    assert canaries == [not inert] * len(canaries)
-    if not inert:
+    assert canaries == [not restricted] * len(canaries)
+    if not restricted:
         assert_no_warnings(test_app)
     elif doctype == ".rst":
         assert_warnings(test_app, [INCLUDE_RST, RAW])
@@ -887,7 +890,7 @@ def test_a_need_written_inside_imported_content(
         assert_warnings(test_app, [INCLUDE_MYST, removed("IMP", 2)])
 
 
-def templates_project(page: str, inert: bool) -> dict[str, Any]:
+def templates_project(page: str, restricted: bool) -> dict[str, Any]:
     """A project with the docs' own example ``pre_template``, a ``template`` rendering
     the content, and a need WRITTEN on the page with the pre template, whose title writes
     raw markup."""
@@ -911,7 +914,7 @@ def templates_project(page: str, inert: bool) -> dict[str, Any]:
     return project(
         page,
         importing_page(page, before=written),
-        inert=inert,
+        restricted=restricted,
         files=[
             (Path("proj/needs_templates/spec_pre_template.need"), docs_pre),
             (Path("proj/needs_templates/content.need"), "{{ content }}\n"),
@@ -920,30 +923,30 @@ def templates_project(page: str, inert: bool) -> dict[str, Any]:
 
 
 @pytest.mark.parametrize(
-    ("test_app", "index", "inert"),
+    ("test_app", "index", "restricted"),
     [
         pytest.param(
-            templates_project(index, inert),
+            templates_project(index, restricted),
             index,
-            inert,
-            id=f"{index}-{'on' if inert else 'off'}",
+            restricted,
+            id=f"{index}-{'on' if restricted else 'off'}",
         )
         for index in ("index.rst", "index.md")
-        for inert in (False, True)
+        for restricted in (False, True)
     ],
     indirect=["test_app"],
 )
-def test_the_text_templates_render_is_inert(
-    test_app: SphinxTestApp, index: str, inert: bool
+def test_the_text_templates_render_is_restricted(
+    test_app: SphinxTestApp, index: str, restricted: bool
 ):
     """The text a ``template``, ``pre_template`` or ``post_template`` renders for an
-    imported need is parsed inert too: the record names the template, and a template
-    renders the record's fields (the docs' example pre template renders its title).
-    A need written on the page with the same pre template is untouched."""
+    imported need is parsed restricted too: the record names the template, and a
+    template renders the record's fields (the docs' example pre template renders its
+    title). A need written on the page with the same pre template is untouched."""
     doctype = Path(index).suffix
 
     def include_and_html(name: str) -> str:
-        # in MyST, the raw markup is an HTML block, which the inert parse removes
+        # in MyST, the raw markup is an HTML block, which the restricted parse removes
         if doctype == ".rst":
             return include_and_raw(doctype, name)
         return (
@@ -995,8 +998,8 @@ def test_the_text_templates_render_is_inert(
     for name in names:
         html = None if doctype == ".rst" else f"<div>CANARY_RAW_{name}</div>"
         found.append(reached(test_app, f"CANARY_RAW_{name}", "raw", html=html))
-    assert found == [not inert] * len(found)
-    if not inert:
+    assert found == [not restricted] * len(found)
+    if not restricted:
         assert_no_warnings(test_app)
     elif doctype == ".rst":
         assert_warnings(test_app, [INCLUDE_RST, RAW] * 3)
@@ -1016,30 +1019,30 @@ MYST_OWN_RAW = (
 
 
 @pytest.mark.parametrize(
-    ("test_app", "route", "inert"),
+    ("test_app", "route", "restricted"),
     [
         pytest.param(
             project(
                 ROUTES[route][0],
                 importing_page(ROUTES[route][0]),
                 by_doctype=ROUTES[route][1],
-                inert=inert,
+                restricted=restricted,
                 extra_conf=(
                     'myst_enable_extensions = ["strikethrough", "tasklist"]\n'
                     'suppress_warnings = ["myst.strikethrough"]\n'
                 ),
             ),
             route,
-            inert,
-            id=f"{route}-{'on' if inert else 'off'}",
+            restricted,
+            id=f"{route}-{'on' if restricted else 'off'}",
         )
         for route in ("myst-declared", "myst-host")
-        for inert in (False, True)
+        for restricted in (False, True)
     ],
     indirect=["test_app"],
 )
 def test_what_myst_parser_writes_as_raw_itself_is_kept(
-    test_app: SphinxTestApp, route: str, inert: bool
+    test_app: SphinxTestApp, route: str, restricted: bool
 ):
     """A hard line break, strikethrough and a task-list checkbox are raw nodes
     myst-parser makes for ordinary Markdown: kept, exactly those texts (``<s>`` and
@@ -1087,7 +1090,7 @@ def test_what_myst_parser_writes_as_raw_itself_is_kept(
     assert "<s>struck</s>" in html
     assert html.count('class="task-list-item-checkbox"') == 2
     assert "line one<br />" in html
-    if not inert:
+    if not restricted:
         assert raws == Counter(kept) + Counter(foreign)
         assert '<br onclick="CANARY_BR">' in html
         assert '<s class="CANARY_S">' in html
@@ -1118,7 +1121,7 @@ STRIKETHROUGH = {
                 ROUTES[route][0],
                 importing_page(ROUTES[route][0]),
                 by_doctype=ROUTES[route][1],
-                inert=True,
+                restricted=True,
                 extra_conf=(
                     'myst_enable_extensions = ["strikethrough"]\n'
                     'suppress_warnings = ["myst.strikethrough"]\n'
@@ -1166,7 +1169,7 @@ def test_strikethrough_is_kept_only_as_a_pair(test_app: SphinxTestApp, case: str
         assert_no_warnings(test_app)
 
 
-def pre_template_project(inert: bool) -> dict[str, Any]:
+def pre_template_project(restricted: bool) -> dict[str, Any]:
     """A MyST page importing ``imported.json`` with a host paragraph after it, and the
     docs' own example pre and post template, which render the need's title."""
     docs_pre = (
@@ -1178,21 +1181,25 @@ def pre_template_project(inert: bool) -> dict[str, Any]:
     return project(
         "index.md",
         importing_page("index.md", after="AFTER_HOST\n\n## Next\n\nNEXT_HOST\n"),
-        inert=inert,
+        restricted=restricted,
         files=[(Path("proj/needs_templates/spec_pre_template.need"), docs_pre)],
     )
 
 
 @pytest.mark.parametrize(
-    ("test_app", "inert"),
+    ("test_app", "restricted"),
     [
-        pytest.param(pre_template_project(inert), inert, id="on" if inert else "off")
-        for inert in (False, True)
+        pytest.param(
+            pre_template_project(restricted),
+            restricted,
+            id="on" if restricted else "off",
+        )
+        for restricted in (False, True)
     ],
     indirect=["test_app"],
 )
 def test_an_open_strikethrough_in_a_template_is_removed(
-    test_app: SphinxTestApp, inert: bool
+    test_app: SphinxTestApp, restricted: bool
 ):
     """An ``<s>`` a record title leaves open, rendered by a pre template on a MyST page,
     sits outside the need: kept, it would strike through the rest of the page."""
@@ -1212,7 +1219,7 @@ def test_an_open_strikethrough_in_a_template_is_removed(
     html = Path(test_app.outdir, "index.html").read_text("utf8")
     assert "AFTER_HOST" in html
     assert "NEXT_HOST" in html
-    if not inert:
+    if not restricted:
         assert html.count("<s>") == 1
         assert "<s>OPEN_S" in html
         assert_no_warnings(test_app)

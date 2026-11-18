@@ -1694,13 +1694,14 @@ def _reset_rst_titles(state: RSTState) -> Generator[None]:
     state.memo.section_level = surrounding_section_level
 
 
-# set on the document's settings for the duration of an inert parse: a ``needimport``
-# met there refuses to read (docutils' own switch can be off for a whole project)
-_INERT_MARKER = "_sphinx_needs_import_inert"
+# set on the document's settings for the duration of a restricted parse: a
+# ``needimport`` met there refuses to read (docutils' own switch can be off for a whole
+# project)
+_RESTRICTED_MARKER = "_sphinx_needs_import_restricted"
 
 
 @contextmanager
-def _inert_parse(settings: Any) -> Generator[None]:
+def _restricted_parse(settings: Any) -> Generator[None]:
     """docutils' ``file_insertion_enabled`` and ``raw_enabled`` off for the duration of
     one parse, with this module's marker set, and all three put back as they were after
     it, whatever happens inside."""
@@ -1708,28 +1709,28 @@ def _inert_parse(settings: Any) -> Generator[None]:
         getattr(settings, "file_insertion_enabled", True),
         getattr(settings, "raw_enabled", True),
     )
-    outer = getattr(settings, _INERT_MARKER, None)
+    outer = getattr(settings, _RESTRICTED_MARKER, None)
     settings.file_insertion_enabled = settings.raw_enabled = False
-    setattr(settings, _INERT_MARKER, True)
+    setattr(settings, _RESTRICTED_MARKER, True)
     try:
         yield
     finally:
         settings.file_insertion_enabled, settings.raw_enabled = previous
         if outer is None:
-            delattr(settings, _INERT_MARKER)
+            delattr(settings, _RESTRICTED_MARKER)
         else:
-            setattr(settings, _INERT_MARKER, outer)
+            setattr(settings, _RESTRICTED_MARKER, outer)
 
 
-def _in_inert_parse(settings: Any) -> bool:
-    """Whether an imported need's content is being parsed inert."""
-    return bool(getattr(settings, _INERT_MARKER, False))
+def _in_restricted_parse(settings: Any) -> bool:
+    """Whether an imported need's content is being parsed restricted."""
+    return bool(getattr(settings, _RESTRICTED_MARKER, False))
 
 
 # the raw nodes myst-parser itself makes for ordinary Markdown, as ``(format, text)``:
 # a hard line break and a task-list checkbox (disabled, or enabled by
 # ``myst_enable_checkboxes``, whose text differs between myst-parser 4 and 5); measured
-# with myst-parser 4.0.1 and 5.1.0. An inert parse keeps them, matched exactly
+# with myst-parser 4.0.1 and 5.1.0. A restricted parse keeps them, matched exactly
 _CHECKBOX = '<input class="task-list-item-checkbox"{} type="checkbox">'
 _MYST_OWN_RAW = frozenset(
     {
@@ -1742,14 +1743,15 @@ _MYST_OWN_RAW = frozenset(
         ),
     }
 )
-# strikethrough, which an inert parse keeps only as a pair: an ``<s>`` with a later
+# strikethrough, which a restricted parse keeps only as a pair: an ``<s>`` with a later
 # ``</s>`` among the same parent's children, as myst-parser writes ``~~x~~``
 _S_OPEN, _S_CLOSE = ("html", "<s>"), ("html", "</s>")
 
 
 def _remove_raw(node: nodes.Element) -> int:
-    """Remove the raw nodes an inert parse still made, but for myst-parser's own output
-    for ordinary Markdown: its HTML blocks and inline HTML never consult ``raw_enabled``.
+    """Remove the raw nodes a restricted parse still made, but for myst-parser's own
+    output for ordinary Markdown: its HTML blocks and inline HTML never consult
+    ``raw_enabled``.
 
     :return: How many were removed.
     """
@@ -1906,14 +1908,16 @@ def _create_need_node(
     # an imported need's content, and the text its templates render (the record names
     # the template, and a template renders the record's fields), are the source's data:
     # parsed with docutils' file insertion and raw markup off when the project asks
-    inert = data["is_import"] and NeedsSphinxConfig(env.config).import_inert_content
+    restricted = (
+        data["is_import"] and NeedsSphinxConfig(env.config).import_restrict_content
+    )
     removed = 0
 
     if pre_content := data.get("pre_content"):
         node = nodes.Element()
         with (
             _reset_rst_titles(state),
-            _inert_parse(state.document.settings) if inert else nullcontext(),
+            _restricted_parse(state.document.settings) if restricted else nullcontext(),
         ):
             state.nested_parse(
                 StringList(pre_content.splitlines(), source=source),
@@ -1921,7 +1925,7 @@ def _create_need_node(
                 node,
                 match_titles=True,
             )
-        if inert:
+        if restricted:
             removed += _remove_raw(node)
         return_nodes.extend(node.children)
 
@@ -1934,7 +1938,7 @@ def _create_need_node(
         content_offset = data["lineno_content"] - 1
     else:
         content_offset = _template_parse_offset(data)
-    with _inert_parse(state.document.settings) if inert else nullcontext():
+    with _restricted_parse(state.document.settings) if restricted else nullcontext():
         if content_parser is not None:
             _parse_declared_content(
                 data,
@@ -1955,7 +1959,7 @@ def _create_need_node(
                 node_need,
                 match_titles=False,
             )
-    if inert:
+    if restricted:
         removed += _remove_raw(node_need)
 
     # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
@@ -1999,7 +2003,7 @@ def _create_need_node(
         node = nodes.Element()
         with (
             _reset_rst_titles(state),
-            _inert_parse(state.document.settings) if inert else nullcontext(),
+            _restricted_parse(state.document.settings) if restricted else nullcontext(),
         ):
             state.nested_parse(
                 StringList(post_content.splitlines(), source=source),
@@ -2007,7 +2011,7 @@ def _create_need_node(
                 node,
                 match_titles=True,
             )
-        if inert:
+        if restricted:
             removed += _remove_raw(node)
         return_nodes.extend(node.children)
 
@@ -2017,8 +2021,8 @@ def _create_need_node(
             logger,
             "Raw markup (an HTML block or inline HTML) removed from "
             f"imported need {data['id']!r} ({removed} node(s)): "
-            "needs_import_inert_content is on",
-            "import_inert",
+            "needs_import_restrict_content is on",
+            "import_restrict",
             location=(data["docname"], data["lineno"]),
         )
 

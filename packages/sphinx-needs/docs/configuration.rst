@@ -3214,10 +3214,10 @@ before. To keep a ``-W`` build green while you register the suffix, add
 
    needs_import_parse_by_doctype = True
 
-.. _`needs_import_inert_content`:
+.. _`needs_import_restrict_content`:
 
-needs_import_inert_content
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+needs_import_restrict_content
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 9.3.0
 
@@ -3240,7 +3240,7 @@ With it, in that content and in the text a ``template``, ``pre_template`` or
   of them;
 - a ``needimport`` does not read its file: one ``needs.needimport`` warning;
 - MyST's HTML blocks and inline HTML, which myst-parser does not switch off, are removed,
-  with one ``needs.import_inert`` warning per imported need (a need written inside its
+  with one ``needs.import_restrict`` warning per imported need (a need written inside its
   content counts into it). A raw node whose text is exactly what myst-parser writes for a
   hard line break or a task-list checkbox is kept, and so are ``<s>`` and ``</s>`` as a
   matched pair within one paragraph (strikethrough); any other raw markup is removed.
@@ -3274,14 +3274,14 @@ It is off by default in 9.x, and is planned to be on by default in a later relea
 
 .. code-block:: python
 
-   needs_import_inert_content = True
+   needs_import_restrict_content = True
 
 or, in ``ubproject.toml``:
 
 .. code-block:: toml
 
    [needs]
-   import_inert_content = true
+   import_restrict_content = true
 
 .. _`needs_external_needs`:
 

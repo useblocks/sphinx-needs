@@ -33,11 +33,11 @@ moves to the content's file as it reads, are put back afterwards. Measured with 
 
 Deliberately not done here: the ``file_insertion_enabled``/``raw_enabled`` restriction
 of an imported need's content, and the removal of the raw nodes myst-parser still makes
-under it, are its caller's (``_create_need_node``, under ``needs_import_inert_content``),
-around this parse and the host state's own alike. Not done at all (yet): no fence against
-need directives in the content, no post-parse walk for images, and no rewriting of the
-locations of the warnings myst-parser logs itself (those name the host page, with the
-content's line).
+under it, are its caller's (``_create_need_node``, under
+``needs_import_restrict_content``), around this parse and the host state's own alike. Not
+done at all (yet): no fence against need directives in the content, no post-parse walk
+for images, and no rewriting of the locations of the warnings myst-parser logs itself
+(those name the host page, with the content's line).
 """
 
 from __future__ import annotations
