@@ -13,6 +13,7 @@ Unreleased
   before, and is now refused; name it without the prefix (``needle`` and other names without the colon are free).
   A self-preset ``need:<type>`` (named as its base, giving the need type defaults) and a preset whose ``base`` is
   ``need:<type>`` are unchanged
+  (`#2538 <https://github.com/useblocks/sphinx-needs/pull/2538>`__)
 
 - ✨ A preset's ``base`` may name a need type qualified, ``need:<type>``, as sphinx-needs now writes every need type
   (``.. need:req::``), and a new preset name ``need:<type>`` is taken by that need type as its bare name is. A bare
