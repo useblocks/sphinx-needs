@@ -384,6 +384,29 @@ def test_a_deeply_nested_filter_builds(
     assert [w for w in warnings if w.endswith("[needs.filter]")] == []
 
 
+def test_with_the_switch_on_the_text_is_not_read(
+    make_app: Any, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The switch is read first: with it on, no filter's text is read for this rule, so
+    a project with namespaced ids on pays nothing for it. With it off the text is read
+    (the control, which shows the read is the one recorded)."""
+    import sphinx_needs.filter_common as filter_common
+
+    read: list[str] = []
+    real = filter_common.namespace_reads
+
+    def recording(expression: str) -> tuple[str, ...]:
+        read.append(expression)
+        return real(expression)
+
+    monkeypatch.setattr(filter_common, "namespace_reads", recording)
+    filter_string = 'c.in_namespace("nc")'
+    _build(make_app, tmp_path / "on", _needlist(filter_string), CONF + ON)
+    assert read == []
+    _build(make_app, tmp_path / "off", _needlist(filter_string))
+    assert filter_string in read
+
+
 # --- the answer does not change ---------------------------------------------------------
 
 
