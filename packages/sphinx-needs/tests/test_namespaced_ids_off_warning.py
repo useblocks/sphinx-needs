@@ -200,6 +200,10 @@ REFUSED_BY_TEXT: list[tuple[str, str]] = [
     ('c.in_namespace("nc", "m2")', "takes 2 positional arguments but 3 were given"),
     ('c.in_namespace(namespace="nc")', "positional-only arguments passed as keyword"),
     ("c.in_namespace(1)", "c.in_namespace takes a namespace as a string, not int"),
+    # the right-hand side of a comparison's first pair is reached
+    ('c.id.ns == c.in_namespace("")', "names no namespace"),
+    # a conditional's test is reached
+    ('c.id.ns if c.in_namespace("") else 1', "names no namespace"),
 ]
 
 
@@ -246,6 +250,11 @@ REACHED_CONDITIONALLY: list[tuple[str, tuple[str, ...]]] = [
     ),
     # the later comparisons of a chain
     ('c.id.ns == "x" != c.id', ("c.id.ns",)),
+    # a comprehension's conditions, which an empty iterable never reaches
+    (
+        'any(x for x in [c.id.ns] if c.in_namespace(""))',
+        ("c.id.ns", "c.in_namespace()"),
+    ),
 ]
 
 
