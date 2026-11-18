@@ -26,7 +26,7 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import (
     FilterBase,
-    _report_namespaced_ids_off,
+    _report_filter_text,
     filter_single_need,
     process_filters,
 )
@@ -237,7 +237,7 @@ def process_needgantt(
         if milestone_filter := current_needgantt["milestone_filter"]:
             # read need by need below: what its text shows is reported here as well, so
             # that a filter no need is tested on is reported too
-            _report_namespaced_ids_off(milestone_filter, needs_config, node)
+            _report_filter_text(milestone_filter, needs_config, node)
 
         # Scale/timeline handling
         if current_needgantt["timeline"]:

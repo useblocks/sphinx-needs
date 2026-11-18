@@ -717,8 +717,10 @@ def links_from_filter(
     candidates = _every_need_and_part(needs, include_parts=include_parts)
     config = NeedsSphinxConfig(app.config)
     # a filter that does not parse fails the call, as one that is a constant does:
-    # every candidate would refuse it, and the call would link nothing, silently
-    compiled = compile(filter, "<links_from_filter>", "eval")
+    # every candidate would refuse it, and the call would link nothing, silently.
+    # It is read past the leading spaces and tabs that ``eval``, which tests each
+    # candidate, reads past
+    compiled = compile(filter.lstrip(" \t"), "<links_from_filter>", "eval")
     if _is_constant_filter(filter):
         raise ValueError(_constant_filter_message(filter))
     origin_docname = need["docname"] if need else None
@@ -823,8 +825,14 @@ def links_from_match(
                 f"links_from_match: the argument {key!r} names {name!r}{problem}"
             )
     # a filter that does not parse fails the call, as one that is a constant does:
-    # every candidate would refuse it, and the call would link nothing, silently
-    compiled = None if not filter else compile(filter, "<links_from_match>", "eval")
+    # every candidate would refuse it, and the call would link nothing, silently.
+    # It is read past the leading spaces and tabs that ``eval``, which tests each
+    # candidate, reads past
+    compiled = (
+        None
+        if not filter
+        else compile(filter.lstrip(" \t"), "<links_from_match>", "eval")
+    )
     if filter and _is_constant_filter(filter):
         raise ValueError(_constant_filter_message(filter))
     if need is None:

@@ -813,10 +813,9 @@ def filter_needs_parts(
 def _python_expression_error(filter_string: str) -> SyntaxError | ValueError | None:
     """Why *filter_string* is no Python expression, or ``None`` if it is one."""
     try:
-        # the very compile the delegate runs: a string with leading white space fails
-        # it (``unexpected indent``) and is reported today, though ``eval`` and the
-        # constant check read such white space past
-        compile(filter_string, "<string>", "eval")
+        # the very compile the delegate runs, past the leading spaces and tabs ``eval``
+        # reads past
+        compile(filter_string.lstrip(" \t"), "<string>", "eval")
     except (SyntaxError, ValueError) as error:
         return error
     return None
@@ -914,8 +913,7 @@ def filter_needs_and_parts(
         finally:
             watch.active = False
     # before either tier, and before the loop: reported even where no need is given
-    _report_unknown_types(filter_string, config, location, append_warning)
-    _report_namespaced_ids_off(filter_string, config, location, append_warning)
+    _report_filter_text(filter_string, config, location, append_warning)
 
     # === Fast path: try compiled predicate to avoid eval() entirely ===
     compiled = compile_portable(filter_string)
@@ -955,7 +953,9 @@ def filter_needs_and_parts(
     found_needs_slow: list[_NeedOrPartT] = []
 
     # https://docs.python.org/3/library/functions.html?highlight=compile#compile
-    filter_compiled = compile(filter_string, "<string>", "eval")
+    # past the leading spaces and tabs, which ``eval`` reads past and ``compile`` does not
+    # (``unexpected indent``): the string selects here what it selects need by need
+    filter_compiled = compile(filter_string.lstrip(" \t"), "<string>", "eval")
     error_reported = False
     for filter_need in needs:
         try:
@@ -983,6 +983,25 @@ def filter_needs_and_parts(
                 error_reported = True
 
     return found_needs_slow
+
+
+def _report_filter_text(
+    filter_string: str,
+    config: NeedsSphinxConfig,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+) -> None:
+    """Report what the text of a filter string shows, both reports together: a
+    ``c.is_a`` literal naming no need type (:func:`_report_unknown_types`) and a
+    namespace value read while ``needs_namespaced_ids`` is off
+    (:func:`_report_namespaced_ids_off`). Each is given once per build for the string,
+    where it is written (*location*) and the origin its caller appends
+    (*append_warning*). Every place that reports either calls this: the two filter
+    entries, and a place testing its filter need by need before it does, so that the
+    place is reported where no need is tested too.
+    """
+    _report_unknown_types(filter_string, config, location, append_warning)
+    _report_namespaced_ids_off(filter_string, config, location, append_warning)
 
 
 def _report_unknown_types(
@@ -1228,10 +1247,10 @@ def filter_single_need(
 ) -> bool:
     """Checks if a single need/need_part passes a filter_string.
 
-    A ``c.is_a`` literal naming no need type is reported once per build for the
-    string, which has no location or origin here. A namespace value read while
-    ``needs_namespaced_ids`` is off is reported once per build for the string where it
-    is written (*location*) and the origin its caller appends (*append_warning*).
+    A ``c.is_a`` literal naming no need type, and a namespace value read while
+    ``needs_namespaced_ids`` is off, are each reported once per build for the string
+    where it is written (*location*) and the origin its caller appends
+    (*append_warning*): once per string for a caller with neither (a constraint).
 
     :param need: the data for a single need
     :param config: NeedsSphinxConfig object
@@ -1249,8 +1268,7 @@ def filter_single_need(
     if _is_constant_filter(filter_string):
         raise NeedsInvalidFilter(_constant_filter_message(filter_string))
     # before either tier
-    _report_unknown_types(filter_string, config)
-    _report_namespaced_ids_off(filter_string, config, location, append_warning)
+    _report_filter_text(filter_string, config, location, append_warning)
     return _filter_single_need(
         need,
         config,

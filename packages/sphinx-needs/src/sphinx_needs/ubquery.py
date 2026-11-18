@@ -286,11 +286,12 @@ def is_a_literals(filter_string: str) -> tuple[str, ...]:
     the name is the string's own.
 
     A call with any other argument (a field, two arguments, a keyword) gives no name
-    of the string's: the name is each need's own value. Empty for a string that does
-    not parse. Cached per string, as :func:`compile_portable` is.
+    of the string's: the name is each need's own value. Read past the leading spaces
+    and tabs ``eval`` reads past, as the string is evaluated; empty for a string that
+    does not parse. Cached per string, as :func:`compile_portable` is.
     """
     try:
-        tree = ast.parse(filter_string, mode="eval")
+        tree = ast.parse(filter_string.lstrip(" \t"), mode="eval")
     except (SyntaxError, ValueError):
         return ()
     found: list[tuple[int, int, str]] = []

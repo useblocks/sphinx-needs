@@ -16,7 +16,7 @@ from sphinx_needs.exceptions import (
     VariantParsingException,
 )
 from sphinx_needs.filter_common import (
-    _report_namespaced_ids_off,
+    _report_filter_text,
     filter_needs_mutable,
 )
 from sphinx_needs.functions.order import filter_names, placeholder, typed_empty
@@ -308,7 +308,7 @@ def extend_needs_data(
         else:
             # evaluated once for its document, but written here too: what is reported
             # of its text is reported for each place it is written
-            _report_namespaced_ids_off(need_filter, needs_config, location)
+            _report_filter_text(need_filter, needs_config, location)
         matched = as_written_by_filter[key]
         if isinstance(matched, Exception):
             log_warning(
