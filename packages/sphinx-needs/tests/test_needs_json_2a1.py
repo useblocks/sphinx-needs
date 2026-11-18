@@ -437,21 +437,109 @@ def test_the_unset_value_is_the_integer_1(make_app: Any, tmp_path: Path) -> None
 def test_only_this_value_registers_a_callable_default() -> None:
     """``add_config_values`` registers a callable default for this value alone (its
     ``override_as_text`` metadata key), which returns the field's own default; every
-    other value is registered with its default as it is."""
-    registered: dict[str, Any] = {}
+    other value is registered with its default as it is. The value is registered to
+    re-read the project when it changes (``"env"``), and as an integer or a text."""
+    registered: dict[str, tuple[Any, str, Any]] = {}
 
     class _Recorder:
         def add_config_value(
             self, name: str, default: Any, rebuild: str, types: Any = ()
         ) -> None:
-            registered[name] = default
+            registered[name] = (default, rebuild, types)
 
     NeedsSphinxConfig.add_config_values(_Recorder())  # type: ignore[arg-type]
-    callables = sorted(name for name, value in registered.items() if callable(value))
+    callables = sorted(
+        name for name, (default, _, _) in registered.items() if callable(default)
+    )
     assert callables == ["needs_json_format_version"]
-    value = registered["needs_json_format_version"](None)
+    default, rebuild, types = registered["needs_json_format_version"]
+    value = default(None)
     assert type(value) is int
     assert value == 1
+    assert rebuild == "env"
+    assert types == (int, str)
+
+
+def _build_twice(
+    make_app: Any, srcdir: Path, first: str | None, second: str | None
+) -> tuple[Any, list[str]]:
+    """Build ``srcdir`` with the value ``first`` (``-D``, or unset for None), then
+    again into the same output directory with ``second``; return the second
+    application, built, and the documents it read."""
+
+    def _app(value: str | None, freshenv: bool) -> Any:
+        overrides = {} if value is None else {"needs_json_format_version": value}
+        return make_app(
+            "needs", srcdir=srcdir, freshenv=freshenv, confoverrides=overrides
+        )
+
+    app = _app(first, True)
+    app.build()
+    app.cleanup()
+    app = _app(second, False)
+    read: list[str] = []
+    app.connect(
+        "env-before-read-docs", lambda _app, _env, docnames: read.extend(docnames)
+    )
+    app.build()
+    return app, read
+
+
+@pytest.mark.parametrize(
+    ("first", "second", "written", "reread"),
+    [
+        (None, "2a1", "2a1", ["index"]),
+        ("2a1", None, 1, ["index"]),
+        (None, None, 1, []),
+    ],
+    ids=["unset-then-2a1", "2a1-then-unset", "unset-then-unset"],
+)
+def test_a_changed_value_rereads_and_rewrites_the_file(
+    first: str | None,
+    second: str | None,
+    written: object,
+    reread: list[str],
+    make_app: Any,
+    tmp_path: Path,
+) -> None:
+    """A build whose value differs from the one the output directory's environment
+    was read with re-reads the project and writes the file in the format asked for:
+    on every supported Sphinx, where Sphinx 7.4 writes no file at all for a build
+    that reads nothing. A build with the same value reads nothing, and the file it
+    leaves (written again or not, by the Sphinx series) is the same format."""
+    app, read = _build_twice(make_app, _option_project(tmp_path), first, second)
+    try:
+        assert _needs_json(app).get("format_version", 1) == written
+        assert read == reread
+    finally:
+        app.cleanup()
+
+
+def test_upgrading_reads_nothing_again(make_app: Any, tmp_path: Path) -> None:
+    """Upgrading reads nothing again: an output directory whose environment was read
+    while the value was registered as sphinx-needs 9.2 registered it (the integer
+    ``1``, rebuilding the html only), built again with the value unset, reads no
+    document."""
+    srcdir = _option_project(tmp_path)
+    app = make_app("needs", srcdir=srcdir, freshenv=True)
+    options = app.config._options
+    registered = options["needs_json_format_version"]
+    options["needs_json_format_version"] = type(registered)(
+        1, "html", registered.valid_types, registered.description
+    )
+    app.build()
+    app.cleanup()
+    app = make_app("needs", srcdir=srcdir, freshenv=False)
+    read: list[str] = []
+    app.connect(
+        "env-before-read-docs", lambda _app, _env, docnames: read.extend(docnames)
+    )
+    try:
+        app.build()
+        assert read == []
+        assert "format_version" not in _needs_json(app)
+    finally:
+        app.cleanup()
 
 
 @pytest.mark.parametrize(
