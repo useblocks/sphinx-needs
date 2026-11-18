@@ -318,8 +318,9 @@ Bug fixes
   ``" status == 'open'"`` was reported there as ``not valid`` (``unexpected indent``) and matched no need, so a
   ``needs_builder_filter`` written so exported none, while a constraint or a link condition read the same string past
   its padding, as Python's ``eval`` does. Every place now reads past exactly what ``eval`` reads past, spaces and tabs
-  (a newline or a form feed followed by a space is still refused, as ``eval`` refuses it), and a warning quoting the
-  filter quotes it as written. A directive option such as ``:filter:`` was never affected: docutils strips it.
+  (a newline or a form feed followed by a space is still refused, as ``eval`` refuses it), a ``c.is_a`` in such a
+  string naming no need type is reported (``needs.filter_type``) as in the unpadded one, at every place, a constraint
+  included, and a warning quoting the filter quotes it as written. A directive option such as ``:filter:`` was never affected: docutils strips it.
 
 - 🐛 A ``c.is_a`` naming no need type is reported once at each place it is written where a filter is tested need by
   need -- a :ref:`needflow` ``:highlight:``, a :ref:`needgantt` ``:milestone_filter:``, a :ref:`needsequence`
