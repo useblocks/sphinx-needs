@@ -162,12 +162,15 @@ def test_json_schema(type_, item_type, nullable, default, expected):
         ("integer", None, False, None, False),
         ("integer", None, False, 1.5, False),
         ("integer", None, False, "1", False),
+        ("integer", None, False, True, False),
+        ("integer", None, False, False, False),
         ("integer", None, True, 1, True),
         ("integer", None, True, -1, True),
         ("integer", None, True, 0, True),
         ("integer", None, True, None, True),
         ("integer", None, True, 1.5, False),
         ("integer", None, True, "1", False),
+        ("integer", None, True, True, False),
         ("number", None, False, 1, True),
         ("number", None, False, 1.5, True),
         ("number", None, False, -1.5, True),
@@ -175,12 +178,16 @@ def test_json_schema(type_, item_type, nullable, default, expected):
         ("number", None, False, 1.0e10, True),
         ("number", None, False, None, False),
         ("number", None, False, "1.5", False),
+        ("number", None, False, True, False),
+        ("number", None, False, False, False),
         ("number", None, True, 1.5, True),
         ("number", None, True, -1.5, True),
         ("number", None, True, 0.0, True),
         ("number", None, True, 1.0e10, True),
         ("number", None, True, None, True),
         ("number", None, True, "1.5", False),
+        ("number", None, True, False, False),
+        ("number", None, True, 1, True),
         ("array", "string", False, ["a", "b", "c"], True),
         ("array", "string", False, [], True),
         ("array", "string", False, None, False),
@@ -205,6 +212,8 @@ def test_json_schema(type_, item_type, nullable, default, expected):
         ("array", "integer", True, [], True),
         ("array", "integer", True, None, True),
         ("array", "integer", True, [1, 2.5, 3], False),
+        ("array", "integer", False, [1, True], False),
+        ("array", "integer", True, [False], False),
         ("array", "number", False, [1.5, -1.5, 0.0], True),
         ("array", "number", False, [], True),
         ("array", "number", False, None, False),
@@ -213,6 +222,9 @@ def test_json_schema(type_, item_type, nullable, default, expected):
         ("array", "number", True, [], True),
         ("array", "number", True, None, True),
         ("array", "number", True, [1.5, "2.5", 3.0], False),
+        ("array", "number", False, [1, 2, 3], True),
+        ("array", "number", False, [1.5, True], False),
+        ("array", "number", True, [False], False),
     ],
 )
 def test_type_check(type_, item_type, nullable, input, result):
@@ -225,6 +237,38 @@ def test_type_check(type_, item_type, nullable, input, result):
         nullable=nullable,
     )
     assert field.type_check(input) is result
+
+
+@pytest.mark.parametrize(
+    "item_type,input,result",
+    [
+        ("string", "a", True),
+        ("string", 1, False),
+        ("boolean", True, True),
+        ("boolean", 1, False),
+        ("integer", 1, True),
+        ("integer", 1.5, False),
+        ("integer", True, False),
+        ("integer", False, False),
+        ("number", 1.5, True),
+        ("number", 1, True),
+        ("number", "1.5", False),
+        ("number", True, False),
+        ("number", False, False),
+    ],
+)
+def test_type_check_item(item_type, input, result):
+    """An item of an array: a boolean is not an integer or a number (#2533)."""
+    field = FieldSchema(
+        name="test_field",
+        schema={"type": "array", "items": {"type": item_type}},
+        nullable=True,
+    )
+    assert field.type_check_item(input) is result
+
+
+def test_type_check_item_of_a_field_that_is_no_array():
+    assert FieldSchema(name="f", schema={"type": "integer"}).type_check_item(1) is False
 
 
 @pytest.mark.parametrize(
