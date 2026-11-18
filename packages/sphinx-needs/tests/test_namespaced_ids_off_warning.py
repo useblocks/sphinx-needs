@@ -219,9 +219,10 @@ def test_refused_by_its_text_though_it_reads_a_namespace_value(
 
 
 #: filters reading a namespace value whose refusing construct is NOT reached
-#: unconditionally (a later operand of ``and`` / ``or``, a branch of a conditional): the
-#: text cannot settle that they are refused, so the warning is given (with the switch
-#: off each is answered with no error at all), with the names each reads
+#: unconditionally (a later operand of ``and`` / ``or``, a branch of a conditional, the
+#: body of a comprehension or a lambda, a later comparison of a chain): the text cannot
+#: settle that they are refused, so the warning is given (with the switch off each is
+#: answered with no error at all), with the names each reads
 REACHED_CONDITIONALLY: list[tuple[str, tuple[str, ...]]] = [
     ('c.id.ns == "" or c.source.nosuch', ("c.id.ns",)),
     ('c.in_namespace("nc") and c.in_namespace("")', ("c.in_namespace()",)),
@@ -229,6 +230,23 @@ REACHED_CONDITIONALLY: list[tuple[str, tuple[str, ...]]] = [
     ("c.id.ns if True else c.id.nss", ("c.id.ns",)),
     ('c.id.ns == "x" or c.id in []', ("c.id.ns",)),
     ('c.id.ns == "" and c.id == c.id', ("c.id.ns",)),
+    # a conditional's body, not only its other branch
+    (
+        'c.in_namespace("") if False else c.id.ns == ""',
+        ("c.id.ns", "c.in_namespace()"),
+    ),
+    # a comprehension's body
+    (
+        'any(c.in_namespace("") for x in []) or c.id.ns == ""',
+        ("c.id.ns", "c.in_namespace()"),
+    ),
+    # a lambda's body
+    (
+        '[lambda: c.in_namespace("")] and c.id.ns == ""',
+        ("c.id.ns", "c.in_namespace()"),
+    ),
+    # the later comparisons of a chain
+    ('c.id.ns == "x" != c.id', ("c.id.ns",)),
 ]
 
 
@@ -322,6 +340,48 @@ def test_row15_with_the_switch_on_nothing_is_reported(
     """Row 15: rows 1-7 with the switch on are not reported."""
     app = _build(make_app, tmp_path, _needlist(filter_string), CONF + ON)
     assert len(_ours(build_warnings(app))) == 0
+
+
+#: how many terms the deeply nested filter below chains: deeper than a recursive walk of
+#: its tree survives in a build, and shallower than the interpreter's own parser and
+#: compiler accept, on every interpreter of the test matrix (see the test's docstring)
+DEEP_TERMS = 1200
+
+#: a filter reading ``c.id.local`` nested :data:`DEEP_TERMS` deep: a left-deep chain of
+#: ``+``, which the parser and the compiler accept and ``eval`` answers ("REQ_1")
+DEEP = 'c.id.local == "REQ_1"' + ' + ""' * (DEEP_TERMS - 1)
+
+
+@pytest.mark.parametrize("switch", ["off", "on"])
+def test_a_deeply_nested_filter_builds(
+    switch: str, make_app: Any, tmp_path: Path
+) -> None:
+    """A filter nested deeper than the interpreter's recursion limit builds: the text
+    check walks its tree with no recursion, and with the switch on it does not read the
+    text at all. Off, it is reported once; on, not at all.
+
+    The depth is a claim about the interpreters, so it was measured, at a needlist in a
+    build under this suite (a left-deep chain of N terms, ``make_app``, Python's default
+    recursion limit of 1000): a recursive walk of the tree stops the build from N = 950
+    (900 builds) on 3.11.16, 3.12.7 and 3.13.13 alike; the build itself, the parser and
+    the compiler included, holds up to N = 2800 on 3.11.16 (3000 stops it, as it does
+    with this warning taken out) and to N = 9500 on 3.12.7 and 3.13.13 (10000 stops
+    it). 1200 sits 250 terms above the first bound and 1600 below the lowest second.
+    """
+    index = _needlist(DEEP)
+    conf = CONF + (ON if switch == "on" else "")
+    app = _build(make_app, tmp_path, index, conf)
+    warnings = build_warnings(app)
+    expected = (
+        [
+            f"<srcdir>/index.rst:{_line(index, '.. needlist::')}: WARNING: "
+            + _text(DEEP, "c.id.local")
+        ]
+        if switch == "off"
+        else []
+    )
+    assert _ours(warnings) == expected
+    assert [w for w in warnings if w.endswith("[needs.filter]")] == []
 
 
 # --- the answer does not change ---------------------------------------------------------
