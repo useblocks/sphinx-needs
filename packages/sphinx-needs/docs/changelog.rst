@@ -372,9 +372,12 @@ Bug fixes
   ``KeyError``. A link to a part the need has is now a link to the need owning the part (a needsequence message to
   ``USER_B``, a needgantt constraint at ``[USER_B]``). A link to a part the need does not have (``USER_B.nopart``),
   like a link to a need that does not exist, is a dead link: it is left out of the diagram, as needflow draws no edge
-  for it, and the dead-link check reports it, as it did (``needs.link_outgoing``). A name in a needsequence's
-  ``:link_types:`` that is no link type ended the build right after the directive's own ``needs.needsequence``
-  warning; it is now left out after that warning. A name in a needgantt's ``:starts_with_links:``,
+  for it, and the dead-link check reports it, as it did (``needs.link_outgoing``). In a needsequence's
+  ``:link_types:``, a link type written in another case (``LINKS``), which the directive accepts, ended the build; it
+  is now walked as the link type it names (``links``). A back-link name (``links_back``) gets the directive's
+  "Unknown link type" warning (``needs.needsequence``) and is walked, as before. A name that is neither a link type
+  nor a back-link name ended the build right after that warning; it is now left out after it. A name in a
+  needgantt's ``:starts_with_links:``,
   ``:starts_after_links:`` or ``:ends_with_links:`` that is no link type (a back-link type such as ``links_back``
   included) ended the build (``SphinxNeedsLinkTypeException``); it is now one ``needs.needgantt`` warning with the
   same text, at the directive, and is left out.
