@@ -242,7 +242,8 @@ Imported content
 An imported need's content is parsed as if it had been written on the importing page:
 every directive and role in it runs in the importing build. An ``include`` in a record of
 the ``needs.json`` reads a file of the machine that builds the importing project, and a
-``raw`` block writes its markup into the output.
+``raw`` block writes its markup into the output. A ``needs.json`` is trusted input,
+whatever :ref:`needs_import_inert_content` says: import only files you trust.
 
 .. versionadded:: 9.3.0
 

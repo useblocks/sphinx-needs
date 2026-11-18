@@ -3229,7 +3229,8 @@ Without it, an imported need's content is parsed as if it had been written on th
 importing page: an ``include`` in a record of the ``needs.json`` reads a file of the machine
 that builds the importing project, and a ``raw`` block writes its markup into the output.
 
-With it, in that content:
+With it, in that content and in the text a ``template``, ``pre_template`` or
+``post_template`` renders for the need:
 
 - ``include``, ``literalinclude``, ``csv-table`` with ``:file:`` or ``:url:``, and the ``raw``
   directive and role (with content, ``:file:`` or ``:url:``) do not run, and each is
@@ -3239,23 +3240,31 @@ With it, in that content:
   of them;
 - a ``needimport`` does not read its file: one ``needs.needimport`` warning;
 - MyST's HTML blocks and inline HTML, which myst-parser does not switch off, are removed,
-  with one ``needs.import_inert`` warning per need.
+  with one ``needs.import_inert`` warning per imported need (a need written inside its
+  content counts into it); what myst-parser itself writes as raw for a hard line break,
+  strikethrough and a task-list checkbox is kept.
 
-Content a template renders for an imported need (its ``template``) is its content, and is
-parsed the same way. The needs written in the project are untouched, and so is the
-``needs.json`` the directive reads. External needs (:ref:`needs_external_needs`) render no
-content.
+The needs written in the project are untouched, and so is the ``needs.json`` the directive
+reads. External needs (:ref:`needs_external_needs`) render no content.
 
-It does not cover:
+It narrows what imported content can do. It does not make a ``needs.json`` from a source
+you do not trust harmless to import: import only files you trust. With it on, a record can
+still:
 
-- images and figures (MyST's ``![](...)`` too) and the ``download`` role: the file they
-  name is copied into the output when it is written, after the content is parsed;
-- a directive that reads a file without consulting docutils' switch, such as ``uml`` naming
-  a file (sphinxcontrib-plantuml), and a diagram whose PlantUML text ``!include``\ s a file,
-  which PlantUML reads when it draws the diagram;
-- directives that read the importing project, such as :ref:`needtable`;
-- the need's ``pre_template`` and ``post_template``, which are parsed as the page's own
-  text.
+- have Python evaluated: every filter string is a Python expression, so a ``:filter:``
+  option of a directive in the content, a ``filter()`` call in a ``needuml``, and the filter
+  of a dynamic function, in the content or in a field value, are evaluated as any filter
+  is; so is the expression of ``ifconfig`` (``sphinx.ext.ifconfig``); and, where the
+  project enables MyST's ``substitution`` extension, ``{{ … }}`` in MyST content is
+  evaluated by Jinja;
+- name a file to a directive that reads it without consulting docutils' switch:
+  ``graphviz``, ``uml`` (sphinxcontrib-plantuml), ``mermaid`` (sphinxcontrib-mermaid), and a
+  diagram whose PlantUML text ``!include``\ s a file, which PlantUML reads when it draws the
+  diagram;
+- have a file copied into the output: images and figures (MyST's ``![](…)`` too) and the
+  ``download`` role name a file that is copied when the output is written;
+- write a link with a ``javascript:`` target, or a ``meta`` directive, into the page;
+- run a directive that reads the importing project, such as :ref:`needtable`.
 
 It is off by default in 9.x, and is planned to be on by default in a later release.
 
