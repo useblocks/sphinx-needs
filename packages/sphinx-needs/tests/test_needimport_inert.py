@@ -1042,8 +1042,8 @@ def test_what_myst_parser_writes_as_raw_itself_is_kept(
     test_app: SphinxTestApp, route: str, inert: bool
 ):
     """A hard line break, strikethrough and a task-list checkbox are raw nodes
-    myst-parser makes for ordinary Markdown: kept, exactly those texts, and not counted;
-    HTML that only starts like them is removed."""
+    myst-parser makes for ordinary Markdown: kept, exactly those texts (``<s>`` and
+    ``</s>`` as a pair), and not counted; HTML that only starts like them is removed."""
     write_records(
         test_app,
         [
@@ -1066,8 +1066,7 @@ def test_what_myst_parser_writes_as_raw_itself_is_kept(
         ("html", "<br />\n"): 1,
         ("latex", "\\\\\n"): 1,
         ("html", "<s>"): 1,
-        # the closing tag of the ``<s class=…>`` is exactly myst-parser's own
-        ("html", "</s>"): 2,
+        ("html", "</s>"): 1,
         (
             "html",
             '<input class="task-list-item-checkbox" disabled="disabled" type="checkbox">',
@@ -1081,12 +1080,15 @@ def test_what_myst_parser_writes_as_raw_itself_is_kept(
     foreign = {
         ("html", '<br onclick="CANARY_BR">'): 1,
         ("html", '<s class="CANARY_S">'): 1,
+        # the closing tag of the ``<s class=…>`` is exactly myst-parser's own, but it
+        # closes no ``<s>`` of myst-parser's
+        ("html", "</s>"): 1,
     }
     assert "<s>struck</s>" in html
     assert html.count('class="task-list-item-checkbox"') == 2
     assert "line one<br />" in html
     if not inert:
-        assert raws == Counter({**kept, **foreign})
+        assert raws == Counter(kept) + Counter(foreign)
         assert '<br onclick="CANARY_BR">' in html
         assert '<s class="CANARY_S">' in html
         assert_no_warnings(test_app)
@@ -1094,4 +1096,157 @@ def test_what_myst_parser_writes_as_raw_itself_is_kept(
     assert raws == Counter(kept)
     assert "CANARY_BR" not in html
     assert "CANARY_S" not in html
-    assert_warnings(test_app, [removed("IMP", 2)])
+    assert html.count("</s>") == 1
+    assert_warnings(test_app, [removed("IMP", 3)])
+
+
+STRIKETHROUGH = {
+    # case: (record content, the html raw nodes kept, how many removed)
+    "pair": ("~~x~~ text", {"<s>": 1, "</s>": 1}, 0),
+    "close-alone": ("a </s> b", {}, 1),
+    "open-twice": ("x <s>a<s>b</s>", {"<s>": 1, "</s>": 1}, 1),
+    # a pair is matched among the children of one parent, never across paragraphs
+    "across-paragraphs": ("Open <s>left\n\nThen </s> closed", {}, 2),
+}
+
+
+@pytest.mark.parametrize(
+    ("test_app", "case"),
+    [
+        pytest.param(
+            project(
+                ROUTES[route][0],
+                importing_page(ROUTES[route][0]),
+                by_doctype=ROUTES[route][1],
+                inert=True,
+                extra_conf=(
+                    'myst_enable_extensions = ["strikethrough"]\n'
+                    'suppress_warnings = ["myst.strikethrough"]\n'
+                ),
+            ),
+            case,
+            id=f"{route}-{case}",
+        )
+        for route in ("myst-declared", "myst-host")
+        for case in STRIKETHROUGH
+    ],
+    indirect=["test_app"],
+)
+def test_strikethrough_is_kept_only_as_a_pair(test_app: SphinxTestApp, case: str):
+    """``<s>`` and ``</s>`` are kept only as a pair among one parent's children, as
+    myst-parser writes ``~~x~~``: an ``<s>`` a record leaves open, or a ``</s>`` that
+    closes nothing, is removed and counted."""
+    content, kept, count = STRIKETHROUGH[case]
+    write_records(
+        test_app,
+        [
+            {
+                "id": "IMP",
+                "type": "spec",
+                "title": "IMP",
+                "doctype": ".md",
+                "content": content,
+            }
+        ],
+    )
+    test_app.build()
+    raws = Counter(
+        raw.astext()
+        for raw in test_app.env.get_doctree("index").findall(nodes.raw)
+        if raw.get("format") == "html"
+    )
+    assert raws == Counter(kept)
+    html = Path(test_app.outdir, "index.html").read_text("utf8")
+    assert html.count("<s>") == kept.get("<s>", 0)
+    assert html.count("</s>") == kept.get("</s>", 0)
+    if count:
+        assert_warnings(test_app, [removed("IMP", count)])
+    else:
+        assert "<s>x</s>" in html
+        assert_no_warnings(test_app)
+
+
+def pre_template_project(inert: bool) -> dict[str, Any]:
+    """A MyST page importing ``imported.json`` with a host paragraph after it, and the
+    docs' own example pre and post template, which render the need's title."""
+    docs_pre = (
+        Path(__file__).parent.parent
+        / "docs"
+        / "needs_templates"
+        / "spec_pre_template.need"
+    ).read_text("utf8")
+    return project(
+        "index.md",
+        importing_page("index.md", after="AFTER_HOST\n\n## Next\n\nNEXT_HOST\n"),
+        inert=inert,
+        files=[(Path("proj/needs_templates/spec_pre_template.need"), docs_pre)],
+    )
+
+
+@pytest.mark.parametrize(
+    ("test_app", "inert"),
+    [
+        pytest.param(pre_template_project(inert), inert, id="on" if inert else "off")
+        for inert in (False, True)
+    ],
+    indirect=["test_app"],
+)
+def test_an_open_strikethrough_in_a_template_is_removed(
+    test_app: SphinxTestApp, inert: bool
+):
+    """An ``<s>`` a record title leaves open, rendered by a pre template on a MyST page,
+    sits outside the need: kept, it would strike through the rest of the page."""
+    write_records(
+        test_app,
+        [
+            {
+                "id": "IMP_S",
+                "type": "spec",
+                "title": "T <s>OPEN_S",
+                "pre_template": "spec_pre_template",
+                "content": "plain",
+            }
+        ],
+    )
+    test_app.build()
+    html = Path(test_app.outdir, "index.html").read_text("utf8")
+    assert "AFTER_HOST" in html
+    assert "NEXT_HOST" in html
+    if not inert:
+        assert html.count("<s>") == 1
+        assert "<s>OPEN_S" in html
+        assert_no_warnings(test_app)
+        return
+    assert "<s>" not in html
+    assert not any(
+        raw.astext() == "<s>"
+        for raw in test_app.env.get_doctree("index").findall(nodes.raw)
+    )
+    assert_warnings(test_app, [removed("IMP_S", 1)])
+
+
+@pytest.mark.parametrize(
+    "test_app", [pytest.param(pre_template_project(True), id="on")], indirect=True
+)
+def test_one_warning_carries_every_parse(test_app: SphinxTestApp):
+    """An imported need whose pre template, content and post template all lose raw
+    markup gets ONE warning, carrying the total."""
+    write_records(
+        test_app,
+        [
+            {
+                "id": "IMP_ALL",
+                "type": "spec",
+                "title": "T <b>CANARY_T</b>",
+                "pre_template": "spec_pre_template",
+                "post_template": "spec_pre_template",
+                "content": "<div>CANARY_C</div>",
+            }
+        ],
+    )
+    test_app.build()
+    html = Path(test_app.outdir, "index.html").read_text("utf8")
+    assert "<b>CANARY_T</b>" not in html
+    assert "<div>CANARY_C</div>" not in html
+    # two inline tags in each template, one HTML block in the content
+    assert_warnings(test_app, [removed("IMP_ALL", 5)])
