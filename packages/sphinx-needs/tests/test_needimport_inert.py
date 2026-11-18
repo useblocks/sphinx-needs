@@ -752,7 +752,11 @@ def test_the_projects_own_settings_are_put_back(test_app: SphinxTestApp):
         pytest.param(
             project(
                 "index.rst",
-                importing_page("index.rst", after=".. include:: ../outside/page.txt\n"),
+                importing_page(
+                    "index.rst",
+                    after=".. needimport:: second.json\n\n"
+                    ".. include:: ../outside/page.txt\n",
+                ),
                 inert=inert,
                 files=[
                     (
@@ -773,7 +777,8 @@ def test_a_project_without_file_insertion_still_imports(
 ):
     """A project that switches file insertion off itself (``docutils.conf``) still
     imports with a page-level ``needimport``, with the option off and on: the directive
-    refuses only inside imported content, and there only under the option."""
+    refuses only inside imported content, and there only under the option. A second
+    page-level import, after the first one's content was parsed, still reads."""
     outside = write_records(
         test_app,
         [
@@ -786,11 +791,13 @@ def test_a_project_without_file_insertion_still_imports(
         ],
     )
     (outside / "nested_local.json").write_text(nested("NESTED_LOCAL"), "utf-8")
+    Path(test_app.srcdir, "second.json").write_text(nested("SECOND"), "utf-8")
     (outside / "page.txt").write_text("CANARY_PAGE\n", encoding="utf-8")
     with patch_docutils(test_app.confdir):
         test_app.build()
     needs = SphinxNeedsData(test_app.env).get_needs_view()
     assert "IMP_TOP" in needs
+    assert "SECOND" in needs
     # the project's own switch is in force on the page itself
     assert not reached(test_app, "CANARY_PAGE", "text")
     if not inert:
