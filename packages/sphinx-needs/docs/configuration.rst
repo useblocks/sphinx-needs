@@ -3580,9 +3580,12 @@ The format the ``needs.json`` files are written in: by the :ref:`needs builder <
   included through, the needs.json it was imported from, the docstring it was written in -- and
   keeps them when another project imports it.
 
-Any other value is reported as a ``needs.config`` warning, and the file is written in format 1.
-Set it in ``conf.py`` or in ``ubproject.toml``: ``-D needs_json_format_version=2a1`` cannot set it, because
-Sphinx converts a ``-D`` value to the type of the default, an integer.
+Set it in ``conf.py``, in ``ubproject.toml``, or on the command line, where
+``sphinx-build -D needs_json_format_version=2a1`` writes a ``"2a1"`` file for one build; a build whose value differs
+from the previous build's reads the project again. The text ``"1"``, which is what
+``-D needs_json_format_version=1`` gives, is format 1 too (as a value it differs from the unset integer, so a
+build that sets it after one that left the option unset reads the project again); any other value is reported as a
+``needs.config`` warning, and the file is written in format 1.
 
 .. attention:: **Experimental.**
 

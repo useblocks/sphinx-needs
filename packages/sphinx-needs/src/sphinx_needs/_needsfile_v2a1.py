@@ -85,11 +85,18 @@ LEGACY_LOCATION_KEYS: Final = (
 nothing out of a 2a1 file (``source`` does)."""
 
 
+def _configured(needs_config: NeedsSphinxConfig) -> object:
+    """``needs_json_format_version`` as both readers below take it: the text ``"1"``
+    is format ``1`` (a ``-D`` value is always text), anything else is as it was set."""
+    value = needs_config.json_format_version
+    return 1 if isinstance(value, str) and value == "1" else value
+
+
 def json_format_version(needs_config: NeedsSphinxConfig) -> Literal[1, "2a1"]:
     """The format the needs builders write: ``"2a1"`` where the project asks for it,
     else 1 (an unknown value is reported at ``config-inited``,
     :func:`check_json_format_config`)."""
-    value = needs_config.json_format_version
+    value = _configured(needs_config)
     return FORMAT_2A1 if isinstance(value, str) and value == FORMAT_2A1 else 1
 
 
@@ -104,7 +111,7 @@ def check_json_format_config(needs_config: NeedsSphinxConfig) -> None:
     ``config-inited``. What the experimental 2a1 does is reported where a 2a1 file is
     written (:func:`warn_on_write`), so that a build that writes none is not warned."""
     value = needs_config.json_format_version
-    if not _known(value):
+    if not _known(_configured(needs_config)):
         log_warning(
             LOGGER,
             f"needs_json_format_version must be 1 or {FORMAT_2A1!r}, not {value!r}; "
