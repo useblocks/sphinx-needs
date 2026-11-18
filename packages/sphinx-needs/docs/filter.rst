@@ -534,7 +534,15 @@ With :ref:`needs_namespaced_ids` on, a need id holding ``::`` names a namespace:
   positionally.
 - The three are defined in every project: with :ref:`needs_namespaced_ids` off (the default until 10.0) every need
   is in no namespace, so ``c.id.ns`` is ``""``, ``c.id.local`` is the whole id, and ``c.in_namespace`` selects
-  nothing.
+  nothing. Such a filter string is answered as written and reported, by its text, as ``needs.namespaced_ids_off``:
+  once per place it is written, and once per build where the place gives no location (a constraint, a derived
+  field's ``where``, a ``calc_sum`` filter). A filter whose text shows it refused (``c.in_namespace("")`` alone,
+  say) keeps that refusal alone, unless evaluation happens not to raise it (``c.id in [] or c.id.ns == ""`` compares
+  nothing), which then gets neither; one whose refusal the text cannot settle (behind an ``and``, say) may get both.
+  A namespace value reached dynamically (``getattr(c.id, "ns")``) is not seen, nor is a filter function or filter
+  code, which is Python rather than a filter string. A build with nothing changed reports a page's filters only when
+  it writes the page again, while :ref:`needextend` filters, link conditions, constraints, dynamic-function and
+  derived-field filters, :ref:`needs_warnings` and :ref:`needs_builder_filter` are reported on every build.
 - ``c.in_namespace`` with a string literal is in the :ref:`portable filter language <filter_string_performance>`,
   as are the two facets; any other argument (``c.in_namespace(group)``) is evaluated by ``eval``, which gives the
   same answer. A name after ``c.id.`` that is no facet is an error naming the closest one (``c.id.nss``).

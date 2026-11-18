@@ -30,6 +30,7 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import (
     FilterBase,
+    _report_namespaced_ids_off,
     filter_single_need,
     resolve_max_items,
 )
@@ -193,6 +194,10 @@ def process_needsequence(
         counter = _MessageCounter(
             resolve_max_items(current_needsequence.get("max_items"), needs_config)
         )
+        if filter_string := current_needsequence["filter"]:
+            # read need by need below: what its text shows is reported here as well, so
+            # that a filter no receiver is tested on is reported too
+            _report_namespaced_ids_off(filter_string, needs_config, node)
         for need_id in start_needs_id:
             try:
                 need = all_needs_dict[need_id.strip()]
@@ -214,6 +219,7 @@ def process_needsequence(
                 filter=current_needsequence["filter"],
                 counter=counter,
                 origin_docname=current_needsequence["docname"],
+                location=node,
             )
             declarations += declarations_new
             arrows += arrows_new
@@ -393,6 +399,7 @@ def get_message_needs(
     *,
     counter: _MessageCounter,
     origin_docname: str | None = None,
+    location: nodes.Element | None = None,
 ) -> tuple[
     dict[str, dict[str, Any]], list[tuple[str, str]], list[tuple[str, str, str]]
 ]:
@@ -400,6 +407,7 @@ def get_message_needs(
 
     :param origin_docname: The document the needsequence is written in, so that a
         ``filter`` may test the receiver against it with ``c.this_doc()``.
+    :param location: The needsequence, for what is reported of the ``filter``'s text.
     :return: the messages, then the participants to declare, as (need id, title),
         then the messages to draw, as (sender id, receiver id, label), in walk order.
         The caller names the participants, once it knows every one of them.
@@ -440,6 +448,7 @@ def get_message_needs(
                     filter,
                     needs=all_needs_dict.values(),
                     origin_docname=origin_docname,
+                    location=location,
                 ):
                     continue
 
@@ -462,6 +471,7 @@ def get_message_needs(
                         filter=filter,
                         counter=counter,
                         origin_docname=origin_docname,
+                        location=location,
                     )
                     declarations += declarations_new
                     arrows += arrows_new

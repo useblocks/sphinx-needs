@@ -121,8 +121,9 @@ Turning it off
 --------------
 
 With :ref:`needs_namespaced_ids` ``False`` (``[needs] namespaced_ids = false``), the default until 10.0, every id
-is a plain id: no id is split, nothing is reported or hinted, the id patterns read the whole id, and the filter
-names above stay defined, every need being in no namespace. Keep it off in a project whose ids hold ``::`` for
+is a plain id: no id is split, no id is reported or hinted, the id patterns read the whole id, and the filter
+names above stay defined, every need being in no namespace; a filter reading one of them is reported as
+``needs.namespaced_ids_off`` (:ref:`filter_namespace`). Keep it off in a project whose ids hold ``::`` for
 another reason (a C++ name, say).
 
 The namespace names are **experimental** in this release (:ref:`api_public`): ``c.id.ns``, ``c.id.local``,

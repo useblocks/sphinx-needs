@@ -53,7 +53,7 @@ from __future__ import annotations
 
 import ast
 import difflib
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Final
 
@@ -328,6 +328,121 @@ def _check_reads(expression: str) -> frozenset[str]:
         elif _is_in_namespace(node):
             reads.add(_id_facets.IN_NAMESPACE)
     return frozenset(reads)
+
+
+#: the namespace values a filter can read, each as the warning names it, in the order
+#: it names them: ``c.id.<facet>`` by its facet, and the call
+_NAMESPACE_READS: Final = (
+    ("ns", "c.id.ns"),
+    ("local", "c.id.local"),
+    (_id_facets.IN_NAMESPACE, "c.in_namespace()"),
+)
+
+
+def _is_bare_id(node: ast.AST) -> bool:
+    """Whether *node* is ``c.id`` itself, which holds the facets, not the id."""
+    return (
+        isinstance(node, ast.Attribute)
+        and node.attr == _id_facets.ID_NAME
+        and isinstance(node.value, ast.Name)
+        and node.value.id == CHECKS_NAME
+    )
+
+
+def _reached(node: ast.AST) -> Iterator[ast.AST]:
+    """*node* and the nodes evaluated whenever it is: not the operands of ``and`` /
+    ``or`` after the first, not the branches of a conditional (its test is), not the
+    body of a lambda or a comprehension (a comprehension's first iterable is), not the
+    comparisons of a chain after the first.
+
+    Walked with an explicit stack, as :func:`ast.walk` is, so a filter nested however
+    deep cannot exceed the interpreter's recursion limit here; the order is none in
+    particular."""
+    stack = [node]
+    while stack:
+        node = stack.pop()
+        yield node
+        children: Iterable[ast.AST]
+        if isinstance(node, ast.BoolOp):
+            children = node.values[:1]
+        elif isinstance(node, ast.IfExp):
+            children = (node.test,)
+        elif isinstance(node, ast.Lambda):
+            children = ()
+        elif isinstance(
+            node, ast.ListComp | ast.SetComp | ast.DictComp | ast.GeneratorExp
+        ):
+            children = (node.generators[0].iter,)
+        elif isinstance(node, ast.Compare):
+            children = (node.left, node.comparators[0])
+        else:
+            children = ast.iter_child_nodes(node)
+        stack.extend(children)
+
+
+def _refused(node: ast.AST) -> bool:
+    """Whether *node* is, by its text, an error every evaluation reaching it gives
+    today: a call of ``c.in_namespace`` that is not one positional argument, or whose
+    literal argument names no namespace (:func:`._id_facets.namespace_argument`); a
+    facet of ``c.source`` / ``c.id`` that is none; ``c.id`` itself compared (by the
+    first comparison of a chain), hashed (a set member, a dict key) or searched
+    (``"x" in c.id``)."""
+    if _is_in_namespace(node):
+        assert isinstance(node, ast.Call)
+        if node.keywords or len(node.args) != 1:
+            return True
+        if isinstance(argument := node.args[0], ast.Constant):
+            try:
+                _id_facets.namespace_argument(argument.value)
+            except (TypeError, ValueError):
+                return True
+        return False
+    if (
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Attribute)
+        and isinstance(node.value.value, ast.Name)
+        and node.value.value.id == CHECKS_NAME
+        and node.value.attr in CHECK_FACETS
+    ):
+        return node.attr not in CHECK_FACETS[node.value.attr]
+    if isinstance(node, ast.Compare):
+        return not isinstance(node.ops[0], ast.Is | ast.IsNot) and (
+            _is_bare_id(node.left) or _is_bare_id(node.comparators[0])
+        )
+    if isinstance(node, ast.Set):
+        return any(map(_is_bare_id, node.elts))
+    if isinstance(node, ast.Dict):
+        return any(key is not None and _is_bare_id(key) for key in node.keys)
+    return False
+
+
+@lru_cache(maxsize=256)
+def namespace_reads(expression: str) -> tuple[str, ...]:
+    """The namespace values an expression reads, as a warning names them, in the order
+    ``c.id.ns``, ``c.id.local``, ``c.in_namespace()``, each once.
+
+    Read from its text as parsed, never from evaluating it, so a name inside a string
+    literal is no read. Empty for an expression that reads none, that does not parse,
+    and for one the text shows refused (:func:`_refused`, judged only where evaluation
+    reaches it unconditionally, :func:`_reached`): such a filter has its refusal, and
+    nothing beside it. Where the text cannot settle whether the filter is refused, the
+    reads are given. Cached per string.
+    """
+    reads = _check_reads(expression)
+    if _id_facets.ID_NAME not in reads and _id_facets.IN_NAMESPACE not in reads:
+        return ()
+    # it parses: _check_reads parsed it
+    tree = ast.parse(expression.strip(), mode="eval")
+    if any(map(_refused, _reached(tree.body))):
+        return ()
+    found: set[str] = set()
+    for node in ast.walk(tree):
+        if facet_read(node) == _id_facets.ID_NAME:
+            assert isinstance(node, ast.Attribute)
+            found.add(node.attr)
+        elif _is_in_namespace(node):
+            found.add(_id_facets.IN_NAMESPACE)
+    return tuple(said for name, said in _NAMESPACE_READS if name in found)
 
 
 def reads_a_facet(expression: str) -> bool:

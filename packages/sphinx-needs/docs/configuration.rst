@@ -2826,7 +2826,10 @@ With it on, the id patterns accept an id whose local id matches (:ref:`needs_id_
 or generates that holds ``::`` but does not split cleanly is reported as ``needs.id_namespace``, and a dead link
 naming a bare id can be hinted with its namespaced id. Keep it off (``False``) in a project whose ids hold ``::``
 for another reason (a C++ name, say). Off, every need is in no namespace, ``c.id.ns`` is ``""`` and ``c.id.local``
-the whole id (:ref:`filter_namespace`), the id patterns read the whole id, and nothing is warned or hinted.
+the whole id (:ref:`filter_namespace`), the id patterns read the whole id, and no id is warned or hinted. Off, a
+filter string reading ``c.id.ns``, ``c.id.local`` or ``c.in_namespace()`` is reported as
+``needs.namespaced_ids_off``, once per place it is written (once per build where the place gives no location),
+as what it reads means nothing then.
 Changing it re-reads every document. The value is not experimental; the filter names and attributes it feeds are.
 
 .. _`needs_functions`:

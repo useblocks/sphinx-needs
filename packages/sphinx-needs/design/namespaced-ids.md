@@ -57,7 +57,8 @@ every document). It is read where a need is created, in the
 creation funnel (`api.need._generate_need`, which every route passes: a directive, the API,
 `list2need`, `needservice`, `needimport`, `needs_external_needs`, and the family's
 producers), and by `needextract` to classify an argument naming an id that does not exist.
-Nothing else reads it: the filters and the hints read what the funnel stored. Off, no id is
+Nothing else reads it but the warning of section 9: the filters and the hints read what the
+funnel stored. Off, no id is
 split and every need is plain; the filter names stay defined and read `""` and the whole id,
 and no hint is offered, as no need is in a namespace. "No namespaces" is the empty rule,
 not a second mode of the code.
@@ -151,7 +152,56 @@ environment, which Sphinx pickles. An application that builds twice (a server re
 change) gets a new one for each build, and neither build's pickled environment holds one
 (`tests/test_namespaced_ids.py::test_the_hint_index_is_one_builds_and_never_pickled`).
 
-## 9. Deliberately absent
+## 9. The warning for a namespace filter with the switch off
+
+**The rule.** With the switch off, a filter string that reads `c.id.ns`, `c.id.local` or
+`c.in_namespace()` is answered as written (every need plain: `""`, the whole id, false) and
+reported as `needs.namespaced_ids_off`, naming what it reads, what each is with the switch
+off, and the two ways out (turn the switch on; suppress the warning type). The reason: such
+a filter gets an answer that means nothing, `c.in_namespace("nc")` selecting no need and
+`not c.in_namespace("nc")` every need, and no word that it does. With the switch on it never
+fires, and no answer changes either way.
+
+**Where it is detected.** By the filter's text as parsed (`_source_facets.namespace_reads`,
+which `_check_reads` gates), in `filter_common._report_namespaced_ids_off`, which the two
+entries every filter string evaluated over needs passes call before either tier:
+`filter_needs_and_parts` and `filter_single_need`, beside the report of a `c.is_a` literal
+naming no need type. The switch is read first, so with it on no text is read; the text is
+walked with an explicit stack, never recursively, so a filter nested past the interpreter's
+recursion limit is checked like any other. The text names the filter. A string the text
+shows refused has its refusal and nothing beside it: one that does not parse, a
+`c.in_namespace` call that is not one positional argument or whose literal names no
+namespace (`namespace_argument` judges it), a facet that is none, `c.id` compared or hashed,
+each judged only where evaluation reaches it unconditionally (not a later operand of `and` /
+`or`, not a branch of a conditional, not a lambda or comprehension body). **Where the text
+cannot settle whether a filter is refused, the warning is given**: a filter may then get
+both findings, and none at all is the outcome this rule exists to prevent. Once per build
+per place: the key is the string, where it is written and the origin its caller appends (a
+`needs_warnings` entry, the builder filter, an external need's link condition), so a place
+with no location is reported once per string per build; the keys are emptied where the need
+types are set. A `needextend` filter, evaluated once per document, is reported again for
+each further place in that document it is written; a `needflow` highlight, a `needgantt`
+milestone filter and a `needsequence` filter, evaluated need by need, are reported once at
+their directive before any need is tested. A quiet pre-pass (the one ordering the dynamic
+functions evaluates a `copy` or `calc_sum` filter first) runs under
+`filter_common.quiet_filters`, which restores the reported keys, so it does not use up the
+real place's report (nor that of a `c.is_a` naming no need type). A directive's filter is
+evaluated where its page is resolved, and a `needextend`, a constraint, a dynamic function's
+filter and a derived field's `where` where the needs are post-processed (`write-started`);
+both run in the main process of a `-j` build too, so a parallel build reports what a serial
+one does.
+
+**What it cannot see.** A name reached dynamically (`getattr(c.id, "ns")`, which `eval`
+answers); a filter function or a directive's filter code, which are Python, not filter
+strings; where a filter is data or configuration evaluated need by need (a link condition,
+a constraint, a dynamic function's filter, a derived field's `where`), a filter tested on no
+need, as nothing reads it there; and a refusing construct the text sees in a first operand
+that evaluation happens not to raise (`c.id in [] or c.id.ns == ""`: an empty list compares
+nothing), which keeps such a filter unreported. Where there is no check context (a
+`needimport` filter, a field's predicate, a variant condition) a read of `c` is refused
+already, and that refusal stands alone.
+
+## 10. Deliberately absent
 
 - a `namespace` option on `needimport` and `needs_external_needs`, beside `id_prefix`
   (later; with the switch on, an `id_prefix` ending in `::` already gives a namespace;
@@ -161,7 +211,7 @@ change) gets a new one for each build, and neither build's pickled environment h
 - short references, a bare id written inside a namespaced need naming a need of that
   namespace (later: a recon, a ruling on the lookup order, a build);
 - any `needs.json` key: format 2 is to carry `ns` beside the full `id` (later);
-- an index-tier arm for `c.in_namespace` (the fast tier answers it, section 10);
+- an index-tier arm for `c.in_namespace` (the fast tier answers it, section 11);
 - a lint for a filter that names a namespace no need has, or a bare-id filter (a namespace
   no need is in selects nothing, as any filter matching nothing does);
 - any change to `id_prefix`;
@@ -176,7 +226,7 @@ change) gets a new one for each build, and neither build's pickled environment h
 - *Root-level filter names* (`ns`, `local_id`): lost because they would have to be
   reserved field names, where `c.` can be shadowed by nothing.
 
-## 10. Measurements (unreleased tip, Python 3.13, sphinx 9.2, one machine, with `needs_namespaced_ids = True`)
+## 11. Measurements (unreleased tip, Python 3.13, sphinx 9.2, one machine, with `needs_namespaced_ids = True`)
 
 - **Memory**: the needs of a 10 000-need build, held after a pickle round trip
   (`tracemalloc`), against the base without namespaces, the arms interleaved with a null arm
