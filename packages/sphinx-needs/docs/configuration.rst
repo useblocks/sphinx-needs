@@ -3243,7 +3243,7 @@ With it, in that content and in the text a ``template``, ``pre_template`` or
   with one ``needs.import_inert`` warning per imported need (a need written inside its
   content counts into it). A raw node whose text is exactly what myst-parser writes for a
   hard line break or a task-list checkbox is kept, and so are ``<s>`` and ``</s>`` as a
-  matched pair (strikethrough); any other raw markup is removed.
+  matched pair within one paragraph (strikethrough); any other raw markup is removed.
 
 The same holds for the project's own template files when they render for an imported need:
 an ``include`` or a ``raw`` in a ``template``, ``pre_template`` or ``post_template`` file
