@@ -377,10 +377,9 @@ Bug fixes
   is now walked as the link type it names (``links``). A back-link name (``links_back``) gets the directive's
   "Unknown link type" warning (``needs.needsequence``) and is walked, as before. A name that is neither a link type
   nor a back-link name ended the build right after that warning; it is now left out after it. A name in a
-  needgantt's ``:starts_with_links:``,
-  ``:starts_after_links:`` or ``:ends_with_links:`` that is no link type (a back-link type such as ``links_back``
-  included) ended the build (``SphinxNeedsLinkTypeException``); it is now one ``needs.needgantt`` warning with the
-  same text, at the directive, and is left out.
+  needgantt's ``:starts_with_links:``, ``:starts_after_links:`` or ``:ends_with_links:`` that is no link type (a
+  back-link type such as ``links_back`` included) ended the build (``SphinxNeedsLinkTypeException``); it is now one
+  ``needs.needgantt`` warning with the same text, at the directive, and is left out.
 
 .. _`release:9.2.0`:
 
