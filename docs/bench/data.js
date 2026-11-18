@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795002828998,
+  "lastUpdate": 1795007173565,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -30072,6 +30072,48 @@ window.BENCHMARK_DATA = {
             "value": 186.484506,
             "unit": "MB",
             "extra": "Commit: 3279cb0753e476d9708d340a4d7bdbbeb443a6e2\nBranch: master\nTime: 2026-11-18T12:52:07+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6f92b07f4be465e56dee09dae20ee47d5b5206c7",
+          "message": "🐛 Filters: leading spaces and tabs are read past, and a `c.is_a` naming no need type is reported at each place (#2537)\n\nTwo fixes to filters, ahead of 9.3.0.\n\n**A filter string with leading spaces or tabs selects what it selects\nwithout them** (#2521).\n`\" status == 'open'\"` in `needs_warnings`, `needs_builder_filter`, an\nindented `needpie` line, needuml's\n`filter()`, the filter of the dynamic functions `copy`,\n`links_from_filter` and `links_from_match`, or a quoted\n`needextend` argument was refused as `not valid … unexpected indent` and\nmatched no need: a padded\n`needs_builder_filter` exported no need, a padded `needextend` extended\nnone, and the dynamic function failed.\nA constraint or a link condition read the same string, as Python's\n`eval` does, past its padding. These places\nnow read past exactly what `eval` reads past -- spaces and tabs, and\nnothing more -- and a warning quotes the\nfilter as written. A `c.is_a(\"…\")` naming no need type in such a string\nis reported (`needs.filter_type`) as in\nthe unpadded one. A padded string is answered by `eval` rather than by\nthe tier that answers the unpadded string;\nthe answer is the same, and the tests pin it tier by tier. One\nexception, on purpose: a derived field's `where`\nand `test` are a declared rule, which must parse as written, so a padded\none is still refused\n(`needs.derive_invalid`), as before.\n\n**`needs.filter_type` is reported where the filter is written** (#2528).\nThis is not new since 9.2.0: 9.2.0\nalready reported a `c.is_a(\"…\")` naming no need type in a needflow\n`:highlight:`, a needgantt\n`:milestone_filter:`, a needsequence `:filter:` or a link condition once\nper build for the string, with no file\nand line, however many places wrote it. This release adds its sibling,\n`needs.namespaced_ids_off`, reported at\neach place, which made the difference visible. The two reports of a\nfilter's text are now given together, at\nthe same places and as often: one warning per place, with the place,\nalso where no need is tested there (a\nneedflow whose `:filter:` drops every need, a needsequence with no\nreceiver) and at each of two `needextend`s of\none document with the same quoted filter. A constraint, which has no\nlocation, is still reported once per build\nfor its string, and an external need's link condition names the need.\nBoth readings of a filter's text read a\nstring as `eval` does, so a string `eval` refuses gets its `not valid`\nwarning and neither report.\n\n### Tests\n\n- `tests/test_filter_leading_white_space.py`: each place and each filter\ntier, padded with spaces, a tab and a\nmix, selects what the unpadded string selects, `links_from_filter` and\n`links_from_match` included; no more is\nread past than `eval` reads past; messages quote the string as written;\na derived field's padded `where` is\n  still refused.\n- `tests/test_is_a.py`: one located warning per place at each\nneed-by-need place; a constraint once; per build\n(an application building twice, an incremental build against a fresh\none); the quiet pre-passes lose no report;\nan external need's link condition names the need; a padded `c.is_a`\nnaming no need type is reported as\nwritten; the two text reports given together at eight places, each\nwritten twice in each of two documents,\nserially and in parallel, fresh and incremental, in their order; a\nstring `eval` refuses gets neither.\n\n**Does ubCode need a matching change?** No: ubCode already reads a\nleading space or tab in a filter past, and\nreports `needs.filter_type` at each place.\n\nCloses #2521, closes #2528",
+          "timestamp": "2026-11-18T14:04:58+01:00",
+          "tree_id": "237612d2322c3ad7f4a2c531de459cb9de65586d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6f92b07f4be465e56dee09dae20ee47d5b5206c7"
+        },
+        "date": 1795007172595,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.0436951960000016,
+            "unit": "s",
+            "extra": "Commit: 6f92b07f4be465e56dee09dae20ee47d5b5206c7\nBranch: master\nTime: 2026-11-18T14:04:58+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 8.760420451999998,
+            "unit": "s",
+            "extra": "Commit: 6f92b07f4be465e56dee09dae20ee47d5b5206c7\nBranch: master\nTime: 2026-11-18T14:04:58+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 188.580449,
+            "unit": "MB",
+            "extra": "Commit: 6f92b07f4be465e56dee09dae20ee47d5b5206c7\nBranch: master\nTime: 2026-11-18T14:04:58+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
           }
         ]
       }
