@@ -17,17 +17,15 @@ from sphinx_needs.diagrams_common import (
     create_legend,
     get_debug_container,
     get_filter_para,
+    linked_needs,
     no_plantuml,
     set_plantuml_paths,
 )
-from sphinx_needs.directives.utils import (
-    SphinxNeedsLinkTypeException,
-    no_needs_found_paragraph,
-)
+from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import (
     FilterBase,
+    _need_by_need,
     _report_filter_text,
-    filter_single_need,
     process_filters,
 )
 from sphinx_needs.logging import get_logger, log_warning
@@ -175,9 +173,15 @@ class NeedganttDirective(FilterBase, DiagramBase):
             if link_type is None or link_type == "":
                 continue
             if link_type not in conf_link_types_name:
-                raise SphinxNeedsLinkTypeException(
-                    link_type + " does not exist in configuration option needs_links"
+                # reported and left out, as needsequence and needflow leave out a
+                # name that is no link type
+                log_warning(
+                    logger,
+                    link_type + " does not exist in configuration option needs_links",
+                    "needgantt",
+                    location=self.get_location(),
                 )
+                continue
 
             final_link_types.append(link_type)
         return final_link_types
@@ -234,10 +238,18 @@ def process_needgantt(
             location=node,
         )
 
+        is_milestone_of = None
         if milestone_filter := current_needgantt["milestone_filter"]:
             # read need by need below: what its text shows is reported here as well, so
             # that a filter no need is tested on is reported too
             _report_filter_text(milestone_filter, needs_config, node)
+            # one test for both loops below, so that a failing filter is reported once
+            is_milestone_of = _need_by_need(
+                milestone_filter,
+                needs_config,
+                location=node,
+                origin_docname=current_needgantt["docname"],
+            )
 
         # Scale/timeline handling
         if current_needgantt["timeline"]:
@@ -269,16 +281,7 @@ def process_needgantt(
         for need in found_needs:
             complete = None
 
-            if current_needgantt["milestone_filter"]:
-                is_milestone = filter_single_need(
-                    need,
-                    needs_config,
-                    current_needgantt["milestone_filter"],
-                    origin_docname=current_needgantt["docname"],
-                    location=node,
-                )
-            else:
-                is_milestone = False
+            is_milestone = is_milestone_of is not None and bool(is_milestone_of(need))
 
             if current_needgantt["milestone_filter"] and is_milestone:
                 gantt_element = "[{}] as [{}] lasts 0 days\n".format(
@@ -352,16 +355,7 @@ def process_needgantt(
         puml_node["uml"] += "\n' Constraints definition \n\n"
         puml_node["uml"] += "\n' Constraints definition \n\n"
         for need in found_needs:
-            if current_needgantt["milestone_filter"]:
-                is_milestone = filter_single_need(
-                    need,
-                    needs_config,
-                    current_needgantt["milestone_filter"],
-                    origin_docname=current_needgantt["docname"],
-                    location=node,
-                )
-            else:
-                is_milestone = False
+            is_milestone = is_milestone_of is not None and bool(is_milestone_of(need))
             for con_type in (
                 "starts_with_links",
                 "starts_after_links",
@@ -380,9 +374,7 @@ def process_needgantt(
                     start_end_sync = "start"
 
                 for link_type in current_needgantt[con_type]:
-                    start_with_links = need[link_type]
-                    for start_with_link in start_with_links:
-                        start_need = all_needs_dict[start_with_link]
+                    for start_need in linked_needs(need, link_type, all_needs_dict):
                         gantt_constraint = "[{}] {} at [{}]'s {}\n".format(
                             need["id"], keyword, start_need["id"], start_end_sync
                         )

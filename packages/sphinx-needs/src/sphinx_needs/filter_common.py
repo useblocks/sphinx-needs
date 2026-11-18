@@ -1280,6 +1280,62 @@ def filter_single_need(
     )
 
 
+def _need_by_need(
+    filter_string: str,
+    config: NeedsSphinxConfig,
+    *,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    needs: Iterable[NeedItem | NeedPartItem] | None = None,
+    origin_docname: str | None = None,
+    append_warning: str | Callable[[NeedItem | NeedPartItem], str] = "",
+) -> Callable[[NeedItem | NeedPartItem], bool | None]:
+    """Test one filter, written at one place, need by need: :func:`filter_single_need`,
+    with a failing filter handled as a view's ``:filter:`` handles one.
+
+    The function returned answers whether a need passes the filter, or ``None`` where
+    the filter fails on it (it is no Python, it names what the need does not have, it
+    raises, or it is a constant), which reads as no match. The first failure is
+    reported as one ``needs.filter`` warning, at *location* and with *append_warning*
+    appended, as :func:`filter_needs_and_parts` reports it; a later one is not, so a
+    place reports its filter once however many needs it fails on, and the build goes
+    on. What the filter's text shows is reported at *location* (without
+    *append_warning*), as :func:`filter_single_need` reports it.
+
+    :param needs: All needs, for a filter that reads ``needs``.
+    :param origin_docname: The document the filter is written in, for ``c.this_doc()``.
+    :param append_warning: Appended to the report; a function is given the need the
+        filter failed on first, for a place with no location to name it.
+    """
+    reported = False
+
+    def test(need: NeedItem | NeedPartItem) -> bool | None:
+        nonlocal reported
+        try:
+            return filter_single_need(
+                need,
+                config,
+                filter_string,
+                needs,
+                origin_docname=origin_docname,
+                location=location,
+            )
+        except NeedsInvalidFilter as error:
+            if not reported:
+                reported = True
+                append = (
+                    append_warning(need) if callable(append_warning) else append_warning
+                )
+                log_warning(
+                    log,
+                    f"{error}" + (f" {append}" if append else ""),
+                    "filter",
+                    location=location,
+                )
+            return None
+
+    return test
+
+
 @measure_time("filtering", name="filter_single_need")
 def _filter_single_need(
     need: NeedItem | NeedPartItem,

@@ -1,14 +1,27 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable
 from sphinx_needs.exceptions import NeedsConstraintFailed
-from sphinx_needs.filter_common import filter_single_need
+from sphinx_needs.filter_common import _need_by_need
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedConstraintResults
+from sphinx_needs.need_item import NeedConstraintResults, NeedItem, NeedPartItem
 
 logger = get_logger(__name__)
+
+
+def _report_tail(
+    constraint: str, check: str
+) -> Callable[[NeedItem | NeedPartItem], str]:
+    """What the report of a failing check ends with: the constraint, the check, and the
+    first need the check fails on."""
+    return lambda need: (
+        f"(from constraint {constraint!r}, check {check!r}, "
+        f"first on need {need['id']!r})"
+    )
 
 
 def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
@@ -18,8 +31,16 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
 
     The ``style`` field may also be changed, if a constraint fails
     (depending on the config value ``constraint_failed_options``)
+
+    A check whose filter fails on a need (it is no Python, names what the need does
+    not have, raises, or is a constant) is reported once for the check, however many
+    needs it fails on, naming the first of them, and is not evaluated on that need: it
+    neither passes nor fails, and the need stores what it would have stored had the
+    check not been declared.
     """
     config_constraints = config.constraints
+    #: each check's filter, by constraint and check name: one report for each
+    checks: dict[tuple[str, str], Callable[[NeedItem | NeedPartItem], bool | None]] = {}
 
     for need in needs.values():
         need_id = need["id"]
@@ -42,7 +63,18 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                     continue
 
                 # compile constraint and check if need fulfils it
-                constraint_passed = filter_single_need(need, config, cmd)
+                if (check := checks.get((constraint, name))) is None:
+                    check = checks[(constraint, name)] = _need_by_need(
+                        cmd,
+                        config,
+                        # a constraint has no location: its report names the need
+                        # the check fails on first
+                        append_warning=_report_tail(constraint, name),
+                    )
+                if (constraint_passed := check(need)) is None:
+                    # the check cannot be evaluated on the need: it is reported, and
+                    # the need is left as if the check were not declared
+                    continue
 
                 error_msg: str | None = None
                 if not constraint_passed:

@@ -232,9 +232,9 @@ Bug fixes
   :ref:`needs_warnings` entry or the :ref:`needs_builder_filter`, ended the build with ``invalid syntax``. It is now
   one ``needs.filter`` warning naming the string and the error, at the directive, where there is one, and it
   matches no need. ``needextend``'s filter form and ``copy(filter=...)``, which reported such a string already, keep
-  their messages. Not changed: needflow's ``:highlight:``, needgantt's ``:milestone_filter:``,
-  :ref:`needs_constraints` and needsequence's ``:filter:`` still end the build on any filter that fails, as before,
-  and so does a filter too deep for Python's parser.
+  their messages. needflow's ``:highlight:``, needgantt's ``:milestone_filter:``, :ref:`needs_constraints` and
+  needsequence's ``:filter:`` report it too, as any filter that fails there (:issue:`2252`). Not changed: a filter too
+  deep for Python's parser still ends the build, as before.
 
 - 🐛 Every link condition reads back as it was written, one that ends in ``]`` or starts with ``[`` included, so a
   ``needs.json`` written with link conditions keeps them through :ref:`needimport` and :ref:`needs_external_needs`
@@ -367,6 +367,36 @@ Bug fixes
   such a field is reported as ``needs.config`` and not used, and on a need type as ``needs.type_conflict`` (it was
   refused as ``needs.type_widening`` before). A dynamic function or variant data returning a boolean for such a
   field is reported as ``needs.dynamic_function``, and the value is dropped. An integer is still a ``number``.
+
+- 🐛 A filter that fails where it is tested need by need -- a :ref:`needflow` ``:highlight:``, a :ref:`needgantt`
+  ``:milestone_filter:``, a :ref:`needsequence` ``:filter:``, a :ref:`needs_constraints` check -- no longer aborts the
+  build (:issue:`2252`, :pr:`2541`)
+
+  A filter there that is not Python (``nc::MISSING``), names what a need does not have (``ab == 1``), raises while it
+  is evaluated (``int('x') == 1``) or is a constant ended the build with a traceback (``NeedsInvalidFilter``). It is
+  now reported as a view's ``:filter:`` reports it: one ``needs.filter`` warning naming the string and the error, at
+  the directive, however many needs it fails on. It matches no need it fails on and answers every other need, so a
+  filter that fails on every need highlights no need, makes no task a milestone and draws no message. A constraint
+  check, which has no directive, is reported once, ending ``(from constraint 'c1', check 'check_0', first on need
+  'REQ_1')``, and is not evaluated on a need it fails on: it neither passes nor fails there, runs no ``on_fail``
+  action, and the need's ``constraints_results`` and ``constraints_passed`` are what they would be had the check not
+  been declared. A filter that works selects what it selected.
+
+- 🐛 A :ref:`needsequence` or :ref:`needgantt` over a link to a need part, or to a need that does not exist, or with
+  a link type that does not exist, no longer aborts the build (:issue:`2336`, :pr:`2541`)
+
+  Both looked a link up as a whole need id, so a link such as ``USER_B.p1``, and a dead link, ended the build with a
+  ``KeyError``. A link to a part the need has is now a link to the need owning the part (a needsequence message to
+  ``USER_B``, a needgantt constraint at ``[USER_B]``). A link to a part the need does not have (``USER_B.nopart``),
+  like a link to a need that does not exist, is a dead link: it is left out of the diagram, as needflow draws no edge
+  for it, and the dead-link check reports it, as it did (``needs.link_outgoing``). In a needsequence's
+  ``:link_types:``, a link type written in another case (``LINKS``), which the directive accepts, ended the build; it
+  is now walked as the link type it names (``links``). A back-link name (``links_back``) gets the directive's
+  "Unknown link type" warning (``needs.needsequence``) and is walked, as before. A name that is neither a link type
+  nor a back-link name ended the build right after that warning; it is now left out after it. A name in a
+  needgantt's ``:starts_with_links:``, ``:starts_after_links:`` or ``:ends_with_links:`` that is no link type (a
+  back-link type such as ``links_back`` included) ended the build (``SphinxNeedsLinkTypeException``); it is now one
+  ``needs.needgantt`` warning with the same text, at the directive, and is left out.
 
 .. _`release:9.2.0`:
 

@@ -3824,6 +3824,13 @@ constraints_passed is a bool showing if ALL constraints of a corresponding need 
 
 constraints_results is a dictionary similar in structure to needs_constraints above. Instead of executable python statements, inner values contain a bool describing if check_0, check_1 ... passed successfully.
 
+A check whose filter fails on a need -- it is not Python, names what the need does not have, raises while it is
+evaluated, or is a constant -- is reported once for the check, as a ``needs.filter`` warning naming the constraint,
+the check and the first need it fails on (``… (from constraint 'critical', check 'check_0', first on need
+'REQ_1')``). It is not evaluated on a need it fails on: it neither passes nor fails there, runs no ``on_fail``
+action, and is left out of that need's constraints_results. So a need none of whose checks could be evaluated reads
+``constraints_passed: True``: treat the warning as an error to fix, not as a passed check.
+
 .. versionadded:: 2.0.0
 
    The ``"error_message"`` key can contain a string, with Jinja templating, which will be displayed if the constraint fails, and saved on the need as ``constraints_error``:

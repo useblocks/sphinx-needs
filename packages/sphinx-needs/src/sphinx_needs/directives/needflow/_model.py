@@ -27,7 +27,7 @@ either of them draws -- and are called out at the point where they happen:
 
 from __future__ import annotations
 
-from collections.abc import Callable, Container, Iterable
+from collections.abc import Callable, Container
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -37,9 +37,9 @@ from sphinx.application import Sphinx
 from sphinx_needs.config import NeedsSphinxConfig, NeedType
 from sphinx_needs.data import NeedsFlowType, SphinxNeedsData
 from sphinx_needs.filter_common import (
+    _need_by_need,
     _report_filter_text,
     apply_max_items,
-    filter_single_need,
     process_filters,
 )
 from sphinx_needs.logging import get_logger, log_warning
@@ -417,21 +417,26 @@ def build_graph(
         found_needs, attributes.get("max_items"), needs_config
     )
 
+    highlighted = None
     if highlight := attributes["highlight"]:
         # read need by need below: what its text shows is reported here as well, so
         # that a highlight no drawn need is tested on is reported too
         _report_filter_text(highlight, needs_config, location)
+        highlighted = _need_by_need(
+            highlight,
+            needs_config,
+            location=location,
+            needs=needs_view.values(),
+            origin_docname=attributes["docname"],
+        )
     roots, drawn = build_node_tree(
         found_needs,
         lambda need: resolve_presentation(
             need,
-            highlight=attributes["highlight"],
+            highlighted=highlighted,
             border_color=attributes["border_color"],
             config=needs_config,
-            needs=needs_view.values(),
             location=variant_location,
-            origin_docname=attributes["docname"],
-            highlight_location=location,
         ),
     )
 
@@ -489,36 +494,23 @@ def resolve_presentation(
     need: NeedItem | NeedPartItem,
     /,
     *,
-    highlight: str,
+    highlighted: Callable[[NeedItem | NeedPartItem], bool | None] | None,
     border_color: str | None,
     config: NeedsSphinxConfig,
-    needs: Iterable[NeedItem | NeedPartItem],
     location: LocationType,
-    origin_docname: str | None = None,
-    highlight_location: LocationType | None = None,
 ) -> NodePresentation:
     """Resolve how a single need is to be presented.
 
     :param need: The need or need part to be drawn.
-    :param highlight: The ``highlight`` filter, empty if the option was not given.
+    :param highlighted: The ``highlight`` filter of the needflow, tested on one need
+        (:func:`~sphinx_needs.filter_common._need_by_need`), or ``None`` if the option
+        was not given. A highlight that fails on the need does not highlight it.
     :param border_color: The ``border_color`` option, in variant syntax.
     :param config: The Sphinx-Needs configuration.
-    :param needs: All needs, for a ``highlight`` filter that consults them.
     :param location: Where to report ``border_color`` variant problems.
-    :param origin_docname: The document the needflow is written in, so that a
-        ``highlight`` filter may test the need against it with ``c.this_doc()``.
-    :param highlight_location: Where the ``highlight`` filter is written, for what is
-        reported of its text.
     :return: The resolved presentation.
     """
-    is_highlighted = bool(highlight) and filter_single_need(
-        need,
-        config,
-        highlight,
-        needs,
-        origin_docname=origin_docname,
-        location=highlight_location,
-    )
+    is_highlighted = highlighted is not None and bool(highlighted(need))
     resolved_border = None
     if not is_highlighted and border_color:
         # a highlight always wins, so the border color is not even resolved
