@@ -19,7 +19,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from sphinx.errors import ExtensionError
 from sphinx.util.parallel import parallel_available
 
 from sphinx_needs.config import NeedsSphinxConfig
@@ -310,9 +309,9 @@ def test_a_refused_filter_gets_its_refusal_alone(
 def test_row14_a_filter_that_does_not_parse_gets_its_parse_error_alone(
     make_app: Any, tmp_path: Path
 ) -> None:
-    """Row 14: a filter that does not parse gets the parse error it has today, alone:
-    at a link condition the ``needs.link_condition_invalid`` warning; at a needlist the
-    error that stops the build (which is reached with no warning of this rule)."""
+    """Row 14: a filter that does not parse gets the parse error it has, alone: at a
+    link condition the ``needs.link_condition_invalid`` warning, at a needlist the
+    ``needs.filter`` warning, each with no warning of this rule."""
     broken = 'c.in_namespace("nc"'
     index = NEEDS + f".. req:: Four\n   :id: REQ_4\n   :links: REQ_1[{broken}]\n"
     app = _build(make_app, tmp_path, index)
@@ -321,10 +320,15 @@ def test_row14_a_filter_that_does_not_parse_gets_its_parse_error_alone(
     (invalid,) = [w for w in warnings if w.endswith("[needs.link_condition_invalid]")]
     assert "was never closed" in invalid
 
-    stream = io.StringIO()
-    with pytest.raises(ExtensionError, match="was never closed"):
-        _build(make_app, tmp_path / "list", _needlist(broken), warning=stream)
-    assert _ours(build_warnings(stream.getvalue())) == []
+    index = _needlist(broken)
+    app = _build(make_app, tmp_path / "list", index)
+    warnings = build_warnings(app)
+    assert len(_ours(warnings)) == 0, warnings
+    (refusal,) = [w for w in warnings if w.endswith("[needs.filter]")]
+    assert refusal.startswith(
+        f"<srcdir>/index.rst:{_line(index, '.. needlist::')}: WARNING: "
+    ), refusal
+    assert "was never closed" in refusal
 
 
 @pytest.mark.parametrize(
@@ -615,6 +619,35 @@ def test_each_place_is_reported_once(place: str, make_app: Any, tmp_path: Path) 
         text = text.replace(f" {CODE}", f"{origin} {CODE}")
     where = f"<srcdir>/index.rst:{_line(index, marker)}: " if marker is not None else ""
     assert ours[0] == f"{where}WARNING: {text}"
+
+
+def test_a_needextend_argument_written_as_one_word_is_a_place(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A one-word needextend argument holding ``(``, ``=`` or a quote is a filter, not
+    an id: ``c.in_namespace("nc")`` written without spaces is reported once, at its
+    directive's line, and a second needextend of the same string in the same document
+    once more, at its own line."""
+    filter_string = 'c.in_namespace("nc")'
+    index = (
+        NEEDS
+        + f".. needextend:: {filter_string}\n   :status: a\n\n"
+        + f".. needextend:: {filter_string}\n   :status: b\n"
+    )
+    app = _build(make_app, tmp_path, index)
+    warnings = build_warnings(app)
+    lines = [
+        number
+        for number, line in enumerate(index.splitlines(), 1)
+        if line == f".. needextend:: {filter_string}"
+    ]
+    assert len(lines) == 2
+    assert sorted(_ours(warnings)) == sorted(
+        f"<srcdir>/index.rst:{line}: WARNING: "
+        + _text(filter_string, "c.in_namespace()")
+        for line in lines
+    )
+    assert [w for w in warnings if "does not exist" in w] == [], warnings
 
 
 #: the places with no check context: a ``c.`` read is refused there today
