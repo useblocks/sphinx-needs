@@ -515,12 +515,19 @@ def test_a_changed_value_rereads_and_rewrites_the_file(
         app.cleanup()
 
 
-def test_upgrading_reads_nothing_again(make_app: Any, tmp_path: Path) -> None:
-    """Changing how the value is registered costs no re-read: an output directory
-    whose environment was read while the value was registered as it was before (the
-    integer ``1``, rebuilding the html only), built again with the value unset, reads
-    no document. (An environment of a release without the value at all is of an older
-    ``ENV_DATA_VERSION``, and is read again whole whatever the value.)"""
+def test_an_unset_value_reads_nothing_again_after_upgrading(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """Upgrading costs no re-read where the value is unset: Sphinx decides what to
+    read again by comparing the VALUES of the options that rebuild the environment,
+    not how they are registered, and an unset value is the integer ``1`` before and
+    after. So an output directory read with the value registered as it was (the
+    integer ``1``, rebuilding the html only) reads no document when built again; the
+    re-registration below is the scenario, and removing it does not change the
+    result. (A build that last set ``-D needs_json_format_version=1`` held the
+    integer and now holds the text, so it reads again once. An environment of a
+    release without the value at all is of an older ``ENV_DATA_VERSION``, and is
+    read again whole whatever the value.)"""
     srcdir = _option_project(tmp_path)
     app = make_app("needs", srcdir=srcdir, freshenv=True)
     options = app.config._options
