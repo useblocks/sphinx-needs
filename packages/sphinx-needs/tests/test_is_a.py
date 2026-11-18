@@ -1022,3 +1022,216 @@ def test_a_padded_filter_naming_no_type_is_reported_as_written(
             _unknown("nosuch", filter_string),
         ]
     )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            conf=CONF
+            + "needs_warnings = {'w': \"\\n c.is_a('nosuch') or c.id.ns == 'x'\"}\n"
+        )
+    ],
+    indirect=True,
+)
+def test_a_string_eval_refuses_gets_neither_text_report(test_app: Any) -> None:
+    """The two text reports read a string as ``eval`` does, past its leading spaces and
+    tabs alone: a newline then a space is refused, so the string gets its ``not valid``
+    warning and neither a ``needs.filter_type`` nor a ``needs.namespaced_ids_off``."""
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert [w for w in warnings if w.endswith("[needs.filter_type]")] == []
+    assert [w for w in warnings if w.endswith("[needs.namespaced_ids_off]")] == []
+    filter_string = "\n c.is_a('nosuch') or c.id.ns == 'x'"
+    (refused,) = [w for w in warnings if w.endswith("[needs.filter]")]
+    assert refused.startswith(f"WARNING: Filter {filter_string!r} not valid. Error: ")
+    assert refused.endswith(" (from warning filter 'w') [needs.filter]")
+
+
+# --- the two text reports of a filter are given together, at each place (#2528) ---
+
+#: a string both text reports read: a type naming no need type, a namespace value
+BOTH = "c.is_a('nosuch') or c.id.ns == 'x'"
+
+#: each place, written twice in each of two documents with the same string: (the
+#: document's text, with ``{f}`` for the filter and ``{n}`` for what tells the places
+#: apart, the configuration's extra text, the builder, whether the place is located)
+TOGETHER: dict[str, tuple[str, str, str, bool]] = {
+    # no need is tested at the place
+    "needflow-highlight-nothing-drawn": (
+        ".. needflow::\n   :filter: id == 'NONE'\n   :highlight: {f}\n",
+        'needs_flow_engine = "graphviz"\n',
+        "html",
+        True,
+    ),
+    "needgantt-milestone_filter-nothing-drawn": (
+        ".. needgantt:: G{n}\n   :filter: id == 'NONE'\n   :milestone_filter: {f}\n",
+        'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n',
+        "dummy",
+        True,
+    ),
+    "needsequence-filter-no-receiver": (
+        ".. needsequence:: S{n}\n   :start: REQ_001\n   :filter: {f}\n",
+        'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n',
+        "dummy",
+        True,
+    ),
+    # one string from one document is evaluated once, and written at each place
+    "needextend": ('.. needextend:: "{f}"\n   :+tags: ext{n}\n', "", "dummy", True),
+    # a need is tested at the place
+    "needflow-highlight": (
+        ".. needflow::\n   :highlight: {f}\n",
+        'needs_flow_engine = "graphviz"\n',
+        "html",
+        True,
+    ),
+    "needgantt-milestone_filter": (
+        ".. needgantt:: G{n}\n   :milestone_filter: {f}\n",
+        'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n',
+        "dummy",
+        True,
+    ),
+    "link-condition": (
+        ".. spec:: Linked on a condition {n}\n   :id: COND_{d}{n}\n"
+        "   :links: REQ_001[{f}]\n",
+        "",
+        "dummy",
+        True,
+    ),
+    "calc_sum": (
+        ".. spec:: Sum {n}\n   :id: SUM_{d}{n}\n"
+        '   :total: [[calc_sum("id", filter={f!r})]]\n',
+        "needs_fields = {'total': {'nullable': True, 'schema': {'type': 'number'}}}\n",
+        "dummy",
+        False,
+    ),
+}
+
+#: two needs, and two more under a constraint sharing the string, which has no location
+TOGETHER_INDEX = (
+    INDEX
+    + "\n.. req:: Constrained\n   :id: REQ_101\n   :constraints: c1\n"
+    + "\n.. req:: Constrained too\n   :id: REQ_102\n   :constraints: c1\n"
+    + "\n.. toctree::\n\n   doc1\n   doc2\n"
+    + "".join(f"   page{i}\n" for i in range(5))
+)
+
+TOGETHER_CONF = (
+    CONF
+    + f"needs_constraints = {{'c1': {{'check_0': {BOTH!r}, 'severity': 'LOW'}}}}\n"
+    + "needs_constraint_failed_options = {'LOW': {'on_fail': [], 'style': []}}\n"
+)
+
+
+def _together_document(place: str, d: int, change: str = "") -> str:
+    rst = TOGETHER[place][0]
+    return (
+        f"Doc {d}\n=====\n"
+        + "".join("\n" + rst.format(f=BOTH, n=n, d=d) for n in (1, 2))
+        + change
+    )
+
+
+def _write_together(srcdir: Path, place: str, change: str = "") -> None:
+    srcdir.mkdir(exist_ok=True)
+    texts = {
+        "conf.py": TOGETHER_CONF + TOGETHER[place][1],
+        "ubproject.toml": TYPES,
+        "index.rst": "Case\n====\n\n" + TOGETHER_INDEX,
+        "doc1.rst": _together_document(place, 1, change),
+        "doc2.rst": _together_document(place, 2),
+        # Sphinx reads and writes in parallel from six documents on
+        **{f"page{i}.rst": f"Page {i}\n======\n" for i in range(5)},
+    }
+    for name, text in texts.items():
+        (srcdir / name).write_text(text, encoding="utf-8")
+
+
+def _places(warnings: list[str], code: str) -> dict[str, int]:
+    """How often *code* is reported at each place: its file and line, or ``""``."""
+    counted: dict[str, int] = {}
+    for warning in warnings:
+        if warning.endswith(f"[{code}]"):
+            where = warning.split("WARNING: ")[0]
+            counted[where] = counted.get(where, 0) + 1
+    return counted
+
+
+def _expected_places(place: str, documents: tuple[int, ...]) -> dict[str, int]:
+    """Each place written in *documents* once, and the constraint once."""
+    expected = {"": 1}
+    if TOGETHER[place][3]:
+        for d in documents:
+            text = _together_document(place, d)
+            marker = TOGETHER[place][0].split("\n")[0].split("{")[0]
+            for number, line in enumerate(text.splitlines(), 1):
+                if line.startswith(marker):
+                    expected[f"<srcdir>/doc{d}.rst:{number}: "] = 1
+        assert len(expected) == 1 + 2 * len(documents), expected
+    return expected
+
+
+@pytest.mark.parametrize("parallel", [0, 2], ids=["serial", "parallel"])
+@pytest.mark.parametrize("place", list(TOGETHER))
+def test_the_two_text_reports_are_given_together_at_each_place(
+    place: str, parallel: int, make_app: Any, tmp_path: Path
+) -> None:
+    """``needs.filter_type`` and ``needs.namespaced_ids_off`` are reported together for
+    a string at a place: once at each place it is written, with its location, whether
+    or not a need is tested there (a needflow drawing no need, a needgantt and a
+    needsequence testing none), two ``needextend``\\ s of one document included; a place
+    with no location (a constraint, a ``calc_sum``) once. A parallel build reports what a
+    serial one does."""
+    if parallel and not parallel_available:
+        pytest.skip("this platform cannot run a parallel build")
+    srcdir = tmp_path / "src"
+    _write_together(srcdir, place)
+    builder = TOGETHER[place][2]
+    app = make_app(
+        builder,
+        srcdir=srcdir,
+        freshenv=True,
+        status=io.StringIO(),
+        warning=io.StringIO(),
+        parallel=parallel,
+    )
+    app.build()
+    status = re.sub(r"\x1b\[[0-9;]*m", "", app._status.getvalue())
+    chunked = re.search(r"reading sources\.\.\. \[ *\d+%\] \S+ \.\. ", status)
+    assert (chunked is not None) is bool(parallel)
+    warnings = build_warnings(app)
+    expected = _expected_places(place, (1, 2))
+    assert _places(warnings, "needs.filter_type") == expected, warnings
+    assert _places(warnings, "needs.namespaced_ids_off") == expected, warnings
+
+
+@pytest.mark.parametrize("parallel", [0, 2], ids=["serial", "parallel"])
+@pytest.mark.parametrize("place", list(TOGETHER))
+def test_an_incremental_build_gives_the_two_text_reports_together(
+    place: str, parallel: int, make_app: Any, tmp_path: Path
+) -> None:
+    """A document changed since the last build is read and written again: each place
+    in it is given both reports, once, with its location; whatever else the build
+    evaluates again is given both, and nothing is given one of them alone."""
+    if parallel and not parallel_available:
+        pytest.skip("this platform cannot run a parallel build")
+    srcdir = tmp_path / "src"
+    builder = TOGETHER[place][2]
+    for fresh, change in ((True, ""), (False, "\n.. a change\n")):
+        _write_together(srcdir, place, change)
+        app = make_app(
+            builder,
+            srcdir=srcdir,
+            freshenv=fresh,
+            status=io.StringIO(),
+            warning=io.StringIO(),
+            parallel=parallel,
+        )
+        app.build()
+    warnings = build_warnings(app)
+    filter_type = _places(warnings, "needs.filter_type")
+    assert filter_type == _places(warnings, "needs.namespaced_ids_off"), warnings
+    changed = _expected_places(place, (1,))
+    assert {where: filter_type.get(where) for where in changed} == changed, warnings
+    assert set(filter_type.values()) == {1}, warnings
