@@ -294,6 +294,10 @@ following; a later version will, as ubCode's reader already does:
 - anything relying on the page's substitutions or ``rst_prolog``: it works, but the same
   text means something else on another page.
 
+For the content of a need :ref:`needimport` creates, :ref:`needs_import_restrict_content`
+switches off docutils' file insertion and raw markup, removes raw HTML in Markdown and
+refuses a ``needimport`` there; its entry lists what it does not cover.
+
 Events
 ------
 

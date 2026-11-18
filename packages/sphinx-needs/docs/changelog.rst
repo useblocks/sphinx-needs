@@ -47,6 +47,15 @@ Improvements
   no need type (``needs.filter_type``) is no longer lost in a ``calc_sum`` filter over a computed field, nor at a
   place with no location (a constraint, say) that shares its filter string with a ``copy`` filter (:pr:`2518`)
 
+- ✨ :ref:`needs_import_restrict_content`, opt-in: the content of a need :ref:`needimport` creates, and the text its
+  templates render, is parsed with docutils' file insertion and raw markup switched off: an ``include``,
+  ``literalinclude``, ``csv-table :file:`` or ``raw`` in it does not run, a ``needimport`` in it reads no file, and
+  MyST's raw HTML in it is removed (``needs.import_restrict``). Turn it on with
+  ``needs_import_restrict_content = True`` (``[needs] import_restrict_content = true``); it is off by default in 9.x
+  and planned to be on by default in a later release. It narrows what imported content can do and is no substitute
+  for trusting the file: its entry lists what it does not cover, filter strings, which are evaluated as Python, among
+  them (:issue:`2259`, :pr:`2542`)
+
 - ✨ **Qualified need directives and** :ref:`needs_directive_name`: every need type is also written
   ``.. need:<type>::`` (a ``{need:<type>}`` fence in MyST), and a project chooses whether the bare ``.. <type>::`` is
   the need where another directive has the name too (:pr:`2507`)

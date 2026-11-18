@@ -1661,6 +1661,11 @@ class NeedsSphinxConfig:
         default=False, metadata={"rebuild": "env", "types": (bool,)}
     )
     """If True, needimport parses each imported need's content in the markup its doctype names."""
+    import_restrict_content: bool = field(
+        default=False, metadata={"rebuild": "env", "types": (bool,)}
+    )
+    """If True, the content of a need needimport creates, and the text its templates
+    render, is parsed with docutils' file insertion and raw markup switched off."""
     external_needs: list[ExternalSource] = field(
         default_factory=list,
         metadata={

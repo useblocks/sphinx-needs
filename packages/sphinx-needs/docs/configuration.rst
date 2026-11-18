@@ -3214,6 +3214,75 @@ before. To keep a ``-W`` build green while you register the suffix, add
 
    needs_import_parse_by_doctype = True
 
+.. _`needs_import_restrict_content`:
+
+needs_import_restrict_content
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.3.0
+
+If ``True``, the content of every need :ref:`needimport` creates is parsed with docutils'
+file insertion and raw markup switched off (its ``file_insertion_enabled`` and
+``raw_enabled`` settings), in whichever markup it is parsed. Default: ``False``.
+
+Without it, an imported need's content is parsed as if it had been written on the
+importing page: an ``include`` in a record of the ``needs.json`` reads a file of the machine
+that builds the importing project, and a ``raw`` block writes its markup into the output.
+
+With it, in that content and in the text a ``template``, ``pre_template`` or
+``post_template`` renders for the need:
+
+- ``include``, ``literalinclude``, ``csv-table`` with ``:file:`` or ``:url:``, and the ``raw``
+  directive and role (with content, ``:file:`` or ``:url:``) do not run, and each is
+  reported by docutils' own warning on the importing page, such as
+  ``"include" directive disabled.``; in MyST content, the same holds for ``{include}``,
+  ``{literalinclude}``, ``{raw}``, ``{csv-table}`` and an ``{eval-rst}`` block holding any
+  of them;
+- a ``needimport`` does not read its file: one ``needs.needimport`` warning;
+- MyST's HTML blocks and inline HTML, which myst-parser does not switch off, are removed,
+  with one ``needs.import_restrict`` warning per imported need (a need written inside its
+  content counts into it). A raw node whose text is exactly what myst-parser writes for a
+  hard line break or a task-list checkbox is kept, and so are ``<s>`` and ``</s>`` as a
+  matched pair within one paragraph (strikethrough); any other raw markup is removed.
+
+The same holds for the project's own template files when they render for an imported need:
+an ``include`` or a ``raw`` in a ``template``, ``pre_template`` or ``post_template`` file
+does not run for it (it still runs for a need written in the project). The needs written
+in the project are untouched, and so is the ``needs.json`` the directive reads. External
+needs (:ref:`needs_external_needs`) render no content.
+
+It narrows what imported content can do. It does not make a ``needs.json`` from a source
+you do not trust harmless to import: import only files you trust. With it on, a record can
+still:
+
+- have Python evaluated: every filter string is a Python expression, so a ``:filter:``
+  option of a directive in the content, a ``filter()`` call in a ``needuml``, and the filter
+  of a dynamic function, in the content or in a field value, are evaluated as any filter
+  is; so is the expression of ``ifconfig`` (``sphinx.ext.ifconfig``); and, where the
+  project enables MyST's ``substitution`` extension, ``{{ … }}`` in MyST content is
+  evaluated by Jinja;
+- name a file to a directive that reads it without consulting docutils' switch, such as
+  ``graphviz``, ``uml`` (sphinxcontrib-plantuml), ``mermaid`` (sphinxcontrib-mermaid) and
+  ``data-viewer`` (sphinx-data-viewer), or write a diagram whose PlantUML text
+  ``!include``\ s a file, which PlantUML reads when it draws the diagram;
+- have a file copied into the output: images and figures (MyST's ``![](…)`` too) and the
+  ``download`` role name a file that is copied when the output is written;
+- write a link with a ``javascript:`` target, or a ``meta`` directive, into the page;
+- run a directive that reads the importing project, such as :ref:`needtable`.
+
+It is off by default in 9.x, and is planned to be on by default in a later release.
+
+.. code-block:: python
+
+   needs_import_restrict_content = True
+
+or, in ``ubproject.toml``:
+
+.. code-block:: toml
+
+   [needs]
+   import_restrict_content = true
+
 .. _`needs_external_needs`:
 
 needs_external_needs

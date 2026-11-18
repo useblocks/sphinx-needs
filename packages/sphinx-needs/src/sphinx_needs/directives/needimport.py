@@ -25,6 +25,7 @@ from sphinx_needs._need_source import (
 )
 from sphinx_needs._needsfile_v2a1 import READ_DRAFTS
 from sphinx_needs.api import InvalidNeedException, ingest_need_record
+from sphinx_needs.api.need import _in_restricted_parse
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -89,6 +90,16 @@ class NeedimportDirective(SphinxDirective):
         # imports records (#1349), and where its own warnings are located (#2463)
         written_source, resolved = directive_line(self)
         location = self._written_location(written_source, resolved)
+        if _in_restricted_parse(self.state.document.settings):
+            # met in an imported need's content under ``needs_import_restrict_content``:
+            # it reads a file into the page, so it reads, notes and looks for none
+            # there. Not docutils' own switch: a project can turn that off for its
+            # pages, and their own imports still read
+            return self._refuse(
+                f"Could not load needs import file {need_import_path}: "
+                "needs_import_restrict_content is on",
+                location,
+            )
 
         # check if given argument is downloadable needs.json path
         url = urlparse(need_import_path)
