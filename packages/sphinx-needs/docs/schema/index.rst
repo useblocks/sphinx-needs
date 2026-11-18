@@ -1787,11 +1787,27 @@ and warning systems.
 
 **Recommended migration path**
 
-1. **Audit existing constraints and warnings**: Review your current validation rules
-2. **Start with local validations**: Convert simple property checks first
-3. **Leverage network validation**: Replace complex Python logic with declarative schemas
-4. **Test incrementally**: Validate schemas work as expected before removing legacy rules
-5. **Update documentation**: Ensure team members understand the new validation approach
+.. steps::
+
+   .. step:: Audit existing constraints and warnings
+
+      Review your current validation rules.
+
+   .. step:: Start with local validations
+
+      Convert simple property checks first.
+
+   .. step:: Leverage network validation
+
+      Replace complex Python logic with declarative schemas.
+
+   .. step:: Test incrementally
+
+      Validate schemas work as expected before removing legacy rules.
+
+   .. step:: Update documentation
+
+      Ensure team members understand the new validation approach.
 
 Learning from examples
 ----------------------
