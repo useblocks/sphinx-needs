@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -11,6 +12,9 @@ from sphinx_needs.exceptions import VariantParsingException
 from sphinx_needs.logging import get_logger, log_warning
 
 LOGGER = get_logger(__name__)
+
+_LONE_COLON = re.compile(r"(?<!:):(?!:)")
+"""A ``:`` with no ``:`` before it nor after it (the ends of the text are not ``:``)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,7 +63,10 @@ class VariantFunctionParsed:
                 reminaing = reminaing[end_expr + 2 :].lstrip()
             else:
                 end_expr = reminaing.find(":")
-                if end_expr == -1:
+                if end_expr == -1 or not _LONE_COLON.search(reminaing):
+                    # with no lone colon left, the rest is the final value, which
+                    # may hold ``::`` (``<<[False]:X, SUPPLIER::REQ_2>>``); while one
+                    # is left, the expression still ends at the first colon
                     final_value = coerce_value(reminaing.strip())
                     break
                 bracketed = False

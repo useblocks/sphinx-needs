@@ -42,6 +42,7 @@ from sphinx_codelinks.sphinx_extension.rediscovery import (
     discover_scope,
     file_fingerprint,
     files_fingerprint,
+    header_units_store,
     is_unread,
     scope_store,
     source_pages_store,
@@ -508,6 +509,7 @@ class SourceTracingDirective(SphinxDirective):
             analyse_config,
             name=project,
             builtin_header_warnings=builtin_header_warnings(self.env),
+            unit_memo=header_units_store(self.env),
         )
         src_analyse.run(log_summary=False)
         # and the files the extraction read besides the discovered ones: a source

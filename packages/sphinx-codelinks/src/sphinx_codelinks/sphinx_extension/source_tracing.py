@@ -161,8 +161,20 @@ def setup(app: Sphinx) -> dict[str, Any]:
         # another arm than in the records an environment at 5 holds; 7: the libclang
         # engine leaves a compilation database entry's `--` out, so the records an
         # environment at 6 holds for an entry with one were extracted from every arm
-        # (an options-ending `--`) or not at all (`-Xlinker --`)
-        "env_version": 7,
+        # (an options-ending `--`) or not at all (`-Xlinker --`); 8: the libclang engine
+        # reads the target an entry declares (its `--target`, its compiler's name) and the
+        # `[preprocessor] target` setting, so the records an environment at 7 holds for a
+        # cross build were extracted for the machine that read them; 9: a file whose
+        # target the engine cannot read (an entry's own `--target` or the setting naming
+        # a triple libclang does not model, a compiler named for a GCC triple whose
+        # architecture it does not model, a target refused even without the CPU flags)
+        # is read as written, every arm kept, where an environment at 8 holds the records
+        # of another target's arms; 10: a header no compilation-database entry lists is
+        # read through every entry that includes it (useblocks/ubcode#4866), so the
+        # records an environment at 9 holds for such headers were extracted with the
+        # `[preprocessor]` defines alone, and the environment holds what each entry
+        # contributes to the headers it includes
+        "env_version": 10,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

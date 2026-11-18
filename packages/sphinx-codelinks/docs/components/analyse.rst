@@ -971,8 +971,9 @@ A file its own includes enter again -- a guarded header whose includes include i
 file that includes itself -- passes through the preprocessor a second time, and that pass
 finds the guard defined and skips the whole guarded body: its comments are kept all the
 same, since the file's own pass compiled them. A source read through the entry that
-includes it is the one exception: there its first inclusion's pass decides
-(:ref:`preprocessor_compile_db`).
+includes it is one exception: there its first inclusion's pass decides
+(:ref:`preprocessor_compile_db`); a header read through the entries that include it is the
+other: there each entry's first inclusion of it decides (:ref:`preprocessor_headers`).
 
 .. important:: The libclang engine requires an optional dependency:
    ``pip install 'sphinx-codelinks[libclang]'``. The wheel bundles the native library, so
@@ -993,7 +994,8 @@ discovered file is parsed:
      - How it is parsed
    * - Listed in ``compile_commands.json``
      - Parsed with the exact flags the compiler used for that translation unit, in the
-       entry's ``directory``.
+       entry's ``directory``, for the target the entry declares (see
+       :ref:`preprocessor_target`).
    * - A compiled source (``.c``, ``.cpp``, ``.cc``, ``.cxx``) **not** listed, that a
        listed source ``#include``\ s (a unity build)
      - Read through that entry's parse, with its flags (see
@@ -1001,10 +1003,16 @@ discovered file is parsed:
    * - A compiled source **not** listed, that no listed source includes
      - Skipped, with a ``codelinks.not_in_compile_database`` warning — assumed to be
        excluded from the build (e.g. another platform).
-   * - A **header** (``.h``, ``.hpp``, …) — never listed in a database
-     - Parsed **standalone** using ``defines`` and ``includes`` (see below).
+   * - A **header** (``.h``, ``.hpp``, …, any file that is not a compiled source) — never
+       listed in a database — that listed sources include
+     - Read through **every** entry whose parse includes it, each with its own flags and
+       target; a branch is left out only when every one of them leaves it out (see
+       :ref:`preprocessor_headers`).
+   * - A **header** not listed that no listed source includes
+     - Parsed **standalone** using ``defines`` and ``includes`` (see below), for the
+       ``target`` setting.
    * - Any file, when **no** database is found
-     - Parsed with ``defines`` and ``includes``.
+     - Parsed with ``defines`` and ``includes``, for the ``target`` setting.
 
 .. _preprocessor_compile_db:
 
@@ -1048,8 +1056,8 @@ An entry of ``compile_commands.json`` is applied as the build applies it:
   A compiled source no entry includes is skipped as before, now with one warning naming
   it and the database (``codelinks.not_in_compile_database``, which
   ``suppress_warnings`` can silence). Only direct includes count: a source included by
-  a file that is itself included is not read through the entry. Headers are unaffected:
-  they keep their standalone parse (below).
+  a file that is itself included is not read through the entry. Headers are read
+  otherwise: through every entry that includes them, at any depth (below).
 
   The files such a read depends on -- the database, the source of every entry tried as
   its includer and the headers those include (not the system headers) -- are
@@ -1057,20 +1065,237 @@ An entry of ``compile_commands.json`` is applied as the build applies it:
   the build directory, outside every traced directory, reads the source again in an
   incremental build; a project no directive traces is analysed again too.
 
+.. _preprocessor_target:
+
+Which target a file is read for
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The target (a clang triple: ``thumbv7em-none-eabihf``, ``x86_64-pc-linux-gnu``) decides
+which ``#if`` branches on the architecture, the operating system and the data model a file
+compiles (``__arm__``, ``_WIN32``, ``__SIZEOF_LONG__``). libclang does not read a target
+from a compile command's compiler: left alone, it reads every file for the machine the
+analysis runs on, so an Arm firmware build read on an x86-64 laptop would take its
+``#if defined(__x86_64__)`` branches. **Sphinx-CodeLinks** reads the target the build
+declares, in this order:
+
+1. The entry's own ``--target=<triple>`` or ``-target <triple>``.
+2. The target the entry's compiler's name carries, read as clang's driver reads it:
+   ``arm-none-eabi-gcc``, ``aarch64-linux-gnu-g++``, ``riscv64-unknown-elf-gcc-13.2.0`` or
+   ``thumbv7em-none-eabihf-clang`` name the target before their last ``-gcc``, ``-g++``,
+   ``-cc``, ``-c++``, ``-clang`` or ``-clang++``, with or without a directory, a version or
+   ``.exe``, and behind a launcher such as ``ccache``. As in clang's driver, the name
+   counts only when its first part is an architecture the loaded libclang has (``arm``,
+   ``aarch64``, ``riscv64``, ``powerpc``, ``x86_64``, ...): a wrapper's name such as
+   ``my-arm-gcc``, ``musl-gcc`` or ``afl-clang-fast`` names no target. The entry's own
+   flags then refine the target as the compiler does (``-mcpu=cortex-m3 -mthumb``).
+3. The ``target`` setting of :ref:`analyse.preprocessor <preprocessor_config>`.
+4. Otherwise the machine the analysis runs on. A native compiler (``gcc``, ``cc``,
+   ``c++``, ``clang``, ``/usr/bin/c++``) names no target, so a native build is read for
+   the machine reading it: right when the database was written on a machine of the same
+   kind, wrong for a database written for another architecture or operating system at the
+   same paths (a Linux build's database read on Windows takes its ``_WIN32`` branches).
+   Set ``target`` when that is the case.
+
+A header an entry includes is read for the target of each entry that includes it
+(:ref:`preprocessor_headers`). A header no entry includes, and a file no entry applies to,
+has no entry to read a target from: it is read for the ``target`` setting, else for the
+machine the analysis runs on. A source read through the entry that includes it is read
+for that entry's target.
+
+A target the loaded libclang cannot parse for is not used, and a build or a
+``codelinks analyse`` run warns at the file's first line
+(``codelinks.preprocessor_target_unknown``), naming the target, where it came from, and
+how the file is read instead. When no other target is the build's, the file's target is
+unknown, and the file is **read as written**: no ``#if`` branch is left out, and every
+comment's markers are kept. Nothing is hidden, but it is less precise: a marker in a
+branch the build does not compile is extracted too, so a definition written once in each
+of two exclusive branches (``#ifdef A`` … ``#else`` …) looks like one, carrying the markers
+of both. The warning comes once per such file; to accept it, add
+``codelinks.preprocessor_target_unknown`` to Sphinx's ``suppress_warnings``, or set
+``target`` to a triple the loaded libclang models, where the file takes the setting and
+such a triple fits.
+
+- an entry's own ``--target`` or ``-target`` naming one (``xtensa-esp32-elf``,
+  ``tricore-elf``) is left out of the parse, and the file is read as written (the
+  ``target`` setting does not override what the entry declares, and is not used);
+- a compiler's name whose first part is an architecture libclang does not have, but whose
+  rest it reads as a vendor, an operating system or an environment
+  (``xtensa-esp32-elf-gcc``, ``tricore-elf-gcc``, ``sh-elf-gcc``: ``elf``), names a target
+  it cannot read: the file is read as written (the ``target`` setting does not override
+  it either); by the same rule a wrapper whose name's rest is a system word
+  (``my-linux-gcc``) names one too, and is read as written;
+- a ``target`` setting naming one is not used: a file that would take it is read as
+  written;
+- a target that clang refuses with the entry's own flags (a CPU or an ABI GCC knows and
+  clang 18 does not, such as ``-mcpu=e200z4``, ``-mcpu=cortex-r52plus``,
+  ``-mcpu=cortex-x925`` or ``-mabi=lp64`` for ``aarch64-linux-gnu``, or RISC-V's
+  ``-march=rv32imac_zicsr`` for the machine the analysis runs on, in a build that names
+  no target; xPack's ``riscv-none-elf-gcc`` names one, ``riscv``, an architecture
+  libclang does not have without its width, so it is read as written instead) is kept,
+  whatever its source, and the file is read
+  for it without the entry's ``-mcpu=``, ``-march=``, ``-mtune=`` and ``-mabi=``, that
+  is, for the architecture's default CPU;
+- a declared target (the entry's own, its compiler's name's or the setting's) that clang
+  refuses without those flags too, because of another of the entry's flags (``-mcmse``
+  with ``arm-none-eabi``), is dropped for that file, which is read as written; the
+  warning says the target was refused with the entry's flags and lists its ``-m`` flags
+  (libclang does not say which one it refused), and, when the setting named it, gives as
+  the remedy a ``target`` that clang accepts with the entry's flags.
+
+A declared target never leaves a file unread that would be read without it, whatever the
+machine the analysis runs on: a refused parse is made again without the entry's
+``-mcpu=``, ``-march=``, ``-mtune=`` and ``-mabi=``, then without the target and them,
+for the file's comments only (it is read as written). A file whose target is unknown is
+never skipped: when clang refuses even that parse, because of another of its flags
+(``-mfpmath=vfp``, which clang refuses for every machine the analysis runs on), it is
+read as written by the tree-sitter engine, every comment's markers kept, attached to no
+entity as under the libclang engine, so with the same findings as a parse read as
+written (no ``codelinks.marker_above_conditional``, which only a marker attached by the
+tree-sitter engine can get). A source with no entry of its own that such an entry
+``#include``\ s is read as written too, through that entry, whatever ``#if`` branch its
+``#include`` line is in, unless an entry whose target **Sphinx-CodeLinks** reads
+includes it in a branch that entry compiles: that one reads it, for its target.
+
+A file whose target is known is never skipped either. When clang refuses every parse of
+it, no parse decides a branch, so it is read as written by the tree-sitter engine, as a
+file whose target is unknown is, and a build or a ``codelinks analyse`` run warns at the
+file's first line (``codelinks.preprocessor_parse_refused``), once per such file. Two
+kinds of refusal are told apart, by what libclang reports:
+
+- a flag of its own that clang does not take for the target it reads (a native build's
+  ``-mfpmath=sse`` on an Arm64 machine, or ``-mfpmath=vfp`` on every machine; its
+  ``-mcpu``, ``-march``, ``-mtune`` and ``-mabi`` are left out first): the warning names
+  the target it was parsed for (the machine the analysis runs on, for a build that names
+  none), whose flags they are (its entry's, its includer's entry's, or the
+  ``[preprocessor]`` table's), their ``-m`` flags and the ``-mcpu``, ``-march``,
+  ``-mtune`` and ``-mabi`` left out (libclang does not say which flag it refused);
+- its arguments, whatever the target: an input file besides the file itself (a
+  compile-and-link entry, ``gcc main.c util.c -o app``), or an argument clang does not
+  take, such as a ``-std`` it does not know (``-std=gnu2y`` from a newer GCC, or a
+  ``std`` in the ``[preprocessor]`` table for a header) or a PGO profile that has moved
+  (``-fprofile-use=`` naming a file that is not there). The warning names whose
+  arguments they are, lists them (at most twelve, the rest counted; not the working
+  directory and builtin-header directory **Sphinx-CodeLinks** adds, nor a target it
+  inserted), and names the other input files among them. A target the build declares
+  (``arm-none-eabi-gcc -std=gnu2y``) is named too: clang refused its command, not the
+  target, so such a file gets this warning rather than
+  ``codelinks.preprocessor_target_unknown``.
+
+The remedy is to remove or change what clang refused in the compilation database (or in
+the ``[preprocessor]`` table, for a file no entry applies to), or to accept the file read
+as written by adding ``codelinks.preprocessor_parse_refused`` to Sphinx's
+``suppress_warnings``. A source with no entry of its own that such an entry
+``#include``\ s is confirmed by that entry's ``#include`` lines and read as written
+through it, with the same warning naming that includer, unless an entry whose parse
+reads includes it in a branch that entry compiles: that one reads it, for its target.
+
+.. _preprocessor_headers:
+
 Header files
 ~~~~~~~~~~~~~
 
 A ``compile_commands.json`` only ever lists compiled translation units (``.cpp`` files);
 headers are pulled in via ``#include`` and never appear as entries. **Sphinx-CodeLinks**
-therefore parses each discovered header **standalone**, using the ``defines`` and
-``includes`` you configure. Include guards resolve correctly, and ``#ifdef`` branches are
-evaluated against your ``defines``.
+reads a header the database does not list through **every entry that includes it**: each
+entry of the header's database (of every database the project's other files find, when
+none is found above the header) whose own parse includes the header, directly, through
+other headers, through a macro ``#include`` or a ``-include``, whatever directory the
+entry's source is in, and whatever directory finds the header (one of the project's on
+an ``-isystem`` or ``-idirafter`` path counts too, though clang calls it a system
+header). A file is the project's when its path is under the project's root, as resolved
+or as the compiler names it: a project directory that is a symbolic link to elsewhere
+counts (though discovery itself lists no file that resolves outside ``src_dir``, so such a
+header reaches the analysis only when a caller names it). Each such entry reads the header with its own flags, its own target,
+and whatever its source defines before the ``#include``, in the header's **first**
+inclusion into it; a file the database compiles twice counts twice.
 
-.. note:: Because headers are parsed standalone, they see only the global ``defines`` —
-   **not** the per-file ``-D`` flags from ``compile_commands.json``. To extract a
-   particular variant's needs from headers, mirror that variant into ``defines``. Treat
-   one analysis run as **one variant**: set ``defines`` to the variant you want, and both
+A branch of the header is left out only when **every** one of those entries leaves it out,
+so a header both an Arm and an x86 entry include keeps the branches of both, and a branch
+none of them compiles (``#ifdef NEVER_SET``) is still left out. Three kinds of entry read
+the header as written, and with one of them no branch of the header is left out:
+
+- one that enters the header again and compiles some of it then (an X-macro header included
+  twice, or a whole-file ``#ifndef`` whose macro nothing defines); a guarded header entered
+  again, whose second entry skips its whole body, is read in its first inclusion;
+- one whose target is unknown (:ref:`preprocessor_target`), and one whose every parse
+  clang refuses: no parse decides their branches, so every file their forced includes
+  and their ``#include`` and ``#include_next`` lines name, at any depth and whatever
+  ``#if`` branch the line is in, counts as included (also through a file outside the
+  project, such as an SDK header that includes a project one). The names are looked up
+  as the compiler looks them up (see :ref:`below <preprocessor_header_spellings>`), and an
+  ``#include_next`` continues after the directory that found its file, each directory
+  once (one listed again, or a symbolic link to an earlier one, is passed over, as clang
+  passes it over); in a file found on no search directory, it is looked up as an
+  ``#include``. The units of one analysis share what they read and look up, so a large
+  include path over many headers is walked once per path.
+
+The header's comments are read from one of the entries whose target is known (the one that
+includes the most project files, the first by the path of its source among equals),
+parsed once more for every header it reads. When none is known, the header is read as
+written by the tree-sitter engine, with the warning the first such entry's includer would
+get (``codelinks.preprocessor_target_unknown`` or ``codelinks.preprocessor_parse_refused``);
+so is a header whose reading entry clang refuses when it is parsed again (a file changed
+in between), with that entry's warning.
+When an entry is read for its target without the ``-mcpu=``, ``-march=``, ``-mtune=`` or
+``-mabi=`` clang refused, and every entry leaves out branches of the header, the header gets
+the same ``codelinks.preprocessor_target_unknown`` warning as that entry's source, worded
+for its includer: those flags decide branches it leaves out.
+
+A header **no entry includes** keeps its **standalone** parse, using the ``defines`` and
+``includes`` you configure, for the ``target`` setting; so does every file when no
+database is found. Include guards resolve correctly, and ``#ifdef`` branches are evaluated
+against your ``defines``.
+
+The files a header's read depends on -- the database, the source of every entry and the
+project files each includes -- are dependencies of the ``src-trace`` directive's document,
+so an edit to one of them reads the header again in an incremental build. What each entry
+contributes is kept in the Sphinx environment between builds, so an entry is parsed again
+only when its source or a project file it includes changes (or its flags, the loaded
+libclang or the database do).
+
+.. note:: A header no entry includes sees only the global ``defines`` — **not** the
+   per-file ``-D`` flags from ``compile_commands.json``. To extract a particular
+   variant's needs from such headers, mirror that variant into ``defines``. Treat one
+   analysis run as **one variant**: set ``defines`` to the variant you want, and both
    sources and headers evaluate their conditions consistently.
+
+What can still hide code in a header:
+
+- a header no entry includes is read with the ``defines`` alone, as above: a branch they
+  do not decide the way the build does is left out;
+- an include guard undefined between two inclusions (``#undef FOO_H`` and an
+  ``#include`` again) leaves a second entry that compiles the body again; the header is
+  read as written then, but a header given both by ``-include`` and ``#include`` is
+  entered once;
+- a header that a file includes only through a ``#include`` of a computed name, in a
+  branch of a target the loaded libclang cannot read, is not seen as included;
+- a header another one newly shadows on an include path is seen when an entry is read
+  again (its source or a project file it includes changes);
+- a source file the database compiles twice, with other flags, is read with its last
+  entry (a header it includes is read through both);
+- a header that an entry whose target is unknown, or whose every parse is refused,
+  finds only through ``-iframework`` (a framework's headers are named
+  ``<Name/header.h>`` and live in ``Name.framework/Headers``) is not seen as included.
+
+.. _preprocessor_header_spellings:
+
+The flags an entry whose branches no parse decides is read for, each joined
+(``-Iinc``) or separate (``-I inc``), each kind in the order the entry gives it:
+
+- the include path, searched in this order: ``-iquote`` (a quoted name only, after the
+  including file's own directory); then ``-I``, clang-cl's ``/I``,
+  ``--include-directory`` (``=`` or separate) and ``-iwithprefixbefore``; then
+  ``-isystem``, ``-cxx-isystem``, ``-iwithsysroot``, and clang-cl's ``/imsvc``
+  (``-imsvc``) and ``/external:I`` (``-external:I``); then ``-idirafter``, ``--include-directory-after`` (``=`` or separate),
+  ``-isystem-after`` and ``-iwithprefix``, last. A directory that starts with ``=`` is
+  under the sysroot (``-isysroot``, else ``--sysroot``), as is every ``-iwithsysroot``
+  one; an ``-iwithprefix`` or ``-iwithprefixbefore`` directory follows the last
+  ``-iprefix`` before it (a plain string prefix); any other relative directory is taken
+  against the entry's ``directory``. ``-iframework`` is not read;
+- the forced includes, ahead of the source's own lines: ``-include``, ``--include``
+  (``=`` or separate), ``-imacros`` and clang-cl's ``/FI`` (``-FI``), looked up in the
+  entry's ``directory`` first, then on the include path; never ``-include-pch`` or
+  another ``-include-*`` or ``--include-*`` flag.
 
 Example
 ~~~~~~~
@@ -1091,9 +1316,10 @@ Example
 
    #endif
 
-With ``defines = ["VARIANT_A"]`` both ``IMPL_BASE`` and ``IMPL_VAR_A`` are extracted.
-With ``defines = []`` only ``IMPL_BASE`` is extracted — the ``#ifdef VARIANT_A`` block is
-inactive, so its need is dropped. The include guard (``#ifndef FEATURE_HPP``) is always
+When no entry includes it, with ``defines = ["VARIANT_A"]`` both ``IMPL_BASE`` and
+``IMPL_VAR_A`` are extracted, and with ``defines = []`` only ``IMPL_BASE`` is extracted —
+the ``#ifdef VARIANT_A`` block is inactive, so its need is dropped. When an entry built
+with ``-DVARIANT_A`` includes it, ``IMPL_VAR_A`` is extracted whatever ``defines`` says. The include guard (``#ifndef FEATURE_HPP``) is always
 active when the header is parsed on its own, so ``IMPL_BASE`` is never suppressed by it,
 even when one of the header's own includes includes it back.
 
@@ -1143,8 +1369,8 @@ Variant handling is the caller's job
 
 Which preprocessor branches are active — and therefore which need markers are in
 scope — is decided entirely by the ``-D`` macros libclang sees (from
-``compile_commands.json`` for a compiled source, or from ``defines`` for headers
-and the standalone path). **Sphinx-CodeLinks** does not model, generate, or
+``compile_commands.json`` for a compiled source and the headers its entries include, or
+from ``defines`` for headers no entry includes and the standalone path). **Sphinx-CodeLinks** does not model, generate, or
 reconcile build variants itself.
 
 For the result to be meaningful, the macros fed to the extractor and the macros
@@ -1163,3 +1389,56 @@ flags (``-D``, ``-I``, ``-std=`` …). MSVC ``cl.exe`` slash-style flags (``/D``
 ``/I``, ``/std:`` …) are **not** recognised, so a database generated for the MSVC
 compiler driver yields no defines or include dirs. Generate the database with
 ``clang`` / ``clang-cl`` (which emit Clang-style flags) for use with this engine.
+
+The target is read exactly as the build declares it (:ref:`preprocessor_target`), but
+these still differ from the compiler's read with the right target, so check them by hand
+where a marker your build compiles is missing:
+
+- **the compiler's identity**: libclang is clang, and defines ``__clang__`` and
+  ``__GNUC__`` as ``4`` on every target, where GCC 13 defines ``__GNUC__`` as ``13`` and
+  no ``__clang__``, so an ``#if __GNUC__ >= 7`` or ``#ifdef __clang__`` takes the other
+  branch for a GCC build;
+- **the sub-architecture defaults**: with no ``-mcpu`` or ``-march`` in the entry, clang's
+  ``arm-none-eabi`` is an older Arm architecture than the one a GCC configured
+  ``--with-cpu`` or ``--with-arch`` defaults to, so an ``#if __ARM_ARCH < 5`` can take the
+  other branch (an entry that passes ``-mcpu``, as Zephyr's do, is exact);
+- **a CPU or ABI clang does not know**: a file whose ``-mcpu``, ``-march``, ``-mtune``
+  or ``-mabi`` clang refuses with its target (``-mcpu=e200z4``, ``-mcpu=cortex-r52plus``)
+  is read for the architecture's default sub-architecture, without them, with a
+  ``codelinks.preprocessor_target_unknown`` warning; all four are left out when one is
+  refused, so an accepted ``-march`` goes with a refused ``-mabi``
+  (``-march=armv8.2-a+crypto -mabi=lp64`` for ``aarch64-linux-gnu`` loses
+  ``__ARM_FEATURE_AES``);
+- **headers**: a header no entry includes, and a file no entry applies to, is read for the
+  ``target`` setting, else the machine the analysis runs on (a header an entry includes is
+  read for the target and flags of every entry that includes it,
+  :ref:`preprocessor_headers`);
+- **response files** (``@args.rsp``): libclang does not read them, so a ``--target``,
+  ``-mcpu`` or ``-D`` inside one is not read;
+- **the type macros**: clang's ``arm-none-eabi`` makes ``__INT32_TYPE__`` an ``int``,
+  newlib GCC targets a ``long int``;
+- **the cross toolchain's own system headers**: a GCC cross compiler finds its C library
+  implicitly, and the compilation database does not list it, so ``<stdio.h>`` for an
+  ``arm-none-eabi`` file is not found (and a newlib or picolibc macro is undefined) unless
+  the entry passes ``--sysroot`` or ``-isystem`` (Yocto, Buildroot and Zephyr's do);
+- **the machine a native build is read for**: an entry of ``gcc``, ``cc``, ``c++`` or
+  ``clang`` names no target, so its file is read for the machine the analysis runs on,
+  which is wrong for a database written for another architecture or operating system at
+  the same paths (an x86-64 and an Arm64 CI runner sharing ``/home/runner/work``, or a
+  Linux build's database read on Windows): set the ``target`` setting then;
+- **a cross compiler whose name carries no triple** (HighTec's ``tricore-gcc``, Xilinx's
+  ``mb-gcc``, Microchip's ``xc32-gcc`` and ``xc16-gcc``, IAR's ``iccarm``): its file is
+  read for the machine the analysis runs on, as a native compiler's is: set the
+  ``target`` setting for it.
+
+A file whose target is unknown hides no marker, but loses precision: an entry's own
+``--target=xtensa-esp32-elf``, a compiler whose name carries such a target
+(``xtensa-esp32-elf-gcc``), a ``target`` setting naming one for a file that takes it, or
+a declared target clang refuses with the entry's flags even without its ``-mcpu``,
+``-march``, ``-mtune`` and ``-mabi`` (``-mcmse`` with ``arm-none-eabi``) leaves the file
+read as written, with a ``codelinks.preprocessor_target_unknown`` warning: the markers
+of every branch of every ``#if`` are extracted, those of the ``#ifdef CONFIG_X``
+branches the build does not compile among them, and none is lost. So is a file whose
+every parse clang refuses, because of a flag of its own (``-mfpmath=vfp``) or because
+of its command (a second input file, a ``-std`` clang does not know), and a source such
+an entry includes, with a ``codelinks.preprocessor_parse_refused`` warning.

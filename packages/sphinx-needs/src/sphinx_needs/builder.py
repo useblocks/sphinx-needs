@@ -168,6 +168,32 @@ def build_needs_json(app: Sphinx, exception: Exception | None) -> None:
     needs_builder.finish()
 
 
+_FILE_NAME_ENCODED = frozenset('<>:"/\\|?*%') | {chr(code) for code in range(0x20)}
+"""The characters of a need id :func:`_id_file_name` writes as ``%XX``."""
+
+
+def _id_file_name(need_id: str) -> str:
+    """The name of the file the per-id builder writes a need to: ``<id>.json``.
+
+    This is the one place a need id becomes a file name. Each character a file name
+    cannot hold on some system -- ``<`` ``>`` ``:`` ``"`` ``/`` ``\\`` ``|`` ``?`` ``*``
+    and the C0 controls U+0000 to U+001F -- is written as ``%`` and the two upper-case
+    hex digits of its code point, and so is ``%`` itself, so that the name can be read
+    back and two ids never share one: ``nc::REQ_1`` is ``nc%3A%3AREQ_1.json``, ``50%``
+    is ``50%25.json``. Every other character is kept, so ``REQ_1`` is ``REQ_1.json``.
+
+    :param need_id: The id of the need.
+    :return: The file name, with its ``.json`` suffix.
+    """
+    return (
+        "".join(
+            f"%{ord(char):02X}" if char in _FILE_NAME_ENCODED else char
+            for char in need_id
+        )
+        + ".json"
+    )
+
+
 class NeedsIdBuilder(Builder):
     """Output the needs data as multiple JSON files, one per need,
     filtering by the ``needs_builder_filter`` config option if set,
@@ -220,7 +246,9 @@ class NeedsIdBuilder(Builder):
             writer = NeedsFile2a1(self.env)
             for need in filtered_needs:
                 try:
-                    writer.write([need], os.path.join(needs_dir, f"{need['id']}.json"))
+                    writer.write(
+                        [need], os.path.join(needs_dir, _id_file_name(need["id"]))
+                    )
                 except Exception as e:
                     LOGGER.error(f"Needs-ID Builder {need['id']} error: {e}")
             LOGGER.info("Needs_id successfully exported")
@@ -231,8 +259,7 @@ class NeedsIdBuilder(Builder):
             needs_list.add_need(version, need)
             id = need["id"]
             try:
-                file_name = f"{id}.json"
-                needs_list.write_json(file_name, needs_dir)
+                needs_list.write_json(_id_file_name(id), needs_dir)
             except Exception as e:
                 LOGGER.error(f"Needs-ID Builder {id} error: {e}")
         LOGGER.info("Needs_id successfully exported")

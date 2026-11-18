@@ -3299,7 +3299,11 @@ keys:
   function or a variant is left as written); a reference to an id the file does **not** contain is
   left as it is, and may resolve to a need of this project. This project references the external needs by their
   prefixed ids. The content is opaque markup, so every whole-word occurrence of a file id in it is rewritten, inside
-  code blocks and file names too.
+  code blocks and file names too, but for one that is one end of a longer ``::``-joined id (``REQ_1`` in
+  ``other::REQ_1`` or ``REQ_1::x``; a ``::`` followed (or preceded) by anything but a letter, a digit, ``_`` or ``-``
+  joins nothing). Each id of the file is tested on its own, so a shorter file id inside a longer one that is left as
+  it is may be rewritten (``x::REQ_1.SUB_2`` becomes ``x::REQ_1.EXT_SUB_2`` with the file ids ``REQ_1.SUB_2`` and
+  ``SUB_2`` and the prefix ``EXT_``).
 :css_class: A class name as string, which gets set in link representations like :ref:`needtable`.
   The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.
   (*optional*) (*default*: ``external_link``)
@@ -3675,8 +3679,13 @@ needs_build_json_per_id
 
 .. versionadded:: 2.0.0
 
-Builds list json files for each need. The name of each file is the ``id`` of need.
+Builds list json files for each need. The name of each file is the ``id`` of the need, encoded as below.
 This option works like :ref:`needs_build_json`.
+
+An id is written into its file name as it is, but for the characters a file name cannot hold on every system:
+``<`` ``>`` ``:`` ``"`` ``/`` ``\`` ``|`` ``?`` ``*`` and the control characters U+0000 to U+001F are each written as
+``%`` and the two upper-case hex digits of the character's code point, and so is ``%`` itself, so two ids never share
+a name. The need ``SUPPLIER::REQ_1`` is written to ``SUPPLIER%3A%3AREQ_1.json``, ``REQ_1`` to ``REQ_1.json``.
 
 Default: False
 
