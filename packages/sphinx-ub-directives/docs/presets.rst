@@ -44,20 +44,32 @@ A need-type base gives each need that type, and the output carries no trace of t
 Set up a preset
 ---------------
 
-1. Pick the base: a built-in directive, one from a loaded extension (such as sphinx-design's ``dropdown``),
-   or a sphinx-needs need type (this needs sphinx-needs 9.2 or later;
-   with an older one a need-type preset is refused, ``ub_directives.directive_preset_unknown_base``),
-   named bare (``req``) or qualified (``need:req``).
-2. Pick the name. A new name must not already be a directive;
-   the same name as the base sets defaults for the base itself (a *self-preset*),
-   for the directive that name is: a self-preset ``req`` is the need type's only where a bare ``.. req::`` is the need,
-   so for a need type whose bare name is left to another directive (sphinx-needs' ``directive_name``)
-   name it ``need:req``.
-3. Choose how each option combines with what a use writes:
-   ``options`` are defaults (a written value replaces the default),
-   ``append_options`` go in front of a written value (``class`` and ``class-*`` options only),
-   and ``force_options`` cannot be changed by a use.
-4. Build. A preset with a problem is reported once, at its ``ubproject.toml`` entry, and left out.
+.. steps::
+
+   .. step:: Pick the base
+
+      A built-in directive, one from a loaded extension (such as sphinx-design's ``dropdown``),
+      or a sphinx-needs need type (this needs sphinx-needs 9.2 or later;
+      with an older one a need-type preset is refused, ``ub_directives.directive_preset_unknown_base``),
+      named bare (``req``) or qualified (``need:req``).
+
+   .. step:: Pick the name
+
+      A new name must not already be a directive;
+      the same name as the base sets defaults for the base itself (a *self-preset*),
+      for the directive that name is: a self-preset ``req`` is the need type's only where a bare ``.. req::`` is the need,
+      so for a need type whose bare name is left to another directive (sphinx-needs' ``directive_name``)
+      name it ``need:req``.
+
+   .. step:: Choose how each option combines with what a use writes
+
+      ``options`` are defaults (a written value replaces the default),
+      ``append_options`` go in front of a written value (``class`` and ``class-*`` options only),
+      and ``force_options`` cannot be changed by a use.
+
+   .. step:: Build
+
+      A preset with a problem is reported once, at its ``ubproject.toml`` entry, and left out.
 
 Which value wins, from highest to lowest:
 a forced value; what the use writes (for an appended option, the preset's values first);

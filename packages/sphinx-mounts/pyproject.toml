@@ -43,7 +43,7 @@ docs = [
   "furo>=2025.12.19",
   "myst-parser>=4.0.0",
   "sphinx-ai-index>=1.0.0,<2",
-  "sphinx-design>=0.6.1",
+  "sphinx-design>=0.8.0",
 ]
 
 [project.urls]
