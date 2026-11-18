@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795008370769,
+  "lastUpdate": 1795009081145,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -30156,6 +30156,48 @@ window.BENCHMARK_DATA = {
             "value": 190.538673,
             "unit": "MB",
             "extra": "Commit: 4b17227ee8de19b95af412cd995b7d051085fc68\nBranch: master\nTime: 2026-11-18T14:25:04+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0be8b9a1e168882254b509b2745963904cfbb1f6",
+          "message": "🐛 sphinx-ub-directives: reserve `need:` preset and template names for need types (#2538)\n\nA directive preset named `need:<x>` was accepted when no need type `<x>`\nexisted. Since `need:<type>` is always a need type's qualified\ndirective (sphinx-needs' `need` domain, #2507), such a preset would be\nsilently replaced the day a need type `<x>` is added to the\nproject.\n\n**What changes.** A NEW (non-self) preset whose name starts with `need:`\n— compared ignoring case, as directive names are — is now\n`directive_preset_name_taken`, whether or not a need type of that name\nexists and whether or not sphinx-needs is loaded:\n\n```\n'need:draft' starts with 'need:', which is kept for need types (need:<type>); a preset cannot take that name\n```\n\nUnchanged: a self-preset `need:<type>` (named as its base, giving the\nneed type project-wide defaults), and a preset of another name\nwhose `base` is `need:<type>`. The check runs where the existing name\ncheck runs (the last of the contract's §3.2), just after it:\na `need:<type>` whose type exists keeps today's \"already a directive\"\nmessage with its self-preset hint, and an entry already refused\nfor its base stays one finding. A refused `need:x` is no preset, so a\nbase naming it is no chain: it resolves as any base does (the\nneed type `x` where one exists, else `directive_preset_unknown_base`).\nNames without the colon (`needle`) are free.\n\nA declared template directive (`[parse.directive_templates.\"need:x\"]`)\nis refused the same way (`directive_template_invalid`):\npresets and templates are the two routes this package has that create a\ndirective name.\n\n**Contract and corpora.** `design/directives-contract.md` §3.2.7 and\n§5.1 state the rule and the order. The presets corpus gains six\ncases (175 → 181): the reserved name with no such type, its cased\nspelling, the order against an unknown base, a base naming a refused\n`need:` name, a cased self-preset that still applies, and `needle` (no\ncolon) still free. The templates corpus gains four (547 → 551):\na qualified need-type name, a `need:` name with no such type, its cased\nspelling, and `needle` still free. ubCode re-vendors both\ncorpora from this PR's merge commit. `presets.rst`, `templates.rst` and\nthe changelog say the same; a `need:` name accepted before is\nnow refused (the `need:<type>` work is itself unreleased here).\n\n**How checked.** The package suite, the sphinx-needs\npreset/qualified-directive tests, the full monorepo suite, the docs\n`-nW`, and\n`prek run --all-files`, all green. Mutation proofs: removing the\nreservation, making it case-sensitive, applying it to self-presets,\ndropping the colon from the prefix, removing it from templates, running\nit before the \"already a directive\" check, or leaving refused\nnames in the chain check each turns the matching new case(s) or test\nred.",
+          "timestamp": "2026-11-18T14:36:35+01:00",
+          "tree_id": "8fca289fcd2f03b62433975334b219cdbbc082e6",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0be8b9a1e168882254b509b2745963904cfbb1f6"
+        },
+        "date": 1795009080556,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.05060750400001268,
+            "unit": "s",
+            "extra": "Commit: 0be8b9a1e168882254b509b2745963904cfbb1f6\nBranch: master\nTime: 2026-11-18T14:36:35+01:00\nCPU: Intel(R) Xeon(R) 6975P-C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 8.933832003000006,
+            "unit": "s",
+            "extra": "Commit: 0be8b9a1e168882254b509b2745963904cfbb1f6\nBranch: master\nTime: 2026-11-18T14:36:35+01:00\nCPU: Intel(R) Xeon(R) 6975P-C"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 189.490097,
+            "unit": "MB",
+            "extra": "Commit: 0be8b9a1e168882254b509b2745963904cfbb1f6\nBranch: master\nTime: 2026-11-18T14:36:35+01:00\nCPU: Intel(R) Xeon(R) 6975P-C"
           }
         ]
       }
