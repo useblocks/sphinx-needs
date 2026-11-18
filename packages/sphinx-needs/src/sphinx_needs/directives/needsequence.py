@@ -123,6 +123,10 @@ def process_needsequence(
     needs_config = NeedsSphinxConfig(env.config)
     include_needs = needs_config.include_needs
     link_type_names = [name.upper() for name in needs_schema.iter_link_field_names()]
+    #: each link type's configured name, by the upper-cased name the check compares
+    configured_link_types = {
+        name.upper(): name for name in needs_schema.iter_link_field_names()
+    }
     needs_types = needs_config.types
 
     # NEEDSEQUENCE
@@ -151,6 +155,15 @@ def process_needsequence(
                     "needsequence",
                     location=node,
                 )
+        # the check above accepts a link type in any case, so the walk reads each
+        # name it accepted by its configured spelling (``LINKS`` walks ``links``);
+        # any other name is read as written (``links_back`` walks the back links)
+        walked_link_types = [
+            link
+            if link in configured_link_types.values()
+            else configured_link_types.get(link.upper(), link)
+            for link in current_needsequence["link_types"]
+        ]
 
         content = []
         try:
@@ -224,7 +237,7 @@ def process_needsequence(
             _msg_receiver_needs, declarations_new, arrows_new = get_message_needs(
                 app,
                 need,
-                current_needsequence["link_types"],
+                walked_link_types,
                 all_needs_dict,
                 receives=receives,
                 counter=counter,
