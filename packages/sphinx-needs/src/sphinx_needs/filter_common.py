@@ -1004,11 +1004,11 @@ def _report_namespaced_ids_off(
     before either tier and whether or not a need is tested; a string the text shows
     refused is not reported here. Once per build for the string, where it is written and
     the origin its caller appends, as :func:`_report_unknown_types` reports. The answer
-    is not touched.
+    is not touched. The switch is read first: with it on, the text is not read at all.
     """
-    if not (names := namespace_reads(filter_string)):
-        return
     if config.namespaced_ids:
+        return
+    if not (names := namespace_reads(filter_string)):
         return
     where = get_source_line(location) if isinstance(location, nodes.Node) else location
     reported = _NEEDS_CONFIG.build.namespaced_ids_off_reported

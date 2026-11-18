@@ -363,10 +363,11 @@ def test_a_deeply_nested_filter_builds(
     The depth is a claim about the interpreters, so it was measured, at a needlist in a
     build under this suite (a left-deep chain of N terms, ``make_app``, Python's default
     recursion limit of 1000): a recursive walk of the tree stops the build from N = 950
-    (900 builds) on 3.11.16, 3.12.7 and 3.13.13 alike; the build itself, the parser and
-    the compiler included, holds up to N = 2800 on 3.11.16 (3000 stops it, as it does
-    with this warning taken out) and to N = 9500 on 3.12.7 and 3.13.13 (10000 stops
-    it). 1200 sits 250 terms above the first bound and 1600 below the lowest second.
+    (900 builds) on 3.11.16, 3.12.7, 3.13.13 and 3.14.7 alike; the build itself, the
+    parser and the compiler included, holds up to N = 2800 on 3.11.16 (3000 stops it, as
+    it does with this warning taken out), to N = 9500 on 3.12.7 and 3.13.13 (10000 stops
+    it) and to N = 10000 at least on 3.14.7. 1200 sits 250 terms above the first bound
+    and 1600 below the lowest second.
     """
     index = _needlist(DEEP)
     conf = CONF + (ON if switch == "on" else "")

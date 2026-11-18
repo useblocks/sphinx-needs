@@ -353,23 +353,31 @@ def _reached(node: ast.AST) -> Iterator[ast.AST]:
     """*node* and the nodes evaluated whenever it is: not the operands of ``and`` /
     ``or`` after the first, not the branches of a conditional (its test is), not the
     body of a lambda or a comprehension (a comprehension's first iterable is), not the
-    comparisons of a chain after the first."""
-    yield node
-    children: Iterable[ast.AST]
-    if isinstance(node, ast.BoolOp):
-        children = node.values[:1]
-    elif isinstance(node, ast.IfExp):
-        children = (node.test,)
-    elif isinstance(node, ast.Lambda):
-        children = ()
-    elif isinstance(node, ast.ListComp | ast.SetComp | ast.DictComp | ast.GeneratorExp):
-        children = (node.generators[0].iter,)
-    elif isinstance(node, ast.Compare):
-        children = (node.left, node.comparators[0])
-    else:
-        children = ast.iter_child_nodes(node)
-    for child in children:
-        yield from _reached(child)
+    comparisons of a chain after the first.
+
+    Walked with an explicit stack, as :func:`ast.walk` is, so a filter nested however
+    deep cannot exceed the interpreter's recursion limit here; the order is none in
+    particular."""
+    stack = [node]
+    while stack:
+        node = stack.pop()
+        yield node
+        children: Iterable[ast.AST]
+        if isinstance(node, ast.BoolOp):
+            children = node.values[:1]
+        elif isinstance(node, ast.IfExp):
+            children = (node.test,)
+        elif isinstance(node, ast.Lambda):
+            children = ()
+        elif isinstance(
+            node, ast.ListComp | ast.SetComp | ast.DictComp | ast.GeneratorExp
+        ):
+            children = (node.generators[0].iter,)
+        elif isinstance(node, ast.Compare):
+            children = (node.left, node.comparators[0])
+        else:
+            children = ast.iter_child_nodes(node)
+        stack.extend(children)
 
 
 def _refused(node: ast.AST) -> bool:
