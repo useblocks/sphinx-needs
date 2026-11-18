@@ -45,7 +45,7 @@ Improvements
   selects no need and ``not c.in_namespace("nc")`` every need. The answer is unchanged; turn the switch on, or
   suppress the warning type (``suppress_warnings = ["needs.namespaced_ids_off"]``). With it, a ``c.is_a`` naming
   no need type (``needs.filter_type``) is no longer lost in a ``calc_sum`` filter over a computed field, nor at a
-  place with no location (a constraint, say) that shares its filter string with a ``copy`` filter
+  place with no location (a constraint, say) that shares its filter string with a ``copy`` filter (:pr:`2518`)
 
 - ✨ **Qualified need directives and** :ref:`needs_directive_name`: every need type is also written
   ``.. need:<type>::`` (a ``{need:<type>}`` fence in MyST), and a project chooses whether the bare ``.. <type>::`` is
