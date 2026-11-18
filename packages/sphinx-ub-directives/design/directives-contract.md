@@ -254,22 +254,30 @@ force_options = { collapse = true }  # a use cannot change these
    Enforced by: test `test_presets.py::test_need_type_presets_need_resolve_need_option`.
 7. A new (non-self) name that is already a directive — built in, a need type (bare or
    `need:`-qualified), any loaded extension's — is `directive_preset_name_taken` at the entry.
-   **A new name starting with `need:`** (compared ignoring case, as names are) is
-   `directive_preset_name_taken` whatever follows it: whether or not a need type of that
-   name exists, and (Sphinx half) whether or not sphinx-needs is loaded. `need:<type>` is
-   always the need type's qualified directive, so a preset `need:x` would be silently
-   replaced the day a need type `x` is added; the prefix is reserved for need types. A
-   self-preset `need:<type>` (3.2.3) is not new and is unaffected, and so is a preset of
-   another name whose base is `need:<type>` (3.2.5). This check is the LAST of 3.2: an
-   entry already refused by 3.2.1-3.2.6 (a base naming nothing, say) is that one finding
-   only, and a base naming a refused `need:` name is no chain (3.2.4) but names no
-   directive (3.2.5).
+   **A new name starting with `need:`** (compared ignoring case, as names are; the colon
+   included, so `needle` is free) that is not already a directive is
+   `directive_preset_name_taken` too, whatever follows the prefix: whether or not a need
+   type of that name exists, and (Sphinx half) whether or not sphinx-needs is loaded.
+   `need:<type>` is always the need type's qualified directive, so a preset `need:x` would
+   be silently replaced the day a need type `x` is added; the prefix is kept for need
+   types (and declared templates are held to the same, 5.1). A self-preset `need:<type>`
+   (3.2.3) is not new and is unaffected, and so is a preset of another name whose base is
+   `need:<type>` (3.2.5).
+   **Order.** These are the LAST checks of 3.2, the "already a directive" one first, then
+   the prefix: a `need:<type>` whose type exists is refused as already a directive (with
+   the self-preset hint), and only a `need:` name no directive has is refused for its
+   prefix (`'need:draft' starts with 'need:', which is kept for need types (need:<type>);
+   a preset cannot take that name`). An entry already refused by 3.2.1-3.2.6 (a base
+   naming nothing, say) is that one finding only. A refused `need:` name is no preset, so a
+   base naming it is no chain (3.2.4): it is resolved as any base is (3.2.5), the need type
+   where one of that name exists, else `directive_preset_unknown_base`.
    Enforced by: corpus `refused-name-taken`, `refused-name-taken-by-a-need-type`,
    `refused-name-taken-by-a-qualified-need-type`, `refused-name-need-prefix-no-such-type`,
    `refused-name-need-prefix-cased`, `refused-name-need-prefix-after-the-base`,
-   `refused-base-names-a-reserved-preset-name`, `self-preset-of-a-qualified-need-type`,
-   `self-preset-of-a-qualified-need-type-cased`;
+   `refused-base-names-a-reserved-preset-name`, `allowed-name-need-without-colon`,
+   `self-preset-of-a-qualified-need-type`, `self-preset-of-a-qualified-need-type-cased`;
    tests `test_presets.py::test_a_qualified_name_is_taken`,
+   `…::test_a_need_name_is_taken_before_it_is_reserved`,
    `…::test_a_need_prefixed_name_is_reserved_without_sphinx_needs`.
 
 ### 3.3 Option checks (every problem reported; the preset is left out if any)
@@ -507,9 +515,11 @@ draft = { flag = true }
 ```
 
 1. A declaration is refused at load (`directive_template_invalid` at its entry) and ignored
-   when its name, in any case, is already a directive (built in, a need type, a preset,
-   `ub-template`) — and a preset named like a declaration is refused the same way
-   (`directive_preset_name_taken`); when an option NAME has upper-case letters (a page
+   when its name, in any case, is already a directive (built in, a need type, bare or
+   `need:`-qualified, a preset, `ub-template`) — and a preset named like a declaration is
+   refused the same way (`directive_preset_name_taken`); when its name starts with `need:`
+   (in any case; the prefix is kept for need types, as for a preset, 3.2.7, and checked
+   just after "already a directive"); when an option NAME has upper-case letters (a page
    writes option names in lower case: docutils lower-cases them); when a flag is
    `required = true`; when it
    differs only in case from another declaration (the later in sorted (code point) order
@@ -524,6 +534,8 @@ draft = { flag = true }
    `directive_template_unknown_key` at that key, and the declaration is KEPT.
    Enforced by: corpus `declaration-refused-builtin-name`,
    `declaration-refused-builtin-name-in-capitals`, `declaration-refused-need-type-name`,
+   `declaration-refused-qualified-need-type-name`, `declaration-refused-need-prefix-no-such-type`,
+   `declaration-refused-need-prefix-cased`, `declared-name-need-without-colon`,
    `declaration-refused-case-duplicate`, `declaration-refused-template-and-body`,
    `declaration-refused-neither`, `declaration-refused-bad-markup`,
    `declaration-refused-markup-contradicts-the-file`,

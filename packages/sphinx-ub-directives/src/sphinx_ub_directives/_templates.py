@@ -26,7 +26,7 @@ from . import _engine, _refusal
 from ._config import resolved
 from ._engine import Failure, Root
 from ._log import At, at, warn
-from ._presets import lookup, need_types
+from ._presets import lookup, need_types, reserved, reserved_message
 
 #: Template file suffixes that declare a markup (§5.1.2).
 MARKUP_SUFFIXES = {
@@ -527,6 +527,9 @@ def declaration_problem(
         return f"{name!r} is already a need type"
     if lookup(app, lower) is not None:
         return f"{name!r} is already a directive ({lower!r}); a template directive cannot redefine it"
+    if reserved(name):
+        # a need: name no directive has yet (§5.1)
+        return reserved_message(name, "a template directive")
     first = next(n for n in names if n.lower() == lower)
     if first != name:
         return (

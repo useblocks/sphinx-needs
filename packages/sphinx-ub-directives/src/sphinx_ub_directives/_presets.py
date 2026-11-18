@@ -120,10 +120,20 @@ NEED_QUALIFIER: Final = "need:"
 
 def reserved(name: str) -> bool:
     """Whether ``name`` starts with ``need:`` (compared ignoring case): the qualified
-    directive of a need type, ``need:<type>``, so no NEW preset may take such a name,
-    whether or not the type exists or sphinx-needs is loaded (§3.2.7). A self-preset
-    ``need:<type>`` is not new: it gives that need type defaults."""
+    directive of a need type, ``need:<type>``, so no NEW directive name -- a preset's
+    (§3.2.7) or a declared template's (§5.1) -- may be such a name, whether or not the
+    type exists or sphinx-needs is loaded. A self-preset ``need:<type>`` is not new: it
+    gives that need type defaults."""
     return name.lower().startswith(NEED_QUALIFIER)
+
+
+def reserved_message(name: str, what: str) -> str:
+    """Why ``name``, a new directive name that is no directive yet, cannot be ``what``'s
+    (one wording for presets and declared templates)."""
+    return (
+        f"{name!r} starts with {NEED_QUALIFIER!r}, which is kept for need types "
+        f"({NEED_QUALIFIER}<type>); {what} cannot take that name"
+    )
 
 
 def need_types(app: Sphinx) -> list[str]:
@@ -382,20 +392,18 @@ class Resolver:
         if isinstance(base, str):
             self.warn("directive_preset_unknown_base", (*path, "base"), base)
             return None
-        if not self_preset and reserved(name):
-            self.warn(
-                "directive_preset_name_taken",
-                path,
-                f"{name!r} starts with {NEED_QUALIFIER!r}, which names a need type "
-                f"({NEED_QUALIFIER}<type>); a preset cannot use that prefix",
-            )
-            return None
         if not self_preset and self.taken(name):
             self.warn(
                 "directive_preset_name_taken",
                 path,
                 f"{name!r} is already a directive of this project; a preset of that "
                 f"name would replace it (name it as its base, {name!r}, for defaults)",
+            )
+            return None
+        if not self_preset and reserved(name):
+            # a need: name no directive has yet (§3.2.7)
+            self.warn(
+                "directive_preset_name_taken", path, reserved_message(name, "a preset")
             )
             return None
         ok = True

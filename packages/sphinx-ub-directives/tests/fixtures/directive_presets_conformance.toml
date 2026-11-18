@@ -2336,6 +2336,26 @@ status = "open"
 status = "done"
 
 [[case]]
+name = "allowed-name-need-without-colon"
+why = "only the need: prefix WITH its colon is kept for need types: a new name that merely starts with need (needle) is free"
+config = '''
+[parse.directive_presets.needle]
+base = "note"
+'''
+source = '''
+.. needle::
+
+   Text.
+'''
+equivalent = '''
+.. note::
+
+   Text.
+'''
+[case.expect]
+findings = []
+
+[[case]]
 name = "qualified-need-type-base"
 why = "a base need:<type> is that need type, its options the need's"
 config = '''
