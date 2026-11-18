@@ -353,7 +353,7 @@ Bug fixes
 
 - 🐛 A boolean is no longer accepted as an ``integer`` or a ``number``: ``true`` or ``false`` in such a field, or as
   an item of an array of either, is refused as any other value of the wrong type is **(changed output)**
-  (:issue:`2533`)
+  (:issue:`2533`, :pr:`2540`)
 
   Python counts a ``bool`` as an ``int``, so the type check let a boolean through: the need was created holding it,
   the schema validation then reported it (``sn_schema_violation.field_fail``), and a filter such as ``effort > 0``
