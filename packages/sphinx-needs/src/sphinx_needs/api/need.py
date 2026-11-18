@@ -1694,35 +1694,73 @@ def _reset_rst_titles(state: RSTState) -> Generator[None]:
     state.memo.section_level = surrounding_section_level
 
 
+# set on the document's settings for the duration of an inert parse: a ``needimport``
+# met there refuses to read (docutils' own switch can be off for a whole project)
+_INERT_MARKER = "_sphinx_needs_import_inert"
+
+
 @contextmanager
 def _inert_parse(settings: Any) -> Generator[None]:
     """docutils' ``file_insertion_enabled`` and ``raw_enabled`` off for the duration of
-    one parse, and put back as they were after it, whatever happens inside."""
+    one parse, with this module's marker set, and all three put back as they were after
+    it, whatever happens inside."""
     previous = (
         getattr(settings, "file_insertion_enabled", True),
         getattr(settings, "raw_enabled", True),
     )
+    outer = getattr(settings, _INERT_MARKER, None)
     settings.file_insertion_enabled = settings.raw_enabled = False
+    setattr(settings, _INERT_MARKER, True)
     try:
         yield
     finally:
         settings.file_insertion_enabled, settings.raw_enabled = previous
+        if outer is None:
+            delattr(settings, _INERT_MARKER)
+        else:
+            setattr(settings, _INERT_MARKER, outer)
 
 
-def _remove_raw(data: NeedItem, node: nodes.Element) -> None:
-    """Remove the raw nodes an inert parse of a need's content still made, with one
-    warning: myst-parser's HTML blocks and inline HTML never consult ``raw_enabled``."""
-    raws = [raw for raw in node.findall(nodes.raw) if raw.parent is not None]
+def _in_inert_parse(settings: Any) -> bool:
+    """Whether an imported need's content is being parsed inert."""
+    return bool(getattr(settings, _INERT_MARKER, False))
+
+
+# the raw nodes myst-parser itself makes for ordinary Markdown, as ``(format, text)``:
+# a hard line break, strikethrough, and a task-list checkbox (disabled, or enabled by
+# ``myst_enable_checkboxes``, whose text differs between myst-parser 4 and 5); measured
+# with myst-parser 4.0.1 and 5.1.0. An inert parse keeps them, matched exactly
+_CHECKBOX = '<input class="task-list-item-checkbox"{} type="checkbox">'
+_MYST_OWN_RAW = frozenset(
+    {
+        ("html", "<br />\n"),
+        ("latex", "\\\\\n"),
+        ("html", "<s>"),
+        ("html", "</s>"),
+        *(
+            ("html", _CHECKBOX.format(checked + enabled))
+            for checked in ("", ' checked="checked"')
+            for enabled in (' disabled="disabled"', "", " ")
+        ),
+    }
+)
+
+
+def _remove_raw(node: nodes.Element) -> int:
+    """Remove the raw nodes an inert parse still made, but for myst-parser's own output
+    for ordinary Markdown: its HTML blocks and inline HTML never consult ``raw_enabled``.
+
+    :return: How many were removed.
+    """
+    raws = [
+        raw
+        for raw in node.findall(nodes.raw)
+        if raw.parent is not None
+        and (raw.get("format"), raw.astext()) not in _MYST_OWN_RAW
+    ]
     for raw in raws:
         raw.parent.remove(raw)
-    if raws:
-        log_warning(
-            logger,
-            f"Raw markup removed from the content of imported need {data['id']!r} "
-            f"({len(raws)} node(s)): needs_import_inert_content is on",
-            "import_inert",
-            location=(data["docname"], data["lineno"]),
-        )
+    return len(raws)
 
 
 def _host_content_anchor(
@@ -1855,15 +1893,26 @@ def _create_need_node(
 
     return_nodes: list[nodes.Node] = []
 
+    # an imported need's content, and the text its templates render (the record names
+    # the template, and a template renders the record's fields), are the source's data:
+    # parsed with docutils' file insertion and raw markup off when the project asks
+    inert = data["is_import"] and NeedsSphinxConfig(env.config).import_inert_content
+    removed = 0
+
     if pre_content := data.get("pre_content"):
         node = nodes.Element()
-        with _reset_rst_titles(state):
+        with (
+            _reset_rst_titles(state),
+            _inert_parse(state.document.settings) if inert else nullcontext(),
+        ):
             state.nested_parse(
                 StringList(pre_content.splitlines(), source=source),
                 _template_parse_offset(data),
                 node,
                 match_titles=True,
             )
+        if inert:
+            removed += _remove_raw(node)
         return_nodes.extend(node.children)
 
     # Calculate target id, to be able to set a link back
@@ -1875,9 +1924,6 @@ def _create_need_node(
         content_offset = data["lineno_content"] - 1
     else:
         content_offset = _template_parse_offset(data)
-    # an imported need's content is the source's data, parsed in either route with
-    # docutils' file insertion and raw markup off when the project asks for it
-    inert = data["is_import"] and NeedsSphinxConfig(env.config).import_inert_content
     with _inert_parse(state.document.settings) if inert else nullcontext():
         if content_parser is not None:
             _parse_declared_content(
@@ -1900,7 +1946,7 @@ def _create_need_node(
                 match_titles=False,
             )
     if inert:
-        _remove_raw(data, node_need)
+        removed += _remove_raw(node_need)
 
     # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
     arch = {}
@@ -1941,14 +1987,30 @@ def _create_need_node(
 
     if post_content := data.get("post_content"):
         node = nodes.Element()
-        with _reset_rst_titles(state):
+        with (
+            _reset_rst_titles(state),
+            _inert_parse(state.document.settings) if inert else nullcontext(),
+        ):
             state.nested_parse(
                 StringList(post_content.splitlines(), source=source),
                 _template_parse_offset(data),
                 node,
                 match_titles=True,
             )
+        if inert:
+            removed += _remove_raw(node)
         return_nodes.extend(node.children)
+
+    if removed:
+        # one warning per imported need, a need written inside its content counted in
+        log_warning(
+            logger,
+            "Raw markup (an HTML block or inline HTML) removed from the content of "
+            f"imported need {data['id']!r} ({removed} node(s)): "
+            "needs_import_inert_content is on",
+            "import_inert",
+            location=(data["docname"], data["lineno"]),
+        )
 
     return return_nodes
 
