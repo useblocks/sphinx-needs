@@ -4,33 +4,40 @@ Usage
 A minimal setup
 ---------------
 
-1. Add ``sphinx_mounts`` to ``extensions`` in ``conf.py``:
+.. steps::
 
-   .. code-block:: python
+   .. step:: Add ``sphinx_mounts`` to ``extensions``
 
-      # conf.py
-      extensions = ["sphinx_mounts"]
+      In ``conf.py``:
 
-2. Describe your mounts in ``ubproject.toml`` next to ``conf.py``:
+      .. code-block:: python
 
-   .. code-block:: toml
+         # conf.py
+         extensions = ["sphinx_mounts"]
 
-      # ubproject.toml
-      [[source.mounts]]
-      dir = "/abs/path/to/bazel-bin/docs/api-foo"
-      mount_at = "_generated/api-foo"
+   .. step:: Describe your mounts
 
-3. Reference mounted docs from your host project's ``index.rst`` like any
-   other docname:
+      In ``ubproject.toml`` next to ``conf.py``:
 
-   .. code-block:: rst
+      .. code-block:: toml
 
-      .. toctree::
-         :maxdepth: 2
+         # ubproject.toml
+         [[source.mounts]]
+         dir = "/abs/path/to/bazel-bin/docs/api-foo"
+         mount_at = "_generated/api-foo"
 
-         _generated/api-foo/index
+   .. step:: Reference mounted docs
 
-That is it — there is no third step to copy or stage files. ``sphinx-build``
+      From your host project's ``index.rst``, like any other docname:
+
+      .. code-block:: rst
+
+         .. toctree::
+            :maxdepth: 2
+
+            _generated/api-foo/index
+
+That is it — there is no further step to copy or stage files. ``sphinx-build``
 reads the bundle directly from ``dir``.
 
 How it works

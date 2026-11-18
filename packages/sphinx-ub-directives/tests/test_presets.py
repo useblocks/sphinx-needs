@@ -542,10 +542,10 @@ prefix = "DD_"
 directive_name = "{dropdown}"
 
 [[needs.types]]
-directive = "step"
-title = "Step"
+directive = "stage"
+title = "Stage"
 prefix = "ST_"
-directive_name = "{step}"
+directive_name = "{stage}"
 """
 
 
@@ -553,16 +553,16 @@ directive_name = "{step}"
     ("modes", "preset", "page", "codes", "needs", "doctree"),
     [
         pytest.param(
-            {"dropdown": "claim", "step": "claim"},
-            '[parse.directive_presets.step]\nbase = "step"\noptions = { status = "zz" }\n',
-            ".. step:: A\n   :id: ST_001\n",
+            {"dropdown": "claim", "stage": "claim"},
+            '[parse.directive_presets.stage]\nbase = "stage"\noptions = { status = "zz" }\n',
+            ".. stage:: A\n   :id: ST_001\n",
             [],
             {"ST_001": "zz"},
             None,
             id="claim-the-need",
         ),
         pytest.param(
-            {"dropdown": "yield", "step": "claim"},
+            {"dropdown": "yield", "stage": "claim"},
             '[parse.directive_presets.dropdown]\nbase = "dropdown"\n'
             'options = { class-container = "zzcls" }\n',
             ".. dropdown:: A\n\n   Body.\n",
@@ -572,7 +572,7 @@ directive_name = "{step}"
             id="yield-the-other-directive",
         ),
         pytest.param(
-            {"dropdown": "yield", "step": "claim"},
+            {"dropdown": "yield", "stage": "claim"},
             '[parse.directive_presets.Dropdown]\nbase = "DROPDOWN"\n'
             'options = { class-container = "zzcls" }\n',
             ".. dropdown:: A\n\n   Body.\n",
@@ -582,7 +582,7 @@ directive_name = "{step}"
             id="yield-the-other-directive-name-and-base-cased-differently",
         ),
         pytest.param(
-            {"dropdown": "yield", "step": "claim"},
+            {"dropdown": "yield", "stage": "claim"},
             '[parse.directive_presets.dropdown]\nbase = "dropdown"\n'
             'options = { status = "zz" }\n',
             ".. dropdown:: A\n\n   Body.\n",
@@ -592,9 +592,9 @@ directive_name = "{step}"
             id="yield-a-need-option-is-the-other-directive-s-unknown-option",
         ),
         pytest.param(
-            {"dropdown": "claim", "step": "qualified"},
-            '[parse.directive_presets.step]\nbase = "step"\noptions = { status = "zz" }\n',
-            ".. need:step:: A\n   :id: ST_001\n",
+            {"dropdown": "claim", "stage": "qualified"},
+            '[parse.directive_presets.stage]\nbase = "stage"\noptions = { status = "zz" }\n',
+            ".. need:stage:: A\n   :id: ST_001\n",
             ["directive_preset_unknown_base"],
             {"ST_001": None},
             None,

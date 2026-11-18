@@ -135,29 +135,48 @@ Both must be available and correctly configured to work.
 Install PlantUML
 ~~~~~~~~~~~~~~~~
 
-1. Download the latest version of the plantuml.jar file:
-   http://sourceforge.net/projects/plantuml/files/plantuml.jar/download
-2. Make a new folder called ``utils`` inside your docs folder. Copy the ``plantuml.jar`` file into the ``utils`` folder.
-3. Install the plantuml sphinx extension: ``pip install sphinxcontrib-plantuml``.
-4. Add ``sphinxcontrib.plantuml`` to the sphinx extension list in ``conf.py``
+.. steps::
 
-.. code-block:: python
+    .. step:: Download PlantUML
 
-      extensions = ['sphinxcontrib.plantuml',
-                    'sphinx_needs']
+        Download the latest version of the plantuml.jar file:
+        http://sourceforge.net/projects/plantuml/files/plantuml.jar/download
 
+    .. step:: Copy the jar into your docs folder
 
-5. Configure plantuml in ``conf.py``
+        Make a new folder called ``utils`` inside your docs folder.
+        Copy the ``plantuml.jar`` file into the ``utils`` folder.
 
-.. code-block:: python
+    .. step:: Install the Sphinx extension
 
-  on_rtd = os.environ.get('READTHEDOCS') == 'True'
-  if on_rtd:
-      plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
-  else:
-      plantuml = 'java -jar %s' % os.path.join(os.path.dirname(__file__), "utils", "plantuml.jar"))
+        .. code-block:: bash
 
-      plantuml_output_format = 'png'
+            pip install sphinxcontrib-plantuml
+
+    .. step:: Enable the extension
+
+        Add ``sphinxcontrib.plantuml`` to the sphinx extension list in ``conf.py``:
+
+        .. code-block:: python
+
+            extensions = ['sphinxcontrib.plantuml',
+                          'sphinx_needs']
+
+    .. step:: Configure PlantUML
+
+        In ``conf.py``:
+
+        .. code-block:: python
+
+            import os
+
+            on_rtd = os.environ.get('READTHEDOCS') == 'True'
+            if on_rtd:
+                plantuml = 'java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar'
+            else:
+                plantuml = 'java -jar %s' % os.path.join(os.path.dirname(__file__), "utils", "plantuml.jar")
+
+            plantuml_output_format = 'png'
 
 The final configuration contains already a setup for building and deploying the documentation on
 `ReadTheDocs <https://readthedocs.org/>`_.
