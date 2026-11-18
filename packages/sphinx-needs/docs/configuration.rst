@@ -3241,11 +3241,15 @@ With it, in that content and in the text a ``template``, ``pre_template`` or
 - a ``needimport`` does not read its file: one ``needs.needimport`` warning;
 - MyST's HTML blocks and inline HTML, which myst-parser does not switch off, are removed,
   with one ``needs.import_inert`` warning per imported need (a need written inside its
-  content counts into it); what myst-parser itself writes as raw for a hard line break,
-  strikethrough and a task-list checkbox is kept.
+  content counts into it). A raw node whose text is exactly what myst-parser writes for a
+  hard line break or a task-list checkbox is kept, and so are ``<s>`` and ``</s>`` as a
+  matched pair (strikethrough); any other raw markup is removed.
 
-The needs written in the project are untouched, and so is the ``needs.json`` the directive
-reads. External needs (:ref:`needs_external_needs`) render no content.
+The same holds for the project's own template files when they render for an imported need:
+an ``include`` or a ``raw`` in a ``template``, ``pre_template`` or ``post_template`` file
+does not run for it (it still runs for a need written in the project). The needs written
+in the project are untouched, and so is the ``needs.json`` the directive reads. External
+needs (:ref:`needs_external_needs`) render no content.
 
 It narrows what imported content can do. It does not make a ``needs.json`` from a source
 you do not trust harmless to import: import only files you trust. With it on, a record can
@@ -3257,10 +3261,10 @@ still:
   is; so is the expression of ``ifconfig`` (``sphinx.ext.ifconfig``); and, where the
   project enables MyST's ``substitution`` extension, ``{{ … }}`` in MyST content is
   evaluated by Jinja;
-- name a file to a directive that reads it without consulting docutils' switch:
-  ``graphviz``, ``uml`` (sphinxcontrib-plantuml), ``mermaid`` (sphinxcontrib-mermaid), and a
-  diagram whose PlantUML text ``!include``\ s a file, which PlantUML reads when it draws the
-  diagram;
+- name a file to a directive that reads it without consulting docutils' switch, such as
+  ``graphviz``, ``uml`` (sphinxcontrib-plantuml), ``mermaid`` (sphinxcontrib-mermaid) and
+  ``data-viewer`` (sphinx-data-viewer), or write a diagram whose PlantUML text
+  ``!include``\ s a file, which PlantUML reads when it draws the diagram;
 - have a file copied into the output: images and figures (MyST's ``![](…)`` too) and the
   ``download`` role name a file that is copied when the output is written;
 - write a link with a ``javascript:`` target, or a ``meta`` directive, into the page;
