@@ -62,11 +62,12 @@ CONSEQUENCE = {
 }
 
 
-def _text(*names: str) -> str:
-    """The warning for a filter reading *names*, in the order the rule fixes."""
+def _text(filter_string: str, *names: str) -> str:
+    """The warning for *filter_string*, reading *names*, in the order the rule fixes."""
     said = names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
     return (
-        f"The filter reads {said}, but namespaced ids are off for this project: "
+        f"The filter {filter_string!r} reads {said}, but namespaced ids are off for "
+        "this project: "
         f"{'; '.join(CONSEQUENCE[name] for name in names)}. Set needs_namespaced_ids "
         "= True to read '::' in an id as a namespace separator, or suppress "
         f"needs.namespaced_ids_off. {CODE}"
@@ -175,15 +176,15 @@ def test_the_rule_row_by_row(
         return
     assert len(ours) == 1, ours
     where = f"<srcdir>/index.rst:{_line(index, '.. needlist::')}: WARNING: "
-    assert ours[0] == where + _text(*names)
+    assert ours[0] == where + _text(filter_string, *names)
 
 
 def test_the_names_come_in_the_fixed_order(make_app: Any, tmp_path: Path) -> None:
     """The names are given in the rule's order, not in the order they are written."""
-    index = _needlist('c.in_namespace("nc") and c.id.local != "" and c.id.ns == "nc"')
-    app = _build(make_app, tmp_path, index)
+    written = 'c.in_namespace("nc") and c.id.local != "" and c.id.ns == "nc"'
+    app = _build(make_app, tmp_path, _needlist(written))
     (warning,) = _ours(build_warnings(app))
-    assert warning.endswith(_text("c.id.ns", "c.id.local", "c.in_namespace()"))
+    assert warning.endswith(_text(written, "c.id.ns", "c.id.local", "c.in_namespace()"))
 
 
 #: filters that read a namespace value, but that the text shows refused: each with the
@@ -193,7 +194,9 @@ REFUSED_BY_TEXT: list[tuple[str, str]] = [
         'c.id == "nc::REQ_1" or c.id.ns == "nc"',
         "c.id holds the facets of the id, not the id",
     ),
-    ('c.id.ns == "" and c.id in {"x"}', "c.id holds the facets of the id, not the id"),
+    ('c.id in {"x"} and c.id.ns == ""', "c.id holds the facets of the id, not the id"),
+    ('{c.id} and c.id.ns == ""', "c.id holds the facets of the id, not the id"),
+    ('{c.id: 1} and c.id.ns == ""', "c.id holds the facets of the id, not the id"),
     ('c.id.nss == "" or c.id.ns == ""', "c.id has no facet 'nss'"),
     ('c.in_namespace("nc", "m2")', "takes 2 positional arguments but 3 were given"),
     ('c.in_namespace(namespace="nc")', "positional-only arguments passed as keyword"),
@@ -213,6 +216,60 @@ def test_refused_by_its_text_though_it_reads_a_namespace_value(
     assert len(_ours(warnings)) == 0, warnings
     (refusal,) = [w for w in warnings if w.endswith("[needs.filter]")]
     assert error in refusal
+
+
+#: filters reading a namespace value whose refusing construct is NOT reached
+#: unconditionally (a later operand of ``and`` / ``or``, a branch of a conditional): the
+#: text cannot settle that they are refused, so the warning is given (with the switch
+#: off each is answered with no error at all), with the names each reads
+REACHED_CONDITIONALLY: list[tuple[str, tuple[str, ...]]] = [
+    ('c.id.ns == "" or c.source.nosuch', ("c.id.ns",)),
+    ('c.in_namespace("nc") and c.in_namespace("")', ("c.in_namespace()",)),
+    ('c.id.local == "NOPE" and c.in_namespace("")', ("c.id.local", "c.in_namespace()")),
+    ("c.id.ns if True else c.id.nss", ("c.id.ns",)),
+    ('c.id.ns == "x" or c.id in []', ("c.id.ns",)),
+    ('c.id.ns == "" and c.id == c.id', ("c.id.ns",)),
+]
+
+
+@pytest.mark.parametrize(("filter_string", "names"), REACHED_CONDITIONALLY)
+def test_a_refusal_not_reached_unconditionally_does_not_silence_it(
+    filter_string: str, names: tuple[str, ...], make_app: Any, tmp_path: Path
+) -> None:
+    """Refusal is judged only where it is reached unconditionally: where the text cannot
+    settle it, the warning is given."""
+    index = _needlist(filter_string)
+    app = _build(make_app, tmp_path, index)
+    warnings = build_warnings(app)
+    assert _ours(warnings) == [
+        f"<srcdir>/index.rst:{_line(index, '.. needlist::')}: WARNING: "
+        + _text(filter_string, *names)
+    ], warnings
+
+
+def test_a_refusal_seen_but_not_raised_is_a_known_limit(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """The known limit: a refusing construct the text sees in a first operand, which
+    evaluation happens not to raise (``c.id in []`` compares nothing), keeps the filter
+    unreported, and it is answered with no error either."""
+    app = _build(make_app, tmp_path, _needlist('c.id in [] or c.id.ns == ""'))
+    warnings = build_warnings(app)
+    assert _ours(warnings) == [], warnings
+    assert [w for w in warnings if w.endswith("[needs.filter]")] == [], warnings
+
+
+def test_a_name_as_the_argument_is_reported(make_app: Any, tmp_path: Path) -> None:
+    """An argument of ``c.in_namespace`` that is no literal cannot be judged from the
+    text: the warning is given."""
+    filter_string = "c.in_namespace(group)"
+    conf = CONF + 'needs_filter_data = {"group": "nc"}\n'
+    index = _needlist(filter_string)
+    app = _build(make_app, tmp_path, index, conf)
+    assert _ours(build_warnings(app)) == [
+        f"<srcdir>/index.rst:{_line(index, '.. needlist::')}: WARNING: "
+        + _text(filter_string, "c.in_namespace()")
+    ]
 
 
 @pytest.mark.parametrize(
@@ -469,7 +526,7 @@ def test_each_place_is_reported_once(place: str, make_app: Any, tmp_path: Path) 
     warnings = build_warnings(app)
     ours = _ours(warnings)
     assert len(ours) == 1, warnings
-    text = _text("c.id.ns")
+    text = _text(filter_string, "c.id.ns")
     if origin:
         text = text.replace(f" {CODE}", f"{origin} {CODE}")
     where = f"<srcdir>/index.rst:{_line(index, marker)}: " if marker is not None else ""
@@ -729,13 +786,229 @@ def test_a_parallel_build_reports_as_a_serial_one(
     ours = sorted(_ours(build_warnings(app)))
     assert ours == sorted(
         [
-            f"<srcdir>/page{i}.rst:7: WARNING: {_text('c.in_namespace()')}"
+            f"<srcdir>/page{i}.rst:7: WARNING: "
+            + _text('c.in_namespace("nc")', "c.in_namespace()")
             for i in range(8)
         ]
         + [
             "WARNING: "
-            + _text("c.id.local").replace(
+            + _text('c.id.local == "REQ_1"', "c.id.local").replace(
                 f" {CODE}", f" (from warning filter 'w1') {CODE}"
             )
         ]
     )
+
+
+# --- a quiet pre-pass does not use up a place's report ----------------------------------
+
+#: two needs whose ``effort`` is computed, and one summing it: the sum's filter is first
+#: evaluated quietly, to order the computation, then for real
+COMPUTED = """\
+Index
+=====
+
+.. req:: One
+   :id: REQ_1
+   :base: 3
+   :effort: [[copy("base")]]
+
+.. req:: Two
+   :id: REQ_2
+   :base: 4
+   :effort: [[copy("base")]]
+
+.. req:: Sum
+   :id: SUM_1
+   :total: [[calc_sum("effort", filter='{f}')]]
+"""
+
+COMPUTED_CONF = CONF + 'needs_extra_options = ["effort", "base", "total"]\n'
+
+
+def test_calc_sum_filter_over_a_computed_field(make_app: Any, tmp_path: Path) -> None:
+    """A ``calc_sum`` over a computed field: its filter is read quietly first, and then
+    reported where it is evaluated for real."""
+    filter_string = 'c.id.local != ""'
+    index = COMPUTED.format(f=filter_string)
+    app = _build(make_app, tmp_path, index, COMPUTED_CONF)
+    assert _ours(build_warnings(app)) == [
+        f"WARNING: {_text(filter_string, 'c.id.local')}"
+    ]
+
+
+def test_calc_sum_filter_type_over_a_computed_field(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """The same for the report of a ``c.is_a`` naming no need type
+    (``needs.filter_type``), which the quiet pre-pass used up too."""
+    index = COMPUTED.format(f='c.is_a("nosuch")')
+    app = _build(make_app, tmp_path, index, COMPUTED_CONF)
+    warnings = build_warnings(app)
+    assert len([w for w in warnings if w.endswith("[needs.filter_type]")]) == 1, (
+        warnings
+    )
+
+
+def test_a_copy_match_does_not_use_up_another_place(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """``copy``'s filter is matched quietly first; a constraint with the same string,
+    which has no location, is still reported, as is the ``copy`` at its need."""
+    filter_string = 'c.id.local == "REQ_1"'
+    index = (
+        NEEDS
+        + ".. req:: Four\n   :id: REQ_4\n   :constraints: c1\n"
+        + f"   :status: [[copy(\"title\", filter='{filter_string}')]]\n"
+    )
+    conf = (
+        CONF + f"needs_constraints = {{'c1': {{'check_0': '{filter_string}', "
+        "'severity': 'LOW'}}\n"
+        "needs_constraint_failed_options = {'LOW': {'on_fail': [], 'style': []}}\n"
+    )
+    app = _build(make_app, tmp_path, index, conf)
+    text = _text(filter_string, "c.id.local")
+    assert sorted(_ours(build_warnings(app))) == sorted(
+        [
+            f"<srcdir>/index.rst:{_line(index, '.. req:: Four')}: WARNING: {text}",
+            f"WARNING: {text}",
+        ]
+    )
+
+
+# --- more places, and what makes a place ------------------------------------------------
+
+
+def test_a_filter_with_a_leading_space_at_a_need_by_need_place(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A constraint whose filter starts with a space is answered as before, and
+    reported."""
+    filter_string = ' c.id.local != ""'
+    index = NEEDS + ".. req:: Four\n   :id: REQ_4\n   :constraints: c1\n"
+    conf = (
+        CONF + f"needs_constraints = {{'c1': {{'check_0': '{filter_string}', "
+        "'severity': 'LOW'}}\n"
+        "needs_constraint_failed_options = {'LOW': {'on_fail': [], 'style': []}}\n"
+    )
+    app = _build(make_app, tmp_path, index, conf)
+    assert _ours(build_warnings(app)) == [
+        f"WARNING: {_text(filter_string, 'c.id.local')}"
+    ]
+
+
+def test_two_configuration_entries_with_one_string_are_two_places(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """Two ``needs_warnings`` entries with the same string: each names itself, so two."""
+    filter_string = 'c.id.ns == "w"'
+    conf = (
+        CONF
+        + f"needs_warnings = {{'w1': '{filter_string}', 'w2': '{filter_string}'}}\n"
+    )
+    app = _build(make_app, tmp_path, NEEDS, conf)
+    text = _text(filter_string, "c.id.ns")
+    assert sorted(_ours(build_warnings(app))) == sorted(
+        f"WARNING: {text.replace(f' {CODE}', f' (from warning filter {name!r}) {CODE}')}"
+        for name in ("w1", "w2")
+    )
+
+
+EXTERNAL_NEEDS = json.dumps(
+    {
+        "current_version": "1.0",
+        "versions": {
+            "1.0": {
+                "needs": {
+                    "A": {"id": "A", "type": "req", "title": "A", "content": ""},
+                    "B": {
+                        "id": "B",
+                        "type": "req",
+                        "title": "B",
+                        "content": "",
+                        "links": ['A[c.id.local != ""]'],
+                    },
+                }
+            }
+        },
+    }
+)
+
+
+def test_an_external_needs_link_condition_names_the_external_need(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """An external need's link condition is written in another project: the warning
+    has no location here, and names the external need, as its other link findings do."""
+    conf = (
+        CONF + "needs_external_needs = [{'json_path': 'ext.json', "
+        "'base_url': 'http://example.org', 'id_prefix': 'EXT_'}]\n"
+    )
+    app = _build(make_app, tmp_path, NEEDS, conf, files={"ext.json": EXTERNAL_NEEDS})
+    url = SphinxNeedsData(app.env).get_needs_view()["EXT_B"]["external_url"]
+    text = _text('c.id.local != ""', "c.id.local").replace(
+        f" {CODE}", f" (from the external need 'EXT_B': {url}) {CODE}"
+    )
+    assert _ours(build_warnings(app)) == [f"WARNING: {text}"]
+
+
+def test_a_file_included_twice_is_one_place_per_written_filter(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A place is where the filter is written: a file holding a needlist and a needflow
+    highlight, included twice, gives one warning for each."""
+    part = (
+        '.. needlist::\n   :filter: c.in_namespace("inc")\n\n'
+        '.. needflow::\n   :highlight: c.in_namespace("hl")\n'
+    )
+    index = NEEDS + "A\n-\n\n.. include:: part.txt\n\nB\n-\n\n.. include:: part.txt\n"
+    conf = CONF + 'needs_flow_engine = "graphviz"\n'
+    app = _build(
+        make_app, tmp_path, index, conf, files={"part.txt": part}, buildername="html"
+    )
+    assert sorted(_ours(build_warnings(app))) == sorted(
+        [
+            "<srcdir>/part.txt:1: WARNING: "
+            + _text('c.in_namespace("inc")', "c.in_namespace()"),
+            "<srcdir>/part.txt:4: WARNING: "
+            + _text('c.in_namespace("hl")', "c.in_namespace()"),
+        ]
+    )
+
+
+#: the directive places whose filter is tested need by need, each with nothing to test:
+#: (the document's extra text, the configuration's, the builder)
+UNTESTED: dict[str, tuple[str, str, str]] = {
+    "needflow-highlight": (
+        '.. needflow::\n   :filter: type == "nosuch"\n   :highlight: {f}\n',
+        'needs_flow_engine = "graphviz"\n',
+        "html",
+    ),
+    "needgantt-milestone_filter": (
+        '.. needgantt:: G\n   :filter: type == "nosuch"\n   :milestone_filter: {f}\n',
+        'extensions.append("sphinxcontrib.plantuml")\n',
+        "dummy",
+    ),
+    "needsequence-filter": (
+        ".. needsequence:: S\n   :start: REQ_1\n   :filter: {f}\n",
+        'extensions.append("sphinxcontrib.plantuml")\n',
+        "dummy",
+    ),
+}
+
+
+@pytest.mark.parametrize("place", list(UNTESTED))
+def test_a_directive_place_is_reported_with_no_need_tested(
+    place: str, make_app: Any, tmp_path: Path
+) -> None:
+    """A needflow highlight, a needgantt milestone filter and a needsequence filter are
+    reported where they are written whether or not a need is tested (the count pins of
+    ``test_each_place_is_reported_once`` hold that a tested one is reported once)."""
+    rst, conf, builder = UNTESTED[place]
+    filter_string = f'c.in_namespace("{place.split("-")[0]}")'
+    index = NEEDS + rst.format(f=filter_string)
+    app = _build(make_app, tmp_path, index, CONF + conf, buildername=builder)
+    marker = rst.split("::")[0] + "::"
+    assert _ours(build_warnings(app)) == [
+        f"<srcdir>/index.rst:{_line(index, marker)}: WARNING: "
+        + _text(filter_string, "c.in_namespace()")
+    ]
