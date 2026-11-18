@@ -168,10 +168,45 @@ Index
 LINK_TYPES_CONF = CONF + "needs_links = {'triggers': {}, 'blocks': {}}\n"
 
 
-def _unknown_link_type(name: str) -> str:
+BACK_LINKS_IN_ORDER = """\
+Index
+=====
+
+.. req:: S1
+   :id: BACK_S1
+   :links: BACK_M1
+
+.. req:: S2
+   :id: BACK_S2
+   :links: BACK_M2
+
+.. req:: S3
+   :id: BACK_S3
+   :links: BACK_M1
+
+.. spec:: M1
+   :id: BACK_M1
+   :links: BACK_R
+
+.. spec:: M2
+   :id: BACK_M2
+   :links: BACK_R
+
+.. req:: R
+   :id: BACK_R
+
+.. needsequence::
+   :start: BACK_R
+   :link_types: links_back
+"""
+"""Two messages back to ``BACK_R``, the first from two senders: the walk over the back
+links meets them in need-id order, as it did."""
+
+
+def _unknown_link_type(name: str, line: int = 15) -> str:
     """needsequence's own report of a name in ``:link_types:``, as it was."""
     return (
-        f"<srcdir>/index.rst:15: WARNING: Unknown link type {name} in needsequence "
+        f"<srcdir>/index.rst:{line}: WARNING: Unknown link type {name} in needsequence "
         "needsequence-index-0. Allowed values: TRIGGERS,BLOCKS,LINKS,PARENT_NEEDS "
         "[needs.needsequence]"
     )
@@ -267,6 +302,27 @@ FORWARD_SEQUENCE = (
             FORWARD_SEQUENCE,
             [],
             id="link-type-mixed-case",
+        ),
+        pytest.param(
+            _project(
+                LINK_TYPES_CONF,
+                LINK_TYPES.format(start="SEQ_R", link_types="LINKS_BACK"),
+            ),
+            EMPTY_SEQUENCE,
+            [_unknown_link_type("LINKS_BACK")],
+            id="back-links-upper-case",
+        ),
+        pytest.param(
+            _project(LINK_TYPES_CONF, BACK_LINKS_IN_ORDER),
+            "@startuml\n\n' Nodes definition \n\n"
+            'participant "R" as BACK_R\n'
+            "\n' Connection definition \n\n"
+            "BACK_R -> BACK_S1: M1\n"
+            "BACK_R -> BACK_S3: M1\n"
+            "BACK_R -> BACK_S2: M2\n"
+            "\n@enduml",
+            [_unknown_link_type("LINKS_BACK", 27)],
+            id="back-links-in-order",
         ),
     ],
     indirect=["test_app"],

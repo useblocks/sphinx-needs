@@ -477,6 +477,50 @@ def test_a_constraint_check_is_evaluated_on_the_needs_it_does_not_fail_on(
     assert stored["SOME_3"]["constraints_passed"] is True
 
 
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _index(
+            """\
+Index
+=====
+
+.. req:: A
+   :id: FIRST_A
+   :status: 2
+   :constraints: c1
+
+.. req:: B
+   :id: FIRST_B
+   :status: open
+   :constraints: c1
+""",
+            CONF + "needs_constraints = {'c1': {"
+            f"'check_0': {SOME!r}, 'severity': 'LOW'"
+            "}}\n"
+            "needs_constraint_failed_options = {'LOW': {'on_fail': ['warn']}}\n",
+        )
+    ],
+    indirect=True,
+)
+def test_a_constraint_report_names_the_first_need_the_check_fails_on(
+    test_app: Sphinx,
+):
+    """The check passes on the first need it is tested on and fails on the second: the
+    report names the second, where it failed, not the first."""
+    app = test_app
+    app.build()
+
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert _is_reported(
+        warnings[0],
+        SOME,
+        None,
+        " (from constraint 'c1', check 'check_0', first on need 'FIRST_B')",
+    ), warnings[0]
+
+
 # --- a filter that works acts where it acted ------------------------------------------
 
 
