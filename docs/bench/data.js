@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794993616419,
+  "lastUpdate": 1795002828998,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -30030,6 +30030,48 @@ window.BENCHMARK_DATA = {
             "value": 187.31686,
             "unit": "MB",
             "extra": "Commit: fa08464deb10eee43cbbc49e099faa0700cb6936\nBranch: master\nTime: 2026-11-18T10:19:08+01:00\nCPU: AMD EPYC 9V45 96-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3279cb0753e476d9708d340a4d7bdbbeb443a6e2",
+          "message": "📚 Docs: sphinx-design `steps` where the docs give a procedure (#2519)\n\nFour lists in the docs are procedures the reader follows in order;\nthey now use sphinx-design's `steps` directive, so each item gets a\nnumbered circle and a short title:\n- sphinx-needs: Installation → \"Install PlantUML\", and Schema validation\n→ \"Recommended migration path\"\n- sphinx-ub-directives: Directive presets → \"Set up a preset\"\n- sphinx-mounts: Usage → \"A minimal setup\"\n**sphinx-design 0.8.0.** `steps` is new in 0.8.0 and the lock resolved\n0.7.0.\nThe first commit raises the `docs`-extra floor of the three packages\nwhose docs use it\n(sphinx-needs `~=0.6` → `>=0.8.0,<1`; sphinx-mounts and\nsphinx-ub-directives `>=0.6.1` → `>=0.8.0`),\nso a pip install over an existing 0.7 (Read the Docs) upgrades too,\nand runs `uv lock --upgrade-package sphinx-design`: only sphinx-design\nmoves in `uv.lock`.\n0.8.0 requires sphinx>=7.2,<10 and Python>=3.11, which every lock cell\nsatisfies.\n**Fixes found on the way.** \"Install PlantUML\" was a broken list:\nits two code blocks sat at column 0, so the list ended after item 4 and\nitem 5 started a second list,\nwith both snippets outside their items. The step-5 `conf.py` snippet had\na stray `)`,\nan `plantuml_output_format` line indented into the `else:` branch, and\nused `os` without importing it;\nit is now valid Python. The mounts page said \"there is no third step\"\nright after a third step; it now says \"no further step\".\n**One test follows the lock.** sphinx-design 0.8.0 registers a `step`\ndirective, so sphinx-ub-directives' `qualified-no-directive` self-preset\ncase, which needs a need type whose bare name is no directive at all,\nnow names that need type `stage` instead of `step` (red on 0.8.0 before,\ngreen after).\n\nNo changelog entry: docs and the docs extras only, no runtime change.\n**How it was checked**\n- `poe docs-needs` (furo, also from scratch), `docs-needs-pds`,\n`docs-needs-alabaster`, `docs-needs-rtd`, `docs-mounts`,\n`docs-ub-directives`: all `-nW` clean.\n- `docs-needs-im` (sphinx-immaterial) fails `-nW` with 7 `api.rst`\nparameter warnings — identically on `master`, so pre-existing and\nunrelated (CI does not build that theme).\n- The steps looked at in all five theme builds (furo, immaterial,\npydata, alabaster, rtd) and on the mounts / ub-directives furo sites.\nOne title lost its inline literal because pydata stacks a rubric's\ninline children.\n- `ai_docs_index.json`: every page entry unchanged on all three sites (a\nstep title is a rubric, not a section).\n- `prek run --all-files` (incl. `uv-lock`, `check-workspace`) clean.",
+          "timestamp": "2026-11-18T12:52:07+01:00",
+          "tree_id": "ce9eb3c512769f431e8888ffc4ae71226c421b3a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3279cb0753e476d9708d340a4d7bdbbeb443a6e2"
+        },
+        "date": 1795002828305,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.07356171499999675,
+            "unit": "s",
+            "extra": "Commit: 3279cb0753e476d9708d340a4d7bdbbeb443a6e2\nBranch: master\nTime: 2026-11-18T12:52:07+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 13.716242627000014,
+            "unit": "s",
+            "extra": "Commit: 3279cb0753e476d9708d340a4d7bdbbeb443a6e2\nBranch: master\nTime: 2026-11-18T12:52:07+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 186.484506,
+            "unit": "MB",
+            "extra": "Commit: 3279cb0753e476d9708d340a4d7bdbbeb443a6e2\nBranch: master\nTime: 2026-11-18T12:52:07+01:00\nCPU: AMD EPYC 7763 64-Core Processor"
           }
         ]
       }
