@@ -516,10 +516,11 @@ def test_a_changed_value_rereads_and_rewrites_the_file(
 
 
 def test_upgrading_reads_nothing_again(make_app: Any, tmp_path: Path) -> None:
-    """Upgrading reads nothing again: an output directory whose environment was read
-    while the value was registered as sphinx-needs 9.2 registered it (the integer
-    ``1``, rebuilding the html only), built again with the value unset, reads no
-    document."""
+    """Changing how the value is registered costs no re-read: an output directory
+    whose environment was read while the value was registered as it was before (the
+    integer ``1``, rebuilding the html only), built again with the value unset, reads
+    no document. (An environment of a release without the value at all is of an older
+    ``ENV_DATA_VERSION``, and is read again whole whatever the value.)"""
     srcdir = _option_project(tmp_path)
     app = make_app("needs", srcdir=srcdir, freshenv=True)
     options = app.config._options

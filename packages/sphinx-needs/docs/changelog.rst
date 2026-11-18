@@ -153,8 +153,11 @@ Bug fixes
 
   Sphinx converted a ``-D`` value by the type of the option's default, the integer ``1``, so ``2a1`` was dropped as
   an invalid number and the file was written in format 1. The value is now passed through as the text it is, and the
-  text ``"1"`` is format 1 wherever it is set (``-D needs_json_format_version=1``, ``conf.py``, ``ubproject.toml``),
-  where it was reported as an unknown value. Unset, the option still reads the integer ``1`` (:issue:`2530`)
+  text ``"1"`` is format 1 wherever it is set (``-D needs_json_format_version=1``, ``conf.py``, ``ubproject.toml``);
+  from ``conf.py`` and ``ubproject.toml`` it was reported as an unknown value. Unset, the option still reads the
+  integer ``1``. A build whose value differs from the previous build's reads the project again, so that it writes the
+  file in the format asked for on every supported Sphinx (on Sphinx 7.4 a build that read nothing wrote no file)
+  (:issue:`2530`)
 
 - 🐛 A :ref:`needsequence` over need ids holding ``::`` (or another character PlantUML refuses in a name, such as
   ``-``) renders, and shows each participant by its title or its id

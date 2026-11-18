@@ -1028,9 +1028,11 @@ class _OverrideAsText:
     says ``"override_as_text": True``: Sphinx calls it for the value of an unset
     option, and gets the field's default back.
 
-    A callable default is the one kind for which Sphinx's ``Config.convert_overrides``
-    passes a ``-D`` value through as the text it is (Sphinx 7.4 to 9): for an integer
-    default it tries ``int(value)`` and drops anything else with a warning.
+    Sphinx's ``Config.convert_overrides`` passes a ``-D`` value through as the text it
+    is for a callable default (Sphinx 7.4 to 9), as for a text or ``None`` one; a
+    callable is the one kind that does so while the unset value stays what the field
+    says, such as the integer ``1``. For an integer default Sphinx tries
+    ``int(value)`` and drops anything else with a warning.
     """
 
     __slots__ = ("value",)
@@ -1714,7 +1716,10 @@ class NeedsSphinxConfig:
     """
     json_format_version: int | str = field(
         default=1,
-        metadata={"rebuild": "html", "types": (int, str), "override_as_text": True},
+        # "env": a build whose value differs from the environment's reads the project
+        # again, so that it writes the file at all -- Sphinx 7.4 writes none for a build
+        # that reads nothing, which a value set for one build with ``-D`` would hit
+        metadata={"rebuild": "env", "types": (int, str), "override_as_text": True},
     )
     """The format version of the ``needs.json`` the needs builders write: ``1`` (the
     default; the text ``"1"`` too, which is what ``-D`` gives), or ``"2a1"``, the
