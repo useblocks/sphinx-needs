@@ -324,6 +324,33 @@ Bug fixes
   ``content``. One whose ``content`` is not a string (``null``, ``0``, ``false``, ``[]``, ``{}``) beside a
   ``description`` is refused, as such a ``content`` already is without one.
 
+- 🐛 A filter string with leading spaces or tabs selects what it selects without them in :ref:`needs_warnings`,
+  :ref:`needs_builder_filter`, a ``needpie`` line, needuml's ``filter()``, the filter of the dynamic functions ``copy``,
+  ``links_from_filter`` and ``links_from_match``, and a quoted :ref:`needextend` argument **(changed output)**
+  (:issue:`2521`, :pr:`2537`)
+
+  ``" status == 'open'"`` was refused there as ``not valid`` (``unexpected indent``) and matched no need: a
+  ``needs_builder_filter`` written so exported none, a ``needextend`` extended none and the dynamic function failed,
+  while a constraint or a link condition read the same string past its padding, as Python's ``eval`` does. These places
+  now read past exactly what ``eval`` reads past, spaces and tabs (a newline or a form feed followed by a space is
+  still refused, as ``eval`` refuses it); a ``c.is_a`` in such a string naming no need type is reported
+  (``needs.filter_type``) as in the unpadded one; and a warning quoting the filter quotes it as written. A
+  :ref:`derived field's <needs_derive>` ``where`` and ``test`` are the exception: a declared rule, which must parse as
+  written, so a padded one is still refused (``needs.derive_invalid``). A directive option such as ``:filter:`` was
+  never affected: docutils strips it.
+
+- 🐛 A ``c.is_a`` naming no need type is reported once at each place it is written, with the place's file and line
+  (an external need's link condition names the need), where a filter is tested need by need -- a :ref:`needflow`
+  ``:highlight:``, a :ref:`needgantt` ``:milestone_filter:``, a :ref:`needsequence` ``:filter:``, a link condition --
+  and at each of two :ref:`needextend`\ s of one document with the same quoted filter **(changed output)**
+  (:issue:`2528`, :pr:`2537`)
+
+  There, ``needs.filter_type`` was reported once per build for the string with no location, however many places wrote
+  it, and a place with no location sharing the string (a constraint) took their report; a highlight, milestone filter
+  or sequence filter that no need was tested on, and the second of two such ``needextend``\ s, were not reported. It is
+  now reported together with ``needs.namespaced_ids_off``, at the same places and as often; a constraint, which has no
+  location, is still reported once per build for its string.
+
 .. _`release:9.2.0`:
 
 9.2.0

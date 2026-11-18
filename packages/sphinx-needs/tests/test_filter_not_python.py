@@ -284,8 +284,7 @@ def test_callers_that_reported_it_keep_their_message(
 def test_a_filter_with_leading_white_space_does_not_abort(test_app: Sphinx):
     """A configured filter may keep leading white space; the build goes on.
 
-    What it is reported as is not pinned: whether such a string is read past, as
-    ``eval`` reads it, is not decided here.
+    It is read past, as ``eval`` reads it: ``test_filter_leading_white_space.py``.
     """
     app = test_app
     app.build()

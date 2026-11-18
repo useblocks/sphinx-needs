@@ -22,6 +22,7 @@ import pytest
 from sphinx.util.parallel import parallel_available
 
 from sphinx_needs import filter_common
+from sphinx_needs._source_facets import namespace_reads
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.derive import filter_problem
@@ -673,3 +674,595 @@ def test_nothing_is_reported_before_a_build_gives_the_types() -> None:
         assert filter_needs_and_parts([], config, "c.is_a('rq')") == []
         assert filter_single_need(MagicMock(), config, "c.is_a('rq')") is False
     assert warn.call_args_list == []
+
+
+# --- where a filter is tested need by need, it is reported where it is written (#2528) ---
+
+#: the places whose filter is tested need by need, each written twice with the same
+#: string: (the document's text, with ``{f}`` for the filter and ``{n}`` for what tells
+#: the two apart, the configuration's extra text, the builder, the text the line of each
+#: place starts with)
+NEED_BY_NEED: dict[str, tuple[str, str, str, str]] = {
+    "needflow-highlight": (
+        ".. needflow::\n   :highlight: {f}\n",
+        'needs_flow_engine = "graphviz"\n',
+        "html",
+        ".. needflow::",
+    ),
+    "needgantt-milestone_filter": (
+        ".. needgantt:: G{n}\n   :milestone_filter: {f}\n",
+        'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n',
+        "dummy",
+        ".. needgantt::",
+    ),
+    "needsequence-filter": (
+        ".. needsequence:: S{n}\n   :start: LINKS_001\n   :filter: {f}\n",
+        'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n',
+        "dummy",
+        ".. needsequence::",
+    ),
+    "link-condition": (
+        ".. spec:: Links on a condition\n   :id: COND_00{n}\n   :links: REQ_001[{f}]\n",
+        "",
+        "dummy",
+        ".. spec:: Links on a condition",
+    ),
+}
+
+#: :data:`INDEX` with a need needsequence starts from, which sends a message to a need
+#: that links another: the receiver its filter is tested on
+LINKED_INDEX = INDEX + (
+    "\n.. spec:: A message\n   :id: MSG_001\n   :links: SYS_001\n"
+    "\n.. spec:: Links the others\n   :id: LINKS_001\n   :links: MSG_001\n"
+)
+
+NOSUCH = "c.is_a('nosuch')"
+
+
+def _twice(place: str, filter_string: str = NOSUCH) -> str:
+    """:data:`LINKED_INDEX` with the place written twice, the same string at each."""
+    rst = NEED_BY_NEED[place][0]
+    return LINKED_INDEX + "".join(
+        "\n" + rst.format(f=filter_string, n=n) for n in (1, 2)
+    )
+
+
+def _lines(index: str, marker: str) -> list[int]:
+    """The line of every place starting with *marker* in the document :func:`_project`
+    writes (which adds a title of three lines above *index*)."""
+    return [
+        3 + number
+        for number, line in enumerate(index.splitlines(), 1)
+        if line.startswith(marker)
+    ]
+
+
+def _need_by_need_project(place: str) -> dict[str, Any]:
+    _, conf, builder, _ = NEED_BY_NEED[place]
+    return _project(_twice(place), conf=CONF + conf, buildername=builder)
+
+
+@pytest.mark.parametrize(
+    ("test_app", "place"),
+    [
+        pytest.param(_need_by_need_project(place), place, id=place)
+        for place in NEED_BY_NEED
+    ],
+    indirect=["test_app"],
+)
+def test_a_need_by_need_place_is_reported_where_it_is_written(
+    test_app: Any, place: str
+) -> None:
+    """A needflow highlight, a needgantt milestone filter, a needsequence filter and a
+    link condition test their filter need by need: a literal naming no need type is
+    reported once at each place the string is written, with its location, as the views
+    report it and as ``needs.namespaced_ids_off`` is reported."""
+    app = test_app
+    app.build()
+    index = _twice(place)
+    lines = _lines(index, NEED_BY_NEED[place][3])
+    assert len(lines) == 2
+    reported = [w for w in build_warnings(app) if w.endswith("[needs.filter_type]")]
+    assert sorted(reported) == sorted(
+        f"<srcdir>/index.rst:{line}: {_unknown('nosuch', NOSUCH)}" for line in lines
+    )
+
+
+#: :data:`LINKED_INDEX` with two needflow highlights, and a constraint on two needs
+CONSTRAINED_INDEX = (
+    _twice("needflow-highlight")
+    + "\n.. req:: Constrained\n   :id: REQ_101\n   :constraints: c1\n"
+    + "\n.. req:: Constrained too\n   :id: REQ_102\n   :constraints: c1\n"
+)
+
+CONSTRAINED_CONF = (
+    CONF
+    + 'needs_flow_engine = "graphviz"\n'
+    + f"needs_constraints = {{'c1': {{'check_0': {NOSUCH!r}, 'severity': 'LOW'}}}}\n"
+    + "needs_constraint_failed_options = {'LOW': {'on_fail': [], 'style': []}}\n"
+)
+
+
+def _constrained_reports() -> list[str]:
+    """Each highlight at its line, and the constraint, which has no location, once."""
+    lines = _lines(CONSTRAINED_INDEX, ".. needflow::")
+    return sorted(
+        [
+            *(
+                f"<srcdir>/index.rst:{line}: {_unknown('nosuch', NOSUCH)}"
+                for line in lines
+            ),
+            _unknown("nosuch", NOSUCH),
+        ]
+    )
+
+
+def _filter_type(warnings: list[str]) -> list[str]:
+    return sorted(w for w in warnings if w.endswith("[needs.filter_type]"))
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(CONSTRAINED_INDEX, conf=CONSTRAINED_CONF, buildername="html")],
+    indirect=True,
+)
+def test_a_place_with_no_location_is_reported_once_per_build(test_app: Any) -> None:
+    """A constraint has no location: tested on two needs, it is reported once, without
+    one, beside the highlights that share its string, each at its own line."""
+    app = test_app
+    app.build()
+    assert _filter_type(build_warnings(app)) == _constrained_reports()
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(CONSTRAINED_INDEX, conf=CONSTRAINED_CONF, buildername="html")],
+    indirect=True,
+)
+def test_an_application_building_twice_reports_in_each_build(test_app: Any) -> None:
+    """Per build, not per application: the second build reports what the first did."""
+    app = test_app
+    app.build()
+    first = _filter_type(build_warnings(app))
+    start = len(app._warning.getvalue())
+    app.build(force_all=True)
+    second = _filter_type(
+        build_warnings(app._warning.getvalue()[start:], srcdir=app.srcdir)
+    )
+    assert first == second == _constrained_reports()
+
+
+def test_an_incremental_build_reports_what_a_fresh_one_does(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """A document changed since the last build is read and written again: its
+    highlights are reported at their lines, and the constraint once, as a fresh build of
+    the same sources reports them."""
+
+    def build(srcdir: Path, fresh: bool) -> list[str]:
+        app = make_app(
+            "html",
+            srcdir=srcdir,
+            freshenv=fresh,
+            status=io.StringIO(),
+            warning=io.StringIO(),
+        )
+        app.build()
+        return _filter_type(build_warnings(app))
+
+    def write(srcdir: Path, index: str) -> None:
+        srcdir.mkdir(exist_ok=True)
+        (srcdir / "conf.py").write_text(CONSTRAINED_CONF, encoding="utf-8")
+        (srcdir / "ubproject.toml").write_text(TYPES, encoding="utf-8")
+        (srcdir / "index.rst").write_text("Case\n====\n\n" + index, encoding="utf-8")
+
+    incremental = tmp_path / "incremental"
+    write(incremental, CONSTRAINED_INDEX)
+    assert build(incremental, True) == _constrained_reports()
+    # the same lines: a comment after the last directive
+    changed = CONSTRAINED_INDEX + "\n.. a change\n"
+    write(incremental, changed)
+    fresh = tmp_path / "fresh"
+    write(fresh, changed)
+    assert build(incremental, False) == build(fresh, True) == _constrained_reports()
+
+
+#: two needs whose ``effort`` is computed, a ``calc_sum`` over it whose filter is read
+#: quietly first (to order the computation), a ``copy`` whose filter is matched quietly
+#: first, and a constraint and a highlight sharing the string
+QUIET_INDEX = (
+    INDEX
+    + '\n.. req:: Base one\n   :id: EFF_001\n   :base: 3\n   :effort: [[copy("base")]]\n'
+    + '\n.. req:: Base two\n   :id: EFF_002\n   :base: 4\n   :effort: [[copy("base")]]\n'
+    + f'\n.. req:: Sum\n   :id: SUM_001\n   :total: [[calc_sum("effort", filter={NOSUCH!r})]]\n'
+    + f"\n.. req:: Copy\n   :id: COPY_001\n   :constraints: c1\n"
+    f'   :base: [[copy("title", filter={NOSUCH!r})]]\n'
+    + f"\n.. needflow::\n   :highlight: {NOSUCH}\n"
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            QUIET_INDEX,
+            conf=CONSTRAINED_CONF
+            + 'needs_extra_options = ["effort", "base", "total"]\n',
+            buildername="html",
+        )
+    ],
+    indirect=True,
+)
+def test_the_quiet_pre_passes_lose_no_report(test_app: Any) -> None:
+    """The pre-passes that order the computed fields evaluate ``calc_sum``'s and
+    ``copy``'s filters quietly: each place is still reported where it is evaluated for
+    real -- the ``copy`` at its need, the highlight at its line, and the ``calc_sum``
+    and the constraint, which share the key of a place with no location, once."""
+    app = test_app
+    app.build()
+    unknown = _unknown("nosuch", NOSUCH)
+    assert _filter_type(build_warnings(app)) == sorted(
+        [
+            f"<srcdir>/index.rst:{_line(QUIET_INDEX, '.. req:: Copy')}: {unknown}",
+            f"<srcdir>/index.rst:{_line(QUIET_INDEX, '.. needflow::')}: {unknown}",
+            unknown,
+        ]
+    )
+
+
+#: an external need whose link condition names no need type
+EXTERNAL_NEEDS = json.dumps(
+    {
+        "current_version": "1.0",
+        "versions": {
+            "1.0": {
+                "needs": {
+                    "A": {"id": "A", "type": "req", "title": "A", "content": ""},
+                    "B": {
+                        "id": "B",
+                        "type": "req",
+                        "title": "B",
+                        "content": "",
+                        "links": [f"A[{NOSUCH}]"],
+                    },
+                }
+            }
+        },
+    }
+)
+
+
+def _external_project() -> dict[str, Any]:
+    project = _project(
+        conf=CONF + "needs_external_needs = [{'json_path': 'ext.json', "
+        "'base_url': 'http://example.org', 'id_prefix': 'EXT_'}]\n"
+    )
+    project["files"].append((Path("ext.json"), EXTERNAL_NEEDS))
+    return project
+
+
+@pytest.mark.parametrize("test_app", [_external_project()], indirect=True)
+def test_an_external_link_condition_names_the_external_need(test_app: Any) -> None:
+    """An external need's link condition is written in another project: it has no
+    location here, and the report names the external need, as its other link findings
+    do."""
+    app = test_app
+    app.build()
+    url = SphinxNeedsData(app.env).get_needs_view()["EXT_B"]["external_url"]
+    assert _filter_type(build_warnings(app)) == [
+        _unknown("nosuch", NOSUCH).replace(
+            " [needs.filter_type]",
+            f" (from the external need 'EXT_B': {url}) [needs.filter_type]",
+        )
+    ]
+
+
+# --- a padded filter's c.is_a literal is read as the filter is (#2521) ---
+
+
+@pytest.mark.parametrize("pad", ["", " ", "\t", " \t "])
+def test_the_names_of_a_padded_filter(pad: str) -> None:
+    """The names are read past the leading spaces and tabs ``eval`` reads past, as the
+    filter is evaluated; no further (a newline then a space does not parse)."""
+    assert is_a_literals(f"{pad}c.is_a('a') or c.is_a('b')") == ("a", "b")
+    assert is_a_literals(f"\n {pad}c.is_a('a')") == ()
+
+
+#: each pad, and the pad of a ``needpie`` line (docutils turns a tab into spaces)
+PADDED = {"none": ("", ""), "space": (" ", " "), "tab": ("\t", " ")}
+
+
+def _padded_index(line_pad: str) -> str:
+    """:data:`INDEX` with a ``needpie`` line and two constrained needs."""
+    return (
+        INDEX
+        + f"\n.. needpie:: P\n\n   {line_pad}{NOSUCH}\n   type == 'req'\n"
+        + "\n.. req:: Constrained\n   :id: REQ_101\n   :constraints: c1\n"
+        + "\n.. req:: Constrained too\n   :id: REQ_102\n   :constraints: c1\n"
+    )
+
+
+def _padded_project(pad: str, line_pad: str) -> dict[str, Any]:
+    filter_string = f"{pad}{NOSUCH}"
+    index = _padded_index(line_pad)
+    conf = (
+        CONF
+        + f"needs_warnings = {{'w': {filter_string!r}}}\n"
+        + f"needs_constraints = {{'c1': {{'check_0': {filter_string!r}, "
+        "'severity': 'LOW'}}\n"
+        + "needs_constraint_failed_options = {'LOW': {'on_fail': [], 'style': []}}\n"
+    )
+    return _project(index, conf=conf, buildername="html")
+
+
+@pytest.mark.parametrize(
+    ("test_app", "pad", "line_pad"),
+    [
+        pytest.param(_padded_project(pad, line_pad), pad, line_pad, id=name)
+        for name, (pad, line_pad) in PADDED.items()
+    ],
+    indirect=["test_app"],
+)
+def test_a_padded_filter_naming_no_type_is_reported_as_written(
+    test_app: Any, pad: str, line_pad: str
+) -> None:
+    """A filter with leading spaces or tabs is answered at every place, so a literal of it
+    naming no need type is reported as the unpadded one is: a ``needs_warnings`` entry
+    naming itself, a ``needpie`` line at its directive, a constraint once with no
+    location; each quoting the filter as written."""
+    app = test_app
+    app.build()
+    filter_string = f"{pad}{NOSUCH}"
+    line = _line(_padded_index(line_pad), ".. needpie::")
+    assert _filter_type(build_warnings(app)) == sorted(
+        [
+            _unknown("nosuch", filter_string).replace(
+                " [needs.filter_type]", " (from warning filter 'w') [needs.filter_type]"
+            ),
+            f"<srcdir>/index.rst:{line}: {_unknown('nosuch', f'{line_pad}{NOSUCH}')}",
+            _unknown("nosuch", filter_string),
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _project(
+            conf=CONF
+            + "needs_warnings = {'w': \"\\n c.is_a('nosuch') or c.id.ns == 'x'\"}\n"
+        )
+    ],
+    indirect=True,
+)
+def test_a_string_eval_refuses_gets_neither_text_report(test_app: Any) -> None:
+    """The two text reports read a string as ``eval`` does, past its leading spaces and
+    tabs alone: a newline then a space is refused, so the string gets its ``not valid``
+    warning and neither a ``needs.filter_type`` nor a ``needs.namespaced_ids_off``."""
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    assert [w for w in warnings if w.endswith("[needs.filter_type]")] == []
+    assert [w for w in warnings if w.endswith("[needs.namespaced_ids_off]")] == []
+    filter_string = "\n c.is_a('nosuch') or c.id.ns == 'x'"
+    (refused,) = [w for w in warnings if w.endswith("[needs.filter]")]
+    assert refused.startswith(f"WARNING: Filter {filter_string!r} not valid. Error: ")
+    assert refused.endswith(" (from warning filter 'w') [needs.filter]")
+
+
+@pytest.mark.parametrize("pad", ["", " ", "\t", " \t "])
+def test_the_two_text_readings_read_a_padded_string_alike(pad: str) -> None:
+    """The names of the types and of the namespace values are both read past the
+    leading spaces and tabs ``eval`` reads past, and no further."""
+    filter_string = f"{pad}c.is_a('a') or c.id.ns == 'x'"
+    assert is_a_literals(filter_string) == ("a",)
+    assert namespace_reads(filter_string) == ("c.id.ns",)
+    assert is_a_literals(f"\n {filter_string}") == ()
+    assert namespace_reads(f"\n {filter_string}") == ()
+
+
+# --- the two text reports of a filter are given together, at each place (#2528) ---
+
+#: a string both text reports read: a type naming no need type, a namespace value
+BOTH = "c.is_a('nosuch') or c.id.ns == 'x'"
+
+#: each place, written twice in each of two documents with the same string: (the
+#: document's text, with ``{f}`` for the filter and ``{n}`` for what tells the places
+#: apart, the configuration's extra text, the builder, whether the place is located)
+TOGETHER: dict[str, tuple[str, str, str, bool]] = {
+    # no need is tested at the place
+    "needflow-highlight-nothing-drawn": (
+        ".. needflow::\n   :filter: id == 'NONE'\n   :highlight: {f}\n",
+        'needs_flow_engine = "graphviz"\n',
+        "html",
+        True,
+    ),
+    "needgantt-milestone_filter-nothing-drawn": (
+        ".. needgantt:: G{n}\n   :filter: id == 'NONE'\n   :milestone_filter: {f}\n",
+        'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n',
+        "dummy",
+        True,
+    ),
+    "needsequence-filter-no-receiver": (
+        ".. needsequence:: S{n}\n   :start: REQ_001\n   :filter: {f}\n",
+        'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n',
+        "dummy",
+        True,
+    ),
+    # one string from one document is evaluated once, and written at each place
+    "needextend": ('.. needextend:: "{f}"\n   :+tags: ext{n}\n', "", "dummy", True),
+    # a need is tested at the place
+    "needflow-highlight": (
+        ".. needflow::\n   :highlight: {f}\n",
+        'needs_flow_engine = "graphviz"\n',
+        "html",
+        True,
+    ),
+    "needgantt-milestone_filter": (
+        ".. needgantt:: G{n}\n   :milestone_filter: {f}\n",
+        'extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]\n',
+        "dummy",
+        True,
+    ),
+    "link-condition": (
+        ".. spec:: Linked on a condition {n}\n   :id: COND_{d}{n}\n"
+        "   :links: REQ_001[{f}]\n",
+        "",
+        "dummy",
+        True,
+    ),
+    "calc_sum": (
+        ".. spec:: Sum {n}\n   :id: SUM_{d}{n}\n"
+        '   :total: [[calc_sum("id", filter={f!r})]]\n',
+        "needs_fields = {'total': {'nullable': True, 'schema': {'type': 'number'}}}\n",
+        "dummy",
+        False,
+    ),
+}
+
+#: two needs, and two more under a constraint sharing the string, which has no location
+TOGETHER_INDEX = (
+    INDEX
+    + "\n.. req:: Constrained\n   :id: REQ_101\n   :constraints: c1\n"
+    + "\n.. req:: Constrained too\n   :id: REQ_102\n   :constraints: c1\n"
+    + "\n.. toctree::\n\n   doc1\n   doc2\n"
+    + "".join(f"   page{i}\n" for i in range(5))
+)
+
+TOGETHER_CONF = (
+    CONF
+    + f"needs_constraints = {{'c1': {{'check_0': {BOTH!r}, 'severity': 'LOW'}}}}\n"
+    + "needs_constraint_failed_options = {'LOW': {'on_fail': [], 'style': []}}\n"
+)
+
+
+def _together_document(place: str, d: int, change: str = "") -> str:
+    rst = TOGETHER[place][0]
+    return (
+        f"Doc {d}\n=====\n"
+        + "".join("\n" + rst.format(f=BOTH, n=n, d=d) for n in (1, 2))
+        + change
+    )
+
+
+def _write_together(srcdir: Path, place: str, change: str = "") -> None:
+    srcdir.mkdir(exist_ok=True)
+    texts = {
+        "conf.py": TOGETHER_CONF + TOGETHER[place][1],
+        "ubproject.toml": TYPES,
+        "index.rst": "Case\n====\n\n" + TOGETHER_INDEX,
+        "doc1.rst": _together_document(place, 1, change),
+        "doc2.rst": _together_document(place, 2),
+        # Sphinx reads and writes in parallel from six documents on
+        **{f"page{i}.rst": f"Page {i}\n======\n" for i in range(5)},
+    }
+    for name, text in texts.items():
+        (srcdir / name).write_text(text, encoding="utf-8")
+
+
+def _places(warnings: list[str], code: str) -> dict[str, int]:
+    """How often *code* is reported at each place: its file and line, or ``""``."""
+    counted: dict[str, int] = {}
+    for warning in warnings:
+        if warning.endswith(f"[{code}]"):
+            where = warning.split("WARNING: ")[0]
+            counted[where] = counted.get(where, 0) + 1
+    return counted
+
+
+def _expected_places(place: str, documents: tuple[int, ...]) -> dict[str, int]:
+    """Each place written in *documents* once, and the constraint once."""
+    expected = {"": 1}
+    if TOGETHER[place][3]:
+        for d in documents:
+            text = _together_document(place, d)
+            marker = TOGETHER[place][0].split("\n")[0].split("{")[0]
+            for number, line in enumerate(text.splitlines(), 1):
+                if line.startswith(marker):
+                    expected[f"<srcdir>/doc{d}.rst:{number}: "] = 1
+        assert len(expected) == 1 + 2 * len(documents), expected
+    return expected
+
+
+@pytest.mark.parametrize("parallel", [0, 2], ids=["serial", "parallel"])
+@pytest.mark.parametrize("place", list(TOGETHER))
+def test_the_two_text_reports_are_given_together_at_each_place(
+    place: str, parallel: int, make_app: Any, tmp_path: Path
+) -> None:
+    """``needs.filter_type`` and ``needs.namespaced_ids_off`` are reported together for
+    a string at a place: once at each place it is written, with its location, whether
+    or not a need is tested there (a needflow drawing no need, a needgantt and a
+    needsequence testing none), two ``needextend``\\ s of one document included; a place
+    with no location (a constraint, a ``calc_sum``) once. A parallel build reports what a
+    serial one does."""
+    if parallel and not parallel_available:
+        pytest.skip("this platform cannot run a parallel build")
+    srcdir = tmp_path / "src"
+    _write_together(srcdir, place)
+    builder = TOGETHER[place][2]
+    app = make_app(
+        builder,
+        srcdir=srcdir,
+        freshenv=True,
+        status=io.StringIO(),
+        warning=io.StringIO(),
+        parallel=parallel,
+    )
+    app.build()
+    status = re.sub(r"\x1b\[[0-9;]*m", "", app._status.getvalue())
+    chunked = re.search(r"reading sources\.\.\. \[ *\d+%\] \S+ \.\. ", status)
+    assert (chunked is not None) is bool(parallel)
+    warnings = build_warnings(app)
+    expected = _expected_places(place, (1, 2))
+    assert _places(warnings, "needs.filter_type") == expected, warnings
+    assert _places(warnings, "needs.namespaced_ids_off") == expected, warnings
+
+
+@pytest.mark.parametrize("parallel", [0, 2], ids=["serial", "parallel"])
+@pytest.mark.parametrize("place", list(TOGETHER))
+def test_an_incremental_build_gives_the_two_text_reports_together(
+    place: str, parallel: int, make_app: Any, tmp_path: Path
+) -> None:
+    """A document changed since the last build is read and written again: each place
+    in it is given both reports, once, with its location; whatever else the build
+    evaluates again is given both, and nothing is given one of them alone."""
+    if parallel and not parallel_available:
+        pytest.skip("this platform cannot run a parallel build")
+    srcdir = tmp_path / "src"
+    builder = TOGETHER[place][2]
+    for fresh, change in ((True, ""), (False, "\n.. a change\n")):
+        _write_together(srcdir, place, change)
+        app = make_app(
+            builder,
+            srcdir=srcdir,
+            freshenv=fresh,
+            status=io.StringIO(),
+            warning=io.StringIO(),
+            parallel=parallel,
+        )
+        app.build()
+    warnings = build_warnings(app)
+    filter_type = _places(warnings, "needs.filter_type")
+    assert filter_type == _places(warnings, "needs.namespaced_ids_off"), warnings
+    changed = _expected_places(place, (1,))
+    assert {where: filter_type.get(where) for where in changed} == changed, warnings
+    assert set(filter_type.values()) == {1}, warnings
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(INDEX + f"\n.. needlist::\n   :filter: {BOTH}\n", buildername="html")],
+    indirect=True,
+)
+def test_the_two_text_reports_come_in_their_order(test_app: Any) -> None:
+    """At a place, the type report comes first and the namespace report second, as the
+    filter entries have always given them."""
+    app = test_app
+    app.build()
+    codes = [
+        code
+        for w in build_warnings(app)
+        for code in ("needs.filter_type", "needs.namespaced_ids_off")
+        if w.endswith(f"[{code}]")
+    ]
+    assert codes == ["needs.filter_type", "needs.namespaced_ids_off"]

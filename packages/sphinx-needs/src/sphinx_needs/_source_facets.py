@@ -422,7 +422,8 @@ def namespace_reads(expression: str) -> tuple[str, ...]:
     ``c.id.ns``, ``c.id.local``, ``c.in_namespace()``, each once.
 
     Read from its text as parsed, never from evaluating it, so a name inside a string
-    literal is no read. Empty for an expression that reads none, that does not parse,
+    literal is no read; read past the leading spaces and tabs ``eval`` reads past, as the
+    string is evaluated. Empty for an expression that reads none, that does not parse,
     and for one the text shows refused (:func:`_refused`, judged only where evaluation
     reaches it unconditionally, :func:`_reached`): such a filter has its refusal, and
     nothing beside it. Where the text cannot settle whether the filter is refused, the
@@ -431,8 +432,11 @@ def namespace_reads(expression: str) -> tuple[str, ...]:
     reads = _check_reads(expression)
     if _id_facets.ID_NAME not in reads and _id_facets.IN_NAMESPACE not in reads:
         return ()
-    # it parses: _check_reads parsed it
-    tree = ast.parse(expression.strip(), mode="eval")
+    try:
+        # past the leading spaces and tabs ``eval`` reads past, and no further
+        tree = ast.parse(expression.lstrip(" \t"), mode="eval")
+    except (SyntaxError, ValueError):
+        return ()
     if any(map(_refused, _reached(tree.body))):
         return ()
     found: set[str] = set()
