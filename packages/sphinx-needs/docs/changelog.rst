@@ -54,7 +54,7 @@ Improvements
   ``needs_import_restrict_content = True`` (``[needs] import_restrict_content = true``); it is off by default in 9.x
   and planned to be on by default in a later release. It narrows what imported content can do and is no substitute
   for trusting the file: its entry lists what it does not cover, filter strings, which are evaluated as Python, among
-  them (:issue:`2259`)
+  them (:issue:`2259`, :pr:`2542`)
 
 - ✨ **Qualified need directives and** :ref:`needs_directive_name`: every need type is also written
   ``.. need:<type>::`` (a ``{need:<type>}`` fence in MyST), and a project chooses whether the bare ``.. <type>::`` is
