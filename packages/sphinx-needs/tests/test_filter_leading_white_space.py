@@ -259,3 +259,136 @@ def test_a_padded_string_that_fails_on_a_need_is_quoted_as_written(
         ((args, _),) = warn.call_args_list
         assert args[1].startswith(f"Filter {filter_string!r} not valid. Error: ")
         assert args[2] == "filter"
+
+
+#: a need whose dynamic functions link by a filter: ``links_from_filter`` keeps the open
+#: need of the two, and ``links_from_match`` the open one of the two it matches
+FUNCTIONS_INDEX = """\
+Index
+=====
+
+.. req:: One
+   :id: REQ_001
+   :status: open
+
+.. req:: Two
+   :id: REQ_002
+   :status: closed
+
+.. spec:: Functions
+   :id: SPEC_001
+   :status: closed
+   :match: open, closed
+   :lff: [[links_from_filter({filter})]]
+   :lfm: [[links_from_match("status", "match", filter={filter})]]
+"""
+
+FUNCTIONS_CONF = """\
+extensions = ["sphinx_needs"]
+needs_fields = {"match": {"nullable": True}}
+needs_links = {"links": {}, "lff": {}, "lfm": {}}
+"""
+
+
+def _functions_project(pad: str) -> dict[str, Any]:
+    # a string literal of the function call: ``\\t`` is a real tab in the filter
+    literal = json.dumps(f"{pad}status == 'open'")
+    return {
+        "buildername": "dummy",
+        "files": [
+            (Path("conf.py"), FUNCTIONS_CONF),
+            (Path("index.rst"), FUNCTIONS_INDEX.format(filter=literal)),
+        ],
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        pytest.param(_functions_project(pad), id=name)
+        for name, pad in PADS.items()
+        if name in ("none", "space", "tab")
+    ],
+    indirect=True,
+)
+def test_a_dynamic_function_linking_by_a_filter_reads_the_padding_past(
+    test_app: Any,
+) -> None:
+    """``links_from_filter`` and ``links_from_match`` compile their filter before they
+    test it need by need: a filter with leading spaces or tabs links what the unpadded
+    one links, and nothing is reported."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    need = SphinxNeedsData(app.env).get_needs_view()["SPEC_001"]
+    assert [str(link) for link in need["lff"]] == ["REQ_001"]
+    assert [str(link) for link in need["lfm"]] == ["REQ_001"]
+
+
+DERIVE_CONF = """\
+extensions = ["sphinx_needs"]
+needs_fields = {{
+    "open_links": {{
+        "schema": {{"type": "integer"}},
+        "derive": {{"kind": "count", "over": "links", "where": {where!r}}},
+    }},
+}}
+"""
+
+DERIVE_INDEX = """\
+Index
+=====
+
+.. req:: One
+   :id: REQ_001
+   :status: open
+
+.. req:: Two
+   :id: REQ_002
+   :status: closed
+
+.. spec:: Links both
+   :id: SPEC_001
+   :links: REQ_001, REQ_002
+"""
+
+
+@pytest.mark.parametrize(
+    ("test_app", "pad"),
+    [
+        pytest.param(
+            {
+                "buildername": "dummy",
+                "files": [
+                    (
+                        Path("conf.py"),
+                        DERIVE_CONF.format(where=f"{pad}status == 'open'"),
+                    ),
+                    (Path("index.rst"), DERIVE_INDEX),
+                ],
+            },
+            pad,
+            id=name,
+        )
+        for name, pad in PADS.items()
+        if name in ("none", "space", "tab")
+    ],
+    indirect=["test_app"],
+)
+def test_a_derived_fields_where_must_parse_as_written(test_app: Any, pad: str) -> None:
+    """A derived field's ``where`` is a declared rule, which must parse as written: a
+    padded one is refused (``needs.derive_invalid``) and the field holds its empty
+    value, as before; the unpadded one counts the open link."""
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    need = SphinxNeedsData(app.env).get_needs_view()["SPEC_001"]
+    if not pad:
+        assert warnings == []
+        assert need["open_links"] == 1
+        return
+    (warning,) = warnings
+    assert warning.startswith("WARNING: Invalid derive of field 'open_links': ")
+    assert "the role 'where' does not parse as a filter (" in warning
+    assert warning.endswith("[needs.derive_invalid]")
+    assert need["open_links"] is None
