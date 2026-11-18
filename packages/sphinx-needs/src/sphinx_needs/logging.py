@@ -135,7 +135,7 @@ WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "id_namespace": "A need id contains '::' but is not a namespaced id; it is read as a plain id",
     "if": "Error in processing if directive",
     "import_doctype": "Imported need content declares a doctype the project cannot parse; parsed as the page's markup",
-    "import_inert": "Raw markup removed from the content of an imported need under needs_import_inert_content",
+    "import_inert": "Raw markup removed from an imported need under needs_import_inert_content",
     "import_need": "Failed to import a need",
     "layout": "Error occurred during layout rendering of a need",
     "link_condition_failed": "Link condition not satisfied by targeted need",
