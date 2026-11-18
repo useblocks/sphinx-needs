@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 27
+ENV_DATA_VERSION: Final = 28
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
@@ -204,6 +204,13 @@ longer ``::``-joined id in a need's content; and a one-word ``needextend`` argum
 holding ``(``, ``=``, ``'`` or ``"`` is stored as a filter. Each is decided when a
 document is read or its diagrams are resolved, so without the bump an upgraded build
 would keep the old values and diagrams on the pages whose sources did not change.
+
+Version 28 adds two slots to every stored need (:class:`~sphinx_needs.need_item.NeedItem`):
+its namespace, a tuple of segments, and its local id, read from its id where it is created
+(``needs_namespaced_ids``, ``design/namespaced-ids.md``). A need pickled by version 27 or
+before has neither, so its first ``need.id_local`` would end with an ``AttributeError``
+rather than re-reading the documents; every project re-reads its sources once after
+upgrading.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """

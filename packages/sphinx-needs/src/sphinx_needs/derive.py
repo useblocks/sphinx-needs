@@ -37,7 +37,8 @@ from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias, TypeGuard
 
-from sphinx_needs._source_facets import READERS as FACET_READERS
+from sphinx_needs._id_facets import IN_NAMESPACE, namespace_argument
+from sphinx_needs._source_facets import facet_read
 from sphinx_needs._wording import title_hint
 
 if TYPE_CHECKING:
@@ -1464,8 +1465,9 @@ def filter_problem(text: str) -> str | None:
     ``needs`` (every need), ``current_need`` (the reader) or a ``c.`` check (such as
     ``c.this_doc()``) is not portable, as ubCode cannot evaluate it -- but
     ``c.is_a("<type>")``, which reads the candidate's type alone, against the need
-    types the project declares, and a facet of its source, ``c.source.<facet>``, which
-    reads the candidate's source alone.
+    types the project declares, a facet of its source, ``c.source.<facet>``, which
+    reads the candidate's source alone, and a facet of its id, ``c.id.<facet>``, or
+    ``c.in_namespace("<ns>")``, which read the candidate's id alone.
 
     :param text: The predicate.
     """
@@ -1489,14 +1491,33 @@ def filter_problem(text: str) -> str | None:
         and isinstance(node.args[0], ast.Constant)
         and isinstance(node.args[0].value, str)
     }
-    #: the ``c.source`` of each ``c.source.<facet>``, which reads the candidate alone
+    #: the ``c.in_namespace("<ns>")`` checks, which read the candidate's id alone
+    in_namespace = [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and node.func.attr == IN_NAMESPACE
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == "c"
+        and len(node.args) == 1
+        and not node.keywords
+        and isinstance(node.args[0], ast.Constant)
+        and isinstance(node.args[0].value, str)
+    ]
+    for node in in_namespace:
+        # a literal naming no namespace is an error of every filter: here, the rule's
+        try:
+            namespace_argument(node.args[0].value)  # ty: ignore[unresolved-attribute]
+        except ValueError as err:
+            return str(err)
+    is_a |= {id(node.func) for node in in_namespace}
+    #: the ``c.source`` / ``c.id`` of each ``c.source.<facet>`` / ``c.id.<facet>``,
+    #: which reads the candidate alone
     facets = {
         id(node.value)
         for node in ast.walk(tree)
-        if isinstance(node, ast.Attribute)
-        and node.attr in FACET_READERS
-        and isinstance(node.value, ast.Attribute)
-        and node.value.attr == "source"
+        if isinstance(node, ast.Attribute) and facet_read(node) is not None
     }
     for node in ast.walk(tree):
         if isinstance(node, ast.Name) and node.id in {"needs", "current_need"}:

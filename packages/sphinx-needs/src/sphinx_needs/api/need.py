@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import os
-import re
 import warnings
 from collections.abc import Generator, Iterable, Mapping, Sequence
 from contextlib import contextmanager
@@ -19,6 +18,12 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs._jinja import render_template_string
+from sphinx_needs._namespaced_ids import (
+    id_matched_by_patterns,
+    nor_local,
+    read_id,
+    unclean_id_message,
+)
 from sphinx_needs._need_source import (
     NeedSourceHop,
     NeedSourcePhysical,
@@ -83,19 +88,6 @@ _deprecated_kwargs = {
     "hide_status",
     "delete",
 }
-
-
-def _id_matched_by_patterns(need_id: str, /) -> str:
-    """The id :ref:`needs_id_regex` and a need type's ``id_regex`` are matched against:
-    the need's local id, as it is written in the need or generated, before any
-    namespace. While a need's id carries no namespace, that is the whole id.
-
-    The one place both patterns read the id from, so that they keep matching the local
-    id should an id ever carry more.
-
-    :param need_id: The id of the need being created.
-    """
-    return need_id
 
 
 def _warn_protocol_source(need_source: object, function: str) -> None:
@@ -382,28 +374,30 @@ def _generate_need(
         if id is None
         else id
     )
+    # the need's namespace and local id, read here alone, for every route
+    id_namespace, id_local, _id_problem = read_id(need_id, needs_config.namespaced_ids)
     # a need from outside the project's sources (imported, external) is the source's
     # data: its id is not checked against ``needs_id_regex`` (a prefix may break any
     # pattern), and it keeps the values of its derived fields
     from_outside = bool(
         source.dict_repr["is_import"] or source.dict_repr["is_external"]
     )
-    #: what the patterns test: the need's local id
-    matched_id = _id_matched_by_patterns(need_id)
+    # the patterns accept the need's local id, or its whole id
     if (
         needs_config.id_regex
         and not from_outside
-        and not re.match(needs_config.id_regex, matched_id)
+        and not id_matched_by_patterns(needs_config.id_regex, need_id, id_local)
     ):
         raise InvalidNeedException(
             "invalid_id",
-            f"Given ID {need_id!r} does not match configured regex {needs_config.id_regex!r}",
+            f"Given ID {need_id!r} does not match configured regex "
+            f"{needs_config.id_regex!r}{nor_local(need_id, id_local)}",
         )
     # and the id_regex of its need type, and of each type that one inherits from
     for declared_by, pattern in (
         () if from_outside else needs_schema.id_patterns(need_type)
     ):
-        if not re.match(pattern, matched_id):
+        if not id_matched_by_patterns(pattern, need_id, id_local):
             inherited = (
                 ""
                 if declared_by == need_type
@@ -412,7 +406,7 @@ def _generate_need(
             raise InvalidNeedException(
                 "invalid_id",
                 f"Given ID {need_id!r} does not match the id_regex {pattern!r} of need "
-                f"type {declared_by!r}{inherited}",
+                f"type {declared_by!r}{inherited}{nor_local(need_id, id_local)}",
             )
 
     # Convert all schema-enabled core fields
@@ -695,6 +689,7 @@ def _generate_need(
             dynamic_fields=dynamic_fields,
             # one set for every need type, the schema's own (derived_names)
             derived=schema.derived_names,
+            _id_split=(id_namespace, id_local),
             _validate=False,
         )
     except ValueError as err:
@@ -747,6 +742,16 @@ def _generate_need(
 
         needs_info.set_content(content_info)
 
+    if _id_problem is not None and not from_outside:
+        # the project's own id (authored or generated) holds the separator but does not
+        # split cleanly: the need is kept, as a plain id. An imported or external one is
+        # the source's data, as for the id patterns
+        log_warning(
+            logger,
+            unclean_id_message(need_id, _id_problem),
+            "id_namespace",
+            location,
+        )
     return needs_info
 
 

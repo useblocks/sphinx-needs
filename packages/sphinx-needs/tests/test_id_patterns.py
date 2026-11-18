@@ -1,10 +1,12 @@
 """The id :ref:`needs_id_regex` and a need type's ``id_regex`` are matched against.
 
-Both patterns match the need's local id, the id as it is written in the need or
-generated, before any namespace; while ids carry no namespace, that is the whole id.
-``sphinx_needs.api.need._id_matched_by_patterns`` is the one place both read it from,
-and these tests pin that both do: each replaces it, so that the local id differs from
-the whole one, and checks which of the two each pattern was matched against.
+Both patterns accept a need's id when its LOCAL id matches, or the id as a whole
+(``needs_namespaced_ids``): ``nc::REQ_1`` is the local id ``REQ_1`` in the namespace
+``nc``; a plain id is its own local id. ``sphinx_needs._namespaced_ids.
+id_matched_by_patterns`` is the one place both read it from, and these tests pin that
+both do: each pattern alone accepts a local id the whole id fails, and refuses one that
+neither matches. The default pattern's behaviour on namespaced ids is pinned in
+``test_namespaced_ids.py``.
 """
 
 from __future__ import annotations
@@ -15,11 +17,12 @@ from typing import Any
 
 import pytest
 
-from sphinx_needs.api import need as need_api
+from sphinx_needs._namespaced_ids import id_matched_by_patterns
 from sphinx_needs_testkit import build_warnings
 
 CONF = """\
 extensions = ["sphinx_needs"]
+needs_namespaced_ids = True
 needs_build_json = True
 needs_id_regex = {global_!r}
 needs_types = [
@@ -43,43 +46,36 @@ def _needs(app: Any) -> dict[str, Any]:
     return data["versions"][data["current_version"]]["needs"]
 
 
-@pytest.mark.parametrize("test_app", [_project("^REQ_", "NS_REQ_1")], indirect=True)
-def test_both_patterns_match_the_local_id(
-    test_app: Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """With a local id that is the whole id without a leading ``NS_``, ``NS_REQ_1``
-    is created: neither pattern accepts the whole id, both accept the local one."""
-    monkeypatch.setattr(
-        need_api, "_id_matched_by_patterns", lambda i: i.removeprefix("NS_")
-    )
+@pytest.mark.parametrize("test_app", [_project("^REQ_", "NS::REQ_1")], indirect=True)
+def test_both_patterns_match_the_local_id(test_app: Any) -> None:
+    """``NS::REQ_1`` is created: neither pattern accepts the whole id, both accept its
+    local id ``REQ_1``."""
     test_app.build()
     assert build_warnings(test_app) == []
-    assert list(_needs(test_app)) == ["NS_REQ_1"]
+    assert list(_needs(test_app)) == ["NS::REQ_1"]
 
 
 @pytest.mark.parametrize(
     ("test_app", "refusal"),
     [
         pytest.param(
-            _project("^REQ_", "REQ_1"),
-            "Given ID 'REQ_1' does not match configured regex '^REQ_'",
+            _project("^REQ_", "NS::X_1"),
+            "Given ID 'NS::X_1' does not match configured regex '^REQ_', nor does its "
+            "local id 'X_1'",
             id="needs_id_regex",
         ),
         pytest.param(
-            _project(".*", "REQ_1"),
-            "Given ID 'REQ_1' does not match the id_regex 'REQ_1' of need type 'req'",
+            _project(".*", "NS::X_1"),
+            "Given ID 'NS::X_1' does not match the id_regex 'REQ_1' of need type "
+            "'req', nor does its local id 'X_1'",
             id="type-id_regex",
         ),
     ],
     indirect=["test_app"],
 )
-def test_each_pattern_matches_the_local_id(
-    test_app: Any, refusal: str, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """With a local id that neither pattern accepts, ``REQ_1``, which both accept,
-    is refused by each pattern alone: each is matched against the local id, not the
-    whole one."""
-    monkeypatch.setattr(need_api, "_id_matched_by_patterns", lambda _: "local")
+def test_each_pattern_refuses_what_neither_matches(test_app: Any, refusal: str) -> None:
+    """``NS::X_1``, whose local id and whole id each pattern refuses, is refused by
+    each pattern alone, and the refusal names the local id too."""
     test_app.build()
     warnings = build_warnings(test_app)
     assert len(warnings) == 1
@@ -89,8 +85,11 @@ def test_each_pattern_matches_the_local_id(
 
 @pytest.mark.parametrize("test_app", [_project("^REQ_", "REQ_1")], indirect=True)
 def test_the_local_id_is_the_whole_id(test_app: Any) -> None:
-    """While ids carry no namespace, the local id is the whole id: nothing changes."""
-    assert need_api._id_matched_by_patterns("REQ_1") == "REQ_1"
+    """A plain id is its own local id: nothing changes."""
+    assert id_matched_by_patterns("^REQ_", "REQ_1", "REQ_1")
+    assert not id_matched_by_patterns("^REQ_", "X_1", "X_1")
+    assert id_matched_by_patterns("^REQ_", "REQ_1::A", "A")
+    assert not id_matched_by_patterns("^REQ_1$", "NS::REQ_1x", "REQ_1x", full=True)
     test_app.build()
     assert build_warnings(test_app) == []
     assert list(_needs(test_app)) == ["REQ_1"]

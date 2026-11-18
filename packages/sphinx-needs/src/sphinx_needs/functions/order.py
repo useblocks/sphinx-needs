@@ -291,8 +291,8 @@ def filter_names(
     nor are the names the filter context supplies over the need's fields (``search``,
     ``c``, ``var``, and ``not_fields``, the keys of ``needs_filter_data``). A builtin's
     name is kept: a field of that name shadows it, and no other is computed.
-    ``c.this_doc()`` reads ``docname`` and ``c.is_a(...)`` ``type``, which nothing
-    computes. A filter that does not parse reads nothing here; evaluating it reports
+    ``c.this_doc()`` reads ``docname``, ``c.is_a(...)`` ``type``, and ``c.id.<facet>``
+    and ``c.in_namespace(...)`` ``id``, which nothing computes. A filter that does not parse reads nothing here; evaluating it reports
     the error.
 
     :param filter_string: The filter.
@@ -332,6 +332,12 @@ def filter_names(
         for node in ast.walk(tree)
         if isinstance(node, ast.Attribute) and node.attr == "is_a"
     }
+    #: the `c` of each `c.id` and `c.in_namespace`, which read the id
+    id_checks = {
+        id(node.value)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Attribute) and node.attr in ("id", "in_namespace")
+    }
     names: set[str] = set()
     opaque = False
     for node in ast.walk(tree):
@@ -346,9 +352,15 @@ def filter_names(
         elif node.id not in _FILTER_GLOBALS and node.id not in not_fields:
             names.add(node.id)
         elif node.id == "c":
-            # `c` itself is no field: `c.is_a(...)` reads the type, any other use of it
-            # (`c.this_doc()`, a bare `c`) the document
-            names.add("type" if id(node) in is_a_checks else "docname")
+            # `c` itself is no field: `c.is_a(...)` reads the type, `c.id.<facet>` and
+            # `c.in_namespace(...)` the id (which never changes after creation), any
+            # other use of it (`c.this_doc()`, a bare `c`) the document
+            if id(node) in is_a_checks:
+                names.add("type")
+            elif id(node) in id_checks:
+                names.add("id")
+            else:
+                names.add("docname")
     return FilterNames(frozenset(names), frozenset(current), opaque)
 
 

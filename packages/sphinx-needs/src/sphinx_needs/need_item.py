@@ -46,6 +46,7 @@ from sphinx_needs.data import (
     NeedsPartType,
     NeedsSourceInfoType,
 )
+from ub_needs_exchange import format_namespace, join_id
 
 if TYPE_CHECKING:
     import docutils.parsers.rst
@@ -859,6 +860,8 @@ class NeedItem:
         "_derived",
         "_dynamic_fields",
         "_extras",
+        "_id_local",
+        "_id_ns",
         "_links",
         "_modifications",
         "_parts",
@@ -882,6 +885,7 @@ class NeedItem:
         dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray]
         | None = None,
         derived: Iterable[str] = (),
+        _id_split: tuple[tuple[str, ...], str] | None = None,
         _validate: bool = True,
     ) -> None:
         """Initialize the NeedItem instance.
@@ -900,6 +904,10 @@ class NeedItem:
         :param derived: The keys of the derived fields (extras or links keys), which
             ``need[key] = value`` refuses: they hold what their rules compute
             (:attr:`~sphinx_needs.needs_schema.FieldsSchema.derived_names`).
+        :param _id_split: The need's namespace, as a tuple of segments, and its local
+            id, as the creation of the need read them from its id
+            (:ref:`needs_namespaced_ids`); ``None`` is a plain id, ``((), id)``.
+            Internal: read once, where a need is created, and kept by every copy.
         :param _validate: Perform runtime type validation of initialisation inputs
         """
         if _validate:
@@ -932,6 +940,11 @@ class NeedItem:
                 )
             if not isinstance(dynamic_fields, None | dict):
                 raise TypeError("NeedItem dynamic_fields must be a dictionary or None.")
+            if _id_split is not None and join_id(*_id_split) != core["id"]:
+                raise ValueError(
+                    f"NeedItem namespace and local id {_id_split!r} do not make its "
+                    f"id {core['id']!r}"
+                )
 
         # set internal fields
         self._dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray] = (
@@ -963,6 +976,13 @@ class NeedItem:
         This is required for distinct access to backlinks in the NeedItem API.
 
         """
+        # set once, where the need is created: the id never changes, so neither can
+        # they. The tuple is shared by the needs of one namespace
+        self._id_ns: tuple[str, ...]
+        self._id_local: str
+        self._id_ns, self._id_local = (
+            ((), core["id"]) if _id_split is None else _id_split
+        )
         self._content: NeedsContent = content
         self._source: NeedItemSourceProtocol = (
             source if source is not None else NeedItemSource()
@@ -1067,6 +1087,25 @@ class NeedItem:
         return self._core["id"]
 
     @property
+    def id_ns(self) -> str:
+        """The need's namespace, as text: ``"nc::m2"`` for the id ``nc::m2::REQ_1``,
+        ``""`` for a plain id (:ref:`namespaced_ids`). **Experimental.**"""
+        return format_namespace(self._id_ns)
+
+    @property
+    def id_ns_segments(self) -> tuple[str, ...]:
+        """The need's namespace, as its segments: ``("nc", "m2")`` for the id
+        ``nc::m2::REQ_1``, ``()`` for a plain id (:ref:`namespaced_ids`).
+        **Experimental.**"""
+        return self._id_ns
+
+    @property
+    def id_local(self) -> str:
+        """The need's local id: ``"REQ_1"`` for the id ``nc::m2::REQ_1``, the whole id
+        for a plain id (:ref:`namespaced_ids`). **Experimental.**"""
+        return self._id_local
+
+    @property
     def source(self) -> NeedItemSourceProtocol:
         """Return the source of the need item."""
         return self._source
@@ -1134,6 +1173,7 @@ class NeedItem:
             constraint_results=self._constraint_results,
             dynamic_fields=self._dynamic_fields,
             derived=self._derived,
+            _id_split=(self._id_ns, self._id_local),
             _validate=False,
         )
 
@@ -1782,6 +1822,24 @@ class NeedPartItem:
     def part_id(self) -> str:
         """Return the part ID."""
         return self._part.id
+
+    @property
+    def id_ns(self) -> str:
+        """The namespace of the part's need, as text (:attr:`NeedItem.id_ns`).
+        **Experimental.**"""
+        return self._need.id_ns
+
+    @property
+    def id_ns_segments(self) -> tuple[str, ...]:
+        """The namespace of the part's need, as its segments
+        (:attr:`NeedItem.id_ns_segments`). **Experimental.**"""
+        return self._need.id_ns_segments
+
+    @property
+    def id_local(self) -> str:
+        """The local id of the part's need (:attr:`NeedItem.id_local`); the part's own
+        id is ``id``. **Experimental.**"""
+        return self._need.id_local
 
     def __repr__(self) -> str:
         """Return a string representation of the NeedPartItem."""

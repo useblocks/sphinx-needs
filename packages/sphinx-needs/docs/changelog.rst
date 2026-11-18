@@ -10,6 +10,35 @@ Unreleased
 Improvements
 ............
 
+- ✨ **Namespaced ids**, opt-in: with :ref:`needs_namespaced_ids` on, a need id holding ``::`` names a namespace,
+  ``nc::m2::REQ_1`` being the need ``REQ_1`` in the namespace ``nc::m2``, and a filter selects a namespace and
+  everything below it with ``c.in_namespace("nc")`` (:ref:`namespaced_ids`)
+
+  Turn it on with ``needs_namespaced_ids = True`` (``[needs] namespaced_ids = true``). It is off by default in the
+  9.x series and **on by default from 10.0**: set it either way to keep a project's reading through that release.
+  With it on, an id is split at its last ``::``, each segment before it made of ASCII letters, digits, ``_`` and
+  ``-``; the id itself is unchanged, the need's key, anchor and ``needs.json`` id, and a link names it whole. In a
+  filter, ``c.id.ns`` is the namespace as text (``""`` for none), ``c.id.local`` the local id, and
+  ``c.in_namespace()`` compares by segments, so ``nc`` does not select ``ncx::REQ_1`` (:ref:`filter_namespace`); in
+  Python a need has ``id_ns``, ``id_ns_segments`` and ``id_local``. The three filter names are defined in every
+  project; off, every need is in no namespace. The filter names and the attributes are experimental; the switch is
+  not.
+
+  A project that does not set the switch sees no change but one full re-read of its sources after upgrading (every
+  need now stores its namespace). A project that turns it on sees, besides the new names:
+
+  - :ref:`needs_id_regex` and a need type's ``id_regex`` accept an id whose local id matches, or which matches as a
+    whole: with the default pattern ``nc::REQ_00001`` is accepted, and every id accepted before still is. As the
+    local id is tried first, a pattern cannot refuse a namespace (``^(?!.*::)…`` accepts ``nc::REQ_1``);
+  - an id the project writes or generates that holds ``::`` but does not split cleanly (``A::::B``,
+    ``std::vector<int>::size``) is kept as a plain id and reported as ``needs.id_namespace``, which fails a ``-W``
+    build until the id is corrected, the switch is turned off again, or the warning type is suppressed
+    (``suppress_warnings = ["needs.id_namespace"]``); imported and external needs are not reported;
+  - a dead link or a ``:need:`` role naming a bare id that no need has, and exactly one need has as its local id in a
+    namespace, ends ``(did you mean 'nc::REQ_2'?)``;
+  - an ``id_prefix`` ending in ``::`` on :ref:`needimport` or :ref:`needs_external_needs` puts the imported needs
+    into that namespace.
+
 - ✨ **Qualified need directives and** :ref:`needs_directive_name`: every need type is also written
   ``.. need:<type>::`` (a ``{need:<type>}`` fence in MyST), and a project chooses whether the bare ``.. <type>::`` is
   the need where another directive has the name too (:pr:`2507`)

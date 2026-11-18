@@ -1264,7 +1264,9 @@ against the project's need types (see :ref:`filter_is_a`).
 A ``where`` may also read the candidate's ``c.source`` facets (:ref:`filter_source`), such as
 ``where = "c.source.path is not None and c.source.path.startswith('../src/')"``: they read where it comes from,
 which no rule computes. A ``where`` that fails on a candidate excludes it without a report, so guard a facet that
-can be ``None``, as that example does.
+can be ``None``, as that example does. It may read the candidate's namespace too, ``c.id.ns``, ``c.id.local`` and
+``c.in_namespace('nc')`` with a string literal (:ref:`filter_namespace`), which read its id alone; a literal that
+names no namespace (``''``, ``'nc::'``) makes the rule invalid, reported as ``needs.derive_invalid``.
 
 A ``join`` matches the needs whose field equals one of this need's values (:ref:`needs_derive_join`).
 

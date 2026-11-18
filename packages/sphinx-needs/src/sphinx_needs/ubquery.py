@@ -54,7 +54,8 @@ from dataclasses import dataclass
 from functools import lru_cache, partial
 from typing import Any
 
-from sphinx_needs._source_facets import CHECKS_NAME, READERS, SOURCE_NAME
+from sphinx_needs._id_facets import IN_NAMESPACE, in_namespace, namespace_argument
+from sphinx_needs._source_facets import CHECK_FACETS, CHECKS_NAME
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 
 _COMPARE_OPS: dict[type, Callable[[Any, Any], Any]] = {
@@ -195,10 +196,25 @@ def _read_facet(
     need: NeedItem | NeedPartItem,
     fallback: Mapping[str, Any] | None = None,
 ) -> Any:
-    """``c.source.<facet>``: *read* of the need (a part's need, for a part), the reader
-    the ``eval`` tier's ``NeedCheckContext.source`` calls. ``c`` is the check context in
-    every tier, whatever a field or a ``needs_filter_data`` key is named."""
+    """``c.source.<facet>``, ``c.id.<facet>``: *read* of the need (a part's need, for a
+    part), the reader the ``eval`` tier's ``NeedCheckContext.source`` and
+    ``NeedCheckContext.id`` call. ``c`` is the check context in every tier, whatever a
+    field or a ``needs_filter_data`` key is named."""
     return read(need._need if isinstance(need, NeedPartItem) else need)
+
+
+def _in_namespace(
+    namespace: tuple[str, ...] | str,
+    need: NeedItem | NeedPartItem,
+    ctx: Mapping[str, Any] | None = None,
+) -> bool:
+    """``c.in_namespace("<ns>")``: whether the need's namespace (a part's need's) is
+    *namespace* or below it, by segments. A *namespace* given as text is the error its
+    literal is (an empty text, or no namespace), raised need by need as the ``eval``
+    tier's ``NeedCheckContext.in_namespace`` raises it."""
+    if isinstance(namespace, str):
+        raise ValueError(namespace)
+    return in_namespace(need.id_ns_segments, namespace)
 
 
 #: Type alias for predicates returned by the fast-path builder.
@@ -371,8 +387,8 @@ def _expr(node: ast.expr) -> SimplePredicate:
 def _call(node: ast.Call) -> SimplePredicate | None:
     """Compile a call that is an expression of its own, or return None for another.
 
-    The grammar has four: ``c.this_doc()``, ``c.is_a("...")``, ``search(...)``, and a
-    string predicate method (``x.startswith("...")``). ``len(x)``, ``x.lower()`` and
+    The grammar has five: ``c.this_doc()``, ``c.is_a("...")``, ``c.in_namespace("...")``,
+    ``search(...)``, and a string predicate method (``x.startswith("...")``). ``len(x)``, ``x.lower()`` and
     ``x.upper()`` are operands, which :func:`_operand` compiles.
 
     :raises _NotPortable: For one of the four in a shape the grammar has no rule for.
@@ -391,6 +407,18 @@ def _call(node: ast.Call) -> SimplePredicate | None:
         if name is None or node.keywords:
             raise _NotPortable("call:c.is_a")
         return partial(_is_a, name)
+
+    # `in_namespace_check`: c.in_namespace("<ns>"), the need's namespace is "<ns>" or
+    # below it; a literal that names no namespace is the error eval gives, need by need
+    if _is_c_check(node, IN_NAMESPACE):
+        text = _string(node.args[0]) if len(node.args) == 1 else None
+        if text is None or node.keywords:
+            raise _NotPortable(f"call:c.{IN_NAMESPACE}")
+        try:
+            namespace: tuple[str, ...] | str = namespace_argument(text)
+        except ValueError as err:
+            namespace = str(err)
+        return partial(_in_namespace, namespace)
 
     # `search_check`: search("<pattern>", <operand>)
     if isinstance(func, ast.Name) and func.id == "search":
@@ -754,12 +782,12 @@ def _field(node: ast.expr, *, within: str | None = None) -> _Getter:
         if (
             chain is not None
             and len(chain) == 3
-            and chain[:2] == (CHECKS_NAME, SOURCE_NAME)
-            and (read := READERS.get(chain[2])) is not None
+            and chain[0] == CHECKS_NAME
+            and (read := CHECK_FACETS.get(chain[1], {}).get(chain[2])) is not None
         ):
             return partial(_read_facet, read)
-        # ``c.source`` alone, an unknown facet, a longer chain: eval answers, and
-        # reports an unknown facet with the closest facet
+        # ``c.source`` or ``c.id`` alone, an unknown facet, a longer chain: eval
+        # answers, and reports an unknown facet with the closest facet
         raise _NotPortable(_describe(node))
     if within is not None and not isinstance(node, ast.Subscript):
         raise _NotPortable(within)

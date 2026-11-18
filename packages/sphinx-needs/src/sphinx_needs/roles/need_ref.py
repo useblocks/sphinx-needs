@@ -10,6 +10,7 @@ from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
 from sphinx_needs._jinja import compile_template
+from sphinx_needs._namespaced_ids import local_id_hints
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
@@ -161,9 +162,10 @@ def process_need_ref(
         need_id_complete = need_link.to_link_string()
 
         if need_id_main not in all_needs:
+            hint = local_id_hints(app, all_needs).hint(need_id_main, need_id_part)
             log_warning(
                 log,
-                f"linked need {node_need_ref['reftarget']} not found",
+                f"linked need {node_need_ref['reftarget']} not found{hint}",
                 "link_ref",
                 location=node_need_ref,
             )

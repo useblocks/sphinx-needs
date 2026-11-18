@@ -351,8 +351,9 @@ By default it is set to:
 Every need type is also written ``.. need:<directive>::`` (:ref:`need_qualified`), so a ``directive`` cannot have a ``:``:
 such an entry is a ``needs.config`` warning, and is ignored.
 
-A type's ``id_regex`` is matched as :ref:`needs_id_regex` is, where it is: against the need's local id
-(the whole id while ids carry no namespace), with Python's ``re.match``,
+A type's ``id_regex`` is matched as :ref:`needs_id_regex` is, where it is: it accepts an id whose local id
+matches, or which matches as a whole, where :ref:`needs_namespaced_ids` is on (:ref:`namespaced_ids`; so it
+cannot refuse a namespace then), with Python's ``re.match``,
 so it is anchored at the start of the id and open at its end (``"REQ_"`` accepts ``REQ_001`` and refuses ``XREQ_001``;
 end it with ``$`` to anchor the end too), on an id given in the need or generated from the type's ``prefix``,
 and never on a need :ref:`needimport` imports or :ref:`needs_external_needs` loads.
@@ -2764,11 +2765,18 @@ without a given ID.
 
 Default value: ``^[A-Z0-9_]{5,}``
 
-By default, an ID is allowed to contain upper characters, numbers and underscore only.
-The ID length must be at least 3 characters.
+The pattern is matched with Python's ``re.match``, so it is anchored at the start of the id only:
+the default accepts an id whose first five characters are upper-case ASCII letters, digits or underscores,
+whatever follows them (``REQ_001``, ``REQ_001_draft``), and refuses ``R_1`` and ``req_001``.
+End a pattern with ``$`` to anchor its end too.
 
-The regular expression is matched against the need's local id
-(the whole id while ids carry no namespace), as is a need type's ``id_regex``.
+With :ref:`needs_namespaced_ids` on (it is off by default until 10.0), it accepts an id whose local id
+matches, or which matches as a whole (:ref:`namespaced_ids`), as does a need type's ``id_regex``: with the
+default pattern, ``nc::REQ_00001`` is accepted through its local id ``REQ_00001``, ``REQ_1::A`` as a whole (its
+local id ``A`` does not match), and ``nc::req`` is refused. For an id that is not namespaced the two are one test.
+Because the local id is tried first, a pattern cannot refuse a namespace: ``^(?!.*::)[A-Z_]+``, written to
+refuse every id holding ``::``, accepts ``nc::REQ_1`` through its local id ``REQ_1``. With the switch off the
+pattern sees the whole id and refuses ``nc::REQ_1``.
 It applies to the needs defined in this project's sources. It is not
 applied to imported needs (:ref:`needimport`) or to external needs
 (:ref:`needs_external_needs`): their ids are the data of the project that wrote them, and an
@@ -2784,6 +2792,42 @@ the id of a need of that type matches both, and the ``id_regex`` of every type i
 
    If you change the regular expression, you should also set :ref:`needs_id_required`
    so that authors are forced to set an valid ID.
+
+.. _`needs_namespaced_ids`:
+
+needs_namespaced_ids
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 9.3.0
+
+Read a namespace out of every need id that holds ``::``: ``nc::m2::REQ_1`` is the local id ``REQ_1`` in the
+namespace ``nc::m2`` (:ref:`namespaced_ids`). It applies to every need of the build, whichever way it was
+created: written in a document, generated, imported with :ref:`needimport` or loaded with
+:ref:`needs_external_needs`. The id itself is unchanged: it is the need's key, its anchor and its
+``needs.json`` id, and a link names it whole.
+
+Default value: ``False``. **The default becomes** ``True`` **in 10.0**: set it either way to keep a project's
+reading through that release.
+
+Turn it on to read namespaces:
+
+.. code-block:: python
+
+   needs_namespaced_ids = True
+
+or in ``ubproject.toml``:
+
+.. code-block:: toml
+
+   [needs]
+   namespaced_ids = true
+
+With it on, the id patterns accept an id whose local id matches (:ref:`needs_id_regex`), an id the project writes
+or generates that holds ``::`` but does not split cleanly is reported as ``needs.id_namespace``, and a dead link
+naming a bare id can be hinted with its namespaced id. Keep it off (``False``) in a project whose ids hold ``::``
+for another reason (a C++ name, say). Off, every need is in no namespace, ``c.id.ns`` is ``""`` and ``c.id.local``
+the whole id (:ref:`filter_namespace`), the id patterns read the whole id, and nothing is warned or hinted.
+Changing it re-reads every document. The value is not experimental; the filter names and attributes it feeds are.
 
 .. _`needs_functions`:
 

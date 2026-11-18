@@ -2477,3 +2477,242 @@ expected = ["REQ_003"]
 filter = 'c.source.kind == "page"'
 expected = ["REQ_001", "REQ_002", "REQ_003"]
 why = "c is the check context, whatever a field is named"
+
+# --- namespaced ids --------------------------------------------------------------------
+# A need id holding `::` is a namespace and a local id, split at its LAST `::` by the
+# grammar ub-needs-exchange's need-id corpus pins (a segment is ASCII letters, digits,
+# `_` and `-`). `c.id.ns` is the namespace as text, `""` for a plain id; `c.id.local` the
+# local id, the whole id for a plain id; `c.in_namespace("<ns>")` whether the namespace
+# is `<ns>` or below it, compared by segments, and an empty argument or one that is no
+# namespace is an error of the filter. A part reads its need's; root `id` stays the full
+# id (a part's own, for a part). Every id here passes the default id pattern as a whole,
+# so no case depends on how a pattern reads a local id. An id that holds `::` but does
+# not split cleanly is a plain id and earns each tool's own report of it, which no entry
+# compares (the Python runner admits the `needs.id_namespace` warning). The second case
+# switches the reading off (`[needs] namespaced_ids = false`): every id is plain, and the
+# names stay defined. Every entry naming c.id or c.in_namespace is divergent for ubCode,
+# its behaviour read rather than run: the mirror measures each and drops the key where
+# it agrees. `c.id` compared with a value is an error: it holds the facets, not the id.
+
+[[case]]
+name = "namespaced-ids-split-at-the-last-separator"
+why = "c.id.ns is the namespace as text and empty for a plain id, c.id.local the local id and the whole id of a plain id, c.in_namespace is true in the namespace and below it by segments (not in a look-alike), an id that does not split cleanly is plain, a part reads its need's, and id stays the full id"
+config = '''
+[needs]
+namespaced_ids = true
+'''
+source = '''
+.. req:: Plain
+   :id: PLAIN_001
+
+.. req:: One segment
+   :id: SUPPLIER::REQ_001
+
+.. req:: Two segments, with a part
+   :id: SUPPLIER::M2::REQ_002
+
+   A part :np:`(P1) of it`.
+
+.. req:: A look-alike namespace
+   :id: SUPPLIERX::REQ_001
+
+.. req:: Not split cleanly
+   :id: SUPPLIER::::REQ_004
+'''
+
+[[case.filters]]
+filter = 'c.id.ns == "SUPPLIER"'
+expected = ["SUPPLIER::REQ_001"]
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.id.ns == "SUPPLIER::M2"'
+expected = ["SUPPLIER::M2::REQ_002"]
+why = "the namespace's text joins its segments with ::"
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.id.ns == ""'
+expected = ["PLAIN_001", "SUPPLIER::::REQ_004"]
+why = "a plain id, and one that does not split cleanly, are in no namespace"
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.id.ns != ""'
+expected = ["SUPPLIER::M2::REQ_002", "SUPPLIER::REQ_001", "SUPPLIERX::REQ_001"]
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.id.local == "REQ_001"'
+expected = ["SUPPLIER::REQ_001", "SUPPLIERX::REQ_001"]
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.id.local == "SUPPLIER::::REQ_004"'
+expected = ["SUPPLIER::::REQ_004"]
+why = "the local id of a plain id is the whole id"
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.id.local == id'
+expected = ["PLAIN_001", "SUPPLIER::::REQ_004"]
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.id.ns in ["SUPPLIER", "SUPPLIERX"]'
+expected = ["SUPPLIER::REQ_001", "SUPPLIERX::REQ_001"]
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = '"M2" in c.id.ns'
+expected = ["SUPPLIER::M2::REQ_002"]
+why = "the namespace is text: membership is a substring test"
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.id.ns.startswith("SUPPLIER")'
+expected = ["SUPPLIER::M2::REQ_002", "SUPPLIER::REQ_001", "SUPPLIERX::REQ_001"]
+why = "a text prefix is no namespace test: it selects the look-alike too"
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.id.local.endswith("_001")'
+expected = ["PLAIN_001", "SUPPLIER::REQ_001", "SUPPLIERX::REQ_001"]
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'search("^REQ_00[12]$", c.id.local)'
+expected = ["SUPPLIER::M2::REQ_002", "SUPPLIER::REQ_001", "SUPPLIERX::REQ_001"]
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.in_namespace("SUPPLIER")'
+expected = ["SUPPLIER::M2::REQ_002", "SUPPLIER::REQ_001"]
+why = "the namespace and below it, by segments: SUPPLIERX is another namespace"
+divergent = { ubcode = "fails on c.in_namespace" }
+
+[[case.filters]]
+filter = 'c.in_namespace("SUPPLIER::M2")'
+expected = ["SUPPLIER::M2::REQ_002"]
+divergent = { ubcode = "fails on c.in_namespace" }
+
+[[case.filters]]
+filter = 'c.in_namespace("M2")'
+expected = []
+why = "a namespace is named from its first segment"
+divergent = { ubcode = "fails on c.in_namespace" }
+
+[[case.filters]]
+filter = 'not c.in_namespace("SUPPLIER")'
+expected = ["PLAIN_001", "SUPPLIER::::REQ_004", "SUPPLIERX::REQ_001"]
+divergent = { ubcode = "fails on c.in_namespace" }
+
+[[case.filters]]
+filter = 'c.in_namespace("")'
+expected = []
+error = "filter"
+why = "an empty argument names no namespace: an error, never every need"
+divergent = { ubcode = "fails on c.in_namespace" }
+
+[[case.filters]]
+filter = 'c.in_namespace("SUPPLIER::")'
+expected = []
+error = "filter"
+why = "a text that is no namespace is an error"
+divergent = { ubcode = "fails on c.in_namespace" }
+
+[[case.filters]]
+filter = 'c.in_namespace(c.id.ns)'
+expected = ["SUPPLIER::M2::REQ_002", "SUPPLIER::REQ_001", "SUPPLIERX::REQ_001"]
+error = "filter"
+tier = "eval"
+reason = "call:c.in_namespace"
+why = "an argument that is no string literal is outside the language; a need in no namespace gives it the empty text, an error"
+divergent = { ubcode = "fails on c.in_namespace" }
+
+[[case.filters]]
+filter = 'c.id.nss == ""'
+expected = []
+error = "filter"
+tier = "eval"
+reason = "attribute:c"
+why = "an unknown facet is an error"
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.id == "SUPPLIER::REQ_001"'
+expected = []
+error = "filter"
+tier = "eval"
+reason = "attribute:c"
+why = "c.id holds the facets of the id, not the id: compared with a value it is an error, never no need"
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'id == "SUPPLIER::REQ_001"'
+expected = ["SUPPLIER::REQ_001"]
+tier = "index"
+why = "id is the full id"
+
+[[case.filters]]
+filter = 'id.startswith("SUPPLIER::")'
+expected = ["SUPPLIER::::REQ_004", "SUPPLIER::M2::REQ_002", "SUPPLIER::REQ_001"]
+
+[[case.filters]]
+filter = 'c.in_namespace("SUPPLIER::M2")'
+expected = ["SUPPLIER::M2::REQ_002", "SUPPLIER::M2::REQ_002.P1"]
+include_parts = true
+why = "a part is in its need's namespace"
+divergent = { ubcode = "fails on c.in_namespace" }
+
+[[case.filters]]
+filter = 'c.id.local == "REQ_002"'
+expected = ["SUPPLIER::M2::REQ_002", "SUPPLIER::M2::REQ_002.P1"]
+include_parts = true
+why = "a part reads its need's local id"
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'id == "P1"'
+expected = ["SUPPLIER::M2::REQ_002.P1"]
+include_parts = true
+why = "a part's own id is its part id"
+
+[[case]]
+name = "namespaced-ids-switched-off"
+why = "with namespaced_ids = false every id is plain: c.id.ns is empty and c.id.local the whole id on every need, c.in_namespace selects nothing, and an empty argument is still an error"
+config = '''
+[needs]
+namespaced_ids = false
+'''
+source = '''
+.. req:: Plain
+   :id: PLAIN_001
+
+.. req:: One segment
+   :id: SUPPLIER::REQ_001
+
+.. req:: Not split cleanly
+   :id: SUPPLIER::::REQ_004
+'''
+
+[[case.filters]]
+filter = 'c.id.ns == ""'
+expected = ["PLAIN_001", "SUPPLIER::::REQ_004", "SUPPLIER::REQ_001"]
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.id.local == id'
+expected = ["PLAIN_001", "SUPPLIER::::REQ_004", "SUPPLIER::REQ_001"]
+divergent = { ubcode = "fails on c.id" }
+
+[[case.filters]]
+filter = 'c.in_namespace("SUPPLIER")'
+expected = []
+divergent = { ubcode = "fails on c.in_namespace" }
+
+[[case.filters]]
+filter = 'c.in_namespace("")'
+expected = []
+error = "filter"
+divergent = { ubcode = "fails on c.in_namespace" }

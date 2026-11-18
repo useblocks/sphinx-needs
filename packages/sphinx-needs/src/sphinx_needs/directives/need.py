@@ -10,6 +10,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs._directive_name import need_type_of
+from sphinx_needs._namespaced_ids import LocalIdHints, reset_local_id_hints
 from sphinx_needs._need_source import (
     enclosing_need,
     placement_semantic,
@@ -379,7 +380,12 @@ def post_process_needs_data(app: Sphinx) -> None:
         )
         # the link fields, then the back links (build_backlinks), then the other fields
         resolve_functions(app, needs, needs_config)
-        check_links(needs, needs_config, needs_schema)
+        check_links(
+            needs,
+            needs_config,
+            needs_schema,
+            hints=reset_local_id_hints(app, needs),
+        )
         # last, so the dynamic functions read the links in the order written
         for need in needs.values():
             need.sort_links()
@@ -604,7 +610,11 @@ def build_backlinks(
 
 
 def check_links(
-    needs: NeedsMutable, config: NeedsSphinxConfig, schema: FieldsSchema
+    needs: NeedsMutable,
+    config: NeedsSphinxConfig,
+    schema: FieldsSchema,
+    *,
+    hints: LocalIdHints | None = None,
 ) -> None:
     """Assess the target types and the link conditions, and report the links to
     unknown needs.
@@ -615,8 +625,11 @@ def check_links(
     conditions, then its dead links. The target types are checked whether or not the
     schema validation runs; a link failing both its target types and its condition is
     reported for each. A union's links are its members': it reports neither a condition
-    nor a dead link of its own.
+    nor a dead link of its own. A dead link to a bare id that exactly one need has as
+    its local id, in a namespace, says which (``hints``; made here when not given).
     """
+    if hints is None:
+        hints = LocalIdHints(needs)
     #: need type -> link type -> its target types, as the type declares them: read
     #: once per need type, not per link
     target_types: dict[str, dict[str, LinkTargetTypes]] = {}
@@ -664,7 +677,11 @@ def check_links(
 
         if need["has_forbidden_dead_links"] and config.report_dead_links:
             for link_type, need_link in _dead_links(need, needs, unions):
-                message = f"Need '{need.id}' has unknown outgoing link '{need_link.to_filter_string()}' in field '{link_type}'"
+                message = (
+                    f"Need '{need.id}' has unknown outgoing link "
+                    f"'{need_link.to_filter_string()}' in field '{link_type}'"
+                    f"{hints.hint(need_link.id, need_link.part)}"
+                )
                 _emit_link_warning(need, message, "link_outgoing")
 
 

@@ -1290,6 +1290,12 @@ class NeedsSphinxConfig:
         default="^[A-Z0-9_]{5,}", metadata={"rebuild": "html", "types": ()}
     )
     """Regex to validate need IDs."""
+    namespaced_ids: bool = field(
+        default=False, metadata={"rebuild": "env", "types": (bool,)}
+    )
+    """Read a namespace out of every need id that holds ``::``: ``nc::m2::REQ_1`` is
+    the local id ``REQ_1`` in the namespace ``nc::m2``. False reads every id as a plain
+    id. Off by default in the 9.x series; on by default from 10.0."""
     show_link_type: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
