@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from sphinx_needs.api import add_need, create_need
+from sphinx_needs.api import add_external_need, add_need, create_need
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.exceptions import InvalidNeedException
 from sphinx_needs.need_item import NeedItemSourceExternal
@@ -81,10 +81,24 @@ def _needs_warnings(app) -> list[str]:
     ]
 
 
+def _typed(value: object) -> object:
+    """A value with its type, item by item: ``True``, ``1`` and ``1.0`` are equal in
+    Python, so a value is compared as ``(type name, value)``, and a list item by item."""
+    if isinstance(value, list):
+        return [_typed(item) for item in value]
+    return (type(value).__name__, value)
+
+
+#: an unset field, typed
+UNSET = ("NoneType", None)
+NO_VALUES = {"effort": UNSET, "ratio": UNSET, "sizes": UNSET}
+
+
 def _values(app) -> dict[str, dict[str, object]]:
+    """The three fields of each need, typed (:func:`_typed`)."""
     needs = SphinxNeedsData(app.env).get_needs_mutable()
     return {
-        nid: {k: need[k] for k in ("effort", "ratio", "sizes")}
+        nid: {k: _typed(need[k]) for k in ("effort", "ratio", "sizes")}
         for nid, need in sorted(needs.items())
     }
 
@@ -93,7 +107,12 @@ IMPORT_JSON = json.dumps(
     {"current_version": "1.0", "versions": {"1.0": {"needs": RECORDS}}}
 )
 
-OK_VALUES = {"effort": 3, "ratio": 1.0, "sizes": [1, 2]}
+#: the right values, as stored: an integer given to a ``number`` field stays an integer
+OK_VALUES = {
+    "effort": ("int", 3),
+    "ratio": ("int", 1),
+    "sizes": [("int", 1), ("int", 2)],
+}
 
 
 @pytest.mark.parametrize("coercion", [True, False], ids=["coercion", "no-coercion"])
@@ -227,7 +246,7 @@ def test_create_need_refuses_a_boolean_and_records_nothing(
         fields={"effort": 3, "ratio": 1, "sizes": [1, 2]},
         allow_type_coercion=coercion,
     )
-    assert {k: need[k] for k in OK_VALUES} == OK_VALUES
+    assert {k: _typed(need[k]) for k in OK_VALUES} == OK_VALUES
 
 
 @pytest.mark.parametrize(
@@ -256,6 +275,42 @@ def test_add_need_refuses_a_boolean_and_records_nothing(
                 )
         assert (err.value.type, err.value.message) == ("invalid_field_value", message)
         assert "REQ_X" not in SphinxNeedsData(app.env).get_needs_mutable()
+
+
+@pytest.mark.parametrize(
+    "validation", [True, False], ids=["validation", "no-validation"]
+)
+@pytest.mark.parametrize("coercion", [True, False], ids=["coercion", "no-coercion"])
+def test_add_external_need_refuses_a_boolean_and_records_nothing(
+    make_app, tmp_path, validation, coercion
+):
+    """``add_external_need``, another function of the creation API, refuses alike."""
+    app = _api_app(make_app, tmp_path, validation)
+    for name, value, message in WRONG:
+        with pytest.raises(InvalidNeedException) as err:
+            add_external_need(
+                app,
+                "req",
+                "T",
+                id="REQ_X",
+                external_url="http://example.org/x.html",
+                allow_type_coercion=coercion,
+                **{name: value},
+            )
+        assert (err.value.type, err.value.message) == ("invalid_field_value", message)
+        assert "REQ_X" not in SphinxNeedsData(app.env).get_needs_mutable()
+    add_external_need(
+        app,
+        "req",
+        "T",
+        id="REQ_OK",
+        external_url="http://example.org/x.html",
+        allow_type_coercion=coercion,
+        effort=3,
+        ratio=1,
+        sizes=[1, 2],
+    )
+    assert _values(app) == {"REQ_OK": OK_VALUES}
 
 
 ONE_NEED = "One\n===\n\n.. req:: One\n   :id: REQ_1\n"
@@ -307,7 +362,7 @@ def test_a_boolean_default_is_reported_and_ignored(
         f"WARNING: needs_fields['sizes']{config_name} value is incorrect: Invalid "
         "value for field 'sizes': [1, True] [needs.config]",
     ]
-    assert _values(app) == {"REQ_1": {"effort": None, "ratio": None, "sizes": None}}
+    assert _values(app) == {"REQ_1": NO_VALUES}
 
 
 def test_a_boolean_type_default_is_a_type_conflict(make_app, tmp_path):
@@ -340,7 +395,7 @@ def test_a_boolean_type_default_is_a_type_conflict(make_app, tmp_path):
         "used: Invalid value for field 'sizes': [1, True]; the entry is ignored "
         "[needs.type_conflict]",
     ]
-    assert _values(app) == {"REQ_1": {"effort": None, "ratio": None, "sizes": None}}
+    assert _values(app) == {"REQ_1": NO_VALUES}
 
 
 DF_FUNCS = """
@@ -402,11 +457,7 @@ def test_a_dynamic_function_returning_a_boolean_is_reported(make_app, tmp_path):
         "'sizes', of need 'REQ_S': dynamic function value <class 'list'> is not of "
         "type 'array' or item type 'integer' [needs.dynamic_function]",
     ]
-    assert _values(app) == {
-        "REQ_E": {"effort": None, "ratio": None, "sizes": None},
-        "REQ_R": {"effort": None, "ratio": None, "sizes": None},
-        "REQ_S": {"effort": None, "ratio": None, "sizes": None},
-    }
+    assert _values(app) == {"REQ_E": NO_VALUES, "REQ_R": NO_VALUES, "REQ_S": NO_VALUES}
 
 
 def test_variant_data_holding_a_boolean_is_reported(make_app, tmp_path):
@@ -440,7 +491,9 @@ def test_variant_data_holding_a_boolean_is_reported(make_app, tmp_path):
         "'ratio', of need 'REQ_R': variant data value <class 'bool'> is not of type "
         "'number' [needs.dynamic_function]",
     ]
-    values = _values(app)
-    assert values["REQ_E"]["effort"] is None
-    assert values["REQ_R"]["ratio"] is None
-    assert values["REQ_S"]["sizes"] == [1]
+    # the boolean is dropped: a scalar field stays empty, an array keeps its other items
+    assert _values(app) == {
+        "REQ_E": NO_VALUES,
+        "REQ_R": NO_VALUES,
+        "REQ_S": {"effort": UNSET, "ratio": UNSET, "sizes": [("int", 1)]},
+    }

@@ -1,3 +1,5 @@
+import enum
+
 import pytest
 
 from sphinx_needs.exceptions import FunctionParsingException
@@ -19,6 +21,13 @@ from sphinx_needs.needs_schema import (
 )
 from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
+
+
+class _Level(enum.IntEnum):
+    """An ``int`` subclass that is not a boolean: an integer, and a number."""
+
+    LOW = 1
+    HIGH = 2
 
 
 @pytest.mark.parametrize(
@@ -164,6 +173,7 @@ def test_json_schema(type_, item_type, nullable, default, expected):
         ("integer", None, False, "1", False),
         ("integer", None, False, True, False),
         ("integer", None, False, False, False),
+        ("integer", None, False, _Level.LOW, True),
         ("integer", None, True, 1, True),
         ("integer", None, True, -1, True),
         ("integer", None, True, 0, True),
@@ -188,6 +198,7 @@ def test_json_schema(type_, item_type, nullable, default, expected):
         ("number", None, True, "1.5", False),
         ("number", None, True, False, False),
         ("number", None, True, 1, True),
+        ("number", None, False, _Level.LOW, True),
         ("array", "string", False, ["a", "b", "c"], True),
         ("array", "string", False, [], True),
         ("array", "string", False, None, False),
@@ -214,6 +225,7 @@ def test_json_schema(type_, item_type, nullable, default, expected):
         ("array", "integer", True, [1, 2.5, 3], False),
         ("array", "integer", False, [1, True], False),
         ("array", "integer", True, [False], False),
+        ("array", "integer", False, [_Level.LOW, 2], True),
         ("array", "number", False, [1.5, -1.5, 0.0], True),
         ("array", "number", False, [], True),
         ("array", "number", False, None, False),
@@ -225,6 +237,7 @@ def test_json_schema(type_, item_type, nullable, default, expected):
         ("array", "number", False, [1, 2, 3], True),
         ("array", "number", False, [1.5, True], False),
         ("array", "number", True, [False], False),
+        ("array", "number", False, [_Level.HIGH, 1.5], True),
     ],
 )
 def test_type_check(type_, item_type, nullable, input, result):
@@ -250,11 +263,13 @@ def test_type_check(type_, item_type, nullable, input, result):
         ("integer", 1.5, False),
         ("integer", True, False),
         ("integer", False, False),
+        ("integer", _Level.LOW, True),
         ("number", 1.5, True),
         ("number", 1, True),
         ("number", "1.5", False),
         ("number", True, False),
         ("number", False, False),
+        ("number", _Level.HIGH, True),
     ],
 )
 def test_type_check_item(item_type, input, result):
