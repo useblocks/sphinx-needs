@@ -22,6 +22,7 @@ import pytest
 from sphinx.util.parallel import parallel_available
 
 from sphinx_needs import filter_common
+from sphinx_needs._source_facets import namespace_reads
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.derive import filter_problem
@@ -1049,6 +1050,17 @@ def test_a_string_eval_refuses_gets_neither_text_report(test_app: Any) -> None:
     assert refused.endswith(" (from warning filter 'w') [needs.filter]")
 
 
+@pytest.mark.parametrize("pad", ["", " ", "\t", " \t "])
+def test_the_two_text_readings_read_a_padded_string_alike(pad: str) -> None:
+    """The names of the types and of the namespace values are both read past the
+    leading spaces and tabs ``eval`` reads past, and no further."""
+    filter_string = f"{pad}c.is_a('a') or c.id.ns == 'x'"
+    assert is_a_literals(filter_string) == ("a",)
+    assert namespace_reads(filter_string) == ("c.id.ns",)
+    assert is_a_literals(f"\n {filter_string}") == ()
+    assert namespace_reads(f"\n {filter_string}") == ()
+
+
 # --- the two text reports of a filter are given together, at each place (#2528) ---
 
 #: a string both text reports read: a type naming no need type, a namespace value
@@ -1235,3 +1247,22 @@ def test_an_incremental_build_gives_the_two_text_reports_together(
     changed = _expected_places(place, (1,))
     assert {where: filter_type.get(where) for where in changed} == changed, warnings
     assert set(filter_type.values()) == {1}, warnings
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [_project(INDEX + f"\n.. needlist::\n   :filter: {BOTH}\n", buildername="html")],
+    indirect=True,
+)
+def test_the_two_text_reports_come_in_their_order(test_app: Any) -> None:
+    """At a place, the type report comes first and the namespace report second, as the
+    filter entries have always given them."""
+    app = test_app
+    app.build()
+    codes = [
+        code
+        for w in build_warnings(app)
+        for code in ("needs.filter_type", "needs.namespaced_ids_off")
+        if w.endswith(f"[{code}]")
+    ]
+    assert codes == ["needs.filter_type", "needs.namespaced_ids_off"]

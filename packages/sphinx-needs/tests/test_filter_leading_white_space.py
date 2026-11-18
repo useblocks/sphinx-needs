@@ -327,6 +327,28 @@ def test_a_dynamic_function_linking_by_a_filter_reads_the_padding_past(
     assert [str(link) for link in need["lfm"]] == ["REQ_001"]
 
 
+@pytest.mark.parametrize(
+    "test_app",
+    [_functions_project("\n ")],
+    indirect=True,
+)
+def test_a_dynamic_function_reads_no_more_past_than_eval(test_app: Any) -> None:
+    """A newline then a space is refused by ``eval``: each function fails, as before,
+    and links nothing."""
+    app = test_app
+    app.build()
+    warnings = build_warnings(app)
+    for function in ("links_from_filter", "links_from_match"):
+        assert any(
+            f"Error while executing function {function!r}: unexpected indent" in w
+            and w.endswith("[needs.dynamic_function]")
+            for w in warnings
+        ), warnings
+    need = SphinxNeedsData(app.env).get_needs_view()["SPEC_001"]
+    assert list(need["lff"]) == []
+    assert list(need["lfm"]) == []
+
+
 DERIVE_CONF = """\
 extensions = ["sphinx_needs"]
 needs_fields = {{
