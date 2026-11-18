@@ -813,10 +813,9 @@ def filter_needs_parts(
 def _python_expression_error(filter_string: str) -> SyntaxError | ValueError | None:
     """Why *filter_string* is no Python expression, or ``None`` if it is one."""
     try:
-        # the very compile the delegate runs: a string with leading white space fails
-        # it (``unexpected indent``) and is reported today, though ``eval`` and the
-        # constant check read such white space past
-        compile(filter_string, "<string>", "eval")
+        # the very compile the delegate runs, past the leading spaces and tabs ``eval``
+        # reads past
+        compile(filter_string.lstrip(" \t"), "<string>", "eval")
     except (SyntaxError, ValueError) as error:
         return error
     return None
@@ -955,7 +954,9 @@ def filter_needs_and_parts(
     found_needs_slow: list[_NeedOrPartT] = []
 
     # https://docs.python.org/3/library/functions.html?highlight=compile#compile
-    filter_compiled = compile(filter_string, "<string>", "eval")
+    # past the leading spaces and tabs, which ``eval`` reads past and ``compile`` does not
+    # (``unexpected indent``): the string selects here what it selects need by need
+    filter_compiled = compile(filter_string.lstrip(" \t"), "<string>", "eval")
     error_reported = False
     for filter_need in needs:
         try:
@@ -1228,10 +1229,10 @@ def filter_single_need(
 ) -> bool:
     """Checks if a single need/need_part passes a filter_string.
 
-    A ``c.is_a`` literal naming no need type is reported once per build for the
-    string, which has no location or origin here. A namespace value read while
-    ``needs_namespaced_ids`` is off is reported once per build for the string where it
-    is written (*location*) and the origin its caller appends (*append_warning*).
+    A ``c.is_a`` literal naming no need type, and a namespace value read while
+    ``needs_namespaced_ids`` is off, are each reported once per build for the string
+    where it is written (*location*) and the origin its caller appends
+    (*append_warning*): once per string for a caller with neither (a constraint).
 
     :param need: the data for a single need
     :param config: NeedsSphinxConfig object
@@ -1249,7 +1250,7 @@ def filter_single_need(
     if _is_constant_filter(filter_string):
         raise NeedsInvalidFilter(_constant_filter_message(filter_string))
     # before either tier
-    _report_unknown_types(filter_string, config)
+    _report_unknown_types(filter_string, config, location, append_warning)
     _report_namespaced_ids_off(filter_string, config, location, append_warning)
     return _filter_single_need(
         need,
