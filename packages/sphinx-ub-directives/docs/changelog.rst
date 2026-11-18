@@ -6,6 +6,13 @@ Changelog
 Unreleased
 ----------
 
+- 🐛 A new preset name starting with ``need:`` (in any case) is now refused, ``directive_preset_name_taken``,
+  whether or not a need type of that name exists and whether or not sphinx-needs is loaded: ``need:<type>`` is
+  always the need type's qualified directive, so a preset ``need:draft`` would be silently replaced the day a need
+  type ``draft`` is added. Such a name was accepted before, and is now refused; name the preset without the prefix.
+  A self-preset ``need:<type>`` (named as its base, giving the need type defaults) and a preset whose ``base`` is
+  ``need:<type>`` are unchanged
+
 - ✨ A preset's ``base`` may name a need type qualified, ``need:<type>``, as sphinx-needs now writes every need type
   (``.. need:req::``), and a new preset name ``need:<type>`` is taken by that need type as its bare name is. A bare
   ``base`` naming a need type whose bare directive is not the need (sphinx-needs' ``directive_name = "yield"`` or

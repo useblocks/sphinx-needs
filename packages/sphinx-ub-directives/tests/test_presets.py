@@ -515,6 +515,38 @@ def test_a_qualified_name_is_taken(
     assert _needs(app)["R_001"]["type"] == "req"
 
 
+def test_a_need_prefixed_name_is_reserved_without_sphinx_needs(
+    make_app: Callable[..., SphinxTestApp], tmp_path: Path
+) -> None:
+    """§3.2.7: a new name starting with ``need:`` (in any case) is refused even where
+    sphinx-needs is not loaded, so there is no ``need`` domain and no need type: the
+    prefix is reserved for need types, and the corpus (which always loads sphinx-needs)
+    cannot show that. A preset of another name still works alongside."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    (tmp_path / "conf.py").write_text(
+        'extensions = ["sphinx_ub_directives"]\nshow_warning_types = True\n',
+        encoding="utf-8",
+        newline="",
+    )
+    (tmp_path / "ubproject.toml").write_text(
+        '[parse.directive_presets."need:draft"]\nbase = "note"\n'
+        '\n[parse.directive_presets."NEED:other"]\nbase = "note"\n'
+        '\n[parse.directive_presets.callout]\nbase = "note"\n',
+        encoding="utf-8",
+        newline="",
+    )
+    (tmp_path / "index.rst").write_text(
+        "Case\n====\n\n.. callout::\n\n   Text.\n", encoding="utf-8", newline=""
+    )
+    app = make_app("html", srcdir=tmp_path, freshenv=True)
+    app.build()
+    refused = [w for w in build_warnings(app) if "directive_preset_name_taken" in w]
+    assert len(refused) == 2, build_warnings(app)
+    assert all("starts with 'need:'" in w for w in refused), refused
+    html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
+    assert "admonition note" in html, html
+
+
 def test_a_qualified_base_takes_the_need_type_s_options(
     make_app: Callable[..., SphinxTestApp], tmp_path: Path
 ) -> None:

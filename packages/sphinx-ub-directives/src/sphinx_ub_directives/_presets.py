@@ -118,6 +118,14 @@ def lookup(app: Sphinx, name: str) -> tuple[type[Directive], str | None] | None:
 NEED_QUALIFIER: Final = "need:"
 
 
+def reserved(name: str) -> bool:
+    """Whether ``name`` starts with ``need:`` (compared ignoring case): the qualified
+    directive of a need type, ``need:<type>``, so no NEW preset may take such a name,
+    whether or not the type exists or sphinx-needs is loaded (§3.2.7). A self-preset
+    ``need:<type>`` is not new: it gives that need type defaults."""
+    return name.lower().startswith(NEED_QUALIFIER)
+
+
 def need_types(app: Sphinx) -> list[str]:
     """The need types' directive names, from sphinx-needs' public API (empty when it is
     not loaded)."""
@@ -341,7 +349,11 @@ class Resolver:
         self_names = {
             n for n, e in entries.items() if n.lower() == str(e["base"]).strip().lower()
         }
-        free = {n.lower() for n in entries if n not in self_names and not self.taken(n)}
+        free = {
+            n.lower()
+            for n in entries
+            if n not in self_names and not reserved(n) and not self.taken(n)
+        }
         presets = []
         # [A4] every base is resolved (snapshotted) before anything is registered
         for name, entry in entries.items():
@@ -369,6 +381,14 @@ class Resolver:
         base = self.base_of(name, base_name)
         if isinstance(base, str):
             self.warn("directive_preset_unknown_base", (*path, "base"), base)
+            return None
+        if not self_preset and reserved(name):
+            self.warn(
+                "directive_preset_name_taken",
+                path,
+                f"{name!r} starts with {NEED_QUALIFIER!r}, which names a need type "
+                f"({NEED_QUALIFIER}<type>); a preset cannot use that prefix",
+            )
             return None
         if not self_preset and self.taken(name):
             self.warn(

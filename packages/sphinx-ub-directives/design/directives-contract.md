@@ -254,9 +254,23 @@ force_options = { collapse = true }  # a use cannot change these
    Enforced by: test `test_presets.py::test_need_type_presets_need_resolve_need_option`.
 7. A new (non-self) name that is already a directive — built in, a need type (bare or
    `need:`-qualified), any loaded extension's — is `directive_preset_name_taken` at the entry.
+   **A new name starting with `need:`** (compared ignoring case, as names are) is
+   `directive_preset_name_taken` whatever follows it: whether or not a need type of that
+   name exists, and (Sphinx half) whether or not sphinx-needs is loaded. `need:<type>` is
+   always the need type's qualified directive, so a preset `need:x` would be silently
+   replaced the day a need type `x` is added; the prefix is reserved for need types. A
+   self-preset `need:<type>` (3.2.3) is not new and is unaffected, and so is a preset of
+   another name whose base is `need:<type>` (3.2.5). This check is the LAST of 3.2: an
+   entry already refused by 3.2.1-3.2.6 (a base naming nothing, say) is that one finding
+   only, and a base naming a refused `need:` name is no chain (3.2.4) but names no
+   directive (3.2.5).
    Enforced by: corpus `refused-name-taken`, `refused-name-taken-by-a-need-type`,
-   `refused-name-taken-by-a-qualified-need-type`;
-   test `test_presets.py::test_a_qualified_name_is_taken`.
+   `refused-name-taken-by-a-qualified-need-type`, `refused-name-need-prefix-no-such-type`,
+   `refused-name-need-prefix-cased`, `refused-name-need-prefix-after-the-base`,
+   `refused-base-names-a-reserved-preset-name`, `self-preset-of-a-qualified-need-type`,
+   `self-preset-of-a-qualified-need-type-cased`;
+   tests `test_presets.py::test_a_qualified_name_is_taken`,
+   `…::test_a_need_prefixed_name_is_reserved_without_sphinx_needs`.
 
 ### 3.3 Option checks (every problem reported; the preset is left out if any)
 

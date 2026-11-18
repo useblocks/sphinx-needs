@@ -2246,6 +2246,96 @@ path = 'parse.directive_presets."need:spec"'
 type = "spec"
 
 [[case]]
+name = "refused-name-need-prefix-no-such-type"
+why = "refused at load, once, at its entry: a new name need:<x> is reserved for need types even where no need type x exists, so a type added later cannot silently take it over"
+config = '''
+[parse.directive_presets."need:draft"]
+base = "need:req"
+options = { status = "draft" }
+'''
+source = '''
+Text.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_name_taken"
+path = 'parse.directive_presets."need:draft"'
+
+[[case]]
+name = "refused-name-need-prefix-cased"
+why = "refused at load, once, at its entry: the need: prefix is compared ignoring case, as directive names are"
+config = '''
+[parse.directive_presets."Need:Draft"]
+base = "note"
+'''
+source = '''
+Text.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_name_taken"
+path = 'parse.directive_presets."Need:Draft"'
+
+[[case]]
+name = "refused-name-need-prefix-after-the-base"
+why = "one finding per entry, in the resolution order: a need:<x> name whose base names nothing is directive_preset_unknown_base at its base, and not also the reserved name"
+config = '''
+[parse.directive_presets."need:draft"]
+base = "nosuch"
+'''
+source = '''
+Text.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_unknown_base"
+path = 'parse.directive_presets."need:draft".base'
+
+[[case]]
+name = "refused-base-names-a-reserved-preset-name"
+why = "a refused need:<x> preset is no preset, so a base naming it is no chain: it names no directive, directive_preset_unknown_base, as a base naming a taken name is the directive itself"
+config = '''
+[parse.directive_presets."need:draft"]
+base = "note"
+
+[parse.directive_presets.draft]
+base = "need:draft"
+'''
+source = '''
+Text.
+'''
+[case.expect]
+[[case.expect.findings]]
+code = "directive_preset_name_taken"
+path = 'parse.directive_presets."need:draft"'
+[[case.expect.findings]]
+code = "directive_preset_unknown_base"
+path = "parse.directive_presets.draft.base"
+
+[[case]]
+name = "self-preset-of-a-qualified-need-type-cased"
+why = "the need: reservation is for NEW names only: a self-preset of need:<type>, its name spelled in another case than its base, still gives the qualified directive project-wide defaults"
+config = '''
+[parse.directive_presets."NEED:req"]
+base = "need:req"
+options = { status = "open" }
+'''
+source = '''
+.. need:req:: A
+   :id: REQ_Q09
+
+.. need:req:: B
+   :id: REQ_Q10
+   :status: done
+'''
+[case.expect]
+findings = []
+[case.expect.needs.REQ_Q09]
+status = "open"
+[case.expect.needs.REQ_Q10]
+status = "done"
+
+[[case]]
 name = "qualified-need-type-base"
 why = "a base need:<type> is that need type, its options the need's"
 config = '''
