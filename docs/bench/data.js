@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1795023972606,
+  "lastUpdate": 1795029408766,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -30282,6 +30282,48 @@ window.BENCHMARK_DATA = {
             "value": 186.379441,
             "unit": "MB",
             "extra": "Commit: 5f18d407eacca79c622f33e109215179dd9934e6\nBranch: master\nTime: 2026-11-18T18:44:43+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "653340c0a32d62b4d3791d20d50510cd12000d44",
+          "message": "✨ sphinx-needs: `needs_import_restrict_content`, imported content parsed with file insertion and raw markup off (#2542)\n\nA `needimport` hands each record's content to the importing page's\nparser as if it had been written\nthere: an `include` in a record reads a file of the machine that builds\nthe importing project, and a `raw`\nblock writes its markup into the output. This adds an opt-in option that\nparses that content, and the text\nits templates render, with docutils' file insertion and raw markup\nswitched off.\n\n**Switch it on**\n\n```python\nneeds_import_restrict_content = True\n```\n\nor `[needs] import_restrict_content = true` in `ubproject.toml`. It is\noff by default in 9.x and planned to be\non by default in a later release. Changing it re-reads the project.\n\n**What it does.** The content of every need `needimport` creates, and\nthe text a `template`, `pre_template`\nor `post_template` renders for it, is parsed with docutils'\n`file_insertion_enabled` and `raw_enabled` off,\nin either markup (reStructuredText, MyST, and with\n`needs_import_parse_by_doctype`); both are put back as\nthey were afterwards, so the needs written in the project are untouched.\nIn that text:\n\n- `include`, `literalinclude`, `csv-table` with `:file:` / `:url:`, and\nthe `raw` directive and role do not\nrun, each reported by docutils' own warning (`\"include\" directive\ndisabled.` …); in MyST the same holds\nfor `{include}`, `{literalinclude}`, `{raw}`, `{csv-table}` and\n`{eval-rst}`;\n- a nested `needimport` reads nothing (one `needs.needimport` warning);\na page-level one is untouched, also in\n  a project that switches file insertion off itself;\n- MyST's HTML blocks and inline HTML, which myst-parser does not switch\noff, are removed with one new\n`needs.import_restrict` warning per imported need, carrying the count\nover its content and templates\n(`Raw markup (an HTML block or inline HTML) removed from imported need\n'X' (N node(s)): needs_import_restrict_content is on`).\nA raw node whose text is exactly what myst-parser writes for a hard line\nbreak or a task-list checkbox is\nkept, and so are `<s>` and `</s>` as a matched pair within one paragraph\n(strikethrough, `~~x~~`); an\n`<s>` a record leaves open, or a `</s>` with no `<s>` before it, is\nremoved like any other raw markup.\n\nThe project's own template files change too when they render for an\nimported need: an `include` or a `raw`\nin a `template`, `pre_template` or `post_template` file does not run for\nit (it still runs for a need\nwritten in the project).\n\n**Trust.** The option narrows what imported content can do; it does not\nmake a `needs.json` from a source\nyou do not trust harmless to import. Import only files you trust: the\noption's entry in the configuration\ndocs lists what a record can still do with it on (filter strings, which\nare evaluated as Python, among them,\nand directives that read a file without consulting docutils' switch,\nsuch as `graphviz`, `uml`, `mermaid` and\n`data-viewer`).\n\n**Tests.** `tests/test_needimport_restrict.py`: every covered construct\nin each of the five ways a record's\ncontent is parsed, with a canary file outside the project that must be\nabsent from the doctree and the\nHTML with the option on and present with it off, and each construct's\nwarning by its text; a refused nested\n`needimport` opens, notes and looks for nothing; a need written inside\nimported content is restricted too and\ncounts into the warning; pre/post templates and a `template` (the docs'\nown example pre template), with a\nneed written on the page with the same template untouched; one warning\nfor a need that loses raw markup in\nits pre template, content and post template; myst-parser's own raw\noutput kept and look-alikes removed, and\nstrikethrough kept only as a pair (a lone `</s>`, a doubled `<s>`, a\npair split across paragraphs, and an open\n`<s>` in a title a pre template renders on a MyST page); the needs\nwritten before and after the import, the\nnext document, and a project's own `raw_enabled` /\n`file_insertion_enabled` switches survive; the option\nfrom `conf.py` and from `ubproject.toml` (true and false); an\nincremental build that changes it, in both\ndirections.\n\nDoes ubCode need a matching change? No: it refuses the text-ingesting\ndirectives (`include`, `literalinclude`, `csv-table :file:`) and the\n`raw` directive in imported content always, with no option.\n\nCloses #2259",
+          "timestamp": "2026-11-18T20:15:22+01:00",
+          "tree_id": "bf7be53ddf27132bd6bf6be121cd95686e062e32",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/653340c0a32d62b4d3791d20d50510cd12000d44"
+        },
+        "date": 1795029407690,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.05534984899999884,
+            "unit": "s",
+            "extra": "Commit: 653340c0a32d62b4d3791d20d50510cd12000d44\nBranch: master\nTime: 2026-11-18T20:15:22+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (no diagram rendering)",
+            "value": 10.862648139999997,
+            "unit": "s",
+            "extra": "Commit: 653340c0a32d62b4d3791d20d50510cd12000d44\nBranch: master\nTime: 2026-11-18T20:15:22+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation: peak memory",
+            "value": 190.064448,
+            "unit": "MB",
+            "extra": "Commit: 653340c0a32d62b4d3791d20d50510cd12000d44\nBranch: master\nTime: 2026-11-18T20:15:22+01:00\nCPU: AMD EPYC 9V74 80-Core Processor"
           }
         ]
       }
