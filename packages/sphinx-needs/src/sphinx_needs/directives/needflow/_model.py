@@ -37,7 +37,7 @@ from sphinx.application import Sphinx
 from sphinx_needs.config import NeedsSphinxConfig, NeedType
 from sphinx_needs.data import NeedsFlowType, SphinxNeedsData
 from sphinx_needs.filter_common import (
-    _report_namespaced_ids_off,
+    _report_filter_text,
     apply_max_items,
     filter_single_need,
     process_filters,
@@ -420,7 +420,7 @@ def build_graph(
     if highlight := attributes["highlight"]:
         # read need by need below: what its text shows is reported here as well, so
         # that a highlight no drawn need is tested on is reported too
-        _report_namespaced_ids_off(highlight, needs_config, location)
+        _report_filter_text(highlight, needs_config, location)
     roots, drawn = build_node_tree(
         found_needs,
         lambda need: resolve_presentation(

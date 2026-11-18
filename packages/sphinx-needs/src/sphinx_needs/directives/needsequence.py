@@ -30,7 +30,7 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import (
     FilterBase,
-    _report_namespaced_ids_off,
+    _report_filter_text,
     filter_single_need,
     resolve_max_items,
 )
@@ -197,7 +197,7 @@ def process_needsequence(
         if filter_string := current_needsequence["filter"]:
             # read need by need below: what its text shows is reported here as well, so
             # that a filter no receiver is tested on is reported too
-            _report_namespaced_ids_off(filter_string, needs_config, node)
+            _report_filter_text(filter_string, needs_config, node)
         for need_id in start_needs_id:
             try:
                 need = all_needs_dict[need_id.strip()]

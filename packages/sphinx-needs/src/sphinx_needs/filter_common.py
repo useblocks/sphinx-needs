@@ -913,8 +913,7 @@ def filter_needs_and_parts(
         finally:
             watch.active = False
     # before either tier, and before the loop: reported even where no need is given
-    _report_unknown_types(filter_string, config, location, append_warning)
-    _report_namespaced_ids_off(filter_string, config, location, append_warning)
+    _report_filter_text(filter_string, config, location, append_warning)
 
     # === Fast path: try compiled predicate to avoid eval() entirely ===
     compiled = compile_portable(filter_string)
@@ -984,6 +983,25 @@ def filter_needs_and_parts(
                 error_reported = True
 
     return found_needs_slow
+
+
+def _report_filter_text(
+    filter_string: str,
+    config: NeedsSphinxConfig,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+) -> None:
+    """Report what the text of a filter string shows, both reports together: a
+    ``c.is_a`` literal naming no need type (:func:`_report_unknown_types`) and a
+    namespace value read while ``needs_namespaced_ids`` is off
+    (:func:`_report_namespaced_ids_off`). Each is given once per build for the string,
+    where it is written (*location*) and the origin its caller appends
+    (*append_warning*). Every place that reports either calls this: the two filter
+    entries, and a place testing its filter need by need before it does, so that the
+    place is reported where no need is tested too.
+    """
+    _report_unknown_types(filter_string, config, location, append_warning)
+    _report_namespaced_ids_off(filter_string, config, location, append_warning)
 
 
 def _report_unknown_types(
@@ -1250,8 +1268,7 @@ def filter_single_need(
     if _is_constant_filter(filter_string):
         raise NeedsInvalidFilter(_constant_filter_message(filter_string))
     # before either tier
-    _report_unknown_types(filter_string, config, location, append_warning)
-    _report_namespaced_ids_off(filter_string, config, location, append_warning)
+    _report_filter_text(filter_string, config, location, append_warning)
     return _filter_single_need(
         need,
         config,
