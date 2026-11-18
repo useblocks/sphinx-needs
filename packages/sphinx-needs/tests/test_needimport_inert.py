@@ -22,9 +22,12 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import requests
 from docutils import nodes
 from sphinx.testing.util import SphinxTestApp
+from sphinx.util.docutils import patch_docutils
 
+import ub_needs_exchange
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
@@ -370,17 +373,40 @@ def matrix_params() -> list[Any]:
 @pytest.mark.parametrize(
     ("test_app", "route", "inert"), matrix_params(), indirect=["test_app"]
 )
-def test_each_construct_in_each_route(test_app: SphinxTestApp, route: str, inert: bool):
+def test_each_construct_in_each_route(
+    test_app: SphinxTestApp, route: str, inert: bool, monkeypatch: pytest.MonkeyPatch
+):
     """On, no canary is read or written, and each construct is reported once by its own
-    warning; off (in ``conf.py``), every canary is, and nothing is reported."""
+    warning; off (in ``conf.py``), every canary is, and nothing is reported. A nested
+    needimport reads nothing when it is refused: neither its file nor its URL is opened."""
     constructs = write_import(test_app, ROUTES[route][2])
+    opened: list[str] = []
+    load, get = ub_needs_exchange.load, requests.Session.get
+
+    def spy_load(path: Any, *args: Any, **kwargs: Any) -> Any:
+        opened.append(str(path))
+        return load(path, *args, **kwargs)
+
+    def spy_get(self: requests.Session, url: Any, *args: Any, **kwargs: Any) -> Any:
+        opened.append(str(url))
+        return get(self, url, *args, **kwargs)
+
+    monkeypatch.setattr(ub_needs_exchange, "load", spy_load)
+    monkeypatch.setattr(requests.Session, "get", spy_get)
     test_app.build()
     reached = {name: present(test_app, c) for name, c in constructs.items()}
+    nested = sorted(
+        Path(name).name for name in opened if not name.endswith("imported.json")
+    )
     if not inert:
         assert reached == dict.fromkeys(constructs, True)
+        assert nested == sorted(
+            file for c in constructs.values() if c.kind == "need" for file in c.files
+        )
         assert_no_warnings(test_app)
         return
     assert reached == dict.fromkeys(constructs, False)
+    assert nested == []
     warnings = build_warnings(test_app)
     expected = Counter(c.warning for c in constructs.values())
     found = Counter(
@@ -575,3 +601,42 @@ def test_changing_the_option_rereads_the_importing_page(
         assert len(build_warnings(again)) == 2, build_warnings(again)
     finally:
         again.cleanup()
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("proj/conf.py"), conf(by_doctype=False, inert=True)),
+                (Path("proj/docutils.conf"), "[general]\nraw_enabled: false\n"),
+                (
+                    Path("proj/index.rst"),
+                    importing_page(
+                        "index.rst",
+                        after=".. raw:: html\n\n   <b>CANARY_RAW_PAGE</b>\n",
+                    ),
+                ),
+            ],
+            "files_srcdir": "proj",
+        }
+    ],
+    indirect=True,
+)
+def test_the_projects_own_settings_are_put_back(test_app: SphinxTestApp):
+    """The switches are put back as the project had them, not switched on: a project
+    that turns raw markup off itself (``docutils.conf``) has it off after the import."""
+    constructs = write_import(test_app, ".rst", ["include"])
+    # what ``sphinx-build`` does around a build, and ``SphinxTestApp`` does not: point
+    # docutils at the project's ``docutils.conf``
+    with patch_docutils(test_app.confdir):
+        test_app.build()
+    assert not present(test_app, constructs["include"])
+    page_raw = Construct(
+        "", "", {}, "CANARY_RAW_PAGE", "raw", "", "<b>CANARY_RAW_PAGE</b>"
+    )
+    assert not present(test_app, page_raw)
+    warnings = build_warnings(test_app)
+    assert len(warnings) == 2, warnings
+    assert sum(RAW in w for w in warnings) == 1, warnings
