@@ -175,6 +175,8 @@ A filter is read for its truth: if your expression is valid and its value is tru
 the related need is added to the filter result list -- an empty string, an empty list, ``0`` and ``None`` are false,
 so ``tags`` selects the needs that have tags.
 If it is invalid or its value is false, the related need is not taken into account for the current filter.
+Leading spaces and tabs are read past, as Python's ``eval`` reads them past, wherever the string is written:
+``" status == 'open'"`` in :ref:`needs_warnings` or :ref:`needs_builder_filter` selects what ``"status == 'open'"`` does.
 
 A filter that is a constant alone says nothing about a need, as its value is the same on every need:
 a literal (a string, bytes, a number with one sign or none, ``None`` or ``...``),
@@ -336,7 +338,8 @@ selects the ``req`` needs, and those of every other type inheriting from ``req``
 - A name that is no need type is false on every need: ``c.is_a('rq')`` selects nothing, as ``type == 'rq'`` does.
   A type is named by its directive name, never its title. A string literal naming no need type is reported with a
   ``needs.filter_type`` warning naming the type it is the title of or is close to, once per filter and place it is
-  written; a filter with no place (a derived field's ``where``, a link condition, a constraint) once per filter string,
+  written, a place that tests it need by need (a :ref:`needflow` ``:highlight:``, a link condition) included; a filter
+  with no place (a derived field's ``where``, a constraint) once per filter string,
   and a :ref:`needs_warnings` filter once per entry, naming it:
   ``Filter "c.is_a('rq')" names 'rq', which is not a need type (did you mean 'req'?); c.is_a('rq') selects no need``.
   A filter naming a type on purpose, such as one shared by projects that do not all declare it, is silenced with

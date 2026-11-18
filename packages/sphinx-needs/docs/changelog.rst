@@ -312,6 +312,24 @@ Bug fixes
   ``content``. One whose ``content`` is not a string (``null``, ``0``, ``false``, ``[]``, ``{}``) beside a
   ``description`` is refused, as such a ``content`` already is without one.
 
+- 🐛 A filter string with leading spaces or tabs selects what it selects without them in a ``needpie`` or ``needbar``
+  line, needuml's ``filter()``, :ref:`needs_warnings` and :ref:`needs_builder_filter` (:issue:`2521`)
+
+  ``" status == 'open'"`` was reported there as ``not valid`` (``unexpected indent``) and matched no need, so a
+  ``needs_builder_filter`` written so exported none, while a constraint or a link condition read the same string past
+  its padding, as Python's ``eval`` does. Every place now reads past exactly what ``eval`` reads past, spaces and tabs
+  (a newline or a form feed followed by a space is still refused, as ``eval`` refuses it), and a warning quoting the
+  filter quotes it as written. A directive option such as ``:filter:`` was never affected: docutils strips it.
+
+- 🐛 A ``c.is_a`` naming no need type is reported once at each place it is written where a filter is tested need by
+  need -- a :ref:`needflow` ``:highlight:``, a :ref:`needgantt` ``:milestone_filter:``, a :ref:`needsequence`
+  ``:filter:``, a link condition -- with the place's file and line **(changed output)** (:issue:`2528`)
+
+  There, ``needs.filter_type`` was reported once per build for the string with no location, however many places wrote
+  it, and a place with no location sharing the string (a constraint) took their report. It is now counted as
+  ``needs.namespaced_ids_off`` is and as the views report it; a constraint, which has no location, is still reported
+  once per build for its string.
+
 .. _`release:9.2.0`:
 
 9.2.0
