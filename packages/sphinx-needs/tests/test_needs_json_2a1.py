@@ -20,6 +20,7 @@ from syrupy.filters import props
 import ub_needs_exchange as exchange
 from sphinx_needs import __version__
 from sphinx_needs._needsfile_v2a1 import hop_to_json
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs_testkit import build_warnings
 
 PROJECT = "doc_test/doc_needs_json_2a1"
@@ -273,12 +274,12 @@ def test_the_default_writes_v1(test_app: Any) -> None:
     assert Path(app.outdir, "needs.json").read_bytes() == default
 
 
-@pytest.mark.parametrize("value", [2, "2", "1", "2a2", True, 1.0])
+@pytest.mark.parametrize("value", [2, "2", " 1", "01", "2a2", True, 1.0])
 def test_an_unknown_value_warns_and_writes_v1(
     value: object, make_app: Any, tmp_path: Path
 ) -> None:
-    """Any value but ``1`` and ``"2a1"`` is one ``needs.config`` warning, and the
-    file is v1."""
+    """Any value but ``1``, ``"1"`` and ``"2a1"`` is one ``needs.config`` warning, and
+    the file is v1: the text ``"1"`` is read as ``1``, exactly, not as a number."""
     srcdir = tmp_path / "src"
     srcdir.mkdir()
     (srcdir / "conf.py").write_text(
@@ -315,6 +316,142 @@ def test_the_option_is_read_from_ubproject_toml(make_app: Any, tmp_path: Path) -
         assert [r["id"] for r in _needs_json(app)["needs"]] == ["REQ_001"]
     finally:
         app.cleanup()
+
+
+def _option_project(tmp_path: Path, conf: str = "", toml: str | None = None) -> Path:
+    srcdir = tmp_path / "src"
+    srcdir.mkdir()
+    if toml is not None:
+        conf += 'needs_from_toml = "ubproject.toml"\n'
+        (srcdir / "ubproject.toml").write_text(
+            f"[needs]\njson_format_version = {toml}\n", encoding="utf-8"
+        )
+    (srcdir / "conf.py").write_text(
+        f'extensions = ["sphinx_needs"]\n{conf}', encoding="utf-8"
+    )
+    (srcdir / "index.rst").write_text(
+        "T\n=\n\n.. req:: a\n   :id: REQ_001\n", encoding="utf-8"
+    )
+    return srcdir
+
+
+# ``-D name=value`` reaches Sphinx as the text ``value`` in ``confoverrides``, the
+# dictionary the builds below pass, and both are converted by
+# ``Config.convert_overrides`` by the default the value is registered with (this suite
+# builds in process: ``test_testkit_subprocess.py``)
+
+
+@pytest.mark.parametrize(
+    ("override", "written", "warnings"),
+    [("2a1", "2a1", [BETA]), ("1", 1, [])],
+    ids=["2a1", "1"],
+)
+def test_the_option_is_read_from_the_command_line(
+    override: str,
+    written: object,
+    warnings: list[str],
+    make_app: Any,
+    tmp_path: Path,
+) -> None:
+    """``-D needs_json_format_version=2a1`` writes a 2a1 file and ``=1`` a v1 one:
+    the text is passed through, not converted as an integer is (#2530)."""
+    srcdir = _option_project(tmp_path)
+    app = make_app(
+        "needs",
+        srcdir=srcdir,
+        freshenv=True,
+        confoverrides={"needs_json_format_version": override},
+    )
+    try:
+        app.build()
+        assert app.config.needs_json_format_version == override
+        assert build_warnings(app) == warnings
+        data = _needs_json(app)
+        assert data.get("format_version", 1) == written
+        if written == 1:
+            assert "REQ_001" in data["versions"][""]["needs"]
+    finally:
+        app.cleanup()
+
+
+def test_an_unknown_command_line_value_warns_and_writes_v1(
+    make_app: Any, tmp_path: Path
+) -> None:
+    """``-D needs_json_format_version=3`` is refused by sphinx-needs' own check, which
+    names the values it takes, and the file is v1."""
+    srcdir = _option_project(tmp_path)
+    app = make_app(
+        "needs",
+        srcdir=srcdir,
+        freshenv=True,
+        confoverrides={"needs_json_format_version": "3"},
+    )
+    try:
+        app.build()
+        assert build_warnings(app) == [
+            "WARNING: needs_json_format_version must be 1 or '2a1', not '3'; "
+            "writing format version 1 [needs.config]"
+        ]
+        assert "format_version" not in _needs_json(app)
+    finally:
+        app.cleanup()
+
+
+@pytest.mark.parametrize(
+    ("conf", "toml"),
+    [('needs_json_format_version = "1"\n', None), ("", '"1"')],
+    ids=["conf.py", "ubproject.toml"],
+)
+def test_the_text_1_is_format_1(
+    conf: str, toml: str | None, make_app: Any, tmp_path: Path
+) -> None:
+    """The text ``"1"`` is format 1 wherever it is set, as it is from ``-D``: no
+    warning, a v1 file."""
+    srcdir = _option_project(tmp_path, conf, toml)
+    app = make_app("needs", srcdir=srcdir, freshenv=True)
+    try:
+        app.build()
+        assert app.config.needs_json_format_version == "1"
+        assert build_warnings(app) == []
+        data = _needs_json(app)
+        assert "format_version" not in data
+        assert "REQ_001" in data["versions"][""]["needs"]
+    finally:
+        app.cleanup()
+
+
+def test_the_unset_value_is_the_integer_1(make_app: Any, tmp_path: Path) -> None:
+    """Unset, the value a ``conf.py`` or an extension reads is the integer ``1``, as it
+    was before ``-D`` could set it."""
+    srcdir = _option_project(tmp_path)
+    app = make_app("needs", srcdir=srcdir, freshenv=True)
+    try:
+        value = app.config.needs_json_format_version
+        assert type(value) is int
+        assert value == 1
+        assert NeedsSphinxConfig.get_default("json_format_version") == 1
+    finally:
+        app.cleanup()
+
+
+def test_only_this_value_registers_a_callable_default() -> None:
+    """``add_config_values`` registers a callable default for this value alone (its
+    ``override_as_text`` metadata key), which returns the field's own default; every
+    other value is registered with its default as it is."""
+    registered: dict[str, Any] = {}
+
+    class _Recorder:
+        def add_config_value(
+            self, name: str, default: Any, rebuild: str, types: Any = ()
+        ) -> None:
+            registered[name] = default
+
+    NeedsSphinxConfig.add_config_values(_Recorder())  # type: ignore[arg-type]
+    callables = sorted(name for name, value in registered.items() if callable(value))
+    assert callables == ["needs_json_format_version"]
+    value = registered["needs_json_format_version"](None)
+    assert type(value) is int
+    assert value == 1
 
 
 @pytest.mark.parametrize(
