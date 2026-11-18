@@ -17,6 +17,7 @@ reStructuredText page).
 from __future__ import annotations
 
 import json
+import os
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -54,7 +55,8 @@ class Construct:
     :param kind: ``text``: the token is text of a file the construct reads; ``raw``: the
         token is in raw markup (the doctree's ``raw`` nodes, the unescaped HTML); ``need``:
         the token is the title of a need a nested needimport reads.
-    :param warning: What the warning reporting it with the option on contains.
+    :param warning: What the warning reporting it with the option on contains (``{OUT}``
+        and ``{OUTURL}`` as in ``body``).
     """
 
     def __init__(
@@ -80,14 +82,34 @@ def nested(need_id: str) -> str:
     )
 
 
+def fill(text: str, outside: Path) -> str:
+    """``{OUT}`` as the importing page names the outside directory, ``{OUTURL}`` its URL."""
+    return text.replace("{OUT}", "../outside").replace(
+        "{OUTURL}", outside.resolve().as_uri()
+    )
+
+
 INCLUDE_RST = '"include" directive disabled'
 INCLUDE_MYST = 'Directive "include" disabled'
 FILE_INSERTION = "File insertion disabled"
 FILE_ACCESS = 'File and URL access deactivated; ignoring "csv-table" directive.'
 RAW = '"raw" directive disabled'
 RAW_ROLE = "raw (and derived) roles disabled"
-NESTED = "file insertion is disabled here"
-RAW_REMOVED = "Raw markup removed from the content of imported need"
+INERT_ON = "needs_import_inert_content is on"
+
+
+def refused(path: str) -> str:
+    """The warning of a ``needimport`` met in imported content under the option."""
+    return f"Could not load needs import file {path}: {INERT_ON}"
+
+
+def removed(need_id: str, count: int) -> str:
+    """The warning of an imported need whose raw markup was removed."""
+    return (
+        "Raw markup (an HTML block or inline HTML) removed from the content of "
+        f"imported need {need_id!r} ({count} node(s)): {INERT_ON}"
+    )
+
 
 CONSTRUCTS: dict[str, Construct] = {
     "include": Construct(
@@ -164,7 +186,7 @@ CONSTRUCTS: dict[str, Construct] = {
         {"nested_local.json": nested("NESTED_LOCAL")},
         "NESTED_LOCAL",
         "need",
-        NESTED,
+        refused("{OUT}/nested_local.json"),
         "CANARY_NESTED_LOCAL",
     ),
     "needimport_url": Construct(
@@ -173,7 +195,7 @@ CONSTRUCTS: dict[str, Construct] = {
         {"nested_url.json": nested("NESTED_URL")},
         "NESTED_URL",
         "need",
-        NESTED,
+        refused("{OUTURL}/nested_url.json"),
         "CANARY_NESTED_URL",
     ),
     "m_include": Construct(
@@ -241,7 +263,7 @@ CONSTRUCTS: dict[str, Construct] = {
         {},
         "CANARY_M_HTML_BLOCK",
         "raw",
-        RAW_REMOVED,
+        removed("IMP_M_HTML_BLOCK", 1),
         "<div>CANARY_M_HTML_BLOCK</div>",
     ),
     "m_html_inline": Construct(
@@ -250,7 +272,8 @@ CONSTRUCTS: dict[str, Construct] = {
         {},
         "CANARY_M_HTML_INLINE",
         "raw",
-        RAW_REMOVED,
+        # the opening and the closing tag are a raw node each
+        removed("IMP_M_HTML_INLINE", 2),
         '<span data-c="CANARY_M_HTML_INLINE">',
     ),
     "m_needimport": Construct(
@@ -259,7 +282,7 @@ CONSTRUCTS: dict[str, Construct] = {
         {"m_nested_local.json": nested("M_NESTED_LOCAL")},
         "M_NESTED_LOCAL",
         "need",
-        NESTED,
+        refused("{OUT}/m_nested_local.json"),
         "CANARY_M_NESTED_LOCAL",
     ),
     "m_needimport_url": Construct(
@@ -268,13 +291,13 @@ CONSTRUCTS: dict[str, Construct] = {
         {"m_nested_url.json": nested("M_NESTED_URL")},
         "M_NESTED_URL",
         "need",
-        NESTED,
+        refused("{OUTURL}/m_nested_url.json"),
         "CANARY_M_NESTED_URL",
     ),
 }
 
 
-def conf(*, by_doctype: bool, inert: bool | None) -> str:
+def conf(*, by_doctype: bool, inert: bool | None, extra: str = "") -> str:
     """A project that parses reStructuredText and MyST; ``inert`` ``None`` leaves the
     option unset in ``conf.py``."""
     lines = [
@@ -286,7 +309,7 @@ def conf(*, by_doctype: bool, inert: bool | None) -> str:
     ]
     if inert is not None:
         lines.append(f"{FLAG} = {inert}")
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines) + "\n" + extra
 
 
 def importing_page(page: str, before: str = "", after: str = "") -> str:
@@ -301,37 +324,50 @@ def importing_page(page: str, before: str = "", after: str = "") -> str:
     return f"{head}{before}{directive}\n{after}"
 
 
+def write_records(app: SphinxTestApp, records: list[dict[str, Any]]) -> Path:
+    """Write ``imported.json`` holding ``records``; return the outside directory."""
+    srcdir = Path(app.srcdir)
+    (srcdir / "imported.json").write_text(
+        json.dumps(
+            {
+                "current_version": "1.0",
+                "versions": {"1.0": {"needs": {r["id"]: r for r in records}}},
+            }
+        ),
+        encoding="utf-8",
+    )
+    outside = srcdir.parent / "outside"
+    outside.mkdir(exist_ok=True)
+    return outside
+
+
 def write_import(
     app: SphinxTestApp, doctype: str, names: list[str] | None = None
 ) -> dict[str, Construct]:
     """Write the canary files outside the project, and ``imported.json``: a need per
     construct of ``doctype`` (or of ``names``), each holding that construct alone."""
-    srcdir = Path(app.srcdir)
-    outside = srcdir.parent / "outside"
-    outside.mkdir(exist_ok=True)
+    outside = Path(app.srcdir).parent / "outside"
     chosen = {
         name: c
         for name, c in CONSTRUCTS.items()
         if (c.markup == doctype if names is None else name in names)
     }
-    needs = {}
+    records = []
     for name, construct in chosen.items():
+        need_id = f"IMP_{name.upper()}"
+        records.append(
+            {
+                "id": need_id,
+                "type": "spec",
+                "title": need_id,
+                "doctype": doctype,
+                "content": fill(construct.body, outside),
+            }
+        )
+    write_records(app, records)
+    for construct in chosen.values():
         for file, text in construct.files.items():
             (outside / file).write_text(text, encoding="utf-8")
-        need_id = f"IMP_{name.upper()}"
-        needs[need_id] = {
-            "id": need_id,
-            "type": "spec",
-            "title": need_id,
-            "doctype": doctype,
-            "content": construct.body.replace("{OUT}", "../outside").replace(
-                "{OUTURL}", outside.resolve().as_uri()
-            ),
-        }
-    (srcdir / "imported.json").write_text(
-        json.dumps({"current_version": "1.0", "versions": {"1.0": {"needs": needs}}}),
-        encoding="utf-8",
-    )
     return chosen
 
 
@@ -351,17 +387,67 @@ def present(app: SphinxTestApp, construct: Construct, docname: str = "index") ->
     return in_doctree
 
 
+def reached(
+    app: SphinxTestApp,
+    token: str,
+    kind: str,
+    docname: str = "index",
+    html: str | None = None,
+) -> bool:
+    """:func:`present` for a canary of a test's own: a ``raw`` one is written
+    ``<b>…</b>`` unless ``html`` says how."""
+    if html is None:
+        html = f"<b>{token}</b>" if kind == "raw" else token
+    return present(app, Construct("", "", {}, token, kind, "", html), docname)
+
+
+def assert_warnings(app: SphinxTestApp, expected: list[str]) -> None:
+    """The build's warnings are exactly ``expected``: each warning contains one of them,
+    and each of them is contained as many times as it is listed."""
+    warnings = build_warnings(app)
+    wanted = Counter(expected)
+    found = Counter(
+        next((w for w in wanted if w in warning), warning) for warning in warnings
+    )
+    assert found == wanted, warnings
+
+
+def project(
+    page: str,
+    text: str,
+    *,
+    by_doctype: bool = False,
+    inert: bool | None,
+    extra_conf: str = "",
+    files: list[tuple[Path, str]] | None = None,
+) -> dict[str, Any]:
+    """``test_app`` parameters: a project in ``<root>/proj`` with ``page`` as its index."""
+    return {
+        "buildername": "html",
+        "files": [
+            (
+                Path("proj/conf.py"),
+                conf(by_doctype=by_doctype, inert=inert, extra=extra_conf),
+            ),
+            (Path("proj", page), text),
+            *(files or []),
+        ],
+        "files_srcdir": "proj",
+    }
+
+
 def matrix_params() -> list[Any]:
     params = []
     for route, (page, by_doctype, _) in ROUTES.items():
         for inert in (False, True):
-            files = [
-                (Path("proj/conf.py"), conf(by_doctype=by_doctype, inert=inert)),
-                (Path("proj", page), importing_page(page)),
-            ]
             params.append(
                 pytest.param(
-                    {"buildername": "html", "files": files, "files_srcdir": "proj"},
+                    project(
+                        page,
+                        importing_page(page),
+                        by_doctype=by_doctype,
+                        inert=inert,
+                    ),
                     route,
                     inert,
                     id=f"{route}-{'on' if inert else 'off'}",
@@ -378,10 +464,13 @@ def test_each_construct_in_each_route(
 ):
     """On, no canary is read or written, and each construct is reported once by its own
     warning; off (in ``conf.py``), every canary is, and nothing is reported. A nested
-    needimport reads nothing when it is refused: neither its file nor its URL is opened."""
+    needimport leaves no trace when it is refused: its file and URL are not opened, its
+    path is not looked for, and it is not noted as a dependency of the page."""
     constructs = write_import(test_app, ROUTES[route][2])
+    outside = Path(test_app.srcdir).parent / "outside"
     opened: list[str] = []
-    load, get = ub_needs_exchange.load, requests.Session.get
+    probed: list[str] = []
+    load, get, exists = ub_needs_exchange.load, requests.Session.get, os.path.exists
 
     def spy_load(path: Any, *args: Any, **kwargs: Any) -> Any:
         opened.append(str(path))
@@ -391,28 +480,45 @@ def test_each_construct_in_each_route(
         opened.append(str(url))
         return get(self, url, *args, **kwargs)
 
+    def spy_exists(path: Any) -> bool:
+        probed.append(str(path))
+        return exists(path)
+
     monkeypatch.setattr(ub_needs_exchange, "load", spy_load)
     monkeypatch.setattr(requests.Session, "get", spy_get)
+    monkeypatch.setattr(os.path, "exists", spy_exists)
     test_app.build()
-    reached = {name: present(test_app, c) for name, c in constructs.items()}
+    monkeypatch.undo()
+    reached_ = {name: present(test_app, c) for name, c in constructs.items()}
+    nested_files = {
+        file for c in constructs.values() if c.kind == "need" for file in c.files
+    }
+    local_files = {
+        file
+        for c in constructs.values()
+        if c.kind == "need"
+        and c.body.startswith((".. needimport:: {OUT}/", "```{needimport} {OUT}/"))
+        for file in c.files
+    }
     nested = sorted(
         Path(name).name for name in opened if not name.endswith("imported.json")
     )
+    noted = {
+        Path(p).name for p in test_app.env.dependencies.get("index", ())
+    } & nested_files
+    looked_for = {Path(p).name for p in probed} & nested_files
     if not inert:
-        assert reached == dict.fromkeys(constructs, True)
-        assert nested == sorted(
-            file for c in constructs.values() if c.kind == "need" for file in c.files
-        )
+        assert reached_ == dict.fromkeys(constructs, True)
+        assert nested == sorted(nested_files)
+        assert noted == local_files
+        assert local_files <= looked_for
         assert_no_warnings(test_app)
         return
-    assert reached == dict.fromkeys(constructs, False)
+    assert reached_ == dict.fromkeys(constructs, False)
     assert nested == []
-    warnings = build_warnings(test_app)
-    expected = Counter(c.warning for c in constructs.values())
-    found = Counter(
-        next((w for w in expected if w in warning), warning) for warning in warnings
-    )
-    assert found == expected, warnings
+    assert noted == set()
+    assert looked_for == set()
+    assert_warnings(test_app, [fill(c.warning, outside) for c in constructs.values()])
 
 
 SCOPE_FILES = {
@@ -465,22 +571,40 @@ def scope_myst() -> tuple[str, str]:
 
 def scope_params() -> list[Any]:
     params = []
-    for route in ("rst-host", "rst-declared", "myst-declared", "myst-host"):
-        page, by_doctype, _ = ROUTES[route]
+    for route, (page, by_doctype, _) in ROUTES.items():
         text, other = scope_rst() if page.endswith(".rst") else scope_myst()
-        files = [
-            (Path("proj/conf.py"), conf(by_doctype=by_doctype, inert=True)),
-            (Path("proj", page), text),
-            (Path("proj", "other" + Path(page).suffix), other),
-        ]
         params.append(
             pytest.param(
-                {"buildername": "html", "files": files, "files_srcdir": "proj"},
+                project(
+                    page,
+                    text,
+                    by_doctype=by_doctype,
+                    inert=True,
+                    files=[(Path("proj", "other" + Path(page).suffix), other)],
+                ),
                 route,
                 id=route,
             )
         )
     return params
+
+
+def include_and_raw(doctype: str, name: str) -> str:
+    """Content that includes ``../outside/<name>.txt`` and writes
+    ``<b>CANARY_RAW_<NAME></b>`` as raw markup, in ``doctype``'s markup."""
+    if doctype == ".rst":
+        return (
+            f".. include:: ../outside/{name}.txt\n\n"
+            f".. raw:: html\n\n   <b>CANARY_RAW_{name.upper()}</b>"
+        )
+    return (
+        f"```{{include}} ../outside/{name}.txt\n```\n\n"
+        f"```{{raw}} html\n<b>CANARY_RAW_{name.upper()}</b>\n```"
+    )
+
+
+def include_warning(doctype: str) -> str:
+    return INCLUDE_RST if doctype == ".rst" else INCLUDE_MYST
 
 
 @pytest.mark.parametrize(("test_app", "route"), scope_params(), indirect=["test_app"])
@@ -489,116 +613,108 @@ def test_only_the_imported_content_is_inert(test_app: SphinxTestApp, route: str)
     next document still include and still pass raw markup through: the switches are put
     back after the imported content's parse."""
     doctype = ROUTES[route][2]
-    outside = Path(test_app.srcdir).parent / "outside"
-    outside.mkdir()
+    outside = write_records(
+        test_app,
+        [
+            {
+                "id": "IMP",
+                "type": "spec",
+                "title": "IMP",
+                "doctype": doctype,
+                "content": include_and_raw(doctype, "imported"),
+            }
+        ],
+    )
     for file, text in SCOPE_FILES.items():
         (outside / file).write_text(text, encoding="utf-8")
-    if doctype == ".rst":
-        content = (
-            ".. include:: ../outside/imported.txt\n\n"
-            ".. raw:: html\n\n   <b>CANARY_RAW_IMPORTED</b>"
-        )
-    else:
-        content = (
-            "```{include} ../outside/imported.txt\n```\n\n"
-            "```{raw} html\n<b>CANARY_RAW_IMPORTED</b>\n```"
-        )
-    record = {
-        "id": "IMP",
-        "type": "spec",
-        "title": "IMP",
-        "doctype": doctype,
-        "content": content,
-    }
-    Path(test_app.srcdir, "imported.json").write_text(
-        json.dumps(
-            {"current_version": "1.0", "versions": {"1.0": {"needs": {"IMP": record}}}}
-        ),
-        encoding="utf-8",
-    )
     test_app.build()
 
-    def reached(token: str, kind: str, docname: str = "index") -> bool:
-        html = f"<b>{token}</b>" if kind == "raw" else token
-        return present(test_app, Construct("", "", {}, token, kind, "", html), docname)
-
-    assert reached("CANARY_BEFORE", "text")
-    assert reached("CANARY_RAW_BEFORE", "raw")
-    assert reached("CANARY_AFTER", "text")
-    assert reached("CANARY_RAW_AFTER", "raw")
-    assert reached("CANARY_RAW_PAGE", "raw")
-    assert reached("CANARY_OTHER", "text", "other")
-    assert reached("CANARY_RAW_OTHER", "raw", "other")
-    assert not reached("CANARY_IMPORTED", "text")
-    assert not reached("CANARY_RAW_IMPORTED", "raw")
-    assert len(build_warnings(test_app)) == 2, build_warnings(test_app)
+    assert reached(test_app, "CANARY_BEFORE", "text")
+    assert reached(test_app, "CANARY_RAW_BEFORE", "raw")
+    assert reached(test_app, "CANARY_AFTER", "text")
+    assert reached(test_app, "CANARY_RAW_AFTER", "raw")
+    assert reached(test_app, "CANARY_RAW_PAGE", "raw")
+    assert reached(test_app, "CANARY_OTHER", "text", "other")
+    assert reached(test_app, "CANARY_RAW_OTHER", "raw", "other")
+    assert not reached(test_app, "CANARY_IMPORTED", "text")
+    assert not reached(test_app, "CANARY_RAW_IMPORTED", "raw")
+    assert_warnings(test_app, [include_warning(doctype), RAW])
 
 
 ONE_IMPORT = ["include", "raw"]
 
 
 @pytest.mark.parametrize(
-    "test_app",
+    ("test_app", "value"),
     [
-        {
-            "buildername": "html",
-            "files": [
-                (
-                    Path("proj/conf.py"),
-                    conf(by_doctype=False, inert=None)
-                    + 'needs_from_toml = "ubproject.toml"\n',
-                ),
-                (Path("proj/ubproject.toml"), "[needs]\nimport_inert_content = true\n"),
-                (Path("proj/index.rst"), importing_page("index.rst")),
-            ],
-            "files_srcdir": "proj",
-        }
+        pytest.param(
+            project(
+                "index.rst",
+                importing_page("index.rst"),
+                inert=None,
+                extra_conf='needs_from_toml = "ubproject.toml"\n',
+                files=[
+                    (
+                        Path("proj/ubproject.toml"),
+                        f"[needs]\nimport_inert_content = {value}\n",
+                    )
+                ],
+            ),
+            value,
+            id=value,
+        )
+        for value in ("true", "false")
     ],
-    indirect=True,
+    indirect=["test_app"],
 )
-def test_the_option_in_ubproject_toml(test_app: SphinxTestApp):
+def test_the_option_in_ubproject_toml(test_app: SphinxTestApp, value: str):
     """``[needs] import_inert_content`` in ``ubproject.toml`` is the option."""
     constructs = write_import(test_app, ".rst", ONE_IMPORT)
     test_app.build()
+    if value == "false":
+        assert all(present(test_app, c) for c in constructs.values())
+        assert_no_warnings(test_app)
+        return
     assert not any(present(test_app, c) for c in constructs.values())
-    assert len(build_warnings(test_app)) == 2, build_warnings(test_app)
+    assert_warnings(test_app, [INCLUDE_RST, RAW])
 
 
 @pytest.mark.parametrize(
-    "test_app",
+    ("test_app", "start"),
     [
-        {
-            "buildername": "html",
-            "files": [
-                (Path("proj/conf.py"), conf(by_doctype=False, inert=None)),
-                (Path("proj/index.rst"), importing_page("index.rst")),
-            ],
-            "files_srcdir": "proj",
-        }
+        pytest.param(
+            project("index.rst", importing_page("index.rst"), inert=start),
+            start,
+            id=f"{'on' if start else 'off'}-to-{'off' if start else 'on'}",
+        )
+        for start in (False, True)
     ],
-    indirect=True,
+    indirect=["test_app"],
 )
 def test_changing_the_option_rereads_the_importing_page(
-    test_app: SphinxTestApp, make_app: Any
+    test_app: SphinxTestApp, make_app: Any, start: bool
 ):
-    """An incremental build that changes only the option re-reads the importing page:
-    nothing else in the project changed, and the canaries the first build read are gone."""
+    """An incremental build that changes only the option re-reads the importing page,
+    in either direction: nothing else in the project changed."""
     constructs = write_import(test_app, ".rst", ONE_IMPORT)
+
+    def check(app: SphinxTestApp, inert: bool) -> None:
+        assert [present(app, c) for c in constructs.values()] == [not inert] * 2
+        assert_warnings(app, [INCLUDE_RST, RAW] if inert else [])
+
     test_app.build()
-    assert all(present(test_app, c) for c in constructs.values())
-    assert_no_warnings(test_app)
+    check(test_app, start)
     test_app.cleanup()
 
     again = make_app(
         buildername="html",
         srcdir=test_app.srcdir,
         builddir=Path(test_app.outdir).parent,
-        confoverrides={FLAG: True},
+        confoverrides={FLAG: not start},
     )
     try:
         again.build()
-        assert not any(present(again, c) for c in constructs.values())
-        assert len(build_warnings(again)) == 2, build_warnings(again)
+        check(again, not start)
     finally:
         again.cleanup()
 
@@ -606,21 +722,14 @@ def test_changing_the_option_rereads_the_importing_page(
 @pytest.mark.parametrize(
     "test_app",
     [
-        {
-            "buildername": "html",
-            "files": [
-                (Path("proj/conf.py"), conf(by_doctype=False, inert=True)),
-                (Path("proj/docutils.conf"), "[general]\nraw_enabled: false\n"),
-                (
-                    Path("proj/index.rst"),
-                    importing_page(
-                        "index.rst",
-                        after=".. raw:: html\n\n   <b>CANARY_RAW_PAGE</b>\n",
-                    ),
-                ),
-            ],
-            "files_srcdir": "proj",
-        }
+        project(
+            "index.rst",
+            importing_page(
+                "index.rst", after=".. raw:: html\n\n   <b>CANARY_RAW_PAGE</b>\n"
+            ),
+            inert=True,
+            files=[(Path("proj/docutils.conf"), "[general]\nraw_enabled: false\n")],
+        )
     ],
     indirect=True,
 )
@@ -633,10 +742,349 @@ def test_the_projects_own_settings_are_put_back(test_app: SphinxTestApp):
     with patch_docutils(test_app.confdir):
         test_app.build()
     assert not present(test_app, constructs["include"])
-    page_raw = Construct(
-        "", "", {}, "CANARY_RAW_PAGE", "raw", "", "<b>CANARY_RAW_PAGE</b>"
+    assert not reached(test_app, "CANARY_RAW_PAGE", "raw")
+    assert_warnings(test_app, [INCLUDE_RST, RAW])
+
+
+@pytest.mark.parametrize(
+    ("test_app", "inert"),
+    [
+        pytest.param(
+            project(
+                "index.rst",
+                importing_page("index.rst", after=".. include:: ../outside/page.txt\n"),
+                inert=inert,
+                files=[
+                    (
+                        Path("proj/docutils.conf"),
+                        "[general]\nfile_insertion_enabled: false\n",
+                    )
+                ],
+            ),
+            inert,
+            id="on" if inert else "off",
+        )
+        for inert in (False, True)
+    ],
+    indirect=["test_app"],
+)
+def test_a_project_without_file_insertion_still_imports(
+    test_app: SphinxTestApp, inert: bool
+):
+    """A project that switches file insertion off itself (``docutils.conf``) still
+    imports with a page-level ``needimport``, with the option off and on: the directive
+    refuses only inside imported content, and there only under the option."""
+    outside = write_records(
+        test_app,
+        [
+            {
+                "id": "IMP_TOP",
+                "type": "spec",
+                "title": "IMP_TOP",
+                "content": ".. needimport:: ../outside/nested_local.json",
+            }
+        ],
     )
-    assert not present(test_app, page_raw)
-    warnings = build_warnings(test_app)
-    assert len(warnings) == 2, warnings
-    assert sum(RAW in w for w in warnings) == 1, warnings
+    (outside / "nested_local.json").write_text(nested("NESTED_LOCAL"), "utf-8")
+    (outside / "page.txt").write_text("CANARY_PAGE\n", encoding="utf-8")
+    with patch_docutils(test_app.confdir):
+        test_app.build()
+    needs = SphinxNeedsData(test_app.env).get_needs_view()
+    assert "IMP_TOP" in needs
+    # the project's own switch is in force on the page itself
+    assert not reached(test_app, "CANARY_PAGE", "text")
+    if not inert:
+        assert "NESTED_LOCAL" in needs
+        assert_warnings(test_app, [INCLUDE_RST])
+        return
+    assert "NESTED_LOCAL" not in needs
+    assert_warnings(test_app, [INCLUDE_RST, refused("../outside/nested_local.json")])
+
+
+def nested_need(doctype: str) -> str:
+    """Imported content holding a need written inside it, which includes a file and
+    writes raw markup; in MyST, the outer content writes an HTML block too."""
+    if doctype == ".rst":
+        return (
+            ".. spec:: Inner\n   :id: INNER\n\n"
+            "   .. include:: ../outside/inner.txt\n\n"
+            "   .. raw:: html\n\n      <b>CANARY_RAW_INNER</b>\n"
+        )
+    return (
+        "<div>CANARY_RAW_OUTER</div>\n\n"
+        "````{spec} Inner\n:id: INNER\n\n"
+        "```{include} ../outside/inner.txt\n```\n\n"
+        "<div>CANARY_RAW_INNER</div>\n````\n"
+    )
+
+
+@pytest.mark.parametrize(
+    ("test_app", "route", "inert"),
+    [
+        pytest.param(
+            project(
+                page,
+                importing_page(page),
+                by_doctype=by_doctype,
+                inert=inert,
+            ),
+            route,
+            inert,
+            id=f"{route}-{'on' if inert else 'off'}",
+        )
+        for route, (page, by_doctype, _) in ROUTES.items()
+        for inert in (False, True)
+    ],
+    indirect=["test_app"],
+)
+def test_a_need_written_inside_imported_content(
+    test_app: SphinxTestApp, route: str, inert: bool
+):
+    """A need written inside an imported need's content is parsed inert too: its
+    ``include`` reads nothing, and its raw markup (a ``raw`` block in reStructuredText,
+    an HTML block in MyST) is stopped or removed, and counted into the warning of the
+    imported need that holds it."""
+    doctype = ROUTES[route][2]
+    outside = write_records(
+        test_app,
+        [
+            {
+                "id": "IMP",
+                "type": "spec",
+                "title": "IMP",
+                "doctype": doctype,
+                "content": nested_need(doctype),
+            }
+        ],
+    )
+    (outside / "inner.txt").write_text("CANARY_INNER\n", encoding="utf-8")
+    test_app.build()
+    assert "INNER" in SphinxNeedsData(test_app.env).get_needs_view()
+    if doctype == ".rst":
+        canaries = [reached(test_app, "CANARY_RAW_INNER", "raw")]
+    else:
+        canaries = [
+            reached(
+                test_app, f"CANARY_RAW_{name}", "raw", html=f"<div>CANARY_RAW_{name}"
+            )
+            for name in ("INNER", "OUTER")
+        ]
+    canaries.append(reached(test_app, "CANARY_INNER", "text"))
+    assert canaries == [not inert] * len(canaries)
+    if not inert:
+        assert_no_warnings(test_app)
+    elif doctype == ".rst":
+        assert_warnings(test_app, [INCLUDE_RST, RAW])
+    else:
+        # the inner need's HTML block is counted into the imported need's warning
+        assert_warnings(test_app, [INCLUDE_MYST, removed("IMP", 2)])
+
+
+def templates_project(page: str, inert: bool) -> dict[str, Any]:
+    """A project with the docs' own example ``pre_template``, a ``template`` rendering
+    the content, and a need WRITTEN on the page with the pre template, whose title writes
+    raw markup."""
+    docs_pre = (
+        Path(__file__).parent.parent
+        / "docs"
+        / "needs_templates"
+        / "spec_pre_template.need"
+    ).read_text("utf8")
+    if page.endswith(".rst"):
+        written = (
+            ".. role:: rawhtml(raw)\n   :format: html\n\n"
+            ".. spec:: x** :rawhtml:`<b>CANARY_RAW_WRITTEN</b>` **y\n"
+            "   :id: WRITTEN\n   :pre_template: spec_pre_template\n\n"
+        )
+    else:
+        written = (
+            '```{spec} x** <span data-c="CANARY_RAW_WRITTEN"></span> **y\n'
+            ":id: WRITTEN\n:pre_template: spec_pre_template\n```\n\n"
+        )
+    return project(
+        page,
+        importing_page(page, before=written),
+        inert=inert,
+        files=[
+            (Path("proj/needs_templates/spec_pre_template.need"), docs_pre),
+            (Path("proj/needs_templates/content.need"), "{{ content }}\n"),
+        ],
+    )
+
+
+@pytest.mark.parametrize(
+    ("test_app", "index", "inert"),
+    [
+        pytest.param(
+            templates_project(index, inert),
+            index,
+            inert,
+            id=f"{index}-{'on' if inert else 'off'}",
+        )
+        for index in ("index.rst", "index.md")
+        for inert in (False, True)
+    ],
+    indirect=["test_app"],
+)
+def test_the_text_templates_render_is_inert(
+    test_app: SphinxTestApp, index: str, inert: bool
+):
+    """The text a ``template``, ``pre_template`` or ``post_template`` renders for an
+    imported need is parsed inert too: the record names the template, and a template
+    renders the record's fields (the docs' example pre template renders its title).
+    A need written on the page with the same pre template is untouched."""
+    doctype = Path(index).suffix
+
+    def include_and_html(name: str) -> str:
+        # in MyST, the raw markup is an HTML block, which the inert parse removes
+        if doctype == ".rst":
+            return include_and_raw(doctype, name)
+        return (
+            f"```{{include}} ../outside/{name}.txt\n```\n\n"
+            f"<div>CANARY_RAW_{name.upper()}</div>"
+        )
+
+    def title(name: str) -> str:
+        return f"x**\n\n{include_and_html(name)}\n\n**y"
+
+    outside = write_records(
+        test_app,
+        [
+            {
+                "id": "IMP_TEMPLATE",
+                "type": "spec",
+                "title": "IMP_TEMPLATE",
+                "template": "content",
+                "content": include_and_html("template"),
+            },
+            {
+                "id": "IMP_PRE",
+                "type": "spec",
+                "title": title("pre"),
+                "pre_template": "spec_pre_template",
+                "content": "plain",
+            },
+            {
+                "id": "IMP_POST",
+                "type": "spec",
+                "title": title("post"),
+                "post_template": "spec_pre_template",
+                "content": "plain",
+            },
+        ],
+    )
+    for name in ("template", "pre", "post"):
+        (outside / f"{name}.txt").write_text(
+            f"CANARY_{name.upper()}\n", encoding="utf-8"
+        )
+    test_app.build()
+    if doctype == ".rst":
+        assert reached(test_app, "CANARY_RAW_WRITTEN", "raw")
+    else:
+        html = '<span data-c="CANARY_RAW_WRITTEN">'
+        assert reached(test_app, "CANARY_RAW_WRITTEN", "raw", html=html)
+    names = ("TEMPLATE", "PRE", "POST")
+    found = [reached(test_app, f"CANARY_{name}", "text") for name in names]
+    for name in names:
+        html = None if doctype == ".rst" else f"<div>CANARY_RAW_{name}</div>"
+        found.append(reached(test_app, f"CANARY_RAW_{name}", "raw", html=html))
+    assert found == [not inert] * len(found)
+    if not inert:
+        assert_no_warnings(test_app)
+    elif doctype == ".rst":
+        assert_warnings(test_app, [INCLUDE_RST, RAW] * 3)
+    else:
+        assert_warnings(
+            test_app,
+            [INCLUDE_MYST] * 3 + [removed(f"IMP_{name}", 1) for name in names],
+        )
+
+
+MYST_OWN_RAW = (
+    "line one\\\nline two\n\n"
+    "~~struck~~ text\n\n"
+    "- [ ] open task\n- [x] done task\n\n"
+    'Text <br onclick="CANARY_BR"> and <s class="CANARY_S">x</s>.'
+)
+
+
+@pytest.mark.parametrize(
+    ("test_app", "route", "inert"),
+    [
+        pytest.param(
+            project(
+                ROUTES[route][0],
+                importing_page(ROUTES[route][0]),
+                by_doctype=ROUTES[route][1],
+                inert=inert,
+                extra_conf=(
+                    'myst_enable_extensions = ["strikethrough", "tasklist"]\n'
+                    'suppress_warnings = ["myst.strikethrough"]\n'
+                ),
+            ),
+            route,
+            inert,
+            id=f"{route}-{'on' if inert else 'off'}",
+        )
+        for route in ("myst-declared", "myst-host")
+        for inert in (False, True)
+    ],
+    indirect=["test_app"],
+)
+def test_what_myst_parser_writes_as_raw_itself_is_kept(
+    test_app: SphinxTestApp, route: str, inert: bool
+):
+    """A hard line break, strikethrough and a task-list checkbox are raw nodes
+    myst-parser makes for ordinary Markdown: kept, exactly those texts, and not counted;
+    HTML that only starts like them is removed."""
+    write_records(
+        test_app,
+        [
+            {
+                "id": "IMP",
+                "type": "spec",
+                "title": "IMP",
+                "doctype": ".md",
+                "content": MYST_OWN_RAW,
+            }
+        ],
+    )
+    test_app.build()
+    raws = Counter(
+        (raw.get("format"), raw.astext())
+        for raw in test_app.env.get_doctree("index").findall(nodes.raw)
+    )
+    html = Path(test_app.outdir, "index.html").read_text("utf8")
+    kept = {
+        ("html", "<br />\n"): 1,
+        ("latex", "\\\\\n"): 1,
+        ("html", "<s>"): 1,
+        # the closing tag of the ``<s class=…>`` is exactly myst-parser's own
+        ("html", "</s>"): 2,
+        (
+            "html",
+            '<input class="task-list-item-checkbox" disabled="disabled" type="checkbox">',
+        ): 1,
+        (
+            "html",
+            '<input class="task-list-item-checkbox" checked="checked" '
+            'disabled="disabled" type="checkbox">',
+        ): 1,
+    }
+    foreign = {
+        ("html", '<br onclick="CANARY_BR">'): 1,
+        ("html", '<s class="CANARY_S">'): 1,
+    }
+    assert "<s>struck</s>" in html
+    assert html.count('class="task-list-item-checkbox"') == 2
+    assert "line one<br />" in html
+    if not inert:
+        assert raws == Counter({**kept, **foreign})
+        assert '<br onclick="CANARY_BR">' in html
+        assert '<s class="CANARY_S">' in html
+        assert_no_warnings(test_app)
+        return
+    assert raws == Counter(kept)
+    assert "CANARY_BR" not in html
+    assert "CANARY_S" not in html
+    assert_warnings(test_app, [removed("IMP", 2)])
