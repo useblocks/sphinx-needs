@@ -236,3 +236,26 @@ def test_a_padded_string_that_is_no_expression_is_quoted_as_written(
             assert filter_needs_view(view, config, filter_string) == []
         ((args, _),) = warn.call_args_list
         assert args[1] == f"Filter {filter_string!r} not valid. Error: {error}."
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "dummy", "files": _project("")["files"]}],
+    indirect=True,
+)
+def test_a_padded_string_that_fails_on_a_need_is_quoted_as_written(
+    test_app: Any,
+) -> None:
+    """A padded string that compiles and fails as it is evaluated, need by need, is
+    reported once, quoting the string as written, and selects nothing."""
+    app = test_app
+    app.build()
+    view = SphinxNeedsData(app.env).get_needs_view()
+    config = NeedsSphinxConfig(app.config)
+    for pad in (" ", "\t"):
+        filter_string = f"{pad}status == 'open' and nosuch"
+        with patch.object(filter_common, "log_warning") as warn:
+            assert filter_needs_view(view, config, filter_string) == []
+        ((args, _),) = warn.call_args_list
+        assert args[1].startswith(f"Filter {filter_string!r} not valid. Error: ")
+        assert args[2] == "filter"
