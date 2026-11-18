@@ -907,3 +907,50 @@ def test_the_quiet_pre_passes_lose_no_report(test_app: Any) -> None:
             unknown,
         ]
     )
+
+
+#: an external need whose link condition names no need type
+EXTERNAL_NEEDS = json.dumps(
+    {
+        "current_version": "1.0",
+        "versions": {
+            "1.0": {
+                "needs": {
+                    "A": {"id": "A", "type": "req", "title": "A", "content": ""},
+                    "B": {
+                        "id": "B",
+                        "type": "req",
+                        "title": "B",
+                        "content": "",
+                        "links": [f"A[{NOSUCH}]"],
+                    },
+                }
+            }
+        },
+    }
+)
+
+
+def _external_project() -> dict[str, Any]:
+    project = _project(
+        conf=CONF + "needs_external_needs = [{'json_path': 'ext.json', "
+        "'base_url': 'http://example.org', 'id_prefix': 'EXT_'}]\n"
+    )
+    project["files"].append((Path("ext.json"), EXTERNAL_NEEDS))
+    return project
+
+
+@pytest.mark.parametrize("test_app", [_external_project()], indirect=True)
+def test_an_external_link_condition_names_the_external_need(test_app: Any) -> None:
+    """An external need's link condition is written in another project: it has no
+    location here, and the report names the external need, as its other link findings
+    do."""
+    app = test_app
+    app.build()
+    url = SphinxNeedsData(app.env).get_needs_view()["EXT_B"]["external_url"]
+    assert _filter_type(build_warnings(app)) == [
+        _unknown("nosuch", NOSUCH).replace(
+            " [needs.filter_type]",
+            f" (from the external need 'EXT_B': {url}) [needs.filter_type]",
+        )
+    ]
