@@ -14,7 +14,9 @@ Its consumers are sphinx-needs' two readers (`needimport` and `needs_external_ne
 [`design/exchange-contract.md`](design/exchange-contract.md) is the normative
 specification; read it before changing behaviour. The writer (`NeedsList`, still in
 `sphinx_needs/needsfile.py`) and the readers' ingest policies (in `sphinx_needs/api/need.py`)
-are not here yet.
+are not here yet. `src/ub_needs_exchange/need_id.py` is the grammar of a need id — how an
+id splits into a namespace and a local id at `::` (contract §14) — and the only module that
+spells the separator; nothing in the package calls it.
 
 ## Layout
 
@@ -24,15 +26,20 @@ README.rst · LICENSE
 src/ub_needs_exchange/
 ├── __init__.py           # the public API, re-exported; `__version__`
 ├── reader.py             # parse / load / select_version / records, the codes
+├── need_id.py            # split_id / join_id / parse_namespace: the one place `::` is spelled
 └── py.typed
 tests/
 ├── test_reader.py        # what the corpus cannot state: messages, bytes, files, aliasing
 ├── test_conformance.py   # runs the corpus and pins its case count
 ├── test_imports.py       # the stdlib-only fence
 ├── test_2a1_draft_conformance.py   # runs the draft "2a1"'s own corpus, pins its count
+├── test_need_id_conformance.py     # runs the need-id corpus, its laws, pins its counts
+├── test_need_id.py       # what that corpus cannot state: messages, types
+├── test_need_id_fence.py # no other module spells `::`
 └── fixtures/
     ├── needs_json_reading_conformance.toml    # the SHARED corpus (ubCode vendors it)
-    └── needs_json_2a1_draft_conformance.toml  # the draft's own (experimental)
+    ├── needs_json_2a1_draft_conformance.toml  # the draft's own (experimental)
+    └── need_id_conformance.toml               # the need-id grammar (SHARED: ubCode vendors it)
 docs/changelog.rst        # the sphinx-mounts convention: an `Unreleased` section
 design/exchange-contract.md
 design/v2a1-draft.md      # the draft "2a1", read on opt-in (experimental)

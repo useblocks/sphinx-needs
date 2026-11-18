@@ -1,0 +1,770 @@
+# Conformance corpus for the GRAMMAR OF A NEED ID: how an id splits into a namespace and a
+# local id at `::`, how a namespace is parsed from its text, and how a pair is joined back.
+#
+# Repository of record: useblocks/sphinx-needs (public)
+# Canonical path:       packages/ub-needs-exchange/tests/fixtures/need_id_conformance.toml
+#
+# THIS copy is CANONICAL. ubCode is to vendor it byte-for-byte, with a provenance block
+# (this path, and the commit it was taken from) prepended and nothing else changed, and to
+# run it against its own implementation of the grammar. The corpus travels public ->
+# private, so vendoring with a recorded source commit is the sync mechanism.
+#
+# Do not reformat this file. `.gitattributes` pins its line endings, and the taplo and
+# yamlfmt hooks exclude it: every string below is the INPUT or the expected output of a
+# case, so a formatter touching one silently changes what the case tests. A change here is
+# a change to the contract, and owes ubCode a re-vendor. The file is pure ASCII: every
+# non-ASCII or control character in a case is written as a `\uXXXX` escape, which a TOML
+# reader decodes.
+#
+# The grammar (the prose half is section 14 of `design/exchange-contract.md`):
+#   - the separator is the two ASCII characters `::`
+#   - a SEGMENT is one or more characters, each an ASCII letter, an ASCII digit, `_` or
+#     `-`, in any position; segments are case-sensitive. Nothing else is a segment
+#   - a NAMESPACE is zero or more segments; as text, the segments joined by `::`, and the
+#     empty namespace is the empty text
+#   - SPLITTING an id: find the LAST occurrence of `::`. None: the id is plain (namespace
+#     empty, local id = the id, no problem). Otherwise `head` is the text before it and
+#     `local` the text after it, and the id is namespaced iff `local` is not empty and
+#     `head`, cut at every `::` from the left, gives only segments. The local id is
+#     otherwise unrestricted
+#   - an id that holds `::` and is not namespaced is a plain id with a PROBLEM, the first
+#     of these classes, tested in this order:
+#       empty_local       - nothing after the last `::`
+#       empty_segment     - `head` is empty, or has an empty piece
+#       segment_character - a piece holds a character that is not in a segment
+#   - splitting never fails, whatever the text: the empty text is a plain id
+#   - this is the grammar of an ID. A link target is not an id: its `[condition]` is
+#     stripped and its part split off at the FIRST `.` before its id is split here
+#
+# Rules for every runner:
+#   - strings are compared character for character (Unicode scalar values, after TOML has
+#     decoded the escapes); a namespace as the list of its segments, in order
+#   - a refusal (`invalid = true`) states only that the operation is refused; its message
+#     is not compared
+#   - every case name is unique across the whole file, kebab-case, and starts with its
+#     table's name; every `why` is one line
+#   - no case carries `divergent` (as the reading corpus's may): this grammar has one
+#     answer, and an implementation passes a case or does not
+#
+# `packages/ub-needs-exchange/tests/test_need_id_conformance.py` runs every case against
+# the Python module `ub_needs_exchange.need_id`, holds the module to two laws over every
+# text the corpus holds (join(split(x)) == x; split(join(ns, local)) == (ns, local) where
+# join accepts the pair -- for the empty namespace, where `local` does not itself split),
+# and asserts the COUNT of each table, so a truncated copy is a red test rather than
+# reduced coverage.
+#
+# Three tables. Each case has a `name` and a `why` (one line saying what the case pins),
+# and:
+#
+# [[split]] - splitting an id
+#   id         - the id
+#   then EITHER
+#   namespace  - the segments, in order (`[]` for a plain id)
+#   local      - the local id
+#   OR
+#   problem    - the class of an id that holds `::` and does not split cleanly; its split
+#                is then the empty namespace and the id itself
+#
+# [[namespace]] - parsing a namespace from its text (cut at every `::`)
+#   text       - the namespace as text
+#   then EITHER
+#   segments   - the segments, in order (`[]` for the empty text)
+#   OR
+#   invalid    - true: a piece is not a segment, and parsing is refused
+#
+# [[join]] - joining a namespace and a local id into an id
+#   namespace  - the segments
+#   local      - the local id
+#   then EITHER
+#   id         - the id. The empty namespace gives `local` unchanged, whatever it holds
+#   OR
+#   invalid    - true: with a non-empty namespace, a segment is not a segment, or `local`
+#                is empty, holds `::`, or starts with `:` (it would not split back)
+
+# --- split: plain ids (no `::`) ------------------------------------------------------
+
+[[split]]
+name = "split-the-empty-text"
+why = "the empty text is a plain id: splitting never fails"
+id = ""
+namespace = []
+local = ""
+
+[[split]]
+name = "split-one-character"
+why = "the shortest non-empty id is plain"
+id = "A"
+namespace = []
+local = "A"
+
+[[split]]
+name = "split-a-plain-id"
+why = "the baseline: an id without `::` is its own local id"
+id = "REQ_1"
+namespace = []
+local = "REQ_1"
+
+[[split]]
+name = "split-a-lone-colon"
+why = "one colon is not the separator"
+id = ":"
+namespace = []
+local = ":"
+
+[[split]]
+name = "split-a-single-colon"
+why = "a single colon between two words is not the separator"
+id = "a:b"
+namespace = []
+local = "a:b"
+
+[[split]]
+name = "split-single-colons-only"
+why = "two single colons are not the separator either: `a:b:c` holds no `::`"
+id = "a:b:c"
+namespace = []
+local = "a:b:c"
+
+[[split]]
+name = "split-a-plain-id-with-non-ascii"
+why = "without `::` no character is checked: a non-ASCII id is plain, with no problem"
+id = "\u00e9t\u00e9"
+namespace = []
+local = "\u00e9t\u00e9"
+
+[[split]]
+name = "split-a-fullwidth-colon-pair-is-not-a-separator"
+why = "U+FF1A FULLWIDTH COLON twice is not `::` (nor after NFKC normalisation is it to be read as one)"
+id = "nc\uff1a\uff1aREQ_1"
+namespace = []
+local = "nc\uff1a\uff1aREQ_1"
+
+[[split]]
+name = "split-a-dot-is-not-a-separator"
+why = "an id holding a `.` and no `::` is plain: splitting a part off is a link target's, not an id's"
+id = "REQ_1.part"
+namespace = []
+local = "REQ_1.part"
+
+# --- split: clean splits ------------------------------------------------------------
+
+[[split]]
+name = "split-one-segment"
+why = "the baseline of a namespaced id"
+id = "nc::REQ_1"
+namespace = ["nc"]
+local = "REQ_1"
+
+[[split]]
+name = "split-two-segments"
+why = "the namespace is everything before the LAST `::`, cut into its segments"
+id = "nc::m2::REQ_1"
+namespace = ["nc", "m2"]
+local = "REQ_1"
+
+[[split]]
+name = "split-three-segments"
+why = "three segments, in order"
+id = "a::b::c::X"
+namespace = ["a", "b", "c"]
+local = "X"
+
+[[split]]
+name = "split-eight-segments"
+why = "no depth limit: eight segments"
+id = "s1::s2::s3::s4::s5::s6::s7::s8::X"
+namespace = ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]
+local = "X"
+
+[[split]]
+name = "split-single-characters"
+why = "a one-character segment and a one-character local id"
+id = "a::b"
+namespace = ["a"]
+local = "b"
+
+[[split]]
+name = "split-a-digit-first-segment"
+why = "no letter-first rule: a segment may start with a digit"
+id = "2024::REQ_5"
+namespace = ["2024"]
+local = "REQ_5"
+
+[[split]]
+name = "split-a-digits-only-segment"
+why = "a segment of digits only, with a leading zero"
+id = "007::A"
+namespace = ["007"]
+local = "A"
+
+[[split]]
+name = "split-an-underscore-only-segment"
+why = "`_` alone is a segment"
+id = "_::X"
+namespace = ["_"]
+local = "X"
+
+[[split]]
+name = "split-a-hyphen-only-segment"
+why = "`-` alone is a segment"
+id = "-::X"
+namespace = ["-"]
+local = "X"
+
+[[split]]
+name = "split-every-segment-character"
+why = "every class of the segment alphabet in one segment, in an unusual order"
+id = "-_9zA-Z_0a::X"
+namespace = ["-_9zA-Z_0a"]
+local = "X"
+
+[[split]]
+name = "split-an-upper-case-namespace"
+why = "segments are case-sensitive: `NC` is kept as written"
+id = "NC::X"
+namespace = ["NC"]
+local = "X"
+
+[[split]]
+name = "split-a-lower-case-namespace"
+why = "`nc` is a different namespace from `NC`: nothing is folded"
+id = "nc::X"
+namespace = ["nc"]
+local = "X"
+
+[[split]]
+name = "split-a-local-id-holding-a-dot"
+why = "the local id is unrestricted: a `.` in it stays (it is an id, not a link target)"
+id = "nc::REQ_1.part"
+namespace = ["nc"]
+local = "REQ_1.part"
+
+[[split]]
+name = "split-a-local-id-holding-a-bracket"
+why = "the local id may hold `[` and `]`: an id is not a link with a condition"
+id = "nc::REQ[1]"
+namespace = ["nc"]
+local = "REQ[1]"
+
+[[split]]
+name = "split-a-local-id-holding-a-space"
+why = "the local id may hold a space"
+id = "nc::my req"
+namespace = ["nc"]
+local = "my req"
+
+[[split]]
+name = "split-a-local-id-holding-a-single-colon"
+why = "a single colon after the last `::` belongs to the local id"
+id = "nc::a:b"
+namespace = ["nc"]
+local = "a:b"
+
+[[split]]
+name = "split-a-local-id-ending-in-a-colon"
+why = "a trailing single colon makes no `::`: the local id is `a:`"
+id = "nc::a:"
+namespace = ["nc"]
+local = "a:"
+
+[[split]]
+name = "split-a-local-id-of-a-non-ascii-letter"
+why = "the local id is not held to the segment alphabet"
+id = "nc::\u00e9t\u00e9"
+namespace = ["nc"]
+local = "\u00e9t\u00e9"
+
+[[split]]
+name = "split-a-local-id-holding-a-control-character"
+why = "the local id may hold any character, a line feed included"
+id = "nc::a\u000ab"
+namespace = ["nc"]
+local = "a\u000ab"
+
+[[split]]
+name = "split-a-local-id-with-surrounding-spaces"
+why = "nothing is stripped: the local id keeps a leading and a trailing space"
+id = "nc:: X "
+namespace = ["nc"]
+local = " X "
+
+[[split]]
+name = "split-a-2000-character-id"
+why = "no length limit: a segment of 998 characters and a local id of 1000"
+id = "nsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsns::REQ_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+namespace = ["nsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsnsns"]
+local = "REQ_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# --- split: empty_local -------------------------------------------------------------
+
+[[split]]
+name = "split-a-trailing-separator"
+why = "nothing after the last `::`: empty_local, and the id stays plain (not a namespace with an empty id)"
+id = "nc::"
+problem = "empty_local"
+
+[[split]]
+name = "split-a-trailing-separator-after-two-segments"
+why = "empty_local after a namespace of two valid segments"
+id = "a::b::"
+problem = "empty_local"
+
+[[split]]
+name = "split-only-a-separator"
+why = "`::` alone: head and local both empty, and empty_local is tested first"
+id = "::"
+problem = "empty_local"
+
+[[split]]
+name = "split-three-colons"
+why = "`:::`: the last `::` is at offset 1, head `:` and nothing after it"
+id = ":::"
+problem = "empty_local"
+
+[[split]]
+name = "split-four-colons"
+why = "`::::`: the last `::` is at offset 2, nothing after it"
+id = "::::"
+problem = "empty_local"
+
+[[split]]
+name = "split-five-colons"
+why = "`:::::`: the last `::` is at offset 3, nothing after it"
+id = ":::::"
+problem = "empty_local"
+
+[[split]]
+name = "split-empty-local-wins-over-segment-character"
+why = "the order: empty_local is tested before a bad character in the head"
+id = "a.b::"
+problem = "empty_local"
+
+[[split]]
+name = "split-empty-local-wins-over-empty-segment"
+why = "the order: empty_local is tested before an empty piece in the head"
+id = "::a::"
+problem = "empty_local"
+
+# --- split: empty_segment -----------------------------------------------------------
+
+[[split]]
+name = "split-a-leading-separator"
+why = "`::X`: head is empty, so it is not the empty namespace but an empty segment"
+id = "::X"
+problem = "empty_segment"
+
+[[split]]
+name = "split-an-empty-first-segment"
+why = "an empty first segment before a valid one"
+id = "::a::X"
+problem = "empty_segment"
+
+[[split]]
+name = "split-an-empty-middle-segment"
+why = "an empty segment between two valid ones"
+id = "a::::b::X"
+problem = "empty_segment"
+
+[[split]]
+name = "split-an-empty-last-segment"
+why = "an empty segment just before the last `::`: head is `a::b::`"
+id = "a::b::::X"
+problem = "empty_segment"
+
+[[split]]
+name = "split-four-colons-between-segments"
+why = "`a::::b`: the last `::` is at offset 3, head `a::` cuts into `a` and an empty piece"
+id = "a::::b"
+problem = "empty_segment"
+
+[[split]]
+name = "split-three-colons-then-a-namespace"
+why = "head `:::a` cut from the left is `` and `:a`: the empty piece decides (cut from the right it would be `:` and `a`)"
+id = ":::a::b"
+problem = "empty_segment"
+
+[[split]]
+name = "split-empty-segment-wins-over-an-earlier-bad-character"
+why = "the order is by class, not by piece: a bad first piece and an empty second piece is empty_segment"
+id = "a.b::::c"
+problem = "empty_segment"
+
+[[split]]
+name = "split-empty-segment-wins-over-a-later-bad-character"
+why = "an empty first piece and a bad second piece is empty_segment"
+id = "::a.b::c"
+problem = "empty_segment"
+
+# --- split: segment_character -------------------------------------------------------
+
+[[split]]
+name = "split-a-bad-first-segment"
+why = "a bad character in the first of three segments"
+id = "a.b::c::d::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-bad-middle-segment"
+why = "a bad character in the middle of three segments"
+id = "a::b c::d::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-bad-last-segment"
+why = "a bad character in the last of three segments"
+id = "a::b::c<::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-with-a-space"
+why = "a space is not in the segment alphabet"
+id = "my ns::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-with-a-dot"
+why = "a `.` is not in the segment alphabet: the head is not cut at `.`"
+id = "nc.x::REQ_1"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-cpp-qualified-name"
+why = "`std::vector<int>::size` is a plain id: `vector<int>` is not a segment"
+id = "std::vector<int>::size"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-of-a-non-ascii-letter"
+why = "U+00E9 is a letter, but not an ASCII one (a `\\w` or `isalnum` test accepts it)"
+id = "caf\u00e9::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-of-a-non-ascii-digit"
+why = "ARABIC-INDIC DIGIT THREE is a digit, but not an ASCII one (`isdigit` and `\\d` accept it)"
+id = "\u0663::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-holding-fullwidth-colons"
+why = "a fullwidth colon pair inside the head is not a separator, so the piece holds a bad character"
+id = "a\uff1a\uff1ab::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-of-the-kelvin-sign"
+why = "U+212A KELVIN SIGN folds to `k`: a case-insensitive `[a-z]` accepts it, the grammar does not"
+id = "\u212a::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-of-a-dotless-i"
+why = "U+0131 LATIN SMALL LETTER DOTLESS I upper-cases to `I`: a case-folding test accepts it"
+id = "\u0131::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-ending-in-a-line-feed"
+why = "a trailing line feed is a bad character (a regex anchored with `$` lets it through)"
+id = "nc\u000a::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-with-a-leading-space"
+why = "nothing is stripped: a leading space is a bad character in the first segment"
+id = " nc::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-holding-a-single-colon"
+why = "a single colon in the head is a bad character, not a separator"
+id = "a:b::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-holding-a-caret"
+why = "`^` lies between `Z` and `a`: the range typo `[A-z]` accepts it, the grammar does not"
+id = "a^b::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-holding-a-slash"
+why = "the segment alphabet is an allow-list: a character no denylist thought of, such as `/`, is still bad"
+id = "a/b::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-a-segment-holding-a-nul"
+why = "a NUL is neither white space nor punctuation, and still not a segment character"
+id = "nc\u0000::X"
+problem = "segment_character"
+
+[[split]]
+name = "split-three-colons-between-segments"
+why = "`a:::b`: the last `::` is at offset 2, so head is `a:` and the local id is `b`, not `:b`"
+id = "a:::b"
+problem = "segment_character"
+
+[[split]]
+name = "split-five-colons-between-segments"
+why = "`a:::::b`: head `a:::` cut from the left is `a` and `:` (cut from the right it would be `a:` and an empty piece)"
+id = "a:::::b"
+problem = "segment_character"
+
+# --- namespace: parsing its text ----------------------------------------------------
+
+[[namespace]]
+name = "namespace-the-empty-text"
+why = "the empty text is the empty namespace, not a refusal"
+text = ""
+segments = []
+
+[[namespace]]
+name = "namespace-one-segment"
+why = "the baseline"
+text = "nc"
+segments = ["nc"]
+
+[[namespace]]
+name = "namespace-two-segments"
+why = "cut at `::`"
+text = "nc::m2"
+segments = ["nc", "m2"]
+
+[[namespace]]
+name = "namespace-digit-underscore-and-hyphen-segments"
+why = "the whole segment alphabet, in any position"
+text = "2024::_::-::a-B_9"
+segments = ["2024", "_", "-", "a-B_9"]
+
+[[namespace]]
+name = "namespace-case-is-kept"
+why = "segments are case-sensitive: nothing is folded"
+text = "NC::nc"
+segments = ["NC", "nc"]
+
+[[namespace]]
+name = "namespace-only-a-separator"
+why = "`::` is two empty pieces"
+text = "::"
+invalid = true
+
+[[namespace]]
+name = "namespace-a-leading-separator"
+why = "an empty first piece"
+text = "::nc"
+invalid = true
+
+[[namespace]]
+name = "namespace-a-trailing-separator"
+why = "an empty last piece: a namespace's text does not end in `::`"
+text = "nc::"
+invalid = true
+
+[[namespace]]
+name = "namespace-an-empty-middle-segment"
+why = "`a::::b` cuts into `a`, an empty piece and `b`"
+text = "a::::b"
+invalid = true
+
+[[namespace]]
+name = "namespace-three-colons"
+why = "`a:::b` cuts into `a` and `:b`, which holds a colon"
+text = "a:::b"
+invalid = true
+
+[[namespace]]
+name = "namespace-a-single-colon"
+why = "a single colon is not a separator, and not a segment character"
+text = "a:b"
+invalid = true
+
+[[namespace]]
+name = "namespace-a-dot"
+why = "a `.` is not a segment character"
+text = "nc.m2"
+invalid = true
+
+[[namespace]]
+name = "namespace-a-backtick"
+why = "a backtick lies between `Z` and `a`: the range typo `[A-z]` accepts it, the grammar does not"
+text = "a`b"
+invalid = true
+
+[[namespace]]
+name = "namespace-a-space"
+why = "a space is not a segment character"
+text = "my ns"
+invalid = true
+
+[[namespace]]
+name = "namespace-a-non-ascii-letter"
+why = "a non-ASCII letter is not a segment character"
+text = "caf\u00e9"
+invalid = true
+
+[[namespace]]
+name = "namespace-a-non-ascii-digit"
+why = "a non-ASCII digit is not a segment character"
+text = "nc::\u0663"
+invalid = true
+
+[[namespace]]
+name = "namespace-a-trailing-line-feed"
+why = "a trailing line feed is a bad character, not ignored"
+text = "nc\u000a"
+invalid = true
+
+[[namespace]]
+name = "namespace-fullwidth-colons"
+why = "a fullwidth colon pair is not a separator"
+text = "a\uff1a\uff1ab"
+invalid = true
+
+[[namespace]]
+name = "namespace-the-kelvin-sign"
+why = "U+212A is not an ASCII letter, though it folds to one"
+text = "\u212a"
+invalid = true
+
+# --- join: a namespace and a local id -----------------------------------------------
+
+[[join]]
+name = "join-one-segment"
+why = "the baseline: segments, `::`, the local id"
+namespace = ["nc"]
+local = "REQ_1"
+id = "nc::REQ_1"
+
+[[join]]
+name = "join-two-segments"
+why = "every segment joined by `::`"
+namespace = ["nc", "m2"]
+local = "REQ_1"
+id = "nc::m2::REQ_1"
+
+[[join]]
+name = "join-a-digit-first-segment"
+why = "no letter-first rule on join either"
+namespace = ["2024"]
+local = "REQ_5"
+id = "2024::REQ_5"
+
+[[join]]
+name = "join-a-local-id-holding-a-dot"
+why = "the local id is unrestricted: a `.` is kept"
+namespace = ["nc"]
+local = "REQ_1.part"
+id = "nc::REQ_1.part"
+
+[[join]]
+name = "join-a-local-id-holding-a-single-colon"
+why = "a single colon inside the local id makes no `::`"
+namespace = ["nc"]
+local = "a:b"
+id = "nc::a:b"
+
+[[join]]
+name = "join-a-local-id-ending-in-a-colon"
+why = "a trailing colon makes no `::` with anything after it"
+namespace = ["nc"]
+local = "a:"
+id = "nc::a:"
+
+[[join]]
+name = "join-a-local-id-of-a-non-ascii-letter"
+why = "the local id is not held to the segment alphabet"
+namespace = ["nc"]
+local = "\u00e9t\u00e9"
+id = "nc::\u00e9t\u00e9"
+
+[[join]]
+name = "join-an-empty-namespace"
+why = "the empty namespace gives the local id unchanged, with no `::`"
+namespace = []
+local = "REQ_1"
+id = "REQ_1"
+
+[[join]]
+name = "join-an-empty-namespace-and-an-empty-local-id"
+why = "the empty namespace accepts any local id, the empty one included"
+namespace = []
+local = ""
+id = ""
+
+[[join]]
+name = "join-an-empty-namespace-keeps-an-id-with-a-problem"
+why = "the empty namespace gives back an id that does not split cleanly, unchanged"
+namespace = []
+local = "a::::b"
+id = "a::::b"
+
+[[join]]
+name = "join-an-empty-namespace-keeps-a-local-that-splits"
+why = "the empty namespace gives `nc::X` unchanged, though that text splits to (`nc`, `X`)"
+namespace = []
+local = "nc::X"
+id = "nc::X"
+
+[[join]]
+name = "join-an-empty-local-id"
+why = "with a namespace, the local id must not be empty: `nc::` does not split back"
+namespace = ["nc"]
+local = ""
+invalid = true
+
+[[join]]
+name = "join-a-local-id-holding-the-separator"
+why = "with a namespace, `a::b` as the local id would split back at its own `::`"
+namespace = ["nc"]
+local = "a::b"
+invalid = true
+
+[[join]]
+name = "join-a-local-starting-with-a-colon"
+why = "`nc` and `:b` would make `nc:::b`, whose last `::` is at offset 3: it would not split back"
+namespace = ["nc"]
+local = ":b"
+invalid = true
+
+[[join]]
+name = "join-an-empty-segment"
+why = "an empty segment is not a segment"
+namespace = [""]
+local = "X"
+invalid = true
+
+[[join]]
+name = "join-an-empty-segment-after-a-valid-one"
+why = "every segment is checked, not only the first"
+namespace = ["nc", ""]
+local = "X"
+invalid = true
+
+[[join]]
+name = "join-a-segment-holding-the-separator"
+why = "a namespace's TEXT is not a segment: `a::b` must be given as two segments"
+namespace = ["a::b"]
+local = "X"
+invalid = true
+
+[[join]]
+name = "join-a-segment-with-a-dot"
+why = "a `.` is not a segment character"
+namespace = ["nc.x"]
+local = "X"
+invalid = true
+
+[[join]]
+name = "join-a-segment-of-a-non-ascii-letter"
+why = "a non-ASCII letter is not a segment character"
+namespace = ["caf\u00e9"]
+local = "X"
+invalid = true
+
+[[join]]
+name = "join-a-segment-ending-in-a-line-feed"
+why = "a trailing line feed is a bad character"
+namespace = ["nc\u000a"]
+local = "X"
+invalid = true

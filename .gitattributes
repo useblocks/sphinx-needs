@@ -55,6 +55,10 @@ packages/ub-needs-exchange/tests/fixtures/needs_json_reading_conformance.toml te
 # Its draft "2a1" corpus is the package's own (experimental, not yet vendored), and protected the
 # same way: its `json = '...'` bodies are case inputs too.
 packages/ub-needs-exchange/tests/fixtures/needs_json_2a1_draft_conformance.toml text eol=lf
+# Its need-id grammar corpus (splitting an id at `::`, parsing and joining a namespace) is shared:
+# this repository is its repository of RECORD, and ubCode is to vendor it byte-for-byte. Its
+# strings are case inputs and expected outputs, so its bytes must be the same on every platform.
+packages/ub-needs-exchange/tests/fixtures/need_id_conformance.toml text eol=lf
 
 # sphinx-ub-directives' two corpora (directive presets, template directives) are the next TOML
 # corpora, and this repository is their repository of RECORD: ubCode is to vendor them

@@ -17,7 +17,7 @@ from typing import Any
 import pytest
 
 import ub_needs_exchange as nx
-from ub_needs_exchange import reader
+from ub_needs_exchange import need_id, reader
 
 
 def envelope(
@@ -36,8 +36,9 @@ def record(need_id: str, **fields: Any) -> dict[str, Any]:
 
 
 def test_the_package_exports_the_reader():
-    assert set(nx.__all__) == {*reader.__all__, "__version__"}
+    assert set(nx.__all__) == {*reader.__all__, *need_id.__all__, "__version__"}
     assert all(getattr(nx, name) is getattr(reader, name) for name in reader.__all__)
+    assert all(getattr(nx, name) is getattr(need_id, name) for name in need_id.__all__)
 
 
 # ------------------------------------------------------------------------------------
@@ -290,6 +291,21 @@ def test_the_key_is_the_id(given, message):
             code="id_mismatch", path="versions.1.0.needs.A.id", message=message
         ),
     )
+
+
+@pytest.mark.parametrize(
+    "key", ["nc::REQ_1", "a::::b", "nc::", "std::vector<int>::size"]
+)
+def test_an_id_holding_the_separator_is_read_as_written(key):
+    """The reader splits no id (contract section 14.9): an id holding ``::`` -- one that
+    splits cleanly, and three that do not -- is the record's key and ``id`` as written,
+    with no finding. The reading corpus holds no such id."""
+    (rec,) = (
+        nx.parse(json.dumps(envelope({key: record(key)})))
+        .select_version(None)
+        .records()
+    )
+    assert (rec.key, rec.fields["id"], rec.diagnostics) == (key, key, ())
 
 
 def test_defaults_removed_without_a_schema():

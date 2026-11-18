@@ -16,6 +16,10 @@ so that it is read one way:
   merged under it, and the legacy ``description`` of a record with no ``content`` (as
   sphinx-needs wrote them before 4.0) read as its ``content``.
 
+It also holds **the grammar of a need id**, ``ub_needs_exchange.need_id``: how
+``nc::m2::REQ_1`` splits at its last ``::`` into the namespace ``nc::m2`` and the local id
+``REQ_1``, with a conformance corpus of its own (``tests/fixtures/need_id_conformance.toml``).
+
 Standard library only: no Sphinx, no docutils, no sibling distribution. A converter or a
 build action that runs without the documentation toolchain can use it.
 

@@ -395,8 +395,8 @@ As `ub-project`'s contract says of discovery, each of these stays with each cons
 ## 12. Divergences from ubCode
 
 ubCode is to be held to this contract through the corpus. A behaviour ubCode diverges from
-deliberately is a row of its `design/divergence-register.md`, and a corpus case it
-diverges on carries `divergent = { ubcode = "design/divergence-register.md#…" }`. **No
+deliberately is a row of its `design/divergence-register.md`, and a reading-corpus case
+it diverges on carries `divergent = { ubcode = "design/divergence-register.md#…" }`. **No
 document-layer case does**: none of the register's needs.json rows is a document-layer
 behaviour. The rows about the file, by subject (as of ubCode `51eb4f4784`):
 
@@ -420,3 +420,105 @@ refusal as one warning that refuses that source (`needs.needimport`,
 it then does with each record is its own (§11). `sphinx_needs.exchange`, where 9.0.0
 shipped this reader, is a deprecated alias of this package until sphinx-needs 10.0.
 The `needs` builder's `needs_file` (`NeedsList.load_json`) and `check_needs_file` still read the file with `json.load`; they move with the writer, a later slice.
+
+## 14. The grammar of a need id — `need_id`
+
+An id may name a **namespace** before a **local id**, separated by `::`: `nc::m2::REQ_1`
+is the local id `REQ_1` in the namespace `nc::m2`. This section is the one statement of
+how an id splits; the module `ub_needs_exchange.need_id` is its Python half and the only
+module of the package that knows the separator, and the corpus
+[`tests/fixtures/need_id_conformance.toml`](../tests/fixtures/need_id_conformance.toml) —
+held canonically here, which ubCode is to vendor like the reading corpus — is its
+executable half, run by `tests/test_need_id_conformance.py` (`::test_split`,
+`::test_namespace`, `::test_join`, and the laws below). Corpus names in this section are
+cases of that file.
+
+1. **The separator** is the two ASCII characters `::`. Nothing else separates: not a
+   single `:`, not a `.`, not a fullwidth colon.
+   Enforced by: corpus: `split-a-single-colon`, `split-a-dot-is-not-a-separator`,
+   `split-a-fullwidth-colon-pair-is-not-a-separator`;
+   `tests/test_need_id_fence.py::test_no_other_module_spells_the_separator`.
+2. **A segment** is one or more characters, each an ASCII letter (`A`–`Z`, `a`–`z`), an
+   ASCII digit (`0`–`9`), `_` or `-`, in any position — a digit first, or `_` or `-` alone,
+   included. Segments are case-sensitive: `NC` and `nc` are different namespaces. Nothing
+   else is a segment: not a non-ASCII letter or digit, not a space, not a `.`, not a
+   control character. (`is_segment`.)
+   Enforced by: corpus: `split-a-digit-first-segment`, `split-an-underscore-only-segment`,
+   `split-a-hyphen-only-segment`, `split-an-upper-case-namespace`,
+   `split-a-lower-case-namespace`, `split-a-segment-of-a-non-ascii-letter`,
+   `split-a-segment-of-a-non-ascii-digit`, `split-a-segment-of-the-kelvin-sign`,
+   `split-a-segment-ending-in-a-line-feed`, `split-a-segment-holding-a-nul`,
+   `split-a-segment-holding-a-caret`, `split-a-segment-holding-a-slash`,
+   `namespace-a-backtick`.
+3. **A namespace** is a sequence of zero or more segments; as text, the segments joined by
+   `::`, and the empty namespace is the empty text. Its text is parsed by cutting it at
+   every `::`; every piece must be a segment, and the empty text is the empty namespace
+   (`parse_namespace`, `format_namespace`).
+   Enforced by: corpus: every `namespace-` case.
+4. **Splitting an id** (`split_id`). Find the LAST occurrence of `::` in the id. None: the
+   id is plain — the empty namespace, and the id is its own local id. Otherwise let
+   `head` be the text before that occurrence and `local` the text after it. The id is
+   **namespaced** if and only if `local` is not empty and `head`, cut at every `::` from
+   the left, gives only segments; its namespace is those segments, its local id `local`.
+   The local id is otherwise unrestricted: it may hold `.`, `[`, a space, a single `:`,
+   any character — though, being what follows the LAST `::`, it never holds `::` and
+   never starts with `:`. A run of colons is read by the same rule: `a:::b` has its last
+   `::` at offset 2, so `head` is `a:` and the id does not split cleanly.
+   Enforced by: corpus: `split-one-segment`, `split-two-segments`,
+   `split-eight-segments`, `split-a-local-id-holding-a-dot`,
+   `split-a-local-id-holding-a-single-colon`, `split-a-2000-character-id`,
+   `split-three-colons-between-segments`; the cut from the left:
+   `split-five-colons-between-segments`, `split-three-colons-then-a-namespace`.
+5. **An id that does not split cleanly** — it holds `::` and is not namespaced — is a
+   plain id: the empty namespace, and the whole id as its local id. It has a **problem**
+   (`id_problem`), exactly one of these classes, the first that applies in this order:
+
+   | class | when |
+   |---|---|
+   | `empty_local` | nothing follows the last `::` |
+   | `empty_segment` | `head` is empty, or has an empty piece |
+   | `segment_character` | a piece of `head` holds a character that is not in a segment |
+
+   The order is by class, not by piece: `a.b::::c` (a bad first piece, an empty second
+   one) is `empty_segment`.
+   Enforced by: corpus: every `split-` case with a `problem`, among them
+   `split-empty-local-wins-over-segment-character`,
+   `split-empty-segment-wins-over-an-earlier-bad-character`.
+6. **Splitting never fails**, whatever the text: the empty text is a plain id, and no
+   text raises. An id is never refused for not splitting cleanly; what that costs, if
+   anything, is the consumer's (9.).
+   Enforced by: corpus: `split-the-empty-text`;
+   `test_need_id_conformance.py::test_join_undoes_split` (every text of the corpus),
+   `test_need_id.py::test_splitting_never_raises`.
+7. **Joining** (`join_id`) is the inverse of splitting. The empty namespace gives the local
+   id unchanged, whatever it holds. A non-empty namespace needs every segment to be a
+   segment, and a local id that is not empty, holds no `::` and does not start with `:`;
+   otherwise it is refused (`ValueError`). Two laws hold: `join_id(*split_id(x)) == x` for
+   every text `x`; and `split_id(join_id(ns, local)) == (ns, local)` wherever `join_id`
+   accepts a non-empty `ns`, and for the empty namespace wherever `local` itself splits to
+   the empty namespace (`join_id((), "nc::X")` is `nc::X`, which splits to `nc` and `X`).
+   Enforced by: corpus: every `join-` case;
+   `test_need_id_conformance.py::test_join_undoes_split`, `…::test_split_undoes_join`,
+   `…::test_join_refuses_what_would_not_split_back`.
+8. **An id, not a link target.** A link target is not an id. A consumer first strips the
+   target's `[condition]`, then splits the rest at its FIRST `.` into an id and a part,
+   and only then splits that id's namespace at its LAST `::`, as above **(not pinned
+   here: this package parses no link)**.
+9. **The package splits nothing on its own.** A reader hands out a record's `id` as
+   written — its key (§6.2), `::` and all — and no record, finding or path of §1–§13
+   depends on this section. Whether and how a project reads a namespace out of an id is
+   the consumer's.
+   Enforced by: `test_reader.py::test_an_id_holding_the_separator_is_read_as_written`
+   (`nc::REQ_1`, which splits cleanly, and three ids that do not).
+
+| id | namespace | local id | problem |
+|---|---|---|---|
+| `REQ_1` | — | `REQ_1` | — |
+| `nc::REQ_1` | `nc` | `REQ_1` | — |
+| `nc::m2::REQ_1` | `nc`, `m2` | `REQ_1` | — |
+| `2024::REQ_5` | `2024` | `REQ_5` | — |
+| `nc::` | — | `nc::` | `empty_local` |
+| `::X` | — | `::X` | `empty_segment` |
+| `a::::b` | — | `a::::b` | `empty_segment` |
+| `a:::b` | — | `a:::b` | `segment_character` |
+| `std::vector<int>::size` | — | `std::vector<int>::size` | `segment_character` |
