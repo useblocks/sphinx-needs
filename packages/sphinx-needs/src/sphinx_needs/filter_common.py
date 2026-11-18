@@ -730,7 +730,7 @@ def filter_needs_view(
     try:
         body = ast.parse(filter_string).body
     except Exception:
-        pass  # warning already emitted in filter_needs
+        pass  # one that is no Python expression is reported below
     else:
         if len(body) == 1 and isinstance((expr := body[0]), ast.Expr):
             needs, requires_eval = _analyze_and_apply_expr(needs, expr.value)
@@ -743,15 +743,21 @@ def filter_needs_view(
             f"Strict eval mode, but no simple filter found: {filter_string!r}"
         )
 
-    return filter_needs(
-        needs.values(),
-        config,
-        filter_string,
-        current_need,
-        location=location,
-        append_warning=append_warning,
-        origin_docname=origin_docname,
-    )
+    try:
+        return filter_needs(
+            needs.values(),
+            config,
+            filter_string,
+            current_need,
+            location=location,
+            append_warning=append_warning,
+            origin_docname=origin_docname,
+        )
+    except (SyntaxError, ValueError):
+        if (error := _python_expression_error(filter_string)) is None:
+            raise
+        _report_not_python(filter_string, error, location, append_warning)
+        return []
 
 
 def filter_needs_parts(
@@ -774,7 +780,7 @@ def filter_needs_parts(
     try:
         body = ast.parse(filter_string).body
     except Exception:
-        pass  # warning already emitted in filter_needs
+        pass  # one that is no Python expression is reported below
     else:
         if len(body) == 1 and isinstance((expr := body[0]), ast.Expr):
             needs, requires_eval = _analyze_and_apply_expr(needs, expr.value)
@@ -787,14 +793,56 @@ def filter_needs_parts(
             f"Strict eval mode, but no simple filter found: {filter_string!r}"
         )
 
-    return filter_needs_and_parts(
-        needs,
-        config,
-        filter_string,
-        current_need,
+    try:
+        return filter_needs_and_parts(
+            needs,
+            config,
+            filter_string,
+            current_need,
+            location=location,
+            append_warning=append_warning,
+            origin_docname=origin_docname,
+        )
+    except (SyntaxError, ValueError):
+        if (error := _python_expression_error(filter_string)) is None:
+            raise
+        _report_not_python(filter_string, error, location, append_warning)
+        return []
+
+
+def _python_expression_error(filter_string: str) -> SyntaxError | ValueError | None:
+    """Why *filter_string* is no Python expression, or ``None`` if it is one."""
+    try:
+        # the very compile the delegate runs: a string with leading white space fails
+        # it (``unexpected indent``) and is reported today, though ``eval`` and the
+        # constant check read such white space past
+        compile(filter_string, "<string>", "eval")
+    except (SyntaxError, ValueError) as error:
+        return error
+    return None
+
+
+def _report_not_python(
+    filter_string: str,
+    error: SyntaxError | ValueError,
+    location: tuple[str, int | None] | nodes.Node | None,
+    append_warning: str,
+) -> None:
+    """Report a filter string that is no Python expression, as one ``needs.filter``
+    warning: :func:`filter_needs_and_parts` compiles the string unguarded, and the
+    callers of :func:`filter_needs_view` and :func:`filter_needs_parts` -- the views,
+    ``need_count``, ``needuml``'s ``filter()``, ``needs_warnings``,
+    ``needs_builder_filter`` -- have no report of their own for it. The callers of
+    :func:`filter_needs_and_parts` and :func:`filter_needs` that do (``needextend``'s
+    filter form, ``copy(filter=...)``) still receive the error.
+    """
+    if append_warning:
+        append_warning = f" {append_warning}"
+    log_warning(
+        log,
+        f"Filter {filter_string!r} not valid. Error: {error}.{append_warning}",
+        "filter",
         location=location,
-        append_warning=append_warning,
-        origin_docname=origin_docname,
     )
 
 

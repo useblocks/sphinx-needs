@@ -119,11 +119,13 @@ def test_libclang_resilient_to_half_typed_code():
     assert {"IMPL_COMPLETE", "IMPL_HALF", "IMPL_AFTER", "IMPL_MID"} <= ids
 
 
-def test_null_tu_warns_and_skips_but_batch_continues(
+def test_null_tu_is_read_as_written_with_a_warning_and_batch_continues(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    """A file whose translation unit cannot be loaded at all is skipped with a
-    WARNING (not silently), and the rest of the batch still extracts.
+    """A file whose translation unit cannot be loaded at all, its target known, is
+    read as written without libclang (useblocks/ubcode#4862), with one
+    ``preprocessor_parse_refused`` WARNING (not silently), and the rest of the batch
+    still extracts.
 
     Real sources are recoverable under ``incomplete`` parsing, so the NULL-TU
     guard is exercised by forcing ``extract_active_comments`` to raise the
@@ -146,18 +148,18 @@ def test_null_tu_warns_and_skips_but_batch_continues(
 
     real = libclang_parser.extract_active_comments
 
-    def fake(src_path, args, on_parse=None):
+    def fake(src_path, args, on_parse=None, *, as_written=False):
         if Path(src_path).name == "bad.cpp":
             raise clang.cindex.TranslationUnitLoadError("forced NULL TU")
-        return real(src_path, args, on_parse)
+        return real(src_path, args, on_parse, as_written=as_written)
 
     monkeypatch.setattr(libclang_parser, "extract_active_comments", fake)
 
     warnings: list[str] = []
 
     class _Rec:
-        def warning(self, *_a: object, **_k: object) -> None:
-            warnings.append("w")
+        def warning(self, *_a: object, subtype: str = "", **_k: object) -> None:
+            warnings.append(subtype)
 
         def info(self, *_a: object, **_k: object) -> None:
             pass
@@ -170,8 +172,10 @@ def test_null_tu_warns_and_skips_but_batch_continues(
     analyse.run()
 
     ids = {n.need["id"] for n in analyse.oneline_needs}
-    assert ids == {"IMPL_GOOD"}, "bad file skipped, good file survives"
-    assert warnings, "a NULL translation unit must warn, not skip silently"
+    assert ids == {"IMPL_BAD", "IMPL_GOOD"}, "bad file read as written, good survives"
+    assert warnings == ["preprocessor_parse_refused"], (
+        "a NULL translation unit must warn, not be read silently"
+    )
 
 
 def test_libclang_active_matches_treesitter_when_all_active():

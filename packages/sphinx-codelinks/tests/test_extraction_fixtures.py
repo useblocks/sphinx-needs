@@ -180,7 +180,8 @@ def _build_preprocessor(case: dict, tmp_path: Path) -> PreprocessorConfig:
     string as the DB (to exercise a present-but-malformed DB).
     ``compile_commands_path`` instead points at an explicit path (which may be
     intentionally absent, to exercise the fallback). Otherwise only the global
-    ``defines`` apply.
+    ``defines`` apply. ``target`` is the ``[preprocessor] target`` setting, which
+    the engine reads where the build names no target (see ``analyse/preproc/target.py``).
     """
     defines = case.get("defines", [])
     compile_commands: Path | None = None
@@ -210,6 +211,7 @@ def _build_preprocessor(case: dict, tmp_path: Path) -> PreprocessorConfig:
         defines=defines,
         compile_commands=compile_commands,
         std=case.get("std", "c++17"),
+        target=case.get("target"),
     )
 
 

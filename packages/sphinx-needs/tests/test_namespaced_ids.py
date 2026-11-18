@@ -1026,6 +1026,29 @@ def test_a_part_reads_its_needs_facets(test_app: Any) -> None:
         assert _both_tiers(app, filter_string, parts=True) == (expected, expected)
 
 
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        _unclean_project(
+            UNCHECKED + 'suppress_warnings = ["needs.id_namespace"]\n',
+            FILTER_INDEX + '\n.. needextend:: c.in_namespace("nc")\n   :+tags: x\n',
+        )
+    ],
+    indirect=True,
+)
+def test_a_needextend_written_without_spaces_extends_the_namespace(
+    test_app: Any,
+) -> None:
+    """``c.in_namespace("nc")`` written as one word is a needextend filter, not an id: it
+    extends the needs of ``nc`` and below, and neither the look-alike ``ncx`` nor a
+    need in no namespace."""
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+    extended = sorted(key for key, need in _needs(app).items() if "x" in need["tags"])
+    assert extended == ["nc::REQ_001", "nc::m2::REQ_002"]
+
+
 #: the error of comparing ``c.id`` itself with a value: it holds the facets, not the id
 ID_IS_NO_ID = (
     "c.id holds the facets of the id, not the id: compare id, c.id.local or c.id.ns"

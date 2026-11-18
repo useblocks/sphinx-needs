@@ -736,8 +736,10 @@ limitations.
   no entry is read through an entry that includes it, or skipped with a warning; see
   :ref:`preprocessor_compile_db`.
 - ``defines`` (``list[str]``) - ``-D`` macros used when a file has **no** entry in the
-  database. This is the fallback applied to every header file (headers never appear in a
-  database) and to all files when no database is found.
+  database and no entry includes it. This is the fallback applied to a header no entry of
+  the database includes (headers never appear in a database: one an entry includes is read
+  through every entry that includes it, see :ref:`preprocessor_headers`) and to all files
+  when no database is found.
 - ``includes`` (``list[str]``) - ``-I`` include directories used together with
   ``defines`` on the fallback path.
 - ``resource_dir`` (``str``) - A clang resource directory, passed to every parse as
@@ -749,3 +751,16 @@ limitations.
   ``clang -print-resource-dir`` when your code includes compiler intrinsics
   (``immintrin.h``, ``arm_neon.h``), which are not shipped; see
   :ref:`preprocessor_builtin_headers`.
+- ``target`` (``str``) - The target to read C/C++ files for when their build names none,
+  as a clang target triple (``thumbv7em-none-eabihf``, ``aarch64-unknown-linux-gnu``,
+  ``x86_64-pc-windows-msvc``). The target decides which ``#if`` branches on the
+  architecture, the operating system and the data model are read (``__arm__``,
+  ``_WIN32``, ``__SIZEOF_LONG__``). An entry of the applicable ``compile_commands.json``
+  (the explicit one, or the one found upward) that names its own ``--target``, or whose
+  compiler's name carries one (``arm-none-eabi-gcc``), is read for that target, never for
+  this setting; the setting also applies to headers no entry includes and to files no
+  entry applies to (a header an entry includes is read for that entry's target).
+  Spaces around it are ignored. If omitted or empty (``""``), those files are read for
+  the machine the analysis runs on; a triple the loaded libclang does not model is not
+  used, and a file that would take it is read as written, every ``#if`` branch kept; see
+  :ref:`preprocessor_target`.

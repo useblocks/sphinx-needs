@@ -113,7 +113,7 @@ A key of the need's mapping (a `_computed` key, a `NeedsCoreFields` entry) would
 been a root filter name, a `needs_schema` property, a `needs.json` key and a reserved field
 name at once. None of those is wanted: `needs.json` format 1 and the draft `"2a1"` are
 byte-identical with the switch on and off, and the names `ns`, `local_id`, `id_ns` and
-`id_local` stay free for a project's fields. `ENV_DATA_VERSION` 27 records the two slots.
+`id_local` stay free for a project's fields. `ENV_DATA_VERSION` 28 records the two slots.
 
 ## 7. The filter names, and why they live under `c.`
 

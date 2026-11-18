@@ -375,11 +375,23 @@ def import_prefix_link_edit(
                 )
 
 
+_WHOLE_ID_BEFORE = r"(?<!\w)(?<![\w-]::)"
+"""Before a whole id: no word character, and no ``::`` that follows one or a ``-``."""
+_WHOLE_ID_AFTER = r"(?!\w)(?!::[\w-])"
+"""After a whole id: no word character, and no ``::`` that a word character or ``-``
+follows."""
+
+
 def _whole_ids_pattern(ids: Iterable[str]) -> re.Pattern[str] | None:
-    """A pattern matching any of ``ids`` where it stands as a whole word.
+    """A pattern matching any of ``ids`` where it stands as a whole id.
 
     An id is matched where no word character (a letter of any script, a digit, ``_``)
-    adjoins it, so an id inside a longer word is not one; of two ids where one begins
+    adjoins it, so an id inside a longer word is not one. Nor is an id that is one end
+    of a longer ``::``-joined id: one directly after a ``::`` that itself follows a word
+    character or a ``-`` (``other::REQ_1``), or directly before a ``::`` that a word
+    character or a ``-`` follows (``REQ_1::x``). A single ``:`` beside an id is still a
+    boundary (``:need:`REQ_1```), and so is a ``::`` that ends the text or is followed
+    by white space (``see REQ_1::`` before a literal block). Of two ids where one begins
     the other, the longer is tried first, so an id holding another (``REQ_X-REQ_Y``) is
     matched whole. The ids are merged into a trie -- a common beginning is matched once
     -- so a text is scanned in time that hardly grows with the number of ids (one
@@ -393,11 +405,15 @@ def _whole_ids_pattern(ids: Iterable[str]) -> re.Pattern[str] | None:
     if not ids:
         return None
     try:
-        return re.compile(r"(?<!\w)" + _trie_pattern(ids) + r"(?!\w)")
+        return re.compile(_WHOLE_ID_BEFORE + _trie_pattern(ids) + _WHOLE_ID_AFTER)
     except RecursionError:
         longest = sorted(ids, key=len, reverse=True)
         return re.compile(
-            r"(?<!\w)(?:" + "|".join(re.escape(i) for i in longest) + r")(?!\w)"
+            _WHOLE_ID_BEFORE
+            + "(?:"
+            + "|".join(re.escape(i) for i in longest)
+            + ")"
+            + _WHOLE_ID_AFTER
         )
 
 
