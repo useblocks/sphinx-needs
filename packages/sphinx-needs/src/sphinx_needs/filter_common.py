@@ -10,7 +10,8 @@ import difflib
 import json
 import math
 import re
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Generator, Iterable, Mapping
+from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
 from timeit import default_timer as timer
@@ -23,6 +24,7 @@ from docutils.statemachine import StringList
 from docutils.utils import get_source_line
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
+from sphinx.util.logging import suppress_logging
 
 from sphinx_needs import _read_watch
 from sphinx_needs._id_facets import IdFacets, in_namespace, namespace_argument
@@ -1016,7 +1018,8 @@ def _report_namespaced_ids_off(
     said = names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
     log_warning(
         log,
-        f"The filter reads {said}, but namespaced ids are off for this project: "
+        f"The filter {filter_string!r} reads {said}, but namespaced ids are off for "
+        "this project: "
         f"{'; '.join(_NAMESPACED_IDS_OFF[name] for name in names)}. Set "
         "needs_namespaced_ids = True to read '::' in an id as a namespace separator, "
         "or suppress needs.namespaced_ids_off."
@@ -1024,6 +1027,24 @@ def _report_namespaced_ids_off(
         "namespaced_ids_off",
         location=location,
     )
+
+
+@contextmanager
+def quiet_filters() -> Generator[None]:
+    """Evaluate filters quietly: nothing is logged, and what is reported once per build
+    of a filter's text (a ``c.is_a`` literal naming no need type, a namespace value read
+    while ``needs_namespaced_ids`` is off) is left to the evaluation that reports it, so
+    a pre-pass (one ordering the dynamic functions) does not use the report up."""
+    build = _NEEDS_CONFIG.build
+    reported = (build.is_a_reported, build.namespaced_ids_off_reported)
+    kept = [set(keys) for keys in reported]
+    try:
+        with suppress_logging():
+            yield
+    finally:
+        for keys, before in zip(reported, kept, strict=True):
+            keys.clear()
+            keys.update(before)
 
 
 def _fast_path_context(

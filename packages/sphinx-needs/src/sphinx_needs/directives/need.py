@@ -659,6 +659,7 @@ def check_links(
                         need_link.condition,
                         # where the link is written, as its other findings are
                         location=_link_location(need),
+                        append_warning=_link_origin(need),
                     ):
                         _emit_link_warning(
                             need,
@@ -754,6 +755,14 @@ def _link_location(need: NeedItem) -> tuple[str, int | None] | None:
     if need["is_external"] or (docname := need["docname"]) is None:
         return None
     return (docname, need["lineno"])
+
+
+def _link_origin(need: NeedItem) -> str:
+    """What a warning for a link of an external need names it by (it has no location
+    here); nothing for any other need."""
+    if need["is_external"]:
+        return f"(from the external need {need['id']!r}: {need['external_url']})"
+    return ""
 
 
 def _emit_link_warning(need: NeedItem, message: str, subtype: WarningSubTypes) -> None:

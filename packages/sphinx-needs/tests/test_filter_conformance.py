@@ -148,9 +148,11 @@ _FILTER_CODE = "filter"
 #: uncompared: the filter selects nothing, which `expected` compares.
 _UNKNOWN_TYPE_CODE = "filter_type"
 
-#: The finding of a filter reading a namespace value while namespaced ids are off (the
-#: switched-off case's entries), which the corpus has no key for: the filter is answered
-#: as `expected` says, and `test_namespaced_ids_off_warning.py` pins the finding.
+#: The finding of a filter reading a namespace value while namespaced ids are off, which
+#: the corpus has no key for: admitted in a case whose project sets
+#: `namespaced_ids = false` alone (anywhere else it is a finding the entry does not say);
+#: the filter is answered as `expected` says, and `test_namespaced_ids_off_warning.py`
+#: pins the finding.
 _NAMESPACED_IDS_OFF_CODE = "namespaced_ids_off"
 _CODE = re.compile(r"\[needs\.([a-z_]+)\]$")
 
@@ -295,8 +297,14 @@ def _outcome(answer: Callable[[], bool]) -> bool | str:
         return f"error: {error}"
 
 
-def _check(app: Any, entry: dict[str, Any]) -> list[str]:
-    """The problems with one entry; an empty list when it holds."""
+def _check(
+    app: Any, entry: dict[str, Any], *, namespaced_ids_off: bool = False
+) -> list[str]:
+    """The problems with one entry; an empty list when it holds.
+
+    :param namespaced_ids_off: Whether the case's project sets ``namespaced_ids =
+        false``, where the finding of a namespace read is admitted.
+    """
     filter_string: str = entry["filter"]
     expected: list[str] = entry["expected"]
     origin = ORIGIN if entry.get("in_document", True) else None
@@ -323,11 +331,10 @@ def _check(app: Any, entry: dict[str, Any]) -> list[str]:
         problem(f"selects {selected}, expected {expected}")
     reported = build_warnings(stream.getvalue()[start:], srcdir=app.srcdir)
     codes = [m[1] if (m := _CODE.search(w)) else w for w in reported]
-    codes = [
-        code
-        for code in codes
-        if code not in (_UNKNOWN_TYPE_CODE, _NAMESPACED_IDS_OFF_CODE)
-    ]
+    admitted = {_UNKNOWN_TYPE_CODE}
+    if namespaced_ids_off:
+        admitted.add(_NAMESPACED_IDS_OFF_CODE)
+    codes = [code for code in codes if code not in admitted]
     want = [_FILTER_CODE] if entry.get("error") else []
     if codes != want:
         problem(f"reports {reported}, expected codes {want}")
@@ -442,10 +449,14 @@ def test_case(test_app: Any, case: dict[str, Any]) -> None:
         and not _UNKNOWN_INHERITS.fullmatch(w)
         and (case["name"] != _UNCLEAN_CASE or w not in unclean)
     ] == [], case["name"]
+    switched_off = (
+        loads_toml(case["config"], case["name"]).get("needs", {}).get("namespaced_ids")
+        is False
+    )
     problems = [
         problem
         for entry in case["filters"]
         if not entry.get("ubcode_only")
-        for problem in _check(app, entry)
+        for problem in _check(app, entry, namespaced_ids_off=switched_off)
     ]
     assert problems == [], f"{case['name']}: {case['why']}"

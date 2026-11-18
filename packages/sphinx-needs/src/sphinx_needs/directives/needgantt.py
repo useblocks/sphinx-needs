@@ -24,7 +24,12 @@ from sphinx_needs.directives.utils import (
     SphinxNeedsLinkTypeException,
     no_needs_found_paragraph,
 )
-from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
+from sphinx_needs.filter_common import (
+    FilterBase,
+    _report_namespaced_ids_off,
+    filter_single_need,
+    process_filters,
+)
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import add_doc, remove_node_from_tree
 
@@ -228,6 +233,11 @@ def process_needgantt(
             origin="needgantt",
             location=node,
         )
+
+        if milestone_filter := current_needgantt["milestone_filter"]:
+            # read need by need below: what its text shows is reported here as well, so
+            # that a filter no need is tested on is reported too
+            _report_namespaced_ids_off(milestone_filter, needs_config, node)
 
         # Scale/timeline handling
         if current_needgantt["timeline"]:

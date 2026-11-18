@@ -166,22 +166,35 @@ fires, and no answer changes either way.
 which `_check_reads` gates), in `filter_common._report_namespaced_ids_off`, which the two
 entries every filter string evaluated over needs passes call before either tier:
 `filter_needs_and_parts` and `filter_single_need`, beside the report of a `c.is_a` literal
-naming no need type. A string the text shows refused has its refusal and nothing beside it:
-one that does not parse, a `c.in_namespace` call that is not one positional argument or whose
-literal names no namespace (`namespace_argument` judges it), a facet that is none, `c.id`
-compared or hashed. Once per build per place: the key is the string, where it is written and
-the origin its caller appends (a `needs_warnings` entry, the builder filter), emptied where
-the need types are set; a `needextend` filter, evaluated once per document, is reported again
-for each further place in that document it is written. Every filter of a page is evaluated
-where the page is resolved, in the main process of a `-j` build too, so a parallel build
+naming no need type. The text names the filter. A string the text shows refused has its
+refusal and nothing beside it: one that does not parse, a `c.in_namespace` call that is not
+one positional argument or whose literal names no namespace (`namespace_argument` judges it),
+a facet that is none, `c.id` compared or hashed, each judged only where evaluation reaches it
+unconditionally (not a later operand of `and` / `or`, not a branch of a conditional, not a
+lambda or comprehension body). **Where the text cannot settle whether a filter is refused,
+the warning is given**: a filter may then get both findings, and none at all is the outcome
+this rule exists to prevent. Once per build per place: the key is the string, where it is
+written and the origin its caller appends (a `needs_warnings` entry, the builder filter, an
+external need's link condition), so a place with no location is reported once per string
+per build; the keys are emptied where the need types are set. A `needextend` filter,
+evaluated once per document, is reported again for each further place in that document it is
+written; a `needflow` highlight, a `needgantt` milestone filter and a `needsequence` filter,
+evaluated need by need, are reported once at their directive before any need is tested. A
+quiet pre-pass (the one ordering the dynamic functions evaluates a `copy` or `calc_sum`
+filter first) runs under `filter_common.quiet_filters`, which restores the reported keys, so
+it does not use up the real place's report (nor that of a `c.is_a` naming no need type). A
+directive's filter is evaluated where its page is resolved, and a `needextend`, a constraint,
+a dynamic function's filter and a derived field's `where` where the needs are post-processed
+(`write-started`); both run in the main process of a `-j` build too, so a parallel build
 reports what a serial one does.
 
 **What it cannot see.** A name reached dynamically (`getattr(c.id, "ns")`, which `eval`
 answers); a filter function or a directive's filter code, which are Python, not filter
-strings; and, where a filter is evaluated need by need (`filter_single_need`: a
-`needsequence` or `needgantt` milestone filter, a `needflow` highlight, a link condition, a
-constraint, a dynamic function's filter, a derived field's `where`), a filter tested on no
-need, as nothing reads it there. Where there is no check context (a `needimport` filter, a
+strings; where a filter is data or configuration evaluated need by need (a link condition,
+a constraint, a dynamic function's filter, a derived field's `where`), a filter tested on no
+need, as nothing reads it there; and a refusing construct the text sees in a first operand
+that evaluation happens not to raise (`c.id in [] or c.id.ns == ""`: an empty list compares
+nothing), which keeps such a filter unreported. Where there is no check context (a `needimport` filter, a
 field's predicate, a variant condition) a read of `c` is refused already, and that refusal
 stands alone.
 

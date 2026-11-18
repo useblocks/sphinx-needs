@@ -21,7 +21,6 @@ from typing import TYPE_CHECKING, Any, Final, Protocol, TypeAlias, TypeVar
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
-from sphinx.util.logging import suppress_logging
 
 from sphinx_needs import _read_watch
 from sphinx_needs._source_facets import explained, unavailable
@@ -31,7 +30,11 @@ from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
 from sphinx_needs.derive import DeriveCall, DeriveRule, fingerprint_names, is_union
 from sphinx_needs.exceptions import FunctionParsingException
-from sphinx_needs.filter_common import filter_needs_and_parts, filter_single_need
+from sphinx_needs.filter_common import (
+    filter_needs_and_parts,
+    filter_single_need,
+    quiet_filters,
+)
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
 from sphinx_needs.needs_schema import (
@@ -1089,7 +1092,7 @@ def resolve_functions(
     def copy_match(filter_string: str, current: NeedItem) -> str | object | None:
         # the lowest-id match of ``copy``'s filter, as the call computes it, quietly:
         # the call reports a filter's problems itself
-        with suppress_logging():
+        with quiet_filters():
             try:
                 found = filter_needs_and_parts(
                     needs.values(),
@@ -1106,7 +1109,7 @@ def resolve_functions(
         # ``calc_sum``'s candidates, in need-id order; a need its filter fails on is
         # summed, as the call sums it
         candidates = []
-        with suppress_logging():
+        with quiet_filters():
             for need_id in sorted(needs):
                 try:
                     keep = filter_single_need(

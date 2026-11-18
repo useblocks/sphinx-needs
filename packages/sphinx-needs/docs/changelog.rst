@@ -40,9 +40,12 @@ Improvements
     into that namespace.
 
 - ✨ A filter that reads ``c.id.ns``, ``c.id.local`` or ``c.in_namespace()`` while :ref:`needs_namespaced_ids` is
-  off is reported as ``needs.namespaced_ids_off``, once per place it is written: every id is plain then, so
-  ``c.in_namespace("nc")`` selects no need and ``not c.in_namespace("nc")`` every need. The answer is unchanged;
-  turn the switch on, or suppress the warning type (``suppress_warnings = ["needs.namespaced_ids_off"]``)
+  off is reported as ``needs.namespaced_ids_off``, naming the filter, once per place it is written (once per build
+  where the place gives no location, such as a constraint): every id is plain then, so ``c.in_namespace("nc")``
+  selects no need and ``not c.in_namespace("nc")`` every need. The answer is unchanged; turn the switch on, or
+  suppress the warning type (``suppress_warnings = ["needs.namespaced_ids_off"]``). With it, a ``c.is_a`` naming
+  no need type (``needs.filter_type``) in a ``calc_sum`` or ``copy`` filter is no longer lost when the function
+  waits for a computed field
 
 - ✨ **Qualified need directives and** :ref:`needs_directive_name`: every need type is also written
   ``.. need:<type>::`` (a ``{need:<type>}`` fence in MyST), and a project chooses whether the bare ``.. <type>::`` is

@@ -2828,7 +2828,8 @@ naming a bare id can be hinted with its namespaced id. Keep it off (``False``) i
 for another reason (a C++ name, say). Off, every need is in no namespace, ``c.id.ns`` is ``""`` and ``c.id.local``
 the whole id (:ref:`filter_namespace`), the id patterns read the whole id, and no id is warned or hinted. Off, a
 filter string reading ``c.id.ns``, ``c.id.local`` or ``c.in_namespace()`` is reported as
-``needs.namespaced_ids_off``, once per place it is written, as what it reads means nothing then.
+``needs.namespaced_ids_off``, once per place it is written (once per build where the place gives no location),
+as what it reads means nothing then.
 Changing it re-reads every document. The value is not experimental; the filter names and attributes it feeds are.
 
 .. _`needs_functions`:
