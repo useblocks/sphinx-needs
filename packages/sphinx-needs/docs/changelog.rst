@@ -158,7 +158,7 @@ Bug fixes
   integer ``1``. A build whose value differs from the previous build's reads the project again, so that it writes the
   file in the format asked for on every supported Sphinx (on Sphinx 7.4 a build that read nothing wrote no file);
   ``-D needs_json_format_version=1`` after a build that left the option unset, or the reverse, is such a build: the
-  text and the integer are both format 1 and differ as values (:issue:`2530`)
+  text and the integer are both format 1 and differ as values (:issue:`2530`, :pr:`2539`)
 
 - 🐛 A :ref:`needsequence` over need ids holding ``::`` (or another character PlantUML refuses in a name, such as
   ``-``) renders, and shows each participant by its title or its id
